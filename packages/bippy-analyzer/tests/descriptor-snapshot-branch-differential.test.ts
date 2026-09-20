@@ -1,8 +1,7 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
   checkDifferentialCases,
-  DifferentialMismatch,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -41,17 +40,9 @@ const witnesses = [
     name: "snapshot and repeated current value retain finite correlations",
     body: `const target = { value: first ? 1 : 2 }; const before = Object.getOwnPropertyDescriptor(target, 'value'); if (second) target.value = 3; const after = Object.getOwnPropertyDescriptors(target).value; return before.value + ':' + after.value + ':' + target.value;`,
   },
-].map((testCase) => ({
-  ...testCase,
-  expected: ["2:2:2", "2:3:3", "1:1:1", "1:3:3"],
-  actual: "<any: + on dynamic values>",
-}));
+];
 
-it.each(witnesses)("known precision gap: $name", async (testCase) => {
-  const failure: unknown = await checkSymbolicCases([testCase]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([testCase]);
-});
+it.each(witnesses)("preserves $name", (testCase) => checkSymbolicCases([testCase]));
 
 it.each(
   witnesses.flatMap((testCase) =>

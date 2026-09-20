@@ -118,9 +118,10 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
       const abortWitness = getAbortWitness(value);
       if (abortWitness) return abortWitness;
       if (getModeledPromise(value)) return Promise.resolve();
-      return value.entries.every(
-        (entry) => entry.kind === "property" && entry.value.kind !== "native-function",
-      )
+      return value.hasObjectPrototype ||
+        value.entries.every(
+          (entry) => entry.kind === "property" && entry.value.kind !== "native-function",
+        )
         ? {}
         : null;
     }

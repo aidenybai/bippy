@@ -1,7 +1,11 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type { Scope, StaticValue } from "../types.js";
-import type { ConditionalEvaluationOptions, EvaluationContext, ValueCaller } from "./context.js";
-import type { CallableValue } from "./values.js";
+import type {
+  ConditionalEvaluationOptions,
+  EvaluationContext,
+  ValueCaller,
+  ValueCallOptions,
+} from "./context.js";
 
 export interface CallbackEvaluator extends ValueCaller {
   runMaybe: <Result>(
@@ -17,10 +21,14 @@ export interface CallbackEvaluator extends ValueCaller {
 
 export const callCallback = (
   evaluator: ValueCaller,
-  callback: CallableValue,
+  callback: StaticValue,
   args: StaticValue[],
   context: EvaluationContext,
-): StaticValue => evaluator.callValue(callback, args, context, null);
+  options?: ValueCallOptions,
+): StaticValue =>
+  options
+    ? evaluator.callValue(callback, args, context, null, options)
+    : evaluator.callValue(callback, args, context, null);
 
 /**
  * A callback run for an item that may be absent (`mayRepeat` false) or occur
@@ -28,15 +36,16 @@ export const callCallback = (
  */
 export const callUncertainCallback = (
   evaluator: CallbackEvaluator,
-  callback: CallableValue,
+  callback: StaticValue,
   args: StaticValue[],
   context: EvaluationContext,
   mayRepeat: boolean,
   predicate: string | null = null,
+  options?: ValueCallOptions,
 ): StaticValue =>
   evaluator.runMaybe(
     callback.kind === "function" ? callback.scope : context.scope,
-    () => callCallback(evaluator, callback, args, context),
+    () => callCallback(evaluator, callback, args, context, options),
     "callback for an item that may not occur",
     null,
     true,

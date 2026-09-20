@@ -208,7 +208,7 @@ export const constructBinary = (
 
 /** `Uint8Array.from(items)` / `Uint8Array.of(...items)` over already-mapped elements. */
 export const binaryFromItems = (name: string, items: StaticValue[]): StaticValue | null =>
-  isTypedArrayName(name) ? binaryValue(name, items) : null;
+  isTypedArrayName(name) ? binaryValue(name, [...items]) : null;
 
 /** `ArrayBuffer.isView(value)`. */
 export const isBinaryView = (value: StaticValue | undefined): boolean | null => {

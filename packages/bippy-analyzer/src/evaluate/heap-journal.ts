@@ -12,10 +12,10 @@ import {
   branchValue,
   getAllocationCount,
   getItemValue,
-  isIndefiniteItem,
   isSameValue,
   joinObjectEntries,
   listValue,
+  mapFiniteListItems,
   spreadListItems,
   unknownValue,
 } from "./values.js";
@@ -345,21 +345,17 @@ export class HeapJournal {
       }
       const isEveryPathAppending = pathItems.every((items) => isExtensionOf(items, original.items));
       const appendedItems = pathItems.map((items) => items.slice(original.items.length));
-      if (isEveryPathAppending && !isRepeated && !appendedItems.flat().some(isIndefiniteItem)) {
-        list.items = [
-          ...original.items,
-          ...spreadListItems(
-            branchValue(appendedItems.map(listValue), reason, location, preferredPath, predicate),
-            location,
-          ),
-        ];
-        continue;
-      }
-      if (!isRepeated && pathItems.every((items) => !items.some(isIndefiniteItem))) {
-        list.items = spreadListItems(
-          branchValue(pathItems.map(listValue), reason, location, preferredPath, predicate),
+      const finitePaths = isRepeated
+        ? null
+        : (isEveryPathAppending ? appendedItems : pathItems).map((items) =>
+            mapFiniteListItems(items, listValue),
+          );
+      if (finitePaths?.every((items) => items !== null)) {
+        const joinedItems = spreadListItems(
+          branchValue(finitePaths, reason, location, preferredPath, predicate),
           location,
         );
+        list.items = isEveryPathAppending ? [...original.items, ...joinedItems] : joinedItems;
         continue;
       }
       const uncertainItems = (isEveryPathAppending ? appendedItems : pathItems)

@@ -206,6 +206,13 @@ export default defineConfig({
   },
   test: {
     name: "bippy-analyzer",
+    coverage: {
+      provider: "v8",
+      include: [resolve(parserDirectory, "src/**/*.{ts,tsx}")],
+      excludeAfterRemap: true,
+      reporter: ["text", "json", "json-summary"],
+      reportOnFailure: true,
+    },
     environment: "happy-dom",
     environmentOptions: {
       happyDOM: {

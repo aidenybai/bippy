@@ -9,6 +9,8 @@ import {
 import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
 import { FUNCTION_OWN_KEYS, getStubOwnKeys } from "../react/element-shape.js";
 import { getReactApiTypeof, isReactLikePackage, resolveReactApi } from "../react/react-api.js";
+import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
+import { andGuard } from "../symbolic/guards.js";
 import type {
   CapturedExportReference,
   CapturedValue,
@@ -38,13 +40,17 @@ import type {
   StubComponent,
   UnknownPrimitiveType,
 } from "../types.js";
+import { createDateState } from "./date-state.js";
 import {
   composeFlattenedPredicate,
+  getAlternativeGuards,
+  guardedPredicate,
   getBranchPredicate,
   getGuardedTruthiness,
   getTruthinessPredicate,
   recordBranchOrigin,
   recordDerivation,
+  type ResolvedAlternativeGuards,
 } from "./predicates.js";
 
 /** A member read off an external binding: a React API for React-like packages, otherwise an opaque derived value. */
@@ -212,6 +218,7 @@ export const nativeObjectValue = (
   if (!lifted) {
     lifted = { kind: "native-object", value, host };
     nativeObjectValues.set(value, lifted);
+    if (value instanceof Date) createDateState(value, allocate, branchValue);
   }
   return lifted;
 };
@@ -1604,7 +1611,7 @@ export const branchValue = (
   }
   if (flattened.length === 1) return flattened[0];
   const isPositional = flattened.length === alternatives.length && !hasNestedBranch;
-  return {
+  const branch: StaticBranchValue = {
     kind: "branch",
     alternatives: flattened,
     preferredIndex: resolvedPreferred,
@@ -1623,6 +1630,10 @@ export const branchValue = (
             flattened.length,
           ),
   };
+  const resolved = branch.predicate === null ? null : getAlternativeGuards(branch);
+  const reachable = resolved?.guards.map((guard) => areGuardsSatisfiable([guard]));
+  if (!reachable?.includes(false)) return branch;
+  return filterAlternatives(branch, (_alternative, index) => reachable[index]) ?? branch;
 };
 
 const getAgreedTruthiness = (alternatives: StaticValue[]): boolean | null => {
@@ -1723,19 +1734,42 @@ export const isNullish = (value: StaticValue): boolean | null => {
   return false;
 };
 
-/** The alternatives of `value` that can be truthy; `value` itself when it is not a branch. */
-export const truthyCounterpart = (value: StaticValue): StaticValue => {
-  if (value.kind !== "branch") return value;
-  const truthy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== false);
-  return truthy.length === 0 ? value : branchValue(truthy, value.reason, value.location);
+const filterAlternatives = (
+  value: StaticBranchValue,
+  accepts: (alternative: StaticValue, index: number) => boolean,
+): StaticValue | null => {
+  const selected = value.alternatives.flatMap((alternative, index) =>
+    accepts(alternative, index) ? [{ alternative, index }] : [],
+  );
+  if (selected.length === 0) return null;
+  const resolved = getAlternativeGuards(value);
+  return branchValue(
+    selected.map(({ alternative }) => alternative),
+    value.reason,
+    value.location,
+    Math.max(
+      0,
+      selected.findIndex(({ index }) => index === value.preferredIndex),
+    ),
+    resolved
+      ? guardedPredicate(
+          selected.map(({ index }) => resolved.guards[index]),
+          [resolved.inputs],
+        )
+      : null,
+  );
 };
+
+/** The alternatives of `value` that can be truthy; `value` itself when it is not a branch. */
+export const truthyCounterpart = (value: StaticValue): StaticValue =>
+  value.kind === "branch"
+    ? (filterAlternatives(value, (alternative) => getTruthiness(alternative) !== false) ?? value)
+    : value;
 
 export const falsyCounterpart = (value: StaticValue): StaticValue => {
   if (value.kind === "branch") {
-    const falsy = value.alternatives.filter((alternative) => getTruthiness(alternative) !== true);
-    return falsy.length === 0
-      ? UNDEFINED_VALUE
-      : branchValue(falsy.map(falsyCounterpart), value.reason, value.location);
+    const falsy = filterAlternatives(value, (alternative) => getTruthiness(alternative) !== true);
+    return falsy === null ? UNDEFINED_VALUE : mapValue(falsy, falsyCounterpart);
   }
   if (value.kind === "primitive") return value;
   if (value.kind === "unknown-primitive") {
@@ -1810,6 +1844,46 @@ export const distributeBinary = (
   }
   if (countAlternatives(left) * countAlternatives(right) > MAX_DISTRIBUTED_ALTERNATIVES)
     return null;
+  if (left.kind === "branch" && right.kind === "branch") {
+    const leftGuards = getAlternativeGuards(left);
+    const rightGuards = getAlternativeGuards(right);
+    if (leftGuards && rightGuards) {
+      const pairs = left.alternatives.flatMap((leftAlternative, leftIndex) =>
+        right.alternatives.flatMap((rightAlternative, rightIndex) => {
+          const leftGuard = leftGuards.guards[leftIndex];
+          const rightGuard = rightGuards.guards[rightIndex];
+          return isGuardCompatibleWithActivePath(leftGuard, rightGuard)
+            ? [
+                {
+                  leftAlternative,
+                  rightAlternative,
+                  guard: andGuard([leftGuard, rightGuard]),
+                  isPreferred:
+                    leftIndex === left.preferredIndex && rightIndex === right.preferredIndex,
+                },
+              ]
+            : [];
+        }),
+      );
+      if (!pairs.length)
+        return unknownValue("binary operation has no feasible alternatives", left.location);
+      const predicate = guardedPredicate(
+        pairs.map((pair) => pair.guard),
+        [leftGuards.inputs, rightGuards.inputs],
+      );
+      if (predicate !== null)
+        return branchValue(
+          pairs.map((pair) => operation(pair.leftAlternative, pair.rightAlternative)),
+          left.reason,
+          left.location,
+          Math.max(
+            0,
+            pairs.findIndex((pair) => pair.isPreferred),
+          ),
+          predicate,
+        );
+    }
+  }
   if (left.kind === "branch") {
     return mapValue(left, (alternative) => operation(alternative, right));
   }
@@ -1835,6 +1909,7 @@ interface SequenceInstance {
 
 interface StructureExpansion {
   active: Set<StaticValue>;
+  guards: Map<StructureDecision, ResolvedAlternativeGuards>;
   limit: number;
   firstBranch: StaticBranchValue | null;
 }
@@ -1875,6 +1950,8 @@ const expandStructure = (
     case "branch": {
       expansion.firstBranch ??= value;
       const key: StructureDecision = value.predicate ?? value;
+      const guards = getAlternativeGuards(value);
+      if (guards) expansion.guards.set(key, guards);
       const decided = decisions.get(key);
       if (decided !== undefined && decided < value.alternatives.length) {
         return expandStructure(value.alternatives[decided], decisions, isPreferred, expansion);
@@ -1958,7 +2035,12 @@ export const distributeObjectBranches = (
   value: StaticValue,
   limit = MAX_DISTRIBUTED_ALTERNATIVES,
 ): StaticValue => {
-  const expansion: StructureExpansion = { active: new Set(), limit, firstBranch: null };
+  const expansion: StructureExpansion = {
+    active: new Set(),
+    guards: new Map(),
+    limit,
+    firstBranch: null,
+  };
   const instances = expandStructure(value, new Map(), true, expansion);
   if (instances === null || instances.length < 2 || expansion.firstBranch === null) return value;
   if (
@@ -1969,7 +2051,21 @@ export const distributeObjectBranches = (
   }
   const keys = new Set(instances.flatMap((instance) => [...instance.decisions.keys()]));
   const [onlyKey] = keys;
-  const predicate = keys.size === 1 && typeof onlyKey === "string" ? onlyKey : null;
+  const instanceGuards = instances.map((instance) => {
+    const guards = [...instance.decisions].map(
+      ([key, index]) => expansion.guards.get(key)?.guards[index],
+    );
+    return guards.every((guard) => guard !== undefined) ? andGuard(guards) : null;
+  });
+  const predicate =
+    keys.size === 1 && typeof onlyKey === "string"
+      ? onlyKey
+      : instanceGuards.every((guard) => guard !== null)
+        ? guardedPredicate(
+            instanceGuards,
+            [...expansion.guards.values()].map((resolved) => resolved.inputs),
+          )
+        : null;
   return branchValue(
     instances.map((instance) => instance.value),
     expansion.firstBranch.reason,
@@ -2233,6 +2329,43 @@ export const spreadListItems = (
     });
   }
   return [{ kind: "repeat", item: unknownValue(`spread of ${describeValue(value)}`), location }];
+};
+
+export const mapFiniteListItems = (
+  items: StaticValue[],
+  visit: (items: StaticValue[]) => StaticValue,
+): StaticValue | null => {
+  let combinationCount = 1;
+  for (const item of items) {
+    let current = item;
+    let presenceCount = 1;
+    while (current.kind === "optional") {
+      if (!current.predicate || ++presenceCount > MAX_DISTRIBUTED_ALTERNATIVES) return null;
+      current = current.value;
+    }
+    if (current.kind === "repeat") return null;
+    combinationCount *= presenceCount;
+    if (combinationCount > MAX_DISTRIBUTED_ALTERNATIVES) return null;
+  }
+  const expand = (remaining: StaticValue[], prefix: StaticValue[]): StaticValue => {
+    const present = [...prefix];
+    for (const [index, item] of remaining.entries()) {
+      if (item.kind !== "optional") {
+        present.push(item);
+        continue;
+      }
+      const rest = remaining.slice(index + 1);
+      return branchValue(
+        [expand([item.value, ...rest], present), expand(rest, present)],
+        item.reason,
+        item.location,
+        item.isAbsentPreferred ? 1 : 0,
+        item.predicate,
+      );
+    }
+    return visit(present);
+  };
+  return expand(items, []);
 };
 
 const MAX_OPTIONAL_CANDIDATES = 8;

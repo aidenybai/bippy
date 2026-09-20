@@ -49,8 +49,6 @@ const cases = [
   },
   {
     name: "empty pair defaults both indexed reads",
-    expected: true,
-    actual: '<boolean: presence of "undefined">',
     body: `const result = Object.fromEntries([[]]); return Object.hasOwn(result, 'undefined');`,
   },
   { name: "hole key becomes undefined", body: `return Object.fromEntries([[, 7]]).undefined;` },
@@ -74,14 +72,10 @@ const cases = [
   },
   {
     name: "symbol keys remain symbols",
-    expected: true,
-    actual: "<boolean: === on dynamic values>",
     body: `const key = Symbol('entry'); return Object.fromEntries([[key, 7]])[key] === 7;`,
   },
   {
     name: "empty string input is an empty iterable",
-    expected: 0,
-    actual: "unknown(Object.keys of unknown(Object.fromEntries of dynamic entries))",
     body: `return Object.keys(Object.fromEntries('')).length;`,
   },
   {

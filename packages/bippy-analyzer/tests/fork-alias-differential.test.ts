@@ -1,7 +1,6 @@
 import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
-  checkKnownSymbolicCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -48,9 +47,6 @@ it.each([
     name: "closures observe branch-local reassignment rather than capture-time values",
     body: `let selected = { value: 'old' }; const original = selected; const read = () => selected.value; if (first) selected = { value: 'new' }; if (second) original.value = 'changed'; return read() + ':' + original.value;`,
   },
-])("$name", (testCase) => checkSymbolicCases([testCase]));
-
-it.each([
   {
     name: "a retained array alias agrees with length after conditional pushes and pops",
     body: `const list = ['x']; const alias = list; if (first) list.push('a'); else list.push('b'); if (second) alias.pop(); return list.join('|') + ':' + alias.length;`,
@@ -59,4 +55,4 @@ it.each([
     name: "caught branches with repeated alias reads stay concrete",
     body: `const state = { value: 'old' }; const alias = state; let result = ''; try { if (first) { alias.value = 'before'; throw 'stop'; } state.value = second ? 'left' : 'right'; result = 'returned'; } catch (error) { result = 'caught'; } return result + ':' + state.value + ':' + alias.value;`,
   },
-])("known precision gap: $name", (testCase) => checkKnownSymbolicCases([testCase]));
+])("$name", (testCase) => checkSymbolicCases([testCase]));

@@ -555,6 +555,7 @@ export interface StaticObjectValue {
   constructedBy?: StaticClassValue;
   /** Created with `Object.create(null)`: no inherited `constructor` or `Object.prototype` methods. */
   hasNullPrototype?: boolean;
+  hasObjectPrototype?: boolean;
   /** The object `Object.create(object)` or `new` on a constructor function inherits from. */
   prototype?: StaticObjectValue;
   /** Passed to `Object.freeze`, so writes no longer land and `Object.isFrozen` answers true. */

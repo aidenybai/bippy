@@ -61,12 +61,6 @@ it.each([
     body: `return ({ read() { try { arguments.callee; return 'accepted'; } catch (error) { return error.name; } } }).read();`,
   },
   {
-    name: "apply does not share its input array with arguments",
-    expected: "1,2:9",
-    actual: JSON.stringify("9,2:9"),
-    body: `const input = [1, 2]; const owner = { read() { arguments[0] = 9; return arguments[0]; } }; const result = owner.read.apply(null, input); return input.join(',') + ':' + result;`,
-  },
-  {
     name: "parameter defaults see the callee arguments rather than the caller arguments",
     expected: undefined,
     actual: "7",
@@ -78,19 +72,26 @@ it.each([
     actual: 'unknown(unbound identifier "arguments")',
     body: `return ({ read(value = arguments.length) { return value; } }).read();`,
   },
+])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+
+it.each([
   {
     name: "Array.from copies arguments independently",
-    expected: 1,
-    actual: "9",
     body: `return ({ read() { const copy = Array.from(arguments); arguments[0] = 9; return copy[0]; } }).read(1);`,
   },
   {
     name: "Array.from creates a distinct array",
-    expected: false,
-    actual: "true",
     body: `const source = [1]; return Array.from(source) === source;`,
   },
-])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+])("matches native Array.from copying: $name", (testCase) => checkDifferentialCases([testCase]));
+
+it("apply does not share its input array with arguments", () =>
+  checkDifferentialCases([
+    {
+      name: "apply does not share its input array with arguments",
+      body: `const input = [1, 2]; const owner = { read() { arguments[0] = 9; return arguments[0]; } }; const result = owner.read.apply(null, input); return input.join(',') + ':' + result;`,
+    },
+  ]));
 
 it("mapped Array.from creates an independent copy", () =>
   checkDifferentialCases([

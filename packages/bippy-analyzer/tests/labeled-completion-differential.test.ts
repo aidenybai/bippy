@@ -77,11 +77,9 @@ it.each(matrix)("$label", ({ action, finalizer, name, isKnown }) => {
   const cases = [0, 4, 8].map((trigger) => ({
     expected: getExpectedTrace(action, finalizer, trigger),
     actual:
-      action.name === "return"
+      action.name === "return" || action.name === "throw"
         ? "branch(<string> | <string>)"
-        : action.name === "throw"
-          ? "branch(<string> | <string> | <string>)"
-          : "<string: + on dynamic values>",
+        : "<string: + on dynamic values>",
     name: `${name}/trigger=${trigger}`,
     body: `
       const trace = [];

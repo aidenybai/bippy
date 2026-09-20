@@ -264,6 +264,10 @@ const resolveGuard = (test: StaticValue): ResolvedGuard => {
     subject = unalias(operand);
     isNegated = !isNegated;
   }
+  const truthiness = subject.kind === "branch" ? null : getTruthiness(subject);
+  if (truthiness !== null) {
+    return { guard: constantGuard(isNegated ? !truthiness : truthiness), inputs: [] };
+  }
   const derivation = derivations.get(subject);
   let resolved: ResolvedGuard;
   switch (derivation?.kind) {

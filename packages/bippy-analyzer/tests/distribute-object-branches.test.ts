@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
+import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
+import { solveGuards } from "../src/symbolic/guard-solver.js";
 import {
   branchValue,
   distributeObjectBranches,
@@ -12,7 +14,9 @@ import type { StaticValue } from "../src/types.js";
 
 const text = (value: string) => primitiveValue(value);
 
-const eitherHref = (predicate: string | null = "truthy(isDark)") =>
+const themePredicate = createPathPredicate("isDark", null);
+
+const eitherHref = (predicate: string | null = themePredicate) =>
   branchValue([text("/dark.png"), text("/light.png")], "theme", null, 1, predicate);
 
 /** Each alternative as JSON, or the whole value when nothing was distributed. */
@@ -39,7 +43,7 @@ describe("distributeObjectBranches", () => {
       '{"rel":"icon","href":"/dark.png"}',
       '{"rel":"icon","href":"/light.png"}',
     ]);
-    expect(distributed.kind === "branch" && distributed.predicate).toBe("truthy(isDark)");
+    expect(distributed.kind === "branch" && distributed.predicate).toBe(themePredicate);
     expect(distributed.kind === "branch" && distributed.preferredIndex).toBe(1);
     expect(distributed.kind === "branch" && distributed.reason).toBe("theme");
   });
@@ -74,8 +78,14 @@ describe("distributeObjectBranches", () => {
   it("takes the cartesian product of independent decisions", () => {
     const distributed = distributeObjectBranches(
       objectFromRecord({
-        theme: branchValue([text("dark"), text("light")], "theme", null, 0, "truthy(isDark)"),
-        size: branchValue([text("sm"), text("lg")], "size", null, 0, "truthy(isLarge)"),
+        theme: branchValue([text("dark"), text("light")], "theme", null, 0, themePredicate),
+        size: branchValue(
+          [text("sm"), text("lg")],
+          "size",
+          null,
+          0,
+          createPathPredicate("isLarge", null),
+        ),
       }),
     );
     expect(alternativesOf(distributed)).toEqual([
@@ -84,7 +94,11 @@ describe("distributeObjectBranches", () => {
       '{"theme":"light","size":"sm"}',
       '{"theme":"light","size":"lg"}',
     ]);
-    expect(distributed.kind === "branch" && distributed.predicate).toBeNull();
+    if (distributed.kind !== "branch") throw new Error("Expected structural alternatives");
+    const resolved = getAlternativeGuards(distributed);
+    expect(resolved?.inputs.map((input) => input.label).sort()).toEqual(["isDark", "isLarge"]);
+    expect(resolved?.guards).toHaveLength(4);
+    for (const guard of resolved?.guards ?? []) expect(solveGuards([guard])).not.toBeNull();
   });
 
   it("keeps repeated occurrences of one predicate correlated", () => {
@@ -93,7 +107,7 @@ describe("distributeObjectBranches", () => {
         icon: eitherHref(),
         nested: listValue([
           objectFromRecord({
-            label: branchValue([text("Dark"), text("Light")], "theme", null, 1, "truthy(isDark)"),
+            label: branchValue([text("Dark"), text("Light")], "theme", null, 1, themePredicate),
           }),
         ]),
       }),
@@ -102,7 +116,7 @@ describe("distributeObjectBranches", () => {
       '{"icon":"/dark.png","nested":[{"label":"Dark"}]}',
       '{"icon":"/light.png","nested":[{"label":"Light"}]}',
     ]);
-    expect(distributed.kind === "branch" && distributed.predicate).toBe("truthy(isDark)");
+    expect(distributed.kind === "branch" && distributed.predicate).toBe(themePredicate);
     expect(distributed.kind === "branch" && distributed.preferredIndex).toBe(1);
   });
 
@@ -116,9 +130,15 @@ describe("distributeObjectBranches", () => {
 
   it("returns the value unchanged once the product exceeds the limit", () => {
     const wide = objectFromRecord({
-      first: branchValue([text("a"), text("b")], "first", null, 0, "truthy(a)"),
-      second: branchValue([text("c"), text("d")], "second", null, 0, "truthy(b)"),
-      third: branchValue([text("e"), text("f")], "third", null, 0, "truthy(c)"),
+      first: branchValue([text("a"), text("b")], "first", null, 0, createPathPredicate("a", null)),
+      second: branchValue(
+        [text("c"), text("d")],
+        "second",
+        null,
+        0,
+        createPathPredicate("b", null),
+      ),
+      third: branchValue([text("e"), text("f")], "third", null, 0, createPathPredicate("c", null)),
     });
     expect(distributeObjectBranches(wide, 4)).toBe(wide);
     expect(alternativesOf(distributeObjectBranches(wide, 8))).toHaveLength(8);

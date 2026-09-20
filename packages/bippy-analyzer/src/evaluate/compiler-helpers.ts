@@ -5,7 +5,7 @@ import { isFunctionLikeExpression } from "../parse/ast-walk.js";
 import type { FunctionLikeNode } from "../parse/source-types.js";
 import type { StaticNativeFunctionValue, StaticValue, StubRenderTools } from "../types.js";
 import { getBuiltinGlobal } from "./builtin-calls.js";
-import { getCollectionItems } from "./collections.js";
+import { consumeCollectionItems } from "./collections.js";
 import {
   chainPromise,
   createPromiseValue,
@@ -268,12 +268,12 @@ const asyncToGenerator: HelperImplementation = ([generatorFunction]) =>
 const ITERATOR_POSITION_KEY = getSymbolPropertyKey(createSymbolValue("position"));
 
 /** `_createForOfIteratorHelper(iterable)`: the `{ s, n, e, f }` stepper a lowered `for..of` drives. */
-const createForOfIteratorHelper: HelperImplementation = ([iterable]) => {
+const createForOfIteratorHelper: HelperImplementation = ([iterable], tools) => {
   if (!iterable) return unknownValue("for..of over nothing");
   const items =
     iterable.kind === "primitive" && typeof iterable.value === "string"
       ? listValue([...iterable.value].map(primitiveValue))
-      : (getCollectionItems(iterable) ?? iterable);
+      : (consumeCollectionItems(iterable, tools.recordStateMutation) ?? iterable);
   if (!isKnownList(items)) return unknownValue(`for..of over ${describeValue(iterable)}`);
   const noop = nativeFunction("noop", () => UNDEFINED_VALUE);
   const iterator = objectFromRecord({

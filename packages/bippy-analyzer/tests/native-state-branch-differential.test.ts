@@ -51,13 +51,19 @@ const branchCases: NativeBranchCase[] = [
     actual: "[ 'changed', 'byte:9' ]",
     body: `const view = new DataView(new ArrayBuffer(1)); if (first) { view.setUint8(0, 9); return 'changed'; } return 'byte:' + view.getUint8(0);`,
   },
+];
+
+const resolvedBranchCases: DifferentialCase[] = [
   {
     name: "apply arguments mutation before an early return",
-    expected: ["source:1", "changed"],
-    actual: "[ 'changed', 'source:9' ]",
     body: `const input = [1]; const owner = { read() { arguments[0] = 9; } }; if (first) { owner.read.apply(null, input); return 'changed'; } return 'source:' + input[0];`,
   },
 ];
+
+it.each(resolvedBranchCases)(
+  "matches native branch isolation and pinned replay: $name",
+  (testCase) => checkSymbolicCases([testCase]),
+);
 
 it.each(branchCases)("known divergence: branch isolation: $name", async (testCase) => {
   const failure: unknown = await checkSymbolicCases([testCase]).catch((error: unknown) => error);
@@ -66,7 +72,7 @@ it.each(branchCases)("known divergence: branch isolation: $name", async (testCas
 });
 
 it.each(
-  branchCases.flatMap((testCase) =>
+  [...branchCases, ...resolvedBranchCases].flatMap((testCase) =>
     [false, true].map((first) => ({
       name: `${testCase.name}/${first}`,
       body: `const first = ${first}; ${testCase.body}`,

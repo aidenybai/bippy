@@ -41,48 +41,6 @@ it.each(differentialSeeds)(
 
 it.each([
   {
-    name: "Reflect.apply executes a bound callback exactly once",
-    expected: 1,
-    actual: "branch(0 | unknown)",
-    body: `let count = 0; const owner = { invoke() { count++; } }; const bound = owner.invoke.bind(owner); Reflect.apply(bound, null, []); return count;`,
-  },
-  {
-    name: "apply accepts a null argument list as empty",
-    expected: 0,
-    actual: "1",
-    body: `const target = (...values) => values.length; return target.apply(null, null);`,
-  },
-  {
-    name: "apply accepts an omitted argument list as empty",
-    expected: 0,
-    actual: "1",
-    body: `const target = (...values) => values.length; return target.apply(null);`,
-  },
-  {
-    name: "apply reads array-like length and indices without iterating",
-    expected: "length|0|1|body",
-    actual: JSON.stringify("body"),
-    body: `const trace = []; const args = { get length() { trace.push('length'); return 2; }, get 0() { trace.push('0'); return 1; }, get 1() { trace.push('1'); return 2; }, [Symbol.iterator]() { throw 'iterator'; } }; const target = () => trace.push('body'); target.apply(null, args); return trace.join('|');`,
-  },
-  {
-    name: "apply stops at a throwing array-like getter",
-    expected: "0|caught:stop",
-    actual: JSON.stringify("body|after"),
-    body: `const trace = []; const args = { length: 2, get 0() { trace.push('0'); throw 'stop'; }, get 1() { trace.push('1'); return 2; } }; const target = () => trace.push('body'); try { target.apply(null, args); trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');`,
-  },
-  {
-    name: "Reflect.apply reads ordinary array-like arguments",
-    expected: "length|0|body",
-    actual: "<string: join of a list with an unknown length>",
-    body: `const trace = []; const args = { get length() { trace.push('length'); return 1; }, get 0() { trace.push('0'); return 1; } }; Reflect.apply(() => trace.push('body'), null, args); return trace.join('|');`,
-  },
-  {
-    name: "Reflect.apply rejects an absent argument list",
-    expected: "TypeError",
-    actual: JSON.stringify("accepted"),
-    body: `try { Reflect.apply(() => 1, null); return 'accepted'; } catch (error) { return error.name; }`,
-  },
-  {
     name: "class call without construction throws",
     expected: "TypeError",
     actual: JSON.stringify("accepted"),
@@ -115,6 +73,34 @@ it.each([
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
 it.each([
+  {
+    name: "apply reads array-like length and indices without iterating",
+    body: `const trace = []; const args = { get length() { trace.push('length'); return 2; }, get 0() { trace.push('0'); return 1; }, get 1() { trace.push('1'); return 2; }, [Symbol.iterator]() { throw 'iterator'; } }; const target = () => trace.push('body'); target.apply(null, args); return trace.join('|');`,
+  },
+  {
+    name: "apply stops at a throwing array-like getter",
+    body: `const trace = []; const args = { length: 2, get 0() { trace.push('0'); throw 'stop'; }, get 1() { trace.push('1'); return 2; } }; const target = () => trace.push('body'); try { target.apply(null, args); trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');`,
+  },
+  {
+    name: "Reflect.apply reads ordinary array-like arguments",
+    body: `const trace = []; const args = { get length() { trace.push('length'); return 1; }, get 0() { trace.push('0'); return 1; } }; Reflect.apply(() => trace.push('body'), null, args); return trace.join('|');`,
+  },
+  {
+    name: "Reflect.apply rejects an absent argument list",
+    body: `try { Reflect.apply(() => 1, null); return 'accepted'; } catch (error) { return error.name; }`,
+  },
+  {
+    name: "apply accepts a null argument list as empty",
+    body: `const target = (...values) => values.length; return target.apply(null, null);`,
+  },
+  {
+    name: "apply accepts an omitted argument list as empty",
+    body: `const target = (...values) => values.length; return target.apply(null);`,
+  },
+  {
+    name: "Reflect.apply executes a bound callback exactly once",
+    body: `let count = 0; const owner = { invoke() { count++; } }; const bound = owner.invoke.bind(owner); Reflect.apply(bound, null, []); return count;`,
+  },
   {
     name: "bound functions retain an undefined receiver after rebinding",
     body: `const owner = { target() { return this === undefined; } }; return owner.target.bind(undefined).bind({}) ();`,

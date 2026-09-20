@@ -19,3 +19,4 @@ packages/bippy/LICENSE
 !packages/bippy-analyzer/tests/framework-fixtures/*/node_modules
 **/node_modules/.vite/
 packages/bippy-analyzer/.corpus
+packages/bippy-analyzer/.opencode-audits

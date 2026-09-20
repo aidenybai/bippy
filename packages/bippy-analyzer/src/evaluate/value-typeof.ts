@@ -79,6 +79,7 @@ export const getTypeofValue = (value: StaticValue, realm: HostRealm): StaticValu
     case "proxy":
       return getTypeofValue(value.target, realm);
     case "native-object":
+    case "regexp":
       return primitiveValue("object");
     case "symbol":
       return primitiveValue("symbol");

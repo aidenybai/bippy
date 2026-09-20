@@ -1,10 +1,9 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
   checkDifferentialCases,
   createSeededRandom,
   differentialSeeds,
-  DifferentialMismatch,
   type DifferentialCase,
 } from "./helpers/differential-evaluator.js";
 
@@ -34,13 +33,12 @@ it.each(differentialSeeds)(
 interface CopyMutation {
   name: string;
   mutation: string;
-  actualSource: string;
 }
 
 const mutations: CopyMutation[] = [
-  { name: "append", mutation: "copy.push(1)", actualSource: "0,1" },
-  { name: "overwrite", mutation: "copy[0] = 7", actualSource: "7" },
-  { name: "truncate", mutation: "copy.length = 0", actualSource: "" },
+  { name: "append", mutation: "copy.push(1)" },
+  { name: "overwrite", mutation: "copy[0] = 7" },
+  { name: "truncate", mutation: "copy.length = 0" },
 ];
 
 const createCopyCase = (
@@ -54,22 +52,9 @@ const createCopyCase = (
 
 it.each(
   mutations.flatMap((mutation) =>
-    [false, true].map((earlyReturn) => ({
-      ...createCopyCase(mutation, "toSorted()", earlyReturn),
-      expected: earlyReturn ? ["source:0", "changed"] : ["source:0"],
-      actual: earlyReturn
-        ? `[ 'changed', 'source:${mutation.actualSource}' ]`
-        : `[ 'source:${mutation.actualSource}' ]`,
-    })),
+    [false, true].map((earlyReturn) => createCopyCase(mutation, "toSorted()", earlyReturn)),
   ),
-)("known divergence: $name", async ({ name, body, expected, actual }) => {
-  const failure: unknown = await checkSymbolicCases([{ name, body }]).catch(
-    (error: unknown) => error,
-  );
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch)
-    expect(failure.actual).toEqual([{ name, body, expected, actual }]);
-});
+)("preserves singleton copy isolation: $name", (testCase) => checkSymbolicCases([testCase]));
 
 it.each(
   mutations.flatMap((mutation) =>

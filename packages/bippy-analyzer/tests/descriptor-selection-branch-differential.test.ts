@@ -1,10 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkSymbolicCases,
-  DifferentialMismatch,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases, checkSymbolicCases } from "./helpers/differential-evaluator.js";
 
 import { propertyShapeObservations } from "./helpers/property-shape-observations.js";
 
@@ -69,25 +65,14 @@ const encodings: DescriptorEncoding[] = [
       "const descriptors = {}; descriptors[inputFirst ? 'left' : 'right'] = descriptor; const result = {}; Object.defineProperties(result, descriptors);",
   },
 ];
-const knownEncodings = new Set([
-  "bulk-key-branch",
-  "bulk-container-branch",
-  "single-key-branch",
-  "single-descriptor-branch",
-  "bulk-descriptor-branch",
-  "create-container-branch",
-  "staged-map",
-]);
 const cases = encodings.flatMap((encoding) =>
   propertyShapeObservations.map((observation) => ({
     name: `${encoding.name}/${observation.name}`,
-    label: `${knownEncodings.has(encoding.name) && observation.name !== "absence" ? "known divergence: " : ""}${encoding.name}/${observation.name}`,
-    isKnown: knownEncodings.has(encoding.name) && observation.name !== "absence",
     body: `const inputFirst = first; const inputSecond = second; const value = inputSecond ? 7 : 9; const descriptor = { value, enumerable: true, configurable: true, writable: true }; const chosenDescriptor = inputSecond ? { value: 7, enumerable: true, configurable: true, writable: true } : { value: 9, enumerable: true, configurable: true, writable: true }; ${encoding.source} ${observation.source}`,
   })),
 );
 
-it.each(cases)("$label", async ({ name, body, isKnown }) => {
+it.each(cases)("$name", async ({ name, body }) => {
   for (let index = 0; index < 4; index++) {
     expect(
       runInNewContext(
@@ -97,11 +82,7 @@ it.each(cases)("$label", async ({ name, body, isKnown }) => {
       ),
     ).toBe("match");
   }
-  if (!isKnown) return checkSymbolicCases([{ name, body }]);
-  const witness = { name, body, expected: ["match"], actual: "[ 'missing' ]" };
-  const failure: unknown = await checkSymbolicCases([witness]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([witness]);
+  return checkSymbolicCases([{ name, body }]);
 });
 
 it.each(cases)("matches every concrete descriptor-selection pin $name", (testCase) =>

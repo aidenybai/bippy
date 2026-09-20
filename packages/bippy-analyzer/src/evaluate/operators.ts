@@ -8,9 +8,9 @@ import { isInstanceOf } from "./instance-of.js";
 import { getLanguageObject } from "./language-intrinsics.js";
 import { getExactLanguageObject, toNativeObjectPrimitive } from "./native-values.js";
 import { applyNumberRangeOperator, compareNumberRanges } from "./number-ranges.js";
-import { recordDerivation, recordNegation } from "./predicates.js";
+import { recordBranchOrigin, recordDerivation, recordNegation } from "./predicates.js";
 import { concatenateStrings, toStringValue } from "./primitive-shapes.js";
-import { getThrownOperand } from "./thrown.js";
+import { getThrowCertainty, getThrownOperand } from "./thrown.js";
 import { applyClockOperator } from "./timers.js";
 import { getGlobalTypeof, getTypeofValue } from "./value-typeof.js";
 import {
@@ -19,33 +19,37 @@ import {
   FALSE_VALUE,
   getTruthiness,
   hasDefiniteItems,
+  mapValue,
   primitiveValue,
   regExpToString,
   TRUE_VALUE,
   unknownPrimitiveValue,
 } from "./values.js";
 
-/**
- * `a && b` / `a || b` whose two outcomes are interchangeable uncertain values
- * joins to one of them; a copy keeps the truth of the whole expression as a
- * formula over both operands instead of claiming it equals one of them.
- */
 export const logicalOutcome = (
   joined: StaticValue,
   operator: "&&" | "||",
   left: StaticValue,
   right: StaticValue,
 ): StaticValue => {
-  if (joined.kind !== "unknown-primitive" && (joined.kind !== "unknown" || joined.thrown)) {
+  if (
+    (joined.kind !== "unknown-primitive" &&
+      joined.kind !== "unknown" &&
+      joined.kind !== "branch") ||
+    getThrowCertainty(joined) !== "never"
+  )
     return joined;
-  }
-  return recordDerivation({ ...joined }, { kind: "logical", operator, left, right });
+  const result = recordDerivation({ ...joined }, { kind: "logical", operator, left, right });
+  if (result.kind === "branch" && joined.kind === "branch") recordBranchOrigin(result, joined);
+  return result;
 };
 
 export const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
   argument: StaticValue,
 ): StaticValue => {
+  if (argument.kind === "branch")
+    return mapValue(argument, (alternative) => applyUnaryOperator(operator, alternative));
   if (getThrownOperand([argument])) return argument;
   if (operator !== "!" && isCoercibleOperand(argument)) {
     return applyUnaryOperator(operator, toCoercedOperand(argument, "number"));

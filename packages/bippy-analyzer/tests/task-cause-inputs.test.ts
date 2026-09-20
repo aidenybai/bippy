@@ -113,7 +113,7 @@ describe("retained task cause inputs", () => {
   });
 
   it.fails.each(subsequentRenders)(
-    "preserves complete rendered contents with a $rendererKind renderer",
+    "known divergence: preserves complete rendered contents with a $rendererKind renderer",
     ({ renderIndex }) => {
       expect(getRenderedContent(outputs[renderIndex].rendered)).toEqual(
         getRenderedContent(outputs[0].rendered),
@@ -122,7 +122,7 @@ describe("retained task cause inputs", () => {
   );
 
   it.fails.each(subsequentRenders)(
-    "preserves the complete enumerated model with a $rendererKind renderer",
+    "known divergence: preserves the complete enumerated model with a $rendererKind renderer",
     ({ renderIndex }) => {
       expect(outputs[renderIndex].model).toEqual(outputs[0].model);
     },

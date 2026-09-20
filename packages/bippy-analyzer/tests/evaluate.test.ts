@@ -1,6 +1,7 @@
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vite-plus/test";
 import { UNDEFINED_VALUE, describeValue } from "../src/evaluate/values.js";
 import { createStaticRenderer } from "../src/index.js";
@@ -25,7 +26,7 @@ export const narrowedByMethodCall = () => {
   return color.charAt(0) === "#" ? color.slice(1) : color;
 };
 
-export const notNarrowedByFunctionCall = () => {
+export const narrowedByFunctionCall = () => {
   const size = isWide ? "lg" : "sm";
   return isLarge(size) ? size.toUpperCase() : size;
 };
@@ -355,17 +356,29 @@ describe("escaped bound mutations", () => {
 
 describe("branch-valued primitives", () => {
   it("narrows a branched binding by evaluating a pure test once per alternative", async () => {
+    const nativeSource = BRANCHED_SOURCE.replace("declare const isWide: boolean;", "")
+      .replace("(value: string)", "(value)")
+      .replaceAll("export const ", "const ");
+    expect(
+      [true, false].map((isWide) =>
+        runInNewContext(
+          `${nativeSource}\nnarrowedByFunctionCall();`,
+          { isWide },
+          { timeout: 1000 },
+        ),
+      ),
+    ).toEqual(["LG", "sm"]);
     const results = await evaluateExports(BRANCHED_SOURCE, [
       "narrowedByEquality",
       "narrowedByDiscriminant",
       "narrowedByMethodCall",
-      "notNarrowedByFunctionCall",
+      "narrowedByFunctionCall",
     ]);
     expect(results).toEqual({
       narrowedByEquality: 'branch("LG" | "sm")',
       narrowedByDiscriminant: "branch(1 | 2)",
       narrowedByMethodCall: 'branch("fff" | "rgb(0, 0, 0)")',
-      notNarrowedByFunctionCall: 'branch("LG" | "SM" | "lg" | "sm")',
+      narrowedByFunctionCall: 'branch("LG" | "sm")',
     });
   });
 

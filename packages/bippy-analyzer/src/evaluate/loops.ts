@@ -35,7 +35,7 @@ import {
   unknownValue,
 } from "./values.js";
 
-export interface LoopBodyEvaluation {
+export interface LoopEvaluation {
   outcome: StatementOutcome;
   isContinued: boolean;
 }
@@ -53,12 +53,19 @@ export interface LoopEvaluator {
     body: Statement,
     context: EvaluationContext,
     proceed: StatementContinuation,
-  ) => LoopBodyEvaluation;
+  ) => LoopEvaluation;
+  continueStatements: (
+    outcome: StatementOutcome,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+  ) => StatementOutcome;
   continueStatementValue: (
     value: StaticValue,
     context: EvaluationContext,
     proceed: StatementValueContinuation,
     location: SourceLocation,
+    shouldDistributeBranches?: boolean,
   ) => StatementOutcome;
   bindDeclarator: (
     kind: VariableDeclaration["kind"],
@@ -178,8 +185,6 @@ const iterationValues = (
         ? { items: iterated.items, isComplete: true }
         : { items: iterated.items.slice(0, positionalCount), isComplete: false };
     }
-    if (right.kind === "primitive" && typeof right.value === "string")
-      return { items: [...right.value].map(primitiveValue), isComplete: true };
     return null;
   }
   const enumerated = getEnumerationTarget(right);
@@ -485,28 +490,49 @@ export const evaluateLoop = (
   statement: LoopStatement,
   context: EvaluationContext,
   location: SourceLocation,
-): StatementOutcome => {
+  proceed: StatementContinuation,
+): LoopEvaluation => {
   if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
     const right = evaluator.evaluateExpression(statement.right, context);
-    return evaluator.continueStatementValue(
-      right,
-      context,
-      (value, pathContext) =>
-        finishUnrolling(
-          evaluator,
-          statement,
-          unrollForEach(evaluator, statement, value, pathContext, location),
-          pathContext,
+    const runLoop: StatementValueContinuation = (value, pathContext) =>
+      finishUnrolling(
+        evaluator,
+        statement,
+        unrollForEach(evaluator, statement, value, pathContext, location),
+        pathContext,
+        location,
+      );
+    if (statement.type === "ForOfStatement" && right.kind === "branch") {
+      return {
+        outcome: evaluator.continueStatementValue(
+          right,
+          context,
+          (value, pathContext) =>
+            evaluator.continueStatements(
+              runLoop(value, pathContext),
+              pathContext,
+              proceed,
+              location,
+            ),
           location,
+          true,
         ),
-      location,
-    );
+        isContinued: true,
+      };
+    }
+    return {
+      outcome: evaluator.continueStatementValue(right, context, runLoop, location),
+      isContinued: false,
+    };
   }
-  return finishUnrolling(
-    evaluator,
-    statement,
-    unrollConditional(evaluator, statement, context, location),
-    context,
-    location,
-  );
+  return {
+    outcome: finishUnrolling(
+      evaluator,
+      statement,
+      unrollConditional(evaluator, statement, context, location),
+      context,
+      location,
+    ),
+    isContinued: false,
+  };
 };

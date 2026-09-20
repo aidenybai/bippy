@@ -18,6 +18,7 @@ import { primitiveValue, UNDEFINED_VALUE } from "./values.js";
 
 import { isClockDateValue, isClockReading } from "./clock-date.js";
 import { getCollectionKind } from "./collection-values.js";
+import { createDateState } from "./date-state.js";
 import { readsEnvironment } from "./environment-reads.js";
 import {
   getIntrinsicGlobal,
@@ -29,19 +30,27 @@ import { element, nativeFunction } from "./stubs.js";
 import { bytesValue, isTypedArrayName, toNativeBinary } from "./typed-arrays.js";
 import { isUrlValue, toNativeUrl } from "./url.js";
 import {
+  allocate,
   branchValue,
+  distributeBinary,
+  distributeObjectBranches,
   getKnownObjectKeys,
   getObjectProperty,
   hasDefiniteItems,
   isSameComposition,
   listValue,
+  mapValue,
   matchesComposition,
   mayOverlapCompositions,
   nativeObjectValue,
+  objectFromRecord,
   objectValue,
+  thrownValue,
   unknownPrimitiveValue,
   unknownValue,
 } from "./values.js";
+
+const getDateState = (date: Date) => createDateState(date, allocate, branchValue);
 
 export const EVENT_LISTENER_METHODS = new Set([
   "addEventListener",
@@ -342,7 +351,10 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
     case "regexp":
       return new RegExp(value.pattern, value.flags);
     case "native-object":
-      return uncertainNativeObjects.has(value.value) ? UNCERTAIN : value.value;
+      return uncertainNativeObjects.has(value.value) ||
+        (value.value instanceof Date && !getDateState(value.value).isConcrete)
+        ? UNCERTAIN
+        : value.value;
     case "global":
       return value.name === "document" && host !== null ? host.document : UNCERTAIN;
     case "function":
@@ -357,6 +369,7 @@ const toNative = (value: StaticValue, host: HostDocument | null): unknown => {
 /** The language object (`Object("abc")`, a `Date`) a value stands for exactly, whose coercions this process can run; null for host objects and objects the analysis lost track of or the program extended. */
 export const getExactLanguageObject = (object: StaticNativeObjectValue): object | null =>
   object.host !== null ||
+  (object.value instanceof Date && !getDateState(object.value).isConcrete) ||
   uncertainNativeObjects.has(object.value) ||
   expandoProperties.has(object.value) ||
   composedExpandoProperties.has(object.value)
@@ -473,6 +486,14 @@ export const pureNativeFunction = (
 ): StaticNativeFunctionValue => {
   const run = (args: StaticValue[], tools: StubRenderTools, isConstruct: boolean): StaticValue => {
     const receiver = thisValue === undefined ? tools.thisValue : null;
+    const date =
+      thisValue instanceof Date
+        ? thisValue
+        : receiver?.kind === "native-object" && receiver.value instanceof Date
+          ? receiver.value
+          : null;
+    if (!isConstruct && date !== null && dateMethods.has(callee))
+      return callDateMethod(name, callee, date, args, tools);
     const nativeReceiver = receiver === null ? thisValue : toNativeReceiver(receiver, host);
     const isRunnable =
       (isConstruct || nativeReceiver !== UNCERTAIN) &&
@@ -515,6 +536,91 @@ export const pureNativeFunction = (
         ? fromNativeValue(Reflect.get(callee, key), `${name}.${key}`, host)
         : undefined,
   };
+};
+
+const dateMethods = new Map<Function, boolean>();
+for (const key of Reflect.ownKeys(Date.prototype)) {
+  const method: unknown = Reflect.get(Date.prototype, key);
+  if (key !== "constructor" && typeof method === "function")
+    dateMethods.set(method, typeof key === "string" && key.startsWith("set"));
+}
+
+const copyNativeDate = (date: Date, timestamp: number): Date =>
+  Object.defineProperties(
+    Object.setPrototypeOf(new Date(timestamp), Object.getPrototypeOf(date)),
+    Object.getOwnPropertyDescriptors(date),
+  );
+
+const getDateArguments = (args: StaticValue[]): StaticValue =>
+  distributeObjectBranches(
+    listValue(
+      args.map((argument) => {
+        if (argument.kind !== "native-object" || !(argument.value instanceof Date)) return argument;
+        const date = argument.value;
+        return mapValue(getDateState(date).capture(), (timestamp) =>
+          timestamp.kind === "primitive" && typeof timestamp.value === "number"
+            ? nativeObjectValue(copyNativeDate(date, timestamp.value), null)
+            : unknownValue("Date argument with an unknown timestamp"),
+        );
+      }),
+    ),
+  );
+
+const callDateMethod = (
+  name: string,
+  callee: Function,
+  date: Date,
+  args: StaticValue[],
+  tools: StubRenderTools,
+): StaticValue => {
+  const state = getDateState(date);
+  const timestamps = state.capture();
+  const argumentLists = getDateArguments(args);
+  const isMutation = dateMethods.get(callee) === true;
+  const call = (timestamp: StaticValue, arguments_: StaticValue): StaticValue => {
+    const natives = arguments_.kind === "list" ? toNativeArguments(arguments_.items, null) : null;
+    let nextTimestamp = timestamp;
+    let result: StaticValue = unknownValue(`${name}() on an unknown Date or arguments`);
+    if (
+      natives !== null &&
+      ((timestamp.kind === "primitive" && typeof timestamp.value === "number") ||
+        callee === Date.prototype.setTime)
+    ) {
+      const copy = copyNativeDate(
+        date,
+        timestamp.kind === "primitive" && typeof timestamp.value === "number"
+          ? timestamp.value
+          : NaN,
+      );
+      try {
+        result = fromNativeValue(Reflect.apply(callee, copy, natives), `${name}()`, null);
+      } catch (error) {
+        result = thrownValue(`${name}() threw`, fromNativeValue(error, `${name} error`, null));
+      }
+      nextTimestamp = primitiveValue(Date.prototype.getTime.call(copy));
+    } else if (isMutation) {
+      nextTimestamp = unknownPrimitiveValue("number", `${name}() on dynamic arguments`);
+    }
+    return objectFromRecord({ result, timestamp: nextTimestamp });
+  };
+  const calls =
+    distributeBinary(timestamps, argumentLists, call) ??
+    (timestamps.kind === "branch" || argumentLists.kind === "branch"
+      ? unknownValue(`${name}() exceeds the finite Date call budget`)
+      : call(timestamps, argumentLists));
+  if (isMutation) {
+    tools.recordStateMutation(state);
+    state.restore(
+      mapValue(calls, (outcome) =>
+        outcome.kind === "object"
+          ? getObjectProperty(outcome, "timestamp")
+          : unknownPrimitiveValue("number", `${name}() exceeds the finite Date call budget`),
+      ),
+    );
+  }
+  return mapValue(calls, (outcome) =>
+    outcome.kind === "object" ? getObjectProperty(outcome, "result") : outcome,
+  );
 };
 
 const isReactElementTag = (tag: unknown): boolean =>
@@ -877,22 +983,30 @@ export const toNativeObjectPrimitive = (
   if (uncertainNativeObjects.has(object.value)) {
     return unknownValue(`${name} after a mutation on dynamic arguments`);
   }
-  return guardNativeCall(name, () => {
-    const exotic = Reflect.get(object.value, Symbol.toPrimitive);
-    if (typeof exotic === "function") {
-      return fromNativeValue(Reflect.apply(exotic, object.value, [hint]), name, object.host);
-    }
-    const methodNames = hint === "string" ? ["toString", "valueOf"] : ["valueOf", "toString"];
-    for (const methodName of methodNames) {
-      const method = Reflect.get(object.value, methodName);
-      if (typeof method !== "function") continue;
-      const result: unknown = Reflect.apply(method, object.value, []);
-      if (result === null || typeof result !== "object") {
-        return fromNativeValue(result, name, object.host);
+  const convert = (value: object): StaticValue =>
+    guardNativeCall(name, () => {
+      const exotic = Reflect.get(value, Symbol.toPrimitive);
+      if (typeof exotic === "function") {
+        return fromNativeValue(Reflect.apply(exotic, value, [hint]), name, object.host);
       }
-    }
-    throw new TypeError("Cannot convert object to primitive value");
-  });
+      const methodNames = hint === "string" ? ["toString", "valueOf"] : ["valueOf", "toString"];
+      for (const methodName of methodNames) {
+        const method = Reflect.get(value, methodName);
+        if (typeof method !== "function") continue;
+        const result: unknown = Reflect.apply(method, value, []);
+        if (result === null || typeof result !== "object") {
+          return fromNativeValue(result, name, object.host);
+        }
+      }
+      throw new TypeError("Cannot convert object to primitive value");
+    });
+  const date = object.value;
+  if (!(date instanceof Date)) return convert(date);
+  return mapValue(getDateState(date).capture(), (timestamp) =>
+    timestamp.kind === "primitive" && typeof timestamp.value === "number"
+      ? convert(copyNativeDate(date, timestamp.value))
+      : unknownValue(`${name} of an unknown timestamp`),
+  );
 };
 
 /** `value instanceof Interface` against the constructor the object's own document installed; null when it has none by that name. */
@@ -923,7 +1037,16 @@ export const constructNativeObject = (
   name: NativeConstructorName,
   args: StaticValue[],
 ): StaticValue | null => {
-  const natives = toNativeArguments(args, null);
+  const argumentLists = name === "Date" ? getDateArguments(args) : listValue(args);
+  if (argumentLists.kind === "branch")
+    return mapValue(argumentLists, (arguments_) =>
+      arguments_.kind === "list"
+        ? (constructNativeObject(name, arguments_.items) ??
+          unknownValue(`${name} constructor on dynamic arguments`))
+        : unknownValue(`${name} constructor on dynamic arguments`),
+    );
+  const natives =
+    argumentLists.kind === "list" ? toNativeArguments(argumentLists.items, null) : null;
   if (natives === null) return null;
   try {
     return fromNativeValue(Reflect.construct(NATIVE_CONSTRUCTORS[name], natives), name, null);

@@ -88,7 +88,14 @@ const createCursorCase = (name: string, expression: string): DifferentialCase =>
   body: `const iterator = ${expression}; if (first) iterator.next(); if (second) iterator.next(); return String(iterator.next().value);`,
 });
 
-it.each(cursorFactories)(
+const supportedCursorFactories = cursorFactories.filter(({ name }) => name !== "array values");
+
+it.each(supportedCursorFactories)(
+  "preserves $name cursor state across symbolic forks",
+  ({ name, expression }) => checkSymbolicCases([createCursorCase(name, expression)]),
+);
+
+it.each(cursorFactories.filter(({ name }) => name === "array values"))(
   "known divergence: preserves $name cursor state across symbolic forks",
   async ({ name, expression }) => {
     const testCase = createCursorCase(name, expression);
@@ -98,15 +105,14 @@ it.each(cursorFactories)(
       expect(failure.actual).toEqual([
         {
           ...testCase,
-          expected: name === "array values" ? ["10", "20", "20", "30"] : ["10", "20", "30"],
-          actual:
-            name === "array values" ? "<string: String(unknown(call of undefined))>" : "[ '30' ]",
+          expected: ["10", "20", "20", "30"],
+          actual: "<string: String(unknown(call of undefined))>",
         },
       ]);
   },
 );
 
-it.each(cursorFactories.filter(({ name }) => name !== "array values"))(
+it.each(supportedCursorFactories)(
   "matches every concrete pin for the same shared $name cursor",
   ({ name, expression }) => {
     const testCase = createCursorCase(name, expression);

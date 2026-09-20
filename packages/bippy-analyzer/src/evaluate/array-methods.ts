@@ -42,6 +42,7 @@ import {
   isKnownList,
   ITERATOR_PROPERTY_KEY,
   listValue,
+  mapFiniteListItems,
   mapValue,
   objectValue,
   optionalValue,
@@ -115,7 +116,7 @@ const sliceList = (
   return listValue(receiver.items.slice(start, end <= indefiniteIndex ? end : undefined));
 };
 
-const MAX_ARRAY_LIKE_LENGTH = 1_000;
+export const MAX_ARRAY_LIKE_LENGTH = 1_000;
 
 export const arrayOfLength = (
   length: StaticValue,
@@ -154,9 +155,6 @@ export const iterableOrArrayLike = (
 ): StaticValue | null => {
   const iterated = evaluator.resolveIterable(value, context, location);
   if (iterated !== value) return iterated;
-  if (value.kind === "primitive" && typeof value.value === "string") {
-    return listValue(spreadListItems(value, location));
-  }
   if (value.kind === "object") return arrayLikeToList(value);
   return value.kind === "native-object" ? null : value;
 };
@@ -323,46 +321,42 @@ const filterList = (
 
 const MAX_JOINED_COMBINATIONS = 16;
 
-interface JoinedItems {
-  parts: StaticValue[];
-  isPreferred: boolean;
-}
-
 /** `join()` over items that may be absent: one string per combination of present items. */
 const joinListItems = (
   items: StaticValue[],
   separator: string,
   location: SourceLocation | null,
 ): StaticValue => {
-  let combinations: JoinedItems[] = [{ parts: [], isPreferred: true }];
+  let combinationCount = 1;
   for (const item of items) {
     if (item.kind === "repeat") {
       return unknownPrimitiveValue("string", "join of a list with an unknown length");
     }
-    if (item.kind !== "optional") {
-      combinations = combinations.map(({ parts, isPreferred }) => ({
-        parts: [...parts, item],
-        isPreferred,
-      }));
-      continue;
-    }
-    if (combinations.length * 2 > MAX_JOINED_COMBINATIONS) {
+    if (item.kind !== "optional") continue;
+    combinationCount *= 2;
+    if (combinationCount > MAX_JOINED_COMBINATIONS) {
       return unknownPrimitiveValue("string", "join of a list with many uncertain items");
     }
-    combinations = combinations.flatMap(({ parts, isPreferred }) => [
-      { parts: [...parts, item.value], isPreferred: isPreferred && !item.isAbsentPreferred },
-      { parts, isPreferred: isPreferred && item.isAbsentPreferred === true },
-    ]);
   }
-  return branchValue(
-    combinations.map(({ parts }) => joinStrings(parts, separator)),
-    "join of a filtered list",
-    location,
-    Math.max(
-      0,
-      combinations.findIndex(({ isPreferred }) => isPreferred),
-    ),
-  );
+  const joinFrom = (startIndex: number, prefix: StaticValue[]): StaticValue => {
+    const parts = [...prefix];
+    for (let index = startIndex; index < items.length; index++) {
+      const item = items[index];
+      if (item.kind !== "optional") {
+        parts.push(item);
+        continue;
+      }
+      return branchValue(
+        [joinFrom(index + 1, [...parts, item.value]), joinFrom(index + 1, parts)],
+        item.reason,
+        item.location ?? location,
+        item.isAbsentPreferred ? 1 : 0,
+        item.predicate,
+      );
+    }
+    return joinStrings(parts, separator);
+  };
+  return joinFrom(0, []);
 };
 
 const sortListItems = (
@@ -371,7 +365,7 @@ const sortListItems = (
   comparator: StaticValue | undefined,
   context: EvaluationContext,
 ): StaticValue[] | null => {
-  if (items.length < 2) return items;
+  if (items.length < 2) return [...items];
   if (comparator === undefined) {
     const primitives: StaticPrimitive[] = [];
     for (const item of items) {
@@ -409,13 +403,23 @@ const getOpaqueItem = (receiver: StaticValue): StaticValue =>
     list: receiver,
   });
 
+interface ListMappingOptions {
+  includeReceiver?: boolean;
+  thisValue?: StaticValue;
+}
+
 export const mapList = (
   evaluator: ArrayMethodEvaluator,
   receiver: StaticValue,
-  callback: CallableValue,
+  callback: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
+  options: ListMappingOptions = {},
 ): StaticValue => {
+  const getArguments = (item: StaticValue, index: StaticValue): StaticValue[] =>
+    options.includeReceiver === false ? [item, index] : [item, index, receiver];
+  const callOptions =
+    options.thisValue === undefined ? undefined : { thisValue: options.thisValue };
   if (receiver.kind === "list") {
     return listValue(
       receiver.items.map((item, index) => {
@@ -426,9 +430,11 @@ export const mapList = (
               item: callUncertainCallback(
                 evaluator,
                 callback,
-                [item.item, unknownPrimitiveValue("number", "index"), receiver],
+                getArguments(item.item, unknownPrimitiveValue("number", "index")),
                 context,
                 true,
+                null,
+                callOptions,
               ),
               location: item.location,
               count: item.count,
@@ -441,10 +447,11 @@ export const mapList = (
             callUncertainCallback(
               evaluator,
               callback,
-              [item.value, unknownPrimitiveValue("number", "index"), receiver],
+              getArguments(item.value, unknownPrimitiveValue("number", "index")),
               context,
               false,
               item.predicate,
+              callOptions,
             ),
             item.reason,
             item.location,
@@ -452,7 +459,13 @@ export const mapList = (
             item.predicate,
           );
         }
-        return callCallback(evaluator, callback, [item, primitiveValue(index), receiver], context);
+        return callCallback(
+          evaluator,
+          callback,
+          getArguments(item, primitiveValue(index)),
+          context,
+          callOptions,
+        );
       }),
     );
   }
@@ -463,9 +476,11 @@ export const mapList = (
         item: callUncertainCallback(
           evaluator,
           callback,
-          [receiver.item, unknownPrimitiveValue("number", "index"), receiver],
+          getArguments(receiver.item, unknownPrimitiveValue("number", "index")),
           context,
           true,
+          null,
+          callOptions,
         ),
         location: receiver.location,
         count: receiver.count,
@@ -479,9 +494,11 @@ export const mapList = (
       item: callUncertainCallback(
         evaluator,
         callback,
-        [getOpaqueItem(receiver), unknownPrimitiveValue("number", "index"), receiver],
+        getArguments(getOpaqueItem(receiver), unknownPrimitiveValue("number", "index")),
         context,
         true,
+        null,
+        callOptions,
       ),
       location,
     },
@@ -836,11 +853,26 @@ export const callArrayMethod = (
       }
       case "pop":
       case "shift": {
-        evaluator.recordHeapMutation(receiver);
-        if (hasDefiniteItems(receiver) && context.uncertainDepth === 0) {
-          const removed = name === "pop" ? receiver.items.pop() : receiver.items.shift();
-          return removed ?? UNDEFINED_VALUE;
+        const remove = (items: StaticValue[]): StaticValue => {
+          evaluator.recordHeapMutation(receiver);
+          receiver.items = items;
+          return (name === "pop" ? items.pop() : items.shift()) ?? UNDEFINED_VALUE;
+        };
+        if (context.uncertainDepth === 0) {
+          const items = receiver.items;
+          if (hasDefiniteItems(receiver)) return remove(items);
+          const shapes = mapFiniteListItems(items, listValue);
+          if (shapes) {
+            const removeAlternative = (alternative: StaticValue): StaticValue =>
+              alternative.kind === "list"
+                ? remove([...alternative.items])
+                : unknownValue(`${name}() of an uncertain list`, location);
+            return shapes.kind === "branch"
+              ? evaluator.callAlternatives(shapes, context, removeAlternative)
+              : removeAlternative(shapes);
+          }
         }
+        evaluator.recordHeapMutation(receiver);
         receiver.items = receiver.items.map((item) =>
           isIndefiniteItem(item) ? item : optionalValue(item, `uncertain ${name}()`, location),
         );

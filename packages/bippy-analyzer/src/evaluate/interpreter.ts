@@ -140,6 +140,7 @@ import type {
 import {
   evaluateBuiltinCall,
   getBuiltinGlobal,
+  getWitnessedPrototype,
   INTRINSIC_PROTOTYPE_NAMES,
   promiseTools,
 } from "./builtin-calls.js";
@@ -168,7 +169,7 @@ import {
   hasKnownStaticChain,
   isReactComponentBase,
 } from "./class-component.js";
-import { getCollectionItems, markCollectionExternallyMutable } from "./collections.js";
+import { consumeCollectionItems, markCollectionExternallyMutable } from "./collections.js";
 import { type CompiledClass, getCompiledClass } from "./compiled-class.js";
 import {
   getCompilerHelper,
@@ -241,7 +242,7 @@ import { getBuiltinWitness, getPrototypeWitness } from "./instance-of.js";
 import { decodeJsxEntities } from "./jsx-entities.js";
 import { cleanJsxText } from "./jsx-text.js";
 import { getPrototypeConstructorGlobal } from "./language-intrinsics.js";
-import type { LoopBodyEvaluation } from "./loops.js";
+import type { LoopEvaluation } from "./loops.js";
 import { evaluateLoop } from "./loops.js";
 import { describeMacroJsxChildren, getStubExpandJsx } from "./macro-jsx.js";
 import { isModeledOpaqueMethodName, isPromiseMethodName } from "./method-signatures.js";
@@ -334,6 +335,7 @@ import {
   getThrownPaths,
   withoutThrows,
 } from "./thrown.js";
+import { MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distribution.js";
 import { TimerQueue } from "./timers.js";
 import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
 import { evaluateTypeScriptDeclaration } from "./typescript-declarations.js";
@@ -2472,7 +2474,7 @@ export class Interpreter {
     const indices = resolved.guards.flatMap((guard, index) =>
       isGuardCompatibleWithActivePath(activeGuard, guard) ? [index] : [],
     );
-    const guarded =
+    let guarded =
       indices.length === value.alternatives.length || indices.length === 0
         ? value
         : branchValue(
@@ -2485,6 +2487,11 @@ export class Interpreter {
               [resolved.inputs],
             ),
           );
+    if (guarded !== value) {
+      if (guarded.kind === "unknown-primitive" || (guarded.kind === "unknown" && !guarded.thrown)) {
+        guarded = recordDerivation({ ...guarded }, { kind: "alias", operand: value });
+      } else recordRefinement(guarded, value);
+    }
     let byGuard = this.guardedValues.get(value);
     if (byGuard === undefined) {
       byGuard = new WeakMap();
@@ -2711,7 +2718,16 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
   ): StaticValue {
-    const items = getCollectionItems(value);
+    if (value.kind === "branch") {
+      return this.callAlternatives(value, context, (alternative, alternativeContext) =>
+        this.resolveIterable(alternative, alternativeContext, location),
+      );
+    }
+    if (value.kind === "primitive" && typeof value.value === "string") {
+      return listValue([...value.value].map((character) => primitiveValue(character)));
+    }
+    const recordMutation = (state: JournaledState<unknown>) => this.recordStateMutation(state);
+    const items = consumeCollectionItems(value, recordMutation);
     if (items) return items;
     if (value.kind !== "object") return value;
     const iteratorMethod = this.getProperty(value, ITERATOR_PROPERTY_KEY, context, location);
@@ -2719,7 +2735,7 @@ export class Interpreter {
     const iterator = this.callValue(iteratorMethod, [], context, location, { thisValue: value });
     if (iterator.kind === "list") return iterator;
     return (
-      getCollectionItems(iterator) ??
+      consumeCollectionItems(iterator, recordMutation) ??
       this.drainIterator(iterator, context, location) ??
       unknownValue(`iteration of ${describeValue(value)}`, location)
     );
@@ -2804,49 +2820,100 @@ export class Interpreter {
     node: ObjectExpression,
     context: EvaluationContext,
   ): StaticValue {
-    const entries: StaticObjectEntry[] = [];
-    for (const property of node.properties) {
-      if (property.type === "SpreadElement") {
-        const spread = this.evaluateExpression(property.argument, context);
-        const copied = getCopiedSpreadEntries(spread);
-        if (copied) {
-          entries.push(...copied);
+    const hasObjectPrototype = !node.properties.some(
+      (property) =>
+        property.type !== "SpreadElement" &&
+        !property.computed &&
+        !property.method &&
+        property.kind === "init" &&
+        ((property.key.type === "Identifier" && property.key.name === "__proto__") ||
+          (property.key.type === "Literal" && property.key.value === "__proto__")),
+    );
+    const evaluateFrom = (
+      startIndex: number,
+      entries: StaticObjectEntry[],
+      currentContext: EvaluationContext,
+      remainingAlternatives: number,
+    ): StaticValue => {
+      for (let index = startIndex; index < node.properties.length; index++) {
+        const property = node.properties[index];
+        if (property.type === "SpreadElement") {
+          const spread = this.evaluateExpression(property.argument, currentContext);
+          const copied = getCopiedSpreadEntries(spread);
+          entries.push(
+            ...(copied ?? [
+              {
+                kind: "spread",
+                value: this.materializeNamespace(spread, currentContext.environment),
+              },
+            ]),
+          );
           continue;
         }
-        entries.push({
-          kind: "spread",
-          value: this.materializeNamespace(spread, context.environment),
-        });
-        continue;
+        const keyValue =
+          property.computed && property.key.type !== "PrivateIdentifier"
+            ? this.evaluateExpression(property.key, currentContext)
+            : primitiveValue(
+                this.evaluatePropertyKey(property.key, property.computed, currentContext),
+              );
+        if (keyValue.kind === "branch" && keyValue.alternatives.length <= remainingAlternatives) {
+          return this.callAlternatives(
+            keyValue,
+            currentContext,
+            (alternative, alternativeContext) => {
+              const selectedEntries = entries.map((entry) =>
+                entry.kind === "property" && entry.accessor
+                  ? { ...entry, accessor: { ...entry.accessor } }
+                  : entry,
+              );
+              this.appendObjectProperty(
+                selectedEntries,
+                property,
+                toPropertyKey(alternative),
+                alternativeContext,
+              );
+              return evaluateFrom(
+                index + 1,
+                selectedEntries,
+                alternativeContext,
+                Math.floor(remainingAlternatives / keyValue.alternatives.length),
+              );
+            },
+          );
+        }
+        this.appendObjectProperty(entries, property, toPropertyKey(keyValue), currentContext);
       }
-      const key = this.evaluatePropertyKey(property.key, property.computed, context);
-      if (key === null) {
-        entries.push({
-          kind: "spread",
-          value: unknownValue("computed property key"),
-        });
-        continue;
-      }
-      const value =
-        property.value.type === "FunctionExpression" &&
-        (property.method || property.kind !== "init")
-          ? this.createFunctionValue(property.value, context, key, true)
-          : this.evaluateExpression(property.value, context, key);
-      if (property.kind !== "init") {
-        const accessor = this.getAccessorEntry(entries, key, context, property);
-        accessor[property.kind] = value;
-        continue;
-      }
-      entries.push({
-        kind: "property",
-        key,
-        value,
-      });
+      const object = { ...objectValue(entries), hasObjectPrototype };
+      return (
+        this.reactElementFromObject(
+          object,
+          this.locate(currentContext.module, node),
+          currentContext,
+        ) ?? object
+      );
+    };
+    return evaluateFrom(0, [], context, MAX_DISTRIBUTED_ALTERNATIVES);
+  }
+
+  private appendObjectProperty(
+    entries: StaticObjectEntry[],
+    property: ObjectProperty,
+    key: string | null,
+    context: EvaluationContext,
+  ): void {
+    if (key === null) {
+      entries.push({ kind: "spread", value: unknownValue("computed property key") });
+      return;
     }
-    const object = objectValue(entries);
-    return (
-      this.reactElementFromObject(object, this.locate(context.module, node), context) ?? object
-    );
+    const value =
+      property.value.type === "FunctionExpression" && (property.method || property.kind !== "init")
+        ? this.createFunctionValue(property.value, context, key, true)
+        : this.evaluateExpression(property.value, context, key);
+    if (property.kind !== "init") {
+      this.getAccessorEntry(entries, key, context, property)[property.kind] = value;
+    } else {
+      entries.push({ kind: "property", key, value });
+    }
   }
 
   private getAccessorEntry(
@@ -3960,6 +4027,51 @@ export class Interpreter {
     }
   }
 
+  private getInheritedObjectProperty(
+    object: StaticObjectValue,
+    key: string,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    receiver: StaticValue,
+  ): StaticValue {
+    const declared = getDeclaredHostObjectMember(
+      this.getRealm(context.environment),
+      object,
+      key,
+      location,
+    );
+    if (declared) return declared;
+    if (object.prototype)
+      return this.getProperty(object.prototype, key, context, location, false, receiver);
+    if (key === "constructor") return getIntrinsicConstructor(object) ?? UNDEFINED_VALUE;
+    if (object.hasNullPrototype) return UNDEFINED_VALUE;
+    if (key === "__proto__") {
+      if (object.constructedBy) {
+        return this.getProperty(
+          getClassPrototypeObject(this, object.constructedBy, context),
+          key,
+          context,
+          location,
+          false,
+          receiver,
+        );
+      }
+      return receiver.kind === "object" &&
+        (receiver.prototype || receiver.constructedBy || receiver.hasNullPrototype)
+        ? this.callBuiltin(
+            { kind: "global", name: "Object.getPrototypeOf" },
+            [receiver],
+            context,
+            location,
+          )
+        : getWitnessedPrototype(receiver, "__proto__", location);
+    }
+    return OBJECT_PROTOTYPE_METHODS.has(key) ||
+      (isPromiseMethodName(key) && getModeledPromise(object))
+      ? { kind: "method", receiver, name: key }
+      : UNDEFINED_VALUE;
+  }
+
   getProperty(
     object: StaticValue,
     key: string,
@@ -3976,31 +4088,29 @@ export class Interpreter {
           this.getProperty(alternative, key, alternativeContext, location, optional, receiver),
         );
       case "object": {
-        const accessor = getObjectAccessor(object, key);
-        if (accessor) {
-          return accessor.get
-            ? this.callValue(accessor.get, [], context, location, {
-                thisValue: receiver ?? object,
-              })
-            : UNDEFINED_VALUE;
-        }
-        const property = getObjectProperty(object, key);
-        if (property.kind !== "primitive" || property.value !== undefined) return property;
-        const declared = getDeclaredHostObjectMember(
-          this.getRealm(context.environment),
-          object,
-          key,
-          location,
-        );
-        if (declared) return declared;
-        if (key === "constructor") return getIntrinsicConstructor(object) ?? property;
-        if (
-          !object.hasNullPrototype &&
-          (OBJECT_PROTOTYPE_METHODS.has(key) ||
-            (isPromiseMethodName(key) && getModeledPromise(object)))
-        )
-          return { kind: "method", receiver: object, name: key };
-        return property;
+        const read = (presence: StaticValue, readContext: EvaluationContext): StaticValue => {
+          if (getTruthiness(presence) === false) {
+            return this.getInheritedObjectProperty(
+              object,
+              key,
+              readContext,
+              location,
+              receiver ?? object,
+            );
+          }
+          const accessor = getObjectAccessor(object, key);
+          return accessor
+            ? accessor.get
+              ? this.callValue(accessor.get, [], readContext, location, {
+                  thisValue: receiver ?? object,
+                })
+              : UNDEFINED_VALUE
+            : getObjectProperty(object, key);
+        };
+        const presence = getOwnPropertyPresence(object, key);
+        return presence.kind === "branch"
+          ? this.callAlternatives(presence, context, read)
+          : read(presence, context);
       }
       case "list": {
         const binaryMember = getBinaryMember(object, key);
@@ -5394,11 +5504,12 @@ export class Interpreter {
         pattern.elements.forEach((element, index) => {
           if (!element) return;
           if (element.type === "RestElement") {
-            const rest =
-              iterated.kind === "list" &&
-              iterated.items.slice(0, index).every((item) => item.kind !== "repeat")
-                ? listValue(iterated.items.slice(index))
-                : unknownValue(`rest of ${describeValue(iterated)}`);
+            const rest = mapValue(iterated, (alternative) =>
+              alternative.kind === "list" &&
+              alternative.items.slice(0, index).every((item) => item.kind !== "repeat")
+                ? listValue(alternative.items.slice(index))
+                : unknownValue(`rest of ${describeValue(alternative)}`),
+            );
             destructure(element.argument, rest);
             return;
           }
@@ -5592,8 +5703,14 @@ export class Interpreter {
         case "ForStatement":
         case "WhileStatement":
         case "DoWhileStatement": {
-          const outcome = evaluateLoop(this, statement, withoutSuspension(context), location);
-          if (!outcome.mayComplete) return outcome;
+          const { outcome, isContinued } = evaluateLoop(
+            this,
+            statement,
+            withoutSuspension(context),
+            location,
+            proceed,
+          );
+          if (isContinued || !outcome.mayComplete) return outcome;
           if (!outcome.returned) break;
           return this.continueStatements(outcome, withoutSuspension(context), proceed, location);
         }
@@ -5610,7 +5727,7 @@ export class Interpreter {
     body: Statement,
     context: EvaluationContext,
     proceed: StatementContinuation,
-  ): LoopBodyEvaluation {
+  ): LoopEvaluation {
     const completionDepth = context.scopedCompletionDepth ?? 0;
     let isContinued = false;
     const outcome = this.evaluateBlock([body], context, true, (pathContext) => {
@@ -5626,7 +5743,22 @@ export class Interpreter {
     context: EvaluationContext,
     proceed: StatementValueContinuation,
     location: SourceLocation,
+    shouldDistributeBranches = false,
   ): StatementOutcome {
+    if (shouldDistributeBranches && value.kind === "branch") {
+      return this.forkPaths(
+        value.alternatives.map(
+          (alternative) => (pathContext) =>
+            this.continueStatementValue(alternative, pathContext, proceed, location, true),
+        ),
+        context,
+        () => COMPLETES,
+        value.reason,
+        value.location ?? location,
+        value.preferredIndex,
+        getBranchPredicate(value),
+      );
+    }
     const certainty = getThrowCertainty(value);
     if (certainty === "always") return returnOutcome(value);
     if (certainty === "never") return proceed(value, context);

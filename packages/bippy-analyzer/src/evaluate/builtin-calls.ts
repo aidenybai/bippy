@@ -19,6 +19,7 @@ import type {
   StaticValue,
 } from "../types.js";
 import { createAbortController } from "./abort-controller.js";
+import { callWithArgumentList } from "./argument-lists.js";
 import {
   type ArrayMethodEvaluator,
   arrayOfLength,
@@ -148,6 +149,7 @@ import {
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
+  getKnownOwnKeys,
   getKnownObjectOwnNames,
   getKnownObjectSymbols,
   getOwnEnumerableEntries as getModeledOwnEnumerableEntries,
@@ -163,7 +165,9 @@ import {
   isNullish,
   isSymbolPropertyKey,
   jsonValue,
+  joinMappedAlternatives,
   listValue,
+  mapFiniteListItems,
   mapValue,
   nativeObjectValue,
   NULL_VALUE,
@@ -335,7 +339,13 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
     if (!present) return null;
     return {
       kind: "spread",
-      value: branchValue([objectValue([present]), objectValue([])], pair.reason, pair.location),
+      value: branchValue(
+        [objectValue([present]), objectValue([])],
+        pair.reason,
+        pair.location,
+        pair.isAbsentPreferred ? 1 : 0,
+        pair.predicate,
+      ),
     };
   }
   if (pair.kind === "branch") {
@@ -347,18 +357,18 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
     }
     return {
       kind: "spread",
-      value: branchValue(
+      value: joinMappedAlternatives(
+        pair,
         alternatives.map((entry) => objectValue([entry])),
-        pair.reason,
-        pair.location,
-        pair.preferredIndex,
       ),
     };
   }
   if (!hasDefiniteItems(pair)) return null;
-  const [key, value = UNDEFINED_VALUE] = pair.items;
-  if (key?.kind !== "primitive") return null;
-  return { kind: "property", key: String(key.value), value };
+  const [key = UNDEFINED_VALUE, value = UNDEFINED_VALUE] = pair.items;
+  if (key.kind === "branch")
+    return getEntryFromPair(mapValue(key, (alternative) => listValue([alternative, value])));
+  const name = getPropertyName(key);
+  return name === null ? null : { kind: "property", key: name, value };
 };
 
 /** A global the bundler injects or the host declares; null when the name is undeclared in this host. */
@@ -465,10 +475,18 @@ const defineOwnProperty = (
   evaluator: BuiltinEvaluator,
   target: StaticValue,
   key: string,
-  descriptor: StaticObjectValue,
+  descriptor: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
+  if (descriptor.kind === "branch") {
+    evaluator.callAlternatives(descriptor, context, (alternative, alternativeContext) => {
+      defineOwnProperty(evaluator, target, key, alternative, alternativeContext, location);
+      return target;
+    });
+    return;
+  }
+  if (descriptor.kind !== "object") return;
   const isEnumerable = isEnumerableDescriptor(descriptor);
   if (target.kind === "object" || target.kind === "list") evaluator.recordHeapMutation(target);
   if (target.kind === "object") {
@@ -519,11 +537,16 @@ const defineOwnProperties = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): void => {
-  for (const key of getKnownObjectKeys(descriptors) ?? []) {
-    const descriptor = getObjectProperty(descriptors, key);
-    if (descriptor.kind === "object") {
-      defineOwnProperty(evaluator, target, key, descriptor, context, location);
-    }
+  for (const [key, isEnumerable] of getKnownOwnKeys(descriptors, () => true, false) ?? []) {
+    if (!isEnumerable) continue;
+    defineOwnProperty(
+      evaluator,
+      target,
+      key,
+      getObjectProperty(descriptors, key),
+      context,
+      location,
+    );
   }
 };
 
@@ -712,7 +735,7 @@ const hasOwnProperty = (
 };
 
 /** `Object.getPrototypeOf(value)` for values whose chain is a native one: the builtin prototype global, or null at the chain's end. */
-const getWitnessedPrototype = (
+export const getWitnessedPrototype = (
   value: StaticValue | undefined,
   name: string,
   location: SourceLocation | null,
@@ -767,6 +790,25 @@ const callInvokedGlobal = (
   const invocation = name.slice(separator + 1);
   if (separator === -1 || !FUNCTION_INVOCATION_METHODS.has(invocation)) return null;
   const target = name.slice(0, separator);
+  const intrinsic = getLanguageObject(target);
+  if (intrinsic !== null && typeof intrinsic !== "function") return null;
+  if (invocation === "apply")
+    return callWithArgumentList(
+      evaluator,
+      args[1] ?? UNDEFINED_VALUE,
+      context,
+      location,
+      true,
+      (appliedArguments, appliedContext) =>
+        callGlobal(
+          evaluator,
+          `${target}.call`,
+          [args[0] ?? UNDEFINED_VALUE, ...appliedArguments],
+          appliedContext,
+          location,
+          false,
+        ),
+    );
   if (target === "Object.prototype.toString" && invocation !== "bind")
     return getObjectTag(args[0] ?? UNDEFINED_VALUE);
   if (target === "Function.prototype.toString" && invocation !== "bind")
@@ -787,16 +829,7 @@ const callInvokedGlobal = (
       tools.call(callee, [...boundArgs, ...callArgs]),
     );
   }
-  const [, second] = args;
-  const calleeArgs =
-    invocation === "call"
-      ? args.slice(1)
-      : second === undefined
-        ? []
-        : second.kind === "list"
-          ? second.items
-          : [unknownValue("apply arguments", location)];
-  return evaluator.callValue(callee, calleeArgs, context, location);
+  return evaluator.callValue(callee, args.slice(1), context, location);
 };
 
 /** `window.addEventListener` splits into the global object and `addEventListener`; `history.pushState` into `history` and `pushState`. */
@@ -903,6 +936,26 @@ const INSPECTING_GLOBALS = new Set([
   "JSON.parse",
 ]);
 
+const getInvalidMapperError = (
+  mapper: StaticValue,
+  location: SourceLocation | null,
+): StaticValue => {
+  const nativeMapper =
+    mapper.kind === "primitive" ? mapper.value : mapper.kind === "symbol" ? Symbol() : {};
+  try {
+    Reflect.apply(Array.from, Array, [[], nativeMapper]);
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return thrownValue(
+        "non-callable array mapper",
+        createErrorValue("TypeError", [primitiveValue(error.message)], location),
+        location,
+      );
+    }
+  }
+  return unknownValue("array mapper validation", location);
+};
+
 const callGlobal = (
   evaluator: BuiltinEvaluator,
   name: string,
@@ -911,6 +964,10 @@ const callGlobal = (
   location: SourceLocation | null,
   isConstructor: boolean,
 ): StaticValue => {
+  const isArrayFrom =
+    !isConstructor &&
+    (name === "Array.from" ||
+      (name.endsWith(".from") && isTypedArrayName(name.slice(0, -".from".length))));
   if (!isConstructor) {
     const invoked = callInvokedGlobal(evaluator, name, args, context, location);
     if (invoked) return invoked;
@@ -920,6 +977,33 @@ const callGlobal = (
         ? callHostObjectMethod(evaluator, receiver, memberName, args, context, location)
         : null;
     if (hostResult) return hostResult;
+    const distributedArgumentCount = isArrayFrom
+      ? 2
+      : name === "Object.defineProperty"
+        ? 3
+        : name === "Object.defineProperties" || name === "Object.create"
+          ? 2
+          : name === "Object.fromEntries" || name === "Reflect.apply"
+            ? 1
+            : 0;
+    if (distributedArgumentCount !== 0) {
+      const branchIndex = args
+        .slice(0, distributedArgumentCount)
+        .findIndex((argument) => argument.kind === "branch");
+      const branch = args[branchIndex];
+      if (branch?.kind === "branch") {
+        return evaluator.callAlternatives(branch, context, (alternative, alternativeContext) =>
+          callGlobal(
+            evaluator,
+            name,
+            args.with(branchIndex, alternative),
+            alternativeContext,
+            location,
+            false,
+          ),
+        );
+      }
+    }
     const [inspected, ...rest] = args;
     if (inspected?.kind === "branch" && INSPECTING_GLOBALS.has(name)) {
       return mapValue(inspected, (alternative) =>
@@ -934,6 +1018,16 @@ const callGlobal = (
   if (name === "Buffer.from") return createBufferValue(args, location);
   if (name === "Buffer.byteLength") return getBufferByteLength(args);
   const [first, second] = args;
+  let hasMapper = isCallable(second);
+  if (isArrayFrom && second) {
+    const mapperType = getTypeofValue(second, evaluator.getRealm(context.environment));
+    if (mapperType.kind !== "primitive")
+      return unknownValue(`${name} with a dynamic mapper`, location);
+    if (mapperType.value !== "undefined" && mapperType.value !== "function") {
+      return getInvalidMapperError(second, location);
+    }
+    hasMapper = mapperType.value === "function";
+  }
   if (isConstructor && (isTypedArrayName(name) || name === "ArrayBuffer"))
     return constructBinary(name, args, location);
   if (name === "ArrayBuffer.isView") {
@@ -942,6 +1036,7 @@ const callGlobal = (
       ? unknownPrimitiveValue("boolean", "ArrayBuffer.isView on dynamic value")
       : primitiveValue(isView);
   }
+  if (!isConstructor && name === "Array.of") return listValue([...args]);
   if (name.endsWith(".of")) {
     const ofItems = binaryFromItems(name.slice(0, -".of".length), args);
     if (ofItems) return ofItems;
@@ -988,12 +1083,14 @@ const callGlobal = (
     case "Map":
     case "Set":
     case "WeakMap":
-    case "WeakSet":
-      return createCollectionValue(
-        name,
-        first && evaluator.resolveIterable(first, context, location),
-        location,
-      );
+    case "WeakSet": {
+      const initial = first && evaluator.resolveIterable(first, context, location);
+      return initial?.kind === "branch"
+        ? evaluator.callAlternatives(initial, context, (alternative) =>
+            createCollectionValue(name, alternative, location),
+          )
+        : createCollectionValue(name, initial, location);
+    }
     case "URLSearchParams":
       return mapValue(distributeObjectBranches(first ?? UNDEFINED_VALUE), (init) =>
         createSearchParamsValue(init, { location }),
@@ -1076,7 +1173,12 @@ const callGlobal = (
             iterable.kind === "list" || iterable.kind === "repeat"
               ? iterable
               : listValue(spreadListItems(iterable, location));
-          return isCallable(second) ? mapList(evaluator, items, second, context, location) : items;
+          if (hasMapper && second)
+            return mapList(evaluator, items, second, context, location, {
+              includeReceiver: false,
+              thisValue: args[2] ?? UNDEFINED_VALUE,
+            });
+          return items.kind === "list" ? listValue([...items.items]) : items;
         });
       });
     }
@@ -1091,9 +1193,13 @@ const callGlobal = (
     case "Float64Array.from": {
       const source = first && iterableOrArrayLike(evaluator, first, context, location);
       if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
-      const mapped = isCallable(second)
-        ? mapList(evaluator, source, second, context, location)
-        : source;
+      const mapped =
+        hasMapper && second
+          ? mapList(evaluator, listValue([...source.items]), second, context, location, {
+              includeReceiver: false,
+              thisValue: args[2] ?? UNDEFINED_VALUE,
+            })
+          : source;
       return mapped.kind === "list"
         ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
         : mapped;
@@ -1132,6 +1238,12 @@ const callGlobal = (
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
       const target = evaluator.materializeNamespace(first ?? UNDEFINED_VALUE, context.environment);
+      if (target.kind === "list") {
+        const inspected = mapFiniteListItems(target.items, (items) =>
+          inspect({ ...target, items }),
+        );
+        if (inspected) return inspected;
+      }
       return getOwnEnumerableEntries(target)
         ? inspect(target)
         : mapValue(distributeObjectBranches(target), inspect);
@@ -1257,17 +1369,21 @@ const callGlobal = (
         unknownValue("Reflect.has on a dynamic target", location)
       );
     case "Reflect.apply": {
-      const applied = args[2];
-      if (!first || !applied) return unknownValue("Reflect.apply without arguments", location);
-      const appliedArguments =
-        applied.kind === "list" && applied.items.every((item) => item.kind !== "repeat")
-          ? applied.items
-          : null;
-      return appliedArguments
-        ? evaluator.callValue(first, appliedArguments, context, location, {
+      const target = first ?? UNDEFINED_VALUE;
+      const targetType = getTypeofValue(target, evaluator.getRealm(context.environment));
+      if (targetType.kind !== "primitive" || targetType.value !== "function")
+        return unknownValue("Reflect.apply with non-callable or dynamic target", location);
+      return callWithArgumentList(
+        evaluator,
+        args[2] ?? UNDEFINED_VALUE,
+        context,
+        location,
+        false,
+        (appliedArguments, appliedContext) =>
+          evaluator.callValue(target, appliedArguments, appliedContext, location, {
             thisValue: second ?? null,
-          })
-        : unknownValue("Reflect.apply with dynamic arguments", location);
+          }),
+      );
     }
     case "Reflect.construct": {
       const newTarget = args[2];
@@ -1307,15 +1423,22 @@ const callGlobal = (
     }
     case "Object.fromEntries": {
       const entries = first && evaluator.resolveIterable(first, context, location);
-      if (entries?.kind === "list" && !entries.items.some((item) => item.kind === "repeat")) {
-        return objectValue(
-          entries.items.map(
-            (pair) =>
-              getEntryFromPair(pair) ?? { kind: "spread", value: unknownValue("dynamic entry") },
-          ),
-        );
-      }
-      return unknownValue("Object.fromEntries of dynamic entries", location);
+      return mapValue(entries ?? UNDEFINED_VALUE, (alternative) =>
+        alternative.kind === "list" && !alternative.items.some((item) => item.kind === "repeat")
+          ? {
+              ...objectValue(
+                alternative.items.map(
+                  (pair) =>
+                    getEntryFromPair(pair) ?? {
+                      kind: "spread",
+                      value: unknownValue("dynamic entry"),
+                    },
+                ),
+              ),
+              hasObjectPrototype: true,
+            }
+          : unknownValue("Object.fromEntries of dynamic entries", location),
+      );
     }
     case "Object.groupBy":
     case "Map.groupBy":
@@ -1735,11 +1858,16 @@ export const evaluateBuiltinCall = (
         thisValue: first ?? null,
       });
     if (name === "apply") {
-      return evaluator.callFunction(
-        receiver,
-        second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
+      return callWithArgumentList(
+        evaluator,
+        second ?? UNDEFINED_VALUE,
         context,
-        { thisValue: first ?? null },
+        location,
+        true,
+        (appliedArguments, appliedContext) =>
+          evaluator.callFunction(receiver, appliedArguments, appliedContext, {
+            thisValue: first ?? null,
+          }),
       );
     }
     return unknownValue(`function.${name}()`, location);
@@ -1786,11 +1914,14 @@ export const evaluateBuiltinCall = (
         : receiver;
     if (name === "call") return evaluator.callValue(rebound, args.slice(1), context, location);
     if (name === "apply") {
-      return evaluator.callValue(
-        rebound,
-        second?.kind === "list" ? second.items : [unknownValue("apply arguments")],
+      return callWithArgumentList(
+        evaluator,
+        second ?? UNDEFINED_VALUE,
         context,
         location,
+        true,
+        (appliedArguments, appliedContext) =>
+          evaluator.callValue(rebound, appliedArguments, appliedContext, location),
       );
     }
     if (name === "bind") {

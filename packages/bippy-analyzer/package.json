@@ -13,10 +13,15 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vp test --project bippy-analyzer",
+    "test:coverage": "vp test --project bippy-analyzer --coverage --reporter=default --reporter=json --outputFile.json=coverage/test-results.json",
+    "test:coverage:strict": "pnpm run test:coverage --coverage.thresholds.100 --coverage.thresholds.perFile",
+    "compatibility:report": "tsx scripts/compatibility-report.ts",
+    "compatibility:check": "pnpm run test:coverage && pnpm run compatibility:report --strict",
     "generate:realms": "tsx scripts/generate-host-realms.ts",
     "check:realms": "tsx scripts/generate-host-realms.ts --check",
     "render": "tsx scripts/render.ts",
-    "corpus": "tsx scripts/corpus.ts"
+    "corpus": "tsx scripts/corpus.ts",
+    "opencode": "tsx scripts/opencode.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",
@@ -47,6 +52,8 @@
     "@lingui/core": "5.6.0",
     "@lingui/react": "5.6.0",
     "@mui/material": "5.16.14",
+    "@opencode/client": "2.0.10",
+    "@opencode/sdk": "2.0.10",
     "@radix-ui/react-tabs": "1.1.21",
     "@reduxjs/toolkit": "2.12.0",
     "@stylexjs/babel-plugin": "0.18.3",
@@ -67,6 +74,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@types/semver": "^7.8.0",
+    "@vitest/coverage-v8": "4.1.11",
     "array.prototype.foreach": "1.0.7",
     "babel-plugin-macros": "3.1.0",
     "clsx": "2.1.1",

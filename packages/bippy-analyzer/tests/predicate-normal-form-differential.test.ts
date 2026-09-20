@@ -1,9 +1,5 @@
-import { expect, it } from "vite-plus/test";
-import {
-  checkSymbolicCases,
-  checkDifferentialCases,
-  DifferentialMismatch,
-} from "./helpers/differential-evaluator.js";
+import { it } from "vite-plus/test";
+import { checkSymbolicCases, checkDifferentialCases } from "./helpers/differential-evaluator.js";
 
 interface PredicateEncoding {
   name: string;
@@ -24,19 +20,11 @@ const encodings: PredicateEncoding[] = [
 const cases = encodings.flatMap((encoding) =>
   [false, true].map((isCached) => ({
     name: `${encoding.name}/cached=${isCached}`,
-    label: `${encoding.name === "three-minterm-nand" && !isCached ? "known precision gap: " : ""}${encoding.name}/cached=${isCached}`,
-    isKnown: encoding.name === "three-minterm-nand" && !isCached,
     body: `const inputFirst = first; const inputSecond = second; const outer = ${encoding.expression}; const inner = ${isCached ? "outer" : encoding.expression}; if (outer) { if (inner) return 'TT'; return 'TF'; } if (inner) return 'FT'; return 'FF';`,
   })),
 );
 
-it.each(cases)("$label", async ({ name, body, isKnown }) => {
-  if (!isKnown) return checkSymbolicCases([{ name, body }]);
-  const witness = { name, body, expected: ["TT", "FF"], actual: "[ 'TT', 'TF', 'FT', 'FF' ]" };
-  const failure: unknown = await checkSymbolicCases([witness]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([witness]);
-});
+it.each(cases)("$name", ({ name, body }) => checkSymbolicCases([{ name, body }]));
 
 it("matches all 32 concrete normal-form pins", () =>
   checkDifferentialCases(

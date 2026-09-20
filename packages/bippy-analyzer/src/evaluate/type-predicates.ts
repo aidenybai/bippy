@@ -1,4 +1,5 @@
 import type { StaticValue } from "../types.js";
+import { getBinaryKind } from "./typed-arrays.js";
 import { getKnownObjectKeys } from "./values.js";
 
 const ELEMENT_TYPE_TAG_KEY = "$$typeof";
@@ -32,7 +33,13 @@ export const isElementValue: TypePredicate = (value) => {
 };
 
 export const isArrayValue: TypePredicate = (value) =>
-  value.kind === "list" || value.kind === "repeat" ? true : isUndecided(value) ? null : false;
+  value.kind === "list"
+    ? getBinaryKind(value) === null
+    : value.kind === "repeat"
+      ? true
+      : isUndecided(value)
+        ? null
+        : false;
 
 interface CalleeTypePredicate {
   name: string;

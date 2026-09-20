@@ -8,7 +8,7 @@ import type {
   UnknownPrimitiveType,
 } from "../types.js";
 import { collectionsByValue, type CollectionKind } from "./collection-values.js";
-import { createGeneratorValue, getGeneratorItems } from "./generators.js";
+import { consumeGeneratorItems, createGeneratorValue, getGeneratorItems } from "./generators.js";
 import { getNativeIterableItems } from "./native-values.js";
 import { getTruthinessPredicate } from "./predicates.js";
 import { getSearchParamsItems } from "./url-search-params.js";
@@ -465,6 +465,11 @@ export const getCollectionItems = (value: StaticValue): StaticValue | null => {
   if (collection.kind === "WeakMap" || collection.kind === "WeakSet") return null;
   return collection.iterate();
 };
+
+export const consumeCollectionItems = (
+  value: StaticValue,
+  recordMutation: StubRenderTools["recordStateMutation"],
+): StaticValue | null => consumeGeneratorItems(value, recordMutation) ?? getCollectionItems(value);
 
 export const markCollectionExternallyMutable = (value: StaticObjectValue): boolean => {
   const collection = collectionsByValue.get(value);

@@ -1,10 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkSymbolicCases,
-  DifferentialMismatch,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases, checkSymbolicCases } from "./helpers/differential-evaluator.js";
 
 import { propertyShapeObservations } from "./helpers/property-shape-observations.js";
 
@@ -60,25 +56,14 @@ const encodings: EntryEncoding[] = [
     source: "const result = inputFirst ? { left: value } : { right: value };",
   },
 ];
-const knownEncodings = new Set([
-  "key-branch",
-  "pair-branch",
-  "container-branch",
-  "mutating-list",
-  "spread-container",
-  "object-key-branch",
-]);
 const cases = encodings.flatMap((encoding) =>
   propertyShapeObservations.map((observation) => ({
     name: `${encoding.name}/${observation.name}`,
-    label: `${knownEncodings.has(encoding.name) ? "known precision gap: " : ""}${encoding.name}/${observation.name}`,
-    isKnown: knownEncodings.has(encoding.name),
-    actual: observation.name === "absence" ? "[ 'extra', 'match' ]" : "[ 'match', 'missing' ]",
     body: `const inputFirst = first; const value = second ? 7 : 9; ${encoding.source} ${observation.source}`,
   })),
 );
 
-it.each(cases)("$label", async ({ name, body, isKnown, actual }) => {
+it.each(cases)("$name", async ({ name, body }) => {
   for (let index = 0; index < 4; index++) {
     expect(
       runInNewContext(
@@ -88,11 +73,7 @@ it.each(cases)("$label", async ({ name, body, isKnown, actual }) => {
       ),
     ).toBe("match");
   }
-  if (!isKnown) return checkSymbolicCases([{ name, body }]);
-  const witness = { name, body, expected: ["match"], actual };
-  const failure: unknown = await checkSymbolicCases([witness]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([witness]);
+  return checkSymbolicCases([{ name, body }]);
 });
 
 it.each(cases)("matches every concrete entry-shape pin $name", (testCase) =>

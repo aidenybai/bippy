@@ -41,27 +41,13 @@ it.each(differentialSeeds)(
   },
 );
 
-it.each(
-  [0, 1, 2].map((length) => ({
-    length,
-    label: `${length < 2 ? "known divergence: " : ""}toSorted copy storage at length ${length}`,
-  })),
-)("$label", ({ length }) => {
+it.each([0, 1, 2])("preserves toSorted copy storage at length %i", (length) => {
   const original = Array.from({ length }, (_, index) => index).join(",");
-  const appended = [original, "9"].filter(Boolean).join(",");
   const testCase = {
     name: `toSorted length=${length}`,
     body: `const original = [${original}]; const copy = original.toSorted(); copy.push(9); return original.join(',') + '#' + copy.join(',') + '#' + (copy === original);`,
   };
-  return length < 2
-    ? checkKnownDifferentialWitnesses([
-        {
-          ...testCase,
-          expected: `${original}#${appended}#false`,
-          actual: JSON.stringify(`${appended}#${appended}#false`),
-        },
-      ])
-    : checkDifferentialCases([testCase]);
+  return checkDifferentialCases([testCase]);
 });
 
 it.each([

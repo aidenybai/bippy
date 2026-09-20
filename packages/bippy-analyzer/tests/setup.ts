@@ -1,5 +1,10 @@
+import { realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
 import "fake-indexeddb/auto";
 import "../../bippy/src/install-hook-only.js";
+
+// HACK: macOS aliases /var to /private/var; create fixtures with the same canonical paths as the resolver.
+process.env.TMPDIR = realpathSync(tmpdir());
 
 // HACK: vitest's happy-dom environment copies `hasOwnProperty` onto the global
 // as a function bound to the window, which breaks `hasOwnProperty.call(target,

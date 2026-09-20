@@ -35,6 +35,21 @@ the live tree with Playwright, and merges results into `corpus/results.json`. `-
 replays the capture saved by the last live run (`.corpus/.out/<id>.capture.json`) when one exists,
 so evaluator changes are re-verified against the same runtime tree without a dev server.
 
+## Compatibility and coverage
+
+Run `pnpm --filter bippy-analyzer compatibility:check` for fresh tests and the strict gate.
+It requires every test file, no explicit known defects or unrun assertions, and 100% per-file
+source coverage. The gate is intentionally red until those requirements are met; passing the
+ordinary test suite does not mean full compatibility.
+
+See [compatibility coverage](docs/compatibility-coverage.md) for reports, evidence requirements,
+and the current array-copy and conditional-join fixes.
+
+## Agent audits
+
+Use the reusable [OpenCode 2 audit runner](docs/opencode-audits.md) to delegate diagnostics
+to DeepSeek 4.1 Flash, review tool permissions, and continue saved sessions.
+
 ## Pipeline
 
 ```

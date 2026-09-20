@@ -1,5 +1,5 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
 import { getRDTHook } from "bippy";
 import type { Context, ReactNode } from "react";
 import { ReactRuntimeError } from "../errors.js";
@@ -9,7 +9,9 @@ import { getRootContainer } from "../harness/runtime-snapshot.js";
 import { isVersionAtLeast } from "../libraries/installed-version.js";
 import { isRecord } from "../observations.js";
 import { ensureDomGlobals } from "./dom-environment.js";
-import { createReactDomLoader } from "./react-dom-modules.js";
+import { createReactModuleLoader } from "./react-modules.js";
+
+const requireFromHarness = createRequire(import.meta.url);
 
 export type ReactModule = typeof import("react");
 type ReactDomClientModule = typeof import("react-dom/client");
@@ -131,17 +133,6 @@ const resolveFromApp = (
   return resolution.kind === "external" && resolution.filePath ? resolution.filePath : null;
 };
 
-const importResolved = async (
-  resolver: ModuleResolver | null,
-  specifier: string,
-  fromDirectory: string | null,
-): Promise<unknown> => {
-  const filePath = resolveFromApp(resolver, specifier, fromDirectory);
-  return unwrapModule(
-    await (filePath === null ? import(specifier) : import(pathToFileURL(filePath).href)),
-  );
-};
-
 const isContextDispatcher = (value: unknown): value is ContextDispatcher =>
   isRecord(value) && typeof value.readContext === "function";
 
@@ -185,12 +176,11 @@ const getReactAct = (react: unknown): ReactRuntime["act"] | null => {
 
 const loadAct = async (
   react: ReactModule,
-  resolver: ModuleResolver | null,
-  fromDirectory: string | null,
+  loadTestUtils: () => unknown,
 ): Promise<ReactRuntime["act"]> => {
   const act = getReactAct(react);
   if (act) return act;
-  const testUtils = await importResolved(resolver, "react-dom/test-utils", fromDirectory);
+  const testUtils = loadTestUtils();
   if (hasAct(testUtils)) return testUtils.act;
   throw new ReactRuntimeError("neither React.act nor react-dom/test-utils act is available");
 };
@@ -281,21 +271,19 @@ const loadPackages = async (
   rootDirectory: string | null,
   packages: ReactPackageSpecifiers,
 ): Promise<ReactRuntime> => {
-  const react = await importResolved(appResolver, packages.react, rootDirectory);
+  const resolvePackage = (specifier: string): string =>
+    resolveFromApp(appResolver, specifier, rootDirectory) ?? requireFromHarness.resolve(specifier);
+  const hasClient = appResolver === null || hasClientEntry(appResolver, rootDirectory, packages);
+  const loadModule = createReactModuleLoader({
+    react: resolvePackage(packages.react),
+    dom: resolvePackage(packages.dom),
+    client: hasClient ? resolvePackage(packages.domClient) : null,
+    server: resolvePackage(packages.domServer),
+  });
+  const loadDomModule = async (specifier: string): Promise<unknown> =>
+    unwrapModule(loadModule(resolvePackage(specifier)));
+  const react = await loadDomModule(packages.react);
   if (!isReactModule(react)) throw new ReactRuntimeError("could not load react");
-  const domPath = resolveFromApp(appResolver, packages.dom, rootDirectory);
-  const clientPath = resolveFromApp(appResolver, packages.domClient, rootDirectory);
-  const serverPath = resolveFromApp(appResolver, packages.domServer, rootDirectory);
-  const loadFrameworkModule =
-    packages.react !== DEFAULT_REACT_PACKAGES.react && domPath && clientPath && serverPath
-      ? createReactDomLoader(react, { dom: domPath, client: clientPath, server: serverPath })
-      : null;
-  const loadDomModule = async (specifier: string): Promise<unknown> => {
-    const filePath = resolveFromApp(appResolver, specifier, rootDirectory);
-    return loadFrameworkModule && filePath
-      ? unwrapModule(loadFrameworkModule(filePath))
-      : importResolved(appResolver, specifier, rootDirectory);
-  };
   const [dom, domServer] = await Promise.all([
     loadDomModule(packages.dom),
     loadDomModule(packages.domServer),
@@ -311,12 +299,10 @@ const loadPackages = async (
     react,
     dom,
     domServer,
-    createRoot: await loadRootFactory(
-      dom,
-      appResolver === null || hasClientEntry(appResolver, rootDirectory, packages),
-      () => loadDomModule(packages.domClient),
+    createRoot: await loadRootFactory(dom, hasClient, () => loadDomModule(packages.domClient)),
+    act: await loadAct(react, () =>
+      unwrapModule(loadModule(resolvePackage("react-dom/test-utils"))),
     ),
-    act: await loadAct(react, appResolver, rootDirectory),
     readContext: loadContextReader(react),
     version: react.version,
   };

@@ -1,8 +1,6 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-  DifferentialMismatch,
   checkSymbolicCases,
   createSeededRandom,
   differentialSeeds,
@@ -56,22 +54,14 @@ const branchCase = {
   body: `const value = new Date(0); if (first) { value.setTime(1000); return 'changed'; } return 'epoch:' + value.getTime();`,
 };
 
-it("known divergence: UTC date mutation crosses an early return branch", async () => {
-  const failure: unknown = await checkSymbolicCases([branchCase]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch)
-    expect(failure.actual).toEqual([
-      { ...branchCase, expected: ["epoch:0", "changed"], actual: "[ 'changed', 'epoch:1000' ]" },
-    ]);
-});
+it("isolates UTC date mutation across an early return branch", () =>
+  checkSymbolicCases([branchCase]));
 
-it("known divergence: invalid ISO conversion does not propagate RangeError", () =>
-  checkKnownDifferentialWitnesses([
+it("propagates RangeError from invalid ISO conversion", () =>
+  checkDifferentialCases([
     {
       name: "invalid ISO conversion throws RangeError",
       body: `try { new Date(NaN).toISOString(); return 'accepted'; } catch (error) { return error.name; }`,
-      expected: "RangeError",
-      actual: JSON.stringify("accepted"),
     },
   ]));
 

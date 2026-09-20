@@ -310,15 +310,23 @@ const isAbsorbedConjunct = (guard: Guard, conjuncts: Map<number, Guard[]>): bool
 const reduceCoveredNegation = (guard: Guard, disjuncts: Map<number, Guard[]>): Guard => {
   if (guard.kind !== "and") return guard;
   const operands = guard.operands.filter((operand) => {
-    if (operand.kind !== "not") return true;
-    return operand.operand.kind === "or"
-      ? !operand.operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))
-      : !hasEquivalentGuard(disjuncts, operand.operand);
+    if (hasEquivalentGuard(disjuncts, negateGuard(operand))) return false;
+    return (
+      operand.kind !== "not" ||
+      operand.operand.kind !== "or" ||
+      !operand.operand.operands.every((alternative) => hasEquivalentGuard(disjuncts, alternative))
+    );
   });
   return operands.length === guard.operands.length ? guard : combineGuards("and", operands, false);
 };
 
 const reduceCoveredConjuncts = (guard: Guard, conjuncts: Map<number, Guard[]>): Guard => {
+  if (guard.kind === "or") {
+    const operands = guard.operands.filter(
+      (operand) => !hasEquivalentGuard(conjuncts, negateGuard(operand)),
+    );
+    return operands.length === guard.operands.length ? guard : combineGuards("or", operands, true);
+  }
   if (guard.kind !== "not" || guard.operand.kind !== "and") return guard;
   const operands = guard.operand.operands.filter(
     (operand) => !hasEquivalentGuard(conjuncts, operand),
@@ -326,6 +334,39 @@ const reduceCoveredConjuncts = (guard: Guard, conjuncts: Map<number, Guard[]>): 
   return operands.length === guard.operand.operands.length
     ? guard
     : negateGuard(combineGuards("and", operands, false));
+};
+
+const factorComplementaryClauses = (kind: "and" | "or", guards: Guard[]): Guard[] | null => {
+  const clauseKind = kind === "and" ? "or" : "and";
+  for (let leftIndex = 0; leftIndex < guards.length; leftIndex++) {
+    const left = guards[leftIndex];
+    if (left.kind !== clauseKind) continue;
+    const leftOperands = indexGuards(left.operands);
+    for (let rightIndex = leftIndex + 1; rightIndex < guards.length; rightIndex++) {
+      const right = guards[rightIndex];
+      if (right.kind !== clauseKind || right.operands.length !== left.operands.length) continue;
+      const common = right.operands.filter((operand) => hasEquivalentGuard(leftOperands, operand));
+      if (common.length !== left.operands.length - 1) continue;
+      const commonOperands = indexGuards(common);
+      const leftRemainder = left.operands.find(
+        (operand) => !hasEquivalentGuard(commonOperands, operand),
+      );
+      const rightRemainder = right.operands.find(
+        (operand) => !hasEquivalentGuard(leftOperands, operand),
+      );
+      if (
+        !leftRemainder ||
+        !rightRemainder ||
+        !isSameGuard(leftRemainder, negateGuard(rightRemainder))
+      )
+        continue;
+      const factored = combineGuards(clauseKind, common, kind === "and");
+      return guards.flatMap((guard, index) =>
+        index === leftIndex ? [factored] : index === rightIndex ? [] : [guard],
+      );
+    }
+  }
+  return null;
 };
 
 const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean): Guard => {
@@ -366,6 +407,8 @@ const combineGuards = (kind: "and" | "or", operands: Guard[], absorbing: boolean
       return combineGuards("and", reduced, false);
     }
   }
+  const factored = factorComplementaryClauses(kind, simplified);
+  if (factored) return combineGuards(kind, factored, absorbing);
   return simplified.length === 1 ? simplified[0] : { kind, operands: simplified };
 };
 
