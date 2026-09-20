@@ -111,7 +111,7 @@ describe.each([
   {
     name: "function replacements receive derived fields",
     expected: "true:7",
-    actual: "<string: + on dynamic values>",
+    actual: "branch(<string> | <string>)",
     body: `const replacement = () => 1; class Base { constructor() { return replacement; } } class Child extends Base { value = 7; } const instance = new Child(); return (instance === replacement) + ':' + instance.value;`,
   },
   {

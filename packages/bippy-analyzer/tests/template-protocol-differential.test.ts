@@ -72,24 +72,6 @@ it.each([
     body: "const receiver = { tag() { return this === receiver; } }; return receiver.tag`same`;",
   },
   {
-    name: "throwing tag lookup prevents interpolation",
-    expected: "lookup|caught:tag",
-    actual: JSON.stringify("lookup|argument|caught:tag"),
-    body: "const trace = []; const receiver = { get tag() { trace.push('lookup'); throw 'tag'; } }; const read = () => { trace.push('argument'); return 1; }; try { receiver.tag`${read()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
-  },
-  {
-    name: "throwing interpolation prevents later interpolation and invocation",
-    expected: "first|caught:stop",
-    actual: JSON.stringify("first|later|caught:stop"),
-    body: "const trace = []; const fail = () => { trace.push('first'); throw 'stop'; }; const later = () => { trace.push('later'); return 2; }; const tag = () => { trace.push('tag'); return 3; }; try { tag`${fail()}-${later()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
-  },
-  {
-    name: "untagged templates stop after a throwing interpolation",
-    expected: "first|caught:stop",
-    actual: JSON.stringify("first|later|caught:stop"),
-    body: "const trace = []; const fail = () => { trace.push('first'); throw 'stop'; }; const later = () => { trace.push('later'); return 2; }; try { const value = `${fail()}-${later()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
-  },
-  {
     name: "untagged symbol conversion throws before a later interpolation",
     expected: "TypeError",
     actual: JSON.stringify("later|after"),
@@ -98,6 +80,18 @@ it.each([
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
 it.each([
+  {
+    name: "throwing tag lookup prevents interpolation",
+    body: "const trace = []; const receiver = { get tag() { trace.push('lookup'); throw 'tag'; } }; const read = () => { trace.push('argument'); return 1; }; try { receiver.tag`${read()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
+  },
+  {
+    name: "throwing interpolation prevents later interpolation and invocation",
+    body: "const trace = []; const fail = () => { trace.push('first'); throw 'stop'; }; const later = () => { trace.push('later'); return 2; }; const tag = () => { trace.push('tag'); return 3; }; try { tag`${fail()}-${later()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
+  },
+  {
+    name: "untagged templates stop after a throwing interpolation",
+    body: "const trace = []; const fail = () => { trace.push('first'); throw 'stop'; }; const later = () => { trace.push('later'); return 2; }; try { const value = `${fail()}-${later()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
+  },
   {
     name: "identical text at distinct sites has distinct identity",
     body: "const tag = (strings) => strings; return tag`same` === tag`same`;",

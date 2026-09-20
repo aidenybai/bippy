@@ -78,7 +78,7 @@ it.each([
   {
     name: "Reflect.get passes the explicit receiver to a proxy trap",
     expected: "value:true",
-    actual: "<string: + on dynamic values>",
+    actual: 'branch("value:true" | "value:false")',
     body: `const receiver = {}; const trace = []; const target = new Proxy({}, { get(target, key, observed) { trace.push(key + ':' + (observed === receiver)); return 7; } }); Reflect.get(target, 'value', receiver); return trace.join('|');`,
   },
   {

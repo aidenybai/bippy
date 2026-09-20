@@ -149,6 +149,15 @@ export const getPrototypeWitness = (value: StaticValue): object | null => {
   }
 };
 
+export const getIntrinsicFunctionTag = (value: StaticFunctionValue): string | null =>
+  value.node.generator
+    ? value.node.async
+      ? "AsyncGeneratorFunction"
+      : "GeneratorFunction"
+    : value.node.async
+      ? "AsyncFunction"
+      : null;
+
 const isPrimitiveLike = (value: StaticValue): boolean =>
   value.kind === "primitive" ||
   value.kind === "symbol" ||

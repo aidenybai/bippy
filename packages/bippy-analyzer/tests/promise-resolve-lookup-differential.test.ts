@@ -46,7 +46,7 @@ it.each([
   {
     name: "all with a subclass receiver constructs a subclass result",
     expected: "true|sync|1,2",
-    actual: "branch(<string> | <string>)",
+    actual: 'branch(<string> | <string> | "true|sync" | "false|sync")',
     body: `
     const trace = []; class Derived extends Promise {}
     const result = Derived.all([1, 2]); trace.push(result instanceof Derived);

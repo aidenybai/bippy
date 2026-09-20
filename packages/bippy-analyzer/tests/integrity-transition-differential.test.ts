@@ -36,11 +36,9 @@ const cases = targets.flatMap((target) =>
         integrity !== "freeze" &&
         (mutation.name === "write-existing" ||
           (integrity === "preventExtensions" && mutation.name === "delete-existing"));
-      const isKnown =
-        !isAllowed || (target.name === "array" && mutation.name === "delete-existing");
+      const isKnown = !isAllowed;
       const isIgnored =
-        (integrity === "freeze" && (target.name === "object" || target.name === "array")) ||
-        (target.name === "array" && mutation.name === "delete-existing");
+        integrity === "freeze" && (target.name === "object" || target.name === "array");
       const actualOutcome = isIgnored
         ? "after:1:undefined"
         : mutation.name === "write-existing"
@@ -70,12 +68,10 @@ it.each(cases)("$label", ({ name, body, expected, actual, isKnown }) =>
     : checkDifferentialCases([{ name, body }]),
 );
 
-it("known divergence: ordinary array property deletion is independent of integrity operations", () =>
-  checkKnownDifferentialWitnesses([
+it("ordinary array property deletion is independent of integrity operations", () =>
+  checkDifferentialCases([
     {
       name: "ordinary array property deletion",
-      expected: undefined,
-      actual: "1",
       body: `const target = []; target.value = 1; delete target.value; return target.value;`,
     },
   ]));

@@ -68,7 +68,7 @@ it.each([
   {
     name: "static getter descriptors remain accessors",
     expected: "function:false:false",
-    actual: "<string: + on dynamic values>",
+    actual: "branch(<string> | <string>)",
     body: `class Target { static get value() { return 7; } } const descriptor = Object.getOwnPropertyDescriptor(Target, 'value'); return typeof descriptor.get + ':' + ('value' in descriptor) + ':' + descriptor.enumerable;`,
   },
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));

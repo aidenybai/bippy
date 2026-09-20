@@ -1,6 +1,5 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type { StaticValue } from "../types.js";
-import { MAX_ARRAY_LIKE_LENGTH } from "./array-methods.js";
 import type { BuiltinEvaluator } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
@@ -15,7 +14,9 @@ import {
   unknownValue,
 } from "./values.js";
 
-interface ArgumentListEvaluator extends Pick<
+export const MAX_ARRAY_LIKE_LENGTH = 1_000;
+
+interface ArrayLikeEvaluator extends Pick<
   BuiltinEvaluator,
   "getProperty" | "callAlternatives" | "getRealm"
 > {}
@@ -28,7 +29,7 @@ const argumentListError = (message: string, location: SourceLocation | null): St
   );
 
 const continueAlternatives = (
-  evaluator: ArgumentListEvaluator,
+  evaluator: ArrayLikeEvaluator,
   value: StaticValue,
   context: EvaluationContext,
   proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
@@ -38,7 +39,7 @@ const continueAlternatives = (
     : proceed(value, context);
 
 const readArgumentList = (
-  evaluator: ArgumentListEvaluator,
+  evaluator: ArrayLikeEvaluator,
   source: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
@@ -62,6 +63,16 @@ const readArgumentList = (
   if (sourceType.kind !== "primitive") return unknownValue("dynamic argument list", location);
   if (sourceType.value !== "object" && sourceType.value !== "function")
     return argumentListError("CreateListFromArrayLike called on non-object", location);
+  return mapArrayLikeItems(evaluator, source, context, location);
+};
+
+export const mapArrayLikeItems = (
+  evaluator: ArrayLikeEvaluator,
+  source: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+  mapItem?: (value: StaticValue, index: number, context: EvaluationContext) => StaticValue,
+): StaticValue => {
   const length = evaluator.getProperty(source, "length", context, location);
   return continueAlternatives(evaluator, length, context, (lengthValue, lengthContext) => {
     if (getThrowCertainty(lengthValue) === "always") return lengthValue;
@@ -87,9 +98,16 @@ const readArgumentList = (
         const item = evaluator.getProperty(source, String(index), prefixContext, location);
         const appendItem = (value: StaticValue): StaticValue =>
           getThrowCertainty(value) === "never" ? listValue([...prefix.items, value]) : value;
+        const mapReadItem = (value: StaticValue, itemContext: EvaluationContext): StaticValue => {
+          if (getThrowCertainty(value) !== "never") return value;
+          const mapped = mapItem ? mapItem(value, index, itemContext) : value;
+          return getThrowCertainty(mapped) === "never"
+            ? appendItem(mapped)
+            : continueAlternatives(evaluator, mapped, itemContext, appendItem);
+        };
         return getThrowCertainty(item) === "never"
-          ? appendItem(item)
-          : continueAlternatives(evaluator, item, prefixContext, appendItem);
+          ? mapReadItem(item, prefixContext)
+          : continueAlternatives(evaluator, item, prefixContext, mapReadItem);
       });
       if (getThrowCertainty(result) === "always" || result.kind === "unknown") return result;
     }
@@ -98,7 +116,7 @@ const readArgumentList = (
 };
 
 export const callWithArgumentList = (
-  evaluator: ArgumentListEvaluator,
+  evaluator: ArrayLikeEvaluator,
   source: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,

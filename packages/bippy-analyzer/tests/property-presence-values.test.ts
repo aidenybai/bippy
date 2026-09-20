@@ -17,6 +17,27 @@ import {
   unknownValue,
 } from "../src/evaluate/values.js";
 
+it("retains the predicate and preference for a selected receiver", () => {
+  const predicate = createPathPredicate("receiver", null);
+  const source = branchValue(
+    [objectFromRecord({ value: UNDEFINED_VALUE }), objectValue([])],
+    "receiver",
+    null,
+    1,
+    predicate,
+  );
+  const presence = hasNamedProperty("value", source);
+  expect(presence).toMatchObject({
+    kind: "branch",
+    predicate,
+    preferredIndex: 1,
+    alternatives: [TRUE_VALUE, FALSE_VALUE],
+  });
+  if (source.kind !== "branch" || presence?.kind !== "branch")
+    throw new Error("Expected guarded presence");
+  expect(getAlternativeGuards(presence)).toEqual(getAlternativeGuards(source));
+});
+
 it("retains the predicate for a deleted undefined-valued property", () => {
   const original = objectFromRecord({ value: UNDEFINED_VALUE });
   const predicate = createPathPredicate("delete", null);

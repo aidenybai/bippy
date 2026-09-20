@@ -23,12 +23,12 @@ import type {
   StatementValueContinuation,
 } from "./context.js";
 import { withScope } from "./context.js";
+import { getOwnEnumerableEntries } from "./own-entries.js";
 import { createScope } from "./scope.js";
 import { getThrowCertainty } from "./thrown.js";
 import {
   UNDEFINED_VALUE,
   getObjectProperty,
-  getOwnEnumerableEntries,
   getTruthiness,
   primitiveValue,
   unknownPrimitiveValue,

@@ -90,7 +90,8 @@ const cases = consumers.flatMap((consumer) =>
     const isKnown =
       consumer.name !== "manual" &&
       isThrowing &&
-      (failure.phase !== "source" || consumer.name === "array-spread");
+      failure.phase !== "source" &&
+      !(consumer.name === "array-from" && failure.phase === "iterator-get");
     const actualTrace =
       failure.phase === "value"
         ? [...completeProtocol]

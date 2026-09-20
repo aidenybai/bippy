@@ -60,18 +60,6 @@ it.each(cases)("$label", ({ name, body, isAllowed, expected, actual }) =>
 
 it.each([
   {
-    name: "clearing a getter makes subsequent reads undefined",
-    expected: undefined,
-    actual: "unknown(call of undefined)",
-    body: `const target = {}; Object.defineProperty(target, 'value', { get: () => 7, configurable: true }); Object.defineProperty(target, 'value', { get: undefined }); return target.value;`,
-  },
-  {
-    name: "clearing a setter makes strict assignments throw",
-    expected: "TypeError",
-    actual: JSON.stringify("accepted"),
-    body: `const target = {}; Object.defineProperty(target, 'value', { set(value) {}, configurable: true }); Object.defineProperty(target, 'value', { set: undefined }); try { target.value = 7; return 'accepted'; } catch (error) { return error.name; }`,
-  },
-  {
     name: "omitted accessor fields retain the existing getter",
     expected: 7,
     actual: 'unknown(property "value" defined with a dynamic descriptor)',
@@ -86,6 +74,14 @@ it.each([
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
 it.each([
+  {
+    name: "clearing a getter makes subsequent reads undefined",
+    body: `const target = {}; Object.defineProperty(target, 'value', { get: () => 7, configurable: true }); Object.defineProperty(target, 'value', { get: undefined }); return target.value;`,
+  },
+  {
+    name: "clearing a setter makes strict assignments throw",
+    body: `const target = {}; Object.defineProperty(target, 'value', { set(value) {}, configurable: true }); Object.defineProperty(target, 'value', { set: undefined }); try { target.value = 7; return 'accepted'; } catch (error) { return error.name; }`,
+  },
   {
     name: "data-to-accessor conversion removes the old data value",
     body: `const target = {}; Object.defineProperty(target, 'value', { value: 7, configurable: true }); Object.defineProperty(target, 'value', { get: () => 9 }); return target.value;`,

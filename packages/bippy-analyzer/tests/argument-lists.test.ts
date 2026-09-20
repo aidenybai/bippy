@@ -1,6 +1,6 @@
 import { expect, it, vi } from "vite-plus/test";
 import type { StaticValue } from "../src/types.js";
-import { callWithArgumentList } from "../src/evaluate/argument-lists.js";
+import { callWithArgumentList } from "../src/evaluate/array-like.js";
 import {
   getObjectProperty,
   listValue,

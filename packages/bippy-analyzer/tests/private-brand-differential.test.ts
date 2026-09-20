@@ -77,7 +77,7 @@ it.each([
   {
     name: "private brand checks distinguish branded and lookalike objects",
     expected: "true:false",
-    actual: "<string: + on dynamic values>",
+    actual: 'branch("true:true" | "true:false" | "false:true" | "false:false")',
     body: `class Secret { #value = 7; static has(value) { return #value in value; } } return Secret.has(new Secret()) + ':' + Secret.has({ '#value': 7 });`,
   },
 ])("known divergence: enforces $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));

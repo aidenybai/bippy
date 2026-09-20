@@ -92,7 +92,7 @@ it.each([
   {
     name: "has invariant for non-configurable data",
     expected: "TypeError",
-    actual: "<string: String(<boolean: in on dynamic values>)>",
+    actual: 'branch("true" | "false")',
     body: `const target = {}; Object.defineProperty(target, 'value', { value: 1 }); const proxy = new Proxy(target, { has: () => false }); try { return String('value' in proxy); } catch (error) { return error.name; }`,
   },
   {

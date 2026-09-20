@@ -44,7 +44,7 @@ it.each([
   {
     name: "reviver deletion leaves an array hole rather than shrinking length",
     expected: "2:false:2",
-    actual: "<string: + on dynamic values>",
+    actual: "branch(<string> | <string>)",
     body: `const result = JSON.parse('[1,2]', (key, value) => key === '0' ? undefined : value); return result.length + ':' + Object.hasOwn(result, '0') + ':' + result[1];`,
   },
   {

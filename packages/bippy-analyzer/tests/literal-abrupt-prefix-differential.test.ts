@@ -1,9 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases } from "./helpers/differential-evaluator.js";
 
 interface LiteralConsumer {
   name: string;
@@ -47,14 +44,8 @@ const cases = consumers.flatMap((consumer) =>
       if (!isThrowing && consumer.isTagged) prefix.push("tag");
       prefix.push(isThrowing ? "caught:true" : "done");
       const name = `${consumer.name}/length=${length}/throw=${throwIndex}`;
-      const isKnown = isThrowing && (consumer.name === "object" || throwIndex < length - 1);
-      const actualPrefix = Array.from({ length }, (_item, index) => `step:${index}`);
-      actualPrefix.push(consumer.name === "object" ? "done" : "caught:true");
       return {
         name,
-        label: `${isKnown ? "known divergence: " : ""}${name}`,
-        isKnown,
-        actual: JSON.stringify(actualPrefix.join("|")),
         expected: prefix.join("|"),
         body: `const trace = []; const token = {}; const evaluate = (index) => { trace.push('step:' + index); if (index === ${throwIndex}) throw token; return index; }; const tag = () => { trace.push('tag'); return 7; }; try { ${consumer.getExpression(length)}; trace.push('done'); } catch (error) { trace.push('caught:' + Object.is(error, token)); } return trace.join('|');`,
       };
@@ -62,10 +53,9 @@ const cases = consumers.flatMap((consumer) =>
   ),
 );
 
-it.each(cases)("$label", async ({ name, body, expected, actual, isKnown }) => {
+it.each(cases)("$name", async ({ name, body, expected }) => {
   expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
     expected,
   );
-  if (isKnown) await checkKnownDifferentialWitnesses([{ name, body, expected, actual }]);
-  else await checkDifferentialCases([{ name, body }]);
+  await checkDifferentialCases([{ name, body }]);
 });

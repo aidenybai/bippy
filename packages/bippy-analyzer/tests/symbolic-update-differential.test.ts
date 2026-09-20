@@ -1,9 +1,8 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
   createSeededRandom,
   differentialSeeds,
-  DifferentialMismatch,
   type DifferentialCase,
 } from "./helpers/differential-evaluator.js";
 
@@ -45,6 +44,14 @@ it.each(differentialSeeds)(
 
 it.each([
   {
+    name: "conditional symbol updates retain the exceptional state",
+    body: "let value = first ? Symbol('value') : 7; let outcome = 'ok'; try { value++; } catch (error) { outcome = error.name; } return outcome;",
+  },
+  {
+    name: "conditional mixed bigint writes retain the exceptional state",
+    body: "let writes = 0; const holder = { get value() { return first ? 1n : 1; }, set value(value) { writes++; } }; let outcome = 'ok'; try { holder.value += 1; } catch (error) { outcome = error.name; } return outcome + ':' + writes;",
+  },
+  {
     name: "merged strings are converted before postfix returns",
     body: "let value = first ? '1' : '2'; const previous = value++; return typeof previous + ':' + previous + ':' + value;",
   },
@@ -56,28 +63,7 @@ it.each([
 
 it.each([
   {
-    name: "conditional symbol updates retain the exceptional state",
-    expected: ["ok", "TypeError"],
-    actual: "[ 'ok' ]",
-    body: "let value = first ? Symbol('value') : 7; let outcome = 'ok'; try { value++; } catch (error) { outcome = error.name; } return outcome;",
-  },
-  {
-    name: "conditional mixed bigint writes retain the exceptional state",
-    expected: ["ok:1", "TypeError:0"],
-    actual: "[ 'ok:1' ]",
-    body: "let writes = 0; const holder = { get value() { return first ? 1n : 1; }, set value(value) { writes++; } }; let outcome = 'ok'; try { holder.value += 1; } catch (error) { outcome = error.name; } return outcome + ':' + writes;",
-  },
-  {
     name: "conditional boxed bigint updates retain both numeric types",
-    expected: ["number", "bigint"],
-    actual: "[ 'number' ]",
     body: "let value = first ? { valueOf: () => 7n } : { valueOf: () => 7 }; return typeof ++value;",
   },
-])("known divergence: $name", async ({ name, body, expected, actual }) => {
-  const failure: unknown = await checkSymbolicCases([{ name, body }]).catch(
-    (error: unknown) => error,
-  );
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch)
-    expect(failure.actual).toEqual([{ name, body, expected, actual }]);
-});
+])("preserves $name", (testCase) => checkSymbolicCases([testCase]));

@@ -1,5 +1,6 @@
 import type { SourceLocation } from "../parse/source-types.js";
-import type { GuardLiteral } from "../symbolic/guards.js";
+import type { GuardLiteral, SymbolicPredicate } from "../symbolic/guards.js";
+import { parseSymbolicPredicate, serializeSymbolicPredicate } from "../symbolic/serialization.js";
 import type {
   StaticBranchValue,
   StaticListValue,
@@ -57,11 +58,14 @@ import {
   type CallableValue,
 } from "./values.js";
 
+import { MAX_ARRAY_LIKE_LENGTH } from "./array-like.js";
+
 export interface ArrayMethodEvaluator extends CallbackEvaluator {
   resolveIterable: (
     value: StaticValue,
     context: EvaluationContext,
     location: SourceLocation | null,
+    iteratorMethod?: StaticValue,
   ) => StaticValue;
 
   getProperty: (
@@ -115,8 +119,6 @@ const sliceList = (
     return receiver;
   return listValue(receiver.items.slice(start, end <= indefiniteIndex ? end : undefined));
 };
-
-export const MAX_ARRAY_LIKE_LENGTH = 1_000;
 
 export const arrayOfLength = (
   length: StaticValue,
@@ -319,6 +321,13 @@ const filterList = (
   );
 };
 
+interface JoinedPresenceDecision {
+  key: string;
+  predicate: SymbolicPredicate;
+  inputIds: Set<string>;
+  serialized: string;
+}
+
 const MAX_JOINED_COMBINATIONS = 16;
 
 /** `join()` over items that may be absent: one string per combination of present items. */
@@ -328,17 +337,48 @@ const joinListItems = (
   location: SourceLocation | null,
 ): StaticValue => {
   let combinationCount = 1;
+  const decisions = new Map<string, JoinedPresenceDecision>();
+  const predicates = new Map<string, JoinedPresenceDecision>();
   for (const item of items) {
     if (item.kind === "repeat") {
       return unknownPrimitiveValue("string", "join of a list with an unknown length");
     }
     if (item.kind !== "optional") continue;
+    if (item.predicate) {
+      if (predicates.has(item.predicate)) continue;
+      const predicate = parseSymbolicPredicate(item.predicate);
+      const key = serializeSymbolicPredicate({ ...predicate, inputs: [] });
+      const existing = decisions.get(key);
+      if (existing) {
+        for (const input of predicate.inputs) {
+          if (existing.inputIds.has(input.id)) continue;
+          existing.inputIds.add(input.id);
+          existing.predicate.inputs.push(input);
+        }
+        predicates.set(item.predicate, existing);
+        continue;
+      }
+      const decision = {
+        key,
+        predicate,
+        inputIds: new Set(predicate.inputs.map((input) => input.id)),
+        serialized: item.predicate,
+      };
+      decisions.set(key, decision);
+      predicates.set(item.predicate, decision);
+    }
     combinationCount *= 2;
     if (combinationCount > MAX_JOINED_COMBINATIONS) {
       return unknownPrimitiveValue("string", "join of a list with many uncertain items");
     }
   }
-  const joinFrom = (startIndex: number, prefix: StaticValue[]): StaticValue => {
+  for (const decision of decisions.values())
+    decision.serialized = serializeSymbolicPredicate(decision.predicate);
+  const joinFrom = (
+    startIndex: number,
+    prefix: StaticValue[],
+    choices: ReadonlyMap<string, boolean>,
+  ): StaticValue => {
     const parts = [...prefix];
     for (let index = startIndex; index < items.length; index++) {
       const item = items[index];
@@ -346,17 +386,34 @@ const joinListItems = (
         parts.push(item);
         continue;
       }
+      const decision = item.predicate ? predicates.get(item.predicate) : undefined;
+      const presence = decision ? choices.get(decision.key) : undefined;
+      if (presence !== undefined) {
+        if (presence) parts.push(item.value);
+        continue;
+      }
       return branchValue(
-        [joinFrom(index + 1, [...parts, item.value]), joinFrom(index + 1, parts)],
+        [
+          joinFrom(
+            index + 1,
+            [...parts, item.value],
+            decision ? new Map(choices).set(decision.key, true) : choices,
+          ),
+          joinFrom(
+            index + 1,
+            parts,
+            decision ? new Map(choices).set(decision.key, false) : choices,
+          ),
+        ],
         item.reason,
         item.location ?? location,
         item.isAbsentPreferred ? 1 : 0,
-        item.predicate,
+        decision?.serialized ?? item.predicate,
       );
     }
     return joinStrings(parts, separator);
   };
-  return joinFrom(0, []);
+  return joinFrom(0, [], new Map());
 };
 
 const sortListItems = (

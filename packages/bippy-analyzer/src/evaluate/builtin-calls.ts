@@ -19,14 +19,13 @@ import type {
   StaticValue,
 } from "../types.js";
 import { createAbortController } from "./abort-controller.js";
-import { callWithArgumentList } from "./argument-lists.js";
+import { callWithArgumentList } from "./array-like.js";
+import { callArrayFrom } from "./array-from.js";
 import {
   type ArrayMethodEvaluator,
   arrayOfLength,
   callArrayMethod,
   groupItems,
-  iterableOrArrayLike,
-  mapList,
 } from "./array-methods.js";
 import { createBlobValue } from "./blob.js";
 import {
@@ -89,6 +88,7 @@ import {
 } from "./native-values.js";
 import { applyMathToRanges, rangedNumberValue } from "./number-ranges.js";
 import { getObjectTag } from "./object-tag.js";
+import { getOwnEnumerableEntries as getModeledOwnEnumerableEntries } from "./own-entries.js";
 import { recordInputSource } from "./predicates.js";
 import {
   callShapedPrimitiveMethod,
@@ -145,6 +145,7 @@ import {
   createRegisteredSymbolValue,
   createSymbolValue,
   describeValue,
+  distributeBinary,
   distributeObjectBranches,
   FALSE_VALUE,
   getClassPrototype,
@@ -152,18 +153,20 @@ import {
   getKnownOwnKeys,
   getKnownObjectOwnNames,
   getKnownObjectSymbols,
-  getOwnEnumerableEntries as getModeledOwnEnumerableEntries,
   getObjectProperty,
   getOwnPropertyDescriptor,
   getOwnPropertyPresence,
+  getObjectAccessor,
   getPropertyName,
   getSymbolPropertyKey,
   getTruthiness,
   hasDefiniteItems,
   isCallable,
+  isIndefiniteItem,
   isKnownList,
   isNullish,
   isSymbolPropertyKey,
+  isUndefinedValue,
   jsonValue,
   joinMappedAlternatives,
   listValue,
@@ -174,7 +177,6 @@ import {
   objectFromRecord,
   objectValue,
   primitiveValue,
-  spreadListItems,
   thrownValue,
   toBooleanValue,
   TRUE_VALUE,
@@ -408,9 +410,11 @@ const getDescriptorAccessor = (descriptor: StaticObjectValue): StaticAccessor | 
   const keys = getKnownObjectKeys(descriptor);
   if (!keys || keys.includes("value") || !(keys.includes("get") || keys.includes("set")))
     return null;
+  const getter = keys.includes("get") ? getObjectProperty(descriptor, "get") : UNDEFINED_VALUE;
+  const setter = keys.includes("set") ? getObjectProperty(descriptor, "set") : UNDEFINED_VALUE;
   return {
-    get: keys.includes("get") ? getObjectProperty(descriptor, "get") : null,
-    set: keys.includes("set") ? getObjectProperty(descriptor, "set") : null,
+    get: isUndefinedValue(getter) ? null : getter,
+    set: isUndefinedValue(setter) ? null : setter,
   };
 };
 
@@ -447,7 +451,6 @@ const getElementRefDescriptor = (
   });
 };
 
-/** Function properties hold values only, so an accessor defined on one is read once. */
 const readDescriptorValue = (
   evaluator: BuiltinEvaluator,
   target: StaticValue,
@@ -487,6 +490,14 @@ const defineOwnProperty = (
     return;
   }
   if (descriptor.kind !== "object") return;
+  if (target.kind === "function") {
+    defineOwnProperty(evaluator, target.properties, key, descriptor, context, location);
+    if (key === "name") {
+      const value = getObjectProperty(target.properties, key);
+      if (value.kind === "primitive" && typeof value.value === "string") target.name = value.value;
+    }
+    return;
+  }
   const isEnumerable = isEnumerableDescriptor(descriptor);
   if (target.kind === "object" || target.kind === "list") evaluator.recordHeapMutation(target);
   if (target.kind === "object") {
@@ -503,7 +514,6 @@ const defineOwnProperty = (
   }
   const value = readDescriptorValue(evaluator, target, descriptor, key, context, location);
   switch (target.kind) {
-    case "function":
     case "class":
       if (key === "name") {
         if (value.kind === "primitive" && typeof value.value === "string")
@@ -595,6 +605,11 @@ const getFunctionOwnPropertyDescriptor = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue => {
+  if (getObjectAccessor(callable.properties, key))
+    return (
+      getOwnPropertyDescriptor(callable.properties, key) ??
+      unknownValue("descriptor of a partially known function", location)
+    );
   const ownNames = getFunctionOwnNames(callable);
   if (!ownNames) return unknownValue(`descriptor of a partially known function`, location);
   if (!ownNames.includes(key)) return UNDEFINED_VALUE;
@@ -809,8 +824,14 @@ const callInvokedGlobal = (
           false,
         ),
     );
-  if (target === "Object.prototype.toString" && invocation !== "bind")
-    return getObjectTag(args[0] ?? UNDEFINED_VALUE);
+  if (target === "Object.prototype.toString") {
+    const receiver = args[0] ?? UNDEFINED_VALUE;
+    return invocation === "bind"
+      ? nativeFunction(`bound ${target}`, (_args, tools) =>
+          tools.call({ kind: "global", name: `${target}.call` }, [receiver]),
+        )
+      : getObjectTag(evaluator, receiver, context, location);
+  }
   if (target === "Function.prototype.toString" && invocation !== "bind")
     return getInvokedFunctionSource(args[0] ?? UNDEFINED_VALUE, location);
   const prototypeIndex = target.indexOf(PROTOTYPE_SEGMENT);
@@ -935,6 +956,15 @@ const INSPECTING_GLOBALS = new Set([
   "JSON.stringify",
   "JSON.parse",
 ]);
+
+const getSameValueComparison = (left: StaticValue, right: StaticValue): StaticValue => {
+  if (left.kind === "primitive" && right.kind === "primitive")
+    return primitiveValue(Object.is(left.value, right.value));
+  const isSame = compareIdentity(left, right);
+  return isSame === null
+    ? unknownPrimitiveValue("boolean", "Object.is on dynamic values")
+    : primitiveValue(isSame);
+};
 
 const getInvalidMapperError = (
   mapper: StaticValue,
@@ -1162,26 +1192,7 @@ const callGlobal = (
         ? unknownPrimitiveValue("boolean", "Array.isArray on dynamic value")
         : primitiveValue(verdict);
     }
-    case "Array.from": {
-      return mapValue(first ?? UNDEFINED_VALUE, (candidate) => {
-        const source = iterableOrArrayLike(evaluator, candidate, context, location);
-        if (!source || (source.kind === "primitive" && typeof source.value !== "string")) {
-          return unknownValue("Array.from of a non-iterable", location);
-        }
-        return mapValue(source, (iterable) => {
-          const items =
-            iterable.kind === "list" || iterable.kind === "repeat"
-              ? iterable
-              : listValue(spreadListItems(iterable, location));
-          if (hasMapper && second)
-            return mapList(evaluator, items, second, context, location, {
-              includeReceiver: false,
-              thisValue: args[2] ?? UNDEFINED_VALUE,
-            });
-          return items.kind === "list" ? listValue([...items.items]) : items;
-        });
-      });
-    }
+    case "Array.from":
     case "Int8Array.from":
     case "Uint8Array.from":
     case "Uint8ClampedArray.from":
@@ -1190,20 +1201,16 @@ const callGlobal = (
     case "Int32Array.from":
     case "Uint32Array.from":
     case "Float32Array.from":
-    case "Float64Array.from": {
-      const source = first && iterableOrArrayLike(evaluator, first, context, location);
-      if (source?.kind !== "list") return unknownValue(`${name} of dynamic iterable`, location);
-      const mapped =
-        hasMapper && second
-          ? mapList(evaluator, listValue([...source.items]), second, context, location, {
-              includeReceiver: false,
-              thisValue: args[2] ?? UNDEFINED_VALUE,
-            })
-          : source;
-      return mapped.kind === "list"
-        ? (binaryFromItems(name.slice(0, -".from".length), mapped.items) ?? mapped)
-        : mapped;
-    }
+    case "Float64Array.from":
+      return callArrayFrom(
+        evaluator,
+        name.slice(0, -".from".length),
+        first ?? UNDEFINED_VALUE,
+        hasMapper ? second : undefined,
+        args[2] ?? UNDEFINED_VALUE,
+        context,
+        location,
+      );
     case "Object.hasOwn":
       return mapValue(first ?? UNDEFINED_VALUE, (target) => {
         if (target.kind === "primitive") {
@@ -1239,6 +1246,7 @@ const callGlobal = (
       };
       const target = evaluator.materializeNamespace(first ?? UNDEFINED_VALUE, context.environment);
       if (target.kind === "list") {
+        if (!target.items.some(isIndefiniteItem)) return inspect(target);
         const inspected = mapFiniteListItems(target.items, (items) =>
           inspect({ ...target, items }),
         );
@@ -1276,12 +1284,9 @@ const callGlobal = (
     case "Object.is": {
       const left = first ?? UNDEFINED_VALUE;
       const right = second ?? UNDEFINED_VALUE;
-      if (left.kind === "primitive" && right.kind === "primitive")
-        return primitiveValue(Object.is(left.value, right.value));
-      const isSame = compareIdentity(left, right);
-      return isSame === null
-        ? unknownPrimitiveValue("boolean", "Object.is on dynamic values")
-        : primitiveValue(isSame);
+      return (
+        distributeBinary(left, right, getSameValueComparison) ?? getSameValueComparison(left, right)
+      );
     }
     case "Object.isFrozen":
       if (first?.kind === "object" || first?.kind === "list")
@@ -1871,6 +1876,11 @@ export const evaluateBuiltinCall = (
       );
     }
     return unknownValue(`function.${name}()`, location);
+  }
+
+  if (receiver.kind === "object") {
+    if (name === "valueOf") return receiver;
+    if (name === "toString") return getObjectTag(evaluator, receiver, context, location);
   }
 
   if (name === "isPrototypeOf" && first !== undefined) {

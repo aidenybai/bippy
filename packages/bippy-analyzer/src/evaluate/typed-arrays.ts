@@ -4,6 +4,7 @@ import { createErrorValue } from "./errors.js";
 import {
   UNDEFINED_VALUE,
   describeValue,
+  getSymbolPropertyKey,
   isKnownList,
   listValue,
   primitiveValue,
@@ -222,6 +223,8 @@ export const isBinaryView = (value: StaticValue | undefined): boolean | null => 
 export const getBinaryMember = (list: StaticListValue, key: string): StaticValue | null => {
   const kind = binaryKinds.get(list);
   if (kind === undefined) return null;
+  if (key === getSymbolPropertyKey({ kind: "symbol", key: "Symbol.toStringTag" }))
+    return list.properties?.get(key) ?? primitiveValue(kind);
   switch (key) {
     case "byteLength":
       return primitiveValue(getBinaryByteLength(list) ?? 0);

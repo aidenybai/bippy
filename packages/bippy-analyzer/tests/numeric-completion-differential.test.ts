@@ -1,4 +1,5 @@
-import { it } from "vite-plus/test";
+import { runInNewContext } from "node:vm";
+import { expect, it } from "vite-plus/test";
 import {
   checkDifferentialCases,
   checkKnownDifferentialWitnesses,
@@ -58,44 +59,24 @@ it.each(
     })),
   ),
 )(
-  "known divergence: conversion and write completion: $label",
-  ({ name, initial, operator, right, setterThrows, errorName }) =>
-    checkKnownDifferentialWitnesses([
-      {
-        name: `${name}/${setterThrows}`,
-        expected: `get|caught:${errorName}#0`,
-        actual: JSON.stringify(setterThrows ? "get|set|caught:setter#1" : "get|set|after#1"),
-        body: `
+  "matches native conversion and write completion: $label",
+  async ({ name, initial, operator, right, setterThrows, errorName }) => {
+    const body = `
     const trace = [];
     let writes = 0;
     const holder = { get value() { trace.push('get'); return ${initial}; }, set value(value) { writes++; trace.push('set'); ${setterThrows ? "throw 'setter';" : ""} } };
     try { holder.value ${operator} ${right}; trace.push('after'); }
     catch (error) { trace.push('caught:' + (typeof error === 'string' ? error : error.name)); }
     return trace.join('|') + '#' + writes;
-  `,
-      },
-    ]),
+  `;
+    expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
+      `get|caught:${errorName}#0`,
+    );
+    await checkDifferentialCases([{ name: `${name}/${setterThrows}`, body }]);
+  },
 );
 
 it.each([
-  {
-    name: "unary plus of bigint throws",
-    expected: "TypeError",
-    actual: JSON.stringify("accepted"),
-    body: `try { +1n; return 'accepted'; } catch (error) { return error.name; }`,
-  },
-  {
-    name: "unary minus preserves bigint type",
-    expected: "bigint",
-    actual: JSON.stringify("number"),
-    body: `return typeof -1n;`,
-  },
-  {
-    name: "bitwise not preserves bigint type",
-    expected: "bigint",
-    actual: JSON.stringify("number"),
-    body: `return typeof ~1n;`,
-  },
   {
     name: "bigint subtraction preserves bigint type",
     expected: "bigint",
@@ -103,6 +84,15 @@ it.each([
     body: `return typeof (2n - 1n);`,
   },
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+
+it.each([
+  {
+    name: "unary plus of bigint throws",
+    body: `try { +1n; return 'accepted'; } catch (error) { return error.name; }`,
+  },
+  { name: "unary minus preserves bigint type", body: `return typeof -1n;` },
+  { name: "bitwise not preserves bigint type", body: `return typeof ~1n;` },
+])("preserves $name", (testCase) => checkDifferentialCases([testCase]));
 
 it("preserves number division by zero writing Infinity", () =>
   checkDifferentialCases([

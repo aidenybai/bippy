@@ -14,7 +14,9 @@ import type {
 } from "../types.js";
 import { getBuiltinFunctionSource, getPrototypeWitness } from "./instance-of.js";
 import { rangedNumberValue } from "./number-ranges.js";
+import { getTruthinessPredicate } from "./predicates.js";
 import {
+  branchValue,
   describeValue,
   distributeBinary,
   getPropertyName,
@@ -309,7 +311,28 @@ const composeStrings = (left: StaticValue, right: StaticValue): StringCompositio
   return null;
 };
 
+const getBooleanText = (value: StaticValue): StaticValue | null =>
+  value.kind === "unknown-primitive" && value.primitiveType === "boolean"
+    ? branchValue(
+        [primitiveValue("true"), primitiveValue("false")],
+        `String(${describeValue(value)})`,
+        null,
+        0,
+        getTruthinessPredicate(value),
+      )
+    : null;
+
 export const concatenateStrings = (left: StaticValue, right: StaticValue): StaticValue => {
+  const leftBoolean = getBooleanText(left);
+  const rightBoolean = getBooleanText(right);
+  if (leftBoolean || rightBoolean) {
+    const distributed = distributeBinary(
+      leftBoolean ?? left,
+      rightBoolean ?? right,
+      concatenateStrings,
+    );
+    if (distributed) return distributed;
+  }
   const leftShape = getConcatenationShape(left);
   const rightShape = getConcatenationShape(right);
   const isLeftComplete = leftShape.length === leftShape.prefix.length;
@@ -352,6 +375,8 @@ export const toStringValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     const text = getCoercedText(alternative);
     if (text !== null) return primitiveValue(text);
+    const booleanText = getBooleanText(alternative);
+    if (booleanText) return booleanText;
     if (hasDefiniteItems(alternative)) return joinStrings(alternative.items, ",");
     if (alternative.kind === "unknown-primitive" && alternative.primitiveType === "string")
       return alternative;

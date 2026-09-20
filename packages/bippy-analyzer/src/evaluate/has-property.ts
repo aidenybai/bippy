@@ -13,20 +13,22 @@ import type {
   StaticValue,
 } from "../types.js";
 import { createErrorValue } from "./errors.js";
-import { getPrototypeWitness } from "./instance-of.js";
+import { getIntrinsicFunctionTag, getPrototypeWitness } from "./instance-of.js";
 import { getLanguageCounterpart, toLanguagePropertyKey } from "./language-intrinsics.js";
 import { hasNativeObjectMember } from "./native-values.js";
 import { isFunctionText, toPropertyKey } from "./primitive-shapes.js";
+import { getBinaryKind } from "./typed-arrays.js";
 import {
-  branchValue,
   FALSE_VALUE,
   getKnownObjectOwnNames,
   getListLength,
   getOwnPropertyPresence,
   getStubOwnDisplayName,
+  getSymbolPropertyKey,
   getTruthiness,
   hasDefiniteItems,
   isIndefiniteItem,
+  joinMappedAlternatives,
   mapValue,
   primitiveValue,
   thrownValue,
@@ -113,7 +115,7 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         if (!result) return null;
         results.push(result);
       }
-      return branchValue(results, target.reason, target.location, target.preferredIndex);
+      return joinMappedAlternatives(target, results);
     }
     case "element":
       return REACT_ELEMENT_OWN_KEYS.has(name) ? TRUE_VALUE : FALSE_VALUE;
@@ -134,6 +136,12 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
     }
     case "function":
     case "class": {
+      if (
+        target.kind === "function" &&
+        name === getSymbolPropertyKey({ kind: "symbol", key: "Symbol.toStringTag" }) &&
+        getIntrinsicFunctionTag(target) !== null
+      )
+        return TRUE_VALUE;
       if (isIntrinsicFunctionKey(target, name) || hasIntrinsicMember(Function.prototype, name))
         return TRUE_VALUE;
       return hasNamedProperty(name, target.properties);
@@ -160,9 +168,27 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
       return hasIntrinsicMember(witness, name) ? TRUE_VALUE : FALSE_VALUE;
     }
     case "list": {
-      if (hasIntrinsicMember(Array.prototype, name)) return TRUE_VALUE;
+      const binaryKind = getBinaryKind(target);
       const index = Number(name);
-      if (!Number.isInteger(index) || index < 0) return FALSE_VALUE;
+      const isCanonicalIndex = String(index) === name;
+      if (
+        binaryKind !== null &&
+        binaryKind !== "ArrayBuffer" &&
+        (isCanonicalIndex || name === "-0")
+      ) {
+        if (name === "-0" || !Number.isInteger(index) || index < 0) return FALSE_VALUE;
+      } else {
+        if (target.properties?.has(name)) return TRUE_VALUE;
+        if (hasIntrinsicMember(getPrototypeWitness(target) ?? Array.prototype, name))
+          return TRUE_VALUE;
+        if (
+          binaryKind === "ArrayBuffer" ||
+          !isCanonicalIndex ||
+          !Number.isInteger(index) ||
+          index < 0
+        )
+          return FALSE_VALUE;
+      }
       const isReachable = target.items.slice(0, index + 1).every((item) => !isIndefiniteItem(item));
       if (index < target.items.length && isReachable) return TRUE_VALUE;
       if (hasDefiniteItems(target)) return FALSE_VALUE;
@@ -265,7 +291,5 @@ export const hasProperty = (key: StaticValue, target: StaticValue): StaticValue 
     if (hasKey === null) return null;
     results.push(primitiveValue(hasKey));
   }
-  return target.kind === "branch"
-    ? branchValue(results, target.reason, target.location, target.preferredIndex)
-    : results[0];
+  return target.kind === "branch" ? joinMappedAlternatives(target, results) : results[0];
 };

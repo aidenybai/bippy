@@ -1,12 +1,17 @@
 import { expect, it, vi } from "vite-plus/test";
 import { evaluateBuiltinCall, type BuiltinEvaluator } from "../src/evaluate/builtin-calls.js";
+import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
+import { nativeFunction } from "../src/evaluate/stubs.js";
 import { TimerQueue } from "../src/evaluate/timers.js";
 import {
+  branchValue,
   getObjectProperty,
   listValue,
+  objectFromRecord,
   objectValue,
   primitiveValue,
   UNDEFINED_VALUE,
+  unknownPrimitiveValue,
 } from "../src/evaluate/values.js";
 import { loadHostRealm } from "../src/host/host-realm.js";
 import { createCallbackValue, createEvaluationContext } from "./helpers/evaluation-context.js";
@@ -61,6 +66,76 @@ const createBuiltinEvaluator = (overrides: Partial<BuiltinEvaluator> = {}): Buil
   runTaskAlternatives: unexpectedOperation,
   recordStateMutation: unexpectedOperation,
   ...overrides,
+});
+
+it.each([4, 5])("retains the SameValue raw product bound for %i by four choices", (count) => {
+  const left = branchValue(
+    Array.from({ length: count }, (_value, index) => primitiveValue(index)),
+    "left",
+  );
+  const right = branchValue([1, 5, 6, 7].map(primitiveValue), "right");
+  const result = evaluateBuiltinCall(
+    createBuiltinEvaluator(),
+    { kind: "global", name: "Object.is" },
+    [left, right],
+    createEvaluationContext(),
+    null,
+  );
+  expect(result?.kind).toBe(count === 4 ? "branch" : "unknown-primitive");
+});
+
+it("retains SameValue signed-zero predicates and preferences", () => {
+  const source = branchValue(
+    [-0, 0].map(primitiveValue),
+    "zero",
+    null,
+    1,
+    createPathPredicate("zero", null),
+  );
+  const result = evaluateBuiltinCall(
+    createBuiltinEvaluator(),
+    { kind: "global", name: "Object.is" },
+    [source, primitiveValue(-0)],
+    createEvaluationContext(),
+    null,
+  );
+  expect(result).toMatchObject({
+    kind: "branch",
+    preferredIndex: 1,
+    alternatives: [primitiveValue(true), primitiveValue(false)],
+  });
+  if (result?.kind !== "branch" || source.kind !== "branch") throw new Error("Expected choices");
+  expect(getAlternativeGuards(result)).toEqual(getAlternativeGuards(source));
+});
+
+it.each([unknownPrimitiveValue("any", "tag"), unknownPrimitiveValue("string", "tag")])(
+  "keeps an unknown $primitiveType tag dynamic",
+  (tag) => {
+    const getProperty = vi.fn(() => tag);
+    const result = evaluateBuiltinCall(
+      createBuiltinEvaluator({ getProperty }),
+      { kind: "global", name: "Object.prototype.toString.call" },
+      [objectValue()],
+      createEvaluationContext(),
+      null,
+    );
+    expect(result).toMatchObject({ kind: "unknown-primitive", primitiveType: "string" });
+    expect(getProperty).toHaveBeenCalledTimes(1);
+  },
+);
+
+it("retains an opaque object's unknown builtin tag without invoking stored functions", () => {
+  const callback = vi.fn(() => UNDEFINED_VALUE);
+  const receiver = objectFromRecord({ method: nativeFunction("opaque", callback) });
+  const result = evaluateBuiltinCall(
+    createBuiltinEvaluator({ getProperty: () => UNDEFINED_VALUE }),
+    { kind: "global", name: "Object.prototype.toString.call" },
+    [receiver],
+    createEvaluationContext(),
+    null,
+  );
+  expect(result).toMatchObject({ kind: "unknown-primitive", primitiveType: "string" });
+  expect(callback).not.toHaveBeenCalled();
 });
 
 it("dispatches primitive builtins without an interpreter", () => {

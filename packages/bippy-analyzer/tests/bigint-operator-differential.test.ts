@@ -23,47 +23,38 @@ const expectedResults: Record<string, string> = {
   ">=": "boolean:true",
 };
 
-it.each(Object.entries(expectedResults))(
-  "known divergence: bounded BigInt %s evaluation",
-  (operator, expected) =>
-    checkKnownDifferentialWitnesses([
-      {
-        name: `3n ${operator} 2n`,
-        expected,
-        actual: "<string: + on dynamic values>",
-        body: `try { const result = 3n ${operator} 2n; return typeof result + ':' + String(result); } catch (error) { return 'error:' + error.name; }`,
-      },
-    ]),
-);
+it.each(
+  Object.entries(expectedResults).map(([operator, expected]) => ({
+    operator,
+    expected,
+    label: `${expected.startsWith("bigint:") ? "known divergence:" : "matches native:"} bounded BigInt ${operator} evaluation`,
+  })),
+)("$label", ({ operator, expected }) => {
+  const testCase = {
+    name: `3n ${operator} 2n`,
+    body: `try { const result = 3n ${operator} 2n; return typeof result + ':' + String(result); } catch (error) { return 'error:' + error.name; }`,
+  };
+  return !expected.startsWith("bigint:")
+    ? checkDifferentialCases([testCase])
+    : checkKnownDifferentialWitnesses([
+        { ...testCase, expected, actual: "<string: + on dynamic values>" },
+      ]);
+});
 
 it.each([
   {
-    name: "negative BigInt literal comparison remains exact",
-    expected: true,
-    actual: "<boolean: < on dynamic values>",
-    body: `return (-1n) < 0n;`,
-  },
-  {
     name: "BigInt division by zero throws before following effects",
-    expected: "RangeError",
-    actual: '"after"',
     body: `const trace = []; try { 1n / 0n; trace.push('after'); } catch (error) { trace.push(error.name); } return trace.join('|');`,
   },
   {
     name: "negative BigInt exponent throws before following effects",
-    expected: "RangeError",
-    actual: '"after"',
     body: `const trace = []; try { 2n ** (-1n); trace.push('after'); } catch (error) { trace.push(error.name); } return trace.join('|');`,
   },
   {
     name: "mixed BigInt and number subtraction throws",
-    expected: "TypeError",
-    actual: '"accepted"',
     body: `try { 2n - 1; return 'accepted'; } catch (error) { return error.name; }`,
   },
-])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
-
-it.each([
+  { name: "negative BigInt literal comparison remains exact", body: `return (-1n) < 0n;` },
   { name: "BigInt and string addition concatenates", body: `return 2n + 'items';` },
   { name: "string and BigInt addition concatenates", body: `return 'items:' + 2n;` },
 ])("preserves $name", (testCase) => checkDifferentialCases([testCase]));

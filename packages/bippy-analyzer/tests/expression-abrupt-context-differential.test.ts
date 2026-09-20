@@ -81,15 +81,6 @@ const thrownSources = [
   "thrownSymbol",
 ];
 const knownOutcomes = new Map([
-  ["conditional", "operand|after|done"],
-  ["array-element", "operand|after|caught:true"],
-  ["object-value", "operand|after|done"],
-  ["object-key", "operand|done"],
-  ["object-spread", "operand|after|done"],
-  ["array-spread", "operand|after|done"],
-  ["template", "operand|after|caught:true"],
-  ["tag-callee", "operand|after|caught:true"],
-  ["tag-substitution", "operand|after|caught:true"],
   ["object-binding", "operand|after|caught:true"],
   ["array-binding", "operand|after|caught:true"],
 ]);

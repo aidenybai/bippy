@@ -98,7 +98,7 @@ it.each([
   {
     name: "Object boxes a Symbol without changing its identity on extraction",
     expected: "object:true",
-    actual: "<string: + on dynamic values>",
+    actual: 'branch("object:true" | "object:false")',
     body: `const symbol = Symbol('boxed'); const boxed = Object(symbol); return typeof boxed + ':' + (boxed.valueOf() === symbol);`,
   },
   {

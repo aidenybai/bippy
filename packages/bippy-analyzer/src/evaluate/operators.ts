@@ -4,6 +4,7 @@ import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
 import type { CompareOperator, GuardLiteral } from "../symbolic/guards.js";
 import type { StaticPrimitive, StaticUnknownPrimitiveValue, StaticValue } from "../types.js";
 import { isClockDateValue, toDatePrimitive } from "./clock-date.js";
+import { createErrorValue } from "./errors.js";
 import { isInstanceOf } from "./instance-of.js";
 import { getLanguageObject } from "./language-intrinsics.js";
 import { getExactLanguageObject, toNativeObjectPrimitive } from "./native-values.js";
@@ -22,6 +23,7 @@ import {
   mapValue,
   primitiveValue,
   regExpToString,
+  thrownValue,
   TRUE_VALUE,
   unknownPrimitiveValue,
 } from "./values.js";
@@ -44,6 +46,36 @@ export const logicalOutcome = (
   return result;
 };
 
+const getNumericTypeError = (message: string, reason = message): StaticValue =>
+  thrownValue(reason, createErrorValue("TypeError", [primitiveValue(message)], null), null);
+
+const evaluateFailingBigIntOperation = (operation: () => bigint): StaticValue => {
+  try {
+    return primitiveValue(operation());
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? primitiveValue(error.message)
+        : unknownPrimitiveValue("string", "BigInt error message");
+    return thrownValue("BigInt operation threw", createErrorValue("RangeError", [message], null));
+  }
+};
+
+const BIGINT_NUMERIC_OPERATORS = new Set([
+  "+",
+  "-",
+  "*",
+  "/",
+  "%",
+  "**",
+  "&",
+  "|",
+  "^",
+  "<<",
+  ">>",
+  ">>>",
+]);
+
 export const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
   argument: StaticValue,
@@ -54,6 +86,8 @@ export const applyUnaryOperator = (
   if (operator !== "!" && isCoercibleOperand(argument)) {
     return applyUnaryOperator(operator, toCoercedOperand(argument, "number"));
   }
+  if (operator !== "!" && argument.kind === "symbol")
+    return getNumericTypeError("Cannot convert a Symbol value to a number");
   switch (operator) {
     case "!": {
       const truthiness = getTruthiness(argument);
@@ -63,16 +97,26 @@ export const applyUnaryOperator = (
       return truthiness ? FALSE_VALUE : TRUE_VALUE;
     }
     case "-":
-      if (argument.kind === "primitive" && typeof argument.value === "number")
-        return primitiveValue(-argument.value);
+      if (argument.kind === "primitive")
+        return primitiveValue(
+          typeof argument.value === "bigint" ? -argument.value : -Number(argument.value),
+        );
       return unknownPrimitiveValue("number", "unary minus");
     case "+":
-      if (argument.kind === "primitive" && typeof argument.value !== "bigint")
+      if (argument.kind === "primitive") {
+        if (typeof argument.value === "bigint")
+          return getNumericTypeError(
+            "Cannot convert a BigInt value to a number",
+            "unary plus on BigInt",
+          );
         return primitiveValue(Number(argument.value));
+      }
       return unknownPrimitiveValue("number", "unary plus");
     case "~":
-      if (argument.kind === "primitive" && typeof argument.value === "number")
-        return primitiveValue(~argument.value);
+      if (argument.kind === "primitive")
+        return primitiveValue(
+          typeof argument.value === "bigint" ? ~argument.value : ~Number(argument.value),
+        );
       return unknownPrimitiveValue("number", "bitwise not");
   }
 };
@@ -364,7 +408,34 @@ const computeBinary = (
     default:
       break;
   }
-  if (typeof left === "bigint" || typeof right === "bigint") return undefined;
+  if (typeof left === "bigint" && typeof right === "bigint") {
+    switch (operator) {
+      case "<":
+        return primitiveValue(left < right);
+      case ">":
+        return primitiveValue(left > right);
+      case "<=":
+        return primitiveValue(left <= right);
+      case ">=":
+        return primitiveValue(left >= right);
+      case "/":
+        return right === 0n ? evaluateFailingBigIntOperation(() => left / right) : undefined;
+      case "%":
+        return right === 0n ? evaluateFailingBigIntOperation(() => left % right) : undefined;
+      case "**":
+        return right < 0n ? evaluateFailingBigIntOperation(() => left ** right) : undefined;
+      case ">>>":
+        return getNumericTypeError("BigInts have no unsigned right shift, use >> instead");
+      default:
+        return undefined;
+    }
+  }
+  if (typeof left === "bigint" || typeof right === "bigint") {
+    return BIGINT_NUMERIC_OPERATORS.has(operator) &&
+      !(operator === "+" && (typeof left === "string" || typeof right === "string"))
+      ? getNumericTypeError("Cannot mix BigInt and other types, use explicit conversions")
+      : undefined;
+  }
   if (typeof left === "string" || typeof right === "string") {
     if (operator === "+") return primitiveValue(String(left) + String(right));
   }

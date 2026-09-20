@@ -116,6 +116,9 @@ export const createGeneratorValue = (
   return generator;
 };
 
+export const isGeneratorValue = (value: StaticValue): boolean =>
+  value.kind === "object" && generatorsByValue.has(value);
+
 export const getGeneratorItems = (value: StaticValue): StaticValue | null =>
   (value.kind === "object" ? generatorsByValue.get(value)?.remaining() : null) ?? null;
 

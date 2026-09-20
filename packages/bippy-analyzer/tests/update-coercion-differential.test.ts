@@ -1,7 +1,6 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -58,41 +57,33 @@ it.each(differentialSeeds)(
   },
 );
 
+it("preserves symbol conversion failure before setter failure", () =>
+  checkDifferentialCases([
+    {
+      name: "symbol conversion fails before setter failure",
+      body: `const trace = []; const holder = { get value() { trace.push('get'); return Symbol('value'); }, set value(value) { trace.push('set'); throw 'setter'; } }; try { holder.value++; trace.push('after'); } catch (error) { trace.push('caught:' + (typeof error === 'string' ? error : error.name)); } return trace.join('|');`,
+    },
+  ]));
+
 it.each([
   {
     name: "postfix returns a numeric primitive rather than the old object",
-    expected: false,
-    actual: "true",
     body: `const original = { valueOf: () => 7 }; let value = original; const previous = value++; return previous === original;`,
   },
   {
     name: "prefix preserves bigint from object conversion",
-    expected: "bigint",
-    actual: JSON.stringify("number"),
     body: `let value = { valueOf: () => 7n }; return typeof ++value;`,
   },
   {
     name: "postfix preserves bigint from object conversion",
-    expected: "bigint",
-    actual: JSON.stringify("object"),
     body: `let value = { valueOf: () => 7n }; return typeof value++;`,
   },
   {
     name: "throwing conversion prevents a setter call",
-    expected: "get|convert|caught:conversion",
-    actual: JSON.stringify("get|set|after"),
     body: `const trace = []; const original = { valueOf: () => { trace.push('convert'); throw 'conversion'; } }; const holder = { get value() { trace.push('get'); return original; }, set value(value) { trace.push('set'); } }; try { holder.value++; trace.push('after'); } catch (error) { trace.push('caught:' + (typeof error === 'string' ? error : error.name)); } return trace.join('|');`,
   },
   {
-    name: "symbol conversion fails before setter failure",
-    expected: "get|caught:TypeError",
-    actual: JSON.stringify("get|set|caught:setter"),
-    body: `const trace = []; const holder = { get value() { trace.push('get'); return Symbol('value'); }, set value(value) { trace.push('set'); throw 'setter'; } }; try { holder.value++; trace.push('after'); } catch (error) { trace.push('caught:' + (typeof error === 'string' ? error : error.name)); } return trace.join('|');`,
-  },
-  {
     name: "conversion reentrancy does not redirect the captured setter",
-    expected: "get|convert|set:true:true",
-    actual: JSON.stringify("get|set:true:false"),
     body: `const trace = []; const replacement = { value: 99 }; const input = { valueOf: () => { trace.push('convert'); current = replacement; return 7; } }; const original = { get value() { trace.push('get'); return input; }, set value(value) { trace.push('set:' + (this === original)); } }; let current = original; current.value++; return trace.join('|') + ':' + (current === replacement);`,
   },
-])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+])("preserves $name", (testCase) => checkDifferentialCases([testCase]));
