@@ -7,7 +7,8 @@ import type {
   StubRenderTools,
 } from "../types.js";
 import { createErrorValue } from "./errors.js";
-import { getAlternativeGuards } from "./predicates.js";
+import { getAlternativeGuards, getTruthinessPredicate } from "./predicates.js";
+import { parseSymbolicPredicate } from "../symbolic/serialization.js";
 import {
   branchValue,
   listValue,
@@ -87,9 +88,29 @@ export class ModeledPromise implements JournaledState<StaticValue> {
   }
 }
 
+export interface AsyncCompletion {
+  value: StaticValue;
+  condition: StaticValue;
+}
+
 export interface AsyncCall {
   result: ModeledPromise | null;
+  completion?: AsyncCompletion;
 }
+
+export const completeAsyncCall = (call: AsyncCall, tools: PromiseTools): StaticValue => {
+  const promise = call.result;
+  if (!promise) throw new Error("Expected a suspended async invocation");
+  const completion = call.completion;
+  if (completion) {
+    const predicate = parseSymbolicPredicate(getTruthinessPredicate(completion.condition));
+    if (predicate.formula)
+      tools.runTask({ guard: predicate.formula, inputs: predicate.inputs }, () => {
+        settlePromise(promise, completion.value, tools);
+      });
+  }
+  return promise.value;
+};
 
 interface AwaitResumption {
   (outcome: StaticValue, isEscaped: boolean): StaticValue | null;

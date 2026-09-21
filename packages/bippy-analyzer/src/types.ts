@@ -528,11 +528,14 @@ export interface StaticAccessor {
   set: StaticValue | null;
 }
 
-/**
- * An accessor entry's `value` is the uncertain stand-in helpers see without calling the getter.
- * `isEnumerable` is false for properties `Object.defineProperty` created without `enumerable: true`.
- */
-export interface StaticPropertyEntry {
+export interface StaticPropertyAttributes {
+  enumerable?: StaticValue;
+  configurable?: StaticValue;
+  writable?: StaticValue;
+}
+
+/** An accessor entry's `value` is the uncertain stand-in helpers see without calling the getter. */
+export interface StaticPropertyEntry extends StaticPropertyAttributes {
   kind: "property";
   key: string;
   value: StaticValue;
@@ -543,6 +546,8 @@ export interface StaticPropertyEntry {
 export interface StaticSpreadEntry {
   kind: "spread";
   value: StaticValue;
+  /** Joined property state, not a JavaScript object spread. */
+  preservesDescriptors?: boolean;
 }
 
 export type StaticObjectEntry = StaticPropertyEntry | StaticSpreadEntry;
@@ -561,8 +566,7 @@ export interface StaticObjectValue {
   hasObjectPrototype?: boolean;
   /** The object `Object.create(object)` or `new` on a constructor function inherits from. */
   prototype?: StaticObjectValue;
-  /** Passed to `Object.freeze`, so writes no longer land and `Object.isFrozen` answers true. */
-  isFrozen?: boolean;
+  integrity?: StaticValue;
 }
 
 /**
@@ -931,6 +935,7 @@ export type ReactApi =
 export interface Scope {
   parent: Scope | null;
   bindings: Map<string, StaticValue>;
+  isCaptured?: boolean;
   /** Allocation ordinal (see `getAllocationCount`), so writes to its bindings date like heap writes. */
   allocation: number;
 }

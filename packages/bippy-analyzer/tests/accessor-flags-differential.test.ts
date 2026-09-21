@@ -1,7 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
+  checkExpectedDifferentialCases,
 } from "./helpers/differential-evaluator.js";
 
 interface AccessorFlags {
@@ -28,8 +28,6 @@ const cases = flags.flatMap((initial, initialIndex) =>
         const result = `${changesGetter ? 2 : 1}:${changesSetter ? 7 : 3}:${replacement.enumerable ? "value" : ""}`;
         return {
           name,
-          label: `${isAllowed ? "" : "known divergence: "}${name}`,
-          isAllowed,
           body: `
       let stored = 0;
       const target = {};
@@ -44,34 +42,29 @@ const cases = flags.flatMap((initial, initialIndex) =>
       target.value = 3;
       return outcome + ':' + target.value + ':' + stored + ':' + Object.keys(target).join(',');
     `,
-          expected: `TypeError:1:3:${initial.enumerable ? "value" : ""}`,
-          actual: JSON.stringify(`accepted:${result}`),
+          expected: isAllowed
+            ? `accepted:${result}`
+            : `TypeError:1:3:${initial.enumerable ? "value" : ""}`,
         };
       }),
     ),
   ),
 );
 
-it.each(cases)("$label", ({ name, body, isAllowed, expected, actual }) =>
-  isAllowed
-    ? checkDifferentialCases([{ name, body }])
-    : checkKnownDifferentialWitnesses([{ name, body, expected, actual }]),
-);
+it.each(cases)("preserves $name", (testCase) => checkExpectedDifferentialCases([testCase]));
 
 it.each([
   {
     name: "omitted accessor fields retain the existing getter",
     expected: 7,
-    actual: 'unknown(property "value" defined with a dynamic descriptor)',
     body: `const target = {}; Object.defineProperty(target, 'value', { get: () => 7, configurable: true }); Object.defineProperty(target, 'value', { enumerable: true }); return target.value;`,
   },
   {
     name: "accessor-to-data conversion gives omitted value undefined",
     expected: undefined,
-    actual: 'unknown(property "value" defined with a dynamic descriptor)',
     body: `const target = {}; Object.defineProperty(target, 'value', { get: () => 7, configurable: true }); Object.defineProperty(target, 'value', { writable: true }); return target.value;`,
   },
-])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+])("preserves $name", (testCase) => checkExpectedDifferentialCases([testCase]));
 
 it.each([
   {

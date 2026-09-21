@@ -3,7 +3,7 @@ import { getAlternativeGuards } from "../src/evaluate/predicates.js";
 import { getObjectProperty } from "../src/evaluate/values.js";
 import {
   checkSymbolicCases,
-  checkKnownSymbolicCases,
+  checkGuardedCases,
   createSeededRandom,
   differentialSeeds,
   evaluateCases,
@@ -128,4 +128,7 @@ it.each([
     name: "a finalizer preserves the correlation between its write and the return value",
     body: `const state = { value: 0 }; const run = () => { try { if (first) throw 'stop'; return second ? 'left' : 'right'; } finally { state.value = second ? 7 : 8; } }; let result; try { result = run(); } catch (error) { result = 'caught'; } return result + ':' + state.value;`,
   },
-])("known precision gap: $name", (testCase) => checkKnownSymbolicCases([testCase]));
+])("preserves $name", async (testCase) => {
+  await checkGuardedCases([testCase]);
+  await checkSymbolicCases([testCase]);
+});

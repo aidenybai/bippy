@@ -42,16 +42,15 @@ it.each(differentialSeeds)(
 it.each([
   {
     name: "throwing replacer stops later callbacks",
-    expected: "0|caught:stop",
-    actual: JSON.stringify("0|1|2|after"),
     body: `const trace = []; try { 'aaa'.replace(/a/g, (match, offset) => { trace.push(offset); throw 'stop'; }); trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');`,
   },
   {
     name: "throwing second replacer retains only earlier callback effects",
-    expected: "0|1|caught:stop",
-    actual: JSON.stringify("0|1|2|after"),
     body: `const trace = []; try { 'aaa'.replaceAll(/a/g, (match, offset) => { trace.push(offset); if (offset === 1) throw 'stop'; return 'x'; }); trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');`,
   },
+])("preserves $name", (testCase) => checkDifferentialCases([testCase]));
+
+it.each([
   {
     name: "replacer object results are converted before the next callback",
     expected: "callback:0|string:0|callback:1|string:1",

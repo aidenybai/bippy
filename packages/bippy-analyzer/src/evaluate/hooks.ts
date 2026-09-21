@@ -4,17 +4,23 @@ import {
   areValuesEquivalent,
   branchValue,
   compareIdentity,
+  TRUE_VALUE,
+  getTruthiness,
   listValue,
   mapValue,
   unknownValue,
 } from "./values.js";
 
-export interface StateCell {
+export interface HookPendingUpdate {
+  next: StaticValue | null;
+  pendingPresence?: StaticValue;
+  pendingReducerActions: StaticValue | null;
+}
+
+export interface StateCell extends HookPendingUpdate {
   name: string;
   initial: StaticValue;
   current: StaticValue;
-  next: StaticValue | null;
-  pendingReducerActions: StaticValue | null;
   setter: StaticNativeFunctionValue | null;
   deferred: StaticValue[];
   isEscaped: boolean;
@@ -54,7 +60,6 @@ export interface HookFrame {
   memoCells: MemoCell[];
   memoCursor: number;
   effects: EffectRecord[];
-  previousEffects: EffectRecord[];
   isRendering: boolean;
   isDeferred: boolean;
   isFrozen: boolean;
@@ -64,6 +69,7 @@ export interface HookFrame {
   requestRender: (() => void) | null;
   recordUpdateCause: (() => void) | null;
   recordUpdate: ((cell: StateCell) => void) | null;
+  recordIncomingUpdates: (() => void) | null;
 }
 
 export const createHookFrame = (
@@ -75,7 +81,6 @@ export const createHookFrame = (
   memoCells: [],
   memoCursor: 0,
   effects: [],
-  previousEffects: [],
   isRendering: false,
   isDeferred: false,
   isFrozen: false,
@@ -85,6 +90,7 @@ export const createHookFrame = (
   requestRender: null,
   recordUpdateCause: null,
   recordUpdate,
+  recordIncomingUpdates: null,
 });
 
 /**
@@ -112,6 +118,173 @@ export const beginHookPass = (frame: HookFrame): void => {
   frame.didStateChange = false;
   frame.hasRenderPhaseReducerUpdate = false;
   frame.isRendering = true;
+};
+
+export const capturePendingHookUpdate = (cell: HookPendingUpdate): HookPendingUpdate => ({
+  next: cell.next,
+  pendingPresence: cell.pendingPresence,
+  pendingReducerActions: cell.pendingReducerActions,
+});
+
+export const restorePendingHookUpdate = (
+  cell: HookPendingUpdate,
+  update: HookPendingUpdate,
+): void => {
+  cell.next = update.next;
+  cell.pendingPresence = update.pendingPresence;
+  cell.pendingReducerActions = update.pendingReducerActions;
+};
+
+interface HookRenderCellSnapshot extends HookPendingUpdate {
+  cell: StateCell;
+  current: StaticValue;
+  completedUpdate: HookPendingUpdate | null;
+}
+
+interface HookRenderCheckpoint {
+  complete: () => void;
+  discard: () => void;
+  recordIncomingUpdates: () => void;
+}
+
+export interface HookRenderAttempt extends Pick<HookRenderCheckpoint, "complete" | "discard"> {
+  commit: () => void;
+}
+
+const getRebasedReducerActions = (
+  original: StaticValue | null,
+  completed: StaticValue | null,
+  current: StaticValue | null,
+): StaticValue | null => {
+  if (current === completed || current === null) return original;
+  if (original === null && completed === null) return current;
+  return mapValue(original ?? listValue([]), (originalQueue) =>
+    mapValue(completed ?? listValue([]), (completedQueue) =>
+      mapValue(current, (currentQueue) => {
+        if (
+          originalQueue.kind !== "list" ||
+          completedQueue.kind !== "list" ||
+          currentQueue.kind !== "list" ||
+          !completedQueue.items.every((action, index) => action === currentQueue.items[index])
+        ) {
+          return unknownValue("reducer queue cannot be rebased after a discarded render");
+        }
+        return listValue([
+          ...originalQueue.items,
+          ...currentQueue.items.slice(completedQueue.items.length),
+        ]);
+      }),
+    ),
+  );
+};
+
+const getHookRenderCheckpoint = (frame: HookFrame): HookRenderCheckpoint => {
+  const stateCells: HookRenderCellSnapshot[] = frame.cells.map((cell) => ({
+    cell,
+    current: cell.current,
+    ...capturePendingHookUpdate(cell),
+    completedUpdate: null,
+  }));
+  const metadata = {
+    memoCells: [...frame.memoCells],
+    effects: frame.effects,
+    cursor: frame.cursor,
+    memoCursor: frame.memoCursor,
+    isFrozen: frame.isFrozen,
+    didStateChange: frame.didStateChange,
+    hasRenderPhaseReducerUpdate: frame.hasRenderPhaseReducerUpdate,
+  };
+  return {
+    recordIncomingUpdates: () => {
+      for (const snapshot of stateCells) {
+        const completed = snapshot.completedUpdate;
+        if (!completed) continue;
+        const pending = capturePendingHookUpdate(snapshot.cell);
+        if (
+          pending.next !== completed.next ||
+          pending.pendingPresence !== completed.pendingPresence
+        ) {
+          snapshot.next = pending.next;
+          snapshot.pendingPresence = pending.pendingPresence;
+        }
+        snapshot.pendingReducerActions = getRebasedReducerActions(
+          snapshot.pendingReducerActions,
+          completed.pendingReducerActions,
+          pending.pendingReducerActions,
+        );
+        snapshot.completedUpdate = null;
+      }
+    },
+    complete: () => {
+      for (const snapshot of stateCells) {
+        snapshot.completedUpdate = capturePendingHookUpdate(snapshot.cell);
+      }
+    },
+    discard: () => {
+      frame.cells = stateCells.map(
+        ({ cell, current, next, pendingPresence, pendingReducerActions, completedUpdate }) => {
+          cell.current = current;
+          if (
+            !completedUpdate ||
+            (cell.next === completedUpdate.next &&
+              cell.pendingPresence === completedUpdate.pendingPresence)
+          ) {
+            cell.next = next;
+            cell.pendingPresence = pendingPresence;
+          }
+          cell.pendingReducerActions = completedUpdate
+            ? getRebasedReducerActions(
+                pendingReducerActions,
+                completedUpdate.pendingReducerActions,
+                cell.pendingReducerActions,
+              )
+            : pendingReducerActions;
+          return cell;
+        },
+      );
+      Object.assign(frame, metadata);
+    },
+  };
+};
+
+export const createHookRenderAttempt = (frame: HookFrame): HookRenderAttempt => {
+  if (frame.recordIncomingUpdates) throw new Error("Hook frame already has a render attempt");
+  let checkpoint: HookRenderCheckpoint | null = getHookRenderCheckpoint(frame);
+  frame.recordIncomingUpdates = checkpoint.recordIncomingUpdates;
+  const finish = (): HookRenderCheckpoint | null => {
+    const previous = checkpoint;
+    if (previous) {
+      frame.recordIncomingUpdates = null;
+      checkpoint = null;
+    }
+    return previous;
+  };
+  return {
+    complete: () => checkpoint?.complete(),
+    commit: () => {
+      finish();
+    },
+    discard: () => finish()?.discard(),
+  };
+};
+
+export const runHookRender = <Result>(
+  frame: HookFrame,
+  render: () => Result,
+  pendingAttempt?: HookRenderAttempt,
+): Result => {
+  const attempt = pendingAttempt ?? createHookRenderAttempt(frame);
+  try {
+    const result = render();
+    if (pendingAttempt) attempt.complete();
+    else attempt.commit();
+    return result;
+  } catch (error) {
+    attempt.discard();
+    throw error;
+  } finally {
+    frame.isRendering = false;
+  }
 };
 
 export const nextStateCell = (
@@ -168,6 +341,19 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
     getStatePredicate(cell, cell.name),
   );
 
+export const getQueuedState = (cell: StateCell): StaticValue => {
+  const next = cell.next;
+  if (next === null) return cell.current;
+  if (cell.pendingPresence === undefined) return next;
+  return mapValue(cell.pendingPresence, (presence) =>
+    presence.kind === "primitive" && typeof presence.value === "boolean"
+      ? presence.value
+        ? next
+        : cell.current
+      : unknownValue("state update has unresolved eligibility"),
+  );
+};
+
 /**
  * The value the next pass commits: an escaped cell takes every value it may
  * hold; a cell with deferred updates holds the synchronous state or any value
@@ -175,9 +361,10 @@ export const escapedStateValue = (cell: StateCell): StaticValue =>
  */
 const pendingStateValue = (cell: StateCell): StaticValue | null => {
   if (cell.isEscaped) return escapedStateValue(cell);
-  if (cell.deferred.length === 0) return cell.next;
+  const next = cell.next === null ? null : getQueuedState(cell);
+  if (cell.deferred.length === 0) return next;
   return branchValue(
-    [cell.next ?? cell.current, ...cell.deferred],
+    [next ?? cell.current, ...cell.deferred],
     "state set by a continuation that may run after the commit",
     null,
     0,
@@ -186,9 +373,9 @@ const pendingStateValue = (cell: StateCell): StaticValue | null => {
 };
 
 /**
- * Mirrors `dispatchSetState`: an update that leaves the value the cell will
- * commit unchanged is dropped eagerly. An escaped cell already commits to every
- * value it may take, so further updates cannot change it either. An update
+ * An unchanged update queued outside render stays pending for a later rebase
+ * without requesting a render. An escaped cell already commits to every value
+ * it may take, so further updates cannot change it either. An update
  * queued by a continuation whose timing is unknown is kept as one more value
  * the cell may hold rather than the value it holds.
  */
@@ -204,14 +391,22 @@ export const queueStateUpdate = (
     frame.recordUpdate?.(cell);
     cell.deferred.push(value);
   } else {
-    if (isSameHookValue(value, cell.next ?? cell.current)) {
-      if (cell.next !== null && !frame.isRendering && !isSameHookValue(value, cell.current)) {
-        frame.recordUpdateCause?.();
+    if (isSameHookValue(value, getQueuedState(cell))) {
+      if (!frame.isRendering) {
+        if (
+          cell.next === null ||
+          (cell.pendingPresence !== undefined && getTruthiness(cell.pendingPresence) !== true)
+        ) {
+          frame.recordUpdate?.(cell);
+          cell.next = value;
+          cell.pendingPresence = TRUE_VALUE;
+        } else if (!isSameHookValue(value, cell.current)) frame.recordUpdateCause?.();
       }
       return;
     }
     frame.recordUpdate?.(cell);
     cell.next = value;
+    cell.pendingPresence = TRUE_VALUE;
   }
   if (!frame.isRendering) frame.requestRender?.();
 };
@@ -280,7 +475,7 @@ export const escapeReducerDispatch = (
   reduce: (state: StaticValue) => StaticValue,
 ): void => {
   if (cell.isEscaped) return;
-  const held = [cell.current, ...(cell.next ? [cell.next] : []), ...cell.deferred];
+  const held = [cell.current, ...(cell.next ? [getQueuedState(cell)] : []), ...cell.deferred];
   const reachable = [...held];
   for (let index = 0; index < reachable.length; index += 1) {
     const next = reduce(reachable[index]);
@@ -297,6 +492,7 @@ export const escapeReducerDispatch = (
 export const applyPendingState = (cell: StateCell, isFrozen = false): boolean => {
   const next = pendingStateValue(cell);
   cell.next = null;
+  cell.pendingPresence = undefined;
   if (next === null || isFrozen || isSameHookValue(next, cell.current)) return false;
   cell.current = next;
   return true;
@@ -304,6 +500,7 @@ export const applyPendingState = (cell: StateCell, isFrozen = false): boolean =>
 
 /** Applies eager updates and returns cells with changed values or reducer work. */
 export const commitHookPass = (frame: HookFrame): StateCell[] => {
+  if (!frame.isRendering) frame.recordIncomingUpdates?.();
   const hasReducerWork = !frame.isRendering || frame.hasRenderPhaseReducerUpdate;
   frame.isRendering = false;
   frame.didStateChange = false;
@@ -320,7 +517,7 @@ export const giveUpOnHookPass = (frame: HookFrame, cells: StateCell[]): void => 
   for (const cell of cells) cell.current = unknownValue(`${cell.name} keeps updating after mount`);
 };
 
-const areDepsEqual = (left: StaticValue | null, right: StaticValue | null): boolean =>
+export const areDepsEqual = (left: StaticValue | null, right: StaticValue | null): boolean =>
   left !== null &&
   right !== null &&
   left.kind === "list" &&
@@ -335,49 +532,55 @@ const CALLABLE_CLEANUP_KINDS = new Set<StaticValue["kind"]>([
   "unknown",
 ]);
 
-/** `commitHookEffectListUnmount` for one effect; React only warns about a non-function return. */
-const runCleanup = (effect: EffectRecord | undefined, call: EffectCall): void => {
-  if (effect?.cleanup && CALLABLE_CLEANUP_KINDS.has(effect.cleanup.kind)) call(effect.cleanup);
+const runCleanup = (cleanup: StaticValue | null | undefined, call: EffectCall): void => {
+  if (cleanup && CALLABLE_CLEANUP_KINDS.has(cleanup.kind)) call(cleanup);
 };
 
-/**
- * The commit's effects of one phase: those whose dependency list changed since
- * the last commit clean up and run again, the others keep their cleanup, as
- * `updateEffectImpl` decides. Cleanups run before any effect, as React unmounts
- * the whole phase before mounting it.
- */
-export const runChangedEffects = (frame: HookFrame, isLayout: boolean, call: EffectCall): void => {
+export const mountEffect = (effect: EffectRecord, call: EffectCall): (() => void) => {
+  const cleanup = call(effect.callback);
+  return () => runCleanup(cleanup, call);
+};
+
+export const runChangedEffects = (
+  effects: readonly EffectRecord[],
+  previousEffects: readonly EffectRecord[],
+  isLayout: boolean,
+  call: EffectCall,
+): void => {
   const changed: EffectRecord[] = [];
-  frame.effects.forEach((effect, index) => {
+  effects.forEach((effect, index) => {
     if (effect.isLayout !== isLayout) return;
-    const previous = frame.previousEffects[index];
+    const previous = previousEffects[index];
     if (previous && areDepsEqual(effect.deps, previous.deps)) {
       effect.cleanup = previous.cleanup;
       return;
     }
-    runCleanup(previous, call);
+    runCleanup(previous?.cleanup, call);
     changed.push(effect);
   });
   for (const effect of changed) effect.cleanup = call(effect.callback);
 };
 
 /** `reappearLayoutEffects`/`reconnectPassiveEffects`: every effect of the phase mounts again. */
-export const mountAllEffects = (frame: HookFrame, isLayout: boolean, call: EffectCall): void => {
-  for (const effect of frame.effects) {
+export const mountAllEffects = (
+  effects: readonly EffectRecord[],
+  isLayout: boolean,
+  call: EffectCall,
+): void => {
+  for (const effect of effects) {
     if (effect.isLayout === isLayout) effect.cleanup = call(effect.callback);
   }
 };
 
 /** `disappearLayoutEffects`/`disconnectPassiveEffects` and deletion: every cleanup of the phase runs. */
-export const unmountAllEffects = (frame: HookFrame, isLayout: boolean, call: EffectCall): void => {
-  for (const effect of frame.effects) {
+export const unmountAllEffects = (
+  effects: readonly EffectRecord[],
+  isLayout: boolean,
+  call: EffectCall,
+): void => {
+  for (const effect of effects) {
     if (effect.isLayout !== isLayout) continue;
-    runCleanup(effect, call);
+    runCleanup(effect.cleanup, call);
     effect.cleanup = null;
   }
-};
-
-/** The effects of the pass that reached the commit become the baseline later passes diff against. */
-export const commitEffects = (frame: HookFrame): void => {
-  frame.previousEffects = frame.effects;
 };

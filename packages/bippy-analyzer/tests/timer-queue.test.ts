@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { HeapJournal } from "../src/evaluate/heap-journal.js";
 import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
-import { TimerQueue } from "../src/evaluate/timers.js";
+import { MAX_TIMER_TASKS, TimerQueue, type ScheduledTask } from "../src/evaluate/timers.js";
 import {
   areValuesEquivalent,
   branchValue,
@@ -10,6 +10,88 @@ import {
 } from "../src/evaluate/values.js";
 
 describe("guarded timer cancellation", () => {
+  it("retains consumed work for a sibling execution path", () => {
+    let journal: HeapJournal | null = null;
+    const queue = new TimerQueue(undefined, undefined, (state) => journal?.recordState(state));
+    let calls = 0;
+    queue.enqueue(() => {
+      calls++;
+    });
+    journal = new HeapJournal();
+    queue.runNextTask();
+    expect(calls).toBe(1);
+    expect(queue.hasTasks()).toBe(false);
+    journal.endPath();
+    expect(queue.hasTasks()).toBe(true);
+    queue.runNextTask();
+    expect(calls).toBe(2);
+    journal.endPath();
+    journal.join("both paths consumed the task", null, 0, createPathPredicate("path", null));
+    expect(queue.hasTasks()).toBe(false);
+  });
+
+  it("restores unhandled continuation registration on a discarded path", () => {
+    const journal = new HeapJournal();
+    const queue = new TimerQueue(undefined, undefined, (state) => journal.recordState(state));
+    let calls = 0;
+    queue.enqueue(() => {
+      calls++;
+    });
+    journal.restore();
+    expect(queue.hasTasks()).toBe(false);
+    queue.runNextTask();
+    expect(calls).toBe(0);
+  });
+
+  it("gives nested work its registration identity and parent", () => {
+    const queue = new TimerQueue();
+    const tasks: ScheduledTask[] = [];
+    queue.schedule(queue.createHandle("timer"), () => {
+      if (!queue.currentTask) throw new Error("Expected active timer");
+      tasks.push(queue.currentTask);
+      queue.queueMicrotask(() => {
+        if (!queue.currentTask) throw new Error("Expected active microtask");
+        tasks.push(queue.currentTask);
+      });
+    });
+    queue.runNextTask();
+    expect(tasks.map((task) => [task.id, task.kind])).toEqual([
+      [1, "timer"],
+      [2, "microtask"],
+    ]);
+    expect(tasks[0].parent).toBeNull();
+    expect(tasks[1].parent).toBe(tasks[0]);
+    expect(queue.currentTask).toBeNull();
+  });
+
+  it("bounds a microtask checkpoint without letting a timer overtake remaining work", () => {
+    const queue = new TimerQueue();
+    let calls = 0;
+    const repeat = () => {
+      calls++;
+      queue.queueMicrotask(repeat);
+    };
+    queue.queueMicrotask(repeat);
+    let didRunTimer = false;
+    queue.enqueue(() => {
+      didRunTimer = true;
+    });
+    queue.runNextTask();
+    expect(calls).toBe(MAX_TIMER_TASKS);
+    expect(queue.hasMicrotasks()).toBe(true);
+    expect(didRunTimer).toBe(false);
+  });
+
+  it("restores task execution context after an internal failure", () => {
+    const queue = new TimerQueue();
+    const failure = new Error("internal failure");
+    queue.enqueue(() => {
+      throw failure;
+    });
+    expect(() => queue.runNextTask()).toThrow(failure);
+    expect(queue.currentTask).toBeNull();
+    expect(queue.isFlushing).toBe(false);
+  });
   it("does not interrupt a running microtask with a nested checkpoint", () => {
     const queue = new TimerQueue();
     const order: string[] = [];

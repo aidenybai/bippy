@@ -1,13 +1,22 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type { ClockReading, ClockTask, JournaledState, StaticValue } from "../types.js";
 import { rangedNumberValue } from "./number-ranges.js";
-import { recordInputSource } from "./predicates.js";
+import { getTruthinessPredicate, recordInputSource } from "./predicates.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import {
+  andGuard,
+  combineGuardContexts,
+  constantGuard,
+  type Guard,
+  type GuardContext,
+} from "../symbolic/guards.js";
+import { parseSymbolicPredicate } from "../symbolic/serialization.js";
 import { branchValue, FALSE_VALUE, getTruthiness, primitiveValue, TRUE_VALUE } from "./values.js";
 
 const getHandleIdentity = (handle: StaticValue): object =>
   handle.kind === "unknown-primitive" ? (handle.identity ?? handle) : handle;
 
-class TimerCancellation implements JournaledState<StaticValue> {
+class TaskFlag implements JournaledState<StaticValue> {
   readonly allocation = 0;
 
   constructor(public value: StaticValue) {}
@@ -29,6 +38,16 @@ class TimerCancellation implements JournaledState<StaticValue> {
   ): void {
     this.value = branchValue(values, reason, location, preferredPath, predicate);
   }
+}
+
+export interface ScheduledTask {
+  readonly id: number;
+  readonly kind: "timer" | "microtask" | "continuation";
+  readonly parent: ScheduledTask | null;
+  readonly cause: GuardContext;
+  readonly handle: StaticValue | null;
+  readonly pending: TaskFlag;
+  readonly callback: () => void;
 }
 
 /** The quiet window (no React commit) after which the runtime snapshot is taken. */
@@ -61,9 +80,11 @@ export const MAX_TIMER_TASKS = 512;
  * that scheduled it.
  */
 export class TimerQueue {
-  private tasks: (() => void)[] = [];
-  private microtasks: (() => void)[] = [];
-  private readonly cancellations = new WeakMap<object, TimerCancellation>();
+  private readonly tasks: ScheduledTask[] = [];
+  private readonly microtasks: ScheduledTask[] = [];
+  private nextTaskId = 0;
+  private activeTask: ScheduledTask | null = null;
+  private readonly cancellations = new WeakMap<object, TaskFlag>();
   private clockSequence = 0;
   private clockTask: ClockTask = { scheduledBy: null, delayMs: 0 };
   private deferredDepth = 0;
@@ -71,7 +92,9 @@ export class TimerQueue {
   private isDrainingMicrotasks = false;
   isClockSettled = false;
   isFlushing = false;
-  bindTask = (task: () => void): (() => void) => task;
+  getCause = (): GuardContext => ({ guard: constantGuard(true), inputs: [] });
+  isTaskPossible = (guard: Guard): boolean => areGuardsSatisfiable([guard]);
+  runWithCause = (_cause: GuardContext, task: () => void): void => task();
 
   constructor(
     private readonly settleMs = DEFAULT_SETTLE_MS,
@@ -88,6 +111,10 @@ export class TimerQueue {
       return Math.max(0, delay.value);
     }
     return null;
+  }
+
+  get currentTaskId(): number | null {
+    return this.activeTask?.id ?? null;
   }
 
   /** True while running a continuation of a promise that settles outside the analysis: its position on this timeline is unknown, so it may or may not have run by the captured commit. */
@@ -127,25 +154,85 @@ export class TimerQueue {
   activate(handle: StaticValue): void {
     const identity = getHandleIdentity(handle);
     if (this.cancellations.has(identity)) return;
-    const cancellation = new TimerCancellation(TRUE_VALUE);
+    const cancellation = new TaskFlag(TRUE_VALUE);
     this.cancellations.set(identity, cancellation);
     this.recordMutation(cancellation);
     cancellation.value = FALSE_VALUE;
   }
 
+  get currentTask(): ScheduledTask | null {
+    return this.activeTask;
+  }
+
+  private createTask(
+    kind: ScheduledTask["kind"],
+    callback: () => void,
+    handle: StaticValue | null = null,
+  ): ScheduledTask {
+    const pending = new TaskFlag(FALSE_VALUE);
+    this.recordMutation(pending);
+    pending.value = TRUE_VALUE;
+    return {
+      id: ++this.nextTaskId,
+      kind,
+      parent: this.activeTask,
+      cause: this.getCause(),
+      handle,
+      pending,
+      callback,
+    };
+  }
+
+  private getTaskCause(task: ScheduledTask): GuardContext | null {
+    const pending = getTruthiness(task.pending.value);
+    const cancellation = task.handle ? this.getCancellation(task.handle) : FALSE_VALUE;
+    const isCancelled = getTruthiness(cancellation);
+    if (pending === false || isCancelled === true) return null;
+    const causes = [task.cause];
+    for (const [value, isNegated] of [
+      [task.pending.value, false],
+      [cancellation, true],
+    ] satisfies Array<[StaticValue, boolean]>) {
+      if (getTruthiness(value) !== null) continue;
+      const predicate = parseSymbolicPredicate(getTruthinessPredicate(value, isNegated));
+      if (predicate.formula) causes.push({ guard: predicate.formula, inputs: predicate.inputs });
+    }
+    const cause = combineGuardContexts(causes, andGuard);
+    return this.isTaskPossible(cause.guard) ? cause : null;
+  }
+
+  private runScheduledTask(task: ScheduledTask, cause: GuardContext): void {
+    this.runWithCause(cause, () => {
+      const previous = this.activeTask;
+      this.activeTask = task;
+      try {
+        this.recordMutation(task.pending);
+        task.pending.value = FALSE_VALUE;
+        task.callback();
+      } finally {
+        this.activeTask = previous;
+      }
+    });
+  }
+
   schedule(handle: StaticValue, task: () => void, delayMs = 0): void {
     this.activate(handle);
     const scheduledBy = this.clockTask;
-    this.enqueue(() => {
-      if (this.isCleared(handle)) return;
-      this.clockTask = { scheduledBy, delayMs };
-      task();
-    });
+    this.tasks.push(
+      this.createTask(
+        "timer",
+        () => {
+          this.clockTask = { scheduledBy, delayMs };
+          task();
+        },
+        handle,
+      ),
+    );
   }
 
   /** Queues `task` for the next round, like a short timer that cannot be cleared. */
   enqueue(task: () => void): void {
-    this.tasks.push(this.bindTask(task));
+    this.tasks.push(this.createTask("continuation", task));
   }
 
   clear(handle: StaticValue | undefined): void {
@@ -166,19 +253,11 @@ export class TimerQueue {
 
   queueMicrotask(task: () => void, handle?: StaticValue): void {
     if (handle) this.activate(handle);
-    this.microtasks.push(
-      this.bindTask(
-        handle
-          ? () => {
-              if (!this.isCleared(handle)) task();
-            }
-          : task,
-      ),
-    );
+    this.microtasks.push(this.createTask("microtask", task, handle));
   }
 
   hasMicrotasks(): boolean {
-    return this.microtasks.length > 0;
+    return this.microtasks.some((task) => this.getTaskCause(task) !== null);
   }
 
   /** Runs microtasks until none remain, including those they queue. */
@@ -186,14 +265,20 @@ export class TimerQueue {
     if (this.isDrainingMicrotasks) return;
     this.isDrainingMicrotasks = true;
     try {
-      for (let task = this.microtasks.shift(); task; task = this.microtasks.shift()) task();
+      let executed = 0;
+      for (const task of this.microtasks) {
+        const cause = this.getTaskCause(task);
+        if (!cause) continue;
+        this.runScheduledTask(task, cause);
+        if (++executed >= MAX_TIMER_TASKS) break;
+      }
     } finally {
       this.isDrainingMicrotasks = false;
     }
   }
 
   hasTasks(): boolean {
-    return this.tasks.length > 0;
+    return this.tasks.some((task) => this.getTaskCause(task) !== null);
   }
 
   /** One turn of the event loop: the microtasks due, the next timer task, then the microtasks it queued. */
@@ -201,10 +286,13 @@ export class TimerQueue {
     this.isFlushing = true;
     try {
       this.drainMicrotasks();
-      const task = this.tasks.shift();
-      if (task) {
-        task();
+      if (this.hasMicrotasks()) return;
+      for (const task of this.tasks) {
+        const cause = this.getTaskCause(task);
+        if (!cause) continue;
+        this.runScheduledTask(task, cause);
         this.drainMicrotasks();
+        break;
       }
     } finally {
       this.isFlushing = false;

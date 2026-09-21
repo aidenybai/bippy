@@ -21,6 +21,7 @@ export interface StatementOutcome {
   returned: StaticValue | null;
   mayComplete: boolean;
   completion?: StaticValue;
+  settlementCondition?: StaticValue;
   /** Set when some path left the enclosing loop early; labeled jumps are `uncertain`. */
   jump: LoopJump | "uncertain" | null;
   /** The list stopped at an `await` of a pending promise; its rest runs once that settles. */
@@ -63,8 +64,16 @@ export const returnOutcome = (value: StaticValue): StatementOutcome => ({
 
 export const getCompletionValue = (outcome: StatementOutcome): StaticValue => {
   if (!outcome.mayComplete) return FALSE_VALUE;
-  if (outcome.returned === null && outcome.jump === null) return TRUE_VALUE;
+  if (outcome.returned === null && outcome.jump === null && !outcome.isSuspended) return TRUE_VALUE;
   return outcome.completion ?? unknownPrimitiveValue("boolean", "statement may complete");
+};
+
+export const getSettlementCondition = (outcome: StatementOutcome): StaticValue => {
+  if (!outcome.isSuspended) return TRUE_VALUE;
+  if (outcome.returned === null && !outcome.mayComplete) return FALSE_VALUE;
+  return (
+    outcome.settlementCondition ?? unknownPrimitiveValue("boolean", "async invocation may settle")
+  );
 };
 
 export const outcomeToReturnValue = (
@@ -86,10 +95,13 @@ const isThrowingOutcome = (outcome: StatementOutcome): boolean =>
   outcome.returned !== null && getThrowCertainty(outcome.returned) === "always";
 
 export const isPureReturn = (outcome: StatementOutcome): boolean =>
-  outcome.returned !== null && !outcome.mayComplete && outcome.jump === null;
+  outcome.returned !== null &&
+  !outcome.mayComplete &&
+  outcome.jump === null &&
+  !outcome.isSuspended;
 
 export const isPureCompletion = (outcome: StatementOutcome): boolean =>
-  outcome.returned === null && outcome.mayComplete && outcome.jump === null;
+  outcome.returned === null && outcome.mayComplete && outcome.jump === null && !outcome.isSuspended;
 
 /** A path that certainly throws is never what a rendered tree took; prefer the first path that may produce a value. */
 export const getPreferredOutcome = (
@@ -139,6 +151,13 @@ export const mergeOutcomes = (
     mayComplete: outcomes.some((outcome) => outcome.mayComplete),
     completion: branchValue(
       outcomes.map(getCompletionValue),
+      reason,
+      location,
+      preferredOutcome,
+      predicate,
+    ),
+    settlementCondition: branchValue(
+      outcomes.map(getSettlementCondition),
       reason,
       location,
       preferredOutcome,

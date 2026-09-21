@@ -1,7 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
+  checkExpectedDifferentialCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -44,24 +44,16 @@ const dataCases = Array.from({ length: 8 }, (_value, flags) => ({
   flags,
 })).flatMap(({ writable, configurable, enumerable, flags }) =>
   [false, true].map((bulk) => {
-    const isKnown = !writable || !configurable;
     const name = `data flags=${flags}/bulk=${bulk}`;
     return {
       name,
-      label: `${isKnown ? "known divergence: " : ""}${name}`,
-      isKnown,
       body: `const target = {}; Object.defineProperty(target, 'value', { value: 7, writable: ${writable}, configurable: ${configurable}, enumerable: ${enumerable} }); const descriptor = ${bulk ? "Object.getOwnPropertyDescriptors(target).value" : "Object.getOwnPropertyDescriptor(target, 'value')"}; return descriptor.value + ':' + descriptor.writable + ':' + descriptor.configurable + ':' + descriptor.enumerable;`,
       expected: `7:${writable}:${configurable}:${enumerable}`,
-      actual: JSON.stringify(`7:true:true:${enumerable}`),
     };
   }),
 );
 
-it.each(dataCases)("$label", ({ name, body, isKnown, expected, actual }) =>
-  isKnown
-    ? checkKnownDifferentialWitnesses([{ name, body, expected, actual }])
-    : checkDifferentialCases([{ name, body }]),
-);
+it.each(dataCases)("preserves $name", (testCase) => checkExpectedDifferentialCases([testCase]));
 
 const accessorCases = Array.from({ length: 4 }, (_value, flags) => ({
   configurable: (flags & 1) !== 0,
@@ -72,17 +64,10 @@ const accessorCases = Array.from({ length: 4 }, (_value, flags) => ({
     const name = `accessor flags=${flags}/bulk=${bulk}`;
     return {
       name,
-      label: `${configurable ? "" : "known divergence: "}${name}`,
-      configurable,
       body: `let calls = 0; const getter = () => { calls++; return 7; }; const target = {}; Object.defineProperty(target, 'value', { get: getter, configurable: ${configurable}, enumerable: ${enumerable} }); const descriptor = ${bulk ? "Object.getOwnPropertyDescriptors(target).value" : "Object.getOwnPropertyDescriptor(target, 'value')"}; return (descriptor.get === getter) + ':' + String(descriptor.set) + ':' + descriptor.configurable + ':' + descriptor.enumerable + ':' + calls;`,
       expected: `true:undefined:${configurable}:${enumerable}:0`,
-      actual: JSON.stringify(`true:undefined:true:${enumerable}:0`),
     };
   }),
 );
 
-it.each(accessorCases)("$label", ({ name, body, configurable, expected, actual }) =>
-  configurable
-    ? checkDifferentialCases([{ name, body }])
-    : checkKnownDifferentialWitnesses([{ name, body, expected, actual }]),
-);
+it.each(accessorCases)("preserves $name", (testCase) => checkExpectedDifferentialCases([testCase]));

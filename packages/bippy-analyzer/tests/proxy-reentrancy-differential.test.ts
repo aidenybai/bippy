@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkExpectedDifferentialCases,
   checkKnownDifferentialWitnesses,
   createSeededRandom,
   differentialSeeds,
@@ -90,12 +91,6 @@ it.each([
     body: `const target = {}; Object.defineProperty(target, 'value', { value: 1 }); const proxy = new Proxy(target, { get: () => 2 }); try { return 'value:' + proxy.value; } catch (error) { return error.name; }`,
   },
   {
-    name: "has invariant for non-configurable data",
-    expected: "TypeError",
-    actual: 'branch("true" | "false")',
-    body: `const target = {}; Object.defineProperty(target, 'value', { value: 1 }); const proxy = new Proxy(target, { has: () => false }); try { return String('value' in proxy); } catch (error) { return error.name; }`,
-  },
-  {
     name: "delete invariant for non-configurable data",
     expected: "TypeError",
     actual: JSON.stringify("true"),
@@ -108,6 +103,15 @@ it.each([
     body: `const proxy = new Proxy({}, { ownKeys: () => ['value', 'value'] }); try { return Reflect.ownKeys(proxy).join(','); } catch (error) { return error.name; }`,
   },
 ])("known divergence: respects $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+
+it("enforces the has invariant for non-configurable data", () =>
+  checkExpectedDifferentialCases([
+    {
+      name: "has invariant for non-configurable data",
+      expected: "TypeError",
+      body: `const target = {}; Object.defineProperty(target, 'value', { value: 1 }); const proxy = new Proxy(target, { has: () => false }); try { return String('value' in proxy); } catch (error) { return error.name; }`,
+    },
+  ]));
 
 it.each([
   {

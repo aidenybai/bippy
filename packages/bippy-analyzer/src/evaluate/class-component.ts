@@ -23,6 +23,7 @@ import {
   applyPendingState,
   createHookFrame,
   escapeStateCell,
+  getQueuedState,
   nextStateCell,
   queueStateUpdate,
   type EffectCall,
@@ -570,7 +571,7 @@ const mountClassInstance = (
     kind: "native-function",
     name: "setState",
     call: ([partialState, callback], tools) => {
-      const previousState = stateCell.next ?? stateCell.current;
+      const previousState = getQueuedState(stateCell);
       const resolvedPartial = isCallable(partialState)
         ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
         : (partialState ?? UNDEFINED_VALUE);
@@ -590,7 +591,7 @@ const mountClassInstance = (
         stateCell,
         partialState === null || isCallable(partialState)
           ? null
-          : mergeState(stateCell.next ?? stateCell.current, partialState ?? UNDEFINED_VALUE),
+          : mergeState(getQueuedState(stateCell), partialState ?? UNDEFINED_VALUE),
       );
     },
   };

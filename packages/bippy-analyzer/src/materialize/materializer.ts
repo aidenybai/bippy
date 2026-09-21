@@ -12,15 +12,20 @@ import {
 import type { EvaluationContext } from "../evaluate/context.js";
 import { isUserDrivenEventHandlerProp } from "../evaluate/event-listeners.js";
 import {
+  areDepsEqual,
   beginHookPass,
-  commitEffects,
   commitHookPass,
   createHookFrame,
+  createHookRenderAttempt,
   type EffectCall,
+  type EffectRecord,
   giveUpOnHookPass,
   type HookFrame,
+  type HookRenderAttempt,
   mountAllEffects,
+  mountEffect,
   runChangedEffects,
+  runHookRender,
   unmountAllEffects,
 } from "../evaluate/hooks.js";
 import type { Interpreter } from "../evaluate/interpreter.js";
@@ -48,6 +53,7 @@ import {
   NULL_VALUE,
   objectFromRecord,
   omitObjectKeys,
+  UNDEFINED_VALUE,
   unknownValue,
 } from "../evaluate/values.js";
 import { isClientModule } from "../graph/module-record.js";
@@ -166,6 +172,8 @@ interface DecisionScope {
  * boundary so in the layout phase of whichever proxy rendered it.
  */
 interface SuspenseScope {
+  parent: SuspenseScope | null;
+  pendingRenders: Set<HookRenderAttempt>;
   maySuspend: boolean;
   commit: () => void;
 }
@@ -231,9 +239,11 @@ interface ErrorBoundaryState {
 interface ProxyInstance {
   frame: HookFrame;
   passCount: number;
-  isRenderedSinceCommit: boolean;
-  committed: CommittedRender | null;
-  rendered: CommittedRender | null;
+  committed: RenderPass | null;
+  rendered: RenderPass | null;
+  layoutRender: RenderPass | null;
+  passiveRender: RenderPass | null;
+  pendingRender: HookRenderAttempt | null;
 }
 
 /** One context value a render read, so the next render can tell whether it changed. */
@@ -242,13 +252,13 @@ interface ContextRead {
   value: StaticValue | null;
 }
 
-/** What a proxy last committed (its `current`), so an update that changes nothing bails out as React's would. */
-interface CommittedRender {
+interface RenderPass {
   input: ProxyInput;
   context: MaterializeContext;
   node: ReactNode;
   contextReads: ContextRead[];
   componentContext: EvaluationContext | null;
+  effects: EffectRecord[];
 }
 
 interface EffectPhaseWork {
@@ -258,6 +268,14 @@ interface EffectPhaseWork {
 
 interface StatefulRender extends EffectPhaseWork {
   node: ReactNode;
+  effects: EffectRecord[];
+  callEffect: EffectCall;
+  commit: () => void;
+}
+
+interface EffectDependency {
+  effect: EffectRecord;
+  token: object;
 }
 
 /** How a class proxy instance hands its persistent state and commit hooks to the materializer. */
@@ -279,9 +297,11 @@ const createProxyInstance = (
     (cell) => interpreter.recordStateUpdate(cell),
   ),
   passCount: 0,
-  isRenderedSinceCommit: false,
   committed: null,
   rendered: null,
+  layoutRender: null,
+  passiveRender: null,
+  pendingRender: null,
 });
 
 interface CompositeEvaluation {
@@ -588,10 +608,11 @@ export class Materializer {
   private readonly serverEnvironment = new ServerEnvironmentStamper();
   private isBudgetExhausted = false;
   readonly commitCauses = new CommitCauses(
-    (cause, run) => this.interpreter.runWithGuard(cause.guard, run),
+    (cause, run) => this.interpreter.runWithGuard(cause.guard, run, cause.inputs),
     (guard) => this.interpreter.isTaskPossible(guard),
   );
   private readonly frameCauses = new WeakMap<HookFrame, GuardContext>();
+  private readonly pendingRenders = new Set<HookRenderAttempt>();
   /** Set by the first layout effect of a commit, cleared by its first passive effect. */
   private isPassivePhasePending = false;
   /** A state update was raised in the layout phase, so React renders it synchronously. */
@@ -637,7 +658,10 @@ export class Materializer {
     options: MaterializerOptions = {},
   ) {
     this.interpreter = interpreter;
-    interpreter.timers.bindTask = (task) => this.commitCauses.bindTask(task);
+    const getEvaluationCause = interpreter.timers.getCause;
+    interpreter.timers.getCause = () =>
+      combineGuardContexts([getEvaluationCause(), this.commitCauses.getCause()], andGuard);
+    interpreter.timers.runWithCause = (cause, task) => this.commitCauses.runTask(cause, task);
     interpreter.runTaskWithCause = (cause, task, context, location) =>
       this.commitCauses.runTask(cause, () =>
         this.runGuardedMutation(
@@ -1838,10 +1862,11 @@ export class Materializer {
     const { useRef, useState, useEffect, useLayoutEffect } = this.runtime.react;
     const instanceRef = useRef<ProxyInstance | null>(null);
     instanceRef.current ??= createProxyInstance(input.context, this.interpreter);
+    const committedDependencies = useRef<EffectDependency[]>([]);
     const [, setPass] = useState(0);
     const props = applyDefaultProps(component, input.props);
     const context = this.renderContext(input);
-    const { node, mount, unmount } = this.renderStateful(
+    const { node, effects, callEffect, commit } = this.renderStateful(
       input,
       context,
       component,
@@ -1864,16 +1889,33 @@ export class Materializer {
             ),
         ),
     );
+    const dependencies = effects.map((effect, index): EffectDependency => {
+      const previous = committedDependencies.current[index];
+      return {
+        effect,
+        token:
+          previous &&
+          (previous.effect === effect || areDepsEqual(previous.effect.deps, effect.deps))
+            ? previous.token
+            : {},
+      };
+    });
     useLayoutEffect(() => {
       this.beginLayoutPhase();
       this.commitSuspenseScope(input.context.suspenseScope);
-      mount(true);
-      return () => unmount(true);
+      committedDependencies.current = dependencies;
+      commit();
+      return () => this.beginLayoutPhase();
     });
     useEffect(() => {
       this.beginPassivePhase();
-      mount(false);
-      return () => unmount(false);
+      committedDependencies.current = dependencies;
+      commit();
+      return () => this.beginPassivePhase();
+    });
+    effects.forEach((effect, index) => {
+      const usePhaseEffect = effect.isLayout ? useLayoutEffect : useEffect;
+      usePhaseEffect(() => mountEffect(effect, callEffect), [dependencies[index].token]);
     });
     return node;
   }
@@ -1899,6 +1941,37 @@ export class Materializer {
     this.interpreter.timers.drainMicrotasks();
   }
 
+  private beginRenderAttempt(
+    instance: ProxyInstance,
+    context: MaterializeContext,
+  ): HookRenderAttempt {
+    if (instance.pendingRender) return instance.pendingRender;
+    const checkpoint = createHookRenderAttempt(instance.frame);
+    const registrations = [this.pendingRenders];
+    for (let scope = context.suspenseScope; scope; scope = scope.parent)
+      registrations.push(scope.pendingRenders);
+    const finish = (): void => {
+      for (const registration of registrations) registration.delete(attempt);
+      if (instance.pendingRender === attempt) instance.pendingRender = null;
+    };
+    const attempt: HookRenderAttempt = {
+      complete: () => checkpoint.complete(),
+      commit: () => {
+        checkpoint.commit();
+        finish();
+      },
+      discard: () => {
+        if (instance.pendingRender !== attempt) return;
+        checkpoint.discard();
+        instance.rendered = instance.committed;
+        finish();
+      },
+    };
+    instance.pendingRender = attempt;
+    for (const registration of registrations) registration.add(attempt);
+    return attempt;
+  }
+
   /**
    * One React render of a stateful proxy: the interpreter evaluates the
    * component against the instance's hook frame, the host mounts and unmounts
@@ -1915,7 +1988,7 @@ export class Materializer {
     evaluate: (frame: HookFrame) => CompositeEvaluation,
   ): StatefulRender {
     const { frame } = instance;
-    this.frameCauses.set(frame, context.cause);
+    if (!instance.committed) this.frameCauses.set(frame, context.cause);
     const changedCells = commitHookPass(frame);
     const previous = instance.rendered;
     const canRetain =
@@ -1925,7 +1998,7 @@ export class Materializer {
       previous.contextReads.every((read) => this.readContext(read.definition) === read.value);
     let didStateChange = frame.didStateChange;
     if (changedCells.length === 0 && canRetain && previous) {
-      return this.commitRender(instance, previous, input.location);
+      return this.commitRender(instance, previous);
     }
     if (changedCells.length > 0) {
       instance.passCount++;
@@ -1956,53 +2029,61 @@ export class Materializer {
         this.contextReads = null;
       }
     };
-    let evaluation = evaluatePass();
-    for (
-      let renderPhaseUpdates = 0;
-      renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES &&
-      getThrowCertainty(evaluation.rendered) !== "always";
-      renderPhaseUpdates++
-    ) {
-      const renderUpdates = commitHookPass(frame);
-      if (renderUpdates.length === 0) break;
-      didStateChange ||= frame.didStateChange;
-      evaluation = evaluatePass(true);
-    }
-    frame.isRendering = false;
-    if (
-      !didStateChange &&
-      canRetain &&
-      previous &&
-      getThrowCertainty(evaluation.rendered) === "never"
-    ) {
-      frame.effects = frame.previousEffects;
-      return this.commitRender(instance, previous, input.location);
-    }
-    // The update reaches React at once, which picks its lane from the phase that
-    // raised it: synchronous from the layout phase, default otherwise. Like
-    // `nestedUpdateCount`, only chains of such updates count toward the limit,
-    // so a timer task starts a new one.
-    frame.recordUpdateCause = () => {
-      if (!frame.isFrozen) this.commitCauses.schedule();
-    };
-    frame.requestRender = () => {
-      if (frame.isFrozen) return;
-      this.interpreter.mutations.record(0);
-      if (this.interpreter.timers.isFlushing) instance.passCount = 0;
-      if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
-      this.commitCauses.schedule();
-      rerender();
-    };
-    instance.rendered = null;
-    const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
-    instance.rendered = {
-      input,
-      context,
-      node,
-      contextReads,
-      componentContext: evaluation.componentContext,
-    };
-    return this.commitRender(instance, instance.rendered, input.location);
+    const attempt = this.beginRenderAttempt(instance, context);
+    return runHookRender(
+      frame,
+      () => {
+        let evaluation = evaluatePass();
+        for (
+          let renderPhaseUpdates = 0;
+          renderPhaseUpdates < MAX_RENDER_PHASE_UPDATES &&
+          getThrowCertainty(evaluation.rendered) !== "always";
+          renderPhaseUpdates++
+        ) {
+          const renderUpdates = commitHookPass(frame);
+          if (renderUpdates.length === 0) break;
+          didStateChange ||= frame.didStateChange;
+          evaluation = evaluatePass(true);
+        }
+        frame.isRendering = false;
+        if (
+          !didStateChange &&
+          canRetain &&
+          previous &&
+          getThrowCertainty(evaluation.rendered) === "never"
+        ) {
+          frame.effects = previous.effects;
+          return this.commitRender(instance, previous);
+        }
+        // The update reaches React at once, which picks its lane from the phase that
+        // raised it: synchronous from the layout phase, default otherwise. Like
+        // `nestedUpdateCount`, only chains of such updates count toward the limit,
+        // so a timer task starts a new one.
+        frame.recordUpdateCause = () => {
+          if (!frame.isFrozen) this.commitCauses.schedule();
+        };
+        frame.requestRender = () => {
+          if (frame.isFrozen) return;
+          this.interpreter.mutations.record(0);
+          if (this.interpreter.timers.isFlushing) instance.passCount = 0;
+          if (this.isPassivePhasePending) this.isSyncRenderScheduled = true;
+          this.commitCauses.schedule();
+          rerender();
+        };
+        instance.rendered = null;
+        const node = this.finishRender(evaluation.rendered, evaluation.childContext, input);
+        instance.rendered = {
+          input,
+          context,
+          node,
+          contextReads,
+          componentContext: evaluation.componentContext,
+          effects: frame.effects,
+        };
+        return this.commitRender(instance, instance.rendered);
+      },
+      attempt,
+    );
   }
 
   private runGuardedMutation<Result>(
@@ -2042,45 +2123,48 @@ export class Materializer {
    * the changed static effects; a bailout (`bailoutHooks`) keeps the previous
    * ones untouched.
    */
-  private commitRender(
-    instance: ProxyInstance,
-    rendered: CommittedRender,
-    location: SourceLocation | null,
-  ): StatefulRender {
-    const { frame } = instance;
-    const isBailout = rendered === instance.committed;
-    instance.isRenderedSinceCommit = true;
-    const withEffectCall = (run: (call: EffectCall) => void): void => {
-      const { componentContext } = rendered;
-      if (!componentContext) return;
-      this.commitCauses.run(rendered.context.cause, () =>
-        run((callback) =>
+  private commitRender(instance: ProxyInstance, rendered: RenderPass): StatefulRender {
+    const { frame, pendingRender } = instance;
+    const getEffectCall =
+      (owner: RenderPass): EffectCall =>
+      (callback) => {
+        const { componentContext } = owner;
+        if (!componentContext) return UNDEFINED_VALUE;
+        const location = owner.input.location;
+        return this.commitCauses.run(owner.context.cause, () =>
           this.runGuardedMutation(
             callback.kind === "function" ? callback.scope : componentContext.scope,
             location,
             () => this.interpreter.callValue(callback, [], componentContext, location),
             frame,
           ),
-        ),
-      );
+        );
+      };
+    const callEffect = getEffectCall(rendered);
+    const commit = (): void => {
+      pendingRender?.commit();
+      instance.committed = rendered;
+      this.frameCauses.set(frame, rendered.context.cause);
     };
     const mount = (isLayout: boolean): void => {
-      instance.committed = rendered;
-      withEffectCall((call) => {
-        if (!instance.isRenderedSinceCommit) mountAllEffects(frame, isLayout, call);
-        else if (!isBailout) runChangedEffects(frame, isLayout, call);
-        if (isLayout) return;
-        commitEffects(frame);
-        instance.isRenderedSinceCommit = false;
-      });
+      const previous = isLayout ? instance.layoutRender : instance.passiveRender;
+      commit();
+      if (isLayout) instance.layoutRender = rendered;
+      else instance.passiveRender = rendered;
+      if (!previous) mountAllEffects(rendered.effects, isLayout, callEffect);
+      else if (previous !== rendered)
+        runChangedEffects(rendered.effects, previous.effects, isLayout, callEffect);
     };
-    const unmount = (isLayout: boolean): void =>
-      withEffectCall((call) => {
-        if (instance.isRenderedSinceCommit) return;
-        if (isLayout) unmountClassInstance(frame, call);
-        unmountAllEffects(frame, isLayout, call);
-      });
-    return { node: rendered.node, mount, unmount };
+    const unmount = (isLayout: boolean): void => {
+      const owner = isLayout ? instance.layoutRender : instance.passiveRender;
+      if (!owner) return;
+      if (isLayout) instance.layoutRender = null;
+      else instance.passiveRender = null;
+      const call = getEffectCall(owner);
+      if (isLayout) unmountClassInstance(frame, call);
+      unmountAllEffects(owner.effects, isLayout, call);
+    };
+    return { node: rendered.node, effects: rendered.effects, callEffect, commit, mount, unmount };
   }
 
   renderClassProxy(
@@ -2192,14 +2276,21 @@ export class Materializer {
     const thrown = findThrown(rendered)?.thrown;
     const promise = thrown && getModeledPromise(thrown);
     if (!promise) return null;
-    this.markMaySuspend(context);
+    for (const attempt of context.suspenseScope?.pendingRenders ?? this.pendingRenders)
+      attempt.discard();
+    if (promise.isEscaped || promise.state.kind === "branch") this.markMaySuspend(context);
     let wakeable = this.wakeables.get(promise);
     if (!wakeable) {
       const { timers } = this.interpreter;
       wakeable = new Promise((wake) => {
         onPromiseSettled(
           promise,
-          (isEscaped) => (isEscaped ? timers.enqueue(() => wake()) : wake()),
+          (isEscaped) => {
+            if (isEscaped) {
+              this.markMaySuspend(context);
+              timers.enqueue(() => wake());
+            } else wake();
+          },
           this.stubTools(context, null),
         );
       });
@@ -2329,8 +2420,14 @@ export class Materializer {
   renderSuspenseBoundary(input: ProxyInput): ReactNode {
     const { useRef, useState, useLayoutEffect, createElement, Suspense } = this.runtime.react;
     const scopeRef = useRef<SuspenseScope | null>(null);
-    scopeRef.current ??= { maySuspend: false, commit: noop };
+    scopeRef.current ??= {
+      parent: null,
+      pendingRenders: new Set(),
+      maySuspend: false,
+      commit: noop,
+    };
     const scope = scopeRef.current;
+    for (const attempt of scope.pendingRenders) attempt.discard();
     const [isSuspendable, setSuspendable] = useState(false);
     scope.commit = () => {
       if (!isSuspendable) setSuspendable(true);
@@ -2338,6 +2435,7 @@ export class Materializer {
     useLayoutEffect(() => this.commitSuspenseScope(scope));
     const { props } = input;
     const context = this.renderContext(input);
+    scope.parent = context.suspenseScope;
     const fallback = this.toNode(getObjectProperty(props, "fallback"), context, true);
     const primary = this.toNode(
       getObjectProperty(props, "children"),

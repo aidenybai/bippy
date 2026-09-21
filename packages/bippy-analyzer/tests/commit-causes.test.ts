@@ -209,7 +209,7 @@ describe("commit causes", () => {
     );
     let calls = 0;
     const task = causes.run(firstCause, () =>
-      causes.bindTask(() => {
+      causes.bindContinuation(() => {
         calls++;
       }),
     );
@@ -226,7 +226,7 @@ describe("commit causes", () => {
     causes.beginRender();
     let calls = 0;
     const task = causes.run({ guard: constantGuard(false), inputs: [] }, () =>
-      causes.bindTask(() => {
+      causes.bindContinuation(() => {
         calls++;
       }),
     );
@@ -245,7 +245,7 @@ describe("commit causes", () => {
     const causes = new CommitCauses();
     causes.beginRender();
     const task = causes.run(firstCause, () =>
-      causes.bindTask(() =>
+      causes.bindContinuation(() =>
         causes.runTask({ guard: negateGuard(secondGuard), inputs: [secondInput] }, () =>
           causes.schedule(),
         ),
@@ -263,7 +263,7 @@ describe("commit causes", () => {
   it("does not attribute a delayed task to an unrelated intervening commit", () => {
     const causes = new CommitCauses();
     causes.beginRender();
-    const task = causes.run(firstCause, () => causes.bindTask(() => causes.schedule()));
+    const task = causes.run(firstCause, () => causes.bindContinuation(() => causes.schedule()));
     causes.commit();
     causes.run({ guard: secondGuard, inputs: [secondInput] }, () => causes.schedule());
     causes.beginRender();

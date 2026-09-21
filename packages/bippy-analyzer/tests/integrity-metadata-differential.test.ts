@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkExpectedDifferentialCases,
   checkKnownDifferentialWitnesses,
 } from "./helpers/differential-evaluator.js";
 
@@ -34,19 +35,14 @@ const cases = shapes.flatMap((shape) =>
           : query === "isSealed"
             ? isSealed
             : isFrozen;
-      const isUnknown = query !== "isFrozen" || shape.name === "boxed-number";
-      const isKnown = isUnknown || (expected && operation !== "freeze");
+      const isKnown =
+        (shape.name === "data-array" && query !== "isFrozen") || shape.name === "boxed-number";
       return {
         name,
-        label: `${isUnknown ? "known precision gap: " : isKnown ? "known divergence: " : ""}${name}`,
+        label: `${isKnown ? "known precision gap: " : ""}${name}`,
         isKnown,
         expected,
-        actual:
-          query !== "isFrozen"
-            ? `unknown(Object.${query}())`
-            : isUnknown
-              ? "<boolean: Object.isFrozen on a dynamic target>"
-              : "false",
+        actual: `<boolean: Object.${query} on a dynamic target>`,
         body: `const target = ${shape.source}; ${operation === "none" ? "" : `Object.${operation}(target);`} return Object.${query}(target);`,
       };
     }),
@@ -56,7 +52,7 @@ const cases = shapes.flatMap((shape) =>
 it.each(cases)("$label", ({ name, body, expected, actual, isKnown }) =>
   isKnown
     ? checkKnownDifferentialWitnesses([{ name, body, expected, actual }])
-    : checkDifferentialCases([{ name, body }]),
+    : checkExpectedDifferentialCases([{ name, body, expected }]),
 );
 
 it("preserves writable length on a sealed empty array", () =>

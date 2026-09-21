@@ -1,20 +1,29 @@
 import type { SourceLocation } from "../parse/source-types.js";
 import type {
   JournaledState,
+  Scope,
   StaticListValue,
   StaticObjectEntry,
   StaticObjectValue,
   StaticValue,
 } from "../types.js";
-import type { StateCell } from "./hooks.js";
+import {
+  capturePendingHookUpdate,
+  restorePendingHookUpdate,
+  type HookPendingUpdate,
+  type StateCell,
+} from "./hooks.js";
+import { createPathPredicate } from "./predicates.js";
 import {
   UNDEFINED_VALUE,
   branchValue,
+  booleanValue,
   getAllocationCount,
   getItemValue,
   isSameValue,
   joinObjectEntries,
   listValue,
+  primitiveValue,
   mapFiniteListItems,
   spreadListItems,
   unknownValue,
@@ -29,28 +38,34 @@ export type ModuleValues = Map<string, StaticValue | typeof IN_PROGRESS>;
 
 type ModuleBindingStates = Map<ModuleValues, Map<string, StaticValue>>;
 
-/** A hook cell's pending update; null when none is queued. */
-interface PendingHookUpdate {
-  next: StaticValue | null;
-  actions: StaticValue | null;
+interface JournaledHookUpdate extends HookPendingUpdate {
   deferred: StaticValue[];
   isEscaped: boolean;
 }
 
-type PendingUpdates = Map<StateCell, PendingHookUpdate>;
+interface PendingUpdates extends Map<StateCell, JournaledHookUpdate> {}
 
-const captureHookUpdate = (cell: StateCell): PendingHookUpdate => ({
-  next: cell.next,
-  actions: cell.pendingReducerActions,
+const captureHookUpdate = (cell: StateCell): JournaledHookUpdate => ({
+  ...capturePendingHookUpdate(cell),
   deferred: [...cell.deferred],
   isEscaped: cell.isEscaped,
 });
 
-const restoreHookUpdate = (cell: StateCell, update: PendingHookUpdate): void => {
-  cell.next = update.next;
-  cell.pendingReducerActions = update.actions;
+const restoreHookUpdate = (cell: StateCell, update: JournaledHookUpdate): void => {
+  restorePendingHookUpdate(cell, update);
   cell.deferred = [...update.deferred];
   cell.isEscaped = update.isEscaped;
+};
+
+interface ObjectState {
+  entries: StaticObjectEntry[];
+  integrity: StaticValue | undefined;
+}
+
+const restoreObjectState = (object: StaticObjectValue, state: ObjectState): void => {
+  object.entries = [...state.entries];
+  if (state.integrity !== undefined) object.integrity = state.integrity;
+  else if (object.integrity !== undefined) delete object.integrity;
 };
 
 interface ListState {
@@ -60,7 +75,7 @@ interface ListState {
 }
 
 interface HeapPath {
-  objects: Map<StaticObjectValue, StaticObjectEntry[]>;
+  objects: Map<StaticObjectValue, ObjectState>;
   lists: Map<StaticListValue, ListState>;
   states: Map<JournaledState<unknown>, unknown>;
   bindings: ModuleBindingStates;
@@ -148,7 +163,7 @@ const getAgreedState = <Item>(
  * with the update on the paths that queued one and its current value elsewhere.
  */
 export class HeapJournal {
-  private readonly objects = new Map<StaticObjectValue, StaticObjectEntry[]>();
+  private readonly objects = new Map<StaticObjectValue, ObjectState>();
   private readonly lists = new Map<StaticListValue, ListState>();
   private readonly states = new Map<JournaledState<unknown>, unknown>();
   private readonly bindings: ModuleBindingStates = new Map();
@@ -156,7 +171,10 @@ export class HeapJournal {
   private paths: HeapPath[] = [];
   private readonly entryAllocation = getAllocationCount();
 
-  constructor(private readonly unconditionalUpdates?: ReadonlySet<StateCell>) {}
+  constructor(
+    private readonly unconditionalUpdates?: ReadonlySet<StateCell>,
+    private readonly snapshotScopes: readonly Scope[] = [],
+  ) {}
 
   /** Whether `target` predates the fork, so its mutations must be journaled. */
   isPreexisting(target: MutableHeapValue | JournaledState<unknown>): boolean {
@@ -165,7 +183,8 @@ export class HeapJournal {
 
   record(target: MutableHeapValue): void {
     if (target.kind === "object") {
-      if (!this.objects.has(target)) this.objects.set(target, [...target.entries]);
+      if (!this.objects.has(target))
+        this.objects.set(target, { entries: [...target.entries], integrity: target.integrity });
     } else if (!this.lists.has(target)) {
       this.lists.set(target, copyListState(target));
     }
@@ -184,6 +203,22 @@ export class HeapJournal {
     if (!originals.has(name)) originals.set(name, current);
   }
 
+  recordScopeBinding(scope: Scope, name: string): void {
+    if (scope.allocation > this.entryAllocation || this.snapshotScopes.includes(scope)) return;
+    const current = scope.bindings.get(name);
+    if (current !== undefined) this.recordModuleBinding(scope.bindings, name, current);
+  }
+
+  restore(): void {
+    for (const [object, original] of this.objects) restoreObjectState(object, original);
+    for (const [list, original] of this.lists) restoreListState(list, original);
+    for (const [state, original] of this.states) state.restore(original);
+    for (const [values, originals] of this.bindings) {
+      for (const [name, original] of originals) values.set(name, original);
+    }
+    for (const [cell, original] of this.updates) restoreHookUpdate(cell, original);
+  }
+
   recordStateUpdate(cell: StateCell): void {
     if (this.unconditionalUpdates?.has(cell)) return;
     if (!this.updates.has(cell)) this.updates.set(cell, captureHookUpdate(cell));
@@ -197,35 +232,26 @@ export class HeapJournal {
       bindings: new Map(),
       updates: new Map(),
     };
-    for (const [object, original] of this.objects) {
-      path.objects.set(object, object.entries);
-      object.entries = [...original];
-    }
-    for (const [list, original] of this.lists) {
+    for (const object of this.objects.keys())
+      path.objects.set(object, { entries: object.entries, integrity: object.integrity });
+    for (const list of this.lists.keys()) {
       path.lists.set(list, {
         items: list.items,
         properties: list.properties,
         nonEnumerableKeys: list.nonEnumerableKeys,
       });
-      restoreListState(list, original);
     }
-    for (const [state, original] of this.states) {
-      path.states.set(state, state.capture());
-      state.restore(original);
-    }
+    for (const state of this.states.keys()) path.states.set(state, state.capture());
     for (const [values, originals] of this.bindings) {
       const pathValues = new Map<string, StaticValue>();
       for (const [name, original] of originals) {
         const current = values.get(name);
         pathValues.set(name, current === undefined || current === IN_PROGRESS ? original : current);
-        values.set(name, original);
       }
       path.bindings.set(values, pathValues);
     }
-    for (const [cell, original] of this.updates) {
-      path.updates.set(cell, captureHookUpdate(cell));
-      restoreHookUpdate(cell, original);
-    }
+    for (const cell of this.updates.keys()) path.updates.set(cell, captureHookUpdate(cell));
+    this.restore();
     this.paths.push(path);
   }
 
@@ -268,6 +294,16 @@ export class HeapJournal {
     for (const [cell, original] of this.updates) {
       const pathUpdates = paths.map((path) => path.updates.get(cell) ?? original);
       const nextValues = pathUpdates.map((update) => update.next);
+      const presences = pathUpdates.map(
+        (update) => update.pendingPresence ?? booleanValue(update.next !== null),
+      );
+      const hasSamePresence = presences.every((presence) => presence === presences[0]);
+      const statePredicate = hasSamePresence
+        ? predicate
+        : (predicate ?? createPathPredicate(reason, location));
+      cell.pendingPresence = hasSamePresence
+        ? presences[0]
+        : branchValue(presences, reason, location, preferredPath, statePredicate);
       cell.next = nextValues.every((value) => value === nextValues[0])
         ? nextValues[0]
         : branchValue(
@@ -275,9 +311,9 @@ export class HeapJournal {
             reason,
             location,
             preferredPath,
-            predicate,
+            statePredicate,
           );
-      const actionQueues = pathUpdates.map((update) => update.actions);
+      const actionQueues = pathUpdates.map((update) => update.pendingReducerActions);
       cell.pendingReducerActions = actionQueues.every((value) => value === actionQueues[0])
         ? actionQueues[0]
         : isRepeated
@@ -311,11 +347,29 @@ export class HeapJournal {
       }
     }
     for (const [object, original] of this.objects) {
-      const pathEntries = paths.map((path) => path.objects.get(object) ?? original);
-      if (isUnchanged(pathEntries, original)) continue;
+      const pathStates = paths.map((path) => path.objects.get(object) ?? original);
+      const integrities = pathStates.map((state) => state.integrity);
+      if (!integrities.every((integrity) => integrity === original.integrity)) {
+        object.integrity = branchValue(
+          integrities.map((integrity) => integrity ?? primitiveValue("extensible")),
+          reason,
+          location,
+          preferredPath,
+          predicate,
+        );
+      }
+      const pathEntries = pathStates.map((state) => state.entries);
+      if (isUnchanged(pathEntries, original.entries)) continue;
       object.entries =
         getAgreedState(pathEntries) ??
-        joinObjectEntries(original, pathEntries, reason, location, preferredPath, predicate);
+        joinObjectEntries(
+          original.entries,
+          pathEntries,
+          reason,
+          location,
+          preferredPath,
+          predicate,
+        );
     }
     for (const [state, original] of this.states) {
       state.join(

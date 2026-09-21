@@ -1,9 +1,5 @@
-import { runInNewContext } from "node:vm";
-import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { it } from "vite-plus/test";
+import { checkExpectedDifferentialCases } from "./helpers/differential-evaluator.js";
 
 interface ConversionFailure {
   index: number;
@@ -36,9 +32,6 @@ const cases = [false, true].flatMap((hasOuterGetter) => {
       );
       return {
         name: `outer=${hasOuterGetter}/index=${failure.index}/field=${failure.field}/staged=${isStaged}`,
-        label: `${isStaged ? "" : "known divergence: "}outer=${hasOuterGetter}/index=${failure.index}/field=${failure.field}/staged=${isStaged}`,
-        isStaged,
-        actual: hasOuterGetter ? '"after#false,false,false"' : '"after#true,true,true"',
         expected:
           expectedTrace.join("|") +
           "#" +
@@ -49,13 +42,9 @@ const cases = [false, true].flatMap((hasOuterGetter) => {
   );
 });
 
-it.each(cases)("$label", async ({ name, body, expected, actual, isStaged }) => {
-  expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
-    expected,
-  );
-  if (isStaged) await checkDifferentialCases([{ name, body }]);
-  else await checkKnownDifferentialWitnesses([{ name, body, expected, actual }]);
-});
+it.each(cases)("preserves conversion completion: $name", (testCase) =>
+  checkExpectedDifferentialCases([testCase]),
+);
 
 const commitCases = ["readonly", "nonextensible"].flatMap((mode) =>
   [0, 1, 2].flatMap((failureIndex) =>
@@ -85,8 +74,6 @@ const commitCases = ["readonly", "nonextensible"].flatMap((mode) =>
       );
       return {
         name: `${mode}/index=${failureIndex}/failing=${isFailing}`,
-        label: `${isFailing ? "known divergence: " : ""}${mode}/index=${failureIndex}/failing=${isFailing}`,
-        isFailing,
         expected: `${isFailing ? "TypeError" : "after"}#${values.join(",")}`,
         body: `const target = {}; ${initialDefinitions.join(" ")} ${mode === "nonextensible" ? "Object.preventExtensions(target);" : ""} let outcome = 'after'; try { Object.defineProperties(target, { ${patches.join(",")} }); } catch (error) { outcome = error.name; } return outcome + '#' + ['alpha', 'beta', 'gamma'].map((name) => Object.hasOwn(target, name) ? String(target[name]) : '_').join(',');`,
       };
@@ -94,11 +81,6 @@ const commitCases = ["readonly", "nonextensible"].flatMap((mode) =>
   ),
 );
 
-it.each(commitCases)("$label", async ({ name, body, expected, isFailing }) => {
-  expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
-    expected,
-  );
-  if (isFailing)
-    await checkKnownDifferentialWitnesses([{ name, body, expected, actual: '"after#7,7,7"' }]);
-  else await checkDifferentialCases([{ name, body }]);
-});
+it.each(commitCases)("preserves definition completion: $name", (testCase) =>
+  checkExpectedDifferentialCases([testCase]),
+);

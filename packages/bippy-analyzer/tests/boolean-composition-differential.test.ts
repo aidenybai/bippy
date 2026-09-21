@@ -15,7 +15,6 @@ interface BooleanConsumer {
 interface BooleanCondition {
   source: string;
   getValue: (first: boolean, second: boolean) => boolean;
-  hasConjunctionGap?: boolean;
 }
 
 const consumers: BooleanConsumer[] = [
@@ -50,7 +49,6 @@ const conditions: BooleanCondition[] = [
   {
     source: "first && second",
     getValue: (first, second) => first && second,
-    hasConjunctionGap: true,
   },
   { source: "first || second", getValue: (first, second) => first || second },
   { source: "!(first && second)", getValue: (first, second) => !(first && second) },
@@ -58,12 +56,10 @@ const conditions: BooleanCondition[] = [
   {
     source: "!first && second",
     getValue: (first, second) => !first && second,
-    hasConjunctionGap: true,
   },
   {
     source: "first && !second",
     getValue: (first, second) => first && !second,
-    hasConjunctionGap: true,
   },
   { source: "!first || second", getValue: (first, second) => !first || second },
   { source: "first || !second", getValue: (first, second) => first || !second },
@@ -85,7 +81,8 @@ const cases = consumers.flatMap((consumer) =>
     [false, true].map((isCached) => {
       const name = `${consumer.name}/${condition.source}/cached=${isCached}`;
       const isKnown =
-        !isCached || (consumer.name === "complement" && condition.hasConjunctionGap === true);
+        !isCached &&
+        (condition.source === "first === second" || condition.source === "first !== second");
       return {
         name,
         label: `${isKnown ? "known precision gap: " : ""}${name}`,

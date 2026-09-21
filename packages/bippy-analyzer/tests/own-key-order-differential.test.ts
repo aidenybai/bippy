@@ -1,9 +1,5 @@
-import { runInNewContext } from "node:vm";
-import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { it } from "vite-plus/test";
+import { checkExpectedDifferentialCases } from "./helpers/differential-evaluator.js";
 
 interface KeyEntry {
   key: string;
@@ -114,13 +110,8 @@ const getOrderCase = (
   const entries = names.map((name, index) => ({ key: name, value: index + 1 }));
   const name = `${builder.name}/${projection.name}/${label}`;
   const expected = projection.getExpected(getOrderedEntries(entries));
-  const insertionOrder = projection.getExpected(entries);
-  const isKnown = projection.name !== "json" && expected !== insertionOrder;
   return {
     name,
-    label: `${isKnown ? "known divergence: " : ""}${name}`,
-    isKnown,
-    actual: JSON.stringify(insertionOrder),
     expected,
     body: `${builder.getSource(entries)} ${projection.statement}`,
   };
@@ -142,10 +133,6 @@ const cases = builders.flatMap((builder) =>
   ]),
 );
 
-it.each(cases)("$label", async ({ name, body, expected, actual, isKnown }) => {
-  expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
-    expected,
-  );
-  if (isKnown) await checkKnownDifferentialWitnesses([{ name, body, expected, actual }]);
-  else await checkDifferentialCases([{ name, body }]);
-});
+it.each(cases)("preserves own-key order: $name", (testCase) =>
+  checkExpectedDifferentialCases([testCase]),
+);

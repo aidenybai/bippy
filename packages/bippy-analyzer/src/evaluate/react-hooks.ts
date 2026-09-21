@@ -14,6 +14,7 @@ import {
   escapeReducerDispatch,
   escapeStateCell,
   invokeHookFactory,
+  getQueuedState,
   nextMemoCell,
   nextStateCell,
   queueReducerAction,
@@ -145,7 +146,7 @@ const stateHook = (
         queueStateUpdate(
           frame,
           cell,
-          reduce(action, cell.next ?? cell.current, tools),
+          reduce(action, getQueuedState(cell), tools),
           tools.isDeferred(),
         );
       }

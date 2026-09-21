@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkExpectedDifferentialCases,
   checkKnownDifferentialWitnesses,
 } from "./helpers/differential-evaluator.js";
 
@@ -50,18 +51,19 @@ it.each(
       name: `${isArray ? "array" : "object"}/${initial.source}`,
     })),
   ),
-)("known divergence: frozen replacement matrix $name", ({ isArray, initial }) =>
-  checkKnownDifferentialWitnesses(
-    cases
-      .filter(
-        (testCase) =>
-          testCase.isArray === isArray && testCase.initial === initial && !testCase.isSame,
+)("checks frozen replacement matrix $name", ({ isArray, initial }) => {
+  const witnesses = cases
+    .filter(
+      (testCase) =>
+        testCase.isArray === isArray && testCase.initial === initial && !testCase.isSame,
+    )
+    .map(({ name, body }) => ({ name, body, expected: "TypeError:true:false" }));
+  return isArray
+    ? checkKnownDifferentialWitnesses(
+        witnesses.map((testCase) => ({
+          ...testCase,
+          actual: JSON.stringify("accepted:true:false"),
+        })),
       )
-      .map(({ name, body }) => ({
-        name,
-        body,
-        expected: "TypeError:true:false",
-        actual: JSON.stringify(isArray ? "accepted:true:false" : "accepted:false:true"),
-      })),
-  ),
-);
+    : checkExpectedDifferentialCases(witnesses);
+});

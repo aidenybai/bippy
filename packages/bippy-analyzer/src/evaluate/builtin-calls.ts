@@ -15,7 +15,6 @@ import type {
   StaticObjectEntry,
   StaticObjectValue,
   StaticPrimitive,
-  StaticPropertyEntry,
   StaticValue,
 } from "../types.js";
 import { createAbortController } from "./abort-controller.js";
@@ -44,7 +43,12 @@ import {
 } from "./clock-date.js";
 import { parseSerializedJson, stringifyJsonValue } from "./json-values.js";
 import { createCollectionValue, getCollectionItems } from "./collections.js";
-import type { EvaluationContext, FunctionCaller, FunctionFactory } from "./context.js";
+import type {
+  EvaluationContext,
+  FunctionCaller,
+  FunctionFactory,
+  PropertyAssigner,
+} from "./context.js";
 import type { MutableHeapValue } from "./heap-journal.js";
 import type { ModuleEvaluator } from "./module-evaluator.js";
 import type { TimerQueue } from "./timers.js";
@@ -60,7 +64,6 @@ import { constructFunctionFromSource } from "./function-constructor.js";
 import { bindFunction } from "./function-bind.js";
 import {
   getFunctionOwnPresence,
-  hasProperty,
   isIntrinsicFunctionKey,
   ownsNoFunctionTextKey,
 } from "./has-property.js";
@@ -100,7 +103,20 @@ import {
 import { applyMathToRanges, rangedNumberValue } from "./number-ranges.js";
 import { getObjectTag } from "./object-tag.js";
 import { getOwnEnumerableEntries as getModeledOwnEnumerableEntries } from "./own-entries.js";
+import { enumerateOwnObject } from "./own-enumeration.js";
+import { assignObjectSource } from "./object-copy.js";
 import { recordInputSource } from "./predicates.js";
+import {
+  getNextObjectIntegrity,
+  getObjectExtensibility,
+  getObjectIntegrityTest,
+} from "./object-integrity.js";
+import {
+  getPropertyDefinition,
+  getProxyDefinitionPermission,
+  readPropertyDescriptor,
+  type PropertyDescriptorEvaluator,
+} from "./property-descriptors.js";
 import {
   callShapedPrimitiveMethod,
   getFunctionText,
@@ -127,6 +143,7 @@ import {
   callRegExpMethod,
   callStringMethod,
   dynamicSplitResult,
+  type StringMethodEvaluator,
 } from "./string-methods.js";
 import { nativeFunction } from "./stubs.js";
 import {
@@ -150,9 +167,8 @@ import { isPrimitiveBranch, MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distrib
 import { getTypeofValue } from "./value-typeof.js";
 import { createAudioContext, createAudioWorkletNode } from "./web-audio.js";
 import {
-  accessorEntry,
   branchValue,
-  compareIdentity,
+  getSameValueComparison,
   createRegisteredSymbolValue,
   createSymbolValue,
   describeValue,
@@ -161,23 +177,26 @@ import {
   FALSE_VALUE,
   getClassPrototype,
   getKnownObjectKeys,
-  getKnownOwnKeys,
   getKnownObjectOwnNames,
   getKnownObjectSymbols,
   getObjectProperty,
   getOwnPropertyDescriptor,
+  getOwnPropertyCandidates,
+  getTruthinessCases,
   getOwnPropertyPresence,
   getObjectAccessor,
   getPropertyName,
+  getPropertyKeyValue,
   getSymbolDescription,
   getSymbolPropertyKey,
   getTruthiness,
   hasDefiniteItems,
   isCallable,
+  isUndefinedValue,
+  isSameValue,
   isIndefiniteItem,
   isNullish,
   isSymbolPropertyKey,
-  isUndefinedValue,
   jsonValue,
   joinMappedAlternatives,
   listValue,
@@ -201,6 +220,9 @@ import { callStorageMethod, getStorageAreaName, type StorageAreas } from "./web-
 export interface BuiltinEvaluator
   extends
     ArrayMethodEvaluator,
+    StringMethodEvaluator,
+    PropertyDescriptorEvaluator,
+    PropertyAssigner,
     FunctionCaller,
     FunctionFactory,
     ModuleEvaluator,
@@ -211,6 +233,12 @@ export interface BuiltinEvaluator
   readonly indexedDb: ReturnType<typeof createIndexedDbFactory>;
   readonly storageAreas: StorageAreas;
   readonly timers: TimerQueue;
+  getProxyMethod: (
+    handler: StaticObjectValue,
+    name: string,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ) => StaticValue;
   getRealm: (environment: RenderEnvironment | null) => HostRealm;
   recordHeapMutation: (target: MutableHeapValue) => void;
   assignOwnProperty: (
@@ -219,12 +247,6 @@ export interface BuiltinEvaluator
     value: StaticValue,
     accessor?: StaticAccessor,
   ) => void;
-  assignProperty: (
-    target: StaticValue,
-    key: string,
-    value: StaticValue,
-    context: EvaluationContext,
-  ) => StaticValue;
   setReactApiProperty: (
     api: ReactApi,
     key: string,
@@ -352,6 +374,7 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
     if (!present) return null;
     return {
       kind: "spread",
+      preservesDescriptors: true,
       value: branchValue(
         [objectValue([present]), objectValue([])],
         pair.reason,
@@ -370,6 +393,7 @@ const getEntryFromPair = (pair: StaticValue): StaticObjectEntry | null => {
     }
     return {
       kind: "spread",
+      preservesDescriptors: true,
       value: joinMappedAlternatives(
         pair,
         alternatives.map((entry) => objectValue([entry])),
@@ -416,18 +440,6 @@ const toStringOfValue = (value: StaticValue): StaticValue =>
         : alternative,
     ),
   );
-
-const getDescriptorAccessor = (descriptor: StaticObjectValue): StaticAccessor | null => {
-  const keys = getKnownObjectKeys(descriptor);
-  if (!keys || keys.includes("value") || !(keys.includes("get") || keys.includes("set")))
-    return null;
-  const getter = keys.includes("get") ? getObjectProperty(descriptor, "get") : UNDEFINED_VALUE;
-  const setter = keys.includes("set") ? getObjectProperty(descriptor, "set") : UNDEFINED_VALUE;
-  return {
-    get: isUndefinedValue(getter) ? null : getter,
-    set: isUndefinedValue(setter) ? null : setter,
-  };
-};
 
 /**
  * Development builds define `element.ref` as a deprecation-warning getter only
@@ -492,84 +504,206 @@ const defineOwnProperty = (
   descriptor: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
-): void => {
+): StaticValue => {
   if (descriptor.kind === "branch") {
-    evaluator.callAlternatives(descriptor, context, (alternative, alternativeContext) => {
-      defineOwnProperty(evaluator, target, key, alternative, alternativeContext, location);
-      return target;
-    });
-    return;
+    return evaluator.callAlternatives(descriptor, context, (alternative, alternativeContext) =>
+      defineOwnProperty(evaluator, target, key, alternative, alternativeContext, location),
+    );
   }
-  if (descriptor.kind !== "object") return;
+  if (descriptor.kind !== "object") return unknownValue("unresolved property descriptor", location);
+  if (target.kind === "proxy") {
+    return evaluator.continueValue(
+      evaluator.getProxyMethod(target.handler, "defineProperty", context, location),
+      context,
+      (method, methodContext) => {
+        if (isUndefinedValue(method))
+          return evaluator.continueValue(
+            defineOwnProperty(evaluator, target.target, key, descriptor, methodContext, location),
+            methodContext,
+            () => target,
+          );
+        const converted = objectValue([...descriptor.entries]);
+        return evaluator.continueValue(
+          evaluator.callValue(
+            method,
+            [target.target, getPropertyKeyValue(key), converted],
+            methodContext,
+            location,
+            { thisValue: target.handler },
+          ),
+          methodContext,
+          (result, resultContext) =>
+            evaluator.continueValue(
+              getTruthinessCases(result),
+              resultContext,
+              (accepted, acceptedContext) => {
+                const failure = (): StaticValue => {
+                  const reason = `Proxy defineProperty trap rejected ${key}`;
+                  return thrownValue(
+                    reason,
+                    createErrorValue("TypeError", [primitiveValue(reason)], location),
+                    location,
+                  );
+                };
+                if (getTruthiness(accepted) === false) return failure();
+                if (target.target.kind !== "object") return target;
+                const backing = target.target;
+                const previous = getOwnPropertyDescriptor(backing, key);
+                if (!previous)
+                  return unknownValue("unresolved proxy definition invariants", location);
+                return evaluator.continueValue(
+                  previous,
+                  acceptedContext,
+                  (metadata, metadataContext) =>
+                    evaluator.continueValue(
+                      getTruthinessCases(
+                        getProxyDefinitionPermission(backing, key, descriptor, metadata, location),
+                      ),
+                      metadataContext,
+                      (permission) => (getTruthiness(permission) === true ? target : failure()),
+                    ),
+                );
+              },
+            ),
+        );
+      },
+    );
+  }
   if (target.kind === "function") {
-    defineOwnProperty(evaluator, target.properties, key, descriptor, context, location);
-    if (key === "name") {
-      const value = getObjectProperty(target.properties, key);
-      if (value.kind === "primitive" && typeof value.value === "string") target.name = value.value;
-    }
-    return;
+    return evaluator.continueValue(
+      defineOwnProperty(evaluator, target.properties, key, descriptor, context, location),
+      context,
+      () => {
+        if (key === "name") {
+          const value = getObjectProperty(target.properties, key);
+          if (value.kind === "primitive" && typeof value.value === "string")
+            target.name = value.value;
+        }
+        return target;
+      },
+    );
   }
   const isEnumerable = isEnumerableDescriptor(descriptor);
-  if (target.kind === "object" || target.kind === "list") evaluator.recordHeapMutation(target);
   if (target.kind === "object") {
-    const accessor = getDescriptorAccessor(descriptor);
-    const entry: StaticPropertyEntry = accessor
-      ? accessorEntry(key, accessor, location)
-      : {
-          kind: "property",
-          key,
-          value: readDescriptorValue(evaluator, target, descriptor, key, context, location),
-        };
-    target.entries.push({ ...entry, isEnumerable });
-    return;
+    const previous = getOwnPropertyDescriptor(target, key);
+    if (previous === null)
+      return unknownValue("Object.defineProperty with an unresolved descriptor", location);
+    return evaluator.continueValue(previous, context, (previousDescriptor, previousContext) => {
+      const definition = getPropertyDefinition(
+        target,
+        key,
+        descriptor,
+        location,
+        previousDescriptor,
+      );
+      if (!definition)
+        return unknownValue("Object.defineProperty with an unresolved descriptor", location);
+      return evaluator.continueValue(definition.permission, previousContext, (permission) => {
+        if (getTruthiness(permission) !== true) {
+          const reason = `Cannot redefine property: ${key}`;
+          return thrownValue(
+            reason,
+            createErrorValue("TypeError", [primitiveValue(reason)], location),
+            location,
+          );
+        }
+        evaluator.recordHeapMutation(target);
+        target.entries.push(definition.entry);
+        return target;
+      });
+    });
   }
+  if (target.kind === "list") evaluator.recordHeapMutation(target);
   const value = readDescriptorValue(evaluator, target, descriptor, key, context, location);
   switch (target.kind) {
     case "class":
       if (key === "name") {
         if (value.kind === "primitive" && typeof value.value === "string")
           target.name = value.value;
-        return;
+        return target;
       }
       evaluator.assignOwnProperty(target.properties, key, value);
-      return;
+      return target;
     case "react-api":
       evaluator.setReactApiProperty(target.api, key, value, context);
-      return;
+      return target;
     case "global":
       evaluator.setGlobalMember(target, key, value, context);
-      return;
+      return target;
     case "list": {
-      if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return;
+      if (target.isFrozen || Number.isInteger(Number(key)) || key === "length") return target;
       target.properties ??= new Map();
       target.properties.set(key, value);
       if (!isEnumerable) (target.nonEnumerableKeys ??= new Set()).add(key);
-      return;
+      return target;
     }
     default:
-      return;
+      return target;
   }
 };
 
 const defineOwnProperties = (
   evaluator: BuiltinEvaluator,
   target: StaticValue,
-  descriptors: StaticObjectValue,
+  descriptors: StaticValue,
   context: EvaluationContext,
   location: SourceLocation | null,
-): void => {
-  for (const [key, isEnumerable] of getKnownOwnKeys(descriptors, () => true, false) ?? []) {
-    if (!isEnumerable) continue;
-    defineOwnProperty(
-      evaluator,
-      target,
-      key,
-      getObjectProperty(descriptors, key),
-      context,
-      location,
-    );
-  }
-};
+): StaticValue =>
+  evaluator.continueValue(descriptors, context, (dictionary, dictionaryContext) => {
+    if (dictionary.kind !== "object")
+      return unknownValue("Object.defineProperties with an unresolved dictionary", location);
+    const keys = getOwnPropertyCandidates(dictionary);
+    if (!keys) return unknownValue("Object.defineProperties with unresolved keys", location);
+    let collected: StaticValue = objectValue();
+    for (const key of keys) {
+      collected = evaluator.continueValue(
+        collected,
+        dictionaryContext,
+        (previous, propertyContext) => {
+          if (previous.kind !== "object") return previous;
+          const own = getOwnPropertyDescriptor(dictionary, key);
+          if (own === null) return unknownValue("unresolved descriptor dictionary entry", location);
+          return evaluator.continueValue(own, propertyContext, (metadata, metadataContext) => {
+            if (metadata.kind !== "object") return isUndefinedValue(metadata) ? previous : metadata;
+            return evaluator.continueValue(
+              getTruthinessCases(getObjectProperty(metadata, "enumerable")),
+              metadataContext,
+              (enumerable, enumerableContext) => {
+                if (getTruthiness(enumerable) === false) return previous;
+                return evaluator.continueValue(
+                  evaluator.getProperty(dictionary, key, enumerableContext, location),
+                  enumerableContext,
+                  (descriptor, descriptorContext) =>
+                    evaluator.continueValue(
+                      readPropertyDescriptor(evaluator, descriptor, descriptorContext, location),
+                      descriptorContext,
+                      (normalized) =>
+                        normalized.kind === "object"
+                          ? objectValue([
+                              ...previous.entries,
+                              { kind: "property", key, value: normalized },
+                            ])
+                          : normalized,
+                    ),
+                );
+              },
+            );
+          });
+        },
+      );
+    }
+    return evaluator.continueValue(collected, dictionaryContext, (prepared, preparedContext) => {
+      if (prepared.kind !== "object") return prepared;
+      let result = target;
+      for (const entry of prepared.entries) {
+        if (entry.kind !== "property") return unknownValue("unresolved descriptor entry", location);
+        result = evaluator.continueValue(result, preparedContext, (current, propertyContext) =>
+          defineOwnProperty(evaluator, current, entry.key, entry.value, propertyContext, location),
+        );
+      }
+      return result;
+    });
+  });
 
 export const INTRINSIC_PROTOTYPE_NAMES = new Set(["Object.prototype", "Function.prototype"]);
 
@@ -982,15 +1116,6 @@ const INSPECTING_GLOBALS = new Set([
   "JSON.parse",
 ]);
 
-const getSameValueComparison = (left: StaticValue, right: StaticValue): StaticValue => {
-  if (left.kind === "primitive" && right.kind === "primitive")
-    return primitiveValue(Object.is(left.value, right.value));
-  const isSame = compareIdentity(left, right);
-  return isSame === null
-    ? unknownPrimitiveValue("boolean", "Object.is on dynamic values")
-    : primitiveValue(isSame);
-};
-
 const getInvalidMapperError = (
   mapper: StaticValue,
   location: SourceLocation | null,
@@ -1284,42 +1409,109 @@ const callGlobal = (
         return listValue(ownEntries.map(([key, value]) => listValue([primitiveValue(key), value])));
       };
       const target = evaluator.materializeNamespace(first ?? UNDEFINED_VALUE, context.environment);
-      if (target.kind === "list") {
-        if (!target.items.some(isIndefiniteItem)) return inspect(target);
-        const inspected = mapFiniteListItems(target.items, (items) =>
-          inspect({ ...target, items }),
-        );
-        if (inspected) return inspected;
-      }
-      return getOwnEnumerableEntries(target)
-        ? inspect(target)
-        : mapValue(distributeObjectBranches(target), inspect);
+      return evaluator.continueValue(target, context, (alternative, alternativeContext) => {
+        if (
+          alternative.kind === "object" &&
+          (alternative.entries.some((entry) => entry.kind === "spread" || entry.accessor) ||
+            !getKnownObjectKeys(alternative))
+        ) {
+          const enumerated = enumerateOwnObject(
+            evaluator,
+            alternative,
+            name,
+            alternativeContext,
+            location,
+          );
+          if (enumerated) return enumerated;
+        }
+        if (alternative.kind === "list") {
+          if (!alternative.items.some(isIndefiniteItem)) return inspect(alternative);
+          const inspected = mapFiniteListItems(alternative.items, (items) =>
+            inspect({ ...alternative, items }),
+          );
+          if (inspected) return inspected;
+        }
+        return getOwnEnumerableEntries(alternative)
+          ? inspect(alternative)
+          : mapValue(distributeObjectBranches(alternative), inspect);
+      });
     }
     case "Object.assign":
-      if (
-        first?.kind === "function" ||
-        first?.kind === "class" ||
-        first?.kind === "component-reference"
-      ) {
-        let target: StaticValue = first;
+      return evaluator.continueValue(first ?? UNDEFINED_VALUE, context, (target, targetContext) => {
+        if (isNullish(target) === true)
+          return thrownValue(
+            "Object.assign requires a target",
+            createErrorValue(
+              "TypeError",
+              [primitiveValue("Cannot convert undefined or null to object")],
+              location,
+            ),
+            location,
+          );
+        if (
+          target.kind !== "object" &&
+          target.kind !== "function" &&
+          target.kind !== "class" &&
+          target.kind !== "component-reference" &&
+          target.kind !== "proxy"
+        )
+          return target.kind === "unknown"
+            ? objectValue(args.map((argument) => ({ kind: "spread", value: argument })))
+            : target;
+        let result: StaticValue = target;
         for (const source of args.slice(1)) {
-          if (source.kind !== "object") continue;
-          for (const key of getKnownObjectKeys(source) ?? []) {
-            target = evaluator.assignProperty(target, key, getObjectProperty(source, key), context);
-          }
+          result = evaluator.continueValue(result, targetContext, (receiver, receiverContext) =>
+            evaluator.continueValue(source, receiverContext, (selected, sourceContext) => {
+              const materialized = evaluator.materializeNamespace(
+                selected,
+                sourceContext.environment,
+              );
+              const object =
+                materialized.kind === "primitive" && typeof materialized.value === "string"
+                  ? objectValue(
+                      materialized.value
+                        .split("")
+                        .map((character, index) => ({
+                          kind: "property",
+                          key: String(index),
+                          value: primitiveValue(character),
+                        })),
+                    )
+                  : materialized;
+              if (object.kind === "primitive" || object.kind === "symbol") return receiver;
+              if (object.kind === "object") {
+                const assigned = assignObjectSource(
+                  evaluator,
+                  receiver,
+                  object,
+                  sourceContext,
+                  location,
+                );
+                if (assigned) return assigned;
+              }
+              if (receiver.kind === "object") {
+                evaluator.recordHeapMutation(receiver);
+                assignOwnEntries(receiver, object);
+              }
+              return receiver;
+            }),
+          );
         }
-        return target;
-      }
-      if (first?.kind === "object") {
-        evaluator.recordHeapMutation(first);
-        for (const source of args.slice(1)) assignOwnEntries(first, source);
-        return first;
-      }
-      if (first && first.kind !== "unknown" && first.kind !== "branch") return first;
-      return objectValue(args.map((argument) => ({ kind: "spread", value: argument })));
+        return result;
+      });
     case "Object.freeze":
-      if (first?.kind === "object" || first?.kind === "list") first.isFrozen = true;
-      return first ?? UNDEFINED_VALUE;
+    case "Object.seal":
+    case "Object.preventExtensions":
+      return evaluator.continueValue(first ?? UNDEFINED_VALUE, context, (target) => {
+        if (target.kind === "object") {
+          const integrity = getNextObjectIntegrity(target, name);
+          if (!target.integrity || !isSameValue(integrity, target.integrity)) {
+            evaluator.recordHeapMutation(target);
+            target.integrity = integrity;
+          }
+        } else if (target.kind === "list" && name === "Object.freeze") target.isFrozen = true;
+        return target;
+      });
     case "Object.is": {
       const left = first ?? UNDEFINED_VALUE;
       const right = second ?? UNDEFINED_VALUE;
@@ -1328,11 +1520,19 @@ const callGlobal = (
       );
     }
     case "Object.isFrozen":
-      if (first?.kind === "object" || first?.kind === "list")
-        return primitiveValue(first.isFrozen === true);
-      if (first?.kind === "primitive") return TRUE_VALUE;
-      return unknownPrimitiveValue("boolean", `${name} on a dynamic target`);
-    case "Object.seal":
+    case "Object.isSealed":
+    case "Object.isExtensible":
+      return mapValue(first ?? UNDEFINED_VALUE, (target) => {
+        if (target.kind === "object")
+          return name === "Object.isExtensible"
+            ? getObjectExtensibility(target)
+            : getObjectIntegrityTest(target, name === "Object.isFrozen");
+        if (target.kind === "primitive" || target.kind === "symbol")
+          return primitiveValue(name !== "Object.isExtensible");
+        if (target.kind === "list" && name === "Object.isFrozen")
+          return primitiveValue(target.isFrozen === true);
+        return unknownPrimitiveValue("boolean", `${name} on a dynamic target`);
+      });
     case "Object.setPrototypeOf":
       return first ?? UNDEFINED_VALUE;
     case "Object.getPrototypeOf":
@@ -1348,24 +1548,29 @@ const callGlobal = (
       return getWitnessedPrototype(first, name, location);
     case "Object.getOwnPropertyNames":
     case "Object.getOwnPropertySymbols":
-    case "Reflect.ownKeys": {
-      if (first?.kind === "function") {
-        const names = name === "Object.getOwnPropertySymbols" ? [] : getFunctionOwnNames(first);
-        return names
-          ? listValue(names.map((key) => primitiveValue(key)))
-          : unknownValue(`${name} on a partially known function`, location);
-      }
-      if (first?.kind !== "object" && first?.kind !== "list")
-        return unknownValue(`${name} on a dynamic target`, location);
-      const ownNames = name === "Object.getOwnPropertySymbols" ? [] : getOwnNames(first);
-      const ownSymbols =
-        name === "Object.getOwnPropertyNames" || first.kind === "list"
-          ? []
-          : getKnownObjectSymbols(first);
-      return ownNames && ownSymbols
-        ? listValue([...ownNames.map((key) => primitiveValue(key)), ...ownSymbols])
-        : unknownValue(`${name} on an object with dynamic spreads`, location);
-    }
+    case "Reflect.ownKeys":
+      return evaluator.continueValue(first ?? UNDEFINED_VALUE, context, (target, targetContext) => {
+        if (target.kind === "function") {
+          const names = name === "Object.getOwnPropertySymbols" ? [] : getFunctionOwnNames(target);
+          return names
+            ? listValue(names.map((key) => primitiveValue(key)))
+            : unknownValue(`${name} on a partially known function`, location);
+        }
+        if (target.kind !== "object" && target.kind !== "list")
+          return unknownValue(`${name} on a dynamic target`, location);
+        if (target.kind === "object") {
+          const enumerated = enumerateOwnObject(evaluator, target, name, targetContext, location);
+          if (enumerated) return enumerated;
+        }
+        const ownNames = name === "Object.getOwnPropertySymbols" ? [] : getOwnNames(target);
+        const ownSymbols =
+          name === "Object.getOwnPropertyNames" || target.kind === "list"
+            ? []
+            : getKnownObjectSymbols(target);
+        return ownNames && ownSymbols
+          ? listValue([...ownNames.map((key) => primitiveValue(key)), ...ownSymbols])
+          : unknownValue(`${name} on an object with dynamic spreads`, location);
+      });
     case "Object.getOwnPropertyDescriptor": {
       const key = second ? toPropertyKey(second) : null;
       if (first?.kind === "element" && key === "ref")
@@ -1381,7 +1586,7 @@ const callGlobal = (
     }
     case "Object.create": {
       if (!first) break;
-      return mapValue(first, (prototype) => {
+      return evaluator.continueValue(first, context, (prototype, prototypeContext) => {
         const isNull = prototype.kind === "primitive" && prototype.value === null;
         const isIntrinsicPrototype =
           prototype.kind === "global" && INTRINSIC_PROTOTYPE_NAMES.has(prototype.name);
@@ -1397,10 +1602,9 @@ const callGlobal = (
             : intrinsicPrototype
               ? { ...objectValue(), prototype: intrinsicPrototype }
               : { ...objectValue(), hasNullPrototype: isNull };
-        if (second?.kind === "object") {
-          defineOwnProperties(evaluator, created, second, context, location);
-        }
-        return created;
+        return second && !isUndefinedValue(second)
+          ? defineOwnProperties(evaluator, created, second, prototypeContext, location)
+          : created;
       });
     }
     case "Reflect.get":
@@ -1408,10 +1612,9 @@ const callGlobal = (
         ? evaluator.getProperty(first, String(second.value), context, location)
         : unknownValue("Reflect.get with a dynamic key", location);
     case "Reflect.has":
-      return (
-        (first && second && hasProperty(second, first)) ??
-        unknownValue("Reflect.has on a dynamic target", location)
-      );
+      return first && second
+        ? evaluator.getHasProperty(first, second, context, location)
+        : unknownValue("Reflect.has on a dynamic target", location);
     case "Reflect.apply": {
       const target = first ?? UNDEFINED_VALUE;
       const targetType = getTypeofValue(target, evaluator.getRealm(context.environment));
@@ -1434,22 +1637,24 @@ const callGlobal = (
     case "Object.defineProperty": {
       const descriptor = args[2];
       const key = second ? getPropertyName(second) : null;
-      if (!first || key === null || descriptor?.kind !== "object") {
+      if (!first || key === null || !descriptor) {
         return first ?? unknownValue("Object.defineProperty on a dynamic target", location);
       }
-      defineOwnProperty(evaluator, first, key, descriptor, context, location);
-      return first;
+      return evaluator.continueValue(
+        readPropertyDescriptor(evaluator, descriptor, context, location),
+        context,
+        (normalized, descriptorContext) =>
+          defineOwnProperty(evaluator, first, key, normalized, descriptorContext, location),
+      );
     }
     case "Object.getOwnPropertyDescriptors":
       return first
         ? getOwnPropertyDescriptors(evaluator, first, context, location)
         : unknownValue(`${name} without a target`, location);
     case "Object.defineProperties": {
-      if (!first || second?.kind !== "object") {
-        return first ?? unknownValue("Object.defineProperties on a dynamic target", location);
-      }
-      defineOwnProperties(evaluator, first, second, context, location);
-      return first;
+      if (!first || !second)
+        return unknownValue("Object.defineProperties without arguments", location);
+      return defineOwnProperties(evaluator, first, second, context, location);
     }
     case "Object.fromEntries": {
       const entries = first && evaluator.resolveIterable(first, context, location);
@@ -1461,6 +1666,7 @@ const callGlobal = (
                   (pair) =>
                     getEntryFromPair(pair) ?? {
                       kind: "spread",
+                      preservesDescriptors: true,
                       value: unknownValue("dynamic entry"),
                     },
                 ),
@@ -1963,13 +2169,17 @@ export const evaluateBuiltinCall = (
 
   if (receiver.kind === "primitive") {
     const branchIndex = args.findIndex(isPrimitiveBranch);
-    if (branchIndex !== -1 && args.filter((argument) => argument.kind === "branch").length === 1) {
-      return mapValue(args[branchIndex], (alternative) =>
+    const argument = args[branchIndex];
+    if (
+      argument?.kind === "branch" &&
+      args.filter((value) => value.kind === "branch").length === 1
+    ) {
+      return evaluator.callAlternatives(argument, context, (alternative, branchContext) =>
         evaluateBuiltinCall(
           evaluator,
           callee,
           args.with(branchIndex, alternative),
-          context,
+          branchContext,
           location,
           isConstructor,
         ),

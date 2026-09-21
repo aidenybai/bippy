@@ -1,7 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
+  checkExpectedDifferentialCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -47,10 +47,8 @@ const matrix = [false, true].flatMap((isAccessor) =>
           : "caught:TypeError|first:7|second:23";
         return {
           name,
-          configurable,
-          label: `${configurable ? "" : "known divergence: "}${name}`,
+
           expected: configurable ? converted : original,
-          actual: JSON.stringify(converted),
           body: `
       const trace = []; const target = {}; const key = ${isSymbol ? "Symbol('value')" : "'value'"}; let stored = 11;
       Object.defineProperty(target, key, {
@@ -70,8 +68,4 @@ const matrix = [false, true].flatMap((isAccessor) =>
   ),
 );
 
-it.each(matrix)("$label", ({ name, body, expected, actual, configurable }) =>
-  configurable
-    ? checkDifferentialCases([{ name, body }])
-    : checkKnownDifferentialWitnesses([{ name, body, expected, actual }]),
-);
+it.each(matrix)("preserves $name", (testCase) => checkExpectedDifferentialCases([testCase]));

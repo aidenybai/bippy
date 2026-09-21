@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vite-plus/test";
 import { TimerQueue } from "../src/evaluate/timers.js";
+import { primitiveValue } from "../src/evaluate/values.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
 import { mountNode } from "../src/materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../src/materialize/react-runtime.js";
@@ -11,6 +12,11 @@ interface FailureCase {
   hasRenderError: boolean;
   renderError?: unknown;
 }
+
+const getRuntime = (): Promise<ReactRuntime> => {
+  const rootDirectory = resolve(import.meta.dirname, "..");
+  return loadReactRuntime({ rootDirectory, resolver: new ModuleResolver({ rootDirectory }) });
+};
 
 const CASES: FailureCase[] = [
   { name: "cleanup alone", hasRenderError: false },
@@ -29,14 +35,51 @@ const CASES: FailureCase[] = [
 ];
 
 describe("materialized mount cleanup", () => {
+  it("records settled work before disposal queues a microtask", async () => {
+    const runtime = await getRuntime();
+    const timers = new TimerQueue();
+    const Component = () => {
+      runtime.react.useEffect(() => () => timers.queueMicrotask(() => {}), []);
+      return runtime.react.createElement("span", null, "settled");
+    };
+    const mounted = await mountNode(
+      runtime,
+      createDomHost(false),
+      runtime.react.createElement(Component),
+      timers,
+      () => {},
+    );
+    expect(mounted.hasPendingWork).toBe(false);
+    expect(timers.hasMicrotasks()).toBe(true);
+  });
+
+  it("records bounded-out work before disposal cancels it", async () => {
+    const runtime = await getRuntime();
+    const timers = new TimerQueue();
+    const handle = primitiveValue(1);
+    const repeat = () => timers.schedule(handle, repeat);
+    const Component = () => {
+      runtime.react.useEffect(() => {
+        repeat();
+        return () => timers.clear(handle);
+      }, []);
+      return runtime.react.createElement("span", null, "pending");
+    };
+    const mounted = await mountNode(
+      runtime,
+      createDomHost(false),
+      runtime.react.createElement(Component),
+      timers,
+      () => {},
+    );
+    expect(mounted.hasPendingWork).toBe(true);
+    expect(timers.hasTasks()).toBe(false);
+  });
+
   it.each(CASES)(
     "restores resources and preserves $name",
     async ({ hasRenderError, renderError }) => {
-      const rootDirectory = resolve(import.meta.dirname, "..");
-      const runtime = await loadReactRuntime({
-        rootDirectory,
-        resolver: new ModuleResolver({ rootDirectory }),
-      });
+      const runtime = await getRuntime();
       const cleanupError = new Error("cleanup failure");
       let cleanupRoot = async (): Promise<void> => {};
       const failingRuntime: ReactRuntime = {

@@ -1,8 +1,8 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
+  checkGuardedCases,
   checkDifferentialCases,
-  DifferentialMismatch,
 } from "./helpers/differential-evaluator.js";
 
 interface BooleanEncoding {
@@ -36,26 +36,14 @@ const cases = encodings.flatMap((encoding) =>
             : storage === "properties"
               ? `const inputs = { left: first, right: second }; ${consume}`
               : consume;
-      const name = `${encoding.name}/${storage}/cached=${isCached}`;
-      const isKnown =
-        (storage === "ambient" && !isCached) ||
-        (isCached && (encoding.name === "and" || encoding.name === "and-conditional"));
-      return { name, body, isKnown, label: `${isKnown ? "known precision gap: " : ""}${name}` };
+      return { name: `${encoding.name}/${storage}/cached=${isCached}`, body };
     }),
   ),
 );
 
-it.each(cases)("$label", async ({ name, body, isKnown }) => {
-  if (!isKnown) return checkSymbolicCases([{ name, body }]);
-  const testCase = {
-    name,
-    body,
-    expected: ["late", "early"],
-    actual: "[ 'early', 'late', 'impossible' ]",
-  };
-  const failure: unknown = await checkSymbolicCases([testCase]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([testCase]);
+it.each(cases)("preserves boolean provenance: $name", async (testCase) => {
+  await checkGuardedCases([testCase]);
+  await checkSymbolicCases([testCase]);
 });
 
 it.each(cases)("matches input provenance pins $name", (testCase) =>

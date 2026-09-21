@@ -17,7 +17,7 @@ import {
   isDefiniteKey,
   type KeyIdentity,
 } from "./collections.js";
-import type { EvaluationContext } from "./context.js";
+import type { EvaluationContext, PropertyReader } from "./context.js";
 import { createErrorValue } from "./errors.js";
 import { hasProperty } from "./has-property.js";
 import { getTruthinessPredicate, recordDerivation, recordRepeatSource } from "./predicates.js";
@@ -62,19 +62,12 @@ import {
 
 import { MAX_ARRAY_LIKE_LENGTH } from "./array-like.js";
 
-export interface ArrayMethodEvaluator extends CallbackEvaluator {
+export interface ArrayMethodEvaluator extends CallbackEvaluator, PropertyReader {
   resolveIterable: (
     value: StaticValue,
     context: EvaluationContext,
     location: SourceLocation | null,
     iteratorMethod?: StaticValue,
-  ) => StaticValue;
-
-  getProperty: (
-    receiver: StaticValue,
-    key: string,
-    context: EvaluationContext,
-    location: SourceLocation | null,
   ) => StaticValue;
 
   recordHeapMutation: (list: StaticListValue) => void;

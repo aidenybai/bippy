@@ -689,7 +689,9 @@ const liftObject = (
       typeof key === "string" ? primitiveValue(key) : null,
     );
   }
-  return objectValue(liftProperties(value, name, host, path));
+  const object = objectValue(liftProperties(value, name, host, path));
+  if (Object.getPrototypeOf(value) === null) object.hasNullPrototype = true;
+  return object;
 };
 
 const liftValue = (

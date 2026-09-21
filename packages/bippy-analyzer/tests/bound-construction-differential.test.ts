@@ -1,9 +1,6 @@
-import { runInNewContext } from "node:vm";
-import { inspect } from "node:util";
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  DifferentialMismatch,
   checkSymbolicCases,
   type DifferentialCase,
 } from "./helpers/differential-evaluator.js";
@@ -87,44 +84,8 @@ cases.push(
     ),
   ),
 );
-it.each(cases.filter((testCase) => !testCase.hasRepeatedAmbientRead))(
-  "matches native bound construction and replay: $name",
-  (testCase) => checkSymbolicCases([testCase]),
-);
-it.each(cases.filter((testCase) => testCase.hasRepeatedAmbientRead))(
-  "known precision gap: repeated ambient prototype input: $name",
-  async (testCase) => {
-    const expected = ["instance:undefined:true", "instance:custom:true"];
-    expect(
-      [false, true].map((first) =>
-        runInNewContext(`(()=>{${testCase.body}})()`, { first }, { timeout: 1000 }),
-      ),
-    ).toEqual(expected);
-    let observed: unknown;
-    try {
-      await checkSymbolicCases([testCase]);
-    } catch (error) {
-      observed = error;
-    }
-    expect(observed).toBeInstanceOf(DifferentialMismatch);
-    if (!(observed instanceof DifferentialMismatch))
-      throw new Error("Expected the recorded symbolic divergence");
-    expect(observed.actual).toEqual([
-      {
-        ...testCase,
-        expected,
-        actual: inspect(
-          [
-            "instance:custom:true",
-            "instance:custom:false",
-            "instance:undefined:true",
-            "instance:undefined:false",
-          ],
-          { depth: null, colors: false },
-        ),
-      },
-    ]);
-  },
+it.each(cases)("matches native bound construction and replay: $name", (testCase) =>
+  checkSymbolicCases([testCase]),
 );
 it.each(cases)("matches concrete bound construction: $name", (testCase) =>
   checkDifferentialCases(

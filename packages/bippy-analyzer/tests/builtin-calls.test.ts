@@ -2,6 +2,7 @@ import { expect, it, vi } from "vite-plus/test";
 import { evaluateBuiltinCall, type BuiltinEvaluator } from "../src/evaluate/builtin-calls.js";
 import { createPathPredicate, getAlternativeGuards } from "../src/evaluate/predicates.js";
 import { nativeFunction } from "../src/evaluate/stubs.js";
+import { hasProperty } from "../src/evaluate/has-property.js";
 import { TimerQueue } from "../src/evaluate/timers.js";
 import {
   branchValue,
@@ -40,10 +41,13 @@ const createBuiltinEvaluator = (overrides: Partial<BuiltinEvaluator> = {}): Buil
   getRealm: () => loadHostRealm("ecmascript"),
   callValue: unexpectedOperation,
   callFunction: unexpectedOperation,
+  continueValue: unexpectedOperation,
   createFunctionValue: unexpectedOperation,
   evaluateModuleExport: unexpectedOperation,
   importModule: unexpectedOperation,
   getProperty: unexpectedOperation,
+  getHasProperty: unexpectedOperation,
+  getProxyMethod: unexpectedOperation,
   resolveIterable: unexpectedOperation,
   callAlternatives: unexpectedOperation,
   runMaybe: unexpectedOperation,
@@ -247,7 +251,16 @@ it("journals property definitions through the supplied mutation operation", () =
   const target = objectValue();
   const recordHeapMutation = vi.fn<BuiltinEvaluator["recordHeapMutation"]>();
   const result = evaluateBuiltinCall(
-    createBuiltinEvaluator({ recordHeapMutation }),
+    createBuiltinEvaluator({
+      recordHeapMutation,
+      getHasProperty: (value, key) => hasProperty(key, value) ?? unexpectedOperation(),
+      continueValue: (value, continuationContext, run) => {
+        expect(value.kind).not.toBe("branch");
+        return run(value, continuationContext);
+      },
+      getProperty: (value, key) =>
+        value.kind === "object" ? getObjectProperty(value, key) : unexpectedOperation(),
+    }),
     { kind: "global", name: "Object.defineProperty" },
     [
       target,
@@ -259,6 +272,7 @@ it("journals property definitions through the supplied mutation operation", () =
   );
   expect(result).toBe(target);
   expect(recordHeapMutation).toHaveBeenCalledWith(target);
+  expect(recordHeapMutation).toHaveBeenCalledTimes(1);
   expect(getObjectProperty(target, "answer")).toEqual(primitiveValue(42));
 });
 

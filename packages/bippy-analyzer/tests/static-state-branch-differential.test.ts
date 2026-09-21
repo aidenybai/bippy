@@ -1,8 +1,8 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
+  checkGuardedCases,
   checkDifferentialCases,
-  DifferentialMismatch,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -40,13 +40,17 @@ it.each(
   },
 );
 
+const scalarMutationCase = {
+  name: "nested scalar mutations preserve repeated condition correlations",
+  body: `let value = 0; if (first) { value = 1; if (second) value += 4; } else { value = 2; } if (second) value += 3; return String(value);`,
+};
+
+it("preserves repeated conditions through nested scalar writes", async () => {
+  await checkGuardedCases([scalarMutationCase]);
+  await checkSymbolicCases([scalarMutationCase]);
+});
+
 const witnesses = [
-  {
-    name: "nested scalar mutations preserve repeated condition correlations",
-    expected: ["2", "5", "1", "8"],
-    actual: "[ '8', '4', '5', '1', '2' ]",
-    body: `let value = 0; if (first) { value = 1; if (second) value += 4; } else { value = 2; } if (second) value += 3; return String(value);`,
-  },
   {
     name: "scalar nested early return excludes later updates",
     body: `let value = 0; if (first) { value = 1; if (second) return String(value); } else { value = 2; } if (second) value += 3; return String(value);`,
@@ -63,20 +67,15 @@ const witnesses = [
     name: "private static nested early return excludes later updates",
     body: `class Counter { static #value = 0; static add(amount) { this.#value += amount; } static read() { return this.#value; } } if (first) { Counter.add(1); if (second) return String(Counter.read()); } else { Counter.add(2); } if (second) Counter.add(3); return String(Counter.read());`,
   },
-].map((testCase) => ({
-  ...testCase,
-  expected: testCase.expected ?? ["2", "5", "1"],
-  actual: testCase.actual ?? "[ '1', '4', '5', '2' ]",
-}));
+];
 
-it.each(witnesses)("known precision gap: $name", async (testCase) => {
-  const failure: unknown = await checkSymbolicCases([testCase]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([testCase]);
+it.each(witnesses)("preserves completion state: $name", async (testCase) => {
+  await checkGuardedCases([testCase]);
+  await checkSymbolicCases([testCase]);
 });
 
 it.each(
-  witnesses.flatMap((testCase) =>
+  [scalarMutationCase, ...witnesses].flatMap((testCase) =>
     [false, true].flatMap((first) =>
       [false, true].map((second) => ({
         name: `${testCase.name}/first=${first}/second=${second}`,

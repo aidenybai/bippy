@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkExpectedDifferentialCases,
   checkKnownDifferentialWitnesses,
 } from "./helpers/differential-evaluator.js";
 
@@ -36,9 +37,8 @@ const cases = targets.flatMap((target) =>
         integrity !== "freeze" &&
         (mutation.name === "write-existing" ||
           (integrity === "preventExtensions" && mutation.name === "delete-existing"));
-      const isKnown = !isAllowed;
-      const isIgnored =
-        integrity === "freeze" && (target.name === "object" || target.name === "array");
+      const isKnown = !isAllowed && target.name !== "object";
+      const isIgnored = integrity === "freeze" && target.name === "array";
       const actualOutcome = isIgnored
         ? "after:1:undefined"
         : mutation.name === "write-existing"
@@ -65,7 +65,7 @@ const cases = targets.flatMap((target) =>
 it.each(cases)("$label", ({ name, body, expected, actual, isKnown }) =>
   isKnown
     ? checkKnownDifferentialWitnesses([{ name, body, expected, actual }])
-    : checkDifferentialCases([{ name, body }]),
+    : checkExpectedDifferentialCases([{ name, body, expected }]),
 );
 
 it("ordinary array property deletion is independent of integrity operations", () =>

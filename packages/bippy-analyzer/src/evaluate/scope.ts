@@ -7,6 +7,13 @@ export const createScope = (parent: Scope | null): Scope => ({
   allocation: allocate(),
 });
 
+export const captureScope = (scope: Scope): Scope => {
+  for (let current: Scope | null = scope; current; current = current.parent) {
+    current.isCaptured = true;
+  }
+  return scope;
+};
+
 export const lookupScope = (scope: Scope, name: string): StaticValue | undefined => {
   let current: Scope | null = scope;
   while (current) {

@@ -1,5 +1,4 @@
-import { runInNewContext } from "node:vm";
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
   checkKnownDifferentialWitnesses,
@@ -39,22 +38,19 @@ it.each(differentialSeeds)(
 it.each([
   {
     name: "named group properties are accessible to the callback",
-    expected: "ba",
-    actual: "<string: replace()>",
     body: `return 'ab'.replace(/(?<first>a)(?<second>b)/, (matched, first, second, offset, input, groups) => groups.second + groups.first);`,
   },
   {
     name: "named group object has a null prototype",
-    expected: true,
-    actual: "<boolean: === on dynamic values>",
     body: `let result; 'a'.replace(/(?<letter>a)/, (matched, letter, offset, input, groups) => { result = Object.getPrototypeOf(groups) === null; return matched; }); return result;`,
   },
   {
     name: "mutating named groups does not alter positional capture arguments",
-    expected: "a:z",
-    actual: "<string: replace()>",
     body: `return 'a'.replace(/(?<letter>a)/, (matched, letter, offset, input, groups) => { groups.letter = 'z'; return letter + ':' + groups.letter; });`,
   },
+])("preserves $name", (testCase) => checkDifferentialCases([testCase]));
+
+it.each([
   {
     name: "symbol replace receives the original replacement argument",
     expected: "abc:true",
@@ -87,20 +83,10 @@ it.each([
 it.each([
   {
     name: "optional named groups are own properties with undefined values",
-    expected: "true:undefined",
     body: `let result; 'a'.replace(/(?<first>a)(?<second>b)?/, (matched, first, second, offset, input, groups) => { result = Object.hasOwn(groups, 'second') + ':' + String(groups.second); return matched; }); return result;`,
   },
   {
     name: "named group keys retain declaration order",
-    expected: "second,first",
     body: `return 'ab'.replace(/(?<second>a)(?<first>b)/, (matched, second, first, offset, input, groups) => Object.keys(groups).join(','));`,
   },
-])("known divergence: evaluator crash: $name", async ({ name, body, expected }) => {
-  expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
-    expected,
-  );
-  await expect(checkDifferentialCases([{ name, body }])).rejects.toMatchObject({
-    name: "AnalyzerEvaluationCrash",
-    cause: { name: "TypeError", message: "Cannot convert object to primitive value" },
-  });
-});
+])("preserves $name", (testCase) => checkDifferentialCases([testCase]));

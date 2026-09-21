@@ -23,6 +23,7 @@ export interface MountResult {
   snapshot: RuntimeSnapshot;
   /** Every tree React committed while settling, in order; the last one is `snapshot`. */
   commits: RuntimeSnapshot[];
+  hasPendingWork: boolean;
   /** Errors React surfaced while rendering: uncaught ones unmount the tree, caught ones reached a boundary. */
   uncaughtErrors: unknown[];
   caughtErrors: unknown[];
@@ -69,7 +70,7 @@ export const mountNode = async (
           timers.runNextTask();
           await new Promise<void>((resolveTick) => setTimeout(resolveTick, 0));
         });
-        if (!timers.hasTasks() && round >= SETTLE_ROUNDS - 1) break;
+        if (!timers.hasTasks() && !timers.hasMicrotasks() && round >= SETTLE_ROUNDS - 1) break;
       }
     } catch (error) {
       uncaughtErrors.push(error);
@@ -77,6 +78,7 @@ export const mountNode = async (
     return {
       snapshot: recorder.snapshot(),
       commits: recorder.commits(),
+      hasPendingWork: timers.hasTasks() || timers.hasMicrotasks(),
       uncaughtErrors,
       caughtErrors,
     };

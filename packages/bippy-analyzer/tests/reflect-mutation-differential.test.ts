@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkExpectedDifferentialCases,
   checkKnownDifferentialWitnesses,
 } from "./helpers/differential-evaluator.js";
 
@@ -27,9 +28,11 @@ it.each([
   {
     name: "Object.freeze prevents new strict-mode property writes",
     expected: "TypeError",
-    actual: '"accepted:undefined"',
     body: `const target = Object.freeze({}); try { target.value = 7; return 'accepted:' + String(target.value); } catch (error) { return error.name; }`,
   },
+])("preserves $name", (testCase) => checkExpectedDifferentialCases([testCase]));
+
+it.each([
   {
     name: "Reflect.defineProperty returns true and defines a data property",
     expected: "true:7",

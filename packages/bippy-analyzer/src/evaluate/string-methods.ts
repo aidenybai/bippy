@@ -5,7 +5,8 @@ import type {
   StaticRegExpValue,
   StaticValue,
 } from "../types.js";
-import type { EvaluationContext } from "./context.js";
+import type { EvaluationContext, FunctionCaller, ValueContinuationEvaluator } from "./context.js";
+import { fromNativeValue } from "./native-values.js";
 import { getCoercedText } from "./primitive-shapes.js";
 import {
   listValue,
@@ -19,12 +20,13 @@ import {
   unknownValue,
 } from "./values.js";
 
-export interface StringMethodEvaluator {
-  callFunction: (
-    callback: StaticFunctionValue,
-    argumentsList: StaticValue[],
-    context: EvaluationContext,
-  ) => StaticValue;
+export interface StringMethodEvaluator
+  extends Pick<FunctionCaller, "callFunction">, ValueContinuationEvaluator {}
+
+interface ReplacementMatch {
+  offset: number;
+  length: number;
+  arguments: StaticValue[];
 }
 
 const toRegExp = (value: StaticRegExpValue): RegExp | null => {
@@ -70,7 +72,6 @@ export const dynamicSplitResult = (location: SourceLocation | null): StaticListV
     { kind: "repeat", item: unknownPrimitiveValue("string", "split of dynamic string"), location },
   ]);
 
-/** `String.prototype.replace` with a callback needs the callback to produce a known string on every match. */
 const replaceWithCallback = (
   evaluator: StringMethodEvaluator,
   receiver: string,
@@ -78,22 +79,42 @@ const replaceWithCallback = (
   replacer: StaticFunctionValue,
   context: EvaluationContext,
   replaceAll: boolean,
-): StaticValue | null => {
-  let isKnown = true;
-  const replaceMatch = (...matchArgs: (string | number)[]): string => {
-    const result = evaluator.callFunction(
-      replacer,
-      matchArgs.map((matchArg) => primitiveValue(matchArg)),
-      context,
-    );
-    if (result.kind === "primitive") return String(result.value);
-    isKnown = false;
+): StaticValue => {
+  const matches: ReplacementMatch[] = [];
+  const collectMatch = (matched: string, ...argumentsList: unknown[]): string => {
+    const lastArgument = argumentsList.at(-1);
+    const offset = argumentsList.at(typeof lastArgument === "object" ? -3 : -2);
+    if (typeof offset !== "number") throw new Error("Expected a replacement match offset");
+    matches.push({
+      offset,
+      length: matched.length,
+      arguments: [matched, ...argumentsList].map((argument) =>
+        fromNativeValue(argument, "replacement match", null),
+      ),
+    });
     return "";
   };
-  const replaced = replaceAll
-    ? receiver.replaceAll(pattern, replaceMatch)
-    : receiver.replace(pattern, replaceMatch);
-  return isKnown ? primitiveValue(replaced) : null;
+  if (replaceAll) receiver.replaceAll(pattern, collectMatch);
+  else receiver.replace(pattern, collectMatch);
+  let result: StaticValue = primitiveValue("");
+  let offset = 0;
+  for (const match of matches) {
+    const prefix = receiver.slice(offset, match.offset);
+    result = evaluator.continueValue(result, context, (previous, matchContext) => {
+      const replacement = evaluator.callFunction(replacer, match.arguments, matchContext);
+      return evaluator.continueValue(replacement, matchContext, (value) =>
+        previous.kind === "primitive" && value.kind === "primitive"
+          ? primitiveValue(String(previous.value) + prefix + String(value.value))
+          : unknownPrimitiveValue("string", "replacement callback returned a dynamic value"),
+      );
+    });
+    offset = match.offset + match.length;
+  }
+  return evaluator.continueValue(result, context, (value) =>
+    value.kind === "primitive"
+      ? primitiveValue(String(value.value) + receiver.slice(offset))
+      : value,
+  );
 };
 
 const UNICODE_NORMALIZATION_FORMS = new Set(["NFC", "NFD", "NFKC", "NFKD"]);

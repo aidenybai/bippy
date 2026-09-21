@@ -100,9 +100,13 @@ import {
 import { areGuardsSatisfiable, isGuardCompatibleWithActivePath } from "../symbolic/guard-solver.js";
 import {
   andGuard,
+  combineGuardContexts,
   constantGuard,
+  decidesAlternatives,
+  predicateGuards,
   type Guard,
   type GuardContext,
+  type InputVariable,
   negateGuard,
   orGuard,
 } from "../symbolic/guards.js";
@@ -133,6 +137,7 @@ import type {
   StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticObjectValue,
+  StaticPropertyAttributes,
   StaticValue,
   StubRenderTools,
   StyledComponentsTransformOptions,
@@ -184,6 +189,7 @@ import {
   COMPLETES,
   getCompletionValue,
   getPreferredOutcome,
+  getSettlementCondition,
   isPureCompletion,
   isPureReturn,
   jumpOutcome,
@@ -199,6 +205,7 @@ import type {
   ContextReader,
   EvaluationContext,
   FunctionCallOptions,
+  PropertyAssignmentOptions,
   StatementContinuation,
   StatementValueContinuation,
   StepBudget,
@@ -273,6 +280,9 @@ import {
   setNativeObjectMember,
 } from "./native-values.js";
 import { applyBinaryOperator, applyUnaryOperator, logicalOutcome } from "./operators.js";
+import { getObjectExtensibility, getObjectIntegrityTest } from "./object-integrity.js";
+import { getNeedsSpreadExecution, getObjectSpreadSnapshot } from "./own-enumeration.js";
+import { getPropertyWritePermission, getPropertyDeletePermission } from "./property-descriptors.js";
 import { getDocumentBaseUri, getPageLocationMember } from "./page-location.js";
 import {
   createPathPredicate,
@@ -295,6 +305,7 @@ import {
 import {
   type AsyncCall,
   awaitedValue,
+  completeAsyncCall,
   escapedPromiseValue,
   getAwaitPromise,
   getModeledPromise,
@@ -314,7 +325,13 @@ import {
   snapshotScopes,
   widenMovedBindings,
 } from "./scope-journal.js";
-import { createScope, declareInScope, findOwningScope, lookupScope } from "./scope.js";
+import {
+  captureScope,
+  createScope,
+  declareInScope,
+  findOwningScope,
+  lookupScope,
+} from "./scope.js";
 import {
   createSessionHistory,
   getHistoryMember,
@@ -339,7 +356,7 @@ import {
   withoutThrows,
 } from "./thrown.js";
 import { MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distribution.js";
-import { TimerQueue } from "./timers.js";
+import { TimerQueue, type ScheduledTask } from "./timers.js";
 import {
   createTypedElementConverter,
   getBinaryKind,
@@ -353,7 +370,6 @@ import {
   areValuesEquivalent,
   isSameValue,
   branchValue,
-  distributeBinary,
   capturedValue,
   CHAIN_SHORT_CIRCUIT,
   completeChain,
@@ -374,7 +390,12 @@ import {
   getListLength,
   getObjectAccessor,
   getObjectProperty,
+  getPropertyKeyValue,
   getOwnPropertyPresence,
+  getOwnPropertyEntry,
+  hasOwnKey,
+  getOwnPropertyDescriptor,
+  getTruthinessCases,
   getPreferredTruthiness,
   getSpreadEntries,
   getStubDisplayName,
@@ -649,11 +670,6 @@ const getIntrinsicConstructor = (object: StaticObjectValue): StaticValue | null 
   return witness === null ? null : getPrototypeConstructorGlobal(Object.getPrototypeOf(witness));
 };
 
-interface PropertyAssignmentOptions {
-  receiver?: StaticValue;
-  isStrict?: boolean;
-}
-
 interface AssignmentReference {
   getValue: (context: EvaluationContext) => StaticValue;
   setValue: (value: StaticValue, context: EvaluationContext) => StaticValue;
@@ -913,6 +929,7 @@ export class Interpreter {
   private readonly viteEnvironment: ViteClientEnvironment | undefined;
   private readonly userDefines: Record<string, JsonValue>;
   private readonly clientEnvironments = new WeakMap<ModuleRecord, StaticValue>();
+  private readonly unknownBindings = new WeakMap<ModuleRecord, Map<string, StaticValue>>();
   private readonly pageState: CapturedPageState | null;
   private readonly processEnvironment: ProcessEnvironment | null;
   private readonly clientRealm: HostRealm;
@@ -928,7 +945,11 @@ export class Interpreter {
     StaticBranchValue,
     WeakMap<Guard, GuardedValueCacheEntry>
   >();
-  private guard: Guard = constantGuard(true);
+  private guardContext: GuardContext = { guard: constantGuard(true), inputs: [] };
+
+  private get guard(): Guard {
+    return this.guardContext.guard;
+  }
   private taskAssumptions: Guard = constantGuard(true);
   private readonly pendingReturnJoins: PendingReturnJoin[] = [];
   /** The outcomes of the `await`s a statement is being (re-)evaluated with, each consumed by its `await`. */
@@ -940,6 +961,7 @@ export class Interpreter {
   /** Whether class components still receive `contextTypes`-masked legacy context (`disableLegacyContext`). */
   readonly hasLegacyContext: boolean;
   private readonly maxSteps: number;
+  private readonly taskBudgets = new WeakMap<ScheduledTask, StepBudget>();
   private readonly clientRegistry = createModuleRegistry();
   private readonly serverRegistry = createModuleRegistry();
   /** Module variables mutated by escaped closures before the variable was evaluated, by file, name and property key. */
@@ -957,6 +979,10 @@ export class Interpreter {
     this.timers = new TimerQueue(options.settleMs, options.timerUnderrunMs, (state) =>
       this.recordStateMutation(state),
     );
+    this.timers.getCause = () => this.guardContext;
+    this.timers.isTaskPossible = (guard) => this.isTaskPossible(andGuard([this.guard, guard]));
+    this.timers.runWithCause = (cause, task) =>
+      this.runWithGuard(andGuard([this.guard, cause.guard]), task, cause.inputs);
     this.maxCallDepth = options.maxCallDepth ?? DEFAULT_MAX_CALL_DEPTH;
     this.maxForkDepth = options.maxForkDepth ?? DEFAULT_MAX_FORK_DEPTH;
     this.maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
@@ -1168,6 +1194,7 @@ export class Interpreter {
       superBinding: null,
       readContext,
       callStack: [],
+      taskId: this.timers.currentTaskId,
       uncertainDepth: 0,
       forkDepth: 0,
       environment,
@@ -1665,9 +1692,95 @@ export class Interpreter {
     }
   }
 
-  private getProxyMethod(
+  getHasProperty(
+    target: StaticValue,
+    key: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ): StaticValue {
+    return this.continueValue(target, context, (receiver, receiverContext) =>
+      this.continueValue(key, receiverContext, (propertyKey, keyContext) => {
+        if (
+          receiver.kind === "primitive" ||
+          receiver.kind === "symbol" ||
+          (receiver.kind === "unknown-primitive" && receiver.primitiveType !== "any")
+        ) {
+          const reason = "Property presence requires an object";
+          return thrownValue(
+            reason,
+            createErrorValue("TypeError", [primitiveValue(reason)], location),
+            location,
+          );
+        }
+        if (receiver.kind !== "proxy")
+          return (
+            this.hasGlobalExpando(propertyKey, receiver, keyContext.environment) ??
+            hasProperty(propertyKey, receiver) ??
+            this.hasGlobalObjectProperty(propertyKey, receiver, keyContext.environment) ??
+            this.hasExternalExport(propertyKey, receiver, keyContext) ??
+            applyBinaryOperator("in", propertyKey, receiver)
+          );
+        return this.continueValue(
+          this.getProxyMethod(receiver.handler, "has", keyContext, location),
+          keyContext,
+          (method, methodContext) => {
+            if (isUndefinedValue(method))
+              return this.getHasProperty(receiver.target, propertyKey, methodContext, location);
+            return this.continueValue(
+              this.callValue(method, [receiver.target, propertyKey], methodContext, location, {
+                thisValue: receiver.handler,
+              }),
+              methodContext,
+              (result, resultContext) =>
+                this.continueValue(
+                  getTruthinessCases(result),
+                  resultContext,
+                  (present, presentContext) => {
+                    if (getTruthiness(present) === true) return TRUE_VALUE;
+                    const name = toPropertyKey(propertyKey);
+                    const backing = receiver.target;
+                    if (backing.kind !== "object" || name === null) return FALSE_VALUE;
+                    const descriptor = getOwnPropertyDescriptor(backing, name);
+                    if (!descriptor) return FALSE_VALUE;
+                    return this.continueValue(
+                      descriptor,
+                      presentContext,
+                      (metadata, metadataContext) => {
+                        if (metadata.kind !== "object") return FALSE_VALUE;
+                        const canHide = mapValue(
+                          getTruthinessCases(getObjectProperty(metadata, "configurable")),
+                          (configurable) =>
+                            getTruthiness(configurable) === true
+                              ? getObjectExtensibility(backing)
+                              : FALSE_VALUE,
+                        );
+                        return this.continueValue(
+                          getTruthinessCases(canHide),
+                          metadataContext,
+                          (permission) => {
+                            if (getTruthiness(permission) === true) return FALSE_VALUE;
+                            const reason = "Proxy has trap cannot hide a protected own property";
+                            return thrownValue(
+                              reason,
+                              createErrorValue("TypeError", [primitiveValue(reason)], location),
+                              location,
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+            );
+          },
+        );
+      }),
+    );
+  }
+
+  getProxyMethod(
     handler: StaticObjectValue,
-    name: "get" | "set",
+    name: string,
     context: EvaluationContext,
     location: SourceLocation | null,
   ): StaticValue {
@@ -1743,25 +1856,55 @@ export class Interpreter {
     if (error) return error;
     switch (target.kind) {
       case "object": {
-        const accessor = getObjectAccessor(target, propertyName);
-        if (accessor) {
-          return this.continueValue(
-            accessor.set ?? UNDEFINED_VALUE,
-            context,
-            (setter, setterContext) =>
-              isUndefinedValue(setter)
-                ? this.getPropertyWriteResult(target, propertyName, FALSE_VALUE, isStrict)
-                : this.continueValue(
-                    this.callValue(setter, [value], setterContext, null, {
-                      thisValue: receiver ?? target,
-                    }),
-                    setterContext,
-                    () => target,
-                  ),
+        const setAccessor = (setter: StaticValue, setterContext: EvaluationContext): StaticValue =>
+          this.continueValue(setter, setterContext, (method, methodContext) =>
+            isUndefinedValue(method)
+              ? this.getPropertyWriteResult(target, propertyName, FALSE_VALUE, isStrict)
+              : this.continueValue(
+                  this.callValue(method, [value], methodContext, null, {
+                    thisValue: receiver ?? target,
+                  }),
+                  methodContext,
+                  () => target,
+                ),
           );
+        const write = (
+          writeContext: EvaluationContext,
+          attributes?: StaticPropertyAttributes,
+        ): StaticValue =>
+          this.continueValue(
+            getPropertyWritePermission(target, propertyName),
+            writeContext,
+            (permission) => {
+              if (getTruthiness(permission) !== true)
+                return this.getPropertyWriteResult(target, propertyName, FALSE_VALUE, isStrict);
+              this.assignOwnProperty(target, propertyName, value, undefined, attributes);
+              return target;
+            },
+          );
+        const accessor = getObjectAccessor(target, propertyName);
+        if (accessor) return setAccessor(accessor.set ?? UNDEFINED_VALUE, context);
+        if (getOwnPropertyEntry(target, propertyName) === null) {
+          const descriptor = getOwnPropertyDescriptor(target, propertyName);
+          if (descriptor)
+            return this.continueValue(descriptor, context, (metadata, metadataContext) => {
+              if (metadata.kind === "object") {
+                if (hasOwnKey(metadata, "set") === true)
+                  return setAccessor(getObjectProperty(metadata, "set"), metadataContext);
+                return write(metadataContext, {
+                  enumerable: getObjectProperty(metadata, "enumerable"),
+                  configurable: getObjectProperty(metadata, "configurable"),
+                  writable: getObjectProperty(metadata, "writable"),
+                });
+              }
+              const inherited =
+                target.prototype && getObjectAccessor(target.prototype, propertyName);
+              return inherited
+                ? setAccessor(inherited.set ?? UNDEFINED_VALUE, metadataContext)
+                : write(metadataContext);
+            });
         }
-        this.assignOwnProperty(target, propertyName, value);
-        return target;
+        return write(context);
       }
       case "list": {
         const binaryKind = getBinaryKind(target);
@@ -1887,7 +2030,7 @@ export class Interpreter {
                   })
                 : this.callValue(
                     trap,
-                    [target.target, primitiveValue(propertyName), value, receiver ?? target],
+                    [target.target, getPropertyKeyValue(propertyName), value, receiver ?? target],
                     trapContext,
                     null,
                     { thisValue: target.handler },
@@ -2028,7 +2171,7 @@ export class Interpreter {
     const value: StaticFunctionValue = {
       kind: "function",
       node,
-      scope: context.scope,
+      scope: captureScope(context.scope),
       module: context.module,
       thisValue: node.type === "ArrowFunctionExpression" ? context.thisValue : null,
       superBinding: node.type === "ArrowFunctionExpression" ? context.superBinding : null,
@@ -2121,7 +2264,7 @@ export class Interpreter {
       kind: "class",
       node,
       body,
-      scope,
+      scope: captureScope(scope),
       module: context.module,
       name,
       properties: {
@@ -2209,12 +2352,23 @@ export class Interpreter {
         context.environment,
       );
     }
-    return this.isAbsentGlobal(name, context.environment)
-      ? thrownValue(
-          `\`${name}\` is not defined`,
-          createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
-        )
-      : unknownValue(`unbound identifier "${name}"`);
+    if (this.isAbsentGlobal(name, context.environment))
+      return thrownValue(
+        `\`${name}\` is not defined`,
+        createErrorValue("ReferenceError", [primitiveValue(`${name} is not defined`)], null),
+      );
+    let bindings = this.unknownBindings.get(context.module);
+    if (!bindings) {
+      bindings = new Map();
+      this.unknownBindings.set(context.module, bindings);
+    }
+    const key = `${context.environment ?? "module"}:${name}`;
+    let value = bindings.get(key);
+    if (!value) {
+      value = unknownValue(`unbound identifier "${name}"`);
+      bindings.set(key, value);
+    }
+    return value;
   }
 
   /** The binding, module export, or modeled global `name` denotes; null when nothing in scope defines it. */
@@ -2419,17 +2573,21 @@ export class Interpreter {
   ): void => {
     const guard = andGuard([this.guard, cause.guard]);
     if (!this.isTaskPossible(guard)) return;
-    this.runWithGuard(guard, () => {
-      if (guard.kind === "constant" && guard.value) return task();
-      this.runMaybe(context?.scope ?? null, task, "conditional task", location, true, false, {
-        predicate: serializeSymbolicPredicate({
-          formula: guard,
-          choice: null,
-          guards: null,
-          inputs: cause.inputs,
-        }),
-      });
-    });
+    this.runWithGuard(
+      guard,
+      () => {
+        if (guard.kind === "constant" && guard.value) return task();
+        this.runMaybe(context?.scope ?? null, task, "conditional task", location, true, false, {
+          predicate: serializeSymbolicPredicate({
+            formula: guard,
+            choice: null,
+            guards: null,
+            inputs: this.guardContext.inputs,
+          }),
+        });
+      },
+      cause.inputs,
+    );
   };
 
   runTaskAlternatives = (
@@ -2447,21 +2605,10 @@ export class Interpreter {
     if (alternatives.length === 0) return;
     if (alternatives.length === 1) {
       const [alternative] = alternatives;
-      if (alternative) this.runWithGuard(alternative.guard, () => task(alternative.index));
+      if (alternative)
+        this.runTaskWithCause(alternative.cause, () => task(alternative.index), context, location);
       return;
     }
-    const scope = context?.scope ?? null;
-    const entrySnapshot = snapshotScopes(scope);
-    const pathSnapshots: ScopeSnapshot[][] = [];
-    const journal = new HeapJournal();
-    this.heapJournals.push(journal);
-    alternatives.forEach((alternative, alternativeIndex) => {
-      if (alternativeIndex > 0) restoreScopes(entrySnapshot);
-      this.runWithGuard(alternative.guard, () => task(alternative.index));
-      pathSnapshots.push(snapshotScopes(scope));
-      journal.endPath();
-    });
-    this.removeHeapJournal(journal);
     const predicate = guardedPredicate(
       alternatives.map((alternative) => alternative.cause.guard),
       alternatives.map((alternative) => alternative.cause.inputs),
@@ -2470,12 +2617,18 @@ export class Interpreter {
       0,
       alternatives.findIndex((alternative) => alternative.index === 0),
     );
-    journal.join(reason, location, preferredPath, predicate);
-    joinScopes(pathSnapshots, reason, location, preferredPath, predicate);
+    this.forkValues(
+      context?.scope ?? null,
+      alternatives.map((alternative) => () => task(alternative.index)),
+      reason,
+      location,
+      preferredPath,
+      predicate,
+    );
   };
 
   bindContinuationWithCause: TaskBinder = (task) => {
-    const cause = { guard: this.guard, inputs: [] };
+    const cause = this.guardContext;
     return (...args) => this.runTaskWithCause(cause, () => task(...args));
   };
 
@@ -2527,13 +2680,20 @@ export class Interpreter {
     this.runTaskWithCause(cause, task, context, location);
   }
 
-  runWithGuard<Result>(guard: Guard, run: () => Result): Result {
-    const previous = this.guard;
-    this.guard = guard;
+  runWithGuard<Result>(
+    guard: Guard,
+    run: () => Result,
+    inputs: readonly InputVariable[] = [],
+  ): Result {
+    const previous = this.guardContext;
+    this.guardContext = combineGuardContexts(
+      [previous, { guard, inputs: [...inputs] }],
+      () => guard,
+    );
     try {
       return run();
     } finally {
-      this.guard = previous;
+      this.guardContext = previous;
     }
   }
 
@@ -2976,23 +3136,33 @@ export class Interpreter {
       for (let index = startIndex; index < node.properties.length; index++) {
         const property = node.properties[index];
         if (property.type === "SpreadElement") {
-          const spread = this.evaluateExpression(property.argument, currentContext);
-          if (getThrowCertainty(spread) !== "never")
-            return this.continueValue(
-              spread,
-              currentContext,
-              (value, spreadContext) => {
+          const spread = this.materializeNamespace(
+            this.evaluateExpression(property.argument, currentContext),
+            currentContext.environment,
+          );
+          const requiresExecution = getNeedsSpreadExecution(spread);
+          if (requiresExecution || getThrowCertainty(spread) !== "never")
+            return this.continueValue(spread, currentContext, (value, spreadContext) => {
+              const snapshot =
+                value.kind === "object"
+                  ? (getObjectSpreadSnapshot(
+                      this,
+                      value,
+                      spreadContext,
+                      this.locate(currentContext.module, property),
+                    ) ?? value)
+                  : value;
+              return this.continueValue(snapshot, spreadContext, (copied, copiedContext) => {
                 const selectedEntries = copyEntries(entries);
-                appendSpread(selectedEntries, value, spreadContext);
+                appendSpread(selectedEntries, copied, copiedContext);
                 return evaluateFrom(
                   index + 1,
                   selectedEntries,
-                  spreadContext,
+                  copiedContext,
                   remainingAlternatives,
                 );
-              },
-              false,
-            );
+              });
+            });
           appendSpread(entries, spread, currentContext);
           continue;
         }
@@ -3207,25 +3377,26 @@ export class Interpreter {
             const nullish = isNullish(left);
             if (nullish === false) return left;
             if (nullish === true) return this.evaluateExpression(node.right, context);
-            let right: StaticValue | null = null;
-            const withRight = (alternative: StaticValue): StaticValue => {
-              if (isNullish(alternative) === false) return alternative;
-              right ??= this.evaluateExpression(node.right, context);
-              return isNullish(alternative) === true
-                ? right
-                : branchValue(
-                    [alternative, right],
-                    `?? on ${describeValue(alternative)}`,
-                    location,
-                    0,
-                    getPresencePredicate(alternative),
-                  );
-            };
-            return mapValue(left, withRight);
+            const reason = `?? on ${describeValue(left)}`;
+            const predicate = getPresencePredicate(left);
+            return branchValue(
+              this.forkValues(
+                context.scope,
+                [() => left, () => this.evaluateExpression(node.right, context)],
+                reason,
+                location,
+                0,
+                predicate,
+              ),
+              reason,
+              location,
+              0,
+              predicate,
+            );
           }
         }
       },
-      false,
+      node.operator === "??",
     );
   }
 
@@ -3328,7 +3499,7 @@ export class Interpreter {
    * hold one alternative per path.
    */
   private forkValues<Result>(
-    scope: Scope,
+    scope: Scope | null,
     paths: Array<() => Result>,
     reason: string,
     location: SourceLocation | null,
@@ -3337,23 +3508,38 @@ export class Interpreter {
     additionalScope?: Scope,
   ): Result[] {
     const entrySnapshot = snapshotScopes(scope, additionalScope);
-    const journal = new HeapJournal();
-    this.heapJournals.push(journal);
+    const journal = new HeapJournal(
+      undefined,
+      entrySnapshot.map((snapshot) => snapshot.scope),
+    );
+    const parsed = predicate === null ? null : parseSymbolicPredicate(predicate);
+    const guards =
+      parsed && decidesAlternatives(parsed, paths.length)
+        ? predicateGuards(parsed, paths.length)
+        : null;
+    const parentGuard = this.guard;
     const snapshots: ScopeSnapshot[][] = [];
+    this.heapJournals.push(journal);
     try {
-      return paths.map((path, pathIndex) => {
+      const results = paths.map((path, pathIndex) => {
         if (pathIndex > 0) restoreScopes(entrySnapshot);
-        const result = path();
+        const result = guards
+          ? this.runWithGuard(andGuard([parentGuard, guards[pathIndex]]), path, parsed?.inputs)
+          : path();
         snapshots.push(snapshotScopes(scope, additionalScope));
         journal.endPath();
         return result;
       });
+      this.removeHeapJournal(journal);
+      journal.join(reason, location, preferredPath, predicate);
+      joinScopes(snapshots, reason, location, preferredPath, predicate);
+      return results;
+    } catch (error) {
+      journal.restore();
+      restoreScopes(entrySnapshot);
+      throw error;
     } finally {
-      this.heapJournals.pop();
-      if (snapshots.length === paths.length) {
-        journal.join(reason, location, preferredPath, predicate);
-        joinScopes(snapshots, reason, location, preferredPath, predicate);
-      }
+      this.removeHeapJournal(journal);
     }
   }
 
@@ -3373,20 +3559,11 @@ export class Interpreter {
       ...context,
       forkDepth: context.forkDepth + 1,
     };
-    const resolved = getAlternativeGuards(branch);
-    const parentGuard = this.guard;
     return joinMappedAlternatives(
       branch,
       this.forkValues(
         context.scope,
-        branch.alternatives.map(
-          (alternative, index) => () =>
-            resolved
-              ? this.runWithGuard(andGuard([parentGuard, resolved.guards[index]]), () =>
-                  call(alternative, alternativeContext),
-                )
-              : call(alternative, alternativeContext),
-        ),
+        branch.alternatives.map((alternative) => () => call(alternative, alternativeContext)),
         branch.reason,
         branch.location,
         branch.preferredIndex,
@@ -3402,7 +3579,7 @@ export class Interpreter {
     const argument = this.evaluateExpression(node.argument, context);
     switch (node.operator) {
       case "void":
-        return getThrownOperand([argument]) ?? UNDEFINED_VALUE;
+        return this.continueValue(argument, context, () => UNDEFINED_VALUE, false);
       default: {
         const operator = node.operator;
         if (
@@ -3489,8 +3666,30 @@ export class Interpreter {
             location,
           );
           if (error) return error;
-          this.deleteProperty(receiver, propertyKey, keyContext);
-          return TRUE_VALUE;
+          const name = toPropertyKey(propertyKey);
+          const properties =
+            receiver.kind === "object"
+              ? receiver
+              : receiver.kind === "function" || receiver.kind === "class"
+                ? receiver.properties
+                : null;
+          const permission =
+            properties && name !== null
+              ? getPropertyDeletePermission(properties, name)
+              : TRUE_VALUE;
+          return this.continueValue(permission, keyContext, (allowed, deleteContext) => {
+            if (getTruthiness(allowed) !== true) {
+              if (!isStrictCode(context.module, target)) return FALSE_VALUE;
+              const reason = `Cannot delete property ${JSON.stringify(name)}`;
+              return thrownValue(
+                reason,
+                createErrorValue("TypeError", [primitiveValue(reason)], location),
+                location,
+              );
+            }
+            this.deleteProperty(receiver, propertyKey, deleteContext);
+            return TRUE_VALUE;
+          });
         });
       },
     );
@@ -3525,7 +3724,6 @@ export class Interpreter {
           this.deleteProperty(target.type.component.properties, key, context);
         return;
       case "object":
-        if (target.isFrozen) return;
         this.recordHeapMutation(target);
         this.escapeWalk.memo.invalidate(target, name);
         if (name !== null) deleteObjectProperty(target, name);
@@ -3569,15 +3767,8 @@ export class Interpreter {
       context,
       (left, context) => {
         const right = this.evaluateExpression(node.right, context);
-        if (node.operator === "in") {
-          const evaluatePresence = (key: StaticValue, target: StaticValue): StaticValue =>
-            this.hasGlobalExpando(key, target, context.environment) ??
-            hasProperty(key, target) ??
-            this.hasGlobalObjectProperty(key, target, context.environment) ??
-            this.hasExternalExport(key, target, context) ??
-            applyBinaryOperator("in", key, target);
-          return distributeBinary(left, right, evaluatePresence) ?? evaluatePresence(left, right);
-        }
+        if (node.operator === "in")
+          return this.getHasProperty(right, left, context, this.locate(context.module, node));
         return applyBinaryOperator(node.operator, left, right, this.getRealm(context.environment));
       },
       false,
@@ -4084,13 +4275,13 @@ export class Interpreter {
     key: string,
     value: StaticValue,
     accessor?: StaticAccessor,
+    attributes?: StaticPropertyAttributes,
   ): void {
-    if (target.isFrozen) return;
+    if (getTruthiness(getPropertyWritePermission(target, key)) === false) return;
     this.recordHeapMutation(target);
     this.escapeWalk.memo.invalidate(target, key);
-    target.entries.push(
-      accessor ? { kind: "property", key, value, accessor } : { kind: "property", key, value },
-    );
+    const previous = getOwnPropertyEntry(target, key);
+    target.entries.push({ ...previous, ...attributes, kind: "property", key, value, accessor });
   }
 
   pushItems(target: StaticListValue, items: readonly StaticValue[]): void {
@@ -4110,7 +4301,7 @@ export class Interpreter {
     key: StaticValue,
     value: StaticValue,
   ): void {
-    if (target.isFrozen) return;
+    if (getTruthiness(getObjectIntegrityTest(target, true)) === true) return;
     this.recordHeapMutation(target);
     this.escapeWalk.memo.invalidate(target, null);
     target.entries.push({
@@ -4129,6 +4320,7 @@ export class Interpreter {
     if (owner) {
       this.mutations.record(owner.allocation);
       this.escapeWalk.memo.invalidate(owner, name);
+      for (const journal of this.heapJournals) journal.recordScopeBinding(owner, name);
       owner.bindings.set(
         name,
         this.withUncertainAssignment(owner.bindings.get(name), value, name, context),
@@ -4444,19 +4636,38 @@ export class Interpreter {
               receiver ?? object,
             );
           }
-          const accessor = getObjectAccessor(object, key);
-          return accessor
-            ? this.continueValue(
-                accessor.get ?? UNDEFINED_VALUE,
-                readContext,
-                (getter, getterContext) =>
-                  isUndefinedValue(getter)
-                    ? UNDEFINED_VALUE
-                    : this.callValue(getter, [], getterContext, location, {
-                        thisValue: receiver ?? object,
-                      }),
-              )
-            : getObjectProperty(object, key);
+          const getAccessedValue = (
+            getter: StaticValue,
+            getterContext: EvaluationContext,
+          ): StaticValue =>
+            this.continueValue(getter, getterContext, (method, methodContext) =>
+              isUndefinedValue(method)
+                ? UNDEFINED_VALUE
+                : this.callValue(method, [], methodContext, location, {
+                    thisValue: receiver ?? object,
+                  }),
+            );
+          const entry = getOwnPropertyEntry(object, key);
+          if (entry)
+            return entry.accessor
+              ? getAccessedValue(entry.accessor.get ?? UNDEFINED_VALUE, readContext)
+              : entry.value;
+          const descriptor = getOwnPropertyDescriptor(object, key);
+          if (!descriptor) return getObjectProperty(object, key);
+          return this.continueValue(descriptor, readContext, (metadata, metadataContext) => {
+            if (isUndefinedValue(metadata))
+              return this.getInheritedObjectProperty(
+                object,
+                key,
+                metadataContext,
+                location,
+                receiver ?? object,
+              );
+            if (metadata.kind !== "object") return metadata;
+            return hasOwnKey(metadata, "get") === true
+              ? getAccessedValue(getObjectProperty(metadata, "get"), metadataContext)
+              : getObjectProperty(metadata, "value");
+          });
         };
         const presence = getOwnPropertyPresence(object, key);
         return presence.kind === "branch"
@@ -4780,7 +4991,7 @@ export class Interpreter {
                 )
               : this.callValue(
                   trap,
-                  [object.target, primitiveValue(key), receiver ?? object],
+                  [object.target, getPropertyKeyValue(key), receiver ?? object],
                   trapContext,
                   location,
                   { thisValue: object.handler },
@@ -5000,6 +5211,18 @@ export class Interpreter {
     });
   }
 
+  private getTaskContext(context: EvaluationContext): EvaluationContext {
+    const task = this.timers.currentTask;
+    const taskId = task?.id ?? null;
+    if ((context.taskId ?? null) === taskId) return context;
+    let budget = task && this.taskBudgets.get(task);
+    if (!budget) {
+      budget = { remaining: this.maxSteps };
+      if (task) this.taskBudgets.set(task, budget);
+    }
+    return { ...context, taskId, callStack: [], budget };
+  }
+
   callValue(
     callee: StaticValue,
     args: StaticValue[],
@@ -5007,6 +5230,7 @@ export class Interpreter {
     location: SourceLocation | null,
     options: ValueCallOptions = {},
   ): StaticValue {
+    context = this.getTaskContext(context);
     const throwingArgumentIndex = args.findIndex(
       (argument) => getThrowCertainty(argument) !== "never",
     );
@@ -5192,6 +5416,7 @@ export class Interpreter {
           if (widened === current) continue;
           this.mutations.record(owner.allocation);
           this.escapeWalk.memo.invalidate(owner, root);
+          for (const journal of this.heapJournals) journal.recordScopeBinding(owner, root);
           owner.bindings.set(root, widened);
           continue;
         }
@@ -5599,6 +5824,7 @@ export class Interpreter {
     context: EvaluationContext,
     options: FunctionCallOptions = {},
   ): StaticValue {
+    context = this.getTaskContext(context);
     const callStack = options.callStack ?? context.callStack;
     const location = this.locate(functionValue.module, functionValue.node);
     if (functionValue.boundArgs || functionValue.boundThis) {
@@ -5641,7 +5867,9 @@ export class Interpreter {
     const wasDeferred = frame?.isDeferred ?? false;
     const asyncCall: AsyncCall | null = functionValue.node.async ? { result: null } : null;
     const returned = this.evaluateFunctionBody(functionValue, args, context, options, asyncCall);
-    const result = asyncCall?.result ? asyncCall.result.value : returned;
+    const result = asyncCall?.result
+      ? completeAsyncCall(asyncCall, promiseTools(this, context, location))
+      : returned;
     // An async body runs synchronously up to its first modeled `await`;
     // a reaction microtask resumes it, while an unknown operand
     // defers whatever follows. Only a framework-awaited call (server components,
@@ -5692,6 +5920,7 @@ export class Interpreter {
       module: functionValue.module,
       scope,
       budget: context.budget,
+      taskId: this.timers.currentTaskId,
       thisValue,
       superBinding: functionValue.superBinding,
       readContext: context.readContext,
@@ -5727,14 +5956,28 @@ export class Interpreter {
     }
     const body = functionValue.node.body;
     if (!body) return UNDEFINED_VALUE;
-    if (body.type !== "BlockStatement") {
+    if (body.type !== "BlockStatement" && !asyncCall) {
       return this.evaluateExpression(body, callContext);
     }
-    for (const name of getHoistedVarNames(body.body)) {
+    const statements: Statement[] =
+      body.type === "BlockStatement"
+        ? body.body
+        : [
+            {
+              type: "ReturnStatement",
+              argument: body,
+              start: body.start,
+              end: body.end,
+            },
+          ];
+    for (const name of getHoistedVarNames(statements)) {
       if (!scope.bindings.has(name)) declareInScope(scope, name, UNDEFINED_VALUE);
     }
-    const outcome = this.evaluateFunctionBlock(body.body, callContext);
-    return outcomeToReturnValue(outcome, location);
+    const outcome = this.evaluateFunctionBlock(statements, callContext);
+    const returned = outcomeToReturnValue(outcome, location);
+    if (asyncCall)
+      asyncCall.completion = { value: returned, condition: getSettlementCondition(outcome) };
+    return returned;
   }
 
   /**
@@ -6026,6 +6269,7 @@ export class Interpreter {
     context: EvaluationContext,
     continuation: StatementContinuation,
   ): StatementOutcome {
+    context = this.getTaskContext(context);
     for (let index = startIndex; index < statements.length; index++) {
       const statement = statements[index];
       const location = this.locate(context.module, statement);
@@ -6054,7 +6298,14 @@ export class Interpreter {
           );
         case "ThrowStatement": {
           const thrownArgument = this.evaluateExpression(statement.argument, context);
-          return returnOutcome(thrownValue("component throws", thrownArgument, location));
+          return returnOutcome(
+            this.continueValue(
+              thrownArgument,
+              context,
+              (value) => thrownValue("component throws", value, location),
+              false,
+            ),
+          );
         }
         case "BreakStatement":
           return jumpOutcome("break", statement.label?.name ?? null);
@@ -6104,32 +6355,39 @@ export class Interpreter {
           return this.evaluateBlock(statement.body, context, true, proceed);
         case "IfStatement": {
           const test = this.evaluateExpression(statement.test, context);
-          const truthiness = getTruthiness(test);
-          const alternate = statement.alternate;
-          const runConsequent: StatementContinuation = (pathContext) =>
-            this.evaluateBlock([statement.consequent], pathContext, true, proceed);
-          const runAlternate: StatementContinuation = (pathContext) =>
-            alternate
-              ? this.evaluateBlock([alternate], pathContext, true, proceed)
-              : proceed(pathContext);
-          if (truthiness === true) return runConsequent(context);
-          if (truthiness === false) return runAlternate(context);
-          const narrowing = this.narrowTest(statement.test, context);
-          if (narrowing?.whenTrue === null) return runAlternate(context);
-          if (narrowing?.whenFalse === null) return runConsequent(context);
-          return this.forkPaths(
-            [
-              (pathContext) => this.evaluateBlock([statement.consequent], pathContext, true),
-              (pathContext) =>
-                alternate ? this.evaluateBlock([alternate], pathContext, true) : COMPLETES,
-            ],
+          return this.continueStatementValue(
+            test,
             context,
-            proceed,
-            `if (${describeValue(test)})`,
+            (test, context) => {
+              const truthiness = getTruthiness(test);
+              const alternate = statement.alternate;
+              const runConsequent: StatementContinuation = (pathContext) =>
+                this.evaluateBlock([statement.consequent], pathContext, true, proceed);
+              const runAlternate: StatementContinuation = (pathContext) =>
+                alternate
+                  ? this.evaluateBlock([alternate], pathContext, true, proceed)
+                  : proceed(pathContext);
+              if (truthiness === true) return runConsequent(context);
+              if (truthiness === false) return runAlternate(context);
+              const narrowing = this.narrowTest(statement.test, context);
+              if (narrowing?.whenTrue === null) return runAlternate(context);
+              if (narrowing?.whenFalse === null) return runConsequent(context);
+              return this.forkPaths(
+                [
+                  (pathContext) => this.evaluateBlock([statement.consequent], pathContext, true),
+                  (pathContext) =>
+                    alternate ? this.evaluateBlock([alternate], pathContext, true) : COMPLETES,
+                ],
+                context,
+                proceed,
+                `if (${describeValue(test)})`,
+                location,
+                getPreferredTruthiness(test) === false ? 1 : 0,
+                getTruthinessPredicate(test),
+                narrowing,
+              );
+            },
             location,
-            getPreferredTruthiness(test) === false ? 1 : 0,
-            getTruthinessPredicate(test),
-            narrowing,
           );
         }
         case "SwitchStatement":
@@ -6263,24 +6521,15 @@ export class Interpreter {
       outcome: StatementOutcome,
       pathContext: EvaluationContext,
     ): StatementOutcome => {
-      if (!finalizer || outcome.mayComplete) return outcome;
-      const exit = this.evaluateBlock(finalizer.body, pathContext, true);
-      if (!exit.mayComplete) return exit;
-      if (exit.returned === null && exit.jump === null) return outcome;
-      return mergeOutcomes(
-        [outcome, { ...exit, mayComplete: false }],
-        "finally",
-        location,
-        0,
-        getTruthinessPredicate(getCompletionValue(exit)),
-      );
+      if (!finalizer || outcome.mayComplete || outcome.isSuspended) return outcome;
+      return this.evaluateBlock(finalizer.body, pathContext, true, () => outcome);
     };
     const handler = statement.handler;
     const afterBody = (outcome: StatementOutcome): StatementOutcome => {
       const thrown = outcome.returned && handler ? getThrownPaths(outcome.returned) : null;
       if (thrown === null || !handler) {
-        if (!outcome.mayComplete) return finishExit(outcome, withoutSuspension(context));
-        if (isPureCompletion(outcome)) return finish(withoutSuspension(context));
+        if (!outcome.mayComplete) return finishExit(outcome, context);
+        if (isPureCompletion(outcome)) return finish(context);
         return this.forkPaths(
           [
             (pathContext) => finishExit({ ...outcome, mayComplete: false }, pathContext),
@@ -6312,7 +6561,11 @@ export class Interpreter {
           );
         }
         return finishExit(
-          this.evaluateBlock(handler.body.body, handlerContext, false),
+          this.evaluateBlock(
+            handler.body.body,
+            withOutcomeHandler(handlerContext, (caught) => finishExit(caught, handlerContext)),
+            false,
+          ),
           handlerContext,
         );
       };
@@ -6343,7 +6596,25 @@ export class Interpreter {
       true,
     );
     this.settlePendingReturns(pendingDepth);
-    return outcome.isSuspended ? outcome : afterBody(outcome);
+    if (!outcome.isSuspended) return afterBody(outcome);
+    const settlement = getSettlementCondition(outcome);
+    if (getTruthiness(settlement) === false) return outcome;
+    const finishSettled = () =>
+      afterBody({
+        ...outcome,
+        returned: outcome.returned && this.getGuardedValue(outcome.returned),
+        isSuspended: false,
+      });
+    if (getTruthiness(settlement) === true) return finishSettled();
+    return this.forkPaths(
+      [finishSettled, () => SUSPENDED],
+      context,
+      () => COMPLETES,
+      "try suspension",
+      location,
+      0,
+      getTruthinessPredicate(settlement),
+    );
   }
 
   /**
@@ -6365,11 +6636,13 @@ export class Interpreter {
   ): Result {
     const predicate = options?.predicate ?? createPathPredicate(reason, location);
     const entrySnapshot = snapshotScopes(scope);
-    const journal = new HeapJournal(options?.unconditionalUpdates);
+    const journal = new HeapJournal(
+      options?.unconditionalUpdates,
+      entrySnapshot.map((snapshot) => snapshot.scope),
+    );
     this.heapJournals.push(journal);
     try {
-      return run();
-    } finally {
+      const result = run();
       const ranSnapshot = snapshotScopes(scope);
       journal.endPath();
       restoreScopes(entrySnapshot);
@@ -6378,6 +6651,13 @@ export class Interpreter {
       const preferredPath = isLikelyRun ? 0 : 1;
       journal.join(reason, location, preferredPath, predicate, isRepeated);
       joinScopes([ranSnapshot, entrySnapshot], reason, location, preferredPath, predicate);
+      return result;
+    } catch (error) {
+      journal.restore();
+      restoreScopes(entrySnapshot);
+      throw error;
+    } finally {
+      this.removeHeapJournal(journal);
     }
   }
 
@@ -6396,7 +6676,10 @@ export class Interpreter {
     isPrimitiveOnly = false,
   ): void {
     const entrySnapshot = snapshotScopes(scope);
-    const journal = new HeapJournal();
+    const journal = new HeapJournal(
+      undefined,
+      entrySnapshot.map((snapshot) => snapshot.scope),
+    );
     const pendingDepth = this.pendingReturnJoins.length;
     this.heapJournals.push(journal);
     try {
@@ -6551,8 +6834,11 @@ export class Interpreter {
       ...context,
       forkDepth: context.forkDepth + 1,
       uncertainDepth: context.uncertainDepth + (isTooDeep ? 1 : 0),
-      suspension: null,
+      suspension: context.suspension,
     };
+    const resumedContext = withOutcomeHandler(forkContext, (outcome) =>
+      this.continueStatements(outcome, context, proceed, location),
+    );
     const narrowedBinding = narrowing?.target.key === null ? narrowing.target.name : null;
     const narrowedSubject =
       narrowedBinding === null ? undefined : lookupScope(context.scope, narrowedBinding);
@@ -6561,159 +6847,188 @@ export class Interpreter {
     const hookCursor = context.hooks?.cursor ?? 0;
     const pathSnapshots: ScopeSnapshot[][] = [];
     let completedHookCursor = hookCursor;
-    const journal = new HeapJournal();
+    const journal = new HeapJournal(
+      undefined,
+      entrySnapshot.map((snapshot) => snapshot.scope),
+    );
     this.heapJournals.push(journal);
-    const outcomes = branches.map((branch, branchIndex) => {
-      if (branchIndex > 0) {
-        restoreScopes(entrySnapshot);
-        if (context.hooks) context.hooks.cursor = hookCursor;
-      }
-      const narrowed = branchIndex === 0 ? narrowing?.whenTrue : narrowing?.whenFalse;
-      if (narrowing && narrowed) {
-        applyNarrowing(context.scope, narrowing.target, narrowed, (object) =>
-          this.journalHeapValue(object),
-        );
-      }
-      const outcome = pathGuards
-        ? this.runWithGuard(andGuard([parentGuard, pathGuards.guards[branchIndex]]), () =>
-            branch(forkContext),
-          )
-        : branch(forkContext);
-      pathSnapshots.push(snapshotScopes(context.scope));
-      if (narrowedBinding !== null && lookupScope(context.scope, narrowedBinding) !== narrowed) {
-        isSubjectReassigned = true;
-      }
-      if (outcome.mayComplete) completedHookCursor = context.hooks?.cursor ?? hookCursor;
-      journal.endPath();
-      return outcome;
-    });
-    const preferredOutcome = getPreferredOutcome(outcomes, preferredBranch);
-    const completingPaths = outcomes.flatMap((outcome, index) =>
-      outcome.mayComplete ? [index] : [],
-    );
-    const jumpingPaths = outcomes.flatMap((outcome, index) => (outcome.mayComplete ? [] : [index]));
-    const returningPaths = jumpingPaths.filter((index) => outcomes[index].jump === null);
-    const isMixed = completingPaths.length > 0 && jumpingPaths.length > 0;
-    if (isMixed) {
-      const preferredCompleting = Math.max(completingPaths.indexOf(preferredOutcome), 0);
-      journal.continueFrom(completingPaths, reason, location, preferredCompleting, null);
-    } else if (!this.deferReturningPaths(journal, outcomes, preferredOutcome, reason, location)) {
-      this.removeHeapJournal(journal);
-      journal.join(reason, location, preferredOutcome, predicate);
-    }
-    const joinedSnapshots = pathSnapshots.filter((_, index) => !returningPaths.includes(index));
-    if (joinedSnapshots.length > 0) {
-      const isJoinedByPredicate = joinedSnapshots.length === branches.length;
-      joinScopes(joinedSnapshots, reason, location, 0, isJoinedByPredicate ? predicate : null);
-      if (narrowedBinding !== null && narrowedSubject && !isSubjectReassigned) {
-        const rejoined = lookupScope(context.scope, narrowedBinding);
-        if (rejoined) recordRefinement(rejoined, narrowedSubject);
-      }
-    }
-    const joinReturningClosures = (): void => {
-      const isSubjectPreserved =
-        narrowedBinding !== null && narrowedSubject !== undefined && !isSubjectReassigned;
-      const subjectAfterRest = isSubjectPreserved
-        ? completingPaths.length === 0
-          ? narrowedSubject
-          : lookupScope(context.scope, narrowedBinding)
-        : undefined;
-      this.joinReturningClosures(
-        pathSnapshots,
-        returningPaths,
-        context,
-        reason,
-        location,
-        preferredOutcome,
-        predicate,
-      );
-      if (narrowedBinding !== null && subjectAfterRest !== undefined) {
-        findOwningScope(context.scope, narrowedBinding)?.bindings.set(
-          narrowedBinding,
-          subjectAfterRest,
-        );
-      }
-    };
-    if (completingPaths.length === 0) {
-      joinReturningClosures();
-      return mergeOutcomes(
-        outcomes,
-        reason,
-        location,
-        preferredOutcome,
-        outcomes.every(isPureReturn) ? predicate : null,
-      );
-    }
-    if (context.hooks) context.hooks.cursor = completedHookCursor;
-    const completingGuard = pathGuards
-      ? orGuard(completingPaths.map((index) => pathGuards.guards[index]))
-      : null;
-    const completingContext =
-      returningPaths.length > 0
-        ? { ...context, scopedCompletionDepth: (context.scopedCompletionDepth ?? 0) + 1 }
-        : context;
-    const rest = completingGuard
-      ? this.runWithGuard(andGuard([parentGuard, completingGuard]), () =>
-          proceed(completingContext),
-        )
-      : proceed(completingContext);
-    joinReturningClosures();
-    if (isMixed) {
-      const remainingPredicate =
-        pathGuards && completingGuard
-          ? guardedPredicate(
-              [...jumpingPaths.map((index) => pathGuards.guards[index]), completingGuard],
-              [pathGuards.inputs],
+    const pendingDepth = this.pendingReturnJoins.length;
+    try {
+      const outcomes = branches.map((branch, branchIndex) => {
+        if (branchIndex > 0) {
+          restoreScopes(entrySnapshot);
+          if (context.hooks) context.hooks.cursor = hookCursor;
+        }
+        const narrowed = branchIndex === 0 ? narrowing?.whenTrue : narrowing?.whenFalse;
+        if (narrowing && narrowed) {
+          applyNarrowing(context.scope, narrowing.target, narrowed, (object) =>
+            this.journalHeapValue(object),
+          );
+        }
+        const outcome = pathGuards
+          ? this.runWithGuard(
+              andGuard([parentGuard, pathGuards.guards[branchIndex]]),
+              () => branch(resumedContext),
+              pathGuards.inputs,
             )
-          : null;
-      journal.endPath();
-      const preferredJumping = jumpingPaths.indexOf(preferredOutcome);
-      if (isPureReturn(rest) && jumpingPaths.some((index) => outcomes[index].jump !== null)) {
-        journal.continueFrom(
-          jumpingPaths.map((_, index) => index),
-          reason,
-          location,
-          Math.max(preferredJumping, 0),
-          null,
-        );
-        this.pendingReturnJoins.push({
-          journal,
-          reason,
-          location,
-          preferredPath: preferredJumping === -1 ? 0 : 1,
-          predicate:
-            pathGuards && completingGuard
-              ? guardedPredicate(
-                  [completingGuard, orGuard(jumpingPaths.map((index) => pathGuards.guards[index]))],
-                  [pathGuards.inputs],
-                )
-              : null,
-        });
-      } else {
+          : branch(resumedContext);
+        pathSnapshots.push(snapshotScopes(context.scope));
+        if (narrowedBinding !== null && lookupScope(context.scope, narrowedBinding) !== narrowed) {
+          isSubjectReassigned = true;
+        }
+        if (outcome.mayComplete) completedHookCursor = context.hooks?.cursor ?? hookCursor;
+        journal.endPath();
+        return outcome;
+      });
+      const preferredOutcome = getPreferredOutcome(outcomes, preferredBranch);
+      if (outcomes.some((outcome) => outcome.mayComplete && !isPureCompletion(outcome))) {
         this.removeHeapJournal(journal);
-        journal.join(
-          reason,
+        journal.join(reason, location, preferredOutcome, predicate);
+        joinScopes(pathSnapshots, reason, location, preferredOutcome, predicate);
+        if (context.hooks) context.hooks.cursor = completedHookCursor;
+        return this.continueStatements(
+          mergeOutcomes(outcomes, reason, location, preferredOutcome, predicate),
+          context,
+          proceed,
           location,
-          preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
-          remainingPredicate,
         );
       }
-    }
-    const completingPath = completingPaths.length === 1 ? completingPaths[0] : -1;
-    const isRestPositional =
-      completingPath !== -1 &&
-      outcomes.every((outcome, index) =>
-        index === completingPath ? isPureCompletion(outcome) : isPureReturn(outcome),
+      const completingPaths = outcomes.flatMap((outcome, index) =>
+        outcome.mayComplete ? [index] : [],
       );
-    return mergeOutcomes(
-      isRestPositional
-        ? outcomes.map((outcome, index) => (index === completingPath ? rest : outcome))
-        : [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
-      reason,
-      location,
-      preferredOutcome,
-      isRestPositional ? predicate : null,
-    );
+      const jumpingPaths = outcomes.flatMap((outcome, index) =>
+        outcome.mayComplete ? [] : [index],
+      );
+      const returningPaths = jumpingPaths.filter((index) => outcomes[index].jump === null);
+      const isMixed = completingPaths.length > 0 && jumpingPaths.length > 0;
+      if (isMixed) {
+        const preferredCompleting = Math.max(completingPaths.indexOf(preferredOutcome), 0);
+        journal.continueFrom(completingPaths, reason, location, preferredCompleting, null);
+      } else if (!this.deferReturningPaths(journal, outcomes, preferredOutcome, reason, location)) {
+        this.removeHeapJournal(journal);
+        journal.join(reason, location, preferredOutcome, predicate);
+      }
+      const joinedSnapshots = pathSnapshots.filter((_, index) => !returningPaths.includes(index));
+      if (joinedSnapshots.length > 0) {
+        const isJoinedByPredicate = joinedSnapshots.length === branches.length;
+        joinScopes(joinedSnapshots, reason, location, 0, isJoinedByPredicate ? predicate : null);
+        if (narrowedBinding !== null && narrowedSubject && !isSubjectReassigned) {
+          const rejoined = lookupScope(context.scope, narrowedBinding);
+          if (rejoined) recordRefinement(rejoined, narrowedSubject);
+        }
+      }
+      const joinReturningClosures = (): void => {
+        const isSubjectPreserved =
+          narrowedBinding !== null && narrowedSubject !== undefined && !isSubjectReassigned;
+        const subjectAfterRest = isSubjectPreserved
+          ? completingPaths.length === 0
+            ? narrowedSubject
+            : lookupScope(context.scope, narrowedBinding)
+          : undefined;
+        this.joinReturningClosures(
+          pathSnapshots,
+          returningPaths,
+          context,
+          reason,
+          location,
+          preferredOutcome,
+          predicate,
+        );
+        if (narrowedBinding !== null && subjectAfterRest !== undefined) {
+          findOwningScope(context.scope, narrowedBinding)?.bindings.set(
+            narrowedBinding,
+            subjectAfterRest,
+          );
+        }
+      };
+      if (completingPaths.length === 0) {
+        joinReturningClosures();
+        return mergeOutcomes(outcomes, reason, location, preferredOutcome, predicate);
+      }
+      if (context.hooks) context.hooks.cursor = completedHookCursor;
+      const completingGuard = pathGuards
+        ? orGuard(completingPaths.map((index) => pathGuards.guards[index]))
+        : null;
+      const completingContext =
+        returningPaths.length > 0
+          ? { ...context, scopedCompletionDepth: (context.scopedCompletionDepth ?? 0) + 1 }
+          : context;
+      const rest = completingGuard
+        ? this.runWithGuard(
+            andGuard([parentGuard, completingGuard]),
+            () => proceed(completingContext),
+            pathGuards?.inputs,
+          )
+        : proceed(completingContext);
+      joinReturningClosures();
+      if (isMixed) {
+        const remainingPredicate =
+          pathGuards && completingGuard
+            ? guardedPredicate(
+                [...jumpingPaths.map((index) => pathGuards.guards[index]), completingGuard],
+                [pathGuards.inputs],
+              )
+            : null;
+        journal.endPath();
+        const preferredJumping = jumpingPaths.indexOf(preferredOutcome);
+        if (isPureReturn(rest) && jumpingPaths.some((index) => outcomes[index].jump !== null)) {
+          journal.continueFrom(
+            jumpingPaths.map((_, index) => index),
+            reason,
+            location,
+            Math.max(preferredJumping, 0),
+            null,
+          );
+          this.pendingReturnJoins.push({
+            journal,
+            reason,
+            location,
+            preferredPath: preferredJumping === -1 ? 0 : 1,
+            predicate:
+              pathGuards && completingGuard
+                ? guardedPredicate(
+                    [
+                      completingGuard,
+                      orGuard(jumpingPaths.map((index) => pathGuards.guards[index])),
+                    ],
+                    [pathGuards.inputs],
+                  )
+                : null,
+          });
+        } else {
+          this.removeHeapJournal(journal);
+          journal.join(
+            reason,
+            location,
+            preferredJumping === -1 ? jumpingPaths.length : preferredJumping,
+            remainingPredicate,
+          );
+        }
+      }
+      const completingPath = completingPaths.length === 1 ? completingPaths[0] : -1;
+      const isRestPositional =
+        completingPath !== -1 &&
+        outcomes.every((outcome, index) =>
+          index === completingPath ? isPureCompletion(outcome) : !outcome.mayComplete,
+        );
+      return mergeOutcomes(
+        isRestPositional
+          ? outcomes.map((outcome, index) => (index === completingPath ? rest : outcome))
+          : [...outcomes.map((outcome) => ({ ...outcome, mayComplete: false })), rest],
+        reason,
+        location,
+        preferredOutcome,
+        isRestPositional ? predicate : null,
+      );
+    } catch (error) {
+      for (const pending of this.pendingReturnJoins.splice(pendingDepth))
+        this.removeHeapJournal(pending.journal);
+      this.removeHeapJournal(journal);
+      journal.restore();
+      restoreScopes(entrySnapshot);
+      if (context.hooks) context.hooks.cursor = hookCursor;
+      throw error;
+    }
   }
 
   private evaluateSwitch(
@@ -6850,78 +7165,140 @@ export class Interpreter {
   private evaluateJsxAttributes(
     attributes: JSXAttributeItem[],
     context: EvaluationContext,
-  ): JsxAttributeValues {
-    const entries: StaticObjectEntry[] = [];
-    let maybeKey: StaticValue = UNDEFINED_VALUE;
-    let hasSpread = false;
-    for (const attribute of attributes) {
-      if (attribute.type === "JSXSpreadAttribute") {
-        hasSpread = true;
-        const spread = this.evaluateExpression(attribute.argument, context);
-        const copied = getCopiedSpreadEntries(spread);
-        entries.push(...(copied ?? [{ kind: "spread", value: spread }]));
-        continue;
+    run: (attributes: JsxAttributeValues, context: EvaluationContext) => StaticValue,
+  ): StaticValue {
+    const evaluateFrom = (
+      startIndex: number,
+      entries: StaticObjectEntry[],
+      maybeKey: StaticValue,
+      hasSpread: boolean,
+      currentContext: EvaluationContext,
+    ): StaticValue => {
+      for (let index = startIndex; index < attributes.length; index++) {
+        const attribute = attributes[index];
+        if (attribute.type === "JSXSpreadAttribute") {
+          hasSpread = true;
+          const spread = this.materializeNamespace(
+            this.evaluateExpression(attribute.argument, currentContext),
+            currentContext.environment,
+          );
+          if (getNeedsSpreadExecution(spread) || getThrowCertainty(spread) !== "never") {
+            return this.continueValue(spread, currentContext, (value, spreadContext) => {
+              const snapshot =
+                value.kind === "object"
+                  ? (getObjectSpreadSnapshot(
+                      this,
+                      value,
+                      spreadContext,
+                      this.locate(currentContext.module, attribute),
+                    ) ?? value)
+                  : value;
+              return this.continueValue(snapshot, spreadContext, (copied, copiedContext) =>
+                evaluateFrom(
+                  index + 1,
+                  [
+                    ...entries,
+                    ...(getCopiedSpreadEntries(copied) ?? [{ kind: "spread", value: copied }]),
+                  ],
+                  maybeKey,
+                  true,
+                  copiedContext,
+                ),
+              );
+            });
+          }
+          entries.push(...(getCopiedSpreadEntries(spread) ?? [{ kind: "spread", value: spread }]));
+          continue;
+        }
+        const name =
+          attribute.name.type === "JSXIdentifier"
+            ? attribute.name.name
+            : `${attribute.name.namespace.name}:${attribute.name.name.name}`;
+        const value =
+          attribute.value === null
+            ? TRUE_VALUE
+            : attribute.value.type === "Literal"
+              ? primitiveValue(
+                  typeof attribute.value.value === "string"
+                    ? decodeJsxEntities(attribute.value.value)
+                    : attribute.value.value,
+                )
+              : attribute.value.type === "JSXExpressionContainer"
+                ? attribute.value.expression.type === "JSXEmptyExpression"
+                  ? UNDEFINED_VALUE
+                  : this.evaluateExpression(attribute.value.expression, currentContext, name)
+                : this.evaluateExpression(attribute.value, currentContext, name);
+        if (getThrowCertainty(value) !== "never") {
+          return this.continueValue(
+            value,
+            currentContext,
+            (selected, selectedContext) =>
+              evaluateFrom(
+                index + 1,
+                name === "key" && !hasSpread
+                  ? [...entries]
+                  : [...entries, { kind: "property", key: name, value: selected }],
+                name === "key" && !hasSpread ? selected : maybeKey,
+                hasSpread,
+                selectedContext,
+              ),
+            false,
+          );
+        }
+        if (name === "key" && !hasSpread) maybeKey = value;
+        else entries.push({ kind: "property", key: name, value });
       }
-      const name =
-        attribute.name.type === "JSXIdentifier"
-          ? attribute.name.name
-          : `${attribute.name.namespace.name}:${attribute.name.name.name}`;
-      let value: StaticValue;
-      if (attribute.value === null) {
-        value = TRUE_VALUE;
-      } else if (attribute.value.type === "Literal") {
-        value = primitiveValue(
-          typeof attribute.value.value === "string"
-            ? decodeJsxEntities(attribute.value.value)
-            : attribute.value.value,
-        );
-      } else if (attribute.value.type === "JSXExpressionContainer") {
-        value =
-          attribute.value.expression.type === "JSXEmptyExpression"
-            ? UNDEFINED_VALUE
-            : this.evaluateExpression(attribute.value.expression, context, name);
-      } else {
-        value = this.evaluateExpression(attribute.value, context, name);
-      }
-      if (name === "key" && !hasSpread) {
-        maybeKey = value;
-        continue;
-      }
-      entries.push({ kind: "property", key: name, value });
-    }
-    const { entries: propEntries, key } = splitElementKey(entries, maybeKey);
-    return { props: objectValue(propEntries), key };
+      const { entries: propEntries, key } = splitElementKey(entries, maybeKey);
+      return run({ props: objectValue(propEntries), key }, currentContext);
+    };
+    return evaluateFrom(0, [], UNDEFINED_VALUE, false, context);
   }
 
-  evaluateJsxChildren(children: JSXChild[], context: EvaluationContext): StaticValue[] {
-    const values: StaticValue[] = [];
-    for (const child of children) {
-      switch (child.type) {
-        case "JSXText": {
+  private evaluateJsxChildren(
+    children: JSXChild[],
+    context: EvaluationContext,
+    run: (values: StaticValue[], context: EvaluationContext) => StaticValue,
+  ): StaticValue {
+    const evaluateFrom = (
+      startIndex: number,
+      values: StaticValue[],
+      currentContext: EvaluationContext,
+    ): StaticValue => {
+      for (let index = startIndex; index < children.length; index++) {
+        const child = children[index];
+        let value: StaticValue;
+        if (child.type === "JSXText") {
           const text = decodeJsxEntities(cleanJsxText(child.value));
           if (text) values.push(primitiveValue(text));
-          break;
+          continue;
         }
-        case "JSXExpressionContainer":
-          if (child.expression.type !== "JSXEmptyExpression") {
-            values.push(this.evaluateExpression(child.expression, context));
-          }
-          break;
-        case "JSXSpreadChild": {
-          const spread = this.evaluateExpression(child.expression, context);
-          if (spread.kind === "list") values.push(...spread.items);
-          else values.push(unknownValue("spread child"));
-          break;
-        }
-        case "JSXElement":
-          values.push(this.evaluateJsxElement(child, context));
-          break;
-        case "JSXFragment":
-          values.push(this.evaluateJsxFragment(child, context));
-          break;
+        if (child.type === "JSXExpressionContainer") {
+          if (child.expression.type === "JSXEmptyExpression") continue;
+          value = this.evaluateExpression(child.expression, currentContext);
+        } else if (child.type === "JSXSpreadChild")
+          value = this.evaluateExpression(child.expression, currentContext);
+        else if (child.type === "JSXElement")
+          value = this.evaluateJsxElement(child, currentContext);
+        else value = this.evaluateJsxFragment(child, currentContext);
+        const getItems = (selected: StaticValue): StaticValue[] =>
+          child.type === "JSXSpreadChild"
+            ? selected.kind === "list"
+              ? selected.items
+              : [unknownValue("spread child")]
+            : [selected];
+        if (getThrowCertainty(value) !== "never")
+          return this.continueValue(
+            value,
+            currentContext,
+            (selected, selectedContext) =>
+              evaluateFrom(index + 1, [...values, ...getItems(selected)], selectedContext),
+            false,
+          );
+        values.push(...getItems(value));
       }
-    }
-    return values;
+      return run(values, currentContext);
+    };
+    return evaluateFrom(0, [], context);
   }
 
   createElement(
@@ -6936,34 +7313,64 @@ export class Interpreter {
     return createStaticElement(type, props, key, children, location, nameHint, context);
   }
 
+  private continueJsxFactory(
+    context: EvaluationContext,
+    location: SourceLocation | null,
+    run: (factory: JsxFactory | null, context: EvaluationContext) => StaticValue,
+  ): StaticValue {
+    const factory = this.getJsxFactory(context, location);
+    return factory
+      ? this.continueValue(factory.callee, context, (callee, factoryContext) =>
+          run({ ...factory, callee }, factoryContext),
+        )
+      : run(null, context);
+  }
+
   private evaluateJsxElement(node: JSXElement, context: EvaluationContext): StaticValue {
-    const { props, key } = this.evaluateJsxAttributes(node.openingElement.attributes, context);
-    const type =
-      this.getStyledJsxType(node.openingElement.name, props) ??
-      this.evaluateJsxName(node.openingElement.name, context);
-    const children = this.evaluateJsxChildren(node.children, context);
-    const factory = this.getJsxFactory(context, this.locate(context.module, node));
-    if (factory) {
-      return this.callJsxFactory(
-        factory,
-        type,
-        props,
-        key,
-        children,
-        node,
-        this.describeJsxName(node.openingElement.name),
-        context,
-      );
-    }
-    const expandJsx = getStubExpandJsx(type);
-    return this.createElement(
-      type,
-      expandJsx ? expandJsx(props, describeMacroJsxChildren(node.children, children)) : props,
-      key,
-      expandJsx ? [] : children,
-      this.locate(context.module, node),
-      this.describeJsxName(node.openingElement.name),
-      context,
+    const location = this.locate(context.module, node);
+    const nameHint = this.describeJsxName(node.openingElement.name);
+    return this.continueJsxFactory(context, location, (factory, factoryContext) =>
+      this.continueValue(
+        this.evaluateJsxName(node.openingElement.name, factoryContext),
+        factoryContext,
+        (resolvedType, typeContext) =>
+          this.evaluateJsxAttributes(
+            node.openingElement.attributes,
+            typeContext,
+            ({ props, key }, propsContext) => {
+              const type = this.getStyledJsxType(node.openingElement.name, props) ?? resolvedType;
+              return this.evaluateJsxChildren(
+                node.children,
+                propsContext,
+                (children, childrenContext) => {
+                  if (factory)
+                    return this.callJsxFactory(
+                      factory,
+                      type,
+                      props,
+                      key,
+                      children,
+                      node,
+                      nameHint,
+                      childrenContext,
+                    );
+                  const expandJsx = getStubExpandJsx(type);
+                  return this.createElement(
+                    type,
+                    expandJsx
+                      ? expandJsx(props, describeMacroJsxChildren(node.children, children))
+                      : props,
+                    key,
+                    expandJsx ? [] : children,
+                    location,
+                    nameHint,
+                    childrenContext,
+                  );
+                },
+              );
+            },
+          ),
+      ),
     );
   }
 
@@ -6979,35 +7386,38 @@ export class Interpreter {
   }
 
   private evaluateJsxFragment(node: JSXFragment, context: EvaluationContext): StaticValue {
-    const children = this.evaluateJsxChildren(node.children, context);
     const location = this.locate(context.module, node);
-    const factory = this.getJsxFactory(context, location);
-    if (factory) {
+    return this.continueJsxFactory(context, location, (factory, factoryContext) => {
       const pragma = context.module.file.jsxPragma;
       const fragmentType =
-        pragma?.fragment && factory.source === "classic"
-          ? this.evaluatePragmaMember(pragma.fragment, context, location)
+        pragma?.fragment && factory?.source === "classic"
+          ? this.evaluatePragmaMember(pragma.fragment, factoryContext, location)
           : REACT_FRAGMENT;
-      return this.callJsxFactory(
-        factory,
-        fragmentType,
-        objectValue(),
-        null,
-        children,
-        node,
-        "Fragment",
-        context,
+      return this.continueValue(fragmentType, factoryContext, (type, typeContext) =>
+        this.evaluateJsxChildren(node.children, typeContext, (children, childrenContext) =>
+          factory
+            ? this.callJsxFactory(
+                factory,
+                type,
+                objectValue(),
+                null,
+                children,
+                node,
+                "Fragment",
+                childrenContext,
+              )
+            : this.createElement(
+                type,
+                objectValue(),
+                null,
+                children,
+                location,
+                "Fragment",
+                childrenContext,
+              ),
+        ),
       );
-    }
-    return this.createElement(
-      REACT_FRAGMENT,
-      objectValue(),
-      null,
-      children,
-      location,
-      "Fragment",
-      context,
-    );
+    });
   }
 
   /**

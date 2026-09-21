@@ -31,6 +31,7 @@ import type {
   StaticPrimitive,
   StaticPrimitiveValue,
   StaticPropertyEntry,
+  StaticPropertyAttributes,
   StaticRegExpValue,
   StaticSymbolValue,
   StaticUnknownPrimitiveValue,
@@ -317,6 +318,24 @@ export const setObjectProperty = (
   object.entries.push({ kind: "property", key, value });
 };
 
+export const getOwnPropertyEntry = (
+  object: StaticObjectValue,
+  key: string,
+): StaticPropertyEntry | null | undefined => {
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const entry = object.entries[index];
+    if (entry.kind === "property") {
+      if (entry.key === key) return entry;
+    } else if (
+      withLookupMemo((memo) => getTruthiness(getSpreadOwnPresence(memo, entry.value, key))) !==
+      false
+    ) {
+      return null;
+    }
+  }
+  return undefined;
+};
+
 /** The accessor owning `key`, unless a later spread could shadow it. */
 export const getObjectAccessor = (
   object: StaticObjectValue,
@@ -472,7 +491,12 @@ const getSpreadProperty = (
   switch (spread.kind) {
     case "object":
       return getMemoizedObjectProperty(memo, spread, key, spread.entries.length);
-    case "primitive":
+    case "primitive": {
+      const index = getPropertyIndex(key);
+      return typeof spread.value === "string" && index !== null && index < spread.value.length
+        ? primitiveValue(spread.value[index])
+        : UNDEFINED_VALUE;
+    }
     case "function":
     case "class":
       return UNDEFINED_VALUE;
@@ -544,12 +568,69 @@ export const getSymbolPropertyKey = (symbol: StaticSymbolValue): string =>
 export const isSymbolPropertyKey = (key: string): boolean =>
   key.startsWith(SYMBOL_PROPERTY_KEY_PREFIX);
 
+const getSymbolFromPropertyKey = (propertyKey: string): StaticSymbolValue => {
+  const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
+  return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
+};
+
+export const getPropertyKeyValue = (key: string): StaticValue =>
+  isSymbolPropertyKey(key) ? getSymbolFromPropertyKey(key) : primitiveValue(key);
+
 export const ITERATOR_PROPERTY_KEY = `${SYMBOL_PROPERTY_KEY_PREFIX}Symbol.iterator`;
 
 /** The property name a computed key denotes, or `null` when the key is not statically known. */
 export const getPropertyName = (key: StaticValue): string | null => {
   if (key.kind === "primitive") return String(key.value);
   return key.kind === "symbol" ? getSymbolPropertyKey(key) : null;
+};
+
+const getPropertyIndex = (key: string): number | null => {
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && index < 2 ** 32 - 1 && String(index) === key
+    ? index
+    : null;
+};
+
+const getPropertyKeyRank = (key: string): number =>
+  getPropertyIndex(key) ?? (isSymbolPropertyKey(key) ? 2 ** 32 : 2 ** 32 - 1);
+
+const getOrderedPropertyKeys = (keys: Iterable<string>): string[] =>
+  [...keys].sort((left, right) => getPropertyKeyRank(left) - getPropertyKeyRank(right));
+
+export const getOwnPropertyCandidates = (object: StaticObjectValue): string[] | null => {
+  const keys = getPropertyCandidates(object, new Map());
+  return keys ? getOrderedPropertyKeys(keys) : null;
+};
+
+const getPropertyCandidates = (
+  value: StaticValue,
+  visited: Map<StaticValue, Set<string> | null>,
+): Set<string> | null => {
+  const previous = visited.get(value);
+  if (previous !== undefined) return previous;
+  visited.set(value, null);
+  const keys = new Set<string>();
+  if (value.kind === "object") {
+    for (const entry of value.entries) {
+      if (entry.kind === "property") keys.add(entry.key);
+      else {
+        const spreadKeys = getPropertyCandidates(entry.value, visited);
+        if (!spreadKeys) return null;
+        for (const key of spreadKeys) keys.add(key);
+      }
+    }
+  } else if (value.kind === "branch") {
+    for (const alternative of value.alternatives) {
+      const alternativeKeys = getPropertyCandidates(alternative, visited);
+      if (!alternativeKeys) return null;
+      for (const key of alternativeKeys) keys.add(key);
+    }
+  } else if (value.kind !== "primitive") return null;
+  else if (typeof value.value === "string") {
+    for (let index = 0; index < value.value.length; index++) keys.add(String(index));
+  }
+  visited.set(value, keys);
+  return keys;
 };
 
 /** Own keys in definition order mapped to their enumerability (the last definition of a key decides); null when a spread source is not fully known. */
@@ -560,25 +641,61 @@ export const getKnownOwnKeys = (
 ): Map<string, boolean> | null =>
   withLookupMemo((memo) => {
     const keys = new Map<string, boolean>();
+    const unknownEnumerability = new Set<string>();
     for (const entry of object.entries) {
       if (entry.kind === "property") {
-        if (isIncluded(entry.key)) keys.set(entry.key, entry.isEnumerable !== false);
+        if (isIncluded(entry.key)) {
+          const isEnumerable = entry.enumerable
+            ? getTruthiness(entry.enumerable)
+            : entry.isEnumerable !== false;
+          if (isEnumerable === null) unknownEnumerability.add(entry.key);
+          else unknownEnumerability.delete(entry.key);
+          keys.set(entry.key, isEnumerable ?? false);
+        }
         continue;
       }
-      const spreadKeys = getKnownSpreadKeys(memo, entry.value);
+      const spreadKeys = entry.preservesDescriptors
+        ? getPropertyCandidates(entry.value, new Map())
+        : getKnownSpreadKeys(memo, entry.value);
       if (!spreadKeys) return null;
       for (const key of spreadKeys) {
         if (!isIncluded(key)) continue;
         if (
           requiresFixedPresence &&
-          keys.get(key) !== true &&
+          !keys.has(key) &&
           getTruthiness(getSpreadOwnPresence(memo, entry.value, key)) !== true
         )
           return null;
-        keys.set(key, true);
+        const enumerable = entry.preservesDescriptors
+          ? getTruthiness(
+              mapValue(entry.value, (alternative) => {
+                const descriptor =
+                  alternative.kind === "object" ? getOwnPropertyDescriptor(alternative, key) : null;
+                return descriptor
+                  ? mapValue(descriptor, (metadata) =>
+                      metadata.kind === "object"
+                        ? getObjectProperty(metadata, "enumerable")
+                        : unknownEnumerability.has(key)
+                          ? unknownPrimitiveValue("boolean", "unresolved enumeration")
+                          : primitiveValue(keys.get(key) ?? true),
+                    )
+                  : unknownPrimitiveValue("boolean", "unresolved enumeration");
+              }),
+            )
+          : true;
+        if (enumerable === null) unknownEnumerability.add(key);
+        else unknownEnumerability.delete(key);
+        keys.set(key, enumerable ?? false);
       }
     }
-    return keys;
+    return unknownEnumerability.size > 0
+      ? null
+      : new Map(
+          getOrderedPropertyKeys(keys.keys()).map((key): [string, boolean] => [
+            key,
+            keys.get(key) === true,
+          ]),
+        );
   });
 
 const getEnumerableKeys = (keys: Map<string, boolean> | null): string[] | null =>
@@ -598,8 +715,12 @@ const getSpreadOwnPresence = (memo: LookupMemo, spread: StaticValue, key: string
   switch (spread.kind) {
     case "object":
       return getMemoizedOwnPresence(memo, spread, key);
-    case "primitive":
-      return FALSE_VALUE;
+    case "primitive": {
+      const index = getPropertyIndex(key);
+      return primitiveValue(
+        typeof spread.value === "string" && index !== null && index < spread.value.length,
+      );
+    }
     case "branch":
       return mapValue(spread, (alternative) => getSpreadOwnPresence(memo, alternative, key));
     default:
@@ -651,37 +772,85 @@ export const getOwnPropertyDescriptor = (
   object: StaticObjectValue,
   key: string,
 ): StaticValue | null => {
-  const ownKeys = getKnownOwnKeys(object, () => true);
-  if (!ownKeys) return null;
-  const isEnumerable = ownKeys.get(key);
-  if (isEnumerable === undefined) return UNDEFINED_VALUE;
-  const isConfigurable = primitiveValue(object.isFrozen !== true);
-  const accessor = getObjectAccessor(object, key);
-  if (accessor) {
-    return objectFromRecord({
-      get: accessor.get ?? UNDEFINED_VALUE,
-      set: accessor.set ?? UNDEFINED_VALUE,
-      enumerable: primitiveValue(isEnumerable),
-      configurable: isConfigurable,
+  const descriptor = getRawOwnPropertyDescriptor(object, key);
+  if (!descriptor || !object.integrity) return descriptor;
+  return mapValue(object.integrity, (level) => {
+    if (level.kind !== "primitive") return unknownValue("unresolved object integrity");
+    if (level.value !== "sealed" && level.value !== "frozen") return descriptor;
+    return mapValue(descriptor, (metadata) =>
+      metadata.kind === "object"
+        ? objectValue(
+            metadata.entries.map((entry) =>
+              entry.kind === "property" &&
+              (entry.key === "configurable" ||
+                (level.value === "frozen" && entry.key === "writable"))
+                ? { ...entry, value: FALSE_VALUE }
+                : entry,
+            ),
+          )
+        : metadata,
+    );
+  });
+};
+
+const getRawOwnPropertyDescriptor = (
+  object: StaticObjectValue,
+  key: string,
+): StaticValue | null => {
+  const entry = getOwnPropertyEntry(object, key);
+  if (entry === undefined) return UNDEFINED_VALUE;
+  if (entry) {
+    const enumerable = entry.enumerable ?? primitiveValue(entry.isEnumerable !== false);
+    const configurable = entry.configurable ?? TRUE_VALUE;
+    return entry.accessor
+      ? objectFromRecord({
+          get: entry.accessor.get ?? UNDEFINED_VALUE,
+          set: entry.accessor.set ?? UNDEFINED_VALUE,
+          enumerable,
+          configurable,
+        })
+      : objectFromRecord({
+          value: entry.value,
+          writable: entry.writable ?? TRUE_VALUE,
+          enumerable,
+          configurable,
+        });
+  }
+  for (let index = object.entries.length - 1; index >= 0; index--) {
+    const spread = object.entries[index];
+    if (spread.kind !== "spread") continue;
+    if (
+      withLookupMemo((memo) => getTruthiness(getSpreadOwnPresence(memo, spread.value, key))) ===
+      false
+    )
+      continue;
+    if (!spread.preservesDescriptors) break;
+    const earlier = (): StaticValue =>
+      getOwnPropertyDescriptor({ ...object, entries: object.entries.slice(0, index) }, key) ??
+      unknownValue(`unresolved descriptor for ${JSON.stringify(key)}`);
+    return mapValue(spread.value, (alternative) => {
+      const descriptor =
+        alternative.kind === "object" ? getOwnPropertyDescriptor(alternative, key) : null;
+      return descriptor
+        ? mapValue(descriptor, (value) => (isUndefinedValue(value) ? earlier() : value))
+        : unknownValue(`unresolved descriptor for ${JSON.stringify(key)}`);
     });
   }
+  const keys = getKnownOwnKeys(object, () => true);
+  if (!keys) return null;
+  if (!keys.has(key)) return UNDEFINED_VALUE;
   return objectFromRecord({
     value: getObjectProperty(object, key),
-    writable: isConfigurable,
-    enumerable: primitiveValue(isEnumerable),
-    configurable: isConfigurable,
+    writable: TRUE_VALUE,
+    enumerable: primitiveValue(keys.get(key)),
+    configurable: TRUE_VALUE,
   });
 };
 
 /** The symbols keying own properties, as `Object.getOwnPropertySymbols` lists them. */
 export const getKnownObjectSymbols = (object: StaticObjectValue): StaticSymbolValue[] | null => {
   const keys = getKnownOwnKeys(object, isSymbolPropertyKey);
-  return keys
-    ? [...keys.keys()].map((propertyKey) => {
-        const key = propertyKey.slice(SYMBOL_PROPERTY_KEY_PREFIX.length);
-        return unregisteredSymbols.get(key) ?? { kind: "symbol", key };
-      })
-    : null;
+  return keys ? [...keys.keys()].map(getSymbolFromPropertyKey) : null;
 };
 
 /** Own enumerable string and symbol keys, as `Object.keys` followed by the enumerable `Object.getOwnPropertySymbols`; null when the shape is not fully known. */
@@ -699,7 +868,9 @@ const getKnownSpreadKeys = (memo: LookupMemo, spread: StaticValue): string[] | n
       return keys;
     }
     case "primitive":
-      return [];
+      return typeof spread.value === "string"
+        ? Array.from({ length: spread.value.length }, (_item, index) => String(index))
+        : [];
     case "branch": {
       const keys: string[] = [];
       for (const alternative of spread.alternatives) {
@@ -726,26 +897,25 @@ export const getSpreadEntries = (spread: StaticValue): StaticObjectEntry[] | nul
   if (!keys) return null;
   const holder = objectValue([{ kind: "spread", value: spread }]);
   return keys.map((key) =>
-    getPropertyEntry(key, getObjectProperty(holder, key), getOwnPropertyPresence(holder, key)),
+    getPropertyEntry(
+      { kind: "property", key, value: getObjectProperty(holder, key) },
+      getOwnPropertyPresence(holder, key),
+    ),
   );
 };
 
-const getPropertyEntry = (
-  key: string,
-  value: StaticValue,
-  presence: StaticValue,
-): StaticObjectEntry => {
-  const entry: StaticPropertyEntry = { kind: "property", key, value };
+const getPropertyEntry = (entry: StaticPropertyEntry, presence: StaticValue): StaticObjectEntry => {
   if (getTruthiness(presence) === true) return entry;
   return {
     kind: "spread",
+    preservesDescriptors: true,
     value: mapValue(presence, (alternative) => {
       const truthiness = getTruthiness(alternative);
       return truthiness === true
         ? objectValue([entry])
         : truthiness === false
           ? objectValue([])
-          : unknownValue(`presence of property ${JSON.stringify(key)}`);
+          : unknownValue(`presence of property ${JSON.stringify(entry.key)}`);
     }),
   };
 };
@@ -764,25 +934,73 @@ export const joinObjectEntries = (
   predicate: string | null,
 ): StaticObjectEntry[] => {
   const pathObjects = pathEntries.map((entries) => objectValue(entries));
-  const joinedKeys = getJoinedPropertyKeys(original, pathEntries);
-  if (joinedKeys === null) {
-    return [
+  const getPathEntries = (): StaticObjectEntry[] => [
+    {
+      kind: "spread",
+      preservesDescriptors: true,
+      value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
+    },
+  ];
+  const joinedKeys = getJoinedPropertyKeys(original, pathObjects);
+  if (joinedKeys === null) return getPathEntries();
+  const joinedEntry = (key: string): StaticObjectEntry => {
+    const previousEntries = pathObjects.map((object) => getOwnPropertyEntry(object, key));
+    const attributes: StaticPropertyAttributes = {};
+    for (const name of ["enumerable", "configurable", "writable"] satisfies Array<
+      keyof StaticPropertyAttributes
+    >) {
+      if (
+        !previousEntries.some(
+          (entry) => entry?.[name] || (name === "enumerable" && entry?.isEnumerable === false),
+        )
+      )
+        continue;
+      const values = previousEntries.map(
+        (entry) =>
+          entry?.[name] ?? primitiveValue(name !== "enumerable" || entry?.isEnumerable !== false),
+      );
+      const value = branchValue(values, reason, location, preferredIndex, predicate);
+      if (getTruthiness(value) !== true) attributes[name] = value;
+    }
+    const accessors = pathObjects.map((object) => getObjectAccessor(object, key));
+    if (accessors.every((accessor) => accessor !== null)) {
+      return {
+        ...accessorEntry(
+          key,
+          {
+            get: branchValue(
+              accessors.map((accessor) => accessor.get ?? UNDEFINED_VALUE),
+              reason,
+              location,
+              preferredIndex,
+              predicate,
+            ),
+            set: branchValue(
+              accessors.map((accessor) => accessor.set ?? UNDEFINED_VALUE),
+              reason,
+              location,
+              preferredIndex,
+              predicate,
+            ),
+          },
+          location,
+        ),
+        ...attributes,
+      };
+    }
+    return getPropertyEntry(
       {
-        kind: "spread",
-        value: branchValue(pathObjects, reason, location, preferredIndex, predicate),
+        kind: "property",
+        key,
+        ...attributes,
+        value: branchValue(
+          pathObjects.map((pathObject) => getObjectProperty(pathObject, key)),
+          reason,
+          location,
+          preferredIndex,
+          predicate,
+        ),
       },
-    ];
-  }
-  const joinedEntry = (key: string): StaticObjectEntry =>
-    getPropertyEntry(
-      key,
-      branchValue(
-        pathObjects.map((pathObject) => getObjectProperty(pathObject, key)),
-        reason,
-        location,
-        preferredIndex,
-        predicate,
-      ),
       branchValue(
         pathObjects.map((pathObject) => getOwnPropertyPresence(pathObject, key)),
         reason,
@@ -791,6 +1009,7 @@ export const joinObjectEntries = (
         predicate,
       ),
     );
+  };
   const lastSpreadIndex = original.findLastIndex((entry) => entry.kind === "spread");
   const placedKeys = new Set<string>();
   const entries = original.map((entry, index) => {
@@ -801,18 +1020,32 @@ export const joinObjectEntries = (
     return joinedEntry(entry.key);
   });
   for (const key of joinedKeys) if (!placedKeys.has(key)) entries.push(joinedEntry(key));
+  const joinedOrder = getOwnPropertyCandidates(objectValue(entries));
+  if (
+    joinedOrder &&
+    pathObjects.some((object) => {
+      const order = getOwnPropertyCandidates(object);
+      if (!order) return false;
+      const keys = new Set(order);
+      const selected = joinedOrder.filter((key) => keys.has(key));
+      return (
+        selected.length !== order.length || selected.some((key, index) => key !== order[index])
+      );
+    })
+  )
+    return getPathEntries();
   return entries;
 };
 
 /**
  * The keys whose own property entries some path replaced, added or removed, or
- * null when a path also changed the spreads or an accessor: only property-level
- * differences can be joined per key without nesting the alternatives.
+ * null when a path changed the spreads or mixes accessor and data descriptors.
  */
 const getJoinedPropertyKeys = (
   original: StaticObjectEntry[],
-  pathEntries: StaticObjectEntry[][],
+  pathObjects: StaticObjectValue[],
 ): Set<string> | null => {
+  const pathEntries = pathObjects.map((object) => object.entries);
   const originalSpreads = original.filter((entry) => entry.kind === "spread");
   const originalEntries = new Set(original);
   const keys = new Set<string>();
@@ -825,18 +1058,31 @@ const getJoinedPropertyKeys = (
         continue;
       }
       if (originalEntries.has(entry)) continue;
-      if (entry.accessor) return null;
       keys.add(entry.key);
     }
     if (spreadIndex !== originalSpreads.length) return null;
     for (const entry of original) {
       if (entry.kind === "spread" || pathEntrySet.has(entry)) continue;
-      if (entry.accessor) return null;
       keys.add(entry.key);
     }
   }
+  for (const key of keys) {
+    const accessors = pathObjects.map((object) => getObjectAccessor(object, key));
+    for (const object of pathObjects) {
+      if (getOwnPropertyEntry(object, key) !== null) continue;
+      const descriptor = getOwnPropertyDescriptor(object, key);
+      if (descriptor && getDescriptorHasAccessor(descriptor)) return null;
+    }
+    if (!accessors.some((accessor) => accessor !== null)) continue;
+    if (accessors.some((accessor) => accessor === null)) return null;
+  }
   return keys;
 };
+
+const getDescriptorHasAccessor = (descriptor: StaticValue): boolean =>
+  descriptor.kind === "branch"
+    ? descriptor.alternatives.some(getDescriptorHasAccessor)
+    : descriptor.kind === "object" && hasOwnKey(descriptor, "get") === true;
 
 /**
  * `object` without `omitted` keys. Objects that never held one of the keys are
@@ -1205,6 +1451,16 @@ export const mayReadAsText = (value: StaticUnknownPrimitiveValue, text: string):
   const shape = value.stringShape;
   if (!shape) return true;
   return text.startsWith(shape.prefix) && (shape.length === null || text.length === shape.length);
+};
+
+export const getSameValueComparison = (left: StaticValue, right: StaticValue): StaticValue => {
+  if (left === right) return TRUE_VALUE;
+  if (left.kind === "primitive" && right.kind === "primitive")
+    return primitiveValue(Object.is(left.value, right.value));
+  const isSame = compareIdentity(left, right);
+  return isSame === null
+    ? unknownPrimitiveValue("boolean", "Object.is on dynamic values")
+    : primitiveValue(isSame);
 };
 
 /**
@@ -1704,7 +1960,6 @@ export const getTruthiness = (value: StaticValue): boolean | null => {
   }
 };
 
-/** `Boolean(value)` / `!!value`, keeping a branch's alternatives and preferred side. */
 /** A decided comparison as `true`/`false`, an undecided one as an unknown boolean. */
 export const decidedBooleanValue = (decision: boolean | null, reason: string): StaticValue =>
   decision === null
@@ -1713,6 +1968,20 @@ export const decidedBooleanValue = (decision: boolean | null, reason: string): S
       ? TRUE_VALUE
       : FALSE_VALUE;
 
+export const getTruthinessCases = (value: StaticValue): StaticValue => {
+  const truthiness = getTruthiness(value);
+  return truthiness === null
+    ? branchValue(
+        [TRUE_VALUE, FALSE_VALUE],
+        `truthiness of ${describeValue(value)}`,
+        null,
+        0,
+        getTruthinessPredicate(value),
+      )
+    : primitiveValue(truthiness);
+};
+
+/** `Boolean(value)` / `!!value`, keeping a branch's alternatives and preferred side. */
 export const toBooleanValue = (value: StaticValue): StaticValue =>
   mapValue(value, (alternative) => {
     const truthiness = getTruthiness(alternative);

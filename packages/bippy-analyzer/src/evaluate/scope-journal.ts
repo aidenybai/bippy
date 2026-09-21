@@ -32,6 +32,9 @@ export const getClosureScopes = (context: EvaluationContext): Set<Scope> | null 
   const frame = context.callStack.at(-1);
   if (!frame) return null;
   const scopes = new Set<Scope>();
+  for (let current: Scope | null = context.scope; current; current = current.parent) {
+    if (current.isCaptured) scopes.add(current);
+  }
   for (let current: Scope | null = frame.scope; current; current = current.parent) {
     scopes.add(current);
   }

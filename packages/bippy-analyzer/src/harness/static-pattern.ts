@@ -18,6 +18,7 @@ import {
   type SymbolicVariable,
 } from "../symbolic/guards.js";
 import { parseSymbolicCardinality, parseSymbolicPredicate } from "../symbolic/serialization.js";
+import { InputRenamer } from "../symbolic/input-renamer.js";
 import type {
   RuntimeFiberSnapshot,
   RuntimeSnapshot,
@@ -217,49 +218,14 @@ const scopeRepeatInputs = (
 
 class PatternReader {
   private anonymousDecisions = 0;
-  private readonly inputIds = new Map<string, string>();
+  private readonly inputRenamer = new InputRenamer();
 
   read(fibers: RuntimeFiberSnapshot[]): PatternNode[] {
     return fibers.flatMap((fiber) => this.toPatternNode(fiber));
   }
 
   readCause(cause: GuardContext): GuardContext {
-    return {
-      guard: mapGuardVariables(cause.guard, (variable) => this.renameVariable(variable)),
-      inputs: this.renameInputs(cause.inputs),
-    };
-  }
-
-  /** Inputs are numbered by first use in document order, so equal trees read to equal patterns whatever the evaluator numbered them. */
-  private renameInput(id: string): string {
-    let renamed = this.inputIds.get(id);
-    if (renamed === undefined) {
-      renamed = `#${this.inputIds.size + 1}`;
-      this.inputIds.set(id, renamed);
-    }
-    return renamed;
-  }
-
-  private renameVariable(variable: SymbolicVariable): SymbolicVariable {
-    return { ...variable, input: this.renameInput(variable.input) };
-  }
-
-  private renameInputs(inputs: InputVariable[]): InputVariable[] {
-    return inputs.map((input) => ({ ...input, id: this.renameInput(input.id) }));
-  }
-
-  private renamePredicate(predicate: SymbolicPredicate): SymbolicPredicate {
-    return {
-      formula:
-        predicate.formula &&
-        mapGuardVariables(predicate.formula, (variable) => this.renameVariable(variable)),
-      choice: predicate.choice && this.renameVariable(predicate.choice),
-      guards:
-        predicate.guards?.map((guard) =>
-          mapGuardVariables(guard, (variable) => this.renameVariable(variable)),
-        ) ?? null,
-      inputs: this.renameInputs(predicate.inputs),
-    };
+    return this.inputRenamer.renameContext(cause);
   }
 
   private toBranch(fiber: RuntimeFiberSnapshot): PatternBranch {
@@ -270,7 +236,7 @@ class PatternReader {
     const { predicate, isSwapped } = normalizePredicate(
       serialized === null
         ? anonymousChoice(anonymousInput(`branch#${++this.anonymousDecisions}`, reason, location))
-        : this.renamePredicate(parseSymbolicPredicate(serialized)),
+        : this.inputRenamer.renamePredicate(parseSymbolicPredicate(serialized)),
       fiber.children.length,
     );
     const alternatives = fiber.children.map((alternative) => this.read(alternative.children));
@@ -293,7 +259,7 @@ class PatternReader {
     const location = readString(fiber.props, "location");
     const parsed = serialized === null ? null : parseSymbolicCardinality(serialized);
     const cardinality = parsed
-      ? { variable: this.renameVariable(parsed.variable), inputs: this.renameInputs(parsed.inputs) }
+      ? this.inputRenamer.renameCardinality(parsed)
       : anonymousCardinality(
           anonymousInput(`repeat#${++this.anonymousDecisions}`, "repeated list", location),
         );

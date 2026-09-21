@@ -1,10 +1,10 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
+  checkGuardedCases,
   checkDifferentialCases,
   createSeededRandom,
   differentialSeeds,
-  DifferentialMismatch,
   type DifferentialCase,
 } from "./helpers/differential-evaluator.js";
 
@@ -49,29 +49,27 @@ it.each(differentialSeeds)(
   },
 );
 
-it.each([
-  {
+it("preserves conditional replacer throws and skips later matches", async () => {
+  const testCase = {
     name: "conditional replacer throw",
     body: `let calls = 0; let outcome = 'ok'; try { 'aa'.replace(/a/g, () => { calls++; if (first) throw 'stop'; return 'x'; }); } catch (error) { outcome = error; } return outcome + ':' + calls;`,
-    expected: ["ok:2", "stop:1"],
-    actual: "[ 'ok:2' ]",
-  },
+  };
+  await checkGuardedCases([testCase]);
+  await checkSymbolicCases([testCase]);
+});
+
+it.each([
   {
     name: "conditional frozen accessor change",
     body: `const target = {}; Object.defineProperty(target, 'value', { get: () => 1 }); let outcome = 'ok'; try { if (first) Object.defineProperty(target, 'value', { get: () => 2 }); } catch (error) { outcome = error.name; } return outcome + ':' + target.value;`,
-    expected: ["ok:1", "ok:1", "TypeError:1", "TypeError:1"],
-    actual: "<string: + on dynamic values>",
   },
   {
     name: "conditional configurable getter",
     body: `const target = {}; Object.defineProperty(target, 'value', { get: () => 1, configurable: true }); if (first) Object.defineProperty(target, 'value', { get: () => 2, configurable: true }); return String(target.value);`,
-    expected: ["1", "1", "2", "2"],
-    actual: '<string: String(unknown(accessor property "value"))>',
   },
-])("known divergence: $name", async (testCase) => {
-  const failure: unknown = await checkSymbolicCases([testCase]).catch((error: unknown) => error);
-  expect(failure).toBeInstanceOf(DifferentialMismatch);
-  if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([testCase]);
+])("preserves accessor branch: $name", async (testCase) => {
+  await checkGuardedCases([testCase]);
+  await checkSymbolicCases([testCase]);
 });
 
 it.each([false, true])("matches concrete configurable getter pin %s", (first) =>

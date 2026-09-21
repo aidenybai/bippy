@@ -55,19 +55,19 @@ const cases = [
   {
     name: "object pair supplies indexed properties",
     expected: 7,
-    actual: 'unknown(property "value" may come from a spread of unknown(dynamic entry))',
+    actual: 'unknown(unresolved descriptor for "value")',
     body: `return Object.fromEntries([{ 0: 'value', 1: 7 }]).value;`,
   },
   {
     name: "missing object key becomes undefined",
     expected: 7,
-    actual: 'unknown(property "undefined" may come from a spread of unknown(dynamic entry))',
+    actual: 'unknown(unresolved descriptor for "undefined")',
     body: `return Object.fromEntries([{ 1: 7 }]).undefined;`,
   },
   {
     name: "function pair supplies indexed properties",
     expected: 7,
-    actual: 'unknown(property "value" may come from a spread of unknown(dynamic entry))',
+    actual: 'unknown(unresolved descriptor for "value")',
     body: `const pair = () => {}; pair[0] = 'value'; pair[1] = 7; return Object.fromEntries([pair]).value;`,
   },
   {

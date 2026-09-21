@@ -21,6 +21,38 @@ export interface ContextReader {
 
 export const NO_PROVIDERS: ContextReader = () => null;
 
+export interface ValueContinuationEvaluator {
+  continueValue: (
+    value: StaticValue,
+    context: EvaluationContext,
+    run: (value: StaticValue, context: EvaluationContext) => StaticValue,
+  ) => StaticValue;
+}
+
+export interface PropertyReader {
+  getProperty: (
+    target: StaticValue,
+    key: string,
+    context: EvaluationContext,
+    location: SourceLocation | null,
+  ) => StaticValue;
+}
+
+export interface PropertyAssignmentOptions {
+  receiver?: StaticValue;
+  isStrict?: boolean;
+}
+
+export interface PropertyAssigner {
+  assignProperty: (
+    target: StaticValue,
+    key: string,
+    value: StaticValue,
+    context: EvaluationContext,
+    options?: PropertyAssignmentOptions,
+  ) => StaticValue;
+}
+
 export interface CallFrame {
   node: FunctionLikeNode;
   scope: Scope;
@@ -45,7 +77,7 @@ interface OutcomeHandler {
  * `outcomeHandlers` are the enclosing `try` statements (innermost last) that
  * the outcome of the resumed rest of the body still has to pass through before
  * it settles `call`. Null where a statement's outcome is consumed by code that
- * is not in continuation style (loops, forked paths, `switch` cases), so an
+ * is not in continuation style (loops and `switch` cases), so an
  * `await` there evaluates to an unknown value instead.
  */
 export interface SuspensionPoint {
@@ -70,6 +102,7 @@ export interface EvaluationContext {
   superBinding: SuperBinding | null;
   readContext: ContextReader;
   callStack: CallFrame[];
+  taskId?: number | null;
   uncertainDepth: number;
   forkDepth: number;
   scopedCompletionDepth?: number;

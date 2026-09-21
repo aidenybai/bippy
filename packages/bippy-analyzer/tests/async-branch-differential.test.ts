@@ -1,6 +1,7 @@
-import { expect, it } from "vite-plus/test";
+import { it } from "vite-plus/test";
 import {
   checkSymbolicCases,
+  checkGuardedCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -57,29 +58,25 @@ it.each([
     name: "a guarded rejection is recovered before a subsequent reaction reads shared state",
     body: `const state = { value: 'initial' }; const pending = first ? Promise.resolve('ready') : Promise.reject('failed'); pending.catch((error) => { state.value = error; }).then(() => { if (second) state.value = 'last'; }); return () => state.value;`,
   },
-])("$name", (testCase) => checkSymbolicCases([testCase], true));
+])("$name", async (testCase) => {
+  await checkGuardedCases([testCase], true);
+  await checkSymbolicCases([testCase], true);
+});
 
 it.each([
   {
     name: "one conditionally registered reaction on a pending promise",
     body: `let result = 'initial'; let settle; const pending = new Promise((resolve) => { settle = resolve; }); if (first) pending.then(() => { result = 'updated'; }); queueMicrotask(() => settle()); return () => result;`,
-    message: "state leaves truthy(#1) undecided",
   },
   {
     name: "conditional last writer",
     body: `const state = { value: 0 }; let settle; const pending = new Promise((resolve) => { settle = resolve; }); if (first) pending.then(() => { state.value = 1; }); if (second) pending.then(() => { state.value = 2; }); queueMicrotask(() => settle()); return () => String(state.value);`,
-    message:
-      "state leaves truthy(#1) | and(not(truthy(#1)), truthy(#2)) | and(not(truthy(#1)), not(truthy(#2))) undecided",
   },
   {
     name: "conditionally registered independent writers",
     body: `const state = { left: 0, right: 0 }; let settle; const pending = new Promise((resolve) => { settle = resolve; }); if (first) pending.then(() => { state.left = 1; }); if (second) pending.then(() => { state.right = 2; }); queueMicrotask(() => settle()); return () => state.left + ':' + state.right;`,
-    message:
-      "state leaves and(truthy(#1), truthy(#2)) | and(truthy(#1), not(truthy(#2))) | and(not(truthy(#1)), truthy(#2)) | and(not(truthy(#1)), not(truthy(#2))) undecided",
   },
-])("known divergence: state enumeration crashes on $name", async ({ name, body, message }) => {
-  await expect(checkSymbolicCases([{ name, body }], true)).rejects.toMatchObject({
-    name: "Error",
-    message,
-  });
+])("retains the inputs of $name", async (testCase) => {
+  await checkGuardedCases([testCase], true);
+  await checkSymbolicCases([testCase], true);
 });

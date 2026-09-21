@@ -1,7 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
+  checkExpectedDifferentialCases,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -48,10 +48,8 @@ it.each([
     name: "sealing a nonextensible accessor-only object changes frozen status",
     body: `const target = { get value() { return 7; } }; Object.preventExtensions(target); const before = Object.isFrozen(target); Object.seal(target); return before + ':' + Object.isFrozen(target);`,
   },
-])("known divergence: live integrity metadata $name", (testCase) =>
-  checkKnownDifferentialWitnesses([
-    { ...testCase, expected: "false:true", actual: '"false:false"' },
-  ]),
+])("preserves live integrity metadata $name", (testCase) =>
+  checkExpectedDifferentialCases([{ ...testCase, expected: "false:true" }]),
 );
 
 it.each([

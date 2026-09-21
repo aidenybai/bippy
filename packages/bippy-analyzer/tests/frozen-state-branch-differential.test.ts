@@ -1,6 +1,7 @@
 import { expect, it } from "vite-plus/test";
 import {
   checkSymbolicCases,
+  checkGuardedCases,
   checkDifferentialCases,
   DifferentialMismatch,
   createSeededRandom,
@@ -32,19 +33,32 @@ it.each(differentialSeeds)("matches fresh branch-local frozen objects, seed %i",
 const witnesses = [
   {
     name: "conditional object freezing preserves the unfrozen alternative",
+    isSupported: true,
     body: `const shouldFreeze = first; const target = {}; if (shouldFreeze) Object.freeze(target); return String(Object.isFrozen(target));`,
   },
   {
     name: "conditional array freezing preserves the unfrozen alternative",
+    isSupported: false,
     body: `const shouldFreeze = first; const target = []; if (shouldFreeze) Object.freeze(target); return String(Object.isFrozen(target));`,
   },
   {
     name: "early return after freezing does not freeze the sibling path",
+    isSupported: true,
     body: `const shouldFreeze = first; const target = {}; if (shouldFreeze) { Object.freeze(target); return String(Object.isFrozen(target)); } return String(Object.isFrozen(target));`,
   },
-].map((testCase) => ({ ...testCase, expected: ["false", "true"], actual: "[ 'true' ]" }));
+].map((testCase) => ({
+  ...testCase,
+  label: `${testCase.isSupported ? "preserves" : "known precision gap:"} ${testCase.name}`,
+  expected: ["false", "true"],
+  actual: "[ 'true' ]",
+}));
 
-it.each(witnesses)("known precision gap: $name", async (testCase) => {
+it.each(witnesses)("$label", async (testCase) => {
+  if (testCase.isSupported) {
+    await checkGuardedCases([testCase]);
+    await checkSymbolicCases([testCase]);
+    return;
+  }
   const failure: unknown = await checkSymbolicCases([testCase]).catch((error: unknown) => error);
   expect(failure).toBeInstanceOf(DifferentialMismatch);
   if (failure instanceof DifferentialMismatch) expect(failure.actual).toEqual([testCase]);

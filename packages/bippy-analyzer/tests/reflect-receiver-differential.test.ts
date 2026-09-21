@@ -1,6 +1,7 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
+  checkExpectedDifferentialCases,
   checkKnownDifferentialWitnesses,
   createSeededRandom,
   differentialSeeds,
@@ -99,13 +100,16 @@ it.each([
     actual: "unknown(Reflect.set())",
     body: `const target = {}; Object.defineProperty(target, 'value', { value: 1 }); return Reflect.set(target, 'value', 7);`,
   },
-  {
-    name: "Reflect.has rejects primitive targets",
-    expected: "TypeError",
-    actual: "unknown(Reflect.has on a dynamic target)",
-    body: `try { return Reflect.has('abc', 'length'); } catch (error) { return error.name; }`,
-  },
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
+
+it("rejects primitive Reflect.has targets", () =>
+  checkExpectedDifferentialCases([
+    {
+      name: "Reflect.has rejects primitive targets",
+      expected: "TypeError",
+      body: `try { return Reflect.has('abc', 'length'); } catch (error) { return error.name; }`,
+    },
+  ]));
 
 it.each([
   {

@@ -1,5 +1,6 @@
 import { realpathSync } from "node:fs";
 import path from "node:path";
+import { normalizeRenderInputs } from "./normalize-inputs.js";
 import { ParserError, describeError } from "../errors.js";
 import { Interpreter } from "../evaluate/interpreter.js";
 import { createScope } from "../evaluate/scope.js";
@@ -348,10 +349,10 @@ export class StaticRenderer {
       materializer.resetElementBudget();
       commitCauses.push(materializer.commitCauses.commit());
     });
-    if (interpreter.timers.hasTasks()) {
+    if (mounted.hasPendingWork) {
       interpreter.report(
         "timers-unsettled",
-        "timer tasks were still queueing more tasks when the settle rounds ran out",
+        "modeled tasks were still pending when the settle rounds ran out",
         null,
         "warning",
       );
@@ -364,13 +365,13 @@ export class StaticRenderer {
         "error",
       );
     }
-    return {
+    return normalizeRenderInputs({
       snapshot: mounted.snapshot,
       commits: mounted.commits,
       commitCauses: commitCauses.slice(0, mounted.commits.length),
       diagnostics: [...interpreter.diagnostics],
       stats: computeRenderStats(mounted.snapshot, this.graph.loadedModuleCount),
-    };
+    });
   }
 
   private createMaterializer(

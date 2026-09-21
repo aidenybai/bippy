@@ -1,9 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases } from "./helpers/differential-evaluator.js";
 import { propertyDefinitionMethods } from "./helpers/property-definition-methods.js";
 
 interface DescriptorShape {
@@ -38,8 +35,6 @@ const cases = shapes
         { ...propertyDefinitionMethods[0], name: "explicit-staging", isStaged: true },
       ].map((method) => ({
         name: `${shape.name}/${method.name}/failure=${failureStep}`,
-        label: `${method.isStaged ? "" : "known divergence: "}${shape.name}/${method.name}/failure=${failureStep}`,
-        isStaged: method.isStaged,
         expected:
           [
             ...(failureStep === 0 ? events : events.slice(0, failureStep)),
@@ -53,10 +48,9 @@ const cases = shapes
   })
   .flat();
 
-it.each(cases)("$label", async ({ name, body, expected, isStaged }) => {
+it.each(cases)("preserves proxy descriptor conversion: $name", async ({ name, body, expected }) => {
   expect(runInNewContext(`"use strict"; (() => { ${body} })()`, {}, { timeout: 1000 })).toBe(
     expected,
   );
-  if (isStaged) await checkDifferentialCases([{ name, body }]);
-  else await checkKnownDifferentialWitnesses([{ name, body, expected, actual: '"after#false"' }]);
+  await checkDifferentialCases([{ name, body }]);
 });

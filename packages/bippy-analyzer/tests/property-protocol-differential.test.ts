@@ -47,13 +47,11 @@ const copyMutations: Record<string, string> = {
 };
 
 describe.each(["assign", "spread"])("%s accessor copying", (method) => {
-  it.each(Object.keys(copyMutations))(
-    "known divergence: observes %s while copying a getter",
-    (mutation) =>
-      checkKnownDifferentialCases([
-        {
-          name: `${method}/${mutation}`,
-          body: `
+  it.each(Object.keys(copyMutations))("observes %s while copying a getter", (mutation) =>
+    checkDifferentialCases([
+      {
+        name: `${method}/${mutation}`,
+        body: `
       let trace = '';
       const source = { get first() { trace += 'G'; ${copyMutations[mutation]} return 1; }, second: 2 };
       const target = { set first(value) { trace += 'S' + value; } };
@@ -62,12 +60,16 @@ describe.each(["assign", "spread"])("%s accessor copying", (method) => {
       catch (error) { result = {}; trace += 'C' + error; }
       return trace + '|' + Object.keys(result).join(',') + '|' + result.second + '|' + source.second;
     `,
-        },
-      ]),
+      },
+    ]),
   );
 });
 
 it.each([
+  {
+    name: "numeric own-key ordering",
+    body: "const target = {}; target.z = 0; target['10'] = 1; target['2'] = 2; target['01'] = 3; return Object.keys(target).join(',');",
+  },
   {
     name: "non-writable data property",
     body: "const target = {}; Object.defineProperty(target, 'value', { value: 1 }); try { target.value = 2; return 'wrote:' + target.value; } catch (error) { return error.name + ':' + target.value; }",
@@ -80,10 +82,9 @@ it.each([
     name: "mixed accessor and data descriptor",
     body: "try { Object.defineProperty({}, 'value', { value: 1, get: () => 2 }); return 'accepted'; } catch (error) { return error.name; }",
   },
-  {
-    name: "numeric own-key ordering",
-    body: "const target = {}; target.z = 0; target['10'] = 1; target['2'] = 2; target['01'] = 3; return Object.keys(target).join(',');",
-  },
+])("respects $name", (testCase) => checkDifferentialCases([testCase]));
+
+it.each([
   {
     name: "assign invokes inherited prototype setter, spread creates own data",
     body: "const source = Object.create(null); source.__proto__ = { inherited: 7 }; const assigned = Object.assign({}, source); const spread = { ...source }; return Object.hasOwn(assigned, '__proto__') + ':' + assigned.inherited + ':' + Object.hasOwn(spread, '__proto__') + ':' + spread.inherited;",

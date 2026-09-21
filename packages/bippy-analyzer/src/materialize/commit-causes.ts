@@ -56,11 +56,6 @@ export class CommitCauses {
     this.pending.push(this.getCause());
   }
 
-  bindTask(task: () => void): () => void {
-    const cause = this.getCause();
-    return () => this.runGuardedTask(cause, task);
-  }
-
   bindContinuation<Arguments extends unknown[]>(
     task: (...args: Arguments) => void,
   ): (...args: Arguments) => void {

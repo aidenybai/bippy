@@ -1,7 +1,7 @@
 import type { BinaryExpression, CallExpression, Expression } from "oxc-parser";
 import type { Scope, StaticObjectEntry, StaticObjectValue, StaticValue } from "../types.js";
 import { hasNamedProperty } from "./has-property.js";
-import { recordRefinement } from "./predicates.js";
+import { getAlternativeGuards, guardedPredicate, recordRefinement } from "./predicates.js";
 import { findOwningScope, lookupScope } from "./scope.js";
 import { getThrowCertainty } from "./thrown.js";
 import { getTypePredicate } from "./type-predicates.js";
@@ -10,6 +10,7 @@ import {
   branchValue,
   describeValue,
   getTruthiness,
+  getOwnPropertyEntry,
   isNullish,
   unknownPrimitiveValue,
 } from "./values.js";
@@ -104,23 +105,46 @@ const MAX_EVALUATED_ALTERNATIVES = 8;
 const alternativesOf = (value: StaticValue): StaticValue[] =>
   value.kind === "branch" ? value.alternatives : [value];
 
+interface NarrowedAlternative {
+  value: StaticValue;
+  index: number;
+}
+
 const partition = (
   value: StaticValue,
   predicate: Predicate,
   reason: string,
   refine: Refinement | null,
 ): [StaticValue | null, StaticValue | null] => {
-  const passing: StaticValue[] = [];
-  const failing: StaticValue[] = [];
-  for (const alternative of alternativesOf(value)) {
+  const passing: NarrowedAlternative[] = [];
+  const failing: NarrowedAlternative[] = [];
+  const resolved = value.kind === "branch" ? getAlternativeGuards(value) : null;
+  for (const [index, alternative] of alternativesOf(value).entries()) {
     const verdict = predicate(alternative);
-    if (verdict === null) passing.push(refine ? refine(alternative) : alternative);
-    else if (verdict) passing.push(alternative);
-    if (verdict !== true) failing.push(alternative);
+    if (verdict === null)
+      passing.push({ value: refine ? refine(alternative) : alternative, index });
+    else if (verdict) passing.push({ value: alternative, index });
+    if (verdict !== true) failing.push({ value: alternative, index });
   }
-  const rebuild = (alternatives: StaticValue[]): StaticValue | null => {
+  const rebuild = (alternatives: NarrowedAlternative[]): StaticValue | null => {
     if (alternatives.length === 0) return null;
-    const rebuilt = branchValue(alternatives, reason);
+    const rebuilt = branchValue(
+      alternatives.map((alternative) => alternative.value),
+      reason,
+      value.kind === "branch" ? value.location : null,
+      value.kind === "branch"
+        ? Math.max(
+            0,
+            alternatives.findIndex((alternative) => alternative.index === value.preferredIndex),
+          )
+        : 0,
+      resolved
+        ? guardedPredicate(
+            alternatives.map((alternative) => resolved.guards[alternative.index]),
+            [resolved.inputs],
+          )
+        : null,
+    );
     recordRefinement(rebuilt, value);
     return rebuilt;
   };
@@ -472,11 +496,9 @@ export const lookupNarrowingTarget = (
 ): StaticValue | undefined => {
   const bound = lookupScope(scope, target.name);
   if (target.key === null || bound === undefined) return bound;
-  if (bound.kind !== "object" || bound.isFrozen) return undefined;
-  const hasAccessor = bound.entries.some(
-    (entry) => entry.kind === "property" && entry.key === target.key && entry.accessor,
-  );
-  return hasAccessor ? undefined : getProperty(bound, target.key);
+  if (bound.kind !== "object") return undefined;
+  const entry = getOwnPropertyEntry(bound, target.key);
+  return !entry || entry.accessor ? undefined : getProperty(bound, target.key);
 };
 
 const narrowProperty = (
@@ -487,8 +509,10 @@ const narrowProperty = (
   journal: HeapJournalEntry,
 ): { object: StaticObjectValue; entry: StaticObjectEntry } | null => {
   const object = lookupScope(scope, target.name);
-  if (object?.kind !== "object" || object.isFrozen) return null;
-  const entry: StaticObjectEntry = { kind: "property", key, value };
+  if (object?.kind !== "object") return null;
+  const previous = getOwnPropertyEntry(object, key);
+  if (!previous || previous.accessor) return null;
+  const entry: StaticObjectEntry = { ...previous, value };
   journal(object);
   object.entries.push(entry);
   return { object, entry };

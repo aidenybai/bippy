@@ -4,7 +4,17 @@ import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 import { inspect } from "node:util";
 import { expect } from "vite-plus/test";
-import { UNDEFINED_VALUE, describeValue } from "../../src/evaluate/values.js";
+import { transformSync } from "esbuild";
+import * as React from "react";
+import {
+  UNDEFINED_VALUE,
+  describeValue,
+  unknownPrimitiveValue,
+} from "../../src/evaluate/values.js";
+import { getAlternativeGuards, getTruthinessPredicate } from "../../src/evaluate/predicates.js";
+import { areGuardsSatisfiable } from "../../src/symbolic/guard-solver.js";
+import { andGuard, negateGuard, type Guard } from "../../src/symbolic/guards.js";
+import { parseSymbolicPredicate } from "../../src/symbolic/serialization.js";
 import { createStaticRenderer, type StaticRenderer } from "../../src/index.js";
 import { enumerateStaticStates } from "../../src/harness/compare-render.js";
 import { replayStateSpace } from "../../src/harness/state-replay.js";
@@ -16,10 +26,14 @@ import type { EvaluationContext } from "../../src/evaluate/context.js";
 export interface DifferentialCase {
   name: string;
   body: string;
+  jsx?: boolean;
 }
 
-interface DifferentialFailure extends DifferentialCase {
+export interface ExpectedDifferentialCase extends DifferentialCase {
   expected: unknown;
+}
+
+interface DifferentialFailure extends ExpectedDifferentialCase {
   actual: string;
 }
 
@@ -40,10 +54,13 @@ class AnalyzerEvaluationCrash extends Error {
   }
 }
 
-const getProgramSource = (cases: DifferentialCase[]): string => {
+const getProgramSource = (cases: DifferentialCase[], parameters: string[] = []): string => {
   if (cases.length === 0) throw new Error("Differential campaigns must not be empty");
   return cases
-    .map(({ body }, index) => `export const probe${index} = () => {\n${body}\n};`)
+    .map(
+      ({ body }, index) =>
+        `export const probe${index} = (${parameters.join(", ")}) => {\n${body}\n};`,
+    )
     .join("\n");
 };
 
@@ -52,8 +69,9 @@ const getCaseResult = (
   exported: StaticValue,
   context: EvaluationContext,
   microtasks: boolean,
+  argumentsList: StaticValue[] = [],
 ): StaticValue => {
-  const result = interpreter.callValue(exported, [], context, null);
+  const result = interpreter.callValue(exported, argumentsList, context, null);
   if (!microtasks) return result;
   interpreter.timers.drainMicrotasks();
   return interpreter.callValue(result, [], context, null);
@@ -63,11 +81,15 @@ export const evaluateCases = async (
   cases: DifferentialCase[],
   microtasks = false,
   prelude = "",
+  bindings: Record<string, StaticValue> = {},
 ): Promise<StaticValue[]> => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-differential-"));
   try {
-    const entryPath = join(directory, "program.ts");
-    writeFileSync(entryPath, prelude + getProgramSource(cases));
+    const entryPath = join(
+      directory,
+      cases.some((testCase) => testCase.jsx) ? "program.tsx" : "program.ts",
+    );
+    writeFileSync(entryPath, prelude + getProgramSource(cases, Object.keys(bindings)));
     const renderer = await createStaticRenderer({ rootDirectory: directory, maxSteps: 5_000_000 });
     const actual: StaticValue[] = [];
     await renderer.renderWith((interpreter) => {
@@ -77,7 +99,9 @@ export const evaluateCases = async (
       for (let index = 0; index < cases.length; index++) {
         const exported = interpreter.evaluateModuleExport(module, `probe${index}`);
         try {
-          actual.push(getCaseResult(interpreter, exported, context, microtasks));
+          actual.push(
+            getCaseResult(interpreter, exported, context, microtasks, Object.values(bindings)),
+          );
         } catch (error) {
           throw new AnalyzerEvaluationCrash(cases[index], error);
         }
@@ -95,13 +119,17 @@ const evaluateNative = (
   body: string,
   bindings: Record<string, boolean> = {},
   microtasks = false,
+  jsx = false,
 ): unknown => {
   const prelude = microtasks
     ? "const queueMicrotask = (callback) => { Promise.resolve().then(callback); };"
     : "";
+  const source = `"use strict"; ${prelude} (() => {\n${body}\n})()`;
   const result: unknown = runInNewContext(
-    `"use strict"; ${prelude} (() => {\n${body}\n})()`,
-    bindings,
+    jsx
+      ? transformSync(source, { loader: "tsx", jsx: "transform", target: "es2022" }).code
+      : source,
+    jsx ? { React, ...bindings } : bindings,
     {
       timeout: 1000,
       microtaskMode: microtasks ? "afterEvaluate" : undefined,
@@ -117,7 +145,9 @@ export const checkDifferentialCases = async (
   cases: DifferentialCase[],
   microtasks = false,
 ): Promise<void> => {
-  const expected = cases.map(({ body }) => evaluateNative(body, {}, microtasks));
+  const expected = cases.map((testCase) =>
+    evaluateNative(testCase.body, {}, microtasks, testCase.jsx),
+  );
   const actual = await evaluateCases(cases, microtasks);
   const failures: DifferentialFailure[] = [];
   for (let index = 0; index < cases.length; index++) {
@@ -127,6 +157,17 @@ export const checkDifferentialCases = async (
     }
   }
   if (failures.length) throw new DifferentialMismatch(failures);
+};
+
+export const checkExpectedDifferentialCases = async (
+  cases: ExpectedDifferentialCase[],
+  microtasks = false,
+): Promise<void> => {
+  for (const testCase of cases)
+    expect(evaluateNative(testCase.body, {}, microtasks, testCase.jsx), testCase.name).toEqual(
+      testCase.expected,
+    );
+  await checkDifferentialCases(cases, microtasks);
 };
 
 export const checkKnownDifferentialCases = async (
@@ -162,7 +203,10 @@ export const checkSymbolicCases = async (
 ): Promise<void> => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-symbolic-differential-"));
   try {
-    const entryPath = join(directory, "program.ts");
+    const entryPath = join(
+      directory,
+      cases.some((testCase) => testCase.jsx) ? "program.tsx" : "program.ts",
+    );
     writeFileSync(
       entryPath,
       "declare const first: boolean; declare const second: boolean;\n" + getProgramSource(cases),
@@ -171,7 +215,9 @@ export const checkSymbolicCases = async (
     for (let index = 0; index < cases.length; index++) {
       const testCase = cases[index];
       const expected = [false, true].flatMap((first) =>
-        [false, true].map((second) => evaluateNative(testCase.body, { first, second }, microtasks)),
+        [false, true].map((second) =>
+          evaluateNative(testCase.body, { first, second }, microtasks, testCase.jsx),
+        ),
       );
       const render = (currentRenderer: StaticRenderer) =>
         currentRenderer.renderWith((interpreter) => {
@@ -214,6 +260,69 @@ export const checkSymbolicCases = async (
     }
   } finally {
     rmSync(directory, { recursive: true, force: true });
+  }
+};
+
+interface GuardedOutcome {
+  kind: "return" | "throw" | "unresolved";
+  value: unknown;
+}
+
+export const getGuardedOutcomes = (value: StaticValue, guard: Guard): GuardedOutcome[] => {
+  if (!areGuardsSatisfiable([guard])) return [];
+  if (value.kind === "branch") {
+    const resolved = getAlternativeGuards(value);
+    if (!resolved) return [{ kind: "unresolved", value: describeValue(value) }];
+    return value.alternatives.flatMap((alternative, index) =>
+      getGuardedOutcomes(alternative, andGuard([guard, resolved.guards[index]])),
+    );
+  }
+  if (value.kind === "primitive") return [{ kind: "return", value: value.value }];
+  if (value.kind === "unknown" && value.thrown) {
+    return getGuardedOutcomes(value.thrown, guard).map((outcome) => ({
+      ...outcome,
+      kind: outcome.kind === "return" ? "throw" : outcome.kind,
+    }));
+  }
+  return [{ kind: "unresolved", value: describeValue(value) }];
+};
+
+export const checkGuardedCases = async (
+  cases: DifferentialCase[],
+  microtasks = false,
+): Promise<void> => {
+  const bindings = {
+    first: unknownPrimitiveValue("boolean", "first"),
+    second: unknownPrimitiveValue("boolean", "second"),
+  };
+  const predicates = Object.values(bindings).map((value) => {
+    const predicate = parseSymbolicPredicate(getTruthinessPredicate(value));
+    if (!predicate.formula) throw new Error("Expected a Boolean input predicate");
+    return predicate.formula;
+  });
+  const results = await evaluateCases(cases, microtasks, "", bindings);
+  for (const [index, testCase] of cases.entries()) {
+    for (const first of [false, true]) {
+      for (const second of [false, true]) {
+        let expected: GuardedOutcome;
+        try {
+          expected = {
+            kind: "return",
+            value: evaluateNative(testCase.body, { first, second }, microtasks, testCase.jsx),
+          };
+        } catch (error) {
+          expected = { kind: "throw", value: error };
+        }
+        const guard = andGuard([
+          first ? predicates[0] : negateGuard(predicates[0]),
+          second ? predicates[1] : negateGuard(predicates[1]),
+        ]);
+        const actual = getGuardedOutcomes(results[index], guard);
+        const context = `${testCase.name}: first=${first}, second=${second}\n${testCase.body}`;
+        expect(actual.length, context).toBeGreaterThan(0);
+        for (const outcome of actual) expect(outcome, context).toEqual(expected);
+      }
+    }
   }
 };
 
