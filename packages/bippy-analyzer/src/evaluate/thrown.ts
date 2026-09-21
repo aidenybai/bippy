@@ -184,6 +184,7 @@ const selectBranchPaths = (
 
 /** `value` restricted to the paths that do not throw; a lone thrown path becomes a plain unknown. */
 export const withoutThrows = (value: StaticValue): StaticValue => {
+  if (getThrowCertainty(value) === "never") return value;
   switch (value.kind) {
     case "unknown":
       return value.thrown ? unknownValue("thrown render", value.location) : value;

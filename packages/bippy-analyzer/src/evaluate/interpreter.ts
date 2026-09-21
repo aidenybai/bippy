@@ -1,4 +1,7 @@
 import path from "node:path";
+import { getBoundTarget } from "./function-bind.js";
+import { getConstructibility, isFunctionConstructor } from "./constructibility.js";
+import { createFunctionProperties } from "./function-metadata.js";
 import { pathToFileURL } from "node:url";
 import type {
   Argument,
@@ -202,7 +205,7 @@ import type {
   ValueCallOptions,
 } from "./context.js";
 import { NO_PROVIDERS, withOutcomeHandler, withoutSuspension, withScope } from "./context.js";
-import { createErrorValue } from "./errors.js";
+import { createErrorValue, createNonConstructorError } from "./errors.js";
 import { EscapeMemo } from "./escape-memo.js";
 import {
   type EscapedMutation,
@@ -337,17 +340,24 @@ import {
 } from "./thrown.js";
 import { MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distribution.js";
 import { TimerQueue } from "./timers.js";
-import { getBinaryMember, getBinaryWitness } from "./typed-arrays.js";
+import {
+  createTypedElementConverter,
+  getBinaryKind,
+  getBinaryMember,
+  getBinaryWitness,
+} from "./typed-arrays.js";
 import { evaluateTypeScriptDeclaration } from "./typescript-declarations.js";
 import { getTypeofValue } from "./value-typeof.js";
 import {
   accessorEntry,
   areValuesEquivalent,
+  isSameValue,
   branchValue,
   distributeBinary,
   capturedValue,
   CHAIN_SHORT_CIRCUIT,
   completeChain,
+  compareIdentity,
   componentReference,
   deleteObjectProperty,
   describeValue,
@@ -373,6 +383,7 @@ import {
   getSymbolDescription,
   getSymbolPropertyKey,
   getTruthiness,
+  hasDefiniteItems,
   isCallable,
   isIndefiniteItem,
   isJsonRecord,
@@ -689,10 +700,15 @@ const hasSameProperties = (previous: StaticObjectValue, next: StaticObjectValue)
     );
   return (
     previousKeys.size === nextKeys.size &&
-    [...previousKeys.keys()].every(
-      (key) =>
-        nextKeys.has(key) && getObjectProperty(previous, key) === getObjectProperty(next, key),
-    )
+    [...previousKeys.keys()].every((key) => {
+      if (!nextKeys.has(key)) return false;
+      const previousValue = getObjectProperty(previous, key);
+      const nextValue = getObjectProperty(next, key);
+      return (
+        previousValue === nextValue ||
+        (previous.allocation !== next.allocation && isSameValue(previousValue, nextValue))
+      );
+    })
   );
 };
 
@@ -1748,6 +1764,42 @@ export class Interpreter {
         return target;
       }
       case "list": {
+        const binaryKind = getBinaryKind(target);
+        const numericIndex = Number(propertyName);
+        if (
+          binaryKind !== null &&
+          binaryKind !== "ArrayBuffer" &&
+          (String(numericIndex) === propertyName || propertyName === "-0")
+        ) {
+          if (receiver !== undefined && compareIdentity(receiver, target) !== true)
+            return unknownValue("typed array indexed write with a foreign receiver");
+          const converted = createTypedElementConverter(
+            binaryKind,
+            null,
+            `${binaryKind} indexed write`,
+          )(value);
+          return this.continueValue(converted, context, (element, elementContext) => {
+            if (element.kind !== "primitive") return element;
+            if (propertyName === "-0" || !Number.isInteger(numericIndex) || numericIndex < 0)
+              return target;
+            if (!hasDefiniteItems(target))
+              return unknownValue("typed array indexed write with an indefinite length");
+            if (numericIndex < target.items.length) {
+              this.recordHeapMutation(target);
+              setListItem(
+                target,
+                numericIndex,
+                this.withUncertainAssignment(
+                  target.items[numericIndex],
+                  element,
+                  `[${numericIndex}]`,
+                  elementContext,
+                ),
+              );
+            }
+            return target;
+          });
+        }
         if (target.isFrozen) return target;
         const index = toIndexKey(propertyName);
         if (index !== null) {
@@ -1981,7 +2033,11 @@ export class Interpreter {
       thisValue: node.type === "ArrowFunctionExpression" ? context.thisValue : null,
       superBinding: node.type === "ArrowFunctionExpression" ? context.superBinding : null,
       name: explicitName ?? nameHint,
-      properties: objectValue(),
+      properties: createFunctionProperties(
+        primitiveValue(getFunctionLength(node)),
+        primitiveValue(explicitName ?? nameHint ?? ""),
+      ),
+      hasStoredMetadata: true,
       hasPrototype:
         node.type !== "ArrowFunctionExpression" && (node.generator || (!node.async && !isMethod)),
     };
@@ -3278,8 +3334,9 @@ export class Interpreter {
     location: SourceLocation | null,
     preferredPath: number,
     predicate: string | null,
+    additionalScope?: Scope,
   ): Result[] {
-    const entrySnapshot = snapshotScopes(scope);
+    const entrySnapshot = snapshotScopes(scope, additionalScope);
     const journal = new HeapJournal();
     this.heapJournals.push(journal);
     const snapshots: ScopeSnapshot[][] = [];
@@ -3287,7 +3344,7 @@ export class Interpreter {
       return paths.map((path, pathIndex) => {
         if (pathIndex > 0) restoreScopes(entrySnapshot);
         const result = path();
-        snapshots.push(snapshotScopes(scope));
+        snapshots.push(snapshotScopes(scope, additionalScope));
         journal.endPath();
         return result;
       });
@@ -3310,6 +3367,7 @@ export class Interpreter {
     branch: StaticBranchValue,
     context: EvaluationContext,
     call: (alternative: StaticValue, alternativeContext: EvaluationContext) => StaticValue,
+    additionalScope?: Scope,
   ): StaticValue {
     const alternativeContext: EvaluationContext = {
       ...context,
@@ -3333,6 +3391,7 @@ export class Interpreter {
         branch.location,
         branch.preferredIndex,
         getBranchPredicate(branch),
+        additionalScope,
       ),
     );
   }
@@ -4617,6 +4676,30 @@ export class Interpreter {
         return unknownValue(`element.${key}`, location);
       case "function":
       case "class": {
+        if (
+          object.kind === "function" &&
+          object.hasStoredMetadata &&
+          (key === "length" || key === "name")
+        ) {
+          const readMetadata = (
+            presence: StaticValue,
+            readContext: EvaluationContext,
+          ): StaticValue =>
+            this.getProperty(
+              getTruthiness(presence) === false
+                ? { kind: "global", name: "Function.prototype" }
+                : object.properties,
+              key,
+              readContext,
+              location,
+              optional,
+              receiver ?? object,
+            );
+          const presence = getOwnPropertyPresence(object.properties, key);
+          return presence.kind === "branch"
+            ? this.callAlternatives(presence, context, readMetadata)
+            : readMetadata(presence, context);
+        }
         const property =
           object.kind === "class"
             ? getStaticProperty(object, key)
@@ -5229,6 +5312,15 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
   ): StaticValue {
+    if (callee.kind === "branch")
+      return this.continueValue(callee, context, (constructor, constructorContext) =>
+        this.construct(constructor, args, constructorContext, location),
+      );
+    if (
+      callee.kind !== "function" &&
+      getConstructibility(callee, this.getRealm(context.environment)) === false
+    )
+      return createNonConstructorError(location);
     if (callee.kind === "global") {
       return evaluateBuiltinCall(this, callee, args, context, location, true);
     }
@@ -5266,24 +5358,49 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
   ): StaticValue {
-    const prototype = getFunctionPrototype(callee);
-    if (prototype.kind !== "object") {
-      this.markEscapes(args);
-      return unknownValue(`new ${describeValue(callee)}`, location);
-    }
-    const instance: StaticObjectValue = { ...objectValue(), prototype };
-    const returned = this.callFunction(callee, args, context, {
-      thisValue: instance,
-    });
-    if (returned.kind === "unknown") {
-      return returned.thrown
-        ? returned
-        : unknownValue(
-            `new ${describeValue(callee)} whose constructor ${returned.reason}`,
+    if (callee.boundArgs || callee.boundThis)
+      return this.constructWithFunction(
+        getBoundTarget(callee),
+        [...(callee.boundArgs ?? []), ...args],
+        context,
+        location,
+      );
+    if (!isFunctionConstructor(callee))
+      return createNonConstructorError(location, "non-constructible function");
+    return this.continueValue(
+      getFunctionPrototype(callee),
+      context,
+      (prototype, prototypeContext) => {
+        const realm = this.getRealm(prototypeContext.environment);
+        const prototypeType = getTypeofValue(prototype, realm);
+        if (
+          prototype.kind !== "object" &&
+          isNullish(prototype) !== true &&
+          !(
+            prototypeType.kind === "primitive" &&
+            prototypeType.value !== "object" &&
+            prototypeType.value !== "function"
+          )
+        ) {
+          this.markEscapes(args);
+          return unknownValue(
+            `new ${describeValue(callee)} with an unsupported prototype`,
             location,
           );
-    }
-    return this.getConstructorResult(returned, instance, this.getRealm(context.environment));
+        }
+        const instance: StaticObjectValue =
+          prototype.kind === "object" ? { ...objectValue(), prototype } : objectValue();
+        const returned = this.callFunction(callee, args, prototypeContext, { thisValue: instance });
+        if (returned.kind === "unknown")
+          return returned.thrown
+            ? returned
+            : unknownValue(
+                `new ${describeValue(callee)} whose constructor ${returned.reason}`,
+                location,
+              );
+        return this.getConstructorResult(returned, instance, realm);
+      },
+    );
   }
 
   /** `new` yields the constructor's return value only when it is an object or function. */
@@ -5486,7 +5603,7 @@ export class Interpreter {
     const location = this.locate(functionValue.module, functionValue.node);
     if (functionValue.boundArgs || functionValue.boundThis) {
       return this.callFunction(
-        { ...functionValue, boundArgs: undefined, boundThis: undefined },
+        getBoundTarget(functionValue),
         [...(functionValue.boundArgs ?? []), ...args],
         context,
         { ...options, thisValue: functionValue.boundThis ?? options.thisValue },
@@ -7011,5 +7128,10 @@ const nameAnonymousInner = (
   )
     return;
   inner.name = displayName;
+  inner.properties.entries = inner.properties.entries.map((entry) =>
+    entry.kind === "property" && entry.key === "name"
+      ? { ...entry, value: primitiveValue(displayName), accessor: undefined }
+      : entry,
+  );
   setObjectProperty(inner.properties, "displayName", primitiveValue(displayName));
 };

@@ -20,6 +20,7 @@ import type {
 } from "../types.js";
 import { createAbortController } from "./abort-controller.js";
 import { callWithArgumentList } from "./array-like.js";
+import { reflectConstruct } from "./reflect-construct.js";
 import { callArrayFrom } from "./array-from.js";
 import {
   type ArrayMethodEvaluator,
@@ -48,11 +49,21 @@ import type { MutableHeapValue } from "./heap-journal.js";
 import type { ModuleEvaluator } from "./module-evaluator.js";
 import type { TimerQueue } from "./timers.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
-import { createErrorValue, isErrorConstructorName } from "./errors.js";
+import {
+  createErrorValue,
+  getIntrinsicConstructionError,
+  isErrorConstructorName,
+} from "./errors.js";
 import { callEventTargetMethod, type EventListenerEvaluator } from "./event-listeners.js";
 import { callFetch } from "./fetch.js";
 import { constructFunctionFromSource } from "./function-constructor.js";
-import { hasProperty, isIntrinsicFunctionKey, ownsNoFunctionTextKey } from "./has-property.js";
+import { bindFunction } from "./function-bind.js";
+import {
+  getFunctionOwnPresence,
+  hasProperty,
+  isIntrinsicFunctionKey,
+  ownsNoFunctionTextKey,
+} from "./has-property.js";
 import {
   constructDeclaredHostObject,
   getHostGlobal,
@@ -128,7 +139,7 @@ import {
 } from "./text-encoding.js";
 import { isArrayValue } from "./type-predicates.js";
 import {
-  binaryFromItems,
+  convertTypedElements,
   constructBinary,
   isBinaryView,
   isTypedArrayName,
@@ -158,12 +169,12 @@ import {
   getOwnPropertyPresence,
   getObjectAccessor,
   getPropertyName,
+  getSymbolDescription,
   getSymbolPropertyKey,
   getTruthiness,
   hasDefiniteItems,
   isCallable,
   isIndefiniteItem,
-  isKnownList,
   isNullish,
   isSymbolPropertyKey,
   isUndefinedValue,
@@ -590,8 +601,9 @@ const getIntrinsicPrototypeObject = (globalName: string): StaticObjectValue | nu
 const getFunctionOwnNames = (callable: StaticFunctionValue): string[] | null => {
   const ownKeys = getKnownObjectOwnNames(callable.properties);
   if (!ownKeys) return null;
-  const names = ["length", "name"];
-  if (isIntrinsicFunctionKey(callable, "prototype")) names.push("prototype");
+  const names = callable.hasStoredMetadata ? [] : ["length", "name"];
+  if (!callable.hasStoredMetadata && isIntrinsicFunctionKey(callable, "prototype"))
+    names.push("prototype");
   for (const key of ownKeys) {
     if (!names.includes(key) && !isSymbolPropertyKey(key)) names.push(key);
   }
@@ -716,6 +728,19 @@ const hasOwnProperty = (
       : unknownPrimitiveValue("boolean", `${name} of a partially known target`);
   }
   if (receiver.kind === "function" || receiver.kind === "class") {
+    if (name === "hasOwnProperty") return getFunctionOwnPresence(receiver, propertyName);
+    if (
+      receiver.kind === "function" &&
+      receiver.hasStoredMetadata &&
+      propertyName !== "prototype"
+    ) {
+      const descriptor = getOwnPropertyDescriptor(receiver.properties, propertyName);
+      return descriptor === null
+        ? unknownPrimitiveValue("boolean", "enumerability of a partially known function")
+        : descriptor.kind === "object"
+          ? getObjectProperty(descriptor, "enumerable")
+          : FALSE_VALUE;
+    }
     if (
       isIntrinsicFunctionKey(receiver, propertyName) &&
       (name === "hasOwnProperty" || propertyName === "prototype")
@@ -994,6 +1019,10 @@ const callGlobal = (
   location: SourceLocation | null,
   isConstructor: boolean,
 ): StaticValue => {
+  if (isConstructor) {
+    const constructionError = getIntrinsicConstructionError(name, location);
+    if (constructionError) return constructionError;
+  }
   const isArrayFrom =
     !isConstructor &&
     (name === "Array.from" ||
@@ -1068,8 +1097,9 @@ const callGlobal = (
   }
   if (!isConstructor && name === "Array.of") return listValue([...args]);
   if (name.endsWith(".of")) {
-    const ofItems = binaryFromItems(name.slice(0, -".of".length), args);
-    if (ofItems) return ofItems;
+    const constructorName = name.slice(0, -".of".length);
+    if (isTypedArrayName(constructorName))
+      return convertTypedElements(constructorName, args, location, `${name}()`);
   }
   if (name === "Intl.NumberFormat") return createNumberFormat(args, location);
   if (isConstructor && name === "TextEncoder") return createTextEncoder();
@@ -1101,7 +1131,13 @@ const callGlobal = (
     case "Object":
       return first ? toObjectValue(first, location) : objectValue([]);
     case "String":
-      return first ? toStringOfValue(first) : primitiveValue("");
+      return first
+        ? mapValue(first, (alternative) =>
+            !isConstructor && alternative.kind === "symbol"
+              ? primitiveValue(`Symbol(${getSymbolDescription(alternative) ?? ""})`)
+              : toStringOfValue(alternative),
+          )
+        : primitiveValue("");
     case "Number":
       return first ? toNumberValue(first) : primitiveValue(0);
     case "Boolean":
@@ -1166,16 +1202,19 @@ const callGlobal = (
     case "Promise":
       return createPromiseValue(first, promiseTools(evaluator, context, location), location);
     case "Symbol":
-      if (isConstructor) break;
-      if (!first || (first.kind === "primitive" && first.value === undefined))
-        return createSymbolValue(undefined);
-      return first.kind === "primitive"
-        ? createSymbolValue(String(first.value))
-        : unknownValue("Symbol with a dynamic description", location);
+      return mapValue(first ?? UNDEFINED_VALUE, (description) =>
+        description.kind === "primitive"
+          ? createSymbolValue(
+              description.value === undefined ? undefined : String(description.value),
+            )
+          : unknownValue("Symbol with a dynamic description", location),
+      );
     case "Symbol.for":
-      return first?.kind === "primitive" && typeof first.value === "string"
-        ? createRegisteredSymbolValue(first.value)
-        : unknownValue("Symbol.for with a dynamic key", location);
+      return mapValue(first ?? UNDEFINED_VALUE, (key) =>
+        key.kind === "primitive" && typeof key.value === "string"
+          ? createRegisteredSymbolValue(key.value)
+          : unknownValue("Symbol.for with a dynamic key", location),
+      );
     case "Promise.resolve":
       return resolvedPromiseValue(first ?? UNDEFINED_VALUE);
     case "Promise.reject":
@@ -1390,22 +1429,8 @@ const callGlobal = (
           }),
       );
     }
-    case "Reflect.construct": {
-      const newTarget = args[2];
-      if (!first) return unknownValue("Reflect.construct without a target", location);
-      const constructArguments =
-        second === undefined ? [] : isKnownList(second) ? second.items : null;
-      if (constructArguments === null) {
-        return unknownValue("Reflect.construct with dynamic arguments", location);
-      }
-      const superConstructed =
-        context.thisValue && evaluator.constructSuper(context.thisValue, first, constructArguments);
-      if (superConstructed) return superConstructed;
-      if (newTarget && newTarget !== first) {
-        return unknownValue("Reflect.construct with a foreign new.target", location);
-      }
-      return evaluator.construct(first, constructArguments, context, location);
-    }
+    case "Reflect.construct":
+      return reflectConstruct(evaluator, args, context, location);
     case "Object.defineProperty": {
       const descriptor = args[2];
       const key = second ? getPropertyName(second) : null;
@@ -1848,16 +1873,7 @@ export const evaluateBuiltinCall = (
   }
 
   if (receiver.kind === "function") {
-    if (name === "bind") {
-      return {
-        ...receiver,
-        name: `bound ${receiver.name ?? ""}`,
-        properties: objectValue(),
-        hasPrototype: false,
-        boundThis: receiver.boundThis ?? first ?? UNDEFINED_VALUE,
-        boundArgs: [...(receiver.boundArgs ?? []), ...args.slice(1)],
-      };
-    }
+    if (name === "bind") return bindFunction(evaluator, receiver, args, context, location);
     if (name === "call")
       return evaluator.callFunction(receiver, args.slice(1), context, {
         thisValue: first ?? null,

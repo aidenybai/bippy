@@ -88,6 +88,7 @@ const joinListProperties = (
   reason: string,
   location: SourceLocation | null,
   preferredPath: number,
+  predicate: string | null,
 ): Map<string, StaticValue> | undefined => {
   const names = new Set(pathProperties.flatMap((properties) => [...(properties?.keys() ?? [])]));
   if (names.size === 0) return undefined;
@@ -98,7 +99,7 @@ const joinListProperties = (
       name,
       pathValues.every((value) => value === pathValues[0])
         ? pathValues[0]
-        : branchValue(pathValues, reason, location, preferredPath),
+        : branchValue(pathValues, reason, location, preferredPath, predicate),
     );
   }
   return joined;
@@ -332,6 +333,7 @@ export class HeapJournal {
         reason,
         location,
         preferredPath,
+        predicate,
       );
       const nonEnumerableKeys = pathStates.flatMap((state) => [...(state.nonEnumerableKeys ?? [])]);
       list.nonEnumerableKeys =

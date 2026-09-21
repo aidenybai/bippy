@@ -13,12 +13,16 @@ export interface ScopeSnapshot {
   bindings: Map<string, StaticValue>;
 }
 
-export const snapshotScopes = (scope: Scope | null): ScopeSnapshot[] => {
+export const snapshotScopes = (scope: Scope | null, additionalScope?: Scope): ScopeSnapshot[] => {
   const snapshots: ScopeSnapshot[] = [];
-  let current: Scope | null = scope;
-  while (current && current.parent) {
-    snapshots.push({ scope: current, bindings: new Map(current.bindings) });
-    current = current.parent;
+  const visited = new Set<Scope>();
+  for (const root of [scope, additionalScope]) {
+    let current = root;
+    while (current?.parent && !visited.has(current)) {
+      visited.add(current);
+      snapshots.push({ scope: current, bindings: new Map(current.bindings) });
+      current = current.parent;
+    }
   }
   return snapshots;
 };

@@ -1,4 +1,5 @@
-import { it } from "vite-plus/test";
+import { runInNewContext } from "node:vm";
+import { expect, it } from "vite-plus/test";
 import {
   checkDifferentialCases,
   checkKnownDifferentialWitnesses,
@@ -34,15 +35,16 @@ it.each(cases)("known divergence: Symbol conversion failure $name", (testCase) =
   checkKnownDifferentialWitnesses([testCase]),
 );
 
-it("known precision gap: explicit String conversion of a Symbol", () =>
-  checkKnownDifferentialWitnesses([
-    {
-      name: "explicit String conversion accepts Symbol values",
-      expected: "Symbol(operand)",
-      actual: '<string: String(Symbol("operand"))>',
-      body: `return String(Symbol('operand'));`,
-    },
-  ]));
+it("matches explicit String conversion of a Symbol", () => {
+  const testCase = {
+    name: "explicit String conversion accepts Symbol values",
+    body: `return String(Symbol('operand'));`,
+  };
+  expect(runInNewContext(`(()=>{${testCase.body}})()`, {}, { timeout: 1000 })).toBe(
+    "Symbol(operand)",
+  );
+  return checkDifferentialCases([testCase]);
+});
 
 it.each([
   { name: "Boolean conversion of a Symbol is truthy", body: `return Boolean(Symbol('operand'));` },

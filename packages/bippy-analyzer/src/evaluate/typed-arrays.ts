@@ -1,12 +1,21 @@
 import type { SourceLocation } from "../parse/source-types.js";
-import type { StaticListValue, StaticValue } from "../types.js";
+import type {
+  StaticListValue,
+  StaticPrimitiveValue,
+  StaticSymbolValue,
+  StaticValue,
+} from "../types.js";
 import { createErrorValue } from "./errors.js";
+import { getThrowCertainty } from "./thrown.js";
 import {
   UNDEFINED_VALUE,
   describeValue,
+  distributeBinary,
   getSymbolPropertyKey,
   isKnownList,
   listValue,
+  mapFiniteListItems,
+  mapValue,
   primitiveValue,
   thrownValue,
   unknownPrimitiveValue,
@@ -117,22 +126,38 @@ export const bytesValue = (kind: BinaryKind, bytes: Uint8Array): StaticListValue
 
 const fromLength = (
   kind: BinaryKind,
-  length: StaticValue,
+  length: StaticPrimitiveValue | StaticSymbolValue,
   location: SourceLocation | null,
 ): StaticValue => {
-  if (length.kind !== "primitive" || typeof length.value !== "number")
-    return unknownValue(`new ${kind}() with a dynamic length`, location);
-  if (!Number.isInteger(length.value) || length.value < 0)
-    return thrownValue(
-      `new ${kind}() with an invalid length`,
-      createErrorValue("RangeError", [primitiveValue(`Invalid ${kind} length`)], location),
-      location,
-    );
-  if (length.value > MAX_BINARY_LENGTH)
+  const nativeLength = length.kind === "symbol" ? Symbol() : length.value;
+  const count =
+    typeof nativeLength === "bigint" || typeof nativeLength === "symbol"
+      ? null
+      : Math.trunc(Number(nativeLength)) || 0;
+  if (count === null || count < 0 || count > Number.MAX_SAFE_INTEGER) {
+    try {
+      Reflect.construct(kind === "ArrayBuffer" ? ArrayBuffer : TYPED_ARRAY_CONSTRUCTORS[kind], [
+        nativeLength,
+      ]);
+    } catch (error) {
+      if (error instanceof TypeError || error instanceof RangeError)
+        return thrownValue(
+          `new ${kind}() with an invalid length`,
+          createErrorValue(
+            error instanceof TypeError ? "TypeError" : "RangeError",
+            [primitiveValue(error.message)],
+            location,
+          ),
+          location,
+        );
+    }
+    return unknownValue(`new ${kind}() with an unsupported length`, location);
+  }
+  if (count > MAX_BINARY_LENGTH)
     return unknownValue(`new ${kind}() longer than the analysis follows`, location);
   return binaryValue(
     kind,
-    Array.from({ length: length.value }, () => primitiveValue(0)),
+    Array.from({ length: count }, () => primitiveValue(0)),
   );
 };
 
@@ -182,6 +207,75 @@ const viewBuffer = (
   );
 };
 
+export const createTypedElementConverter = (
+  kind: keyof typeof TYPED_ARRAY_CONSTRUCTORS,
+  location: SourceLocation | null,
+  operation: string,
+): ((value: StaticValue) => StaticValue) => {
+  const element = new TYPED_ARRAY_CONSTRUCTORS[kind](1);
+  return (value) =>
+    mapValue(value, (alternative) => {
+      if (alternative.kind === "unknown" && alternative.thrown) return alternative;
+      const primitiveType =
+        alternative.kind === "symbol"
+          ? "Symbol"
+          : alternative.kind === "primitive" && typeof alternative.value === "bigint"
+            ? "BigInt"
+            : null;
+      if (primitiveType !== null)
+        return thrownValue(
+          `${operation} element conversion`,
+          createErrorValue(
+            "TypeError",
+            [primitiveValue(`Cannot convert a ${primitiveType} value to a number`)],
+            location,
+          ),
+          location,
+        );
+      if (alternative.kind !== "primitive")
+        return unknownValue(`${operation} with unsupported element conversion`, location);
+      element[0] = Number(alternative.value);
+      return primitiveValue(element[0]);
+    });
+};
+
+export const convertTypedElements = (
+  kind: keyof typeof TYPED_ARRAY_CONSTRUCTORS,
+  items: StaticValue[],
+  location: SourceLocation | null,
+  operation = `new ${kind}()`,
+): StaticValue => {
+  const convert = createTypedElementConverter(kind, location, operation);
+  const appendElement = (prefix: StaticValue, element: StaticValue): StaticValue => {
+    if (prefix.kind === "branch" || element.kind === "branch")
+      return (
+        distributeBinary(prefix, element, appendElement) ??
+        unknownValue(`${operation} exceeds supported element alternatives`, location)
+      );
+    if (prefix.kind !== "list") return prefix;
+    return element.kind === "primitive" ? binaryValue(kind, [...prefix.items, element]) : element;
+  };
+  const result = mapFiniteListItems(items, (elements) => {
+    let converted: StaticValue = binaryValue(kind, []);
+    for (const item of elements) {
+      if (converted.kind === "unknown" || getThrowCertainty(converted) === "always") break;
+      const element = convert(item);
+      if (
+        element.kind === "primitive" ||
+        (element.kind === "branch" &&
+          element.alternatives.every((alternative) => alternative.kind === "primitive"))
+      ) {
+        converted = mapValue(converted, (prefix) => {
+          if (prefix.kind === "list") prefix.items.push(element);
+          return prefix;
+        });
+      } else converted = appendElement(converted, element);
+    }
+    return converted;
+  });
+  return result ?? unknownValue(`${operation} with unsupported element conversion`, location);
+};
+
 /** `new Uint8Array(source, byteOffset?, length?)` / `new ArrayBuffer(length)`: zero-filled from a length, copied from a list, viewed over a buffer. */
 export const constructBinary = (
   name: string,
@@ -196,20 +290,23 @@ export const constructBinary = (
   if (kind === null) return unknownValue(`new ${name}()`, location);
   const [source, byteOffset, length] = args;
   if (source === undefined) return binaryValue(kind, []);
+  if (source.kind === "branch")
+    return mapValue(source, (alternative) =>
+      constructBinary(name, [alternative, ...args.slice(1)], location),
+    );
   if (source.kind === "list") {
     const sourceKind = binaryKinds.get(source);
     if (sourceKind === "ArrayBuffer" || (sourceKind !== undefined && kind === "ArrayBuffer")) {
       return viewBuffer(kind, source, sourceKind, byteOffset, length, location);
     }
-    return binaryValue(kind, [...source.items]);
+    return kind === "ArrayBuffer"
+      ? binaryValue(kind, [...source.items])
+      : convertTypedElements(kind, source.items, location);
   }
-  if (source.kind === "primitive") return fromLength(kind, source, location);
+  if (source.kind === "primitive" || source.kind === "symbol")
+    return fromLength(kind, source, location);
   return unknownValue(`new ${name}() from ${describeValue(source)}`, location);
 };
-
-/** `Uint8Array.from(items)` / `Uint8Array.of(...items)` over already-mapped elements. */
-export const binaryFromItems = (name: string, items: StaticValue[]): StaticValue | null =>
-  isTypedArrayName(name) ? binaryValue(name, [...items]) : null;
 
 /** `ArrayBuffer.isView(value)`. */
 export const isBinaryView = (value: StaticValue | undefined): boolean | null => {
@@ -244,7 +341,16 @@ export const getBinaryMember = (list: StaticListValue, key: string): StaticValue
 /** Overwrites every element with an unknown value, as a write the analysis cannot follow does. */
 export const fillBinaryUnknown = (list: StaticListValue, reason: string): void => {
   const kind = binaryKinds.get(list) ?? "Uint8Array";
-  list.items.splice(0, list.items.length, ...unknownElements(kind, list.items.length, reason));
+  for (let index = 0; index < list.items.length; index++) {
+    const item = list.items[index];
+    const value = unknownPrimitiveValue("number", `${kind} element ${reason}`);
+    list.items[index] =
+      item.kind === "optional"
+        ? { ...item, value }
+        : item.kind === "repeat"
+          ? { ...item, item: value }
+          : value;
+  }
 };
 
 /** A known numeric index argument, `fallback` when omitted or `undefined`, null when dynamic. */
@@ -254,12 +360,11 @@ export const toIndex = (value: StaticValue | undefined, fallback: number): numbe
   return value.kind === "primitive" && typeof value.value === "number" ? value.value : null;
 };
 
-/** `subarray`/`slice` of a typed array, and `set` writing a source into it; null for other methods. */
+/** `subarray`/`slice` of a typed array; null for other methods. */
 export const callBinaryMethod = (
   list: StaticListValue,
   name: string,
   args: StaticValue[],
-  recordMutation: () => void,
   location: SourceLocation | null,
 ): StaticValue | null => {
   const kind = binaryKinds.get(list);
@@ -273,23 +378,6 @@ export const callBinaryMethod = (
       if (start === null || end === null)
         return unknownValue(`${kind}.${name}() with dynamic bounds`, location);
       return binaryValue(kind, list.items.slice(start, end));
-    }
-    case "set": {
-      if (kind === "ArrayBuffer" || first === undefined) return null;
-      const offset = toIndex(second, 0);
-      recordMutation();
-      if (
-        offset === null ||
-        !isKnownList(first) ||
-        offset + first.items.length > list.items.length
-      ) {
-        fillBinaryUnknown(list, `after ${kind}.set() the analysis cannot follow`);
-        return UNDEFINED_VALUE;
-      }
-      first.items.forEach((item, index) => {
-        list.items[offset + index] = item;
-      });
-      return UNDEFINED_VALUE;
     }
     default:
       return null;

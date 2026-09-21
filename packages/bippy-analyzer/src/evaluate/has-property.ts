@@ -74,6 +74,16 @@ export const isIntrinsicFunctionKey = (
     callable.node.type !== "ArrowFunctionExpression" &&
     (callable.kind === "class" || callable.hasPrototype !== false));
 
+export const getFunctionOwnPresence = (
+  callable: StaticFunctionValue | StaticClassValue,
+  key: string,
+): StaticValue =>
+  callable.kind === "function" && callable.hasStoredMetadata && (key === "length" || key === "name")
+    ? getOwnPropertyPresence(callable.properties, key)
+    : isIntrinsicFunctionKey(callable, key)
+      ? TRUE_VALUE
+      : getOwnPropertyPresence(callable.properties, key);
+
 const hasComponentProperty = (type: StaticElementType, name: string): StaticValue | null => {
   switch (type.kind) {
     case "function":

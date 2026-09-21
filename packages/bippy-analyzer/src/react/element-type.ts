@@ -68,7 +68,10 @@ export const createFunctionComponentDefinition = (
   classBody: null,
   properties: value.properties,
   hasPrototype: value.hasPrototype,
+  hasStoredMetadata: value.hasStoredMetadata,
   boundArgs: value.boundArgs,
+  boundIdentity: value.boundIdentity,
+  boundTarget: value.boundTarget,
   boundThis: value.boundThis,
   isClientReference: value.isClientReference ?? false,
 });

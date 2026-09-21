@@ -1,5 +1,5 @@
 import type { SourceLocation } from "../parse/source-types.js";
-import type { StaticValue } from "../types.js";
+import type { Scope, StaticValue } from "../types.js";
 import type { BuiltinEvaluator } from "./builtin-calls.js";
 import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
@@ -33,9 +33,10 @@ const continueAlternatives = (
   value: StaticValue,
   context: EvaluationContext,
   proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
+  additionalScope?: Scope,
 ): StaticValue =>
   value.kind === "branch"
-    ? evaluator.callAlternatives(value, context, proceed)
+    ? evaluator.callAlternatives(value, context, proceed, additionalScope)
     : proceed(value, context);
 
 const readArgumentList = (
@@ -72,47 +73,63 @@ export const mapArrayLikeItems = (
   context: EvaluationContext,
   location: SourceLocation | null,
   mapItem?: (value: StaticValue, index: number, context: EvaluationContext) => StaticValue,
+  mapperScope?: Scope,
 ): StaticValue => {
   const length = evaluator.getProperty(source, "length", context, location);
-  return continueAlternatives(evaluator, length, context, (lengthValue, lengthContext) => {
-    if (getThrowCertainty(lengthValue) === "always") return lengthValue;
-    if (
-      lengthValue.kind === "symbol" ||
-      (lengthValue.kind === "primitive" && typeof lengthValue.value === "symbol")
-    )
-      return argumentListError("Cannot convert a Symbol value to a number", location);
-    if (lengthValue.kind !== "primitive")
-      return unknownValue("dynamic argument list length", location);
-    if (typeof lengthValue.value === "bigint")
-      return argumentListError("Cannot convert a BigInt value to a number", location);
-    const count = Math.min(
-      Math.max(Math.trunc(Number(lengthValue.value)) || 0, 0),
-      Number.MAX_SAFE_INTEGER,
-    );
-    if (count > MAX_ARRAY_LIKE_LENGTH)
-      return unknownValue("argument list exceeds supported length", location);
-    let result: StaticValue = listValue([]);
-    for (let index = 0; index < count; index++) {
-      result = continueAlternatives(evaluator, result, lengthContext, (prefix, prefixContext) => {
-        if (prefix.kind !== "list") return prefix;
-        const item = evaluator.getProperty(source, String(index), prefixContext, location);
-        const appendItem = (value: StaticValue): StaticValue =>
-          getThrowCertainty(value) === "never" ? listValue([...prefix.items, value]) : value;
-        const mapReadItem = (value: StaticValue, itemContext: EvaluationContext): StaticValue => {
-          if (getThrowCertainty(value) !== "never") return value;
-          const mapped = mapItem ? mapItem(value, index, itemContext) : value;
-          return getThrowCertainty(mapped) === "never"
-            ? appendItem(mapped)
-            : continueAlternatives(evaluator, mapped, itemContext, appendItem);
-        };
-        return getThrowCertainty(item) === "never"
-          ? mapReadItem(item, prefixContext)
-          : continueAlternatives(evaluator, item, prefixContext, mapReadItem);
-      });
-      if (getThrowCertainty(result) === "always" || result.kind === "unknown") return result;
-    }
-    return result;
-  });
+  return continueAlternatives(
+    evaluator,
+    length,
+    context,
+    (lengthValue, lengthContext) => {
+      if (getThrowCertainty(lengthValue) === "always") return lengthValue;
+      if (
+        lengthValue.kind === "symbol" ||
+        (lengthValue.kind === "primitive" && typeof lengthValue.value === "symbol")
+      )
+        return argumentListError("Cannot convert a Symbol value to a number", location);
+      if (lengthValue.kind !== "primitive")
+        return unknownValue("dynamic argument list length", location);
+      if (typeof lengthValue.value === "bigint")
+        return argumentListError("Cannot convert a BigInt value to a number", location);
+      const count = Math.min(
+        Math.max(Math.trunc(Number(lengthValue.value)) || 0, 0),
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (count > MAX_ARRAY_LIKE_LENGTH)
+        return unknownValue("argument list exceeds supported length", location);
+      let result: StaticValue = listValue([]);
+      for (let index = 0; index < count; index++) {
+        result = continueAlternatives(
+          evaluator,
+          result,
+          lengthContext,
+          (prefix, prefixContext) => {
+            if (prefix.kind !== "list") return prefix;
+            const item = evaluator.getProperty(source, String(index), prefixContext, location);
+            const appendItem = (value: StaticValue): StaticValue =>
+              getThrowCertainty(value) === "never" ? listValue([...prefix.items, value]) : value;
+            const mapReadItem = (
+              value: StaticValue,
+              itemContext: EvaluationContext,
+            ): StaticValue => {
+              if (getThrowCertainty(value) !== "never") return value;
+              const mapped = mapItem ? mapItem(value, index, itemContext) : value;
+              return getThrowCertainty(mapped) === "never"
+                ? appendItem(mapped)
+                : continueAlternatives(evaluator, mapped, itemContext, appendItem, mapperScope);
+            };
+            return getThrowCertainty(item) === "never"
+              ? mapReadItem(item, prefixContext)
+              : continueAlternatives(evaluator, item, prefixContext, mapReadItem, mapperScope);
+          },
+          mapperScope,
+        );
+        if (getThrowCertainty(result) === "always" || result.kind === "unknown") return result;
+      }
+      return result;
+    },
+    mapperScope,
+  );
 };
 
 export const callWithArgumentList = (

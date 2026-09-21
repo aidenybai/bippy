@@ -501,7 +501,10 @@ const toFunctionValue = (component: ComponentDefinition): StaticFunctionValue =>
     name: component.name,
     properties: component.properties,
     hasPrototype: component.hasPrototype,
+    hasStoredMetadata: component.hasStoredMetadata,
     boundArgs: component.boundArgs,
+    boundIdentity: component.boundIdentity,
+    boundTarget: component.boundTarget,
     boundThis: component.boundThis,
     isClientReference: component.isClientReference,
   };

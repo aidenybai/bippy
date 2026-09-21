@@ -180,9 +180,17 @@ const isInstanceOfClass = (left: StaticValue, classValue: StaticClassValue): boo
 
 /** Whether `fn.prototype` is on `left`'s explicit prototype chain; null once the chain reaches an object the analysis did not create. */
 const isInstanceOfFunction = (left: StaticValue, fn: StaticFunctionValue): boolean | null => {
+  if (fn.boundTarget) return isInstanceOfFunction(left, fn.boundTarget);
+  return isOnFunctionPrototypeChain(left, getObjectProperty(fn.properties, "prototype"));
+};
+
+export const isOnFunctionPrototypeChain = (
+  left: StaticValue,
+  prototype: StaticValue,
+): boolean | null => {
   if (isPrimitiveLike(left)) return false;
+  if (prototype.kind === "branch") return null;
   if (left.kind !== "object") return getPrototypeWitness(left) === null ? null : false;
-  const prototype = getObjectProperty(fn.properties, "prototype");
   let current = left;
   while (current.prototype) {
     if (current.prototype === prototype) return true;

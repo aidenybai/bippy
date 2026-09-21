@@ -1065,7 +1065,15 @@ const getClosureIdentity = (value: StaticValue): ClosureIdentity | null => {
   if (value.kind === "function") return value.boundArgs || value.boundThis ? null : value;
   if (value.kind !== "component-reference") return null;
   const { type } = value;
-  return type.kind === "function" || type.kind === "class" ? type.component : null;
+  if (type.kind !== "function" && type.kind !== "class") return null;
+  return type.component.boundArgs || type.component.boundThis ? null : type.component;
+};
+
+const getBoundIdentity = (value: StaticValue): number | null => {
+  if (value.kind === "function") return value.boundIdentity ?? null;
+  return value.kind === "component-reference" && value.type.kind === "function"
+    ? (value.type.component.boundIdentity ?? null)
+    : null;
 };
 
 /** A `forwardRef`/`memo`/`lazy` object, never identical to a closure or class. */
@@ -1207,6 +1215,14 @@ export const mayReadAsText = (value: StaticUnknownPrimitiveValue, text: string):
 export const compareIdentity = (left: StaticValue, right: StaticValue): boolean | null => {
   if (left.kind === "primitive" && right.kind === "primitive") return left.value === right.value;
   if (left === right) return true;
+  const leftBound = getBoundIdentity(left);
+  const rightBound = getBoundIdentity(right);
+  if (leftBound !== null && rightBound !== null) return leftBound === rightBound;
+  if (
+    (leftBound !== null && getClosureIdentity(right)) ||
+    (rightBound !== null && getClosureIdentity(left))
+  )
+    return false;
   if (
     left.kind === "unknown-primitive" &&
     right.kind === "unknown-primitive" &&
@@ -1820,7 +1836,7 @@ export const joinMappedAlternatives = (
   return mapped;
 };
 
-const MAX_DISTRIBUTED_ALTERNATIVES = 16;
+export const MAX_DISTRIBUTED_ALTERNATIVES = 16;
 
 export const countAlternatives = (value: StaticValue): number =>
   value.kind === "branch" ? value.alternatives.length : 1;

@@ -122,12 +122,10 @@ it.each([
   await checkDifferentialCases(cases);
 });
 
-it("known divergence: dynamic function name and length when binding", () =>
-  checkKnownDifferentialWitnesses([
+it("reads dynamic function name and length when binding", () =>
+  checkDifferentialCases([
     {
       name: "dynamic bind metadata",
-      expected: "length|name:2:bound custom",
-      actual: JSON.stringify(":0:bound target"),
       body: `const trace = []; const target = () => 1; Object.defineProperty(target, 'length', { get() { trace.push('length'); return 3; } }); Object.defineProperty(target, 'name', { get() { trace.push('name'); return 'custom'; } }); trace.length = 0; const bound = target.bind(null, 1); return trace.join('|') + ':' + bound.length + ':' + bound.name;`,
     },
   ]));

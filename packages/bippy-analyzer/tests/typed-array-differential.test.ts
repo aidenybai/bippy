@@ -1,4 +1,5 @@
-import { it } from "vite-plus/test";
+import { runInNewContext } from "node:vm";
+import { expect, it } from "vite-plus/test";
 import {
   checkDifferentialCases,
   checkKnownDifferentialWitnesses,
@@ -45,21 +46,41 @@ it.each([
   {
     name: "indexed writes perform integer conversion",
     expected: 1,
-    actual: "257",
     body: `const values = new Uint8Array([0]); values[0] = 257; return values[0];`,
   },
   {
     name: "clamped writes use ties-to-even",
     expected: "2,4",
-    actual: JSON.stringify("2.5,3.5"),
     body: `const values = new Uint8ClampedArray([0, 0]); values[0] = 2.5; values[1] = 3.5; return values.join(',');`,
   },
   {
     name: "out-of-bounds writes do not extend a typed array",
     expected: "1:undefined",
-    actual: JSON.stringify("3:7"),
     body: `const values = new Uint8Array([1]); values[2] = 7; return values.length + ':' + String(values[2]);`,
   },
+  {
+    name: "set converts values to the target element type",
+    expected: 1,
+    body: `const values = new Uint8Array([0]); values.set([257]); return values[0];`,
+  },
+  {
+    name: "set rejects an oversized source before writing",
+    expected: "RangeError",
+    body: `const values = new Uint8Array([1]); try { values.set([2, 3]); return 'accepted'; } catch (error) { return error.name; }`,
+  },
+  {
+    name: "set rejects a negative offset",
+    expected: "RangeError",
+    body: `const values = new Uint8Array([1]); try { values.set([2], -1); return 'accepted'; } catch (error) { return error.name; }`,
+  },
+])("matches native typed-array writes: $name", (testCase) => {
+  expect(runInNewContext(`(()=>{${testCase.body}})()`, {}, { timeout: 1000 })).toBe(
+    testCase.expected,
+  );
+  return checkDifferentialCases([testCase]);
+});
+
+it.each([
   {
     name: "subarray writes are visible in the original",
     expected: "1,7,3:7,3",
@@ -71,24 +92,6 @@ it.each([
     expected: 7,
     actual: "0",
     body: `const buffer = new ArrayBuffer(2); const first = new Uint8Array(buffer); const second = new Uint8Array(buffer); first[0] = 7; return second[0];`,
-  },
-  {
-    name: "set converts values to the target element type",
-    expected: 1,
-    actual: "257",
-    body: `const values = new Uint8Array([0]); values.set([257]); return values[0];`,
-  },
-  {
-    name: "set rejects an oversized source before writing",
-    expected: "RangeError",
-    actual: JSON.stringify("accepted"),
-    body: `const values = new Uint8Array([1]); try { values.set([2, 3]); return 'accepted'; } catch (error) { return error.name; }`,
-  },
-  {
-    name: "set rejects a negative offset",
-    expected: "RangeError",
-    actual: JSON.stringify("accepted"),
-    body: `const values = new Uint8Array([1]); try { values.set([2], -1); return 'accepted'; } catch (error) { return error.name; }`,
   },
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
@@ -107,21 +110,21 @@ it.each([
   {
     name: "float32 constructor rounds to element precision",
     expected: 0.10000000149011612,
-    actual: "0.1",
     body: `return new Float32Array([0.1])[0];`,
   },
   {
     name: "uint8 constructor converts integer elements",
     expected: "255,0,1,0",
-    actual: JSON.stringify("-1,256,257,NaN"),
     body: `return new Uint8Array([-1, 256, 257, NaN]).join(',');`,
   },
   {
     name: "clamped constructor rounds ties to even",
     expected: "2,4",
-    actual: JSON.stringify("2.5,3.5"),
     body: `return new Uint8ClampedArray([2.5, 3.5]).join(',');`,
   },
-])("known divergence: constructor conversion: $name", (testCase) =>
-  checkKnownDifferentialWitnesses([testCase]),
-);
+])("matches native constructor conversion: $name", (testCase) => {
+  expect(runInNewContext(`(()=>{${testCase.body}})()`, {}, { timeout: 1000 })).toBe(
+    testCase.expected,
+  );
+  return checkDifferentialCases([testCase]);
+});

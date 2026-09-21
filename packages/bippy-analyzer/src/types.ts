@@ -17,8 +17,11 @@ export interface ComponentDefinition {
   classBody: ClassBody | null;
   properties: StaticObjectValue;
   hasPrototype?: boolean;
+  hasStoredMetadata?: boolean;
   /** Set when the component is a `bind` result; each `bind` call is a distinct component type. */
   boundArgs?: StaticValue[];
+  boundIdentity?: number;
+  boundTarget?: StaticFunctionValue;
   boundThis?: StaticValue;
   /** Reached by server code through a `"use client"` module's export. */
   isClientReference: boolean;
@@ -698,7 +701,10 @@ export interface StaticFunctionValue {
   name: string | null;
   properties: StaticObjectValue;
   hasPrototype?: boolean;
+  hasStoredMetadata?: boolean;
   boundArgs?: StaticValue[];
+  boundIdentity?: number;
+  boundTarget?: StaticFunctionValue;
   boundThis?: StaticValue;
   isClientReference?: boolean;
 }

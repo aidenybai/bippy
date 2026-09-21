@@ -2,6 +2,7 @@ import type { SourceLocation } from "../parse/source-types.js";
 import type { GuardLiteral, SymbolicPredicate } from "../symbolic/guards.js";
 import { parseSymbolicPredicate, serializeSymbolicPredicate } from "../symbolic/serialization.js";
 import type {
+  Scope,
   StaticBranchValue,
   StaticListValue,
   StaticOptionalValue,
@@ -22,7 +23,8 @@ import { hasProperty } from "./has-property.js";
 import { getTruthinessPredicate, recordDerivation, recordRepeatSource } from "./predicates.js";
 import { joinStrings } from "./primitive-shapes.js";
 import { getThrowCertainty } from "./thrown.js";
-import { callBinaryMethod, toIndex } from "./typed-arrays.js";
+import { callTypedSet } from "./typed-array-set.js";
+import { callBinaryMethod, getBinaryKind, toIndex } from "./typed-arrays.js";
 import { isPrimitiveBranch, MAX_DISTRIBUTED_ALTERNATIVES } from "./value-distribution.js";
 import {
   branchValue,
@@ -81,6 +83,7 @@ export interface ArrayMethodEvaluator extends CallbackEvaluator {
     branch: StaticBranchValue,
     context: EvaluationContext,
     call: (alternative: StaticValue, context: EvaluationContext) => StaticValue,
+    additionalScope?: Scope,
   ) => StaticValue;
 }
 
@@ -619,13 +622,10 @@ export const callArrayMethod = (
   }
 
   if (receiver.kind === "list") {
-    const binaryResult = callBinaryMethod(
-      receiver,
-      name,
-      args,
-      () => evaluator.recordHeapMutation(receiver),
-      location,
-    );
+    const binaryKind = getBinaryKind(receiver);
+    if (name === "set" && binaryKind && binaryKind !== "ArrayBuffer")
+      return callTypedSet(evaluator, receiver, args, context, location);
+    const binaryResult = callBinaryMethod(receiver, name, args, location);
     if (binaryResult) return binaryResult;
     switch (name) {
       case "filter":

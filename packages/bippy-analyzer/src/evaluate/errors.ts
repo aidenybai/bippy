@@ -4,6 +4,7 @@ import {
   getObjectProperty,
   objectFromRecord,
   primitiveValue,
+  thrownValue,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
 } from "./values.js";
@@ -53,6 +54,28 @@ export const createErrorValue = (
   errorWitnesses.set(error, new ERROR_CONSTRUCTORS[name]());
   return error;
 };
+
+export const createNonConstructorError = (
+  location: SourceLocation | null,
+  reason = "non-constructible value",
+): StaticValue =>
+  thrownValue(
+    reason,
+    createErrorValue("TypeError", [unknownPrimitiveValue("string", reason)], location),
+    location,
+  );
+
+export const getIntrinsicConstructionError = (
+  name: string,
+  location: SourceLocation | null,
+): StaticValue | null =>
+  name === "Symbol" || name === "BigInt"
+    ? thrownValue(
+        `${name} cannot be constructed`,
+        createErrorValue("TypeError", [primitiveValue(`${name} is not a constructor`)], location),
+        location,
+      )
+    : null;
 
 export const getErrorWitness = (value: StaticObjectValue): Error | null =>
   errorWitnesses.get(value) ?? null;

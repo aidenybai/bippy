@@ -64,24 +64,189 @@ for generators, dates, arrays, or descriptors.
 
 ## Measured baseline
 
-The normal-order full run starting `2026-09-20T11:23:13.106Z` passed all 310 test files: 12,024 passing
+The normal-order full run starting `2026-09-20T21:39:29.460Z` passed all 340 test files: 15,419 passing
 assertions and four expected failures, with no unexpected failures or unrun assertions.
-The report separates 9,930 ordinary passes from 2,098 explicitly labeled defect assertions.
+The report separates 13,322 ordinary passes from 2,101 explicitly labeled defect assertions.
 Those are assertion counts, not distinct root causes.
 
-All 257 source files were reported; 223 remain below complete coverage. Statements: **83.83%**;
-branches: **73.99%**; functions: **85.74%**; lines: **86.61%**. The strict report correctly exited
+All 262 source files were reported; 225 remain below complete coverage. Statements: **84.01%**;
+branches: **74.37%**; functions: **85.89%**; lines: **86.76%**. The strict report correctly exited
 with status 1. The earlier per-file threshold smoke also exited 1. No exclusions or budget
 increases were used to make these checks pass.
 
-The full shuffled run (`--sequence.shuffle --sequence.seed=424242`) also passed all 310 files,
+The full shuffled run (`--sequence.shuffle --sequence.seed=424242`) also passed all 340 files,
 with the same assertion-name/status multiset and actual exit status 0. The earlier nine
 `vite-resolved-environment.test.ts` shuffled failures remain in the evidence history. An isolated
 React module loader now selects coherent development React/React DOM builds without changing
 application environment values or the native module cache. Subprocess regressions cover both
 production/development preload orders, effects, repeated commits, cleanup, and native identities.
 
+The first concurrent bind-phase coverage run timed out in `compiled-tslib-async.js`; 439 later
+fixture assertions were unresolved. Its actual exit 1 and reports are archived. Four focused
+controls and an unchanged full rerun passed without increasing timeouts or changing assertions.
+This records the failure, not a timeout fix. That bind-phase checkpoint followed the later bound-target fix.
+
 ## Current focused progress
+
+- Numeric typed-array set now normalizes primitive offsets before source acquisition, validates
+  source length before indexed reads, and converts/writes elements in order. Conversion or getter
+  failure retains earlier writes and stops later reads. Typed sources snapshot; array-like reads are
+  live and ignore iterators. Final 288 programs pass 1,152 assignments and replay, with 21 units and
+  1,785 surrounding assertions. Three unchanged defects are native-positive: element conversion,
+  oversized-source rejection and negative offsets. The 1,000-element array-like limit and sixteen
+  optional-shape limit remain; element completion forks use the existing raw sixteen-combination
+  bound while numeric alternatives stay compact. Nine 10,000-element helper controls and two late
+  errors supplement, not replace, eight existing full-interpreter controls. Opaque invalidation now
+  retains optional/repeat shape. Object coercion, ArrayBuffer source properties, generic receivers,
+  detached/resizable buffers and shared storage remain incomplete. New test-domain and fixture
+  mistakes, the initial abrupt-continuation error, and their original failures remain archived.
+
+- Numeric typed-array indexed writes now convert primitive values before checking index validity,
+  journal successful in-bounds writes and ignore invalid canonical indices without extending storage.
+  Assignment/update results retain their pre-storage values. The initial matrix had 396 failures and
+  36 passes; 225 final programs pass 900 assignments and replay. Noncanonical expando controls exposed
+  two adjacent gaps: explicit String(Symbol) conversion and lost property-value guards in list journals.
+  Known symbols now stringify descriptively without calling prototype hooks; primitive description and
+  registry-key choices retain branches. Thirty-two programs check 128 assignments, including symbol
+  identity. Named list-property joins now carry their existing fork predicate. Six units check error
+  opacity, same-target receivers, conservative refusals, frozen-empty conversion and property guards.
+  Final surrounding group: 753 passes. Four unchanged defects are native-positive: integer/clamped
+  writes, out-of-bounds growth and explicit Symbol stringification. Object coercion, unknown keys,
+  foreign receivers/proxies, length/descriptor writes, set and shared buffers remain incomplete.
+
+- Numeric typed-array and ArrayBuffer primitive lengths now follow ToIndex conversion: strings,
+  Booleans, nullish values, NaN and fractional lengths normalize before allocation checks. Negative
+  integers, infinities and unsafe indices raise RangeErrors; BigInt/Symbol lengths raise TypeErrors.
+  Only guaranteed-invalid primitive lengths reach native construction to capture Node/V8 error wording;
+  valid lengths never delegate allocation. The existing 65,536-element analysis limit is unchanged.
+  All initial 318 assertions failed. The final 159-program matrix passes 636 assignments and replay,
+  including omitted lengths, ignored typed-constructor arguments and reflective getter throws.
+  Fourteen units check allocation bounds, absence of native allocation for valid lengths, opaque stacks
+  and choice metadata. A TypeScript error from passing a general error.name string was corrected by
+  narrowing the constructor name, without a cast. Final surrounding group: 1,164 passes. No old defects
+  were promoted. Object lengths, ArrayBuffer options, view spans/sharing, writes/set and generic
+  construction remain incomplete.
+
+- Numeric typed-array constructors and `.of` now propagate BigInt/Symbol conversion errors in element
+  order. A definite failure stops before later unsupported object conversion; unsupported earlier
+  conversion stays unknown rather than inventing a later error. Numeric branches remain stored as
+  elements instead of expanding combinations. Error alternatives use the existing bounded distributor.
+  All initial 360 assertions failed before implementation; 216 final programs pass 864 assignments
+  and symbolic replay across constructors, of/apply and Reflect.construct. Direct argument evaluation,
+  ignored constructor arguments and argument-list getter throws retain precedence over conversion.
+  Nine units cover sixteen versus seventeen error alternatives, raw 4×4 acceptance/5×4 refusal,
+  unexpanded numeric choices, provenance, opacity and two 10,000-element late-error controls.
+  A missing scalar-dispatch fallback caused 217 intermediate failures and was corrected without
+  changing comparisons. Final surrounding group: 1,117 passes. No old defects were promoted. Object
+  coercion, generic receivers, generator gaps, indexed writes/set and shared buffers remain incomplete.
+
+- Typed-array `.from` converts each mapped primitive before the next callback or array-like read.
+  BigInt/Symbol conversion throws modeled TypeErrors with opaque stacks. Finite iterable mapping keeps
+  its snapshot, ordered abrupt prefixes and sixteen-shape bound; definite prefixes grow iteratively.
+  The initial 108-program matrix had 205 failures and eleven passes. Final matrices cover 144 programs
+  and 576 assignments: all concrete comparisons pass, while nine unchanged symbolic generator-drain
+  witnesses remain exact labeled gaps. The eager generator model discards conditional throws.
+  Seventeen units cover conversion, errors/provenance, 10,000 elements, shape limits and scope journals.
+  Full runs exposed one genuine closure-counter regression: alternatives saved caller bindings but
+  omitted the mapper's separate closure. Forks now optionally snapshot both chains, deduplicating shared
+  scopes and preserving the existing root exclusion. Disabling that capture reproduces 27 symbolic
+  failures. Final surrounding group: 1,049 passes, including nine gap assertions. No old defect
+  assertions were promoted. Object coercion, generic receivers, generator suspension/drain semantics,
+  other callback closures, writes/set and shared buffers remain incomplete.
+
+- Numeric typed-array `.of` now shares primitive element conversion with construction. Eighty-one
+  programs check 324 assignments and replay across direct, spread, same-intrinsic-receiver call/apply,
+  bind and Reflect.apply forms, including argument completion and source-copy isolation. Initial tests
+  had 129 failures and 33 passes. Conversion exposed nine remaining symbolic brand failures: completion
+  refinement cloned nonthrowing lists, losing binary brands and aliases. It now preserves nonthrowing
+  values. Thirty-six further programs check 144 assignments across constructor/from/of results and
+  alias writes; all 36 symbolic assertions failed with identity preservation disabled and now pass.
+  Thirteen units cover identity, nine 10,000-element conversions and opaque-input refusal. The final
+  surrounding group passes 638 assertions. No old defect assertions were promoted. Generic method
+  receivers, object coercion, writes/set and buffer sharing remain incomplete. BigInt/Symbol of errors
+  and primitive from conversion are covered by the subsequent work above.
+
+- Nine numeric typed-array constructors now convert finite primitive-valued lists rather than copying
+  raw values. Fixed-size native scratch storage supplies wrapping, clamping and floating-point rounding;
+  conversion never invokes program object hooks. Source/element choices and finite optional shapes retain
+  guards, preferences and brands. Ninety programs check 360 assignments and replay. Initial tests had
+  154 failures and 26 passes; the final surrounding group passes 551 assertions. Thirteen units cover
+  10,000-element conversion for each constructor, the unchanged sixteen-shape bound, choice metadata
+  and opaque-input refusal. Five unchanged defect assertions became native-positive, including the
+  Uint8Array overflow control discovered during constructor eligibility work. Object element conversion,
+  object length coercion, custom iterators, writes, set and shared buffers remain incomplete.
+  Primitive of/from conversion is covered by the
+  subsequent work above.
+
+- New-expression dispatch now rejects known nonconstructors before builtin execution or proxy
+  construct-trap lookup, but after argument evaluation. Primitives, namespaces, intrinsic methods,
+  nonconstructor proxies and selected targets have controls; valid constructors and proxy overrides
+  still run. Seventy-four programs pass 296 assignments and replay; three units keep error messages
+  and stacks opaque. Initial tests had 127 failures and four passes; the final surrounding group passes
+  561 assertions. That checkpoint recorded four exact defect assertions: eager global accessor
+  definition and missing Uint8Array element conversion. The latter also failed with the eligibility
+  guard disabled and is now fixed by the subsequent primitive conversion work above. Original bodies,
+  native expectations and historical failures are retained. No old defects were promoted in the
+  eligibility phase. Opaque/lifted callable capabilities, global descriptors, broader typed conversion
+  and proxy semantics remain incomplete.
+
+- Direct and reflective construction of the Symbol/BigInt intrinsics now throws modeled TypeErrors
+  without coercing arguments. Argument expressions and array-like acquisition still complete first;
+  invalid newTarget validation and getter throws retain precedence. These unconditional body failures
+  also resolve with a foreign newTarget, without reading its prototype. Thirty-nine programs pass
+  156 assignments and replay; three units preserve opaque stacks and leave other intrinsic bodies
+  alone. Initial 66 assertions had 46 failures and twenty passes; final surrounding 398 assertions pass.
+  Error branding, intrinsic renaming and shadowed local constructors have controls. No defects were
+  added or promoted. Bound intrinsic wrappers, general foreign-newTarget allocation, native-constructor
+  eligibility and other construction bodies remain incomplete.
+
+- Reflect.construct now validates supported target/newTarget constructor capabilities before acquiring
+  array-like arguments. Length is read once, indices remain live and ordered, iterator methods are not
+  acquired, and getter throws prevent invocation. Seventy programs pass 280 assignments and replay;
+  one unchanged function-source error-message witness remains two exact precision gaps. Initial 128
+  assertions failed; final surrounding 337 assertions pass. Twelve units cover constructor slots,
+  trap-free native classification, revoked proxies, uncertainty, existing distribution/array-like bounds
+  and independent 10,000-item definite storage. Native probes corrected two mistaken assumptions:
+  Node/V8's missing-argument behavior and the constructor slots of Symbol/BigInt, distinct from whether
+  their constructor bodies succeed. These observations are pinned to Node 24.21.0, not engine-neutral
+  promises. No old defects were promoted. Foreign new.target, opaque/lifted callable capabilities,
+  general length coercion, broader list descriptors and function-source error messages remain incomplete.
+
+- Bound ordinary-function construction now uses the original target and accumulated arguments,
+  ignoring bound receivers and wrapper prototypes. Target prototypes remain live; primitive prototypes
+  use Object.prototype. Constructor returns and throws retain their effects. Known interpreted
+  non-constructors throw modeled TypeErrors with opaque messages/stacks. Default bound instanceof
+  follows the target; guarded prototype selection keeps the existing sixteen-pair raw bound. Definite
+  Reflect.construct argument lists retain value branches and copy storage before invocation.
+  Sixty-nine programs pass 276 assignments and replay. Two unchanged ambient-input reread programs
+  pass concrete checks but remain exact symbolic precision gaps; they increase the defect count rather
+  than hide extra modeled states. Five units cover distribution bounds/correlation and error opacity.
+  Initial 118 assertions failed; the surrounding final group passes 366. Bound classes, foreign
+  new.target, custom hasInstance, broader prototype kinds, broader Reflect.construct support
+  and exact non-constructor error messages remain incomplete.
+
+- Interpreted functions now store own length/name metadata in journaled property entries. Deletion,
+  presence checks and binding retain aliases and fork-local state; definite reflection respects absence
+  and reinsertion order. Binding checks own length presence before reading it. Thirty-five programs
+  check 140 concrete assignments and replay; four units include an independent native inherited-getter
+  control. Initial tests had 56 failures and eight passes. Both first full runs caught a recursion-guard
+  regression: fresh method metadata needed scalar value comparison. Existing-callee property rewrites
+  remain progress signals, with five programs / twenty assignments guarding counter, signed-zero,
+  NaN, object and symbol changes. An overly broad comparison and a symbolic numeric/text harness
+  mismatch are preserved in the evidence history. Final surrounding 517 assertions pass; no existing
+  defects were promoted. Class/lifted callable metadata, arbitrary prototype changes, descriptor
+  enforcement, guarded key enumeration and broader reflection remain incomplete.
+
+- Interpreted-function binding now reads current length/name metadata in order, preserving getter
+  effects and throws without coercing non-number lengths or non-string names. Rebinding snapshots
+  metadata and retains the original receiver, arguments and callable target. Distinct bindings have
+  allocation identities preserved through component references. Sixty-nine programs check 276 concrete
+  assignments, symbolic enumeration and replay; one unit checks cloned/component identities. Initial
+  104 assertions failed, supplemental identity controls failed eight assertions, and four later
+  invocation controls failed eight more despite an intermediate green full run. Named-function bodies
+  now read the original target's live properties, not the wrapper's metadata. Two unchanged defect
+  witnesses are native-positive. Remaining callable kinds, arbitrary inherited metadata, descriptor
+  flags, class/proxy binding, broader construction and prototype changes remain incomplete.
 
 - Interpreted functions now store own accessors without invoking getters during definition.
   Reads/writes bind the function receiver, preserve abrupt results, and support valid accessor/data
@@ -89,9 +254,9 @@ production/development preload orders, effects, repeated commits, cleanup, and n
   There are 120 positive programs / 480 concrete assignments. Four unchanged Object.create(function)
   probes remain eight explicit precision-gap assertions, raising the defect count rather than hiding
   unsupported prototypes. Equivalent join decisions now merge differing input metadata; two units
-  preserve input provenance, preference and the unchanged sixteen-combination raw limit. Binding
-  metadata remains a labeled defect with a changed exact diagnostic. Class/list accessors, function
-  values as prototypes, general descriptor flags and exact getter-only function error messages remain open.
+  preserve input provenance, preference and the unchanged sixteen-combination raw limit. Class/list
+  accessors, function values as prototypes, general descriptor flags and exact getter-only function
+  error messages remain open.
 
 - Arrays, binary lists and interpreted functions/classes now honor string-valued data tags and
   non-string overrides. Async/generator function tags have matching property reads and presence.

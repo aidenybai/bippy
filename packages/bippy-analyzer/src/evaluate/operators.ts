@@ -5,7 +5,7 @@ import type { CompareOperator, GuardLiteral } from "../symbolic/guards.js";
 import type { StaticPrimitive, StaticUnknownPrimitiveValue, StaticValue } from "../types.js";
 import { isClockDateValue, toDatePrimitive } from "./clock-date.js";
 import { createErrorValue } from "./errors.js";
-import { isInstanceOf } from "./instance-of.js";
+import { isInstanceOf, isOnFunctionPrototypeChain } from "./instance-of.js";
 import { getLanguageObject } from "./language-intrinsics.js";
 import { getExactLanguageObject, toNativeObjectPrimitive } from "./native-values.js";
 import { applyNumberRangeOperator, compareNumberRanges } from "./number-ranges.js";
@@ -19,6 +19,7 @@ import {
   distributeBinary,
   FALSE_VALUE,
   getTruthiness,
+  getObjectProperty,
   hasDefiniteItems,
   mapValue,
   primitiveValue,
@@ -134,6 +135,19 @@ export const applyBinaryOperator = (
       hasDefiniteItems(right) ? toStringValue(right) : right,
       realm,
     );
+  }
+  if (operator === "instanceof" && right.kind === "function") {
+    const prototype = getObjectProperty((right.boundTarget ?? right).properties, "prototype");
+    if (prototype.kind === "branch")
+      return (
+        distributeBinary(left, prototype, (instance, selectedPrototype) => {
+          const result = isOnFunctionPrototypeChain(instance, selectedPrototype);
+          return result === null
+            ? unknownPrimitiveValue("boolean", "instanceof on dynamic values")
+            : primitiveValue(result);
+        }) ??
+        unknownPrimitiveValue("boolean", "instanceof exceeds supported prototype alternatives")
+      );
   }
   const distributed = distributeBinary(left, right, (leftAlternative, rightAlternative) =>
     applyBinaryOperator(operator, leftAlternative, rightAlternative, realm),

@@ -64,15 +64,13 @@ it.each([
     actual: JSON.stringify(""),
     body: `const trace = []; class Target { constructor() { trace.push('target'); } } class Alternate { constructor() { trace.push('alternate'); } } Reflect.construct(Target, [], Alternate); return trace.join('|');`,
   },
-  {
-    name: "separate bind evaluations have distinct identity",
-    expected: false,
-    actual: "<boolean: === on dynamic values>",
-    body: `const target = () => 1; return target.bind(null) === target.bind(null);`,
-  },
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
 it.each([
+  {
+    name: "separate bind evaluations have distinct identity",
+    body: `const target = () => 1; return target.bind(null) === target.bind(null);`,
+  },
   {
     name: "apply reads array-like length and indices without iterating",
     body: `const trace = []; const args = { get length() { trace.push('length'); return 2; }, get 0() { trace.push('0'); return 1; }, get 1() { trace.push('1'); return 2; }, [Symbol.iterator]() { throw 'iterator'; } }; const target = () => trace.push('body'); target.apply(null, args); return trace.join('|');`,

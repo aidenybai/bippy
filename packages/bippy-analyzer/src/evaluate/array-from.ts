@@ -8,13 +8,18 @@ import type { EvaluationContext } from "./context.js";
 import { createErrorValue } from "./errors.js";
 import { isGeneratorValue } from "./generators.js";
 import { getThrowCertainty } from "./thrown.js";
-import { binaryFromItems } from "./typed-arrays.js";
+import {
+  convertTypedElements,
+  createTypedElementConverter,
+  isTypedArrayName,
+} from "./typed-arrays.js";
 import { getTypeofValue } from "./value-typeof.js";
 import {
   isCallable,
   isNullish,
   ITERATOR_PROPERTY_KEY,
   listValue,
+  mapFiniteListItems,
   mapValue,
   primitiveValue,
   spreadListItems,
@@ -51,24 +56,85 @@ export const callArrayFrom = (
   context: EvaluationContext,
   location: SourceLocation | null,
 ): StaticValue => {
-  const isTyped = constructorName !== "Array";
+  const typedKind = isTypedArrayName(constructorName) ? constructorName : null;
+  const isTyped = typedKind !== null;
+  const operation = `${constructorName}.from()`;
+  const mapperScope = mapper?.kind === "function" ? mapper.scope : undefined;
+  const callAlternatives: BuiltinEvaluator["callAlternatives"] = (branch, pathContext, call) =>
+    evaluator.callAlternatives(branch, pathContext, call, mapperScope);
+  const convert =
+    typedKind === null ? null : createTypedElementConverter(typedKind, location, operation);
+  const mapItem = (
+    value: StaticValue,
+    index: number,
+    itemContext: EvaluationContext,
+  ): StaticValue => {
+    const mapped = mapper
+      ? callCallback(evaluator, mapper, [value, primitiveValue(index)], itemContext, { thisValue })
+      : value;
+    return convert ? convert(mapped) : mapped;
+  };
   const complete = (value: StaticValue): StaticValue =>
     mapValue(value, (alternative) =>
-      alternative.kind === "list" && getThrowCertainty(alternative) === "never" && isTyped
-        ? (binaryFromItems(constructorName, alternative.items) ?? alternative)
+      alternative.kind === "list" &&
+      getThrowCertainty(alternative) === "never" &&
+      typedKind !== null
+        ? convertTypedElements(typedKind, alternative.items, location, operation)
         : alternative,
     );
+  const mapTypedIterable = (
+    items: StaticValue[],
+    iterableContext: EvaluationContext,
+  ): StaticValue => {
+    const expanded = mapFiniteListItems(items, listValue);
+    if (!expanded) return unknownValue(`${operation} with indefinite iterable`, location);
+    const consume = (sourceList: StaticValue, sourceContext: EvaluationContext): StaticValue => {
+      if (sourceList.kind !== "list") return sourceList;
+      let result: StaticValue = listValue([]);
+      for (const [index, item] of sourceList.items.entries()) {
+        const append = (prefix: StaticValue, itemContext: EvaluationContext): StaticValue => {
+          if (prefix.kind !== "list") return prefix;
+          const mapped = mapItem(item, index, itemContext);
+          if (
+            mapped.kind === "branch" &&
+            mapped.alternatives.some((alternative) => alternative.kind !== "primitive")
+          )
+            return callAlternatives(mapped, itemContext, (alternative) =>
+              alternative.kind === "unknown" || getThrowCertainty(alternative) !== "never"
+                ? alternative
+                : listValue([...prefix.items, alternative]),
+            );
+          if (mapped.kind === "unknown" || getThrowCertainty(mapped) !== "never") return mapped;
+          prefix.items.push(mapped);
+          return prefix;
+        };
+        result =
+          result.kind === "branch"
+            ? callAlternatives(result, sourceContext, (prefix, prefixContext) =>
+                append(
+                  prefix.kind === "list" ? listValue([...prefix.items]) : prefix,
+                  prefixContext,
+                ),
+              )
+            : append(result, sourceContext);
+        if (getThrowCertainty(result) === "always" || result.kind === "unknown") break;
+      }
+      return complete(result);
+    };
+    return expanded.kind === "branch"
+      ? callAlternatives(expanded, iterableContext, consume)
+      : consume(expanded, iterableContext);
+  };
   const consumeIterable = (value: StaticValue, iterableContext: EvaluationContext): StaticValue => {
-    if (value.kind === "branch")
-      return evaluator.callAlternatives(value, iterableContext, consumeIterable);
+    if (value.kind === "branch") return callAlternatives(value, iterableContext, consumeIterable);
     if (getThrowCertainty(value) === "always") return value;
     if (isTyped && value.kind !== "list")
       return unknownValue(`${constructorName}.from of dynamic iterable`, location);
+    if (isTyped && value.kind === "list")
+      return mapTypedIterable([...value.items], iterableContext);
     const items =
       value.kind === "list"
-        ? isTyped
-          ? listValue([...value.items])
-          : value
+        ? value
         : value.kind === "repeat"
           ? value
           : listValue(spreadListItems(value, location));
@@ -105,12 +171,8 @@ export const callArrayFrom = (
             source,
             methodContext,
             location,
-            mapper
-              ? (value, index, itemContext) =>
-                  callCallback(evaluator, mapper, [value, primitiveValue(index)], itemContext, {
-                    thisValue,
-                  })
-              : undefined,
+            mapper || convert ? mapItem : undefined,
+            mapperScope,
           ),
         );
       const methodType = getTypeofValue(method, evaluator.getRealm(methodContext.environment));
@@ -126,7 +188,7 @@ export const callArrayFrom = (
     };
     const method = evaluator.getProperty(source, ITERATOR_PROPERTY_KEY, context, location);
     return method.kind === "branch"
-      ? evaluator.callAlternatives(method, context, consumeMethod)
+      ? callAlternatives(method, context, consumeMethod)
       : consumeMethod(method, context);
   }
   const iterable = iterableOrArrayLike(evaluator, source, context, location);
