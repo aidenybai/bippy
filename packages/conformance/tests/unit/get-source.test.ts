@@ -311,6 +311,91 @@ describe("normalizeFileName", () => {
     expect(normalizeFileName("webpack://my-app/./src/file.tsx")).toBe("./src/file.tsx");
     expect(normalizeFileName("middleware/index.ts")).toBe("middleware/index.ts");
   });
+
+  it("strips turbopack module metadata without eating route groups", () => {
+    expect(normalizeFileName("[project]/src/app/page.tsx [app-rsc] (ecmascript)")).toBe(
+      "./src/app/page.tsx",
+    );
+    expect(
+      normalizeFileName(
+        "[project]/examples/(group)/with-turbopack/app/foo.ts [app-rsc] (ecmascript)",
+      ),
+    ).toBe("./examples/(group)/with-turbopack/app/foo.ts");
+    expect(normalizeFileName("./app/(marketing)/page.tsx (ecmascript)")).toBe(
+      "./app/(marketing)/page.tsx",
+    );
+    expect(normalizeFileName("./src/app.tsx <locals>")).toBe("./src/app.tsx");
+    expect(normalizeFileName("page.tsx [draft]")).toBe("page.tsx [draft]");
+    expect(normalizeFileName("[root-of-the-server]__51ab98c8._.js")).toBe(
+      "[root-of-the-server]__51ab98c8._.js",
+    );
+    expect(isSourceFile("[project]/src/app/page.tsx [app-rsc] (ecmascript)")).toBe(true);
+    expect(isSourceFile("[root-of-the-server]__51ab98c8._.js")).toBe(false);
+  });
+
+  it("decodes turbopack magic identifiers into module paths", () => {
+    expect(normalizeFileName("__TURBOPACK__module__evaluation__")).toBe("module evaluation");
+    expect(normalizeFileName("__TURBOPACK__Hello$2f$World__")).toBe("Hello/World");
+    expect(normalizeFileName("__TURBOPACK__Hello$_1f600$World__")).toBe("Hello😀World");
+    expect(
+      normalizeFileName(
+        "__TURBOPACK__imported__module__$5b$project$5d2f$examples$2f$with$2d$turbopack$2f$app$2f$foo$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__",
+      ),
+    ).toBe("./examples/with-turbopack/app/foo.ts");
+    expect(
+      isSourceFile(
+        "__TURBOPACK__imported__module__$5b$project$5d2f$examples$2f$with$2d$turbopack$2f$app$2f$foo$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__",
+      ),
+    ).toBe(true);
+  });
+
+  it("unwraps react server file urls for display", () => {
+    expect(normalizeFileName("rsc://React/Server/file:///proj/server-chunk.js")).toBe(
+      "/proj/server-chunk.js",
+    );
+    expect(normalizeFileName("about://React/Server/file:///proj/server-chunk.js?42")).toBe(
+      "/proj/server-chunk.js",
+    );
+    expect(normalizeFileName("React/Server/src/app.tsx")).toBe("React/Server/src/app.tsx");
+  });
+
+  it("keeps the resource after a webpack loader chain", () => {
+    expect(normalizeFileName("./node_modules/css-loader/dist/cjs.js!./app/page.tsx")).toBe(
+      "./app/page.tsx",
+    );
+    expect(normalizeFileName("./node_modules/loader.js!./app/(marketing)/page.tsx?t=1")).toBe(
+      "./app/(marketing)/page.tsx",
+    );
+    expect(normalizeFileName("button!.tsx")).toBe("button!.tsx");
+  });
+
+  it("normalizes parcel, rspack, and bun specifiers", () => {
+    expect(normalizeFileName("parcel:///src/App.tsx")).toBe("/src/App.tsx");
+    expect(normalizeFileName("parcel://src/App.tsx")).toBe("src/App.tsx");
+    expect(normalizeFileName("rspack://my-app/./src/file.tsx")).toBe("./src/file.tsx");
+    expect(normalizeFileName("rspack-internal:///(ssr)/./src/app.tsx")).toBe("./src/app.tsx");
+    expect(normalizeFileName("bun:sqlite")).toBe("sqlite");
+  });
+
+  it("drops virtual module ids", () => {
+    expect(normalizeFileName("\0virtual:helper")).toBe("");
+    expect(normalizeFileName("virtual:react-router/server-build")).toBe("");
+    expect(normalizeFileName("astro:scripts/before-hydration.js")).toBe("");
+    expect(normalizeFileName("nitro:routes")).toBe("");
+    expect(normalizeFileName("cloudflare:workers")).toBe("");
+    expect(isSourceFile("virtual:react-router/server-build")).toBe(false);
+    expect(isSourceFile("astro:scripts/before-hydration.js")).toBe(false);
+  });
+
+  it("strips a windows extended path prefix", () => {
+    expect(normalizeFileName("\\\\?\\C:\\projects\\app\\src\\app.tsx")).toBe(
+      "C:\\projects\\app\\src\\app.tsx",
+    );
+  });
+
+  it("strips metro platform queries", () => {
+    expect(normalizeFileName("/src/App.tsx?platform=ios&dev=true")).toBe("/src/App.tsx");
+  });
 });
 
 describe("isSourceFile", () => {
@@ -326,6 +411,15 @@ describe("isSourceFile", () => {
     expect(isSourceFile("/dist/app.js")).toBe(false);
     expect(isSourceFile("/static/chunk-abc123.js")).toBe(false);
     expect(isSourceFile("/node_modules/react/index.js")).toBe(false);
+    expect(isSourceFile("/_next/static/chunks/main.js")).toBe(false);
+    expect(isSourceFile("/@vite/client")).toBe(false);
+    expect(isSourceFile("/src/.vite/deps/react.js")).toBe(false);
+    expect(isSourceFile("/.parcel-cache/file.js")).toBe(false);
+    expect(isSourceFile("/app/.expo/file.js")).toBe(false);
+    expect(isSourceFile("/.rsbuild/server/index.js")).toBe(false);
+    expect(isSourceFile("/.svelte-kit/output/server/index.js")).toBe(false);
+    expect(isSourceFile("/.astro/file.js")).toBe(false);
+    expect(isSourceFile("/_nuxt/entry.js")).toBe(false);
   });
 
   it("returns true for plain source files", () => {

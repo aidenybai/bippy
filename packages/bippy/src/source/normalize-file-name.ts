@@ -19,8 +19,141 @@ const APP_PAGES_BROWSER_PREFIX = /^\/?(?:app-pages-browser|\(app-pages-browser\)
 const NEXT_BUNDLER_LAYER_PREFIX =
   /^\/?\((?:action-browser|api-edge|api-node|edge-asset|instrument|middleware|pages-dir-browser|pages-dir-edge|pages-dir-node|rsc|shared|ssr)\)\//;
 const ENCODED_SEPARATOR = /%(?:2f|5c)/i;
+const WINDOWS_EXTENDED_PATH_PREFIX = "\\\\?\\";
+const REACT_ENVIRONMENT_PREFIX = /^React\/[^/]+\//;
+const TURBOPACK_MAGIC_IDENTIFIER = /__TURBOPACK__[a-zA-Z0-9_$]+__/g;
+const TURBOPACK_MAGIC_IDENTIFIER_EXACT = /^__TURBOPACK__([a-zA-Z0-9_$]+)__$/;
+const IMPORTED_MODULE_PREFIX = "imported module ";
+const BUNDLER_LAYER_SUFFIX =
+  /\s\[(?:app-[a-z0-9-]+|action-browser|api-edge|api-node|edge-asset|instrument|middleware|pages-dir-browser|pages-dir-edge|pages-dir-node|rsc|shared|ssr)\]$/;
+const BUNDLER_MODULE_TYPE_SUFFIX =
+  /\s\((?:asset|client reference proxy|css(?: client reference| module)?|ecmascript(?: client reference to (?:client|ssr))?|javascript|json|less|mdx|raw|sass|scss|static|typescript|unknown|wasm)\b[^)]*\)$/;
+const BUNDLER_EXPORT_SUFFIX = /\s<(?:exports?|locals|namespace)\b[^>]*>$/;
+const BUNDLER_MODULE_SUFFIXES = [
+  BUNDLER_MODULE_TYPE_SUFFIX,
+  BUNDLER_LAYER_SUFFIX,
+  BUNDLER_EXPORT_SUFFIX,
+];
 
 const isWindowsDrivePath = (filePath: string): boolean => WINDOWS_DRIVE_PREFIX.test(filePath);
+
+const VIRTUAL_SCHEME_PREFIXES = ["astro:", "cloudflare:", "nitro:"] as const;
+
+const isVirtualModuleId = (filePath: string): boolean =>
+  filePath.startsWith("\0") ||
+  filePath.startsWith("virtual:") ||
+  VIRTUAL_SCHEME_PREFIXES.some((prefix) => filePath.startsWith(prefix));
+
+const decodeHex = (hexText: string): string => {
+  if (hexText.trim() === "") throw new Error("empty hex");
+  const codePoint = Number.parseInt(hexText, 16);
+  if (Number.isNaN(codePoint)) throw new Error("invalid hex");
+  return String.fromCodePoint(codePoint);
+};
+
+const decodeMagicIdentifier = (identifier: string): string => {
+  const innerIdentifier = identifier.match(TURBOPACK_MAGIC_IDENTIFIER_EXACT)?.[1];
+  if (!innerIdentifier) return identifier;
+
+  let output = "";
+  let mode: "text" | "underscore" | "hex" | "long-hex" = "text";
+  let buffer = "";
+
+  for (const character of innerIdentifier) {
+    if (mode === "text") {
+      if (character === "_") mode = "underscore";
+      else if (character === "$") mode = "hex";
+      else output += character;
+      continue;
+    }
+
+    if (mode === "underscore") {
+      if (character === "_") output += " ";
+      else if (character === "$") {
+        output += "_";
+        mode = "hex";
+        continue;
+      } else output += character;
+      mode = "text";
+      continue;
+    }
+
+    if (mode === "hex") {
+      if (buffer.length === 2) {
+        output += decodeHex(buffer);
+        buffer = "";
+      }
+      if (character === "_") {
+        if (buffer !== "") throw new Error("invalid hex");
+        mode = "long-hex";
+      } else if (character === "$") {
+        if (buffer !== "") throw new Error("invalid hex");
+        mode = "text";
+      } else {
+        buffer += character;
+      }
+      continue;
+    }
+
+    if (character === "_") throw new Error("invalid hex");
+    if (character === "$") {
+      output += decodeHex(buffer);
+      buffer = "";
+      mode = "text";
+      continue;
+    }
+    buffer += character;
+  }
+
+  return output;
+};
+
+const decodeMagicIdentifiers = (filePath: string): string => {
+  if (!filePath.includes("__TURBOPACK__")) return filePath;
+  const decodedFilePath = filePath.replace(TURBOPACK_MAGIC_IDENTIFIER, (identifier) => {
+    try {
+      return decodeMagicIdentifier(identifier);
+    } catch {
+      return identifier;
+    }
+  });
+  if (!decodedFilePath.startsWith(IMPORTED_MODULE_PREFIX)) return decodedFilePath;
+  return decodedFilePath.slice(IMPORTED_MODULE_PREFIX.length);
+};
+
+const stripBundlerModuleMetadata = (filePath: string): string => {
+  let strippedFilePath = filePath;
+  let didStripMetadata = true;
+  while (didStripMetadata) {
+    didStripMetadata = false;
+    for (const suffix of BUNDLER_MODULE_SUFFIXES) {
+      const suffixMatch = strippedFilePath.match(suffix);
+      if (!suffixMatch?.[0]) continue;
+      strippedFilePath = strippedFilePath.slice(0, -suffixMatch[0].length).trimEnd();
+      didStripMetadata = true;
+      break;
+    }
+  }
+  return strippedFilePath;
+};
+
+const stripWebpackLoaders = (filePath: string): string => {
+  const separatorIndex = filePath.lastIndexOf("!");
+  if (separatorIndex <= 0) return filePath;
+  const loaderPath = filePath.slice(0, separatorIndex);
+  const resourcePath = filePath.slice(separatorIndex + 1);
+  if (!loaderPath.includes("/") && !loaderPath.includes("\\")) return filePath;
+  const isResourcePath =
+    resourcePath.startsWith("./") ||
+    resourcePath.startsWith("../") ||
+    resourcePath.startsWith("/") ||
+    resourcePath.startsWith("\\") ||
+    resourcePath.includes("/") ||
+    resourcePath.includes("\\") ||
+    isWindowsDrivePath(resourcePath);
+  if (!isResourcePath) return filePath;
+  return resourcePath;
+};
 
 const decodePath = (filePath: string): string => {
   if (!filePath.includes("%")) return filePath;
@@ -147,10 +280,19 @@ const normalizeLexicalPath = (filePath: string): string => {
 export const normalizeFileName = (fileName: string): string => {
   if (!fileName) return "";
   if (ANONYMOUS_FILE_PATTERNS.some((pattern) => pattern === fileName)) return "";
+  if (isVirtualModuleId(fileName)) return "";
 
   let normalizedFileName = fileName;
+  if (normalizedFileName.startsWith(WINDOWS_EXTENDED_PATH_PREFIX)) {
+    const extendedPath = normalizedFileName.slice(WINDOWS_EXTENDED_PATH_PREFIX.length);
+    if (isWindowsDrivePath(extendedPath)) normalizedFileName = extendedPath;
+  }
+  normalizedFileName = decodeMagicIdentifiers(normalizedFileName);
+  if (isVirtualModuleId(normalizedFileName)) return "";
+
   let didStripWebpackScheme = false;
   let didStripBundlerScheme = false;
+  let didStripRscScheme = false;
   let didResolveFileProtocol = false;
 
   const isHttpUrl =
@@ -183,12 +325,24 @@ export const normalizeFileName = (fileName: string): string => {
       didStripPrefix = true;
       continue;
     }
+    if (didStripRscScheme) {
+      const reactEnvironmentMatch = normalizedFileName.match(REACT_ENVIRONMENT_PREFIX);
+      if (reactEnvironmentMatch?.[0]) {
+        normalizedFileName = normalizedFileName.slice(reactEnvironmentMatch[0].length);
+        didStripRscScheme = false;
+        didStripPrefix = true;
+        continue;
+      }
+    }
     for (const prefix of INTERNAL_SCHEME_PREFIXES) {
       if (!normalizedFileName.startsWith(prefix)) continue;
-      if (prefix === "webpack://") didStripWebpackScheme = true;
+      if (prefix === "rsc://") didStripRscScheme = true;
+      if (prefix === "webpack://" || prefix === "rspack://") didStripWebpackScheme = true;
       if (
         prefix === "webpack://" ||
         prefix === "webpack-internal://" ||
+        prefix === "rspack://" ||
+        prefix === "rspack-internal://" ||
         prefix === "turbopack://"
       ) {
         didStripBundlerScheme = true;
@@ -199,7 +353,7 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
-  if (normalizedFileName.startsWith("virtual:")) return "";
+  if (isVirtualModuleId(normalizedFileName)) return "";
 
   if (!isWindowsDrivePath(normalizedFileName)) {
     const schemeMatch = normalizedFileName.match(SCHEME_REGEX);
@@ -220,9 +374,14 @@ export const normalizeFileName = (fileName: string): string => {
   } else if (normalizedFileName.startsWith(`/${TURBOPACK_PROJECT_TOKEN}`)) {
     normalizedFileName = normalizedFileName.slice(TURBOPACK_PROJECT_TOKEN.length);
   }
+  normalizedFileName = stripBundlerModuleMetadata(normalizedFileName);
+  const resourcePath = stripWebpackLoaders(normalizedFileName);
+  if (resourcePath !== normalizedFileName) return normalizeFileName(resourcePath);
   normalizedFileName = stripUrlPostfix(normalizedFileName);
   normalizedFileName = decodePath(normalizedFileName);
-  return normalizeLexicalPath(normalizedFileName);
+  normalizedFileName = normalizeLexicalPath(normalizedFileName);
+  if (isVirtualModuleId(normalizedFileName)) return "";
+  return normalizedFileName;
 };
 
 const getPathSegmentCount = (path: string): number => path.split("/").filter(Boolean).length;
