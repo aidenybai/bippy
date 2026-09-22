@@ -189,6 +189,7 @@ export class StaticRenderer {
         ]),
       ),
       conditionNames: options.conditionNames,
+      nodeEnvironment: nodeEnvironment ?? "development",
       rootDirectory,
     });
     const devDirectory = resolveOptionalPath(rootDirectory, options.devDirectory);
@@ -231,6 +232,7 @@ export class StaticRenderer {
         ),
         resolveExternalPackages: options.resolveExternalPackages,
         externalPackageAllowList: options.externalPackageAllowList,
+        serverModuleConditions: options.serverComponents === true,
       }),
     };
   }
