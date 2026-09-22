@@ -32,6 +32,8 @@ The parser interprets application source but uses React to construct the resulti
 
 The interpreter computes possible values from source expressions. It does not import an application component and call the component function. The interpreter must preserve unresolved inputs instead of assigning arbitrary values from the analysis environment.
 
+Eligible scalar function bodies execute a verified SSA graph over modeled values. Other bodies retain AST evaluation. The SSA executor uses the existing guards and resource bounds; it does not compile application code for native execution. Compiler constants are never substituted into AST fallback reads. See [the compiler notes](compiler-research.md#ssa-execution) for supported operations and remaining work.
+
 This restriction does not make analysis a security sandbox. React packages and analysis infrastructure execute outside the interpreter. Project build configuration and plugins can execute when the renderer loads them.
 
 ### Use React for reconciliation
@@ -83,6 +85,8 @@ The renderer coordinates source loading, evaluation, materialization, and captur
 | `render/types.ts`                 | Render configuration, captured results, and replay decisions                                        |
 
 `Interpreter` still coordinates evaluation and owns run state. `builtin-calls.ts` dispatches builtins and retains global and host-call handling. Neither is a foundation for its extracted subsystems: loops, array methods, and string methods accept explicit operation interfaces rather than the concrete interpreter. No adapter objects or forwarding classes are needed; the interpreter satisfies those interfaces directly.
+
+`compiler/` owns binding resolution, CFG lowering, SSA construction, phi simplification, verification, and constant propagation. It depends on source and value types, not evaluation or rendering. `evaluate/ssa-execution.ts` accepts guard, distribution, `typeof`, and budget operations through an explicit host interface. Compilation is cached by AST identity; execution registers and phi selections are fresh for each call. Opaque heap and suspension operations do not imply a complete executable backend for those features.
 
 Builtin and class evaluation also consume explicit contracts. Prototype construction requires only a function factory; class construction keeps its existing pending-super registry and cache lifetimes. Builtin dispatch composes array, function, module, and event operations without access to interpreter-private state. Abort, observer, event, resource-loading, and module-import helpers declare their own requirements. These contracts make dependencies explicit; they do not move module initialization out of the interpreter or make builtin dispatch a small subsystem.
 

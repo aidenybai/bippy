@@ -40,6 +40,7 @@ const evaluationModules = new Set([
   "evaluate/environment-reads.ts",
   "evaluate/json-values.ts",
   "evaluate/native-closures.ts",
+  "evaluate/narrowing.ts",
   "evaluate/completion.ts",
   "evaluate/context.ts",
   "evaluate/loops.ts",
@@ -58,6 +59,7 @@ const evaluationModules = new Set([
   "evaluate/react-elements.ts",
   "evaluate/react-hooks.ts",
   "evaluate/scope-journal.ts",
+  "evaluate/ssa-execution.ts",
   "evaluate/string-methods.ts",
   "evaluate/value-distribution.ts",
   "evaluate/value-typeof.ts",
@@ -71,6 +73,18 @@ describe("engine dependency boundaries", () => {
     expect(
       getViolations(
         ({ source, target }) => source.startsWith("evaluate/") && target.startsWith("harness/"),
+      ),
+    ).toEqual([]);
+  });
+
+  it("keeps compilation independent of runtime execution and rendering", () => {
+    expect(
+      getViolations(
+        ({ source, target }) =>
+          source.startsWith("compiler/") &&
+          !target.startsWith("compiler/") &&
+          !target.startsWith("parse/") &&
+          target !== "types.ts",
       ),
     ).toEqual([]);
   });
@@ -139,7 +153,7 @@ describe("engine dependency boundaries", () => {
       ...evaluationModules,
       ...dependencies
         .map(({ source }) => source)
-        .filter((source) => source.startsWith("symbolic/")),
+        .filter((source) => source.startsWith("symbolic/") || source.startsWith("compiler/")),
     ]);
     expect(
       getDependencyCycles(

@@ -40,40 +40,10 @@ it.each(differentialSeeds)(
 
 it.each([
   {
-    name: "block let hides an outer binding before initialization",
-    expected: "ReferenceError",
-    actual: "99",
-    body: `const value = 99; try { { const result = value; let value = 1; return result; } } catch (error) { return error.name; }`,
-  },
-  {
-    name: "typeof does not bypass a lexical temporal dead zone",
-    expected: "ReferenceError",
-    actual: JSON.stringify("number"),
-    body: `const value = 99; try { { const result = typeof value; let value = 1; return result; } } catch (error) { return error.name; }`,
-  },
-  {
-    name: "self initialization does not read an outer value",
-    expected: "ReferenceError",
-    actual: "99",
-    body: `const value = 99; try { { let value = value; return value; } } catch (error) { return error.name; }`,
-  },
-  {
-    name: "unreached declarations still create a temporal dead zone",
-    expected: "ReferenceError",
-    actual: '<string: typeof unknown(unbound identifier "value")>',
-    body: `const run = () => { return typeof value; let value = 1; }; try { return run(); } catch (error) { return error.name; }`,
-  },
-  {
     name: "for-of right side is inside the iteration declaration temporal dead zone",
     expected: "ReferenceError",
     actual: JSON.stringify("body"),
     body: `const values = [1]; try { for (let values of values) { return 'body'; } return 'done'; } catch (error) { return error.name; }`,
-  },
-  {
-    name: "switch cases share the lexical declaration scope",
-    expected: "ReferenceError",
-    actual: JSON.stringify("number"),
-    body: `const value = 99; try { switch (0) { case 0: return typeof value; case 1: let value = 1; return value; } } catch (error) { return error.name; }`,
   },
   {
     name: "closures observe an uninitialized captured binding",
@@ -102,6 +72,26 @@ it.each([
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
 it.each([
+  {
+    name: "block let hides an outer binding before initialization",
+    body: `const value = 99; try { { const result = value; let value = 1; return result; } } catch (error) { return error.name; }`,
+  },
+  {
+    name: "typeof does not bypass a lexical temporal dead zone",
+    body: `const value = 99; try { { const result = typeof value; let value = 1; return result; } } catch (error) { return error.name; }`,
+  },
+  {
+    name: "self initialization does not read an outer value",
+    body: `const value = 99; try { { let value = value; return value; } } catch (error) { return error.name; }`,
+  },
+  {
+    name: "unreached declarations still create a temporal dead zone",
+    body: `const run = () => { return typeof value; let value = 1; }; try { return run(); } catch (error) { return error.name; }`,
+  },
+  {
+    name: "switch cases share the lexical declaration scope",
+    body: `const value = 99; try { switch (0) { case 0: return typeof value; case 1: let value = 1; return value; } } catch (error) { return error.name; }`,
+  },
   {
     name: "let declarations without an initializer become undefined",
     body: `const value = 99; { let value; return value; }`,

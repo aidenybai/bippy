@@ -200,6 +200,7 @@ export const checkKnownSymbolicCases = async (
 export const checkSymbolicCases = async (
   cases: DifferentialCase[],
   microtasks = false,
+  bindings: Record<string, StaticValue> = {},
 ): Promise<void> => {
   const directory = mkdtempSync(join(tmpdir(), "bippy-symbolic-differential-"));
   try {
@@ -209,7 +210,8 @@ export const checkSymbolicCases = async (
     );
     writeFileSync(
       entryPath,
-      "declare const first: boolean; declare const second: boolean;\n" + getProgramSource(cases),
+      "declare const first: boolean; declare const second: boolean;\n" +
+        getProgramSource(cases, Object.keys(bindings)),
     );
     const renderer = await createStaticRenderer({ rootDirectory: directory });
     for (let index = 0; index < cases.length; index++) {
@@ -229,6 +231,7 @@ export const checkSymbolicCases = async (
             exported,
             interpreter.createModuleContext(module),
             microtasks,
+            Object.values(bindings),
           );
           if (value.kind === "unknown-primitive") {
             throw new DifferentialMismatch([
