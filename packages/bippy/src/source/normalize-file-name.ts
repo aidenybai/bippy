@@ -114,6 +114,7 @@ const stripUrlPostfix = (filePath: string): string => {
 const normalizeLexicalPath = (filePath: string): string => {
   if (!filePath || filePath.includes("\\")) return filePath;
   const isAbsolute = filePath.startsWith("/");
+  const isNetworkPath = filePath.startsWith("//");
   const hasRelativeDotPrefix = filePath.startsWith("./");
   const normalizedSegments: string[] = [];
 
@@ -124,6 +125,7 @@ const normalizeLexicalPath = (filePath: string): string => {
       if (
         previousSegment &&
         previousSegment !== ".." &&
+        (!isNetworkPath || normalizedSegments.length > 2) &&
         !WINDOWS_DRIVE_SEGMENT.test(previousSegment)
       ) {
         normalizedSegments.pop();
@@ -135,7 +137,7 @@ const normalizeLexicalPath = (filePath: string): string => {
     normalizedSegments.push(segment);
   }
 
-  if (isAbsolute) return `/${normalizedSegments.join("/")}`;
+  if (isAbsolute) return `${isNetworkPath ? "//" : "/"}${normalizedSegments.join("/")}`;
   const joinedPath = normalizedSegments.join("/");
   if (!joinedPath) return hasRelativeDotPrefix ? "./" : "";
   if (hasRelativeDotPrefix && !joinedPath.startsWith("../")) return `./${joinedPath}`;
@@ -149,6 +151,7 @@ export const normalizeFileName = (fileName: string): string => {
   let normalizedFileName = fileName;
   let didStripWebpackScheme = false;
   let didStripBundlerScheme = false;
+  let didResolveFileProtocol = false;
 
   const isHttpUrl =
     normalizedFileName.startsWith("http://") || normalizedFileName.startsWith("https://");
@@ -176,6 +179,7 @@ export const normalizeFileName = (fileName: string): string => {
       const resolvedFilePath = resolveFileProtocol(normalizedFileName);
       if (resolvedFilePath === normalizedFileName) break;
       normalizedFileName = resolvedFilePath;
+      didResolveFileProtocol = true;
       didStripPrefix = true;
       continue;
     }
@@ -195,12 +199,14 @@ export const normalizeFileName = (fileName: string): string => {
     }
   }
 
+  if (normalizedFileName.startsWith("virtual:")) return "";
+
   if (!isWindowsDrivePath(normalizedFileName)) {
     const schemeMatch = normalizedFileName.match(SCHEME_REGEX);
     if (schemeMatch) normalizedFileName = normalizedFileName.slice(schemeMatch[0].length);
   }
 
-  if (normalizedFileName.startsWith("//")) {
+  if (!didResolveFileProtocol && normalizedFileName.startsWith("//")) {
     const firstPathSlashIndex = normalizedFileName.indexOf("/", 2);
     normalizedFileName =
       firstPathSlashIndex === -1 ? "" : normalizedFileName.slice(firstPathSlashIndex);
@@ -209,8 +215,10 @@ export const normalizeFileName = (fileName: string): string => {
   normalizedFileName = unwrapViteId(normalizedFileName);
   if (didStripWebpackScheme) normalizedFileName = stripWebpackNamespace(normalizedFileName);
   normalizedFileName = stripBundlerLayer(normalizedFileName, didStripBundlerScheme);
-  if (normalizedFileName.includes(TURBOPACK_PROJECT_TOKEN)) {
-    normalizedFileName = normalizedFileName.replaceAll(TURBOPACK_PROJECT_TOKEN, "./");
+  if (normalizedFileName.startsWith(TURBOPACK_PROJECT_TOKEN)) {
+    normalizedFileName = `./${normalizedFileName.slice(TURBOPACK_PROJECT_TOKEN.length)}`;
+  } else if (normalizedFileName.startsWith(`/${TURBOPACK_PROJECT_TOKEN}`)) {
+    normalizedFileName = normalizedFileName.slice(TURBOPACK_PROJECT_TOKEN.length);
   }
   normalizedFileName = stripUrlPostfix(normalizedFileName);
   normalizedFileName = decodePath(normalizedFileName);

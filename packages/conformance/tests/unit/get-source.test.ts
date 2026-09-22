@@ -274,6 +274,25 @@ describe("normalizeFileName", () => {
     expect(normalizeFileName("/src/my%2Ffile.tsx")).toBe("/src/my%2Ffile.tsx");
   });
 
+  it("preserves network file hosts and share roots", () => {
+    expect(normalizeFileName("file://server/share/src/../App.tsx")).toBe("//server/share/App.tsx");
+    expect(normalizeFileName("rsc://file://server/share/../../App.tsx")).toBe(
+      "//server/share/App.tsx",
+    );
+  });
+
+  it("preserves real folders named after the Turbopack project token", () => {
+    expect(normalizeFileName("./src/[project]/page.tsx")).toBe("./src/[project]/page.tsx");
+    expect(normalizeFileName("turbopack://[project]/app/[project]/page.tsx")).toBe(
+      "./app/[project]/page.tsx",
+    );
+  });
+
+  it("does not classify virtual scheme ids as source files", () => {
+    expect(isSourceFile("virtual:helper.ts")).toBe(false);
+    expect(isSourceFile("rsc://virtual:helper.ts")).toBe(false);
+  });
+
   it("strips a hash fragment", () => {
     expect(normalizeFileName("src/app.tsx#L12")).toBe("src/app.tsx");
   });

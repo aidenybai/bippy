@@ -278,45 +278,35 @@ const canonicalSourcePath = (fileName: string): string => {
   return normalizedFileName.startsWith("./") ? normalizedFileName.slice(2) : normalizedFileName;
 };
 
-const findSourceContentByFileName = (
-  sources: string[],
-  sourcesContent: Array<string | null> | undefined,
-  fileName: string,
-): string | null => {
-  if (!sourcesContent) return null;
-  const sourceIndex = getStringIndex(sources, fileName);
-  if (sourceIndex !== -1) return sourcesContent[sourceIndex] ?? null;
-
-  const canonicalFileName = canonicalSourcePath(fileName);
-  if (!canonicalFileName) return null;
-  for (let index = 0; index < sources.length; index++) {
-    if (canonicalSourcePath(sources[index] ?? "") !== canonicalFileName) continue;
-    return sourcesContent[index] ?? null;
-  }
-  return null;
-};
-
 export const getSourceContentFromSourceMap = (
   sourceMap: SourceMap,
   originalFileName: string,
 ): string | null => {
-  const sourceContent = findSourceContentByFileName(
-    sourceMap.sources,
-    sourceMap.sourcesContent,
-    originalFileName,
-  );
-  if (sourceContent !== null) return sourceContent;
-
-  if (!sourceMap.sections) return null;
-  for (const section of sourceMap.sections) {
-    const sectionSourceContent = findSourceContentByFileName(
-      section.map.sources,
-      section.map.sourcesContent,
-      originalFileName,
-    );
-    if (sectionSourceContent !== null) return sectionSourceContent;
+  const maps = [sourceMap, ...(sourceMap.sections?.map((section) => section.map) ?? [])];
+  let hasExactSource = false;
+  for (const map of maps) {
+    const sourceIndex = getStringIndex(map.sources, originalFileName);
+    if (sourceIndex === -1) continue;
+    hasExactSource = true;
+    const sourceContent = map.sourcesContent?.[sourceIndex];
+    if (typeof sourceContent === "string") return sourceContent;
   }
-  return null;
+  if (hasExactSource) return null;
+
+  const canonicalFileName = canonicalSourcePath(originalFileName);
+  if (!canonicalFileName) return null;
+  let matchedFileName: string | undefined;
+  let matchedContent: string | null = null;
+  for (const map of maps) {
+    for (let index = 0; index < map.sources.length; index++) {
+      const fileName = map.sources[index];
+      if (!fileName || canonicalSourcePath(fileName) !== canonicalFileName) continue;
+      if (matchedFileName !== undefined && matchedFileName !== fileName) return null;
+      matchedFileName = fileName;
+      matchedContent ??= map.sourcesContent?.[index] ?? null;
+    }
+  }
+  return matchedContent;
 };
 
 const resolveUrl = (reference: string, baseUrl: string): string | null => {
@@ -465,11 +455,7 @@ const isAbsoluteSourcePath = (source: string): boolean =>
 const resolveRelativeSource = (source: string, sourceMapUrl: string): string => {
   if (!source.startsWith("./") && !source.startsWith("../")) return source;
   if (INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return source;
-  try {
-    return new URL(source, sourceMapUrl).toString();
-  } catch {
-    return source;
-  }
+  return resolveUrl(source, sourceMapUrl) ?? source;
 };
 
 const normalizeJoinedSourcePath = (joinedSource: string): string => {
