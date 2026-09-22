@@ -205,8 +205,9 @@ describe("normalizeFileName", () => {
     expect(normalizeFileName("rsc://file:///Users/me/src/app.tsx")).toBe("/Users/me/src/app.tsx");
   });
 
-  it("strips the turbopack:// prefix", () => {
-    expect(normalizeFileName("turbopack://[project]/src/app.tsx")).toBe("[project]/src/app.tsx");
+  it("strips the turbopack:// prefix and the project root token", () => {
+    expect(normalizeFileName("turbopack://[project]/src/app.tsx")).toBe("./src/app.tsx");
+    expect(normalizeFileName("turbopack:///[project]/src/app.tsx")).toBe("/src/app.tsx");
   });
 
   it("strips the node: prefix", () => {
@@ -239,6 +240,57 @@ describe("normalizeFileName", () => {
 
   it("strips query parameters with multiple entries", () => {
     expect(normalizeFileName("src/app.tsx?t=123&v=4")).toBe("src/app.tsx");
+  });
+
+  it("unwraps Vite /@fs/ urls into filesystem paths", () => {
+    expect(normalizeFileName("https://example.local:5173/@fs/Users/me/proj/src/app.tsx")).toBe(
+      "/Users/me/proj/src/app.tsx",
+    );
+    expect(normalizeFileName("http://localhost:5173/@fs/C:/proj/src/App.tsx")).toBe(
+      "C:/proj/src/App.tsx",
+    );
+    expect(isSourceFile("http://localhost:5173/@fs/Users/me/proj/src/app.tsx")).toBe(true);
+    expect(
+      isSourceFile("http://localhost:5173/@fs/Users/me/proj/node_modules/react/index.js"),
+    ).toBe(false);
+  });
+
+  it("drops Vite virtual module ids", () => {
+    expect(normalizeFileName("http://localhost:5173/@id/__x00__virtual:helper")).toBe("");
+    expect(isSourceFile("http://localhost:5173/@id/__x00__plugin-vue:export-helper")).toBe(false);
+  });
+
+  it("turns Windows file urls into drive paths", () => {
+    expect(normalizeFileName("file:///C:/projects/app/src/app.tsx")).toBe(
+      "C:/projects/app/src/app.tsx",
+    );
+    expect(normalizeFileName("file://localhost/Users/me/src/app.tsx")).toBe(
+      "/Users/me/src/app.tsx",
+    );
+  });
+
+  it("decodes escaped path segments without decoding separators", () => {
+    expect(normalizeFileName("http://localhost:5173/src/my%20file.tsx")).toBe("/src/my file.tsx");
+    expect(normalizeFileName("/src/my%2Ffile.tsx")).toBe("/src/my%2Ffile.tsx");
+  });
+
+  it("strips a hash fragment", () => {
+    expect(normalizeFileName("src/app.tsx#L12")).toBe("src/app.tsx");
+  });
+
+  it("collapses dot segments and keeps a leading dot-slash", () => {
+    expect(normalizeFileName("./src/../lib/button.tsx")).toBe("./lib/button.tsx");
+    expect(normalizeFileName("/src/../lib/button.tsx")).toBe("/lib/button.tsx");
+  });
+
+  it("strips Next.js bundler layers without eating route groups", () => {
+    expect(normalizeFileName("webpack-internal:///(rsc)/./app/(marketing)/about/page.tsx")).toBe(
+      "./app/(marketing)/about/page.tsx",
+    );
+    expect(normalizeFileName("webpack-internal:///(ssr)/./src/app.tsx")).toBe("./src/app.tsx");
+    expect(normalizeFileName("webpack://_N_E/./src/hello.tsx")).toBe("./src/hello.tsx");
+    expect(normalizeFileName("webpack://my-app/./src/file.tsx")).toBe("./src/file.tsx");
+    expect(normalizeFileName("middleware/index.ts")).toBe("middleware/index.ts");
   });
 });
 

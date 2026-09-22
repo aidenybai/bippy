@@ -371,10 +371,10 @@ it("normalizeFileName should strip single-segment base path for long segment", (
   expect(result).toBe("/src/page.tsx");
 });
 
-it("normalizeFileName should keep single-segment base path for /@fs/", () => {
+it("normalizeFileName should unwrap Vite /@fs/ into an absolute filesystem path", () => {
   const input = "https://example.local:5173/@fs/Users/me/proj/src/app.tsx";
   const result = normalizeFileName(input);
-  expect(result).toBe("/@fs/Users/me/proj/src/app.tsx");
+  expect(result).toBe("/Users/me/proj/src/app.tsx");
 });
 
 it("normalizeFileName should strip http:// host prefix and query parameters", () => {
