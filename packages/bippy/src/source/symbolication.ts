@@ -2,6 +2,7 @@ import { decode, type SourceMapMappings, type SourceMapSegment } from "@jridgewe
 
 import { BippySourceMapError } from "../errors.js";
 import { SCHEME_REGEX } from "./constants.js";
+import { normalizeFileName } from "./normalize-file-name.js";
 import type { StackFrame } from "./parse-stack.js";
 
 export interface DecodedSourceMapSection {
@@ -272,37 +273,40 @@ export const getSourceFromSourceMapByFunctionName = (
   );
 };
 
-const findSourceContentByFileName = (
-  sources: string[],
-  sourcesContent: Array<string | null> | undefined,
-  fileName: string,
-): string | null => {
-  if (!sourcesContent) return null;
-  const sourceIndex = getStringIndex(sources, fileName);
-  return sourceIndex === -1 ? null : (sourcesContent[sourceIndex] ?? null);
+const canonicalSourcePath = (fileName: string): string => {
+  const normalizedFileName = normalizeFileName(fileName);
+  return normalizedFileName.startsWith("./") ? normalizedFileName.slice(2) : normalizedFileName;
 };
 
 export const getSourceContentFromSourceMap = (
   sourceMap: SourceMap,
   originalFileName: string,
 ): string | null => {
-  const sourceContent = findSourceContentByFileName(
-    sourceMap.sources,
-    sourceMap.sourcesContent,
-    originalFileName,
-  );
-  if (sourceContent !== null) return sourceContent;
-
-  if (!sourceMap.sections) return null;
-  for (const section of sourceMap.sections) {
-    const sectionSourceContent = findSourceContentByFileName(
-      section.map.sources,
-      section.map.sourcesContent,
-      originalFileName,
-    );
-    if (sectionSourceContent !== null) return sectionSourceContent;
+  const maps = [sourceMap, ...(sourceMap.sections?.map((section) => section.map) ?? [])];
+  let hasExactSource = false;
+  for (const map of maps) {
+    const sourceIndex = getStringIndex(map.sources, originalFileName);
+    if (sourceIndex === -1) continue;
+    hasExactSource = true;
+    const sourceContent = map.sourcesContent?.[sourceIndex];
+    if (typeof sourceContent === "string") return sourceContent;
   }
-  return null;
+  if (hasExactSource) return null;
+
+  const canonicalFileName = canonicalSourcePath(originalFileName);
+  if (!canonicalFileName) return null;
+  let matchedFileName: string | undefined;
+  let matchedContent: string | null = null;
+  for (const map of maps) {
+    for (let index = 0; index < map.sources.length; index++) {
+      const fileName = map.sources[index];
+      if (!fileName || canonicalSourcePath(fileName) !== canonicalFileName) continue;
+      if (matchedFileName !== undefined && matchedFileName !== fileName) return null;
+      matchedFileName = fileName;
+      matchedContent ??= map.sourcesContent?.[index] ?? null;
+    }
+  }
+  return matchedContent;
 };
 
 const resolveUrl = (reference: string, baseUrl: string): string | null => {
@@ -445,12 +449,46 @@ const getIgnoredSourceIndices = (rawSourceMap: StandardSourceMap): Set<number> |
   return ignoreList?.length ? new Set(ignoreList) : undefined;
 };
 
+const isAbsoluteSourcePath = (source: string): boolean =>
+  source.startsWith("/") || /^[a-zA-Z]:[\\/]/.test(source) || SCHEME_REGEX.test(source);
+
+const resolveRelativeSource = (source: string, sourceMapUrl: string): string => {
+  if (!source.startsWith("./") && !source.startsWith("../")) return source;
+  if (INLINE_SOURCEMAP_REGEX.test(sourceMapUrl)) return source;
+  return resolveUrl(source, sourceMapUrl) ?? source;
+};
+
+const normalizeJoinedSourcePath = (joinedSource: string): string => {
+  const pathSegments = joinedSource.split("/");
+  const normalizedPathSegments: string[] = [];
+  for (const pathSegment of pathSegments) {
+    if (pathSegment === "" || pathSegment === ".") {
+      if (pathSegment === "" && normalizedPathSegments.length === 0) {
+        normalizedPathSegments.push("");
+      }
+      continue;
+    }
+    if (pathSegment === "..") {
+      const previousSegment = normalizedPathSegments[normalizedPathSegments.length - 1];
+      if (previousSegment && previousSegment !== ".." && previousSegment !== "") {
+        normalizedPathSegments.pop();
+      } else {
+        normalizedPathSegments.push("..");
+      }
+      continue;
+    }
+    normalizedPathSegments.push(pathSegment);
+  }
+  return normalizedPathSegments.join("/");
+};
+
 const resolveSourceRoot = (
   sourceRoot: string | undefined,
   source: string,
   sourceMapUrl: string,
 ): string => {
-  if (!sourceRoot || SCHEME_REGEX.test(source) || source.startsWith("/")) return source;
+  if (isAbsoluteSourcePath(source)) return source;
+  if (!sourceRoot) return resolveRelativeSource(source, sourceMapUrl);
   const normalizedSourceRoot = sourceRoot.endsWith("/") ? sourceRoot : `${sourceRoot}/`;
   const normalizedSource = source.replace(/^\.\//, "");
   try {
@@ -459,16 +497,7 @@ const resolveSourceRoot = (
       : new URL(normalizedSourceRoot, sourceMapUrl).toString();
     return new URL(normalizedSource, baseUrl).toString();
   } catch {
-    const pathSegments = `${normalizedSourceRoot}${normalizedSource}`.split("/");
-    const normalizedPathSegments: string[] = [];
-    for (const pathSegment of pathSegments) {
-      if (pathSegment === "..") {
-        normalizedPathSegments.pop();
-      } else if (pathSegment !== ".") {
-        normalizedPathSegments.push(pathSegment);
-      }
-    }
-    return normalizedPathSegments.join("/");
+    return normalizeJoinedSourcePath(`${normalizedSourceRoot}${normalizedSource}`);
   }
 };
 

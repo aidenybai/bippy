@@ -1,15 +1,19 @@
 export const SCHEME_REGEX = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 
 export const INTERNAL_SCHEME_PREFIXES = [
-  "rsc://",
-  "file:///",
+  "rspack-internal://",
   "webpack-internal://",
-  "webpack://",
-  "node:",
   "turbopack://",
+  "webpack://",
+  "rspack://",
+  "parcel://",
   "metro://",
-  "/app-pages-browser/",
+  "file:///",
+  "rsc://",
+  "node:",
+  "bun:",
   "/(app-pages-browser)/",
+  "/app-pages-browser/",
 ] as const;
 
 export const ABOUT_REACT_PREFIX = "about://React/";
@@ -21,7 +25,7 @@ export const ANONYMOUS_FILE_PATTERNS = ["<anonymous>", "eval", ""] as const;
 export const SOURCE_FILE_EXTENSION_REGEX = /\.(cjs|cts|js|jsx|mdx|mjs|mts|ts|tsx)$/;
 
 export const BUNDLED_FILE_PATTERN_REGEX =
-  /(\.min|bundle|chunk|vendor|vendors|runtime|polyfill|polyfills)\.(js|mjs|cjs)$|(chunk|bundle|vendor|vendors|runtime|polyfill|polyfills|framework|app|main|index)[-_.][A-Za-z0-9_-]{4,}\.(js|mjs|cjs)$|[\da-f]{8,}\.(js|mjs|cjs)$|[-_.][\da-f]{20,}\.(js|mjs|cjs)$|\/dist\/|\/build\/|\/.next\/|\/out\/|\/node_modules\/|\.webpack\.|\.vite\.|\.turbopack\./i;
+  /(\.min|bundle|chunk|vendor|vendors|runtime|polyfill|polyfills)\.(js|mjs|cjs)$|(chunk|bundle|vendor|vendors|runtime|polyfill|polyfills|framework|app|main|index)[-_.][A-Za-z0-9_-]{4,}\.(js|mjs|cjs)$|[\da-f]{8,}\.(js|mjs|cjs)$|[-_.][\da-f]{20,}\.(js|mjs|cjs)$|\/dist\/|\/build\/|\/.next\/|\/out\/|\/node_modules\/|\/_next\/|\/_expo\/|\/_nuxt\/|\/@vite\/|\/@react-refresh|\/\.parcel-cache\/|\/\.expo\/|\/\.rsbuild\/|\/\.vite\/|\/\.svelte-kit\/|\/\.astro\/|\/\.nuxt\/|\/\.angular\/|\.webpack\.|\.vite\.|\.turbopack\.|\[root-of-the-server\]/i;
 
 export const QUERY_PARAMETER_PATTERN_REGEX = /^\?[\w~.-]+(?:=[^&#]*)?(?:&[\w~.-]+(?:=[^&#]*)?)*$/;
 

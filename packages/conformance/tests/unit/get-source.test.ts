@@ -205,8 +205,9 @@ describe("normalizeFileName", () => {
     expect(normalizeFileName("rsc://file:///Users/me/src/app.tsx")).toBe("/Users/me/src/app.tsx");
   });
 
-  it("strips the turbopack:// prefix", () => {
-    expect(normalizeFileName("turbopack://[project]/src/app.tsx")).toBe("[project]/src/app.tsx");
+  it("strips the turbopack:// prefix and the project root token", () => {
+    expect(normalizeFileName("turbopack://[project]/src/app.tsx")).toBe("./src/app.tsx");
+    expect(normalizeFileName("turbopack:///[project]/src/app.tsx")).toBe("/src/app.tsx");
   });
 
   it("strips the node: prefix", () => {
@@ -240,6 +241,161 @@ describe("normalizeFileName", () => {
   it("strips query parameters with multiple entries", () => {
     expect(normalizeFileName("src/app.tsx?t=123&v=4")).toBe("src/app.tsx");
   });
+
+  it("unwraps Vite /@fs/ urls into filesystem paths", () => {
+    expect(normalizeFileName("https://example.local:5173/@fs/Users/me/proj/src/app.tsx")).toBe(
+      "/Users/me/proj/src/app.tsx",
+    );
+    expect(normalizeFileName("http://localhost:5173/@fs/C:/proj/src/App.tsx")).toBe(
+      "C:/proj/src/App.tsx",
+    );
+    expect(isSourceFile("http://localhost:5173/@fs/Users/me/proj/src/app.tsx")).toBe(true);
+    expect(
+      isSourceFile("http://localhost:5173/@fs/Users/me/proj/node_modules/react/index.js"),
+    ).toBe(false);
+  });
+
+  it("drops Vite virtual module ids", () => {
+    expect(normalizeFileName("http://localhost:5173/@id/__x00__virtual:helper")).toBe("");
+    expect(isSourceFile("http://localhost:5173/@id/__x00__plugin-vue:export-helper")).toBe(false);
+  });
+
+  it("turns Windows file urls into drive paths", () => {
+    expect(normalizeFileName("file:///C:/projects/app/src/app.tsx")).toBe(
+      "C:/projects/app/src/app.tsx",
+    );
+    expect(normalizeFileName("file://localhost/Users/me/src/app.tsx")).toBe(
+      "/Users/me/src/app.tsx",
+    );
+  });
+
+  it("decodes escaped path segments without decoding separators", () => {
+    expect(normalizeFileName("http://localhost:5173/src/my%20file.tsx")).toBe("/src/my file.tsx");
+    expect(normalizeFileName("/src/my%2Ffile.tsx")).toBe("/src/my%2Ffile.tsx");
+  });
+
+  it("preserves network file hosts and share roots", () => {
+    expect(normalizeFileName("file://server/share/src/../App.tsx")).toBe("//server/share/App.tsx");
+    expect(normalizeFileName("rsc://file://server/share/../../App.tsx")).toBe(
+      "//server/share/App.tsx",
+    );
+  });
+
+  it("preserves real folders named after the Turbopack project token", () => {
+    expect(normalizeFileName("./src/[project]/page.tsx")).toBe("./src/[project]/page.tsx");
+    expect(normalizeFileName("turbopack://[project]/app/[project]/page.tsx")).toBe(
+      "./app/[project]/page.tsx",
+    );
+  });
+
+  it("does not classify virtual scheme ids as source files", () => {
+    expect(isSourceFile("virtual:helper.ts")).toBe(false);
+    expect(isSourceFile("rsc://virtual:helper.ts")).toBe(false);
+  });
+
+  it("strips a hash fragment", () => {
+    expect(normalizeFileName("src/app.tsx#L12")).toBe("src/app.tsx");
+  });
+
+  it("collapses dot segments and keeps a leading dot-slash", () => {
+    expect(normalizeFileName("./src/../lib/button.tsx")).toBe("./lib/button.tsx");
+    expect(normalizeFileName("/src/../lib/button.tsx")).toBe("/lib/button.tsx");
+  });
+
+  it("strips Next.js bundler layers without eating route groups", () => {
+    expect(normalizeFileName("webpack-internal:///(rsc)/./app/(marketing)/about/page.tsx")).toBe(
+      "./app/(marketing)/about/page.tsx",
+    );
+    expect(normalizeFileName("webpack-internal:///(ssr)/./src/app.tsx")).toBe("./src/app.tsx");
+    expect(normalizeFileName("webpack://_N_E/./src/hello.tsx")).toBe("./src/hello.tsx");
+    expect(normalizeFileName("webpack://my-app/./src/file.tsx")).toBe("./src/file.tsx");
+    expect(normalizeFileName("middleware/index.ts")).toBe("middleware/index.ts");
+  });
+
+  it("strips turbopack module metadata without eating route groups", () => {
+    expect(normalizeFileName("[project]/src/app/page.tsx [app-rsc] (ecmascript)")).toBe(
+      "./src/app/page.tsx",
+    );
+    expect(
+      normalizeFileName(
+        "[project]/examples/(group)/with-turbopack/app/foo.ts [app-rsc] (ecmascript)",
+      ),
+    ).toBe("./examples/(group)/with-turbopack/app/foo.ts");
+    expect(normalizeFileName("./app/(marketing)/page.tsx (ecmascript)")).toBe(
+      "./app/(marketing)/page.tsx",
+    );
+    expect(normalizeFileName("./src/app.tsx <locals>")).toBe("./src/app.tsx");
+    expect(normalizeFileName("page.tsx [draft]")).toBe("page.tsx [draft]");
+    expect(normalizeFileName("[root-of-the-server]__51ab98c8._.js")).toBe(
+      "[root-of-the-server]__51ab98c8._.js",
+    );
+    expect(isSourceFile("[project]/src/app/page.tsx [app-rsc] (ecmascript)")).toBe(true);
+    expect(isSourceFile("[root-of-the-server]__51ab98c8._.js")).toBe(false);
+  });
+
+  it("decodes turbopack magic identifiers into module paths", () => {
+    expect(normalizeFileName("__TURBOPACK__module__evaluation__")).toBe("module evaluation");
+    expect(normalizeFileName("__TURBOPACK__Hello$2f$World__")).toBe("Hello/World");
+    expect(normalizeFileName("__TURBOPACK__Hello$_1f600$World__")).toBe("Hello😀World");
+    expect(
+      normalizeFileName(
+        "__TURBOPACK__imported__module__$5b$project$5d2f$examples$2f$with$2d$turbopack$2f$app$2f$foo$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__",
+      ),
+    ).toBe("./examples/with-turbopack/app/foo.ts");
+    expect(
+      isSourceFile(
+        "__TURBOPACK__imported__module__$5b$project$5d2f$examples$2f$with$2d$turbopack$2f$app$2f$foo$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__",
+      ),
+    ).toBe(true);
+  });
+
+  it("unwraps react server file urls for display", () => {
+    expect(normalizeFileName("rsc://React/Server/file:///proj/server-chunk.js")).toBe(
+      "/proj/server-chunk.js",
+    );
+    expect(normalizeFileName("about://React/Server/file:///proj/server-chunk.js?42")).toBe(
+      "/proj/server-chunk.js",
+    );
+    expect(normalizeFileName("React/Server/src/app.tsx")).toBe("React/Server/src/app.tsx");
+  });
+
+  it("keeps the resource after a webpack loader chain", () => {
+    expect(normalizeFileName("./node_modules/css-loader/dist/cjs.js!./app/page.tsx")).toBe(
+      "./app/page.tsx",
+    );
+    expect(normalizeFileName("./node_modules/loader.js!./app/(marketing)/page.tsx?t=1")).toBe(
+      "./app/(marketing)/page.tsx",
+    );
+    expect(normalizeFileName("button!.tsx")).toBe("button!.tsx");
+  });
+
+  it("normalizes parcel, rspack, and bun specifiers", () => {
+    expect(normalizeFileName("parcel:///src/App.tsx")).toBe("/src/App.tsx");
+    expect(normalizeFileName("parcel://src/App.tsx")).toBe("src/App.tsx");
+    expect(normalizeFileName("rspack://my-app/./src/file.tsx")).toBe("./src/file.tsx");
+    expect(normalizeFileName("rspack-internal:///(ssr)/./src/app.tsx")).toBe("./src/app.tsx");
+    expect(normalizeFileName("bun:sqlite")).toBe("sqlite");
+  });
+
+  it("drops virtual module ids", () => {
+    expect(normalizeFileName("\0virtual:helper")).toBe("");
+    expect(normalizeFileName("virtual:react-router/server-build")).toBe("");
+    expect(normalizeFileName("astro:scripts/before-hydration.js")).toBe("");
+    expect(normalizeFileName("nitro:routes")).toBe("");
+    expect(normalizeFileName("cloudflare:workers")).toBe("");
+    expect(isSourceFile("virtual:react-router/server-build")).toBe(false);
+    expect(isSourceFile("astro:scripts/before-hydration.js")).toBe(false);
+  });
+
+  it("strips a windows extended path prefix", () => {
+    expect(normalizeFileName("\\\\?\\C:\\projects\\app\\src\\app.tsx")).toBe(
+      "C:\\projects\\app\\src\\app.tsx",
+    );
+  });
+
+  it("strips metro platform queries", () => {
+    expect(normalizeFileName("/src/App.tsx?platform=ios&dev=true")).toBe("/src/App.tsx");
+  });
 });
 
 describe("isSourceFile", () => {
@@ -255,6 +411,15 @@ describe("isSourceFile", () => {
     expect(isSourceFile("/dist/app.js")).toBe(false);
     expect(isSourceFile("/static/chunk-abc123.js")).toBe(false);
     expect(isSourceFile("/node_modules/react/index.js")).toBe(false);
+    expect(isSourceFile("/_next/static/chunks/main.js")).toBe(false);
+    expect(isSourceFile("/@vite/client")).toBe(false);
+    expect(isSourceFile("/src/.vite/deps/react.js")).toBe(false);
+    expect(isSourceFile("/.parcel-cache/file.js")).toBe(false);
+    expect(isSourceFile("/app/.expo/file.js")).toBe(false);
+    expect(isSourceFile("/.rsbuild/server/index.js")).toBe(false);
+    expect(isSourceFile("/.svelte-kit/output/server/index.js")).toBe(false);
+    expect(isSourceFile("/.astro/file.js")).toBe(false);
+    expect(isSourceFile("/_nuxt/entry.js")).toBe(false);
   });
 
   it("returns true for plain source files", () => {

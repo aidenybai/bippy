@@ -2,6 +2,7 @@ import { encode } from "@jridgewell/sourcemap-codec";
 import { describe, expect, it, vi } from "vite-plus/test";
 import type { StackFrame } from "../../../bippy/src/source/parse-stack.js";
 import {
+  getSourceContentFromSourceMap,
   getSourceFromSourceMap,
   getSourceFromSourceMapByFunctionName,
   getSourceMap,
@@ -757,6 +758,120 @@ describe("getSourceMapUncached", () => {
 
     const sourceMap = await getSourceMapUncached("http://localhost/assets/bundle.js", fetchFn);
     expect(sourceMap?.sources).toEqual(["http://localhost/assets/src/app.tsx"]);
+  });
+
+  it("resolves vite and rolldown sources that are relative to the source map", async () => {
+    const sourceMapWithRelativeSource = JSON.stringify({
+      version: 3,
+      sources: ["../../src/App.tsx"],
+      names: [],
+      mappings: encode([[[0, 0, 0, 0]]]),
+    });
+    const fetchFn = createFetchFn({
+      "http://localhost/assets/index.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=index.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/assets/index.js.map": new Response(sourceMapWithRelativeSource, {
+        status: 200,
+      }),
+    });
+
+    const sourceMap = await getSourceMapUncached("http://localhost/assets/index.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["http://localhost/src/App.tsx"]);
+  });
+
+  it("keeps project-relative sources that are not relative to the source map", async () => {
+    const fetchFn = createFetchFn({
+      "http://localhost/assets/bundle.js": new Response(
+        "const value = 1;\n//# sourceMappingURL=bundle.js.map",
+        { status: 200 },
+      ),
+      "http://localhost/assets/bundle.js.map": new Response(STANDARD_RAW_MAP, { status: 200 }),
+    });
+
+    const sourceMap = await getSourceMapUncached("http://localhost/assets/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["src/app.tsx"]);
+  });
+
+  it("finds source content through bundler path aliases", () => {
+    const sourceMap = createStandardSourceMap({
+      sources: ["webpack://_N_E/./src/app.tsx"],
+      sourcesContent: ["export const App = () => null;"],
+    });
+
+    expect(getSourceContentFromSourceMap(sourceMap, "./src/app.tsx")).toBe(
+      "export const App = () => null;",
+    );
+    expect(getSourceContentFromSourceMap(sourceMap, "src/app.tsx")).toBe(
+      "export const App = () => null;",
+    );
+  });
+
+  it("prefers exact source content across index-map sections", () => {
+    const sourceMap = createStandardSourceMap({
+      sources: [],
+      sourcesContent: undefined,
+      sections: [
+        {
+          offset: { line: 0, column: 0 },
+          map: createStandardSourceMap({
+            sources: ["webpack://client/./src/app.tsx"],
+            sourcesContent: ["client code"],
+          }),
+        },
+        {
+          offset: { line: 1, column: 0 },
+          map: createStandardSourceMap({
+            sources: ["webpack://server/./src/app.tsx"],
+            sourcesContent: ["server code"],
+          }),
+        },
+      ],
+    });
+
+    expect(getSourceContentFromSourceMap(sourceMap, "webpack://server/./src/app.tsx")).toBe(
+      "server code",
+    );
+    expect(getSourceContentFromSourceMap(sourceMap, "./src/app.tsx")).toBeNull();
+  });
+
+  it("does not guess between source contents with the same normalized path", () => {
+    const sourceMap = createStandardSourceMap({
+      sources: ["webpack://client/./src/app.tsx", "webpack://server/./src/app.tsx"],
+      sourcesContent: ["client code", "server code"],
+    });
+
+    expect(getSourceContentFromSourceMap(sourceMap, "src/app.tsx")).toBeNull();
+    expect(getSourceContentFromSourceMap(sourceMap, "webpack://server/./src/app.tsx")).toBe(
+      "server code",
+    );
+  });
+
+  it("does not replace missing exact source content with an alias", () => {
+    const sourceMap = createStandardSourceMap({
+      sources: ["webpack://client/./src/app.tsx", "webpack://server/./src/app.tsx"],
+      sourcesContent: ["client code", null],
+    });
+
+    expect(getSourceContentFromSourceMap(sourceMap, "webpack://server/./src/app.tsx")).toBeNull();
+  });
+
+  it("resolves sources when the source map URL is root-relative", async () => {
+    const fetchFn = createFetchFn({
+      "/assets/bundle.js": new Response("//# sourceMappingURL=bundle.js.map"),
+      "/assets/bundle.js.map": new Response(
+        JSON.stringify({
+          version: 3,
+          sources: ["../src/app.tsx"],
+          names: [],
+          mappings: encode([[[0, 0, 0, 0]]]),
+        }),
+      ),
+    });
+
+    const sourceMap = await getSourceMapUncached("/assets/bundle.js", fetchFn);
+    expect(sourceMap?.sources).toEqual(["/src/app.tsx"]);
   });
 
   it("decodes index source maps and deduplicates sources", async () => {
