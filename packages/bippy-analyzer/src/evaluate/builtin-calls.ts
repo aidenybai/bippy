@@ -1469,13 +1469,11 @@ const callGlobal = (
               const object =
                 materialized.kind === "primitive" && typeof materialized.value === "string"
                   ? objectValue(
-                      materialized.value
-                        .split("")
-                        .map((character, index) => ({
-                          kind: "property",
-                          key: String(index),
-                          value: primitiveValue(character),
-                        })),
+                      materialized.value.split("").map((character, index) => ({
+                        kind: "property",
+                        key: String(index),
+                        value: primitiveValue(character),
+                      })),
                     )
                   : materialized;
               if (object.kind === "primitive" || object.kind === "symbol") return receiver;
