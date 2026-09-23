@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { TimerQueue } from "../src/evaluate/timers.js";
 import { primitiveValue } from "../src/evaluate/values.js";
 import { ModuleResolver } from "../src/graph/module-resolver.js";
+import * as commitRecorderModule from "../src/harness/commit-recorder.js";
 import { mountNode } from "../src/materialize/mount.js";
 import { loadReactRuntime, type ReactRuntime } from "../src/materialize/react-runtime.js";
+import { isRecord } from "../src/observations.js";
 import { createDomHost } from "../src/render/dom-host.js";
 
 interface FailureCase {
@@ -156,4 +158,99 @@ describe("materialized mount cleanup", () => {
       }
     },
   );
+
+  it("records an error React reports from the root while rendering", async () => {
+    const runtime = await getRuntime();
+    const failure = new Error("render boom");
+    const Component = () => {
+      throw failure;
+    };
+    const mounted = await mountNode(
+      runtime,
+      createDomHost(false),
+      runtime.react.createElement(Component),
+      new TimerQueue(),
+      () => {},
+    );
+    expect(mounted.uncaughtErrors).toContain(failure);
+  });
+
+  it("records an error React reports through the root when the render is outside act", async () => {
+    const runtime = await getRuntime();
+    const internals = Reflect.get(
+      runtime.react,
+      "__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE",
+    );
+    if (!isRecord(internals) || !("actQueue" in internals)) {
+      throw new Error("React act queue is not observable");
+    }
+    const previousQueue = internals.actQueue;
+    const failure = new Error("outside act");
+    const Component = () => {
+      // HACK: development React reports in-act render errors by rethrowing from act, and only calls onUncaughtError when actQueue is clear.
+      internals.actQueue = null;
+      throw failure;
+    };
+    try {
+      const mounted = await mountNode(
+        runtime,
+        createDomHost(false),
+        runtime.react.createElement(Component),
+        new TimerQueue(),
+        () => {},
+      );
+      expect(mounted.uncaughtErrors).toContain(failure);
+    } finally {
+      internals.actQueue = previousQueue;
+    }
+  });
+
+  it("preserves a snapshot failure when unmount also fails", async () => {
+    const runtime = await getRuntime();
+    const snapshotError = new Error("snapshot failure");
+    const cleanupError = new Error("cleanup failure");
+    const createRecorder = commitRecorderModule.createCommitRecorder;
+    const spy = vi
+      .spyOn(commitRecorderModule, "createCommitRecorder")
+      .mockImplementation((options) => {
+        const recorder = createRecorder(options);
+        return {
+          ...recorder,
+          snapshot: () => {
+            throw snapshotError;
+          },
+        };
+      });
+    const failingRuntime: ReactRuntime = {
+      ...runtime,
+      createRoot: (container, callbacks) => {
+        const mounted = runtime.createRoot(container, callbacks);
+        return {
+          render: (node) => mounted.render(node),
+          unmount: () => {
+            mounted.unmount();
+            throw cleanupError;
+          },
+        };
+      },
+    };
+    let failure: unknown;
+    try {
+      await mountNode(
+        failingRuntime,
+        createDomHost(false),
+        runtime.react.createElement("span", null, "rendered"),
+        new TimerQueue(),
+        () => {},
+      );
+    } catch (error) {
+      failure = error;
+    } finally {
+      spy.mockRestore();
+    }
+    expect(failure).toBeInstanceOf(AggregateError);
+    if (failure instanceof AggregateError) {
+      expect(failure.errors).toEqual([snapshotError, cleanupError]);
+    }
+  });
 });
