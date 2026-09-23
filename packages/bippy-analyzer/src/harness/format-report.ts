@@ -5,6 +5,7 @@ import { formatGuardCoverage, type GuardCoverage } from "./guard-coverage.js";
 import type { StateReplaySummary } from "./state-replay.js";
 import {
   DEFAULT_STATE_SPACE_BUDGET,
+  type DecisionCondition,
   type StateCondition,
   type StateOmission,
   type StateSpaceBudget,
@@ -266,7 +267,7 @@ const formatSymbolicNodes = (
   });
 };
 
-const formatDecisionRow = (conditions: StateCondition[], handles: DecisionHandles): string =>
+const formatDecisionRow = (conditions: DecisionCondition[], handles: DecisionHandles): string =>
   conditions
     .map((condition) => {
       switch (condition.kind) {
@@ -275,8 +276,6 @@ const formatDecisionRow = (conditions: StateCondition[], handles: DecisionHandle
           return `${handles.of(condition.variable)}|${condition.alternativeIndex}`;
         case "repeat":
           return `${handles.of(condition.variable)}×${condition.count}`;
-        case "transition":
-          return `commit=${condition.commit}`;
       }
     })
     .join("  ");
