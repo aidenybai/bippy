@@ -26,9 +26,7 @@ const readJsonLiteral = (node: Expression): JsonValue | undefined => {
         ? undefined
         : expression.value;
     case "TemplateLiteral":
-      return expression.expressions.length === 0
-        ? (expression.quasis[0]?.value.cooked ?? undefined)
-        : undefined;
+      return expression.expressions.length === 0 ? expression.quasis[0].value.cooked : undefined;
     case "ArrayExpression": {
       const items: JsonValue[] = [];
       for (const element of expression.elements) {
@@ -67,7 +65,7 @@ const findPluginCall = (program: Program): PluginCall | null => {
   const factoryByLocalName = new Map<string, string>();
   for (const statement of program.body) {
     if (statement.type !== "ImportDeclaration" || statement.source.value !== PLUGIN_ENTRY) continue;
-    for (const specifier of statement.specifiers ?? []) {
+    for (const specifier of statement.specifiers) {
       if (specifier.type !== "ImportSpecifier") continue;
       const importedName =
         specifier.imported.type === "Identifier"
