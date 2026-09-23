@@ -77,8 +77,6 @@ const cases = [
   },
   {
     name: "const writes throw rather than replace the binding",
-    expected: "TypeError:7",
-    actual: '"accepted:9"',
     body: `const value = 7; try { value = 9; return 'accepted:' + value; } catch (error) { return error.name + ':' + value; }`,
   },
   {

@@ -1,4 +1,5 @@
 import path from "node:path";
+import { executeSsa } from "./ssa-execution.js";
 import { getBoundTarget } from "./function-bind.js";
 import { getConstructibility, isFunctionConstructor } from "./constructibility.js";
 import { createFunctionProperties } from "./function-metadata.js";
@@ -263,7 +264,6 @@ import {
   lookupNarrowingTarget,
   type NarrowingTarget,
   narrowTest,
-  narrowTestByEvaluation,
   type TestNarrowing,
   withNarrowedTarget,
 } from "./narrowing.js";
@@ -3416,32 +3416,26 @@ export class Interpreter {
   private narrowTest(test: Expression, context: EvaluationContext): TestNarrowing | null {
     const lookup = (target: NarrowingTarget) =>
       lookupNarrowingTarget(context.scope, target, getObjectProperty);
-    const journal = (object: StaticObjectValue) => this.journalHeapValue(object);
-    return (
-      narrowTest(
-        test,
-        lookup,
-        (callee) => this.resolveTestCallee(callee, context),
-        (value) => getTypeofValue(value, this.getRealm(context.environment)),
-      ) ??
-      narrowTestByEvaluation(test, lookup, (name, alternative) =>
-        withNarrowedTarget(context.scope, { name, key: null }, alternative, journal, () =>
-          this.evaluateExpression(test, context),
-        ),
-      )
+    return narrowTest(
+      test,
+      lookup,
+      (callee) => this.resolveTestCallee(callee, context),
+      (value) => getTypeofValue(value, this.getRealm(context.environment)),
     );
   }
 
-  /** A callee named by identifiers alone (`isValidElement`, `React.isValidElement`, `Array.isArray`) evaluates without side effects. */
   private resolveTestCallee(callee: Expression, context: EvaluationContext): StaticValue | null {
-    if (callee.type === "Identifier") return this.evaluateExpression(callee, context);
+    if (callee.type === "Identifier") return this.resolveIdentifier(callee.name, context) ?? null;
     if (
       callee.type === "MemberExpression" &&
       !callee.computed &&
       callee.property.type === "Identifier" &&
       callee.object.type === "Identifier"
     ) {
-      return this.evaluateExpression(callee, context);
+      const object = this.resolveIdentifier(callee.object.name, context);
+      if (object?.kind === "react-api" || (object?.kind === "global" && object.name === "Array")) {
+        return this.getProperty(object, callee.property.name, context, null);
+      }
     }
     return null;
   }
@@ -5905,6 +5899,17 @@ export class Interpreter {
     }
   }
 
+  private getSsaValue(value: StaticValue): StaticValue {
+    const guarded = this.getGuardedValue(value);
+    if (guarded.kind !== "unknown-primitive" || guarded.primitiveType !== "boolean") return guarded;
+    const predicate = parseSymbolicPredicate(getTruthinessPredicate(guarded));
+    const guards = predicateGuards(predicate, 2);
+    const feasible = guards.map((guard) => this.isTaskPossible(andGuard([this.guard, guard])));
+    if (!feasible[0] && feasible[1]) return primitiveValue(false);
+    if (feasible[0] && !feasible[1]) return primitiveValue(true);
+    return guarded;
+  }
+
   private evaluateFunctionBody(
     functionValue: Extract<StaticValue, { kind: "function" }>,
     args: StaticValue[],
@@ -5956,6 +5961,43 @@ export class Interpreter {
     }
     const body = functionValue.node.body;
     if (!body) return UNDEFINED_VALUE;
+    if (!asyncCall) {
+      const result = executeSsa(
+        functionValue.node,
+        callContext,
+        {
+          getTypeof: (value) => getTypeofValue(value, this.getRealm(callContext.environment)),
+          resolve: (value) => this.getSsaValue(value),
+          consumeStep: () => this.consumeStep(callContext.budget, location),
+          distribute: (value, run) =>
+            value.kind === "branch" ? this.callAlternatives(value, callContext, run) : run(value),
+          fork: (predicate, paths) => {
+            const parsed = parseSymbolicPredicate(predicate);
+            const guards = predicateGuards(parsed, paths.length);
+            const feasible = guards.map((guard) =>
+              this.isTaskPossible(andGuard([this.guard, guard])),
+            );
+            const selected = feasible.findIndex(Boolean);
+            if (selected === -1) return UNDEFINED_VALUE;
+            if (feasible.filter(Boolean).length === 1)
+              return this.runWithGuard(
+                andGuard([this.guard, guards[selected]]),
+                paths[selected],
+                parsed.inputs,
+              );
+            return branchValue(
+              this.forkValues(null, paths, "SSA branch", location, 0, predicate),
+              "SSA branch",
+              location,
+              0,
+              predicate,
+            );
+          },
+        },
+        location,
+      );
+      if (result !== null) return result;
+    }
     if (body.type !== "BlockStatement" && !asyncCall) {
       return this.evaluateExpression(body, callContext);
     }

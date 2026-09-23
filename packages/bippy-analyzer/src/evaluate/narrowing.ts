@@ -1,17 +1,24 @@
+// Equality and logical narrowing adapted from TypeScript. See ../../third-party-notices.md.
 import type { BinaryExpression, CallExpression, Expression } from "oxc-parser";
 import type { Scope, StaticObjectEntry, StaticObjectValue, StaticValue } from "../types.js";
 import { hasNamedProperty } from "./has-property.js";
-import { getAlternativeGuards, guardedPredicate, recordRefinement } from "./predicates.js";
+import {
+  getAlternativeGuards,
+  guardedPredicate,
+  recordDerivation,
+  recordRefinement,
+} from "./predicates.js";
 import { findOwningScope, lookupScope } from "./scope.js";
-import { getThrowCertainty } from "./thrown.js";
 import { getTypePredicate } from "./type-predicates.js";
 import {
   UNDEFINED_VALUE,
   branchValue,
+  compareIdentity,
   describeValue,
   getTruthiness,
   getOwnPropertyEntry,
   isNullish,
+  primitiveValue,
   unknownPrimitiveValue,
 } from "./values.js";
 
@@ -90,17 +97,9 @@ interface CalleeResolver {
   (callee: Expression): StaticValue | null;
 }
 
-/** Evaluates a test expression with `name` bound to `alternative`. */
-interface TestEvaluator {
-  (name: string, alternative: StaticValue): StaticValue;
+interface TestNarrower {
+  (lookup: NarrowingLookup): TestNarrowing | null;
 }
-
-interface PureTestShape {
-  identifiers: Set<string>;
-  calledRoots: Set<string>;
-}
-
-const MAX_EVALUATED_ALTERNATIVES = 8;
 
 const alternativesOf = (value: StaticValue): StaticValue[] =>
   value.kind === "branch" ? value.alternatives : [value];
@@ -115,6 +114,7 @@ const partition = (
   predicate: Predicate,
   reason: string,
   refine: Refinement | null,
+  refineFalse: Refinement | null = null,
 ): [StaticValue | null, StaticValue | null] => {
   const passing: NarrowedAlternative[] = [];
   const failing: NarrowedAlternative[] = [];
@@ -124,7 +124,11 @@ const partition = (
     if (verdict === null)
       passing.push({ value: refine ? refine(alternative) : alternative, index });
     else if (verdict) passing.push({ value: alternative, index });
-    if (verdict !== true) failing.push({ value: alternative, index });
+    if (verdict !== true)
+      failing.push({
+        value: verdict === null && refineFalse ? refineFalse(alternative) : alternative,
+        index,
+      });
   }
   const rebuild = (alternatives: NarrowedAlternative[]): StaticValue | null => {
     if (alternatives.length === 0) return null;
@@ -174,6 +178,7 @@ const narrowTarget = (
   predicate: Predicate,
   describeReason: (targetName: string) => string,
   refine: Refinement | null = null,
+  refineFalse: Refinement | null = null,
 ): TestNarrowing | null => {
   const value = target && lookup(target);
   if (!target || !value || (value.kind !== "branch" && !refine)) return null;
@@ -182,6 +187,7 @@ const narrowTarget = (
     predicate,
     describeReason(describeTarget(target)),
     refine,
+    refineFalse,
   );
   return { target, whenTrue, whenFalse };
 };
@@ -202,9 +208,12 @@ const refineByTypeof = (typeName: string): Refinement | null => {
     if (alternative.kind !== "unknown" && alternative.kind !== "unknown-primitive") return null;
     if (typeName === "undefined") return UNDEFINED_VALUE;
     if (typeName === "string" || typeName === "number" || typeName === "boolean") {
-      return unknownPrimitiveValue(
-        typeName,
-        `${describeValue(alternative)} where typeof is "${typeName}"`,
+      return recordDerivation(
+        unknownPrimitiveValue(
+          typeName,
+          `${describeValue(alternative)} where typeof is "${typeName}"`,
+        ),
+        { kind: "alias", operand: alternative },
       );
     }
     return null;
@@ -233,6 +242,31 @@ const narrowTypeof = (
   );
 };
 
+const narrowLiteralEquality = (
+  test: BinaryExpression,
+  lookup: NarrowingLookup,
+): TestNarrowing | null => {
+  if (test.operator !== "===" && test.operator !== "!==") return null;
+  const [operand, literalNode] =
+    test.left.type === "Literal" ? [test.right, test.left] : [test.left, test.right];
+  if (operand.type !== "Identifier" || literalNode.type !== "Literal" || "regex" in literalNode)
+    return null;
+  const literal = primitiveValue(literalNode.value);
+  return narrowTarget(
+    getNarrowingTarget(operand),
+    lookup,
+    (value) => compareIdentity(value, literal),
+    (targetName) => `${targetName} equals ${describeValue(literal)}`,
+    (alternative) => (literal.value === 0 ? alternative : literal),
+    (alternative) =>
+      alternative.kind === "unknown-primitive" &&
+      alternative.primitiveType === "boolean" &&
+      typeof literal.value === "boolean"
+        ? primitiveValue(!literal.value)
+        : alternative,
+  );
+};
+
 const negate = (narrowing: TestNarrowing | null): TestNarrowing | null =>
   narrowing && {
     target: narrowing.target,
@@ -240,45 +274,51 @@ const negate = (narrowing: TestNarrowing | null): TestNarrowing | null =>
     whenFalse: narrowing.whenTrue,
   };
 
-const intersect = (
-  left: StaticValue | null,
-  right: StaticValue | null,
-  reason: string,
-): StaticValue | null => {
-  if (left === null || right === null) return null;
-  const rightAlternatives = alternativesOf(right);
-  const shared = alternativesOf(left).filter((alternative) =>
-    rightAlternatives.includes(alternative),
-  );
-  return shared.length === 0 ? null : branchValue(shared, reason);
+const isReadOnlyTest = (test: Expression): boolean => {
+  switch (test.type) {
+    case "Identifier":
+    case "Literal":
+      return true;
+    case "ParenthesizedExpression":
+      return isReadOnlyTest(test.expression);
+    case "UnaryExpression":
+      return (
+        (test.operator === "!" || test.operator === "typeof" || test.operator === "void") &&
+        isReadOnlyTest(test.argument)
+      );
+    case "BinaryExpression":
+      return (
+        (test.operator === "===" || test.operator === "!==") &&
+        isReadOnlyTest(test.left) &&
+        isReadOnlyTest(test.right)
+      );
+    case "LogicalExpression":
+      return isReadOnlyTest(test.left) && isReadOnlyTest(test.right);
+    default:
+      return false;
+  }
 };
 
-/**
- * `a || b` fails only when both operands fail and `a && b` holds only when both
- * hold, so that side combines the operands' narrowings; the other side keeps
- * the binding as it was.
- */
 const narrowLogical = (
   operator: "||" | "&&",
   left: TestNarrowing | null,
-  right: TestNarrowing | null,
+  narrowRight: TestNarrower,
   lookup: NarrowingLookup,
 ): TestNarrowing | null => {
-  const primary = left ?? right;
+  const primary = left ?? narrowRight(lookup);
   if (!primary) return null;
   const original = lookup(primary.target);
   if (!original) return null;
   const isOr = operator === "||";
   const sideOf = (narrowing: TestNarrowing): StaticValue | null =>
     isOr ? narrowing.whenFalse : narrowing.whenTrue;
-  const combined =
-    left && right && isSameTarget(left.target, right.target)
-      ? intersect(
-          sideOf(left),
-          sideOf(right),
-          `${describeTarget(primary.target)} narrowed by ${operator}`,
-        )
-      : sideOf(primary);
+  let combined = sideOf(primary);
+  if (left && combined !== null) {
+    const narrowedLookup: NarrowingLookup = (target) =>
+      isSameTarget(target, left.target) ? (sideOf(left) ?? undefined) : lookup(target);
+    const right = narrowRight(narrowedLookup);
+    if (right && isSameTarget(left.target, right.target)) combined = sideOf(right);
+  }
   if (combined) recordRefinement(combined, original);
   return isOr
     ? { target: primary.target, whenTrue: original, whenFalse: combined }
@@ -336,12 +376,12 @@ export const narrowTest = (
     case "CallExpression":
       return narrowTypePredicateCall(test, lookup, resolveCallee);
     case "LogicalExpression":
-      return test.operator === "??"
+      return test.operator === "??" || !isReadOnlyTest(test)
         ? null
         : narrowLogical(
             test.operator,
             narrowTest(test.left, lookup, resolveCallee, getTypeof),
-            narrowTest(test.right, lookup, resolveCallee, getTypeof),
+            (narrowedLookup) => narrowTest(test.right, narrowedLookup, resolveCallee, getTypeof),
             lookup,
           );
     case "BinaryExpression": {
@@ -361,8 +401,9 @@ export const narrowTest = (
       const isEquality = test.operator === "==" || test.operator === "===";
       const isInequality = test.operator === "!=" || test.operator === "!==";
       if (!isEquality && !isInequality) return null;
-      const typeofNarrowing = narrowTypeof(test, lookup, getTypeof);
-      if (typeofNarrowing) return isEquality ? typeofNarrowing : negate(typeofNarrowing);
+      const narrowingByValue =
+        narrowTypeof(test, lookup, getTypeof) ?? narrowLiteralEquality(test, lookup);
+      if (narrowingByValue) return isEquality ? narrowingByValue : negate(narrowingByValue);
       const [operand, literalNode] =
         getNullishLiteral(test.right) === false ? [test.right, test.left] : [test.left, test.right];
       const literal = getNullishLiteral(literalNode);
@@ -379,108 +420,6 @@ export const narrowTest = (
     default:
       return null;
   }
-};
-
-const getMemberRoot = (node: Expression): string | null =>
-  node.type === "Identifier"
-    ? node.name
-    : node.type === "MemberExpression"
-      ? getMemberRoot(node.object)
-      : null;
-
-/**
- * Collects the identifiers a test reads when it is built only from operators,
- * property reads and method calls on one of those identifiers, so evaluating
- * it again cannot run code the analysis has not already accounted for.
- */
-const collectPureTestShape = (node: Expression, shape: PureTestShape): boolean => {
-  switch (node.type) {
-    case "Identifier":
-      shape.identifiers.add(node.name);
-      return true;
-    case "Literal":
-      return true;
-    case "TemplateLiteral":
-      return node.expressions.every((expression) => collectPureTestShape(expression, shape));
-    case "ParenthesizedExpression":
-    case "ChainExpression":
-      return collectPureTestShape(node.expression, shape);
-    case "MemberExpression":
-      return (
-        collectPureTestShape(node.object, shape) &&
-        (!node.computed || collectPureTestShape(node.property, shape))
-      );
-    case "UnaryExpression":
-      return node.operator !== "delete" && collectPureTestShape(node.argument, shape);
-    case "BinaryExpression":
-      return (
-        node.left.type !== "PrivateIdentifier" &&
-        collectPureTestShape(node.left, shape) &&
-        collectPureTestShape(node.right, shape)
-      );
-    case "LogicalExpression":
-      return collectPureTestShape(node.left, shape) && collectPureTestShape(node.right, shape);
-    case "ConditionalExpression":
-      return (
-        collectPureTestShape(node.test, shape) &&
-        collectPureTestShape(node.consequent, shape) &&
-        collectPureTestShape(node.alternate, shape)
-      );
-    case "CallExpression": {
-      if (node.callee.type !== "MemberExpression") return false;
-      const root = getMemberRoot(node.callee.object);
-      if (root === null) return false;
-      shape.calledRoots.add(root);
-      return (
-        collectPureTestShape(node.callee, shape) &&
-        node.arguments.every(
-          (argument) => argument.type !== "SpreadElement" && collectPureTestShape(argument, shape),
-        )
-      );
-    }
-    default:
-      return false;
-  }
-};
-
-const isPrimitiveLike = (value: StaticValue): boolean =>
-  value.kind === "primitive" || value.kind === "unknown-primitive";
-
-/**
- * Narrows a test the syntactic rules do not cover (`x === "a"`,
- * `x.charAt(0) === "#"`, `x.kind === "leaf"`) by evaluating it once per
- * alternative of the single branch-valued identifier it reads. Method calls
- * are only re-run on primitive alternatives, where they are builtins.
- */
-export const narrowTestByEvaluation = (
-  test: Expression,
-  lookup: NarrowingLookup,
-  evaluate: TestEvaluator,
-): TestNarrowing | null => {
-  const shape: PureTestShape = { identifiers: new Set(), calledRoots: new Set() };
-  if (!collectPureTestShape(test, shape)) return null;
-  const lookupName = (name: string) => lookup({ name, key: null });
-  const branched = [...shape.identifiers].filter((name) => lookupName(name)?.kind === "branch");
-  if (branched.length !== 1) return null;
-  const [name] = branched;
-  const value = lookupName(name);
-  if (!value || value.kind !== "branch") return null;
-  if (value.alternatives.length > MAX_EVALUATED_ALTERNATIVES) return null;
-  if ([...shape.calledRoots].some((root) => root !== name)) return null;
-  if (shape.calledRoots.has(name) && !value.alternatives.every(isPrimitiveLike)) return null;
-  const verdicts = new Map<StaticValue, boolean | null>();
-  for (const alternative of value.alternatives) {
-    const result = evaluate(name, alternative);
-    verdicts.set(alternative, getThrowCertainty(result) === "never" ? getTruthiness(result) : null);
-  }
-  if ([...verdicts.values()].every((verdict) => verdict === null)) return null;
-  const [whenTrue, whenFalse] = partition(
-    value,
-    (alternative) => verdicts.get(alternative) ?? null,
-    `${name} narrowed by test`,
-    null,
-  );
-  return { target: { name, key: null }, whenTrue, whenFalse };
 };
 
 /** Records that `object` is about to change so an enclosing fork can undo it for its other paths. */

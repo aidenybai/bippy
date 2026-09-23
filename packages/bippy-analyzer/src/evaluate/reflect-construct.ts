@@ -21,14 +21,17 @@ interface ReflectConstructEvaluator extends Pick<
   "getProperty" | "callAlternatives" | "getRealm" | "construct" | "constructSuper"
 > {}
 
-const constructorError = (value: StaticValue, location: SourceLocation | null): StaticValue => {
+const getReflectConstructError = (
+  nativeArguments: unknown[] | null,
+  location: SourceLocation | null,
+): StaticValue => {
   let message: StaticValue = unknownPrimitiveValue(
     "string",
     "invalid Reflect.construct constructor",
   );
-  if (value.kind === "primitive") {
+  if (nativeArguments) {
     try {
-      Reflect.apply(Reflect.construct, Reflect, [value.value, []]);
+      Reflect.apply(Reflect.construct, Reflect, nativeArguments);
     } catch (error) {
       if (error instanceof Error) message = primitiveValue(error.message);
     }
@@ -40,6 +43,9 @@ const constructorError = (value: StaticValue, location: SourceLocation | null): 
   );
 };
 
+const constructorError = (value: StaticValue, location: SourceLocation | null): StaticValue =>
+  getReflectConstructError(value.kind === "primitive" ? [value.value, []] : null, location);
+
 export const reflectConstruct = (
   evaluator: ReflectConstructEvaluator,
   args: StaticValue[],
@@ -47,8 +53,7 @@ export const reflectConstruct = (
   location: SourceLocation | null,
 ): StaticValue => {
   const target = args[0] ?? UNDEFINED_VALUE;
-  // HACK: Node/V8 leaves newTarget undefined when fewer than two arguments are supplied.
-  const hasNewTarget = args.length !== 2;
+  const hasNewTarget = args.length > 2;
   const newTarget = hasNewTarget ? (args[2] ?? UNDEFINED_VALUE) : target;
   const constructSelected = (
     selectedTarget: StaticValue,
@@ -60,6 +65,8 @@ export const reflectConstruct = (
     if (targetConstructibility === false) return constructorError(selectedTarget, location);
     if (targetConstructibility === null)
       return unknownValue("Reflect.construct with a dynamic target", location);
+    // HACK: V8 builds disagree on the error when the argument list is omitted.
+    if (args.length < 2) return getReflectConstructError([Object], location);
     const newTargetConstructibility = getConstructibility(selectedNewTarget, realm);
     if (newTargetConstructibility === false) return constructorError(selectedNewTarget, location);
     if (newTargetConstructibility === null)

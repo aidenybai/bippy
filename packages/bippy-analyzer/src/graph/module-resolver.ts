@@ -14,6 +14,12 @@ export interface ModuleResolverOptions {
   conditionNames?: string[];
   requireConditionNames?: string[];
   /**
+   * `process.env.NODE_ENV` the bundler resolves against. Only `"production"`
+   * selects the `production` export condition; every other value selects
+   * `development`, matching Vite.
+   */
+  nodeEnvironment?: string;
+  /**
    * Package specifiers that resolve outside this directory are external even
    * when the resolved file is not under `node_modules` (workspace symlinks
    * pointing at sibling packages' sources or build output).
@@ -32,10 +38,26 @@ const EXTENSION_ALIAS: Record<string, string[]> = {
   ".cjs": [".cjs", ".cts"],
 };
 
-const DEFAULT_CONDITION_NAMES = ["browser", "import", "module", "default"];
-const DEFAULT_REQUIRE_CONDITION_NAMES = ["browser", "require", "module", "default"];
+const CLIENT_MAIN_FIELDS = ["browser", "module", "jsnext:main", "jsnext", "main"];
+const SERVER_MAIN_FIELDS = ["module", "main"];
 
 type ImporterKind = "esm" | "commonjs";
+type ResolutionEnvironment = "client" | "server";
+
+const getModeCondition = (nodeEnvironment: string | undefined): string =>
+  nodeEnvironment === "production" ? "production" : "development";
+
+const getConditionNames = (
+  environment: ResolutionEnvironment,
+  importer: ImporterKind,
+  mode: string,
+): string[] => [
+  ...(environment === "server" ? ["react-server", "node"] : ["browser"]),
+  importer === "esm" ? "import" : "require",
+  "module",
+  mode,
+  "default",
+];
 
 const NODE_MODULES_SEGMENT = "/node_modules/";
 const JAVASCRIPT_CONFIG_FILE = "jsconfig.json";
@@ -117,8 +139,14 @@ interface ResolverPair {
   fallback: ResolverFactory;
 }
 
+interface ResolverFieldOptions {
+  conditionNames: string[];
+  mainFields: string[];
+  aliasFields: string[];
+}
+
 export class ModuleResolver {
-  private readonly resolvers: Record<ImporterKind, ResolverPair>;
+  private readonly resolvers: Record<ResolutionEnvironment, Record<ImporterKind, ResolverPair>>;
   private readonly cache = new Map<string, ModuleResolution>();
   private readonly packageManifestPaths = new Map<string, string>();
   private readonly sideEffectFreeManifests = new Map<string, boolean>();
@@ -129,16 +157,21 @@ export class ModuleResolver {
   constructor(options: ModuleResolverOptions = {}) {
     this.rootDirectory = options.rootDirectory ? path.resolve(options.rootDirectory) : null;
     this.aliasNames = Object.keys(options.aliases ?? {});
-    const createPair = (conditionNames: string[]): ResolverPair => {
+    const alias = Object.fromEntries(
+      Object.entries(options.aliases ?? {}).map(([specifier, target]) => [specifier, [target]]),
+    );
+    const createPair = ({
+      conditionNames,
+      mainFields,
+      aliasFields,
+    }: ResolverFieldOptions): ResolverPair => {
       const baseOptions = {
         extensions: SOURCE_EXTENSIONS,
         extensionAlias: EXTENSION_ALIAS,
-        alias: Object.fromEntries(
-          Object.entries(options.aliases ?? {}).map(([specifier, target]) => [specifier, [target]]),
-        ),
+        alias,
         conditionNames,
-        mainFields: ["browser", "module", "main"],
-        aliasFields: ["browser"],
+        mainFields,
+        aliasFields,
         nodePath: false,
       };
       return {
@@ -151,17 +184,52 @@ export class ModuleResolver {
         fallback: new ResolverFactory(baseOptions),
       };
     };
+    const mode = getModeCondition(options.nodeEnvironment);
+    const clientFields = {
+      mainFields: CLIENT_MAIN_FIELDS,
+      aliasFields: ["browser"],
+    };
+    const serverFields = {
+      mainFields: SERVER_MAIN_FIELDS,
+      aliasFields: [],
+    };
     this.resolvers = {
-      esm: createPair(options.conditionNames ?? DEFAULT_CONDITION_NAMES),
-      commonjs: createPair(options.requireConditionNames ?? DEFAULT_REQUIRE_CONDITION_NAMES),
+      client: {
+        esm: createPair({
+          conditionNames: options.conditionNames ?? getConditionNames("client", "esm", mode),
+          ...clientFields,
+        }),
+        commonjs: createPair({
+          conditionNames:
+            options.requireConditionNames ?? getConditionNames("client", "commonjs", mode),
+          ...clientFields,
+        }),
+      },
+      // Next.js RSC server compilations prepend `react-server` and resolve like
+      // Node: no `browser` condition and no browser field.
+      server: {
+        esm: createPair({
+          conditionNames: getConditionNames("server", "esm", mode),
+          ...serverFields,
+        }),
+        commonjs: createPair({
+          conditionNames: getConditionNames("server", "commonjs", mode),
+          ...serverFields,
+        }),
+      },
     };
   }
 
-  resolve(specifier: string, fromFile: string, importer: ImporterKind = "esm"): ModuleResolution {
-    const cacheKey = `${importer}\u0000${fromFile}\u0000${specifier}`;
+  resolve(
+    specifier: string,
+    fromFile: string,
+    importer: ImporterKind = "esm",
+    environment: ResolutionEnvironment = "client",
+  ): ModuleResolution {
+    const cacheKey = `${environment}\u0000${importer}\u0000${fromFile}\u0000${specifier}`;
     const cached = this.cache.get(cacheKey);
     if (cached) return cached;
-    const resolution = this.resolveUncached(specifier, fromFile, importer);
+    const resolution = this.resolveUncached(specifier, fromFile, importer, environment);
     this.cache.set(cacheKey, resolution);
     return resolution;
   }
@@ -181,13 +249,14 @@ export class ModuleResolver {
     specifier: string,
     fromFile: string,
     importer: ImporterKind,
+    environment: ResolutionEnvironment,
   ): ModuleResolution {
-    const { primary, fallback } = this.resolvers[importer];
+    const { primary, fallback } = this.resolvers[environment][importer];
     const bareSpecifier = specifier.replace(/^node:/, "");
     if (specifier.startsWith("node:") || isBuiltin(bareSpecifier)) {
       return { kind: "builtin", specifier };
     }
-    const cleanSpecifier = stripInlineLoaders(specifier).split("?")[0];
+    const cleanSpecifier = stripInlineLoaders(specifier).split(/[?#]/, 1)[0] ?? specifier;
     let result = primary.resolveFileSync(fromFile, cleanSpecifier);
     const fallbackResult = fallback.resolveFileSync(fromFile, cleanSpecifier);
     const isPathMapped = result.path !== undefined && result.path !== fallbackResult.path;
@@ -219,6 +288,7 @@ export class ModuleResolver {
             filePath,
             fromFile,
             importer,
+            environment,
           ),
         };
       }
@@ -244,12 +314,13 @@ export class ModuleResolver {
     filePath: string,
     fromFile: string,
     importer: ImporterKind,
+    environment: ResolutionEnvironment,
   ): string {
     const extension = path.extname(specifier);
     if (!SCRIPT_EXTENSIONS.has(extension)) return specifier;
     const extensionless = specifier.slice(0, -extension.length);
     if (getPackageNameFromSpecifier(extensionless) === extensionless) return specifier;
-    const resolution = this.resolve(extensionless, fromFile, importer);
+    const resolution = this.resolve(extensionless, fromFile, importer, environment);
     return resolution.kind === "external" && resolution.filePath === filePath
       ? extensionless
       : specifier;

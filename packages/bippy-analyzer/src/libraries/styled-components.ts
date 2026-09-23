@@ -130,8 +130,8 @@ const classNameValue = (): StaticValue =>
  * analysis knows nothing about (an `as` hiding in a spread of an unknown object).
  */
 const firstTruthy = (values: readonly StaticValue[], reason: string): StaticValue => {
-  const head = values[0];
-  const rest = values.slice(1);
+  const [head, ...rest] = values;
+  if (head === undefined) return UNDEFINED_VALUE;
   if (rest.length === 0) return head;
   return mapValue(head, (alternative) => {
     const truthiness = getTruthiness(alternative);

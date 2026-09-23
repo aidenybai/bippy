@@ -63,7 +63,11 @@ describe("kea store discovery", () => {
   it("skips a kea module whose context is not a redux store", async () => {
     Reflect.set(globalThis, "__bippyKeaVite", null);
     Reflect.set(globalThis, "__bippyKeaIndex", 1);
-    const withoutContext = await withResourceUrls([viteModuleUrl, indexModuleUrl, namespaceModuleUrl]);
+    const withoutContext = await withResourceUrls([
+      viteModuleUrl,
+      indexModuleUrl,
+      namespaceModuleUrl,
+    ]);
     expect(withoutContext).toEqual([]);
     Reflect.set(globalThis, "__bippyKeaVite", { store: { getState: () => ({}) } });
     const withoutSubscribe = await withResourceUrls([viteModuleUrl]);

@@ -1,3 +1,4 @@
+// Boolean comparison normalization adapted from TypeScript. See ../../third-party-notices.md.
 import type { UnaryOperator } from "oxc-parser";
 import type { HostRealm } from "../host/host-realm.js";
 import { REACT_MEMO_CACHE_SENTINEL_KEY } from "../react/react-api.js";
@@ -305,6 +306,16 @@ const deriveComparison = (
   const literal = literalSide.value;
   if (EQUALITY_OPERATORS.has(operator)) {
     if (literal !== undefined && !isGuardLiteral(literal)) return result;
+    if (
+      operand.kind === "unknown-primitive" &&
+      operand.primitiveType === "boolean" &&
+      typeof literal === "boolean"
+    ) {
+      const isNegated = operator === "!==" || operator === "!=";
+      return literal !== isNegated
+        ? recordDerivation(result, { kind: "alias", operand })
+        : recordNegation(result, operand);
+    }
     return recordDerivation(result, {
       kind: "equality",
       operand,

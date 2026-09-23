@@ -8,620 +8,621 @@
       content="Inside Bippy’s React interpreter: modeled values, scopes, guarded execution, heap joins, completions, hook frames, effects, promises, and materialization."
     />
     <title>How the React interpreter works · Bippy</title>
-    <style>:root {
-  color-scheme: light;
-  --paper: oklch(1 0 0);
-  --ink: oklch(0.205 0 0);
-  --muted: oklch(0.51 0 0);
-  --line: oklch(0.936 0 0);
-  --surface: oklch(0.984 0 0);
-  --track: oklch(0.957 0 0);
-  --selected: oklch(0.99 0 0);
-  --focus: oklch(0.45 0 0);
-  --warning: oklch(0.48 0.09 75);
-  --radius: 7px;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-* {
-  box-sizing: border-box;
-}
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 72px;
-}
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font:
-    15px/1.75 ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-a {
-  color: inherit;
-  text-underline-offset: 3px;
-}
-a:hover {
-  text-decoration-thickness: 2px;
-}
-button,
-input,
-select {
-  font: inherit;
-}
-button,
-select,
-summary {
-  cursor: pointer;
-}
-button {
-  min-height: 30px;
-  border: 0;
-  border-radius: var(--radius);
-  padding: 5px 10px;
-  box-shadow: 0 0 0 1px oklch(0.89 0 0);
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 13px;
-  line-height: 20px;
-}
-button:hover {
-  background: var(--surface);
-}
-button:disabled {
-  cursor: default;
-  color: oklch(0.7 0 0);
-  background: var(--surface);
-}
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-summary:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
-}
-input[type="checkbox"] {
-  accent-color: var(--ink);
-  width: 16px;
-  height: 16px;
-}
-select {
-  max-width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 6px 9px;
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 13px;
-}
-h1,
-h2,
-h3,
-h4 {
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: -0.02em;
-}
-h1 {
-  font-size: 30px;
-  margin: 8px 0 18px;
-}
-h2 {
-  font-size: 24px;
-  margin: 0 0 16px;
-}
-h3 {
-  font-size: 18px;
-  margin: 30px 0 12px;
-}
-h4 {
-  font-size: 15px;
-  margin: 0 0 8px;
-}
-p {
-  margin: 0 0 16px;
-  max-width: 85ch;
-}
-li {
-  margin: 8px 0;
-}
-ul,
-ol {
-  padding-left: 23px;
-}
-strong {
-  font-weight: 600;
-}
-code,
-kbd {
-  font: 0.86em var(--mono);
-  background: oklch(0.97 0 0);
-  border-radius: 3px;
-  padding: 2px 4px;
-  overflow-wrap: anywhere;
-}
-pre {
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 17px 20px;
-  font: 13px/1.8 var(--mono);
-  tab-size: 2;
-  margin: 20px 0;
-}
-pre code {
-  font: inherit;
-  background: none;
-  padding: 0;
-  overflow-wrap: normal;
-}
-.skip {
-  position: fixed;
-  top: -80px;
-  left: 12px;
-  z-index: 10;
-  background: var(--paper);
-  padding: 10px;
-}
-.skip:focus {
-  top: 10px;
-}
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  min-height: 49px;
-  padding: 8px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
-  font-size: 13px;
-}
-.brand {
-  text-decoration: none;
-  white-space: nowrap;
-  font-weight: 500;
-}
-.brand span {
-  color: var(--muted);
-  font-weight: 400;
-}
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.top-actions button {
-  font-size: 12px;
-  min-height: 28px;
-  padding: 3px 9px;
-}
-.layout {
-  display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
-  max-width: 1440px;
-  margin: auto;
-}
-.sidebar {
-  position: sticky;
-  top: 49px;
-  height: calc(100vh - 49px);
-  align-self: start;
-  padding: 24px 12px;
-  overflow-y: auto;
-  border-right: 1px solid var(--line);
-  font-size: 13px;
-  scrollbar-width: thin;
-}
-.sidebar-title {
-  padding: 0 8px;
-  font-weight: 500;
-  font-size: 12px;
-}
-.sidebar nav {
-  display: grid;
-  gap: 2px;
-  margin: 12px 0 24px;
-}
-.sidebar a {
-  text-decoration: none;
-  color: var(--muted);
-  padding: 5px 8px;
-  border-radius: 6px;
-  line-height: 22px;
-}
-.sidebar a:hover {
-  background: var(--surface);
-}
-.sidebar a[aria-current="location"] {
-  background: oklch(0.946 0 0);
-  color: var(--ink);
-}
-.nav-group {
-  padding: 17px 8px 5px;
-  color: var(--muted);
-  font-size: 11px;
-}
-.sidebar-footer {
-  border-top: 1px solid var(--line);
-  padding: 14px 8px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.sidebar-footer a {
-  display: block;
-  padding: 4px 0;
-}
-main {
-  min-width: 0;
-  width: 100%;
-  max-width: 1110px;
-  padding: 38px clamp(24px, 4.5vw, 68px) 70px;
-}
-section {
-  margin-top: 56px;
-  scroll-margin-top: 72px;
-}
-section:first-of-type {
-  margin-top: 0;
-}
-.intro {
-  font-size: 16px;
-}
-.eyebrow,
-.note,
-.source,
-.muted {
-  color: var(--muted);
-}
-.eyebrow,
-.note,
-.source {
-  font-size: 12px;
-}
-.source {
-  margin-top: 22px;
-}
-.source a {
-  margin-right: 12px;
-  overflow-wrap: anywhere;
-}
-.mobile-nav {
-  display: none;
-}
-.callout {
-  border-left: 2px solid var(--line);
-  padding: 4px 0 4px 16px;
-  margin: 22px 0;
-}
-.callout.warning {
-  border-color: var(--warning);
-}
-.callout > :last-child {
-  margin-bottom: 0;
-}
-.table-wrap {
-  overflow-x: auto;
-  margin: 20px 0;
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-  text-align: left;
-}
-th,
-td {
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  vertical-align: top;
-}
-th {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-}
-tbody tr:hover {
-  background: var(--surface);
-}
-caption {
-  text-align: left;
-  color: var(--muted);
-  margin: 0 0 10px;
-}
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.grid > * {
-  min-width: 0;
-}
-.lab {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  margin: 24px 0;
-  overflow: hidden;
-}
-.lab-header {
-  border-bottom: 1px solid var(--line);
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 500;
-}
-.lab-header span {
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--muted);
-}
-.lab-body {
-  padding: 16px;
-}
-.lab-body > :last-child {
-  margin-bottom: 0;
-}
-.lab-note {
-  padding: 9px 16px;
-  font-size: 12px;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-}
-.controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-bottom: 16px;
-}
-.controls label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-}
-.step-count {
-  margin-right: auto;
-  color: var(--muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.segmented {
-  display: flex;
-  flex-wrap: wrap;
-  width: fit-content;
-  max-width: 100%;
-  padding: 3px;
-  gap: 2px;
-  background: var(--track);
-  border-radius: 6px;
-  margin: 0 0 16px;
-}
-.segmented button {
-  box-shadow: none;
-  background: transparent;
-  border-radius: 4px;
-  color: var(--muted);
-  min-height: 28px;
-  padding: 4px 9px;
-}
-.segmented button[aria-pressed="true"] {
-  background: var(--selected);
-  color: var(--ink);
-}
-.field-label {
-  font-size: 12px;
-  font-weight: 500;
-}
-.trace-output {
-  margin: 8px 0 16px;
-  min-height: 150px;
-  font-size: 12px;
-}
-.trace-explanation {
-  min-height: 135px;
-  font-size: 14px;
-}
-.result {
-  background: var(--surface);
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-}
-.result pre {
-  border: 0;
-  padding: 0;
-  margin: 8px 0 0;
-  background: none;
-}
-.result p:last-child {
-  margin-bottom: 0;
-}
-.result-label {
-  color: var(--muted);
-  font-size: 12px;
-}
-[data-code-line] {
-  display: block;
-  margin: 0 -20px;
-  padding: 0 20px;
-}
-[data-code-line].active-line {
-  background: oklch(0.93 0 0);
-  box-shadow: inset 2px 0 var(--ink);
-}
-details {
-  border-top: 1px solid var(--line);
-  margin: 20px 0;
-}
-summary {
-  padding: 12px 0;
-  font-size: 13px;
-  font-weight: 500;
-}
-summary::marker {
-  color: var(--muted);
-}
-.detail-body {
-  padding: 4px 0 12px;
-}
-.detail-body > :last-child {
-  margin-bottom: 0;
-}
-.glossary {
-  display: grid;
-  grid-template-columns: 145px 1fr;
-  gap: 12px 20px;
-}
-.glossary dt {
-  font-weight: 500;
-}
-.glossary dd {
-  margin: 0;
-}
-footer {
-  border-top: 1px solid var(--line);
-  margin-top: 50px;
-  padding-top: 20px;
-  font-size: 12px;
-  color: var(--muted);
-}
-[hidden] {
-  display: none !important;
-}
-@media (max-width: 1100px) {
-  .layout {
-    grid-template-columns: 212px minmax(0, 1fr);
-  }
-  main {
-    padding-inline: 30px;
-  }
-}
-@media (max-width: 760px) {
-  .layout {
-    display: block;
-  }
-  .sidebar,
-  .brand span {
-    display: none;
-  }
-  main {
-    padding: 24px 18px 45px;
-  }
-  .topbar {
-    padding: 8px 14px;
-  }
-  h1 {
-    font-size: 27px;
-  }
-  h2 {
-    font-size: 22px;
-  }
-  .intro {
-    font-size: 15px;
-  }
-  .mobile-nav {
-    display: block;
-    margin: 0 0 24px;
-  }
-  .mobile-nav select {
-    width: 100%;
-    min-height: 34px;
-  }
-  section {
-    margin-top: 42px;
-  }
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  pre {
-    font-size: 12px;
-    padding: 14px;
-  }
-  .trace-output {
-    min-height: 100px;
-  }
-  .trace-explanation {
-    min-height: 150px;
-  }
-  [data-code-line] {
-    margin-inline: -14px;
-    padding-inline: 14px;
-  }
-  .lab-body {
-    padding: 14px;
-  }
-  .glossary {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .glossary dd {
-    margin-bottom: 14px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-}
-@media print {
-  body {
-    font-size: 11pt;
-  }
-  .topbar,
-  .sidebar,
-  .mobile-nav,
-  .controls,
-  .segmented,
-  .no-print {
-    display: none !important;
-  }
-  .layout {
-    display: block;
-  }
-  main {
-    max-width: none;
-    padding: 0;
-  }
-  section {
-    margin-top: 28px;
-  }
-  h1 {
-    font-size: 26pt;
-  }
-  h2 {
-    font-size: 20pt;
-  }
-  h3 {
-    font-size: 14pt;
-  }
-  pre {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  .lab,
-  pre {
-    break-inside: avoid;
-  }
-  .trace-output,
-  .trace-explanation {
-    min-height: 0;
-  }
-}
-</style>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: oklch(1 0 0);
+        --ink: oklch(0.205 0 0);
+        --muted: oklch(0.51 0 0);
+        --line: oklch(0.936 0 0);
+        --surface: oklch(0.984 0 0);
+        --track: oklch(0.957 0 0);
+        --selected: oklch(0.99 0 0);
+        --focus: oklch(0.45 0 0);
+        --warning: oklch(0.48 0.09 75);
+        --radius: 7px;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 72px;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font:
+          15px/1.75 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 3px;
+      }
+      a:hover {
+        text-decoration-thickness: 2px;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button,
+      select,
+      summary {
+        cursor: pointer;
+      }
+      button {
+        min-height: 30px;
+        border: 0;
+        border-radius: var(--radius);
+        padding: 5px 10px;
+        box-shadow: 0 0 0 1px oklch(0.89 0 0);
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 20px;
+      }
+      button:hover {
+        background: var(--surface);
+      }
+      button:disabled {
+        cursor: default;
+        color: oklch(0.7 0 0);
+        background: var(--surface);
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 3px;
+      }
+      input[type="checkbox"] {
+        accent-color: var(--ink);
+        width: 16px;
+        height: 16px;
+      }
+      select {
+        max-width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 6px 9px;
+        background: var(--paper);
+        color: var(--ink);
+        font-size: 13px;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-weight: 500;
+        line-height: 1.35;
+        letter-spacing: -0.02em;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 8px 0 18px;
+      }
+      h2 {
+        font-size: 24px;
+        margin: 0 0 16px;
+      }
+      h3 {
+        font-size: 18px;
+        margin: 30px 0 12px;
+      }
+      h4 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 0 0 16px;
+        max-width: 85ch;
+      }
+      li {
+        margin: 8px 0;
+      }
+      ul,
+      ol {
+        padding-left: 23px;
+      }
+      strong {
+        font-weight: 600;
+      }
+      code,
+      kbd {
+        font: 0.86em var(--mono);
+        background: oklch(0.97 0 0);
+        border-radius: 3px;
+        padding: 2px 4px;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 17px 20px;
+        font: 13px/1.8 var(--mono);
+        tab-size: 2;
+        margin: 20px 0;
+      }
+      pre code {
+        font: inherit;
+        background: none;
+        padding: 0;
+        overflow-wrap: normal;
+      }
+      .skip {
+        position: fixed;
+        top: -80px;
+        left: 12px;
+        z-index: 10;
+        background: var(--paper);
+        padding: 10px;
+      }
+      .skip:focus {
+        top: 10px;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        min-height: 49px;
+        padding: 8px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper);
+        font-size: 13px;
+      }
+      .brand {
+        text-decoration: none;
+        white-space: nowrap;
+        font-weight: 500;
+      }
+      .brand span {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .top-actions button {
+        font-size: 12px;
+        min-height: 28px;
+        padding: 3px 9px;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 236px minmax(0, 1fr);
+        max-width: 1440px;
+        margin: auto;
+      }
+      .sidebar {
+        position: sticky;
+        top: 49px;
+        height: calc(100vh - 49px);
+        align-self: start;
+        padding: 24px 12px;
+        overflow-y: auto;
+        border-right: 1px solid var(--line);
+        font-size: 13px;
+        scrollbar-width: thin;
+      }
+      .sidebar-title {
+        padding: 0 8px;
+        font-weight: 500;
+        font-size: 12px;
+      }
+      .sidebar nav {
+        display: grid;
+        gap: 2px;
+        margin: 12px 0 24px;
+      }
+      .sidebar a {
+        text-decoration: none;
+        color: var(--muted);
+        padding: 5px 8px;
+        border-radius: 6px;
+        line-height: 22px;
+      }
+      .sidebar a:hover {
+        background: var(--surface);
+      }
+      .sidebar a[aria-current="location"] {
+        background: oklch(0.946 0 0);
+        color: var(--ink);
+      }
+      .nav-group {
+        padding: 17px 8px 5px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .sidebar-footer {
+        border-top: 1px solid var(--line);
+        padding: 14px 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .sidebar-footer a {
+        display: block;
+        padding: 4px 0;
+      }
+      main {
+        min-width: 0;
+        width: 100%;
+        max-width: 1110px;
+        padding: 38px clamp(24px, 4.5vw, 68px) 70px;
+      }
+      section {
+        margin-top: 56px;
+        scroll-margin-top: 72px;
+      }
+      section:first-of-type {
+        margin-top: 0;
+      }
+      .intro {
+        font-size: 16px;
+      }
+      .eyebrow,
+      .note,
+      .source,
+      .muted {
+        color: var(--muted);
+      }
+      .eyebrow,
+      .note,
+      .source {
+        font-size: 12px;
+      }
+      .source {
+        margin-top: 22px;
+      }
+      .source a {
+        margin-right: 12px;
+        overflow-wrap: anywhere;
+      }
+      .mobile-nav {
+        display: none;
+      }
+      .callout {
+        border-left: 2px solid var(--line);
+        padding: 4px 0 4px 16px;
+        margin: 22px 0;
+      }
+      .callout.warning {
+        border-color: var(--warning);
+      }
+      .callout > :last-child {
+        margin-bottom: 0;
+      }
+      .table-wrap {
+        overflow-x: auto;
+        margin: 20px 0;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+        text-align: left;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--muted);
+      }
+      tbody tr:hover {
+        background: var(--surface);
+      }
+      caption {
+        text-align: left;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .grid > * {
+        min-width: 0;
+      }
+      .lab {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        margin: 24px 0;
+        overflow: hidden;
+      }
+      .lab-header {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .lab-header span {
+        font-size: 11px;
+        font-weight: 400;
+        color: var(--muted);
+      }
+      .lab-body {
+        padding: 16px;
+      }
+      .lab-body > :last-child {
+        margin-bottom: 0;
+      }
+      .lab-note {
+        padding: 9px 16px;
+        font-size: 12px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-bottom: 16px;
+      }
+      .controls label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+      }
+      .step-count {
+        margin-right: auto;
+        color: var(--muted);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
+      .segmented {
+        display: flex;
+        flex-wrap: wrap;
+        width: fit-content;
+        max-width: 100%;
+        padding: 3px;
+        gap: 2px;
+        background: var(--track);
+        border-radius: 6px;
+        margin: 0 0 16px;
+      }
+      .segmented button {
+        box-shadow: none;
+        background: transparent;
+        border-radius: 4px;
+        color: var(--muted);
+        min-height: 28px;
+        padding: 4px 9px;
+      }
+      .segmented button[aria-pressed="true"] {
+        background: var(--selected);
+        color: var(--ink);
+      }
+      .field-label {
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .trace-output {
+        margin: 8px 0 16px;
+        min-height: 150px;
+        font-size: 12px;
+      }
+      .trace-explanation {
+        min-height: 135px;
+        font-size: 14px;
+      }
+      .result {
+        background: var(--surface);
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 5px;
+      }
+      .result pre {
+        border: 0;
+        padding: 0;
+        margin: 8px 0 0;
+        background: none;
+      }
+      .result p:last-child {
+        margin-bottom: 0;
+      }
+      .result-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      [data-code-line] {
+        display: block;
+        margin: 0 -20px;
+        padding: 0 20px;
+      }
+      [data-code-line].active-line {
+        background: oklch(0.93 0 0);
+        box-shadow: inset 2px 0 var(--ink);
+      }
+      details {
+        border-top: 1px solid var(--line);
+        margin: 20px 0;
+      }
+      summary {
+        padding: 12px 0;
+        font-size: 13px;
+        font-weight: 500;
+      }
+      summary::marker {
+        color: var(--muted);
+      }
+      .detail-body {
+        padding: 4px 0 12px;
+      }
+      .detail-body > :last-child {
+        margin-bottom: 0;
+      }
+      .glossary {
+        display: grid;
+        grid-template-columns: 145px 1fr;
+        gap: 12px 20px;
+      }
+      .glossary dt {
+        font-weight: 500;
+      }
+      .glossary dd {
+        margin: 0;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        margin-top: 50px;
+        padding-top: 20px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      [hidden] {
+        display: none !important;
+      }
+      @media (max-width: 1100px) {
+        .layout {
+          grid-template-columns: 212px minmax(0, 1fr);
+        }
+        main {
+          padding-inline: 30px;
+        }
+      }
+      @media (max-width: 760px) {
+        .layout {
+          display: block;
+        }
+        .sidebar,
+        .brand span {
+          display: none;
+        }
+        main {
+          padding: 24px 18px 45px;
+        }
+        .topbar {
+          padding: 8px 14px;
+        }
+        h1 {
+          font-size: 27px;
+        }
+        h2 {
+          font-size: 22px;
+        }
+        .intro {
+          font-size: 15px;
+        }
+        .mobile-nav {
+          display: block;
+          margin: 0 0 24px;
+        }
+        .mobile-nav select {
+          width: 100%;
+          min-height: 34px;
+        }
+        section {
+          margin-top: 42px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        pre {
+          font-size: 12px;
+          padding: 14px;
+        }
+        .trace-output {
+          min-height: 100px;
+        }
+        .trace-explanation {
+          min-height: 150px;
+        }
+        [data-code-line] {
+          margin-inline: -14px;
+          padding-inline: 14px;
+        }
+        .lab-body {
+          padding: 14px;
+        }
+        .glossary {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .glossary dd {
+          margin-bottom: 14px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+      @media print {
+        body {
+          font-size: 11pt;
+        }
+        .topbar,
+        .sidebar,
+        .mobile-nav,
+        .controls,
+        .segmented,
+        .no-print {
+          display: none !important;
+        }
+        .layout {
+          display: block;
+        }
+        main {
+          max-width: none;
+          padding: 0;
+        }
+        section {
+          margin-top: 28px;
+        }
+        h1 {
+          font-size: 26pt;
+        }
+        h2 {
+          font-size: 20pt;
+        }
+        h3 {
+          font-size: 14pt;
+        }
+        pre {
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+        }
+        .lab,
+        pre {
+          break-inside: avoid;
+        }
+        .trace-output,
+        .trace-explanation {
+          min-height: 0;
+        }
+      }
+    </style>
   </head>
   <body>
     <a class="skip" href="#main">Skip to the explanation</a>
@@ -825,9 +826,16 @@ Not an execution:     p + strong</code></pre>
             <code>isReady = true</code> with the wrong path.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts">Proxy execution</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/hooks.ts">Hook cells</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/commit-causes.ts">Callback causes</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts"
+              >Proxy execution</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/hooks.ts"
+              >Hook cells</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/commit-causes.ts"
+              >Callback causes</a
+            >
           </p>
         </section>
 
@@ -974,10 +982,19 @@ block scope
             or an unknown role; the caller or environment supplies the modeled value.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L2501">Expression dispatch</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/context.ts">Evaluation context</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/scope.ts">Scope lookup</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/graph/module-graph.ts">Source graph</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L2501"
+              >Expression dispatch</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/context.ts"
+              >Evaluation context</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/scope.ts"
+              >Scope lookup</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/graph/module-graph.ts"
+              >Source graph</a
+            >
           </p>
         </section>
 
@@ -1097,9 +1114,16 @@ outer ? (inner ? A : B) : C   → flattened alternatives
             render the value.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/types.ts#L548">Value interfaces</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/values.ts#L1566">Branch construction</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/primitive-shapes.ts">Primitive shapes</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/types.ts#L548"
+              >Value interfaces</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/values.ts#L1566"
+              >Branch construction</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/primitive-shapes.ts"
+              >Primitive shapes</a
+            >
           </p>
         </section>
 
@@ -1229,10 +1253,19 @@ const value = input ?? getFallback();</code></pre>
             undefined.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/values.ts#L1756">Mapping and distribution</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/operators.ts">Operators</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L2897">Short-circuit evaluation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L3979">Accessor reads</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/values.ts#L1756"
+              >Mapping and distribution</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/operators.ts"
+              >Operators</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L2897"
+              >Short-circuit evaluation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L3979"
+              >Accessor reads</a
+            >
           </p>
         </section>
 
@@ -1337,10 +1370,19 @@ const readSecond = makeReader("second");</code></pre>
             arbitrary recursive equation to completion.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/types.ts#L690">Function representation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5048">Function entry</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5132">Call scope and body</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L3113">Alternative calls</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/types.ts#L690"
+              >Function representation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5048"
+              >Function entry</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5132"
+              >Call scope and body</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L3113"
+              >Alternative calls</a
+            >
           </p>
         </section>
 
@@ -1433,10 +1475,19 @@ Never just one of them.</pre>
             in a tree or computation. Different occurrences can depend on the same predicate.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/predicates.ts">Derivation tracking</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L2981">Narrowing and tested paths</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/symbolic/guards.ts">Guard representation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/symbolic/guard-solver.ts">Constraint solving</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/predicates.ts"
+              >Derivation tracking</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L2981"
+              >Narrowing and tested paths</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/symbolic/guards.ts"
+              >Guard representation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/symbolic/guard-solver.ts"
+              >Constraint solving</a
+            >
           </p>
         </section>
 
@@ -1549,9 +1600,16 @@ A.count = 0       A.count = 1         A.count = 2        A.count = branch(1, 2)
             every mutable API model.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L3079">forkValues</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/heap-journal.ts">Journal records and joins</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/scope-journal.ts">Scope snapshots</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L3079"
+              >forkValues</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/heap-journal.ts"
+              >Journal records and joins</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/scope-journal.ts"
+              >Scope snapshots</a
+            >
           </p>
         </section>
 
@@ -1660,9 +1718,16 @@ join:        combine the finished executions, not their prefixes</code></pre>
             are not a claim of complete support for every JavaScript control-flow form.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/completion.ts">Statement outcomes</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5960">forkPaths and continuations</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5682">Try, catch, and finally</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/completion.ts"
+              >Statement outcomes</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5960"
+              >forkPaths and continuations</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5682"
+              >Try, catch, and finally</a
+            >
           </p>
         </section>
 
@@ -1761,10 +1826,19 @@ $Branch(flag)                         choose under flag:
             where creation happened rather than inferring it only from eventual fiber ancestry.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L6326">JSX evaluation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/types.ts#L586">Element representation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L843">Branch materialization</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1830">Function proxy</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L6326"
+              >JSX evaluation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/types.ts#L586"
+              >Element representation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L843"
+              >Branch materialization</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1830"
+              >Function proxy</a
+            >
           </p>
         </section>
 
@@ -1959,9 +2033,16 @@ setCount → the persistent cell</pre>
             </div>
           </details>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/hooks.ts">Hook storage and pass lifecycle</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/react-hooks.ts">Hook API dispatch</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1904">Proxy rerendering</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/hooks.ts"
+              >Hook storage and pass lifecycle</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/react-hooks.ts"
+              >Hook API dispatch</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1904"
+              >Proxy rerendering</a
+            >
           </p>
         </section>
 
@@ -2054,10 +2135,19 @@ Insufficient:
             rather than treating every effect as “run immediately after the function returns.”
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/hooks.ts#L319">Dependency comparison and cleanup</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/commit-causes.ts">Cause capture</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L2005">Guarded mutation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1888">Passive-phase coordination</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/hooks.ts#L319"
+              >Dependency comparison and cleanup</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/commit-causes.ts"
+              >Cause capture</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L2005"
+              >Guarded mutation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1888"
+              >Passive-phase coordination</a
+            >
           </p>
         </section>
 
@@ -2200,10 +2290,19 @@ awaited promise settles → modeled microtask</code></pre>
             </div>
           </details>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/promises.ts">Promise state and resumption</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/timers.ts">Task queues</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5048">Async call handling</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/generators.ts">Iterator representation</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/promises.ts"
+              >Promise state and resumption</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/timers.ts"
+              >Task queues</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5048"
+              >Async call handling</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/generators.ts"
+              >Iterator representation</a
+            >
           </p>
         </section>
 
@@ -2283,10 +2382,19 @@ Repeated pattern:   row(item) × some permitted number of occurrences</code></pr
             entries has state too.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/array-methods.ts">Array callback evaluation</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/loops.ts">Loop execution</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5788">Conditional execution</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/harness/static-pattern.ts">Repeat inputs and cardinality</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/array-methods.ts"
+              >Array callback evaluation</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/loops.ts"
+              >Loop execution</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/interpreter.ts#L5788"
+              >Conditional execution</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/harness/static-pattern.ts"
+              >Repeat inputs and cardinality</a
+            >
           </p>
         </section>
 
@@ -2398,10 +2506,19 @@ Repeated pattern:   row(item) × some permitted number of occurrences</code></pr
             behavior; it does not mean that opening an untrusted project is a sandboxed operation.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1160">Context providers</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/react-hooks.ts#L171">External-store model</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/libraries/index.ts">Library registry</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/native-closures.ts">Native callable lifting</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts#L1160"
+              >Context providers</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/react-hooks.ts#L171"
+              >External-store model</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/libraries/index.ts"
+              >Library registry</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/evaluate/native-closures.ts"
+              >Native callable lifting</a
+            >
           </p>
         </section>
 
@@ -2485,9 +2602,16 @@ Later commit, allowed under canEdit
             mutations to the final patterns.
           </p>
           <p class="source">
-            <a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/harness/static-pattern.ts">Pattern nodes and marker reading</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/harness/symbolic-tree.ts">Guarded commits</a
-            ><a href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts">Host-child materialization</a>
+            <a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/harness/static-pattern.ts"
+              >Pattern nodes and marker reading</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/harness/symbolic-tree.ts"
+              >Guarded commits</a
+            ><a
+              href="https://github.com/aidenybai/bippy/blob/c9cfc18ff6455211f9c53323ef35f75f67ba8684/packages/bippy-analyzer/src/materialize/materializer.ts"
+              >Host-child materialization</a
+            >
           </p>
         </section>
 
@@ -2559,104 +2683,422 @@ Later commit, allowed under canEdit
         </section>
         <footer>
           <p>
-            Source links are pinned to <code>c9cfc18ff6455211f9c53323ef35f75f67ba8684</code>. The diagrams use simplified
-            notation; linked interfaces and methods show the concrete representation. Standalone
-            HTML with no external runtime assets.
+            Source links are pinned to <code>c9cfc18ff6455211f9c53323ef35f75f67ba8684</code>. The
+            diagrams use simplified notation; linked interfaces and methods show the concrete
+            representation. Standalone HTML with no external runtime assets.
           </p>
         </footer>
       </main>
     </div>
     <script>
-      (()=>{var n=(e,t=document)=>{let a=t.querySelector(e);if(!a)throw new Error(`Missing guide element: ${e}`);return a},s=(e,t=document)=>Array.from(t.querySelectorAll(e)),f=(e,t)=>{for(let a of s(e))a.setAttribute("aria-pressed",String(a===t))},A=[{title:"An element is a description",state:`canEdit \u2192 unknown Boolean
+      (() => {
+        var n = (e, t = document) => {
+            let a = t.querySelector(e);
+            if (!a) throw new Error(`Missing guide element: ${e}`);
+            return a;
+          },
+          s = (e, t = document) => Array.from(t.querySelectorAll(e)),
+          f = (e, t) => {
+            for (let a of s(e)) a.setAttribute("aria-pressed", String(a === t));
+          },
+          A = [
+            {
+              title: "An element is a description",
+              state: `canEdit \u2192 unknown Boolean
 hook frame \u2192 not initialized
 view \u2192 not allocated
-tasks \u2192 empty`,output:`AccessPanel element
+tasks \u2192 empty`,
+              output: `AccessPanel element
 props: { canEdit: unknown }
 
-Its body has not run.`,explanation:"Creating an element records its type and props. The materializer gives React a proxy for AccessPanel. React invokes the proxy, which asks the interpreter to evaluate AccessPanel\u2019s body."},{title:"Evaluate the body and its conditional mutation",state:`cell 0: current = false
+Its body has not run.`,
+              explanation:
+                "Creating an element records its type and props. The materializer gives React a proxy for AccessPanel. React invokes the proxy, which asks the interpreter to evaluate AccessPanel\u2019s body.",
+            },
+            {
+              title: "Evaluate the body and its conditional mutation",
+              state: `cell 0: current = false
 view \u2192 object A
 A.mode = canEdit ? 'edit' : 'read'
 effect callback recorded
-tasks \u2192 empty`,output:`The proxy is rendering.
+tasks \u2192 empty`,
+              output: `The proxy is rendering.
 
 No effect has run yet.
-No timer has been registered.`,explanation:"The first state hook allocates its persistent cell. The local object is allocated for this render. The true path writes 'edit'; the false path retains 'read'. Joining those stores leaves one object with a conditional field. The effect captures this render\u2019s environment."},{title:"Turn the returned values into React nodes",state:`canEdit \u2192 still unknown
+No timer has been registered.`,
+              explanation:
+                "The first state hook allocates its persistent cell. The local object is allocated for this render. The true path writes 'edit'; the false path retains 'read'. Joining those stores leaves one object with a conditional field. The effect captures this render\u2019s environment.",
+            },
+            {
+              title: "Turn the returned values into React nodes",
+              state: `canEdit \u2192 still unknown
 isReady \u2192 false
 view.mode \u2192 conditional
-registered tasks \u2192 none`,output:`AccessPanel \u2192 main
+registered tasks \u2192 none`,
+              output: `AccessPanel \u2192 main
   $Branch(canEdit)
     true:  button
     false: p
-  span`,explanation:"The known false state selects span immediately. The unknown canEdit keeps two alternatives for the other child. React reconciles their materialized nodes beneath internal markers. Those markers carry a choice, not a claim that the original page displays both alternatives."},{title:"Commit the initial tree, then invoke the effect",state:`cell 0: current = false
+  span`,
+              explanation:
+                "The known false state selects span immediately. The unknown canEdit keeps two alternatives for the other child. React reconciles their materialized nodes beneath internal markers. Those markers carry a choice, not a claim that the original page displays both alternatives.",
+            },
+            {
+              title: "Commit the initial tree, then invoke the effect",
+              state: `cell 0: current = false
 timer 1: registered under canEdit
-callback: setReady(true)`,output:`Initial possibilities
+callback: setReady(true)`,
+              output: `Initial possibilities
 
 canEdit  \u2192 button + span
-!canEdit \u2192 p + span`,explanation:"The passive phase invokes the modeled effect callback. Its condition is interpreted. The timer exists only on the edit path, and its registration retains that cause after the callback returns."},{title:"Run the timer as a guarded mutation",state:`timer 1: consumed
+!canEdit \u2192 p + span`,
+              explanation:
+                "The passive phase invokes the modeled effect callback. Its condition is interpreted. The timer exists only on the edit path, and its registration retains that cause after the callback returns.",
+            },
+            {
+              title: "Run the timer as a guarded mutation",
+              state: `timer 1: consumed
 active condition: canEdit
 current state: false
 next state: true under canEdit
-proxy render requested`,output:`The existing committed tree
+proxy render requested`,
+              output: `The existing committed tree
 is still the current output.
 
 A pending setter is not a
-rewrite of old local variables.`,explanation:"The timer updates the persistent cell under its registration condition. The no-edit path keeps false. Calling the proxy\u2019s real React setter requests another render, but the earlier function call\u2019s isReady binding remains false."},{title:"Read persistent state in a new function activation",state:`pending state applied
+rewrite of old local variables.`,
+              explanation:
+                "The timer updates the persistent cell under its registration condition. The no-edit path keeps false. Calling the proxy\u2019s real React setter requests another render, but the earlier function call\u2019s isReady binding remains false.",
+            },
+            {
+              title: "Read persistent state in a new function activation",
+              state: `pending state applied
 hook cursors reset
 new local bindings
 new view object
-same persistent state cell`,output:`Later tree under canEdit
+same persistent state cell`,
+              output: `Later tree under canEdit
 
 main \u2192 button + strong
 
-No read-only ready transition.`,explanation:"The interpreter evaluates the body again with the same hook frame. Local allocations happen again; the hook initializer does not reset the existing cell. The update\u2019s cause constrains the later commit, keeping the ready branch associated with canEdit."},{title:"Preserve the structures and the conditions that connect them",state:`input relationship retained
+No read-only ready transition.`,
+              explanation:
+                "The interpreter evaluates the body again with the same hook frame. Local allocations happen again; the hook initializer does not reset the existing cell. The update\u2019s cause constrains the later commit, keeping the ready branch associated with canEdit.",
+            },
+            {
+              title: "Preserve the structures and the conditions that connect them",
+              state: `input relationship retained
 initial and later commits retained
-no remaining task in this example`,output:`!canEdit: p + span
+no remaining task in this example`,
+              output: `!canEdit: p + span
 canEdit:  button + span
           \u2192 button + strong
 
-Excluded: p + strong`,explanation:"The tree reader turns internal markers back into guarded patterns. The cause on the later commit prevents mixing its ready state with the no-edit input. The representation keeps why a structure can appear, not just a list of element names."}],L=[{title:"Record the fork\u2019s starting point",state:`state \u2192 object A
+Excluded: p + strong`,
+              explanation:
+                "The tree reader turns internal markers back into guarded patterns. The cause on the later commit prevents mixing its ready state with the no-edit input. The representation keeps why a structure can appear, not just a list of element names.",
+            },
+          ],
+          L = [
+            {
+              title: "Record the fork\u2019s starting point",
+              state: `state \u2192 object A
 alias \u2192 object A
-A.count = 0`,output:`Entry allocation recorded.
-No path has written A yet.`,explanation:"Both names reference A. The journal records A\u2019s original contents when the first write touches it. Copying the scope\u2019s two references would not copy or restore A.",line:0},{title:"Evaluate the true path",state:`active path: flag
+A.count = 0`,
+              output: `Entry allocation recorded.
+No path has written A yet.`,
+              explanation:
+                "Both names reference A. The journal records A\u2019s original contents when the first write touches it. Copying the scope\u2019s two references would not copy or restore A.",
+              line: 0,
+            },
+            {
+              title: "Evaluate the true path",
+              state: `active path: flag
 state \u2192 object A
 alias \u2192 object A
-A.count = 1`,output:`Original contents: count = 0
-True-path contents: count = 1`,explanation:"The write through alias changes the same object reached through state. The journal is keyed by that object identity, not by the variable spelling used in the assignment.",line:1},{title:"Save the path result and restore the entry state",state:`state \u2192 object A
+A.count = 1`,
+              output: `Original contents: count = 0
+True-path contents: count = 1`,
+              explanation:
+                "The write through alias changes the same object reached through state. The journal is keyed by that object identity, not by the variable spelling used in the assignment.",
+              line: 1,
+            },
+            {
+              title: "Save the path result and restore the entry state",
+              state: `state \u2192 object A
 alias \u2192 object A
-A.count = 0`,output:`Saved under flag: count = 1
-Restored for sibling: count = 0`,explanation:"endPath retains the state the true path left, then restores the original object entries. The false path has not executed yet. This restoration is interpreter bookkeeping, not another statement in the application."},{title:"Evaluate the false path from the same entry state",state:`active path: !flag
+A.count = 0`,
+              output: `Saved under flag: count = 1
+Restored for sibling: count = 0`,
+              explanation:
+                "endPath retains the state the true path left, then restores the original object entries. The false path has not executed yet. This restoration is interpreter bookkeeping, not another statement in the application.",
+            },
+            {
+              title: "Evaluate the false path from the same entry state",
+              state: `active path: !flag
 state \u2192 object A
 alias \u2192 object A
-A.count = 2`,output:`Saved under flag: count = 1
-False-path contents: count = 2`,explanation:"The sibling starts from zero, not from the earlier path\u2019s one. Its write is recorded as a different execution outcome rather than appended to the true path\u2019s history.",line:3},{title:"Join the contents without replacing object identity",state:`state \u2192 object A
+A.count = 2`,
+              output: `Saved under flag: count = 1
+False-path contents: count = 2`,
+              explanation:
+                "The sibling starts from zero, not from the earlier path\u2019s one. Its write is recorded as a different execution outcome rather than appended to the true path\u2019s history.",
+              line: 3,
+            },
+            {
+              title: "Join the contents without replacing object identity",
+              state: `state \u2192 object A
 alias \u2192 object A
-A.count = flag ? 1 : 2`,output:`Returned value
+A.count = flag ? 1 : 2`,
+              output: `Returned value
   1 under flag
   2 under !flag
 
-state === alias remains true`,explanation:"The journal joins the recorded contents into a conditional field. All existing references still reach A. The condition on the field remains available to code that reads it later.",line:4}],C=[{title:"The synchronous body finishes",state:`microtasks: promise reaction, explicit microtask
-timers: timer callback`,output:"sync",explanation:"Calling then registered a reaction. It did not invoke that callback inline. The synchronous push happens before the queued work."},{title:"Run the promise reaction",state:`microtasks: explicit microtask, nested microtask
-timers: timer callback`,output:"sync \u2192 promise",explanation:"The reaction appends 'promise' to the trace and queues another microtask. The nested callback goes behind the explicit microtask that was already waiting."},{title:"Run the already waiting microtask",state:`microtasks: nested microtask
-timers: timer callback`,output:"sync \u2192 promise \u2192 microtask",explanation:"The explicit microtask runs before the newer nested one. Looking only at the nesting of callback bodies would suggest the wrong order."},{title:"Drain the nested microtask",state:`microtasks: empty
-timers: timer callback`,output:"sync \u2192 promise \u2192 microtask \u2192 nested",explanation:"The reaction\u2019s nested work now runs. This drains the modeled microtask queue before the eligible zero-delay timer callback is advanced."},{title:"Run the timer",state:`microtasks: empty
-timers: empty`,output:"sync \u2192 promise \u2192 microtask \u2192 nested \u2192 timer",explanation:"The timer appends the final entry. This trace models the stated queue operations; it is not a complete browser event-loop simulator or a model of every React scheduling priority."}],d=!1,j=()=>{let e=d?2:1;return[{title:"The callback was created by a render",state:`current = 0
-next = none`,output:`captured count = 0
-setCount \u2192 the persistent cell`,explanation:"Its count binding is 0. Calling the setter changes pending hook state, not this captured binding."},{title:"Compute the first pending update",state:`current = 0
-next = 1`,output:`captured count = 0
-setCount \u2192 the persistent cell`,explanation:d?"The updater receives cell.next ?? cell.current, which is 0. Interpreting value + 1 produces 1, which becomes the pending state.":"The callback evaluates count + 1 using its captured zero. It supplies the replacement value 1 to the setter."},{title:"Compute the second pending update",state:`current = 0
-next = ${e}`,output:`captured count = 0
-setCount \u2192 the persistent cell`,explanation:d?"The second updater receives the pending value 1, not the callback\u2019s captured count. Its result is 2.":"The callback evaluates count + 1 again using the same captured zero. It supplies 1 again. This does not increment the pending value to 2."},{title:"Apply pending state for the next proxy render",state:`current = ${e}
-next = none`,output:`old callback\u2019s count = 0
+state === alias remains true`,
+              explanation:
+                "The journal joins the recorded contents into a conditional field. All existing references still reach A. The condition on the field remains available to code that reads it later.",
+              line: 4,
+            },
+          ],
+          C = [
+            {
+              title: "The synchronous body finishes",
+              state: `microtasks: promise reaction, explicit microtask
+timers: timer callback`,
+              output: "sync",
+              explanation:
+                "Calling then registered a reaction. It did not invoke that callback inline. The synchronous push happens before the queued work.",
+            },
+            {
+              title: "Run the promise reaction",
+              state: `microtasks: explicit microtask, nested microtask
+timers: timer callback`,
+              output: "sync \u2192 promise",
+              explanation:
+                "The reaction appends 'promise' to the trace and queues another microtask. The nested callback goes behind the explicit microtask that was already waiting.",
+            },
+            {
+              title: "Run the already waiting microtask",
+              state: `microtasks: nested microtask
+timers: timer callback`,
+              output: "sync \u2192 promise \u2192 microtask",
+              explanation:
+                "The explicit microtask runs before the newer nested one. Looking only at the nesting of callback bodies would suggest the wrong order.",
+            },
+            {
+              title: "Drain the nested microtask",
+              state: `microtasks: empty
+timers: timer callback`,
+              output: "sync \u2192 promise \u2192 microtask \u2192 nested",
+              explanation:
+                "The reaction\u2019s nested work now runs. This drains the modeled microtask queue before the eligible zero-delay timer callback is advanced.",
+            },
+            {
+              title: "Run the timer",
+              state: `microtasks: empty
+timers: empty`,
+              output: "sync \u2192 promise \u2192 microtask \u2192 nested \u2192 timer",
+              explanation:
+                "The timer appends the final entry. This trace models the stated queue operations; it is not a complete browser event-loop simulator or a model of every React scheduling priority.",
+            },
+          ],
+          d = !1,
+          j = () => {
+            let e = d ? 2 : 1;
+            return [
+              {
+                title: "The callback was created by a render",
+                state: `current = 0
+next = none`,
+                output: `captured count = 0
+setCount \u2192 the persistent cell`,
+                explanation:
+                  "Its count binding is 0. Calling the setter changes pending hook state, not this captured binding.",
+              },
+              {
+                title: "Compute the first pending update",
+                state: `current = 0
+next = 1`,
+                output: `captured count = 0
+setCount \u2192 the persistent cell`,
+                explanation: d
+                  ? "The updater receives cell.next ?? cell.current, which is 0. Interpreting value + 1 produces 1, which becomes the pending state."
+                  : "The callback evaluates count + 1 using its captured zero. It supplies the replacement value 1 to the setter.",
+              },
+              {
+                title: "Compute the second pending update",
+                state: `current = 0
+next = ${e}`,
+                output: `captured count = 0
+setCount \u2192 the persistent cell`,
+                explanation: d
+                  ? "The second updater receives the pending value 1, not the callback\u2019s captured count. Its result is 2."
+                  : "The callback evaluates count + 1 again using the same captured zero. It supplies 1 again. This does not increment the pending value to 2.",
+              },
+              {
+                title: "Apply pending state for the next proxy render",
+                state: `current = ${e}
+next = none`,
+                output: `old callback\u2019s count = 0
 new render\u2019s count = ${e}
-setCount \u2192 the same cell`,explanation:"The hook pass applies the pending value and the next evaluation reads it into fresh locals. The original callback\u2019s binding does not change. A newly created callback can capture the new render\u2019s value."}]},u=(e,t)=>{let a=n(`[data-trace="${e}"]`),i=0,c=()=>{let h=t(),r=h[i];n("[data-step-count]",a).textContent=`Step ${i+1} of ${h.length}`,n("[data-state]",a).textContent=r.state,n("[data-output]",a).textContent=r.output;let T=document.createElement("h4");T.textContent=`${i+1}. ${r.title}`;let x=document.createElement("p");x.textContent=r.explanation,n("[data-explanation]",a).replaceChildren(T,x),n("[data-back]",a).disabled=i===0,n("[data-next]",a).disabled=i===h.length-1;for(let w of s("[data-code-line]",a))w.classList.toggle("active-line",Number(w.dataset.codeLine)===r.line)},v=()=>{i=0,c()};return n("[data-next]",a).addEventListener("click",()=>{i=Math.min(t().length-1,i+1),c()}),n("[data-back]",a).addEventListener("click",()=>{i=Math.max(0,i-1),c()}),n("[data-reset]",a).addEventListener("click",v),c(),{reset:v}};u("execution",()=>A);u("mutation",()=>L);u("tasks",()=>C);var S=u("updates",j);for(let e of s("[data-update]"))e.addEventListener("click",()=>{d=e.dataset.update==="updater",f("[data-update]",e),S.reset()});for(let e of s("[data-value]"))e.addEventListener("click",()=>{let t=e.dataset.value;f("[data-value]",e),n("#value-count").textContent=t==="unknown"?`2 when flag
-3 when !flag`:t==="true"?"2":"3",n("#value-result").textContent=t==="unknown"?`4 when flag
-6 when !flag`:t==="true"?"4":"6",n("#value-explanation").textContent=t==="unknown"?"Multiplication changes each numeric alternative but retains the condition selecting it.":"The known condition selects one value. The multiplication can produce one concrete result without a branch."});var p=n("#closure-mutation");p.addEventListener("change",()=>{n("#closure-result").textContent=p.checked?"after":"before",n("#closure-explanation").textContent=p.checked?"The function reads object A when called. Its captured reference still reaches A after A\u2019s contents change.":"Without the write, object A still holds 'before'. The closure reads the object at call time; it did not precompute the property when it was created."});for(let e of s("[data-role]"))e.addEventListener("click",()=>{let t=e.dataset.role;f("[data-role]",e),n("#guard-conditions").textContent=t==="unknown"?`button present: eq(role, "admin")
-a present:      eq(role, "admin")`:`button condition: ${t==="admin"}
-a condition:      ${t==="admin"}`,n("#guard-output").textContent=t==="unknown"?`button + a
+setCount \u2192 the same cell`,
+                explanation:
+                  "The hook pass applies the pending value and the next evaluation reads it into fresh locals. The original callback\u2019s binding does not change. A newly created callback can capture the new render\u2019s value.",
+              },
+            ];
+          },
+          u = (e, t) => {
+            let a = n(`[data-trace="${e}"]`),
+              i = 0,
+              c = () => {
+                let h = t(),
+                  r = h[i];
+                ((n("[data-step-count]", a).textContent = `Step ${i + 1} of ${h.length}`),
+                  (n("[data-state]", a).textContent = r.state),
+                  (n("[data-output]", a).textContent = r.output));
+                let T = document.createElement("h4");
+                T.textContent = `${i + 1}. ${r.title}`;
+                let x = document.createElement("p");
+                ((x.textContent = r.explanation),
+                  n("[data-explanation]", a).replaceChildren(T, x),
+                  (n("[data-back]", a).disabled = i === 0),
+                  (n("[data-next]", a).disabled = i === h.length - 1));
+                for (let w of s("[data-code-line]", a))
+                  w.classList.toggle("active-line", Number(w.dataset.codeLine) === r.line);
+              },
+              v = () => {
+                ((i = 0), c());
+              };
+            return (
+              n("[data-next]", a).addEventListener("click", () => {
+                ((i = Math.min(t().length - 1, i + 1)), c());
+              }),
+              n("[data-back]", a).addEventListener("click", () => {
+                ((i = Math.max(0, i - 1)), c());
+              }),
+              n("[data-reset]", a).addEventListener("click", v),
+              c(),
+              { reset: v }
+            );
+          };
+        u("execution", () => A);
+        u("mutation", () => L);
+        u("tasks", () => C);
+        var S = u("updates", j);
+        for (let e of s("[data-update]"))
+          e.addEventListener("click", () => {
+            ((d = e.dataset.update === "updater"), f("[data-update]", e), S.reset());
+          });
+        for (let e of s("[data-value]"))
+          e.addEventListener("click", () => {
+            let t = e.dataset.value;
+            (f("[data-value]", e),
+              (n("#value-count").textContent =
+                t === "unknown"
+                  ? `2 when flag
+3 when !flag`
+                  : t === "true"
+                    ? "2"
+                    : "3"),
+              (n("#value-result").textContent =
+                t === "unknown"
+                  ? `4 when flag
+6 when !flag`
+                  : t === "true"
+                    ? "4"
+                    : "6"),
+              (n("#value-explanation").textContent =
+                t === "unknown"
+                  ? "Multiplication changes each numeric alternative but retains the condition selecting it."
+                  : "The known condition selects one value. The multiplication can produce one concrete result without a branch."));
+          });
+        var p = n("#closure-mutation");
+        p.addEventListener("change", () => {
+          ((n("#closure-result").textContent = p.checked ? "after" : "before"),
+            (n("#closure-explanation").textContent = p.checked
+              ? "The function reads object A when called. Its captured reference still reaches A after A\u2019s contents change."
+              : "Without the write, object A still holds 'before'. The closure reads the object at call time; it did not precompute the property when it was created."));
+        });
+        for (let e of s("[data-role]"))
+          e.addEventListener("click", () => {
+            let t = e.dataset.role;
+            (f("[data-role]", e),
+              (n("#guard-conditions").textContent =
+                t === "unknown"
+                  ? `button present: eq(role, "admin")
+a present:      eq(role, "admin")`
+                  : `button condition: ${t === "admin"}
+a condition:      ${t === "admin"}`),
+              (n("#guard-output").textContent =
+                t === "unknown"
+                  ? `button + a
 neither
 
-Never just one of them.`:t==="admin"?"button + a":"neither",n("#guard-explanation").textContent=t==="unknown"?"The two tests derive from the same role input. Selecting only one child would require a condition and its negation to hold together.":t==="admin"?"Both tests are true under this input, so both children are present.":"Both tests are false under this input, so both children are absent."});var o=s("details"),m=n("#expand-details"),b=()=>{let e=o.every(t=>t.open);m.setAttribute("aria-pressed",String(e)),m.textContent=e?"Collapse details":"Expand details"};m.addEventListener("click",()=>{let e=!o.every(t=>t.open);for(let t of o)t.open=e;b()});for(let e of o)e.addEventListener("toggle",b);var l=null;window.addEventListener("beforeprint",()=>{if(!l){l=o.map(e=>e.open);for(let e of o)e.open=!0}});window.addEventListener("afterprint",()=>{l&&(o.forEach((e,t)=>{e.open=l?.[t]??!1}),l=null,b())});n("#print-guide").addEventListener("click",()=>window.print());n("#section-select").addEventListener("change",e=>{e.currentTarget instanceof HTMLSelectElement&&(window.location.hash=e.currentTarget.value)});var y=s("main > section[id]"),M=s(".sidebar nav a"),g=!1,E=()=>{let e=y[0];for(let t of y)t.getBoundingClientRect().top<=150&&(e=t);for(let t of M)t.hash===`#${e.id}`?t.setAttribute("aria-current","location"):t.removeAttribute("aria-current");n("#section-select").value=e.id,g=!1},k=()=>{g||(g=!0,requestAnimationFrame(E))};window.addEventListener("scroll",k,{passive:!0});window.addEventListener("resize",k);for(let e of o)e.addEventListener("toggle",k);E();document.documentElement.classList.add("js");})();
-
+Never just one of them.`
+                  : t === "admin"
+                    ? "button + a"
+                    : "neither"),
+              (n("#guard-explanation").textContent =
+                t === "unknown"
+                  ? "The two tests derive from the same role input. Selecting only one child would require a condition and its negation to hold together."
+                  : t === "admin"
+                    ? "Both tests are true under this input, so both children are present."
+                    : "Both tests are false under this input, so both children are absent."));
+          });
+        var o = s("details"),
+          m = n("#expand-details"),
+          b = () => {
+            let e = o.every((t) => t.open);
+            (m.setAttribute("aria-pressed", String(e)),
+              (m.textContent = e ? "Collapse details" : "Expand details"));
+          };
+        m.addEventListener("click", () => {
+          let e = !o.every((t) => t.open);
+          for (let t of o) t.open = e;
+          b();
+        });
+        for (let e of o) e.addEventListener("toggle", b);
+        var l = null;
+        window.addEventListener("beforeprint", () => {
+          if (!l) {
+            l = o.map((e) => e.open);
+            for (let e of o) e.open = !0;
+          }
+        });
+        window.addEventListener("afterprint", () => {
+          l &&
+            (o.forEach((e, t) => {
+              e.open = l?.[t] ?? !1;
+            }),
+            (l = null),
+            b());
+        });
+        n("#print-guide").addEventListener("click", () => window.print());
+        n("#section-select").addEventListener("change", (e) => {
+          e.currentTarget instanceof HTMLSelectElement &&
+            (window.location.hash = e.currentTarget.value);
+        });
+        var y = s("main > section[id]"),
+          M = s(".sidebar nav a"),
+          g = !1,
+          E = () => {
+            let e = y[0];
+            for (let t of y) t.getBoundingClientRect().top <= 150 && (e = t);
+            for (let t of M)
+              t.hash === `#${e.id}`
+                ? t.setAttribute("aria-current", "location")
+                : t.removeAttribute("aria-current");
+            ((n("#section-select").value = e.id), (g = !1));
+          },
+          k = () => {
+            g || ((g = !0), requestAnimationFrame(E));
+          };
+        window.addEventListener("scroll", k, { passive: !0 });
+        window.addEventListener("resize", k);
+        for (let e of o) e.addEventListener("toggle", k);
+        E();
+        document.documentElement.classList.add("js");
+      })();
     </script>
   </body>
 </html>

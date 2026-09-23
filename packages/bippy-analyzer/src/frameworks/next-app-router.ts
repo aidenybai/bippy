@@ -243,8 +243,8 @@ export const renderNextAppRoute = (
     const leaf = segments[segments.length - 1];
     Object.assign(model.params, leaf.params);
     loadNextConfig(renderer, interpreter, model);
-    // HACK: matchSegments only returns a chain whose last directory contains a page file.
-    const pagePath = findPageFile(leaf.directory)!;
+    const pagePath = findPageFile(leaf.directory);
+    if (!pagePath) return unknownValue(`no page for ${options.route}`);
 
     // Next 15+ hands these to pages and layouts as promises; the interpreter
     // unwraps `await` of a plain object, so the resolved shape is used directly.

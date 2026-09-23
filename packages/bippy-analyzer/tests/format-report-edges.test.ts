@@ -217,9 +217,7 @@ describe("comparison report formatting", () => {
     expect(rendered).toContain("states: 14 in 1 clusters, 10 enumerated (incomplete)");
     expect(rendered).toContain("possible guard sides (13):");
     expect(rendered).toContain("… and 1 more");
-    expect(rendered).toContain(
-      "matched state: outside the enumerated set commit 3 of 3",
-    );
+    expect(rendered).toContain("matched state: outside the enumerated set commit 3 of 3");
     expect(rendered).toContain("closest state: #21 (unconditional)");
     expect(rendered).toContain("unobserved states (10):");
     expect(rendered).toContain("omitted (8):");
@@ -292,15 +290,19 @@ describe("comparison report formatting", () => {
       },
     };
     const rendered = formatStateReplay(replay).join("\n");
-    expect(rendered).toContain("replayed: 2 of 4 decision assignments (sampled, max 2), 2 mismatched, 1 incomplete");
-    expect(rendered).toContain("verification: unrecorded");
     expect(rendered).toContain(
-      "matched outside enumeration: incomplete; commit 1 of 3",
+      "replayed: 2 of 4 decision assignments (sampled, max 2), 2 mismatched, 1 incomplete",
     );
+    expect(rendered).toContain("verification: unrecorded");
+    expect(rendered).toContain("matched outside enumeration: incomplete; commit 1 of 3");
     expect(rendered).toContain("unresolved claim commits 1, 3; replay not concrete");
     expect(rendered).toContain("(uncorrected)");
     expect(rendered).toContain("(corrected)");
-    const recorded = formatStateReplay({ ...replay, verification: "contradicted", incomplete: undefined });
+    const recorded = formatStateReplay({
+      ...replay,
+      verification: "contradicted",
+      incomplete: undefined,
+    });
     expect(recorded.join("\n")).toContain("verification: contradicted");
     expect(recorded.join("\n")).not.toContain("unresolved claim");
   });
@@ -327,7 +329,9 @@ describe("symbolic tree formatting", () => {
             { kind: "text", text: "hi" },
           ],
         },
-        anonymousRepeat("items", [choiceBranch("role", [patternHost("admin")], [patternHost("guest")])]),
+        anonymousRepeat("items", [
+          choiceBranch("role", [patternHost("admin")], [patternHost("guest")]),
+        ]),
         {
           kind: "opaque",
           name: "Chart",
@@ -383,7 +387,9 @@ describe("symbolic tree formatting", () => {
     const narrow = enumerateStateSpace([
       [choiceBranch("lane", [patternHost("left")], [patternHost("right")])],
     ]);
-    expect(formatSymbolicTree(narrow.tree, { maxStates: 1, maxRepeat: 0 })).toContain("(truncated)");
+    expect(formatSymbolicTree(narrow.tree, { maxStates: 1, maxRepeat: 0 })).toContain(
+      "(truncated)",
+    );
   });
 
   it("keeps a single commit under the tree heading", () => {

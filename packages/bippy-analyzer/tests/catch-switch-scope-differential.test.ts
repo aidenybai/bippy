@@ -50,8 +50,6 @@ const cases = [
   },
   {
     name: "case expressions see uninitialized switch-local bindings",
-    expected: "ReferenceError",
-    actual: '"matched"',
     body: `const key = 7; try { switch (7) { case key: let key = 9; return 'matched'; } } catch (error) { return error.name; }`,
   },
   {

@@ -18,7 +18,11 @@ const writeFile = (directory: string, filename: string, source: string): void =>
 const createRoot = (): string => {
   const rootDirectory = mkdtempSync(join(tmpdir(), "bippy-svgr-"));
   directories.push(rootDirectory);
-  writeFile(rootDirectory, "package.json", JSON.stringify({ name: "svgr-edges", version: "0.0.0" }));
+  writeFile(
+    rootDirectory,
+    "package.json",
+    JSON.stringify({ name: "svgr-edges", version: "0.0.0" }),
+  );
   return rootDirectory;
 };
 
@@ -40,7 +44,10 @@ const writePackage = (rootDirectory: string, packageName: string, source: string
   writeFile(rootDirectory, join("node_modules", packageName, "index.js"), source);
 };
 
-const coreWith = (transformSource: string, loadConfigSource = "function loadConfigSync() { return {}; }"): string =>
+const coreWith = (
+  transformSource: string,
+  loadConfigSource = "function loadConfigSync() { return {}; }",
+): string =>
   `${loadConfigSource}
 loadConfigSync.sync = loadConfigSync;
 ${transformSource}
@@ -68,7 +75,8 @@ const transformSvg = (
 };
 
 afterEach(() => {
-  for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true });
+  for (const directory of directories.splice(0))
+    rmSync(directory, { recursive: true, force: true });
 });
 
 describe("svgr module edges", () => {
@@ -180,7 +188,11 @@ module.exports = { transform: false, default: fallbackSync, loadConfig: loadConf
   it("returns no transform when a default plugin does not export a function", () => {
     const rootDirectory = createRoot();
     writePackage(rootDirectory, "@svgr/webpack", "module.exports = {};");
-    writePackage(rootDirectory, "@svgr/core", coreWith(syncTransform("return 'export const Icon = 1';")));
+    writePackage(
+      rootDirectory,
+      "@svgr/core",
+      coreWith(syncTransform("return 'export const Icon = 1';")),
+    );
     writePackage(rootDirectory, "@svgr/plugin-svgo", "module.exports = { default: 1 };");
     writePackage(rootDirectory, "@svgr/plugin-jsx", pluginModule("jsx"));
     expect(transformSvg(rootDirectory)).toBeNull();
@@ -191,8 +203,16 @@ module.exports = { transform: false, default: fallbackSync, loadConfig: loadConf
     const seenPath = join(rootDirectory, "seen.json");
     writePackage(rootDirectory, "@svgr/webpack", "module.exports = {};");
     writePackage(rootDirectory, "@docusaurus/plugin-svgr", "module.exports = {};");
-    writePackage(rootDirectory, "@svgr/plugin-svgo", "module.exports = function plugin() { return null; };");
-    writePackage(rootDirectory, "@svgr/plugin-jsx", "module.exports = function plugin() { return null; };");
+    writePackage(
+      rootDirectory,
+      "@svgr/plugin-svgo",
+      "module.exports = function plugin() { return null; };",
+    );
+    writePackage(
+      rootDirectory,
+      "@svgr/plugin-jsx",
+      "module.exports = function plugin() { return null; };",
+    );
     writePackage(
       rootDirectory,
       "@svgr/core",
@@ -234,8 +254,8 @@ transform.sync = transformSync;
     expect(transform?.appliesTo(".svg", null, "react")).toBe(true);
     expect(transform?.appliesTo(".svg", null, null)).toBe(false);
     expect(transform?.appliesTo(".svg", null, "url")).toBe(false);
-    expect(transform?.transform(join(rootDirectory, "icon.svg"), "<svg />", "react")?.sourceText).toBe(
-      'export const marks = "jsx:<svg />"',
-    );
+    expect(
+      transform?.transform(join(rootDirectory, "icon.svg"), "<svg />", "react")?.sourceText,
+    ).toBe('export const marks = "jsx:<svg />"');
   });
 });

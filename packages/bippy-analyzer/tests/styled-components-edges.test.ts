@@ -16,8 +16,13 @@ import {
 import { ModuleResolver } from "../src/graph/module-resolver.js";
 import { createProjectContext } from "../src/graph/project-context.js";
 import { styledComponentsValue } from "../src/libraries/styled-components.js";
-import type { ProjectContext, StaticObjectValue, StaticValue, StubRenderTools } from "../src/types.js";
-import { createStubTools } from "./helpers/stub-tools.js";
+import type {
+  ProjectContext,
+  StaticObjectValue,
+  StaticValue,
+  StubRenderTools,
+} from "../src/types.js";
+import { loadHostRealm } from "../src/host/host-realm.js";
 
 const rootDirectory = "/workspace/packages/bippy-analyzer";
 
@@ -33,11 +38,38 @@ const projectFor = (version: string | null): ProjectContext => {
   return project;
 };
 
+const unexpectedOperation = (): never => {
+  throw new Error("Unexpected styled-components operation");
+};
+
 const createTools = (version: string | null): StubRenderTools => {
-  const tools = createStubTools(projectFor(version), (callee, args) =>
-    callee.kind === "native-function" ? callee.call(args, tools) : unknownValue("stub call"),
-  );
-  tools.readContext = () => contextTheme;
+  const tools: StubRenderTools = {
+    project: projectFor(version),
+    realm: loadHostRealm("ecmascript"),
+    readContext: () => contextTheme,
+    call: (callee, args) =>
+      callee.kind === "native-function" ? callee.call(args, tools) : unexpectedOperation(),
+    hooks: null,
+    thisValue: null,
+    nameHint: null,
+    templateArgumentNames: null,
+    environment: null,
+    callAwaited: unexpectedOperation,
+    construct: unexpectedOperation,
+    callDeferred: unexpectedOperation,
+    captured: unexpectedOperation,
+    markEscaped: unexpectedOperation,
+    queueMicrotask: unexpectedOperation,
+    bindTask: unexpectedOperation,
+    runTask: unexpectedOperation,
+    runTaskAlternatives: unexpectedOperation,
+    isDeferred: unexpectedOperation,
+    setProperty: unexpectedOperation,
+    materializeNamespace: unexpectedOperation,
+    recordStateMutation: unexpectedOperation,
+    pushItems: unexpectedOperation,
+    setItem: unexpectedOperation,
+  };
   return tools;
 };
 
@@ -111,7 +143,8 @@ const elementProps = (value: StaticValue): StaticObjectValue => {
 const propKeys = (value: StaticValue): string[] =>
   elementProps(value).entries.flatMap((entry) => (entry.kind === "property" ? [entry.key] : []));
 
-const propsOf = (record: Record<string, StaticValue>): StaticObjectValue => objectFromRecord(record);
+const propsOf = (record: Record<string, StaticValue>): StaticObjectValue =>
+  objectFromRecord(record);
 
 const button = stubValue({ displayName: "Button", render: () => primitiveValue(null) });
 
@@ -120,10 +153,14 @@ const styledFactory = (tools: StubRenderTools): StaticValue => importStyled(tool
 const tagFactory = (tools: StubRenderTools, tag: string): StaticValue =>
   readProperty(tools, styledFactory(tools), tag);
 
-const styledTag = (tools: StubRenderTools, tag: string): StaticValue => callValue(tools, tagFactory(tools, tag));
+const styledTag = (tools: StubRenderTools, tag: string): StaticValue =>
+  callValue(tools, tagFactory(tools, tag));
 
 const withConfig = (tools: StubRenderTools, tag: string, config: StaticValue): StaticValue =>
-  callValue(tools, callValue(tools, readProperty(tools, tagFactory(tools, tag), "withConfig"), [config]));
+  callValue(
+    tools,
+    callValue(tools, readProperty(tools, tagFactory(tools, tag), "withConfig"), [config]),
+  );
 
 const withAttrs = (tools: StubRenderTools, tag: string, attr: StaticValue): StaticValue =>
   callValue(tools, callValue(tools, readProperty(tools, tagFactory(tools, tag), "attrs"), [attr]));
@@ -191,9 +228,9 @@ describe("styled-components", () => {
     expect(seenTags).toContain("em");
     expect(componentStub(styledTag(tools, "Div")).displayName).toBe("Styled(Div)");
     expect(componentStub(styledTag(tools, "div")).displayName).toBe("styled.div");
-    expect(componentStub(callValue(tools, callValue(tools, styledFactory(tools), [button]))).displayName).toBe(
-      "Styled(Button)",
-    );
+    expect(
+      componentStub(callValue(tools, callValue(tools, styledFactory(tools), [button]))).displayName,
+    ).toBe("Styled(Button)");
   });
 
   it("lets a v5 attr function read props and keeps a prop whose filter is unknown", () => {
@@ -229,10 +266,15 @@ describe("styled-components", () => {
         withConfig(
           tools,
           "div",
-          propsOf({ shouldForwardProp: nativeFunction("shouldForwardProp", () => unknownValue("filter")) }),
+          propsOf({
+            shouldForwardProp: nativeFunction("shouldForwardProp", () => unknownValue("filter")),
+          }),
         ),
         objectValue([
-          { kind: "spread", value: propsOf({ id: primitiveValue("row"), $secret: primitiveValue("hide") }) },
+          {
+            kind: "spread",
+            value: propsOf({ id: primitiveValue("row"), $secret: primitiveValue("hide") }),
+          },
           { kind: "property", key: "title", value: primitiveValue("row") },
         ]),
       ),
@@ -240,13 +282,21 @@ describe("styled-components", () => {
     expect(propKeys(kept)).toEqual(["id", "title", "className"]);
     const spread = expand(
       tools,
-      renderStub(tools, styledTag(tools, "div"), objectValue([{ kind: "spread", value: unknownValue("rest") }])),
+      renderStub(
+        tools,
+        styledTag(tools, "div"),
+        objectValue([{ kind: "spread", value: unknownValue("rest") }]),
+      ),
     );
     expect(spread.kind).toBe("branch");
-    expect(componentStub(withConfig(tools, "div", primitiveValue("nope"))).displayName).toBe("styled.div");
-    expect(hostTag(expand(tools, renderStub(tools, withAttrs(tools, "div", UNDEFINED_VALUE), propsOf({}))))).toBe(
-      "div",
+    expect(componentStub(withConfig(tools, "div", primitiveValue("nope"))).displayName).toBe(
+      "styled.div",
     );
+    expect(
+      hostTag(
+        expand(tools, renderStub(tools, withAttrs(tools, "div", UNDEFINED_VALUE), propsOf({}))),
+      ),
+    ).toBe("div");
   });
 
   it("folds a styled target and forwards a prop only when every filter allows it", () => {
@@ -261,9 +311,11 @@ describe("styled-components", () => {
     expect(propKeys(inheritedRender)).toEqual(["id", "className"]);
     const folded = callValue(
       tools,
-      callValue(tools, readProperty(tools, callValue(tools, styledFactory(tools), [base]), "withConfig"), [
-        propsOf({ shouldForwardProp: forwardFilter("align") }),
-      ]),
+      callValue(
+        tools,
+        readProperty(tools, callValue(tools, styledFactory(tools), [base]), "withConfig"),
+        [propsOf({ shouldForwardProp: forwardFilter("align") })],
+      ),
     );
     const rendered = expand(
       tools,
@@ -277,7 +329,8 @@ describe("styled-components", () => {
     expect(propKeys(rendered)).toEqual(["id", "className"]);
     const consumer = importStyled(tools, "ThemeConsumer");
     expect(
-      componentStub(callValue(tools, callValue(tools, styledFactory(tools), [consumer]))).displayName,
+      componentStub(callValue(tools, callValue(tools, styledFactory(tools), [consumer])))
+        .displayName,
     ).toContain("Styled(");
   });
 
@@ -306,11 +359,19 @@ describe("styled-components", () => {
     );
     expect(shapedAs.kind).toBe("branch");
     if (shapedAs.kind === "branch") expect(shapedAs.preferredIndex).toBe(0);
-    const falsyAs = expand(tools, renderStub(tools, box, propsOf({ as: FALSE_VALUE, theme: FALSE_VALUE })));
+    const falsyAs = expand(
+      tools,
+      renderStub(tools, box, propsOf({ as: FALSE_VALUE, theme: FALSE_VALUE })),
+    );
     expect(hostTag(falsyAs)).toBe("div");
     expect(getObjectProperty(elementProps(falsyAs), "data-accent")).toEqual(contextTheme);
-    const propTheme = expand(tools, renderStub(tools, box, propsOf({ theme: primitiveValue("red") })));
-    expect(getObjectProperty(elementProps(propTheme), "data-accent")).toEqual(primitiveValue("red"));
+    const propTheme = expand(
+      tools,
+      renderStub(tools, box, propsOf({ theme: primitiveValue("red") })),
+    );
+    expect(getObjectProperty(elementProps(propTheme), "data-accent")).toEqual(
+      primitiveValue("red"),
+    );
   });
 
   it("merges a v5 theme and renders a global style as nothing", () => {
@@ -318,9 +379,13 @@ describe("styled-components", () => {
     contextTheme = propsOf({ accent: primitiveValue("outer") });
     const provider = importStyled(tools, "ThemeProvider");
     contextTheme = UNDEFINED_VALUE;
-    expect(renderStub(tools, provider, propsOf({ theme: primitiveValue("inner"), children: FALSE_VALUE }))).toEqual(
-      primitiveValue(null),
-    );
+    expect(
+      renderStub(
+        tools,
+        provider,
+        propsOf({ theme: primitiveValue("inner"), children: FALSE_VALUE }),
+      ),
+    ).toEqual(primitiveValue(null));
     const bare = renderStub(
       tools,
       provider,
@@ -344,7 +409,9 @@ describe("styled-components", () => {
       tools,
       provider,
       propsOf({
-        theme: nativeFunction("theme", ([outer = UNDEFINED_VALUE]) => objectFromRecord({ from: outer })),
+        theme: nativeFunction("theme", ([outer = UNDEFINED_VALUE]) =>
+          objectFromRecord({ from: outer }),
+        ),
         children: primitiveValue("child"),
       }),
     );
@@ -357,18 +424,34 @@ describe("styled-components", () => {
     expect(componentStub(themed).displayName).toBe("WithTheme(Button)");
     expect(importStyled(tools, "withTheme")).toBe(withTheme);
     expect(renderStub(tools, themed, propsOf({ id: primitiveValue("x") })).kind).toBe("element");
-    expect(callValue(tools, importStyled(tools, "css"), [unknownValue("strings")]).kind).toBe("list");
+    expect(callValue(tools, importStyled(tools, "css"), [unknownValue("strings")]).kind).toBe(
+      "list",
+    );
     expect(callValue(tools, importStyled(tools, "keyframes")).kind).toBe("unknown-primitive");
-    const globalStyle = callValue(tools, importStyled(tools, "createGlobalStyle"), [unknownValue("strings")]);
+    const globalStyle = callValue(tools, importStyled(tools, "createGlobalStyle"), [
+      unknownValue("strings"),
+    ]);
     expect(renderStub(tools, globalStyle, propsOf({}))).toEqual(primitiveValue(null));
   });
 
   it("reads v4 as from props and lets attrs replace the other props", () => {
     const tools = createTools("4.4.1");
     contextTheme = propsOf({ accent: primitiveValue("tomato") });
-    const badge = withAttrs(tools, "span", propsOf({ as: primitiveValue("strong"), color: primitiveValue("blue") }));
-    const first = renderStub(tools, badge, propsOf({ as: primitiveValue("b"), color: primitiveValue("red") }));
-    const second = renderStub(tools, badge, propsOf({ as: primitiveValue("b"), color: primitiveValue("red") }));
+    const badge = withAttrs(
+      tools,
+      "span",
+      propsOf({ as: primitiveValue("strong"), color: primitiveValue("blue") }),
+    );
+    const first = renderStub(
+      tools,
+      badge,
+      propsOf({ as: primitiveValue("b"), color: primitiveValue("red") }),
+    );
+    const second = renderStub(
+      tools,
+      badge,
+      propsOf({ as: primitiveValue("b"), color: primitiveValue("red") }),
+    );
     expect(first.kind).toBe("element");
     expect(second.kind).toBe("element");
     if (
@@ -384,7 +467,9 @@ describe("styled-components", () => {
     expect(hostTag(rendered)).toBe("b");
     expect(getObjectProperty(elementProps(rendered), "color")).toEqual(primitiveValue("blue"));
     const provider = importStyled(tools, "ThemeProvider");
-    expect(renderStub(tools, provider, propsOf({ children: UNDEFINED_VALUE }))).toEqual(primitiveValue(null));
+    expect(renderStub(tools, provider, propsOf({ children: UNDEFINED_VALUE }))).toEqual(
+      primitiveValue(null),
+    );
     const provided = renderStub(
       tools,
       provider,
@@ -396,7 +481,11 @@ describe("styled-components", () => {
     expect(provided.kind).toBe("element");
     if (provided.kind === "element") expect(provided.type.kind).toBe("context-consumer");
     expect(expand(tools, provided).kind).toBe("primitive");
-    const wrapped = renderStub(tools, callValue(tools, importStyled(tools, "withTheme"), [button]), propsOf({}));
+    const wrapped = renderStub(
+      tools,
+      callValue(tools, importStyled(tools, "withTheme"), [button]),
+      propsOf({}),
+    );
     expect(wrapped.kind).toBe("element");
     if (wrapped.kind === "element") expect(wrapped.type.kind).toBe("context-consumer");
     expect(expand(tools, wrapped)).toEqual(primitiveValue(null));
@@ -405,12 +494,16 @@ describe("styled-components", () => {
       strings,
       primitiveValue("body"),
     ]);
-    expect(expand(tools, renderStub(tools, staticGlobal, propsOf({})))).toEqual(primitiveValue(null));
+    expect(expand(tools, renderStub(tools, staticGlobal, propsOf({})))).toEqual(
+      primitiveValue(null),
+    );
     const dynamicGlobal = callValue(tools, importStyled(tools, "createGlobalStyle"), [
       strings,
       nativeFunction("interpolation", () => primitiveValue("color")),
     ]);
-    expect(expand(tools, renderStub(tools, dynamicGlobal, propsOf({})))).toEqual(primitiveValue(null));
+    expect(expand(tools, renderStub(tools, dynamicGlobal, propsOf({})))).toEqual(
+      primitiveValue(null),
+    );
     const uncertainGlobal = callValue(tools, importStyled(tools, "createGlobalStyle"), [
       strings,
       branchValue([primitiveValue("a"), unknownValue("rule")], "interpolation"),
@@ -427,7 +520,10 @@ describe("styled-components", () => {
     const tools = createTools("4.3.1");
     contextTheme = UNDEFINED_VALUE;
     const badge = withAttrs(tools, "span", propsOf({ color: primitiveValue("blue") }));
-    const rendered = expand(tools, renderStub(tools, badge, propsOf({ color: primitiveValue("red") })));
+    const rendered = expand(
+      tools,
+      renderStub(tools, badge, propsOf({ color: primitiveValue("red") })),
+    );
     expect(hostTag(rendered)).toBe("span");
     expect(getObjectProperty(elementProps(rendered), "color")).toEqual(primitiveValue("red"));
   });

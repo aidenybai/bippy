@@ -29,6 +29,11 @@ export interface ModuleGraphOptions {
   sourceFileCache?: SourceFileCache;
   resolveExternalPackages?: boolean;
   externalPackageAllowList?: string[];
+  /**
+   * Next.js app-router server modules resolve with `react-server` and Node
+   * conditions. `"use client"` modules keep the browser resolution.
+   */
+  serverModuleConditions?: boolean;
 }
 
 const describeImportedName = (imported: ImportedName): string => {
@@ -49,6 +54,7 @@ export class ModuleGraph {
   private readonly analyzedModules = new Set<string>();
   private readonly nodeEnvironment: string | undefined;
   private readonly resolveExternalPackages: boolean;
+  private readonly serverModuleConditions: boolean;
   private readonly externalPackageAllowList: Set<string>;
   private readonly externalScopeAllowList: Set<string>;
   /** `prefix-*` entries: unscoped workspace packages sharing a name prefix. */
@@ -59,6 +65,7 @@ export class ModuleGraph {
     this.nodeEnvironment = options.nodeEnvironment;
     this.sourceFileCache = options.sourceFileCache ?? new SourceFileCache();
     this.resolveExternalPackages = options.resolveExternalPackages ?? false;
+    this.serverModuleConditions = options.serverModuleConditions ?? false;
     const allowList = options.externalPackageAllowList ?? [];
     this.externalPackageAllowList = new Set(allowList.filter((name) => !name.endsWith("*")));
     this.externalScopeAllowList = new Set(
@@ -107,6 +114,7 @@ export class ModuleGraph {
       specifier,
       fromModule.filePath,
       fromModule.isCommonJs ? "commonjs" : "esm",
+      this.serverModuleConditions && !isClientModule(fromModule) ? "server" : "client",
     );
     if (
       this.analyzedModules.has(fromModule.filePath) &&

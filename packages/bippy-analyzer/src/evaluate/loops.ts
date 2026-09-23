@@ -113,7 +113,7 @@ type LoopStatement =
  * tail becomes uncertain. Loops over a known iterable are bounded by the
  * iterable itself (and the step budget), so they unroll in full.
  */
-const MAX_UNROLLED_ITERATIONS = 256;
+export const MAX_UNROLLED_ITERATIONS = 256;
 
 type UnrollResult =
   | { kind: "exact"; outcome: StatementOutcome }

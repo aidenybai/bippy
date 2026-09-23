@@ -72,6 +72,44 @@ const createBuiltinEvaluator = (overrides: Partial<BuiltinEvaluator> = {}): Buil
   ...overrides,
 });
 
+it.each(["CreateListFromArrayLike called on non-object", "undefined is not a constructor"])(
+  "uses the host's omitted Reflect.construct argument error: %s",
+  (message) => {
+    const evaluator = createBuiltinEvaluator();
+    const context = createEvaluationContext();
+    const nativeConstruct = Reflect.construct;
+    const requests: unknown[][] = [];
+    Reflect.construct = (...args: unknown[]) => {
+      requests.push(args);
+      throw new TypeError(message);
+    };
+    let result: ReturnType<typeof evaluateBuiltinCall>;
+    try {
+      result = evaluateBuiltinCall(
+        evaluator,
+        { kind: "global", name: "Reflect.construct" },
+        [
+          {
+            kind: "native-function",
+            name: "Target",
+            call: unexpectedOperation,
+            construct: unexpectedOperation,
+          },
+        ],
+        context,
+        null,
+      );
+    } finally {
+      Reflect.construct = nativeConstruct;
+    }
+    expect(requests).toEqual([[Object]]);
+    if (result?.kind !== "unknown" || result.thrown?.kind !== "object")
+      throw new Error("Expected a modeled error");
+    expect(getObjectProperty(result.thrown, "name")).toEqual(primitiveValue("TypeError"));
+    expect(getObjectProperty(result.thrown, "message")).toEqual(primitiveValue(message));
+  },
+);
+
 it.each([4, 5])("retains the SameValue raw product bound for %i by four choices", (count) => {
   const left = branchValue(
     Array.from({ length: count }, (_value, index) => primitiveValue(index)),

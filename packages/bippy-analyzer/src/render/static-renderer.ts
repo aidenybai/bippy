@@ -189,6 +189,7 @@ export class StaticRenderer {
         ]),
       ),
       conditionNames: options.conditionNames,
+      nodeEnvironment: nodeEnvironment ?? "development",
       rootDirectory,
     });
     const devDirectory = resolveOptionalPath(rootDirectory, options.devDirectory);
@@ -216,8 +217,7 @@ export class StaticRenderer {
         rootDirectory,
         bundler,
         options.environment ?? null,
-        // HACK: createProjectContext always sets servedDirectory from the Vite root or the option.
-        project.servedDirectory!,
+        project.servedDirectory ?? rootDirectory,
       ),
       graph: new ModuleGraph({
         resolver,
@@ -232,6 +232,7 @@ export class StaticRenderer {
         ),
         resolveExternalPackages: options.resolveExternalPackages,
         externalPackageAllowList: options.externalPackageAllowList,
+        serverModuleConditions: options.serverComponents === true,
       }),
     };
   }
@@ -266,8 +267,7 @@ export class StaticRenderer {
     if (this.documentShell === null) return;
     this.documentShell = await transform(
       this.documentShell,
-      // HACK: createProjectContext always sets servedDirectory from the Vite root or the option.
-      this.project.servedDirectory!,
+      this.project.servedDirectory ?? this.options.rootDirectory,
     );
   }
 

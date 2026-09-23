@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
@@ -35,4 +36,5 @@ const html = template
 if (/\{\{[A-Z_]+\}\}/.test(html)) throw new Error("The guide has unresolved placeholders");
 const output = new URL("../pr-115-explained.html", directory);
 await writeFile(output, html);
+execFileSync("pnpm", ["exec", "vp", "fmt", fileURLToPath(output)], { stdio: "inherit" });
 console.log(`Built ${fileURLToPath(output)}`);
