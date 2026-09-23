@@ -216,7 +216,8 @@ export class StaticRenderer {
         rootDirectory,
         bundler,
         options.environment ?? null,
-        project.servedDirectory ?? rootDirectory,
+        // HACK: createProjectContext always sets servedDirectory from the Vite root or the option.
+        project.servedDirectory!,
       ),
       graph: new ModuleGraph({
         resolver,
@@ -265,7 +266,8 @@ export class StaticRenderer {
     if (this.documentShell === null) return;
     this.documentShell = await transform(
       this.documentShell,
-      this.project.servedDirectory ?? this.options.rootDirectory,
+      // HACK: createProjectContext always sets servedDirectory from the Vite root or the option.
+      this.project.servedDirectory!,
     );
   }
 
