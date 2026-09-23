@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { readKeaStores } from "../src/harness/kea-store.js";
 
-const viteModuleUrl = "../../tests/fixtures/kea-modules/.vite/deps/kea.js";
-const indexModuleUrl = "../../tests/fixtures/kea-modules/kea/lib/index.js";
-const namespaceModuleUrl = "../../tests/fixtures/kea-modules/kea/lib/index.esm.js";
-const missingModuleUrl = "../../tests/fixtures/kea-modules/missing/kea/lib/index.js";
+const viteModuleUrl = "../../tests/kea-module-stubs/.vite/deps/kea.js";
+const indexModuleUrl = "../../tests/kea-module-stubs/kea/lib/index.js";
+const namespaceModuleUrl = "../../tests/kea-module-stubs/kea/lib/index.esm.js";
+const missingModuleUrl = "../../tests/kea-module-stubs/missing/kea/lib/index.js";
 
 const createStore = (name: string) => ({
   getState: () => ({ name }),
