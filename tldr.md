@@ -430,6 +430,43 @@ Loop phis carry values from one iteration to the next. The executor uses the exi
 
 This is not a complete SSA runtime. Scalar function bodies and tested exception paths can use it; mutable captures, arbitrary heap operations, calls, JSX construction, async functions, and generators still use the existing evaluator. Compiler constants are not substituted into that fallback's reads. The [research notes](packages/bippy-analyzer/docs/compiler-research.md#ssa-execution) explain the boundary and the React Compiler adaptation.
 
+In practice most calls still take that fallback. Profiling every fixture shows 8,575 of 54,102 function invocations running through SSA, and all but 329 of those come from one MUI fixture. The most common reasons are props-like object parameters, calls, imported or global bindings, and mutable captures such as `trace += …`. The [fallback report](packages/bippy-analyzer/docs/compiler-research.md#fallback-report) ranks them and lists the operations to add next.
+
+A fuzzer built on [fast-check](https://github.com/dubzzz/fast-check) checks both paths against native execution:
+
+```js
+while (true) {
+  if (first) return "early";
+  break;
+}
+return "end";
+```
+
+Native code returns `"early"` or `"end"` depending on `first`. The evaluator returned only `"early"` until this was fixed. The fuzzer runs generated programs with every input unknown and compares each input's return, throw, and event trace. fast-check supplies the seeds, shrinking, and replay; Bippy supplies the program generators and a shrinker that never removes a declaration a later statement reads. A failure counts only if the shrunk program still differs in the same way and still runs in the same mode, SSA or a named fallback.
+
+Later campaigns found defects of the same kind in the fallback evaluator:
+
+```js
+switch (0) {
+  default:
+    if (first) return "early";
+}
+trace += "late";
+```
+
+When `first` is true, native code returns before `trace` changes. The evaluator also appended `"late"` on that path. Other fixes made `let beta = beta` throw instead of reading an outer `beta`, and made `String(object)` call the object's own conversion methods.
+
+Generated programs only contain what the generator emits, so a second fuzzer runs functions from real GitHub repositories. It closes each utility function over the declarations it reads and calls it with arguments chosen by parameter type or name. This one is from saleor's dashboard:
+
+```js
+const hasEmptyHeader = (customHeaders) =>
+  customHeaders.filter((header) => header.name.length === 0).length > 0;
+
+hasEmptyHeader(first ? 0 : { id: 0 });
+```
+
+Native code throws a `TypeError` for both inputs, because neither `0` nor `{ id: 0 }` has a `filter` method. The evaluator returned an unknown value, because it treated a call it could not resolve as unknown. Now calling a primitive, a plain object, or a method that no object on the receiver's prototype chain has throws. The same corpus showed that `new Number(7)` returned a primitive, that a tagged template's strings had no `raw`, and that `forEach`, `map`, and `filter` kept going after a callback threw. [Differential fuzzing](packages/bippy-analyzer/docs/compiler-research.md#differential-fuzzing) lists the commands, fixed defects, and the ones still open.
+
 ### Narrowing
 
 An unknown input can become more specific as its tests succeed:
@@ -804,7 +841,7 @@ The fixes leave public renderer calls, real React rendering, and serialized fibe
 
 The property fixes distinguish copying data from invoking setters. `{ ...source }` reads source getters and creates data properties. `Object.assign(target, source)` writes to the target and can invoke its setters. Related fixes cover descriptor flags, freeze/seal restrictions, key order, and callback execution.
 
-The latest full coverage run passed 23,301 tests. Of those, 1,353 assertions confirm known defects rather than correct JavaScript or React behavior. Seven former known-defect cases now match native execution and are ordinary regressions. The strict compatibility check still fails because known defects and incomplete coverage in 238 source files remain. The [compiler research notes](packages/bippy-analyzer/docs/compiler-research.md#validation) record this run; the [implementation progress](docs/pr-115-implementation-progress.md) records earlier checkpoints and performance measurements.
+The latest full coverage run passed 23,390 tests; three failed for environmental reasons (a missing browser binary and two `Reflect.construct` cases that also fail at the starting commit). Of the passing assertions, 22,268 are ordinary and 1,122 confirm known defects rather than correct JavaScript or React behavior. The known count fell from 1,353 because fuzzer-driven fixes made those cases match native execution. The fixes cover labeled breaks, loop and `switch` exits, the temporal dead zone, Symbol conversion, object coercion, calls of values that aren't functions, and boxed primitives. The strict compatibility check still fails because known defects and incomplete coverage in 239 source files remain. The [compiler research notes](packages/bippy-analyzer/docs/compiler-research.md#validation) record this run; the [implementation progress](docs/pr-115-implementation-progress.md) records earlier checkpoints and performance measurements.
 
 Some gaps have direct effects on predictions. The current `useTransition` model reports `pending = false` and invokes the transition callback directly. `useDeferredValue` returns its input. Neither reproduces React’s deferred scheduling.
 
@@ -834,6 +871,7 @@ Paths below are relative to `packages/bippy-analyzer/src/`:
 | Compile control flow and local definitions         | `compiler/bindings.ts`, `compiler/lower-function.ts`, `compiler/enter-ssa.ts`                                        |
 | Simplify and verify SSA                            | `compiler/eliminate-phis.ts`, `compiler/verify-ssa.ts`, `compiler/propagate-constants.ts`                            |
 | Select and execute SSA bodies                      | `compiler/compile-function.ts`, `evaluate/ssa-execution.ts`                                                          |
+| Profile SSA execution and fallback                 | `evaluate/ssa-profile.ts`                                                                                            |
 | Refine tested values and preserve Boolean identity | `evaluate/narrowing.ts`, `evaluate/operators.ts`                                                                     |
 | Execute modeled hooks                              | `evaluate/react-hooks.ts`, `evaluate/hooks.ts`                                                                       |
 | Restore and join branch mutations                  | `evaluate/heap-journal.ts`, `evaluate/scope-journal.ts`                                                              |
