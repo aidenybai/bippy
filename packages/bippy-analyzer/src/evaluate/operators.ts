@@ -78,6 +78,8 @@ const BIGINT_NUMERIC_OPERATORS = new Set([
   ">>>",
 ]);
 
+const RELATIONAL_OPERATORS = new Set(["<", ">", "<=", ">="]);
+
 export const applyUnaryOperator = (
   operator: Exclude<UnaryOperator, "typeof" | "void" | "delete">,
   argument: StaticValue,
@@ -103,7 +105,7 @@ export const applyUnaryOperator = (
         return primitiveValue(
           typeof argument.value === "bigint" ? -argument.value : -Number(argument.value),
         );
-      return unknownPrimitiveValue("number", "unary minus");
+      return unknownPrimitiveValue(getNumericType(argument), "unary minus");
     case "+":
       if (argument.kind === "primitive") {
         if (typeof argument.value === "bigint")
@@ -119,7 +121,7 @@ export const applyUnaryOperator = (
         return primitiveValue(
           typeof argument.value === "bigint" ? ~argument.value : ~Number(argument.value),
         );
-      return unknownPrimitiveValue("number", "bitwise not");
+      return unknownPrimitiveValue(getNumericType(argument), "bitwise not");
   }
 };
 
@@ -165,6 +167,13 @@ export const applyBinaryOperator = (
       realm,
     );
   }
+  if (
+    (left.kind === "symbol" || right.kind === "symbol") &&
+    (BIGINT_NUMERIC_OPERATORS.has(operator) || RELATIONAL_OPERATORS.has(operator))
+  )
+    return getNumericTypeError(
+      `Cannot convert a Symbol value to a ${operator === "+" && (isStringValue(left) || isStringValue(right)) ? "string" : "number"}`,
+    );
   if (left.kind === "primitive" && right.kind === "primitive") {
     const computed = computeBinary(operator, left.value, right.value);
     if (computed !== undefined) return computed;
@@ -177,6 +186,8 @@ export const applyBinaryOperator = (
   }
   const timed = applyClockOperator(operator, left, right);
   if (timed) return timed;
+  if (isBigIntMixture(operator, left, right) || isBigIntMixture(operator, right, left))
+    return getNumericTypeError("Cannot mix BigInt and other types, use explicit conversions");
   const ordered =
     compareNumberRanges(operator, left, right) ?? applyNumberRangeOperator(operator, left, right);
   if (ordered) return ordered;
@@ -199,18 +210,16 @@ export const applyBinaryOperator = (
     case "in":
       return unknownPrimitiveValue("boolean", `${operator} on dynamic values`);
     case "+": {
-      const isString =
-        (left.kind === "primitive" && typeof left.value === "string") ||
-        (right.kind === "primitive" && typeof right.value === "string") ||
-        (left.kind === "unknown-primitive" && left.primitiveType === "string") ||
-        (right.kind === "unknown-primitive" && right.primitiveType === "string");
-      if (isString) return concatenateStrings(left, right);
-      return isNumberValue(left) && isNumberValue(right)
+      if (isStringValue(left) || isStringValue(right)) return concatenateStrings(left, right);
+      return isNeverBigInt(left) && isNeverBigInt(right)
         ? unknownPrimitiveValue("number", "+ on dynamic values")
         : unknownPrimitiveValue("any", "+ on dynamic values");
     }
     default:
-      return unknownPrimitiveValue("number", `${operator} on dynamic values`);
+      return unknownPrimitiveValue(
+        operator === ">>>" ? "number" : getNumericType(left, right),
+        `${operator} on dynamic values`,
+      );
   }
 };
 
@@ -249,11 +258,28 @@ const toCoercedOperand = (value: StaticValue, hint: "default" | "number"): Stati
   return toDatePrimitive(value, hint) ?? value;
 };
 
-/** A value that is a number for sure, known or not. */
-const isNumberValue = (value: StaticValue): boolean =>
+const isStringValue = (value: StaticValue): boolean =>
   value.kind === "primitive"
-    ? typeof value.value === "number"
-    : value.kind === "unknown-primitive" && value.primitiveType === "number";
+    ? typeof value.value === "string"
+    : value.kind === "unknown-primitive" && value.primitiveType === "string";
+
+const isNeverBigInt = (value: StaticValue): boolean =>
+  value.kind === "primitive"
+    ? typeof value.value !== "bigint"
+    : value.kind === "unknown-primitive" && value.primitiveType !== "any";
+
+/** A numeric result is a Number unless every operand may be a BigInt; a mixture throws instead. */
+const getNumericType = (...operands: StaticValue[]): "number" | "any" =>
+  operands.some(isNeverBigInt) ? "number" : "any";
+
+const isBigIntMixture = (operator: string, bigint: StaticValue, other: StaticValue): boolean =>
+  BIGINT_NUMERIC_OPERATORS.has(operator) &&
+  bigint.kind === "primitive" &&
+  typeof bigint.value === "bigint" &&
+  other.kind === "unknown-primitive" &&
+  (other.primitiveType === "boolean" ||
+    other.primitiveType === "number" ||
+    (other.primitiveType === "string" && operator !== "+"));
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 
@@ -293,6 +319,31 @@ const isGuardLiteral = (value: StaticPrimitive): value is GuardLiteral =>
   value !== undefined &&
   (typeof value !== "number" || Number.isFinite(value));
 
+/** `==` between a typed primitive and a literal of another type compares numbers: `false == "0e16"`, `count == "1"`. */
+const deriveLooseEquality = (
+  operand: StaticUnknownPrimitiveValue,
+  numericLiteral: number,
+  isNegated: boolean,
+  result: StaticUnknownPrimitiveValue,
+): StaticValue => {
+  if (operand.primitiveType === "string") return result;
+  if (operand.primitiveType === "boolean") {
+    if (numericLiteral !== 0 && numericLiteral !== 1) return primitiveValue(isNegated);
+    return (numericLiteral === 1) !== isNegated
+      ? recordDerivation(result, { kind: "alias", operand })
+      : recordNegation(result, operand);
+  }
+  if (Number.isNaN(numericLiteral)) return primitiveValue(isNegated);
+  if (!Number.isFinite(numericLiteral)) return result;
+  return recordDerivation(result, {
+    kind: "equality",
+    operand,
+    literal: numericLiteral,
+    isStrict: true,
+    isNegated,
+  });
+};
+
 /** Records an undecided comparison of a dynamic operand against a literal as a guard over that operand. */
 const deriveComparison = (
   operator: string,
@@ -306,23 +357,28 @@ const deriveComparison = (
   const literal = literalSide.value;
   if (EQUALITY_OPERATORS.has(operator)) {
     if (literal !== undefined && !isGuardLiteral(literal)) return result;
+    const isStrict = operator === "===" || operator === "!==";
+    const isNegated = operator === "!==" || operator === "!=";
     if (
       operand.kind === "unknown-primitive" &&
       operand.primitiveType === "boolean" &&
       typeof literal === "boolean"
     ) {
-      const isNegated = operator === "!==" || operator === "!=";
       return literal !== isNegated
         ? recordDerivation(result, { kind: "alias", operand })
         : recordNegation(result, operand);
     }
-    return recordDerivation(result, {
-      kind: "equality",
-      operand,
-      literal,
-      isStrict: operator === "===" || operator === "!==",
-      isNegated: operator === "!==" || operator === "!=",
-    });
+    if (
+      !isStrict &&
+      operand.kind === "unknown-primitive" &&
+      operand.primitiveType !== "any" &&
+      literal !== null &&
+      literal !== undefined &&
+      typeof literal !== operand.primitiveType
+    ) {
+      return deriveLooseEquality(operand, Number(literal), isNegated, result);
+    }
+    return recordDerivation(result, { kind: "equality", operand, literal, isStrict, isNegated });
   }
   const compareOperator = COMPARE_OPERATORS[operator];
   if (compareOperator === undefined || typeof literal !== "number" || !Number.isFinite(literal)) {
@@ -414,6 +470,42 @@ const compareEquality = (
   return primitiveValue(operator === "===" || operator === "==" ? isEqual : !isEqual);
 };
 
+const MAX_BIGINT_BITS = 4096n;
+
+const getBitLength = (value: bigint): bigint =>
+  BigInt((value < 0n ? -value : value).toString(2).length);
+
+const BIGINT_OPERATIONS: Record<string, (left: bigint, right: bigint) => bigint> = {
+  "+": (left, right) => left + right,
+  "-": (left, right) => left - right,
+  "*": (left, right) => left * right,
+  "/": (left, right) => left / right,
+  "%": (left, right) => left % right,
+  "**": (left, right) => left ** right,
+  "&": (left, right) => left & right,
+  "|": (left, right) => left | right,
+  "^": (left, right) => left ^ right,
+  "<<": (left, right) => left << right,
+  ">>": (left, right) => left >> right,
+};
+
+/** Exact BigInt arithmetic while operands and results stay within a few thousand bits. */
+const computeBoundedBigInt = (
+  operator: string,
+  left: bigint,
+  right: bigint,
+): StaticValue | undefined => {
+  if (getBitLength(left) > MAX_BIGINT_BITS || getBitLength(right) > MAX_BIGINT_BITS)
+    return undefined;
+  if (operator === "**" && getBitLength(left) * right > MAX_BIGINT_BITS) return undefined;
+  if (
+    (operator === "<<" || operator === ">>") &&
+    (right > MAX_BIGINT_BITS || right < -MAX_BIGINT_BITS)
+  )
+    return undefined;
+  return primitiveValue(BIGINT_OPERATIONS[operator](left, right));
+};
+
 const computeBinary = (
   operator: string,
   left: StaticPrimitive,
@@ -443,16 +535,14 @@ const computeBinary = (
         return primitiveValue(left <= right);
       case ">=":
         return primitiveValue(left >= right);
-      case "/":
-        return right === 0n ? evaluateFailingBigIntOperation(() => left / right) : undefined;
-      case "%":
-        return right === 0n ? evaluateFailingBigIntOperation(() => left % right) : undefined;
-      case "**":
-        return right < 0n ? evaluateFailingBigIntOperation(() => left ** right) : undefined;
       case ">>>":
         return getNumericTypeError("BigInts have no unsigned right shift, use >> instead");
       default:
-        return undefined;
+        if (!(operator in BIGINT_OPERATIONS)) return undefined;
+        return ((operator === "/" || operator === "%") && right === 0n) ||
+          (operator === "**" && right < 0n)
+          ? evaluateFailingBigIntOperation(() => BIGINT_OPERATIONS[operator](left, right))
+          : computeBoundedBigInt(operator, left, right);
     }
   }
   if (typeof left === "bigint" || typeof right === "bigint") {

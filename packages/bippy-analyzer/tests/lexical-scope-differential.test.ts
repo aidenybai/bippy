@@ -46,12 +46,6 @@ it.each([
     body: `const values = [1]; try { for (let values of values) { return 'body'; } return 'done'; } catch (error) { return error.name; }`,
   },
   {
-    name: "closures observe an uninitialized captured binding",
-    expected: "ReferenceError",
-    actual: "99",
-    body: `const value = 99; try { { const read = () => value; const result = read(); let value = 1; return result; } } catch (error) { return error.name; }`,
-  },
-  {
     name: "typeof an undeclared identifier remains allowed",
     expected: "undefined",
     actual: '<string: typeof unknown(unbound identifier "absentLexicalProbe")>',
@@ -79,6 +73,10 @@ it.each([
   {
     name: "typeof does not bypass a lexical temporal dead zone",
     body: `const value = 99; try { { const result = typeof value; let value = 1; return result; } } catch (error) { return error.name; }`,
+  },
+  {
+    name: "closures observe an uninitialized captured binding",
+    body: `const value = 99; try { { const read = () => value; const result = read(); let value = 1; return result; } } catch (error) { return error.name; }`,
   },
   {
     name: "self initialization does not read an outer value",

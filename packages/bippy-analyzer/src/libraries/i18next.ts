@@ -8,6 +8,7 @@ import {
   getObjectProperty,
   isKnownString,
   isUndefinedValue,
+  listValue,
   objectFromRecord,
   primitiveValue,
   unknownPrimitiveValue,
@@ -353,14 +354,14 @@ const createI18nextModel = (): I18nextModel => {
     const fixedT = getOption(activeInstance, "getFixedT");
     const keyPrefix = options ? getOption(options, "keyPrefix") : UNDEFINED_VALUE;
     const t = tools.call(fixedT, [UNDEFINED_VALUE, activeNamespace, keyPrefix]);
-    return objectFromRecord({
-      0: t,
-      1: activeInstance,
-      2: TRUE_VALUE,
-      t,
-      i18n: activeInstance,
-      ready: TRUE_VALUE,
-    });
+    return {
+      ...listValue([t, activeInstance, TRUE_VALUE]),
+      properties: new Map([
+        ["t", t],
+        ["i18n", activeInstance],
+        ["ready", TRUE_VALUE],
+      ]),
+    };
   });
   const reactPlugin = objectFromRecord({
     type: primitiveValue("3rdParty"),

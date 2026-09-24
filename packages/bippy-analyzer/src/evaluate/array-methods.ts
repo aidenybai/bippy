@@ -18,7 +18,7 @@ import {
   type KeyIdentity,
 } from "./collections.js";
 import type { EvaluationContext, PropertyReader } from "./context.js";
-import { createErrorValue } from "./errors.js";
+import { createErrorValue, createTypeError } from "./errors.js";
 import { hasProperty } from "./has-property.js";
 import { getTruthinessPredicate, recordDerivation, recordRepeatSource } from "./predicates.js";
 import { joinStrings } from "./primitive-shapes.js";
@@ -43,6 +43,7 @@ import {
   isCallable,
   isIndefiniteItem,
   isKnownList,
+  isNeverCallable,
   ITERATOR_PROPERTY_KEY,
   listValue,
   mapFiniteListItems,
@@ -61,6 +62,21 @@ import {
 } from "./values.js";
 
 import { MAX_ARRAY_LIKE_LENGTH } from "./array-like.js";
+
+const CALLBACK_METHODS = new Set([
+  "every",
+  "filter",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+  "flatMap",
+  "forEach",
+  "map",
+  "reduce",
+  "reduceRight",
+  "some",
+]);
 
 export interface ArrayMethodEvaluator extends CallbackEvaluator, PropertyReader {
   resolveIterable: (
@@ -128,7 +144,7 @@ export const arrayOfLength = (
     return mapValue(length, (alternative) => arrayOfLength(alternative, location));
   if (length.kind === "unknown") return unknownValue("Array() with a dynamic length", location);
   if (length.kind !== "primitive" || typeof length.value !== "number") return listValue([length]);
-  if (!Number.isInteger(length.value) || length.value < 0) {
+  if (!Number.isInteger(length.value) || length.value < 0 || length.value > 2 ** 32 - 1) {
     return thrownValue(
       "Array() with an invalid length",
       createErrorValue("RangeError", [primitiveValue("Invalid array length")], location),
@@ -253,9 +269,11 @@ const filterItem = (
     item.kind === "branch" && item.alternatives.length <= MAX_FILTERED_ALTERNATIVES
       ? item.alternatives
       : [item];
-  const verdicts = alternatives.map((alternative) =>
-    getTruthiness(callCallback(evaluator, predicate, [alternative, index, list], context)),
+  const results = alternatives.map((alternative) =>
+    callCallback(evaluator, predicate, [alternative, index, list], context),
   );
+  if (results.length === 1 && getThrowCertainty(results[0]) === "always") return results[0];
+  const verdicts = results.map(getTruthiness);
   if (verdicts.every((verdict) => verdict === true)) return item;
   const accepted = alternatives.filter((_, position) => verdicts[position] !== false);
   if (accepted.length === 0) return null;
@@ -295,26 +313,28 @@ const filterList = (
   list: StaticListValue,
   predicate: CallableValue,
   context: EvaluationContext,
-): StaticListValue => {
+): StaticValue => {
   const firstIndefiniteIndex = list.items.findIndex(isIndefiniteItem);
-  return listValue(
-    list.items.flatMap((item, index) => {
-      const kept =
-        item.kind === "repeat" || item.kind === "optional"
-          ? filterIndefiniteItem(evaluator, list, predicate, item, context)
-          : filterItem(
-              evaluator,
-              list,
-              predicate,
-              item,
-              firstIndefiniteIndex === -1 || index < firstIndefiniteIndex
-                ? primitiveValue(index)
-                : unknownPrimitiveValue("number", "index"),
-              context,
-            );
-      return kept ? [kept] : [];
-    }),
-  );
+  let thrown: StaticValue | null = null;
+  const keptItems = list.items.flatMap((item, index) => {
+    if (thrown) return [];
+    const kept =
+      item.kind === "repeat" || item.kind === "optional"
+        ? filterIndefiniteItem(evaluator, list, predicate, item, context)
+        : filterItem(
+            evaluator,
+            list,
+            predicate,
+            item,
+            firstIndefiniteIndex === -1 || index < firstIndefiniteIndex
+              ? primitiveValue(index)
+              : unknownPrimitiveValue("number", "index"),
+            context,
+          );
+    if (kept && getThrowCertainty(kept) === "always") thrown = kept;
+    return kept ? [kept] : [];
+  });
+  return thrown ?? listValue(keptItems);
 };
 
 interface JoinedPresenceDecision {
@@ -473,54 +493,60 @@ export const mapList = (
     options.includeReceiver === false ? [item, index] : [item, index, receiver];
   const callOptions =
     options.thisValue === undefined ? undefined : { thisValue: options.thisValue };
-  if (receiver.kind === "list") {
-    return listValue(
-      receiver.items.map((item, index) => {
-        if (item.kind === "repeat") {
-          return recordRepeatSource(
-            {
-              kind: "repeat",
-              item: callUncertainCallback(
-                evaluator,
-                callback,
-                getArguments(item.item, unknownPrimitiveValue("number", "index")),
-                context,
-                true,
-                null,
-                callOptions,
-              ),
-              location: item.location,
-              count: item.count,
-            },
-            item,
-          );
-        }
-        if (item.kind === "optional") {
-          return optionalValue(
-            callUncertainCallback(
-              evaluator,
-              callback,
-              getArguments(item.value, unknownPrimitiveValue("number", "index")),
-              context,
-              false,
-              item.predicate,
-              callOptions,
-            ),
-            item.reason,
-            item.location,
-            item.isAbsentPreferred,
-            item.predicate,
-          );
-        }
-        return callCallback(
+  const mapListItem = (item: StaticValue, index: number): StaticValue => {
+    if (item.kind === "repeat") {
+      return recordRepeatSource(
+        {
+          kind: "repeat",
+          item: callUncertainCallback(
+            evaluator,
+            callback,
+            getArguments(item.item, unknownPrimitiveValue("number", "index")),
+            context,
+            true,
+            null,
+            callOptions,
+          ),
+          location: item.location,
+          count: item.count,
+        },
+        item,
+      );
+    }
+    if (item.kind === "optional") {
+      return optionalValue(
+        callUncertainCallback(
           evaluator,
           callback,
-          getArguments(item, primitiveValue(index)),
+          getArguments(item.value, unknownPrimitiveValue("number", "index")),
           context,
+          false,
+          item.predicate,
           callOptions,
-        );
-      }),
+        ),
+        item.reason,
+        item.location,
+        item.isAbsentPreferred,
+        item.predicate,
+      );
+    }
+    return callCallback(
+      evaluator,
+      callback,
+      getArguments(item, primitiveValue(index)),
+      context,
+      callOptions,
     );
+  };
+  if (receiver.kind === "list") {
+    let thrown: StaticValue | null = null;
+    const mappedItems = receiver.items.map((item, index) => {
+      if (thrown) return item;
+      const mapped = mapListItem(item, index);
+      if (!isIndefiniteItem(item) && getThrowCertainty(mapped) === "always") thrown = mapped;
+      return mapped;
+    });
+    return thrown ?? listValue(mappedItems);
   }
   if (receiver.kind === "repeat") {
     return recordRepeatSource(
@@ -569,13 +595,17 @@ export const callArrayMethod = (
   boundArguments: StaticValue[],
 ): StaticValue | null => {
   const [first, second] = boundArguments;
+  if (CALLBACK_METHODS.has(name) && first && isNeverCallable(first))
+    return createTypeError(`${describeValue(first)} is not a function`, location);
   if (name === "map" && isCallable(first)) {
     return mapList(evaluator, receiver, first, context, location);
   }
 
   if (name === "forEach" && isCallable(first)) {
     if (receiver.kind === "list") {
+      let thrown: StaticValue | null = null;
       receiver.items.forEach((item, index) => {
+        if (thrown) return;
         if (item.kind === "repeat" || item.kind === "optional") {
           callUncertainCallback(
             evaluator,
@@ -588,8 +618,17 @@ export const callArrayMethod = (
             context,
             item.kind === "repeat",
           );
-        } else callCallback(evaluator, first, [item, primitiveValue(index), receiver], context);
+          return;
+        }
+        const result = callCallback(
+          evaluator,
+          first,
+          [item, primitiveValue(index), receiver],
+          context,
+        );
+        if (getThrowCertainty(result) === "always") thrown = result;
       });
+      if (thrown) return thrown;
     } else {
       callUncertainCallback(
         evaluator,

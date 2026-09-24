@@ -351,11 +351,12 @@ export const concatenateStrings = (left: StaticValue, right: StaticValue): Stati
 };
 
 /** `Array.prototype.join`: `null` and `undefined` items read as empty, every other item as its `+` coercion. */
-const toJoinedItem = (item: StaticValue): StaticValue => {
-  if (item.kind === "primitive" && (item.value === null || item.value === undefined))
-    return primitiveValue("");
-  return item.kind === "list" ? toStringValue(item) : item;
-};
+const toJoinedItem = (item: StaticValue): StaticValue =>
+  mapValue(item, (alternative) => {
+    if (alternative.kind === "primitive" && (alternative.value ?? null) === null)
+      return primitiveValue("");
+    return alternative.kind === "list" ? toStringValue(alternative) : alternative;
+  });
 
 const concatenateAlternatives = (left: StaticValue, right: StaticValue): StaticValue =>
   distributeBinary(left, right, concatenateAlternatives) ?? concatenateStrings(left, right);
@@ -445,10 +446,11 @@ export const getShapedStringLength = (receiver: StaticUnknownPrimitiveValue): St
   });
 };
 
-/** Whether a dynamic property key may read as `name`: an unknown string of another prefix or length, or a number, never does. */
+/** Whether a dynamic property key may read as `name`: an unknown string of another prefix or length, a number, or a boolean, never does. */
 export const mayEqualPropertyKey = (key: StaticValue, name: string): boolean => {
   if (key.kind !== "unknown-primitive") return true;
   if (key.primitiveType === "number") return String(Number(name)) === name;
+  if (key.primitiveType === "boolean") return name === "true" || name === "false";
   if (key.primitiveType !== "string" || !key.stringShape) return true;
   const { prefix, length } = key.stringShape;
   return name.startsWith(prefix) && (length === null || name.length === length);

@@ -1,9 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases } from "./helpers/differential-evaluator.js";
 
 const operations = [
   {
@@ -77,15 +74,7 @@ it.each(
 );
 
 it.each([
-  {
-    name: "bigint subtraction preserves bigint type",
-    expected: "bigint",
-    actual: JSON.stringify("number"),
-    body: `return typeof (2n - 1n);`,
-  },
-])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
-
-it.each([
+  { name: "bigint subtraction preserves bigint type", body: `return typeof (2n - 1n);` },
   {
     name: "unary plus of bigint throws",
     body: `try { +1n; return 'accepted'; } catch (error) { return error.name; }`,

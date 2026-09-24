@@ -1,5 +1,7 @@
 import path from "node:path";
 import { executeSsa } from "./ssa-execution.js";
+import { getSsaProfile, measureSsaFallback } from "./ssa-profile.js";
+import { isClockDateValue } from "./clock-date.js";
 import { getBoundTarget } from "./function-bind.js";
 import { getConstructibility, isFunctionConstructor } from "./constructibility.js";
 import { createFunctionProperties } from "./function-metadata.js";
@@ -188,12 +190,14 @@ import {
 } from "./compiler-helpers.js";
 import {
   COMPLETES,
+  consumeLabeledBreak,
   getCompletionValue,
   getPreferredOutcome,
   getSettlementCondition,
   isPureCompletion,
   isPureReturn,
   jumpOutcome,
+  leaveSwitch,
   mergeOutcomes,
   outcomeToReturnValue,
   returnOutcome,
@@ -213,7 +217,7 @@ import type {
   ValueCallOptions,
 } from "./context.js";
 import { NO_PROVIDERS, withOutcomeHandler, withoutSuspension, withScope } from "./context.js";
-import { createErrorValue, createNonConstructorError } from "./errors.js";
+import { createErrorValue, createNonConstructorError, createTypeError } from "./errors.js";
 import { EscapeMemo } from "./escape-memo.js";
 import {
   type EscapedMutation,
@@ -232,6 +236,7 @@ import { GlobalProperties, type GlobalPropertyState } from "./global-properties.
 import {
   hasFunctionTextProperty,
   hasIntrinsicMember,
+  hasNamedProperty,
   hasProperty,
   OBJECT_PROTOTYPE_METHODS,
   OBJECT_PROTOTYPE_OWN_NAMES,
@@ -331,6 +336,7 @@ import {
   declareInScope,
   findOwningScope,
   lookupScope,
+  UNINITIALIZED_BINDING,
 } from "./scope.js";
 import {
   createSessionHistory,
@@ -408,6 +414,7 @@ import {
   isCallable,
   isIndefiniteItem,
   isJsonRecord,
+  isNeverCallable,
   isNullish,
   isSymbolPropertyKey,
   isUndefinedValue,
@@ -583,13 +590,79 @@ const MAX_INTERVAL_TICKS = 1_000;
 
 const MAX_ITERATOR_STEPS = 256;
 
-const USE_STRICT_DIRECTIVE = "use strict";
+const PRIMITIVE_WITNESSES = { string: "", number: 0, boolean: false };
+
+const ARRAY_ITERATOR_WITNESS = [][Symbol.iterator]();
+
+/**
+ * No object on the receiver's prototype chain has `name`, so calling `receiver[name]()` throws.
+ * A list may stand for the cursor `values()` returns, so iterator members count as present on it.
+ */
+const isDefinitelyAbsent = (receiver: StaticValue, name: string): boolean => {
+  const primitive =
+    receiver.kind === "primitive"
+      ? receiver.value
+      : receiver.kind === "unknown-primitive" && receiver.primitiveType !== "any"
+        ? PRIMITIVE_WITNESSES[receiver.primitiveType]
+        : undefined;
+  if (receiver.kind === "primitive" || receiver.kind === "unknown-primitive")
+    return (
+      primitive !== null &&
+      primitive !== undefined &&
+      !isSymbolPropertyKey(name) &&
+      !(name in Object(primitive))
+    );
+  if (receiver.kind === "list" && hasIntrinsicMember(ARRAY_ITERATOR_WITNESS, name)) return false;
+  if (receiver.kind !== "object" && receiver.kind !== "list") return false;
+  const presence = hasNamedProperty(name, receiver);
+  return presence !== null && getTruthiness(presence) === false;
+};
+
+const isSloppyFunction = (module: ModuleRecord, node: FunctionLikeNode): boolean =>
+  node.type !== "ArrowFunctionExpression" && !isStrictCode(module, node);
 
 const FS_URL_PREFIX = "/@fs/";
 
 const SERVER_HOST_PLATFORM: HostPlatform = "node";
 
 const FUNCTION_INSTANCE_KEYS = new Set(["length", "prototype", "arguments", "caller"]);
+
+type PrimitiveHint = "default" | "number" | "string";
+
+const IDENTITY_OPERATORS = new Set(["===", "!==", "instanceof"]);
+
+const RELATIONAL_OPERATORS = new Set(["<", ">", "<=", ">="]);
+
+const isUserObject = (value: StaticValue): boolean =>
+  value.kind === "object" && !isClockDateValue(value);
+
+const mayBeUserObject = (value: StaticValue): boolean =>
+  isUserObject(value) || (value.kind === "branch" && value.alternatives.some(isUserObject));
+
+const CONVERSION_HINTS = new Map<string, PrimitiveHint>([
+  ["String", "string"],
+  ["Number", "number"],
+]);
+
+/** The `ToPrimitive` hint a binary operator applies to an object operand; loose equality converts only against a non-nullish primitive. */
+const getPrimitiveHint = (
+  operator: string,
+  left: StaticValue,
+  right: StaticValue,
+): PrimitiveHint | null => {
+  const isLeftObject = isUserObject(left);
+  const isRightObject = isUserObject(right);
+  if ((!isLeftObject && !isRightObject) || IDENTITY_OPERATORS.has(operator)) return null;
+  if (operator !== "==" && operator !== "!=") return operator === "+" ? "default" : "number";
+  if (left.kind === right.kind) return null;
+  const other = isLeftObject ? right : left;
+  return (other.kind === "primitive" ||
+    other.kind === "unknown-primitive" ||
+    other.kind === "symbol") &&
+    isNullish(other) === false
+    ? "default"
+    : null;
+};
 
 /** Expressions the language names after their binding site (`NamedEvaluation`). */
 const isAnonymousFunctionOrClass = (node: Expression): boolean => {
@@ -611,6 +684,16 @@ const isClosureBinding = (binding: TopLevelBinding): boolean =>
   binding.kind === "variable" &&
   binding.declarationKind === "const" &&
   isFunctionLikeExpression(binding.init);
+
+const getUninitializedError = (name: string): StaticValue =>
+  thrownValue(
+    `\`${name}\` accessed before initialization`,
+    createErrorValue(
+      "ReferenceError",
+      [primitiveValue(`Cannot access '${name}' before initialization`)],
+      null,
+    ),
+  );
 
 /** Callees that ignore `this`: one call covers every receiver alternative that resolves to them. */
 const isReceiverIndependent = (callee: StaticValue): boolean =>
@@ -1712,6 +1795,14 @@ export class Interpreter {
             location,
           );
         }
+        if (isUserObject(propertyKey))
+          return this.withPrimitive(
+            propertyKey,
+            keyContext,
+            "string",
+            (primitive, primitiveContext) =>
+              this.getHasProperty(receiver, primitive, primitiveContext, location),
+          );
         if (receiver.kind !== "proxy")
           return (
             this.hasGlobalExpando(propertyKey, receiver, keyContext.environment) ??
@@ -2378,6 +2469,7 @@ export class Interpreter {
     isTypeof = false,
   ): StaticValue | null {
     const scoped = lookupScope(context.scope, name);
+    if (scoped === UNINITIALIZED_BINDING) return getUninitializedError(name);
     if (scoped) return scoped;
     const moduleValue = this.evaluateModuleBinding(context.module, name, context.environment);
     if (moduleValue) return moduleValue;
@@ -2894,11 +2986,20 @@ export class Interpreter {
                 origin: "derived",
               };
             }
-            const strings = listValue(
-              node.quasi.quasis.map((quasi) =>
-                primitiveValue(quasi.value.cooked ?? quasi.value.raw),
+            const raw = {
+              ...listValue(node.quasi.quasis.map((quasi) => primitiveValue(quasi.value.raw))),
+              isFrozen: true,
+            };
+            const strings: StaticListValue = {
+              ...listValue(
+                node.quasi.quasis.map((quasi) =>
+                  primitiveValue(quasi.value.cooked ?? quasi.value.raw),
+                ),
               ),
-            );
+              properties: new Map([["raw", raw]]),
+              nonEnumerableKeys: new Set(["raw"]),
+              isFrozen: true,
+            };
             const templateArgumentNames = node.quasi.expressions.map((expression) =>
               expression.type === "Identifier" ? expression.name : null,
             );
@@ -2963,16 +3064,28 @@ export class Interpreter {
         const expression = node.expressions[index];
         if (!expression) return withQuasi;
         const value = this.evaluateExpression(expression, pathContext);
-        if (getThrowCertainty(value) !== "never")
+        if (mayBeUserObject(value) || getThrowCertainty(value) !== "never")
           return this.continueValue(
             value,
             pathContext,
             (alternative, alternativeContext) =>
-              evaluateFrom(
-                index + 1,
-                applyBinaryOperator("+", withQuasi, alternative),
-                alternativeContext,
-              ),
+              isUserObject(alternative)
+                ? this.withPrimitive(
+                    alternative,
+                    alternativeContext,
+                    "string",
+                    (primitive, primitiveContext) =>
+                      evaluateFrom(
+                        index + 1,
+                        applyBinaryOperator("+", withQuasi, primitive),
+                        primitiveContext,
+                      ),
+                  )
+                : evaluateFrom(
+                    index + 1,
+                    applyBinaryOperator("+", withQuasi, alternative),
+                    alternativeContext,
+                  ),
             false,
           );
         text = applyBinaryOperator("+", withQuasi, value);
@@ -3006,12 +3119,22 @@ export class Interpreter {
     if (value.kind === "primitive" && typeof value.value === "string") {
       return listValue([...value.value].map((character) => primitiveValue(character)));
     }
+    if (
+      value.kind === "primitive" ||
+      value.kind === "symbol" ||
+      (value.kind === "unknown-primitive" &&
+        (value.primitiveType === "number" || value.primitiveType === "boolean"))
+    ) {
+      return createTypeError(`${describeValue(value)} is not iterable`, location);
+    }
     const recordMutation = (state: JournaledState<unknown>) => this.recordStateMutation(state);
     const items = consumeCollectionItems(value, recordMutation);
     if (items) return items;
     if (value.kind !== "object") return value;
     const iteratorMethod =
       acquiredIteratorMethod ?? this.getProperty(value, ITERATOR_PROPERTY_KEY, context, location);
+    if (iteratorMethod.kind === "primitive")
+      return createTypeError(`${describeValue(value)} is not iterable`, location);
     if (!isCallable(iteratorMethod)) return value;
     const iterator = this.callValue(iteratorMethod, [], context, location, { thisValue: value });
     if (iterator.kind === "list") return iterator;
@@ -3583,7 +3706,7 @@ export class Interpreter {
               argument.alternatives.some((alternative) => alternative.kind === "object")))
         ) {
           return this.continueValue(argument, context, (value, valueContext) =>
-            this.withNumericPrimitive(value, valueContext, (primitive) =>
+            this.withPrimitive(value, valueContext, "number", (primitive) =>
               applyUnaryOperator(operator, primitive),
             ),
           );
@@ -3607,15 +3730,7 @@ export class Interpreter {
     location: SourceLocation | null,
   ): StaticValue {
     const frame = context.callStack.at(-1);
-    const isSloppy =
-      context.module.isCommonJs &&
-      !context.module.directives.includes(USE_STRICT_DIRECTIVE) &&
-      frame !== undefined &&
-      frame.node.type !== "ArrowFunctionExpression" &&
-      !frame.node.body?.body.some(
-        (statement) => "directive" in statement && statement.directive === USE_STRICT_DIRECTIVE,
-      );
-    return isSloppy
+    return frame !== undefined && isSloppyFunction(context.module, frame.node)
       ? { kind: "global", name: "globalThis" }
       : unknownValue("this outside of a class", location);
   }
@@ -3759,13 +3874,55 @@ export class Interpreter {
     return this.continueValue(
       left,
       context,
-      (left, context) => {
-        const right = this.evaluateExpression(node.right, context);
-        if (node.operator === "in")
-          return this.getHasProperty(right, left, context, this.locate(context.module, node));
-        return applyBinaryOperator(node.operator, left, right, this.getRealm(context.environment));
-      },
+      (left, leftContext) =>
+        this.continueValue(
+          this.evaluateExpression(node.right, leftContext),
+          leftContext,
+          (right, rightContext) =>
+            node.operator === "in"
+              ? this.getHasProperty(
+                  right,
+                  left,
+                  rightContext,
+                  this.locate(rightContext.module, node),
+                )
+              : this.applyBinary(node.operator, left, right, rightContext),
+          false,
+        ),
       false,
+    );
+  }
+
+  private applyBinary(
+    operator: string,
+    left: StaticValue,
+    right: StaticValue,
+    context: EvaluationContext,
+  ): StaticValue {
+    const other = isUserObject(left) ? right : isUserObject(right) ? left : null;
+    const coercedBranch = IDENTITY_OPERATORS.has(operator)
+      ? null
+      : [left, right].find((operand) => operand.kind === "branch" && mayBeUserObject(operand));
+    const split =
+      coercedBranch ??
+      ((operator === "==" || operator === "!=") && other?.kind === "branch" ? other : null);
+    if (split) {
+      return this.continueValue(split, context, (alternative, pathContext) =>
+        split === left
+          ? this.applyBinary(operator, alternative, right, pathContext)
+          : this.applyBinary(operator, left, alternative, pathContext),
+      );
+    }
+    const realm = this.getRealm(context.environment);
+    const hint = getPrimitiveHint(operator, left, right);
+    if (!hint) return applyBinaryOperator(operator, left, right, realm);
+    const isLeftNumericFirst = hint === "number" && !RELATIONAL_OPERATORS.has(operator);
+    return this.withPrimitive(left, context, hint, (leftPrimitive, leftContext) =>
+      isLeftNumericFirst && leftPrimitive.kind === "symbol"
+        ? applyUnaryOperator("+", leftPrimitive)
+        : this.withPrimitive(right, leftContext, hint, (rightPrimitive) =>
+            applyBinaryOperator(operator, leftPrimitive, rightPrimitive, realm),
+          ),
     );
   }
 
@@ -3914,13 +4071,24 @@ export class Interpreter {
                 const propertyName = toPropertyKey(propertyKey);
                 const error = getNullishPropertyError(receiver, propertyName, "set", location);
                 if (error) return error;
+                const isStrict = isStrictCode(context.module, target);
+                if (
+                  isStrict &&
+                  propertyName !== "__proto__" &&
+                  (receiver.kind === "primitive" || receiver.kind === "unknown-primitive") &&
+                  isNullish(receiver) === false
+                )
+                  return createTypeError(
+                    `cannot create property ${propertyName ?? "with a dynamic key"} on ${describeValue(receiver)}`,
+                    location,
+                  );
                 if (propertyName === null) {
                   this.assignDynamicProperty(receiver, propertyKey, value);
                   return value;
                 }
                 return this.continueValue(
                   this.assignProperty(receiver, propertyName, value, assignmentContext, {
-                    isStrict: isStrictCode(context.module, target),
+                    isStrict,
                   }),
                   assignmentContext,
                   (assigned, writeContext) =>
@@ -3950,9 +4118,10 @@ export class Interpreter {
     return withObject(this.evaluateExpression(objectNode, context), null, context);
   }
 
-  private withNumericPrimitive(
+  private withPrimitive(
     value: StaticValue,
     context: EvaluationContext,
+    hint: PrimitiveHint,
     proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
   ): StaticValue {
     if (value.kind !== "object") return proceed(value, context);
@@ -3997,8 +4166,9 @@ export class Interpreter {
       budget: number,
     ): StaticValue => {
       if (index === 2) return invalidResult();
+      const methodNames = hint === "string" ? ["toString", "valueOf"] : ["valueOf", "toString"];
       return continueConversion(
-        this.getProperty(value, index === 0 ? "valueOf" : "toString", ordinaryContext, null),
+        this.getProperty(value, methodNames[index], ordinaryContext, null),
         ordinaryContext,
         budget,
         (method, methodContext, methodBudget) => {
@@ -4052,7 +4222,7 @@ export class Interpreter {
           return unknownValue("dynamic numeric conversion method");
         }
         return continueConversion(
-          this.callValue(method, [primitiveValue("number")], methodContext, null, {
+          this.callValue(method, [primitiveValue(hint)], methodContext, null, {
             thisValue: value,
           }),
           methodContext,
@@ -4079,12 +4249,15 @@ export class Interpreter {
         reference.getValue(referenceContext),
         referenceContext,
         (input, inputContext) =>
-          this.withNumericPrimitive(input, inputContext, (current, readContext) => {
+          this.withPrimitive(input, inputContext, "number", (current, readContext) => {
             if (current.kind === "symbol") return applyUnaryOperator("+", current);
             const previous =
               current.kind === "primitive" && typeof current.value !== "bigint"
                 ? primitiveValue(Number(current.value))
-                : current;
+                : current.kind === "unknown-primitive" &&
+                    (current.primitiveType === "boolean" || current.primitiveType === "string")
+                  ? applyUnaryOperator("+", current)
+                  : current;
             const numericValue = previous.kind === "primitive" ? previous.value : null;
             const next =
               typeof numericValue === "number"
@@ -4141,7 +4314,7 @@ export class Interpreter {
             readContext,
             (right, rightContext) =>
               this.continueValue(
-                applyBinaryOperator(node.operator.slice(0, -1), current, right),
+                this.applyBinary(node.operator.slice(0, -1), current, right, rightContext),
                 rightContext,
                 (value, assignmentContext) => reference.setValue(value, assignmentContext),
               ),
@@ -4311,6 +4484,7 @@ export class Interpreter {
     node: Node,
   ): StaticValue | null {
     const owner = findOwningScope(context.scope, name);
+    if (owner?.bindings.get(name) === UNINITIALIZED_BINDING) return getUninitializedError(name);
     if (owner) {
       this.mutations.record(owner.allocation);
       this.escapeWalk.memo.invalidate(owner, name);
@@ -4415,6 +4589,8 @@ export class Interpreter {
         );
       const key = this.evaluateExpression(node.property, receiverContext);
       const readKey = (propertyKey: StaticValue, keyContext: EvaluationContext): StaticValue => {
+        if (isUserObject(propertyKey) && isNullish(receiver) === false)
+          return this.withPrimitive(propertyKey, keyContext, "string", readKey);
         const propertyName = toPropertyKey(propertyKey);
         return propertyName !== null
           ? this.getProperty(receiver, propertyName, keyContext, location, node.optional)
@@ -4440,12 +4616,20 @@ export class Interpreter {
     if (error) return error;
     if (isFunctionText(key) && hasFunctionTextProperty(object) === false) return UNDEFINED_VALUE;
     if (object.kind === "list") {
-      const candidates = object.items.map(getItemValue);
+      if (key.kind === "unknown-primitive" && key.primitiveType === "boolean")
+        return [...(object.properties?.keys() ?? [])].some((name) => mayEqualPropertyKey(key, name))
+          ? unknownValue("boolean key into a list with named properties", location)
+          : UNDEFINED_VALUE;
       const indefiniteIndex = object.items.findIndex(isIndefiniteItem);
+      const mayMissItems = indefiniteIndex === -1 && mayBeIndexKey(key);
+      const candidates = [
+        ...object.items.map(getItemValue),
+        ...(mayMissItems ? [UNDEFINED_VALUE] : []),
+      ];
       const canCorrelateIndex =
         mayBeIndexKey(key) &&
         (indefiniteIndex === -1 || indefiniteIndex === object.items.length - 1);
-      return candidates.length === 0
+      return object.items.length === 0
         ? unknownValue("index into an unknown list", location)
         : branchValue(
             candidates,
@@ -4453,7 +4637,11 @@ export class Interpreter {
             location,
             0,
             canCorrelateIndex
-              ? getListIndexPredicate(key, candidates.length, indefiniteIndex !== -1)
+              ? getListIndexPredicate(
+                  key,
+                  candidates.length,
+                  indefiniteIndex !== -1 || mayMissItems,
+                )
               : null,
           );
     }
@@ -5152,13 +5340,17 @@ export class Interpreter {
       }
       if (getThrowCertainty(callee) === "always" || callee === CHAIN_SHORT_CIRCUIT) return callee;
       if (node.optional && isNullish(callee) === true) return CHAIN_SHORT_CIRCUIT;
+      const isStrictPlainCall =
+        node.callee.type !== "MemberExpression" &&
+        callee.kind === "function" &&
+        !isSloppyFunction(callee.module, callee.node);
       return this.evaluateArguments(node.arguments, callContext, (args, argumentContext) =>
         this.callValue(
           this.withStyledDisplayName(callee, node, argumentContext),
           args,
           argumentContext,
           location,
-          { thisValue, nameHint },
+          { thisValue: thisValue ?? (isStrictPlainCall ? UNDEFINED_VALUE : null), nameHint },
         ),
       );
     };
@@ -5180,6 +5372,11 @@ export class Interpreter {
               : primitiveValue(member.property.name);
         return this.continueValue(key, receiverContext, (propertyKey, keyContext) => {
           const propertyName = toPropertyKey(propertyKey);
+          if (!node.optional && propertyName !== null && isDefinitelyAbsent(receiver, propertyName))
+            return createTypeError(
+              `${describeValue(receiver)}.${propertyName} is not a function`,
+              location,
+            );
           const callee =
             propertyName === null
               ? (getNullishPropertyError(receiver, null, "read", location) ??
@@ -5243,6 +5440,8 @@ export class Interpreter {
     const thrownArgument = getThrownOperand(args);
     if (thrownArgument) return thrownArgument;
     if (callee.kind === "unknown" && callee.thrown) return callee;
+    if (isNeverCallable(callee))
+      return createTypeError(`${describeValue(callee)} is not a function`, location);
     switch (callee.kind) {
       case "branch":
         return this.callAlternatives(callee, context, (alternative, alternativeContext) =>
@@ -5352,6 +5551,14 @@ export class Interpreter {
     context: EvaluationContext,
     location: SourceLocation | null,
   ): StaticValue {
+    const [first] = args;
+    const hint = callee.kind === "global" ? CONVERSION_HINTS.get(callee.name) : undefined;
+    if (hint && first && mayBeUserObject(first))
+      return this.continueValue(first, context, (alternative, alternativeContext) =>
+        this.withPrimitive(alternative, alternativeContext, hint, (primitive, primitiveContext) =>
+          this.callBuiltin(callee, args.with(0, primitive), primitiveContext, location),
+        ),
+      );
     const result = evaluateBuiltinCall(this, callee, args, context, location);
     if (result.kind === "unknown" && result.thrown === undefined) this.markEscapes(args);
     return result;
@@ -5961,43 +6168,55 @@ export class Interpreter {
     }
     const body = functionValue.node.body;
     if (!body) return UNDEFINED_VALUE;
-    if (!asyncCall) {
-      const result = executeSsa(
-        functionValue.node,
-        callContext,
-        {
-          getTypeof: (value) => getTypeofValue(value, this.getRealm(callContext.environment)),
-          resolve: (value) => this.getSsaValue(value),
-          consumeStep: () => this.consumeStep(callContext.budget, location),
-          distribute: (value, run) =>
-            value.kind === "branch" ? this.callAlternatives(value, callContext, run) : run(value),
-          fork: (predicate, paths) => {
-            const parsed = parseSymbolicPredicate(predicate);
-            const guards = predicateGuards(parsed, paths.length);
-            const feasible = guards.map((guard) =>
-              this.isTaskPossible(andGuard([this.guard, guard])),
+    const result = executeSsa(
+      functionValue.node,
+      callContext,
+      {
+        getTypeof: (value) => getTypeofValue(value, this.getRealm(callContext.environment)),
+        resolve: (value) => this.getSsaValue(value),
+        consumeStep: () => this.consumeStep(callContext.budget, location),
+        distribute: (value, run) =>
+          value.kind === "branch" ? this.callAlternatives(value, callContext, run) : run(value),
+        fork: (predicate, paths) => {
+          const parsed = parseSymbolicPredicate(predicate);
+          const guards = predicateGuards(parsed, paths.length);
+          const feasible = guards.map((guard) =>
+            this.isTaskPossible(andGuard([this.guard, guard])),
+          );
+          const selected = feasible.findIndex(Boolean);
+          if (selected === -1) return UNDEFINED_VALUE;
+          if (feasible.filter(Boolean).length === 1)
+            return this.runWithGuard(
+              andGuard([this.guard, guards[selected]]),
+              paths[selected],
+              parsed.inputs,
             );
-            const selected = feasible.findIndex(Boolean);
-            if (selected === -1) return UNDEFINED_VALUE;
-            if (feasible.filter(Boolean).length === 1)
-              return this.runWithGuard(
-                andGuard([this.guard, guards[selected]]),
-                paths[selected],
-                parsed.inputs,
-              );
-            return branchValue(
-              this.forkValues(null, paths, "SSA branch", location, 0, predicate),
-              "SSA branch",
-              location,
-              0,
-              predicate,
-            );
-          },
+          return branchValue(
+            this.forkValues(null, paths, "SSA branch", location, 0, predicate),
+            "SSA branch",
+            location,
+            0,
+            predicate,
+          );
         },
-        location,
-      );
-      if (result !== null) return result;
-    }
+      },
+      location,
+    );
+    if (result !== null) return result;
+    const profile = getSsaProfile();
+    if (!profile) return this.evaluateFunctionAst(body, callContext, location, asyncCall);
+    return measureSsaFallback(profile, functionValue.node, functionValue.module.file, () =>
+      this.evaluateFunctionAst(body, callContext, location, asyncCall),
+    );
+  }
+
+  private evaluateFunctionAst(
+    body: NonNullable<FunctionLikeNode["body"]>,
+    callContext: EvaluationContext,
+    location: SourceLocation | null,
+    asyncCall: AsyncCall | null,
+  ): StaticValue {
+    const scope = callContext.scope;
     if (body.type !== "BlockStatement" && !asyncCall) {
       return this.evaluateExpression(body, callContext);
     }
@@ -6282,6 +6501,11 @@ export class Interpreter {
           statement.id.name,
           this.createFunctionValue(statement, context, statement.id.name),
         );
+      } else if (statement.type === "VariableDeclaration" && statement.kind !== "var") {
+        for (const name of getDeclaredNames(statement))
+          declareInScope(context.scope, name, UNINITIALIZED_BINDING);
+      } else if (statement.type === "ClassDeclaration" && statement.id) {
+        declareInScope(context.scope, statement.id.name, UNINITIALIZED_BINDING);
       }
     }
   }
@@ -6449,11 +6673,16 @@ export class Interpreter {
             proceed,
           );
           if (isContinued || !outcome.mayComplete) return outcome;
-          if (!outcome.returned) break;
+          if (!outcome.returned && outcome.jump === null) break;
           return this.continueStatements(outcome, withoutSuspension(context), proceed, location);
         }
-        case "LabeledStatement":
-          return this.evaluateBlock([statement.body], context, false, proceed);
+        case "LabeledStatement": {
+          const outcome = consumeLabeledBreak(
+            this.evaluateBlock([statement.body], withoutSuspension(context), false),
+            statement.label.name,
+          );
+          return this.continueStatements(outcome, withoutSuspension(context), proceed, location);
+        }
         default:
           break;
       }
@@ -6849,8 +7078,8 @@ export class Interpreter {
    * Runs each path from the same scope state, then joins the states of the
    * paths that complete normally (bindings that differ become branch values,
    * like SSA phis) and continues with the rest of the function exactly once.
-   * Paths that jump out of a loop are joined too: the loop then gives up
-   * unrolling, so their state is only ever observed as uncertain.
+   * Paths that `break` or `continue` skip the rest: their states join the
+   * state the rest leaves, which is what the jump target observes.
    */
   private forkPaths(
     branches: StatementContinuation[],
@@ -6950,7 +7179,13 @@ export class Interpreter {
         this.removeHeapJournal(journal);
         journal.join(reason, location, preferredOutcome, predicate);
       }
-      const joinedSnapshots = pathSnapshots.filter((_, index) => !returningPaths.includes(index));
+      const deferredPaths =
+        completingPaths.length > 0
+          ? jumpingPaths.filter((index) => !returningPaths.includes(index))
+          : [];
+      const joinedSnapshots = pathSnapshots.filter(
+        (_, index) => !returningPaths.includes(index) && !deferredPaths.includes(index),
+      );
       if (joinedSnapshots.length > 0) {
         const isJoinedByPredicate = joinedSnapshots.length === branches.length;
         joinScopes(joinedSnapshots, reason, location, 0, isJoinedByPredicate ? predicate : null);
@@ -7003,6 +7238,22 @@ export class Interpreter {
           )
         : proceed(completingContext);
       joinReturningClosures();
+      if (deferredPaths.length > 0) {
+        joinScopes(
+          [...deferredPaths.map((index) => pathSnapshots[index]), snapshotScopes(context.scope)],
+          reason,
+          location,
+          deferredPaths.includes(preferredOutcome)
+            ? deferredPaths.indexOf(preferredOutcome)
+            : deferredPaths.length,
+          pathGuards && completingGuard
+            ? guardedPredicate(
+                [...deferredPaths.map((index) => pathGuards.guards[index]), completingGuard],
+                [pathGuards.inputs],
+              )
+            : null,
+        );
+      }
       if (isMixed) {
         const remainingPredicate =
           pathGuards && completingGuard
@@ -7079,7 +7330,22 @@ export class Interpreter {
     proceed: StatementContinuation,
     location: SourceLocation,
   ): StatementOutcome {
-    const discriminant = this.evaluateExpression(statement.discriminant, context);
+    return this.continueStatementValue(
+      this.evaluateExpression(statement.discriminant, context),
+      context,
+      (discriminant, switchContext) =>
+        this.evaluateSwitchCases(statement, discriminant, switchContext, proceed, location),
+      location,
+    );
+  }
+
+  private evaluateSwitchCases(
+    statement: SwitchStatement,
+    discriminant: StaticValue,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+  ): StatementOutcome {
     const caseValues = statement.cases.map((switchCase) =>
       switchCase.test ? this.evaluateExpression(switchCase.test, context) : null,
     );
@@ -7092,20 +7358,15 @@ export class Interpreter {
         (pathContext) => runCases(caseIndex + 1, pathContext),
       );
     };
-    const runFrom = (startCase: number, pathContext: EvaluationContext): StatementOutcome => {
-      const outcome = runCases(startCase, withScope(pathContext, createScope(pathContext.scope)));
-      return outcome.jump === "break" ? { ...outcome, mayComplete: true, jump: null } : outcome;
-    };
-    const runThenProceed = (startCase: number): StatementOutcome => {
-      const outcome = runFrom(startCase, withoutSuspension(context));
-      if (!outcome.mayComplete) return outcome;
-      const rest = proceed(context);
-      return mergeOutcomes(
-        [{ ...outcome, mayComplete: false }, rest],
-        `switch (${describeValue(discriminant)})`,
+    const runFrom = (startCase: number, pathContext: EvaluationContext): StatementOutcome =>
+      leaveSwitch(runCases(startCase, withScope(pathContext, createScope(pathContext.scope))));
+    const runThenProceed = (startCase: number): StatementOutcome =>
+      this.continueStatements(
+        runFrom(startCase, withoutSuspension(context)),
+        context,
+        proceed,
         location,
       );
-    };
     const defaultIndex = statement.cases.findIndex((switchCase) => switchCase.test === null);
     const realm = this.getRealm(context.environment);
     const getMatchIndex = (value: StaticValue): number | null => {

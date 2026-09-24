@@ -9,7 +9,6 @@ interface AsyncLoopCase {
   source: string;
   expected: string;
   actual: string;
-  isPrecisionGap?: boolean;
 }
 
 const serialTrace = "before:0|sync|after:0|before:1|after:1|before:2|after:2|end|ok:done";
@@ -75,27 +74,25 @@ const cases: AsyncLoopCase[] = [
     source:
       "for await (const value of [Promise.resolve(1), Promise.resolve(2)]) { trace.push('item:' + value); }",
     expected: "sync|item:1|item:2|end|ok:done",
-    actual: "<string: + on dynamic values>",
-    isPrecisionGap: true,
+    actual: "item:[object Promise]|item:[object Promise]|end|sync|ok:done",
   },
   {
     name: "for-await closes a synchronous iterator",
     source:
       "let position = 0; const iterable = { [Symbol.iterator]: () => ({ next: () => { trace.push('next'); return position++ < 2 ? { done: false, value: Promise.resolve(position) } : { done: true }; }, return: () => { trace.push('close'); return {}; } }) }; for await (const value of iterable) { trace.push('item:' + value); break; }",
     expected: "next|sync|item:1|close|end|ok:done",
-    actual: "<string: + on dynamic values>",
-    isPrecisionGap: true,
+    actual: "next|next|next|item:[object Promise]|end|sync|ok:done",
   },
 ];
 
-describe.each(cases)("async loop: $name", ({ name, source, expected, actual, isPrecisionGap }) => {
-  it(`known ${isPrecisionGap ? "precision gap" : "divergence"}: preserves the native suspension trace`, () =>
+describe.each(cases)("async loop: $name", ({ name, source, expected, actual }) => {
+  it("known divergence: preserves the native suspension trace", () =>
     checkKnownDifferentialWitnesses(
       [
         {
           name,
           expected,
-          actual: isPrecisionGap ? actual : JSON.stringify(actual),
+          actual: JSON.stringify(actual),
           body: `const trace = []; const run = async () => { ${source} trace.push('end'); return 'done'; }; run().then((value) => trace.push('ok:' + value), (error) => trace.push('error:' + error)); trace.push('sync'); return () => trace.join('|');`,
         },
       ],

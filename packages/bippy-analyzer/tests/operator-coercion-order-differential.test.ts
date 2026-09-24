@@ -1,7 +1,6 @@
 import { it } from "vite-plus/test";
 import {
   checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
   createSeededRandom,
   differentialSeeds,
   type DifferentialCase,
@@ -45,34 +44,11 @@ const outcomes: CoercionOutcome[] = [
   { name: "symbol", source: "return Symbol('left');" },
 ];
 
-const cases = ["+", "-", "*", "<", ">", "<=", ">=", "==", "==="].flatMap((operator) =>
-  outcomes.flatMap((left) =>
-    [false, true].map((rightThrows) => {
-      const name = `${operator}/left=${left.name}/rightThrows=${rightThrows}`;
-      const isKnown = operator !== "==" && operator !== "===";
-      const trace = ["left-expression", "right-expression"];
-      if (isKnown) {
-        const hint = operator === "+" ? "default" : "number";
-        trace.push(`left:${hint}`);
-        if (left.name === "throws") trace.push("error:left");
-        else if (
-          left.name === "object" ||
-          (left.name === "symbol" && (operator === "-" || operator === "*"))
-        )
-          trace.push("error:TypeError");
-        else {
-          trace.push(`right:${hint}`);
-          trace.push(
-            rightThrows ? "error:right" : left.name === "symbol" ? "error:TypeError" : "after",
-          );
-        }
-      } else trace.push("after");
-      return {
-        name,
-        label: `${isKnown ? "known divergence: " : ""}${name}`,
-        isKnown,
-        expected: trace.join("|"),
-        actual: '"left-expression|right-expression|after"',
+const cases: DifferentialCase[] = ["+", "-", "*", "<", ">", "<=", ">=", "==", "==="].flatMap(
+  (operator) =>
+    outcomes.flatMap((left) =>
+      [false, true].map((rightThrows) => ({
+        name: `${operator}/left=${left.name}/rightThrows=${rightThrows}`,
         body: `
     const trace = [];
     const left = { [Symbol.toPrimitive](hint) { trace.push('left:' + hint); ${left.source} } };
@@ -83,13 +59,10 @@ const cases = ["+", "-", "*", "<", ">", "<=", ">=", "==", "==="].flatMap((operat
     catch (error) { trace.push('error:' + (typeof error === 'string' ? error : error.name)); }
     return trace.join('|');
   `,
-      };
-    }),
-  ),
+      })),
+    ),
 );
 
-it.each(cases)("$label", ({ name, body, expected, actual, isKnown }) =>
-  isKnown
-    ? checkKnownDifferentialWitnesses([{ name, body, expected, actual }])
-    : checkDifferentialCases([{ name, body }]),
+it.each(cases)("matches native ToPrimitive order: $name", (testCase) =>
+  checkDifferentialCases([testCase]),
 );

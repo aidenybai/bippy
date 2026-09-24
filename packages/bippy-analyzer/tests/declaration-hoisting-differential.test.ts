@@ -81,8 +81,6 @@ const cases = [
   },
   {
     name: "class declarations shadow outer values before initialization",
-    expected: "ReferenceError",
-    actual: "99",
     body: `const Target = 99; try { { const result = Target; class Target {} return result; } } catch (error) { return error.name; }`,
   },
   {
@@ -93,8 +91,6 @@ const cases = [
   },
   {
     name: "computed class keys precede class-name initialization",
-    expected: "ReferenceError",
-    actual: '"accepted"',
     body: `const Target = 99; try { class Target { [Target]() {} } return 'accepted'; } catch (error) { return error.name; }`,
   },
   {

@@ -1,8 +1,5 @@
 import { it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases } from "./helpers/differential-evaluator.js";
 
 interface OrdinaryConsumer {
   name: string;
@@ -20,28 +17,9 @@ const consumers: OrdinaryConsumer[] = [
 const cases = consumers.flatMap((consumer) =>
   ["primitive", "object", "missing", "noncallable", "getter-throws", "method-throws"].flatMap(
     (firstMode) =>
-      ["primitive", "object", "throws"].map((secondMode) => {
-        const trace = ["first-get"];
-        if (firstMode === "getter-throws") trace.push("error:lookup");
-        else if (firstMode === "primitive") trace.push("first-call:true", "after");
-        else if (firstMode === "method-throws") trace.push("first-call:true", "error:first");
-        else {
-          if (firstMode === "object") trace.push("first-call:true");
-          trace.push(
-            "second-get",
-            "second-call:true",
-            secondMode === "object"
-              ? "error:TypeError"
-              : secondMode === "throws"
-                ? "error:second"
-                : "after",
-          );
-        }
-        return {
-          name: `${consumer.name}/first=${firstMode}/second=${secondMode}`,
-          expected: trace.join("|"),
-          actual: '"after"',
-          body: `
+      ["primitive", "object", "throws"].map((secondMode) => ({
+        name: `${consumer.name}/first=${firstMode}/second=${secondMode}`,
+        body: `
     const trace = []; const target = {};
     const methods = {
       first() { trace.push('first-call:' + (this === target)); ${firstMode === "method-throws" ? "throw 'first';" : firstMode === "object" ? "return {};" : "return 7;"} },
@@ -56,13 +34,12 @@ const cases = consumers.flatMap((consumer) =>
     catch (error) { trace.push('error:' + (typeof error === 'string' ? error : error.name)); }
     return trace.join('|');
   `,
-        };
-      }),
+      })),
   ),
 );
 
-it.each(cases)("known divergence: ordinary conversion $name", (testCase) =>
-  checkKnownDifferentialWitnesses([testCase]),
+it.each(cases)("matches native ordinary conversion $name", (testCase) =>
+  checkDifferentialCases([testCase]),
 );
 
 it.each(["valueOf", "toString"])("preserves explicit getter-backed %s invocation", (method) =>

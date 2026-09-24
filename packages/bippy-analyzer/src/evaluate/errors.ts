@@ -7,6 +7,7 @@ import {
   thrownValue,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
+  unknownValue,
 } from "./values.js";
 
 const ERROR_CONSTRUCTORS = {
@@ -55,15 +56,17 @@ export const createErrorValue = (
   return error;
 };
 
-export const createNonConstructorError = (
-  location: SourceLocation | null,
-  reason = "non-constructible value",
-): StaticValue =>
+export const createTypeError = (reason: string, location: SourceLocation | null): StaticValue =>
   thrownValue(
     reason,
     createErrorValue("TypeError", [unknownPrimitiveValue("string", reason)], location),
     location,
   );
+
+export const createNonConstructorError = (
+  location: SourceLocation | null,
+  reason = "non-constructible value",
+): StaticValue => createTypeError(reason, location);
 
 export const getIntrinsicConstructionError = (
   name: string,
@@ -79,3 +82,19 @@ export const getIntrinsicConstructionError = (
 
 export const getErrorWitness = (value: StaticObjectValue): Error | null =>
   errorWitnesses.get(value) ?? null;
+
+const isStringablePrimitive = (value: StaticValue): boolean =>
+  value.kind === "primitive"
+    ? typeof value.value !== "symbol"
+    : value.kind === "unknown-primitive" && value.primitiveType !== "any";
+
+/** `Error.prototype.toString` over the `name` and `message` the receiver reads back. */
+export const getErrorText = (errorName: StaticValue, message: StaticValue): StaticValue => {
+  if (!isStringablePrimitive(errorName) || !isStringablePrimitive(message))
+    return unknownValue("Error.prototype.toString of an unmodeled name or message");
+  return errorName.kind === "primitive" && message.kind === "primitive"
+    ? primitiveValue(
+        Error.prototype.toString.call({ name: errorName.value, message: message.value }),
+      )
+    : unknownPrimitiveValue("string", "Error.prototype.toString of a dynamic name or message");
+};

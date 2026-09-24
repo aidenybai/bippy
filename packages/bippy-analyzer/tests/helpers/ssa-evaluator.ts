@@ -4,14 +4,14 @@ import { compileFunction } from "../../src/compiler/compile-function.js";
 import { executeSsa, type SsaExecutionHost } from "../../src/evaluate/ssa-execution.js";
 import { getErrorWitness } from "../../src/evaluate/errors.js";
 import { getTypeofValue } from "../../src/evaluate/value-typeof.js";
-import { primitiveValue } from "../../src/evaluate/values.js";
+import { describeValue, primitiveValue } from "../../src/evaluate/values.js";
 import { loadHostRealm } from "../../src/host/host-realm.js";
 import { parseSourceText } from "../../src/parse/parse-source-file.js";
 import type { StaticPrimitive, StaticValue } from "../../src/types.js";
 import { createEvaluationContext } from "./evaluation-context.js";
 
 export interface ScalarOutcome {
-  kind: "return" | "throw" | "error";
+  kind: "return" | "throw" | "error" | "unresolved";
   value: unknown;
 }
 
@@ -72,15 +72,19 @@ export const getNativeScalarOutcome = (
     { timeout: 1000 },
   );
 
+export const getStaticOutcome = (value: StaticValue, isThrown = false): ScalarOutcome => {
+  if (!isThrown && value.kind === "unknown" && value.thrown)
+    return getStaticOutcome(value.thrown, true);
+  if (value.kind === "primitive")
+    return { kind: isThrown ? "throw" : "return", value: value.value };
+  const witness = isThrown && value.kind === "object" ? getErrorWitness(value) : null;
+  if (witness) return { kind: "error", value: witness.name };
+  return { kind: "unresolved", value: describeValue(value) };
+};
+
 export const getSsaScalarOutcome = (result: StaticValue | null): ScalarOutcome => {
-  if (result?.kind === "primitive") return { kind: "return", value: result.value };
-  if (result?.kind === "unknown" && result.thrown) {
-    if (result.thrown.kind === "primitive") return { kind: "throw", value: result.thrown.value };
-    if (result.thrown.kind === "object") {
-      const witness = getErrorWitness(result.thrown);
-      if (witness) return { kind: "error", value: witness.name };
-    }
-  }
+  const outcome = result && getStaticOutcome(result);
+  if (outcome && outcome.kind !== "unresolved") return outcome;
   throw new Error(
     `Expected an executed scalar completion, got ${result === null ? "fallback" : result.kind}`,
   );

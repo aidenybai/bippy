@@ -134,6 +134,11 @@ export const hasNamedProperty = (name: string, target: StaticValue): StaticValue
         const truthiness = getTruthiness(presence);
         if (truthiness === true) return TRUE_VALUE;
         if (truthiness === null) return presence;
+        if (target.hostInterfaceName !== undefined)
+          return unknownPrimitiveValue(
+            "boolean",
+            `${target.hostInterfaceName} presence of ${name}`,
+          );
         if (target.prototype)
           return (
             hasNamedProperty(name, target.prototype) ??

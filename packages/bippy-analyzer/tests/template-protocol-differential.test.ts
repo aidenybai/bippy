@@ -42,18 +42,6 @@ it.each([
     body: "const tag = (strings) => strings; const create = () => () => tag`same`; return create()() === create()();",
   },
   {
-    name: "template arrays are frozen",
-    expected: true,
-    actual: "false",
-    body: "const tag = (strings) => Object.isFrozen(strings); return tag`same`;",
-  },
-  {
-    name: "raw strings are exposed as an array",
-    expected: true,
-    actual: "false",
-    body: "const tag = (strings) => Array.isArray(strings.raw); return tag`same`;",
-  },
-  {
     name: "template arrays reject indexed writes",
     expected: "TypeError",
     actual: JSON.stringify("accepted"),
@@ -71,15 +59,13 @@ it.each([
     actual: "<boolean: === on dynamic values>",
     body: "const receiver = { tag() { return this === receiver; } }; return receiver.tag`same`;",
   },
-  {
-    name: "untagged symbol conversion throws before a later interpolation",
-    expected: "TypeError",
-    actual: JSON.stringify("later|after"),
-    body: "const trace = []; const later = () => { trace.push('later'); return 2; }; try { const value = `${Symbol('value')}-${later()}`; trace.push('after'); } catch (error) { trace.push(error.name); } return trace.join('|');",
-  },
 ])("known divergence: $name", (testCase) => checkKnownDifferentialWitnesses([testCase]));
 
 it.each([
+  {
+    name: "untagged symbol conversion throws before a later interpolation",
+    body: "const trace = []; const later = () => { trace.push('later'); return 2; }; try { const value = `${Symbol('value')}-${later()}`; trace.push('after'); } catch (error) { trace.push(error.name); } return trace.join('|');",
+  },
   {
     name: "throwing tag lookup prevents interpolation",
     body: "const trace = []; const receiver = { get tag() { trace.push('lookup'); throw 'tag'; } }; const read = () => { trace.push('argument'); return 1; }; try { receiver.tag`${read()}`; trace.push('after'); } catch (error) { trace.push('caught:' + error); } return trace.join('|');",
@@ -103,6 +89,14 @@ it.each([
   {
     name: "tagged symbol interpolation does not coerce",
     body: "const value = Symbol('value'); const tag = (strings, argument) => argument === value; return tag`${value}`;",
+  },
+  {
+    name: "template arrays are frozen",
+    body: "const tag = (strings) => Object.isFrozen(strings); return tag`same`;",
+  },
+  {
+    name: "raw strings are exposed as an array",
+    body: "const tag = (strings) => Array.isArray(strings.raw); return tag`same`;",
   },
   {
     name: "interpolation cannot replace the captured tag",

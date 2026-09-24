@@ -3,6 +3,7 @@ import { expect, it } from "vite-plus/test";
 import {
   checkDifferentialCases,
   checkKnownDifferentialWitnesses,
+  checkSymbolicCases,
 } from "./helpers/differential-evaluator.js";
 
 interface CompletionAction {
@@ -60,9 +61,8 @@ const matrix = actions.flatMap((action) =>
   finalizers.map((finalizer) => {
     const name = `${action.name}/${finalizer.name}`;
     const isKnown =
-      finalizer.name.endsWith("-outer") ||
-      (finalizer.name === "normal" &&
-        (action.name.startsWith("break-") || action.name.startsWith("continue-")));
+      finalizer.name === "continue-outer" ||
+      (finalizer.name === "normal" && action.name.startsWith("continue-"));
     return {
       action,
       finalizer,
@@ -76,10 +76,7 @@ const matrix = actions.flatMap((action) =>
 it.each(matrix)("$label", ({ action, finalizer, name, isKnown }) => {
   const cases = [0, 4, 8].map((trigger) => ({
     expected: getExpectedTrace(action, finalizer, trigger),
-    actual:
-      action.name === "return" || action.name === "throw"
-        ? "branch(<string> | <string>)"
-        : "<string: + on dynamic values>",
+    actual: "<string: + on dynamic values>",
     name: `${name}/trigger=${trigger}`,
     body: `
       const trace = [];
@@ -113,10 +110,50 @@ it.each(matrix)("$label", ({ action, finalizer, name, isKnown }) => {
 it.each([
   {
     name: "labeled block break runs intervening finally",
-    expected: "body|finally|after",
-    actual: "undefined",
     body: `const trace = []; block: { try { trace.push('body'); break block; } finally { trace.push('finally'); } trace.push('unreachable'); } trace.push('after'); return trace.join('|');`,
   },
+  {
+    name: "conditional labeled block break keeps the skipped path's writes",
+    body: `const trace = []; const force = () => 0; for (const value of [false, true]) { block: { if (value) break block; trace.push('rest:' + value); } trace.push('after:' + value); } return trace.join('|');`,
+  },
+  {
+    name: "for-of breaks out to an enclosing label",
+    body: `let trace = ''; const force = () => 0; outer: { for (const item of [1, 2, 3]) { if (item === 2) break outer; trace += item; } trace += 'a'; } return trace + '!';`,
+  },
+  {
+    name: "labeled loop breaks its own label",
+    body: `let trace = ''; const force = () => 0; loop: for (const item of [1, 2, 3]) { if (item === 2) break loop; trace += item; } return trace + '!';`,
+  },
+  {
+    name: "labeled switch break skips the rest of the case",
+    body: `let trace = ''; const force = () => 0; for (const value of [false, true]) { choice: switch (1) { case 1: if (value) break choice; trace += 'a'; } trace += '!'; } return trace;`,
+  },
+])("preserves $name", (testCase) => checkDifferentialCases([testCase]));
+
+it.each([
+  {
+    name: "nested labeled breaks to different targets",
+    body: `let trace = ''; const force = () => 0; outer: { inner: { if (first) break outer; trace += 'a'; break inner; } trace += 'b'; } return trace + '!';`,
+  },
+  {
+    name: "independent inputs break to inner and outer labels",
+    body: `let trace = ''; const force = () => 0; outer: { inner: { if (first) break inner; if (second) break outer; trace += 'a'; } trace += 'b'; } return trace + '!';`,
+  },
+  {
+    name: "unbounded loop breaks out to an enclosing label",
+    body: `let trace = ''; const force = () => 0; outer: { while (true) { if (first) break outer; break; } trace += 'a'; } return trace + '!';`,
+  },
+  {
+    name: "uncertain loop tail keeps a break to an enclosing label",
+    body: `let trace = ''; const force = () => 0; const limit = first ? 400 : 1; outer: { for (let index = 0; index < limit; index++) { if (second) break outer; } trace += 'a'; } return trace + '!';`,
+  },
+  {
+    name: "labeled block keeps a return apart from its break",
+    body: `let trace = ''; const force = () => 0; label0: { if (first) { trace += 'x'; break label0; } if (second) return trace + '?'; trace += 'a'; } return trace + '!';`,
+  },
+])("preserves $name for each input assignment", (testCase) => checkSymbolicCases([testCase]));
+
+it.each([
   {
     name: "switch break does not consume a labeled outer continue",
     expected: "0|tail|2|tail",

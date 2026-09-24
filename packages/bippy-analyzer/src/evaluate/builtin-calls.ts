@@ -55,6 +55,8 @@ import type { TimerQueue } from "./timers.js";
 import { createDomObserver, isDomObserverName } from "./dom-observers.js";
 import {
   createErrorValue,
+  getErrorText,
+  getErrorWitness,
   getIntrinsicConstructionError,
   isErrorConstructorName,
 } from "./errors.js";
@@ -1072,6 +1074,22 @@ const callHostObjectMethod = (
       );
 };
 
+const convertToPrimitiveType = (
+  name: "String" | "Number" | "Boolean",
+  value: StaticValue | undefined,
+  isConstructor: boolean,
+): StaticValue => {
+  if (name === "Number") return value ? toNumberValue(value) : primitiveValue(0);
+  if (name === "Boolean") return value ? toBooleanValue(value) : FALSE_VALUE;
+  return value
+    ? mapValue(value, (alternative) =>
+        !isConstructor && alternative.kind === "symbol"
+          ? primitiveValue(`Symbol(${getSymbolDescription(alternative) ?? ""})`)
+          : toStringOfValue(alternative),
+      )
+    : primitiveValue("");
+};
+
 /** `Object(value)`: objects pass through, nullish values become `{}`, primitives box into wrappers. */
 const toObjectValue = (value: StaticValue, location: SourceLocation | null): StaticValue =>
   mapValue(value, (alternative) => {
@@ -1256,17 +1274,11 @@ const callGlobal = (
     case "Object":
       return first ? toObjectValue(first, location) : objectValue([]);
     case "String":
-      return first
-        ? mapValue(first, (alternative) =>
-            !isConstructor && alternative.kind === "symbol"
-              ? primitiveValue(`Symbol(${getSymbolDescription(alternative) ?? ""})`)
-              : toStringOfValue(alternative),
-          )
-        : primitiveValue("");
     case "Number":
-      return first ? toNumberValue(first) : primitiveValue(0);
-    case "Boolean":
-      return first ? toBooleanValue(first) : FALSE_VALUE;
+    case "Boolean": {
+      const converted = convertToPrimitiveType(name, first, isConstructor);
+      return isConstructor ? toObjectValue(converted, location) : converted;
+    }
     case "Array":
       return args.length === 1 && first !== undefined
         ? arrayOfLength(first, location)
@@ -2100,7 +2112,13 @@ export const evaluateBuiltinCall = (
 
   if (receiver.kind === "object") {
     if (name === "valueOf") return receiver;
-    if (name === "toString") return getObjectTag(evaluator, receiver, context, location);
+    if (name === "toString")
+      return getErrorWitness(receiver)
+        ? getErrorText(
+            evaluator.getProperty(receiver, "name", context, location),
+            evaluator.getProperty(receiver, "message", context, location),
+          )
+        : getObjectTag(evaluator, receiver, context, location);
   }
 
   if (name === "isPrototypeOf" && first !== undefined) {

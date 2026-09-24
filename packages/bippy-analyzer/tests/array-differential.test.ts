@@ -13,9 +13,9 @@ interface CallbackMethod {
 }
 
 const methods: CallbackMethod[] = [
-  { method: "map", knownDivergences: ["truncate", "delete", "throw"] },
-  { method: "filter", knownDivergences: ["delete", "throw"] },
-  { method: "forEach", knownDivergences: ["delete", "throw"] },
+  { method: "map", knownDivergences: ["truncate", "delete"] },
+  { method: "filter", knownDivergences: ["delete"] },
+  { method: "forEach", knownDivergences: ["delete"] },
   { method: "some", knownDivergences: ["delete"] },
   { method: "every", knownDivergences: ["delete"] },
   { method: "find", knownDivergences: [] },

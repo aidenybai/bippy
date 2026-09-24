@@ -60,42 +60,6 @@ it.each(values)("preserves Object boxing and primitive extraction for $name", ({
 
 it.each([
   {
-    name: "Number construction creates an object wrapper",
-    expected: "object",
-    actual: '"number"',
-    body: `return typeof new Number(7);`,
-  },
-  {
-    name: "Boolean construction creates an object wrapper",
-    expected: "object",
-    actual: '"boolean"',
-    body: `return typeof new Boolean(false);`,
-  },
-  {
-    name: "String construction creates an object wrapper",
-    expected: "object",
-    actual: '"string"',
-    body: `return typeof new String('abc');`,
-  },
-  {
-    name: "a constructed false Boolean wrapper is truthy",
-    expected: true,
-    actual: "false",
-    body: `return Boolean(new Boolean(false));`,
-  },
-  {
-    name: "distinct constructed Number wrappers have different identities",
-    expected: false,
-    actual: "true",
-    body: `return new Number(7) === new Number(7);`,
-  },
-  {
-    name: "constructed wrappers accept independent own properties",
-    expected: "9:7",
-    actual: '"undefined:7"',
-    body: `const boxed = new Number(7); try { boxed.extra = 9; return boxed.extra + ':' + boxed.valueOf(); } catch (error) { return error.name; }`,
-  },
-  {
     name: "Object boxes a Symbol without changing its identity on extraction",
     expected: "object:true",
     actual: 'branch("object:true" | "object:false")',
@@ -121,5 +85,29 @@ it.each([
   {
     name: "ordinary Object boxing produces separate wrappers",
     body: `return Object(7) === Object(7);`,
+  },
+  {
+    name: "Number construction creates an object wrapper",
+    body: `return typeof new Number(7);`,
+  },
+  {
+    name: "Boolean construction creates an object wrapper",
+    body: `return typeof new Boolean(false);`,
+  },
+  {
+    name: "String construction creates an object wrapper",
+    body: `return typeof new String('abc');`,
+  },
+  {
+    name: "a constructed false Boolean wrapper is truthy",
+    body: `return Boolean(new Boolean(false));`,
+  },
+  {
+    name: "distinct constructed Number wrappers have different identities",
+    body: `return new Number(7) === new Number(7);`,
+  },
+  {
+    name: "constructed wrappers accept independent own properties",
+    body: `const boxed = new Number(7); try { boxed.extra = 9; return boxed.extra + ':' + boxed.valueOf(); } catch (error) { return error.name; }`,
   },
 ])("preserves $name", (testCase) => checkDifferentialCases([testCase]));

@@ -15,7 +15,14 @@ import type {
 import type { ModuleRecord } from "../graph/module-types.js";
 import type { SourceLocation } from "../parse/source-types.js";
 import type { Scope, StaticOptionalValue, StaticValue } from "../types.js";
-import { COMPLETES, mergeOutcomes, returnOutcome, type StatementOutcome } from "./completion.js";
+import {
+  COMPLETES,
+  isLabeledBreak,
+  leaveLoop,
+  mergeOutcomes,
+  returnOutcome,
+  type StatementOutcome,
+} from "./completion.js";
 import type {
   ConditionalEvaluationOptions,
   EvaluationContext,
@@ -114,6 +121,13 @@ type LoopStatement =
  * iterable itself (and the step budget), so they unroll in full.
  */
 export const MAX_UNROLLED_ITERATIONS = 256;
+
+/**
+ * Upper bound on unrolled iterations that resume from a forked path. Each one
+ * nests the next inside its continuation and lengthens every path guard, so
+ * past this many the tail becomes uncertain instead of overflowing the stack.
+ */
+export const MAX_FORKED_ITERATIONS = 16;
 
 type UnrollResult =
   | { kind: "exact"; outcome: StatementOutcome }
@@ -214,8 +228,12 @@ const advanceIteration = (
   outcome: StatementOutcome,
   outcomes: StatementOutcome[],
 ): "next" | UnrollResult => {
-  const isDefinite = !outcome.mayComplete && outcome.returned === null;
-  if (outcome.jump === "break" && isDefinite) return exactCompletion(outcomes);
+  if (!outcome.mayComplete && (outcome.jump === "break" || isLabeledBreak(outcome))) {
+    return {
+      kind: "exact",
+      outcome: mergeOutcomes([...outcomes, leaveLoop(outcome)], "break out of a loop", null),
+    };
+  }
   if (outcome.returned !== null && !outcome.mayComplete && outcome.jump === null) {
     return {
       kind: "exact",
@@ -275,8 +293,13 @@ const unrollForEach = (
 ): UnrollResult | null => {
   const iteration = iterationValues(evaluator, statement, right, context);
   if (!iteration) return null;
-  const collectFrom = (start: number, iterationContext: EvaluationContext): UnrollResult => {
+  const collectFrom = (
+    start: number,
+    iterationContext: EvaluationContext,
+    forkedIterations = 0,
+  ): UnrollResult => {
     const outcomes: StatementOutcome[] = [];
+    if (forkedIterations > MAX_FORKED_ITERATIONS) return { kind: "partial", outcomes };
     for (let index = start; index < iteration.items.length; index++) {
       const item = iteration.items[index];
       const evaluation =
@@ -292,7 +315,11 @@ const unrollForEach = (
                 finishUnrolling(
                   evaluator,
                   statement,
-                  collectFrom(index + 1, withScope(pathContext, iterationContext.scope)),
+                  collectFrom(
+                    index + 1,
+                    withScope(pathContext, iterationContext.scope),
+                    forkedIterations + 1,
+                  ),
                   pathContext,
                   location,
                 ),
@@ -318,7 +345,8 @@ const unrollConditional = (
   const resumeFrom = (
     iteration: number,
     iterationContext: EvaluationContext,
-    completion: StaticValue = UNDEFINED_VALUE,
+    completion: StaticValue,
+    forkedIterations: number,
   ): StatementOutcome =>
     evaluator.continueStatementValue(
       completion,
@@ -327,7 +355,7 @@ const unrollConditional = (
         finishUnrolling(
           evaluator,
           statement,
-          collectFrom(iteration, pathContext),
+          collectFrom(iteration, pathContext, null, forkedIterations),
           pathContext,
           location,
         ),
@@ -337,8 +365,10 @@ const unrollConditional = (
     startIteration: number,
     iterationContext: EvaluationContext,
     completedTest: StaticValue | null = null,
+    forkedIterations = 0,
   ): UnrollResult | null => {
     const outcomes: StatementOutcome[] = [];
+    if (forkedIterations > MAX_FORKED_ITERATIONS) return { kind: "partial", outcomes };
     for (let iteration = startIteration; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
       if (test && (iteration !== 0 || statement.type !== "DoWhileStatement")) {
         const tested =
@@ -356,7 +386,7 @@ const unrollConditional = (
                   finishUnrolling(
                     evaluator,
                     statement,
-                    collectFrom(iteration, pathContext, value),
+                    collectFrom(iteration, pathContext, value, forkedIterations + 1),
                     pathContext,
                     location,
                   ),
@@ -379,7 +409,7 @@ const unrollConditional = (
             statement.type === "ForStatement" && statement.update
               ? evaluator.evaluateExpression(statement.update, pathContext)
               : UNDEFINED_VALUE;
-          return resumeFrom(iteration + 1, pathContext, updated);
+          return resumeFrom(iteration + 1, pathContext, updated, forkedIterations + 1);
         },
       );
       if (evaluation.isContinued)
@@ -390,7 +420,10 @@ const unrollConditional = (
         const updated = evaluator.evaluateExpression(statement.update, iterationContext);
         if (getThrowCertainty(updated) !== "never")
           return completeUnrolling(
-            [...outcomes, resumeFrom(iteration + 1, iterationContext, updated)],
+            [
+              ...outcomes,
+              resumeFrom(iteration + 1, iterationContext, updated, forkedIterations + 1),
+            ],
             location,
           );
       }
@@ -401,9 +434,9 @@ const unrollConditional = (
     const initialized =
       statement.init.type === "VariableDeclaration"
         ? evaluator.evaluateBlock([statement.init], loopContext, false, (pathContext) =>
-            resumeFrom(0, pathContext),
+            resumeFrom(0, pathContext, UNDEFINED_VALUE, 0),
           )
-        : resumeFrom(0, loopContext, evaluator.evaluateExpression(statement.init, loopContext));
+        : resumeFrom(0, loopContext, evaluator.evaluateExpression(statement.init, loopContext), 0);
     return completeUnrolling([initialized], location);
   }
   return collectFrom(0, loopContext);
@@ -464,7 +497,7 @@ const evaluateUncertainTail = (
     true,
   );
   whileTestHolds(() => evaluator.widenLoopCarriedBindings(context.scope, runTailBody, location));
-  return { ...outcome, mayComplete: true, jump: null };
+  return { ...leaveLoop(outcome), mayComplete: true };
 };
 
 const finishUnrolling = (

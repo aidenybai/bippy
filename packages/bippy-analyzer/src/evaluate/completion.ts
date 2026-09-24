@@ -5,6 +5,7 @@ import { getThrowCertainty } from "./thrown.js";
 import {
   branchValue,
   FALSE_VALUE,
+  getTruthiness,
   TRUE_VALUE,
   UNDEFINED_VALUE,
   unknownPrimitiveValue,
@@ -24,6 +25,8 @@ export interface StatementOutcome {
   settlementCondition?: StaticValue;
   /** Set when some path left the enclosing loop early; labeled jumps are `uncertain`. */
   jump: LoopJump | "uncertain" | null;
+  /** When each labeled break is taken, keyed by label; `OTHER_JUMP` stands for every other jump. */
+  jumpConditions?: Record<string, StaticValue>;
   /** The list stopped at an `await` of a pending promise; its rest runs once that settles. */
   isSuspended: boolean;
 }
@@ -42,10 +45,13 @@ export const SUSPENDED: StatementOutcome = {
   isSuspended: true,
 };
 
+const OTHER_JUMP = "";
+
 export const jumpOutcome = (jump: LoopJump, label: string | null): StatementOutcome => ({
   returned: null,
   mayComplete: false,
   jump: label === null ? jump : "uncertain",
+  jumpConditions: { [jump === "break" && label !== null ? label : OTHER_JUMP]: TRUE_VALUE },
   isSuspended: false,
 });
 
@@ -54,6 +60,81 @@ const mergeJumps = (outcomes: StatementOutcome[]): StatementOutcome["jump"] => {
   if (jumps.length === 0) return null;
   return jumps.every((jump) => jump === jumps[0]) ? jumps[0] : "uncertain";
 };
+
+const getJumpConditions = (outcome: StatementOutcome): Record<string, StaticValue> => {
+  if (outcome.jump === null) return {};
+  return outcome.jumpConditions ?? { [OTHER_JUMP]: TRUE_VALUE };
+};
+
+const mergeJumpConditions = (
+  outcomes: StatementOutcome[],
+  reason: string,
+  location: SourceLocation | null,
+  preferredOutcome: number,
+  predicate: string | null,
+): Record<string, StaticValue> | undefined => {
+  const conditions = outcomes.map(getJumpConditions);
+  const labels = [...new Set(conditions.flatMap(Object.keys))];
+  if (labels.length === 0) return undefined;
+  return Object.fromEntries(
+    labels.map((label) => [
+      label,
+      branchValue(
+        conditions.map((condition) => condition[label] ?? FALSE_VALUE),
+        reason,
+        location,
+        preferredOutcome,
+        predicate,
+      ),
+    ]),
+  );
+};
+
+/** Every jumping path breaks out to a label, so the enclosing loop stops iterating and the jump propagates. */
+export const isLabeledBreak = (outcome: StatementOutcome): boolean =>
+  outcome.jump === "uncertain" && !(OTHER_JUMP in getJumpConditions(outcome));
+
+/**
+ * Paths that take the `key` jump complete here; other jumps keep propagating.
+ * Paths that jump further share the joined state, so their later completions stay conservative.
+ */
+const completeJump = (outcome: StatementOutcome, key: string, reason: string): StatementOutcome => {
+  const { [key]: condition, ...remaining } = getJumpConditions(outcome);
+  const isJumping = Object.keys(remaining).length > 0;
+  const jump = isJumping ? (key === OTHER_JUMP ? "uncertain" : outcome.jump) : null;
+  if (!condition || getTruthiness(condition) === false) {
+    return outcome.jump === null
+      ? outcome
+      : { ...outcome, jump, jumpConditions: isJumping ? remaining : undefined };
+  }
+  return {
+    ...outcome,
+    mayComplete: true,
+    completion:
+      getTruthiness(condition) === true
+        ? TRUE_VALUE
+        : branchValue(
+            [TRUE_VALUE, getCompletionValue(outcome)],
+            reason,
+            null,
+            0,
+            getTruthinessPredicate(condition),
+          ),
+    jump,
+    jumpConditions: isJumping ? remaining : undefined,
+  };
+};
+
+/** A loop that has finished: its own breaks and continues end here, breaks to enclosing labels propagate. */
+export const leaveLoop = (outcome: StatementOutcome): StatementOutcome =>
+  completeJump(outcome, OTHER_JUMP, "leave loop");
+
+/** A finished `switch` ends its own breaks; a `continue` keeps propagating to the enclosing loop. */
+export const leaveSwitch = (outcome: StatementOutcome): StatementOutcome =>
+  outcome.jump === "break" ? completeJump(outcome, OTHER_JUMP, "leave switch") : outcome;
+
+export const consumeLabeledBreak = (outcome: StatementOutcome, label: string): StatementOutcome =>
+  getJumpConditions(outcome)[label] ? completeJump(outcome, label, `break ${label}`) : outcome;
 
 export const returnOutcome = (value: StaticValue): StatementOutcome => ({
   returned: value,
@@ -164,6 +245,7 @@ export const mergeOutcomes = (
       predicate,
     ),
     jump: mergeJumps(outcomes),
+    jumpConditions: mergeJumpConditions(outcomes, reason, location, preferredOutcome, predicate),
     isSuspended: outcomes.some((outcome) => outcome.isSuspended),
   };
 };

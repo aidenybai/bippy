@@ -14,6 +14,7 @@ import type {
   StaticNativeFunctionValue,
   StaticObjectEntry,
   StaticObjectValue,
+  StaticPropertyEntry,
   StaticValue,
   SuperBinding,
 } from "../types.js";
@@ -207,6 +208,16 @@ const methodContextFor = (
   superBinding: { construct: null, parent: classValue.body.superValue },
 });
 
+/** Class accessors live on the prototype, so enumeration never lists them. */
+const getterEntry = (
+  key: string,
+  get: StaticFunctionValue,
+  location: SourceLocation | null,
+): StaticPropertyEntry => ({
+  ...accessorEntry(key, { get, set: null }, location),
+  isEnumerable: false,
+});
+
 const bindMethods = (
   evaluator: FunctionFactory,
   classValue: StaticClassValue,
@@ -254,7 +265,12 @@ const bindMethods = (
     if (member.kind === "getter") {
       members.getters.push({ key: member.key, functionValue: boundMethod });
     } else {
-      target.entries.push({ kind: "property", key: member.key, value: boundMethod });
+      target.entries.push({
+        kind: "property",
+        key: member.key,
+        value: boundMethod,
+        isEnumerable: false,
+      });
     }
   }
   return members;
@@ -279,11 +295,7 @@ export const getSuperObject = (
         const members = bindMethods(evaluator, current, prototype, methodContext, seen);
         for (const getter of members.getters) {
           prototype.entries.push(
-            accessorEntry(
-              getter.key,
-              { get: { ...getter.functionValue, boundThis: thisValue }, set: null },
-              location,
-            ),
+            getterEntry(getter.key, { ...getter.functionValue, boundThis: thisValue }, location),
           );
         }
       }
@@ -322,9 +334,7 @@ export const getClassPrototypeObject = (
     const methodContext = methodContextFor(current, context, prototype);
     const members = bindMethods(evaluator, current, prototype, methodContext, seen);
     for (const getter of members.getters) {
-      prototype.entries.push(
-        accessorEntry(getter.key, { get: getter.functionValue, set: null }, null),
-      );
+      prototype.entries.push(getterEntry(getter.key, getter.functionValue, null));
     }
   }
   prototypeMemberCounts.set(prototype, prototype.entries.length);
@@ -1008,9 +1018,7 @@ const initializeInstance = (
   });
   for (const { members } of layers) {
     for (const getter of members.getters) {
-      instance.entries.push(
-        accessorEntry(getter.key, { get: getter.functionValue, set: null }, null),
-      );
+      instance.entries.push(getterEntry(getter.key, getter.functionValue, null));
     }
   }
   return { chain, value: constructLayer(evaluator, layers, 0, args, instance) };

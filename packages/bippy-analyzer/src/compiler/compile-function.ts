@@ -19,6 +19,8 @@ export interface CompilationResult {
 
 const cache = new WeakMap<FunctionLikeNode, CompilationResult>();
 
+export const hasCompilation = (node: FunctionLikeNode): boolean => cache.has(node);
+
 export const compileFunction = (node: FunctionLikeNode): CompilationResult => {
   const cached = cache.get(node);
   if (cached) return cached;

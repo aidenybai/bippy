@@ -1,9 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { checkDifferentialCases } from "./helpers/differential-evaluator.js";
 
 const cases = [
   "+",
@@ -25,15 +22,14 @@ const cases = [
 ].flatMap((operator) =>
   [false, true].map((isLeft) => ({
     name: `${operator}/symbolOnLeft=${isLeft}`,
-    expected: "TypeError",
-    actual: '"accepted"',
     body: `const value = Symbol('operand'); try { ${isLeft ? "value" : "2"} ${operator} ${isLeft ? "2" : "value"}; return 'accepted'; } catch (error) { return error.name; }`,
   })),
 );
 
-it.each(cases)("known divergence: Symbol conversion failure $name", (testCase) =>
-  checkKnownDifferentialWitnesses([testCase]),
-);
+it.each(cases)("throws the native Symbol conversion failure for $name", (testCase) => {
+  expect(runInNewContext(`(()=>{${testCase.body}})()`, {}, { timeout: 1000 })).toBe("TypeError");
+  return checkDifferentialCases([testCase]);
+});
 
 it("matches explicit String conversion of a Symbol", () => {
   const testCase = {

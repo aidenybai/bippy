@@ -7,6 +7,11 @@ import {
   type DifferentialCase,
 } from "./helpers/differential-evaluator.js";
 
+interface ToPrimitiveCase {
+  name: string;
+  expression: string;
+}
+
 it.each(differentialSeeds)(
   "copies only enumerable own data properties without mutating sources, seed %i",
   async (seed) => {
@@ -91,19 +96,19 @@ it.each([
   },
 ])("known divergence: respects $name", (testCase) => checkKnownDifferentialCases([testCase]));
 
+const getToPrimitiveCase = ({ name, expression }: ToPrimitiveCase) => ({
+  name,
+  body: `let trace = ''; const value = { [Symbol.toPrimitive]: (hint) => { trace += hint; return 7; } }; const result = ${expression}; return String(result) + ':' + trace;`,
+});
+
 it.each([
-  { name: "number conversion", expression: "Number(value)" },
-  { name: "string conversion", expression: "String(value)" },
   { name: "default hint for addition", expression: "value + 1" },
   { name: "number hint for comparison", expression: "value < 10" },
+  { name: "number conversion", expression: "Number(value)" },
+  { name: "string conversion", expression: "String(value)" },
   { name: "string hint for a property key", expression: "({ 7: 'found' })[value]" },
-])("known divergence: Symbol.toPrimitive effects: $name", ({ name, expression }) =>
-  checkKnownDifferentialCases([
-    {
-      name,
-      body: `let trace = ''; const value = { [Symbol.toPrimitive]: (hint) => { trace += hint; return 7; } }; const result = ${expression}; return String(result) + ':' + trace;`,
-    },
-  ]),
+])("preserves Symbol.toPrimitive effects: $name", (testCase) =>
+  checkDifferentialCases([getToPrimitiveCase(testCase)]),
 );
 
 it.each(["value === 7", "Boolean(value)"])("does not coerce objects for %s", (expression) =>

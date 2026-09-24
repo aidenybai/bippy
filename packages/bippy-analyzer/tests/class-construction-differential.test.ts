@@ -117,7 +117,7 @@ describe.each([
   {
     name: "class methods are inherited and non-enumerable",
     expected: "value:false",
-    actual: JSON.stringify("method,value:true"),
+    actual: JSON.stringify("value:true"),
     body: `class Example { value = 1; method() { return 2; } } const instance = new Example(); return Object.keys(instance).join(',') + ':' + Object.hasOwn(instance, 'method');`,
   },
   {

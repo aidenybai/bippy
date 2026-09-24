@@ -1,5 +1,8 @@
 import type { Scope, StaticValue } from "../types.js";
-import { allocate } from "./values.js";
+import { allocate, unknownValue } from "./values.js";
+
+/** A `let`, `const` or class binding between entry to its block and its declaration. */
+export const UNINITIALIZED_BINDING = unknownValue("binding before initialization");
 
 export const createScope = (parent: Scope | null): Scope => ({
   parent,

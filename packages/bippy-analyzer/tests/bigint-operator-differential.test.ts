@@ -1,8 +1,6 @@
-import { it } from "vite-plus/test";
-import {
-  checkDifferentialCases,
-  checkKnownDifferentialWitnesses,
-} from "./helpers/differential-evaluator.js";
+import { runInNewContext } from "node:vm";
+import { expect, it } from "vite-plus/test";
+import { checkDifferentialCases } from "./helpers/differential-evaluator.js";
 
 const expectedResults: Record<string, string> = {
   "+": "bigint:5",
@@ -23,23 +21,14 @@ const expectedResults: Record<string, string> = {
   ">=": "boolean:true",
 };
 
-it.each(
-  Object.entries(expectedResults).map(([operator, expected]) => ({
-    operator,
-    expected,
-    label: `${expected.startsWith("bigint:") ? "known divergence:" : "matches native:"} bounded BigInt ${operator} evaluation`,
-  })),
-)("$label", ({ operator, expected }) => {
-  const testCase = {
-    name: `3n ${operator} 2n`,
-    body: `try { const result = 3n ${operator} 2n; return typeof result + ':' + String(result); } catch (error) { return 'error:' + error.name; }`,
-  };
-  return !expected.startsWith("bigint:")
-    ? checkDifferentialCases([testCase])
-    : checkKnownDifferentialWitnesses([
-        { ...testCase, expected, actual: "<string: + on dynamic values>" },
-      ]);
-});
+it.each(Object.entries(expectedResults))(
+  "matches native bounded BigInt %s evaluation",
+  async (operator, expected) => {
+    const body = `try { const result = 3n ${operator} 2n; return typeof result + ':' + String(result); } catch (error) { return 'error:' + error.name; }`;
+    expect(runInNewContext(`(() => { ${body} })()`)).toBe(expected);
+    await checkDifferentialCases([{ name: `3n ${operator} 2n`, body }]);
+  },
+);
 
 it.each([
   {

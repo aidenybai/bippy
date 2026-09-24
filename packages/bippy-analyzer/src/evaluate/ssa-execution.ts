@@ -1,8 +1,16 @@
+import type { Node } from "oxc-parser";
 import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
+import { getSourceLocation } from "../parse/source-location.js";
 import type { StaticValue } from "../types.js";
-import { compileFunction } from "../compiler/compile-function.js";
-import { getRequired, type FlowInstruction } from "../compiler/ir.js";
+import { compileFunction, hasCompilation } from "../compiler/compile-function.js";
+import { getRequired, type FlowInstruction, type SsaGraph } from "../compiler/ir.js";
 import type { EvaluationContext } from "./context.js";
+import {
+  getSsaProfile,
+  recordSsaAttempt,
+  type SsaCompilationSample,
+  type SsaFallback,
+} from "./ssa-profile.js";
 import { createErrorValue, getErrorWitness } from "./errors.js";
 import { applyBinaryOperator, applyUnaryOperator } from "./operators.js";
 import { getPresencePredicate, getTruthinessPredicate } from "./predicates.js";
@@ -27,7 +35,23 @@ export interface SsaExecutionHost {
   consumeStep: () => boolean;
 }
 
-class SsaDeoptimization extends Error {}
+export interface SsaBlocker {
+  category: SsaFallback["category"];
+  reason: string;
+  node: Node | null;
+}
+
+interface SsaAttempt {
+  value: StaticValue | null;
+  blocker: SsaBlocker | null;
+  compilation: SsaCompilationSample | null;
+}
+
+class SsaDeoptimization extends Error {
+  constructor(readonly blocker: SsaBlocker) {
+    super(blocker.reason);
+  }
+}
 
 interface ExecutionState {
   values: Map<number, StaticValue>;
@@ -37,6 +61,11 @@ interface ExecutionState {
 }
 
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
+const GLOBAL_CONSTANTS = new Map<string, StaticValue>([
+  ["undefined", UNDEFINED_VALUE],
+  ["NaN", primitiveValue(NaN)],
+  ["Infinity", primitiveValue(Infinity)],
+]);
 const isNaNValue = (value: StaticValue): boolean =>
   value.kind === "primitive" && typeof value.value === "number" && Number.isNaN(value.value);
 
@@ -45,20 +74,139 @@ const isScalar = (value: StaticValue): boolean =>
   value.kind === "unknown-primitive" ||
   (value.kind === "branch" && value.alternatives.every(isScalar));
 
-export const executeSsa = (
+const getSignatureBlockers = (node: FunctionLikeNode): SsaBlocker[] => {
+  if (node.async) return [{ category: "static", reason: "async function", node }];
+  if (node.type !== "ArrowFunctionExpression" && node.generator)
+    return [{ category: "static", reason: "generator function", node }];
+  return node.params
+    .filter((parameter) => parameter.type !== "Identifier")
+    .map((parameter) => ({
+      category: "static",
+      reason: `${parameter.type} parameter`,
+      node: parameter,
+    }));
+};
+
+const getInputBlocker = (
+  value: StaticValue | undefined,
+  role: string,
+  node: Node,
+): SsaBlocker | null =>
+  value && isScalar(value)
+    ? null
+    : { category: "input", reason: `${value?.kind ?? "unbound"} ${role}`, node };
+
+const getInstructionBlocker = (
+  instruction: FlowInstruction,
+  graph: SsaGraph,
+  root: FunctionLikeNode,
+): SsaBlocker | null => {
+  const blocker = (reason: string): SsaBlocker => ({
+    category: "static",
+    reason,
+    node: instruction.node,
+  });
+  if (instruction.kind === "load-cell" || instruction.kind === "store-cell")
+    return blocker("captured binding");
+  if (instruction.kind === "binary" && instruction.operator === "in") return blocker("in operator");
+  if (instruction.kind === "input" && instruction.node) {
+    const input = instruction.node;
+    if (input.type === "CatchClause") return null;
+    if (input.type === "Identifier" && root.params.some((parameter) => parameter === input))
+      return null;
+    const variable = getRequired(
+      graph.variables,
+      getRequired(graph.definitions, instruction.target).variable,
+    );
+    if (variable.storage === "cell") return blocker("captured binding");
+    return blocker(input.type === "Identifier" ? "function self-reference" : input.type);
+  }
+  if (instruction.kind !== "opaque") return null;
+  if (instruction.operator === "invalid-assignment") return null;
+  if (
+    instruction.operator === "load-reference" &&
+    instruction.node?.type === "MemberExpression" &&
+    !instruction.node.computed &&
+    instruction.node.property.type === "Identifier" &&
+    (instruction.node.property.name === "name" || instruction.node.property.name === "message")
+  )
+    return null;
+  if (getExternalName(instruction) !== null) return null;
+  return blocker(instruction.operator ?? "opaque operation");
+};
+
+const getExternalName = (instruction: FlowInstruction): string | null => {
+  const external = instruction.node;
+  if (instruction.kind === "input" || instruction.operator === "load-external")
+    return external?.type === "Identifier" ? external.name : null;
+  if (
+    instruction.operator === "typeof-external" &&
+    external?.type === "UnaryExpression" &&
+    external.argument.type === "Identifier"
+  )
+    return external.argument.name;
+  return null;
+};
+
+export const getStaticSsaBlockers = (node: FunctionLikeNode): SsaBlocker[] => {
+  const blockers = getSignatureBlockers(node);
+  const compiled = compileFunction(node);
+  if (!compiled.function)
+    return [...blockers, { category: "static", reason: `unsupported ${compiled.reason}`, node }];
+  const { graph, constants } = compiled.function;
+  for (const block of graph.blocks.values()) {
+    if (!constants.executableBlocks.has(block.id)) continue;
+    for (const instruction of block.instructions) {
+      const blocker = getInstructionBlocker(instruction, graph, node);
+      if (blocker) blockers.push(blocker);
+    }
+  }
+  return blockers;
+};
+
+const getCompilationSample = (graph: SsaGraph, milliseconds: number): SsaCompilationSample => {
+  const blocks = [...graph.blocks.values()];
+  return {
+    milliseconds,
+    blocks: blocks.length,
+    instructions: blocks.reduce((count, block) => count + block.instructions.length, 0),
+    phis: blocks.reduce((count, block) => count + block.phis.length, 0),
+  };
+};
+
+const attemptSsa = (
   node: FunctionLikeNode,
   context: EvaluationContext,
   host: SsaExecutionHost,
   location: SourceLocation | null,
-): StaticValue | null => {
-  if (node.async || (node.type !== "ArrowFunctionExpression" && node.generator)) return null;
+  isProfiling: boolean,
+): SsaAttempt => {
+  const decline = (blocker: SsaBlocker, compilation: SsaCompilationSample | null = null) => ({
+    value: null,
+    blocker,
+    compilation,
+  });
+  const signatureBlocker = getSignatureBlockers(node)[0];
+  if (signatureBlocker) return decline(signatureBlocker);
   for (const parameter of node.params) {
-    if (parameter.type !== "Identifier") return null;
-    const value = lookupScope(context.scope, parameter.name);
-    if (!value || !isScalar(value)) return null;
+    if (parameter.type !== "Identifier") continue;
+    const blocker = getInputBlocker(
+      lookupScope(context.scope, parameter.name),
+      "parameter",
+      parameter,
+    );
+    if (blocker) return decline(blocker);
   }
-  const compiled = compileFunction(node).function;
-  if (!compiled) return null;
+  const isCold = isProfiling && !hasCompilation(node);
+  const compilationStartedAt = isCold ? performance.now() : 0;
+  const compilation = compileFunction(node);
+  const compiled = compilation.function;
+  const sample =
+    isCold && compiled
+      ? getCompilationSample(compiled.graph, performance.now() - compilationStartedAt)
+      : null;
+  if (!compiled)
+    return decline({ category: "static", reason: `unsupported ${compilation.reason}`, node });
   const graph = compiled.graph;
   const ranks = new Map([...graph.blocks.keys()].map((block, index) => [block, index]));
   const inputs = new Map<number, StaticValue>();
@@ -67,36 +215,22 @@ export const executeSsa = (
     for (const instruction of block.instructions) {
       instructions.set(instruction.target, instruction);
       if (!compiled.constants.executableBlocks.has(block.id)) continue;
-      if (instruction.kind === "load-cell" || instruction.kind === "store-cell") return null;
-      if (instruction.kind === "binary" && instruction.operator === "in") return null;
-      if (instruction.kind === "input" && instruction.node?.type === "Identifier") {
-        if (!node.params.some((parameter) => parameter === instruction.node)) return null;
-        const value = lookupScope(context.scope, instruction.node.name);
-        if (!value || !isScalar(value)) return null;
-        inputs.set(instruction.target, value);
-      } else if (
-        instruction.kind === "input" &&
-        instruction.node &&
-        instruction.node.type !== "CatchClause"
-      )
-        return null;
-      if (instruction.kind === "opaque") {
-        if (instruction.operator === "invalid-assignment") continue;
-        if (
-          instruction.operator === "load-reference" &&
-          instruction.node?.type === "MemberExpression" &&
-          !instruction.node.computed &&
-          instruction.node.property.type === "Identifier" &&
-          (instruction.node.property.name === "name" ||
-            instruction.node.property.name === "message")
-        )
-          continue;
-        if (instruction.operator !== "load-external" || instruction.node?.type !== "Identifier")
-          return null;
-        const value = lookupScope(context.scope, instruction.node.name);
-        if (!value || !isScalar(value)) return null;
-        inputs.set(instruction.target, value);
-      }
+      const staticBlocker = getInstructionBlocker(instruction, graph, node);
+      if (staticBlocker) return decline(staticBlocker, sample);
+      const name = getExternalName(instruction);
+      if (name === null || !instruction.node) continue;
+      const value = lookupScope(context.scope, name) ?? GLOBAL_CONSTANTS.get(name);
+      const inputBlocker = getInputBlocker(
+        value,
+        instruction.kind === "input" ? "parameter" : "outer binding",
+        instruction.node,
+      );
+      if (inputBlocker) return decline(inputBlocker, sample);
+      if (value)
+        inputs.set(
+          instruction.target,
+          instruction.operator === "typeof-external" ? host.getTypeof(value) : value,
+        );
     }
   }
   const error = (name: Parameters<typeof createErrorValue>[0], message: string): StaticValue =>
@@ -169,11 +303,16 @@ export const executeSsa = (
           continue;
         }
         const operands = instruction.operands.map((operand) => getValue(state, operand));
-        if (
-          (instruction.kind === "unary" || instruction.kind === "binary") &&
-          operands.some((operand) => !isScalar(operand))
-        )
-          throw new SsaDeoptimization();
+        const nonScalar =
+          instruction.kind === "unary" || instruction.kind === "binary"
+            ? operands.find((operand) => !isScalar(operand))
+            : undefined;
+        if (nonScalar)
+          throw new SsaDeoptimization({
+            category: "deoptimization",
+            reason: `${nonScalar.kind} operand`,
+            node: instruction.node,
+          });
         let value: StaticValue;
         state.uninitialized.delete(instruction.target);
         switch (instruction.kind) {
@@ -219,7 +358,11 @@ export const executeSsa = (
                 member?.type !== "MemberExpression" ||
                 member.property.type !== "Identifier"
               )
-                throw new SsaDeoptimization();
+                throw new SsaDeoptimization({
+                  category: "deoptimization",
+                  reason: `property read on ${receiver.kind}`,
+                  node: instruction.node,
+                });
               value = getObjectProperty(receiver, member.property.name);
             } else
               value =
@@ -319,7 +462,8 @@ export const executeSsa = (
         );
         if (normal === undefined || exceptional === undefined)
           throw new Error("Unsupported SSA suspension");
-        if (getThrowCertainty(value) === "maybe")
+        const certainty = getThrowCertainty(value);
+        if (certainty === "maybe" || (certainty === "always" && value.kind === "branch"))
           return host.distribute(value, (alternative) => {
             const next = clone(state);
             if (terminal.value !== null) next.values.set(terminal.value, alternative);
@@ -343,17 +487,47 @@ export const executeSsa = (
   };
   const entryBudget = context.budget.remaining;
   try {
-    return run(graph.entry, null, {
-      values: new Map(),
-      uninitialized: new Set(),
-      visits: new Map(),
-      exception: null,
-    });
+    return {
+      value: run(graph.entry, null, {
+        values: new Map(),
+        uninitialized: new Set(),
+        visits: new Map(),
+        exception: null,
+      }),
+      blocker: null,
+      compilation: sample,
+    };
   } catch (error) {
     if (error instanceof SsaDeoptimization) {
       context.budget.remaining = entryBudget;
-      return null;
+      return decline(error.blocker, sample);
     }
     throw error;
   }
+};
+
+export const executeSsa = (
+  node: FunctionLikeNode,
+  context: EvaluationContext,
+  host: SsaExecutionHost,
+  location: SourceLocation | null,
+): StaticValue | null => {
+  const profile = getSsaProfile();
+  if (!profile) return attemptSsa(node, context, host, location, false).value;
+  const startedAt = performance.now();
+  const attempt = attemptSsa(node, context, host, location, true);
+  const file = context.module.file;
+  recordSsaAttempt(profile, node, file, {
+    fallback: attempt.blocker && {
+      category: attempt.blocker.category,
+      reason: attempt.blocker.reason,
+      location: attempt.blocker.node && getSourceLocation(file, attempt.blocker.node),
+    },
+    isUncertain:
+      attempt.value?.kind === "unknown-primitive" ||
+      (attempt.value?.kind === "unknown" && !attempt.value.thrown),
+    milliseconds: performance.now() - startedAt,
+    compilation: attempt.compilation,
+  });
+  return attempt.value;
 };

@@ -1783,6 +1783,7 @@ const isSameLocation = (left: SourceLocation | null, right: SourceLocation | nul
 const areInterchangeableThrownObjects = (
   left: StaticObjectValue,
   right: StaticObjectValue,
+  getPredicate: (value: StaticValue) => string,
 ): boolean =>
   left.constructedBy === right.constructedBy &&
   left.hasNullPrototype === right.hasNullPrototype &&
@@ -1798,12 +1799,16 @@ const areInterchangeableThrownObjects = (
       other.accessor === undefined &&
       entry.value.kind !== "object" &&
       entry.value.kind !== "list" &&
-      isInterchangeable(entry.value, other.value)
+      isInterchangeable(entry.value, other.value, getPredicate)
     );
   });
 
 /** Alternatives analysis could never tell apart, so a branch keeps only one of them. */
-const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
+const isInterchangeable = (
+  left: StaticValue,
+  right: StaticValue,
+  getPredicate: (value: StaticValue) => string,
+): boolean => {
   if (isSameValue(left, right)) return true;
   if (left === CHAIN_SHORT_CIRCUIT || right === CHAIN_SHORT_CIRCUIT) return false;
   if (left.kind === "external" && right.kind === "external") {
@@ -1816,13 +1821,13 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
   if (left.kind === "unknown" && right.kind === "unknown") {
     if (left.thrown === undefined || right.thrown === undefined)
       return left.thrown === right.thrown;
-    if (isInterchangeable(left.thrown, right.thrown)) return true;
+    if (isInterchangeable(left.thrown, right.thrown, getPredicate)) return true;
     return (
       left.thrown.kind === "object" &&
       right.thrown.kind === "object" &&
       left.reason === right.reason &&
       isSameLocation(left.location, right.location) &&
-      areInterchangeableThrownObjects(left.thrown, right.thrown)
+      areInterchangeableThrownObjects(left.thrown, right.thrown, getPredicate)
     );
   }
   return (
@@ -1830,7 +1835,8 @@ const isInterchangeable = (left: StaticValue, right: StaticValue): boolean => {
     right.kind === "unknown-primitive" &&
     left.primitiveType === right.primitiveType &&
     left.identity === right.identity &&
-    haveSameShape(left, right)
+    haveSameShape(left, right) &&
+    getPredicate(left) === getPredicate(right)
   );
 };
 
@@ -1849,10 +1855,18 @@ export const branchValue = (
   preferredIndex = 0,
   predicate: string | null = null,
 ): StaticValue => {
+  const predicates = new Map<StaticValue, string>();
+  const getPredicate = (value: StaticValue): string => {
+    const cached = predicates.get(value) ?? getTruthinessPredicate(value);
+    predicates.set(value, cached);
+    return cached;
+  };
   const [firstAlternative] = alternatives;
   if (
     firstAlternative !== undefined &&
-    alternatives.every((alternative) => isInterchangeable(alternative, firstAlternative))
+    alternatives.every((alternative) =>
+      isInterchangeable(alternative, firstAlternative, getPredicate),
+    )
   )
     return firstAlternative;
   const flattened: StaticValue[] = [];
@@ -1860,7 +1874,9 @@ export const branchValue = (
   let resolvedPreferred = 0;
   let hasNestedBranch = false;
   const add = (value: StaticValue): number => {
-    const existing = flattened.findIndex((candidate) => isInterchangeable(candidate, value));
+    const existing = flattened.findIndex((candidate) =>
+      isInterchangeable(candidate, value, getPredicate),
+    );
     if (existing !== -1) return existing;
     flattened.push(value);
     return flattened.length - 1;
@@ -2018,6 +2034,13 @@ export const isNullish = (value: StaticValue): boolean | null => {
   if (value.kind === "unknown-primitive") return value.primitiveType === "any" ? null : false;
   return false;
 };
+
+/** Calling it throws a `TypeError`. A nullish value is excluded: an unmodeled built-in member reads as `undefined`. */
+export const isNeverCallable = (value: StaticValue): boolean =>
+  value.kind === "object" ||
+  value.kind === "list" ||
+  ((value.kind === "primitive" || value.kind === "unknown-primitive") &&
+    isNullish(value) === false);
 
 const filterAlternatives = (
   value: StaticBranchValue,
