@@ -185,9 +185,8 @@ const mountFixture = async (fixture: FixtureCase): Promise<MountResult> => {
   }
 };
 
-export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
-  const profile = getFrameworkProfile(fixture.manifest.framework);
-  const renderer = await createFrameworkRenderer(
+export const createFixtureRenderer = (fixture: FixtureCase) =>
+  createFrameworkRenderer(
     {
       framework: fixture.manifest.framework,
       entry: join(fixture.directory, fixture.manifest.entry),
@@ -204,6 +203,10 @@ export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult
       timerUnderrunMs: NODE_TIMER_UNDERRUN_MS,
     },
   );
+
+export const runFixture = async (fixture: FixtureCase): Promise<FixtureRunResult> => {
+  const profile = getFrameworkProfile(fixture.manifest.framework);
+  const renderer = await createFixtureRenderer(fixture);
   const staticResult = await renderer.render();
   if (fixture.manifest.skipRuntime) {
     return {

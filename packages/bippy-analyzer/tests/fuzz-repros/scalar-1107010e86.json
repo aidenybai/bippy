@@ -1,0 +1,91 @@
+{
+  "grammar": "scalar",
+  "signature": "fallback:deoptimization:object operand",
+  "rootCause": "SSA has no object operands, so a caught error reaching += deoptimizes to AST",
+  "mode": "ast",
+  "fallback": {
+    "category": "deoptimization",
+    "reason": "object operand",
+    "location": {
+      "filePath": "/tmp/bippy-differential-NGUIsm/program.ts",
+      "line": 8,
+      "column": 16
+    }
+  },
+  "input": "undefined",
+  "source": "let alpha = 0, beta = 0;\nlet total = 0, flag = first, trace = \"\";\n{ { try { trace |= (-2n);\n} catch (caught) { trace = caught;\n}\n}\n{ let total = (trace += \"e16\", 0);\n}\n}\n",
+  "assignments": [
+    {
+      "first": false,
+      "second": false,
+      "expected": {
+        "kind": "return",
+        "value": {
+          "text": "undefined"
+        }
+      },
+      "actual": [
+        {
+          "kind": "return",
+          "value": {
+            "text": "undefined"
+          }
+        }
+      ]
+    },
+    {
+      "first": false,
+      "second": true,
+      "expected": {
+        "kind": "return",
+        "value": {
+          "text": "undefined"
+        }
+      },
+      "actual": [
+        {
+          "kind": "return",
+          "value": {
+            "text": "undefined"
+          }
+        }
+      ]
+    },
+    {
+      "first": true,
+      "second": false,
+      "expected": {
+        "kind": "return",
+        "value": {
+          "text": "undefined"
+        }
+      },
+      "actual": [
+        {
+          "kind": "return",
+          "value": {
+            "text": "undefined"
+          }
+        }
+      ]
+    },
+    {
+      "first": true,
+      "second": true,
+      "expected": {
+        "kind": "return",
+        "value": {
+          "text": "undefined"
+        }
+      },
+      "actual": [
+        {
+          "kind": "return",
+          "value": {
+            "text": "undefined"
+          }
+        }
+      ]
+    }
+  ]
+}

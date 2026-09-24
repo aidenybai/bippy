@@ -238,6 +238,9 @@ importers:
       fake-indexeddb:
         specifier: 6.2.4
         version: 6.2.4
+      fast-check:
+        specifier: 4.10.2
+        version: 4.10.2
       happy-dom:
         specifier: ^20.11.6
         version: 20.11.6
