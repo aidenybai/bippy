@@ -471,8 +471,8 @@ These passes do not establish complete JavaScript or React compatibility. Unsupp
 
 After the fuzzer, fallback report, and fixes above:
 
-- Coverage: 23,390 tests passed across 371 files; 3 failed and 4 were skipped. The failures are environmental: the browser-capture test needs a Playwright Chromium that isn't installed, and two `Reflect.construct` argument cases also fail at the starting commit under this Node build.
-- Ordinary assertions: 22,268 (was 21,948). Known-defect assertions: 1,122 (was 1,353). The decrease comes from witnesses that now match native execution and from the fixed `heap-28` repro; none were relabeled without a passing native comparison.
+- Coverage, rebased onto `4398f30e`: 23,444 tests passed across 379 files; 1 failed and 4 were skipped. The failure is environmental: the browser-capture test needs a Playwright Chromium that isn't installed.
+- Ordinary assertions: 22,322 (was 21,948). Known-defect assertions: 1,122 (was 1,353). The decrease comes from witnesses that now match native execution and from the fixed `heap-28` repro; none were relabeled without a passing native comparison.
 - Final fuzz campaigns: 2,000 scalar and 2,000 heap cases from fast-check seed 20260924, with no new mismatch, crash, or fallback.
 - Typecheck, touched-file lint and formatting, `git diff --check`, and architecture tests passed.
-- Strict compatibility still fails: known defects remain, and 239 source files lack complete coverage, one more than before because of the new `evaluate/ssa-profile.ts`.
+- Strict compatibility still fails: known defects remain, and 233 source files lack complete coverage, including the new `evaluate/ssa-profile.ts`.
