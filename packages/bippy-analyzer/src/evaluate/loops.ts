@@ -1,0 +1,571 @@
+import type {
+  AssignmentTarget,
+  BindingPattern,
+  DoWhileStatement,
+  Expression,
+  ForInStatement,
+  ForOfStatement,
+  ForStatement,
+  ForStatementLeft,
+  Span,
+  Statement,
+  VariableDeclaration,
+  WhileStatement,
+} from "oxc-parser";
+import type { ModuleRecord } from "../graph/module-types.js";
+import type { SourceLocation } from "../parse/source-types.js";
+import type { Scope, StaticOptionalValue, StaticValue } from "../types.js";
+import {
+  COMPLETES,
+  isLabeledBreak,
+  leaveLoop,
+  mergeOutcomes,
+  returnOutcome,
+  type StatementOutcome,
+} from "./completion.js";
+import type {
+  ConditionalEvaluationOptions,
+  EvaluationContext,
+  StatementContinuation,
+  StatementValueContinuation,
+} from "./context.js";
+import { withScope } from "./context.js";
+import { getOwnEnumerableEntries } from "./own-entries.js";
+import { createScope } from "./scope.js";
+import { getThrowCertainty } from "./thrown.js";
+import {
+  UNDEFINED_VALUE,
+  getObjectProperty,
+  getTruthiness,
+  primitiveValue,
+  unknownPrimitiveValue,
+  unknownValue,
+} from "./values.js";
+
+export interface LoopEvaluation {
+  outcome: StatementOutcome;
+  isContinued: boolean;
+}
+
+export interface LoopEvaluator {
+  locate: (module: ModuleRecord, span: Span) => SourceLocation;
+  evaluateExpression: (node: Expression, context: EvaluationContext) => StaticValue;
+  evaluateBlock: (
+    statements: Statement[],
+    context: EvaluationContext,
+    createChildScope: boolean,
+    continuation?: StatementContinuation,
+  ) => StatementOutcome;
+  evaluateLoopBody: (
+    body: Statement,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+  ) => LoopEvaluation;
+  continueStatements: (
+    outcome: StatementOutcome,
+    context: EvaluationContext,
+    proceed: StatementContinuation,
+    location: SourceLocation,
+  ) => StatementOutcome;
+  continueStatementValue: (
+    value: StaticValue,
+    context: EvaluationContext,
+    proceed: StatementValueContinuation,
+    location: SourceLocation,
+    shouldDistributeBranches?: boolean,
+  ) => StatementOutcome;
+  bindDeclarator: (
+    kind: VariableDeclaration["kind"],
+    pattern: BindingPattern,
+    value: StaticValue,
+    context: EvaluationContext,
+  ) => void;
+  assignTarget: (target: AssignmentTarget, value: StaticValue, context: EvaluationContext) => void;
+  resolveIterable: (
+    value: StaticValue,
+    context: EvaluationContext,
+    location: SourceLocation,
+  ) => StaticValue;
+  runMaybe: <Result>(
+    scope: Scope | null,
+    run: () => Result,
+    reason: string,
+    location: SourceLocation | null,
+    isLikelyRun?: boolean,
+    isRepeated?: boolean,
+    options?: ConditionalEvaluationOptions,
+  ) => Result;
+  runWhenTruthy: <Result>(
+    test: Expression,
+    context: EvaluationContext,
+    run: () => Result,
+  ) => Result;
+  widenLoopCarriedBindings: (
+    scope: Scope,
+    run: () => void,
+    location: SourceLocation,
+    isPrimitiveOnly?: boolean,
+  ) => void;
+}
+
+type LoopStatement =
+  | ForOfStatement
+  | ForInStatement
+  | ForStatement
+  | WhileStatement
+  | DoWhileStatement;
+
+/**
+ * Upper bound on concretely unrolled iterations of a conditional loop before the
+ * tail becomes uncertain. Loops over a known iterable are bounded by the
+ * iterable itself (and the step budget), so they unroll in full.
+ */
+export const MAX_UNROLLED_ITERATIONS = 256;
+
+/**
+ * Upper bound on unrolled iterations that resume from a forked path. Each one
+ * nests the next inside its continuation and lengthens every path guard, so
+ * past this many the tail becomes uncertain instead of overflowing the stack.
+ */
+export const MAX_FORKED_ITERATIONS = 16;
+
+type UnrollResult =
+  | { kind: "exact"; outcome: StatementOutcome }
+  | { kind: "partial"; outcomes: StatementOutcome[] };
+
+const completeUnrolling = (
+  outcomes: StatementOutcome[],
+  location: SourceLocation,
+): UnrollResult => ({
+  kind: "exact",
+  outcome: mergeOutcomes(outcomes, "return inside a loop", location),
+});
+
+const exactCompletion = (outcomes: StatementOutcome[]): UnrollResult => ({
+  kind: "exact",
+  outcome: mergeOutcomes([...outcomes, COMPLETES], "return inside a loop", null),
+});
+
+const bindLoopLeft = (
+  evaluator: LoopEvaluator,
+  left: ForStatementLeft,
+  value: StaticValue,
+  context: EvaluationContext,
+): void => {
+  if (left.type === "VariableDeclaration") {
+    for (const declarator of left.declarations)
+      evaluator.bindDeclarator(left.kind, declarator.id, value, context);
+    return;
+  }
+  evaluator.assignTarget(left, value, context);
+};
+
+const ENUMERATION_TRAPS = ["ownKeys", "getOwnPropertyDescriptor"];
+
+/** `for..in` enumerates through a proxy's target unless its handler traps key enumeration. */
+const getEnumerationTarget = (value: StaticValue): StaticValue => {
+  if (value.kind !== "proxy") return value;
+  const isTrapped = ENUMERATION_TRAPS.some((trap) => {
+    const handler = getObjectProperty(value.handler, trap);
+    return handler.kind !== "primitive" || handler.value !== undefined;
+  });
+  return isTrapped ? value : getEnumerationTarget(value.target);
+};
+
+/** The items a loop visits one by one; `isComplete` is false when an unknown number of items follows them. */
+interface IterationItems {
+  items: StaticValue[];
+  isComplete: boolean;
+}
+
+const isPositionalItem = (item: StaticValue): boolean =>
+  item.kind !== "repeat" && item.kind !== "branch";
+
+const iterationValues = (
+  evaluator: LoopEvaluator,
+  statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
+  context: EvaluationContext,
+): IterationItems | null => {
+  if (statement.type === "ForOfStatement") {
+    const iterated = evaluator.resolveIterable(
+      right,
+      context,
+      evaluator.locate(context.module, statement.right),
+    );
+    if (iterated.kind === "list") {
+      const positionalCount = iterated.items.findIndex((item) => !isPositionalItem(item));
+      return positionalCount === -1
+        ? { items: iterated.items, isComplete: true }
+        : { items: iterated.items.slice(0, positionalCount), isComplete: false };
+    }
+    return null;
+  }
+  const enumerated = getEnumerationTarget(right);
+  if (enumerated.kind === "primitive") {
+    const keys = typeof enumerated.value === "string" ? Object.keys(enumerated.value) : [];
+    return { items: keys.map(primitiveValue), isComplete: true };
+  }
+  if (enumerated.kind !== "object" && enumerated.kind !== "list") return null;
+  const entries = getOwnEnumerableEntries(enumerated);
+  return entries ? { items: entries.map(([key]) => primitiveValue(key)), isComplete: true } : null;
+};
+
+const runBody = (
+  evaluator: LoopEvaluator,
+  body: Statement,
+  context: EvaluationContext,
+): StatementOutcome => evaluator.evaluateBlock([body], context, true);
+
+/**
+ * Runs one concrete iteration. A definite `continue` or completion moves on, a
+ * definite `break` ends the loop, a definite return ends the function. A return
+ * (or throw) on only some paths leaves the function on those paths while the
+ * others carry on with the next iteration; only a `break` that may or may not
+ * happen leaves the remaining iterations uncertain.
+ */
+const advanceIteration = (
+  outcome: StatementOutcome,
+  outcomes: StatementOutcome[],
+): "next" | UnrollResult => {
+  if (!outcome.mayComplete && (outcome.jump === "break" || isLabeledBreak(outcome))) {
+    return {
+      kind: "exact",
+      outcome: mergeOutcomes([...outcomes, leaveLoop(outcome)], "break out of a loop", null),
+    };
+  }
+  if (outcome.returned !== null && !outcome.mayComplete && outcome.jump === null) {
+    return {
+      kind: "exact",
+      outcome: mergeOutcomes([...outcomes, outcome], "return inside a loop", null),
+    };
+  }
+  if (outcome.returned) outcomes.push(returnOutcome(outcome.returned));
+  return outcome.jump === null || outcome.jump === "continue"
+    ? "next"
+    : { kind: "partial", outcomes };
+};
+
+const createForEachContext = (
+  evaluator: LoopEvaluator,
+  statement: ForOfStatement | ForInStatement,
+  value: StaticValue,
+  context: EvaluationContext,
+): EvaluationContext => {
+  const iterationContext = withScope(context, createScope(context.scope));
+  bindLoopLeft(evaluator, statement.left, value, iterationContext);
+  return iterationContext;
+};
+
+const runForEachIteration = (
+  evaluator: LoopEvaluator,
+  statement: ForOfStatement | ForInStatement,
+  value: StaticValue,
+  context: EvaluationContext,
+): StatementOutcome =>
+  runBody(evaluator, statement.body, createForEachContext(evaluator, statement, value, context));
+
+/** An item present on some paths only runs its iteration on those paths, so the loop may skip it. */
+const runOptionalIteration = (
+  evaluator: LoopEvaluator,
+  statement: ForOfStatement | ForInStatement,
+  item: StaticOptionalValue,
+  context: EvaluationContext,
+): StatementOutcome => {
+  const outcome = evaluator.runMaybe(
+    context.scope,
+    () => runForEachIteration(evaluator, statement, item.value, context),
+    item.reason,
+    item.location,
+    !item.isAbsentPreferred,
+    false,
+    { predicate: item.predicate ?? undefined },
+  );
+  return { ...outcome, mayComplete: true };
+};
+
+const unrollForEach = (
+  evaluator: LoopEvaluator,
+  statement: ForOfStatement | ForInStatement,
+  right: StaticValue,
+  context: EvaluationContext,
+  location: SourceLocation,
+): UnrollResult | null => {
+  const iteration = iterationValues(evaluator, statement, right, context);
+  if (!iteration) return null;
+  const collectFrom = (
+    start: number,
+    iterationContext: EvaluationContext,
+    forkedIterations = 0,
+  ): UnrollResult => {
+    const outcomes: StatementOutcome[] = [];
+    if (forkedIterations > MAX_FORKED_ITERATIONS) return { kind: "partial", outcomes };
+    for (let index = start; index < iteration.items.length; index++) {
+      const item = iteration.items[index];
+      const evaluation =
+        item.kind === "optional"
+          ? {
+              outcome: runOptionalIteration(evaluator, statement, item, iterationContext),
+              isContinued: false,
+            }
+          : evaluator.evaluateLoopBody(
+              statement.body,
+              createForEachContext(evaluator, statement, item, iterationContext),
+              (pathContext) =>
+                finishUnrolling(
+                  evaluator,
+                  statement,
+                  collectFrom(
+                    index + 1,
+                    withScope(pathContext, iterationContext.scope),
+                    forkedIterations + 1,
+                  ),
+                  pathContext,
+                  location,
+                ),
+            );
+      if (evaluation.isContinued)
+        return completeUnrolling([...outcomes, evaluation.outcome], location);
+      const step = advanceIteration(evaluation.outcome, outcomes);
+      if (step !== "next") return step;
+    }
+    return iteration.isComplete ? exactCompletion(outcomes) : { kind: "partial", outcomes };
+  };
+  return collectFrom(0, context);
+};
+
+const unrollConditional = (
+  evaluator: LoopEvaluator,
+  statement: ForStatement | WhileStatement | DoWhileStatement,
+  context: EvaluationContext,
+  location: SourceLocation,
+): UnrollResult | null => {
+  const loopContext = withScope(context, createScope(context.scope));
+  const test = statement.test;
+  const resumeFrom = (
+    iteration: number,
+    iterationContext: EvaluationContext,
+    completion: StaticValue,
+    forkedIterations: number,
+  ): StatementOutcome =>
+    evaluator.continueStatementValue(
+      completion,
+      iterationContext,
+      (_value, pathContext) =>
+        finishUnrolling(
+          evaluator,
+          statement,
+          collectFrom(iteration, pathContext, null, forkedIterations),
+          pathContext,
+          location,
+        ),
+      location,
+    );
+  const collectFrom = (
+    startIteration: number,
+    iterationContext: EvaluationContext,
+    completedTest: StaticValue | null = null,
+    forkedIterations = 0,
+  ): UnrollResult | null => {
+    const outcomes: StatementOutcome[] = [];
+    if (forkedIterations > MAX_FORKED_ITERATIONS) return { kind: "partial", outcomes };
+    for (let iteration = startIteration; iteration < MAX_UNROLLED_ITERATIONS; iteration++) {
+      if (test && (iteration !== 0 || statement.type !== "DoWhileStatement")) {
+        const tested =
+          iteration === startIteration && completedTest !== null
+            ? completedTest
+            : evaluator.evaluateExpression(test, iterationContext);
+        if (getThrowCertainty(tested) !== "never") {
+          return completeUnrolling(
+            [
+              ...outcomes,
+              evaluator.continueStatementValue(
+                tested,
+                iterationContext,
+                (value, pathContext) =>
+                  finishUnrolling(
+                    evaluator,
+                    statement,
+                    collectFrom(iteration, pathContext, value, forkedIterations + 1),
+                    pathContext,
+                    location,
+                  ),
+                location,
+              ),
+            ],
+            location,
+          );
+        }
+        const truthiness = getTruthiness(tested);
+        if (truthiness === null)
+          return outcomes.length > 0 || iteration > 0 ? { kind: "partial", outcomes } : null;
+        if (truthiness === false) return exactCompletion(outcomes);
+      }
+      const evaluation = evaluator.evaluateLoopBody(
+        statement.body,
+        iterationContext,
+        (pathContext) => {
+          const updated =
+            statement.type === "ForStatement" && statement.update
+              ? evaluator.evaluateExpression(statement.update, pathContext)
+              : UNDEFINED_VALUE;
+          return resumeFrom(iteration + 1, pathContext, updated, forkedIterations + 1);
+        },
+      );
+      if (evaluation.isContinued)
+        return completeUnrolling([...outcomes, evaluation.outcome], location);
+      const step = advanceIteration(evaluation.outcome, outcomes);
+      if (step !== "next") return step;
+      if (statement.type === "ForStatement" && statement.update) {
+        const updated = evaluator.evaluateExpression(statement.update, iterationContext);
+        if (getThrowCertainty(updated) !== "never")
+          return completeUnrolling(
+            [
+              ...outcomes,
+              resumeFrom(iteration + 1, iterationContext, updated, forkedIterations + 1),
+            ],
+            location,
+          );
+      }
+    }
+    return { kind: "partial", outcomes };
+  };
+  if (statement.type === "ForStatement" && statement.init) {
+    const initialized =
+      statement.init.type === "VariableDeclaration"
+        ? evaluator.evaluateBlock([statement.init], loopContext, false, (pathContext) =>
+            resumeFrom(0, pathContext, UNDEFINED_VALUE, 0),
+          )
+        : resumeFrom(0, loopContext, evaluator.evaluateExpression(statement.init, loopContext), 0);
+    return completeUnrolling([initialized], location);
+  }
+  return collectFrom(0, loopContext);
+};
+
+/**
+ * Evaluates the body once with every loop-controlled binding unknown. Used when
+ * the iteration count is not statically known: the body's effects are joined
+ * with the state in which it never ran, so assignments become branches and
+ * pushed items become repeats. A counter the test or update steps
+ * (`while (++index < length)`) is loop control like a declared one: the tail
+ * stands for any iteration, so it is unknown before the body runs.
+ */
+const evaluateUncertainTail = (
+  evaluator: LoopEvaluator,
+  statement: LoopStatement,
+  context: EvaluationContext,
+  location: SourceLocation,
+): StatementOutcome => {
+  const loopContext: EvaluationContext = {
+    ...context,
+    scope: createScope(context.scope),
+  };
+  if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
+    const value =
+      statement.type === "ForInStatement"
+        ? unknownPrimitiveValue("string", "loop key")
+        : unknownValue("loop variable", location);
+    bindLoopLeft(evaluator, statement.left, value, loopContext);
+  } else if (statement.type === "ForStatement" && statement.init?.type === "VariableDeclaration") {
+    for (const declarator of statement.init.declarations) {
+      evaluator.bindDeclarator(
+        statement.init.kind,
+        declarator.id,
+        declarator.init?.type === "Literal" && typeof declarator.init.value === "number"
+          ? unknownPrimitiveValue("number", "loop counter")
+          : unknownValue("loop variable", location),
+        loopContext,
+      );
+    }
+  }
+  const test = "test" in statement ? statement.test : null;
+  const whileTestHolds = <Result>(run: () => Result): Result =>
+    test ? evaluator.runWhenTruthy(test, loopContext, run) : run();
+  const runTailBody = (): StatementOutcome => runBody(evaluator, statement.body, loopContext);
+  const stepControl = (): void => {
+    if (statement.type === "ForStatement" && statement.update)
+      evaluator.evaluateExpression(statement.update, loopContext);
+    if (test) evaluator.evaluateExpression(test, loopContext);
+  };
+  evaluator.widenLoopCarriedBindings(context.scope, stepControl, location, true);
+  const outcome = evaluator.runMaybe(
+    context.scope,
+    () => whileTestHolds(runTailBody),
+    "loop iterations are uncertain",
+    location,
+    true,
+    true,
+  );
+  whileTestHolds(() => evaluator.widenLoopCarriedBindings(context.scope, runTailBody, location));
+  return { ...leaveLoop(outcome), mayComplete: true };
+};
+
+const finishUnrolling = (
+  evaluator: LoopEvaluator,
+  statement: LoopStatement,
+  unrolled: UnrollResult | null,
+  context: EvaluationContext,
+  location: SourceLocation,
+): StatementOutcome => {
+  if (unrolled?.kind === "exact") return unrolled.outcome;
+  const tail = evaluateUncertainTail(evaluator, statement, context, location);
+  return mergeOutcomes([...(unrolled?.outcomes ?? []), tail], "return inside a loop", location);
+};
+
+/**
+ * Loops are unrolled while their iteration count is statically known (a known
+ * list, a known key set, or a counter whose test stays decidable) and every
+ * `break`/`continue` is definite. Once that stops being true the remaining
+ * iterations collapse into a single uncertain evaluation.
+ */
+export const evaluateLoop = (
+  evaluator: LoopEvaluator,
+  statement: LoopStatement,
+  context: EvaluationContext,
+  location: SourceLocation,
+  proceed: StatementContinuation,
+): LoopEvaluation => {
+  if (statement.type === "ForOfStatement" || statement.type === "ForInStatement") {
+    const right = evaluator.evaluateExpression(statement.right, context);
+    const runLoop: StatementValueContinuation = (value, pathContext) =>
+      finishUnrolling(
+        evaluator,
+        statement,
+        unrollForEach(evaluator, statement, value, pathContext, location),
+        pathContext,
+        location,
+      );
+    if (statement.type === "ForOfStatement" && right.kind === "branch") {
+      return {
+        outcome: evaluator.continueStatementValue(
+          right,
+          context,
+          (value, pathContext) =>
+            evaluator.continueStatements(
+              runLoop(value, pathContext),
+              pathContext,
+              proceed,
+              location,
+            ),
+          location,
+          true,
+        ),
+        isContinued: true,
+      };
+    }
+    return {
+      outcome: evaluator.continueStatementValue(right, context, runLoop, location),
+      isContinued: false,
+    };
+  }
+  return {
+    outcome: finishUnrolling(
+      evaluator,
+      statement,
+      unrollConditional(evaluator, statement, context, location),
+      context,
+      location,
+    ),
+    isContinued: false,
+  };
+};

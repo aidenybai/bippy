@@ -1,0 +1,11 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "An app bundled by react-scripts, which declares no `webpack` itself: webpack 5's default `node.global` still makes the bare `global` the page's window, as CommonJS dependencies guarding on `typeof global` rely on.",
+  "expectedStats": {
+    "branchCount": 0,
+    "unknownCount": 0
+  },
+  "expectedStates": 1
+}

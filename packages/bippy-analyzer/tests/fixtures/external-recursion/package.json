@@ -1,0 +1,5 @@
+{
+  "name": "fixture-external-recursion",
+  "private": true,
+  "type": "module"
+}

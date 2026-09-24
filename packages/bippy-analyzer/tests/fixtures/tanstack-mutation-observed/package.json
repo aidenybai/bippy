@@ -1,0 +1,8 @@
+{
+  "name": "fixture-tanstack-mutation-observed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tanstack/react-query": "5.101.4"
+  }
+}

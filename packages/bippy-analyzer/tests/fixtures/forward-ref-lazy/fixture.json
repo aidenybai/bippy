@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "React.lazy chunks are not loaded at commit time, so the Suspense boundary is observed in its fallback alternative."
+}

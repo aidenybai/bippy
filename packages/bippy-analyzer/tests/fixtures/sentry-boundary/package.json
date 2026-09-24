@@ -1,0 +1,5 @@
+{
+  "name": "fixture-sentry-boundary",
+  "private": true,
+  "type": "module"
+}

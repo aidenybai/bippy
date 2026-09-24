@@ -1,0 +1,28 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "skipRuntime": true,
+  "externalPackages": ["debounce-kit"],
+  "expectedStats": { "unknownCount": 0, "branchCount": 0 },
+  "notes": "A dependency compiled by Babel without the regenerator import, in the shape react-table ships `useAsyncDebounce`: it reads the free `regeneratorRuntime` while rendering, and the captured window has no such global. Declaring react-scripts means `@babel/plugin-transform-runtime` (regenerator: true) rewrites that read into `@babel/runtime/regenerator` in every module it compiles, so the hook must not throw a ReferenceError; vitest runs the untransformed source, so this is asserted statically.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "page": {
+      "cookie": "",
+      "localStorage": {},
+      "sessionStorage": {},
+      "windowKeys": [
+        "window",
+        "document",
+        "navigator",
+        "location",
+        "history",
+        "setTimeout",
+        "clearTimeout",
+        "Promise"
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "react-scripts runs @svgr/webpack with { ref: true, titleProp: true } after file-loader: the default export is the asset URL and ReactComponent is a forwardRef named after the file."
+}

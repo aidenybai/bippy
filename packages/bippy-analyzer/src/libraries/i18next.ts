@@ -1,0 +1,415 @@
+import { resolvedPromiseValue } from "../evaluate/promises.js";
+import { element, nativeFunction, stubValue } from "../evaluate/stubs.js";
+import {
+  FALSE_VALUE,
+  NULL_VALUE,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
+  getObjectProperty,
+  isKnownString,
+  isUndefinedValue,
+  listValue,
+  objectFromRecord,
+  primitiveValue,
+  unknownPrimitiveValue,
+} from "../evaluate/values.js";
+import type {
+  ContextDefinition,
+  LibraryRun,
+  LibraryValueProvider,
+  ModeledExports,
+  StaticObjectValue,
+  StaticValue,
+  StubComponent,
+} from "../types.js";
+
+export const I18NEXT_PACKAGES = ["i18next", "react-i18next"];
+export const I18NEXT_MODELED_EXPORTS: ModeledExports = {
+  i18next: [
+    "default",
+    "i18next",
+    "createInstance",
+    "t",
+    "getFixedT",
+    "use",
+    "init",
+    "changeLanguage",
+  ],
+  "react-i18next": ["initReactI18next", "I18nextProvider", "useTranslation", "getI18n"],
+};
+
+interface I18nextInstanceState {
+  resources: StaticValue;
+  language: StaticValue;
+  fallbackLanguage: StaticValue;
+  defaultNamespace: StaticValue;
+  keySeparator: string | null;
+  resourceProperties: WeakMap<StaticObjectValue, ReadonlyMap<string, StaticValue> | null>;
+}
+
+interface I18nextModel {
+  getValue: (specifier: string, importedName: string) => StaticValue | null;
+}
+
+const I18NEXT_CONTEXT: ContextDefinition = {
+  name: "I18nextContext",
+  displayName: null,
+  defaultValue: NULL_VALUE,
+  location: null,
+};
+
+const getOption = (options: StaticValue, name: string): StaticValue =>
+  options.kind === "object" ? getObjectProperty(options, name) : UNDEFINED_VALUE;
+
+const getLanguageCandidates = (
+  language: StaticValue,
+  fallbackLanguage: StaticValue,
+): StaticValue[] => {
+  const candidates: StaticValue[] = [];
+  const addCandidate = (candidate: StaticValue): void => {
+    if (!isKnownString(candidate)) {
+      if (!isUndefinedValue(candidate)) candidates.push(candidate);
+      return;
+    }
+    if (
+      !candidates.some((existing) => isKnownString(existing) && existing.value === candidate.value)
+    ) {
+      candidates.push(candidate);
+    }
+    const baseLanguage = candidate.value.split("-")[0];
+    if (
+      baseLanguage !== candidate.value &&
+      !candidates.some((existing) => isKnownString(existing) && existing.value === baseLanguage)
+    ) {
+      candidates.push(primitiveValue(baseLanguage));
+    }
+  };
+  const addCandidates = (value: StaticValue): void => {
+    if (value.kind === "list") {
+      value.items.forEach(addCandidate);
+      return;
+    }
+    addCandidate(value);
+  };
+  addCandidates(language);
+  addCandidates(fallbackLanguage);
+  return candidates;
+};
+
+const getNamespaceCandidates = (namespace: StaticValue): StaticValue[] =>
+  namespace.kind === "list" ? namespace.items : [namespace];
+
+const getResourceProperty = (
+  state: I18nextInstanceState,
+  object: StaticObjectValue,
+  key: string,
+): StaticValue => {
+  let properties = state.resourceProperties.get(object);
+  if (properties === undefined) {
+    if (
+      object.entries.every((entry) => entry.kind === "property" && entry.accessor === undefined)
+    ) {
+      const knownProperties = new Map<string, StaticValue>();
+      for (const entry of object.entries) {
+        if (entry.kind === "property") knownProperties.set(entry.key, entry.value);
+      }
+      properties = knownProperties;
+    } else {
+      properties = null;
+    }
+    state.resourceProperties.set(object, properties);
+  }
+  return properties === null
+    ? getObjectProperty(object, key)
+    : (properties.get(key) ?? UNDEFINED_VALUE);
+};
+
+const getNestedValue = (
+  state: I18nextInstanceState,
+  root: StaticValue,
+  segments: readonly string[],
+): StaticValue => {
+  let value = root;
+  for (const segment of segments) {
+    if (value.kind !== "object") {
+      return isUndefinedValue(value)
+        ? UNDEFINED_VALUE
+        : unknownPrimitiveValue("string", "translation from a dynamic resource catalog");
+    }
+    value = getResourceProperty(state, value, segment);
+  }
+  return value;
+};
+
+const getInterpolation = (translation: string, options: StaticValue): StaticValue => {
+  const pattern = /\{\{\s*([^},\s]+)[^}]*\}\}/gu;
+  let result = "";
+  let offset = 0;
+  for (const match of translation.matchAll(pattern)) {
+    const index = match.index;
+    const name = match[1];
+    result += translation.slice(offset, index);
+    const value = getOption(options, name);
+    if (
+      value.kind !== "primitive" ||
+      (typeof value.value !== "string" &&
+        typeof value.value !== "number" &&
+        typeof value.value !== "boolean")
+    ) {
+      return unknownPrimitiveValue("string", `translation interpolation "${name}"`);
+    }
+    result += String(value.value);
+    offset = index + match[0].length;
+  }
+  return primitiveValue(result + translation.slice(offset));
+};
+
+const getTranslation = (
+  state: I18nextInstanceState,
+  keyValue: StaticValue,
+  options: StaticValue,
+  fixedLanguage: StaticValue,
+  fixedNamespace: StaticValue,
+  keyPrefix: StaticValue,
+): StaticValue => {
+  if (!isKnownString(keyValue)) {
+    return unknownPrimitiveValue("string", "translation of a dynamic key");
+  }
+  const optionLanguage = getOption(options, "lng");
+  const language = isUndefinedValue(optionLanguage)
+    ? isUndefinedValue(fixedLanguage)
+      ? state.language
+      : fixedLanguage
+    : optionLanguage;
+  const optionNamespace = getOption(options, "ns");
+  let namespaceValue = isUndefinedValue(optionNamespace)
+    ? isUndefinedValue(fixedNamespace)
+      ? state.defaultNamespace
+      : fixedNamespace
+    : optionNamespace;
+  let key = keyValue.value;
+  const namespaceSeparator = key.indexOf(":");
+  if (namespaceSeparator >= 0) {
+    namespaceValue = primitiveValue(key.slice(0, namespaceSeparator));
+    key = key.slice(namespaceSeparator + 1);
+  }
+  if (isKnownString(keyPrefix) && keyPrefix.value) {
+    key = `${keyPrefix.value}${state.keySeparator ?? "."}${key}`;
+  }
+  const optionCount = getOption(options, "count");
+  const optionKeySeparator = getOption(options, "keySeparator");
+  const keyCandidates =
+    optionKeySeparator.kind === "primitive" && optionKeySeparator.value === false
+      ? [key]
+      : optionCount.kind === "primitive" && typeof optionCount.value === "number"
+        ? [
+            `${key}_${optionCount.value === 0 ? "zero" : optionCount.value === 1 ? "one" : "other"}`,
+            key,
+          ]
+        : [key];
+  for (const namespaceCandidate of getNamespaceCandidates(namespaceValue)) {
+    if (!isKnownString(namespaceCandidate)) {
+      return unknownPrimitiveValue("string", "translation from a dynamic namespace");
+    }
+    for (const languageCandidate of getLanguageCandidates(language, state.fallbackLanguage)) {
+      if (!isKnownString(languageCandidate)) {
+        return unknownPrimitiveValue("string", "translation from a dynamic language");
+      }
+      for (const keyCandidate of keyCandidates) {
+        const segments =
+          state.keySeparator === null ? [keyCandidate] : keyCandidate.split(state.keySeparator);
+        const value = getNestedValue(state, state.resources, [
+          languageCandidate.value,
+          namespaceCandidate.value,
+          ...segments,
+        ]);
+        if (isUndefinedValue(value)) continue;
+        return isKnownString(value)
+          ? getInterpolation(value.value, options)
+          : unknownPrimitiveValue("string", `translation of "${key}"`);
+      }
+    }
+  }
+  const defaultValue = getOption(options, "defaultValue");
+  if (isKnownString(defaultValue)) return getInterpolation(defaultValue.value, options);
+  return primitiveValue(key);
+};
+
+const createI18nextInstance = (): StaticObjectValue => {
+  const state: I18nextInstanceState = {
+    resources: UNDEFINED_VALUE,
+    language: UNDEFINED_VALUE,
+    fallbackLanguage: primitiveValue("dev"),
+    defaultNamespace: primitiveValue("translation"),
+    keySeparator: ".",
+    resourceProperties: new WeakMap(),
+  };
+  let instance = objectFromRecord({});
+  const translate = (
+    key: StaticValue,
+    options: StaticValue | undefined = undefined,
+    fixedLanguage: StaticValue | undefined = undefined,
+    fixedNamespace: StaticValue | undefined = undefined,
+    keyPrefix: StaticValue | undefined = undefined,
+  ): StaticValue =>
+    getTranslation(
+      state,
+      key,
+      options !== undefined && isKnownString(options)
+        ? objectFromRecord({ defaultValue: options })
+        : (options ?? UNDEFINED_VALUE),
+      fixedLanguage ?? UNDEFINED_VALUE,
+      fixedNamespace ?? UNDEFINED_VALUE,
+      keyPrefix ?? UNDEFINED_VALUE,
+    );
+  const t = nativeFunction("t", ([key = UNDEFINED_VALUE, options]) => translate(key, options));
+  instance = objectFromRecord({
+    language: state.language,
+    resolvedLanguage: state.language,
+    isInitialized: FALSE_VALUE,
+    t,
+    getFixedT: nativeFunction(
+      "getFixedT",
+      ([language = UNDEFINED_VALUE, namespace = UNDEFINED_VALUE, keyPrefix = UNDEFINED_VALUE]) =>
+        nativeFunction("fixedT", ([key = UNDEFINED_VALUE, options]) =>
+          translate(key, options, language, namespace, keyPrefix),
+        ),
+    ),
+    use: nativeFunction("use", () => instance),
+    init: nativeFunction("init", ([options = UNDEFINED_VALUE]) => {
+      const resources = getOption(options, "resources");
+      const language = getOption(options, "lng");
+      const fallbackLanguage = getOption(options, "fallbackLng");
+      const defaultNamespace = getOption(options, "defaultNS");
+      const keySeparator = getOption(options, "keySeparator");
+      if (!isUndefinedValue(resources)) state.resources = resources;
+      if (!isUndefinedValue(language)) state.language = language;
+      if (!isUndefinedValue(fallbackLanguage)) state.fallbackLanguage = fallbackLanguage;
+      if (!isUndefinedValue(defaultNamespace)) state.defaultNamespace = defaultNamespace;
+      if (keySeparator.kind === "primitive") {
+        if (keySeparator.value === false) state.keySeparator = null;
+        if (typeof keySeparator.value === "string") state.keySeparator = keySeparator.value;
+      }
+      instance.entries = objectFromRecord({
+        language: state.language,
+        resolvedLanguage: state.language,
+        isInitialized: TRUE_VALUE,
+        t,
+      }).entries.concat(
+        instance.entries.filter(
+          (entry) =>
+            entry.kind !== "property" ||
+            !["language", "resolvedLanguage", "isInitialized", "t"].includes(entry.key),
+        ),
+      );
+      return resolvedPromiseValue(t);
+    }),
+    changeLanguage: nativeFunction("changeLanguage", ([language = UNDEFINED_VALUE]) => {
+      state.language = language;
+      return resolvedPromiseValue(t);
+    }),
+    exists: nativeFunction("exists", ([key = UNDEFINED_VALUE, options]) =>
+      isKnownString(translate(key, options)) ? TRUE_VALUE : FALSE_VALUE,
+    ),
+    hasLoadedNamespace: nativeFunction("hasLoadedNamespace", () => TRUE_VALUE),
+    loadNamespaces: nativeFunction("loadNamespaces", () => resolvedPromiseValue(UNDEFINED_VALUE)),
+    loadLanguages: nativeFunction("loadLanguages", () => resolvedPromiseValue(UNDEFINED_VALUE)),
+    on: nativeFunction("on", () => instance),
+    off: nativeFunction("off", () => instance),
+  });
+  return instance;
+};
+
+const createI18nextModel = (): I18nextModel => {
+  const globalInstance = createI18nextInstance();
+  const createInstance = nativeFunction("createInstance", () => createI18nextInstance());
+  globalInstance.entries.push({ kind: "property", key: "createInstance", value: createInstance });
+  const providerStub: StubComponent = {
+    displayName: "I18nextProvider",
+    render: (props) =>
+      element(
+        { kind: "context-provider", context: I18NEXT_CONTEXT, displayName: null },
+        objectFromRecord({
+          value: objectFromRecord({
+            i18n: getObjectProperty(props, "i18n"),
+            defaultNS: getObjectProperty(props, "defaultNS"),
+          }),
+          children: getObjectProperty(props, "children"),
+        }),
+      ),
+  };
+  const useTranslation = nativeFunction("useTranslation", ([namespace, options], tools) => {
+    const context = tools.readContext(I18NEXT_CONTEXT);
+    const contextualInstance =
+      context.kind === "object" ? getObjectProperty(context, "i18n") : UNDEFINED_VALUE;
+    const optionInstance = options ? getOption(options, "i18n") : UNDEFINED_VALUE;
+    const activeInstance = !isUndefinedValue(optionInstance)
+      ? optionInstance
+      : isUndefinedValue(contextualInstance)
+        ? globalInstance
+        : contextualInstance;
+    const contextNamespace =
+      context.kind === "object" ? getObjectProperty(context, "defaultNS") : UNDEFINED_VALUE;
+    const activeNamespace = namespace ?? contextNamespace ?? UNDEFINED_VALUE;
+    const fixedT = getOption(activeInstance, "getFixedT");
+    const keyPrefix = options ? getOption(options, "keyPrefix") : UNDEFINED_VALUE;
+    const t = tools.call(fixedT, [UNDEFINED_VALUE, activeNamespace, keyPrefix]);
+    return {
+      ...listValue([t, activeInstance, TRUE_VALUE]),
+      properties: new Map([
+        ["t", t],
+        ["i18n", activeInstance],
+        ["ready", TRUE_VALUE],
+      ]),
+    };
+  });
+  const reactPlugin = objectFromRecord({
+    type: primitiveValue("3rdParty"),
+    init: nativeFunction("init", () => UNDEFINED_VALUE),
+  });
+  return {
+    getValue: (specifier, importedName) => {
+      if (specifier === "i18next") {
+        switch (importedName) {
+          case "default":
+          case "i18next":
+            return globalInstance;
+          case "createInstance":
+            return createInstance;
+          case "t":
+          case "getFixedT":
+          case "use":
+          case "init":
+          case "changeLanguage":
+            return getObjectProperty(globalInstance, importedName);
+          default:
+            return null;
+        }
+      }
+      if (specifier !== "react-i18next") return null;
+      switch (importedName) {
+        case "initReactI18next":
+          return reactPlugin;
+        case "I18nextProvider":
+          return stubValue(providerStub);
+        case "useTranslation":
+          return useTranslation;
+        case "getI18n":
+          return nativeFunction("getI18n", () => globalInstance);
+        default:
+          return null;
+      }
+    },
+  };
+};
+
+const models = new WeakMap<LibraryRun, I18nextModel>();
+
+export const i18nextValue: LibraryValueProvider = (specifier, importedName, run) => {
+  let model = models.get(run);
+  if (!model) {
+    model = createI18nextModel();
+    models.set(run, model);
+  }
+  return model.getValue(specifier, importedName);
+};

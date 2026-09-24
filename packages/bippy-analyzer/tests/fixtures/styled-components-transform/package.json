@@ -1,0 +1,11 @@
+{
+  "name": "transform-fixture-styled-components",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "styled-components": "6.5.3"
+  },
+  "devDependencies": {
+    "babel-plugin-styled-components": "2.1.4"
+  }
+}

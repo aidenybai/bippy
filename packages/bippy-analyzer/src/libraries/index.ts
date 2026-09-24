@@ -1,0 +1,284 @@
+import { objectValue, TRUE_VALUE } from "../evaluate/values.js";
+import { lazyProperties } from "../evaluate/stubs.js";
+import type { LibraryValueProvider, ModeledExports, StaticValue } from "../types.js";
+import {
+  APOLLO_NEXTJS_MODELED_EXPORTS,
+  APOLLO_NEXTJS_PACKAGES,
+  apolloNextjsValue,
+} from "./apollo-nextjs.js";
+import { AXIOS_PACKAGES, axiosValue } from "./axios.js";
+import { EMOTION_PACKAGES, emotionValue } from "./emotion.js";
+import { ES_SHIM_PACKAGES, esShimValue } from "./es-shims.js";
+import { FOREIGN_RENDERER_PACKAGES, foreignRendererValue } from "./foreign-renderers.js";
+import {
+  FLOATING_UI_MODELED_EXPORTS,
+  FLOATING_UI_PACKAGES,
+  floatingUiValue,
+} from "./floating-ui.js";
+import {
+  FRAMER_MOTION_MODELED_EXPORTS,
+  FRAMER_MOTION_PACKAGES,
+  framerMotionValue,
+} from "./framer-motion.js";
+import {
+  HOIST_NON_REACT_STATICS_PACKAGES,
+  hoistNonReactStaticsValue,
+} from "./hoist-non-react-statics.js";
+import {
+  HAST_JSX_RUNTIME_MODELED_EXPORTS,
+  HAST_JSX_RUNTIME_PACKAGES,
+  hastJsxRuntimeValue,
+} from "./hast-util-to-jsx-runtime.js";
+import { IMMER_PACKAGES, immerValue } from "./immer.js";
+import { I18NEXT_MODELED_EXPORTS, I18NEXT_PACKAGES, i18nextValue } from "./i18next.js";
+import { JED_PACKAGES, jedValue } from "./jed.js";
+import { JOTAI_MODELED_EXPORTS, JOTAI_PACKAGES, jotaiValue } from "./jotai.js";
+import { KEA_PACKAGES, keaValue } from "./kea.js";
+import { LINARIA_PACKAGES, linariaValue } from "./linaria.js";
+import { LINGUI_PACKAGES, linguiValue } from "./lingui.js";
+import { LODASH_MODELED_EXPORTS, LODASH_PACKAGES, lodashValue } from "./lodash.js";
+import {
+  MOBX_PACKAGES,
+  MOBX_REACT_MODELED_EXPORTS,
+  MOBX_REACT_PACKAGES,
+  mobxValue,
+} from "./mobx.js";
+import { NEXT_AUTH_MODELED_EXPORTS, NEXT_AUTH_PACKAGES, nextAuthValue } from "./next-auth.js";
+import {
+  NEXT_TRANSLATE_MODELED_EXPORTS,
+  NEXT_TRANSLATE_PACKAGES,
+  nextTranslateValue,
+} from "./next-translate.js";
+import { NODE_FS_PACKAGES, nodeFsValue } from "./node-fs.js";
+import {
+  PRISM_REACT_RENDERER_MODELED_EXPORTS,
+  PRISM_REACT_RENDERER_PACKAGES,
+  prismReactRendererValue,
+} from "./prism-react-renderer.js";
+import { REACT_HOOK_FORM_PACKAGES, reactHookFormValue } from "./react-hook-form.js";
+import {
+  REACT_INLINESVG_MODELED_EXPORTS,
+  REACT_INLINESVG_PACKAGES,
+  reactInlineSvgValue,
+} from "./react-inlinesvg.js";
+import {
+  REACT_MARKDOWN_MODELED_EXPORTS,
+  REACT_MARKDOWN_PACKAGES,
+  reactMarkdownValue,
+} from "./react-markdown.js";
+import { RADIX_FOCUS_SCOPE_PACKAGES, radixFocusScopeValue } from "./radix-focus-scope.js";
+import {
+  REACT_LIFECYCLES_COMPAT_PACKAGES,
+  reactLifecyclesCompatValue,
+} from "./react-lifecycles-compat.js";
+import {
+  REDUX_PERSIST_MODELED_EXPORTS,
+  REDUX_PERSIST_PACKAGES,
+  reduxPersistValue,
+} from "./redux-persist.js";
+import {
+  REDUX_MODELED_EXPORTS,
+  REDUX_PACKAGES,
+  REDUX_TOOLKIT_PACKAGES,
+  reduxToolkitValue,
+  reduxValue,
+} from "./redux-toolkit.js";
+import { REFLUX_PACKAGES, refluxValue } from "./reflux.js";
+import { SCHEDULER_PACKAGES, schedulerValue } from "./scheduler.js";
+import { SENTRY_PACKAGES, sentryValue } from "./sentry.js";
+import { STYLED_COMPONENTS_PACKAGES, styledComponentsValue } from "./styled-components.js";
+import {
+  STYLETRON_REACT_MODELED_EXPORTS,
+  STYLETRON_REACT_PACKAGES,
+  styletronReactValue,
+} from "./styletron-react.js";
+import { STYLEX_PACKAGES, stylexValue } from "./stylex.js";
+import {
+  TANSTACK_QUERY_MODELED_EXPORTS,
+  TANSTACK_QUERY_PACKAGES,
+  tanstackQueryValue,
+} from "./tanstack-query.js";
+import { TAURI_MODELED_EXPORTS, TAURI_PACKAGES, tauriValue } from "./tauri.js";
+import { SWR_PACKAGES, swrValue } from "./swr.js";
+import { TANSTACK_STORE_PACKAGES, tanstackStoreValue } from "./tanstack-store.js";
+import { UNPLUGIN_AUTO_IMPORT_PACKAGES, unpluginAutoImportValue } from "./unplugin-auto-import.js";
+import {
+  USE_SYNC_EXTERNAL_STORE_PACKAGES,
+  useSyncExternalStoreValue,
+} from "./use-sync-external-store.js";
+import { VITE_PACKAGES, viteValue } from "./vite.js";
+import { ZUSTAND_MODELED_EXPORTS, ZUSTAND_PACKAGES, zustandValue } from "./zustand.js";
+
+// Libraries the harness models instead of analyzing: their runtime output
+// depends on a build-time transform (macros) or on data only present at runtime,
+// so interpreting the shipped source would only produce unknowns. A modeled
+// package is never resolved to its files unless the model lists the exports it
+// covers per specifier, in which case the rest of the package is still analyzed.
+
+interface LibraryModel {
+  packages: readonly string[];
+  getValue: LibraryValueProvider;
+  modeledExports?: ModeledExports;
+}
+
+const LIBRARY_MODELS: readonly LibraryModel[] = [
+  {
+    packages: APOLLO_NEXTJS_PACKAGES,
+    getValue: apolloNextjsValue,
+    modeledExports: APOLLO_NEXTJS_MODELED_EXPORTS,
+  },
+  { packages: AXIOS_PACKAGES, getValue: axiosValue },
+  { packages: EMOTION_PACKAGES, getValue: emotionValue },
+  { packages: ES_SHIM_PACKAGES, getValue: esShimValue },
+  { packages: FOREIGN_RENDERER_PACKAGES, getValue: foreignRendererValue },
+  {
+    packages: FLOATING_UI_PACKAGES,
+    getValue: floatingUiValue,
+    modeledExports: FLOATING_UI_MODELED_EXPORTS,
+  },
+  {
+    packages: FRAMER_MOTION_PACKAGES,
+    getValue: framerMotionValue,
+    modeledExports: FRAMER_MOTION_MODELED_EXPORTS,
+  },
+  {
+    packages: HAST_JSX_RUNTIME_PACKAGES,
+    getValue: hastJsxRuntimeValue,
+    modeledExports: HAST_JSX_RUNTIME_MODELED_EXPORTS,
+  },
+  { packages: HOIST_NON_REACT_STATICS_PACKAGES, getValue: hoistNonReactStaticsValue },
+  { packages: IMMER_PACKAGES, getValue: immerValue },
+  {
+    packages: I18NEXT_PACKAGES,
+    getValue: i18nextValue,
+    modeledExports: I18NEXT_MODELED_EXPORTS,
+  },
+  { packages: JED_PACKAGES, getValue: jedValue },
+  { packages: JOTAI_PACKAGES, getValue: jotaiValue, modeledExports: JOTAI_MODELED_EXPORTS },
+  { packages: KEA_PACKAGES, getValue: keaValue },
+  { packages: LINARIA_PACKAGES, getValue: linariaValue },
+  { packages: LINGUI_PACKAGES, getValue: linguiValue },
+  {
+    packages: LODASH_PACKAGES,
+    getValue: lodashValue,
+    modeledExports: LODASH_MODELED_EXPORTS,
+  },
+  { packages: MOBX_PACKAGES, getValue: mobxValue },
+  {
+    packages: MOBX_REACT_PACKAGES,
+    getValue: mobxValue,
+    modeledExports: MOBX_REACT_MODELED_EXPORTS,
+  },
+  {
+    packages: NEXT_AUTH_PACKAGES,
+    getValue: nextAuthValue,
+    modeledExports: NEXT_AUTH_MODELED_EXPORTS,
+  },
+  {
+    packages: NEXT_TRANSLATE_PACKAGES,
+    getValue: nextTranslateValue,
+    modeledExports: NEXT_TRANSLATE_MODELED_EXPORTS,
+  },
+  { packages: NODE_FS_PACKAGES, getValue: nodeFsValue },
+  {
+    packages: PRISM_REACT_RENDERER_PACKAGES,
+    getValue: prismReactRendererValue,
+    modeledExports: PRISM_REACT_RENDERER_MODELED_EXPORTS,
+  },
+  { packages: REACT_HOOK_FORM_PACKAGES, getValue: reactHookFormValue },
+  {
+    packages: REACT_INLINESVG_PACKAGES,
+    getValue: reactInlineSvgValue,
+    modeledExports: REACT_INLINESVG_MODELED_EXPORTS,
+  },
+  {
+    packages: REACT_MARKDOWN_PACKAGES,
+    getValue: reactMarkdownValue,
+    modeledExports: REACT_MARKDOWN_MODELED_EXPORTS,
+  },
+  {
+    packages: RADIX_FOCUS_SCOPE_PACKAGES,
+    getValue: radixFocusScopeValue,
+  },
+  { packages: REACT_LIFECYCLES_COMPAT_PACKAGES, getValue: reactLifecyclesCompatValue },
+  { packages: REDUX_PACKAGES, getValue: reduxValue, modeledExports: REDUX_MODELED_EXPORTS },
+  {
+    packages: REDUX_PERSIST_PACKAGES,
+    getValue: reduxPersistValue,
+    modeledExports: REDUX_PERSIST_MODELED_EXPORTS,
+  },
+  { packages: REDUX_TOOLKIT_PACKAGES, getValue: reduxToolkitValue },
+  { packages: REFLUX_PACKAGES, getValue: refluxValue },
+  { packages: SCHEDULER_PACKAGES, getValue: schedulerValue },
+  { packages: SENTRY_PACKAGES, getValue: sentryValue },
+  { packages: STYLED_COMPONENTS_PACKAGES, getValue: styledComponentsValue },
+  {
+    packages: STYLETRON_REACT_PACKAGES,
+    getValue: styletronReactValue,
+    modeledExports: STYLETRON_REACT_MODELED_EXPORTS,
+  },
+  { packages: STYLEX_PACKAGES, getValue: stylexValue },
+  { packages: SWR_PACKAGES, getValue: swrValue },
+  {
+    packages: TANSTACK_QUERY_PACKAGES,
+    getValue: tanstackQueryValue,
+    modeledExports: TANSTACK_QUERY_MODELED_EXPORTS,
+  },
+  { packages: TAURI_PACKAGES, getValue: tauriValue, modeledExports: TAURI_MODELED_EXPORTS },
+  { packages: TANSTACK_STORE_PACKAGES, getValue: tanstackStoreValue },
+  { packages: UNPLUGIN_AUTO_IMPORT_PACKAGES, getValue: unpluginAutoImportValue },
+  { packages: USE_SYNC_EXTERNAL_STORE_PACKAGES, getValue: useSyncExternalStoreValue },
+  { packages: VITE_PACKAGES, getValue: viteValue },
+  {
+    packages: ZUSTAND_PACKAGES,
+    getValue: zustandValue,
+    modeledExports: ZUSTAND_MODELED_EXPORTS,
+  },
+];
+
+const MODELED_PACKAGES: ReadonlySet<string> = new Set(
+  LIBRARY_MODELS.filter((model) => !model.modeledExports).flatMap((model) => model.packages),
+);
+
+const MODELED_EXPORTS: ReadonlyMap<string, ReadonlySet<string>> = new Map(
+  LIBRARY_MODELS.flatMap((model) =>
+    Object.entries(model.modeledExports ?? {}).map(
+      ([specifier, exportNames]): [string, ReadonlySet<string>] => [
+        specifier,
+        new Set(exportNames),
+      ],
+    ),
+  ),
+);
+
+export const isModeledLibraryPackage = (packageName: string): boolean =>
+  MODELED_PACKAGES.has(packageName);
+
+/** An export modeled while the rest of its package is analyzed from source. */
+export const isModeledLibraryExport = (specifier: string, exportName: string): boolean =>
+  MODELED_EXPORTS.get(specifier)?.has(exportName) ?? false;
+
+export const getLibraryValue: LibraryValueProvider = (specifier, importedName, run) => {
+  for (const model of LIBRARY_MODELS) {
+    const value = model.getValue(specifier, importedName, run);
+    if (value) return value;
+  }
+  if (importedName !== "*" || !MODELED_PACKAGES.has(specifier)) return null;
+  const defaultExport = getLibraryValue(specifier, "default", run);
+  const unmodeledExport = (key: string): StaticValue => ({
+    kind: "external",
+    packageName: specifier,
+    specifier,
+    importedName: key,
+    origin: "binding",
+  });
+  return lazyProperties(
+    defaultExport?.kind === "native-function" || defaultExport?.kind === "function"
+      ? defaultExport
+      : objectValue(),
+    (key) =>
+      key === "__esModule" && defaultExport
+        ? TRUE_VALUE
+        : (getLibraryValue(specifier, key, run) ?? unmodeledExport(key)),
+  );
+};

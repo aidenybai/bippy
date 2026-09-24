@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/posts/hello",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "createBrowserRouter + RouterProvider with a nested layout/Outlet and a dynamic segment. react-router itself is modeled (Link, Outlet, RouterProvider) rather than executed; its runtime wrappers are flattened by the react-router profile."
+}

@@ -1,0 +1,23 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["react-redux"],
+  "notes": "A plain `redux` createStore(combineReducers(...)) store: its state is whatever the page recorded, so the reducer's initial state (which reads localStorage) is not re-derived statically. react-redux's Provider, useSelector and connect() are interpreted from their own source; connect's `childPropsFromStoreUpdate.current` ref is only decided by narrowing the tested property path.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "stores": [
+      {
+        "customization": {
+          "isDarkMode": false,
+          "fontFamily": "Inter",
+          "opened": true
+        },
+        "auth": {
+          "isAuthenticated": false,
+          "user": null
+        }
+      }
+    ]
+  }
+}

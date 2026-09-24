@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "notes": "An effect focuses the input, so the focus listener the program registered runs before the snapshot; the analysis sees the dispatch through the DOM and widens that handler's state, while the untouched focusout handler stays certain."
+}

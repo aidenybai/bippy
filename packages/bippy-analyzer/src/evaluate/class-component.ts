@@ -1,0 +1,1025 @@
+import type { Class, ClassElement, Expression, ParamPattern } from "oxc-parser";
+import type { HostRealm } from "../host/host-realm.js";
+import type { FunctionLikeNode, SourceLocation } from "../parse/source-types.js";
+import type {
+  ClassBody,
+  ClassFieldMember,
+  ClassFunctionMember,
+  ClassMember,
+  ComponentDefinition,
+  ReactApi,
+  RenderEnvironment,
+  StaticClassValue,
+  StaticFunctionValue,
+  StaticNativeFunctionValue,
+  StaticObjectEntry,
+  StaticObjectValue,
+  StaticPropertyEntry,
+  StaticValue,
+  SuperBinding,
+} from "../types.js";
+import type { EvaluationContext, FunctionCaller, FunctionFactory } from "./context.js";
+import { createErrorValue } from "./errors.js";
+import {
+  applyPendingState,
+  createHookFrame,
+  escapeStateCell,
+  getQueuedState,
+  nextStateCell,
+  queueStateUpdate,
+  type EffectCall,
+  type HookFrame,
+  type StateCell,
+} from "./hooks.js";
+import { toPropertyKey } from "./primitive-shapes.js";
+import { setPrototypeOwner } from "./prototype-owners.js";
+import { providedContextValue } from "./react-context.js";
+import { createScope } from "./scope.js";
+import { getThrowCertainty, withoutThrows } from "./thrown.js";
+import { getTypeofValue } from "./value-typeof.js";
+import {
+  accessorEntry,
+  describeValue,
+  FALSE_VALUE,
+  getKnownObjectKeys,
+  getObjectProperty,
+  getOwnPropertyPresence,
+  getTruthiness,
+  isCallable,
+  isNullish,
+  mapValue,
+  NULL_VALUE,
+  objectFromRecord,
+  objectValue,
+  primitiveValue,
+  setObjectProperty,
+  thrownValue,
+  TRUE_VALUE,
+  UNDEFINED_VALUE,
+  unknownValue,
+} from "./values.js";
+
+export interface ClassMemberEvaluator extends FunctionFactory {
+  evaluateExpression: (
+    node: Expression,
+    context: EvaluationContext,
+    nameHint?: string | null,
+  ) => StaticValue;
+  continueValue: (
+    value: StaticValue,
+    context: EvaluationContext,
+    proceed: (value: StaticValue, context: EvaluationContext) => StaticValue,
+  ) => StaticValue;
+}
+
+export interface ClassEvaluator extends ClassMemberEvaluator, FunctionCaller {
+  readonly assumeOuterProviders: boolean;
+  readonly pendingSuperBindings: WeakMap<StaticObjectValue, SuperBinding>;
+  getThisValue: (context: EvaluationContext, location: SourceLocation | null) => StaticValue;
+  getRealm: (environment: RenderEnvironment | null) => HostRealm;
+  getConstructorResult: (
+    returned: StaticValue,
+    instance: StaticObjectValue,
+    realm: HostRealm,
+  ) => StaticValue;
+  recordHeapMutation: (target: StaticObjectValue) => void;
+}
+
+const MAX_INHERITANCE_DEPTH = 8;
+
+interface ClassMembersContinuation {
+  (members: ClassMember[], context: EvaluationContext): StaticValue;
+}
+
+const getElementName = (element: ClassElement): string | null => {
+  if (element.type === "StaticBlock" || element.type === "TSIndexSignature") return null;
+  const key = element.key;
+  if (key.type === "Identifier") return key.name;
+  if (key.type === "PrivateIdentifier") return `#${key.name}`;
+  if (key.type === "Literal") return String(key.value);
+  return null;
+};
+
+const getClassMember = (element: ClassElement, key: string | null): ClassMember | null => {
+  if (key === null) return null;
+  if (element.type === "MethodDefinition" || element.type === "TSAbstractMethodDefinition") {
+    if (element.kind === "set" || element.value.body === null) return null;
+    const kind = element.kind === "get" ? "getter" : element.kind;
+    return { key, isStatic: element.static, kind, functionNode: element.value };
+  }
+  if (
+    (element.type === "PropertyDefinition" || element.type === "TSAbstractPropertyDefinition") &&
+    !element.declare
+  ) {
+    return { key, isStatic: element.static, kind: "field", value: element.value };
+  }
+  return null;
+};
+
+export const evaluateClassMembers = (
+  evaluator: ClassMemberEvaluator,
+  node: Class,
+  context: EvaluationContext,
+  proceed: ClassMembersContinuation,
+): StaticValue => {
+  const collectFrom = (
+    start: number,
+    members: ClassMember[],
+    memberContext: EvaluationContext,
+  ): StaticValue => {
+    for (let index = start; index < node.body.body.length; index++) {
+      const element = node.body.body[index];
+      if (element.type === "StaticBlock") {
+        members.push({ kind: "static-block", isStatic: true, body: element.body });
+        continue;
+      }
+      if (element.type === "TSIndexSignature") continue;
+      let key: string | null;
+      if (element.computed && element.key.type !== "PrivateIdentifier") {
+        const evaluated = evaluator.evaluateExpression(element.key, memberContext);
+        if (evaluated.kind === "branch" || getThrowCertainty(evaluated) !== "never") {
+          return evaluator.continueValue(evaluated, memberContext, (value, keyContext) => {
+            const nextMembers = [...members];
+            const member = getClassMember(element, toPropertyKey(value));
+            if (member) nextMembers.push(member);
+            return collectFrom(index + 1, nextMembers, keyContext);
+          });
+        }
+        key = toPropertyKey(evaluated);
+      } else {
+        key = getElementName(element);
+      }
+      const member = getClassMember(element, key);
+      if (member) members.push(member);
+    }
+    return proceed(members, memberContext);
+  };
+  return collectFrom(0, [], context);
+};
+
+const hasPresentProperty = (object: StaticObjectValue, key: string): boolean =>
+  isNullish(getObjectProperty(object, key)) !== true;
+
+export const isErrorBoundaryClass = (classValue: StaticClassValue): boolean =>
+  collectClassChain(classValue).some(
+    ({ body, properties }) =>
+      body.members.some(
+        (member) =>
+          member.kind !== "static-block" &&
+          ((member.key === "getDerivedStateFromError" && member.isStatic) ||
+            (member.key === "componentDidCatch" && !member.isStatic)),
+      ) ||
+      getTruthiness(getOwnPropertyPresence(properties, "getDerivedStateFromError")) !== false ||
+      (body.prototype !== undefined && hasPresentProperty(body.prototype, "componentDidCatch")),
+  );
+
+const collectClassChain = (classValue: StaticClassValue): StaticClassValue[] => {
+  const chain: StaticClassValue[] = [classValue];
+  let current: StaticClassValue = classValue;
+  while (chain.length < MAX_INHERITANCE_DEPTH) {
+    const superValue = current.body.superValue;
+    if (superValue?.kind !== "class" || chain.includes(superValue)) break;
+    chain.push(superValue);
+    current = superValue;
+  }
+  return chain;
+};
+
+interface InstanceGetter {
+  key: string;
+  functionValue: StaticFunctionValue;
+}
+
+interface InstanceMembers {
+  constructor: StaticFunctionValue | null;
+  fields: ClassFieldMember[];
+  getters: InstanceGetter[];
+}
+
+const methodContextFor = (
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+  thisValue: StaticValue,
+): EvaluationContext => ({
+  ...context,
+  module: classValue.module,
+  scope: classValue.scope,
+  thisValue,
+  superBinding: { construct: null, parent: classValue.body.superValue },
+});
+
+/** Class accessors live on the prototype, so enumeration never lists them. */
+const getterEntry = (
+  key: string,
+  get: StaticFunctionValue,
+  location: SourceLocation | null,
+): StaticPropertyEntry => ({
+  ...accessorEntry(key, { get, set: null }, location),
+  isEnumerable: false,
+});
+
+const bindMethods = (
+  evaluator: FunctionFactory,
+  classValue: StaticClassValue,
+  target: StaticObjectValue,
+  methodContext: EvaluationContext,
+  seen: Set<string>,
+): InstanceMembers => {
+  const members: InstanceMembers = { constructor: null, fields: [], getters: [] };
+  for (const entry of getPrototypeAssignments(classValue)) {
+    if (entry.kind === "property") {
+      if (seen.has(entry.key)) continue;
+      seen.add(entry.key);
+    }
+    target.entries.push(entry);
+  }
+  const bind = (member: ClassFunctionMember, name: string): StaticFunctionValue | null => {
+    const functionValue = evaluator.createFunctionValue(
+      member.functionNode,
+      methodContext,
+      name,
+      true,
+    );
+    return functionValue.kind === "function"
+      ? {
+          ...functionValue,
+          thisValue: UNDEFINED_VALUE,
+          superBinding: methodContext.superBinding,
+        }
+      : null;
+  };
+  for (const member of classValue.body.members) {
+    if (member.isStatic) continue;
+    if (member.kind === "constructor") {
+      members.constructor = bind(member, "constructor");
+      continue;
+    }
+    if (seen.has(member.key)) continue;
+    seen.add(member.key);
+    if (member.kind === "field") {
+      members.fields.push(member);
+      continue;
+    }
+    const boundMethod = bind(member, member.key);
+    if (!boundMethod) continue;
+    if (member.kind === "getter") {
+      members.getters.push({ key: member.key, functionValue: boundMethod });
+    } else {
+      target.entries.push({
+        kind: "property",
+        key: member.key,
+        value: boundMethod,
+        isEnumerable: false,
+      });
+    }
+  }
+  return members;
+};
+
+export const getSuperObject = (
+  evaluator: ClassEvaluator,
+  context: EvaluationContext,
+  location: SourceLocation | null,
+): StaticValue => {
+  const parent = context.superBinding?.parent;
+  if (!parent) return unknownValue("super outside a derived class", location);
+  return evaluator.continueValue(
+    evaluator.getThisValue(context, location),
+    context,
+    (thisValue) => {
+      if (parent.kind !== "class" || thisValue.kind === "class") return parent;
+      const prototype = objectFromRecord({});
+      const seen = new Set<string>();
+      for (const current of collectClassChain(parent)) {
+        const methodContext = methodContextFor(current, context, thisValue);
+        const members = bindMethods(evaluator, current, prototype, methodContext, seen);
+        for (const getter of members.getters) {
+          prototype.entries.push(
+            getterEntry(getter.key, { ...getter.functionValue, boundThis: thisValue }, location),
+          );
+        }
+      }
+      return prototype;
+    },
+  );
+};
+
+/** Keyed by the evaluated class body, which a class value and the component definition derived from it share. */
+const classPrototypes = new WeakMap<ClassBody, StaticObjectValue>();
+
+/** How many entries each `Class.prototype` held once its own members were bound; later ones were assigned onto it. */
+const prototypeMemberCounts = new WeakMap<StaticObjectValue, number>();
+
+/** Members written onto `Class.prototype` after the class was defined (`Class.prototype.render = …`), which instances inherit like its own. */
+const getPrototypeAssignments = (classValue: StaticClassValue): StaticObjectEntry[] => {
+  const prototype = classPrototypes.get(classValue.body);
+  const memberCount = prototype && prototypeMemberCounts.get(prototype);
+  return prototype && memberCount !== undefined ? prototype.entries.slice(memberCount) : [];
+};
+
+export const getClassPrototypeObject = (
+  evaluator: FunctionFactory,
+  classValue: StaticClassValue,
+  context: EvaluationContext,
+): StaticObjectValue => {
+  const cached = classPrototypes.get(classValue.body);
+  if (cached) return cached;
+  const superValue = classValue.body.superValue;
+  const prototype = objectFromRecord({ constructor: classValue });
+  if (superValue?.kind === "class") prototype.constructedBy = superValue;
+  classPrototypes.set(classValue.body, prototype);
+  setPrototypeOwner(prototype, classValue);
+  const seen = new Set<string>();
+  for (const current of collectClassChain(classValue)) {
+    const methodContext = methodContextFor(current, context, prototype);
+    const members = bindMethods(evaluator, current, prototype, methodContext, seen);
+    for (const getter of members.getters) {
+      prototype.entries.push(getterEntry(getter.key, getter.functionValue, null));
+    }
+  }
+  prototypeMemberCounts.set(prototype, prototype.entries.length);
+  return prototype;
+};
+
+/** The parameters that receive arguments: a leading TypeScript `this` annotation is not one. */
+export const getValueParams = (params: ParamPattern[]): ParamPattern[] => {
+  const [firstParam] = params;
+  return firstParam?.type === "Identifier" && firstParam.name === "this" ? params.slice(1) : params;
+};
+
+/** `Function.length`: the leading parameters before the first default or rest parameter. */
+export const getFunctionLength = (functionNode: FunctionLikeNode): number => {
+  const valueParams = getValueParams(functionNode.params);
+  const optionalIndex = valueParams.findIndex((parameter) => {
+    const pattern = parameter.type === "TSParameterProperty" ? parameter.parameter : parameter;
+    return pattern.type === "AssignmentPattern" || pattern.type === "RestElement";
+  });
+  return optionalIndex === -1 ? valueParams.length : optionalIndex;
+};
+
+/** `Class.length`: the constructor's `Function.length`; 0 without a constructor. */
+export const getClassLength = (classValue: StaticClassValue): number => {
+  const constructor = classValue.body.members.find(
+    (member) => member.kind === "constructor" && !member.isStatic,
+  );
+  return constructor?.kind === "constructor" ? getFunctionLength(constructor.functionNode) : 0;
+};
+
+/** The class's own or inherited static property, or null when no class in the chain defines it. */
+export const getStaticProperty = (
+  classValue: StaticClassValue,
+  key: string,
+): StaticValue | null => {
+  for (const current of collectClassChain(classValue)) {
+    if (getTruthiness(getOwnPropertyPresence(current.properties, key)) !== false)
+      return getObjectProperty(classValue.properties, key);
+  }
+  return null;
+};
+
+/**
+ * `Component.key` as React reads statics such as `defaultProps`: the component's
+ * own property, or for a class one inherited through the constructor chain.
+ */
+export const getComponentProperty = (
+  component: ComponentDefinition,
+  key: string,
+): StaticValue | null => {
+  if (getTruthiness(getOwnPropertyPresence(component.properties, key)) !== false)
+    return getObjectProperty(component.properties, key);
+  const superValue = component.classBody?.superValue;
+  return superValue?.kind === "class" ? getStaticProperty(superValue, key) : null;
+};
+
+export const isReactComponentBase = (value: StaticValue | null): boolean =>
+  value?.kind === "react-api" && (value.api === "Component" || value.api === "PureComponent");
+
+const reactBasePrototypes = new Map<ReactApi, StaticObjectValue>();
+
+/** `Component.prototype` / `PureComponent.prototype` as `ReactBaseClasses.js` builds them: the `isReactComponent` marker, the updater methods, and `isPureReactComponent` on the pure variant. */
+export const getReactBasePrototype = (api: ReactApi): StaticObjectValue => {
+  const cached = reactBasePrototypes.get(api);
+  if (cached) return cached;
+  const constructor: StaticValue = { kind: "react-api", api };
+  const prototype = objectFromRecord({
+    constructor,
+    isReactComponent: objectValue(),
+    setState: unknownValue(`${api}.prototype.setState`),
+    forceUpdate: unknownValue(`${api}.prototype.forceUpdate`),
+    ...(api === "PureComponent" ? { isPureReactComponent: TRUE_VALUE } : {}),
+  });
+  reactBasePrototypes.set(api, prototype);
+  return prototype;
+};
+
+/** Whether every class up the `extends` chain is known (ending in nothing or `React.Component`, which has no statics), so a missing static is `undefined`. */
+export const hasKnownStaticChain = (classValue: StaticClassValue): boolean => {
+  const baseValue = collectClassChain(classValue).at(-1)?.body.superValue ?? null;
+  return baseValue === null || isReactComponentBase(baseValue);
+};
+
+const getStaticMethod = (
+  classValue: StaticClassValue,
+  name: string,
+): StaticFunctionValue | null => {
+  const property = getStaticProperty(classValue, name);
+  return property?.kind === "function" ? property : null;
+};
+
+const getInstanceMethod = (
+  instance: StaticObjectValue,
+  name: string,
+): StaticFunctionValue | null => {
+  const method = getObjectProperty(instance, name);
+  return method.kind === "function" ? { ...method, boundThis: method.boundThis ?? instance } : null;
+};
+
+/** `assign({}, prevState, partialState)` of `getStateFromUpdate`; null and undefined leave the state as is. */
+const mergeState = (state: StaticValue, partialState: StaticValue): StaticValue =>
+  isNullish(partialState) === true
+    ? state
+    : objectValue([
+        { kind: "spread", value: state },
+        { kind: "spread", value: partialState },
+      ]);
+
+interface ClassInstanceRecord {
+  instance: StaticObjectValue;
+  construction: StaticValue;
+  stateCell: StateCell;
+  isMounted: boolean;
+  committedProps: StaticValue;
+  committedState: StaticValue;
+  pendingCallbacks: StaticValue[];
+  rendered: StaticValue | null;
+  /** `__reactInternalMemoizedMergedChildContext`: what the last render handed down, reused when the update bails out. */
+  childLegacyContext: StaticValue | null;
+}
+
+/** A rendered class component and the unmasked legacy context its children see. */
+interface ClassRender {
+  rendered: StaticValue;
+  childLegacyContext: StaticValue | null;
+}
+
+const classInstances = new WeakMap<HookFrame, ClassInstanceRecord>();
+
+const readLegacyContextKey = (unmaskedContext: StaticValue, key: string): StaticValue =>
+  unmaskedContext.kind === "object"
+    ? getObjectProperty(unmaskedContext, key)
+    : unknownValue(`legacy context ${key}`);
+
+/** `getMaskedContext`: the keys `contextTypes` declares, read from the unmasked context; `{}` without any. */
+export const getMaskedLegacyContext = (
+  contextTypes: StaticValue | null,
+  unmaskedContext: StaticValue,
+): StaticValue => {
+  if (contextTypes === null || getTruthiness(contextTypes) === false) return objectFromRecord({});
+  const keys = contextTypes.kind === "object" ? getKnownObjectKeys(contextTypes) : null;
+  if (keys === null)
+    return unknownValue("legacy context masked by contextTypes that are not statically known");
+  return objectFromRecord(
+    Object.fromEntries(keys.map((key) => [key, readLegacyContextKey(unmaskedContext, key)])),
+  );
+};
+
+/**
+ * The `context` a class instance is constructed and rendered with: `readContext`
+ * of a `static contextType`, else the legacy context masked by `contextTypes`
+ * (`emptyContextObject` once `disableLegacyContext`).
+ */
+const readClassContext = (
+  evaluator: ClassEvaluator,
+  classValue: StaticClassValue,
+  legacyContext: StaticValue | null,
+  context: EvaluationContext,
+): StaticValue => {
+  const contextType = getStaticProperty(classValue, "contextType");
+  if (contextType?.kind === "context") {
+    return providedContextValue(
+      evaluator.assumeOuterProviders,
+      contextType.context,
+      context.readContext(contextType.context),
+      null,
+    );
+  }
+  if (contextType && !isNullish(contextType)) {
+    return unknownValue(`contextType ${describeValue(contextType)}`);
+  }
+  if (legacyContext === null) return objectFromRecord({});
+  if (!hasKnownStaticChain(classValue)) return unknownValue("legacy class context");
+  return getMaskedLegacyContext(getStaticProperty(classValue, "contextTypes"), legacyContext);
+};
+
+/** `processChildContext`: `Object.assign({}, parentContext, instance.getChildContext())` for a class declaring `childContextTypes`. */
+const getChildLegacyContext = (
+  evaluator: FunctionCaller,
+  classValue: StaticClassValue,
+  instance: StaticObjectValue,
+  parentContext: StaticValue | null,
+  context: EvaluationContext,
+): StaticValue | null => {
+  if (parentContext === null) return null;
+  const childContextTypes = getStaticProperty(classValue, "childContextTypes");
+  if (childContextTypes === null || isNullish(childContextTypes) === true) return parentContext;
+  const getChildContext = getInstanceMethod(instance, "getChildContext");
+  if (!getChildContext) return parentContext;
+  return objectValue([
+    { kind: "spread", value: parentContext },
+    {
+      kind: "spread",
+      value: evaluator.callFunction(getChildContext, [], context, { thisValue: instance }),
+    },
+  ]);
+};
+
+/**
+ * `constructClassInstance` + `adoptClassInstance`: builds the `this` a class
+ * component observes (props, fields and methods from the base classes down,
+ * then whatever the constructors assigned) and installs the updater methods.
+ * `setState` queues a merge into the instance's single state cell, so an
+ * update from a lifecycle, a store listener or an escaped handler re-renders
+ * exactly like a hook update would.
+ */
+const mountClassInstance = (
+  evaluator: ClassEvaluator,
+  classValue: StaticClassValue,
+  props: StaticValue,
+  instanceContext: StaticValue,
+  context: EvaluationContext,
+  frame: HookFrame,
+): ClassInstanceRecord => {
+  let instance = objectFromRecord({
+    props,
+    state: UNDEFINED_VALUE,
+    context: instanceContext,
+    refs: objectFromRecord({}),
+  });
+  const initialized = initializeInstance(
+    evaluator,
+    classValue,
+    instance,
+    [props, instanceContext],
+    context,
+  );
+  const completed = withoutThrows(initialized.value);
+  if (completed.kind === "object") instance = completed;
+  const initialState = getObjectProperty(instance, "state");
+  const stateCell = nextStateCell(frame, `${classValue.name ?? "class"} state`, () => initialState);
+  const record: ClassInstanceRecord = {
+    instance,
+    construction: initialized.value,
+    stateCell,
+    isMounted: false,
+    committedProps: props,
+    committedState: initialState,
+    pendingCallbacks: [],
+    rendered: null,
+    childLegacyContext: null,
+  };
+  const setState: StaticNativeFunctionValue = {
+    kind: "native-function",
+    name: "setState",
+    call: ([partialState, callback], tools) => {
+      const previousState = getQueuedState(stateCell);
+      const resolvedPartial = isCallable(partialState)
+        ? tools.call(partialState, [previousState, getObjectProperty(instance, "props")])
+        : (partialState ?? UNDEFINED_VALUE);
+      if (callback) record.pendingCallbacks.push(callback);
+      queueStateUpdate(
+        frame,
+        stateCell,
+        mergeState(previousState, resolvedPartial),
+        tools.isDeferred(),
+      );
+      return UNDEFINED_VALUE;
+    },
+    onEscape: (argumentValues) => {
+      const partialState = argumentValues?.[0];
+      escapeStateCell(
+        frame,
+        stateCell,
+        partialState === null || isCallable(partialState)
+          ? null
+          : mergeState(getQueuedState(stateCell), partialState ?? UNDEFINED_VALUE),
+      );
+    },
+  };
+  setObjectProperty(instance, "setState", setState);
+  setObjectProperty(instance, "forceUpdate", {
+    kind: "native-function",
+    name: "forceUpdate",
+    call: ([callback]) => {
+      if (callback) record.pendingCallbacks.push(callback);
+      return UNDEFINED_VALUE;
+    },
+  });
+  return record;
+};
+
+/**
+ * `commitClassLayoutLifecycles` for the pass that just committed:
+ * `componentDidMount` on the first commit, `componentDidUpdate(prevProps,
+ * prevState)` afterwards unless the update was bailed out of, then the
+ * `setState` callbacks in order.
+ */
+const lifecycleEffect = (
+  record: ClassInstanceRecord,
+  props: StaticValue,
+  state: StaticValue,
+  didBailOut: boolean,
+): StaticNativeFunctionValue => ({
+  kind: "native-function",
+  name: "commitClassLayoutLifecycles",
+  call: (_args, tools) => {
+    const { instance } = record;
+    const previousProps = record.committedProps;
+    const previousState = record.committedState;
+    record.committedProps = props;
+    record.committedState = state;
+    if (!record.isMounted) {
+      record.isMounted = true;
+      const didMount = getInstanceMethod(instance, "componentDidMount");
+      if (didMount) tools.call(didMount, []);
+    } else if (!didBailOut) {
+      const didUpdate = getInstanceMethod(instance, "componentDidUpdate");
+      if (didUpdate) tools.call(didUpdate, [previousProps, previousState]);
+    }
+    const callbacks = record.pendingCallbacks;
+    record.pendingCallbacks = [];
+    for (const callback of callbacks) tools.call(callback, []);
+    return UNDEFINED_VALUE;
+  },
+});
+
+/**
+ * `checkShouldComponentUpdate` for an update pass: `false` only when the
+ * instance's `shouldComponentUpdate(nextProps, nextState, nextContext)` decidedly
+ * declines, so an undecided answer renders as a forced update would.
+ */
+const shouldClassUpdate = (
+  evaluator: FunctionCaller,
+  instance: StaticObjectValue,
+  props: StaticValue,
+  state: StaticValue,
+  instanceContext: StaticValue,
+  context: EvaluationContext,
+): boolean => {
+  const shouldComponentUpdate = getInstanceMethod(instance, "shouldComponentUpdate");
+  if (!shouldComponentUpdate) return true;
+  const decision = evaluator.callFunction(
+    shouldComponentUpdate,
+    [props, state, instanceContext],
+    context,
+    { thisValue: instance },
+  );
+  return getTruthiness(decision) !== false;
+};
+
+/**
+ * `safelyCallComponentWillUnmount` for the instance rendered against `frame`;
+ * the next lifecycle effect then mounts it again, as after a Strict Mode
+ * `disappearLayoutEffects`/`reappearLayoutEffects` pair.
+ */
+export const unmountClassInstance = (frame: HookFrame, call: EffectCall): void => {
+  const record = classInstances.get(frame);
+  if (!record?.isMounted) return;
+  record.isMounted = false;
+  const willUnmount = getInstanceMethod(record.instance, "componentWillUnmount");
+  if (willUnmount) call(willUnmount);
+};
+
+/**
+ * One render of a class component as `updateClassComponent` performs it: the
+ * instance is created once per hook frame and reused, `getDerivedStateFromProps`
+ * (or, without it, `componentWillMount` on mount) adjusts the state before
+ * `render()`, and the layout lifecycles are queued as an effect of the pass.
+ * With `caughtError` the instance renders as React re-renders an error
+ * boundary: with `getDerivedStateFromError` merged into state, or with null
+ * children when the class only defines `componentDidCatch` (`finishClassComponent`).
+ * `legacyContext` is the unmasked legacy context at the component's position,
+ * null where React no longer threads one (`disableLegacyContext`).
+ */
+export const renderClassComponent = (
+  evaluator: ClassEvaluator,
+  classValue: StaticClassValue,
+  props: StaticValue,
+  legacyContext: StaticValue | null,
+  context: EvaluationContext,
+  caughtError: StaticValue | null = null,
+): ClassRender => {
+  const frame = context.hooks ?? createHookFrame();
+  const instanceContext = readClassContext(evaluator, classValue, legacyContext, context);
+  let record = classInstances.get(frame);
+  if (record) {
+    const { stateCell } = record;
+    nextStateCell(frame, stateCell.name, () => stateCell.initial);
+    setObjectProperty(record.instance, "context", instanceContext);
+  } else {
+    record = mountClassInstance(evaluator, classValue, props, instanceContext, context, frame);
+    classInstances.set(frame, record);
+  }
+  let childLegacyContext = legacyContext;
+  const rendered = evaluator.continueValue(record.construction, context, (constructed) => {
+    if (constructed.kind === "unknown") return constructed;
+    if (constructed !== record.instance)
+      return unknownValue("React class constructor replacement varies by path");
+    const result = renderClassInstance(
+      evaluator,
+      classValue,
+      record,
+      props,
+      legacyContext,
+      instanceContext,
+      context,
+      frame,
+      caughtError,
+    );
+    childLegacyContext = result.childLegacyContext;
+    return result.rendered;
+  });
+  return { rendered, childLegacyContext };
+};
+
+const renderClassInstance = (
+  evaluator: ClassEvaluator,
+  classValue: StaticClassValue,
+  record: ClassInstanceRecord,
+  props: StaticValue,
+  legacyContext: StaticValue | null,
+  instanceContext: StaticValue,
+  context: EvaluationContext,
+  frame: HookFrame,
+  caughtError: StaticValue | null,
+): ClassRender => {
+  const { instance, stateCell } = record;
+  let state = stateCell.current;
+  const deriveStateFromProps = getStaticMethod(classValue, "getDerivedStateFromProps");
+  if (deriveStateFromProps) {
+    state = mergeState(
+      state,
+      evaluator.callFunction(deriveStateFromProps, [props, state], context, {
+        thisValue: UNDEFINED_VALUE,
+      }),
+    );
+  } else if (!record.isMounted && !getInstanceMethod(instance, "getSnapshotBeforeUpdate")) {
+    const willMount =
+      getInstanceMethod(instance, "UNSAFE_componentWillMount") ??
+      getInstanceMethod(instance, "componentWillMount");
+    if (willMount) {
+      setObjectProperty(instance, "state", state);
+      evaluator.callFunction(willMount, [], context, { thisValue: instance });
+      applyPendingState(stateCell);
+      state = stateCell.current;
+    }
+  }
+  if (caughtError) {
+    const deriveStateFromError = getStaticMethod(classValue, "getDerivedStateFromError");
+    if (!deriveStateFromError) return { rendered: NULL_VALUE, childLegacyContext: legacyContext };
+    state = mergeState(
+      state,
+      evaluator.callFunction(deriveStateFromError, [caughtError], context, {
+        thisValue: UNDEFINED_VALUE,
+      }),
+    );
+  }
+  const didBailOut =
+    record.isMounted &&
+    !caughtError &&
+    record.rendered !== null &&
+    !shouldClassUpdate(evaluator, instance, props, state, instanceContext, context);
+  setObjectProperty(instance, "props", props);
+  stateCell.current = state;
+  setObjectProperty(instance, "state", state);
+  setObjectProperty(instance, "context", instanceContext);
+  frame.effects.push({
+    isLayout: true,
+    callback: lifecycleEffect(record, props, state, didBailOut),
+    deps: null,
+    cleanup: null,
+  });
+  if (didBailOut && record.rendered !== null) {
+    return { rendered: record.rendered, childLegacyContext: record.childLegacyContext };
+  }
+  const render = getInstanceMethod(instance, "render");
+  if (!render) {
+    return {
+      rendered: unknownValue(`class ${classValue.name ?? "component"} has no static render method`),
+      childLegacyContext: legacyContext,
+    };
+  }
+  record.rendered = evaluator.callFunction(render, [], context, { thisValue: instance });
+  record.childLegacyContext = getChildLegacyContext(
+    evaluator,
+    classValue,
+    instance,
+    legacyContext,
+    context,
+  );
+  return { rendered: record.rendered, childLegacyContext: record.childLegacyContext };
+};
+
+/** `new Class(...args)`: the instance as it is right after construction. */
+export const constructClassInstance = (
+  evaluator: ClassEvaluator,
+  classValue: StaticClassValue,
+  args: StaticValue[],
+  context: EvaluationContext,
+): StaticValue => {
+  const instance = objectFromRecord({});
+  const initialized = initializeInstance(evaluator, classValue, instance, args, context);
+  const baseValue = initialized.chain[initialized.chain.length - 1].body.superValue;
+  if (!baseValue || baseValue.kind === "class") return initialized.value;
+  return mapValue(initialized.value, (constructed) => {
+    if (constructed.kind === "object" && constructed.constructedBy === classValue) {
+      evaluator.recordHeapMutation(constructed);
+      constructed.entries.unshift({
+        kind: "spread",
+        value: unknownValue(`members inherited from ${describeValue(baseValue)}`),
+      });
+    }
+    return constructed;
+  });
+};
+
+interface ClassInitialization {
+  chain: StaticClassValue[];
+  value: StaticValue;
+}
+
+interface ClassLayer {
+  current: StaticClassValue;
+  methodContext: EvaluationContext;
+  members: InstanceMembers;
+}
+
+const initializeFields = (
+  evaluator: ClassEvaluator,
+  layer: ClassLayer,
+  instance: StaticObjectValue,
+): StaticValue => {
+  const initializeFrom = (start: number): StaticValue => {
+    for (let index = start; index < layer.members.fields.length; index++) {
+      const field = layer.members.fields[index];
+      const fieldContext: EvaluationContext = {
+        ...layer.methodContext,
+        thisValue: instance,
+        scope: createScope(layer.current.scope),
+      };
+      const value = field.value
+        ? evaluator.evaluateExpression(field.value, fieldContext, field.key)
+        : UNDEFINED_VALUE;
+      const setField = (resolved: StaticValue) => {
+        evaluator.recordHeapMutation(instance);
+        setObjectProperty(instance, field.key, resolved);
+      };
+      if (getThrowCertainty(value) !== "never") {
+        return evaluator.continueValue(value, fieldContext, (resolved) => {
+          setField(resolved);
+          return initializeFrom(index + 1);
+        });
+      }
+      setField(value);
+    }
+    return UNDEFINED_VALUE;
+  };
+  return initializeFrom(0);
+};
+
+const constructLayer = (
+  evaluator: ClassEvaluator,
+  layers: ClassLayer[],
+  index: number,
+  args: StaticValue[],
+  instance: StaticObjectValue,
+): StaticValue => {
+  const layer = layers[index];
+  if (!layer) return instance;
+  const context = layer.methodContext;
+  const isDerived = layer.current.body.superValue !== null;
+  const isNativeClass =
+    layer.current.node.type === "ClassDeclaration" || layer.current.node.type === "ClassExpression";
+  const construction = objectFromRecord({
+    hasConstructedParent: FALSE_VALUE,
+    thisValue: UNDEFINED_VALUE,
+  });
+  const getConstructionError = (name: "ReferenceError" | "TypeError", message: string) =>
+    thrownValue(
+      "class construction throws",
+      createErrorValue(name, [primitiveValue(message)], null),
+      null,
+    );
+  const getParentState = () => getObjectProperty(construction, "hasConstructedParent");
+  const getThisValue = (): StaticValue =>
+    evaluator.continueValue(getParentState(), context, (hasConstructedParent) =>
+      getTruthiness(hasConstructedParent) === true
+        ? getObjectProperty(construction, "thisValue")
+        : getConstructionError(
+            "ReferenceError",
+            "Must call super constructor in derived class before accessing 'this' or returning from derived constructor",
+          ),
+    );
+  const constructParent = (superArgs: StaticValue[]): StaticValue =>
+    evaluator.continueValue(
+      constructLayer(
+        evaluator,
+        layers,
+        index + 1,
+        superArgs,
+        isNativeClass ? { ...instance, ...objectValue([...instance.entries]) } : instance,
+      ),
+      context,
+      (parentInstance) =>
+        evaluator.continueValue(getParentState(), context, (hasConstructedParent) => {
+          if (getTruthiness(hasConstructedParent) === true)
+            return getConstructionError(
+              "ReferenceError",
+              "Super constructor may only be called once",
+            );
+          evaluator.recordHeapMutation(construction);
+          setObjectProperty(construction, "hasConstructedParent", TRUE_VALUE);
+          const thisValue =
+            parentInstance.kind === "object"
+              ? parentInstance
+              : unknownValue("derived constructor replacement is not a known object");
+          setObjectProperty(construction, "thisValue", thisValue);
+          if (thisValue.kind !== "object") return thisValue;
+          return evaluator.continueValue(
+            initializeFields(evaluator, layer, thisValue),
+            context,
+            () => thisValue,
+          );
+        }),
+    );
+  const finishConstructor = (returned: StaticValue): StaticValue => {
+    if (returned.kind === "unknown")
+      return unknownValue(`class constructor result: ${returned.reason}`, returned.location);
+    const realm = evaluator.getRealm(context.environment);
+    const result = evaluator.getConstructorResult(returned, instance, realm);
+    if (!isDerived || result !== instance || returned === instance) return result;
+    const returnType = getTypeofValue(returned, realm);
+    if (returnType.kind === "primitive" && returnType.value !== "undefined")
+      return getConstructionError(
+        "TypeError",
+        "Derived constructors may only return object or undefined",
+      );
+    return getThisValue();
+  };
+  const callConstructor = (): StaticValue => {
+    if (!layer.members.constructor) return isDerived ? constructParent(args) : instance;
+    const superBinding: SuperBinding = {
+      construct: isDerived ? constructParent : null,
+      getThisValue: isDerived && isNativeClass ? getThisValue : undefined,
+      parent: layer.current.body.superValue,
+    };
+    const outerSuperBinding = evaluator.pendingSuperBindings.get(instance);
+    evaluator.pendingSuperBindings.set(instance, superBinding);
+    let returned: StaticValue;
+    try {
+      returned = evaluator.callFunction(
+        { ...layer.members.constructor, superBinding },
+        args,
+        { ...context, superBinding },
+        { thisValue: instance },
+      );
+    } finally {
+      if (outerSuperBinding) evaluator.pendingSuperBindings.set(instance, outerSuperBinding);
+      else evaluator.pendingSuperBindings.delete(instance);
+    }
+    return evaluator.continueValue(returned, context, finishConstructor);
+  };
+  return isDerived
+    ? callConstructor()
+    : evaluator.continueValue(
+        initializeFields(evaluator, layer, instance),
+        context,
+        callConstructor,
+      );
+};
+
+const initializeInstance = (
+  evaluator: ClassEvaluator,
+  classValue: StaticClassValue,
+  instance: StaticObjectValue,
+  args: StaticValue[],
+  context: EvaluationContext,
+): ClassInitialization => {
+  instance.constructedBy = classValue;
+  if (classValue.body.prototype) instance.prototype = classValue.body.prototype;
+  const chain = collectClassChain(classValue);
+  const seen = new Set<string>();
+  const layers: ClassLayer[] = chain.map((current) => {
+    const methodContext = methodContextFor(current, context, instance);
+    return {
+      current,
+      methodContext,
+      members: bindMethods(evaluator, current, instance, methodContext, seen),
+    };
+  });
+  for (const { members } of layers) {
+    for (const getter of members.getters) {
+      instance.entries.push(getterEntry(getter.key, getter.functionValue, null));
+    }
+  }
+  return { chain, value: constructLayer(evaluator, layers, 0, args, instance) };
+};

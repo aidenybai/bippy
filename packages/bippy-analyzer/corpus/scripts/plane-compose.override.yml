@@ -1,0 +1,11 @@
+services:
+  plane-redis:
+    ports: !reset []
+  plane-minio:
+    ports: !reset []
+  plane-db:
+    ports: !reset []
+  api:
+    depends_on:
+      migrator:
+        condition: service_completed_successfully

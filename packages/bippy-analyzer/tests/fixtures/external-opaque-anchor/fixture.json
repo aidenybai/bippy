@@ -1,0 +1,6 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "anchor": "main",
+  "notes": "The whole app is passed through an opaque provider; the anchor is located inside the provider's passed children on both sides."
+}

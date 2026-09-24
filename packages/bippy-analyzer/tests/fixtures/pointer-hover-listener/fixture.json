@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Radix ScrollArea's hover scrollbar: an effect listens for pointerenter on the root node. Headless Chromium never synthesizes pointer arrival events without a real pointer event first, so the handler cannot run before the snapshot and the scrollbar stays hidden."
+}

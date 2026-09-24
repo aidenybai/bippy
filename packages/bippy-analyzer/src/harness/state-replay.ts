@@ -1,0 +1,939 @@
+import type { PinnedDecisions, StaticRenderResult } from "../render/types.js";
+import { areGuardsSatisfiable } from "../symbolic/guard-solver.js";
+import { choiceGuard, negateGuard, type Guard } from "../symbolic/guards.js";
+import {
+  enumerateStaticStates,
+  type CompareRenderResult,
+  type StaticRenderStateSpace,
+  type StaticStateSpaceOptions,
+} from "./compare-render.js";
+import {
+  describePatternNode,
+  matchPatternToRuntime,
+  type ComparisonDivergence,
+  type ComparisonOptions,
+  type ComparisonReport,
+  type ComparisonStatus,
+} from "./compare.js";
+import type { RuntimeFiberSnapshot } from "./snapshot.js";
+import {
+  getPinnedPattern,
+  pinDecisions,
+  type DecisionCondition,
+  type StateCondition,
+  type StaticState,
+  type StaticStateSpace,
+} from "./state-space.js";
+import { hasPatternDecisions, scopeRepeatIteration, type PatternNode } from "./static-pattern.js";
+import { COMMIT_VARIABLE, decisionGuard } from "./symbolic-tree.js";
+
+// The enumeration derives every state from one render in which all
+// alternatives were materialized together, so module state, refs and effects
+// of one alternative can leak into another's subtree. Replaying an assignment
+// of the decision variables renders the static tree again, from a fresh
+// interpreter, with only those alternatives and repeat counts selected; the
+// trees it commits are checked against the symbolic tree under that assignment.
+
+/**
+ * How many decision assignments a replay renders at most; each is a full
+ * static render. The runtime-matched assignment is always among them, the rest
+ * are spread evenly over the enumeration order, and the summary reports the
+ * count so a sampled replay is never mistaken for a complete one.
+ */
+export const DEFAULT_MAX_REPLAYED_ASSIGNMENTS = 16;
+
+export interface StateReplayMismatch {
+  /** The enumerated states (indices before correction) the assignment claims. */
+  stateIndices: number[];
+  conditions: DecisionCondition[];
+  /** Distinct projected claim trees (possibly partial) and independently replayed trees. */
+  claimedCommits: number;
+  replayedCommits: number;
+  divergence: ComparisonDivergence;
+  /** Concrete replay replacements are available for enumerated claims; the symbolic tree is not corrected. */
+  isCorrected: boolean;
+}
+
+export interface StateReplayIncomplete {
+  stateIndices: number[];
+  conditions: DecisionCondition[];
+  unresolvedClaimCommits: number[];
+  isReplayConcrete: boolean;
+}
+
+export interface MatchedOutsideEnumerationReplay {
+  conditions: StateCondition[];
+  verification: "not-replayed" | "passed" | "incomplete" | "contradicted";
+}
+
+export interface StateReplaySummary {
+  verification?: "not-replayed" | "sample-passed" | "sample-incomplete" | "contradicted";
+  /** Enumerated states before the replay corrected any. */
+  states: number;
+  /** Candidate assignments from enumeration and any matched state outside it. */
+  assignments: number;
+  replayed: number;
+  maxReplayed: number;
+  /** Replayed assignments whose claimed trees the reconciler did not produce. */
+  mismatched: StateReplayMismatch[];
+  incomplete?: StateReplayIncomplete[];
+  matchedOutsideEnumeration?: MatchedOutsideEnumerationReplay;
+}
+
+export interface StateReplayOptions {
+  maxReplayed?: number;
+  matchedConditions?: StateCondition[];
+  /** The options the state space was enumerated with, so the replay is read the same way. */
+  enumerate?: StaticStateSpaceOptions;
+  compare?: ComparisonOptions;
+}
+
+export interface RenderPinnedDecisions {
+  (decisions: PinnedDecisions): Promise<StaticRenderResult>;
+}
+
+const END_OF_CHILDREN = "<end of children>";
+
+const describeAt = (nodes: PatternNode[], index: number): string => {
+  const node = nodes[index];
+  return node === undefined ? END_OF_CHILDREN : describePatternNode(node);
+};
+
+const isSameNodeHead = (expected: PatternNode, actual: PatternNode): boolean => {
+  switch (expected.kind) {
+    case "fiber":
+      return (
+        actual.kind === "fiber" &&
+        expected.tag === actual.tag &&
+        expected.name === actual.name &&
+        expected.key === actual.key
+      );
+    case "text":
+      return actual.kind === "text" && expected.text === actual.text;
+    case "opaque":
+      return (
+        actual.kind === "opaque" && expected.name === actual.name && expected.key === actual.key
+      );
+    case "wildcard":
+      return actual.kind === "wildcard" && expected.reason === actual.reason;
+    case "branch":
+    case "repeat":
+      return false;
+  }
+};
+
+const childrenOf = (node: PatternNode): PatternNode[] => {
+  switch (node.kind) {
+    case "fiber":
+      return node.children;
+    case "opaque":
+      return node.passedChildren;
+    case "text":
+    case "wildcard":
+    case "branch":
+    case "repeat":
+      return [];
+  }
+};
+
+const hasUnknownHead = (node: PatternNode | undefined): boolean =>
+  node !== undefined && (node.kind === "text" ? node.text === null : node.kind !== "fiber");
+
+const diffPatterns = (
+  expected: PatternNode[],
+  actual: PatternNode[],
+  path: string[],
+  isPartial = false,
+): ComparisonDivergence | null => {
+  const compareAt = (expectedIndex: number, actualIndex: number): ComparisonDivergence | null => {
+    const expectedNode = expected[expectedIndex];
+    const actualNode = actual[actualIndex];
+    if (
+      expectedNode === undefined ||
+      actualNode === undefined ||
+      !isSameNodeHead(expectedNode, actualNode)
+    ) {
+      return {
+        path: `${path.join(" > ")}[${expectedIndex}]`,
+        expected: describeAt(expected, expectedIndex),
+        actual: describeAt(actual, actualIndex),
+      };
+    }
+    return diffPatterns(
+      childrenOf(expectedNode),
+      childrenOf(actualNode),
+      [...path, describePatternNode(expectedNode)],
+      isPartial,
+    );
+  };
+  const length = Math.max(expected.length, actual.length);
+  let prefix = 0;
+  for (; prefix < length; prefix++) {
+    if (isPartial && (hasUnknownHead(expected[prefix]) || hasUnknownHead(actual[prefix]))) break;
+    const divergence = compareAt(prefix, prefix);
+    if (divergence) return divergence;
+  }
+  for (let suffix = 0; suffix < length - prefix; suffix++) {
+    const expectedIndex = expected.length - 1 - suffix;
+    const actualIndex = actual.length - 1 - suffix;
+    const expectedPosition = expectedIndex >= prefix ? expectedIndex : expected.length;
+    const actualPosition = actualIndex >= prefix ? actualIndex : actual.length;
+    if (hasUnknownHead(expected[expectedPosition]) || hasUnknownHead(actual[actualPosition])) break;
+    const divergence = compareAt(expectedPosition, actualPosition);
+    if (divergence) return divergence;
+  }
+  if (prefix < length && actual.every((node) => !hasUnknownHead(node))) {
+    let candidate = 0;
+    for (let index = 0; index < expected.length; index++) {
+      if (hasUnknownHead(expected[index])) continue;
+      while (candidate < actual.length && compareAt(index, candidate) !== null) candidate++;
+      if (candidate === actual.length) return compareAt(index, actual.length);
+      candidate++;
+    }
+  }
+  return null;
+};
+
+const isSameTree = (left: PatternNode[], right: PatternNode[]): boolean =>
+  diffPatterns(left, right, []) === null;
+
+const distinctTrees = (trees: PatternNode[][]): PatternNode[][] =>
+  trees.filter((tree, index) => !trees.slice(0, index).some((seen) => isSameTree(seen, tree)));
+
+/** The first commit position where the claimed and the witnessed tree sequences differ. */
+const diffTreeSequences = (
+  claimed: PatternNode[][],
+  witnessed: PatternNode[][],
+): ComparisonDivergence | null => {
+  const length = Math.max(claimed.length, witnessed.length);
+  for (let commit = 0; commit < length; commit++) {
+    const divergence = diffPatterns(claimed[commit] ?? [], witnessed[commit] ?? [], [
+      ...(length > 1 ? [`commit ${commit + 1}`] : []),
+      "root",
+    ]);
+    if (divergence) return divergence;
+  }
+  return null;
+};
+
+const isDecisionCondition = (condition: StateCondition): condition is DecisionCondition =>
+  condition.kind !== "transition";
+
+const decisionValue = (condition: DecisionCondition): number =>
+  condition.kind === "repeat" ? condition.count : condition.alternativeIndex;
+
+/**
+ * Which decision every variable of a commit stands for. Each commit names
+ * its variables on its own, so the same decision (one materializer id at one
+ * position) can carry different variables in different commits and one
+ * variable name can mean different decisions; the join treats the variable of
+ * each commit as its own and unifies those naming one decision, since a
+ * replay can pin the decision only once for all commits. Decisions inside a
+ * repeat are per iteration and keep their own variables; alternatives of a
+ * branch sharing its scope were materialized in one scope, so their ids
+ * already tell them apart.
+ */
+const collectDecisionVariables = (
+  nodes: PatternNode[],
+  position: string,
+  variableOf: Map<string, string>,
+): void => {
+  for (const node of nodes) {
+    switch (node.kind) {
+      case "fiber":
+        collectDecisionVariables(node.children, position, variableOf);
+        break;
+      case "opaque":
+        collectDecisionVariables(node.passedChildren, position, variableOf);
+        break;
+      case "branch": {
+        const decision = `${position}${node.decision}`;
+        variableOf.set(decision, variableOf.get(decision) ?? node.variable);
+        node.alternatives.forEach((alternative, alternativeIndex) => {
+          collectDecisionVariables(
+            alternative,
+            node.sharesScope ? position : `${decision}|${alternativeIndex}/`,
+            variableOf,
+          );
+        });
+        break;
+      }
+      case "repeat": {
+        const decision = `${position}${node.decision}`;
+        variableOf.set(decision, variableOf.get(decision) ?? node.variable);
+        break;
+      }
+      case "text":
+      case "wildcard":
+        break;
+    }
+  }
+};
+
+const commitVariableKey = (commit: number, variable: string): string => `${commit}:${variable}`;
+
+/** Commit-scoped variables that name the same decision, by union-find over the decision ids. */
+const unifyDecisionVariables = (commits: PatternNode[][]): Map<string, string> => {
+  const parents = new Map<string, string>();
+  const resolve = (key: string): string => {
+    const parent = parents.get(key) ?? key;
+    if (parent === key) return key;
+    const root = resolve(parent);
+    parents.set(key, root);
+    return root;
+  };
+  const keyOfDecision = new Map<string, string>();
+  commits.forEach((commit, commitIndex) => {
+    const variableOf = new Map<string, string>();
+    collectDecisionVariables(commit, "", variableOf);
+    for (const [decision, variable] of variableOf) {
+      const key = commitVariableKey(commitIndex, variable);
+      if (!parents.has(key)) parents.set(key, key);
+      const earlier = keyOfDecision.get(decision);
+      if (earlier === undefined) keyOfDecision.set(decision, key);
+      else parents.set(resolve(key), resolve(earlier));
+    }
+  });
+  return new Map([...parents.keys()].map((key) => [key, resolve(key)]));
+};
+
+interface CommitDecision {
+  commit: number;
+  condition: DecisionCondition;
+}
+
+/** One joint assignment: the decisions of each canonical variable, one per commit deciding it. */
+interface Assignment extends ReadonlyMap<string, CommitDecision[]> {}
+
+const assignmentKey = (assignment: Assignment): string =>
+  JSON.stringify(
+    [...assignment]
+      .map(([variable, [decision]]): [string, number] => [
+        variable,
+        decisionValue(decision.condition),
+      ])
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+
+class AssignmentJoin {
+  constructor(private readonly canonical: Map<string, string>) {}
+
+  private decided(assignment: Assignment, decision: CommitDecision): number | null {
+    const [existing] = assignment.get(this.canonicalOf(decision)) ?? [];
+    return existing === undefined ? null : decisionValue(existing.condition);
+  }
+
+  private canonicalOf({ commit, condition }: CommitDecision): string {
+    const key = commitVariableKey(commit, condition.variable);
+    return this.canonical.get(key) ?? key;
+  }
+
+  agreesWith(assignment: Assignment, decisions: CommitDecision[]): boolean {
+    return decisions.every((decision) => {
+      const value = this.decided(assignment, decision);
+      return value === null || value === decisionValue(decision.condition);
+    });
+  }
+
+  isSubAssignment(assignment: Assignment, decisions: CommitDecision[]): boolean {
+    return decisions.every(
+      (decision) => this.decided(assignment, decision) === decisionValue(decision.condition),
+    );
+  }
+
+  merge(assignment: Assignment, decisions: CommitDecision[]): Assignment {
+    const merged = new Map(assignment);
+    for (const decision of decisions) {
+      const variable = this.canonicalOf(decision);
+      const aliases = merged.get(variable) ?? [];
+      if (!aliases.some((alias) => alias.commit === decision.commit)) {
+        merged.set(variable, [...aliases, decision]);
+      }
+    }
+    return merged;
+  }
+}
+
+const collectAssignedGuards = (
+  nodes: PatternNode[],
+  conditions: ReadonlyMap<string, DecisionCondition>,
+): Guard[] =>
+  nodes.flatMap((node): Guard[] => {
+    switch (node.kind) {
+      case "fiber":
+        return collectAssignedGuards(node.children, conditions);
+      case "opaque":
+        return collectAssignedGuards(node.passedChildren, conditions);
+      case "branch": {
+        const condition = conditions.get(node.variable);
+        if (condition?.kind !== "branch" && condition?.kind !== "state-update") return [];
+        return [
+          decisionGuard(node, condition.alternativeIndex),
+          ...collectAssignedGuards(node.alternatives[condition.alternativeIndex] ?? [], conditions),
+        ];
+      }
+      case "repeat": {
+        const condition = conditions.get(node.variable);
+        if (condition?.kind !== "repeat") return [];
+        return [
+          decisionGuard(node, condition.count),
+          ...Array.from({ length: condition.count }, (_, iteration) =>
+            collectAssignedGuards(scopeRepeatIteration(node, iteration), conditions),
+          ).flat(),
+        ];
+      }
+      case "text":
+      case "wildcard":
+        return [];
+    }
+  });
+
+const getPinnedConditions = (assignment: Assignment, commitCount: number): DecisionCondition[][] =>
+  Array.from({ length: commitCount }, (_, commit) =>
+    [...assignment.values()].flatMap((aliases) =>
+      aliases.flatMap((alias) => (alias.commit === commit ? [alias.condition] : [])),
+    ),
+  );
+
+interface CommitAssignment {
+  decisions: CommitDecision[];
+  guards: Guard[];
+}
+
+interface GuardedAssignment {
+  assignment: Assignment;
+  guards: Guard[];
+}
+
+export interface DecisionAssignment {
+  /** One condition per decision, under the variable of the earliest commit meeting it. */
+  conditions: DecisionCondition[];
+  /** The same decisions under each commit's own variables, so every commit finds its pins. */
+  pinnedConditions: DecisionCondition[][];
+  /** The enumerated states the assignment claims, in enumeration order. */
+  stateIndices: number[];
+}
+
+/**
+ * The joint assignments of every decision variable the enumeration met. Each
+ * commit was enumerated on its own, so a variable that only exists in one
+ * commit is joined with every agreeing assignment of the other commits; a
+ * state belongs to each joint assignment its own conditions are part of. The
+ * join is bounded like the enumeration itself.
+ */
+export const joinDecisionAssignments = (stateSpace: StaticStateSpace): DecisionAssignment[] => {
+  const join = new AssignmentJoin(unifyDecisionVariables(stateSpace.commits));
+  let commitStart = 0;
+  const decisionsOf: CommitDecision[][] = [];
+  const perCommit = stateSpace.commitStates.map((commitStates, commit) => {
+    const commitDecisions = stateSpace.states
+      .slice(commitStart, commitStart + commitStates.stateCount)
+      .map((state): CommitAssignment => {
+        const conditions = state.conditions.filter(isDecisionCondition);
+        return {
+          decisions: conditions.map((condition) => ({ commit, condition })),
+          guards: collectAssignedGuards(
+            stateSpace.commits[commit],
+            new Map(conditions.map((condition) => [condition.variable, condition])),
+          ),
+        };
+      });
+    commitStart += commitStates.stateCount;
+    decisionsOf.push(...commitDecisions.map((candidate) => candidate.decisions));
+    return commitDecisions;
+  });
+  let joint: GuardedAssignment[] = [{ assignment: new Map(), guards: [] }];
+  for (const [commit, commitAssignments] of perCommit.entries()) {
+    const extended = new Map<string, GuardedAssignment>();
+    for (const existing of joint) {
+      const { assignment } = existing;
+      let isExtended = false;
+      for (const candidate of commitAssignments) {
+        if (!join.agreesWith(assignment, candidate.decisions)) continue;
+        const guards = [...existing.guards, ...candidate.guards];
+        if (!areGuardsSatisfiable([...guards, stateSpace.tree.commits[commit].guard])) continue;
+        const merged = join.merge(assignment, candidate.decisions);
+        isExtended = true;
+        extended.set(assignmentKey(merged), { assignment: merged, guards });
+      }
+      if (!isExtended) extended.set(assignmentKey(assignment), existing);
+    }
+    joint = [...extended.values()].slice(0, stateSpace.budget.maxStates);
+  }
+  return joint.map(({ assignment, guards }): DecisionAssignment => {
+    const decisions = [...assignment.values()];
+    const pinnedConditions = getPinnedConditions(assignment, stateSpace.commits.length);
+    const reachable = stateSpace.tree.commits.map((commit) =>
+      areGuardsSatisfiable([...guards, commit.guard]),
+    );
+    return {
+      conditions: decisions.map(([decision]) => decision.condition),
+      pinnedConditions,
+      stateIndices: decisionsOf.flatMap((stateDecisions, stateIndex) => {
+        const transition = stateSpace.states[stateIndex].conditions.find(
+          (condition) => condition.kind === "transition",
+        );
+        return reachable[transition?.commit ?? 0] &&
+          join.isSubAssignment(assignment, stateDecisions)
+          ? [stateIndex]
+          : [];
+      }),
+    };
+  });
+};
+
+const getAssignmentGuards = (
+  stateSpace: StaticStateSpace,
+  assignment: DecisionAssignment,
+): Guard[] =>
+  stateSpace.commits.flatMap((commit, commitIndex) =>
+    collectAssignedGuards(
+      commit,
+      new Map(
+        assignment.pinnedConditions[commitIndex].map((condition) => [
+          condition.variable,
+          condition,
+        ]),
+      ),
+    ),
+  );
+
+const includeMatchedAssignment = (
+  stateSpace: StaticStateSpace,
+  assignments: DecisionAssignment[],
+  conditions: StateCondition[],
+): number => {
+  const commit = conditions.find((condition) => condition.kind === "transition")?.commit ?? 0;
+  const matchedCommit = stateSpace.tree.commits[commit];
+  if (!matchedCommit) return -1;
+  const decisions = conditions.filter(isDecisionCondition);
+  const scoped = decisions.map((condition) => ({ commit, condition }));
+  const join = new AssignmentJoin(unifyDecisionVariables(stateSpace.commits));
+  const existing = assignments.findIndex((assignment) => {
+    const assigned = join.merge(
+      new Map(),
+      assignment.pinnedConditions.flatMap((conditions, commit) =>
+        conditions.map((condition) => ({ commit, condition })),
+      ),
+    );
+    return (
+      join.isSubAssignment(assigned, scoped) &&
+      areGuardsSatisfiable([...getAssignmentGuards(stateSpace, assignment), matchedCommit.guard])
+    );
+  });
+  if (existing !== -1) return existing;
+  assignments.push({
+    conditions: decisions,
+    pinnedConditions: stateSpace.commits.map((_pattern, commitIndex) =>
+      commitIndex === commit ? decisions : [],
+    ),
+    stateIndices: [],
+  });
+  return assignments.length - 1;
+};
+
+/**
+ * Which assignments to replay: up to `maxReplayed` spread evenly over the
+ * enumeration order, the slot nearest the runtime-matched assignment replaced
+ * by it so the match itself is re-witnessed when the budget permits.
+ */
+export const chooseReplaySample = (
+  assignmentCount: number,
+  matchedAssignment: number | null,
+  maxReplayed: number,
+): number[] => {
+  if (maxReplayed <= 0) return [];
+  if (assignmentCount <= maxReplayed) {
+    return Array.from({ length: assignmentCount }, (_, index) => index);
+  }
+  const step = maxReplayed === 1 ? 0 : (assignmentCount - 1) / (maxReplayed - 1);
+  const sample = Array.from({ length: maxReplayed }, (_, slot) => Math.round(slot * step));
+  if (matchedAssignment !== null && !sample.includes(matchedAssignment)) {
+    const nearest = sample.reduce(
+      (best, index, slot) =>
+        Math.abs(index - matchedAssignment) < Math.abs(sample[best] - matchedAssignment)
+          ? slot
+          : best,
+      0,
+    );
+    sample[nearest] = matchedAssignment;
+  }
+  return sample.sort((left, right) => left - right);
+};
+
+const transitionConditions = (commit: number, commitCount: number): StateCondition[] =>
+  commitCount > 1 ? [{ kind: "transition", commit, commitCount }] : [];
+
+interface ReplayClaim {
+  commits: PatternNode[][];
+  unresolvedCommits: number[];
+}
+
+const getReplayClaim = (
+  stateSpace: StaticStateSpace,
+  assignment: DecisionAssignment,
+  pins: PinnedDecisions,
+): ReplayClaim => {
+  const guards = getAssignmentGuards(stateSpace, assignment);
+  const commits: PatternNode[][] = [];
+  const unresolvedCommits: number[] = [];
+  stateSpace.tree.commits.forEach((commit, commitIndex) => {
+    if (!areGuardsSatisfiable([...guards, commit.guard])) return;
+    const tree = getPinnedPattern(commit.tree, pins);
+    const isOptional = areGuardsSatisfiable([
+      ...guards,
+      choiceGuard(COMMIT_VARIABLE, commitIndex),
+      negateGuard(commit.guard),
+    ]);
+    if (isOptional || tree.some(hasPatternDecisions)) unresolvedCommits.push(commitIndex);
+    if (!isOptional) commits.push(tree);
+  });
+  return { commits: distinctTrees(commits), unresolvedCommits };
+};
+
+const diffKnownClaims = (
+  claimed: PatternNode[][],
+  witnessed: PatternNode[][],
+): ComparisonDivergence | null => {
+  if (witnessed.length === 0) return null;
+  for (const [commitIndex, tree] of claimed.entries()) {
+    let divergence: ComparisonDivergence | null = null;
+    for (const candidate of witnessed) {
+      divergence = diffPatterns(tree, candidate, [`commit ${commitIndex + 1}`], true);
+      if (divergence === null) break;
+    }
+    if (divergence !== null) return divergence;
+  }
+  return null;
+};
+
+interface ReplayOutcome {
+  mismatch: StateReplayMismatch | null;
+  incomplete: StateReplayIncomplete | null;
+  reproduced: number[];
+  /** The assignment's states as the replay witnessed them; null when the claimed states were reproduced. */
+  corrected: StaticState[] | null;
+}
+
+const replayAssignment = (
+  states: StaticState[],
+  assignment: DecisionAssignment,
+  claim: ReplayClaim,
+  replay: StaticStateSpace,
+): ReplayOutcome => {
+  const claimed = claim.commits;
+  const witnessed = distinctTrees(replay.commits);
+  const isConcrete =
+    witnessed.length > 0 && witnessed.every((commit) => !commit.some(hasPatternDecisions));
+  const incomplete =
+    claim.unresolvedCommits.length > 0 || !isConcrete
+      ? {
+          stateIndices: assignment.stateIndices,
+          conditions: assignment.conditions,
+          unresolvedClaimCommits: claim.unresolvedCommits,
+          isReplayConcrete: isConcrete,
+        }
+      : null;
+  const divergence =
+    incomplete === null
+      ? diffTreeSequences(claimed, witnessed)
+      : diffKnownClaims(claimed, witnessed);
+  const reproduced = assignment.stateIndices.filter((stateIndex) =>
+    witnessed.some((tree) => isSameTree(states[stateIndex].tree, tree)),
+  );
+  if (divergence === null) return { mismatch: null, incomplete, reproduced, corrected: null };
+  const shouldCorrect = isConcrete && assignment.stateIndices.length > 0;
+  return {
+    incomplete,
+    reproduced,
+    mismatch: {
+      stateIndices: assignment.stateIndices,
+      conditions: assignment.conditions,
+      claimedCommits: claimed.length,
+      replayedCommits: witnessed.length,
+      divergence,
+      isCorrected: shouldCorrect,
+    },
+    corrected: shouldCorrect
+      ? witnessed.map((tree, commit) => ({
+          tree,
+          conditions: [...transitionConditions(commit, witnessed.length), ...assignment.conditions],
+        }))
+      : null,
+  };
+};
+
+interface CorrectedStateSpace {
+  states: StaticState[];
+  /** New index of every enumerated state still claimed by an uncorrected assignment. */
+  kept: Map<number, number>;
+  /** New indices of the states whose trees the corrected replays committed. */
+  witnessed: number[];
+}
+
+interface CorrectedEntry {
+  state: StaticState;
+  /** Index in the enumeration; null for a state a corrected replay contributed. */
+  origin: number | null;
+}
+
+/**
+ * Drops the states only corrected assignments claimed and puts each
+ * corrected assignment's witnessed trees where its first state was; a tree
+ * some remaining state already describes is witnessed through that state.
+ */
+const correctStates = (
+  states: StaticState[],
+  assignments: DecisionAssignment[],
+  corrections: Map<number, StaticState[]>,
+): CorrectedStateSpace => {
+  const claimedBy = states.map((): number[] => []);
+  assignments.forEach((assignment, assignmentIndex) => {
+    for (const stateIndex of assignment.stateIndices) claimedBy[stateIndex].push(assignmentIndex);
+  });
+  const isDropped = (stateIndex: number): boolean =>
+    claimedBy[stateIndex].length > 0 &&
+    claimedBy[stateIndex].every((assignmentIndex) => corrections.has(assignmentIndex));
+  const keptTrees = states
+    .filter((_, stateIndex) => !isDropped(stateIndex))
+    .map((state) => state.tree);
+  const witnessedTrees = [...corrections.values()].flat().map((state) => state.tree);
+  const insertAt = new Map<number, number[]>();
+  for (const assignmentIndex of corrections.keys()) {
+    const first = assignments[assignmentIndex].stateIndices[0] ?? states.length;
+    insertAt.set(first, [...(insertAt.get(first) ?? []), assignmentIndex]);
+  }
+  const entries: CorrectedEntry[] = [];
+  const insert = (stateIndex: number): void => {
+    for (const assignmentIndex of insertAt.get(stateIndex) ?? []) {
+      for (const state of corrections.get(assignmentIndex) ?? []) {
+        const isDescribed = [...keptTrees, ...entries.map((entry) => entry.state.tree)].some(
+          (tree) => isSameTree(tree, state.tree),
+        );
+        if (!isDescribed) entries.push({ state, origin: null });
+      }
+    }
+  };
+  states.forEach((state, stateIndex) => {
+    insert(stateIndex);
+    if (!isDropped(stateIndex)) entries.push({ state, origin: stateIndex });
+  });
+  insert(states.length);
+  const kept = new Map<number, number>();
+  const witnessed: number[] = [];
+  entries.forEach(({ state, origin }, index) => {
+    if (origin !== null) kept.set(origin, index);
+    if (origin === null || witnessedTrees.some((tree) => isSameTree(tree, state.tree))) {
+      witnessed.push(index);
+    }
+  });
+  return { states: entries.map((entry) => entry.state), kept, witnessed };
+};
+
+interface RuntimeMatch {
+  index: number;
+  report: ComparisonReport;
+}
+
+/** The latest state the runtime is an instance of, as the derived matching prefers later commits. */
+const matchStates = (
+  states: StaticState[],
+  indices: number[],
+  runtime: RuntimeFiberSnapshot[],
+  options: ComparisonOptions | undefined,
+): RuntimeMatch | null => {
+  for (const index of [...indices].sort((left, right) => right - left)) {
+    const match = matchPatternToRuntime(states[index].tree, runtime, options);
+    if (match.report.status !== "mismatch") return { index, report: match.report };
+  }
+  return null;
+};
+
+const reindex = <T extends { index: number | null }>(
+  state: T | null,
+  kept: Map<number, number>,
+): T | null => {
+  if (state === null || state.index === null) return state;
+  const index = kept.get(state.index);
+  return index === undefined ? null : { ...state, index };
+};
+
+export interface StateSpaceReplay {
+  summary: StateReplaySummary;
+  /** The enumerated states with the contradicted ones replaced by what their replays committed. */
+  states: StaticState[];
+  /** New index of every enumerated state a replay did not contradict. */
+  kept: Map<number, number>;
+  /** New indices of the states some replay reproduced or committed. */
+  reWitnessed: Set<number>;
+}
+
+/**
+ * Independently replays the enumerated decision assignments in a bounded
+ * sample that includes the assignment of `preferredState` when enabled.
+ * States a replay contradicts are replaced by the replayed commits.
+ */
+export const replayStateSpace = async (
+  stateSpace: StaticStateSpace,
+  render: RenderPinnedDecisions,
+  preferredState: number | null,
+  options: StateReplayOptions = {},
+): Promise<StateSpaceReplay> => {
+  const maxReplayed = options.maxReplayed ?? DEFAULT_MAX_REPLAYED_ASSIGNMENTS;
+  const assignments = joinDecisionAssignments(stateSpace);
+  const matchedOutsideEnumeration: MatchedOutsideEnumerationReplay | undefined =
+    preferredState === null && options.matchedConditions
+      ? { conditions: options.matchedConditions, verification: "not-replayed" }
+      : undefined;
+  const preferredAssignment = matchedOutsideEnumeration
+    ? includeMatchedAssignment(stateSpace, assignments, matchedOutsideEnumeration.conditions)
+    : assignments.findIndex(
+        (assignment) => preferredState !== null && assignment.stateIndices.includes(preferredState),
+      );
+  const sample = chooseReplaySample(
+    assignments.length,
+    preferredAssignment === -1 ? null : preferredAssignment,
+    maxReplayed,
+  );
+  const mismatched: StateReplayMismatch[] = [];
+  const incomplete: StateReplayIncomplete[] = [];
+  const corrections = new Map<number, StaticState[]>();
+  const reproduced = new Set<number>();
+  for (const assignmentIndex of sample) {
+    const assignment = assignments[assignmentIndex];
+    const pins = pinDecisions(stateSpace, assignment.pinnedConditions);
+    const claim = getReplayClaim(stateSpace, assignment, pins);
+    const rendered = await render(pins);
+    const outcome = replayAssignment(
+      stateSpace.states,
+      assignment,
+      claim,
+      enumerateStaticStates(rendered, options.enumerate),
+    );
+    if (matchedOutsideEnumeration && assignmentIndex === preferredAssignment) {
+      matchedOutsideEnumeration.verification = outcome.mismatch
+        ? "contradicted"
+        : outcome.incomplete
+          ? "incomplete"
+          : "passed";
+    }
+    if (outcome.incomplete) incomplete.push(outcome.incomplete);
+    if (outcome.mismatch) mismatched.push(outcome.mismatch);
+    else for (const stateIndex of outcome.reproduced) reproduced.add(stateIndex);
+    if (outcome.corrected) corrections.set(assignmentIndex, outcome.corrected);
+  }
+  const { states, kept, witnessed } = correctStates(stateSpace.states, assignments, corrections);
+  return {
+    summary: {
+      verification:
+        sample.length === 0
+          ? "not-replayed"
+          : mismatched.length > 0
+            ? "contradicted"
+            : incomplete.length > 0
+              ? "sample-incomplete"
+              : "sample-passed",
+      states: stateSpace.states.length,
+      assignments: assignments.length,
+      replayed: sample.length,
+      maxReplayed,
+      mismatched,
+      incomplete,
+      ...(matchedOutsideEnumeration ? { matchedOutsideEnumeration } : {}),
+    },
+    states,
+    kept,
+    reWitnessed: new Set([
+      ...witnessed,
+      ...[...reproduced].flatMap((stateIndex) => kept.get(stateIndex) ?? []),
+    ]),
+  };
+};
+
+/** The state space with the replays' corrections in place of the states they contradicted; the tree and its clusters stay the enumeration's. */
+const withCorrectedStates = (
+  stateSpace: StaticRenderStateSpace,
+  states: StaticState[],
+): StaticRenderStateSpace => ({
+  tree: stateSpace.tree,
+  commits: stateSpace.commits,
+  commitStates: stateSpace.commitStates,
+  budget: stateSpace.budget,
+  stateCount: stateSpace.stateCount - stateSpace.states.length + states.length,
+  states,
+  omitted: stateSpace.omitted,
+  staticPattern: stateSpace.staticPattern,
+  anchor: stateSpace.anchor,
+  unresolved: stateSpace.unresolved,
+});
+
+/**
+ * Replays the enumerated states and folds their evidence into the comparison.
+ * A contradiction against the matched assignment can invalidate membership;
+ * an incomplete replay cannot. Trees produced by concrete replays can also match.
+ */
+export const replayEnumeratedStates = async (
+  comparison: CompareRenderResult,
+  render: RenderPinnedDecisions,
+  options: StateReplayOptions = {},
+): Promise<CompareRenderResult> => {
+  const { stateSpace } = comparison;
+  const matchedIndex = comparison.matchedState?.index ?? null;
+  const { summary, states, kept, reWitnessed } = await replayStateSpace(
+    stateSpace,
+    render,
+    matchedIndex,
+    {
+      ...options,
+      matchedConditions:
+        comparison.matchedState?.index === null ? comparison.matchedState.conditions : undefined,
+    },
+  );
+  const matchedState = reindex(comparison.matchedState, kept);
+  const replayed: CompareRenderResult = {
+    ...comparison,
+    stateSpace: withCorrectedStates(stateSpace, states),
+    matchedState,
+    closestState: reindex(comparison.closestState, kept),
+    stateReplay: summary,
+  };
+  if (summary.replayed === 0 || summary.matchedOutsideEnumeration?.verification === "passed") {
+    return replayed;
+  }
+  if (matchedState !== null && matchedState.index !== null && reWitnessed.has(matchedState.index)) {
+    return replayed;
+  }
+  const rematch = matchStates(states, [...reWitnessed], comparison.runtimeSubtree, options.compare);
+  if (rematch) {
+    const status: ComparisonStatus =
+      rematch.report.status === "partial" ? "partial" : stateSpace.omitted ? "truncated" : "exact";
+    return {
+      ...replayed,
+      report: { ...rematch.report, status },
+      matchedState: { index: rematch.index, conditions: states[rematch.index].conditions },
+      closestState: null,
+    };
+  }
+  if (summary.matchedOutsideEnumeration?.verification === "contradicted") {
+    return {
+      ...replayed,
+      report: { ...comparison.report, status: "unsound" },
+      matchedState: null,
+    };
+  }
+  if (matchedIndex === null) return replayed;
+  const contradiction = summary.mismatched.find((mismatch) =>
+    mismatch.stateIndices.includes(matchedIndex),
+  );
+  if (!contradiction) return replayed;
+  const closestIndex = matchedState?.index ?? null;
+  return {
+    ...replayed,
+    report: { ...comparison.report, status: "unsound" },
+    matchedState: null,
+    closestState:
+      closestIndex !== null
+        ? { index: closestIndex, divergence: contradiction.divergence }
+        : replayed.closestState,
+  };
+};
