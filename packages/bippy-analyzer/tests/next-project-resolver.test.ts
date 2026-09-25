@@ -51,6 +51,11 @@ describe("installed Next configuration", () => {
         mode: "development",
         allowConfigExecution: true,
       });
+      expect(resolver.discover("@dynamic", project.importer)).toEqual({
+        classification: "both",
+        browser: { kind: "file", id: join(project.directory, "browser.js") },
+        node: { kind: "file", id: join(project.directory, "server.js") },
+      });
       expect(resolver.resolve("@dynamic", project.importer)).toEqual({
         kind: "file",
         id: join(project.directory, "browser.js"),
@@ -89,6 +94,23 @@ describe("installed Next configuration", () => {
       else process.env.BIPPY_CONFIG_SECRET = previous;
     }
   }, 20000);
+
+  it("keeps a configuration failure scoped to its context during discovery", () => {
+    const project = createProject(`module.exports = {webpack: (config, context) => {
+      if (context.isServer) throw new Error('node-configuration-failed');
+      config.resolve.alias['@dynamic'] = require('node:path').join(__dirname, 'browser.js');
+      return config;
+    }};`);
+    const resolver = createResolver({
+      rootDirectory: project.directory,
+      allowConfigExecution: true,
+    });
+    expect(resolver.discover("@dynamic", project.importer)).toMatchObject({
+      classification: "browser-only",
+      browser: { kind: "file", id: join(project.directory, "browser.js") },
+      node: { kind: "unresolved", error: expect.stringContaining("node-configuration-failed") },
+    });
+  }, 15000);
 
   it("requires explicit authorization before executing project code", () => {
     const project = createProject("module.exports = () => {throw new Error('must not execute');};");

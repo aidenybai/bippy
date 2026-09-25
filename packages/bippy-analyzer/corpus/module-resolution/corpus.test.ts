@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { expect, it } from "vite-plus/test";
 import ts from "typescript";
 import { createModuleResolver } from "../../src/module-resolver.js";
-import { createResolver, type ProjectConfiguration } from "../../src/core.js";
+import { createResolver, type ModuleDiscovery, type ProjectConfiguration } from "../../src/core.js";
 import { createNodeModuleResolver } from "../../src/node-module-resolver.js";
 import { createViteModuleResolver } from "../../src/vite-module-resolver.js";
 import { createWebpackModuleResolver } from "../../src/webpack-module-resolver.js";
@@ -36,6 +36,7 @@ interface Row extends Request {
   core: Outcome;
   matches: boolean;
   sourceCheck?: SourceCheck;
+  discovery?: ModuleDiscovery;
 }
 interface Project {
   id: string;
@@ -74,9 +75,9 @@ const report: {
   implementation: process.env.BIPPY_RESOLVER_IMPLEMENTATION ?? "core",
   configurations: {},
 };
+const referencePlatform = ["vite", "next"].includes(project.toolchain) ? "browser" : "node";
 const projectResolver = createResolver({
   rootDirectory: directory,
-  platform: ["vite", "next"].includes(project.toolchain) ? "browser" : "node",
   mode: ["vite", "next"].includes(project.toolchain) ? "development" : "production",
   allowConfigExecution: true,
 });
@@ -178,27 +179,35 @@ const getIdentity = (outcome: Outcome) => {
 };
 const add = (request: Request, native: Outcome, resolveCore: () => Outcome) => {
   const kind = request.kind === "commonjs" ? "require" : "import";
-  if (report.implementation === "project") {
-    const key = `${relative(directory, dirname(request.importer))}:${kind}`;
-    if (!report.configurations[key]) {
-      try {
-        report.configurations[key] = projectResolver.getConfiguration(request.importer, { kind });
-      } catch (error) {
-        report.configurations[key] = {
-          error: error instanceof Error ? error.message : String(error),
-        };
+  const discovery =
+    report.implementation === "project"
+      ? projectResolver.discover(request.specifier, request.importer, { kind })
+      : undefined;
+  if (discovery) {
+    const platforms: Array<"browser" | "node"> = ["browser", "node"];
+    for (const platform of platforms) {
+      const key = `${relative(directory, dirname(request.importer))}:${platform}:${kind}`;
+      if (!report.configurations[key]) {
+        try {
+          report.configurations[key] = projectResolver.getConfiguration(request.importer, {
+            kind,
+            platform,
+          });
+        } catch (error) {
+          report.configurations[key] = {
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       }
     }
   }
-  const core =
-    report.implementation === "project"
-      ? projectResolver.resolve(request.specifier, request.importer, { kind })
-      : resolveCore();
+  const core = discovery ? discovery[referencePlatform] : resolveCore();
   report.rows.push({
     ...request,
     importer: relative(directory, request.importer),
     native,
     core,
+    discovery,
     matches:
       native.kind !== "unresolved" &&
       native.kind === core.kind &&
@@ -465,12 +474,8 @@ it("compares real project import occurrences with its installed toolchain", asyn
       }));
       const nativeSources = sourceRequests.length ? getNativeNodeOutcomes(sourceRequests) : [];
       selected.forEach((row, index) => {
-        const request = sourceRequests[index];
-        const kind = request.kind === "commonjs" ? "require" : "import";
-        const candidate = projectResolver.resolve(request.specifier, request.importer, {
-          kind,
-          platform: "node",
-        });
+        if (!row.discovery) throw new Error("Missing project discovery outcomes");
+        const candidate = row.discovery.node;
         const native = nativeSources[index];
         row.sourceCheck = {
           scope:
@@ -484,17 +489,6 @@ it("compares real project import occurrences with its installed toolchain", asyn
             native.kind === candidate.kind &&
             getIdentity(native) === getIdentity(candidate),
         };
-        const key = `${relative(directory, dirname(request.importer))}:node:${kind}`;
-        if (!report.configurations[key]) {
-          try {
-            report.configurations[key] = projectResolver.getConfiguration(request.importer, {
-              kind,
-              platform: "node",
-            });
-          } catch (error) {
-            report.configurations[key] = { error: sourceError(error) };
-          }
-        }
       });
     }
     report.status =

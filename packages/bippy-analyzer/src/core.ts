@@ -19,16 +19,25 @@ export interface ProjectResolverOptions extends Omit<
   "aliasPrecedence"
 > {
   rootDirectory: string;
-  platform: "browser" | "node";
+  platform?: "browser" | "node";
   mode?: "development" | "production";
   configFile?: string | false;
   allowConfigExecution?: boolean;
   configTimeoutMs?: number;
 }
 
-export interface ResolutionRequest {
+export interface DiscoveryRequest {
   kind?: "import" | "require";
+}
+
+export interface ResolutionRequest extends DiscoveryRequest {
   platform?: "browser" | "node";
+}
+
+export interface ModuleDiscovery {
+  classification: "browser-only" | "node-only" | "both" | "neither";
+  browser: ModuleResolution;
+  node: ModuleResolution;
 }
 
 export interface ProjectConfiguration {
@@ -74,6 +83,10 @@ export const createResolver = (options: ProjectResolverOptions) => {
       throw new ResolverConfigurationError("The importing file must be an absolute path");
     const kind = request.kind ?? "import";
     const selectedPlatform = request.platform ?? platform;
+    if (!selectedPlatform)
+      throw new ResolverConfigurationError(
+        "Select a platform for resolution, or use discover() to inspect both contexts",
+      );
     const key = JSON.stringify([dirname(fromFile), kind, selectedPlatform]);
     const cached = configurations.get(key);
     if (cached) return structuredClone(cached);
@@ -174,44 +187,66 @@ export const createResolver = (options: ProjectResolverOptions) => {
     configurations.set(key, configuration);
     return structuredClone(configuration);
   };
+  const resolve = (
+    specifier: string,
+    fromFile: string,
+    request: ResolutionRequest = {},
+  ): ModuleResolution => {
+    try {
+      const configuration = getConfiguration(fromFile, request);
+      const resolveFile = (request: string, isAliased: boolean): ModuleResolution => {
+        const policy = {
+          ...configuration.options,
+          alias: undefined,
+          tsconfig: isAliased ? undefined : configuration.options.tsconfig,
+        };
+        const key = JSON.stringify(policy);
+        let resolver = resolvers.get(key);
+        if (!resolver) {
+          resolver = createModuleResolver(policy);
+          resolvers.set(key, resolver);
+        }
+        const importer =
+          isAliased && configuration.aliasDirectory
+            ? join(configuration.aliasDirectory, "__bippy_resolver__.js")
+            : fromFile;
+        return resolver.resolve(request, importer);
+      };
+      const result = resolveAliases(specifier, configuration, resolveFile);
+      if (result.kind === "file" && /\.d\.[cm]?ts(?:[?#]|$)/.test(result.id))
+        return {
+          kind: "unresolved",
+          specifier,
+          error: "Declaration files are not executable modules",
+        };
+      return result;
+    } catch (error) {
+      return { kind: "unresolved", specifier, error: getResolutionError(error) };
+    }
+  };
   return {
     getConfiguration,
-    resolve: (
+    resolve,
+    discover: (
       specifier: string,
       fromFile: string,
-      request: ResolutionRequest = {},
-    ): ModuleResolution => {
-      try {
-        const configuration = getConfiguration(fromFile, request);
-        const resolveFile = (request: string, isAliased: boolean): ModuleResolution => {
-          const policy = {
-            ...configuration.options,
-            alias: undefined,
-            tsconfig: isAliased ? undefined : configuration.options.tsconfig,
-          };
-          const key = JSON.stringify(policy);
-          let resolver = resolvers.get(key);
-          if (!resolver) {
-            resolver = createModuleResolver(policy);
-            resolvers.set(key, resolver);
-          }
-          const importer =
-            isAliased && configuration.aliasDirectory
-              ? join(configuration.aliasDirectory, "__bippy_resolver__.js")
-              : fromFile;
-          return resolver.resolve(request, importer);
-        };
-        const result = resolveAliases(specifier, configuration, resolveFile);
-        if (result.kind === "file" && /\.d\.[cm]?ts(?:[?#]|$)/.test(result.id))
-          return {
-            kind: "unresolved",
-            specifier,
-            error: "Declaration files are not executable modules",
-          };
-        return result;
-      } catch (error) {
-        return { kind: "unresolved", specifier, error: getResolutionError(error) };
-      }
+      request: DiscoveryRequest = {},
+    ): ModuleDiscovery => {
+      const browser = resolve(specifier, fromFile, { kind: request.kind, platform: "browser" });
+      const node = resolve(specifier, fromFile, { kind: request.kind, platform: "node" });
+      const hasBrowserResolution = browser.kind !== "unresolved";
+      const hasNodeResolution = node.kind !== "unresolved";
+      return {
+        classification: hasBrowserResolution
+          ? hasNodeResolution
+            ? "both"
+            : "browser-only"
+          : hasNodeResolution
+            ? "node-only"
+            : "neither",
+        browser,
+        node,
+      };
     },
     clearCache: () => {
       configurations.clear();

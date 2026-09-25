@@ -25,7 +25,7 @@ For JSON output, add `--reporter=json` and use pnpm's `--silent` option. To requ
 
 ## Module resolution
 
-Use `createResolver({ rootDirectory, platform, mode })` from `src/index.ts` for project-aware source lookup. It discovers TypeScript/JavaScript configuration and supported static toolchain aliases, then resolves through Oxc. No browser extension, Bippy bundler plugin, or application configuration changes are required. See [project-aware resolution](docs/project-resolution.md) for the API, configuration diagnostics and unsupported cases.
+Use `createResolver({ rootDirectory, mode })` from `src/index.ts` for project-aware source lookup. Its `discover()` method returns independent browser and Node outcomes, classified as browser-only, Node-only, both, or neither. For a single-context `resolve()`, provide a platform on the request or constructor; discovery never chooses an execution target. It discovers TypeScript/JavaScript configuration and supported static toolchain aliases, then resolves through Oxc. No browser extension, Bippy bundler plugin, or application configuration changes are required. See [project-aware resolution](docs/project-resolution.md) for the API, configuration diagnostics and unsupported cases.
 
 `allowConfigExecution: true` opts into bounded execution of installed Next webpack configuration, including wrappers and callbacks. Untrusted configuration still requires an outer sandbox. Browser lookups reject unprovided Node builtins; individual requests can select an explicit Node platform.
 

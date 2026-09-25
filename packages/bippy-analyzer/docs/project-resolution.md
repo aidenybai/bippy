@@ -7,19 +7,38 @@ import { createResolver } from "../src/index.js";
 
 const resolver = createResolver({
   rootDirectory: "/workspace/app",
-  platform: "browser",
   mode: "production",
 });
 
-resolver.resolve("@/components/button.js", "/workspace/app/src/page.tsx");
-resolver.resolve("conditional-package", "/workspace/app/src/page.tsx", {
+resolver.discover("@/components/button.js", "/workspace/app/src/page.tsx");
+resolver.discover("conditional-package", "/workspace/app/src/page.tsx", {
   kind: "require",
 });
 ```
 
 `createResolver` is the project-facing API. It collects configuration and delegates filesystem/package resolution to the existing Oxc implementation. There is no second bundler resolution pass, browser extension, or Bippy bundler plugin.
 
-## Discovery
+## Browser and Node discovery
+
+`discover(specifier, importer, { kind })` always probes browser and Node policies independently, even if a default platform was supplied to `createResolver`. It returns both complete outcomes and a classification: `browser-only`, `node-only`, `both`, or `neither`.
+
+For example, discovering `node:fs` under the default policies returns:
+
+```ts
+{
+  classification: "node-only",
+  browser: { kind: "unresolved", specifier: "node:fs", error: "…" },
+  node: { kind: "builtin", id: "node:fs" },
+}
+```
+
+`both` does not mean the targets are identical: a package's browser and Node export branches can select different files. No preferred target is returned, and one context's success never replaces the other's error. Import/require conditions remain separate in both contexts.
+
+Classification counts any non-`unresolved` resolution decision, including `ignored`. Always inspect each outcome: an ignored module is not an executable file, a builtin still needs a host implementation, and virtual/external outcomes would still need their owning loader or linker. `neither` also retains configuration errors; it is not proof that the package is absent.
+
+For a single-context lookup, use `resolve(specifier, importer, { platform })`. A constructor-level `platform` supplies a default for `resolve` and `getConfiguration`, but is optional for discovery. Without either an explicit or default platform, `resolve` reports an unresolved configuration error and `getConfiguration` throws. Discovery never selects an execution environment or assigns Next layers.
+
+## Configuration discovery
 
 The resolver searches from the importing file toward the workspace root:
 
@@ -52,7 +71,7 @@ resolver.resolve("next-intl/config", "/workspace/app/app/page.tsx");
 
 A child process loads Next, materializes the selected client or Node-server webpack configuration, and returns its filesystem settings. Wrappers and callbacks execute; application entry modules are not compiled or evaluated. Oxc remains the lookup engine. This is not a native webpack resolution retry or a Bippy plugin installed in the application.
 
-Execution is disabled by default and currently applies only to discovered Next configurations. Opting in selects Next's webpack filesystem policy, not Turbopack; it does not infer the bundler from package scripts. Each configuration/platform/mode is loaded once, including both import and require policies. Failures are cached too; `clearCache()` starts fresh processes on subsequent requests. `getConfiguration()` exposes `nextVersion`, captured `configurationOutput`, and limitations in `diagnostics`.
+Execution is disabled by default and currently applies only to discovered Next configurations. Opting in selects Next's webpack filesystem policy, not Turbopack; it does not infer the bundler from package scripts. Each configuration/platform/mode is loaded once, including both import and require policies. Calling `discover` loads both platform configurations; repeated requests reuse those configurations. Failures are cached too; `clearCache()` starts fresh processes on subsequent requests. `getConfiguration()` exposes `nextVersion`, captured `configurationOutput`, and limitations in `diagnostics`.
 
 The worker has a ten-second default deadline, a 512 MiB JavaScript heap limit, bounded output, and a fresh environment containing the selected `NODE_ENV`, temporary `HOME`, and tooling limits. It does not inherit host credentials or `NODE_OPTIONS`. Next can still read the project's `.env` files. **A child process is not a security sandbox:** untrusted configuration must run inside an outer filesystem/network/resource sandbox. The corpus uses its existing isolated, network-disabled containers.
 
