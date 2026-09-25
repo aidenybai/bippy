@@ -1,0 +1,62 @@
+[
+  {
+    "id": "nlw-expert-react",
+    "repository": "https://github.com/rocketseat-education/nlw-expert-react",
+    "revision": "a610fdc6d2c4d1cdbf50557505ce706954ef11cf",
+    "toolchain": "vite"
+  },
+  {
+    "id": "ignite-todo",
+    "repository": "https://github.com/rocketseat-education/ignite-challenge-solution-reactjs-todo",
+    "revision": "cf83cf99e9a5563ebd90c60b9593130f4ff2d688",
+    "toolchain": "vite"
+  },
+  {
+    "id": "hariadiarief-react-vite-shadcn-dashboard-starter-kit",
+    "repository": "https://github.com/hariadiarief/react-vite-shadcn-dashboard-starter-kit",
+    "revision": "46ce5235b3ec7e01cbec3a511bc8e07343d8f536",
+    "toolchain": "vite"
+  },
+  {
+    "id": "ecommerce-react",
+    "repository": "https://github.com/jgudo/ecommerce-react",
+    "revision": "8d37028200dc1475d78f27d3b352a4d0384a4ab1",
+    "toolchain": "vite"
+  },
+  {
+    "id": "invoify",
+    "repository": "https://github.com/al1abb/invoify",
+    "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
+    "toolchain": "next"
+  },
+  {
+    "id": "commerce",
+    "repository": "https://github.com/vercel/commerce",
+    "revision": "1df2cf6f6c935f4782eed27351fa18f276917a4d",
+    "toolchain": "next"
+  },
+  {
+    "id": "nextjs-saas-starter",
+    "repository": "https://github.com/nextjs/saas-starter",
+    "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+    "toolchain": "next"
+  },
+  {
+    "id": "zustand-demo",
+    "repository": "https://github.com/pmndrs/zustand",
+    "revision": "b57db4f86ef179285da216eeb291266da82c361c",
+    "toolchain": "rollup"
+  },
+  {
+    "id": "p-limit",
+    "repository": "https://github.com/sindresorhus/p-limit",
+    "revision": "a8a6fbec4e0e866d6d779b10889bb4f5567e70eb",
+    "toolchain": "node"
+  },
+  {
+    "id": "execa",
+    "repository": "https://github.com/sindresorhus/execa",
+    "revision": "8017b279e19347efaf2587711c2d57dbd4330740",
+    "toolchain": "node"
+  }
+]

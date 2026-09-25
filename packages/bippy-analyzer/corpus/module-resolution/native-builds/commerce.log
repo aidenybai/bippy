@@ -1,0 +1,33 @@
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   ▲ Next.js 15.6.0-canary.60 (Turbopack)
+   - Experiments (use with caution):
+     ✓ inlineCss
+     ✓ ppr
+     ✓ rdcForNavigations (enabled by `experimental.ppr`)
+     ✓ useCache
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+(node:62) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ Compiled successfully in 2.4s
+   Collecting page data ...
+   Finalizing page optimization ...
+   Build ran with "compile" mode, to finalize the build run either "generate" or "generate-env" mode as well
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /[page]
+├ ƒ /[page]/opengraph-image
+├ ƒ /api/revalidate
+├ ƒ /opengraph-image
+├ ƒ /product/[handle]
+├ ƒ /robots.txt
+├ ƒ /search
+├ ƒ /search/[collection]
+├ ƒ /search/[collection]/opengraph-image
+└ ƒ /sitemap.xml
+
+
+ƒ  (Dynamic)  server-rendered on demand

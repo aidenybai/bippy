@@ -1,0 +1,26 @@
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   ▲ Next.js 15.6.0-canary.59 (Turbopack)
+   - Experiments (use with caution):
+     ✓ ppr
+     ✓ rdcForNavigations (enabled by `experimental.ppr`)
+
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead.
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+(node:53) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Turbopack build encountered 1 warnings:
+[next]/internal/font/google/manrope_ccd61c10.module.css
+Error while requesting resource
+There was an issue establishing a connection while requesting https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap.
+
+
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+[next]/internal/font/google/manrope_ccd61c10.module.css
+next/font: error:
+Failed to fetch `Manrope` from Google Fonts.
+
+
+    at ignore-listed frames

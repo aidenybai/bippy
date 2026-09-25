@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "oxc-resolver": "11.24.2",
+    "import-meta-resolve": "4.2.0",
+    "rolldown": "1.2.4",
+    "typescript": "5.9.3",
+    "tsx": "4.23.12",
+    "vite-plus": "0.3.1"
+  }
+}

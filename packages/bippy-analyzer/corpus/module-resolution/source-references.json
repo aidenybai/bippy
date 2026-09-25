@@ -1,0 +1,147 @@
+[
+  {
+    "name": "parcel",
+    "repository": "parcel-bundler/parcel",
+    "paths": [
+      "crates/parcel-resolver",
+      "packages/resolvers/default",
+      "packages/utils/node-resolver-core",
+      "packages/core/core/src/requests"
+    ],
+    "revision": "59484858a1a0bcbb71f74088956bb437a2db6505"
+  },
+  {
+    "name": "rollup",
+    "repository": "rollup/rollup",
+    "paths": ["src", "docs/plugin-development", "docs/configuration-options"],
+    "revision": "3722484c33c58b3ab0cbbfcca09b8f267d420329"
+  },
+  {
+    "name": "enhanced-resolve",
+    "repository": "webpack/enhanced-resolve",
+    "paths": ["lib"],
+    "revision": "cba4ba4da4b24d93723cef85c2b7ba39734876df"
+  },
+  {
+    "name": "webpack",
+    "repository": "webpack/webpack",
+    "paths": ["lib/config", "lib/NormalModuleFactory.js"],
+    "revision": "05a1865790ed4afb64f1d2d10ce69cf86a615ef0"
+  },
+  {
+    "name": "rspack",
+    "repository": "web-infra-dev/rspack",
+    "paths": ["crates/rspack_resolver", "crates/rspack_core/src", "packages/rspack/src/config"],
+    "revision": "eccd2f8ee490373a7b7511d1b0929ebeaff7c80a"
+  },
+  {
+    "name": "esbuild",
+    "repository": "evanw/esbuild",
+    "paths": ["internal/resolver", "internal/bundler"],
+    "revision": "f6058f8364fe7ab91ca57a83e02577ed74c9cae4"
+  },
+  {
+    "name": "vite",
+    "repository": "vitejs/vite",
+    "paths": ["packages/vite/src/node", "docs/guide", "docs/config"],
+    "revision": "69283019441d93763f085806b374fc53eaea323b"
+  },
+  {
+    "name": "knip",
+    "repository": "webpro-nl/knip",
+    "paths": ["packages/knip/src", "packages/docs/src/content/docs"],
+    "revision": "c0e42f83bda7664065465f2f3faca7af97c988ac"
+  },
+  {
+    "name": "yarn",
+    "repository": "yarnpkg/berry",
+    "paths": ["packages/yarnpkg-pnp/sources", "packages/plugin-pnp/sources"],
+    "revision": "e4e423a1eb117b5129f20ac626a03eb7a97aedff"
+  },
+  {
+    "name": "node",
+    "repository": "nodejs/node",
+    "branch": "v26.4.0",
+    "paths": [
+      "lib/internal/modules",
+      "doc/api/esm.md",
+      "doc/api/modules.md",
+      "doc/api/packages.md"
+    ],
+    "revision": "2022edf3e32ce28ee08b17f8566243a090dacd95"
+  },
+  {
+    "name": "metro",
+    "repository": "facebook/metro",
+    "paths": ["packages/metro-resolver/src", "docs"],
+    "revision": "427f857a6be5aea3447e478d2beaa6089da76286"
+  },
+  {
+    "name": "typescript",
+    "repository": "microsoft/TypeScript",
+    "paths": ["src/compiler", "src/testRunner/unittests/moduleResolution"],
+    "revision": "c63de15a992d37f0d6cec03ac7631872838602cb",
+    "tag": "v5.9.3"
+  },
+  {
+    "name": "rollup-plugins",
+    "repository": "rollup/plugins",
+    "paths": ["packages/alias", "packages/node-resolve", "packages/commonjs"],
+    "revision": "639f45638234c1c3fabfb13615c78bebaef89ef2"
+  },
+  {
+    "name": "tsconfig-paths",
+    "repository": "dividab/tsconfig-paths",
+    "paths": ["src"],
+    "revision": "3e95f102973842e670ad5d30e6beb0dd9992e416"
+  },
+  {
+    "name": "deno",
+    "repository": "denoland/deno",
+    "paths": ["libs/resolver", "libs/node_resolver"],
+    "revision": "461f32ec6174d88b7e43654a054d46d67ae2fdab"
+  },
+  {
+    "name": "bun",
+    "repository": "oven-sh/bun",
+    "paths": ["src/resolver"],
+    "revision": "29d9638da3dd5b498a5b608d3fa02549b0bdddf1"
+  },
+  {
+    "name": "next",
+    "repository": "vercel/next.js",
+    "revision": "9ff92cebcaa6ba4e7463b6fd037a8510ba9b81ec",
+    "tag": "v15.5.18",
+    "paths": [
+      "crates/next-core/src/next_client/context.rs",
+      "crates/next-core/src/next_server/context.rs",
+      "turbopack/crates/turbopack-core/src/ident.rs"
+    ]
+  },
+  {
+    "name": "rolldown",
+    "repository": "rolldown/rolldown",
+    "revision": "483c64833c0fb0d1b75f1339accf781c0a09b335",
+    "tag": "v1.2.4",
+    "paths": [
+      "crates/rolldown_resolver/src/resolver_config.rs",
+      "packages/rolldown/src/plugin/plugin-context.ts",
+      "crates/rolldown_binding/src/utils/napi_error.rs"
+    ]
+  },
+  {
+    "name": "oxc-resolver",
+    "repository": "oxc-project/oxc-resolver",
+    "revision": "7ba4ae692c1f55d5b20bcb0e06ad1f13ad338950",
+    "paths": ["src/lib.rs", "src/error.rs"]
+  },
+  {
+    "name": "react",
+    "repository": "facebook/react",
+    "revision": "90ab3f89f4824ac763b6f877c6f711200d1338d2",
+    "paths": [
+      "packages/react-server-dom-webpack/src/ReactFlightWebpackNodeLoader.js",
+      "packages/react-server-dom-webpack/src/client/ReactFlightClientConfigBundlerWebpack.js"
+    ]
+  }
+]
