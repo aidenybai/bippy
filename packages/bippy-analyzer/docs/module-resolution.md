@@ -64,7 +64,11 @@ The Vite adapter calls the supplied environment’s plugin container and forward
 
 Rollup and Rolldown have separate plugin-context adapters. They forward their native request options rather than translating one toolchain’s defaults into another’s. Rolldown preserves dependency kind; Rollup preserves import attributes. Both preserve custom options, entry status, `skipSelf` and external decisions.
 
-These adapters do not discover configuration, invent fallback resolvers or load application bodies themselves. Creating toolchains and running their plugins executes host code. Use isolation for downloaded project configuration.
+These are internal adapters, not Bippy plugins that applications must install. Application evaluation must run externally: no browser extension, Bippy bundler plugin, or application configuration changes. References to plugins here mean the toolchain’s existing resolution and loading behavior; the plugin-context adapters currently serve native comparisons and tests, not a required application integration.
+
+Use one authoritative resolution path for each build. When a configured bundler resolves, transforms and bundles an application, do not run the standalone Oxc wrapper first or retry its decisions through Oxc. The standalone resolver remains useful for direct-resolution cases and differential tests.
+
+These adapters do not discover configuration, invent fallback resolvers or load application bodies themselves. Creating toolchains and running their existing plugins executes host code. Use isolation for downloaded project configuration.
 
 Select the correct Vite environment or webpack dependency/layer resolver before calling the adapter. There is no automatic framework detection. The webpack adapter is not a webpack compilation: module rules, loaders, externals, and module factories can still change what is loaded.
 
