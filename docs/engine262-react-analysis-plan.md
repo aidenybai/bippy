@@ -54,6 +54,18 @@ We should not assume engine262 passes every test. The previous work found both e
 
 **First implementation milestone:** a reproducible dependency installation and a recorded Test262 baseline. A partial run must say it is partial. The existing harness has limitations documented in the package README; its output is not proof of complete conformance. Any later execution changes must be checked against this baseline.
 
+## Resolve project imports
+
+engine262 executes JavaScript; it does not replace a project's module-resolution and source-transform rules. An import such as `@/components/button` still needs the project's aliases, package conditions, and file-extension rules before the engine can execute it.
+
+Review the previous analyzer's `src/graph/module-resolver.ts` and its regression tests first. Preserve the demonstrated behavior for tsconfig/jsconfig paths, package exports, import/require conditions, browser/server selection, workspace packages, and module identity. Keep missing or unsupported imports explicit.
+
+Keep the core independent of framework defaults. Conditions, extensions, main fields, aliases, and symlink behavior depend on the actual resolution context. Use native/toolchain implementations where available; do not label Vite behavior as universal JavaScript or a `react-server` condition as complete Next support. Source transforms for TSX, assets, and framework modules are a separate loading responsibility.
+
+Do not bring over `ModuleGraph` wholesale: it imports old modeled-library policies and interpreter-specific module analysis. JavaScript module linking, live bindings, cycles, and evaluation belong to the chosen execution/loading pipeline, not a duplicate of the old interpreter's export evaluator. Preserve source/import provenance separately where analysis needs it.
+
+The working tree now contains an explicitly configured Oxc resolver, separate Node ESM/CommonJS resolution, and supplied-toolchain Vite/webpack adapters. Native and toolchain tests cover concrete targets, failures, and legitimate disagreements. Next main-field rules and its paths plugin are tested, but full Next/Turbopack integration remains open. See [resolution evidence and limits](../packages/bippy-analyzer/docs/module-resolution.md). Nothing is connected to engine262's module loader yet.
+
 ## Then prove concrete React execution
 
 Once the foundation is measured, try a component with no unknown inputs:
@@ -112,6 +124,18 @@ Before implementing this part, inventory the previous analyzer's useful behavior
 
 **These later stages are a direction, not an approved detailed design.** We still need to discuss the first symbolic React result and which analysis capabilities it must preserve. Do not import the whole old analyzer to answer those questions by default.
 
+## Deferred: harvest real component scenarios
+
+Later, use the existing roughly 500-repository corpus as a pinned source index. This is not part of the resolver or initial fiber-harness work.
+
+Prefer existing Storybook stories, component tests, and demos because they already supply props, providers, and interactions. Retain repository, revision, source/export, and license provenance; keep downloaded repositories in an ignored cache.
+
+Keep components, React, and runnable dependencies real. Mock only declared external inputs such as network responses, initial data, storage, time, and routes. Do not silently replace missing imports or child components with stubs. Run installation and build scripts in isolated environments without credentials.
+
+First validate that the intended component mounts natively. Then execute the same bundle, React version, inputs, and actions through engine262 and compare committed fibers and lifecycle observations. Report native setup failures, unsupported cases, engine failures, mismatches, and timeouts separately. Matching under supplied mocks does not establish behavior outside that scenario.
+
+Start with a small pilot, around 10 repositories and 50 scenarios, before attempting the full corpus. Corpus harvesting remains deferred.
+
 ## Working boundaries
 
 - Branch: `engine262-analysis`.
@@ -122,4 +146,4 @@ Before implementing this part, inventory the previous analyzer's useful behavior
 
 Both reference worktrees remain untouched. This branch inherits no PR #115 analyzer or SSA changes.
 
-**Current scope: a pinned dependency, the existing Test262 harness, and a small public-API test. Symbolic and React analysis require further discussion; neither is part of this setup.**
+**Current scope: the pinned engine, existing Test262 harness, public-API smoke test, and independently tested resolution primitives. Framework loading, symbolic execution, and React integration remain separate work.**

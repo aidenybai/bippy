@@ -1,6 +1,6 @@
 # bippy-analyzer
 
-An unmodified, pinned engine262 dependency and the existing Test262 harness. No engine fork, patches, symbolic execution, or React integration yet.
+A pinned engine262 dependency, the existing Test262 harness, and module-resolution primitives. No engine fork, patches, symbolic execution, or React integration yet.
 
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
@@ -15,7 +15,7 @@ pnpm --filter bippy-analyzer typecheck
 pnpm --filter bippy-analyzer test:test262 '.test262/test/built-ins/Object/is/*.js'
 ```
 
-`test` uses Vite+/Vitest to check the public engine API and realm isolation.
+`test` uses Vite+/Vitest to check the public engine API, realm isolation, and module resolution against native Node and actual toolchains.
 
 `test:test262` fetches and verifies the pinned suite, then invokes `test262-harness` against engine262's published CLI. Supply quoted test paths or globs relative to this package. Failures produce a nonzero exit code. The harness's default timeout is 10 seconds per variant.
 
@@ -23,7 +23,13 @@ The suite is stored in ignored `.test262/`. Its revision is pinned in `scripts/s
 
 For JSON output, add `--reporter=json` and use pnpm's `--silent` option. To request the full suite, use `'.test262/test/**/*.js'`; that is a much larger run, not the default smoke check.
 
-## Initial results
+## Module resolution
+
+Resolution is separate from loading and execution. Choose an explicit Oxc policy, Node ESM/CommonJS semantics, or a supplied Vite/webpack resolver. No Vite defaults are imposed on other frameworks.
+
+See [module resolution](docs/module-resolution.md) for examples, prior research, validated behavior, and limits. Next's installed main-field rules and paths plugin are tested; full Next/Turbopack integration is **not** implemented.
+
+## Initial engine results
 
 On Node 26.4.0, this selection produced **301 passes and 5 failures across 306 harness variants (160 files)**, with no timeouts:
 
