@@ -1,5 +1,7 @@
 # Project resolver audit
 
+**Historical static-only baseline:** the [subsequent configuration-execution audit](project-execution-audit.md) fixes Invoify's 584 blocked requests and separately checks Node contexts and Zustand source targets. The results and failures below are preserved from `project-v1`.
+
 The new `createResolver` API matches **1,694 of 2,299 request occurrences** across the same ten pinned repositories. Six selected resolver contexts match completely. This is not universal resolution or application acceptance.
 
 The audit ran against resolver commit `95c4d9ea`, with fresh native comparisons and the existing installed dependencies. It took 30.5 seconds across ten containers. All tracked source checks passed, and every native reference outcome matched the earlier audit. No resolver fixes, per-project overrides, exclusions or deadline increases were applied during this run.

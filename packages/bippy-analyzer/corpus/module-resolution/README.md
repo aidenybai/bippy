@@ -1,6 +1,6 @@
 # Ten-repository module-resolution audit
 
-**New project-facing API:** a [separate audit of `createResolver`](project-audit.md) matched 1,694 of the same 2,299 requests. Invoify’s wrapped configuration is an additional unsupported case. The results below remain the earlier explicit-policy and native-adapter audit; they must not be attributed to the new discovery API.
+**Project-facing API:** the [latest `createResolver` audit](project-execution-audit.md) matches 2,278/2,299 requests after executing Next configuration, with separate positive checks for nine Node contexts and twelve Zustand source targets. The [static-only baseline](project-audit.md) matched 1,694/2,299. The results below remain the earlier explicit-policy and native-adapter audit; they are separate evidence.
 
 The audit compares 2,299 literal request occurrences in 579 selected source files. Seven of ten resolver contexts match every observed request. The other contexts retain nine unresolved requests and twelve Rollup external-policy differences. These are not ten passing applications.
 

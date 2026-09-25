@@ -1,0 +1,1758 @@
+{
+  "label": "project-v3",
+  "resolverRevision": "03ec68669eaf8e8cc386344f70f9a53a0442ff0d",
+  "node": "26.4.0",
+  "implementation": "createResolver with allowConfigExecution; no policies injected by the audit and no per-project overrides",
+  "supplementalScope": "Nine explicit Node builtin checks and twelve original-source Node lookups for Rollup-externalized requests. These do not alter the primary comparison or establish automatic layer assignment/build equivalence.",
+  "requestContext": "browser/development for Vite and Next client comparisons; node/production for Node and Rollup; import or require selected per request",
+  "identityComparison": "Raw identities retained; file URLs normalized to filesystem paths with query/fragment for comparison. Matching unresolved outcomes are not passes.",
+  "sourceHashes": {
+    "corpus/module-resolution/corpus.test.ts": "928c264103b29988d921113a4a609946218a9a2ede421358c268ea9d5f4675e8",
+    "corpus/module-resolution/run.ts": "2475c4555289aa1576717635301b9a4313a9462b593dcdb72f4e98dfac8447bf",
+    "src/core.ts": "a44182b32ddd1268406f938844b35de032dcfe4f0b6f5a0e37db2c0e62885e91",
+    "src/errors.ts": "0bf16d756092d6ba9a3460a6d9a2290fc7d3439902350c749a6bf639b9003e05",
+    "src/index.ts": "b2b18ca9c769919dd605780c0e40bd912375931a6c12f8fa86bf41d758202f3d",
+    "src/module-resolver.ts": "26c1b89455b36194ef460dd675309ec6bb61d31401bc6e86973d44d9d88b0f88",
+    "src/node-module-resolver.ts": "be844d3c1e6ba85bb70155c9e0e0acd07da7805c197d0517a8dec9cfd9046931",
+    "src/plugin-module-resolution.ts": "dc1001235c1869e9d02c36575439292d414ee56ba6b7744beccc2699e7ceb416",
+    "src/resolution-error.ts": "0403e2b21c72df91fe8ce565329f47764a55f86496f566bd8ed19f9d43f1c684",
+    "src/rolldown-module-resolver.ts": "09b78dba9f246aaa6eef04528cc01acba2520184d7e554a06952357f67dbaf2b",
+    "src/rollup-module-resolver.ts": "19b5ccbc8f390eb677265c69dca80324e7ac4338698651dc0bc9474a9d8a16ad",
+    "src/utils/load-next-config.ts": "a0f0e333c6423dfac0ef229d831d1d195f7fa3b63b12e148365644618144dee3",
+    "src/utils/next-config-worker.ts": "f6e7e79d66756393444a29c920a38b63801fad12468bf76a94fb8cd7db7396e7",
+    "src/utils/read-resolver-config.ts": "1089a439f37c88cef9732e069ca6dd1cedae788fb80569ae7d3bc1e99ce06ef9",
+    "src/utils/resolve-aliases.ts": "6782417e12ce1c7348721d0d91b2bdf9c05f35cfe354b425120200d5670c3495",
+    "src/vite-module-resolver.ts": "0545582b5e9146500d66c0c427cd4875acac380609aa011cbdf6c0844ef673d8",
+    "src/webpack-module-resolver.ts": "6d6a6d63d32979bab92472fe0567a6fb37758f5a0564c28e6fe43d1d064010dc"
+  },
+  "totals": {
+    "projects": 10,
+    "matchedContexts": 7,
+    "files": 579,
+    "requests": 2299,
+    "matched": 2278,
+    "candidateUnresolved": 9,
+    "nativeUnresolved": 9,
+    "resolvedDifferences": 12,
+    "sourceChecks": 21,
+    "matchedSourceChecks": 21,
+    "sharedUnresolved": 9
+  },
+  "projects": [
+    {
+      "id": "nlw-expert-react",
+      "repository": "https://github.com/rocketseat-education/nlw-expert-react",
+      "revision": "a610fdc6d2c4d1cdbf50557505ce706954ef11cf",
+      "toolchain": "vite",
+      "status": "matched",
+      "nativeVersion": "5.0.12",
+      "counts": {
+        "files": 4,
+        "requests": 17,
+        "matched": 17,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 0,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "76eef68d351dae451d50c98a57bdcc5e364856917b8e4fa1867f9928ca4cf456",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/vite.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Toolchain plugins were not executed; their configuration and virtual-module hooks are not represented"
+          ],
+          "aliasOrder": [],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["browser", "development", "import"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {}
+          }
+        }
+      ],
+      "build": {
+        "status": "compiled",
+        "scope": "native Vite production bundle, no application execution"
+      },
+      "run": {
+        "project": {
+          "id": "nlw-expert-react",
+          "repository": "https://github.com/rocketseat-education/nlw-expert-react",
+          "revision": "a610fdc6d2c4d1cdbf50557505ce706954ef11cf",
+          "toolchain": "vite"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 2633,
+        "sourceBefore": "c6e42a86e6cedb970f263681b0063b649ac9a8c7be9b392c69060ec98a4927fb",
+        "sourceAfter": "c6e42a86e6cedb970f263681b0063b649ac9a8c7be9b392c69060ec98a4927fb",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-nlw-expert-react",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/projects/nlw-expert-react,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/nlw-expert-react-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/nlw-expert-react-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/nlw-expert-react-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "ignite-todo",
+      "repository": "https://github.com/rocketseat-education/ignite-challenge-solution-reactjs-todo",
+      "revision": "cf83cf99e9a5563ebd90c60b9593130f4ff2d688",
+      "toolchain": "vite",
+      "status": "matched",
+      "nativeVersion": "4.5.0",
+      "counts": {
+        "files": 8,
+        "requests": 21,
+        "matched": 21,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 0,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "2ea43559db2a492f3bda308fd4f8bfd2cd14cf6c55dc34ac89e31d9407ba7e12",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/vite.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Toolchain plugins were not executed; their configuration and virtual-module hooks are not represented"
+          ],
+          "aliasOrder": [],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["browser", "development", "import"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {}
+          }
+        }
+      ],
+      "build": {
+        "status": "compiled",
+        "scope": "native Vite production bundle, no application execution"
+      },
+      "run": {
+        "project": {
+          "id": "ignite-todo",
+          "repository": "https://github.com/rocketseat-education/ignite-challenge-solution-reactjs-todo",
+          "revision": "cf83cf99e9a5563ebd90c60b9593130f4ff2d688",
+          "toolchain": "vite"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 2770,
+        "sourceBefore": "4b15f5a78595cc1cdb5a7df97060b9b68d11455dc82297ab3f816e153dd0b375",
+        "sourceAfter": "4b15f5a78595cc1cdb5a7df97060b9b68d11455dc82297ab3f816e153dd0b375",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-ignite-todo",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/projects/ignite-todo,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/ignite-todo-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/ignite-todo-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/ignite-todo-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "hariadiarief-react-vite-shadcn-dashboard-starter-kit",
+      "repository": "https://github.com/hariadiarief/react-vite-shadcn-dashboard-starter-kit",
+      "revision": "46ce5235b3ec7e01cbec3a511bc8e07343d8f536",
+      "toolchain": "vite",
+      "status": "matched",
+      "nativeVersion": "6.0.11",
+      "counts": {
+        "files": 72,
+        "requests": 299,
+        "matched": 299,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 2,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "a7a5a762d8322d0ab3d18002ef9f332fcb53d7d9be2585b1c6db89a202ec0b50",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/vite.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Toolchain plugins were not executed; their configuration and virtual-module hooks are not represented"
+          ],
+          "literalAliases": true,
+          "recursiveAliases": false,
+          "aliasOrder": ["@"],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["browser", "development", "import"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@": ["/project/src"]
+            }
+          }
+        }
+      ],
+      "build": {
+        "status": "compiled",
+        "scope": "native Vite production bundle, no application execution"
+      },
+      "run": {
+        "project": {
+          "id": "hariadiarief-react-vite-shadcn-dashboard-starter-kit",
+          "repository": "https://github.com/hariadiarief/react-vite-shadcn-dashboard-starter-kit",
+          "revision": "46ce5235b3ec7e01cbec3a511bc8e07343d8f536",
+          "toolchain": "vite"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 2595,
+        "sourceBefore": "10d69f0d12fb569c16762cf04aabc6601d824cd4a0f8afa4a204cdf1b13ccea5",
+        "sourceAfter": "10d69f0d12fb569c16762cf04aabc6601d824cd4a0f8afa4a204cdf1b13ccea5",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-hariadiarief-react-vite-shadcn-dashboard-starter-kit",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-hariadiarief-react-vite-shadcn-dashboard-starter-kit,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/hariadiarief-react-vite-shadcn-dashboard-starter-kit-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/hariadiarief-react-vite-shadcn-dashboard-starter-kit-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/hariadiarief-react-vite-shadcn-dashboard-starter-kit-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "ecommerce-react",
+      "repository": "https://github.com/jgudo/ecommerce-react",
+      "revision": "8d37028200dc1475d78f27d3b352a4d0384a4ab1",
+      "toolchain": "vite",
+      "status": "matched",
+      "nativeVersion": "3.0.2",
+      "counts": {
+        "files": 131,
+        "requests": 620,
+        "matched": 620,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 0,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "71966eeff00a257dbca8b5f9dc28ca87c26402f3deed7e3d3d6c96dea4c253bb",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/vite.config.js", "/project/jsconfig.json"],
+          "diagnostics": [
+            "Toolchain plugins were not executed; their configuration and virtual-module hooks are not represented"
+          ],
+          "literalAliases": true,
+          "recursiveAliases": false,
+          "aliasOrder": ["@"],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["browser", "development", "import"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/jsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@": ["/project/src"]
+            }
+          }
+        }
+      ],
+      "build": {
+        "status": "compiled",
+        "scope": "native Vite production bundle, no application execution"
+      },
+      "run": {
+        "project": {
+          "id": "ecommerce-react",
+          "repository": "https://github.com/jgudo/ecommerce-react",
+          "revision": "8d37028200dc1475d78f27d3b352a4d0384a4ab1",
+          "toolchain": "vite"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 5881,
+        "sourceBefore": "7478c229b2b21edb14a00aea48dad94342d06fc98e123b5009602aa261cab359",
+        "sourceAfter": "7478c229b2b21edb14a00aea48dad94342d06fc98e123b5009602aa261cab359",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-ecommerce-react",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-ecommerce-react,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/ecommerce-react-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/ecommerce-react-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/ecommerce-react-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "invoify",
+      "repository": "https://github.com/al1abb/invoify",
+      "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
+      "toolchain": "next",
+      "status": "matched",
+      "nativeVersion": "15.3.8",
+      "counts": {
+        "files": 137,
+        "requests": 584,
+        "matched": 584,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 22,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "cd48e5909e50ca6b041726262fb0962259971428123aa5124aa1cc8900ebb498",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/next.config.js", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Next webpack filesystem policy only; Turbopack, compiler hooks, module rules, externals, RSC and edge layers are not represented",
+            "Configuration callbacks receive synthetic build metadata; build-identity-dependent behavior is not validated"
+          ],
+          "nextVersion": "15.3.8",
+          "configurationOutput": "",
+          "aliasOrder": [
+            "@vercel/og$",
+            "next/dist/server/ReactDOMServerPages",
+            "@opentelemetry/api",
+            "styled-jsx/style$",
+            "styled-jsx$",
+            "private-next-pages/_app",
+            "private-next-pages/_error",
+            "private-next-pages/_document",
+            "private-next-app-dir",
+            "private-next-root-dir",
+            "private-next-instrumentation-client",
+            "private-next-empty-module",
+            "private-dot-next",
+            "unfetch",
+            "isomorphic-unfetch",
+            "whatwg-fetch",
+            "object-assign",
+            "object.assign/auto",
+            "object.assign/implementation",
+            "object.assign/polyfill",
+            "object.assign/shim",
+            "url",
+            "private-next-rsc-action-validate",
+            "private-next-rsc-action-client-wrapper",
+            "private-next-rsc-server-reference",
+            "private-next-rsc-action-encryption",
+            "private-next-rsc-cache-wrapper",
+            "/project/node_modules/next/dist/shared/lib/router/utils/resolve-rewrites.js",
+            "@swc/helpers/_",
+            "setimmediate",
+            "next-intl/config"
+          ],
+          "options": {
+            "extensions": [".js", ".mjs", ".tsx", ".ts", ".jsx", ".json", ".wasm"],
+            "extensionAlias": {},
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["import", "module", "webpack", "development", "browser"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@vercel/og$": ["next/dist/server/og/image-response"],
+              "next/dist/server/ReactDOMServerPages": ["react-dom/server.browser"],
+              "@opentelemetry/api": ["next/dist/compiled/@opentelemetry/api"],
+              "styled-jsx/style$": ["/project/node_modules/styled-jsx/style.js"],
+              "styled-jsx$": ["/project/node_modules/styled-jsx"],
+              "private-next-pages/_app": ["next/dist/pages/_app.js"],
+              "private-next-pages/_error": ["next/dist/pages/_error.js"],
+              "private-next-pages/_document": ["next/dist/pages/_document.js"],
+              "private-next-app-dir": ["/project/app"],
+              "private-next-root-dir": ["/project"],
+              "private-next-instrumentation-client": [
+                "/project/src/instrumentation-client",
+                "/project/instrumentation-client",
+                "private-next-empty-module"
+              ],
+              "private-next-empty-module": [null],
+              "private-dot-next": ["/project/.next"],
+              "unfetch": ["/project/node_modules/next/dist/build/polyfills/fetch/index.js"],
+              "isomorphic-unfetch": [
+                "/project/node_modules/next/dist/build/polyfills/fetch/index.js"
+              ],
+              "whatwg-fetch": [
+                "/project/node_modules/next/dist/build/polyfills/fetch/whatwg-fetch.js"
+              ],
+              "object-assign": ["/project/node_modules/next/dist/build/polyfills/object-assign.js"],
+              "object.assign/auto": [
+                "/project/node_modules/next/dist/build/polyfills/object.assign/auto.js"
+              ],
+              "object.assign/implementation": [
+                "/project/node_modules/next/dist/build/polyfills/object.assign/implementation.js"
+              ],
+              "object.assign/polyfill": [
+                "/project/node_modules/next/dist/build/polyfills/object.assign/polyfill.js"
+              ],
+              "object.assign/shim": [
+                "/project/node_modules/next/dist/build/polyfills/object.assign/shim.js"
+              ],
+              "url": ["/project/node_modules/next/dist/compiled/native-url/index.js"],
+              "private-next-rsc-action-validate": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-validate"
+              ],
+              "private-next-rsc-action-client-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-client-wrapper"
+              ],
+              "private-next-rsc-server-reference": [
+                "next/dist/build/webpack/loaders/next-flight-loader/server-reference"
+              ],
+              "private-next-rsc-action-encryption": ["next/dist/server/app-render/encryption"],
+              "private-next-rsc-cache-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/cache-wrapper"
+              ],
+              "/project/node_modules/next/dist/shared/lib/router/utils/resolve-rewrites.js": [null],
+              "@swc/helpers/_": ["/project/node_modules/@swc/helpers/_"],
+              "setimmediate": ["next/dist/compiled/setimmediate"],
+              "next-intl/config": ["/project/i18n/request.ts"]
+            },
+            "fallback": {
+              "process": ["/project/node_modules/next/dist/build/polyfills/process.js"]
+            },
+            "mainFiles": ["index"],
+            "exportsFields": ["exports"],
+            "importsFields": ["imports"],
+            "modules": ["node_modules"],
+            "symlinks": true,
+            "fullySpecified": false,
+            "preferRelative": false,
+            "preferAbsolute": false,
+            "roots": ["/project"],
+            "enforceExtension": 2
+          }
+        }
+      ],
+      "build": {
+        "status": "not-run",
+        "scope": "Next client webpack resolver only; not an RSC or Turbopack graph"
+      },
+      "run": {
+        "project": {
+          "id": "invoify",
+          "repository": "https://github.com/al1abb/invoify",
+          "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
+          "toolchain": "next"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 1731,
+        "sourceBefore": "fef167a3688581212d422ce0d0f834400161fbc469c75b1614060bd48fd0cf4c",
+        "sourceAfter": "fef167a3688581212d422ce0d0f834400161fbc469c75b1614060bd48fd0cf4c",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-invoify",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-invoify,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/invoify-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/invoify-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/invoify-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "commerce",
+      "repository": "https://github.com/vercel/commerce",
+      "revision": "1df2cf6f6c935f4782eed27351fa18f276917a4d",
+      "toolchain": "next",
+      "status": "nonpass",
+      "nativeVersion": "15.6.0-canary.60",
+      "counts": {
+        "files": 64,
+        "requests": 200,
+        "matched": 198,
+        "candidateUnresolved": 2,
+        "nativeUnresolved": 2,
+        "resolvedDifferences": 0,
+        "sourceChecks": 2,
+        "matchedSourceChecks": 2,
+        "sharedUnresolved": 2,
+        "typeOnly": 10,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "6bf362fdce3db932dd6e467d4449c1af9b4e394408f706279ab551d9d32db4a2",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/next.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Next webpack filesystem policy only; Turbopack, compiler hooks, module rules, externals, RSC and edge layers are not represented",
+            "Configuration callbacks receive synthetic build metadata; build-identity-dependent behavior is not validated"
+          ],
+          "nextVersion": "15.6.0-canary.60",
+          "configurationOutput": "[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`",
+          "aliasOrder": [
+            "@vercel/og$",
+            "next/dist/server/ReactDOMServerPages",
+            "@opentelemetry/api",
+            "styled-jsx/style$",
+            "styled-jsx$",
+            "next/dist/compiled/next-devtools",
+            "private-next-pages/_app",
+            "private-next-pages/_error",
+            "private-next-pages/_document",
+            "private-next-app-dir",
+            "private-next-root-dir",
+            "private-next-instrumentation-client",
+            "private-next-empty-module",
+            "private-dot-next",
+            "unfetch",
+            "isomorphic-unfetch",
+            "whatwg-fetch",
+            "object-assign",
+            "object.assign/auto",
+            "object.assign/implementation",
+            "object.assign/polyfill",
+            "object.assign/shim",
+            "url",
+            "private-next-rsc-action-validate",
+            "private-next-rsc-action-client-wrapper",
+            "private-next-rsc-server-reference",
+            "private-next-rsc-action-encryption",
+            "private-next-rsc-cache-wrapper",
+            "private-next-rsc-track-dynamic-import",
+            "@swc/helpers/_",
+            "setimmediate"
+          ],
+          "options": {
+            "extensions": [".js", ".mjs", ".tsx", ".ts", ".jsx", ".json", ".wasm"],
+            "extensionAlias": {},
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["import", "module", "webpack", "development", "browser"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@vercel/og$": ["next/dist/server/og/image-response"],
+              "next/dist/server/ReactDOMServerPages": ["react-dom/server.edge"],
+              "@opentelemetry/api": ["next/dist/compiled/@opentelemetry/api"],
+              "styled-jsx/style$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.0.0/node_modules/styled-jsx/style.js"
+              ],
+              "styled-jsx$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.0.0/node_modules/styled-jsx"
+              ],
+              "next/dist/compiled/next-devtools": ["next/dist/compiled/next-devtools"],
+              "private-next-pages/_app": ["next/dist/pages/_app.js"],
+              "private-next-pages/_error": ["next/dist/pages/_error.js"],
+              "private-next-pages/_document": ["next/dist/pages/_document.js"],
+              "private-next-app-dir": ["/project/app"],
+              "private-next-root-dir": ["/project"],
+              "private-next-instrumentation-client": [
+                "/project/src/instrumentation-client",
+                "/project/instrumentation-client",
+                "private-next-empty-module"
+              ],
+              "private-next-empty-module": [null],
+              "private-dot-next": ["/project/.next/dev"],
+              "unfetch": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/fetch/index.js"
+              ],
+              "isomorphic-unfetch": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/fetch/index.js"
+              ],
+              "whatwg-fetch": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/fetch/whatwg-fetch.js"
+              ],
+              "object-assign": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/object-assign.js"
+              ],
+              "object.assign/auto": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/object.assign/auto.js"
+              ],
+              "object.assign/implementation": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/object.assign/implementation.js"
+              ],
+              "object.assign/polyfill": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/object.assign/polyfill.js"
+              ],
+              "object.assign/shim": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/object.assign/shim.js"
+              ],
+              "url": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/compiled/native-url/index.js"
+              ],
+              "private-next-rsc-action-validate": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-validate"
+              ],
+              "private-next-rsc-action-client-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-client-wrapper"
+              ],
+              "private-next-rsc-server-reference": [
+                "next/dist/build/webpack/loaders/next-flight-loader/server-reference"
+              ],
+              "private-next-rsc-action-encryption": ["next/dist/server/app-render/encryption"],
+              "private-next-rsc-cache-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/cache-wrapper"
+              ],
+              "private-next-rsc-track-dynamic-import": [
+                "next/dist/build/webpack/loaders/next-flight-loader/track-dynamic-import"
+              ],
+              "@swc/helpers/_": [
+                "/project/node_modules/.pnpm/@swc+helpers@0.5.15/node_modules/@swc/helpers/_"
+              ],
+              "setimmediate": ["next/dist/compiled/setimmediate"]
+            },
+            "fallback": {
+              "process": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.60_react-dom@19.0.0_react@19.0.0__react@19.0.0/node_modules/next/dist/build/polyfills/process.js"
+              ]
+            },
+            "mainFiles": ["index"],
+            "exportsFields": ["exports"],
+            "importsFields": ["imports"],
+            "modules": ["node_modules", "/project"],
+            "symlinks": true,
+            "fullySpecified": false,
+            "preferRelative": false,
+            "preferAbsolute": false,
+            "roots": ["/project"],
+            "enforceExtension": 2
+          }
+        },
+        {
+          "files": ["/project/next.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Next webpack filesystem policy only; Turbopack, compiler hooks, module rules, externals, RSC and edge layers are not represented",
+            "Configuration callbacks receive synthetic build metadata; build-identity-dependent behavior is not validated",
+            "Missing optional peers remain unresolved; Next may replace them with ignored modules"
+          ],
+          "nextVersion": "15.6.0-canary.60",
+          "configurationOutput": "[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`",
+          "aliasOrder": [
+            "@vercel/og$",
+            "next/dist/server/ReactDOMServerPages",
+            "@opentelemetry/api",
+            "styled-jsx/style$",
+            "styled-jsx$",
+            "next/dist/compiled/next-devtools",
+            "private-next-pages/_app",
+            "private-next-pages/_error",
+            "private-next-pages/_document",
+            "private-next-app-dir",
+            "private-next-root-dir",
+            "private-dot-next",
+            "private-next-rsc-action-validate",
+            "private-next-rsc-action-client-wrapper",
+            "private-next-rsc-server-reference",
+            "private-next-rsc-action-encryption",
+            "private-next-rsc-cache-wrapper",
+            "private-next-rsc-track-dynamic-import",
+            "@swc/helpers/_",
+            "setimmediate"
+          ],
+          "options": {
+            "extensions": [".js", ".mjs", ".tsx", ".ts", ".jsx", ".json", ".wasm"],
+            "extensionAlias": {},
+            "mainFields": ["main", "module"],
+            "aliasFields": [],
+            "conditionNames": ["import", "module", "webpack", "development", "node"],
+            "builtinModules": true,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@vercel/og$": ["next/dist/server/og/image-response"],
+              "next/dist/server/ReactDOMServerPages": ["react-dom/server.edge"],
+              "@opentelemetry/api": ["next/dist/compiled/@opentelemetry/api"],
+              "styled-jsx/style$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.0.0/node_modules/styled-jsx/style.js"
+              ],
+              "styled-jsx$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.0.0/node_modules/styled-jsx"
+              ],
+              "next/dist/compiled/next-devtools": ["next/dist/next-devtools/dev-overlay.shim.js"],
+              "private-next-pages/_app": ["next/dist/pages/_app.js"],
+              "private-next-pages/_error": ["next/dist/pages/_error.js"],
+              "private-next-pages/_document": ["next/dist/pages/_document.js"],
+              "private-next-app-dir": ["/project/app"],
+              "private-next-root-dir": ["/project"],
+              "private-dot-next": ["/project/.next/dev"],
+              "private-next-rsc-action-validate": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-validate"
+              ],
+              "private-next-rsc-action-client-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-client-wrapper"
+              ],
+              "private-next-rsc-server-reference": [
+                "next/dist/build/webpack/loaders/next-flight-loader/server-reference"
+              ],
+              "private-next-rsc-action-encryption": ["next/dist/server/app-render/encryption"],
+              "private-next-rsc-cache-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/cache-wrapper"
+              ],
+              "private-next-rsc-track-dynamic-import": [
+                "next/dist/build/webpack/loaders/next-flight-loader/track-dynamic-import"
+              ],
+              "@swc/helpers/_": [
+                "/project/node_modules/.pnpm/@swc+helpers@0.5.15/node_modules/@swc/helpers/_"
+              ],
+              "setimmediate": ["next/dist/compiled/setimmediate"]
+            },
+            "fallback": {},
+            "mainFiles": ["index"],
+            "exportsFields": ["exports"],
+            "importsFields": ["imports"],
+            "modules": ["node_modules", "/project"],
+            "symlinks": true,
+            "fullySpecified": false,
+            "preferRelative": false,
+            "preferAbsolute": false,
+            "roots": ["/project"],
+            "enforceExtension": 2
+          }
+        }
+      ],
+      "build": {
+        "status": "not-run",
+        "scope": "Next client webpack resolver only; not an RSC or Turbopack graph"
+      },
+      "run": {
+        "project": {
+          "id": "commerce",
+          "repository": "https://github.com/vercel/commerce",
+          "revision": "1df2cf6f6c935f4782eed27351fa18f276917a4d",
+          "toolchain": "next"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 1,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 1981,
+        "sourceBefore": "1531bfd86ad2674ba6632bb8cbff064bd8e8c0ecb44309ce18339a658155389e",
+        "sourceAfter": "1531bfd86ad2674ba6632bb8cbff064bd8e8c0ecb44309ce18339a658155389e",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-commerce",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-commerce,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/commerce-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/commerce-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/commerce-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "nextjs-saas-starter",
+      "repository": "https://github.com/nextjs/saas-starter",
+      "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+      "toolchain": "next",
+      "status": "nonpass",
+      "nativeVersion": "15.6.0-canary.59",
+      "counts": {
+        "files": 38,
+        "requests": 164,
+        "matched": 157,
+        "candidateUnresolved": 7,
+        "nativeUnresolved": 7,
+        "resolvedDifferences": 0,
+        "sourceChecks": 7,
+        "matchedSourceChecks": 7,
+        "sharedUnresolved": 7,
+        "typeOnly": 1,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "ec7ef04953838793283ade5305a1f0744ba2fe1e0ec23a3d763d92921857a7d0",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/next.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Next webpack filesystem policy only; Turbopack, compiler hooks, module rules, externals, RSC and edge layers are not represented",
+            "Configuration callbacks receive synthetic build metadata; build-identity-dependent behavior is not validated"
+          ],
+          "nextVersion": "15.6.0-canary.59",
+          "configurationOutput": "[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`",
+          "aliasOrder": [
+            "@vercel/og$",
+            "next/dist/server/ReactDOMServerPages",
+            "@opentelemetry/api",
+            "styled-jsx/style$",
+            "styled-jsx$",
+            "next/dist/compiled/next-devtools",
+            "private-next-pages/_app",
+            "private-next-pages/_error",
+            "private-next-pages/_document",
+            "private-next-app-dir",
+            "private-next-root-dir",
+            "private-next-instrumentation-client",
+            "private-next-empty-module",
+            "private-dot-next",
+            "unfetch",
+            "isomorphic-unfetch",
+            "whatwg-fetch",
+            "object-assign",
+            "object.assign/auto",
+            "object.assign/implementation",
+            "object.assign/polyfill",
+            "object.assign/shim",
+            "url",
+            "private-next-rsc-action-validate",
+            "private-next-rsc-action-client-wrapper",
+            "private-next-rsc-server-reference",
+            "private-next-rsc-action-encryption",
+            "private-next-rsc-cache-wrapper",
+            "private-next-rsc-track-dynamic-import",
+            "@swc/helpers/_",
+            "setimmediate"
+          ],
+          "options": {
+            "extensions": [".js", ".mjs", ".tsx", ".ts", ".jsx", ".json", ".wasm"],
+            "extensionAlias": {},
+            "mainFields": ["browser", "module", "main"],
+            "aliasFields": ["browser"],
+            "conditionNames": ["import", "module", "webpack", "development", "browser"],
+            "builtinModules": false,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@vercel/og$": ["next/dist/server/og/image-response"],
+              "next/dist/server/ReactDOMServerPages": ["react-dom/server.edge"],
+              "@opentelemetry/api": ["next/dist/compiled/@opentelemetry/api"],
+              "styled-jsx/style$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.1.0/node_modules/styled-jsx/style.js"
+              ],
+              "styled-jsx$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.1.0/node_modules/styled-jsx"
+              ],
+              "next/dist/compiled/next-devtools": ["next/dist/compiled/next-devtools"],
+              "private-next-pages/_app": ["next/dist/pages/_app.js"],
+              "private-next-pages/_error": ["next/dist/pages/_error.js"],
+              "private-next-pages/_document": ["next/dist/pages/_document.js"],
+              "private-next-app-dir": ["/project/app"],
+              "private-next-root-dir": ["/project"],
+              "private-next-instrumentation-client": [
+                "/project/src/instrumentation-client",
+                "/project/instrumentation-client",
+                "private-next-empty-module"
+              ],
+              "private-next-empty-module": [null],
+              "private-dot-next": ["/project/.next/dev"],
+              "unfetch": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/fetch/index.js"
+              ],
+              "isomorphic-unfetch": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/fetch/index.js"
+              ],
+              "whatwg-fetch": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/fetch/whatwg-fetch.js"
+              ],
+              "object-assign": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/object-assign.js"
+              ],
+              "object.assign/auto": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/object.assign/auto.js"
+              ],
+              "object.assign/implementation": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/object.assign/implementation.js"
+              ],
+              "object.assign/polyfill": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/object.assign/polyfill.js"
+              ],
+              "object.assign/shim": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/object.assign/shim.js"
+              ],
+              "url": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/compiled/native-url/index.js"
+              ],
+              "private-next-rsc-action-validate": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-validate"
+              ],
+              "private-next-rsc-action-client-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-client-wrapper"
+              ],
+              "private-next-rsc-server-reference": [
+                "next/dist/build/webpack/loaders/next-flight-loader/server-reference"
+              ],
+              "private-next-rsc-action-encryption": ["next/dist/server/app-render/encryption"],
+              "private-next-rsc-cache-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/cache-wrapper"
+              ],
+              "private-next-rsc-track-dynamic-import": [
+                "next/dist/build/webpack/loaders/next-flight-loader/track-dynamic-import"
+              ],
+              "@swc/helpers/_": [
+                "/project/node_modules/.pnpm/@swc+helpers@0.5.15/node_modules/@swc/helpers/_"
+              ],
+              "setimmediate": ["next/dist/compiled/setimmediate"]
+            },
+            "fallback": {
+              "process": [
+                "/project/node_modules/.pnpm/next@15.6.0-canary.59_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/polyfills/process.js"
+              ]
+            },
+            "mainFiles": ["index"],
+            "exportsFields": ["exports"],
+            "importsFields": ["imports"],
+            "modules": ["node_modules", "/project"],
+            "symlinks": true,
+            "fullySpecified": false,
+            "preferRelative": false,
+            "preferAbsolute": false,
+            "roots": ["/project"],
+            "enforceExtension": 2
+          }
+        },
+        {
+          "files": ["/project/next.config.ts", "/project/tsconfig.json"],
+          "diagnostics": [
+            "Next webpack filesystem policy only; Turbopack, compiler hooks, module rules, externals, RSC and edge layers are not represented",
+            "Configuration callbacks receive synthetic build metadata; build-identity-dependent behavior is not validated",
+            "Missing optional peers remain unresolved; Next may replace them with ignored modules"
+          ],
+          "nextVersion": "15.6.0-canary.59",
+          "configurationOutput": "[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`",
+          "aliasOrder": [
+            "@vercel/og$",
+            "next/dist/server/ReactDOMServerPages",
+            "@opentelemetry/api",
+            "styled-jsx/style$",
+            "styled-jsx$",
+            "next/dist/compiled/next-devtools",
+            "private-next-pages/_app",
+            "private-next-pages/_error",
+            "private-next-pages/_document",
+            "private-next-app-dir",
+            "private-next-root-dir",
+            "private-dot-next",
+            "private-next-rsc-action-validate",
+            "private-next-rsc-action-client-wrapper",
+            "private-next-rsc-server-reference",
+            "private-next-rsc-action-encryption",
+            "private-next-rsc-cache-wrapper",
+            "private-next-rsc-track-dynamic-import",
+            "@swc/helpers/_",
+            "setimmediate"
+          ],
+          "options": {
+            "extensions": [".js", ".mjs", ".tsx", ".ts", ".jsx", ".json", ".wasm"],
+            "extensionAlias": {},
+            "mainFields": ["main", "module"],
+            "aliasFields": [],
+            "conditionNames": ["import", "module", "webpack", "development", "node"],
+            "builtinModules": true,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {
+              "@vercel/og$": ["next/dist/server/og/image-response"],
+              "next/dist/server/ReactDOMServerPages": ["react-dom/server.edge"],
+              "@opentelemetry/api": ["next/dist/compiled/@opentelemetry/api"],
+              "styled-jsx/style$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.1.0/node_modules/styled-jsx/style.js"
+              ],
+              "styled-jsx$": [
+                "/project/node_modules/.pnpm/styled-jsx@5.1.6_react@19.1.0/node_modules/styled-jsx"
+              ],
+              "next/dist/compiled/next-devtools": ["next/dist/next-devtools/dev-overlay.shim.js"],
+              "private-next-pages/_app": ["next/dist/pages/_app.js"],
+              "private-next-pages/_error": ["next/dist/pages/_error.js"],
+              "private-next-pages/_document": ["next/dist/pages/_document.js"],
+              "private-next-app-dir": ["/project/app"],
+              "private-next-root-dir": ["/project"],
+              "private-dot-next": ["/project/.next/dev"],
+              "private-next-rsc-action-validate": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-validate"
+              ],
+              "private-next-rsc-action-client-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/action-client-wrapper"
+              ],
+              "private-next-rsc-server-reference": [
+                "next/dist/build/webpack/loaders/next-flight-loader/server-reference"
+              ],
+              "private-next-rsc-action-encryption": ["next/dist/server/app-render/encryption"],
+              "private-next-rsc-cache-wrapper": [
+                "next/dist/build/webpack/loaders/next-flight-loader/cache-wrapper"
+              ],
+              "private-next-rsc-track-dynamic-import": [
+                "next/dist/build/webpack/loaders/next-flight-loader/track-dynamic-import"
+              ],
+              "@swc/helpers/_": [
+                "/project/node_modules/.pnpm/@swc+helpers@0.5.15/node_modules/@swc/helpers/_"
+              ],
+              "setimmediate": ["next/dist/compiled/setimmediate"]
+            },
+            "fallback": {},
+            "mainFiles": ["index"],
+            "exportsFields": ["exports"],
+            "importsFields": ["imports"],
+            "modules": ["node_modules", "/project"],
+            "symlinks": true,
+            "fullySpecified": false,
+            "preferRelative": false,
+            "preferAbsolute": false,
+            "roots": ["/project"],
+            "enforceExtension": 2
+          }
+        }
+      ],
+      "build": {
+        "status": "not-run",
+        "scope": "Next client webpack resolver only; not an RSC or Turbopack graph"
+      },
+      "run": {
+        "project": {
+          "id": "nextjs-saas-starter",
+          "repository": "https://github.com/nextjs/saas-starter",
+          "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+          "toolchain": "next"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 1,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 1972,
+        "sourceBefore": "cb05107773c081fc2bef352a663c4a3eb2a8d0fdbb1dadb4eb779310aa3700ec",
+        "sourceAfter": "cb05107773c081fc2bef352a663c4a3eb2a8d0fdbb1dadb4eb779310aa3700ec",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-nextjs-saas-starter",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-nextjs-saas-starter,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/nextjs-saas-starter-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/nextjs-saas-starter-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/nextjs-saas-starter-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "zustand-demo",
+      "repository": "https://github.com/pmndrs/zustand",
+      "revision": "b57db4f86ef179285da216eeb291266da82c361c",
+      "toolchain": "rollup",
+      "status": "nonpass",
+      "nativeVersion": "4.62.4",
+      "counts": {
+        "files": 15,
+        "requests": 18,
+        "matched": 6,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 12,
+        "sourceChecks": 12,
+        "matchedSourceChecks": 12,
+        "sharedUnresolved": 0,
+        "typeOnly": 12,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "a7f74912ff06097b820b7bafdab379defa9b003a0eea0ff698105d70ca811d5f",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/tsconfig.json"],
+          "diagnostics": [],
+          "aliasOrder": [],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["module", "main"],
+            "aliasFields": [],
+            "conditionNames": ["node", "production", "import"],
+            "builtinModules": true,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {}
+          }
+        }
+      ],
+      "build": {
+        "status": "compiled",
+        "scope": "upstream base ESM Rollup configuration, no declarations or postbuild"
+      },
+      "run": {
+        "project": {
+          "id": "zustand-demo",
+          "repository": "https://github.com/pmndrs/zustand",
+          "revision": "b57db4f86ef179285da216eeb291266da82c361c",
+          "toolchain": "rollup"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 1,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 921,
+        "sourceBefore": "d18d2df689fd506655413bd853a9a3478f525a55f96c523c0a65a2b18df6bc80",
+        "sourceAfter": "d18d2df689fd506655413bd853a9a3478f525a55f96c523c0a65a2b18df6bc80",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-zustand-demo",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-zustand-demo,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/zustand-demo-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/zustand-demo-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/zustand-demo-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "p-limit",
+      "repository": "https://github.com/sindresorhus/p-limit",
+      "revision": "a8a6fbec4e0e866d6d779b10889bb4f5567e70eb",
+      "toolchain": "node",
+      "status": "matched",
+      "nativeVersion": "v26.4.0",
+      "counts": {
+        "files": 1,
+        "requests": 1,
+        "matched": 1,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 0,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "4f604abb34f3b93897e79b161692b623d3565e31d24a9ad6e66254b66a8c1c39",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": [],
+          "diagnostics": [],
+          "aliasOrder": [],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["module", "main"],
+            "aliasFields": [],
+            "conditionNames": ["node", "production", "import"],
+            "builtinModules": true,
+            "alias": {}
+          }
+        }
+      ],
+      "run": {
+        "project": {
+          "id": "p-limit",
+          "repository": "https://github.com/sindresorhus/p-limit",
+          "revision": "a8a6fbec4e0e866d6d779b10889bb4f5567e70eb",
+          "toolchain": "node"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 788,
+        "sourceBefore": "de21863408ebef407f8c817437f79e559dd60719742de3ed38eac1cf7cab2615",
+        "sourceAfter": "de21863408ebef407f8c817437f79e559dd60719742de3ed38eac1cf7cab2615",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-p-limit",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-p-limit,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/p-limit-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/p-limit-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/p-limit-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    },
+    {
+      "id": "execa",
+      "repository": "https://github.com/sindresorhus/execa",
+      "revision": "8017b279e19347efaf2587711c2d57dbd4330740",
+      "toolchain": "node",
+      "status": "matched",
+      "nativeVersion": "v26.4.0",
+      "counts": {
+        "files": 109,
+        "requests": 375,
+        "matched": 375,
+        "candidateUnresolved": 0,
+        "nativeUnresolved": 0,
+        "resolvedDifferences": 0,
+        "sourceChecks": 0,
+        "matchedSourceChecks": 0,
+        "sharedUnresolved": 0,
+        "typeOnly": 0,
+        "dynamicUnknown": 0
+      },
+      "sourceHash": "f79aa3f6cf117c8ae0675449e5412b58ec6c99bd2049c2d33e57e038aa87ea35",
+      "sourceUnchanged": true,
+      "nativeReferenceUnchanged": true,
+      "configurations": [
+        {
+          "files": ["/project/tsconfig.json"],
+          "diagnostics": [],
+          "aliasOrder": [],
+          "options": {
+            "extensions": [".mjs", ".js", ".ts", ".jsx", ".tsx", ".cjs", ".mts", ".cts", ".json"],
+            "extensionAlias": {
+              ".js": [".js", ".ts", ".tsx"],
+              ".jsx": [".jsx", ".tsx"],
+              ".mjs": [".mjs", ".mts"],
+              ".cjs": [".cjs", ".cts"]
+            },
+            "mainFields": ["module", "main"],
+            "aliasFields": [],
+            "conditionNames": ["node", "production", "import"],
+            "builtinModules": true,
+            "tsconfig": {
+              "configFile": "/project/tsconfig.json",
+              "references": "auto"
+            },
+            "alias": {}
+          }
+        }
+      ],
+      "run": {
+        "project": {
+          "id": "execa",
+          "repository": "https://github.com/sindresorhus/execa",
+          "revision": "8017b279e19347efaf2587711c2d57dbd4330740",
+          "toolchain": "node"
+        },
+        "image": "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+        "code": 0,
+        "signal": null,
+        "timedOut": false,
+        "elapsedMs": 875,
+        "sourceBefore": "2379aefe11cbe23a2a50eb05a44276a512f4bbee85d0de7e9616b106be2a532a",
+        "sourceAfter": "2379aefe11cbe23a2a50eb05a44276a512f4bbee85d0de7e9616b106be2a532a",
+        "unchanged": true,
+        "args": [
+          "run",
+          "--rm",
+          "--name",
+          "bippy-resolver-test-execa",
+          "--network",
+          "none",
+          "--read-only",
+          "--cap-drop",
+          "ALL",
+          "--security-opt",
+          "no-new-privileges",
+          "--pids-limit",
+          "256",
+          "--memory",
+          "2g",
+          "--cpus",
+          "2",
+          "--tmpfs",
+          "/tmp:rw,nosuid,size=512m",
+          "--mount",
+          "type=volume,source=bippy-resolution-execa,target=/project",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/tools,target=/tools,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/execa-project-v3,target=/reports",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/execa-project-v3/metadata.json,target=/project-metadata.json,readonly",
+          "--mount",
+          "type=bind,source=/private/tmp/bippy-resolver-corpus-20260924/reports/execa-project-v3/tracked.json,target=/tracked-files.json,readonly",
+          "--workdir",
+          "/tools",
+          "--env",
+          "HOME=/tmp/home",
+          "--env",
+          "BIPPY_RESOLVER_REPORT_SUFFIX=project-v3",
+          "--env",
+          "BIPPY_RESOLVER_IMPLEMENTATION=project",
+          "--env",
+          "NEXT_TELEMETRY_DISABLED=1",
+          "--env",
+          "RAYON_NUM_THREADS=2",
+          "node@sha256:ec82d089a8ae2cf02628da7b34ea57dc357b24db724d557fe2d240e6beb659c1",
+          "node",
+          "/tools/node_modules/vite-plus/bin/vp",
+          "test",
+          "corpus/module-resolution/corpus.test.ts",
+          "--pool=forks",
+          "--maxWorkers=1"
+        ]
+      }
+    }
+  ]
+}
