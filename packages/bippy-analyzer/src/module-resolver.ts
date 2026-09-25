@@ -1,6 +1,7 @@
 import { isBuiltin } from "node:module";
 import { isAbsolute } from "node:path";
 import { ResolverFactory, type NapiResolveOptions } from "oxc-resolver";
+import { getResolutionError } from "./resolution-error.js";
 
 export interface ModuleResolverOptions extends NapiResolveOptions {
   conditionNames: string[];
@@ -38,6 +39,7 @@ export interface VirtualResolution {
 export interface ExternalResolution {
   kind: "external";
   id: string;
+  external?: true | "absolute" | "relative";
 }
 
 export type ModuleResolution =
@@ -93,14 +95,16 @@ export const createModuleResolver = (options: ModuleResolverOptions) => {
       if (result.error?.startsWith("Path is ignored ")) return { kind: "ignored", specifier };
       const builtin =
         result.builtin?.resolved ??
-        (result.error === `Cannot find module '${requestPath}'` && isBuiltin(requestPath)
+        (policy.builtinModules !== false &&
+        result.error === `Cannot find module '${requestPath}'` &&
+        isBuiltin(requestPath)
           ? requestPath
           : undefined);
       if (builtin && isBuiltin(builtin) && requestPath === specifier)
         return { kind: "builtin", id: builtin.startsWith("node:") ? builtin : `node:${builtin}` };
       return unresolved(result.error ?? "Module not found");
     } catch (error) {
-      return unresolved(error instanceof Error ? error.message : String(error));
+      return unresolved(getResolutionError(error));
     }
   };
 

@@ -25,9 +25,9 @@ For JSON output, add `--reporter=json` and use pnpm's `--silent` option. To requ
 
 ## Module resolution
 
-Resolution is separate from loading and execution. Choose an explicit Oxc policy, Node ESM/CommonJS semantics, or a supplied Vite/webpack resolver. No Vite defaults are imposed on other frameworks.
+Resolution is separate from loading and execution. Choose an explicit Oxc policy, Node ESM/CommonJS semantics, or a supplied Vite, webpack, Rollup or Rolldown resolver. No Vite defaults are imposed on other frameworks.
 
-See [module resolution](docs/module-resolution.md) for examples, prior research, validated behavior, and limits. Next's installed main-field rules and paths plugin are tested; full Next/Turbopack integration is **not** implemented.
+See [module resolution](docs/module-resolution.md) for examples, prior research, validated behavior, and limits. The [ten-repository audit](corpus/module-resolution/README.md) retains successful resolutions, policy differences and native build failures. [Toolchain research](docs/toolchain-resolution-research.md) explains configuration discovery and backend-specific behavior. Native Next/Turbopack fixtures and compile-mode builds are tested; complete integration is **not** implemented.
 
 ## Initial engine results
 

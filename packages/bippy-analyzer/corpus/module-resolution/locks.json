@@ -1,0 +1,23 @@
+[
+  {
+    "id": "tools",
+    "artifact": "locks/tools-package-lock.json.gz",
+    "kind": "install-lock",
+    "sha256": "655831198a6e3355cdfb366a425aa27cc6b97be9642419f21828cfdb34ad93a3",
+    "bytes": 138106
+  },
+  {
+    "id": "p-limit",
+    "artifact": "locks/p-limit-package-lock.json.gz",
+    "kind": "installed-tree-snapshot",
+    "sha256": "aafa0363d0e38093c38020b876f6e8ec4764f06a9075d98ec8fd527022422e57",
+    "bytes": 284695
+  },
+  {
+    "id": "execa",
+    "artifact": "locks/execa-package-lock.json.gz",
+    "kind": "installed-tree-snapshot",
+    "sha256": "f641d12122a6844bfc736c59085baea9b3c545321b9ed6989478221a26e7c8ef",
+    "bytes": 306814
+  }
+]

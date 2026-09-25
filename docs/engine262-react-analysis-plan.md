@@ -64,7 +64,7 @@ Keep the core independent of framework defaults. Conditions, extensions, main fi
 
 Do not bring over `ModuleGraph` wholesale: it imports old modeled-library policies and interpreter-specific module analysis. JavaScript module linking, live bindings, cycles, and evaluation belong to the chosen execution/loading pipeline, not a duplicate of the old interpreter's export evaluator. Preserve source/import provenance separately where analysis needs it.
 
-The working tree now contains an explicitly configured Oxc resolver, separate Node ESM/CommonJS resolution, and supplied-toolchain Vite/webpack adapters. Native and toolchain tests cover concrete targets, failures, and legitimate disagreements. Next main-field rules and its paths plugin are tested, but full Next/Turbopack integration remains open. See [resolution evidence and limits](../packages/bippy-analyzer/docs/module-resolution.md). Nothing is connected to engine262's module loader yet.
+The working tree now contains an explicitly configured Oxc resolver, separate Node ESM/CommonJS resolution, and supplied-toolchain Vite, webpack, Rollup and Rolldown adapters. Native tests cover concrete targets, failures, request context and legitimate disagreements. The ten-repository audit records 2,299 request occurrences, including unresolved requests and external-policy differences. Native Turbopack compilation has both passing and failing project results; full Next integration remains open. See [resolution evidence and limits](../packages/bippy-analyzer/docs/module-resolution.md). Nothing is connected to engine262’s module loader yet.
 
 ## Then prove concrete React execution
 

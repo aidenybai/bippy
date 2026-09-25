@@ -34,6 +34,54 @@ it("does not silently enable TypeScript, browser fields, module conditions, or p
   });
 });
 
+it("forwards webpack issuer context and dependency tracking to native resolver plugins", async () => {
+  const project = createResolverProject();
+  const target = project.write("src/target.js", "export {};");
+  const fileDependencies = new Set<string>();
+  const resolver = ResolverFactory.createResolver({ ...basePolicy, fileSystem: fs });
+  resolver.hooks.resolve.tapAsync(
+    { name: "check-request-context", stage: -1000 },
+    (request, context, callback) => {
+      if (request.context?.issuer !== project.importer)
+        return callback(new Error("Missing issuer"));
+      context.fileDependencies?.add("plugin-dependency");
+      callback();
+    },
+  );
+  const adapter = createWebpackModuleResolver(resolver);
+  expect(
+    await adapter.resolve("./target.js", project.importer, {
+      context: { issuer: project.importer },
+      resolveContext: { fileDependencies },
+    }),
+  ).toEqual({ kind: "file", id: target });
+  expect(fileDependencies.has("plugin-dependency")).toBe(true);
+  expect(await adapter.resolve("./target.js", project.importer)).toMatchObject({
+    kind: "unresolved",
+    error: "Missing issuer",
+  });
+});
+
+it("honors disabled builtin recognition without disabling explicit aliases", async () => {
+  const project = createResolverProject();
+  const polyfill = project.write("src/polyfill.js", "export {};");
+  const options = { ...basePolicy, builtinModules: false };
+  const resolver = createModuleResolver(options);
+  const webpack = createWebpackModuleResolver(
+    ResolverFactory.createResolver({ ...basePolicy, fileSystem: fs }),
+  );
+  for (const specifier of ["path", "fs/promises", "node:fs"]) {
+    expect(resolver.resolve(specifier, project.importer).kind).toBe("unresolved");
+    expect((await webpack.resolve(specifier, project.importer)).kind).toBe("unresolved");
+  }
+  expect(
+    createModuleResolver({ ...options, alias: { "node:fs": [polyfill] } }).resolve(
+      "node:fs",
+      project.importer,
+    ),
+  ).toEqual({ kind: "file", id: polyfill });
+});
+
 it.each([
   {
     extensions: [".ts", ".tsx", ".js", ".jsx", ".scss", ".css", ".less"],

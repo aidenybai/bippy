@@ -1,0 +1,45 @@
+ ⚠ Linting is disabled.
+   ▲ Next.js 15.3.8 (Turbopack)
+
+   Creating an optimized production build ...
+Failed to download `Alex Brush` from Google Fonts. Using fallback font instead.
+Failed to download `Outfit` from Google Fonts. Using fallback font instead.
+Failed to download `Dancing Script` from Google Fonts. Using fallback font instead.
+Failed to download `Great Vibes` from Google Fonts. Using fallback font instead.
+Failed to download `Parisienne` from Google Fonts. Using fallback font instead.
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Browserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+thread 'tokio-runtime-worker' panicked at crates/next-api/src/dynamic_imports.rs:70:26:
+called `Option::unwrap()` on a `None` value
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+ ⚠ Support for Turbopack builds is experimental. We don't recommend deploying mission-critical applications to production.
+
+- Turbopack currently always builds production sourcemaps for the browser. This will include project sourcecode if deployed to production.
+- It is expected that your bundle size might be different from `next build` with webpack. This will be improved as we work towards stability.
+- This build is without disk caching; subsequent builds will become faster when disk caching becomes available.
+- When comparing output to webpack builds, make sure to first clear the Next.js cache by deleting the `.next` directory.
+
+Provide feedback for Turbopack builds at https://github.com/vercel/next.js/discussions/77721
+
+> Build error occurred
+[Error [TurbopackInternalError]: Failed to write app endpoint /api/invoice/send/route
+
+Caused by:
+- Panic in AppEndpoint::output: Some("called `Option::unwrap()` on a `None` value")
+
+Debug info:
+- Execution of TaskId { id: 2147483650 } transient failed
+- Execution of get_all_written_entrypoints_with_issues_operation failed
+- Execution of EntrypointsOperation::new failed
+- Execution of all_entrypoints_write_to_disk_operation failed
+- Execution of Project::emit_all_output_assets failed
+- Execution of all_assets_from_entries_operation failed
+- Execution of output_assets_operation failed
+- Execution of <AppEndpoint as Endpoint>::output failed
+- Failed to write app endpoint /api/invoice/send/route
+- Panic in AppEndpoint::output: Some("called `Option::unwrap()` on a `None` value")] {
+  type: 'TurbopackInternalError'
+}

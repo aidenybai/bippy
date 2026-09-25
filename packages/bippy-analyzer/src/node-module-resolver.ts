@@ -2,6 +2,7 @@ import { createRequire, isBuiltin } from "node:module";
 import { isAbsolute } from "node:path";
 import { pathToFileURL } from "node:url";
 import { moduleResolve } from "import-meta-resolve";
+import { getResolutionError } from "./resolution-error.js";
 import type { ModuleResolution } from "./module-resolver.js";
 
 interface NodeEsmResolverOptions {
@@ -46,7 +47,7 @@ export const createNodeModuleResolver = (
         return {
           kind: "unresolved",
           specifier,
-          error: error instanceof Error ? error.message : String(error),
+          error: getResolutionError(error),
         };
       }
     },

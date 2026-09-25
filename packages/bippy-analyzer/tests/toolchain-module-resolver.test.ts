@@ -24,7 +24,10 @@ beforeAll(async () => {
       {
         name: "resolver-test",
         enforce: "pre",
-        resolveId: (source) => {
+        resolveId: (source, _importer, options) => {
+          if (source === "plugin:context" && options.isEntry && options.custom?.fixture?.enabled)
+            return "\0context";
+          if (source === "plugin:builtin-name") return { id: "node:fs", external: false };
           if (source === "virtual:fixture") return "\0fixture?raw#part";
           if (source === "external:fixture")
             return { id: "https://example.com/module.js", external: true };
@@ -63,6 +66,28 @@ it("keeps client and SSR builtin decisions distinct", async () => {
   expect(
     await createViteModuleResolver(server.environments.ssr).resolve("node:fs", project.importer),
   ).toEqual({ kind: "builtin", id: "node:fs" });
+});
+
+it("forwards entry and custom resolution options", async () => {
+  const resolver = createViteModuleResolver(server.environments.client);
+  expect(
+    await resolver.resolve("plugin:context", project.importer, {
+      isEntry: true,
+      custom: { fixture: { enabled: true } },
+    }),
+  ).toEqual({ kind: "virtual", id: "\0context" });
+  expect(await resolver.resolve("plugin:context", project.importer)).toMatchObject({
+    kind: "unresolved",
+  });
+});
+
+it("does not turn a plugin-owned builtin-shaped ID into a native builtin", async () => {
+  expect(
+    await createViteModuleResolver(server.environments.client).resolve(
+      "plugin:builtin-name",
+      project.importer,
+    ),
+  ).toEqual({ kind: "virtual", id: "node:fs" });
 });
 
 it("preserves plugin failures and unresolved imports", async () => {

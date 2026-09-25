@@ -69,11 +69,11 @@ it.each([
 });
 
 it.each(["fs", "node:fs", "node:test"])("classifies %s without loading it", (specifier) => {
-  for (const environment of ["client", "server"] satisfies Array<"client" | "server">)
-    expect(resolver.resolve(specifier, project.importer, "esm", environment)).toEqual({
-      kind: "builtin",
-      id: specifier.startsWith("node:") ? specifier : `node:${specifier}`,
-    });
+  expect(resolver.resolve(specifier, project.importer, "esm", "server")).toEqual({
+    kind: "builtin",
+    id: specifier.startsWith("node:") ? specifier : `node:${specifier}`,
+  });
+  expect(resolver.resolve(specifier, project.importer, "esm", "client").kind).toBe("unresolved");
 });
 
 it("requires an absolute importing file rather than relying on process.cwd", () => {
