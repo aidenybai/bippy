@@ -1,5 +1,7 @@
 # Project resolver: Next configuration execution
 
+The [subsequent discovery audit](project-discovery-audit.md) probes both platforms for every request, without overwriting this single-reference comparison or its failures.
+
 Invoify's wrapped configuration previously blocked all 584 requests. With authorized Next configuration execution, **584/584 now match** its installed Next client webpack resolver. The facade now matches **2,278/2,299 requests** across the same ten pinned repositories, up from 1,694 in the [static-only audit](project-audit.md).
 
 Seven contexts match completely. The primary audit still exits **1**: nine requests remain unresolved in browser context, and twelve source lookups differ from Rollup's packaging decisions. Neither category is relabeled as a pass.

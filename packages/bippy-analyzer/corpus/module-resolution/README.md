@@ -1,6 +1,6 @@
 # Ten-repository module-resolution audit
 
-**Project-facing API:** the [latest `createResolver` audit](project-execution-audit.md) matches 2,278/2,299 requests after executing Next configuration, with separate positive checks for nine Node contexts and twelve Zustand source targets. The [static-only baseline](project-audit.md) matched 1,694/2,299. The results below remain the earlier explicit-policy and native-adapter audit; they are separate evidence.
+**Project-facing API:** the [latest dual-context discovery audit](project-discovery-audit.md) records both browser and Node outcomes for all 2,299 requests: 2,215 resolve in both contexts and 84 are Node-only. Its unchanged primary native comparison matches 2,278/2,299; discovery does not turn browser failures or Rollup policy differences into native passes. The [configuration-execution audit](project-execution-audit.md) and [static-only baseline](project-audit.md) remain preserved. The results below are the earlier explicit-policy and native-adapter audit.
 
 The audit compares 2,299 literal request occurrences in 579 selected source files. Seven of ten resolver contexts match every observed request. The other contexts retain nine unresolved requests and twelve Rollup external-policy differences. These are not ten passing applications.
 
