@@ -81,6 +81,9 @@ importers:
       oxc-resolver:
         specifier: 11.24.2
         version: 11.24.2
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -106,9 +109,6 @@ importers:
       tsx:
         specifier: ^4.21.0
         version: 4.23.12
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
       vite-plus:
         specifier: latest
         version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)

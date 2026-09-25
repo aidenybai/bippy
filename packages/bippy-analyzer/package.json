@@ -11,7 +11,8 @@
   "dependencies": {
     "@engine262/engine262": "0.0.1-a600354c2954300d62d108bf9ed3459a8e4a289b",
     "import-meta-resolve": "4.2.0",
-    "oxc-resolver": "11.24.2"
+    "oxc-resolver": "11.24.2",
+    "typescript": "^5.9.3"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -22,7 +23,6 @@
     "rollup": "4.62.4",
     "test262-harness": "10.0.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
     "vite-plus": "latest"
   },
   "engines": {

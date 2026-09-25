@@ -25,7 +25,9 @@ For JSON output, add `--reporter=json` and use pnpm's `--silent` option. To requ
 
 ## Module resolution
 
-Resolution is separate from loading and execution. Choose an explicit Oxc policy, Node ESM/CommonJS semantics, or a supplied Vite, webpack, Rollup or Rolldown resolver. No Vite defaults are imposed on other frameworks.
+Use `createResolver({ rootDirectory, platform, mode })` from `src/index.ts` for project-aware source lookup. It discovers TypeScript/JavaScript configuration and supported static toolchain aliases, then resolves through Oxc. No browser extension, Bippy bundler plugin, or application configuration changes are required. See [project-aware resolution](docs/project-resolution.md) for the API, configuration diagnostics and unsupported cases.
+
+Resolution is separate from loading and execution. Explicit Oxc policies and native Node/toolchain adapters remain available for lower-level use and differential tests; callers of the project-facing API do not choose between those adapters.
 
 See [module resolution](docs/module-resolution.md) for examples, prior research, validated behavior, and limits. The [ten-repository audit](corpus/module-resolution/README.md) retains successful resolutions, policy differences and native build failures. [Toolchain research](docs/toolchain-resolution-research.md) explains configuration discovery and backend-specific behavior. Native Next/Turbopack fixtures and compile-mode builds are tested; complete integration is **not** implemented.
 
