@@ -5,7 +5,7 @@ description: Write or revise PR descriptions using the writing guidelines and co
 
 # PR writing
 
-Read [the writing guidelines](references/writing-guidelines.md) before writing. They are bundled here; no other skill is required.
+Fetch and read [the writing guidelines](https://aidenybai.com/w) before writing.
 
 Read the relevant diff, implementation, and validation results. For a stacked PR, compare against its parent branch. Explain only what this PR changes. If you only have supplied prose, preserve its meaning without claiming you checked the code.
 
@@ -28,7 +28,7 @@ Keep short changes short. Do not add a tutorial or code example when a paragraph
 
 [OpenCode Reloaded](https://anoma.ly/notes/opencode-reloaded/) explains a design through one concrete example. It shows how catalog mutations fail during refresh, explains the cause, and demonstrates rebuilding from ordered transformations. It introduces the `State` abstraction after the reader understands the mechanism.
 
-Borrow that progression: behavior, example, cause, fix, result, then abstraction if needed. Do not invent failed approaches to tell a story. Do not imitate the essay’s jokes, profanity, rhetorical questions, or distinctive wording. The bundled guidelines take precedence over the reference’s voice.
+Borrow that progression: behavior, example, cause, fix, result, then abstraction if needed. Do not invent failed approaches to tell a story. Do not imitate the essay’s jokes, profanity, rhetorical questions, or distinctive wording. The writing guidelines take precedence over the reference’s voice.
 
 ## Check the draft
 
