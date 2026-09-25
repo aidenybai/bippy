@@ -9,9 +9,7 @@ Fetch and read [the writing guidelines](https://aidenybai.com/w) before writing.
 
 Read the relevant diff, implementation, and validation results. For a stacked PR, compare against its parent branch. Explain only what this PR changes. If you only have supplied prose, preserve its meaning without claiming you checked the code.
 
-## Follow the tldr.md style
-
-Use the approach from Bippy’s “How Bippy analyzes React source”:
+## Explain through examples
 
 - State what changes and why it matters.
 - Show a small example, its input, and its expected result before introducing architecture terms.
