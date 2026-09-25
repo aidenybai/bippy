@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { dirname, isAbsolute, join, relative, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 import {
   createModuleResolver,
   type ModuleResolution,
@@ -9,6 +9,7 @@ import { ResolverConfigurationError } from "./errors.js";
 import { getResolutionError } from "./resolution-error.js";
 import { readResolverConfig } from "./utils/read-resolver-config.js";
 import { resolveAliases } from "./utils/resolve-aliases.js";
+import { loadNextConfig, type NextResolverConfig } from "./utils/load-next-config.js";
 
 export { AnalyzerError, ResolverConfigurationError } from "./errors.js";
 export type { ModuleResolution } from "./module-resolver.js";
@@ -21,15 +22,20 @@ export interface ProjectResolverOptions extends Omit<
   platform: "browser" | "node";
   mode?: "development" | "production";
   configFile?: string | false;
+  allowConfigExecution?: boolean;
+  configTimeoutMs?: number;
 }
 
 export interface ResolutionRequest {
   kind?: "import" | "require";
+  platform?: "browser" | "node";
 }
 
 export interface ProjectConfiguration {
   files: string[];
   diagnostics: string[];
+  nextVersion?: string;
+  configurationOutput?: string;
   aliasOrder: string[];
   aliasDirectory?: string;
   literalAliases?: boolean;
@@ -47,12 +53,17 @@ export const createResolver = (options: ProjectResolverOptions) => {
     platform,
     mode = "production",
     configFile,
+    allowConfigExecution = false,
+    configTimeoutMs = 10000,
     ...overrides
   } = structuredClone(options);
   if (!isAbsolute(rootDirectory))
     throw new ResolverConfigurationError("The project root must be an absolute path");
   if (configFile && !isAbsolute(configFile))
     throw new ResolverConfigurationError("The configuration file must be an absolute path");
+  if (!Number.isSafeInteger(configTimeoutMs) || configTimeoutMs <= 0)
+    throw new ResolverConfigurationError("Configuration timeout must be a positive safe integer");
+  const nextConfigurations = new Map<string, NextResolverConfig | ResolverConfigurationError>();
   const configurations = new Map<string, ProjectConfiguration>();
   const resolvers = new Map<string, ReturnType<typeof createModuleResolver>>();
   const getConfiguration = (
@@ -62,7 +73,8 @@ export const createResolver = (options: ProjectResolverOptions) => {
     if (!isAbsolute(fromFile))
       throw new ResolverConfigurationError("The importing file must be an absolute path");
     const kind = request.kind ?? "import";
-    const key = JSON.stringify([dirname(fromFile), kind]);
+    const selectedPlatform = request.platform ?? platform;
+    const key = JSON.stringify([dirname(fromFile), kind, selectedPlatform]);
     const cached = configurations.get(key);
     if (cached) return structuredClone(cached);
     let tsconfigFile: string | undefined;
@@ -89,7 +101,34 @@ export const createResolver = (options: ProjectResolverOptions) => {
       if (parent === directory) break;
       directory = parent;
     }
-    const discovered = toolchainFile ? readResolverConfig(toolchainFile, rootDirectory) : {};
+    let nextConfiguration: NextResolverConfig | undefined;
+    if (
+      allowConfigExecution === true &&
+      toolchainFile &&
+      basename(toolchainFile).startsWith("next.config.")
+    ) {
+      const nextKey = JSON.stringify([toolchainFile, selectedPlatform, mode]);
+      let cachedNext = nextConfigurations.get(nextKey);
+      if (!cachedNext) {
+        try {
+          cachedNext = loadNextConfig(
+            { configFile: toolchainFile, platform: selectedPlatform, mode },
+            configTimeoutMs,
+          );
+        } catch (error) {
+          cachedNext =
+            error instanceof ResolverConfigurationError
+              ? error
+              : new ResolverConfigurationError("Cannot load Next configuration", error);
+        }
+        nextConfigurations.set(nextKey, cachedNext);
+      }
+      if (cachedNext instanceof ResolverConfigurationError) throw cachedNext;
+      nextConfiguration = cachedNext;
+    }
+    const discovered =
+      nextConfiguration?.[kind] ??
+      (toolchainFile ? readResolverConfig(toolchainFile, rootDirectory) : {});
     const {
       diagnostics = [],
       aliasOrder = [],
@@ -102,6 +141,8 @@ export const createResolver = (options: ProjectResolverOptions) => {
     const configuration: ProjectConfiguration = {
       files: [toolchainFile, tsconfigFile].filter((file): file is string => file !== undefined),
       diagnostics,
+      nextVersion: nextConfiguration?.version,
+      configurationOutput: nextConfiguration?.output,
       aliasDirectory,
       literalAliases,
       recursiveAliases,
@@ -114,9 +155,11 @@ export const createResolver = (options: ProjectResolverOptions) => {
           ".mjs": [".mjs", ".mts"],
           ".cjs": [".cjs", ".cts"],
         },
-        mainFields: platform === "browser" ? ["browser", "module", "main"] : ["module", "main"],
-        aliasFields: platform === "browser" ? ["browser"] : [],
-        conditionNames: [platform, mode, kind],
+        mainFields:
+          selectedPlatform === "browser" ? ["browser", "module", "main"] : ["module", "main"],
+        aliasFields: selectedPlatform === "browser" ? ["browser"] : [],
+        conditionNames: [selectedPlatform, mode, kind],
+        builtinModules: selectedPlatform === "node",
         tsconfig: tsconfigFile ? { configFile: tsconfigFile, references: "auto" } : undefined,
         ...discoveredPolicy,
         ...overrides,
@@ -172,6 +215,7 @@ export const createResolver = (options: ProjectResolverOptions) => {
     },
     clearCache: () => {
       configurations.clear();
+      nextConfigurations.clear();
       for (const resolver of resolvers.values()) resolver.clearCache();
       resolvers.clear();
     },

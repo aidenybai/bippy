@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readlinkSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { createRequire, isBuiltin } from "node:module";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { expect, it } from "vite-plus/test";
@@ -25,10 +25,17 @@ interface Outcome {
   id?: string;
   error?: string;
 }
+interface SourceCheck {
+  scope: string;
+  native: Outcome;
+  candidate: Outcome;
+  matches: boolean;
+}
 interface Row extends Request {
   native: Outcome;
   core: Outcome;
   matches: boolean;
+  sourceCheck?: SourceCheck;
 }
 interface Project {
   id: string;
@@ -71,6 +78,7 @@ const projectResolver = createResolver({
   rootDirectory: directory,
   platform: ["vite", "next"].includes(project.toolchain) ? "browser" : "node",
   mode: ["vite", "next"].includes(project.toolchain) ? "development" : "production",
+  allowConfigExecution: true,
 });
 const getSourceHash = () => {
   const hash = createHash("sha256");
@@ -197,6 +205,20 @@ const add = (request: Request, native: Outcome, resolveCore: () => Outcome) => {
       getIdentity(native) === getIdentity(core),
   });
 };
+const getNativeNodeOutcomes = (requests: Request[]): Outcome[] =>
+  JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        "--experimental-import-meta-resolve",
+        "--input-type=module",
+        "--eval",
+        `import {createRequire,isBuiltin} from 'node:module'; import {pathToFileURL} from 'node:url'; import {statSync} from 'node:fs';
+    console.log(JSON.stringify(${JSON.stringify(requests)}.map(request=>{try { const id=request.kind==='commonjs'?createRequire(request.importer).resolve(request.specifier):import.meta.resolve(request.specifier,pathToFileURL(request.importer).href); if(isBuiltin(id)) return {kind:'builtin',id:id.startsWith('node:')?id:'node:'+id}; const url=request.kind==='commonjs'?pathToFileURL(id):new URL(id); if(!statSync(url).isFile()) throw new Error('Not a file'); return {kind:'file',id:url.href}; } catch(error){return {kind:'unresolved',error:error.message};}})));`,
+      ],
+      { encoding: "utf8", maxBuffer: 8 * 1024 * 1024, timeout: 10000 },
+    ),
+  );
 const sourceError = (error: unknown) =>
   error instanceof Error ? (error.stack ?? error.message) : String(error);
 
@@ -286,21 +308,7 @@ it("compares real project import occurrences with its installed toolchain", asyn
       report.nativeVersion = process.version;
       const esm = createNodeModuleResolver({ kind: "esm" });
       const commonjs = createNodeModuleResolver({ kind: "commonjs" });
-      const native: Outcome[] = JSON.parse(
-        execFileSync(
-          process.execPath,
-          [
-            "--experimental-import-meta-resolve",
-            "--input-type=module",
-            "--eval",
-            `
-        import {createRequire,isBuiltin} from 'node:module'; import {pathToFileURL} from 'node:url'; import {statSync} from 'node:fs';
-        console.log(JSON.stringify(${JSON.stringify(requests)}.map(request=>{try { const id=request.kind==='commonjs'?createRequire(request.importer).resolve(request.specifier):import.meta.resolve(request.specifier,pathToFileURL(request.importer).href); if(isBuiltin(id)) return {kind:'builtin',id:id.startsWith('node:')?id:'node:'+id}; const url=request.kind==='commonjs'?pathToFileURL(id):new URL(id); if(!statSync(url).isFile()) throw new Error('Not a file'); return {kind:'file',id:url.href}; } catch(error){return {kind:'unresolved',error:error.message};}})));
-      `,
-          ],
-          { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 },
-        ),
-      );
+      const native = getNativeNodeOutcomes(requests);
       requests.forEach((request, index) =>
         add(request, native[index], () =>
           (request.kind === "commonjs" ? commonjs : esm).resolve(
@@ -442,6 +450,52 @@ it("compares real project import occurrences with its installed toolchain", asyn
       } finally {
         await bundle.close();
       }
+    }
+    if (report.implementation === "project") {
+      const selected = report.rows.filter(
+        (row) =>
+          row.native.kind === "external" ||
+          (row.native.kind === "unresolved" && isBuiltin(row.specifier)),
+      );
+      const sourceRequests = selected.map((row) => ({
+        specifier: row.specifier,
+        importer: join(directory, row.importer),
+        kind: row.kind,
+        line: row.line,
+      }));
+      const nativeSources = sourceRequests.length ? getNativeNodeOutcomes(sourceRequests) : [];
+      selected.forEach((row, index) => {
+        const request = sourceRequests[index];
+        const kind = request.kind === "commonjs" ? "require" : "import";
+        const candidate = projectResolver.resolve(request.specifier, request.importer, {
+          kind,
+          platform: "node",
+        });
+        const native = nativeSources[index];
+        row.sourceCheck = {
+          scope:
+            row.native.kind === "external"
+              ? "Node source lookup; not Rollup packaging parity"
+              : "Explicit Node context; not automatic source-layer assignment",
+          native,
+          candidate,
+          matches:
+            native.kind !== "unresolved" &&
+            native.kind === candidate.kind &&
+            getIdentity(native) === getIdentity(candidate),
+        };
+        const key = `${relative(directory, dirname(request.importer))}:node:${kind}`;
+        if (!report.configurations[key]) {
+          try {
+            report.configurations[key] = projectResolver.getConfiguration(request.importer, {
+              kind,
+              platform: "node",
+            });
+          } catch (error) {
+            report.configurations[key] = { error: sourceError(error) };
+          }
+        }
+      });
     }
     report.status =
       report.rows.some((row) => !row.matches || row.native.kind === "unresolved") ||

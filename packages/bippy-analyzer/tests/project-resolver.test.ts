@@ -172,13 +172,30 @@ describe("project resolver", () => {
     project.write("src/server.ts", "export {};");
     const resolver = createResolver({ rootDirectory: project.directory, platform: "browser" });
     expect(resolver.resolve("#value", project.importer)).toEqual({ kind: "file", id: target });
-    expect(resolver.resolve("node:fs", project.importer)).toEqual({
+    expect(resolver.resolve("node:fs", project.importer).kind).toBe("unresolved");
+    expect(resolver.resolve("node:fs", project.importer, { platform: "node" })).toEqual({
       kind: "builtin",
       id: "node:fs",
     });
     expect(resolver.resolve("./server.ts", project.importer)).toEqual({
       kind: "ignored",
       specifier: "./server.ts",
+    });
+  });
+
+  it("allows explicit browser polyfills without enabling Node builtins", () => {
+    const project = createResolverProject();
+    const shim = project.write("src/fs-shim.ts", "export const readFile = () => 'fixture';");
+    const resolver = createResolver({
+      rootDirectory: project.directory,
+      platform: "browser",
+      alias: { "node:fs": [shim] },
+    });
+    expect(resolver.resolve("node:fs", project.importer)).toEqual({ kind: "file", id: shim });
+    expect(resolver.resolve("node:child_process", project.importer).kind).toBe("unresolved");
+    expect(resolver.resolve("node:child_process", project.importer, { platform: "node" })).toEqual({
+      kind: "builtin",
+      id: "node:child_process",
     });
   });
 

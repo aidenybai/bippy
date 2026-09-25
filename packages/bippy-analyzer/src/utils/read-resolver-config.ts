@@ -10,7 +10,7 @@ interface ConfigImport {
   name: string;
 }
 
-export interface ResolverConfig {
+export interface ResolverConfig extends Partial<ModuleResolverOptions> {
   diagnostics?: string[];
   aliasOrder?: string[];
   aliasDirectory?: string;

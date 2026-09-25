@@ -34,15 +34,56 @@ Ordered alias rewriting lives in the project layer because Oxc’s N-API alias m
 
 Explicit resolver options override collected values. For a dynamic configuration whose selected policy is already known, pass `configFile: false` and its aliases/options directly. This disables toolchain-config discovery, not TypeScript-config discovery.
 
+## Executing Next webpack configuration
+
+Next wrappers and `webpack` callbacks cannot be recovered from an object-literal reader. Opt in to running the project's installed Next configuration loader:
+
+```ts
+const resolver = createResolver({
+  rootDirectory: "/workspace/app",
+  platform: "browser",
+  mode: "development",
+  allowConfigExecution: true,
+  configTimeoutMs: 10_000,
+});
+
+resolver.resolve("next-intl/config", "/workspace/app/app/page.tsx");
+```
+
+A child process loads Next, materializes the selected client or Node-server webpack configuration, and returns its filesystem settings. Wrappers and callbacks execute; application entry modules are not compiled or evaluated. Oxc remains the lookup engine. This is not a native webpack resolution retry or a Bippy plugin installed in the application.
+
+Execution is disabled by default and currently applies only to discovered Next configurations. Opting in selects Next's webpack filesystem policy, not Turbopack; it does not infer the bundler from package scripts. Each configuration/platform/mode is loaded once, including both import and require policies. Failures are cached too; `clearCache()` starts fresh processes on subsequent requests. `getConfiguration()` exposes `nextVersion`, captured `configurationOutput`, and limitations in `diagnostics`.
+
+The worker has a ten-second default deadline, a 512 MiB JavaScript heap limit, bounded output, and a fresh environment containing the selected `NODE_ENV`, temporary `HOME`, and tooling limits. It does not inherit host credentials or `NODE_OPTIONS`. Next can still read the project's `.env` files. **A child process is not a security sandbox:** untrusted configuration must run inside an outer filesystem/network/resource sandbox. The corpus uses its existing isolated, network-disabled containers.
+
+This extracts filesystem policy, not a whole Next build. Compiler hooks, loaders, externalization, RSC and edge layers are not represented. Callbacks receive synthetic build/preview metadata, so build-identity-dependent behavior is not validated. Unsupported `resolve.plugins` entries and modified standard path-plugin settings fail instead of being discarded. Missing optional peers stay unresolved even where Next would ignore them. No application execution falls back to Node.
+
+## Runtime context
+
+Browser requests no longer classify Node builtins as available. An explicitly configured polyfill can still resolve to a file. Use an explicit Node context for a Node request:
+
+```ts
+resolver.resolve("node:fs", "/workspace/app/lib/read-file.ts");
+resolver.resolve("node:fs", "/workspace/app/lib/read-file.ts", { platform: "node" });
+```
+
+The first request is unresolved under the default browser policy; the second identifies `node:fs` as a builtin. This does not infer a file's Next layer from its imports. Automatic graph/layer assignment remains separate, and engine262 still needs an explicit host implementation to use a builtin.
+
+## Library source versus distribution builds
+
+Resolving Zustand's source import `./vanilla.ts` means locating `src/vanilla.ts`. Its Rollup publishing build rewrites that import to the external package identity `zustand/vanilla`. Those are different contracts, not two candidate answers to the same source lookup.
+
+For source analysis, follow the original import without reading Rollup's packaging recipe. For an installed dependency, follow its shipped package exports and imports. Reproducing a library's distribution build would instead require its build configuration and externalization rules; it is not claimed by this API.
+
 ## Scope
 
 This is source-file discovery, not exact Node ESM loading or complete framework execution. Default extension search includes JavaScript and TypeScript, and explicit JavaScript extensions can select TypeScript source. Declarations are rejected as executable inputs. Builtins, ignored paths and unresolved requests remain distinct outcomes.
 
 Conditions stay separated by browser/Node, development/production and import/require. A failed Node lookup is not retried using browser conditions. Package exports, imports and browser maps are handled by Oxc under that selected policy.
 
-Configuration functions, mutations, regex aliases, custom alias resolvers and unsupported resolve options report configuration errors rather than executing code or dropping the option. Plugins are not executed: when a config declares plugins, `getConfiguration` reports that their hooks are not represented. Static file matches alone do not prove equivalence to those hooks. Virtual modules, framework-generated aliases, transforms, native addons, custom loaders, Yarn PnP and complete Next layers are not established by this implementation.
+In the default static mode, configuration functions, mutations, regex aliases, custom alias resolvers and unsupported resolve options report configuration errors rather than executing code or dropping the option. Static discovery does not execute plugins: when a config declares plugins, `getConfiguration` reports that their hooks are not represented. Static file matches alone do not prove equivalence to those hooks. Virtual modules, framework-generated aliases, transforms, native addons, custom loaders, Yarn PnP and complete Next layers are not established by this implementation.
 
-The existing native adapters remain differential-test tools and lower-level integrations, not alternative APIs an application must install. A [separate ten-repository audit of this facade](../corpus/module-resolution/project-audit.md) matched 1,694 of 2,299 requests. Six contexts matched completely. Invoify’s dynamic configuration blocked 584 requests; nine Next client/builtin cases and twelve Zustand externalization cases also differed. These failures remain recorded separately from the earlier lower-level audit.
+The existing native adapters remain differential-test tools and lower-level integrations, not alternative APIs an application must install. The [original static-only ten-repository audit of this facade](../corpus/module-resolution/project-audit.md) matched 1,694 of 2,299 requests. Six contexts matched completely. Invoify’s dynamic configuration blocked 584 requests; nine Next client/builtin cases and twelve Zustand externalization cases also differed. These failures remain recorded separately from the earlier lower-level audit.
 
 ## Knip reference
 
