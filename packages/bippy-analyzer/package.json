@@ -1,0 +1,24 @@
+{
+  "name": "bippy-analyzer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vp test",
+    "setup:test262": "tsx scripts/setup-test262.ts",
+    "test:test262": "pnpm --silent setup:test262 && test262-harness --host-type=engine262 --host-path=engine262 --host-args=--no-inspect --test262-dir=.test262 --error-for-failures=true",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@engine262/engine262": "0.0.1-a600354c2954300d62d108bf9ed3459a8e4a289b"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "test262-harness": "10.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite-plus": "latest"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}
