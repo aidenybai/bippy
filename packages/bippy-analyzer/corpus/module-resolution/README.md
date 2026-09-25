@@ -1,5 +1,7 @@
 # Ten-repository module-resolution audit
 
+**New project-facing API:** a [separate audit of `createResolver`](project-audit.md) matched 1,694 of the same 2,299 requests. Invoify’s wrapped configuration is an additional unsupported case. The results below remain the earlier explicit-policy and native-adapter audit; they must not be attributed to the new discovery API.
+
 The audit compares 2,299 literal request occurrences in 579 selected source files. Seven of ten resolver contexts match every observed request. The other contexts retain nine unresolved requests and twelve Rollup external-policy differences. These are not ten passing applications.
 
 [The manifest](manifest.json) pins all ten repository revisions. [Results](results.json) record versions, source hashes, commands, installation attempts and outcomes. [Request records](requests.jsonl) retain every native/core comparison, including failures. Paths inside the containers start with `/project`.

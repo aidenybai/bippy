@@ -15,6 +15,9 @@ import { getCorpusRoot, getProjects, image, type CorpusProject } from "./context
 const root = getCorpusRoot();
 const label = process.argv[3] ?? "audit";
 const installation = process.argv[4] ?? "install";
+const implementation = process.argv[5] ?? "core";
+if (!["core", "project"].includes(implementation))
+  throw new Error("Resolver implementation must be core or project");
 if (![label, installation].every((value) => /^[a-z0-9-]+$/.test(value)))
   throw new Error("Labels must use lowercase letters, digits, or hyphens");
 const sourceHash = (directory: string, files: string[]) => {
@@ -99,6 +102,8 @@ const run = async (project: CorpusProject) => {
     "HOME=/tmp/home",
     "--env",
     `BIPPY_RESOLVER_REPORT_SUFFIX=${label}`,
+    "--env",
+    `BIPPY_RESOLVER_IMPLEMENTATION=${implementation}`,
     "--env",
     "NEXT_TELEMETRY_DISABLED=1",
     "--env",

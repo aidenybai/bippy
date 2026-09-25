@@ -2,11 +2,12 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, relative } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { expect, it } from "vite-plus/test";
 import ts from "typescript";
 import { createModuleResolver } from "../../src/module-resolver.js";
+import { createResolver, type ProjectConfiguration } from "../../src/core.js";
 import { createNodeModuleResolver } from "../../src/node-module-resolver.js";
 import { createViteModuleResolver } from "../../src/vite-module-resolver.js";
 import { createWebpackModuleResolver } from "../../src/webpack-module-resolver.js";
@@ -53,6 +54,8 @@ const report: {
   nativeVersion?: string;
   build?: object;
   unsupportedPolicy?: string[];
+  implementation: string;
+  configurations: Record<string, ProjectConfiguration | { error: string }>;
 } = {
   project,
   node: process.version,
@@ -61,7 +64,14 @@ const report: {
   dynamicUnknown: 0,
   rows: [],
   status: "started",
+  implementation: process.env.BIPPY_RESOLVER_IMPLEMENTATION ?? "core",
+  configurations: {},
 };
+const projectResolver = createResolver({
+  rootDirectory: directory,
+  platform: ["vite", "next"].includes(project.toolchain) ? "browser" : "node",
+  mode: ["vite", "next"].includes(project.toolchain) ? "development" : "production",
+});
 const getSourceHash = () => {
   const hash = createHash("sha256");
   for (const file of tracked)
@@ -151,14 +161,42 @@ for (const file of tracked.filter(
   visit(parsed);
 }
 report.sourceHash = digest.digest("hex");
-const add = (request: Request, native: Outcome, core: Outcome) =>
+const getIdentity = (outcome: Outcome) => {
+  if (outcome.kind === "file" && outcome.id?.startsWith("file:")) {
+    const url = new URL(outcome.id);
+    return fileURLToPath(url) + url.search + url.hash;
+  }
+  return outcome.id;
+};
+const add = (request: Request, native: Outcome, resolveCore: () => Outcome) => {
+  const kind = request.kind === "commonjs" ? "require" : "import";
+  if (report.implementation === "project") {
+    const key = `${relative(directory, dirname(request.importer))}:${kind}`;
+    if (!report.configurations[key]) {
+      try {
+        report.configurations[key] = projectResolver.getConfiguration(request.importer, { kind });
+      } catch (error) {
+        report.configurations[key] = {
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
+  }
+  const core =
+    report.implementation === "project"
+      ? projectResolver.resolve(request.specifier, request.importer, { kind })
+      : resolveCore();
   report.rows.push({
     ...request,
     importer: relative(directory, request.importer),
     native,
     core,
-    matches: native.kind !== "unresolved" && native.kind === core.kind && native.id === core.id,
+    matches:
+      native.kind !== "unresolved" &&
+      native.kind === core.kind &&
+      getIdentity(native) === getIdentity(core),
   });
+};
 const sourceError = (error: unknown) =>
   error instanceof Error ? (error.stack ?? error.message) : String(error);
 
@@ -230,7 +268,7 @@ it("compares real project import occurrences with its installed toolchain", asyn
             await adapter.resolve(request.specifier, request.importer, {
               custom: { "node-resolve": { isRequire: request.kind === "commonjs" } },
             }),
-            cores[request.kind].resolve(request.specifier, request.importer),
+            () => cores[request.kind].resolve(request.specifier, request.importer),
           );
       } finally {
         await server.close();
@@ -264,9 +302,7 @@ it("compares real project import occurrences with its installed toolchain", asyn
         ),
       );
       requests.forEach((request, index) =>
-        add(
-          request,
-          native[index],
+        add(request, native[index], () =>
           (request.kind === "commonjs" ? commonjs : esm).resolve(
             request.specifier,
             request.importer,
@@ -339,9 +375,7 @@ it("compares real project import occurrences with its installed toolchain", asyn
           for (const request of requests.filter(
             (request) => (request.kind === "commonjs" ? "commonjs" : "esm") === kind,
           ))
-            add(
-              request,
-              await adapter.resolve(request.specifier, request.importer),
+            add(request, await adapter.resolve(request.specifier, request.importer), () =>
               core.resolve(request.specifier, request.importer),
             );
         }
@@ -387,7 +421,7 @@ it("compares real project import occurrences with its installed toolchain", asyn
                   result
                     ? { kind: result.external ? "external" : "file", id: result.id }
                     : { kind: "unresolved" },
-                  core.resolve(request.specifier, request.importer),
+                  () => core.resolve(request.specifier, request.importer),
                 );
               }
             },

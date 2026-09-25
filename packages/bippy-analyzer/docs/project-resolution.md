@@ -42,7 +42,7 @@ Conditions stay separated by browser/Node, development/production and import/req
 
 Configuration functions, mutations, regex aliases, custom alias resolvers and unsupported resolve options report configuration errors rather than executing code or dropping the option. Plugins are not executed: when a config declares plugins, `getConfiguration` reports that their hooks are not represented. Static file matches alone do not prove equivalence to those hooks. Virtual modules, framework-generated aliases, transforms, native addons, custom loaders, Yarn PnP and complete Next layers are not established by this implementation.
 
-The existing native adapters remain differential-test tools and lower-level integrations, not alternative APIs an application must install. The earlier ten-repository audit validates those lower-level paths; it has not yet been rerun through this new discovery facade.
+The existing native adapters remain differential-test tools and lower-level integrations, not alternative APIs an application must install. A [separate ten-repository audit of this facade](../corpus/module-resolution/project-audit.md) matched 1,694 of 2,299 requests. Six contexts matched completely. Invoify’s dynamic configuration blocked 584 requests; nine Next client/builtin cases and twelve Zustand externalization cases also differed. These failures remain recorded separately from the earlier lower-level audit.
 
 ## Knip reference
 
