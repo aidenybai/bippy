@@ -1,0 +1,77 @@
+diff --git a/src/abstract-ops/arguments-operations.mts b/src/abstract-ops/arguments-operations.mts
+index fe296d1..371b425 100644
+--- a/src/abstract-ops/arguments-operations.mts
++++ b/src/abstract-ops/arguments-operations.mts
+@@ -12,0 +13 @@ import {
++  OrdinaryOwnPropertyKeys,
+@@ -34,0 +36,3 @@ import {
++  type PropertyKeyValue,
++  type Realm,
++  PropertyKeyMap,
+@@ -164 +168 @@ export function CreateUnmappedArgumentsObject(argumentsList: Arguments) {
+-function MakeArgGetter(name: string, env: EnvironmentRecord) {
++function MakeArgGetter(name: string, env: EnvironmentRecord, realm: Realm) {
+@@ -169 +173 @@ function MakeArgGetter(name: string, env: EnvironmentRecord) {
+-  const getter = X(CreateBuiltinFunction(getterClosure, 0, Value(''), ['Name', 'Env']));
++  const getter = X(CreateBuiltinFunction(getterClosure, 0, Value(''), ['Name', 'Env'], realm));
+@@ -176 +180 @@ function MakeArgGetter(name: string, env: EnvironmentRecord) {
+-function MakeArgSetter(name: string, env: EnvironmentRecord) {
++function MakeArgSetter(name: string, env: EnvironmentRecord, realm: Realm) {
+@@ -181 +185 @@ function MakeArgSetter(name: string, env: EnvironmentRecord) {
+-  const setter = X(CreateBuiltinFunction(setterClosure, 1, Value(''), ['Name', 'Env']));
++  const setter = X(CreateBuiltinFunction(setterClosure, 1, Value(''), ['Name', 'Env'], realm));
+@@ -214,0 +219,2 @@ export function CreateMappedArgumentsObject(func: ECMAScriptFunctionObject, form
++  const realm = surroundingAgent.currentRealmRecord;
++  const pendingMappings = new PropertyKeyMap<string>();
+@@ -222,8 +228,13 @@ export function CreateMappedArgumentsObject(func: ECMAScriptFunctionObject, form
+-        const g = MakeArgGetter(name, env);
+-        const p = MakeArgSetter(name, env);
+-        X(map.DefineOwnProperty(X(ToString(F(index))), Descriptor({
+-          Set: p,
+-          Get: g,
+-          Enumerable: false,
+-          Configurable: true,
+-        })));
++        const propertyKey = X(ToString(F(index)));
++        if (surroundingAgent.hostDefinedOptions.onDebugger) {
++          const getter = MakeArgGetter(name, env, realm);
++          const setter = MakeArgSetter(name, env, realm);
++          X(map.DefineOwnProperty(propertyKey, Descriptor({
++            Set: setter,
++            Get: getter,
++            Enumerable: false,
++            Configurable: true,
++          })));
++        } else {
++          pendingMappings.set(propertyKey, name);
++        }
+@@ -233,0 +245,29 @@ export function CreateMappedArgumentsObject(func: ECMAScriptFunctionObject, form
++  if (pendingMappings.size > 0) {
++    const initializeMapping = (propertyKey: PropertyKeyValue | string) => {
++      const name = pendingMappings.get(propertyKey);
++      if (name === undefined) return;
++      pendingMappings.delete(propertyKey);
++      map.properties.set(propertyKey, Descriptor({
++        Get: MakeArgGetter(name, env, realm),
++        Set: MakeArgSetter(name, env, realm),
++        Enumerable: false,
++        Configurable: true,
++      }));
++      if (pendingMappings.size === 0) {
++        map.GetOwnProperty = ObjectValue.prototype.GetOwnProperty;
++        map.OwnPropertyKeys = ObjectValue.prototype.OwnPropertyKeys;
++      }
++    };
++    const methods = {
++      * GetOwnProperty(propertyKey: PropertyKeyValue | string): PlainEvaluator<FullyPopulatedDescriptor | undefined> {
++        initializeMapping(propertyKey);
++        return OrdinaryGetOwnProperty(map, propertyKey);
++      },
++      * OwnPropertyKeys(): PlainEvaluator<PropertyKeyValue[]> {
++        for (const propertyKey of pendingMappings.keys()) initializeMapping(propertyKey);
++        return OrdinaryOwnPropertyKeys(map);
++      },
++    };
++    map.GetOwnProperty = methods.GetOwnProperty;
++    map.OwnPropertyKeys = methods.OwnPropertyKeys;
++  }

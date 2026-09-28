@@ -1,0 +1,52 @@
+{
+  "node": "v26.4.0",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "harnessVersion": "10.0.0",
+  "baselineCommit": "fc53c74f",
+  "baselineEngineSha256": "2eb90ebe3cf4d15f5a659fa2e73537530bfe7aad91e09e82a023dedcaecf4147",
+  "candidateEngineSha256": "56d555f298306c4c00042b2182e193f790d648242a339734e8a1b3a762f7cf01",
+  "patchHashes": {
+    "simple-parameters": "c39dd1aaa1159865764da8bfea097ae0de233917c5c9744bd8b95bd1c0148448",
+    "string-substr": "1eeb3e22877a6da3ab94a8891044a33f018ca64956cb1ea718807c30f55131ed",
+    "lazy-argument-accessors": "18fd934d0ba2f01a30f0a471c584b5ee27c19400b9d791840a37571093dee5ba"
+  },
+  "selection": [
+    ".test262/test/language/arguments-object/**/*.js",
+    ".test262/test/language/expressions/function/*.js"
+  ],
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "identicalInputsAndCompiledHashes": true,
+  "identicalVerdicts": true,
+  "beforeReceipt": "../parameter-binding-validation/after.json",
+  "before": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "after": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "failures": [
+    {
+      "file": ".test262/test/language/arguments-object/10.6-13-a-2.js",
+      "scenario": "default"
+    },
+    {
+      "file": ".test262/test/language/arguments-object/10.6-13-a-3.js",
+      "scenario": "default"
+    }
+  ],
+  "receiptHashes": {
+    "before": "5f84928528e485812f3031e5c6e8f9ed7f193b7d9e6b8856d022185c8f917837",
+    "after": "6a901048ff785a01203e1abaf6e6b219d5ee5fe7151a2f92c95ec4ecd7a47fcd",
+    "benchmark": "fcd71284dcd323efbb9eb95fc31152d4487e1ef17e0d75dbc3d3340e638b2fbe",
+    "initial-ci-failure": "d08ed4660b095a7fbd433dcd9bb9eca09d77af87bc2a180ce220a4cfd03c8b92",
+    "validation-logs": "2ea143662855856883a7421b2865929e3b3c1b7337c98ae3305da79f2af5a7e7"
+  }
+}

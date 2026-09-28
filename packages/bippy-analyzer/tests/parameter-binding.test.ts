@@ -5,6 +5,9 @@ import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { createNativeRuntime } from "./helpers/native-runtime.js";
 
 const programs = [
+  "function collect(value) { const saved = arguments; value = 9; return [saved, () => value]; } const [saved, get] = collect(2); saved[0] = 7; return [saved[0], get()];",
+  "function collect(value) { eval('value = 9'); return arguments; } const saved = collect(2); return [saved[0], Object.getOwnPropertyDescriptor(saved, '0').value];",
+  "function collect(value) { Object.defineProperty(arguments, '0', { get() { return 8; } }); value = 9; return [value, arguments[0]]; } return collect(2);",
   "function collect(first, second) { return [first, second, arguments.length, [...arguments]]; } return [collect(), collect(1), collect(1, 2, 3)];",
   "function collect(first, first) { first = 4; return [first, arguments[0], arguments[1]]; } return [collect(), collect(1), collect(1, 2)];",
   "function collect(first, second) { first = 4; arguments[1] = 5; return [first, second, [...arguments]]; } return collect(1, 2);",
