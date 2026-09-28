@@ -34,7 +34,7 @@ These limits are not a sandbox. They do not bound parsing, concrete execution, a
 
 React’s `basicStateReducer` calls update functions, then `updateReducerImpl` compares state with `Object.is`. The inspected React revision is `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, in `packages/react-reconciler/src/ReactFiberHooks.js`. Unknown numeric comparisons still abort here, so additive terms alone cannot execute this symbolic hook path.
 
-The domain does not provide unknown Boolean decisions, path guards, whole-state ownership, numeric comparisons, string domains, or guarded React output. It is not yet integrated with `evaluateSymbolicExpression` or the concrete runtime’s public contract. The suspended-generator GC gap remains open.
+The numeric domain does not provide unknown Boolean decisions, path guards, whole-state ownership, numeric comparisons, string domains, or guarded React output. A separate [engine Boolean protocol](boolean-decisions.md) now suspends `if` statements and supports a selected-state guarded fixture. It is not yet integrated with `evaluateSymbolicExpression` or the concrete runtime’s public contract. The suspended-generator GC gap remains open.
 
 ## Verification
 

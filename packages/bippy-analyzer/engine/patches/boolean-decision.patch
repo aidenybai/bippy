@@ -1,0 +1,283 @@
+diff --git a/src/abstract-ops/testing-comparison.mts b/src/abstract-ops/testing-comparison.mts
+index 18baea3..0d85a6f 100644
+--- a/src/abstract-ops/testing-comparison.mts
++++ b/src/abstract-ops/testing-comparison.mts
+@@ -178,10 +178,8 @@ export function SameValueNonNumber(x: Value, y: Value): boolean {
+     return x.stringValue() === (y as JSStringValue).stringValue();
+   }
+ 
+-  if (x instanceof BooleanValue) {
+-    if (x === Value.true && y === Value.true) return true;
+-    if (x === Value.false && y === Value.false) return true;
+-    return false;
++  if (x instanceof BooleanValue && y instanceof BooleanValue) {
++    return x.booleanValue() === y.booleanValue();
+   }
+   return x === y;
+ }
+diff --git a/src/abstract-ops/type-conversion.mts b/src/abstract-ops/type-conversion.mts
+index 927950f..f4551e9 100644
+--- a/src/abstract-ops/type-conversion.mts
++++ b/src/abstract-ops/type-conversion.mts
+@@ -20,7 +20,7 @@ import type { BooleanObject } from '../intrinsics/Boolean.mts';
+ import type { NumberObject } from '../intrinsics/Number.mts';
+ import type { SymbolObject } from '../intrinsics/Symbol.mts';
+ import type { BigIntObject } from '../intrinsics/BigInt.mts';
+-import type { PlainEvaluator, ValueEvaluator } from '../evaluator.mts';
++import type { PlainEvaluator, ValueEvaluator, EvaluatorYieldType_AbstractBoolean } from '../evaluator.mts';
+ import {
+   Assert,
+   Call,
+@@ -123,7 +123,7 @@ export function ToBoolean(argument: Value): boolean {
+     return false;
+   } else if (argument instanceof BooleanValue) {
+     // Return argument.
+-    return argument === Value.true;
++    return argument.booleanValue();
+   } else if (argument instanceof NumberValue) {
+     // If argument is +0𝔽, -0𝔽, or NaN, return false; otherwise return true.
+     if (R(argument) === 0 || argument.isNaN()) {
+@@ -143,6 +143,18 @@ export function ToBoolean(argument: Value): boolean {
+   return true;
+ }
+ 
++export const ResolveBooleanCondition = function* (argument: Value): PlainEvaluator<boolean> {
++  if (!BooleanValue.isAbstract(argument)) return ToBoolean(argument);
++  const decision: EvaluatorYieldType_AbstractBoolean = Object.freeze({ suspend: 'abstract-boolean', value: argument });
++  const response = yield decision;
++  if (response?.resume !== 'abstract-boolean' || response.decision !== decision) {
++    throw new TypeError('Invalid abstract Boolean decision response');
++  }
++  const choice = response.value;
++  if (typeof choice !== 'boolean') throw new TypeError('Invalid abstract Boolean decision response');
++  return choice;
++};
++
+ /** https://tc39.es/ecma262/#sec-tonumeric */
+ export function* ToNumeric(value: Value): ValueEvaluator<NumberValue | BigIntValue> {
+   // 1. Let primValue be ? ToPrimitive(value, number).
+@@ -165,7 +177,7 @@ export function* ToNumber(argument: Value): ValueEvaluator<NumberValue> {
+     return F(+0);
+   } else if (argument instanceof BooleanValue) {
+     // If argument is true, return 1𝔽.
+-    if (argument === Value.true) {
++    if (argument.booleanValue()) {
+       return F(1);
+     }
+     // If argument is false, return +0𝔽.
+@@ -355,7 +367,7 @@ export function* ToBigInt(argument: Value): ValueEvaluator<BigIntValue> {
+     return Throw.TypeError('Cannot convert $1 to a BigInt', prim);
+   } else if (prim instanceof BooleanValue) {
+     // Return 1ℤ if prim is true and 0ℤ if prim is false.
+-    if (prim === Value.true) {
++    if (prim.booleanValue()) {
+       return Z(1n);
+     }
+     return Z(0n);
+@@ -409,7 +421,7 @@ export function* ToString(argument: Value): PlainEvaluator<string> {
+   } else if (argument instanceof NullValue) {
+     return 'null';
+   } else if (argument instanceof BooleanValue) {
+-    return argument === Value.true ? 'true' : 'false';
++    return argument.booleanValue() ? 'true' : 'false';
+   } else if (argument instanceof NumberValue) {
+     return X(NumberValue.toString(argument, 10n));
+   } else if (argument instanceof JSStringValue) {
+diff --git a/src/evaluator.mts b/src/evaluator.mts
+index bba20f3..d864780 100644
+--- a/src/evaluator.mts
++++ b/src/evaluator.mts
+@@ -76,7 +76,7 @@ import {
+   Evaluate_ExpressionBody,
+ } from './runtime-semantics/all.mts';
+ import { avoid_using_children } from './parser/utils.mts';
+-import { ObjectValue, surroundingAgent } from '#self';
++import { ObjectValue, surroundingAgent, type BooleanValue } from '#self';
+ import {
+   type AbruptCompletion, Assert, type ReferenceRecord, type ReturnCompletion, Value,
+   type ValueCompletion,
+@@ -299,6 +299,9 @@ export function skipDebugger<T>(iterator: Evaluator<T>, maxSteps = Infinity): T
+     if (done) {
+       return value;
+     }
++    if (value.suspend === 'abstract-boolean') {
++      throw new TypeError('Abstract Boolean decision requires an explicit resume');
++    }
+     /* node:coverage ignore next 4 */
+     steps += 1;
+     if (steps > maxSteps) {
+@@ -311,7 +314,12 @@ export type EvaluatorYieldType_Debugger = { suspend: 'debugger' } | { suspend: '
+ export type EvaluatorYieldType_Await = { suspend: 'await' }
+ export type EvaluatorYieldType_Yield = { suspend: 'yield', value: ObjectValue | ThrowCompletion }
+ export type EvaluatorYieldType_AsyncYield = { suspend: 'async-yield' }
++export interface EvaluatorYieldType_AbstractBoolean {
++  readonly suspend: 'abstract-boolean';
++  readonly value: BooleanValue;
++}
+ export type EvaluatorYieldType =
++  | EvaluatorYieldType_AbstractBoolean
+   | EvaluatorYieldType_Debugger
+   | EvaluatorYieldType_Await
+   | EvaluatorYieldType_Yield
+@@ -321,7 +329,13 @@ export type EvaluatorNextType_Debugger = { resume: 'debugger', value: ValueCompl
+ export type EvaluatorNextType_Await = { resume: 'await', value: ValueCompletion }
+ export type EvaluatorNextType_Yield = { resume: 'yield', value: NormalCompletion<Value> | Value | void | ReturnCompletion | ThrowCompletion }
+ export type EvaluatorNextType_AsyncYield = { resume: 'async-yield', value: void | YieldCompletion }
++export interface EvaluatorNextType_AbstractBoolean {
++  readonly resume: 'abstract-boolean';
++  readonly decision: EvaluatorYieldType_AbstractBoolean;
++  readonly value: boolean;
++}
+ export type EvaluatorNextType =
++  | EvaluatorNextType_AbstractBoolean
+   | EvaluatorNextType_Debugger
+   | EvaluatorNextType_Await
+   | EvaluatorNextType_Yield
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 2044bec..24b9a66 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -182,6 +182,9 @@ export class Agent {
+     while (true) {
+       const state = evaluator.next({ resume: 'debugger', value: debuggerStatementCompletion });
+       debuggerStatementCompletion = undefined;
++      if (!state.done && state.value.suspend === 'abstract-boolean') {
++        throw new TypeError('Abstract Boolean decision requires an explicit resume');
++      }
+ 
+       if (!noBreakpoint && this.breakpointsEnabled && this.hostDefinedOptions.onDebugger && !this.debugger_isPreviewing && !state.done) {
+         if (state.value.suspend === 'debugger') {
+diff --git a/src/execution-context/ExecutionContext.mts b/src/execution-context/ExecutionContext.mts
+index aeec0c1..7600a1f 100644
+--- a/src/execution-context/ExecutionContext.mts
++++ b/src/execution-context/ExecutionContext.mts
+@@ -212,8 +212,7 @@ export function* RunSuspendedContext(context: ExecutionContext, completionRecord
+       break;
+     }
+     const { value } = iter_result;
+-    // if it is a debugger break, pop it to the evaluator runner
+-    if (value.suspend === 'debugger' || value.suspend === 'potential-debugger') {
++    if (value.suspend === 'debugger' || value.suspend === 'potential-debugger' || value.suspend === 'abstract-boolean') {
+       completion = yield value;
+     } else if (value.suspend === 'await' || value.suspend === 'async-yield') {
+       return undefined;
+diff --git a/src/host-defined/test262-intrinsics.mts b/src/host-defined/test262-intrinsics.mts
+index d706398..5f15238 100644
+--- a/src/host-defined/test262-intrinsics.mts
++++ b/src/host-defined/test262-intrinsics.mts
+@@ -8,6 +8,7 @@ import {
+   ThrowCompletion,
+   Throw,
+   ScriptEvaluation,
++  BooleanValue,
+   CreateNonEnumerableDataPropertyOrThrow,
+   type ValueEvaluator,
+   X,
+@@ -94,7 +95,7 @@ export function createTest262Intrinsics(realm: ManagedRealm, printCompatMode: bo
+       }
+       // eslint-disable-next-line no-debugger
+       debugger;
+-      if (callValue !== Value.false) {
++      if (!(callValue instanceof BooleanValue) || callValue.booleanValue()) {
+         Q(yield* Call(value, Value.undefined, []));
+       }
+       return Value.undefined;
+diff --git a/src/intrinsics/BooleanPrototype.mts b/src/intrinsics/BooleanPrototype.mts
+index 252077d..ad5c3c1 100644
+--- a/src/intrinsics/BooleanPrototype.mts
++++ b/src/intrinsics/BooleanPrototype.mts
+@@ -32,7 +32,7 @@ function BooleanProto_toString(_argList: Arguments, { thisValue }: FunctionCallC
+   // 1. Let b be ? thisBooleanValue(this value).
+   const b = Q(ThisBooleanValue(thisValue));
+   // 2. If b is true, return "true"; else return "false".
+-  if (b === Value.true) {
++  if (b.booleanValue()) {
+     return Value('true');
+   }
+   return Value('false');
+diff --git a/src/intrinsics/JSON.mts b/src/intrinsics/JSON.mts
+index 77087d9..ac1bc56 100644
+--- a/src/intrinsics/JSON.mts
++++ b/src/intrinsics/JSON.mts
+@@ -440,11 +440,8 @@ function* SerializeJSONProperty(state: State, key: JSStringValue, holder: Object
+   if (value === Value.null) {
+     return Value('null');
+   }
+-  if (value === Value.true) {
+-    return Value('true');
+-  }
+-  if (value === Value.false) {
+-    return Value('false');
++  if (value instanceof BooleanValue) {
++    return Value(value.booleanValue() ? 'true' : 'false');
+   }
+   if (value instanceof JSStringValue) {
+     return Value(QuoteJSONString(value.stringValue()));
+diff --git a/src/runtime-semantics/IfStatement.mts b/src/runtime-semantics/IfStatement.mts
+index dac5771..93a5ece 100644
+--- a/src/runtime-semantics/IfStatement.mts
++++ b/src/runtime-semantics/IfStatement.mts
+@@ -6,10 +6,11 @@ import {
+   Q,
+   UpdateEmpty,
+ } from '../completion.mts';
+-import { Value } from '../value.mts';
++import { Value, BooleanValue } from '../value.mts';
+ import type { ParseNode } from '../parser/ParseNode.mts';
+ import {
+   GetValue,
++  ResolveBooleanCondition,
+   ToBoolean,
+ } from '#self';
+ 
+@@ -21,7 +22,10 @@ export function* Evaluate_IfStatement({ Expression, Statement_a, Statement_b }:
+   // 1. Let exprRef be the result of evaluating Expression.
+   const exprRef = Q(yield* Evaluate(Expression));
+   // 2. Let exprValue be ! ToBoolean(? GetValue(exprRef)).
+-  const exprValue = ToBoolean(Q(yield* GetValue(exprRef)));
++  const condition = Q(yield* GetValue(exprRef));
++  const exprValue = BooleanValue.isAbstract(condition)
++    ? yield* ResolveBooleanCondition(condition)
++    : ToBoolean(condition);
+   if (Statement_b) {
+     let stmtCompletion;
+     // 3. If exprValue is true, then
+diff --git a/src/value.mts b/src/value.mts
+index 90969d4..1248f7e 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -169,17 +169,31 @@ export class NullValue extends PrimitiveValue {
+   declare static [Symbol.hasInstance]: (value: unknown) => value is NullValue;
+ }
+ 
++const abstractBooleans = new WeakSet<Value>();
++
+ /** https://tc39.es/ecma262/#sec-ecmascript-language-types-boolean-type */
+ export class BooleanValue<T extends boolean = boolean> extends PrimitiveValue {
+   declare readonly type: 'Boolean'; // defined on prototype by static block
+ 
+-  readonly value: T;
++  readonly value!: T;
+ 
+-  private constructor(value: T) {
++  private constructor(value: T | undefined) {
+     super();
+-    this.value = value;
++    if (value === undefined) {
++      Object.defineProperty(this, 'value', {
++        enumerable: true,
++        get: () => { throw new TypeError('Unsupported concrete read of abstract Boolean'); },
++      });
++      abstractBooleans.add(this);
++    } else {
++      this.value = value;
++    }
+   }
+ 
++  static createAbstract = (): BooleanValue => Object.freeze(new BooleanValue<boolean>(undefined));
++
++  static isAbstract = (value: Value): value is BooleanValue => abstractBooleans.has(value);
++
+   booleanValue() {
+     return this.value;
+   }

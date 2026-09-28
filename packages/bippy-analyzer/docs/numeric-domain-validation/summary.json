@@ -57,7 +57,7 @@
     "median": 3561.256458
   },
   "benchmarkClaim": "Three sequential local samples only; no controlled performance improvement claim.",
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "3274e013 passes 985 units but fails the unchanged smoke at 72/74; see ci-failure.json",
   "initialFailures": "Wrong fixture completion type failed TypeScript. Unsupported host errors left engine execution contexts active, so normal top-context cleanup masked the intended errors. The corrected fixture discards its owned Agent rather than resuming it. An initial declare-only Number field changed inherited-setter behavior; a retained before test failed. Keeping the original class field with a definite-assignment assertion fixes it.",
   "boundaries": [
     "Addition/subtraction/unary negation only",

@@ -1,0 +1,99 @@
+{
+  "scope": "engine262-abstract-if-decision-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "160c5c71890d2cd2b19901f6b4787b57501f11bde81c3fd48e90f45114c6b16f",
+  "units": {
+    "passed": 1024,
+    "total": 1024,
+    "files": 25,
+    "addedDecisionCases": 37,
+    "addedGuardedCases": 2
+  },
+  "guardedFixture": {
+    "branchOrders": 2,
+    "outcomesPerOrder": 4,
+    "unknownInputs": ["enabled", "fail", "unused"],
+    "numericInput": "unbounded JavaScript Number amount",
+    "prefixExecutions": 1,
+    "conditionCalls": 1,
+    "forks": 3,
+    "reusedDecisions": 2,
+    "numberWitnesses": 9,
+    "observationsPerIndependentReference": 72,
+    "references": ["native V8", "published engine262"],
+    "stateOwner": "Only the shared ordinary object, global declarative bindings, and execution-context stack; not a transitive whole-state owner.",
+    "scheduledCallback": "Guest function saved in a lexical binding, not an engine job/timer."
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74,
+    "exitCode": 0
+  },
+  "historical": {
+    "passed": 301,
+    "total": 306,
+    "exitCode": 1
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 324,
+      "passed": 322,
+      "exitCode": 1
+    },
+    {
+      "name": "published",
+      "total": 324,
+      "passed": 322,
+      "exitCode": 1
+    }
+  ],
+  "test262Selection": [
+    ".test262/test/built-ins/Boolean/**/*.js",
+    ".test262/test/language/statements/if/*.js",
+    ".test262/test/language/expressions/logical-not/*.js",
+    ".test262/test/built-ins/JSON/stringify/value-*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "remainingSelectionFailures": [
+    "language/statements/if/tco-if-body.js strict mode",
+    "language/statements/if/tco-else-body.js strict mode"
+  ],
+  "failureDifference": "Source variants time out. Published error normalization reports file URL errors; raw results are retained without treating them as matching diagnostics.",
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "benchmark": {
+    "node": "v26.4.0",
+    "engineSha256": "160c5c71890d2cd2b19901f6b4787b57501f11bde81c3fd48e90f45114c6b16f",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3593.727583, 3568.3608329999997, 3630.945834],
+    "median": 3593.727583
+  },
+  "linuxConfirmation": "pending",
+  "initialFailures": [
+    "RunSuspendedContext exhaustiveness rejected the new yield type until forwarding was added.",
+    "Guest-generator tests initially omitted ordinary debugger suspension handling.",
+    "TypeScript needed explicit decision narrowing after the driver loop.",
+    "The initial response implementation read choice twice. A changing getter regression failed before copying and validating the choice once."
+  ],
+  "boundaries": [
+    "if statements only; other unknown Boolean consumption rejects",
+    "Driver must maintain consistent path assignments",
+    "No package explorer, guard solver, whole-state owner, or guarded React report",
+    "No ownership guarantee across arbitrary guest generators",
+    "Existing control-local GC gap remains",
+    "Host errors require discarding the Agent"
+  ],
+  "files": {
+    "engine/patches/boolean-decision.patch": "dafb6469dd114a68693ad4be0c50b4a116d1cb836e8037c9684a255383f5f8f5",
+    "engine/scripts/build.ts": "f26f0dea0d5a09e7cfed2deffff20b8b9b4909821372f90e15bb7a811469b870",
+    "tests/boolean-decision.test.ts": "e0ec9a89432a7be4487b2e4c14bc7b8d3c770580251cbf3ecd2fad6a12072546",
+    "tests/guarded-control.test.ts": "f0c7ea1af6cba373340235217e9359ce7ddc093f546bd5b9beb63f7930582900",
+    "tests/numeric-domain.test.ts": "c08dbbbd5f93b2da4fde837c3f57200efe6f49e585d4355eca65ab9124d897fb",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17",
+    "tests/helpers/numeric-expression.ts": "2d3e22474d2fe971cec6afb404c72d18dc5131ad2390777853a98edb60e2a243"
+  }
+}

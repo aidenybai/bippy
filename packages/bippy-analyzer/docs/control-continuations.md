@@ -44,7 +44,7 @@ The control increments add 92 tests:
 
 The selected-state fixture suspends actual `ScriptEvaluation` at `debugger`. It captures selected objects, global lexical bindings, and the execution-context stack through a fixture-specific owner. It then resumes supplied Boolean combinations in both orders. Return/throw values, finally mutations, aliases, and prefix observations match fresh V8 and published-engine executions. The prefix observer runs once.
 
-This fixture verifies resumption without prefix replay. It does not declare unknown inputs or build a symbolic report. The native callback-array fixture is not an engine job-queue implementation.
+This debugger fixture verifies resumption without prefix replay. It does not declare unknown inputs or build a symbolic report. A separate [abstract Boolean fixture](boolean-decisions.md) now forks engine `if` decisions with unbounded Number expressions, under a selected-state owner. Neither its deferred guest callback nor the native callback-array fixture implements an engine job queue.
 
 ## Delegation protocol corrections
 
@@ -56,7 +56,7 @@ There is no general engine-state owner. Selected object/binding checkpoints do n
 
 Native analyzer generator hooks are foreign continuations unless they are lowered through this machinery. Abstract decisions must not enter an opaque delegate and then pretend it is forkable. Unsupported coercions and operations must fail visibly rather than treating abstract values as ordinary truthy objects.
 
-Numeric/string domains, guarded state joins, symbolic React trees, and transitions remain missing. The [completion checklist](symbolic-react-status.md) keeps those requirements separate from this control increment.
+Unbounded additive Number terms and selected-state Boolean forks now exist. Broader numeric/string domains, guarded state joins, symbolic React trees, and transitions remain missing. The [completion checklist](symbolic-react-status.md) keeps those requirements separate from this control increment.
 
 ## CLI termination
 

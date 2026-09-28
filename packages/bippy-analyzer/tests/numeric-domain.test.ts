@@ -1,62 +1,9 @@
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import type {
-  NumberValue,
-  NormalCompletion,
-  ThrowCompletion,
-  Value,
-} from "../engine/dist/declaration/index.mjs";
-import { createNumericDomain, type NumericDomain, type NumericExpression } from "../src/index.js";
-import { getSymbolicEngine, type SymbolicEngine } from "../src/symbolic/load-engine.js";
-
-interface NumericFixture {
-  api: SymbolicEngine["api"];
-  domain: NumericDomain;
-  evaluate: (source: string) => NormalCompletion<Value> | ThrowCompletion;
-  getNumber: (source: string) => NumberValue;
-}
-
-const withNumericFixture = async (
-  run: (fixture: NumericFixture) => void,
-  providedDomain?: NumericDomain,
-) => {
-  const domain = providedDomain ?? (await createNumericDomain());
-  const { api } = await getSymbolicEngine();
-  const previous = api.surroundingAgent;
-  const agent = new api.Agent({ startEventLoop: false, ...domain.agentOptions });
-  api.setSurroundingAgent(agent);
-  try {
-    const realm = new api.ManagedRealm();
-    realm.pushTopContext();
-    try {
-      api.X(
-        api.CreateDataPropertyOrThrow(realm.GlobalObject, "amount", domain.createInput("amount")),
-      );
-      const evaluate = (source: string) =>
-        api.EnsureCompletion(realm.evaluateScriptSkipDebugger(source));
-      const getNumber = (source: string) => {
-        const result = evaluate(source);
-        if (result.Type !== "normal" || !(result.Value instanceof api.NumberValue))
-          throw new Error("Expected a normal Number result");
-        return result.Value;
-      };
-      run({ api, domain, evaluate, getNumber });
-    } finally {
-      // HACK: Host errors bypass context unwinding; discard this fixture Agent without resuming it.
-      agent.executionContextStack.length = 0;
-    }
-  } finally {
-    api.setSurroundingAgent(previous);
-  }
-};
-
-const getExpressionSource = (expression: NumericExpression): string => {
-  if (expression.kind === "input") return `inputs[${JSON.stringify(expression.name)}]`;
-  if (expression.kind === "constant") return expression.value;
-  const operands = expression.operands.map(getExpressionSource);
-  if (expression.operator === "unaryMinus") return `(-(${operands[0]}))`;
-  return `((${operands[0]})${expression.operator === "add" ? "+" : "-"}(${operands[1]}))`;
-};
+import { createNumericDomain } from "../src/index.js";
+import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
+import { withAbstractFixture as withNumericFixture } from "./helpers/abstract-fixture.js";
+import { getExpressionSource } from "./helpers/numeric-expression.js";
 
 const witnesses = [
   NaN,

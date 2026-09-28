@@ -8,6 +8,8 @@ See [concrete execution](docs/concrete-execution.md) for `createConcreteRuntime(
 
 The separate [numeric domain](docs/numeric-domain.md) represents unbounded Number inputs through engine addition, subtraction, and unary negation. It preserves expression structure through calls and mutation, but rejects unsupported concrete reads. It does not yet provide guarded decisions or symbolic React output.
 
+An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements on unknown inputs. Selected-state tests fork guarded outcomes with unbounded numbers and no prefix replay. General state ownership and a package-level symbolic explorer remain missing.
+
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
 ## Run
