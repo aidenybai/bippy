@@ -27,6 +27,8 @@ Engine SHA-256: `d0eba416803f0d343b0eff7c897c5bee2502b5cbe2c8283623d61a1577e5ce9
 
 The preceding revision `0d1b9483` passes all 909 Linux unit tests but still fails the unchanged smoke at 72/74. Both numeric `substr` variants time out. Its failure-only profiles take 10136.59 ms by default and 10311.31 ms without Maglev. Logs and compressed profiles are retained in the receipts; diagnostic success under a longer limit is not a passing gate.
 
-Linux confirmation for the indexed-list patch is pending. The Test262 timeout remains 10 seconds, unit timeout 5 seconds, and worker count two. No selection changed.
+[Linux CI at `964f06c4`](indexed-internal-lists-validation/ci-indexed-failure.json) passes all 917 units but still fails both numeric smoke variants, for 72/74. All other CI jobs pass. Its AMD EPYC runner records 11632.47 ms by default and 11618.16 ms without Maglev in failure-only profiling. The preceding revision ran on an Intel Xeon; these runs are not a controlled performance comparison.
+
+The Test262 timeout remains 10 seconds, unit timeout 5 seconds, and worker count two. No selection changed. Further performance work is needed. Additional local validation retains the historical 301/306 result and passes 152/152 weak-reference/finalization variants.
 
 A separate attempt to preserve all generator-free host functions during lowering was rejected: 99 focused tests pass, but its local median is 4045.87 ms. Its source and measurements are retained, not used by the build.
