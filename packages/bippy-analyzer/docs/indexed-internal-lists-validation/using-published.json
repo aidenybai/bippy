@@ -1,0 +1,1269 @@
+{
+  "originalReportSha256": "f10dfa61ae2cc3c98bbcf69b570ee11747a6af13769299a1c6af3350853a25ee",
+  "total": 85,
+  "passed": 85,
+  "failed": 0,
+  "exitCode": 0,
+  "outcomes": [
+    {
+      "file": ".test262/test/language/statements/using/block-local-closure-get-before-initialization.js",
+      "scenario": "default",
+      "contentsSha256": "de420dea7e22663a7419edd40a7a7a6f6d75495e31edccc04034583a3ce1f5fa",
+      "compiledSha256": "06f3f85567a75a99d77cef91dea19029d8f670867a37c3b2caca095d31fda36e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/block-local-closure-get-before-initialization.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2b01df5d31d3a53ffc773c06e74369e217a6adf076e170d3ea1094924f6fd872",
+      "compiledSha256": "41356cb6c855cdc1dba3ee69f53e3f6e72f0062d85d002082a0cd0bd94ade4c8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/block-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "default",
+      "contentsSha256": "1ea27279361c3f0ae27914d9f5f2506cdafff03aa77bdfd139e08c093bb22e17",
+      "compiledSha256": "650fa79a5b7516287f9c9dc81d2ed5c8942588b143891253411bcff6b161e291",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/block-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1fa93638310b9d6251851e0c1bd99ee3de3e26042697c5cdc26f71da6471d2a3",
+      "compiledSha256": "8226922b4ca1c3891f6189f7c0f7e4fa7d230d12da210fe046516a244e5a8c1d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/block-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "default",
+      "contentsSha256": "a5a0f362d3defbc3942b71b64894e59bfae70e16cb0a6ed881681b7a5184d1fb",
+      "compiledSha256": "05844b396e1b8d767bd8e2c163bb0c81a1c87ab25a813bd90b5127fc401fe4a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/block-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8e8c7e1811d507bb280bcb0132c5d6f88b45fcd3510cc7caed0f39e9724eb2c5",
+      "compiledSha256": "4ddac8965d06d99940446182f5231ee75cea7a171ed227594f7f1ab26d6f276c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/cptn-value.js",
+      "scenario": "default",
+      "contentsSha256": "fd23bc5df774070a3818641871b38dffbe1d96b9dfb186a1023960fda2095dc3",
+      "compiledSha256": "34b12cb12172b45a8c84c76ca24a90b1bdec892fd2599347829b13040b60fa19",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/cptn-value.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6938f218aa9fd1d42ddc678b51f0b1c74404334a84e1e16388302a3e128e5ac8",
+      "compiledSha256": "ff45c3505cbdc5d70c45d87281f9cfc365f80841d323045e3a6a15d4783d8e48",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-arrow.js",
+      "scenario": "default",
+      "contentsSha256": "ec1043e2bbb7334fea4bd8c872c482d815058054888e9cf3529ac08f5ee9928d",
+      "compiledSha256": "a8716d02f30ea7e3c5a30d82acd84f5fd8a2d083d2ea031d418575fba8c3802d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-arrow.js",
+      "scenario": "strict mode",
+      "contentsSha256": "934dbff55ae85e91dd85cbf5fc03c4a4f7000c7fab54b4469794604b4c1af7a7",
+      "compiledSha256": "848a3657b515bafdf442ef6d9a46202a2de3ed8bbacd01ae51f0b8689ec1894c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-class.js",
+      "scenario": "default",
+      "contentsSha256": "ca17c19e96b3e01df17bca55cd21b1e14f7927ab9a363296788fc68d41fd2b0f",
+      "compiledSha256": "287c6a0df8df7acd81b6e08581bc2b7c27dbd7832de4e29b12149ea37bf4c6a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-class.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ca1b454a9a7e1bb98a6b34263cc7febd02a3e8fb40b1082bd0a238adf65ecd06",
+      "compiledSha256": "2bb73e1e307bdf2c6d3e2b4d1b14a646f777adefff213099db8c98d5567938c8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-cover.js",
+      "scenario": "default",
+      "contentsSha256": "f55c669c5b233e756e430dc29ae0c27d3324e8d631f5a95046f580adaf35cea7",
+      "compiledSha256": "bec98d9976a5469686b83844ccca9f5b1b2ed740c8e20711e78fa2db9d9d4041",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-cover.js",
+      "scenario": "strict mode",
+      "contentsSha256": "bb5ebd459dd51dcf2bc1987631084ed1b703460281746f163db58134825ce473",
+      "compiledSha256": "a71977b1bdea6f4792b0942d35a3fc79bff0458057bff40a1cc7225d7d31f3ab",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-fn.js",
+      "scenario": "default",
+      "contentsSha256": "b7edcc5a5200dd16c35cfdea224ccece231e20eae1b5fbcaff6c8b84028e7f79",
+      "compiledSha256": "6458667aaacddc14a2d509a6a0bc9c2acc3ddab0f6a63213935f45c3253ce646",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-fn.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f9b000b2b9bf89c273e0b5fb9a98d717aeeb1ba7e9fc2528e82170eae3d583ee",
+      "compiledSha256": "bb50908e035e7222981ba26a98a950365a417030d447d3fabd35a21f5523280c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-gen.js",
+      "scenario": "default",
+      "contentsSha256": "ae2adcb7ba7b56926e98786ad65684354f3e742a58b55961996059ac18faa4df",
+      "compiledSha256": "66328bab41493f0c43a0595b37afed4e752be7d8477af3f15d4e291b0965d087",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/fn-name-gen.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f54523342c6a058ca398f684823dfc57f74cf9143e3d269b3c748e1c1c78da4d",
+      "compiledSha256": "2d75b1fd453db16d04c48c377c1c38a3b9fc5340032c973d0b89ebea9847169a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/function-local-closure-get-before-initialization.js",
+      "scenario": "default",
+      "contentsSha256": "d01f51cc238af332ab35b908a255b07eeb753bc1295c31499f7a3503a34a4e14",
+      "compiledSha256": "159e04780b85a5bb40d52aa224e5f222fed16495473655180384b0d397d66e48",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/function-local-closure-get-before-initialization.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b9b9fead0c006df199cc75be9679d9a0d6bdc760195132aed725debaab5f4912",
+      "compiledSha256": "ea846ebf6c280d4aaa7fdfbdb209d495e4ba650c302a70de6c5a2adf2eaae743",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/function-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "default",
+      "contentsSha256": "8ca07af8594d08abeb8717436aa150d571cf3b78ffa19031e48cbb2c21d7cf8f",
+      "compiledSha256": "2a6aa6b604ba9de50f1a34e5f08d8bff71c792c95950103428539fa94fb041ea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/function-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "10278b68655cb218dd5cc93b635da39432aa6282ff98250d0cef37bafcf40d3c",
+      "compiledSha256": "433ce830d73c4a11d5e790df7007a245beb40439799c95274a73c9ed764263de",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/function-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "default",
+      "contentsSha256": "58d3c9c5dc45f1d631a18444884b362d838ff8ae64ae5a33ba8261d9fa4667fc",
+      "compiledSha256": "82cb74657362b04f390c99aec984b4754596d03780ae31191dc7293ce633a0c0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/function-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e33b1699b119c6fe79a0fac20d9a9380cc5cb07e997d92d6c93fc8df32415ad1",
+      "compiledSha256": "f83d23db88a2844ad176e0598f43db303b2a39d3a56f349206f79f630564526a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/gets-initializer-Symbol.dispose-property-once.js",
+      "scenario": "default",
+      "contentsSha256": "01b7b8f316917cd3a48dbfe84e7482efd8ff7766376a5a4bac0667b086b6f6fa",
+      "compiledSha256": "ecdb57096b87f25553c2c41b6210c4321692f7e5f3bc72197b8b3a2336e9bae8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/gets-initializer-Symbol.dispose-property-once.js",
+      "scenario": "strict mode",
+      "contentsSha256": "43f20701ebccd8f244febe966460548ede6aa4439ae96711efdb0cc8e34b0ff9",
+      "compiledSha256": "7288d21de3b14aa8a926cc4861069b3df446abb31c89dda710787c89b0695fec",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/global-closure-get-before-initialization.js",
+      "scenario": "default",
+      "contentsSha256": "8ed1248d5d248bcdceede15fe7af75c71028f4a0577180f29e172b218d95586b",
+      "compiledSha256": "0895f792ea76f058fcb9b6d636561452f77033b10f968542aedf065be430027c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/global-closure-get-before-initialization.js",
+      "scenario": "strict mode",
+      "contentsSha256": "48613915d1cb3a2fdfdb9cafe13630d4ad4bdbc7e19cc7af50641e6ac4c90f83",
+      "compiledSha256": "94459242fb3f965426f808197a36b2ca0b71c7b5d107f6486273ae5a564f9e2e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/global-use-before-initialization-in-declaration-statement.js",
+      "scenario": "default",
+      "contentsSha256": "c3fb109af27275edac2ddad67361db679006db35acf79e7d4c93d195f1bb2b3f",
+      "compiledSha256": "f6e18ac4d318370c442252ff395f1a088003113f52cbb596434043c72338e3e1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+        "stdout": "",
+        "error": {
+          "name": "ReferenceError",
+          "message": "x cannot be used before initialization",
+          "stack": [
+            {
+              "source": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+              "fileName": "ReferenceError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/global-use-before-initialization-in-declaration-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f310ee12ad3d8c169d0002ae49f9ec23a61bf81820a79694a8daead314c5cf23",
+      "compiledSha256": "f9eb7bca62f07a90180eb413c71461758abee396aa9e55c4c9b8a8ab6a68c92b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+        "stdout": "",
+        "error": {
+          "name": "ReferenceError",
+          "message": "x cannot be used before initialization",
+          "stack": [
+            {
+              "source": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+              "fileName": "ReferenceError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/global-use-before-initialization-in-prior-statement.js",
+      "scenario": "default",
+      "contentsSha256": "20cbc739690d6ff2b096bfbc495274cc0e6b0759e2a7f30e0e2ec20ee487bfee",
+      "compiledSha256": "abd27150a90460ef4701b2f0d68bd842b50f4488e3dc496322c6946edc1d8c97",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+        "stdout": "",
+        "error": {
+          "name": "ReferenceError",
+          "message": "x cannot be used before initialization",
+          "stack": [
+            {
+              "source": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+              "fileName": "ReferenceError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/global-use-before-initialization-in-prior-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d6bc2c10da582df79cec15ed1b6a584ef92aa595f34a915b88e6fcf6765acbde",
+      "compiledSha256": "00b33ba48fb2ecdc27a9f68c9753add94c21788910d5cf3eb6f75af3eea11698",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+        "stdout": "",
+        "error": {
+          "name": "ReferenceError",
+          "message": "x cannot be used before initialization",
+          "stack": [
+            {
+              "source": "{ name: 'ReferenceError', message: 'x cannot be used before initialization' }",
+              "fileName": "ReferenceError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-asyncfunctionbody.js",
+      "scenario": "default",
+      "contentsSha256": "5a5f9e0ba2f6cd43ca903be1282094c6019acd8ba0fb4a520c71624dcd26479f",
+      "compiledSha256": "82ae0d27144929664715414c9faf8579111bcb52d1935ef6542c3f6d09eb479c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-asyncfunctionbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "694caa1110a3658c1484978664a38b4e4a4e12564ecb939bc4aa5e519e8ce05b",
+      "compiledSha256": "06f2bfedf7c59e329d9efa95430e6288c4af20b4036382ba1190a5d1997e2dd8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-asyncgeneratorbody.js",
+      "scenario": "default",
+      "contentsSha256": "f54cab17d1bbb45f1658368c5051f75ac0c1df142cb452540af6e579bdd9cadd",
+      "compiledSha256": "31541c885c615b6912be08678a00edca9e804e568f7094f781a4eda3f697e835",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-asyncgeneratorbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "042191d27d83c86651c1f00d087186212a6534e78abbf43887244aa5b36c746b",
+      "compiledSha256": "2a6455cec25766c15ec7078012323c7486786ea4f0329908256a8d4023ebe21f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-block.js",
+      "scenario": "default",
+      "contentsSha256": "d9c198599c83abb91e6d350c165432a78099a27e0b22b851b01492428d05c9d2",
+      "compiledSha256": "8e6738c55e2c3f1738e524cba5b4720ac1cd5f84c36a64568e7e1de25a52d618",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-block.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5a8e0d7dc7616d06344476edd69f9827019675a81b0c8b81f754325f9597eaa7",
+      "compiledSha256": "eb1f65fe855f462dd46651f0e613cc84452d805995092362ddcfff31341cfcf8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-forstatement.js",
+      "scenario": "default",
+      "contentsSha256": "b525319f47e22bffd479dcf6b0ec1f3ed0bd496b312ee66c457fa5d476fd246e",
+      "compiledSha256": "ebb7254c0ce2e671a6605a97cb21e405852a6beb03e24dc4ca588f8d136ae4a3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-forstatement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c722f584bcfe441b026b86451883815bdae75cd96e179f53c31ff88f7e782266",
+      "compiledSha256": "5c4e24ad549bf500d48cd8857122e46edfba9b70bcbe5a5ab15d2d0647050862",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-functionbody.js",
+      "scenario": "default",
+      "contentsSha256": "29abae791f586bcfaa42ff5748f28b67235c7df68dc38084743b9fb71a0762e0",
+      "compiledSha256": "75f3641cd67bede0ee0a083ab665608679ab3003745cb52b3110df3d56bc1fc0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-functionbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ad591b1e6cf6c0599343092f7ec1be71bd010c96be9d36129e70b7f524fb0cb4",
+      "compiledSha256": "ed8bb605c92419e0cf51c9b172bd04695346a7dfcaa6ffd17cb167894636acda",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-generatorbody.js",
+      "scenario": "default",
+      "contentsSha256": "d9d69a03506d9e0e842a676741dc717093d78c83e9298bfc6f09f8b3ddd07d75",
+      "compiledSha256": "49fccf1715863d928ac3b7260c1e7215e02a0e319e72f4d535e12997384fb629",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-generatorbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f4b33104e2f3c5227d74f054cda4d43186f12a1b7edcdb156dc10851bf76852f",
+      "compiledSha256": "5f3795aba12fa34849abdf4110557d94e3fd915e1b995f7ceb255d5fc71b1c97",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-imported-module.js",
+      "scenario": "default",
+      "contentsSha256": "f9f255e729a71afdcdefded328f73322a84749d56036d56e9a853a287fe643be",
+      "compiledSha256": "5072980bc8d497e743a4058f8273a1657e17b5bd4ba0d4fb578dec8980403394",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-imported-module.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f47ff4b55715aa0d1e25708a8d1337911e0e268fb583e495c560d724fa7590b0",
+      "compiledSha256": "eb8b91020799a5d7e24dd8969ff74cbce137176d382c209bd4b3a621a85c65fa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-module.js",
+      "scenario": "default",
+      "contentsSha256": "b8d987152c70ef21ff26ca67dc846d37b64fa1b1ac5e7e009ed1eb69c7f0369f",
+      "compiledSha256": "5df572f0492022e82fbd97a2a306cff33edb187fb7a83067886980032293a52b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-at-end-of-module.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ee6396aaf5a9d8f2c7bd61301e4ec411dffd0ff439df5ba62697a064fdbd8488",
+      "compiledSha256": "c1c88d43c7a58bc36e49490457122570d9ff17f9ba7851dd691d738c17f75e5d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-if-subsequent-initializer-throws-in-forstatement-head.js",
+      "scenario": "default",
+      "contentsSha256": "7415f4c919e48cf3bb6a00f4b22e2691e145d082f323836197c4d87d435ee6f1",
+      "compiledSha256": "9f49cfec7bfbca1a2f28560352eb293a02700c710036c8f1d216484b70ca1d04",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-if-subsequent-initializer-throws-in-forstatement-head.js",
+      "scenario": "strict mode",
+      "contentsSha256": "295bbcd2b41bf0032e54239fee713229b449639845053ac73d37df7bda2aa275",
+      "compiledSha256": "42c0bd21a008f59605f5ec3e0aa3e9d2e3dabbc60bd14a81b7295b97a6e843b2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-if-subsequent-initializer-throws.js",
+      "scenario": "default",
+      "contentsSha256": "8c41e582985a5c616d3aa8a9c715d72476470b36cf1c78bc3c8dd905a2e0305d",
+      "compiledSha256": "b869b88343e84790f4db6dc4eb66655cf565541c63d9a264bdc00f145d78818e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/initializer-disposed-if-subsequent-initializer-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "476574c862b5894c73c187d9d6400c8ac36d0d24014c04c5bd303316d650b845",
+      "compiledSha256": "22750ff4569aeb5bd6995a3eb74259b62557dd8d29a14d4572ad2ba853d43295",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/multiple-resources-disposed-in-reverse-order.js",
+      "scenario": "default",
+      "contentsSha256": "cd89fb2ef7b6980a01842bedc1fcc1aeb6c5ca1af2c16961e3ba6a0282c41f15",
+      "compiledSha256": "e4ca0efa91c514550542eaf4c9d817b0e29d88a7b84a9dd0b9c2188e386b390b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/multiple-resources-disposed-in-reverse-order.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c30c1f726e34d00d096c8bdc295d11d4f81d5cadd22fc5a0c113019542ffb346",
+      "compiledSha256": "a69f2a73e45542c2b5f959f3f85fddcc7ddcf0695328f0aeb5fc7cceee33c34a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/puts-initializer-on-top-of-disposableresourcestack-multiple-bindings.js",
+      "scenario": "default",
+      "contentsSha256": "6e5af98b2fc23ce27dec4fc31db4d70a7d467a8866e3b2e45930770b2421ad1b",
+      "compiledSha256": "2f9de6e26e52b93800ef9b452408c1b3137b0565901bfa3e410cf006079e6752",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/puts-initializer-on-top-of-disposableresourcestack-multiple-bindings.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c4392d26a2344135beb4b7521935ba7fd2ba778492cbe7caa203b3f484f519c7",
+      "compiledSha256": "ffb89089be1df94ac8ee4fbf0a3d6bc20f02c0d3ef86d61b79cbe846661576c0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/puts-initializer-on-top-of-disposableresourcestack-subsequent-usings.js",
+      "scenario": "default",
+      "contentsSha256": "20e4629a65156ed230284593e24ddf79f313f4b95c3008dd98c56f291a83c683",
+      "compiledSha256": "fb37eb4a47429087294127d3d0288e6efaabb4f354970ca76148853f947ef3d2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/puts-initializer-on-top-of-disposableresourcestack-subsequent-usings.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f5992e7e5d556fea6b58b6c785816139b092d174b0a544b9d1d3f592da23949b",
+      "compiledSha256": "294abf78a7bfa8edd686fc4803a710f6eba0c1b51a9152cd3eb510786b41999c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/redeclaration-error-from-within-strict-mode-function-using.js",
+      "scenario": "default",
+      "contentsSha256": "c21d00334db227f37d729e824c1a3fe4aa8685f41615b6da78fb6c443b8e7442",
+      "compiledSha256": "fea994153a2a1a81431443e968c127f95f5d439a8223e2084f4a3fdff39207a9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Variable f already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Variable f already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Variable f already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/static-init-await-binding-invalid.js",
+      "scenario": "default",
+      "contentsSha256": "c0558eed3d3b8b404496f47bfbd8ccf78d6c8030eda59247f2e4f1bd85554ad1",
+      "compiledSha256": "d917575edeb7e0c3d700a01649b1e00f0a3b089d6dadcac8d459b24db51e36c6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "await cannot be used as an identifier inside async functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/static-init-await-binding-invalid.js",
+      "scenario": "strict mode",
+      "contentsSha256": "57e5320b74cb846095bc055f38d141a1d86eb36e5a6b9908ade8db8f6387cff5",
+      "compiledSha256": "1f44b5c041792d24435c44b62335aebf5999b1c4798912c19d1874bfef34d998",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "await cannot be used as an identifier inside async functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/static-init-await-binding-valid.js",
+      "scenario": "default",
+      "contentsSha256": "77700f25580a1900551d09554d373ae763069f1db285d22ad1556715ceb92cd2",
+      "compiledSha256": "ea48c6ff0fccbe12534d07054be44183ab378ccc3c6bd3e5af09a4c4ac10de6a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/static-init-await-binding-valid.js",
+      "scenario": "strict mode",
+      "contentsSha256": "60d40f5f2b6eb226c38bd80358057c8e7c01d60d0ff02ddb0f39f4820283140c",
+      "compiledSha256": "b62fe9255cec2b174be18be71d2432beaa1ed4277a6af80a055ce74debdb1201",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/Symbol.dispose-getter.js",
+      "scenario": "default",
+      "contentsSha256": "cf8e27b45cbe6cc73cb9906f05f92cfd7274cb3a4db6dd73f37d906e0f55116d",
+      "compiledSha256": "783a0b36bf16ebee26e70d5a30ed7de623dbd36d95e489292e992234a09f0aa2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/Symbol.dispose-getter.js",
+      "scenario": "strict mode",
+      "contentsSha256": "28bfeea3b1a3b2afbf5b4172bae2c55ef57df23597141ef90b14c7326c247447",
+      "compiledSha256": "d76b61427e4e8dd33d7ad16a49603e8b8663b5e743946c64c5a423afe9f16604",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/Symbol.dispose-method-called-with-correct-this.js",
+      "scenario": "default",
+      "contentsSha256": "82633b18cbcae9ee81a590ff1f49e3e3195a442521c547c9e1ae69554f9cdbde",
+      "compiledSha256": "62b55e3d5b05d92c3917bfdd682882dd3d964777e51d94895a3ab32b43be2303",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/Symbol.dispose-method-called-with-correct-this.js",
+      "scenario": "strict mode",
+      "contentsSha256": "28be8feef06e7ca470ca72ec8e35f98ea29529b6890c86c1689cef315de7ab2b",
+      "compiledSha256": "e8a8f84867e21da3d4eef803754863f2574d7f6fefd4fa8e90f507f24a9bdec0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-error-as-is-if-only-one-error-during-disposal.js",
+      "scenario": "default",
+      "contentsSha256": "57548098ef6765aeed552c73f6b23fca92a3d93b912a476ba4f71688038ccbd9",
+      "compiledSha256": "ff0454520eb9d52df9c1836e784727308ae007fdc641567b9b427b460a0b3051",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-error-as-is-if-only-one-error-during-disposal.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a7e3d5d149aedd4e7684a3c413373cf0f4662f3a821948eb9fba288730ac8b59",
+      "compiledSha256": "64dc25c179674fb4ddcd754c14b2b7d96e1d334ec905833933796369941fbd30",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-missing-Symbol.dispose.js",
+      "scenario": "default",
+      "contentsSha256": "ef0bc0b4410f3c31e16678f24f1817a0c5f2af27c29f165d18d68aef9b355dbe",
+      "compiledSha256": "2dce116580133c21076f43392c92040438372c0cf8815026ec6bb9e63c55453e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-missing-Symbol.dispose.js",
+      "scenario": "strict mode",
+      "contentsSha256": "20292a6c055cafdcb1a16c04df0ff1847c598757ff3072785085ee01693af688",
+      "compiledSha256": "235f1845d4c66af532d46adc544c40fdc1cca5cfaef35c75058663df1fc0a138",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-not-object.js",
+      "scenario": "default",
+      "contentsSha256": "7aa4c588bb1c688d55af231c5e66623787cd65a2d67df9fec22d590aa592485a",
+      "compiledSha256": "a3472e81aa288c6fba10d795432d939d5106f4da139c4b8566ca36288cedc92c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-not-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ea0ea2bc97f763445f81965178c665fdb5ab429fd4c47e64afbda4131379e35f",
+      "compiledSha256": "3a440bd0bbb2f2efd44ebbfd6ba4b6875af3f4e2baf44cc145fee40dc635d678",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-Symbol.dispose-property-is-null.js",
+      "scenario": "default",
+      "contentsSha256": "ac8ebc965f2166c1033cf6380d2a3c1fc20e2cd7332d6d3953c11a530ef2f692",
+      "compiledSha256": "6d1af35f1b0047c2d53df33ff12a331e011183c9a77cda0671be6db63df85040",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-Symbol.dispose-property-is-null.js",
+      "scenario": "strict mode",
+      "contentsSha256": "85869f11567adf5ea9250359fb591d352112c2a5ec6326419f2ba4ba7ab6097b",
+      "compiledSha256": "68c29ad7e4b19d370a41e6b9d2f8e09662ae6b59827601bf2d5ddceac18f7b5d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-Symbol.dispose-property-is-undefined.js",
+      "scenario": "default",
+      "contentsSha256": "9482faf112e147069ff8bc47bc8f95ff21bd171b38ce27e7fd05481843662235",
+      "compiledSha256": "b09c32874478d23c155184af21668130332cd370dbe895fe1962288def39db22",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-Symbol.dispose-property-is-undefined.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f901d20e9a1d133416f8fb478241702ec0a185dddc473f51ba1fd5f67d87d932",
+      "compiledSha256": "0c88724ec4e0032a181ffbe34b8acef5a60accd54063f011532f1ba1b9b8a627",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-Symbol.dispose-property-not-callable.js",
+      "scenario": "default",
+      "contentsSha256": "413b7599039a398163e610e232ca4af6736a14158c8f60f897d465c2fef7ed6e",
+      "compiledSha256": "2bf736b082b8a9c19c82c86a8c5b780528d06ff707e2f40c56ee7593e8e2b6cf",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-if-initializer-Symbol.dispose-property-not-callable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d849b6618f376bb6e5ab94742ebb53d0573c70ad4bccbe978faf5042015a9510",
+      "compiledSha256": "16793c6572db8131cfc2df2456eb6045254039f00fe3916824245a287ecd7877",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-suppressederror-if-multiple-errors-during-disposal.js",
+      "scenario": "default",
+      "contentsSha256": "ed9af4d610d56361ca598b272d35d01250cc9c4844022badb6af0e760b3c9dc2",
+      "compiledSha256": "1dca81fef5ba27f780d082d9d2a3ecc4d9380e0216f7633a139e2393795e3efa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/throws-suppressederror-if-multiple-errors-during-disposal.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fb298a4ebd3d2c678dcdb53e648951e2beb1be9bf95cc0bdab74ae24fcd42cfe",
+      "compiledSha256": "a94314f1e2badcb056a39856b54f16a7af9382469f8bec4dd9e0c099ad717c9e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/using-allows-null-initializer.js",
+      "scenario": "default",
+      "contentsSha256": "d271955c57b9017fc360758802049cbf6f6614643143ea0439616792483bd49d",
+      "compiledSha256": "4f15ebc05a5cca877449ee18f43b082db6ac83924a6f48dd4a8cbdb01c5a2efd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/using-allows-null-initializer.js",
+      "scenario": "strict mode",
+      "contentsSha256": "20de85aa38f111d172bcf6bfccc6978b84cfdb6ebd21ddefda682419a2d1e513",
+      "compiledSha256": "9e579cf7dee0548a98dff5d37eae454727430219969e9aa9ea44e04b25c121e9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/using-allows-undefined-initializer.js",
+      "scenario": "default",
+      "contentsSha256": "20ea825dfe721d80804553442ce6f8e0a67dde60c0cb8697d77d187322608022",
+      "compiledSha256": "c9707874c1992d67bbedaa4108cbd795d179305377797437fc87ae4cae9a3d24",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/using/using-allows-undefined-initializer.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7617408e16c0c40f30229f8e87df1542e3c8472c894a3b3cf398e4df2f276029",
+      "compiledSha256": "86fd11e0692738d7d66d9d315441fd8c9137b34735d65dcc924f6345ed60eadb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    }
+  ]
+}

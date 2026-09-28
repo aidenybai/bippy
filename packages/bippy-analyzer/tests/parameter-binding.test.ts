@@ -5,6 +5,14 @@ import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { createNativeRuntime } from "./helpers/native-runtime.js";
 
 const programs = [
+  "function collect(){function value(){return 1;}function value(){return 2;}var value;return value();}return collect();",
+  "function collect(){let [first,{value:second}]=[1,{value:2}];const third=3;class Fourth{static value=4;}return [first,second,third,Fourth.value];}return collect();",
+  "const trace=[];const spread={*[Symbol.iterator](){trace.push('spread');yield 2;yield 3;}};function collect(...values){trace.push('call');return values;}const values=collect((trace.push('first'),1),...spread,(trace.push('last'),4));return [values,trace];",
+  "const trace=[];const spread={*[Symbol.iterator](){try{yield 1;throw Error('spread');}finally{trace.push('close');}}};try{((...values)=>trace.push('call'))(...spread,(trace.push('last'),2));}catch(error){trace.push(error.message);}return trace;",
+  "const trace=[];let previous;function tag(site,...values){const same=previous===site;previous=site;return [same,site.raw,values];}function render(){return tag`first${(trace.push(1),1)}last${(trace.push(2),2)}`;}return [render(),render(),trace];",
+  "const trace=[];function resource(name){return {[Symbol.dispose](){trace.push(name);}};}function collect(){using first=resource('first'),second=resource('second');return 7;}return [collect(),trace];",
+  "const trace=[];function resource(name){return {[Symbol.dispose](){trace.push(name);throw Error(name);}};}try{using first=resource('first'),second=resource('second');throw Error('body');}catch(error){return [trace,error.name,error.error.message,error.suppressed.name,error.suppressed.error.message,error.suppressed.suppressed.message];}",
+  "const trace=[];const resource={[Symbol.dispose](){trace.push('dispose');}};try{using first=resource,second=(()=>{throw Error('initialize');})();}catch(error){trace.push(error.message);}return trace;",
   "function collect(first, second = arguments[0]) { return [first, second]; } return [collect(7), collect(8, 9)];",
   "function collect(first, { [arguments[0]]: value } = { key: 13 }) { return value; } return collect('key');",
   "function collect(first, second = eval('arg' + 'uments[0]')) { return [first, second]; } return collect(7);",
@@ -68,7 +76,7 @@ const getOptimizedObservation = async (source: string) => {
   }
 };
 
-it.each(programs)("preserves native and published parameter binding: %s", async (program) => {
+it.each(programs)("preserves native and published function evaluation: %s", async (program) => {
   const source = `JSON.stringify((() => { ${program} })())`;
   const runtime = await createConcreteRuntime();
   try {

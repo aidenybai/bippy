@@ -1,0 +1,130 @@
+diff --git a/src/abstract-ops/disposable-operations.mts b/src/abstract-ops/disposable-operations.mts
+index 0ff5507..79dd74e 100644
+--- a/src/abstract-ops/disposable-operations.mts
++++ b/src/abstract-ops/disposable-operations.mts
+@@ -124,7 +124,9 @@ export function* DisposeResources<C extends Completion<unknown>>(
+   let needsAwait = false;
+   let hasAwaited = false;
+   let outputCompletion: C | ThrowCompletion = completion;
+-  for (const resource of disposableResourceStack.toReversed()) {
++  const resources = disposableResourceStack.toReversed();
++  for (let resourceIndex = 0; resourceIndex < resources.length; resourceIndex += 1) {
++    const resource = resources[resourceIndex];
+     const value = resource.ResourceValue;
+     const kind = resource.Kind;
+     const method = resource.DisposeMethod;
+diff --git a/src/runtime-semantics/ArgumentListEvaluation.mts b/src/runtime-semantics/ArgumentListEvaluation.mts
+index 5ba3d81..9c2bc5e 100644
+--- a/src/runtime-semantics/ArgumentListEvaluation.mts
++++ b/src/runtime-semantics/ArgumentListEvaluation.mts
+@@ -105,7 +105,9 @@ function* ArgumentListEvaluation_TemplateLiteral(TemplateLiteral: ParseNode.Temp
+       const templateLiteral = TemplateLiteral;
+       const siteObj = GetTemplateObject(templateLiteral);
+       const restSub = [];
+-      for (const Expression of TemplateLiteral.ExpressionList) {
++      const expressions = TemplateLiteral.ExpressionList;
++      for (let expressionIndex = 0; expressionIndex < expressions.length; expressionIndex += 1) {
++        const Expression = expressions[expressionIndex];
+         const subRef = Q(yield* Evaluate(Expression));
+         const subValue = Q(yield* GetValue(subRef));
+         restSub.push(subValue);
+@@ -132,7 +134,8 @@ function* ArgumentListEvaluation_TemplateLiteral(TemplateLiteral: ParseNode.Temp
+ //     `(` ArgumentList `,` `)`
+ function* ArgumentListEvaluation_Arguments(Arguments: ParseNode.Arguments): PlainEvaluator<Arguments> {
+   const precedingArgs = [];
+-  for (const element of Arguments) {
++  for (let argumentIndex = 0; argumentIndex < Arguments.length; argumentIndex += 1) {
++    const element = Arguments[argumentIndex];
+     if (element.type === 'AssignmentRestElement') {
+       const { AssignmentExpression } = element;
+       // 2. Let spreadRef be the result of evaluating AssignmentExpression.
+diff --git a/src/runtime-semantics/Block.mts b/src/runtime-semantics/Block.mts
+index 38d479b..c9f8ab7 100644
+--- a/src/runtime-semantics/Block.mts
++++ b/src/runtime-semantics/Block.mts
+@@ -18,9 +18,12 @@ export function* BlockDeclarationInstantiation(code: ParseNode.StatementList | P
+   // 3. Let privateEnv be the running execution context's PrivateEnvironment.
+   const privateEnv = surroundingAgent.runningExecutionContext.PrivateEnvironment;
+   // 4. For each element d in declarations, do
+-  for (const d of declarations) {
++  for (let declarationIndex = 0; declarationIndex < declarations.length; declarationIndex += 1) {
++    const d = declarations[declarationIndex];
+     // a. For each element dn of the BoundNames of d, do
+-    for (const dn of BoundNames(d)) {
++    const boundNames = BoundNames(d);
++    for (let nameIndex = 0; nameIndex < boundNames.length; nameIndex += 1) {
++      const dn = boundNames[nameIndex];
+       // i. If IsConstantDeclaration of d is true, then
+       if (IsConstantDeclaration(d)) {
+         // 1. Perform ! env.CreateImmutableBinding(dn, true).
+diff --git a/src/runtime-semantics/FunctionDeclarationInstantiation.mts b/src/runtime-semantics/FunctionDeclarationInstantiation.mts
+index f981ee6..7f9db06 100644
+--- a/src/runtime-semantics/FunctionDeclarationInstantiation.mts
++++ b/src/runtime-semantics/FunctionDeclarationInstantiation.mts
+@@ -56,7 +56,8 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+   // 13. Let functionNames be a new empty List.
+   const functionsToInitialize = [];
+   // 14. For each d in varDeclarations, in reverse list order, do
+-  for (const d of [...varDeclarations].reverse()) {
++  for (let declarationIndex = varDeclarations.length - 1; declarationIndex >= 0; declarationIndex -= 1) {
++    const d = varDeclarations[declarationIndex];
+     // a. If d is neither a VariableDeclaration nor a ForBinding nor a BindingIdentifier, then
+     if (d.type !== 'VariableDeclaration'
+         && d.type !== 'ForBinding'
+@@ -123,7 +124,8 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+     calleeContext.LexicalEnvironment = env;
+   }
+   // 21. For each String paramName in parameterNames, do
+-  for (const paramName of parameterNames) {
++  for (let parameterIndex = 0; parameterIndex < parameterNames.length; parameterIndex += 1) {
++    const paramName = parameterNames[parameterIndex];
+     // a. Let alreadyDeclared be env.HasBinding(paramName).
+     const alreadyDeclared = yield* env.HasBinding(paramName);
+     // b. NOTE: Early errors ensure that duplicate parameter names can only occur in
+@@ -201,7 +203,8 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+     // b. Let instantiatedVarNames be a copy of the List parameterBindings.
+     const instantiatedVarNames = new Set(parameterBindings);
+     // c. For each n in varNames, do
+-    for (const n of varNames) {
++    for (let nameIndex = 0; nameIndex < varNames.length; nameIndex += 1) {
++      const n = varNames[nameIndex];
+       // i. If n is not an element of instantiatedVarNames, then
+       if (!instantiatedVarNames.has(n)) {
+         // 1. Append n to instantiatedVarNames.
+@@ -224,7 +227,8 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+     // d. Let instantiatedVarNames be a new empty List.
+     const instantiatedVarNames = new Set<string>();
+     // e. For each n in varNames, do
+-    for (const n of varNames) {
++    for (let nameIndex = 0; nameIndex < varNames.length; nameIndex += 1) {
++      const n = varNames[nameIndex];
+       // If n is not an element of instantiatedVarNames, then
+       if (!instantiatedVarNames.has(n)) {
+         // 1. Append n to instantiatedVarNames.
+@@ -264,11 +268,14 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+   // 33. Let lexDeclarations be the LexicallyScopedDeclarations of code.
+   const lexDeclarations = LexicallyScopedDeclarations(code);
+   // 34. For each element d in lexDeclarations, do
+-  for (const d of lexDeclarations) {
++  for (let declarationIndex = 0; declarationIndex < lexDeclarations.length; declarationIndex += 1) {
++    const d = lexDeclarations[declarationIndex];
+     // a. NOTE: A lexically declared name cannot be the same as a function/generator declaration, formal
+     //    parameter, or a var name. Lexically declared names are only instantiated here but not initialized.
+     // b. For each element dn of the BoundNames of d, do
+-    for (const dn of BoundNames(d)) {
++    const boundNames = BoundNames(d);
++    for (let nameIndex = 0; nameIndex < boundNames.length; nameIndex += 1) {
++      const dn = boundNames[nameIndex];
+       // i. If IsConstantDeclaration of d is true, then
+       if (IsConstantDeclaration(d)) {
+         // 1. Perform ! lexEnv.CreateImmutableBinding(dn, true).
+@@ -282,7 +289,8 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+   // 35. Let privateEnv be the PrivateEnvironment of calleeContext.
+   const privateEnv = calleeContext.PrivateEnvironment;
+   // 36. For each Parse Node f in functionsToInitialize, do
+-  for (const f of functionsToInitialize) {
++  for (let functionIndex = 0; functionIndex < functionsToInitialize.length; functionIndex += 1) {
++    const f = functionsToInitialize[functionIndex];
+     // a. Let fn be the sole element of the BoundNames of f.
+     const fn = BoundNames(f)[0];
+     // b. Let fo be InstantiateFunctionObject of f with argument lexEnv and privateEnv.

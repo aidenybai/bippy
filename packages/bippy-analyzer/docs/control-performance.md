@@ -28,4 +28,6 @@ The local suite passes 909 tests across 22 files. The unchanged smoke passes 74/
 
 Typecheck, root check, and relocated clean builds pass. Engine SHA-256 is `963fd3c6767af14cffb462430fef2e7ffba2e8224453f6c32d84690a0782ce85`. [Receipts](control-performance-validation/summary.json) retain measurements, rejected attempts, and command logs.
 
-Linux confirmation remains pending. No timeout, worker limit, or Test262 selection changed. These changes do not add a general state owner, abstract domains, or symbolic React rendering.
+Linux CI at `0d1b9483` passes all 909 units but still fails the unchanged smoke at 72/74: both numeric variants time out. Failure-only profiles take 10136.59 ms by default and 10311.31 ms without Maglev. [Indexed internal lists](indexed-internal-lists.md) address the remaining helper overhead and retain those diagnostics.
+
+No timeout, worker limit, or Test262 selection changed. These changes do not add a general state owner, abstract domains, or symbolic React rendering.

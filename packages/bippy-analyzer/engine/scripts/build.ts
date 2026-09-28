@@ -66,6 +66,7 @@ const build = async (): Promise<void> => {
       "binding-checkpoint.patch",
       "control-machine.patch",
       "collection-roots.patch",
+      "indexed-internal-lists.patch",
     ])
       execFileSync(
         "git",
