@@ -258,9 +258,10 @@ class SymbolicEvaluation {
 
 export const evaluateSymbolicExpression = async (
   source: string,
-  inputs: string[],
+  inputs: readonly string[],
   options: SymbolicOptions = {},
 ): Promise<SymbolicExpressionResult> => {
+  const inputNames = [...inputs];
   const maxSteps = options.maxSteps ?? 10000;
   const maxOutcomes = options.maxOutcomes ?? 64;
   if (
@@ -272,11 +273,11 @@ export const evaluateSymbolicExpression = async (
     throw new SymbolicEngineError("Symbolic budgets must be positive safe integers");
   if (
     source.length > 4096 ||
-    inputs.length > 8 ||
-    inputs.some((input) => input.length > 128) ||
-    new Set(inputs).size !== inputs.length
+    inputNames.length > 8 ||
+    inputNames.some((input) => input.length > 128) ||
+    new Set(inputNames).size !== inputNames.length
   )
     throw new SymbolicEngineError("Expression/input budget exceeded or duplicate input names");
   const engine = await getSymbolicEngine();
-  return new SymbolicEvaluation(engine, maxSteps, maxOutcomes).evaluate(source, inputs);
+  return new SymbolicEvaluation(engine, maxSteps, maxOutcomes).evaluate(source, inputNames);
 };

@@ -299,6 +299,24 @@ describe("engine262 symbolic conditional evaluation", () => {
     expect(concreteEngine.surroundingAgent).toBe(originalAgent);
   });
 
+  it("snapshots input names before asynchronous engine loading", async () => {
+    const inputs = ["enabled"];
+    const pending = evaluateSymbolicExpression("enabled ? 1 : 2", inputs);
+    inputs.push(...Array.from({ length: 9 }, (_, index) => `extra${index}`));
+    const result = await pending;
+    expect(result.inputs).toEqual(["enabled"]);
+    expect(result.outcomes).toHaveLength(2);
+  });
+
+  it("rejects excessive input-name lengths and expression nesting", async () => {
+    await expect(evaluateSymbolicExpression("1", ["a".repeat(129)])).rejects.toBeInstanceOf(
+      SymbolicEngineError,
+    );
+    await expect(
+      evaluateSymbolicExpression(`${"(".repeat(129)}1${")".repeat(129)}`, []),
+    ).rejects.toThrow("nesting");
+  });
+
   it("preserves PR #115's Boolean guard shape and negation rules", () => {
     const guard = truthyGuard({ input: "enabled", path: [], measure: "value" });
     expect(negateGuard(negateGuard(guard))).toBe(guard);
