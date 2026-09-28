@@ -1,0 +1,143 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index c55bd40..a949812 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -2,0 +3 @@ import { shouldStepOnNode } from '../host-defined/debugger-util.mts';
++import { markObjectCheckpoints } from '../host-defined/object-checkpoint.mts';
+@@ -127,0 +129 @@ export class Agent {
++    markObjectCheckpoints(this, m);
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+new file mode 100644
+index 0000000..cab7102
+--- /dev/null
++++ b/src/host-defined/object-checkpoint.mts
+@@ -0,0 +1,116 @@
++import {
++  isOrdinaryObject, surroundingAgent, ObjectValue, Value,
++  type Agent, type GCMarker, type OrdinaryObject,
++  type FullyPopulatedDescriptor, type PropertyKeyValue,
++} from '#self';
++
++interface OrdinaryObjectState {
++  object: OrdinaryObject;
++  prototype: OrdinaryObject['Prototype'];
++  extensible: boolean;
++  properties: [PropertyKeyValue, FullyPopulatedDescriptor][];
++}
++
++interface ObjectCheckpointFrame {
++  states: OrdinaryObjectState[];
++}
++
++export interface OrdinaryObjectCheckpoint {
++  readonly scope: 'selected-ordinary-objects-v1';
++  readonly size: number;
++  restore(): void;
++  release(): void;
++}
++
++const checkpoints = new WeakMap<Agent, ObjectCheckpointFrame[]>();
++
++export const markObjectCheckpoints = (agent: Agent, mark: GCMarker): void => {
++  for (const frame of checkpoints.get(agent) ?? []) {
++    for (const state of frame.states) {
++      mark(state.object);
++      mark(state.prototype);
++      for (const [key, descriptor] of state.properties) {
++        mark(key);
++        mark(descriptor);
++      }
++    }
++  }
++};
++
++export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]): OrdinaryObjectCheckpoint => {
++  let owner: Agent | undefined = surroundingAgent;
++  if (!owner) throw new Error('Object checkpoint requires a current agent');
++  const states: OrdinaryObjectState[] = [];
++  for (const object of new Set(objects)) {
++    if (object.ownerAgent !== owner) {
++      throw new TypeError('Checkpoint objects must belong to the current agent');
++    }
++    if (!isOrdinaryObject(object)
++      || object.internalSlotsList.length !== 2
++      || !object.internalSlotsList.includes('Prototype')
++      || !object.internalSlotsList.includes('Extensible')
++      || object.PrivateElements.length !== 0
++      || object.ConstructedBy.length !== 0) {
++      throw new TypeError('Checkpoint requires ordinary objects without additional internal state');
++    }
++    states.push({
++      object,
++      prototype: object.Prototype,
++      extensible: object.Extensible,
++      properties: [...object.properties],
++    });
++  }
++  const frame = { states };
++  const stack = checkpoints.get(owner) ?? [];
++  stack.push(frame);
++  checkpoints.set(owner, stack);
++  const assertActive = (): Agent => {
++    if (!owner) throw new Error('Object checkpoint is released');
++    if (surroundingAgent !== owner) throw new Error('Object checkpoint belongs to another agent');
++    if (stack.at(-1) !== frame) throw new Error('Object checkpoints require last-in-first-out access');
++    return owner;
++  };
++  return {
++    scope: 'selected-ordinary-objects-v1',
++    size: states.length,
++    restore: () => {
++      const agent = assertActive();
++      for (const state of states) {
++        if (agent.debugger_tryTouchDuringPreview(state.object) !== undefined) {
++          throw new Error('Object checkpoint cannot restore an existing object during preview');
++        }
++      }
++      const prototypes = new Map<ObjectValue, OrdinaryObject['Prototype']>();
++      for (const state of states) prototypes.set(state.object, state.prototype);
++      for (const state of states) {
++        const visited = new Set<ObjectValue>();
++        let cursor: ObjectValue = state.object;
++        while (cursor.GetPrototypeOf === ObjectValue.prototype.GetPrototypeOf) {
++          if (visited.has(cursor)) throw new Error('Object checkpoint would restore a prototype cycle');
++          visited.add(cursor);
++          const prototype: unknown = prototypes.get(cursor) ?? ('Prototype' in cursor ? cursor.Prototype : undefined);
++          if (prototype === Value.null) break;
++          if (!(prototype instanceof Value) || prototype.type !== 'Object') {
++            throw new Error('Object checkpoint found an invalid prototype');
++          }
++          cursor = prototype;
++        }
++      }
++      for (const { object, prototype, extensible, properties } of states) {
++        object.properties.clear();
++        for (const [key, descriptor] of properties) object.properties.set(key, descriptor);
++        object.Prototype = prototype;
++        object.Extensible = extensible;
++        object.PrivateElements.length = 0;
++        object.ConstructedBy.length = 0;
++      }
++    },
++    release: () => {
++      const agent = assertActive();
++      stack.pop();
++      if (stack.length === 0) checkpoints.delete(agent);
++      states.length = 0;
++      owner = undefined;
++    },
++  };
++};
+diff --git a/src/index.mts b/src/index.mts
+index 1c4d122..fbb9102 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -6,0 +7 @@ export * from './host-defined/engine.mts';
++export { createOrdinaryObjectCheckpoint, type OrdinaryObjectCheckpoint } from './host-defined/object-checkpoint.mts';
+diff --git a/src/value.mts b/src/value.mts
+index 76db24f..abce4b7 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -710,0 +711,2 @@ export class ObjectValue extends Value implements ObjectInternalMethods<ObjectVa
++  readonly ownerAgent: typeof surroundingAgent = surroundingAgent;
++

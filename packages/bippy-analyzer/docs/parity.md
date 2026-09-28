@@ -25,7 +25,7 @@ pnpm --filter bippy-analyzer test --run
 pnpm --filter bippy-analyzer typecheck
 ```
 
-The current local and Linux CI suites pass **766 tests across 14 files**, using at most two workers. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
+The current local suite passes **797 tests across 15 files**, using at most two workers. The preceding Linux CI suite passed 766 tests; the added checkpoint increment needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
 
 - All 144 ordered pairs from 12 selected scalar literals for each of 23 binary/control operators. These produce 3,312 guarded expression templates and 13,248 Boolean witness runs per reference engine.
 - 192 generated cases from three fixed seeds, containing 160 distinct expressions. Each uses three declared Boolean inputs and checks all eight assignments, for 1,536 additional witness runs per reference engine.
@@ -72,9 +72,15 @@ The task host still accepts zero-delay timers only. Queue draining is not a comp
 
 At `c274ddc9`, [Linux analyzer CI](https://github.com/aidenybai/bippy/actions/runs/36393315028/job/108833815268) passes 766 unit tests and all 74 smoke variants. Both numeric `substr` variants pass with the original selection, two workers, and 10-second timeout. The previous run’s 72/74 failure and complete CPU profiles remain archived.
 
-The CLI opts into omitting unreferenced argument bindings under a conservative source check. Default agents and the concrete analyzer runtime retain those bindings. [Allocation rules and receipts](unused-arguments-validation/README.md) document the host-inspection restriction, preserved eval/escaped-identifier behavior, rejected changes, and independent checks. The current engine SHA-256 is `96eefcf1b15d2c61ec22e18cd16b73bc254fc103804bd843add502873e23749c`.
+The CLI opts into omitting unreferenced argument bindings under a conservative source check. Default agents and the concrete analyzer runtime retain those bindings. [Allocation rules and receipts](unused-arguments-validation/README.md) document the host-inspection restriction, preserved eval/escaped-identifier behavior, rejected changes, and independent checks. That revision’s engine SHA-256 is `96eefcf1b15d2c61ec22e18cd16b73bc254fc103804bd843add502873e23749c`.
 
 The additional parameter/arguments selection remains 557/559, and the historical selection remains 301/306. Passing the smoke does not establish full JavaScript, browser, or symbolic React parity.
+
+## Selected object checkpoints
+
+The [ordinary-object checkpoint contract](object-checkpoints.md) and its 31 tests add selected-object restoration without replacing JavaScript semantics. The tests compare aliasing, descriptors, property order, prototypes, integrity, and branch visitation order with published engine262 and V8 observations. Additional checks cover ownership, private-brand installation, garbage-collection roots, nested checkpoints, and prototype-cycle rejection.
+
+This is storage restoration, not a suspended execution snapshot. Unselected objects, captured bindings, jobs, and host effects remain outside its scope. The [symbolic React checklist](symbolic-react-status.md) records those missing requirements. The local engine hash is `da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29`.
 
 ## Acceptance for later stages
 
