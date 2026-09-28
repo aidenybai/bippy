@@ -275,6 +275,20 @@ export class ExecutionMachine
     this.l = locals;
   }
 
+  mark(marker: (value: unknown) => void): void {
+    marker(this.v);
+    marker(this.argument);
+    marker(this.receiver);
+    marker(this.delegate);
+    marker(this.delegateNextMethod);
+    for (const key of Reflect.ownKeys(this.l)) {
+      const descriptor = Object.getOwnPropertyDescriptor(this.l, key);
+      if (descriptor && "value" in descriptor) marker(descriptor.value);
+    }
+    for (const handler of this.handlers) marker(handler.argument);
+    for (const binding of this.captureBindings?.().bindings ?? []) marker(binding.get());
+  }
+
   assertCheckpointHealthy(): void {
     if (this.checkpointFailure) throw this.checkpointFailure;
   }

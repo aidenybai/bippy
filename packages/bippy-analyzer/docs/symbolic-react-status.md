@@ -47,6 +47,6 @@ Follow the [engine reuse audit](engine-reuse-audit.md) rather than adding an ana
 
 [Additive Number terms](numeric-domain.md), [Boolean decisions](boolean-decisions.md), and [Number SameValue predicates](number-predicates.md) now have engine-backed support. Actual React can retain unknown Number state through a single driven update. Broader predicates, string domains, general ownership, and a package explorer remain missing. Fresh single-path React runs do not establish no-prefix-replay React forks.
 
-[Weak-entry propagation](ephemeron-roots.md) now retains values regardless of dependency order. The suspended-control GC counterexample still fails. Neither the 603 passing weak-collection Test262 variants nor the selected checkpoint tests prove complete root coverage.
+[Weak-entry propagation](ephemeron-roots.md) now retains values regardless of dependency order. [Suspended-evaluator marking](suspended-control-roots.md) fixes the original partial-array GC counterexample. Unregistered external evaluators and timer callbacks still lose live weak targets. Neither the 815 passing weak-collection/generator Test262 variants nor the selected checkpoint tests prove complete root coverage.
 
 Keep the goal active until each required row has implementation and independent acceptance evidence. General browser behavior and later server/native targets retain the separate boundaries in the roadmap.

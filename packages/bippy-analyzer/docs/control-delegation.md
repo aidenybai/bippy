@@ -33,4 +33,4 @@ The earlier docs-only revision `a3bc42e7` passes Linux CI, including 917 units a
 
 [Linux CI at `e83442bc`](control-delegation-validation/ci-success.json) passes all jobs, including 937 units and 74/74 smoke. No test selection, timeout, or worker limit changed. These corrections do not establish complete generator conformance, general state ownership, control-local GC roots, or symbolic React execution.
 
-A [separate GC comparison](control-validation/gc-control-gap.json) still fails. Engine262 clears a weak reference to an object held by a suspended generator’s partial array result. Resuming still returns that object. Independent V8 retains the weak target across a task boundary and explicit collection. The missing control-root traversal remains open.
+The historical [GC comparison](control-validation/gc-control-gap.json) cleared a weak reference to an object held by a suspended generator’s partial array result. [Suspended-evaluator marking](suspended-control-roots.md) now retains that target, matching V8. Unregistered external drivers, host callbacks, and saved-state root ownership still need work.

@@ -28,10 +28,10 @@ The full local suite passes 1,196 tests across thirty files. Typechecking, reloc
 
 The published engine passes that selection while failing the independent dependency probe. The selection therefore does not establish complete weak-reference correctness. [Validation receipts](ephemeron-root-validation/summary.json) retain both observations and the initial fixture error, where an arrow body returned `undefined` instead of an object.
 
-The engine SHA-256 is `da89eb16aa62b210bd0a705b63a7e45c9390ca0e8b2faa7e28ec02d48dd3d2cd`. No worker count, smoke selection, or timeout changed. Linux validation for this patch remains pending.
+The engine SHA-256 is `da89eb16aa62b210bd0a705b63a7e45c9390ca0e8b2faa7e28ec02d48dd3d2cd`. No worker count, smoke selection, or timeout changed. [Linux CI at `e696d70a`](ephemeron-root-validation/ci.json) passes all jobs, including 1,196 units and the unchanged 74-variant smoke. Earlier Linux timeout failures remain recorded; this pass does not establish stable runner timing.
 
 ## Remaining gaps
 
-The suspended-array probe still returns `[false,7]` in engine262 and `[true,7]` in V8. Its partial result remains usable after the engine clears its weak reference. The weak-entry correction does not add control, native-capture, job, or module roots.
+At `e696d70a`, the suspended-array probe still returned `[false,7]` in engine262 and `[true,7]` in V8. The weak-entry correction did not add evaluator roots. The later [suspended-evaluator correction](suspended-control-roots.md) fixes that probe while retaining separate external-driver and host-callback failures.
 
 General engine-state ownership, shared-prefix React forks, guarded React reports, and the integrated symbolic demo remain incomplete. The [completion checklist](symbolic-react-status.md) remains open.

@@ -37,13 +37,13 @@ The published-engine test suspends a real guest generator, copies its context, a
 
 ### GC marking is not ownership discovery
 
-`Agent.mark`, `ExecutionContext.mark`, and `api.gc` provide existing roots and traversal conventions. They are useful implementation inputs, but they do not describe all state that must rewind. The retained [suspended-control counterexample](control-validation/gc-control-gap.json) also proves that current reachability marking is incomplete.
+`Agent.mark`, `ExecutionContext.mark`, and `api.gc` provide existing roots and traversal conventions. They are useful implementation inputs, but they do not describe all state that must rewind. The retained [suspended-control counterexample](control-validation/gc-control-gap.json) exposed a missing root path. [Engine marking extensions](suspended-control-roots.md) now fix that case. Current external-driver and timer-callback probes still prove incomplete reachability marking.
 
 Do not infer a complete state owner from this traversal. The [engine state inventory](engine-state-inventory.md) identifies existing records, capture conventions, and missing roots. Native captures, internal collections, execution records, jobs, module state, and host resources still need explicit treatment or rejection. The [weak-entry propagation correction](ephemeron-roots.md) fixes order-dependent marking, not continuation roots or rollback.
 
 ## Size and maintenance cost
 
-At this audit, the two control runtime extensions contain 640 lines: `execution-machine.mts` has 592 and `native-captures.mts` has 48. Six control build helpers contain another 520 lines. These counts include interfaces and formatting. They exclude patches, general build/integrity tools, tests, and third-party implementations, so they are not a total project size.
+At the original audit (`0dbcb0e9`), the two control runtime extensions contained 640 lines: `execution-machine.mts` has 592 and `native-captures.mts` has 48. Six control build helpers contain another 520 lines. The later machine marking method adds fourteen lines, bringing those extensions to 654 lines. These counts include interfaces and formatting. They exclude patches, general build/integrity tools, tests, and third-party implementations, so they are not a total project size.
 
 Babel performs generator lowering. The project adds capture metadata and a modified execution driver. This is not another application-language interpreter, but it still creates generator-protocol, GC, and performance obligations. Delegation regressions required corrections, and repeated Linux smoke timeouts remain unresolved. Those observations do not establish a controlled slowdown relative to upstream.
 

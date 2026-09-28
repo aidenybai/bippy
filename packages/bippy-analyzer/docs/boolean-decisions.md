@@ -53,7 +53,7 @@ Both branch visitation orders verify:
 
 Each order specializes four outcomes at nine Number witnesses. Independent V8 and published-engine runs match all 72 observations per reference. The actual numeric expressions remain unbounded; the witnesses only check their specializations.
 
-The callback fixture does not use an engine job or timer queue. Its owner is specific to the selected program. It does not prove transitive ownership of execution records, native captures, internal collections, modules, host effects, or escaped functions. The known suspended-control GC gap remains open.
+The callback fixture does not use an engine job or timer queue. Its owner is specific to the selected program. It does not prove transitive ownership of execution records, native captures, internal collections, modules, host effects, or escaped functions. [Suspended-evaluator roots](suspended-control-roots.md) cover the original generator probe, but external drivers and host callbacks still have proven root gaps.
 
 ## Remaining React work
 

@@ -1,0 +1,88 @@
+{
+  "scope": "engine262-reachable-evaluator-roots-v1",
+  "symbolicReactComplete": false,
+  "completeControlRoots": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "1c969c89415c808d77f8a1af13de37c0708b030dc0eaff3a16cf637af87e6140",
+  "rootPaths": [
+    "ExecutionContext.CodeEvaluationState and Generator",
+    "Agent private paused evaluator, including while Agent.evaluate is running",
+    "Machine locals/data descriptors, resume state, receiver, delegate/cached next, handler arguments, capture-binding values",
+    "Native array indices after existing marking/weak-collection cases"
+  ],
+  "customRuntimeLinesAdded": 14,
+  "regressions": {
+    "initialCases": 10,
+    "initialPrepatchFailures": 10,
+    "patchedCases": 11,
+    "additionalActiveAgentCase": 1,
+    "independentV8GeneratorObservations": 8,
+    "deterministicReleaseChecks": true
+  },
+  "units": {
+    "passed": 1207,
+    "total": 1207,
+    "files": 31
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 815,
+      "passed": 815,
+      "exitCode": 0
+    },
+    {
+      "name": "published",
+      "total": 815,
+      "passed": 815,
+      "exitCode": 0
+    }
+  ],
+  "selection": [
+    ".test262/test/built-ins/WeakMap/**/*.js",
+    ".test262/test/built-ins/WeakSet/**/*.js",
+    ".test262/test/built-ins/WeakRef/**/*.js",
+    ".test262/test/built-ins/FinalizationRegistry/**/*.js",
+    ".test262/test/language/statements/generators/yield*.js",
+    ".test262/test/language/expressions/generators/yield*.js",
+    ".test262/test/built-ins/GeneratorPrototype/**/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "accumulator": {
+    "source": "var reference;function create(){const target={value:7};reference=new WeakRef(target);return target;}function* run(){return [create(),yield 'pause'];}var iterator=run();iterator.next();",
+    "engine": [true, 7],
+    "native": [true, 7],
+    "fixed": true
+  },
+  "reproducedRemainingGaps": [
+    "Unregistered external ScriptEvaluation debugger suspension",
+    "Concrete runtime timer callback environment under explicit host GC"
+  ],
+  "additionalUnverifiedCoverage": [
+    "Saved control snapshots without root ownership",
+    "Complete native captures and internal record traversal",
+    "Nested/reentrant drivers and cross-Agent ownership",
+    "Promise/module/host resource roots and rollback"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/suspended-control-roots.patch": "f7f0fe6f2633b3f66ba0a8c056cb3070a9cb2d53949e40c93069555570f75dc2",
+    "engine/scripts/build.ts": "8ac9b46a29c65de83a1989e40e00fc3642de6e9c25dfdd22480109cd02a847fa",
+    "engine/extensions/execution-machine.mts": "e3864a42efd90c2898ddab0959d41198a247e9f4c35a040077cd965ca45753b9",
+    "engine/extensions/native-captures.mts": "e7fff23089ed8b9c46f47a7f716ea73ae1322c520bb872dbf2e858da8e80d98f",
+    "tests/gc-control.test.ts": "48f1c3cec9dae5146c97f499af88d483d376e2bdcb018e127b17b5f741e41039",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "docs/engine-state-inventory.md": "2652aff2731e1afaa6c0c3f31d8d0ceec127eedc413f3aadae2e9d15c0e00321"
+  }
+}
