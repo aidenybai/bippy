@@ -1,0 +1,17 @@
+diff --git a/src/api.mts b/src/api.mts
+index f1600f9..5cb0457 100644
+--- a/src/api.mts
++++ b/src/api.mts
+@@ -30,0 +31,2 @@ import { isWeakSetObject, type WeakSetObject } from './intrinsics/WeakSet.mts';
++import { isMapObject } from './intrinsics/Map.mts';
++import { isSetObject } from './intrinsics/Set.mts';
+@@ -106,0 +109,9 @@ export function gc() {
++    } else if (O instanceof ObjectValue && isMapObject(O)) {
++      O.mark(markCb);
++      for (const entry of O.MapData) {
++        markCb(entry.Key);
++        markCb(entry.Value);
++      }
++    } else if (O instanceof ObjectValue && isSetObject(O)) {
++      O.mark(markCb);
++      O.SetData.forEach(markCb);
