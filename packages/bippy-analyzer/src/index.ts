@@ -26,4 +26,13 @@ export type {
   GuardTruthy,
   SymbolicVariable,
 } from "./symbolic/guards.js";
+export { createNumericDomain } from "./symbolic/numeric-domain.js";
+export type {
+  NumericConstantExpression,
+  NumericDomain,
+  NumericDomainOptions,
+  NumericExpression,
+  NumericInputExpression,
+  NumericOperationExpression,
+} from "./symbolic/numeric-domain.js";
 export { SymbolicEngineError } from "./symbolic/errors.js";

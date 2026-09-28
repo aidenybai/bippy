@@ -6,6 +6,8 @@ See the [roadmap](ROADMAP.md) for the remaining implementation stages and comple
 
 See [concrete execution](docs/concrete-execution.md) for `createConcreteRuntime()`, executable artifact loading, the restricted task host, and native React comparisons. React supplies both renderers used by these checks. A guest-owned LinkeDOM counter matches native V8 and Chromium observations. These selected checks do not establish general browser or symbolic React parity.
 
+The separate [numeric domain](docs/numeric-domain.md) represents unbounded Number inputs through engine addition, subtraction, and unary negation. It preserves expression structure through calls and mutation, but rejects unsupported concrete reads. It does not yet provide guarded decisions or symbolic React output.
+
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
 ## Run
