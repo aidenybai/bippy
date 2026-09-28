@@ -3,6 +3,7 @@ import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { SourceMap } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { types } from "node:util";
 import * as published from "@engine262/engine262";
 import { expect, it } from "vite-plus/test";
 import type { AgentHostDefined, ValueEvaluator } from "../engine/dist/declaration/index.mjs";
@@ -79,6 +80,7 @@ it.each(concreteCases)("source build matches the published engine: %s", async (s
 
 it("emits a typed hook after node observation, with an untouched fallback", async () => {
   const { api } = await getSymbolicEngine();
+  expect(types.isModuleNamespaceObject(api)).toBe(true);
   const previous = api.surroundingAgent;
   const observed: string[] = [];
   const options: AgentHostDefined = {

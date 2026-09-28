@@ -64,6 +64,8 @@ The executable now starts `node --import tsx` directly. TypeScript loading still
 
 [Validation receipts](control-validation/summary.json) record source hashes, input comparisons, failures, corrected runs, and raw logs.
 
+[The first Linux run](control-validation/ci-failure.json) passed 889/890 tests. Its first checkpoint case exceeded the five-second unit timeout during cold loading. The Test262 step did not run; other CI jobs passed. Vitest had transformed the already-built engine inside the test process. The test configuration now loads that artifact directly through Node. A native module-namespace assertion fails with the old configuration and passes with the correction. All 890 tests pass locally after the change. No unit or Test262 timeout changed; Linux confirmation remains pending.
+
 `engine/extensions/` is part of the build identity. The build checks its TypeScript, bundles it with engine262, and emits `CONTROL-LICENSE`. Completion dispatch retains Babel/Facebook MIT attribution. New direct Babel dependencies are exact versions, and unrelated lockfile resolutions remain unchanged.
 
 The full local suite passes 890 tests across 21 files. The unchanged smoke passes 74/74. The parameter/arguments selection retains 557/559 verdicts. The historical selection retains 301/306, but its three tail-call failures now time out rather than overflowing the native stack. No timeout changed. An additional 212 generator variants pass in both source-built and published engines, with identical input and compiled hashes. Relocated clean builds match engine SHA-256 `cf0fd5f77326b740c6d0da56739e39ad9c770eb9e2a4b195a2430f3dd7980662`.
