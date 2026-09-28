@@ -25,7 +25,7 @@ pnpm --filter bippy-analyzer test --run
 pnpm --filter bippy-analyzer typecheck
 ```
 
-The current local suite passes **805 tests across 16 files**, using at most two workers. [Linux CI](https://github.com/aidenybai/bippy/actions/runs/36438481504) passed the preceding 797-test checkpoint revision and its unchanged 74-variant smoke. The added declarative-root fix needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
+The current local suite passes **821 tests across 17 files**, using at most two workers. The [preceding Linux analyzer job](https://github.com/aidenybai/bippy/actions/runs/36441682230/job/108993490477) passed 805 tests and the unchanged 74-variant smoke. That workflow’s check job failed on `engine/scripts/build.ts` indentation. The current root check passes after correcting it. The combined binding-checkpoint increment needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
 
 - All 144 ordered pairs from 12 selected scalar literals for each of 23 binary/control operators. These produce 3,312 guarded expression templates and 13,248 Boolean witness runs per reference engine.
 - 192 generated cases from three fixed seeds, containing 160 distinct expressions. Each uses three declared Boolean inputs and checks all eight assignments, for 1,536 additional witness runs per reference engine.
@@ -86,7 +86,13 @@ This is storage restoration, not a suspended execution snapshot. Unselected obje
 
 The [binding-root fix](declarative-roots-validation/README.md) makes the collector visit each declarative binding record rather than its native map. Before the fix, five focused checks lost weak references to values that remained accessible through bindings. Eight checks now pass, including saved getter captures and module bindings, with independent V8 comparisons for retained values.
 
-Both published and source-built engines pass the additional 152 WeakRef/FinalizationRegistry variants. That upstream selection did not detect this bug. The current engine hash is `7b638705724afba015103efa11308ad4e036b5b7129115564c6d89263425004f`. Marking bindings is not checkpointing them; symbolic React branch isolation remains missing.
+Both published and source-built engines pass the additional 152 WeakRef/FinalizationRegistry variants. That upstream selection did not detect this bug. That revision’s engine hash is `7b638705724afba015103efa11308ad4e036b5b7129115564c6d89263425004f`. That fix marks bindings. Selected binding restoration is a separate extension below.
+
+## Selected object and binding checkpoints
+
+The [combined checkpoint contract](state-checkpoints.md) adds selected declarative/function bindings to ordinary-object restoration. Sixteen tests cover closure aliases, separate parameter/body records, temporal dead zones, constant assignment, cell identity, declaration rollback, ownership, GC roots, and validation before restoration. Branch observations compare with V8 and published engine262 in both visitation orders.
+
+These tests restore selected state between separately executed scripts. They do not clone a continuation or render symbolic React trees. Module state, excluded internal collections, unselected mutations, jobs, and host effects remain unsupported. Relocated builds match engine SHA-256 `6d0119e78de339d6a4033e92a705035c67842ddfa05459223ac24646abe4a68a`.
 
 ## Acceptance for later stages
 

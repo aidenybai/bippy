@@ -170,6 +170,7 @@ Completion check: unknown numeric and string inputs remain expressions through s
 This is the main gap between the current conditional evaluator and a symbolic JavaScript engine. Evaluating both branches against the same mutable heap is incorrect. The [completion checklist](docs/symbolic-react-status.md) maps the remaining React requirements to current artifacts.
 
 - [x] Add engine-owned checkpoints for explicitly selected ordinary objects, with ownership, descriptor/order preservation, nested restoration, and garbage-collection roots. [The contract](docs/object-checkpoints.md) excludes captured bindings, unselected objects, jobs, and continuations. This does not complete branch isolation.
+- [x] Add [combined checkpoints](docs/state-checkpoints.md) for selected ordinary objects and declarative/function bindings, preserving cell identity, initialization, flags, aliases, and ownership. Module state, disposal, jobs, and continuations remain excluded.
 - [ ] Inventory mutable engine and host state. Define ownership for objects, environments, module bindings, execution records, internal collections, jobs, and external handles.
 - [ ] Choose checkpoint/journal or persistent-state mechanisms that preserve object identity and aliases. Do not use JSON or generic deep cloning as a heap snapshot.
 - [ ] Define branch continuation and resumption behavior, including exception unwinding and `finally`. Do not assume a suspended host generator can be cloned or that heap restoration also restores execution.

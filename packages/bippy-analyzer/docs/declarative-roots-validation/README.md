@@ -31,4 +31,4 @@ This patch changes reachability, not binding restoration. There is still no bind
 - The local full suite passes 805 tests across 16 files. Typecheck, lint/format, and relocated build verification pass.
 - The built engine SHA-256 is `7b638705724afba015103efa11308ad4e036b5b7129115564c6d89263425004f`.
 
-[The summary](summary.json) records provenance, hashes, probe observations, and test counts. Raw failure and success logs remain in `validation-logs.json`. The separate [checkpoint CI receipt](../object-checkpoint-validation/ci-success.json) verifies the preceding 797-test revision, not this fix.
+[The summary](summary.json) records provenance, hashes, probe observations, and test counts. Raw failure and success logs remain in `validation-logs.json`. The separate [checkpoint CI receipt](../object-checkpoint-validation/ci-success.json) verifies the preceding 797-test revision. [This fix’s Linux analyzer job](ci.json) passed 805 tests and the 74-variant smoke. The workflow’s check job failed on `engine/scripts/build.ts` indentation. The later binding-checkpoint increment corrects that formatting error and reruns the root check.

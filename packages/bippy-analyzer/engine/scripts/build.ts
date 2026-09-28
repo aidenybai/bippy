@@ -57,7 +57,8 @@ const build = async (): Promise<void> => {
       "lazy-argument-accessors.patch",
       "unused-arguments.patch",
       "object-checkpoint.patch",
-    "declarative-roots.patch",
+      "declarative-roots.patch",
+      "binding-checkpoint.patch",
     ])
       execFileSync(
         "git",
