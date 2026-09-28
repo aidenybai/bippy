@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
+import { runInNewContext } from "node:vm";
 import * as concreteEngine from "@engine262/engine262";
 import { describe, expect, it } from "vite-plus/test";
 import {
@@ -92,6 +93,61 @@ const decodeObservation = (observation: NormalObservation | ThrowObservation): C
   }
 };
 
+const checkScalarExpression = async (source: string): Promise<void> => {
+  const result = await evaluateSymbolicExpression(source, ["enabled", "other"]);
+  expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+  for (const enabled of [false, true]) {
+    for (const other of [false, true]) {
+      const inputs = new Map([
+        ["enabled", enabled],
+        ["other", other],
+      ]);
+      const matching = result.outcomes.filter(
+        (outcome) => evaluateGuard(outcome.guard, inputs) === true,
+      );
+      expect(matching, source).toHaveLength(1);
+      const observation = decodeObservation(matching[0].completion);
+      expect(observation, source).toEqual(getConcreteResult(source, inputs));
+      let native: ConcreteResult;
+      try {
+        native = { kind: "normal", value: runInNewContext(`(${source}\n)`, { enabled, other }) };
+      } catch (error) {
+        if (
+          typeof error !== "object" ||
+          error === null ||
+          !("name" in error) ||
+          typeof error.name !== "string"
+        )
+          throw error;
+        native = { kind: "throw", name: error.name };
+      }
+      expect(observation.kind, source).toBe(native.kind);
+      if (observation.kind === "throw") expect(observation.name, source).toBe(native.name);
+      else expect(observation, source).toEqual(native);
+    }
+  }
+};
+
+const scalarValues = [
+  "undefined",
+  "null",
+  "false",
+  "true",
+  "-0",
+  "0",
+  "NaN",
+  "Infinity",
+  "-Infinity",
+  "2",
+  "'2'",
+  "''",
+  "2n",
+  "0n",
+  "-1n",
+  "'not a number'",
+  "'\\uD800'",
+];
+
 const cases = [
   "enabled ? 2 + 3 : 4 * 5",
   "enabled ? 'count: ' + 3 : 'hidden'",
@@ -119,6 +175,56 @@ const cases = [
   "enabled ? (other ? 1n + 1 : 3) : (other ? 4 : 1n / 0n)",
   "2 ** 3 + 4 * 5",
   "enabled ? 1 : 2 // trailing comment",
+  "enabled",
+  "enabled + 1",
+  "typeof enabled",
+  "enabled === true",
+  "enabled && 1",
+  "enabled || 1",
+  "(enabled ? 1 : 2) + 1",
+  "(enabled ? true : false) ? 1 : 2",
+  "(enabled ? 1 : 2) + (enabled ? 3 : 4)",
+  "(enabled ? 1 : 2) + (other ? 3 : 4)",
+  "(enabled ? 'count: ' : 3) + (other ? 2 : 'items')",
+  "((enabled ? 2 : 5) * (other ? 3 : 7)) - +enabled",
+  "(enabled ? 7 : -7) / (other ? 0 : -0)",
+  "(enabled ? 7n : -7n) % (other ? 3n : 0n)",
+  "(enabled ? 2n : 2) ** (other ? 3n : -1n)",
+  "-(enabled ? 0 : -0)",
+  "+(enabled ? 1n : '3')",
+  "~(enabled ? 1n : '4294967296')",
+  "typeof (enabled ? null : undefined)",
+  "void (enabled ? 1n + 1 : 3)",
+  "!(enabled ? NaN : Infinity)",
+  "(enabled ? NaN : -0) === (other ? NaN : 0)",
+  "(enabled ? '2' : 2n) == (other ? 2 : '2')",
+  "(enabled ? '2' : 2n) != (other ? 2 : '3')",
+  "(enabled ? '2' : 2n) !== (other ? 2 : 2n)",
+  "(enabled ? null : undefined) == undefined",
+  "(enabled ? '10' : 10n) < (other ? '2' : 2)",
+  "(enabled ? NaN : 3) <= (other ? 3n : 4)",
+  "(enabled ? NaN : 3) > (other ? 3n : 2)",
+  "(enabled ? NaN : 3) >= (other ? 3n : 4)",
+  "(+enabled === 1) ? (enabled ? 7 : 1n / 0n) : (enabled ? 1n / 0n : 8)",
+  "enabled ? !enabled : enabled",
+  "enabled && other",
+  "enabled || other",
+  "enabled ?? other",
+  "(enabled ? null : 0) ?? (other ? 7 : 8)",
+  "(enabled ? undefined : false) ?? (other ? 7 : 8)",
+  "(enabled ? -0 : 0n) || 'fallback'",
+  "(enabled ? '' : NaN) && (1n / 0n)",
+  "(enabled ? 'value' : 1n) || (1n / 0n)",
+  "(enabled && other) ? (enabled ? 7 : 1n / 0n) : 8",
+  "(enabled || other) && (enabled ? !other : other)",
+  "(enabled ? 1n / 0n : 2) + (other ? 3 : 4)",
+  "(enabled ? 1n : 2) + (other ? 1n / 0n : 3)",
+  "(enabled ? 1n + 1 : other) && (other ? 7 : 8)",
+  "((enabled ? undefined : 1n / 0n) ?? (other ? 2 : 3)) + 1",
+  "(enabled ? (other ? true : false) : false) ? 7 : 8",
+  "false && enabled",
+  "true || enabled",
+  "0 ?? enabled",
 ];
 
 describe("engine262 symbolic conditional evaluation", () => {
@@ -150,25 +256,45 @@ describe("engine262 symbolic conditional evaluation", () => {
     }
   });
   it.each(cases)(
-    "matches the unmodified engine for all Boolean substitutions: %s",
-    async (source) => {
-      const result = await evaluateSymbolicExpression(source, ["enabled", "other"]);
-      const restored = JSON.parse(JSON.stringify(result));
-      expect(restored).toEqual(result);
-      for (const enabled of [false, true]) {
-        for (const other of [false, true]) {
-          const inputs = new Map([
-            ["enabled", enabled],
-            ["other", other],
-          ]);
-          const matching = result.outcomes.filter(
-            (outcome) => evaluateGuard(outcome.guard, inputs) === true,
-          );
-          expect(matching).toHaveLength(1);
-          expect(decodeObservation(matching[0].completion)).toEqual(
-            getConcreteResult(source, inputs),
-          );
-        }
+    "matches unmodified engine262 and Node for all Boolean substitutions: %s",
+    checkScalarExpression,
+  );
+
+  it.each([
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "**",
+    "==",
+    "!=",
+    "===",
+    "!==",
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "&&",
+    "||",
+    "??",
+  ])("matches both engines across the guarded scalar matrix: %s", async (operator) => {
+    for (const [index, value] of scalarValues.entries()) {
+      const alternate = scalarValues[(index + 1) % scalarValues.length];
+      const other = scalarValues[(index + 5) % scalarValues.length];
+      await checkScalarExpression(
+        `(enabled ? ${value} : ${alternate}) ${operator} (other ? ${alternate} : ${other})`,
+      );
+    }
+  });
+
+  it.each(["+", "-", "!", "~", "typeof", "void"])(
+    "matches both engines across guarded unary coercions: %s",
+    async (operator) => {
+      for (const [index, value] of scalarValues.entries()) {
+        await checkScalarExpression(
+          `${operator} (enabled ? ${value} : ${scalarValues[(index + 1) % scalarValues.length]})`,
+        );
       }
     },
   );
@@ -201,14 +327,13 @@ describe("engine262 symbolic conditional evaluation", () => {
   });
 
   it.each([
-    "enabled",
-    "enabled + 1",
-    "typeof enabled",
-    "enabled === true",
-    "enabled && 1",
-    "enabled || 1",
-    "(enabled ? 1 : 2) + 1",
-    "(enabled ? true : false) ? 1 : 2",
+    "enabled & 1",
+    "enabled << 1",
+    "enabled ? 1 in 2 : 3",
+    "enabled ? 1 instanceof 2 : 3",
+    "enabled && getValue()",
+    "true || getValue()",
+    "0 ?? object.value",
     "enabled ? (counter = 1) : 2",
     "enabled ? counter++ : 2",
     "enabled ? getValue() : 2",
@@ -225,6 +350,78 @@ describe("engine262 symbolic conditional evaluation", () => {
     await expect(evaluateSymbolicExpression(source, ["enabled"])).rejects.toBeInstanceOf(
       SymbolicEngineError,
     );
+  });
+
+  it("reports the scalar-expression scope and bounds each intermediate or final choice", async () => {
+    const result = await evaluateSymbolicExpression("(enabled ? 1 : 2) + 3", ["enabled"], {
+      maxOutcomes: 2,
+    });
+    expect(result.scope).toBe("engine262-pure-scalar-expression-v2");
+    expect(result.outcomes).toHaveLength(2);
+    await expect(
+      evaluateSymbolicExpression("enabled", ["enabled"], { maxOutcomes: 1 }),
+    ).rejects.toThrow("outcome budget");
+    await expect(
+      evaluateSymbolicExpression("enabled + other", ["enabled", "other"], { maxOutcomes: 3 }),
+    ).rejects.toThrow("outcome budget");
+    const complete = await evaluateSymbolicExpression("enabled + other", ["enabled", "other"], {
+      maxOutcomes: 4,
+    });
+    expect(complete.outcomes).toHaveLength(4);
+  });
+
+  it("shares an operand prefix before a symbolic choice", async () => {
+    const result = await evaluateSymbolicExpression("(1 + 2) + (enabled ? 3 : 4)", ["enabled"]);
+    expect(result.visitedExpressions.filter((source) => source === "1 + 2")).toHaveLength(1);
+    expect(result.outcomes.map((outcome) => decodeObservation(outcome.completion).value)).toEqual([
+      6, 7,
+    ]);
+  });
+
+  it("does not evaluate a right operand on paths where the left operand throws", async () => {
+    const result = await evaluateSymbolicExpression("(enabled ? 1n / 0n : 2) + (other ? 3 : 4)", [
+      "enabled",
+      "other",
+    ]);
+    expect(result.outcomes).toHaveLength(3);
+    expect(result.outcomes[0].completion.kind).toBe("throw");
+    expect(result.visitedExpressions.filter((source) => source === "other")).toHaveLength(1);
+    expect(evaluateGuard(result.outcomes[0].guard, new Map([["enabled", true]]))).toBe(true);
+  });
+
+  it.each([
+    "(enabled ? 0 : NaN) && (1n / 0n)",
+    "(enabled ? 'value' : 1n) || (1n / 0n)",
+    "(enabled ? 0 : false) ?? (1n / 0n)",
+  ])("never visits the skipped native short-circuit operand: %s", async (source) => {
+    const result = await evaluateSymbolicExpression(source, ["enabled"]);
+    expect(result.visitedExpressions).not.toContain("1n / 0n");
+    expect(result.outcomes.every((outcome) => outcome.completion.kind === "normal")).toBe(true);
+  });
+
+  it("prunes contradictions after native numeric coercion and comparison", async () => {
+    const result = await evaluateSymbolicExpression(
+      "(+enabled === 1) ? (enabled ? 7 : 1n / 0n) : (enabled ? 1n / 0n : 8)",
+      ["enabled"],
+    );
+    expect(result.visitedExpressions).not.toContain("1n / 0n");
+    expect(result.outcomes).toHaveLength(2);
+  });
+
+  it("preserves every input correlation without a Cartesian product of repeated choices", async () => {
+    const inputs = Array.from({ length: 8 }, (_, index) => `input${index}`);
+    const source = inputs.map((input) => `(${input} === ${input})`).join(" && ");
+    const result = await evaluateSymbolicExpression(source, inputs, { maxOutcomes: 256 });
+    expect(result.outcomes).toHaveLength(256);
+    expect(
+      result.outcomes.every((outcome) => decodeObservation(outcome.completion).value === true),
+    ).toBe(true);
+    for (let mask = 0; mask < 256; mask++) {
+      const values = new Map(inputs.map((input, index) => [input, Boolean(mask & (1 << index))]));
+      expect(
+        result.outcomes.filter((outcome) => evaluateGuard(outcome.guard, values)),
+      ).toHaveLength(1);
+    }
   });
 
   it("rejects malformed input declarations and invalid source", async () => {
@@ -274,14 +471,30 @@ describe("engine262 symbolic conditional evaluation", () => {
       ).rejects.toBeInstanceOf(SymbolicEngineError);
       expect(api.surroundingAgent).toBe(previousAgent);
     }
-    await expect(evaluateSymbolicExpression("enabled + 1", ["enabled"])).rejects.toBeInstanceOf(
-      SymbolicEngineError,
-    );
+    await expect(
+      evaluateSymbolicExpression("enabled + object.value", ["enabled"]),
+    ).rejects.toBeInstanceOf(SymbolicEngineError);
     expect(api.surroundingAgent).toBe(previousAgent);
     expect(
       (await evaluateSymbolicExpression("enabled ? 1 : 2", ["enabled"])).outcomes,
     ).toHaveLength(2);
     expect(api.surroundingAgent).toBe(previousAgent);
+  });
+
+  it("restores the surrounding agent when any scalar dispatch exhausts its step budget", async () => {
+    const { api } = await getSymbolicEngine();
+    const previous = api.surroundingAgent;
+    const source = "(enabled ? 1 : 2) + (other ? 3 : 4)";
+    const complete = await evaluateSymbolicExpression(source, ["enabled", "other"]);
+    for (let maxSteps = 1; maxSteps < complete.steps; maxSteps++) {
+      await expect(
+        evaluateSymbolicExpression(source, ["enabled", "other"], { maxSteps }),
+      ).rejects.toThrow("step budget");
+      expect(api.surroundingAgent).toBe(previous);
+    }
+    expect((await evaluateSymbolicExpression(source, ["enabled", "other"])).outcomes).toEqual(
+      complete.outcomes,
+    );
   });
 
   it("isolates overlapping requests and preserves the unmodified engine's surrounding agent", async () => {

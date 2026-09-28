@@ -14,18 +14,22 @@ Initial symbolic milestone: commit `3d5d5563` on [PR #149](https://github.com/ai
 - [x] Handle Boolean negation, nested conditions, correlated decisions, and guarded scalar exceptions.
 - [x] Reuse selected Boolean guard shapes and helpers from #115.
 - [x] Reject unsupported syntax and report step/outcome budget exhaustion without returning a complete-looking result.
-- [x] Compare supported expressions with independent runs of the unmodified engine. The baseline has 58 passing tests and a passing analyzer CI job.
+- [x] Compare supported expressions with independent runs of the unmodified engine. The initial baseline had 58 passing tests and a passing analyzer CI job.
 
 ```text
-enabled ? 2 + 3 : 4 * 5
-├── enabled  → 5
-└── !enabled → 20
+(enabled ? 1 : 2) + 3
+├── enabled  → 4
+└── !enabled → 5
 ```
 
 - [x] Replace runtime bundle insertion with a pinned source build, typed hook, generated declarations, and source maps.
 - [x] Verify clean-build reproducibility across relocated roots and preserve the scoped concrete baseline against the published engine.
 
-The current implementation still uses internal object tokens for unknown Booleans. A syntax check prevents those tokens from entering ordinary JavaScript coercions. The [source-built extension](engine/README.md) replaces bundle insertion but does not add general symbolic values or mutable state. See the [current implementation contract](docs/symbolic-evaluation.md).
+- [x] Lift finite guarded scalar alternatives through engine arithmetic, comparisons, unary operations, ternaries, and short-circuit/nullish expressions.
+- [x] Preserve input correlations through intermediate values and skip right operands on throwing or short-circuited paths.
+- [x] Compare scalar fixtures and generated operator matrices with unmodified engine262 and native Node execution. The current local suite passes 166 tests across three files.
+
+Declared inputs remain unknown Booleans. Internal object tokens identify finite guarded alternatives; syntax checks and operand substitution keep those tokens out of ordinary engine coercions. The [source-built extension](engine/README.md) does not yet provide unbounded numeric/string inputs, heap isolation, or a general constraint solver. See the [current implementation contract](docs/symbolic-evaluation.md), including the v2 scope and intermediate-choice budget.
 
 The separate resolver work includes native build observation, corpus comparisons, a build CLI, and a Vite + React demo. That work is not integrated into this PR. A matching build graph does not prove module execution or React rendering.
 
@@ -133,6 +137,7 @@ Completion check: the demo mounts and responds to supported interactions through
 
 ## 4. General symbolic values and conditions
 
+- [x] Lift finite guarded scalar alternatives through the existing engine operations, with Boolean inputs, correlation checks, and independent concrete comparisons. This is a bounded first increment, not completion of the general-value tasks below.
 - [ ] Replace the Boolean-token-only contract with explicit abstract values and expressions integrated with engine execution.
 - [ ] Define constants, inputs, operations, conditional values, references, and explicit unknown results. Share repeated expressions instead of copying entire alternative trees.
 - [ ] Carry over useful guard normalization, contradiction checks, numeric constraints, string constraints, membership, and witness generation from #115.
