@@ -33,7 +33,7 @@ The pinned engine previously treated Boolean values as the two concrete singleto
 
 The remaining executable singleton checks use engine-internal concrete flags. `ForInIteratorPrototype` writes only `Value.true` or `Value.false` to `ObjectWasVisited`. The RegExp replacement algorithm derives its flag from a concrete native string. Assertion comments do not execute.
 
-Only `if` statements request abstract decisions. Logical operators, logical negation, ternaries, loops, conversions, boxing, and same-type equality still reject unsupported abstract consumption. Known type-based results, such as `typeof enabled` and `enabled === 1`, remain concrete. These bounds are deliberate, not general Boolean abstraction support.
+The original patch adds decisions to `if` statements. The separate [Boolean expression patch](boolean-expressions.md) now covers `?:`, `&&`, `||`, and `!`. Unknown logical assignments, loop conditions, conversions, boxing, and same-type equality still reject unsupported abstract consumption. Known type-based results, such as `typeof enabled` and `enabled === 1`, remain concrete. These bounds are deliberate, not general Boolean abstraction support.
 
 Host errors can leave engine execution contexts active. Discard the Agent after such failures unless a separately verified owner supplies recovery. These failures are not guest exceptions, and guest `catch` does not consume them.
 

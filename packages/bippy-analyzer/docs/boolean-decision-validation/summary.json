@@ -72,7 +72,7 @@
     "samples": [3593.727583, 3568.3608329999997, 3630.945834],
     "median": 3593.727583
   },
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "57e72161 passes 1024 units but fails the unchanged smoke at 72/74; see ci-failure.json",
   "initialFailures": [
     "RunSuspendedContext exhaustiveness rejected the new yield type until forwarding was added.",
     "Guest-generator tests initially omitted ordinary debugger suspension handling.",

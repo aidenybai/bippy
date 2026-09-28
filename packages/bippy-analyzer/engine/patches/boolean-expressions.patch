@@ -1,0 +1,126 @@
+diff --git a/src/abstract-ops/type-conversion.mts b/src/abstract-ops/type-conversion.mts
+index f4551e9..480aca5 100644
+--- a/src/abstract-ops/type-conversion.mts
++++ b/src/abstract-ops/type-conversion.mts
+@@ -144,7 +144,7 @@ export function ToBoolean(argument: Value): boolean {
+ }
+ 
+ export const ResolveBooleanCondition = function* (argument: Value): PlainEvaluator<boolean> {
+-  if (!BooleanValue.isAbstract(argument)) return ToBoolean(argument);
++  if (!(argument instanceof BooleanValue) || !BooleanValue.isAbstract(argument)) return ToBoolean(argument);
+   const decision: EvaluatorYieldType_AbstractBoolean = Object.freeze({ suspend: 'abstract-boolean', value: argument });
+   const response = yield decision;
+   if (response?.resume !== 'abstract-boolean' || response.decision !== decision) {
+diff --git a/src/runtime-semantics/ConditionalExpression.mts b/src/runtime-semantics/ConditionalExpression.mts
+index 6715a25..829d1aa 100644
+--- a/src/runtime-semantics/ConditionalExpression.mts
++++ b/src/runtime-semantics/ConditionalExpression.mts
+@@ -1,7 +1,7 @@
+ import { Evaluate, type ValueEvaluator } from '../evaluator.mts';
+-import { Q, X } from '../completion.mts';
++import { Q } from '../completion.mts';
+ import type { ParseNode } from '../parser/ParseNode.mts';
+-import { ToBoolean, GetValue } from '#self';
++import { BooleanValue, ResolveBooleanCondition, ToBoolean, GetValue } from '#self';
+ 
+ /** https://tc39.es/ecma262/#sec-conditional-operator-runtime-semantics-evaluation */
+ //   ConditionalExpression :
+@@ -14,7 +14,10 @@ export function* Evaluate_ConditionalExpression({
+   // 1. Let lref be the result of evaluating ShortCircuitExpression.
+   const lref = Q(yield* Evaluate(ShortCircuitExpression));
+   // 2. Let lval be ! ToBoolean(? GetValue(lref)).
+-  const lval = X(ToBoolean(Q(yield* GetValue(lref))));
++  const condition = Q(yield* GetValue(lref));
++  const lval = BooleanValue.isAbstract(condition)
++    ? yield* ResolveBooleanCondition(condition)
++    : ToBoolean(condition);
+   // 3. If lval is true, then
+   if (lval) {
+     // a. Let trueRef be the result of evaluating the first AssignmentExpression.
+diff --git a/src/runtime-semantics/LogicalANDExpression.mts b/src/runtime-semantics/LogicalANDExpression.mts
+index 43f5c69..a4dc12c 100644
+--- a/src/runtime-semantics/LogicalANDExpression.mts
++++ b/src/runtime-semantics/LogicalANDExpression.mts
+@@ -1,7 +1,7 @@
+ import { Evaluate, type ValueEvaluator } from '../evaluator.mts';
+-import { Q, X } from '../completion.mts';
++import { Q } from '../completion.mts';
+ import type { ParseNode } from '../parser/ParseNode.mts';
+-import { GetValue, ToBoolean } from '#self';
++import { BooleanValue, ResolveBooleanCondition, GetValue, ToBoolean } from '#self';
+ 
+ /** https://tc39.es/ecma262/#sec-binary-logical-operators-runtime-semantics-evaluation */
+ //   LogicalANDExpression :
+@@ -12,7 +12,9 @@ export function* Evaluate_LogicalANDExpression({ LogicalANDExpression, BitwiseOR
+   // 2. Let lval be ? GetValue(lref).
+   const lval = Q(yield* GetValue(lref));
+   // 3. Let lbool be ! ToBoolean(lval).
+-  const lbool = X(ToBoolean(lval));
++  const lbool = BooleanValue.isAbstract(lval)
++    ? yield* ResolveBooleanCondition(lval)
++    : ToBoolean(lval);
+   // 4. If lbool is false, return lval.
+   if (!lbool) {
+     return lval;
+diff --git a/src/runtime-semantics/LogicalORExpression.mts b/src/runtime-semantics/LogicalORExpression.mts
+index ecc95ae..9fe3fe2 100644
+--- a/src/runtime-semantics/LogicalORExpression.mts
++++ b/src/runtime-semantics/LogicalORExpression.mts
+@@ -1,7 +1,7 @@
+ import { Evaluate, type ValueEvaluator } from '../evaluator.mts';
+-import { Q, X } from '../completion.mts';
++import { Q } from '../completion.mts';
+ import type { ParseNode } from '../parser/ParseNode.mts';
+-import { GetValue, ToBoolean } from '#self';
++import { BooleanValue, ResolveBooleanCondition, GetValue, ToBoolean } from '#self';
+ 
+ /** https://tc39.es/ecma262/#sec-binary-logical-operators-runtime-semantics-evaluation */
+ //   LogicalORExpression :
+@@ -12,7 +12,9 @@ export function* Evaluate_LogicalORExpression({ LogicalORExpression, LogicalANDE
+   // 2. Let lval be ? GetValue(lref).
+   const lval = Q(yield* GetValue(lref));
+   // 3. Let lbool be ! ToBoolean(lval).
+-  const lbool = X(ToBoolean(lval));
++  const lbool = BooleanValue.isAbstract(lval)
++    ? yield* ResolveBooleanCondition(lval)
++    : ToBoolean(lval);
+   // 4. If lbool is true, return lval.
+   if (lbool) {
+     return lval;
+diff --git a/src/runtime-semantics/UnaryExpression.mts b/src/runtime-semantics/UnaryExpression.mts
+index 4414ff4..10ed54d 100644
+--- a/src/runtime-semantics/UnaryExpression.mts
++++ b/src/runtime-semantics/UnaryExpression.mts
+@@ -13,6 +13,7 @@ import {
+   IsPropertyReference,
+   IsSuperReference,
+   IsUnresolvableReference,
++  ResolveBooleanCondition,
+   ToBoolean,
+   ToNumber,
+   ToObject,
+@@ -177,7 +178,10 @@ function* Evaluate_UnaryExpression_Bang({ UnaryExpression }: ParseNode.UnaryExpr
+   // 1. Let expr be the result of evaluating UnaryExpression.
+   const expr = Q(yield* Evaluate(UnaryExpression));
+   // 2. Let oldValue be ! ToBoolean(? GetValue(expr)).
+-  const oldValue = ToBoolean(Q(yield* GetValue(expr)));
++  const condition = Q(yield* GetValue(expr));
++  const oldValue = BooleanValue.isAbstract(condition)
++    ? yield* ResolveBooleanCondition(condition)
++    : ToBoolean(condition);
+   // 3. If oldValue is true, return false.
+   if (oldValue) {
+     return Value.false;
+diff --git a/src/value.mts b/src/value.mts
+index 1248f7e..ee4476f 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -192,7 +192,7 @@ export class BooleanValue<T extends boolean = boolean> extends PrimitiveValue {
+ 
+   static createAbstract = (): BooleanValue => Object.freeze(new BooleanValue<boolean>(undefined));
+ 
+-  static isAbstract = (value: Value): value is BooleanValue => abstractBooleans.has(value);
++  static isAbstract = (value: Value): boolean => abstractBooleans.has(value);
+ 
+   booleanValue() {
+     return this.value;

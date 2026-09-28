@@ -26,19 +26,36 @@ interface ConcreteObservation {
   sameObject: boolean;
 }
 
-const source = `
+const getSource = (body: string): string => `
   let prefixRuns=0;prefixRuns++;let conditionReads=0;
   let shared={count:amount};let alias=shared;let scheduled;
   const schedule=(callback)=>{scheduled=callback;};
   const getEnabled=()=>{conditionReads++;return enabled;};
   try {
+    ${body}
+    shared.count;
+  } finally { shared.count=shared.count+10; }
+`;
+const programs = [
+  {
+    name: "statements",
+    source: getSource(`
     if(getEnabled()) shared.count=shared.count+1;
     if(enabled) alias.count=shared.count;
     schedule(()=>alias.count);
     if(fail) throw shared.count;
-    shared.count;
-  } finally { shared.count=shared.count+10; }
-`;
+  `),
+  },
+  {
+    name: "expressions",
+    source: getSource(`
+    getEnabled() ? shared.count=shared.count+1 : undefined;
+    enabled && (alias.count=shared.count);
+    schedule(()=>alias.count);
+    !fail || (()=>{throw shared.count;})();
+  `),
+  },
+];
 const stateSource = `JSON.stringify({
   count:Object.is(shared.count,-0)?'-0':String(shared.count),
   deferred:Object.is(scheduled(),-0)?'-0':String(scheduled()),
@@ -47,6 +64,7 @@ const stateSource = `JSON.stringify({
 const getNumberText = (value: number): string => (Object.is(value, -0) ? "-0" : String(value));
 
 const getNativeObservation = (
+  source: string,
   amount: number,
   guard: Record<string, boolean>,
 ): ConcreteObservation => {
@@ -66,6 +84,7 @@ const getNativeObservation = (
 };
 
 const getPublishedObservation = (
+  source: string,
   amount: number,
   guard: Record<string, boolean>,
 ): ConcreteObservation => {
@@ -105,9 +124,11 @@ const getSpecialized = (expression: NumericExpression, amount: number): string =
   return getNumberText(value);
 };
 
-it.each([false, true])(
-  "forks actual unknown decisions with unbounded amounts and selected state, reversed=%s",
-  async (isReversed) => {
+it.each(
+  programs.flatMap((program) => [false, true].map((isReversed) => ({ ...program, isReversed }))),
+)(
+  "forks unknown $name with unbounded amounts and selected state, reversed=$isReversed",
+  async ({ source, isReversed }) => {
     const observations: GuardedObservation[] = [];
     let prefixVisits = 0;
     let forks = 0;
@@ -244,8 +265,8 @@ it.each([false, true])(
           conditionReads: observation.conditionReads,
           sameObject: observation.sameObject,
         };
-        expect(concrete).toEqual(getNativeObservation(amount, observation.guard));
-        expect(concrete).toEqual(getPublishedObservation(amount, observation.guard));
+        expect(concrete).toEqual(getNativeObservation(source, amount, observation.guard));
+        expect(concrete).toEqual(getPublishedObservation(source, amount, observation.guard));
       }
     }
   },

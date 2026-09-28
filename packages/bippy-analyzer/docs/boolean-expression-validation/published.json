@@ -1,0 +1,3683 @@
+{
+  "name": "published",
+  "total": 148,
+  "passed": 144,
+  "exitCode": 1,
+  "originalReportSha256": "04d81cd29affa6c400f3f1111207decd088333762ecf0b0b03deaf20d6580649",
+  "outcomes": [
+    {
+      "file": ".test262/test/language/expressions/conditional/coalesce-expr-ternary.js",
+      "attrs": {
+        "description": "ShortCircuitExpression in the Conditional Expression (? :)\n",
+        "esid": "sec-conditional-operator",
+        "info": "ShortCircuitExpression :\n    LogicalORExpression\n    CoalesceExpression\n\nCoalesceExpression :\n    CoalesceExpressionHead ?? BitwiseORExpression\n\nCoalesceExpressionHead :\n    CoalesceExpression\n    BitwiseORExpression\n\nConditionalExpression :\n    ShortCircuitExpression\n    ShortCircuitExpression ? AssignmentExpression : AssignmentExpression\n",
+        "features": ["coalesce-expression"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/coalesce-expr-ternary.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "1ea74e3d7e07c1a198b01a2918cc8ffe6e3cd7589e1645a001f485908fb3b516",
+      "compiledSha256": "79d169f67aec412c37a3dbf1630ae09c1da0f36bdd7f8255f0489a1cd1f4f3fd"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/coalesce-expr-ternary.js",
+      "attrs": {
+        "description": "ShortCircuitExpression in the Conditional Expression (? :)\n (Strict Mode)",
+        "esid": "sec-conditional-operator",
+        "info": "ShortCircuitExpression :\n    LogicalORExpression\n    CoalesceExpression\n\nCoalesceExpression :\n    CoalesceExpressionHead ?? BitwiseORExpression\n\nCoalesceExpressionHead :\n    CoalesceExpression\n    BitwiseORExpression\n\nConditionalExpression :\n    ShortCircuitExpression\n    ShortCircuitExpression ? AssignmentExpression : AssignmentExpression\n",
+        "features": ["coalesce-expression"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/coalesce-expr-ternary.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "5bfb979acee7bf8e70285927ebd1b746da7925bea9999883275afd7279c86012",
+      "compiledSha256": "6d3da2baeb95e38e3b3ae77a28165d21c0d45fcbc1dbba6a12616fd24c4f984d"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/in-branch-1.js",
+      "attrs": {
+        "esid": "sec-conditional-operator",
+        "es6id": 12.13,
+        "description": "The first AssignmentExpression may include the `in` keyword in any context\n",
+        "info": "Syntax\n\nConditionalExpression[In, Yield] :\n  LogicalORExpression[?In, ?Yield]\n  LogicalORExpression[?In, ?Yield] ? AssignmentExpression[+In, ?Yield] : AssignmentExpression[?In, ?Yield]\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/in-branch-1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7de318553c49c043624f92726b05024ca3689af9b470c2880d4bf250b12969f2",
+      "compiledSha256": "86a3964798afd1013b81f6c84803bd93a3887c7c13def2268842db386b3967fd"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/in-branch-1.js",
+      "attrs": {
+        "esid": "sec-conditional-operator",
+        "es6id": 12.13,
+        "description": "The first AssignmentExpression may include the `in` keyword in any context\n (Strict Mode)",
+        "info": "Syntax\n\nConditionalExpression[In, Yield] :\n  LogicalORExpression[?In, ?Yield]\n  LogicalORExpression[?In, ?Yield] ? AssignmentExpression[+In, ?Yield] : AssignmentExpression[?In, ?Yield]\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/in-branch-1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "56ad311e88f3666f6c70ff29e356d7032d0fcb54ea3cdb1d4744a585eb275e9e",
+      "compiledSha256": "40de63b19fc0acd1c7128e1920c3e058c3f4b6fb800da271ac677dbf422be510"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/in-branch-2.js",
+      "attrs": {
+        "esid": "sec-conditional-operator",
+        "es6id": 12.13,
+        "description": "The second AssignmentExpression cannot include the `in` keyword in contexts where it is disallowed.\n",
+        "info": "Syntax\n\nConditionalExpression[In, Yield] :\n  LogicalORExpression[?In, ?Yield]\n  LogicalORExpression[?In, ?Yield] ? AssignmentExpression[+In, ?Yield] : AssignmentExpression[?In, ?Yield]\n",
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        },
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/in-branch-2.js",
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6d076d38dc2d3ea561bf14b14eb3eb2ce2dd3ff86b052c6ae8d24bd922234317",
+      "compiledSha256": "10ed5f2c10a915bfa0dae4b6c93b30c3fc47cfb2590abf701cc9b29fede9e253"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/in-branch-2.js",
+      "attrs": {
+        "esid": "sec-conditional-operator",
+        "es6id": 12.13,
+        "description": "The second AssignmentExpression cannot include the `in` keyword in contexts where it is disallowed.\n (Strict Mode)",
+        "info": "Syntax\n\nConditionalExpression[In, Yield] :\n  LogicalORExpression[?In, ?Yield]\n  LogicalORExpression[?In, ?Yield] ? AssignmentExpression[+In, ?Yield] : AssignmentExpression[?In, ?Yield]\n",
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        },
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/in-branch-2.js",
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c3b12943c82f11d572d1a5fe4f3a469362287997b260e8415d96b7c551d71cfe",
+      "compiledSha256": "07dac41fe8fe6ff75b804fc445721b1e08a8e74ec52924cfda42f31a2202e009"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/in-condition.js",
+      "attrs": {
+        "esid": "sec-conditional-operator",
+        "es6id": 12.13,
+        "description": "The expression's LogicalORExpression sub-expression cannot include the `in` keyword in contexts where it is disallowed.\n",
+        "info": "Syntax\n\nConditionalExpression[In, Yield] :\n  LogicalORExpression[?In, ?Yield]\n  LogicalORExpression[?In, ?Yield] ? AssignmentExpression[+In, ?Yield] : AssignmentExpression[?In, ?Yield]\n",
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        },
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/in-condition.js",
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6da757fdb60cb85359435c12d5fcb8757264fe17d573494427145131aa7ad6f1",
+      "compiledSha256": "a72cd522767606a4e579ab21d4d599bd689b1fa003bd537b2f5ef72df4bcbbda"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/in-condition.js",
+      "attrs": {
+        "esid": "sec-conditional-operator",
+        "es6id": 12.13,
+        "description": "The expression's LogicalORExpression sub-expression cannot include the `in` keyword in contexts where it is disallowed.\n (Strict Mode)",
+        "info": "Syntax\n\nConditionalExpression[In, Yield] :\n  LogicalORExpression[?In, ?Yield]\n  LogicalORExpression[?In, ?Yield] ? AssignmentExpression[+In, ?Yield] : AssignmentExpression[?In, ?Yield]\n",
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        },
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/in-condition.js",
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4f5187cf579f38245504629f8fe26f077f307bcce93117058a3a9c7b2568f84a",
+      "compiledSha256": "fbf4b22ad62ecf1eaed24196ee6bc026a76b4b6e95225fe48497519f53eb2082"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between LogicalORExpression and \"?\" or\nbetween \"?\" and AssignmentExpression or between AssignmentExpression and\n\":\" or between \":\" and AssignmentExpression are allowed\n",
+        "es5id": "11.12_A1",
+        "description": "Checking by using eval",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "b43dd3a9cbdf926c4a99ec2a5346d2a9c6d5e83af8648b71238684c24fef94b7",
+      "compiledSha256": "f0d45af451020041b4d6d668f1c8d6536c01e82c1fcb7a1829027c7e589da955"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between LogicalORExpression and \"?\" or\nbetween \"?\" and AssignmentExpression or between AssignmentExpression and\n\":\" or between \":\" and AssignmentExpression are allowed\n",
+        "es5id": "11.12_A1",
+        "description": "Checking by using eval (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9ecf0d41b68cd056f4d70578b815d20035c7aefc480fa1c2ad7b27e409709b2a",
+      "compiledSha256": "a5d23ecd11830e6ffb76e4cfa69f0a3ba0b330e57b3f28f242aa0d1e52f24866"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T1",
+        "description": "Either Type is not Reference or GetBase is not null",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "8dc3c547a09da9509a40119df4bb041830ac16b287adaca597f2f9484e92c209",
+      "compiledSha256": "0b15e7312c7cc5f29959b19246d32bba902d26e13b03204d4966e0aad8013d4f"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T1",
+        "description": "Either Type is not Reference or GetBase is not null (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7d99e3f1f2c97c7369e6b24228c1bfe6263c5c57728a5e5f0a34fe0cd87209bd",
+      "compiledSha256": "2520728f8012d41f997c7df47a9926a744c2485c8ee548a86284522bfc52e32b"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "be889502e3fbfb0cd5d9b8b8a271f2555ac3f1c23c682f7524e052a03822812d",
+      "compiledSha256": "d3631f4ddfe1bbd51d67bbf411cbf6c0688da681a5986af71b26c1f417f0e655"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "f80bc90e4932298c74030ebd5ee3623e625e562ff8b979b0b8361900ebb94fe9",
+      "compiledSha256": "9bf728b34ae1007ce51cce27c434a120c1d312909a3a0e17fc568eb734f4d34d"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T3.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T3",
+        "description": "If ToBoolean(x) is true and GetBase(y) is null, throw ReferenceError\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "df009ca030845cc37df34ef3638e27ce427a030d6ca14d1e105ff59f14498e13",
+      "compiledSha256": "6cfa0a3861ab50feedd9ce4148c2cfb937a1fcb104a837805b65747441842a28"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T3.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T3",
+        "description": "If ToBoolean(x) is true and GetBase(y) is null, throw ReferenceError\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9555a59e354329c775661c4bcf25de6788efaede4edcf995b434831226526dea",
+      "compiledSha256": "e2e28860525f134f58c213860df390b74e552e217b8e45abd42fb07e9da3778f"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T4.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T4",
+        "description": "If ToBoolean(x) is false and GetBase(z) is null, throw ReferenceError\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6e72c6bc823a7132b9e8bdcfd56188f0776a32c45c20c44e4bc3fdbd83bebed8",
+      "compiledSha256": "d9430e28df89b1d9569695199cbb8d3b96071fecbecdf9dbad66261985505aa6"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T4.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T4",
+        "description": "If ToBoolean(x) is false and GetBase(z) is null, throw ReferenceError\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "50910afbf80cca85bb1eebd7e0203e5476f0125919d84b87eccc0097f7c3d4ba",
+      "compiledSha256": "0292fb81d4e8897cfcd45e96c2bc21edd966740bbc6464abbf5fb417b772d7d5"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T5.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T5",
+        "description": "If ToBoolean(x) is true and GetBase(z) is null, return y",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T5.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "81c0b1cfa8a8fd28c66ad1be3fd8572936a24a94867c067bb9a74727ea7823f4",
+      "compiledSha256": "637076cb5192d0de997c53434c73ca05cf0bcee9cf74a5829a89e2cbc42fb7e4"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T5.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T5",
+        "description": "If ToBoolean(x) is true and GetBase(z) is null, return y (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T5.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "94d7d3caea98fb1068653ce6e1c39028920b9f1858a368dab224a4b002454a3b",
+      "compiledSha256": "927361464eef918b107e6f5bdecc6e6bd8e93bf957629a2e61bdbb52a2104763"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T6.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T6",
+        "description": "If ToBoolean(x) is false and GetBase(y) is null, return z",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T6.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "67d3900faa058320306a9cae95b173ea397aadbeca252431e5f4f73ed3a41f9a",
+      "compiledSha256": "7fbbfcc5aeaacfa554091c6613df9ac75e91dc217f60a5768942d407d45c2732"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A2.1_T6.js",
+      "attrs": {
+        "info": "Operator x ? y : z uses GetValue",
+        "es5id": "11.12_A2.1_T6",
+        "description": "If ToBoolean(x) is false and GetBase(y) is null, return z (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A2.1_T6.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "5d342868e1c8d2606406ab2c0883f4420de5e4beedb1d2f3af4f55d00c7fb13b",
+      "compiledSha256": "405e8bb6e26d2e24d62a65e0af503bd2799c827a4256ec99d606486ef4747ba4"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T1",
+        "description": "Type(y) and Type(z) are boolean primitives",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "451f9c663046722d323eab36aff2d5929fe6ca66087bf549ac73df21ad09a5bf",
+      "compiledSha256": "a59767b1e557bef50ecffcb30904cf218060ca7b59929d83c6778ce903f1b65e"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T1",
+        "description": "Type(y) and Type(z) are boolean primitives (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "686fe24c488833293afc03a207c58d91cbb61618cad725ebde7139ff7fd91173",
+      "compiledSha256": "94853fa0275b2276a981307e2971e324fef2c357dad362bf256e2a126130aef0"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T2",
+        "description": "Type(y) and Type(z) are number primitives",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e871ebdd1d0378b3ed0003ceca13b8ef5259bf50e3da230f11ccb2b541f12f01",
+      "compiledSha256": "f112e8741e9f7f1f8ecc0c7b30c481a626feb2d16303baf363c6b8cedfa3cb15"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T2",
+        "description": "Type(y) and Type(z) are number primitives (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9b8f83c4b4f52965212e13ad68fd995bde5ccd15e7de46ed19b18a43843978ea",
+      "compiledSha256": "2afdb2cb18dfb1e475340a5fcd55e70ae873e16645acc4423588bffd5b579823"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T3",
+        "description": "Type(y) and Type(z) are string primitives",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "485da7dd85feb7c5044afe2d5a3efefd9b4d03aa95b135023edb1e03be583601",
+      "compiledSha256": "a1b0483bcbb346b7db0451517f0470ce72f3d3b2fabb1a84838172f7925c6048"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T3",
+        "description": "Type(y) and Type(z) are string primitives (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "d96bac84208b89e91c9708975f81ad67420d86a69927751a274b2e672d18e8ed",
+      "compiledSha256": "e9cc135346ff34d588583847cff371552c34fcf673f6b4d121031fd7ece7a62b"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "14aa3a840d3565642b22f178339039c0ca21c7b2417c18940126397c55f79d14",
+      "compiledSha256": "1e1edf385af4651aa4cc8c3a81b774e5f6c21d7da3f8374c15662d41e019a3b1"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A3_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return z",
+        "es5id": "11.12_A3_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a37980ee49d09d87f00f5d054e147103043faca604bc5e6c92e39b1644fccd60",
+      "compiledSha256": "bffa3ce0629d5c77417f4f4f7a3696bd35553760e8658afe06841bb82dae540c"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T1",
+        "description": "Type(y) and Type(z) are boolean primitives",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "665a02fac8b9078a56aaee2c0f375e3a48b274f56d2566fe0f247eca85498731",
+      "compiledSha256": "8ec5696b49a4e3c7a1d112ba50f6028a946ae6961eb33f4175648719335b04a1"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T1",
+        "description": "Type(y) and Type(z) are boolean primitives (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "94589d6cd83252304b32f008c0bce6631797a57e5152c6c3a54aa1d14b11d3d5",
+      "compiledSha256": "50ef7e6c87d8149640e665f77da1b3948cffbbd155bcd69391ac44de29b93f82"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T2",
+        "description": "Type(y) and Type(z) are number primitives",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "2c3a6d403b2b13ac5eef490e364e1e98fffe13c617bf54b44fcbffd8a9b9eb4c",
+      "compiledSha256": "beca4a2f8f513060fcb2bc15c12ef1ddf9c4fe0c92ebb57ce1246f3338dea72d"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T2",
+        "description": "Type(y) and Type(z) are number primitives (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7044bb604361f56b8ecbc828a6aec0407c5e7b1703c1e5eccc3c1cb381a4a8e2",
+      "compiledSha256": "122d92e6450e00b7506477534b6811907df3376cd004838880f40b7dfd384d08"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T3",
+        "description": "Type(y) and Type(z) are string primitives",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "cdad7049acb41951d0e080ae4f1d2c3c1226d177054322da873dc4390a321e09",
+      "compiledSha256": "c57c6e72494eef5fdc950c6c3ec54b9774c88d612363c6ae96b59d039eb2f308"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T3",
+        "description": "Type(y) and Type(z) are string primitives (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "ce2ee0caf7a6826a9de9b5907e11d350c55c684988fd151803eb45c97290e725",
+      "compiledSha256": "7302f58b810296dc6c4d7cf00abed12ac3449220dfb9b4ed40c0f5ba81e2d5e5"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/S11.12_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a2bfbf65c47f6e20bb0a5814c9b7c2105098e87162080c3955d0b5b5cec12a76",
+      "compiledSha256": "9a7aef6305989a39b7b436354e8f4775bc261924b7e37c04407413838a396a71"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/S11.12_A4_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.12_A4_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/S11.12_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e63ff6a2308c949f87b900a243bb0d152c57ffd7dd45cbda3221cea4e33d7d71",
+      "compiledSha256": "08666618f3db3b91196a3559275a3d7c18e1f8293d1a2c9bf6007fef6337f2db"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/symbol-conditional-evaluation.js",
+      "attrs": {
+        "es6id": "12.12.3",
+        "description": "Conditional Symbol evaluation\n",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/conditional/symbol-conditional-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7caf2d9ea06864be0bd360ac29fc41458f00b86bee9d026ff92196d89ca7f15c",
+      "compiledSha256": "95dfde29c772bf9aabba328aed4067cd9c819874383c3312c916a1d2e50f55c8"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/symbol-conditional-evaluation.js",
+      "attrs": {
+        "es6id": "12.12.3",
+        "description": "Conditional Symbol evaluation\n (Strict Mode)",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/conditional/symbol-conditional-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "bb277b916e7801219e752fdaf12fefee01fdbf7633735f99cd223a34673ae22d",
+      "compiledSha256": "4ad6461b977be19fffe154faf6b95bdd773ab934557b80274d6712375a81214c"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-cond.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/conditional/tco-cond.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818"
+      },
+      "contentsSha256": "2730a2a0e37b2692a0de3008c276ba41933d59294ae8b8e226e48c89a8a07c02",
+      "compiledSha256": "e8665152547178126927052bb519bc4a8d3a847822f0097af01e0bb48fdbb802"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-pos.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/conditional/tco-pos.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:8818"
+      },
+      "contentsSha256": "7b70a56e00002f70163b173d7fe8826e12494c88f88b2a77264e889ba7a88c76",
+      "compiledSha256": "84594ec00cf3850c0085342d062e1e9816702b3c614bd391d9882e8ef9d92829"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between LogicalANDExpression and \"&&\" or\nbetween \"&&\" and BitwiseORExpression are allowed\n",
+        "es5id": "11.11.1_A1",
+        "description": "Checking by using eval",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6caeebb60bd8fe2e38e9fe26dddd2c6ce6e82713719c8eba043fbab9dfb2c43d",
+      "compiledSha256": "9a4ef2541e1130d8f1312950acdf1ce6c91ffc7685467054512b504f95bdf2de"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between LogicalANDExpression and \"&&\" or\nbetween \"&&\" and BitwiseORExpression are allowed\n",
+        "es5id": "11.11.1_A1",
+        "description": "Checking by using eval (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c54d36ccf2daca849d4b8d9398d428db09c6266a5cda9558810d55c43725ae32",
+      "compiledSha256": "401c677be1c6ac8d81be99a773944b3cb3434d2c411b4a131231fbd6bebf35a9"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T1",
+        "description": "Either Type is not Reference or GetBase is not null",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "757783b74c8f41812eb7f30df9abd21d5fe888a37bcca34a6ba79d112f2fef3f",
+      "compiledSha256": "95df76d261638ed0ac53c20f6fc4115b3bad5967c559ce589e616876ba0ea917"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T1",
+        "description": "Either Type is not Reference or GetBase is not null (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "bc514606b387b9ec05f45c4641fb664217e02c81e82717375c263757ccb3cf3f",
+      "compiledSha256": "926d0b18ea5844732c6845a5f34590e21266ee9c2431f78514e745f983328d8c"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9d6492b0db1b29cb5a03ab87b6718f9ec5c9f198133d0acbf5862db03bda5f83",
+      "compiledSha256": "f61b25197d3301b99993d1318dd4247b5b9c7c767b9cb4288a16a281da3c695b"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "1f7ce75677eb4192639ed399612b787ef52f3b00232e0ead76aa12ea47bb0ce8",
+      "compiledSha256": "44910b954f6248ba8d8ad12a7855d138e502450576d9da47f2c702695b593203"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T3.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T3",
+        "description": "If ToBoolean(x) is true and GetBase(y) is null, throw ReferenceError\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "8e8b6fc76bdc7d89d37569de1b6b4cb2e57b7689af7b212e12ba6631d9d15b43",
+      "compiledSha256": "c41f0afcce34d056974a6c1be18b43d99081017d3dda74f5a9e772db2f08640a"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T3.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T3",
+        "description": "If ToBoolean(x) is true and GetBase(y) is null, throw ReferenceError\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7a45aab8213f4842ed65c248cab593c705a1fb32044676ea387370e507c3c6b3",
+      "compiledSha256": "18792c2aab32811c6b1ec8696cddd6f210595de3a3bd57d3d421f7f48e605886"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T4.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T4",
+        "description": "If ToBoolean(x) is false and GetBase(y) is null, return false",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "961eed326eb4aa09f03219dc95493c5eda828e69caf41b72c9bd4802b795bc82",
+      "compiledSha256": "18ec1ee44d8a54d5ce341a46564da52c0b7f6e0736283a0b2322b5df07280c4f"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.1_T4.js",
+      "attrs": {
+        "info": "Operator x && y uses GetValue",
+        "es5id": "11.11.1_A2.1_T4",
+        "description": "If ToBoolean(x) is false and GetBase(y) is null, return false (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.1_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a81b682426230880a88dbce7e3a9651630970e7f6f29b356a8d4b48dd38d2e6d",
+      "compiledSha256": "4b8b68f9cc8da7c0a27a1d295153bc31753eab6e948ee6e17f97be93092b6c50"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.4_T1.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.1_A2.4_T1",
+        "description": "Checking with \"=\"",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9ea67e8fb8581a307215762c5812f279ddf59359775d5275325a3ab0c03869af",
+      "compiledSha256": "744e8460e5f912c051293c6958d16098c055a64864b2a5e8b87829b738f3e0ab"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.4_T1.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.1_A2.4_T1",
+        "description": "Checking with \"=\" (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e348616a941aa447d4997bd6352bfd86a1e1e247c8890542ee809f9bc9e4fa2e",
+      "compiledSha256": "7871b3f8700c03b3a398dd1d9fcd7c4177fba33ce8734453aec698c3303d559d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.4_T2.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.1_A2.4_T2",
+        "description": "Checking with \"throw\"",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "0d28eecda228beca0e32aae110575c84e7982fca015355e064e115d89a7bdbee",
+      "compiledSha256": "b07a9146211eb1f31f93db8f87b01e3c7ea042a8843938dc344f0318e19c5597"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.4_T2.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.1_A2.4_T2",
+        "description": "Checking with \"throw\" (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "683a134387494e2c3a987284dabb6bccb18d52354499af86fc72f50dbeb83adb",
+      "compiledSha256": "d6dfcf841c92027b24fda6c7b7c79c3f8205a7d4c73a21cd5206b550eead094c"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A2.4_T3.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.1_A2.4_T3",
+        "description": "Checking with undeclarated variables",
+        "flags": {
+          "noStrict": true
+        },
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A2.4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9a189608c93ef74e6ad1c243f912be6747d81ebc8c7847361a43015d4ec74099",
+      "compiledSha256": "07f0ffb090ce19752760fb06bbbdf165bd7a434e973dacb44e524714a530c365"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T1",
+        "description": "Type(x) is primitive boolean and Type(y) is changed between primitive boolean and Boolean object\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "81c7ab49689f442617fbc7cf95197c4dd5e3494b70e88f2f81565d0059deb074",
+      "compiledSha256": "d0908828dbdf472f793fa6969de57d983c4aeb7a41781c3d717a7a7fc685315f"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T1",
+        "description": "Type(x) is primitive boolean and Type(y) is changed between primitive boolean and Boolean object\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "34b63204d24998da81296171a8de1736ad522c7e857136f95504dad620f83622",
+      "compiledSha256": "f0d9e90d45dd907cccbbddf62f2d7d84df2d4c03ce2fa63548c2dca14bae0523"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "f5715910ceaa29bcfcf6dbec0fe9713dec427fd900717c3597115b1d819e9c7e",
+      "compiledSha256": "3797306622e4bf40a6541ca03d1f9e7623fa7c5f94337c9185fa3457fead2f68"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4d5b302573703f93d05fdfa62bff0d4169f84b63d56b2f4c7151dc3edf623c42",
+      "compiledSha256": "cc0dc7bc4d1c2d0f0f4d9600fa8f16739d9b1ed10ea0175012d54379f57ae21e"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e1c2ea313c58db4eefb5553235692cb8e450088016b11c5d4e0ca4d399b38371",
+      "compiledSha256": "54468a8a7be004ca5b03e49ce2845f246c9c526fd791aaf32ee2ed87b3b3a84e"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4ef4a106a85a8586190306d33e539bffe03b40baea41d946c9e12f0a170780a8",
+      "compiledSha256": "926ed5d5aa37a8c1ee1fbf06cbb6c60edf642d9607be0d4a3dd945d302b1b4ab"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "74b0bc161de731f969ea4f72e891824225f469f36e75821edb600a5bed880a22",
+      "compiledSha256": "d7f4a94176be92697668bccd09ab798fdde1884c4cefcbd7dab3c8b509179383"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A3_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return x",
+        "es5id": "11.11.1_A3_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "008bf7f1d46afe3b600a487fdb8dc1270c80b81eb20bca0446cf7a1d681e322a",
+      "compiledSha256": "e5e1a1decc97d9f9ddd3ef0ffe1a80840f102286a528c64a8ae748e7022a895d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T1",
+        "description": "Type(x) and Type(y) vary between primitive boolean and Boolean object\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "361666bb0519436b54758f282f3cc6647851c0d955d768621fe0b905525b3920",
+      "compiledSha256": "bcc6a287d2f6b2760fd10bc82632083f1776771c69cd4f26f816b06a5d9cc848"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T1",
+        "description": "Type(x) and Type(y) vary between primitive boolean and Boolean object\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c15af20e2cc206ae64e80da8e21ae386a91d5e05cc001ad652cf0e072d1a540a",
+      "compiledSha256": "bf2cb9f93df8f9ca93131c0b44872f0466264580336a9dc50deab3a395fc322e"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "5b7fcd3b233b5c27be83102a3abfc0f039a5026b953e27732698936e7b896c4c",
+      "compiledSha256": "e087e916483132cc73660307bb23b87ed061db6b8f69d05ca730d31363dfcbe3"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c7980ea25b2fb0d8e9c68147ebc58b0c86c42dbd097347761f0a78631792f826",
+      "compiledSha256": "d14806ae96eb00a3da6af95eceec9169eaae708e5ae5c5a3ed61c68eb4242a1d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c40fff5c0c5428eb50d413704b5469501e8144656c90b54970a3c819ece9875d",
+      "compiledSha256": "10c89ccfe54aa177768c72764f8c68fa77f672247d099a6687ffe2aa3b62ded0"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "1016c0e43c86374ba40c9a8fcfc5d99d2e96eb24f36180f50b04c4c52d2d2461",
+      "compiledSha256": "722d89cfe966eb15e7e29e5075649fc576bc477c97b25b42c0d2fb971f3ce0f9"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "90b7fc77fd4dd3cb83c76a8f318cc98fe77816cceb529300c55dec65ae87e1ac",
+      "compiledSha256": "4018fc4f23625174e42ce3b690631b6814986b766cb6fad4b53fce9b6d3da4fa"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/S11.11.1_A4_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return y",
+        "es5id": "11.11.1_A4_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/S11.11.1_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "d824c6d79adde0d619c88ae71cc7779043f824ba0e33d7e477ee1384256e2396",
+      "compiledSha256": "56db3c2ed217984df034c5ce9977ef0b4daec28f8436dd30c476ef7b5d89c0de"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/symbol-logical-and-evaluation.js",
+      "attrs": {
+        "es6id": "12.12.3",
+        "description": "\"Logical AND\" Symbol evaluation\n",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-and/symbol-logical-and-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "2ef6fea8bb66d9293a3e663c06c3ecdb2b82576d995176576dcccab2454dc7c7",
+      "compiledSha256": "8ea32e3c7556e241557cdfd0e55c45ddacaa4f3197dc8820897e0225829c40b4"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/symbol-logical-and-evaluation.js",
+      "attrs": {
+        "es6id": "12.12.3",
+        "description": "\"Logical AND\" Symbol evaluation\n (Strict Mode)",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-and/symbol-logical-and-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "b37e5bb00663b6f92b34c10e2ea17adcc608365bed1cf1a58664fbd081179f20",
+      "compiledSha256": "8980a2e16c57f6405d4a4ba023fed919bfb0157418f7e9799ed3f20db6b80ef1"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/tco-right.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/logical-and/tco-right.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477"
+      },
+      "contentsSha256": "820b720cc423902c8b987992cd593c563e9be860dde3a369fc63fb0143c3b468",
+      "compiledSha256": "b76cc5b0a355536eb556b0daa3f8f00028e5cddf90e0031965ee29a800c61a68"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/bigint.js",
+      "attrs": {
+        "description": "Conversion of BigInt values to booleans",
+        "esid": "sec-logical-not-operator-runtime-semantics-evaluation",
+        "info": "UnaryExpression: ! UnaryExpression\n\n1. Let expr be the result of evaluating UnaryExpression.\n2. Let oldValue be ToBoolean(? GetValue(expr)).\n3. If oldValue is true, return false.\n4. Return true.\n\nToBoolean ( argument )\n\nBigInt: Return false if argument is 0n; otherwise return true.\n",
+        "features": ["BigInt"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2017 Robin Templeton. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/bigint.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "41f19d21dca79b66f1b58c31f004fdb0e022a3f2ba982a7f53be1e038ffc9921",
+      "compiledSha256": "eccfc05573a4ddb4f2fb4d3730a1b477c7ba28f8389e8b3506e6106934535e81"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/bigint.js",
+      "attrs": {
+        "description": "Conversion of BigInt values to booleans (Strict Mode)",
+        "esid": "sec-logical-not-operator-runtime-semantics-evaluation",
+        "info": "UnaryExpression: ! UnaryExpression\n\n1. Let expr be the result of evaluating UnaryExpression.\n2. Let oldValue be ToBoolean(? GetValue(expr)).\n3. If oldValue is true, return false.\n4. Return true.\n\nToBoolean ( argument )\n\nBigInt: Return false if argument is 0n; otherwise return true.\n",
+        "features": ["BigInt"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2017 Robin Templeton. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/bigint.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "bbff7d5889939fd17c7485145036b10360581111b95940a6eda90b3cf4d6843a",
+      "compiledSha256": "4d5fe735351b7a6fdf006685c9473d3bb819274806eb358be32f8669e35f8d5d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between \"!\" and UnaryExpression are\nallowed\n",
+        "es5id": "11.4.9_A1",
+        "description": "Checking by using eval",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e36294834db399f3280c3027c32e4183b7d3f309e902ec47232e8a3e6dac7e3f",
+      "compiledSha256": "9bcf4c3a4f7c0ba5338713abd0bee788fa471d36b621105f79b450a5fd2b35d4"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between \"!\" and UnaryExpression are\nallowed\n",
+        "es5id": "11.4.9_A1",
+        "description": "Checking by using eval (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "065b7153219f02f52817374395af43a856e7bd69e4bc436148164633500e244c",
+      "compiledSha256": "bbd8b6b18d1ed6d2a05fe87fffa69c45da0c03397294f203ab65d180f7234924"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator !x uses GetValue",
+        "es5id": "11.4.9_A2.1_T1",
+        "description": "Either Type(x) is not Reference or GetBase(x) is not null",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4f1ce423da9a15649ce2438d0872cce13645c744f93008b22f2b764b8339fb1d",
+      "compiledSha256": "85ec9735b7f5a26f844c1c647841ced80ff1ee935089711aeb822f237cae2502"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator !x uses GetValue",
+        "es5id": "11.4.9_A2.1_T1",
+        "description": "Either Type(x) is not Reference or GetBase(x) is not null (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e4772e3562fe4f470866ba6f5f5f97e260394d8724f94f00bbe623fd67c0eee8",
+      "compiledSha256": "71ca5aa7e04d37bf96ccc9fe4ee4e782154098e5ed8746e0a46eecea14302382"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator !x uses GetValue",
+        "es5id": "11.4.9_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "15c8d89c96ab3406cc97ed8d33eeab207f4d9f97137892c0e44e7b7d19741011",
+      "compiledSha256": "9cce3725bb4f29859e30b62530f86942159ef2674ec5481d2b455b56b585a7bd"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator !x uses GetValue",
+        "es5id": "11.4.9_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "744cf5bc329aed0fb6d65f468ac8e1f2de5e338f88ab68da4b3e9b3d72e8ceec",
+      "compiledSha256": "50f341db797eb942aeeef6ce39f3988936e846d18e9a4e70a4402453ff50bbc9"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A2.2_T1.js",
+      "attrs": {
+        "info": "Operator !x uses [[Default Value]]",
+        "es5id": "11.4.9_A2.2_T1",
+        "description": "If Type(value) is Object, return false",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A2.2_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "34f033e066b4e071266bc72cc5f6d6b94e3aaa4e8fca15a13a85163ca688e1d8",
+      "compiledSha256": "41092d5d836f98c020835ad141b820bd26da96ffb172b6011cfc6fda0d2adcd2"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A2.2_T1.js",
+      "attrs": {
+        "info": "Operator !x uses [[Default Value]]",
+        "es5id": "11.4.9_A2.2_T1",
+        "description": "If Type(value) is Object, return false (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A2.2_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "067a173104311f05c51cf2ec9871e3f30f390c3e50f51da82a6707868844049a",
+      "compiledSha256": "22647c597c6c6b8ebda24f367bd7147b167e11c50ea898851316a4c3f409322e"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T1.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T1",
+        "description": "Type(x) is boolean primitive or Boolean object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "8c0d08e2363102eb72fc1a98ac7bd00509ed3664e38f7719304431544a859956",
+      "compiledSha256": "2c0fe43afffff2347b068714eda8040094aa5a2f880e64d4d3c783cb4ad4ff9a"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T1.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T1",
+        "description": "Type(x) is boolean primitive or Boolean object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "478d4581039712c4a05e835e1d66b7ed0b5bf97bf835ff3fabe948e9d4414c0f",
+      "compiledSha256": "ec8473c9d4c6cdf333a6a1100ad06007cc21a94054b9d1fa283288255a94c830"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T2.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T2",
+        "description": "Type(x) is number primitive or Number object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "386c7c314018626551d1e0b3f621f23729b1fdeab1ae56fe1aafa590ba1cb8c2",
+      "compiledSha256": "2129f41507c029542157b214a74767d154308a91486573a0b8539dd737b12fac"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T2.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T2",
+        "description": "Type(x) is number primitive or Number object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c3c8e2781e4982ae91904e74e3d9fee5a07ce082f58882203a19714a2b034258",
+      "compiledSha256": "6019dec5d93b0753e4d0cf282ea78e724f379e8d29352ac74e4589aa4bda2863"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T3.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T3",
+        "description": "Type(x) is string primitive or String object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "0a5b31b323d30606c1ff740a54cffbbaf72e571bd3eb3f2ffbc81edee5aff265",
+      "compiledSha256": "e45b999963facb1ed17fef41cd62215f7062bf54b0bd564a867701de3e3b58b0"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T3.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T3",
+        "description": "Type(x) is string primitive or String object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "2c1f67eddbe3c7ce71b59b3e58f6539be423b6f0e474fd86cb1545b94c5e9c13",
+      "compiledSha256": "e0316fd14af9915be53646762f0ea3a40b3746e021d7a619bdee89843b010ad2"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T4.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T4",
+        "description": "Type(x) is undefined or null",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "3376bdf1137ecda6a821a2512fe391ec3becd7af1da3f2a15ffe1c59852b5f36",
+      "compiledSha256": "4d61d0de2e2ebf3e17336ec379883cfc633760cbbf1376525ccdc48797995be0"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T4.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T4",
+        "description": "Type(x) is undefined or null (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "dba2b30abf534b1e8d9a65538b39c04ac45ee667601422ca1d3fabc5631b39bc",
+      "compiledSha256": "f6ccc17a14381b0e1bb90833d222a7f7ccfc1916b188284ade8b8e18a0c3ad74"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T5.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T5",
+        "description": "Type(x) is Object object or Function object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T5.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "df0a16eb4000d0cd6c5a38505df9620ae32363fbc59bc299d64f922d1398228c",
+      "compiledSha256": "d28b37fa67aaf480980434add3505e8883dd4d0a0f88b170453d6de53df61ddb"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S11.4.9_A3_T5.js",
+      "attrs": {
+        "info": "Operator !x returns !ToBoolean(x)",
+        "es5id": "11.4.9_A3_T5",
+        "description": "Type(x) is Object object or Function object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S11.4.9_A3_T5.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "bf9e9edaf7537f60efa4364dcfbf0e988c81a66511c8e02ab4a647eda1c89d08",
+      "compiledSha256": "b730a7f81318b2270e9e7cd0efd7f01246a603ab4f67d8ef1828805d18e06830"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A1_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from undefined value is false",
+        "es5id": "9.2_A1_T2",
+        "description": "Undefined, void and others are converted to Boolean by implicit transformation\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4dc49223e1dc39313efd3ec65d711406f9f4f649ca71d443ead1e06182a20e31",
+      "compiledSha256": "7f5b6a10a2cb9f084522eaa5ffbd81c6c8304b77e9d73de91215516a6be5cbdd"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A1_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from undefined value is false",
+        "es5id": "9.2_A1_T2",
+        "description": "Undefined, void and others are converted to Boolean by implicit transformation\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "1ba0226aaa6d41251713c9fad22daf5e102ee21aa3a9facb9934b7d1d6b74b88",
+      "compiledSha256": "d117183fea8f401779f12d52b6881a28aa8fa603857dd6872f8a002a002824b5"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A2_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from null value is false",
+        "es5id": "9.2_A2_T2",
+        "description": "null convert to Boolean by implicit transformation",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A2_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "174507beb2206dfc2fe5945a3a80380d2612c806a31c803246d27ea78947d6fc",
+      "compiledSha256": "5731dbec99cab110e7c9ffb18c360bbdc5618ada512a4a6d15f58017302b2386"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A2_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from null value is false",
+        "es5id": "9.2_A2_T2",
+        "description": "null convert to Boolean by implicit transformation (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A2_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "3bdbb0c60128504fe31f7f24f24c4a42a7f269e5f1c2763685658a3168348c6c",
+      "compiledSha256": "400189bde311a9688c521d721086a37845297525c0ccb6d37c745ff3b2e94cc0"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A3_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from boolean value is no conversion",
+        "es5id": "9.2_A3_T2",
+        "description": "true and false convert to Boolean by implicit transformation",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "ac60722a1c33d0d61d78fb255f48f12fc675ee446d801e8ea09f920abd21a945",
+      "compiledSha256": "fe0194667fe97c395ad87e0b3b28fa2d8b8a4b105806440a1d3c3c9e0e75debe"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A3_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from boolean value is no conversion",
+        "es5id": "9.2_A3_T2",
+        "description": "true and false convert to Boolean by implicit transformation (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "985220bb1aab1091460d2c0b0afb6a10d7735d9611a75f846c9b86f155d46b4a",
+      "compiledSha256": "f36ffd88983ec29963385dd7979d0bb76f83a75d3b77896b5a2a6d8157baf4b9"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A4_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from number value is false if the argument\nis +0, -0, or NaN; otherwise, is true\n",
+        "es5id": "9.2_A4_T2",
+        "description": "+0, -0 and NaN convert to Boolean by implicit transformation",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "3c00b615b2845dd2446f5b79a14ddf5f02d002fd2007e6177f63b995a9a2ba6c",
+      "compiledSha256": "97154d259834c81aafe7814daa864bfbe445f3a800e4182b6092b0a0ee14ce05"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A4_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from number value is false if the argument\nis +0, -0, or NaN; otherwise, is true\n",
+        "es5id": "9.2_A4_T2",
+        "description": "+0, -0 and NaN convert to Boolean by implicit transformation (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7158d5fa566e5f9a8238ce7c74fabb064366756f728dba3b24d81bf8e2df7708",
+      "compiledSha256": "35a8bd82530a5f286e17ef9fc1aabf5bc91f7ae3bf473b6e3e38863c33b0ff91"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A4_T4.js",
+      "attrs": {
+        "info": "Result of boolean conversion from number value is false if the argument\nis +0, -0, or NaN; otherwise, is true\n",
+        "es5id": "9.2_A4_T4",
+        "description": "Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.MAX_VALUE, Number.MIN_VALUE and some other numbers are converted to Boolean by implicit transformation\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "b3e72fcea70f62086b91dfe58afb34ad5fe18b0ce84783a4c41f871fdc12ae18",
+      "compiledSha256": "5334599ceef74c95b3016f61db5067b6b5b93ed891505aa305cccfa3b97cddd0"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A4_T4.js",
+      "attrs": {
+        "info": "Result of boolean conversion from number value is false if the argument\nis +0, -0, or NaN; otherwise, is true\n",
+        "es5id": "9.2_A4_T4",
+        "description": "Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.MAX_VALUE, Number.MIN_VALUE and some other numbers are converted to Boolean by implicit transformation\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "727181b90a8252e1370ffc868e8b8ab0f93825f60e19eccb6af1769d748a80f3",
+      "compiledSha256": "2f72a639c16d77b170d490d6f82b3a7096eaadf42b27608a8f3ceb1688a74013"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A5_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from nonempty string value (length is not\nzero) is true; from empty String (length is zero) is false\n",
+        "es5id": "9.2_A5_T2",
+        "description": "\"\" convert to Boolean by implicit transformation",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A5_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "003554131ababe96a7206775d5bd8e1f7e6fe9de71c3783072ccaa8c6dd34287",
+      "compiledSha256": "767e940fc599d1feda063aa6223fc0564c3f53b2bbd954a591ef474eda0df241"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A5_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from nonempty string value (length is not\nzero) is true; from empty String (length is zero) is false\n",
+        "es5id": "9.2_A5_T2",
+        "description": "\"\" convert to Boolean by implicit transformation (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A5_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7b36c88c9dd4b53b486e0674db5474ddbf824d01eb897159a8bafd11c5542e87",
+      "compiledSha256": "07093a3d32af4b98824e91d6598bf67861a6482f61d28e53224c85f3d5015459"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A5_T4.js",
+      "attrs": {
+        "info": "Result of boolean conversion from nonempty string value (length is not\nzero) is true; from empty String (length is zero) is false\n",
+        "es5id": "9.2_A5_T4",
+        "description": "Any nonempty string convert to Boolean by implicit transformation",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A5_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "dc2da290296d95974e7457a6ccf2d15e4ba655f67090dffa0de0f637b2476688",
+      "compiledSha256": "0146f98e542dffbccd7bd7b915ec3436ddc5a3a745db0dc379479179875f43be"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A5_T4.js",
+      "attrs": {
+        "info": "Result of boolean conversion from nonempty string value (length is not\nzero) is true; from empty String (length is zero) is false\n",
+        "es5id": "9.2_A5_T4",
+        "description": "Any nonempty string convert to Boolean by implicit transformation (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A5_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e6acbfefd068d917b05d88dbe24a636e6a3684f27aa9f881f5fae11473e3d69b",
+      "compiledSha256": "5f3b0d29e39223cdf7f87a5d6c683ff2d65512525af3324814b06161aa4890b1"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A6_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from object is true",
+        "es5id": "9.2_A6_T2",
+        "description": "Different objects convert to Boolean by implicit transformation",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/S9.2_A6_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6434954f566b3206bd7ecd137b0a5b33747764f128b87a7116ab0edb03c1bb1e",
+      "compiledSha256": "30b03b729cfa442966f30bd75b6ff5bdb9e76c3a6737f7ef05938bd25372cd3d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/S9.2_A6_T2.js",
+      "attrs": {
+        "info": "Result of boolean conversion from object is true",
+        "es5id": "9.2_A6_T2",
+        "description": "Different objects convert to Boolean by implicit transformation (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/S9.2_A6_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "dab62226782cc2549ffda3795dbab2807ec3fc83c493e0540237d5dce96d7a2d",
+      "compiledSha256": "2b51bb969f4a728bb3c76df30b8205e51461385b7853e23a1c0b7c5a4320416d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/symbol-logical-not-evaluation.js",
+      "attrs": {
+        "es6id": "12.5.12.1",
+        "description": "\"Logical Not\" coercion operation on Symbols\n",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-not/symbol-logical-not-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "72bc9ffb8dd6470bfef43b0a46ef41f6ab4d737b6c013c648447fd76c6a6edba",
+      "compiledSha256": "27042f25d61cae5e5c67b9b27304a291be4694b71a72841eef05c3b6cd17d007"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-not/symbol-logical-not-evaluation.js",
+      "attrs": {
+        "es6id": "12.5.12.1",
+        "description": "\"Logical Not\" coercion operation on Symbols\n (Strict Mode)",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-not/symbol-logical-not-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "fd92fe29f5774488e4695839570d0c9e86dfcbd64b748736a44a0c93f79f5f6c",
+      "compiledSha256": "c1c998a74d10fb71bcdf742a0ed544a336cd3c6d2a95823b27aa9497d1460007"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between LogicalORExpression and \"||\" or\nbetween \"||\" and LogicalANDExpression are allowed\n",
+        "es5id": "11.11.2_A1",
+        "description": "Checking by using eval",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6d9f9bbda08b0640c3fd789d455549be42503e571f385b0084ee694e3a0c74d3",
+      "compiledSha256": "fab6413b8634cbd614508a87fd5666e6c0ac5ef163b311c0746475c807831399"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A1.js",
+      "attrs": {
+        "info": "White Space and Line Terminator between LogicalORExpression and \"||\" or\nbetween \"||\" and LogicalANDExpression are allowed\n",
+        "es5id": "11.11.2_A1",
+        "description": "Checking by using eval (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a53ed70777e6ae1c89a8874fb012f032713a1a26af093a03b1fee9652c27e127",
+      "compiledSha256": "d8a846e29ca25aaf0f7e46f2087bb81fce6c34d465e4abf80d1930acf28c0614"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T1",
+        "description": "Either Type is not Reference or GetBase is not null",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "658b4c30288a63c35fae5880473f0f34ce5e6bddc1bfb8c179b9e5d42bc5ddcd",
+      "compiledSha256": "3ac50f842e3a1b54d30766f0b13755688a27a640e35cfab8d73d370718f18ab8"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T1.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T1",
+        "description": "Either Type is not Reference or GetBase is not null (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4a9b01f48a5b68f5d9f67f63459fd49166073beec159683d8630dd3fba9cfc39",
+      "compiledSha256": "931eab0ad08de128fa7e60573ea40010bb337d57787a1d4649d59e8f00eee9e5"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "128e6660177e3ccf9dcab4b9ee3d8170a61b6dbe4d5b488bf1843ec528e99508",
+      "compiledSha256": "572babac578d29171d438a2fb501e291c8ed7f58af3a1260e14df1db9dc67771"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T2.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T2",
+        "description": "If GetBase(x) is null, throw ReferenceError (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "0670e61ff02727699d002ae3cb6c2263c756c00f53bb3400f613fa2d9a42a2d0",
+      "compiledSha256": "5bd1e7fa613e4d51872d601b56d737706e8126441d2cd44c04f87a5d93e3a879"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T3.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T3",
+        "description": "If ToBoolean(x) is false and GetBase(y) is null, throw ReferenceError\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "02d335eea8f269638520b2ad51e279de2caf339cc83c470f23dc3325c9e078e0",
+      "compiledSha256": "3e5e6ecd707ee89203acd595e86d73e5684a355bf62635674c5f9d237e5aa332"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T3.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T3",
+        "description": "If ToBoolean(x) is false and GetBase(y) is null, throw ReferenceError\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "f71abb2a0b345ff161012e73179ecc322f02706bd596d4abd8727e7786133804",
+      "compiledSha256": "5efd420b2473bdff4a4a15dfd5351b815d73f66451f0b096e5772d8015d33116"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T4.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T4",
+        "description": "If ToBoolean(x) is true and GetBase(y) is null, return true",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "f65d09d26efe74457dc4f4174408c636496abba5a23182e9f2ae740a72de8d81",
+      "compiledSha256": "ec10f9151389f568df081dde2572919d6b3756d570df9fdd2d42b209daab8718"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.1_T4.js",
+      "attrs": {
+        "info": "Operator x || y uses GetValue",
+        "es5id": "11.11.2_A2.1_T4",
+        "description": "If ToBoolean(x) is true and GetBase(y) is null, return true (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.1_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4543e1dfb0dc5271581973ef253298052245311e6d08ca1b58bfffdb535ce7e8",
+      "compiledSha256": "06faa63ee665d6278ecb7b4ed16e337276c3606cecfed54b4bd29032be5255f9"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.4_T1.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.2_A2.4_T1",
+        "description": "Checking with \"=\"",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "9ab8b886c8d041958a5ea2405ded8a8752962ec33ff21ff72fd898154fa9870e",
+      "compiledSha256": "35d9855485c1607be98f4860dbf757cb5b2249647767c05e360bec8cbbfaab6d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.4_T1.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.2_A2.4_T1",
+        "description": "Checking with \"=\" (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e93d85c9743daed57fc64edc9665e3c983a3a851189bab964cb7a878e2ca1b82",
+      "compiledSha256": "668241affaee1dda080a007ebe40bae769424434704869644fd13ebad5383f8f"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.4_T2.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.2_A2.4_T2",
+        "description": "Checking with \"throw\"",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e20bf7748a38b0937927beea62fa493e5c7ef0d24f982bf2c0f3aacefe1289ca",
+      "compiledSha256": "dc2b334e3adf9b26987f75a8ec99cb5d4418187bdfa914ac0cb9b706003ad035"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.4_T2.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.2_A2.4_T2",
+        "description": "Checking with \"throw\" (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e53eeb2a72356686c7eee8b4e0136d9b8c9addd986bfee5f4c4260ec5fcd16f8",
+      "compiledSha256": "361d40d2307fa47ed49865078803bfcb4aa1e3a949c555eefbe8e98d7976b8c7"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A2.4_T3.js",
+      "attrs": {
+        "info": "First expression is evaluated first, and then second expression",
+        "es5id": "11.11.2_A2.4_T3",
+        "description": "Checking with undeclarated variables",
+        "flags": {
+          "noStrict": true
+        },
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A2.4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "762bcbad92af5f2e306dd3e0ec1b8507eb2c6a9bf899775d4b2e345e6c4a5e93",
+      "compiledSha256": "9ec2cb1d5290adf1691c3026fa85c52ba0023f8d966863147327299ecde22962"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T1",
+        "description": "Type(x) and Type(y) vary between primitive boolean and Boolean object\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "970254060a0df6307176321c251455dbc1fd5b6c9d5c120f7fde93bf4cc0d303",
+      "compiledSha256": "cf9bf18afe93b4bda407186f0e32382789dc54bbd0a94883a0631b0fe152a9d6"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T1",
+        "description": "Type(x) and Type(y) vary between primitive boolean and Boolean object\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "68ac9494c290412e007189b6ec28488530a626ec333352c13a3b43fc6bb8be59",
+      "compiledSha256": "89b86dce905a6082cf564f35abec9b20d4b84f9dd575e9ce2387386903200efd"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "1d59f20291ea35fc850c9142b6612ad8b8e14613b428ba2379c0e259f9ecc4ec",
+      "compiledSha256": "bec53c85c014e17aed4036b40f42b3ce0cfebc8d32614ee9c8d2664a3a1b7568"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "0af4c0c31e2c63fc43eb31effa0c4c7b8c3415d8c214b98025004549a99d0058",
+      "compiledSha256": "095dad5de06015924e2fab3f6c7e1ea358402330351e5d2a28b0acd3a8a83e48"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "feb5d866112f7c99343975af3915a47c3ae2f93dd670c0f0d05ff5d79a352f70",
+      "compiledSha256": "66f62a3e68dcb3b5aaf16b17f9db4e18980a73e8c2581aa42fc4828a00eb1c66"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7bf0260200398a57d3de70c4270affa3a119e1c64496e4ab35cf898f1679a62f",
+      "compiledSha256": "ec20c5ccb75b3eed63af6dbb89e5516cc9de9973dfb73a99953fe4dff822a8c5"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "f018b52317d2a283069892917b0cdec5fcbe879ca30c67aaa6981e534a7b9464",
+      "compiledSha256": "8c02ae449eef9607311233604d25aa8e6f498ab518fa41f7d8489101c67b35de"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A3_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is false, return y",
+        "es5id": "11.11.2_A3_T4",
+        "description": "Type(x) or Type(y) is changed between null and undefined (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A3_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e2f62539275ccf4c5e524f4bc151a00cb4d0814617c6bb23284b5e9ddb0827d2",
+      "compiledSha256": "7a364c29230a96350fd058aa904efdf2beae62001459af61da35a61802a7735d"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T1",
+        "description": "Type(x) and Type(y) vary between primitive boolean and Boolean object\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a89c9290e39bdcc9f23c07e303e2f1e4d6b35d92bd208ef3a30ce9e8c719290b",
+      "compiledSha256": "6296597c3f36355cc05342eec9e429565f9152aaeca525e3884bdc9e2eff683e"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T1.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T1",
+        "description": "Type(x) and Type(y) vary between primitive boolean and Boolean object\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T1.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "14f70b75d16756188612e17badf6e276eb2221b64d1cc9954b577484d4bebe2e",
+      "compiledSha256": "f93c2afd1d4b4687236c6c12ece6091ca1db95969322d94d02db94e928bb32fc"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "3c8461e4b11a522dfa10fc3e991bd731214025740a25c7bc9efbb9144502aeef",
+      "compiledSha256": "035538817475d054328c0fa15acbfb4b6efb44d4ae24d07245d8f4620c1a35b9"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T2.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T2",
+        "description": "Type(x) and Type(y) vary between primitive number and Number object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T2.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4b093695eb482e3c253cc39e1363b8e3fd6e2162084459bef648260d42c4b9a7",
+      "compiledSha256": "15551f71602500e2244df4157ab24c65d93988b3e40d8505d87375d181d0ee98"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "5ae493cbb1c264953e169adfb6e3c6c66771ac44f999e9a6b4e95796051e66a6",
+      "compiledSha256": "935ad8421047052ff24b996312f12670c532b3ccd898e803c4b5dee125b89527"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T3.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T3",
+        "description": "Type(x) and Type(y) vary between primitive string and String object (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T3.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "02eea00d774f166a7c684b29098480df2a411d9cc67a811efaf7cfa02ee57a04",
+      "compiledSha256": "7a87ef479f99270ef57abad5c7a360fc5479554f88a4ed6b46b066985d3cb631"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T4",
+        "description": "Type(x) or Type(y) vary between Null and Undefined",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6a8e8d0b5c5cd731e22e6ef3acb56974b72947921c0d2bfd86a4dfee9cf8d8a6",
+      "compiledSha256": "8789a10dfe8a2cede8c6c563c8bb991dab6fadea80cf4e06df1ec80333d5aa7a"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/S11.11.2_A4_T4.js",
+      "attrs": {
+        "info": "If ToBoolean(x) is true, return x",
+        "es5id": "11.11.2_A4_T4",
+        "description": "Type(x) or Type(y) vary between Null and Undefined (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright 2009 the Sputnik authors.  All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/S11.11.2_A4_T4.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4981d2586f98954c1d8aa5b89f39c686a9310282907229deafdb985227318ddd",
+      "compiledSha256": "7ba847eedb1b51baa7dbb643b0c43f1b640e1ded73395d82803cfa79578261bb"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/symbol-logical-or-evaluation.js",
+      "attrs": {
+        "es6id": "12.12.3",
+        "description": "\"Logical OR\" Symbol evaluation\n",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "language/expressions/logical-or/symbol-logical-or-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "bfc0c57381ca8d7e3d387882dee77ddfb7da3692863a62c1768ab0db14158671",
+      "compiledSha256": "b0ae109110a35b92175f8db0b5b25df9f8c391f69ee563f7fc88836a258a9c19"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/symbol-logical-or-evaluation.js",
+      "attrs": {
+        "es6id": "12.12.3",
+        "description": "\"Logical OR\" Symbol evaluation\n (Strict Mode)",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "language/expressions/logical-or/symbol-logical-or-evaluation.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "36c4b6644372ffb702d266a39c9533084590de6fde6fdd64f2b3266843edd730",
+      "compiledSha256": "2d037f562344624ad1855a022b35b0558d02914f58919215b9b57188e0c267d5"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/tco-right.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/logical-or/tco-right.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477"
+      },
+      "contentsSha256": "1c885eb3b9fece476a5ddab1f613b4660013b0cad7d36e7abdc6a1f956dc3c06",
+      "compiledSha256": "f38a992e7b878030f0cdfdc2ec8df2860094cb24a276c6396612ad6ca9474a6a"
+    }
+  ]
+}
