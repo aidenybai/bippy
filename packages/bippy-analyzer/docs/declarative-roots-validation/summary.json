@@ -1,0 +1,71 @@
+{
+  "scope": "declarative-binding-gc-roots-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "beforeCommit": "0c6f385c29f2e1c7813b11c578491269bd316535",
+  "beforeEngineSha256": "da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29",
+  "engineSha256": "7b638705724afba015103efa11308ad4e036b5b7129115564c6d89263425004f",
+  "patchSha256": "9d7eca82e1f7574dc68b4a55513cbdece7e86aa14ceed58045c7db3f5a3cbff5",
+  "testSha256": "319895134d4339992c9c12b81a74ce55ac8651a2174c8c506c26d59517faef40",
+  "helperSha256": "72c219f4e83c2eb77b48d5d38eb4fe4a25a37d37b78836df91307d385e108867",
+  "probes": {
+    "published": {
+      "setup": "normal",
+      "result": "normal",
+      "value": "[\"object\",false]"
+    },
+    "fixed": {
+      "setup": "normal",
+      "result": "normal",
+      "value": "[\"object\",true]"
+    }
+  },
+  "sourceBeforeProbe": {
+    "setup": "normal",
+    "result": "normal",
+    "value": "[\"object\",false]"
+  },
+  "beforeFocused": {
+    "total": 6,
+    "passed": 1,
+    "failed": 5
+  },
+  "afterFocused": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "totalUnitTests": 805,
+  "unitTestFiles": 16,
+  "smoke": {
+    "total": 74,
+    "passed": 74,
+    "failed": 0
+  },
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "selection": [
+    ".test262/test/built-ins/WeakRef/**/*.js",
+    ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+  ],
+  "published": {
+    "total": 152,
+    "passed": 152,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "source": {
+    "total": 152,
+    "passed": 152,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "identicalInputsCompiledHashesAndVerdicts": true,
+  "receiptHashes": {
+    "published": "618e6102c43be8e0b57e620cd74c8cf70c14979647ed7b75fe91338beaa8fe60",
+    "source": "e0a62c38b91e8cb75b2a0b4b9ca353da8cc64652e02d9abd5b235d5823134ffd",
+    "validation-logs": "5a8004e88a9f3d4514f9c083c0fc99b8b71dfdfb8ccf01ecba05f919e10f2810"
+  }
+}

@@ -25,7 +25,7 @@ pnpm --filter bippy-analyzer test --run
 pnpm --filter bippy-analyzer typecheck
 ```
 
-The current local suite passes **797 tests across 15 files**, using at most two workers. The preceding Linux CI suite passed 766 tests; the added checkpoint increment needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
+The current local suite passes **805 tests across 16 files**, using at most two workers. [Linux CI](https://github.com/aidenybai/bippy/actions/runs/36438481504) passed the preceding 797-test checkpoint revision and its unchanged 74-variant smoke. The added declarative-root fix needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
 
 - All 144 ordered pairs from 12 selected scalar literals for each of 23 binary/control operators. These produce 3,312 guarded expression templates and 13,248 Boolean witness runs per reference engine.
 - 192 generated cases from three fixed seeds, containing 160 distinct expressions. Each uses three declared Boolean inputs and checks all eight assignments, for 1,536 additional witness runs per reference engine.
@@ -80,7 +80,13 @@ The additional parameter/arguments selection remains 557/559, and the historical
 
 The [ordinary-object checkpoint contract](object-checkpoints.md) and its 31 tests add selected-object restoration without replacing JavaScript semantics. The tests compare aliasing, descriptors, property order, prototypes, integrity, and branch visitation order with published engine262 and V8 observations. Additional checks cover ownership, private-brand installation, garbage-collection roots, nested checkpoints, and prototype-cycle rejection.
 
-This is storage restoration, not a suspended execution snapshot. Unselected objects, captured bindings, jobs, and host effects remain outside its scope. The [symbolic React checklist](symbolic-react-status.md) records those missing requirements. The local engine hash is `da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29`.
+This is storage restoration, not a suspended execution snapshot. Unselected objects, captured bindings, jobs, and host effects remain outside its scope. The [symbolic React checklist](symbolic-react-status.md) records those missing requirements. The checkpoint revision’s engine hash is `da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29`.
+
+## Declarative binding roots
+
+The [binding-root fix](declarative-roots-validation/README.md) makes the collector visit each declarative binding record rather than its native map. Before the fix, five focused checks lost weak references to values that remained accessible through bindings. Eight checks now pass, including saved getter captures and module bindings, with independent V8 comparisons for retained values.
+
+Both published and source-built engines pass the additional 152 WeakRef/FinalizationRegistry variants. That upstream selection did not detect this bug. The current engine hash is `7b638705724afba015103efa11308ad4e036b5b7129115564c6d89263425004f`. Marking bindings is not checkpointing them; symbolic React branch isolation remains missing.
 
 ## Acceptance for later stages
 

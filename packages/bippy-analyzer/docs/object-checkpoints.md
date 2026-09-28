@@ -27,7 +27,7 @@ Keep the owning agent current and release the checkpoint in cleanup. Restore onl
 
 Restore also checks the projected ordinary prototype graph before changing objects. If an unselected prototype mutation would introduce a cycle, restore fails without applying the snapshots. Exotic prototype boundaries do not invoke traps during this check.
 
-Open checkpoints participate in engine garbage collection. Saved descriptor values, accessor functions, symbol keys, objects, and prototypes remain reachable. Release removes these roots and clears the stored snapshots.
+Open checkpoints participate in engine garbage collection. Saved descriptor values, accessor functions, symbol keys, objects, and prototypes remain reachable. Release removes these roots and clears the stored snapshots. The subsequent [declarative-root fix](declarative-roots-validation/README.md) also preserves values captured by saved accessors; the initial checkpoint revision inherited an upstream bug in binding traversal.
 
 ## Unsupported state
 
@@ -45,7 +45,7 @@ These limits prevent treating the API as branch isolation for React. React’s c
 
 The branch-mutation cases compare observations with unmodified engine262 and V8. They execute the setup once in the checkpointed realm, restore between branches, and repeat with reversed branch order. Getter counts remain zero. This verifies selected object restoration, not symbolic branch execution or continuation resumption.
 
-[Validation receipts](object-checkpoint-validation/summary.json) retain 797 passing local tests across 15 files and the 74/74 smoke. The historical selection remains 301/306; the parameter/arguments selection remains 557/559 with identical inputs and verdicts. Logs retain the two initial source-typecheck failures and the final passing checks. Relocated builds match `da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29`.
+[Validation receipts](object-checkpoint-validation/summary.json) retain 797 passing local tests across 15 files and the 74/74 smoke. The historical selection remains 301/306; the parameter/arguments selection remains 557/559 with identical inputs and verdicts. Logs retain the two initial source-typecheck failures and the final passing checks. Relocated builds match `da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29`. [Linux CI](object-checkpoint-validation/ci-success.json) confirms the same 797 tests, 74-variant smoke, and engine hash at `0c6f385c`. The later binding-root fix has separate receipts.
 
 Run the focused checks with:
 

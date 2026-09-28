@@ -1,52 +1,7 @@
 import * as published from "@engine262/engine262";
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vite-plus/test";
-import type { ManagedRealm, ObjectValue, Value } from "../engine/dist/declaration/index.mjs";
-import { getSymbolicEngine, type SymbolicEngine } from "../src/symbolic/load-engine.js";
-
-interface CheckpointFixture {
-  api: SymbolicEngine["api"];
-  realm: ManagedRealm;
-  evaluate: (source: string) => Value;
-  getObject: (source: string) => ObjectValue;
-  readString: (source: string) => string;
-}
-
-const withFixture = async (run: (fixture: CheckpointFixture) => void) => {
-  const { api } = await getSymbolicEngine();
-  const previous = api.surroundingAgent;
-  api.setSurroundingAgent(new api.Agent({ startEventLoop: false }));
-  try {
-    const realm = new api.ManagedRealm();
-    const pop = realm.pushTopContext();
-    try {
-      const evaluate = (source: string) => {
-        const result = api.EnsureCompletion(realm.evaluateScriptSkipDebugger(source));
-        if (result instanceof api.ThrowCompletion) throw new Error(api.inspect(result.Value));
-        return result.Value;
-      };
-      run({
-        api,
-        realm,
-        evaluate,
-        getObject: (source) => {
-          const value = evaluate(source);
-          if (!(value instanceof api.ObjectValue)) throw new Error("Expected an object");
-          return value;
-        },
-        readString: (source) => {
-          const value = evaluate(source);
-          if (!(value instanceof api.JSStringValue)) throw new Error("Expected a string");
-          return value.stringValue();
-        },
-      });
-    } finally {
-      pop?.();
-    }
-  } finally {
-    api.setSurroundingAgent(previous);
-  }
-};
+import { withFixture } from "./helpers/engine-fixture.js";
 
 const setup = `
   var prefixRuns = (globalThis.prefixRuns ?? 0) + 1;

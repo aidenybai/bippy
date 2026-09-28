@@ -1,0 +1,7 @@
+diff --git a/src/execution-context/Environment.mts b/src/execution-context/Environment.mts
+index 184b864..dcb2b76 100644
+--- a/src/execution-context/Environment.mts
++++ b/src/execution-context/Environment.mts
+@@ -269 +269 @@ export class DeclarativeEnvironmentRecord extends EnvironmentRecord {
+-    m(this.bindings);
++    for (const binding of this.bindings.values()) m(binding);
