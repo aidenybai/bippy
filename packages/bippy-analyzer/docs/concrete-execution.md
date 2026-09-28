@@ -26,7 +26,7 @@ try {
 
 `evaluate(source, specifier?)` returns an engine-owned value. Do not transfer these values between runtimes. `readString(source)` executes another script and requires a string result. These methods execute code. They are not passive snapshot readers and can invoke getters or change state.
 
-The runtime restores the previous surrounding agent after each operation, including failures. Ordinary guest exceptions remain `ConcreteGuestError` objects with their original engine value. Host failures and exhausted budgets prevent further execution in that runtime.
+The runtime restores the previous surrounding agent after each operation, including failures. Ordinary guest exceptions remain `ConcreteGuestError` objects with their original engine value in `.value`. `toJSON()` returns diagnostic strings and the engine value tag, without traversing the guest heap or invoking guest getters. The message and guest stack use engine262's cached creation-time diagnostics when available. Later changes to a guest error's properties do not update those cached strings. Raw values are no longer attached as `.cause`, which caused diagnostic formatters to traverse realm and syntax graphs. Host failures and exhausted budgets prevent further execution in that runtime.
 
 `dispose()` prevents further execution and cancels pending timer handles. It does not execute application cleanup, flush jobs, or unmount React. Perform those operations explicitly before disposal. No native timers, network requests, or filesystem handles belong to this runtime.
 
@@ -77,7 +77,7 @@ The additional globals are:
 - `setTimeout(callback, delay?, ...arguments)`, with callable callbacks and numeric zero or omitted delays only. Handles are numbers. Callbacks receive an undefined receiver, subject to JavaScript's normal `this` binding rules.
 - `clearTimeout(handle?)`, accepting numeric handles or undefined. Unknown numeric handles have no effect.
 - `queueMicrotask(callback)`, accepting callable callbacks.
-- `console.log`, `console.warn`, and `console.error`, recording engine values by reference without invoking getters or coercing objects. These records are not deep snapshots.
+- `console.log`, `console.info`, `console.warn`, and `console.error`, recording engine values by reference without invoking getters or coercing objects. These records are not deep snapshots.
 
 Positive delays, coercible nonnumeric delays, string callbacks, and nonnumeric timer handles are unsupported. These are explicit restrictions, not HTML timer or Node timer parity. There is no DOM, `window`, `fetch`, `process`, `require`, `MessageChannel`, or `setImmediate` implementation. Clocks and randomness retain engine262's defaults.
 
@@ -115,4 +115,20 @@ The V8 reference has its own FIFO timer driver. Its microtask shim uses native P
 
 The first Node comparison exposed a `/var` versus `/private/var` URL mismatch. The fixture now supplies physical file URLs to both executions. The runtime does not normalize away that difference or change Node's symlink policy.
 
-React Test Renderer is React's deprecated test renderer, not React DOM. These checks establish selected concrete execution behavior only. Browser events, DOM behavior, portals, browser scheduling, lazy/Suspense rendering, and symbolic React remain separate gates.
+React Test Renderer is React's deprecated test renderer, not React DOM. These checks establish selected concrete execution behavior only.
+
+## React DOM counter
+
+`tests/concrete-react-dom.test.ts` executes React DOM 19.3.0 with LinkeDOM 0.18.12's worker build inside engine262. DOM constructors, document methods, event dispatch, React hooks, and component code remain guest-owned JavaScript. The analyzer does not forward DOM operations to native objects.
+
+Production and development builds compare nine observations with independent V8 and Chromium executions. The sequence mounts the counter, increments, selects step five, increments again, resets, decrements, hides, shows, and unmounts. Reset changes the count, not the selected step. Development uses Strict Mode. Tests compare complete container HTML and lifecycle traces, require an initially rendered counter, and check counts zero, six, and minus five.
+
+Chromium executes the same component without LinkeDOM. Its driver uses the fixture's declared document and URL, blocks other requests, and dispatches the same programmatic bubbling click events. It waits for an application effect checkpoint after each render, not for output to match the engine. Unmount uses React's synchronous root cleanup. The local reference is Chromium 153.0.8010.12 through pinned Playwright 1.63.0. CI installs Playwright's matching browser.
+
+The guest setup declares fixed `href` and `protocol` data for `https://fixture.invalid/`. That data is not a Location implementation. LinkeDOM's navigator and event behavior are library behavior, not a full browser model. These checks do not cover trusted pointer events, default actions, layout, navigation, live collections, or browser task-source ordering. LinkeDOM deliberately simplifies parts of the DOM and event model.
+
+Initial document parsing failed because pinned engine262 omitted Annex B `String.prototype.substr`. The maintained engine patch delegates coercion and index conversion to existing engine operations. All 30 selected Test262 variants pass, compared with zero on the published engine. A separate 972-case scalar/UTF-16 matrix and six metadata/coercion checks match V8. See the [intrinsic receipts](engine-substr-validation/summary.json).
+
+The first development setup also lacked location data. Both engines rejected it. The final fixture declares that input and records React's development `console.info` output. The original setup failures and formatter out-of-memory report remain in [DOM validation records](guest-dom-validation/).
+
+General browser integration, portals, lazy/Suspense rendering, broader scheduling behavior, mutable symbolic state, and symbolic React remain unfinished. The counter is a test fixture, not a public browser-host API or a replacement for the separate application-loader integration.

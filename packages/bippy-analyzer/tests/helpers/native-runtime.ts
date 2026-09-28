@@ -22,6 +22,9 @@ export const createNativeRuntime = () => {
         timers.delete(handle);
       },
       console: {
+        info: (...args: unknown[]) => {
+          consoleEntries.push(["info", ...args]);
+        },
         log: (...args: unknown[]) => {
           consoleEntries.push(["log", ...args]);
         },

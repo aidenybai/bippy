@@ -6,6 +6,7 @@ export type {
   ConcreteConsoleEntry,
 } from "./concrete/runtime.js";
 export { ConcreteGuestError, ConcreteRuntimeError } from "./concrete/errors.js";
+export type { ConcreteGuestDiagnostic } from "./concrete/errors.js";
 export { evaluateSymbolicExpression } from "./symbolic/evaluate.js";
 export type {
   ExpressionEvaluation,

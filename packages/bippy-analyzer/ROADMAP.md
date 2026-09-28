@@ -27,7 +27,7 @@ Initial symbolic milestone: commit `3d5d5563` on [PR #149](https://github.com/ai
 
 - [x] Lift finite guarded scalar alternatives through engine arithmetic, comparisons, unary operations, ternaries, and short-circuit/nullish expressions.
 - [x] Preserve input correlations through intermediate values and skip right operands on throwing or short-circuited paths.
-- [x] Compare scalar fixtures and generated operator matrices with unmodified engine262 and native Node execution. The current local suite passes 651 tests across four files.
+- [x] Compare scalar fixtures and generated operator matrices with unmodified engine262 and native Node execution. The scalar checkpoint passed 651 tests across four files.
 
 - [x] Delegate bitwise and shift expressions to engine262's existing evaluators.
 - [x] Compare guarded syntax traces and complete outcome partitions against independent witnesses. Keep generated selections fixed and preserve all failures.
@@ -40,9 +40,12 @@ The separate resolver work includes native build observation, corpus comparisons
 
 - [x] Execute supplied native-built JavaScript chunks through engine262's module loader and cache, including dynamic imports and top-level await.
 - [x] Run actual React and React Test Renderer inside engine262. Nine scenarios compare trees, state, lifecycle traces, and cleanup against V8.
-- [x] Add explicit zero-delay task-host boundaries, job/step budgets, failure retention, and runtime isolation checks. The complete local suite passes 705 tests across eight files.
+- [x] Add explicit zero-delay task-host boundaries, job/step budgets, failure retention, and runtime isolation checks. The initial concrete checkpoint passed 705 tests across eight files.
+- [x] Execute production and development React DOM counter fixtures with guest-owned LinkeDOM. Compare HTML, lifecycle traces, programmatic clicks, and cleanup with V8 and real Chromium.
+- [x] Add the missing Annex B `substr` intrinsic through an engine source patch. Preserve independent Test262 and V8 comparisons and the earlier engine failures.
+- [x] Serialize guest exception diagnostics without traversing their heap or invoking guest code. Keep original values available explicitly.
 
-These are [concrete execution increments](docs/concrete-execution.md), not completion of the browser runtime stages. Still missing here: full application-loader integration, React DOM/browser execution, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.
+These are [concrete execution increments](docs/concrete-execution.md), not completion of the browser runtime stages. Still missing here: full application-loader integration, general browser host support, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.
 
 ## Rules for every stage
 
@@ -132,7 +135,7 @@ Completion check: a native-built module fixture and its dynamic chunk execute in
 
 ## 3. Run concrete React through engine262
 
-The first check uses React's own test renderer, not a custom host configuration. It covers selected concrete state, effects, keys, class errors, stores, transitions, and development Strict Mode behavior. The DOM/browser tasks below remain open.
+The first check uses React's own test renderer, not a custom host configuration. It covers selected concrete state, effects, keys, class errors, stores, transitions, and development Strict Mode behavior. A later fixture uses actual React DOM with guest-owned LinkeDOM and matches V8 and Chromium counter observations. The broader DOM/browser tasks below remain open.
 
 - [ ] Load actual React, its JSX runtime, React DOM, and the application into the same managed execution system. Prevent duplicate React instances.
 - [ ] Provide an explicit DOM/browser adapter. Choose and pin its implementation; distinguish a DOM emulator from a real browser.

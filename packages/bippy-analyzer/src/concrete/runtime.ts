@@ -21,7 +21,7 @@ export interface ConcreteRuntimeOptions {
 }
 
 export interface ConcreteConsoleEntry {
-  method: "log" | "warn" | "error";
+  method: "log" | "info" | "warn" | "error";
   arguments: Value[];
 }
 
@@ -29,7 +29,7 @@ interface RuntimeFailure {
   error: unknown;
 }
 
-const consoleMethods: ConcreteConsoleEntry["method"][] = ["log", "warn", "error"];
+const consoleMethods: ConcreteConsoleEntry["method"][] = ["log", "info", "warn", "error"];
 
 export class ConcreteRuntime {
   readonly scope = "engine262-concrete-zero-delay-host-v1";

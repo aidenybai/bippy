@@ -1,9 +1,8 @@
-import { fileURLToPath } from "node:url";
-import { build } from "vite-plus";
 import { beforeAll, expect, it } from "vitest";
 import { createConcreteRuntime } from "../src/index.js";
 import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { createNativeRuntime } from "./helpers/native-runtime.js";
+import { buildScriptFixture } from "./helpers/build-script-fixture.js";
 
 interface ReactScenario {
   name: string;
@@ -19,36 +18,11 @@ beforeAll(async () => {
     { name: "development", mode: "development", jsxDev: true },
     { name: "mismatched-jsx", mode: "production", jsxDev: true },
   ]) {
-    const { mode } = profile;
-    const result = await build({
-      root: fileURLToPath(new URL("./fixtures/", import.meta.url)),
-      configFile: false,
-      envFile: false,
-      logLevel: "silent",
-      mode,
-      esbuild: { jsxDev: profile.jsxDev },
-      define: { "process.env.NODE_ENV": JSON.stringify(mode) },
-      build: {
-        write: false,
-        minify: false,
-        sourcemap: true,
-        lib: {
-          entry: fileURLToPath(new URL("./fixtures/concrete-react.tsx", import.meta.url)),
-          name: "fixture",
-          formats: ["iife"],
-        },
-      },
-    });
-    const outputs = Array.isArray(result) ? result : [result];
-    expect(outputs).toHaveLength(1);
-    const output = outputs[0];
-    if (!("output" in output)) throw new Error("Unexpected native build result");
-    const chunks = output.output.filter((item) => item.type === "chunk");
-    expect(chunks).toHaveLength(1);
-    const chunk = chunks[0];
-    expect(chunk.imports).toEqual([]);
-    expect(chunk.dynamicImports).toEqual([]);
-    expect(chunk.map).not.toBeNull();
+    const chunk = await buildScriptFixture(
+      new URL("./fixtures/concrete-react.tsx", import.meta.url),
+      profile.mode,
+      profile.jsxDev,
+    );
     expect(Object.keys(chunk.modules).some((name) => name.includes("react-test-renderer"))).toBe(
       true,
     );

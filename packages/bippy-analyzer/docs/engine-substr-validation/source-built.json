@@ -1,0 +1,430 @@
+{
+  "scope": "harness-verdicts-only",
+  "originalReportSha256": "dbaf3afab823553f954fec0d2bd191af7c7b0ea25d6944ae17210fed150fb233",
+  "exitCode": 0,
+  "total": 30,
+  "passed": 30,
+  "failed": 0,
+  "outcomes": [
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/B.2.3.js",
+      "scenario": "default",
+      "contentsSha256": "a894f1227e2e013c5cabef2e988c4f1e04333fc4737ac2fe35c2bfb79b68afb1",
+      "compiledSha256": "94c82a573432c7d693256fb0a7dcd1e0fa72fc03e68a427b567aa052358f90c5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/B.2.3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d73cbdc8ab0cda0fa1e24c045b5d5bf7518c32b6dc4ecfdf863995be439750ee",
+      "compiledSha256": "46c06cffa0fd4c557383058bb68e248a3a083a35ae3afe9162788ba097f8a0fc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-falsey.js",
+      "scenario": "default",
+      "contentsSha256": "3b95573329277bbcb6055c868a8676f2ef52fcf89e5414752d9e2e151a90581a",
+      "compiledSha256": "476df954940963beabcd92b413e233bfaadc9c212c83e0caa7383973e2b4f7d3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-falsey.js",
+      "scenario": "strict mode",
+      "contentsSha256": "adbe497dd69b6055a142c93365e2a163dae53583ae32c7f8a63a17ca493a28cc",
+      "compiledSha256": "b8a2fac5dc3c1b634797b1580953faae1f983f2d1951e7722bf15aa109ec1de2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-negative.js",
+      "scenario": "default",
+      "contentsSha256": "51ccd1adb5dba0d31447d5e16d3621dc569d809ca56c70ac84db3ad363068a3a",
+      "compiledSha256": "2457fc8d9b1630c3716bd5b5bb05522b66820c7b2f3cc4fccd600905af2c87e0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-negative.js",
+      "scenario": "strict mode",
+      "contentsSha256": "36a8190ca4b0e8792d58ed7eadbe008d7f38ff84c516b9b7b228d4cc34c646a6",
+      "compiledSha256": "fa66eba1ca290df65bfa30a70194241d0c7a1c3eb177175f1d1b32ac22b21a43",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-positive.js",
+      "scenario": "default",
+      "contentsSha256": "3d6584865d77255214ad33af17c54ca581b73946bf910dcf4ee42a0b07c04c37",
+      "compiledSha256": "8ab10cef1d35f90d2fa690cd6fb6cd0c05850627d1c33930b270ae683820e890",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-positive.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8955111c648a40358b0282d126464ac8cc8636433400b8e8416a9cbe0bd8ecfb",
+      "compiledSha256": "ee8f1c5812a502109596c66b5603b6190cfe28243afecd390b2931bc38dd9947",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-to-int-err.js",
+      "scenario": "default",
+      "contentsSha256": "e6edd0f6a161a84fe12cb18cc7408c5dfec9bc4330225e342da4884016e1b4a6",
+      "compiledSha256": "aedd2fa654a9dbb6cba9c2e4e601655c809fa4f7caeabdcd9468dc19627b7705",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-to-int-err.js",
+      "scenario": "strict mode",
+      "contentsSha256": "af033babb0de9b6c0655287b2399abb74eba272d3a695aaebd6a8f5e0c31eb7e",
+      "compiledSha256": "c7d333660a6aadc2bc4e78bf02ecdb25ecad4538cee1dd82a769554c09d67063",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-undef.js",
+      "scenario": "default",
+      "contentsSha256": "3a00acb6c52c5f586d6d573f7c20d5e1d4c86ab0a64ee7d6db3a373b9722bc8e",
+      "compiledSha256": "6a7f57cd9dd83734ae8cf83af481d16e99afc6d59e75fece540cf806168a239f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length-undef.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b98a3be168703f225f1ecc45826c33e91fcaaf14a56112d0978175100a4dec0e",
+      "compiledSha256": "5fc746a8fb22294f4f9d7f2b438b2e9ad23a4e8db1d3c0746d28b601273d3f46",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length.js",
+      "scenario": "default",
+      "contentsSha256": "54a8166aa2b205f6d683958fd4ed7a4abf3fbe5c23d74f9e8a9063180fe5824d",
+      "compiledSha256": "c81b0b2abafa61684ff992a362a94d5fddc4591fd841560632806073ed8609ec",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/length.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a1141262d600434a9b8ce3e5fd9b97ef0d3814640009bf8149ce3989979324e3",
+      "compiledSha256": "a92c1aa60a6096a4c159ff48d8d977c01ff00002108e4c66713f878dacece935",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/name.js",
+      "scenario": "default",
+      "contentsSha256": "3dcdb5815e2483c0a0fef802c00fcd75434505a362868cfc7d753dcc16b8daab",
+      "compiledSha256": "0da9d7b658cef9c958bd2a2ddea3f210fbae062f41e81b7951afed58d5843954",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "13e0691e0067321a2d74b59c49128e71bd107d0b8fa01fe3220c24f933dd97cf",
+      "compiledSha256": "53f27a2d08e4bc856761a852d9041e321b20532dd954bfc89e0ff0631577eec9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/not-a-constructor.js",
+      "scenario": "default",
+      "contentsSha256": "5f01e3727ce026e5e9814b55eeb24c1ecd6e96f172ac70a40d7d58d343cdd1a7",
+      "compiledSha256": "8e4771ab8b38deadb58bb949abce4edcb7633576d1755dd225972768362e787f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/not-a-constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "aa7b13d35d76496a865c04998f0991efb842d3c8e1ab46863449694b5d03ba76",
+      "compiledSha256": "45fbccaa42c35a1867e4e4d87be34365956d7587a48c8fc733ee678f61ca0a39",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js",
+      "scenario": "default",
+      "contentsSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+      "compiledSha256": "61b86440085982837a139754345173c942e2e3926bf4e7a553910c159331caf9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1b5eb56143da559bafbec7ab91a9af58de0374feb79195d4d4581461e3d9b897",
+      "compiledSha256": "767e721587f47791187aec164ad4de383dbf3b6165dd2e15d5111e04567712a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/start-negative.js",
+      "scenario": "default",
+      "contentsSha256": "7f5e5c07a54de4653303bfb6a5816d02f9d4177920111b103137a3a21e4a20fb",
+      "compiledSha256": "feb47e1393f30527d72dffd5b6617fa5f11f78cc0ed42e33a20a554781bfb470",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/start-negative.js",
+      "scenario": "strict mode",
+      "contentsSha256": "206964b9eec86867b8e5c47de4cb30cf42cde188ae5bdeeef6d66fdd26391ad5",
+      "compiledSha256": "8793752624207bf938d343e6dd75ac27c877de6a468c8ce501a488cc835796ef",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/start-to-int-err.js",
+      "scenario": "default",
+      "contentsSha256": "128f62164bbf68b3ba1b6f357c6ca60f9b62f5f1caad66bad7ba9542110a96ac",
+      "compiledSha256": "8a138e1150500d57b33948761b587eb2a2bf9ced0997768864f4d62aa2f503f9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/start-to-int-err.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3d5289aad5cef2eb2c0006a091ed27e3f376127557d91deb7d64ea2cd1f2d7b9",
+      "compiledSha256": "b4365246c66068c579bfe431db4ece9dc428a10477cf3f5f35a263ef5b676ed6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/surrogate-pairs.js",
+      "scenario": "default",
+      "contentsSha256": "9f39b895296c62fbba45780808fbc3c8597432ba76cd27ed5385c59aa349c733",
+      "compiledSha256": "4f142df4053f3372b5f7239565995376c4efd636d529bb9000db8d87c8f3e952",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/surrogate-pairs.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f4bc30cb9ed113fb1a6acbeeef8dd6d465237945b615bd4388f2ac8a6aff95c1",
+      "compiledSha256": "2d570293a2dcde0fb0454f501a41244082c2ace810b8328b691adebae68ec102",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/this-non-obj-coerce.js",
+      "scenario": "default",
+      "contentsSha256": "29f773b8dcedfa641729629148becaba206cadc1d3e07db0af7d4b694df45bec",
+      "compiledSha256": "e3c9ed9c3ba9a52c9468eeff575317a47a91e6d5c645cbb345091a6d3b52cbea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/this-non-obj-coerce.js",
+      "scenario": "strict mode",
+      "contentsSha256": "930507235a2922f33767eadcd38b6be490f1c9dbf921012dadd9d384e739ab4a",
+      "compiledSha256": "a563b1f3cc6bbf376c1fd5a38f738b2a3b58875bfa541593927f6db22ab9f4b2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/this-to-str-err.js",
+      "scenario": "default",
+      "contentsSha256": "1a973e396511d747e88c1dcd16e8998ec6e0ea35595b7b8601a631eac488381c",
+      "compiledSha256": "7c04537199b7b2d9318198c1d9d4dd9e51050c6421638b109cf6690c58ae7566",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/annexB/built-ins/String/prototype/substr/this-to-str-err.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d21ab6393074c7cbfea996a07937cf78c8afc7ec2d69e57876f78320042142d3",
+      "compiledSha256": "96d1a21b0a482d2615758c49ad43f6434c16895a81b3cf8308004453629bf849",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    }
+  ]
+}

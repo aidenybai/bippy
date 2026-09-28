@@ -26,6 +26,7 @@ Do not rebuild during active analysis. Restart the consuming process after a reb
 The source changes are checked in under `patches/`:
 
 - `evaluation-hook.patch` adds `AgentHostDefined.evaluateNode` and invokes it in `Evaluate`, after node observation and debugger handling. Returning `undefined` preserves ordinary dispatch. A returned evaluator supplies the node's completion.
+- `string-substr.patch` adds Annex B `String.prototype.substr`. It reuses `RequireObjectCoercible`, `ToString`, `ToClampedIndex`, and `ToIntegerOrInfinity`, preserving their coercion order and abrupt completions. The final substring uses the same native string operations as existing engine intrinsics.
 - `typecheck.patch` removes one unused `@ts-expect-error` before an existing `console.assert` in `EvaluateBody.mts`. The pinned Node types define `console`, so the suppression itself fails strict checking. This patch does not change executable statements or disable a typecheck.
 
 The build copies sources into `.build/source`, applies these patches, and checks the patched source with the pinned TypeScript native compiler. Babel strips TypeScript, handles decorators, and runs upstream's completion-macro transform. Rollup bundles the resulting JavaScript. The target is Node 26+, not downleveled browser code.
@@ -57,7 +58,8 @@ The existing Test262 harness can use the built engine:
 ```sh
 pnpm --filter bippy-analyzer test:source-test262 \
   '.test262/test/built-ins/Object/is/*.js' \
-  '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js'
+  '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' \
+  '.test262/test/annexB/built-ins/String/prototype/substr/*.js'
 ```
 
 The TypeScript CLI adapter runs upstream's published CLI and redirects its engine imports to the built artifact. It does not replace the Test262 runner or validator. Its executable entrypoint preserves module flags that the harness prepends. The harness uses two workers and its unchanged default timeout.
@@ -68,7 +70,7 @@ The broader existing baseline selection produced **301 passes and 5 failures in 
 
 The first adapter invocation placed module flags before the `tsx` script argument and rejected two module variants. That was a CLI integration failure, not an accepted engine result. The executable adapter fixes the argument ordering, and a regression test covers it.
 
-The source build's Object.is smoke passes 42/42 variants. The package README retains the published harness's limitations. Symbolic inputs, React rendering, heap merging, and queued symbolic work do not gain new support from this build change.
+The source build's Object.is smoke passes 42/42 variants. Its added `substr` selection passes 30/30, against 0/30 for the published engine. [Intrinsic receipts](../docs/engine-substr-validation/summary.json) retain identical input hashes and both engines' diagnostics. The broader baseline still passes 301/306 after the intrinsic patch. The package README retains the published harness's limitations. Adding this concrete intrinsic does not make its operations symbolic or add heap merging.
 
 ## Upgrade procedure
 

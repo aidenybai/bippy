@@ -25,10 +25,11 @@ jobs:
           node-version: 26
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter bippy-analyzer exec playwright install --with-deps chromium
       - run: pnpm --filter bippy-analyzer test:engine-build
       - run: pnpm --filter bippy-analyzer typecheck
       - run: pnpm --filter bippy-analyzer test
-      - run: pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js'
+      - run: pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'
 
   checks:
     name: ${{ matrix.task }}

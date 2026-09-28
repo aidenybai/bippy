@@ -1,0 +1,67 @@
+
+> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer
+> pnpm build:engine && vp test --run tests/concrete-react-dom.test.ts
+
+
+> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer
+> tsx engine/scripts/build.ts
+
+Engine build is current
+
+ RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer
+
+ ❯ tests/concrete-react-dom.test.ts (2 tests | 1 failed) 3400ms
+   × executes React DOM and a guest-owned DOM library: development 1038ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/concrete-react-dom.test.ts > executes React DOM and a guest-owned DOM library: development
+TypeError: Cannot read properties of undefined (reading 'protocol')
+ ❯ evalmachine.<anonymous>:27335:36
+ ❯ evalmachine.<anonymous>:27373:5
+ ❯ evalmachine.<anonymous>:10:50
+ ❯ evalmachine.<anonymous>:27378:20
+ ❯ evalmachine.<anonymous>:10:50
+ ❯ evalmachine.<anonymous>:27590:22
+ ❯ evalmachine.<anonymous>:27724:3
+ ❯ Object.evaluate tests/helpers/native-runtime.ts:39:24
+     37|   );
+     38|   const evaluate = (source: string): unknown =>
+     39|     new Script(source).runInContext(context, { timeout: 10_000 });
+       |                        ^
+     40|   evaluate(
+     41|     "globalThis.global = globalThis; globalThis.queueMicrotask = callb…
+ ❯ tests/concrete-react-dom.test.ts:16:18
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/concrete-react-dom.test.ts > executes React DOM and a guest-owned DOM library: development
+Error: Cannot convert undefined to object
+ ❯ tests/concrete-react-dom.test.ts:20:23
+     18|       if (error instanceof ConcreteGuestError && error.value.type === …
+     19|         const message = error.value.properties.get("message")?.Value;
+     20|         failures.push(new Error(message?.type === "String" ? message.v…
+       |                       ^
+     21|       } else failures.push(error);
+     22|     }
+
+Caused by: ConcreteGuestError: TypeError: Cannot convert undefined to object
+ ❯ ConcreteRuntime.unwrap src/concrete/runtime.ts:185:13
+ ❯ src/concrete/runtime.ts:206:31
+ ❯ ConcreteRuntime.withAgent src/concrete/runtime.ts:196:14
+ ❯ ConcreteRuntime.evaluate src/concrete/runtime.ts:206:10
+ ❯ tests/concrete-react-dom.test.ts:17:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { valueType: 'Object', guestStack: '\n    at <anonymous> (<anonymous>:27335:20)\n    at <anonymous> (as cb) (<anonymous>:11794:4)\n    at <anonymous> (as require_react_dom_client_development) (<anonymous>:10:86)\n    at <anonymous> (as cb) (<anonymous>:27378:20)\n    at <anonymous> (as require_client) (<anonymous>:10:86)\n    at <anonymous> (<anonymous>:27590:22)\n    at <anonymous>:27724:4' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  21:13:40
+   Duration  3.57s (transform 620ms, setup 0ms, import 108ms, tests 3.40s, environment 0ms)
+
+/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bippy-analyzer@ test: `pnpm build:engine && vp test --run tests/concrete-react-dom.test.ts`
+Exit status 1
