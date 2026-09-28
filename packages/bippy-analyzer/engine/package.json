@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#self": {
+      "types": "./dist/declaration/index.d.mts",
+      "default": "./dist/engine.mjs"
+    }
+  }
+}

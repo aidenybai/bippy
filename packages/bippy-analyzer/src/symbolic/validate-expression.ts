@@ -1,4 +1,4 @@
-import type { ParseNode } from "@engine262/engine262";
+import type { ParseNode } from "../../engine/dist/declaration/index.mjs";
 import { SymbolicEngineError } from "./errors.js";
 
 export interface ExpressionPlan {

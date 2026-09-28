@@ -15,4 +15,4 @@ export type {
   GuardTruthy,
   SymbolicVariable,
 } from "./symbolic/guards.js";
-export { SymbolicEngineError, SymbolicEngineCleanupError } from "./symbolic/errors.js";
+export { SymbolicEngineError } from "./symbolic/errors.js";

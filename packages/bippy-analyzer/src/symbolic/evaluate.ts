@@ -4,7 +4,7 @@ import type {
   Value,
   ValueCompletion,
   ValueEvaluator,
-} from "@engine262/engine262";
+} from "../../engine/dist/declaration/index.mjs";
 import { SymbolicEngineError } from "./errors.js";
 import { andGuard, evaluateGuard, negateGuard, truthyGuard, type Guard } from "./guards.js";
 import { getSymbolicEngine, type SymbolicEngine } from "./load-engine.js";
@@ -44,10 +44,6 @@ export interface SymbolicExpressionResult {
   visitedExpressions: string[];
   originalEngineSha256: string;
   patchedEngineSha256: string;
-}
-
-interface ExtendedAgentOptions extends AgentHostDefined {
-  evaluateNode?: (node: ParseNode) => ValueEvaluator | undefined;
 }
 
 interface BooleanDecision {
@@ -187,7 +183,7 @@ class SymbolicEvaluation {
   evaluate = (source: string, inputs: string[]): SymbolicExpressionResult => {
     const { api } = this.engine;
     const previousAgent = api.surroundingAgent;
-    const options: ExtendedAgentOptions = { startEventLoop: false };
+    const options: AgentHostDefined = { startEventLoop: false };
     const agent = new api.Agent(options);
     api.setSurroundingAgent(agent);
     try {

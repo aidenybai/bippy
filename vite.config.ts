@@ -14,6 +14,7 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "packages/bippy/src/react-internals/generated/**",
       reactDevToolsHookSources,
+      "packages/bippy-analyzer/engine/vendor/**",
     ],
     semi: true,
     singleQuote: false,
@@ -37,6 +38,7 @@ export default defineConfig({
       "coverage",
       "pnpm-lock.yaml",
       reactDevToolsHookSources,
+      "packages/bippy-analyzer/engine/vendor/**",
     ],
   },
 });

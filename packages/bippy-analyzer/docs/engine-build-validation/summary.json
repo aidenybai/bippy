@@ -1,0 +1,48 @@
+{
+  "engineRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "harnessVersion": "10.0.0",
+  "nodeVersion": "26.4.0",
+  "sourceBuiltEngineSha256": "6638676e79fa1452ff40fab2889ee5db2cc3992195f15a5006c0c112fc041b1b",
+  "publishedEngineSha256": "bbc66b6f71a0f36e23c5ea07bbf3cc2c390de9c6c7bb1f4a0ecf5791b2b2600b",
+  "threads": 2,
+  "timeout": 10000,
+  "selection": [
+    ".test262/test/built-ins/Object/is/*.js",
+    ".test262/test/language/statements/try/*.js",
+    ".test262/test/built-ins/Promise/resolve/*.js",
+    ".test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js"
+  ],
+  "verdictsMatched": true,
+  "diagnosticTextMatched": false,
+  "fullConformanceVerified": false,
+  "runs": [
+    {
+      "label": "published",
+      "accepted": true,
+      "originalReportSha256": "3fae9cb6c7d4a77ed14eef6b4ed7c23ff8a0b36342ed3f78df4775e576976d75",
+      "exitCode": 1,
+      "total": 306,
+      "passed": 301,
+      "failed": 5
+    },
+    {
+      "label": "rejected-cli",
+      "accepted": false,
+      "originalReportSha256": "e3d51f725a5406b8e972770f8027e830cd6f3ceddfc5ed1521855394893038fb",
+      "exitCode": 1,
+      "total": 306,
+      "passed": 299,
+      "failed": 7
+    },
+    {
+      "label": "source-built",
+      "accepted": true,
+      "originalReportSha256": "26893d3a364aac7e782c55d1dfbc45362007667c77b7de7009380e994f23ac09",
+      "exitCode": 1,
+      "total": 306,
+      "passed": 301,
+      "failed": 5
+    }
+  ]
+}

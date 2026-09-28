@@ -11,11 +11,9 @@ import {
   type ThrowObservation,
 } from "../src/index.js";
 import { constantGuard, evaluateGuard, negateGuard, truthyGuard } from "../src/symbolic/guards.js";
-import {
-  getPatchedEngineSource,
-  getSymbolicEngine,
-  ORIGINAL_ENGINE_SHA256,
-} from "../src/symbolic/load-engine.js";
+import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
+import { outputDirectory, verifyEngineBuild } from "../engine/manifest.js";
+import source from "../engine/source.json" with { type: "json" };
 
 const require = createRequire(import.meta.url);
 
@@ -328,12 +326,13 @@ describe("engine262 symbolic conditional evaluation", () => {
     const filename = join(dirname(require.resolve("@engine262/engine262")), "engine262.mjs");
     const before = await readFile(filename, "utf8");
     const engine = await getSymbolicEngine();
-    expect(createHash("sha256").update(before).digest("hex")).toBe(ORIGINAL_ENGINE_SHA256);
-    const patched = getPatchedEngineSource(before);
-    expect(createHash("sha256").update(patched).digest("hex")).toBe(engine.patchedSha256);
-    expect(patched).not.toContain("//# sourceMappingURL=");
-    expect(patched.match(/hostDefinedOptions\.evaluateNode/g)).toHaveLength(1);
-    expect(() => getPatchedEngineSource(`${before}\n`)).toThrow(SymbolicEngineError);
+    expect(createHash("sha256").update(before).digest("hex")).toBe(source.publishedBundleSha256);
+    const manifest = await verifyEngineBuild();
+    const built = await readFile(join(outputDirectory, "engine.mjs"), "utf8");
+    expect(createHash("sha256").update(built).digest("hex")).toBe(engine.patchedSha256);
+    expect(manifest.outputs["engine.mjs"]).toBe(engine.patchedSha256);
+    expect(built).toContain("//# sourceMappingURL=engine.mjs.map");
+    expect(built.match(/hostDefinedOptions\.evaluateNode/g)).toHaveLength(1);
     expect(await readFile(filename, "utf8")).toBe(before);
   });
 });

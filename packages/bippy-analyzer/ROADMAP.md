@@ -6,7 +6,7 @@ This is a migration of capabilities from [PR #115](https://github.com/aidenybai/
 
 ## Where we are
 
-Baseline: commit `3d5d5563` on [PR #149](https://github.com/aidenybai/bippy/pull/149), stacked on [the engine262 setup PR](https://github.com/aidenybai/bippy/pull/146). These features are implemented on the PR branch, not a claim about a merged release.
+Initial symbolic milestone: commit `3d5d5563` on [PR #149](https://github.com/aidenybai/bippy/pull/149), stacked on [the engine262 setup PR](https://github.com/aidenybai/bippy/pull/146). These features are implemented on the PR branch, not a claim about a merged release.
 
 - [x] Pin engine262 and provide a public-API smoke test and Test262 setup.
 - [x] Expose `evaluateSymbolicExpression()` through the package source API.
@@ -22,7 +22,10 @@ enabled ? 2 + 3 : 4 * 5
 └── !enabled → 20
 ```
 
-The current implementation uses internal object tokens for unknown Booleans. A syntax check prevents those tokens from entering ordinary JavaScript coercions. It extends a hash-checked copy of the engine bundle at load time. Neither mechanism is sufficient for general symbolic execution. See the [current implementation contract](docs/symbolic-evaluation.md).
+- [x] Replace runtime bundle insertion with a pinned source build, typed hook, generated declarations, and source maps.
+- [x] Verify clean-build reproducibility across relocated roots and preserve the scoped concrete baseline against the published engine.
+
+The current implementation still uses internal object tokens for unknown Booleans. A syntax check prevents those tokens from entering ordinary JavaScript coercions. The [source-built extension](engine/README.md) replaces bundle insertion but does not add general symbolic values or mutable state. See the [current implementation contract](docs/symbolic-evaluation.md).
 
 The separate resolver work includes native build observation, corpus comparisons, a build CLI, and a Vite + React demo. That work is not integrated into this PR. A matching build graph does not prove module execution or React rendering.
 
@@ -88,15 +91,15 @@ Completion check: API examples show a concrete render, an unknown prop, a state 
 
 ## 1. Maintainable engine extension
 
-- [ ] Replace load-time bundle text insertion with a reproducible source-built extension or an upstream evaluation hook.
-- [ ] Pin source, patches, build tools, generated artifacts, declarations, and licenses. Produce valid source maps and a documented upgrade procedure.
+- [x] Replace load-time bundle text insertion with a reproducible source-built extension or an upstream evaluation hook.
+- [x] Pin source, patches, build tools, generated artifacts, declarations, and licenses. Produce valid source maps and a documented upgrade procedure.
 - [ ] Define typed extension points for symbolic decisions, values, state changes, and observations. Preserve normal evaluation order and abrupt completions.
 - [ ] Audit specification operations and intrinsics implemented in host TypeScript. An override of guest syntax cannot make their concrete tests and native operations symbolic.
-- [ ] Keep an unmodified engine available for independent comparisons. Run concrete checks against the extended engine too, not only the published CLI.
+- [x] Keep an unmodified engine available for independent comparisons. Run concrete checks against the extended engine too, not only the published CLI.
 - [ ] Expand Test262 coverage using pinned selections and bounded workers. Preserve existing failures and distinguish expected exceptions from crashes and harness failures.
 - [ ] Test agent/realm isolation, reentrancy, overlapping requests, cancellation, deadlines, and cleanup failures.
 - [ ] Define CPU, memory, source-size, recursion, and queue limits. Node-count limits do not bound a single expensive operation.
-- [ ] Remove the current temporary bundle loader once the replacement passes the same tests.
+- [x] Remove the current temporary bundle loader once the replacement passes the same tests.
 
 Completion check: CI builds the extension from pinned sources. Concrete execution preserves the recorded baseline, and the symbolic tests no longer depend on bundle string matching.
 
@@ -262,10 +265,9 @@ Do not block the browser demo on these targets. Do not label a successful bundle
 
 ## First implementation PRs after this roadmap
 
-1. Replace the bundle insertion with a source-built or upstreamed engine hook and preserve the current tests.
-2. Add symbolic scalar expressions and guard constraints without enabling unisolated side effects.
-3. Prove engine-owned branch isolation with aliasing, closures, and guarded exceptions.
-4. In parallel, integrate native artifacts and prove concrete React mounting and updates.
-5. Combine those tracks for the first guarded React tree, then add event-driven transitions.
+1. Add symbolic scalar expressions and guard constraints without enabling unisolated side effects.
+2. Prove engine-owned branch isolation with aliasing, closures, and guarded exceptions.
+3. In parallel, integrate native artifacts and prove concrete React mounting and updates.
+4. Combine those tracks for the first guarded React tree, then add event-driven transitions.
 
 Keep the scope of each PR explicit. Check off a task only when its implementation and acceptance evidence exist, not when its representation or tests have been copied.

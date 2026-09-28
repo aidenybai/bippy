@@ -28,9 +28,11 @@ For an unknown condition, the adapter evaluates the two branch bodies through en
 
 ## Engine extension
 
-The installed engine remains unmodified and is the independent concrete oracle in tests. The symbolic loader makes a separate copy of its ESM bundle, inserts the evaluation hook, imports that copy, and removes the temporary file. Only one extended module is loaded per host module instance. Every request gets a fresh agent and realm; synchronous evaluation restores the previous agent even on failure.
+The installed engine remains unmodified and is the independent concrete oracle in tests. The symbolic loader imports a source-built engine from `engine/dist/engine.mjs`. Runtime loading never edits a bundle, builds code, or creates a temporary engine file.
 
-The loader rejects any installed bundle whose SHA-256 differs from the reviewed version. It removes the original source-map reference because that map does not describe the modified code. Results include both original and extended bundle hashes. Temporary-file cleanup failures are propagated, including simultaneous load and cleanup failures.
+Run `pnpm --filter bippy-analyzer build:engine` before consuming the source API. The build applies the typed hook to pinned engine262 sources and emits JavaScript, declarations, and a valid source map. The loader verifies source/build identity and artifact hashes before importing the result. Missing, changed, or stale artifacts fail with a rebuild instruction and the original cause.
+
+Only one extended module is loaded per host module instance. Every request gets a fresh agent and realm; synchronous evaluation restores the previous agent even on failure. Results retain the `originalEngineSha256` and `patchedEngineSha256` fields. The latter now identifies the source-built extension, not a runtime-patched copy.
 
 Pinned upstream:
 
@@ -38,7 +40,7 @@ Pinned upstream:
 - npm package: `0.0.1-a600354c2954300d62d108bf9ed3459a8e4a289b`
 - original ESM SHA-256: `bbc66b6f71a0f36e23c5ea07bbf3cc2c390de9c6c7bb1f4a0ecf5791b2b2600b`
 
-`engine262-evaluation-hook.patch` records the equivalent typed upstream-source change. The current loader applies the bundle insertion directly; it does **not** claim to rebuild the package from that source patch. The bundle retains upstream's license. This narrowly pinned extension should be replaced with a built or upstreamed hook before expanding engine integration; it is not a general-purpose engine patcher.
+The maintained source patch is `engine/patches/evaluation-hook.patch`. See [source-built engine262](../engine/README.md) for source provenance, toolchain pins, clean-build comparison, concrete checks, and upgrade instructions. This changes engine delivery, not the supported symbolic subset.
 
 ## Carried over from PR #115
 
@@ -71,4 +73,4 @@ Unknown inputs are internal opaque engine objects, not new general ECMAScript Bo
 
 Defaults are 10,000 evaluated nodes and 64 scalar/throw outcomes. Callers may explicitly set `maxSteps` and `maxOutcomes`; exhaustion throws rather than returning a truncated result. Source length is limited to 4,096 UTF-16 code units. Nesting is limited to 128 validation levels. You can declare up to eight unique input names, each at most 128 UTF-16 code units. These limits do not bound the cost of a single arithmetic operation, parsing, or host allocation. This is not a security sandbox.
 
-React rendering, hooks, event transitions, mutable branch state, general symbolic values, and symbolic loops remain unsupported. The published CLI/Test262 results in the package README concern the unmodified engine, not this extension.
+React rendering, hooks, event transitions, mutable branch state, general symbolic values, and symbolic loops remain unsupported. Published-engine and source-built-engine compatibility checks are reported separately. Neither establishes general symbolic or React support.

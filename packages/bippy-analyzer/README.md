@@ -2,7 +2,7 @@
 
 A pinned engine262 dependency, its Test262 harness, and symbolic evaluation of pure conditional expressions. The source API returns guarded results for unknown Boolean inputs. React rendering and mutable symbolic state are not supported yet.
 
-See the [roadmap](ROADMAP.md) for the remaining implementation stages and completion checks. See [symbolic evaluation](docs/symbolic-evaluation.md) for the API, engine extension, PR #115 reuse, and current limits. The symbolic evaluator extends an integrity-checked copy of engine262. The installed dependency and its CLI remain unmodified.
+See the [roadmap](ROADMAP.md) for the remaining implementation stages and completion checks. See [symbolic evaluation](docs/symbolic-evaluation.md) for the API, engine extension, PR #115 reuse, and current limits. The symbolic evaluator uses a [source-built engine262 extension](engine/README.md). The installed dependency and its CLI remain unmodified.
 
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
@@ -12,12 +12,15 @@ From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm --filter bippy-analyzer build:engine
 pnpm --filter bippy-analyzer test
 pnpm --filter bippy-analyzer typecheck
 pnpm --filter bippy-analyzer test:test262 '.test262/test/built-ins/Object/is/*.js'
 ```
 
-`test` uses Vite+/Vitest to check the engine API, realm isolation, guarded results, rejection boundaries, and concrete substitutions against the unmodified engine.
+`test` and `typecheck` build the extended engine first. Tests check the engine API, realm isolation, guarded results, rejection boundaries, concrete substitutions, source maps, and artifact integrity.
+
+`test:engine-build` compares clean builds in different roots. `test:source-test262` uses the existing harness and published CLI with engine imports redirected to the built artifact. It accepts the same test paths as `test:test262` and does not hide failures.
 
 `test:test262` fetches and verifies the pinned suite, then invokes `test262-harness` against engine262's published CLI. Supply quoted test paths or globs relative to this package. Failures produce a nonzero exit code. The harness's default timeout is 10 seconds per variant.
 
