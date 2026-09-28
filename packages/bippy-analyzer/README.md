@@ -2,7 +2,7 @@
 
 A pinned engine262 dependency, its Test262 harness, and symbolic evaluation of pure conditional expressions. The source API returns guarded results for unknown Boolean inputs. React rendering and mutable symbolic state are not supported yet.
 
-See [symbolic evaluation](docs/symbolic-evaluation.md) for the API, engine extension, PR #115 reuse, and current limits. The symbolic evaluator extends an integrity-checked copy of engine262. The installed dependency and its CLI remain unmodified.
+See the [roadmap](ROADMAP.md) for the remaining implementation stages and completion checks. See [symbolic evaluation](docs/symbolic-evaluation.md) for the API, engine extension, PR #115 reuse, and current limits. The symbolic evaluator extends an integrity-checked copy of engine262. The installed dependency and its CLI remain unmodified.
 
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
