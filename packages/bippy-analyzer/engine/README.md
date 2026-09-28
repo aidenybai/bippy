@@ -13,7 +13,7 @@ pnpm --filter bippy-analyzer test
 pnpm --filter bippy-analyzer test:engine-build
 ```
 
-`typecheck` and `test` build first. A valid, current build is reused. `build:engine --force` performs a clean build. `test:engine-build` compares two clean builds in different filesystem roots, including JavaScript, maps, declarations, license, and manifest.
+`typecheck` and `test` build first. A valid, current build is reused. `build:engine --force` performs a clean build. `test:engine-build` compares two clean builds in different filesystem roots, including JavaScript, maps, declarations, licenses, and manifest.
 
 The source API requires the full workspace installation, including build dependencies. This private package is not yet a standalone production-only distribution. Call `build:engine` before importing the source API in another process. Runtime loading verifies inputs and artifacts but never builds, patches, or writes files. Missing, changed, or stale artifacts produce an error with the original cause.
 
@@ -33,9 +33,10 @@ The source changes are checked in under `patches/`:
 - `object-checkpoint.patch` adds agent ownership and reusable checkpoints for selected ordinary objects. It restores property descriptors/order, prototypes, and integrity without cloning value identities. Saved references participate in engine garbage collection. [The checkpoint contract](../docs/object-checkpoints.md) excludes unselected objects, captured bindings, jobs, and continuations; it is not yet symbolic React isolation.
 - `declarative-roots.patch` marks each declarative binding record during garbage collection. The upstream marker does not traverse the native binding map; values reachable through lexical bindings, captured parameters, or saved getters could otherwise lose their weak references. [Validation](../docs/declarative-roots-validation/README.md) retains the failing cases and independent V8 comparisons. This is not binding restoration.
 - `binding-checkpoint.patch` adds `createStateCheckpoint` for selected ordinary objects and declarative/function bindings. It preserves environment and cell identity, initialization, flags, aliases, and saved-value GC roots. [The contract](../docs/state-checkpoints.md) excludes module environments, pending disposal, uninitialized constructor receivers, jobs, and continuations. The ordinary-object API retains its contract and shares the nested checkpoint stack.
+- `control-machine.patch` exports control capture and metrics from the authored execution extensions. [The control contract](../docs/control-continuations.md) requires an explicit state owner and does not provide a whole-realm fork.
 - `typecheck.patch` removes one unused `@ts-expect-error` before an existing `console.assert` in `EvaluateBody.mts`. The pinned Node types define `console`, so the suppression itself fails strict checking. This patch does not change executable statements or disable a typecheck.
 
-The build copies sources into `.build/source`, applies these patches, and checks the patched source with the pinned TypeScript native compiler. Babel strips TypeScript, handles decorators, and runs upstream's completion-macro transform. Rollup bundles the resulting JavaScript. The target is Node 26+, not downleveled browser code.
+The build copies sources and authored `extensions/` into `.build/source`, applies these patches, and checks their TypeScript. Babel strips types, handles decorators, and runs upstream’s completion-macro transform. It then lowers engine generators into explicit frames and adds lazy native-capture metadata. Source maps compose across these steps. Rollup bundles the resulting JavaScript. These transforms reify engine control, not application semantics. The target remains Node 26+.
 
 `vendor/transform.mts` is an unchanged copy of upstream `scripts/transform.mts` at the pinned commit. Its MIT license is in `vendor/LICENSE`. Do not format or edit that file independently of an upstream update. The generated bundle retains the license banner and includes a license file.
 
@@ -49,9 +50,10 @@ Generated files stay in ignored `dist/`:
 - `engine.mjs.map`: a source map with embedded source content and root-independent source names.
 - `declaration/`: declarations emitted from the patched source, including the hook's type.
 - `LICENSE`: upstream's license.
+- `CONTROL-LICENSE`: Babel/Facebook MIT attribution for adapted completion dispatch.
 - `manifest.json`: source/build identity, build Node version, and hashes of all other output files.
 
-Build identity includes the pinned source/data, local build scripts, patches, vendor files, configuration, package manifest, installed tool metadata, and lockfile. Exact direct tool versions must match their package declarations. Verification rejects missing, changed, or extra artifacts. A successful build publishes verified output after compilation; a failed build does not promote partial output. Build and cleanup failures remain observable.
+Build identity includes the pinned source/data, local build scripts, patches, authored extensions, vendor files, configuration, package manifest, installed tool metadata, and lockfile. Exact direct tool versions must match their package declarations. Verification rejects missing, changed, or extra artifacts. A successful build publishes verified output after compilation; a failed build does not promote partial output. Build and cleanup failures remain observable.
 
 The manifest detects stale or changed inputs and outputs. It is not a signature, a sandbox, or a substitute for a frozen, trusted toolchain installation. Reproducibility is tested between clean roots under one installed toolchain; that alone is not proof across every Node version or platform.
 
@@ -68,7 +70,7 @@ pnpm --filter bippy-analyzer test:source-test262 \
   '.test262/test/annexB/built-ins/String/prototype/substr/*.js'
 ```
 
-The TypeScript CLI adapter runs upstream’s published CLI. `cli-api.ts` re-exports the verified engine and enables `elideUnusedArguments` for CLI agents. It does not replace evaluation, the Test262 runner, or validation. Its executable entrypoint preserves module flags that the harness prepends. The harness uses two workers and its unchanged default timeout.
+The TypeScript CLI adapter runs upstream’s published CLI. `cli-api.ts` re-exports the verified engine and enables `elideUnusedArguments` for CLI agents. It does not replace evaluation, the Test262 runner, or validation. Its executable entrypoint preserves module flags that the harness prepends. It runs `node --import tsx` directly so timeout termination kills the evaluator, not a launcher with a surviving child. The harness uses two workers and its unchanged default timeout. [Control validation](../docs/control-continuations.md) records the discovered launcher leak and correction.
 
 The broader existing baseline selection produced **301 passes and 5 failures in 306 variants** for both engines. The same test variants failed. This is pass/fail parity for that selection, not equality of diagnostic text or full conformance. Source-map paths and upstream crash normalization produce different failure messages; those diagnostics are retained separately. The three strict tail-call cases and two Promise constructor cases remain failures.
 

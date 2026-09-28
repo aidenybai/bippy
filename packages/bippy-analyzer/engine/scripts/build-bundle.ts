@@ -10,6 +10,8 @@ import macros from "../vendor/transform.mjs";
 import source from "../source.json" with { type: "json" };
 import { EngineBuildCleanupError, EngineBuildError } from "../errors.js";
 import { engineDirectory } from "../manifest.js";
+import { lowerGenerators } from "./lower-generators.js";
+import { controlSpecifier, capturesSpecifier } from "./control-paths.js";
 
 const require = createRequire(import.meta.url);
 const normalize = (filename: string): string => filename.split(sep).join("/");
@@ -28,6 +30,10 @@ const getEnginePlugin = (sourceDirectory: string): Plugin => ({
   name: "engine262-source",
   resolveId(specifier) {
     if (specifier === "#self") return join(sourceDirectory, "src/index.mts");
+    if (specifier === controlSpecifier)
+      return join(sourceDirectory, "src/host-defined/control/execution-machine.mts");
+    if (specifier === capturesSpecifier)
+      return join(sourceDirectory, "src/host-defined/control/native-captures.mts");
   },
   async transform(code, filename) {
     if (
@@ -61,7 +67,10 @@ const getEnginePlugin = (sourceDirectory: string): Plugin => ({
     });
     if (!result?.code || !result.map)
       throw new EngineBuildError(`Engine transform produced no code or source map: ${filename}`);
-    return { code: result.code, map: JSON.stringify(result.map) };
+    if (filename.startsWith(join(sourceDirectory, "src/host-defined/control") + sep))
+      return { code: result.code, map: JSON.stringify(result.map) };
+    const lowered = await lowerGenerators(result.code, filename, result.map);
+    return { code: lowered.code, map: JSON.stringify(lowered.map) };
   },
 });
 
@@ -70,6 +79,7 @@ export const buildBundle = async (
   outputDirectory: string,
 ): Promise<void> => {
   const license = await readFile(join(engineDirectory, "vendor/LICENSE"), "utf8");
+  const controlLicense = await readFile(join(engineDirectory, "extensions/LICENSE"), "utf8");
   const bundle = await rollup({
     input: join(sourceDirectory, "src/index.mts"),
     plugins: [
@@ -94,6 +104,9 @@ export const buildBundle = async (
       sourcemapPathTransform: (filename, mapFilename) =>
         getSourceName(resolve(dirname(mapFilename), filename), sourceDirectory),
       banner: `/*! engine262 ${source.revision}, bippy evaluation hook\n${license
+        .split("\n")
+        .map((line) => ` * ${line}`)
+        .join("\n")}\n${controlLicense
         .split("\n")
         .map((line) => ` * ${line}`)
         .join("\n")}\n */`,

@@ -1,0 +1,3427 @@
+{
+  "originalReportSha256": "fa07c47c1c781013ce937a7b0c7eee2e708ea26e552ea6daca2a6c1a221c2e28",
+  "total": 212,
+  "passed": 212,
+  "failed": 0,
+  "exitCode": 0,
+  "outcomes": [
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/constructor.js",
+      "scenario": "default",
+      "contentsSha256": "5f054401ad44567e33cd4565bcb74664bf531254eea4434d5849409e1accbe33",
+      "compiledSha256": "8e69c2ad13a8fdddfc687465848331408ef9b39ebaf4a56e5beda9f3fe1215ef",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "aad62ed08de96a8d0d44c55c385ec43d97c8c66c600b4bc0195c9b6f0d434b14",
+      "compiledSha256": "3a035135b556f433f6c7cf82004833e02d7fcd389fab75a933477f5b6b2ae490",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/consecutive-yields.js",
+      "scenario": "default",
+      "contentsSha256": "9f7d618f137d6bdad92bac97e7c65859f8baf4ac1b883c634918b703a18d0610",
+      "compiledSha256": "747c86d49d796747aeeb557f0ea8c40135dc5312b53039833e94035eccd1a8a3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/consecutive-yields.js",
+      "scenario": "strict mode",
+      "contentsSha256": "974566e68c4b57ca93e63f9ab2cee7c8c91c36a00499c270bc05330180bdb265",
+      "compiledSha256": "cff31674b9612535b56fa6c37804ff59df30098a58a313860168f84fdfcefaa3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/context-method-invocation.js",
+      "scenario": "default",
+      "contentsSha256": "162c82c847cbccf30c1c5578d4e8a48c0c8ed5339212ac5e4758640096df55e6",
+      "compiledSha256": "f3adf8d101fd727914ff0ef0170fb9ec0e95cdc159f70e129f0416601ed9533a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/context-method-invocation.js",
+      "scenario": "strict mode",
+      "contentsSha256": "cde37f37c8973ee2240f063efa36f5a1baa2887176825830c4cc6ccf1e951665",
+      "compiledSha256": "3dd6e7bcf64f6049045bbc8a1d1d2e051cfc78b3374094ca540a764ecdabe6b6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/from-state-executing.js",
+      "scenario": "default",
+      "contentsSha256": "90ca2ac3f871a54bd76fc42c28e493e4536f858242b877e8a99966d0b42f8c26",
+      "compiledSha256": "11c7c2e57627df3807512bb6428c319ca287d30c974ab0e524152909772dd1cb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/from-state-executing.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9633aadd10dbadbcb7b5af4c85e9e8b3ffbce350715cf98941ed9e3bb2078d66",
+      "compiledSha256": "08f245b5be8e4340f798f1ecde115a361633b8b37c4a8967b19b15a6b368ec57",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/length.js",
+      "scenario": "default",
+      "contentsSha256": "698ced4700e9fbd5759613b8a462abbd79bbf1ed6d35a96b991ac3f00cf78e2f",
+      "compiledSha256": "bf34ec54a6ef4e6ac0a63f653a431cdfb50133c1d4698b9b52e124865e88b892",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/length.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6fc66f1d2959bbd70544daeb922ad5dee1a8f4c9fb83deda3da93eee9c1c135a",
+      "compiledSha256": "748f53d0c0e0840a1737d71497b3b64793219b64b3cb3491828bd7ec323518ef",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/lone-return.js",
+      "scenario": "default",
+      "contentsSha256": "26c5aa4365a6a5e9f61af3ee71531fd4c493eaef51ca9a5de83f7feaf23a0db7",
+      "compiledSha256": "72ee401d88bca27e8b46b04d4f456f24d57cf5e0cab783db94e69a12aa533752",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/lone-return.js",
+      "scenario": "strict mode",
+      "contentsSha256": "226c6684936214556990ebd61c352c30300ddcf7be46fe2f1ec3b900d7f4e4b6",
+      "compiledSha256": "d38d9acebdd5fc9f51c852b704b4a819ab29c581827e470b244628af3f7d419d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/lone-yield.js",
+      "scenario": "default",
+      "contentsSha256": "d71ed9b9685192a1f930eef4ebdbcf7d31186ab6cf526e0117159e73b2619af1",
+      "compiledSha256": "ce3022c59e5274796f1fd2e102d79579ef1859224394c7fa71bdcdaccd76e43f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/lone-yield.js",
+      "scenario": "strict mode",
+      "contentsSha256": "387e4fbd616c7026162454b428206f5a1130ab895408f2e4c5a43b0f417e8235",
+      "compiledSha256": "07ed532dda13923b5ad34b9c68a7ec4077104f47ad1b303d505b3d0c9530dc9a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/name.js",
+      "scenario": "default",
+      "contentsSha256": "af6c49c98b207da8324bd618f061c8b107d7ae8a062783b14a7e51804347afa4",
+      "compiledSha256": "cfc4657906bf58f865c17f6746cdb640a43d0b37c7f99690ce2d3dba6284c3f3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "93f3fcdad77428954bdcdf73de668bfc5bfed86affd5df77ab5b614665a6aa82",
+      "compiledSha256": "163c40a074482d26e3a748ac2e3e42422f97430e7071b286f641279227af716c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/no-control-flow.js",
+      "scenario": "default",
+      "contentsSha256": "aa755a152c72a16f05e9a7f1d3f716adf85b7e5158020cb520916fdc1f58fc4d",
+      "compiledSha256": "eb29403db9734da935f802e459bc66dba9322801af0a5f3e4b323afd6e12b6b4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/no-control-flow.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a8ebe5919edd0e0af626c921a00f80b6726f35e6495e52acb02ee6c0c802a84f",
+      "compiledSha256": "bf11cd30d684fb2be2613b5baa88742097b82856917509a4ff4016649664abc1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/not-a-constructor.js",
+      "scenario": "default",
+      "contentsSha256": "582d007ef676c9e6ef1c1c355d9d950eb3a33a6a65730f98f74738e60c1575ea",
+      "compiledSha256": "162df5475853498496562c5d4adeba1bd70ee610c424e0705e7b9483cf13a97f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/not-a-constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c115d2aca495dc7541c6998f1511b12f01533531c2ab79e1635ef8695a4d9349",
+      "compiledSha256": "4edbd3decc50d00832a36c91078e2784e134586251daa44dd313963a03166b9c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/property-descriptor.js",
+      "scenario": "default",
+      "contentsSha256": "5b2543fc5259d894665d387c673dd89fa7b1bf549eaf8b3b4e1e37f7400f97de",
+      "compiledSha256": "c3b3dc6c1f58e6c0a26918bb1bbe3105f84911cec6b6ba66ad8147d78b7a0998",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/property-descriptor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "838bf0c408def8413f08dd150c748a1626ca56a2556d4e295b35483626349450",
+      "compiledSha256": "bbb40e5cf4445c5e9d848b54228266a50f14ee065c5f87e8b284e560a948d1f5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/result-prototype.js",
+      "scenario": "default",
+      "contentsSha256": "11dbc402e1dcd7810469fd932e1a7cbc63af7cf9bf64f887cc9fd36fec53ec9a",
+      "compiledSha256": "757652766ed189d2f724bd18c389ca59d7b770b8b1207088c947c2dd73c3de73",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/result-prototype.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0ac98b8662a0165ccd95e5215137570045cf3cf8a404b22fb43f7116f87e6537",
+      "compiledSha256": "003153fabf8b9e2e073f6df5871d8fbe6e5b191b142bfb5b6fc9fbcc932f4f7f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/return-yield-expr.js",
+      "scenario": "default",
+      "contentsSha256": "3758279de89ad4bc49779943cad7b0d82a0cc3a26b2e7595a0d3c525466f02b3",
+      "compiledSha256": "a6842602248e9ad2ce5389c150ef29fc3d52a023e56e3a881a3108ecc0437c4a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/return-yield-expr.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2f1c4808e5c6ec681251b59fcf275bb7763e1a7925677aba822972d9f8a5a219",
+      "compiledSha256": "ac7000bab825c5b6ab3d3437dda7a9cc942fd2d6eae0f3192081da6e7c59c275",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/this-val-not-generator.js",
+      "scenario": "default",
+      "contentsSha256": "6f459ad2277dcde6c7058720f7519d48e4c6f2247f2dab27415b0ebe69f91e0c",
+      "compiledSha256": "8cab3700f62b6a5900287da5639b515ec3e89ad3a004d45466fcf8a0bf003fe6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/this-val-not-generator.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9997a7109c1f9b20893dca6161478d2da42a8a37903a0a17b804cb771433db19",
+      "compiledSha256": "e73c85177afddd770936392eec9525f777817e09976a25cbb547bf9625aee072",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/this-val-not-object.js",
+      "scenario": "default",
+      "contentsSha256": "312e392683a37d2fe7864edec7ab4465e62dfff27fd4970d74b4fad5ce0552f5",
+      "compiledSha256": "0ee10d2a90e469bab1b1831df91a5eccfef405c2da5bd2ad72eeeab71ea01fe9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/next/this-val-not-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e379adc2fbfad2a9e3a18b060cba46131ea67af985b5f1ec5f6405458f3b7218",
+      "compiledSha256": "4912781b3313bffc469607cb104b805352e9e36837c8e2cfa8500002c5507097",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/from-state-completed.js",
+      "scenario": "default",
+      "contentsSha256": "94e80001716ac27bed920c0b00499077b77a09d4012938dbcd6dcfd21b82d7a7",
+      "compiledSha256": "2b8f0405bf3a55ec246483d655f7a0dbd14ae1b99585b9953cda188d05a86411",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/from-state-completed.js",
+      "scenario": "strict mode",
+      "contentsSha256": "db1e3016a16b74dbe42350b748caa010ff20ab7c2ba8569c2f5bf2c1265d8fa8",
+      "compiledSha256": "359fb3922b96520566a886d8bc071327f2721135001538aa9f561e6f2f8b16d6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/from-state-executing.js",
+      "scenario": "default",
+      "contentsSha256": "ee47ead2a5a4cb6483d8ca005a438dfc304dc5b9c2a1930dd498ed73fb2dc554",
+      "compiledSha256": "ff05e2f0f1ae1435e4ca564ddca05bcff716a6eb49bbe5552779670f974a599c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/from-state-executing.js",
+      "scenario": "strict mode",
+      "contentsSha256": "799c9dfad56bf4a928ab20cf642602f5625b41ca6583a879354f931958a69152",
+      "compiledSha256": "9703ab8eee00ae461f4e340e8aaae5a0ad870b4aad23e540a225bd2c7dd056cd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/from-state-suspended-start.js",
+      "scenario": "default",
+      "contentsSha256": "ddca20d341d994f89e509f212c8a7156ff295b3c6d4a1c1916e9a35439ca0808",
+      "compiledSha256": "42ab5de80efb24f79d36f724a8483ffcaaf56d5a35bb2d88d3f5b4af9916d8f8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/from-state-suspended-start.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3aa420bcb71e84f2e1fe46664495dc1b4c1ab2dbbc4bebff2efb5fe63da49136",
+      "compiledSha256": "2bf1e502c4fa1fd72841362d4d80ba301593b7092a6f055c4a0e7ace790d490b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/length.js",
+      "scenario": "default",
+      "contentsSha256": "2cc699c935e8cc55ece023597bb3fc311c699a6f0c3fc9840a0b71a3889f94e8",
+      "compiledSha256": "87fba259d8f6d4b08697d0eaf0fdb10774907cbde03d032f2e108b95412ff2b4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/length.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3853043091a0d0308591c558058ba3d1d73c0c3c40a0cd70893f4baa10d59e4b",
+      "compiledSha256": "ca3269898cf097ddc531d34427f1d563906a8ecd5d6ecf27f043651f69ff7b40",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/name.js",
+      "scenario": "default",
+      "contentsSha256": "04e347a5d43a7aba45c6839afa348382bc7843ba30c78e2b75e172b4c8a11cda",
+      "compiledSha256": "da130c7fc63fb01b4c55657570787f4616e340757bc0f9981d6280e3868b5af1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2a0dd32e440fa8060ed66ce0926d4477f126e26b5d142c65e613073ccab9161b",
+      "compiledSha256": "d198c6038fde15ae68cabb211e3204cde4dffb81ad20230afbb75e48dc5ada9c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/not-a-constructor.js",
+      "scenario": "default",
+      "contentsSha256": "f774a7263746c299a0cc6ca250d5145998c58c5a94e39d7513ee242e79963ff9",
+      "compiledSha256": "3a0378110647ae310daa389c77068452a54ce21aae9ab0845cf53f50fa822b00",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/not-a-constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "370cb4d6ad0b59f0e2f2ccf5c1baee5dc2019b3b68cc0810996c47c6327f0ef4",
+      "compiledSha256": "af0c7a76d1d40f5f659209530fd6140db1c6c8cec6d09db46d304aa31b7ed731",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/property-descriptor.js",
+      "scenario": "default",
+      "contentsSha256": "e87752f00057e3cb18f21c2bce57dd12c239d40bc90e0fb6a589549985826930",
+      "compiledSha256": "9d400d1a88c6e54248fa682c2e4ec02bc3bc83c3a47a63e556db5b579719df99",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/property-descriptor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d39ab132a9e46c2dc99fdec8d1763cf1862550f72bd5e8be36fe6931da2b6476",
+      "compiledSha256": "c55e9c6f97def9b11fa143336453164b5cc8896f099be9bae5d741767880a228",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/this-val-not-generator.js",
+      "scenario": "default",
+      "contentsSha256": "2469d47596e628cdf86dd90d0603c034ade4a2a0c198fc9cf4484a8bf74ca6a2",
+      "compiledSha256": "5e75b37200b0e1a3174f677fbe511d7615ee2dc5a05f225943ef851efe42895a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/this-val-not-generator.js",
+      "scenario": "strict mode",
+      "contentsSha256": "177ac3c347875f897c77daeedba8f3d3654b8ef61f026ebcb654556fd26f42f9",
+      "compiledSha256": "996461ea9428cd36204ea650af7855a19669c72a7761d7007db52d8b1bd6bf42",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/this-val-not-object.js",
+      "scenario": "default",
+      "contentsSha256": "f5dce06fd79c36f8960d2d0bd31a242f5d6fb746afe74432e7d999d81bd72278",
+      "compiledSha256": "42f3929efd86074804639deffc45232dc83681c30f5c2421a5e2e2dd0977569b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/this-val-not-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "38c5873e96be1a0c4a05747ca7a11496929ebf9b341ee86685abcb507e3eff87",
+      "compiledSha256": "dfccf42eabdbf1aa0f0f22592e2d4495e640c61d634fcdb2530939863658b33a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-before-try.js",
+      "scenario": "default",
+      "contentsSha256": "cad0d986825025d3e83b8c6ddc9d6c823d0d670c8100004506300b6337af5294",
+      "compiledSha256": "2446ae8b92ee1d9822d87cb17203e0ab47fc583dfe01126906c28b34d58d904f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-before-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b4c5fe1048b0c6f1392d7558274b5b2415fffd8e9acffcb89f5767ac1ebef3e9",
+      "compiledSha256": "5e72e28569134812704e5c66e7fc21ce4e7d2dd4d1ec685a5c680423411a1ed8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-following-catch.js",
+      "scenario": "default",
+      "contentsSha256": "35a45fd26d407c9fe0bd17e276d3184baa7dbde4eabe71607f843ad5b084135d",
+      "compiledSha256": "caed78eb94463fce55811a605580e508559c81fd040ec069e75312dd206dc438",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-following-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f21e4cc39af4ce991d4a3d4455f4bc505668eeccdab1790eb7ce47d867e1850f",
+      "compiledSha256": "f65e236a63b6112f51d79b284768845370c649d85e3d6b5d35285fa7854d8b9d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-within-catch.js",
+      "scenario": "default",
+      "contentsSha256": "9772418782f03498a491ecf923f147ed9a02fe5df21250810addf4b7cee0481a",
+      "compiledSha256": "0f9a70a8873a23bf5e87b9932ee2065ee1e14ee50ee090982fe2d4ee616ff74e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-within-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "98088420ff257510d414cc812ccbcc50a229aaba7bf4e459bb5a213672474ec0",
+      "compiledSha256": "0d28201540b756ab18de61ba84fa2e1cf1757e33349c192cdf978427f05f0f31",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-within-try.js",
+      "scenario": "default",
+      "contentsSha256": "d6d3dd0c3363eaafcd3bda681b880ff7a8d7999839f00ce38e9ca403d9cf70a7",
+      "compiledSha256": "8bb4e099728455aa915cc7ecef508ca1b632a7d90380f5b6e484f325c2f48639",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-catch-within-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "dc1a993d3dd3595ca5bccc8dccbc69585caa2cf2eb850070de0e0ccacdc5e935",
+      "compiledSha256": "a7e44d7b8ebd5841a563d43ad14238dd8a52044647e8a93e3f2be5d1b4ddb51a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-before-try.js",
+      "scenario": "default",
+      "contentsSha256": "b6006aafb8935a094a363cc9ac3585420530f7d294279b865d11e349902013cc",
+      "compiledSha256": "a9688b9acc1ecf7444853364fe6915c76b72efdb7eb19de6c6a6d2573f2c653a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-before-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e320727d3e0cc5c106e4933d19d3e12b7fe8889550c745b82368cc4ae0dca1ee",
+      "compiledSha256": "25cfb2b94e41265c663219f901fa4c213e67f9aead746e9da1534c1aa28914f5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-following-finally.js",
+      "scenario": "default",
+      "contentsSha256": "8b5c200d4c8d356b64427da4123eef436aba119db1feedf1b4df62ff6f3484a2",
+      "compiledSha256": "f196a35bb21c78b2307f782978cd1f73270a43f29ff85143cbb715e624eaffbe",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-following-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "db0877334b49bd30f41071c843c1bbef9f70a15e9265b333464f07cd74452cd9",
+      "compiledSha256": "ab391bdab1b4c65a8aa12aaaa59bc2a1450c0c55f236d2d822489d3fc3c4b7f8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-catch.js",
+      "scenario": "default",
+      "contentsSha256": "1eac5a820b685784432d3ed667e3dfdfcf5760399201a4701750ba6ee002cbcd",
+      "compiledSha256": "10f4aa1f3ca039a59fbcff8d223aece85c7ae11c01d97a460daa17dcb96ffc76",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "88d92cc26e532dfcf1eded580aff609f155db9ada446d2dbfaa70e4a886dec1d",
+      "compiledSha256": "d738dc4b0d174856ff8dece5f3c00fdb9249bbc41588e32222561231ad522092",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-finally.js",
+      "scenario": "default",
+      "contentsSha256": "aa45a5befa84d97da35586e2cf2a56de7c54c0505e0c88e905e0ff6ab115c9d9",
+      "compiledSha256": "3322ee67428567c765abf424198b9886b24fe5c657f86cb234f0edebc01b0463",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "31ec9238cc349cf950eb39252569514d0e95ebbb70864e0b2032f9ebd52b7477",
+      "compiledSha256": "1382f8e579270441039b2cc0e8bc35a5c6341bb5a2c7af12fccbca5c85e8a71f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-inner-try.js",
+      "scenario": "default",
+      "contentsSha256": "25dfc4e0bd9da6c5837b10c5b1acf17cbb755a3408e37e954b0b49d9236d3bca",
+      "compiledSha256": "ef359ab8b4fc2174e39a9d640dee5f6009483cef1ad12469b913e6f5ec69348a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-inner-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1885ef290d02643304242245c166da1a654eef318359983de8c321460fc7a0a7",
+      "compiledSha256": "6a419e979d424b76904da50afe69b939b5bc04c229b3b6233606912767f3911a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-after-nested.js",
+      "scenario": "default",
+      "contentsSha256": "c59f620507fa2c40515f543cd944ccfd63887bb3567c710c80153e2b5ddc128a",
+      "compiledSha256": "6ee2811cc7c2ea99ce6f59750d455255c7bc8b25a99a1d1b860a801ddbeeccce",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-after-nested.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fffb99bd21815ed832b830e34b67a4dc9ca5a43a68f7d56c0ef9c65906cd9252",
+      "compiledSha256": "0e51d71d70df8654e471b6481b18e9299f522217e83479b5a3ec5622173fd451",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-before-nested.js",
+      "scenario": "default",
+      "contentsSha256": "dc0abd67f372a2a90814c5e487f233b8739b326548ba1a05587d8aadfe57ef26",
+      "compiledSha256": "aacf35d17ada66a67143d0773e5ee371526a13f90ccf3ce1078cba8b2bdc6b73",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-nested-try-catch-within-outer-try-before-nested.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fa15c3257a9eb10aa8d425f5182353f0680e67c1a2dab3e2e6692025f514932f",
+      "compiledSha256": "bc0812c46a67472024597837c5b44723f59dac8eaefdd3c2eb85761fec43c047",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-set-property-within-try.js",
+      "scenario": "default",
+      "contentsSha256": "998902f5c18aad3a0932706b60142b8d5d97522853e4c72dd6f9f6ef2b20ecff",
+      "compiledSha256": "9d6e7b6f2664671066e1c04b1f0234b4470e6ee86f5d9cf7df550a7da3021118",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-set-property-within-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "eb45c8c6e062912cec652d9edb4bfad4b83e9960df80809d66dba189800d208d",
+      "compiledSha256": "79b208f04570d93b9389a10d0475de7c06811f76688a10a6edaa5b51041033eb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-within-finally.js",
+      "scenario": "default",
+      "contentsSha256": "744656e99a7770984e35297b9cc3360fa76bf2298a4b392a0619eed7c9fe67e3",
+      "compiledSha256": "0b68a0d1f243b7d55f2de368e5cfe388a64eae329ea2bfc59ddb3602f194ec62",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-within-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "90dd2e83d2640ed8d5fef8f794aa22941cdac82d72dd362d5d1a76dadf51a7e9",
+      "compiledSha256": "de1c555c23568b29d107727c8a18e09547e07c9dc71ba5df13cd9db9202d2ee2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-within-try.js",
+      "scenario": "default",
+      "contentsSha256": "5389c2e6fc1ad07f26d2631103f5808cad8193318d0202b788007b3b640fef4e",
+      "compiledSha256": "4be5b6cb9c8cb2032ebc7f011d81fff19d6abe6347690916d1f8861d9da03833",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/return/try-finally-within-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "41189002d9d08e76f60fd4c46fe5b821d2c7d85df73c2946fcd976809096f9e2",
+      "compiledSha256": "bdcbc80db01f9626f9a0e5791ab3d1a2ab4f92690ab18841b639a82999d14426",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/Symbol.toStringTag.js",
+      "scenario": "default",
+      "contentsSha256": "a1eb95654bcdd366204cf08e72c0795ec6a3a3f866b88d657e9a9f8ff0a6d9d4",
+      "compiledSha256": "6fe0cbbdcc20fce294c14aca3c9d4be3a0d87b8d21c6963b74335c579b2f44e1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/Symbol.toStringTag.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9c299d1a4b01411880be9f67b5ad92f219783f4f3458a055b517f64d14dd41b5",
+      "compiledSha256": "5680e0067f563c09a39a8e775d1b5883512ab044d7a94aef128088ff62440fe0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/from-state-completed.js",
+      "scenario": "default",
+      "contentsSha256": "88a1a593589c558fa2b88c205a5b5d287022889a3811fcb5342db667faa07a32",
+      "compiledSha256": "a5223b222a9f1cec19d214ab2c667b28f29a46162418939999e173ef152db573",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/from-state-completed.js",
+      "scenario": "strict mode",
+      "contentsSha256": "10143e68368d3205117ae9b58d1611c07c244fade37842310582eb6fb0c621b2",
+      "compiledSha256": "84951dc06ebdf07ad86f524d34e26aa617992466ef058b0f9046f24cd7bed9fb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/from-state-executing.js",
+      "scenario": "default",
+      "contentsSha256": "11f719fc7083905c290e169f0b7c91df5b4872d4acda3297a1973eaa4ee47ed4",
+      "compiledSha256": "8eae71f5e3995d4ec6c181107a7d37059c22b00a6d30c81f3ab1cd44f1c7f797",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/from-state-executing.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f3dc52860e6661f2ebf1a9d743e1648782dc7e9fa40da68da6be0573dbd130f7",
+      "compiledSha256": "31739b78c3701803ee97ca0933070622892c7b6e3aebecc9cc14aa70bea57456",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/from-state-suspended-start.js",
+      "scenario": "default",
+      "contentsSha256": "b0fa6cd7f7f7b93af88dd74ba335adb7dd58ddbc7251671fb71863d3cbffbb8d",
+      "compiledSha256": "b85735f8bad7ba9acd5a2d3773fa99fdb65f9511d47214ab57c4fb847e846056",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/from-state-suspended-start.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f272a69d845573ec7b63ff04296a0bcb8f5fd2ed4cc131be048c43641ab640a2",
+      "compiledSha256": "f1685e2e20c9c01f5ec2437091112bf82e8c06538cf0cfd6b646936c191cbee4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/length.js",
+      "scenario": "default",
+      "contentsSha256": "83d2d19667128fe779841b475f5941ec6480144d6d04079b2aa2b7386e38340a",
+      "compiledSha256": "bff82e9caa6351f8d75792e8459d5b41066c93de441360cd6847a662d3fb47a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/length.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ba6f34e6fa4b35d78cb7e2c489a5bb4ce8c4f64117e6b83be7d0a291a3b9a6c4",
+      "compiledSha256": "be8c38a1f30290be6334dada25a8fb1d137b022fe512c3c527752bb116936d75",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/name.js",
+      "scenario": "default",
+      "contentsSha256": "bf80f33cd62bb5346e29705eb188d1d94893cdf5b2e302dad03401a9fc1521ca",
+      "compiledSha256": "9c6fdf8b4c967e5795c4a8593abbe6dc190ae12d7ae799b64efc06e1ae2d19ea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d7ae71594813065ec40e82a2510eaf95bc0881132c81f8db35bf9c2aff4631ee",
+      "compiledSha256": "a3f6d49a59ad3549457913dc23bb1ba2c78ca5dd83b08688e949c56bb042db54",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/not-a-constructor.js",
+      "scenario": "default",
+      "contentsSha256": "b3f169dacbaa6353e09f6e5b3374fa8b506a2b6242a51eb91c2062c6de6165a6",
+      "compiledSha256": "596bf83f737c59e7d84fea2a2d12d699324eac051abe757abaa2a0aa81673325",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/not-a-constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7b2892b20789f1ae4f7d205dbc6ab8ce0282a3e5b2eaff33dd3ae6d58f38e8f4",
+      "compiledSha256": "885d2c0f91d61809dc38dfc619e6ede083ef099e9911786159a531e4d01b2796",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/property-descriptor.js",
+      "scenario": "default",
+      "contentsSha256": "a5eb224d13a8eb6e0e019cb6b55b4a153b7ac3dab19f4b528d1ca24420ac2517",
+      "compiledSha256": "20db82ea6a8bbdc9041ac273dc571daf39900307b6023ce1520c1504b70e9d29",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/property-descriptor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "66f33c65ba45113f4359763dfbadd65098b0d5d813a9989eb79d2953d2a7ee33",
+      "compiledSha256": "64207bb101694f07018b3a473bd183b699ac1ef576e7dc548762d8ac301e5d39",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/this-val-not-generator.js",
+      "scenario": "default",
+      "contentsSha256": "0b1e79a6bde623a7547b8d38c8eee2988cfd63f808db2375e34b6e854f976f60",
+      "compiledSha256": "10673b4a02a66718655bf75092d9388e1404d7c6e14b1009b93bfd6d00cc2589",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/this-val-not-generator.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3ec9e6c4618a83cdf156b25af54bcc0f0289a86d1e9f82a001fe6c1846f7b6e9",
+      "compiledSha256": "7bb318329a8b41a34c2fe7f70f3b8a90ca5ac1f143a150b3019ac98be6ed6831",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/this-val-not-object.js",
+      "scenario": "default",
+      "contentsSha256": "cd2fa1dee6ffc6ebfe5568c2d6ed90d74c497a14467449cd295b47a6627b1929",
+      "compiledSha256": "8c4ee0c2b9e42afc0d0f19b086a9d832ec4051433713d1246f2c8cdc4ad6d1eb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/this-val-not-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5b93aed118e61955a2c8872aa2fba49d3fbaa69f918982084ee32522e4b24c1c",
+      "compiledSha256": "204cc8f819c280eec50421ce831281c4f6c6010457b32fcb410adfb3d59735f9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-before-try.js",
+      "scenario": "default",
+      "contentsSha256": "396e3025797bac9c40846298b0b2b2849f5594d751d08347c6b9e3ece91f1bc1",
+      "compiledSha256": "76a4b935266158bfee9e9231ff9ca04418cb19ed88d1abbadbf2deb329beabff",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-before-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4349c57dc45f186c29f037648445cf642fb5989d97dee65c4a830c7f75f95d31",
+      "compiledSha256": "aad66e10ac5bb6e7c150540a7cd4ae37325f7805911de0f6e34697ce55eb5c97",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-following-catch.js",
+      "scenario": "default",
+      "contentsSha256": "c49c153821b9f39609e9f88fb498f90321f35cd83b03d2b26036de70567a7cb2",
+      "compiledSha256": "466a3c45b484828f0c475330d9dee6ed0832a334945a215b90b18e3df7e17fac",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-following-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "022cc7ccb280e492f1f03c92f69a3be6312505198a3bdbfba45285d35045d277",
+      "compiledSha256": "e3eb8f63a5e4c77046bee3a884ec8561292716338e5e3c8442c5a86785c38219",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-within-catch.js",
+      "scenario": "default",
+      "contentsSha256": "112af545e6126d6afa592760a1393bfa374c6dc571a1e1c376dc9f51c6493c43",
+      "compiledSha256": "789cdfd54976c6c3d30e5941c591ddcb8eb2073e1a1090007f3ebe769d912021",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-within-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "02947dc25309c57ced39fc359d710fc4a3d155f29ab473374107039ed12e8d9a",
+      "compiledSha256": "4489ad9d54fb54780cc85ee7e27b83d6233ccfe0dadcc5377aadcdf3b2c41f7a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-within-try.js",
+      "scenario": "default",
+      "contentsSha256": "52b15019800df62106968c277b2c19204dbe604643e34bfda297e654cfa97598",
+      "compiledSha256": "b81abd96d4d16aec37a579077969bd4bb755072f93d2d62e674f61de7f832a9d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-catch-within-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "98e732d5dd58fafe07bcd78951ca45a203a87bffcffef1d088ac43a731d3e1fe",
+      "compiledSha256": "b3471039e3bcb95bb1ba7fa89d02bda01c4e1bfe5a97bca0f8679243637d84c0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-before-try.js",
+      "scenario": "default",
+      "contentsSha256": "2b00d8b90ba01e70933ee4c1f8578b3b7b798a4fbcf264cf1181fe6bb3acafae",
+      "compiledSha256": "5736c2d05f8ec0d2f36484a12a04b72d4772b0c88f2acaf76ef598e3185b674e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-before-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5acd7fee29bdd714d10b2d6bc715227c2551230fcc9c16c34b467842a447e2d3",
+      "compiledSha256": "939ce8fb6f4b3a2840324a9b0b5eb58e822011ffd8de74598cf29bdf113595fb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-following-finally.js",
+      "scenario": "default",
+      "contentsSha256": "181f8ccac1b914d9cc9df47fab2ed0451e706505cf483b8ac342fedf4ece759c",
+      "compiledSha256": "bb3d4ea1b4a91f08db13d8a25fa2e9163eddeedfba3bc8a433920d8e76c05535",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-following-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1ec2f1869d5e00d7147a40a5e0e19386eb0eb76c5ddedf9b2790cb2eb99034f7",
+      "compiledSha256": "d9392fb8b524c69d97987c3c448b4a38dfa50f4620e6652ef95824ba781a07dc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-catch.js",
+      "scenario": "default",
+      "contentsSha256": "65be4712d72eb65f75ec531206afbc0b8388217d6904c95f1bbab53a6d68eb0e",
+      "compiledSha256": "1e64f6acae3cd9566f36d866269daa5de27e54127149e14621fac57c53a7f3e8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "caa073ac81fe90a33b67397fc2cf9c8988f9b7759942f6c3f4f358231f1ff403",
+      "compiledSha256": "547e3d8ae64fa2eabbedc35efe78aafca8feaa7c8a7eb3ae638b9d254f868f91",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-finally.js",
+      "scenario": "default",
+      "contentsSha256": "7b90f5f4e32d026f67036a546e3d779ffb4b1c368faa314f1755132001568ede",
+      "compiledSha256": "00a1f97d83090767e82a449e65ea92c1746db0002b81c925e19f6d5ee515e34e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9449fbe7c6b2a2fa1e1654a094adb58705d46c73e81850e2b87af4b70f8487da",
+      "compiledSha256": "d54456d0ce9b2799f011137602cb910825768cf74bb803a4573b2e0d86021147",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-inner-try.js",
+      "scenario": "default",
+      "contentsSha256": "6910c41e17b3cb1c76629aabf9b39a7d777da2999a100d12bb110fb417e0bc15",
+      "compiledSha256": "a39fe82f60ea16986e1f9d4b5af64716532eb4e4636c163014b4852b39c06fb3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-inner-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3403cd704093a188bf75ff991b11f8b5c17079f3617c60cdb043ac2240a7ed99",
+      "compiledSha256": "ed20a2fd1d59c399e761264b5c9b7c9cef8b7da19467e2dd20b87a0db6e2c7ec",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-outer-try-after-nested.js",
+      "scenario": "default",
+      "contentsSha256": "4d4cf8808cf9762ec55f74f7d216d61ea7c87b2579e6b3985aa1d8e10e43f3fe",
+      "compiledSha256": "ed4d90d5cbe7a7d4cbcd7e3443acc25ae6dff924cb4ddeb10189ea6a7b23aefd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-outer-try-after-nested.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d130f26073e94ed058ea689cabfe0befc578e926616f346ce40ed4343aa9a2ef",
+      "compiledSha256": "9823ae2818020ad70fea3574013cb1ca1b220fd37fbcbb42334b1d219c435690",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-outer-try-before-nested.js",
+      "scenario": "default",
+      "contentsSha256": "30f2d64b394e0076da2df3d35676da1f1ce6c85153ef9de252b5b18249210835",
+      "compiledSha256": "75b742f28f38fb802d96207b99a9b24f5cef988b2b5a808066df8a9fcfc2bea0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-nested-try-catch-within-outer-try-before-nested.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c03cbbf2117349aa3966cb2857ef49cc9464e63514a3f4d65bcec5fdc7bb2058",
+      "compiledSha256": "2f573c67ab33268e9c458ccec22a2d37fd8ef2772af0d5c17988f5f9a4ae8bff",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-within-finally.js",
+      "scenario": "default",
+      "contentsSha256": "66c5f8f610d27494091f94cdd3d00e4422e904f4ad3edeb5ce4a44d7b6be21d5",
+      "compiledSha256": "1248ef0c0bf2fde0833e1d0f82ad1d56f27d8d2718ec50d5782bd13da470ce2a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-within-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "07ee20cc6b39548843a44af2466fd1d7252f43b58f35f96ee8463934053d6a10",
+      "compiledSha256": "e85a826606ea4fdab3469c7b6d106537bb5b500be4c456e6c877b7c8e72fe652",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-within-try.js",
+      "scenario": "default",
+      "contentsSha256": "ba474c9b92d81a43b92bf5b7b01f86ac3188b8db6430299238a1ad09c20300f8",
+      "compiledSha256": "138e5bf719b30c0f82af99ed11f1fd30769bd79d21b02aabbef36022f6ce388c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/GeneratorPrototype/throw/try-finally-within-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "dc194776ab76e2e3f994dd0e8cdad32616fc51344d2cb0dca1857422528ed219",
+      "compiledSha256": "86f3872159b9ec1eb1b602c888f5a1732105e5c87c2f0594edbc80a8a0722f35",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-binding-identifier-escaped.js",
+      "scenario": "default",
+      "contentsSha256": "f6fdb8ff5e2c344370727065b9f8f6eccb4d413acd573624dc32194cbb805e2d",
+      "compiledSha256": "b0b2d9b03cf6225fa5b8e0dde53dc88b7b6b6ce23b5b23cea90dbb544a5d1702",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-binding-identifier-escaped.js",
+      "scenario": "strict mode",
+      "contentsSha256": "683d91a1f2900bef5a14e5d51e259a8118d74bcd624c430b0273e282e78e44fc",
+      "compiledSha256": "032563b41022f37b124a9aee4c0276b8665959c4458e4ced5a59b49c6534071a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-binding-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "5fbee49ec00f77fbdf4a76615626f34ac4f2b367703188bf0a17564649402f3f",
+      "compiledSha256": "f101af011025b9f0af0897a3b5221ef4a5ca01cbf6cec9876ae52968508ed4fa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-binding-identifier.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e1e7025968d49f85894150e3174819a59dea1d7aa77d52944949aff6f84e1efe",
+      "compiledSha256": "845a0af8c345d6003cf5d056f3dce260d132c23ec8ded21e4a6bb54c0d139dba",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-function-expression-binding-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "ba30babae802da9a0fea74acf0ad3f93d9090870170b1db0f5c940a8a63eca4e",
+      "compiledSha256": "6b38084fae6474dbf716d3a9fdd34fba179985ccdc560993121f3a4127099baf",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-generator-expression-binding-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "f18392fffe93edd2df6a46f00e3058cb3f6586736c49388487638f02cfbde6be",
+      "compiledSha256": "55272407ecf08d90953c9061cbcbb2b175b7a2ebaa79d3d819a0a3a2ea969a0d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-identifier-in-nested-function.js",
+      "scenario": "default",
+      "contentsSha256": "39a751a2f0f4972f04d9f18cac5db940f168d9e8e1b8dc2abec8b47a3e3f6843",
+      "compiledSha256": "1b784daca5f765685a058fe404c92304c16b1c88fc16de65d75c9d2ead37172e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-identifier-reference-escaped.js",
+      "scenario": "default",
+      "contentsSha256": "7860c03a63e03bf98571b270e858fe05a8970a7576b559aa78f88173fde129dd",
+      "compiledSha256": "def2001a5e311aa68e89352cdf9bc5474186cd9fa970676554884167518c1f27",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-identifier-reference-escaped.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a8f17537465d9ea8d112e2af4d738d66c5b7bbb6be80b7fb1fea4a7b89bcccf2",
+      "compiledSha256": "12ff35f173e20810044245d89601538811aa5bdabf75520a8bf7cc46190b8f04",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-identifier-reference.js",
+      "scenario": "default",
+      "contentsSha256": "f5dd6a2b7d5e002540b43a739149f0fa7f7963d0a92abadf6d748e8db64a599d",
+      "compiledSha256": "c054dc4f99b0a99afbed612d4c2bda58637f7826816f865857a57829e955f6c2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-identifier-reference.js",
+      "scenario": "strict mode",
+      "contentsSha256": "da2849aebf7de3049e5a62a4a0277aa097c2463e053ea98da5870a0a48959d0e",
+      "compiledSha256": "d9914bc13c5d0cd360cef5be3859eb376dd99e26bcaa2b2726208e629d8e7c77",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-label-identifier-escaped.js",
+      "scenario": "default",
+      "contentsSha256": "1385b190cd6555a727b21d55866a35f38e3b0394b1f6c9c5586fbc738b8754cb",
+      "compiledSha256": "aaa4b546621113cacbc26ca60eb059f49abe3377d5208c04ea049e9396a7b526",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-label-identifier-escaped.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fb7ca59611edb3fccca8926dd7b055dc8c8795deffff8b37d431c3670c63a105",
+      "compiledSha256": "a55a9e86f3c7fe576d0a0ddfeec8dff9e031f76138c6b5ee0629793f8eb796f5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-label-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "d5fadbe8b650f1336dc866b43a245707e54082c481dfbc5018a23a68887c6c39",
+      "compiledSha256": "e06a79a6b692e9c2b5f448e9320b54c1cf30a0ef6002603e3967c719646d1285",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-label-identifier.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0b7cc1dad2fc290109beda70fe2b08cb5d196ede0c1c1723fbb08e584f1f4d87",
+      "compiledSha256": "8b39a48cffdf67591290400c29b186c49aaa1bcc9f292a562c5baab0e5fc7264",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-literal-property-name.js",
+      "scenario": "default",
+      "contentsSha256": "5c336d532dcaf326a14fd747ecf314fb081952f0efade67812c6cde7effc20c6",
+      "compiledSha256": "e03548bf31296c31583c1659cba26acc97690db6f18e35392d107988829d669d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-literal-property-name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "21abe7e252bf29e06315be038ea11dc9232e9077f1edeedb20c9fe8d387ebe1f",
+      "compiledSha256": "5ab30ba86b6167b412bbba1d9548ab3e24d3ec250035785a2686e9acb5ae1902",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-logical-or-expression.js",
+      "scenario": "default",
+      "contentsSha256": "98a05ec681d56ed3917a0f217ff7680589a80952a8ab9e0cad882814d63f2dd0",
+      "compiledSha256": "202f5b1cc4e7beadaf19da508299e5e551cb696aa9bc09bb8f01ea26147cf9ac",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-logical-or-expression.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1955d9360dd8cad0c055ce139b925becdf8b96b6d6a1c6fe66e6a74e6fe81cff",
+      "compiledSha256": "c034c3ee1fe3217fad242e94f71f51f3f01217a3398941377ff7d3927d2b20ea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-parameter.js",
+      "scenario": "default",
+      "contentsSha256": "128517bd98958af7308f3fd09d029b637706efe1256e452c0d9a9ce09e20c135",
+      "compiledSha256": "d2a55d11def442ac997b89389af65655e62f366f5f16f8e0d8be8f22365db5fe",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-parameter.js",
+      "scenario": "strict mode",
+      "contentsSha256": "42e88f9f3de2eb1400b9dc38b2f2206592efb05f9faa7e12a062bd43a6526b93",
+      "compiledSha256": "beb5afa1dbe10346af87b5f5267a954d41ee34dcb8d361ed97c56e6e04cc87e3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-property-name.js",
+      "scenario": "default",
+      "contentsSha256": "588d434cf178eaaaa3eec647bdbd6ecb2a67fc0c48a3ff2a2603590a9581053f",
+      "compiledSha256": "7e7ab69561c03b629dc4ff358c4a8655845b216d066a7a67d697d78479c711ac",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-property-name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f3c4e2683476c4dc5d3c15c5dc6bfa80f6d7707bf59c92e86f603d2569564662",
+      "compiledSha256": "173f8f46e05cfac338aadb9e62401ded51cc4cc76ef3f71cba9f4536d73b71f6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-statement.js",
+      "scenario": "default",
+      "contentsSha256": "d8a90b13442d9488f65661a2c9fad53d784693ac2eb12a705d81e06cdcaf7c05",
+      "compiledSha256": "f7ec7ea849b5c90fa64dfa64d74b4ed390ea04213dff5d86dee2e0c5fb8f1df3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "76ac24e05834e346cf82707165c09c2850cb9647bb2ec363ea6ea685cf674012",
+      "compiledSha256": "521b510fc3d5210269f2b356fcbe3b8eb10d7c05c8095636ad165713584141db",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-yield-operand.js",
+      "scenario": "default",
+      "contentsSha256": "3a2624da7543d861e3239789505d994918efbbfb0e0c646ea20d12bb45704c82",
+      "compiledSha256": "e93cc73568023b4b395496aa0e29fe13171a8abf6cec085207bf41715912543d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-as-yield-operand.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6832428d6b63962b0c8d7ee20b189cde8ed746c5c0ff9e2bfac0bcd694b5ec8d",
+      "compiledSha256": "c8575563544438d74497c814e06a006df1589f841cf252040b0a57164d44700e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-identifier-non-strict.js",
+      "scenario": "default",
+      "contentsSha256": "05d91b111a8aec6c3fda48a340ff1ba30c99013f6bc901dde74711600e35fa3b",
+      "compiledSha256": "78817984c9a198f0c043cf4c941b9be05415c94f6859dec0046285b3e12e1e19",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-identifier-spread-non-strict.js",
+      "scenario": "default",
+      "contentsSha256": "4f76e59af9d321a29fa3d7be369165e48021823074a74bc06e740ab0473bc1a1",
+      "compiledSha256": "8fb151128c350d34ef3bad4b14f804f1afa1122401c56a96b9f838d0f8a7f0fc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-identifier-spread-strict.js",
+      "scenario": "strict mode",
+      "contentsSha256": "124d3eae520bd599d471cc8db1360318dec276747f969b4f4a3a89297397bbf7",
+      "compiledSha256": "dec9e3f790af8207c29f07257c6707ef98767635a1964d3d065ff596376dbd16",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier in strict mode",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-identifier-strict.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f20126a1e88229009550dacfd92d67463f1a16124c0271e5bb658223f7c40f01",
+      "compiledSha256": "01992e6c9ca02b8ced00af7262f83d84a55acdd9c292de4c1e86ade337ab4f21",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier in strict mode",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-newline.js",
+      "scenario": "default",
+      "contentsSha256": "ee8202a48c73cc9ab93f8ce02553ea6996b9a4c2e42f5163921466be8fcabd0c",
+      "compiledSha256": "815b501c66acc2624784eed5f2a8b5d1ab11c5e956f5c40f9c3315839c751921",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-newline.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3771abbf090a3ac680d3b4d0da1e37abd11415090f9959c3e135107f86782ae1",
+      "compiledSha256": "d212bf33fdb3fc3d539e9f0d4ac12677cda86ec9b01530e5b773bb3267aeca3a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-spread-arr-multiple.js",
+      "scenario": "default",
+      "contentsSha256": "545fc7223a62c7cab8d3f8e0f67581395b9ffbda200a3c63b6e8ad84dbaf66e5",
+      "compiledSha256": "fa22dac6e64239c9d27e7bb43c4471bdbc8257b1fddc2ddaffbaf73bb0f8f2d5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-spread-arr-multiple.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0ff7bc9b2974fbaec796c0c1dae2ec67431f6cd6e88ae6f4db08f6505306f27f",
+      "compiledSha256": "3091998caad7ca324e9e3594e5cc682ba6691191afa074f1b814f9c4667cb5bc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-spread-arr-single.js",
+      "scenario": "default",
+      "contentsSha256": "7cfed8e2be9673112105976e89c02ac6777260e1184b06b7e9da8052b2c8d41e",
+      "compiledSha256": "41ba86f448ed11bf13d2b0fabbf2484863eb3f2b93485593dd6b08b51540d9b2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-spread-arr-single.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b63700727df514947f0424fc5d32eee102d5e12e47f68a17caba5cceed0a04b9",
+      "compiledSha256": "6b5e80180228e8f9edacfe29918abd97828333b650b20265a9fa1a48373f8c2b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-spread-obj.js",
+      "scenario": "default",
+      "contentsSha256": "87694a1ea79ddb67a986fcdb63c31a2e23ca82594b7a541b15e650b98c1128c5",
+      "compiledSha256": "e66dadca7040c7ba55c0163cbb37831c6cee2cd0a8c1b704d486dc22dcfc8c79",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-spread-obj.js",
+      "scenario": "strict mode",
+      "contentsSha256": "cbc402d2e2db1d536b6b93fdfc757f7ebf65a988644bf23993206e9810c67893",
+      "compiledSha256": "636af00b3d94fa1fd656f04f9553615ad17dd1049d1d2c10735c34cfc53b2e9d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-star-after-newline.js",
+      "scenario": "default",
+      "contentsSha256": "b8bc4f699a34f9d1cc0c0ac82e2b42d91d4715a9f9200665f1d12bcaee59e51b",
+      "compiledSha256": "c72b1e8dc4b191c736e99ad47978e6114c2b691397f61eca4dbd7730c078de42",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-star-after-newline.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9e88493b41809e53da489bf7ad2f4deb165df518d705881f1eb7134c005c7647",
+      "compiledSha256": "e8210faed837bbe64813bc9c04917c0df1927b876790b7c5e0eea3b3a9b0a3a8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-star-before-newline.js",
+      "scenario": "default",
+      "contentsSha256": "5d58d09d33ec2f10f10539f0ce2d56230ecf9850d79ad8e63ccc42f02f855301",
+      "compiledSha256": "23b72ecf45e8fd5f67e7ebccfdcfa7d5966d5b1205eb3c5b3879740921b790d1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-star-before-newline.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e424e7fe1e035e3da9148e44c1439708dcfe8401502b58220fd8d1269f368581",
+      "compiledSha256": "c4ee16cea2a20bf7f1b1d48c6f1c4839405adf70435a34645b9f7383c1102967",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-weak-binding.js",
+      "scenario": "default",
+      "contentsSha256": "c51c69165d36d36d6c9abafbb746347feacf47fa62897a772c559a0685e6d5d4",
+      "compiledSha256": "dfbdaeb868363d1522e3ff0eb592497f67bd38e68272a9e39783073816d6a6af",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/generators/yield-weak-binding.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ef1a83043ddd62139acfa91d521987658a3098ad5f0885aaed9b67f350d608dc",
+      "compiledSha256": "3e68fc11b2f36a1ce35f712250c60e584c1734cffeff5e784c8a458a932ce20d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-binding-identifier-escaped.js",
+      "scenario": "default",
+      "contentsSha256": "5cea13d27f84e93271472041215032bffd755b4a3eec9bfc5dc54b68a0f85bb9",
+      "compiledSha256": "eb6f3ed344e854464a2f646bb2c879fa042b58f1d21ba31169f0d9e2697237ac",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-binding-identifier-escaped.js",
+      "scenario": "strict mode",
+      "contentsSha256": "27798ac9b6a71940bba25b86b809d45855a9ae5059bc9cd23f8fb00e11ff6266",
+      "compiledSha256": "f93bf03e6f54e1668cfe661fd2d5c61683b49094e58939d7413e70ce81e3f062",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-binding-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "f7bc650a213073b33fa634815f95c8ceb96096f05f6ca1f28a7e7864d6586360",
+      "compiledSha256": "7d47cd27038a5d84b54fd81edee9c4bfffd17d2546c3624863d0b4c187dede31",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-binding-identifier.js",
+      "scenario": "strict mode",
+      "contentsSha256": "10f6d07671a9a9aef49d9d0b345555de2b6f4265b9ea4808afaee94968f86a84",
+      "compiledSha256": "8e9c9ada39d685dd80f6db79b84caea9460d5cb63eb2bad3bff8b8128e9eb78f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-function-expression-binding-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "f7bf280737eaf8bebe86d02f5c422d238cc6a4ec2281c73118a3def5279716c5",
+      "compiledSha256": "72c70d32ce593fcda65b2f8df318046f1a77fec1f46828c167873892297297a1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-generator-declaration-binding-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "47abfbd27770c8403e4657a1814d41662a30069845de5bc9821b9355d7380c06",
+      "compiledSha256": "4c89b26ed8c1d6c172e20ca621972a1f8da965b4315e5847b6c4207d48d58350",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-identifier-in-nested-function.js",
+      "scenario": "default",
+      "contentsSha256": "e302d03e988322592a549ef7e79d747abe2e2b83526a8b5bb1fc949ea3ca1996",
+      "compiledSha256": "b3d2e3a45d561e4e7b49143a310d88798050b9ebd0a0c6c19ed266d249e1249c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-identifier-reference-escaped.js",
+      "scenario": "default",
+      "contentsSha256": "e5ffb5d052a7150a072939eadd3ccb35581e27d6a49e1fdd94b22a71a44742c3",
+      "compiledSha256": "71e2b8884449d9b772c62e2c5eb6f6b0ec2c29880abb192bfda4e90b8ed80f36",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-identifier-reference-escaped.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c7b5c2f6b1c6fa6027688fdad7e4c9901be3bc9cf53f6a67e2042fec43b3b429",
+      "compiledSha256": "0d41ec02780dfad4e2d2ff12ec18abb1dfb5883b989b9cb5bf54d59a8334e79a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-identifier-reference.js",
+      "scenario": "default",
+      "contentsSha256": "37905689df64b95c507e0cd7ecaef28a5635b47fc2c4b61f59650fd737c62d3d",
+      "compiledSha256": "e9541d142681753aac99a6609f9991c2f7c5dc6bc3fe0f6d1ef9ddd6e22fac50",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-identifier-reference.js",
+      "scenario": "strict mode",
+      "contentsSha256": "382731eb51ddfb760cc4fe7032a8568ab42ebae71c577c1e594b1357b6bf7401",
+      "compiledSha256": "8731c32f95609a4dbdd4bef925758507cb4ab1b85c9c320b25da32086cb9374b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-label-identifier-escaped.js",
+      "scenario": "default",
+      "contentsSha256": "9241f970b77804be789d710cd012777d3cbaf80abfd8ab015cbe79ba5792a999",
+      "compiledSha256": "8522fd3085eef53a0780f2f02f0fad815881aee75de3512578c47a2c01518adc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-label-identifier-escaped.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b133d1e0f1b5c329abe1b0d1ddb76068572b1cca5134bdcea46ae46de3c278d1",
+      "compiledSha256": "da165638b572a651b53596b6c66f54ba4ca51900f1ddc891f78e5cc5d147ad0c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-label-identifier.js",
+      "scenario": "default",
+      "contentsSha256": "8ce0a9d678a168f4969df5ee9545271037307a191835c3dd5a897e22e5d65fa5",
+      "compiledSha256": "fe913ebfa2f8125a9b7dd77f549950fa83b902018c77be2b6d2483eff03b7b92",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-label-identifier.js",
+      "scenario": "strict mode",
+      "contentsSha256": "32694fb487851cc6e39884cc0d7730c84c46ffe35afbd9166e479cb2047546d4",
+      "compiledSha256": "97409557b61d35920658e8ec0ee38d24da2ff854c2f1ea5cdaa0a8808969a130",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-literal-property-name.js",
+      "scenario": "default",
+      "contentsSha256": "884232d436fa3817bf0e3827af5de0b0d656463dbc2370a2a166e22c9932954a",
+      "compiledSha256": "7ad7668ef93c2ffe43a6e45c3f61d7cefe6a0a0002ed935a0d2354873225d602",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-literal-property-name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a4b4be8d6c42c9090da61f8556cfeaf90ac07be02d474fdce8cd697bda935a1b",
+      "compiledSha256": "83f7f6787f2fa8a3f5fe4660c5e13ffcc28b17ae5541f9d5c5dd3fa02c0befb7",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-logical-or-expression.js",
+      "scenario": "default",
+      "contentsSha256": "ecd975480c5b9706474acc418ad87a0977b434c57886ba6dd7ae5eaf08c44577",
+      "compiledSha256": "845f6a59dc8410d05ceca6a18fa141a6fef4384fcc2bf00bcb9034795a3c5ca7",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-logical-or-expression.js",
+      "scenario": "strict mode",
+      "contentsSha256": "92ddab9a8ca1b55d25b59d530e7e2c1141c4f1866e09742075270e902b997bfb",
+      "compiledSha256": "65debe40532af04f94d7b69304cf58d5b40a20490441d8518baf8300c5c2e5c8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-parameter.js",
+      "scenario": "default",
+      "contentsSha256": "acc81f3607685619b2c0a22fcd1a815f5ea617093363c953e84996c0f3f40d2c",
+      "compiledSha256": "358e1adbd130c02052c073f0daf3334ea25680f245ed25860e206fed678e9dea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-parameter.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5a7ba79a7e76e901f94ef8e8921ab2ef260e7c7acadb09fa679895e619c6ae70",
+      "compiledSha256": "56c1aaf3759a4eb3cdb9e96b28d44b959119ba01738926bbb4923dd6a22bc5ae",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier inside generator functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier inside generator functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-property-name.js",
+      "scenario": "default",
+      "contentsSha256": "439405d2e8090259d9fe613f7ab548cd43223f023514090b1cbc89b5f8aa7f13",
+      "compiledSha256": "2e8befc19193d829b7996788ec7ff2c829a4bb966a2c3595efaf047abc5da186",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-property-name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "692f825e732dcc684263e83bef321b53d40bfd70d9935be305c189ad9f2df408",
+      "compiledSha256": "c2ef620dd0b4d853eaa45a8727eb3ca53d0c3d46b6eb4884234efbc72e75a5f2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-statement.js",
+      "scenario": "default",
+      "contentsSha256": "bc57c4ff39e6616b71c127bdc263fa4496bf033464e72e189cb127a1f4124c3f",
+      "compiledSha256": "fe792cd4f871db3d0173c774f0d3621528da47aebd153a76b2ed4f9aa8935b09",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6d04aaafce908490a034f7827829ff3625e70acedf3ae28ff75171f0bfea021b",
+      "compiledSha256": "2584a52e3db4633291607404ec5958983b5a9b665bb81c110256f212ee81dc84",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-yield-operand.js",
+      "scenario": "default",
+      "contentsSha256": "421d6bc8ccba22f2f13cb210cae41b9171272ca2f911e838c81f6f9f9c13e3ca",
+      "compiledSha256": "5a4b819cc35bc588aa1a2dbae83920a24c9070e3773b4f1f4d6af306a06d06a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-as-yield-operand.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7640d36daedc5cfa41f565156f9f36932e15cd5cc3f14df2078773a1255ecee2",
+      "compiledSha256": "48767a9d99771249abebe8de3dba16fc97f7cf03c9c22393f0a91a75538bad6a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-identifier-non-strict.js",
+      "scenario": "default",
+      "contentsSha256": "671229e82aaec2950c79956f5b320163828c326cc7253a1bf6b82907a4d9b78d",
+      "compiledSha256": "c5a33fed74b25c00b332d19eb78664d4f0395340b222acf0c249ab17ea455017",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-identifier-spread-non-strict.js",
+      "scenario": "default",
+      "contentsSha256": "b2f4043319472d6d2dfbd6ce124143b10d478c7615ef9e81193c3ad93c1ee226",
+      "compiledSha256": "4b2239b991a661c9b9e89d589204005ecef68c6f45803c84a25b577fa52daa8e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-identifier-spread-strict.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5938565fff34413868ab28ff6be4a0a8476c30d70a897814dd9b9806bf0737d2",
+      "compiledSha256": "660eadbd625a4c3344a590d18caa5f35fcf4a0d5f88a068c8da4a36599ee6e70",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier in strict mode",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-identifier-strict.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2109c3b96188fbc84665635f07779eef587b436ec8734f8b3338da3162a131e8",
+      "compiledSha256": "e6870bd2f997f4c5eddc3f53656182f8677ec375c416026d3117f84f7421d17b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "yield cannot be used as an identifier in strict mode",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'yield cannot be used as an identifier in strict mode' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-newline.js",
+      "scenario": "default",
+      "contentsSha256": "94f16f6c3ea6f4bfc41e0a713da38809443f330bbb28f9456893c710c1823c0b",
+      "compiledSha256": "7f50c52721f9ace64ab362173e6df791d4770cf960d831f7ef7d27719fc8a55a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-newline.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5b69bed813b848172416b255feaa06489a7c0e55a582bac15c38fb98d4650ea6",
+      "compiledSha256": "86f484833dd504ce85469de66dfdacdf8ae06ef16955ddafc0b40af16c05faf3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-spread-arr-multiple.js",
+      "scenario": "default",
+      "contentsSha256": "9264c1ad84f3afb04fbe19fddaf2580c60f743645cb5f093d526a9b93661adbb",
+      "compiledSha256": "2ef624ef20c0621e83766b37ec66e16767203c8441876ee0720bc4ef0887f9b5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-spread-arr-multiple.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8b3405ed0cb864fb4adb2b96280ff7163f8fba356c794a3cc49d3e2175f12b8d",
+      "compiledSha256": "e67cef7eb9bb78d473e9763f43dc6a4b4a0d872abab31916c32df1da1efe2c1d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-spread-arr-single.js",
+      "scenario": "default",
+      "contentsSha256": "4d201692c6048e0a3c47a6e5bdba4c5ba4ac0fde6aad72fec06a078671695732",
+      "compiledSha256": "785a4dbbac55af0b7115ec4a7cbcade687b15d1f9f068c766764edead0d9fae2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-spread-arr-single.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4e0a85a2a934ad260c2c581f7502c81fca1963be3f0b8d442b19d140824c18e9",
+      "compiledSha256": "1a7eca547bcf3dfc9d89bf7b232a0e275262ddbd29f2439c1c7d1c4a626d19b4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-spread-obj.js",
+      "scenario": "default",
+      "contentsSha256": "4f0f141c9d4b8edd40f7b7812024229f15163d4b8dc35adbfdd2b6b6e32b6334",
+      "compiledSha256": "1d8cb1579d69685c2473cf2e11f51b322af7bde0893a1d50da50fe832232044e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-spread-obj.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c2ed51db3708830c43d9e60ea761e3f18ed1b36d0d3c783c7557153b79af77ad",
+      "compiledSha256": "5485cc4f074b83535e0e3b196712f323e7c10f6667c2824ed7c124b851e49fae",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-star-after-newline.js",
+      "scenario": "default",
+      "contentsSha256": "aa68791520f69d6c674795a765fa518273fbbcd87fafe4cb4880762934953789",
+      "compiledSha256": "d30cae16debb3547f2924b63ab7ac68229876fca0e09f02dd1ec3e6e78d12368",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-star-after-newline.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5601e822a7d4b4c73c8f0c1595a3cb221e5aa9b0654b42e1f6b11a0d5a95f897",
+      "compiledSha256": "adfd27e7abe943e72553d3602ca632d4e41c62eae806310b2305d51341562d23",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-star-before-newline.js",
+      "scenario": "default",
+      "contentsSha256": "41af585a519f57362bbd296b64188e2b05406b1fe732dac94077d66a35455a1d",
+      "compiledSha256": "df7094afab7811a07762a8fcbf47a4f611b9fa149e21c9bbb7e0b05ab47e8bff",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-star-before-newline.js",
+      "scenario": "strict mode",
+      "contentsSha256": "52d746d2675349821a91556019a4a61e9f17eb9acb06ce8093ea4400666909e5",
+      "compiledSha256": "ce7044fefee0573ce9d91837180faccf2f7974676dd673a5ffb288da11cb3ce4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-weak-binding.js",
+      "scenario": "default",
+      "contentsSha256": "8c9529af7aa101ca2dd98c13a56785e6494dfc70b39e3fd778ed44584a7e3e9c",
+      "compiledSha256": "34563e24faf9c030afc3113963dec07b86d83b391c26fd0a45ae126c8f4eeaa8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/generators/yield-weak-binding.js",
+      "scenario": "strict mode",
+      "contentsSha256": "52c3eb0ee828dfb3a782fa065b53312af72d26de9f7f22b1aa811728d7640eac",
+      "compiledSha256": "42129af053ac97a93eda7da2aa4c3402399ba70cbaf8dcf9a920ccb9b1f718f0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -102,7 +102,7 @@ export const getBuildIdentity = async (): Promise<EngineBuildIdentity> => {
     upstreamBundle: publishedBundleSha256,
     upstreamHarness: harnessSha256,
   };
-  for (const name of ["scripts", "patches", "vendor"])
+  for (const name of ["scripts", "patches", "vendor", "extensions"])
     Object.assign(inputs, await getFileHashes(join(engineDirectory, name), `${name}/`));
   for (const name of (await readdir(engineDirectory)).filter(
     (name) => name.endsWith(".ts") || name.endsWith(".json"),
@@ -117,6 +117,12 @@ export const getBuildIdentity = async (): Promise<EngineBuildIdentity> => {
     "@babel/core",
     "@babel/plugin-proposal-decorators",
     "@babel/preset-typescript",
+    "@babel/types",
+    "@babel/plugin-transform-parameters",
+    "@babel/plugin-transform-destructuring",
+    "@babel/plugin-transform-for-of",
+    "@babel/plugin-transform-block-scoping",
+    "@babel/plugin-transform-regenerator",
     "@rollup/plugin-commonjs",
     "@rollup/plugin-json",
     "@rollup/plugin-node-resolve",
@@ -166,7 +172,13 @@ export const readBuildManifest = async (
     !isHashRecord(value.outputs)
   )
     throw new EngineBuildError("Invalid engine build manifest");
-  for (const name of ["engine.mjs", "engine.mjs.map", "declaration/index.d.mts", "LICENSE"])
+  for (const name of [
+    "engine.mjs",
+    "engine.mjs.map",
+    "declaration/index.d.mts",
+    "LICENSE",
+    "CONTROL-LICENSE",
+  ])
     if (!(name in value.outputs))
       throw new EngineBuildError(`Missing engine build artifact: ${name}`);
   return {

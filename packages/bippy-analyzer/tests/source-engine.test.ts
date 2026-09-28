@@ -136,6 +136,31 @@ it("preserves abrupt hook completions and does not evaluate the remaining operan
   }
 });
 
+it("runs the CLI without a launcher child that could outlive harness termination", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "bippy-cli-process-"));
+  try {
+    const filename = join(directory, "processes.txt");
+    const preload = `import { appendFileSync } from 'node:fs'; appendFileSync(${JSON.stringify(filename)}, process.pid + '\\n');`;
+    const result = execFileSync(
+      join(engineDirectory, "scripts/cli.ts"),
+      ["--no-inspect", "--eval", "console.log(3)"],
+      {
+        encoding: "utf8",
+        timeout: 10000,
+        env: {
+          ...process.env,
+          NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=data:text/javascript,${encodeURIComponent(preload)}`,
+        },
+      },
+    );
+    expect(result).toBe("3\n");
+    const processes = new Set((await readFile(filename, "utf8")).trim().split("\n"));
+    expect(processes.size).toBe(1);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 it("accepts module flags before other CLI arguments", () => {
   const result = execFileSync(
     join(engineDirectory, "scripts/cli.ts"),

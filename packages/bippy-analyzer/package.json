@@ -18,7 +18,13 @@
   "devDependencies": {
     "@babel/core": "8.0.1",
     "@babel/plugin-proposal-decorators": "8.0.2",
+    "@babel/plugin-transform-block-scoping": "8.0.5",
+    "@babel/plugin-transform-destructuring": "8.0.5",
+    "@babel/plugin-transform-for-of": "8.0.1",
+    "@babel/plugin-transform-parameters": "8.0.5",
+    "@babel/plugin-transform-regenerator": "8.0.6",
     "@babel/preset-typescript": "8.0.1",
+    "@babel/types": "8.0.6",
     "@rollup/plugin-commonjs": "29.0.2",
     "@rollup/plugin-json": "6.1.0",
     "@rollup/plugin-node-resolve": "16.0.3",

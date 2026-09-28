@@ -43,6 +43,11 @@ const build = async (): Promise<void> => {
     await mkdir(sourceDirectory, { recursive: true });
     await mkdir(stagingDirectory, { recursive: true });
     await cp(join(upstreamDirectory, "src"), join(sourceDirectory, "src"), { recursive: true });
+    await cp(
+      join(engineDirectory, "extensions"),
+      join(sourceDirectory, "src/host-defined/control"),
+      { recursive: true },
+    );
     await mkdir(join(sourceDirectory, "lib"));
     await cp(
       join(upstreamDirectory, "lib/test262-harness.json"),
@@ -59,6 +64,7 @@ const build = async (): Promise<void> => {
       "object-checkpoint.patch",
       "declarative-roots.patch",
       "binding-checkpoint.patch",
+      "control-machine.patch",
     ])
       execFileSync(
         "git",
@@ -79,6 +85,10 @@ const build = async (): Promise<void> => {
     });
     await buildBundle(sourceDirectory, stagingDirectory);
     await cp(join(engineDirectory, "vendor/LICENSE"), join(stagingDirectory, "LICENSE"));
+    await cp(
+      join(engineDirectory, "extensions/LICENSE"),
+      join(stagingDirectory, "CONTROL-LICENSE"),
+    );
     const manifest: EngineBuildManifest = {
       format: 1,
       ...identity,

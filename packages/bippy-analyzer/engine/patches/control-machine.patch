@@ -1,0 +1,10 @@
+diff --git a/src/index.mts b/src/index.mts
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -1,0 +1,6 @@
++export {
++  captureControl, measureSynchronousExecution,
++  type ControlCheckpoint, type ContinuationStateOwner, type ContinuationStateRoots,
++} from './host-defined/control/execution-machine.mts';
++export { getNativeCaptures, type CapturedBinding, type CaptureManifest } from './host-defined/control/native-captures.mts';
++

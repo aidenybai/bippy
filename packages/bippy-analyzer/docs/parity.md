@@ -25,7 +25,7 @@ pnpm --filter bippy-analyzer test --run
 pnpm --filter bippy-analyzer typecheck
 ```
 
-The current local suite passes **821 tests across 17 files**, using at most two workers. The [preceding Linux analyzer job](https://github.com/aidenybai/bippy/actions/runs/36441682230/job/108993490477) passed 805 tests and the unchanged 74-variant smoke. That workflow’s check job failed on `engine/scripts/build.ts` indentation. The current root check passes after correcting it. The combined binding-checkpoint increment needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
+The current local suite passes **890 tests across 21 files**, using at most two workers. [Linux CI](https://github.com/aidenybai/bippy/actions/runs/36445049262) passed all jobs for the preceding binding-checkpoint revision, including 821 analyzer tests and the 74-variant smoke. The control-continuation increment needs its own Linux confirmation. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
 
 - All 144 ordered pairs from 12 selected scalar literals for each of 23 binary/control operators. These produce 3,312 guarded expression templates and 13,248 Boolean witness runs per reference engine.
 - 192 generated cases from three fixed seeds, containing 160 distinct expressions. Each uses three declared Boolean inputs and checks all eight assignments, for 1,536 additional witness runs per reference engine.
@@ -93,6 +93,14 @@ Both published and source-built engines pass the additional 152 WeakRef/Finaliza
 The [combined checkpoint contract](state-checkpoints.md) adds selected declarative/function bindings to ordinary-object restoration. Sixteen tests cover closure aliases, separate parameter/body records, temporal dead zones, constant assignment, cell identity, declaration rollback, ownership, GC roots, and validation before restoration. Branch observations compare with V8 and published engine262 in both visitation orders.
 
 These tests restore selected state between separately executed scripts. They do not clone a continuation or render symbolic React trees. Module state, excluded internal collections, unselected mutations, jobs, and host effects remain unsupported. Relocated builds match engine SHA-256 `6d0119e78de339d6a4033e92a705035c67842ddfa05459223ac24646abe4a68a`.
+
+## Engine control continuations
+
+The [control extension](control-continuations.md) lowers engine algorithm generators into explicit resumable frames. Sixty-eight control tests cover native completion behavior, capture metadata, rejected state, poisoning, and actual engine resumption with selected object/binding state. The fixture-specific owner restores the execution-context stack and verifies both branch orders without prefix replay.
+
+This is not a general state owner or a symbolic React fork. A further CLI test checks direct, single-process execution so harness termination cannot leave a launcher child running. Supplied Boolean witnesses remain concrete. Numeric/string domains, transitive ownership, internal collections, jobs, and guarded React output remain unfinished.
+
+Relocated builds match engine SHA-256 `cf0fd5f77326b740c6d0da56739e39ad9c770eb9e2a4b195a2430f3dd7980662`. The local smoke passes 74/74. The historical selection retains 301/306 verdicts, but its three tail-call cases now time out instead of overflowing the native stack. No timeout or selection changed. The two Promise failures remain. Raw diagnostics are retained separately.
 
 ## Acceptance for later stages
 
