@@ -49,7 +49,12 @@ const build = async (): Promise<void> => {
       join(sourceDirectory, "lib/test262-harness.json"),
     );
     const repositoryDirectory = resolve(engineDirectory, "../../..");
-    for (const name of ["evaluation-hook.patch", "typecheck.patch", "string-substr.patch"])
+    for (const name of [
+      "evaluation-hook.patch",
+      "typecheck.patch",
+      "string-substr.patch",
+      "simple-parameters.patch",
+    ])
       execFileSync(
         "git",
         [

@@ -1,0 +1,25 @@
+diff --git a/src/runtime-semantics/FunctionDeclarationInstantiation.mts b/src/runtime-semantics/FunctionDeclarationInstantiation.mts
+index 1c066c8..7e17344 100644
+--- a/src/runtime-semantics/FunctionDeclarationInstantiation.mts
++++ b/src/runtime-semantics/FunctionDeclarationInstantiation.mts
+@@ -15,0 +16 @@ import {
++  BindingInitialization,
+@@ -162,2 +162,0 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+-  // 24. Let iteratorRecord be CreateListIteratorRecord(argumentsList).
+-  const iteratorRecord = CreateListIteratorRecord(argumentsList.values());
+@@ -173 +172,14 @@ export function* FunctionDeclarationInstantiation(func: ECMAScriptFunctionObject
+-  Q(yield* IteratorBindingInitialization_FormalParameters(formals, iteratorRecord, usedEnv));
++  if (
++    simpleParameterList
++    && !surroundingAgent.hostDefinedOptions.onDebugger
++    && !surroundingAgent.breakpointsByFunction.has(surroundingAgent.intrinsic('%GeneratorFunction.prototype.prototype.next%'))
++  ) {
++    for (const [index, parameter] of formals.entries()) {
++      Assert(parameter.type === 'SingleNameBinding' && !parameter.Initializer);
++      Q(yield* BindingInitialization(parameter.BindingIdentifier, argumentsList[index] ?? Value.undefined, usedEnv));
++    }
++  } else {
++    // 24. Let iteratorRecord be CreateListIteratorRecord(argumentsList).
++    const iteratorRecord = CreateListIteratorRecord(argumentsList.values());
++    Q(yield* IteratorBindingInitialization_FormalParameters(formals, iteratorRecord, usedEnv));
++  }
