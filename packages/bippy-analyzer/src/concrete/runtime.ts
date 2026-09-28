@@ -43,7 +43,7 @@ export class ConcreteRuntime {
   private isDisposed = false;
   private failure: RuntimeFailure | undefined;
   private nextTimer = 0;
-  private readonly timers = new Set<number>();
+  private readonly timers = new Map<number, Value[]>();
 
   constructor(
     private readonly engine: SymbolicEngine,
@@ -106,26 +106,27 @@ export class ConcreteRuntime {
             throw new ConcreteRuntimeError("Only numeric zero-delay timers are supported");
           this.countJob();
           const handle = ++this.nextTimer;
-          this.timers.add(handle);
+          const capturedValues = [callback, ...args.map((value) => value ?? api.Value.undefined)];
+          this.timers.set(handle, capturedValues);
           this.agent.eventLoop.enqueue("timers", {
             queueName: "Timers",
             callerRealm: this.realm,
             callerScriptOrModule: api.GetActiveScriptOrModule(),
-            job: () =>
-              this.timers.delete(handle)
-                ? api.Call(
-                    callback,
-                    api.Value.undefined,
-                    args.map((value) => value ?? api.Value.undefined),
-                  )
-                : api.GetValue(api.Value.undefined),
+            capturedValues,
+            job: () => {
+              if (!this.timers.delete(handle)) return api.GetValue(api.Value.undefined);
+              const [scheduledCallback = api.Value.undefined, ...scheduledArguments] =
+                capturedValues;
+              capturedValues.length = 0;
+              return api.Call(scheduledCallback, api.Value.undefined, scheduledArguments);
+            },
           });
           return api.Value(handle);
         });
         install("clearTimeout", ([handle]) => {
           if (handle && handle !== api.Value.undefined && handle.type !== "Number")
             throw new ConcreteRuntimeError("Only numeric timer handles are supported");
-          if (handle?.type === "Number") this.timers.delete(handle.value);
+          if (handle?.type === "Number") this.cancelTimer(handle.value);
           return api.Value.undefined;
         });
         install("queueMicrotask", ([callback]) => {
@@ -135,6 +136,7 @@ export class ConcreteRuntime {
             queueName: "Microtasks",
             callerRealm: this.realm,
             callerScriptOrModule: api.GetActiveScriptOrModule(),
+            capturedValues: [callback],
             job: () => api.Call(callback, api.Value.undefined, []),
           });
           return api.Value.undefined;
@@ -174,6 +176,12 @@ export class ConcreteRuntime {
       }
     });
   }
+
+  private cancelTimer = (handle: number): void => {
+    const capturedValues = this.timers.get(handle);
+    if (capturedValues) capturedValues.length = 0;
+    this.timers.delete(handle);
+  };
 
   private countJob = (): void => {
     if (++this.jobs > this.maxJobs)
@@ -222,7 +230,7 @@ export class ConcreteRuntime {
 
   dispose = (): void => {
     this.isDisposed = true;
-    this.timers.clear();
+    for (const handle of this.timers.keys()) this.cancelTimer(handle);
   };
 }
 

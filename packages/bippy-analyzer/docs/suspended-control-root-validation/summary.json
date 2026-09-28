@@ -75,7 +75,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "failed at 0a13888b: 1207 units pass, smoke 72/74; see ci-failure.json",
   "files": {
     "engine/patches/suspended-control-roots.patch": "f7f0fe6f2633b3f66ba0a8c056cb3070a9cb2d53949e40c93069555570f75dc2",
     "engine/scripts/build.ts": "8ac9b46a29c65de83a1989e40e00fc3642de6e9c25dfdd22480109cd02a847fa",

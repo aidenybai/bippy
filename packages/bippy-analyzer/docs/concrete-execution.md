@@ -28,7 +28,7 @@ try {
 
 The runtime restores the previous surrounding agent after each operation, including failures. Ordinary guest exceptions remain `ConcreteGuestError` objects with their original engine value in `.value`. `toJSON()` returns diagnostic strings and the engine value tag, without traversing the guest heap or invoking guest getters. The message and guest stack use engine262's cached creation-time diagnostics when available. Later changes to a guest error's properties do not update those cached strings. Raw values are no longer attached as `.cause`, which caused diagnostic formatters to traverse realm and syntax graphs. Host failures and exhausted budgets prevent further execution in that runtime.
 
-`dispose()` prevents further execution and cancels pending timer handles. It does not execute application cleanup, flush jobs, or unmount React. Perform those operations explicitly before disposal. No native timers, network requests, or filesystem handles belong to this runtime.
+`dispose()` prevents further execution and cancels pending timer handles. Cancellation and disposal release those timers' [declared callback/argument roots](host-job-roots.md). Explicit microtasks also declare their callback roots. This does not establish complete Promise, diagnostic-value, or external-driver GC coverage. It does not execute application cleanup, flush jobs, or unmount React. Perform those operations explicitly before disposal. No native timers, network requests, or filesystem handles belong to this runtime.
 
 ## Executable module artifacts
 

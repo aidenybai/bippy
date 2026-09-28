@@ -1,0 +1,34 @@
+{
+  "externalDriver": {
+    "source": "var reference, retained; function create(){const target={value:7};reference=new WeakRef(target);return target;} function pause(){debugger;} retained=[create(),pause()];",
+    "observation": "JSON.stringify([reference.deref() !== undefined, retained[0].value])",
+    "engine": [false, 7],
+    "usesAgentEvaluate": false,
+    "fixed": false
+  },
+  "timer": {
+    "source": "var reference, seen; (()=>{const target={value:7};reference=new WeakRef(target);setTimeout(()=>{seen=target.value;},0);})();",
+    "observation": "JSON.stringify([reference.deref() !== undefined, seen])",
+    "engine": [true, 7],
+    "native": [true, 7],
+    "nativeHost": "Explicit retained callback queue, not browser timer scheduling parity",
+    "fixed": true
+  },
+  "promise": {
+    "source": "var reference, seen, fulfill; var promise = new Promise(resolve => { fulfill = resolve; }); (() => { const target = { value: 7 }; reference = new WeakRef(target); promise.then(() => { seen = target.value; }); })();",
+    "observation": "JSON.stringify([reference.deref() !== undefined, seen])",
+    "engine": [false, 7],
+    "native": [true, 7],
+    "fixed": false
+  },
+  "drivers": [
+    {
+      "sha256": "b44b9fef2eecd915f3203def7c1ed7ecbefab8fa9f3be9e75ae8472ea53eeb19",
+      "source": "import { getSymbolicEngine } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/src/symbolic/load-engine.ts';\nimport { createConcreteRuntime } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/src/concrete/runtime.ts';\nimport { getNativeGcObservation } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/tests/helpers/native-gc.ts';\nconst main = async () => {\n  const { api } = await getSymbolicEngine();\n  const previous = api.surroundingAgent;\n  const agent = new api.Agent({ startEventLoop: false, onDebugger: () => {} });\n  api.setSurroundingAgent(agent);\n  const source = `var reference, retained; function create(){const target={value:7};reference=new WeakRef(target);return target;} function pause(){debugger;} retained=[create(),pause()];`;\n  let externalDriver: unknown;\n  try {\n    const realm = new api.ManagedRealm();\n    const compiled = api.EnsureCompletion(realm.compileScript(source));\n    if (compiled.Type !== 'normal') throw new Error('Expected compiled script');\n    const iterator = api.ScriptEvaluation(compiled.Value);\n    let step = iterator.next();\n    while (!step.done && step.value.suspend !== 'debugger') step = iterator.next({resume:'debugger',value:undefined});\n    if (step.done) throw new Error('Expected debugger suspension');\n    agent.AgentRecord.KeptAlive.clear();\n    api.gc();\n    const completed = api.EnsureCompletion(api.skipDebugger(iterator));\n    if (completed.Type !== 'normal') throw new Error('Expected resumed completion');\n    const observation = 'JSON.stringify([reference.deref() !== undefined, retained[0].value])';\n    const result = api.EnsureCompletion(realm.evaluateScriptSkipDebugger(observation));\n    if (result.Value.type !== 'String') throw new Error('Expected observation');\n    externalDriver = { source, observation, engine: JSON.parse(result.Value.stringValue()), usesAgentEvaluate: false, fixed: false };\n  } finally { api.setSurroundingAgent(previous); }\n  const runtime = await createConcreteRuntime();\n  const timerSource = `var reference, seen; (()=>{const target={value:7};reference=new WeakRef(target);setTimeout(()=>{seen=target.value;},0);})();`;\n  let timer: unknown;\n  try {\n    runtime.evaluate(timerSource);\n    api.setSurroundingAgent(runtime.agent);\n    const pop = runtime.realm.pushTopContext();\n    try { runtime.agent.AgentRecord.KeptAlive.clear(); api.gc(); }\n    finally { pop?.(); api.setSurroundingAgent(previous); }\n    runtime.drainJobs();\n    const observation = 'JSON.stringify([reference.deref() !== undefined, seen])';\n    const nativeSetup = `const pending=[]; const setTimeout=callback=>pending.push(callback); ${timerSource}`;\n    const nativeObservation = `(pending.shift()(), ${observation})`;\n    timer = { source: timerSource, observation, engine: JSON.parse(runtime.readString(observation)), native: JSON.parse(getNativeGcObservation(nativeSetup, nativeObservation)), nativeHost: 'Explicit retained callback queue, not browser timer scheduling parity', fixed: true };\n  } finally { runtime.dispose(); api.setSurroundingAgent(previous); }\n  console.log(JSON.stringify({ externalDriver, timer }, null, 2));\n};\nvoid main();\n"
+    },
+    {
+      "sha256": "86d58b06d6f76200d0c8b5fec70ea29ac9beaa9f1a53e9579aa94418b44a2b39",
+      "source": "import { getSymbolicEngine } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/src/symbolic/load-engine.ts';\nimport { createConcreteRuntime } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/src/concrete/runtime.ts';\nimport { getNativeGcObservation } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/tests/helpers/native-gc.ts';\nconst main = async () => {\n  const { api } = await getSymbolicEngine();\n  const previous = api.surroundingAgent;\n  const runtime = await createConcreteRuntime();\n  const source = `var reference, seen, fulfill; var promise = new Promise(resolve => { fulfill = resolve; }); (() => { const target = { value: 7 }; reference = new WeakRef(target); promise.then(() => { seen = target.value; }); })();`;\n  const observation = 'JSON.stringify([reference.deref() !== undefined, seen])';\n  try {\n    runtime.evaluate(source);\n    api.setSurroundingAgent(runtime.agent);\n    const pop = runtime.realm.pushTopContext();\n    try { runtime.agent.AgentRecord.KeptAlive.clear(); api.gc(); }\n    finally { pop?.(); api.setSurroundingAgent(previous); }\n    runtime.evaluate('fulfill()');\n    runtime.drainJobs();\n    console.log(JSON.stringify({ source, observation, engine: JSON.parse(runtime.readString(observation)), native: JSON.parse(getNativeGcObservation(source, `(fulfill(), await promise, ${observation})`)), fixed: false }, null, 2));\n  } finally { runtime.dispose(); api.setSurroundingAgent(previous); }\n};\nvoid main();\n"
+    }
+  ]
+}

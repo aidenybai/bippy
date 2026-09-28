@@ -1,0 +1,182 @@
+{
+  "scope": "engine262-declared-host-job-roots-v1",
+  "symbolicReactComplete": false,
+  "completeJobRoots": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "15d0f9a0459edd4f027e6dc8a717e171096b3de1d4c27a298495cdb7e0f3d34d",
+  "implementation": [
+    "Optional trusted Job.capturedValues guest references",
+    "Existing basic/by-type queues and deferred/web-like/Node-like event-loop marking",
+    "Realm job contexts and shallow copies share HostCapturedValues list",
+    "Nonempty realmless captures reject before callback; absent/empty remain compatible",
+    "Concrete timer lists clear on start/cancel/dispose; explicit microtasks declare callbacks"
+  ],
+  "newPublicExport": "Existing upstream ByTypeJobQueue implementation, not a replacement queue",
+  "regressions": {
+    "initialCases": 13,
+    "initialPrepatchFailures": 13,
+    "patchedCases": 21,
+    "independentV8CallbackQueueObservations": 6,
+    "queuePaths": ["basic", "by-type", "microtask", "web", "node"],
+    "cancellationAndRelease": true
+  },
+  "units": {
+    "passed": 1228,
+    "total": 1228,
+    "files": 32
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 749,
+      "passed": 745,
+      "exitCode": 1
+    },
+    {
+      "name": "published",
+      "total": 749,
+      "passed": 745,
+      "exitCode": 1
+    }
+  ],
+  "selection": [
+    ".test262/test/built-ins/WeakMap/**/*.js",
+    ".test262/test/built-ins/WeakSet/**/*.js",
+    ".test262/test/built-ins/WeakRef/**/*.js",
+    ".test262/test/built-ins/FinalizationRegistry/**/*.js",
+    ".test262/test/built-ins/Promise/prototype/then/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "identicalFailureDiagnostics": true,
+  "failures": [
+    {
+      "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-fulfilled-next-abrupt.js",
+      "scenario": "default",
+      "rawResult": {
+        "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+        "stdout": "",
+        "error": {
+          "name": "Unhandled",
+          "message": "promise rejection: Error",
+          "stack": [
+            {
+              "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+              "fileName": "Unhandled",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-fulfilled-next-abrupt.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+        "stdout": "",
+        "error": {
+          "name": "Unhandled",
+          "message": "promise rejection: Error",
+          "stack": [
+            {
+              "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+              "fileName": "Unhandled",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-rejected-next-abrupt.js",
+      "scenario": "default",
+      "rawResult": {
+        "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+        "stdout": "",
+        "error": {
+          "name": "Unhandled",
+          "message": "promise rejection: Error",
+          "stack": [
+            {
+              "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+              "fileName": "Unhandled",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-rejected-next-abrupt.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+        "stdout": "",
+        "error": {
+          "name": "Unhandled",
+          "message": "promise rejection: Error",
+          "stack": [
+            {
+              "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+              "fileName": "Unhandled",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "fixedTimerProbe": {
+    "source": "var reference, seen; (()=>{const target={value:7};reference=new WeakRef(target);setTimeout(()=>{seen=target.value;},0);})();",
+    "observation": "JSON.stringify([reference.deref() !== undefined, seen])",
+    "engine": [true, 7],
+    "native": [true, 7],
+    "nativeHost": "Explicit retained callback queue, not browser timer scheduling parity",
+    "fixed": true
+  },
+  "remainingExternalDriverProbe": {
+    "source": "var reference, retained; function create(){const target={value:7};reference=new WeakRef(target);return target;} function pause(){debugger;} retained=[create(),pause()];",
+    "observation": "JSON.stringify([reference.deref() !== undefined, retained[0].value])",
+    "engine": [false, 7],
+    "usesAgentEvaluate": false,
+    "fixed": false
+  },
+  "remainingPromiseProbe": {
+    "source": "var reference, seen, fulfill; var promise = new Promise(resolve => { fulfill = resolve; }); (() => { const target = { value: 7 }; reference = new WeakRef(target); promise.then(() => { seen = target.value; }); })();",
+    "observation": "JSON.stringify([reference.deref() !== undefined, seen])",
+    "engine": [false, 7],
+    "native": [true, 7],
+    "fixed": false
+  },
+  "boundaries": [
+    "Trusted same-Agent host annotations, not closure discovery or validation of arbitrary graphs",
+    "Intrinsic Promise jobs/reaction/capability records are not automatically annotated",
+    "No diagnostic-host-value/module/saved-state root completeness",
+    "No whole-state owner, branch rollback, or guarded React reports"
+  ],
+  "retainedChecks": [
+    "Thirteen-case prepatch failure",
+    "Initial typecheck lacked public ByTypeJobQueue export; existing class now exported",
+    "Four matching Promise-then failures in source and published engines"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/host-job-roots.patch": "122e7cb90ec13ebaed6b4addeb49bc240f2c1e32c7c30db98014ad4be1b4aeb6",
+    "engine/scripts/build.ts": "4b9b7a80b758cbdba3d006b68ed6d04efe3deb013ae3784c3c7a4d3bb54f923d",
+    "src/concrete/runtime.ts": "8e2fefa3cf6960f2c0662c9f707c3ed4d4941aaab7feabd500f9b516a2cb50cb",
+    "tests/gc-host-jobs.test.ts": "b20d0f27812cdbc8d9c7fe073f572ee0d8a9ccf7853880305f65f60b17934230",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "docs/engine-state-inventory.md": "35653e8067136ce1e017b68b20a780715d54b75df8656260444672975f21d880"
+  }
+}

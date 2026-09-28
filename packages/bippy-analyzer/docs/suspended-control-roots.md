@@ -28,16 +28,16 @@ The original [partial-array failure](control-validation/gc-control-gap.json) now
 
 The full local suite passes 1,207 tests across thirty-one files. The unchanged smoke passes 74/74. The combined weak-collection and generator selection passes 815/815 in both source-built and published engines. Inputs, compiled hashes, and verdicts match. These selections do not prove complete GC coverage.
 
-Engine SHA-256: `1c969c89415c808d77f8a1af13de37c0708b030dc0eaff3a16cf637af87e6140`. No test timeout, worker limit, or smoke selection changed. Linux validation for this increment remains pending.
+Engine SHA-256: `1c969c89415c808d77f8a1af13de37c0708b030dc0eaff3a16cf637af87e6140`. No test timeout, worker limit, or smoke selection changed. [Linux CI at `0a13888b`](suspended-control-root-validation/ci-failure.json) passes 1,207 units but fails both numeric smoke variants at the unchanged timeout. Other CI jobs, E2E, and publish pass.
 
 ## Reproduced boundaries
 
-Two current counterexamples still report `[false,7]`: a weak target disappears while later execution still reads its object value.
+At `0a13888b`, two counterexamples still reported `[false,7]`: a weak target disappeared while later execution still read its object value.
 
 1. An external caller drives `ScriptEvaluation` directly to a debugger pause without `Agent.evaluate`. A partial array held only by that unregistered evaluator is not an Agent root.
 2. A concrete runtime timer holds a guest callback whose environment retains an object. Explicit host GC clears the weak reference before `drainJobs`, although the callback later reads the object. An independent V8 callback-queue model retains it and reports `[true,7]`. That model checks closure liveness, not browser timer scheduling.
 
-No automatic collection policy was added. These probes invoke host GC explicitly. The host-callback counterexample requires native capture/root integration, not a change to React's effects.
+No automatic collection policy was added. These probes invoke host GC explicitly. The later [declared host-job roots](host-job-roots.md) fix the timer counterexample without changing React's effects. The unregistered external driver and a pending-Promise reaction probe still fail.
 
 Saved control snapshots also require an owner that retains their saved engine values. The control checkpoint closure alone is not an Agent root. This increment does not establish complete saved-state, native-capture, Promise, module, nested-driver, or host-resource coverage.
 

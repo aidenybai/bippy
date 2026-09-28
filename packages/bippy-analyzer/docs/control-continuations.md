@@ -52,7 +52,7 @@ The [original mismatch](control-validation/delegate-next-gap.json) read a foreig
 
 ## Remaining ownership gaps
 
-There is no general engine-state owner. Selected object/binding checkpoints do not cover all internal collections, execution records, module state, jobs, host resources, or external effects. The historical [GC comparison](control-validation/gc-control-gap.json) lost a weak target held by a suspended generator’s partial array result. [Suspended-evaluator marking](suspended-control-roots.md) now fixes that case. Unregistered external evaluators and host timer callbacks still lack roots, with current failing probes. Direct closure metadata alone does not solve transitive ownership.
+There is no general engine-state owner. Selected object/binding checkpoints do not cover all internal collections, execution records, module state, jobs, host resources, or external effects. The historical [GC comparison](control-validation/gc-control-gap.json) lost a weak target held by a suspended generator’s partial array result. [Suspended-evaluator marking](suspended-control-roots.md) now fixes that case. [Declared host-job roots](host-job-roots.md) also fix timer callback liveness. Unregistered external evaluators and pending-Promise reactions still fail current probes. Direct closure metadata alone does not solve transitive ownership.
 
 Native analyzer generator hooks are foreign continuations unless they are lowered through this machinery. Abstract decisions must not enter an opaque delegate and then pretend it is forkable. Unsupported coercions and operations must fail visibly rather than treating abstract values as ordinary truthy objects.
 

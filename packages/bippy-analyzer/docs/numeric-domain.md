@@ -35,7 +35,7 @@ These limits are not a sandbox. They do not bound parsing, concrete execution, a
 
 React’s `basicStateReducer` calls update functions, then `updateReducerImpl` compares state with `Object.is`. The inspected React revision is `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, in `packages/react-reconciler/src/ReactFiberHooks.js`. The native `Object.is` path now emits opaque Boolean predicates. A [single-path React fixture](number-predicates.md) drives both bailout choices without replacing React hooks.
 
-The numeric domain does not provide a decision driver, constraint solver, whole-state ownership, broader numeric comparisons, string domains, or guarded React output. A separate [engine Boolean protocol](boolean-decisions.md) now suspends `if` statements and supports a selected-state guarded fixture. It is not yet integrated with `evaluateSymbolicExpression` or the concrete runtime’s public contract. [Suspended-evaluator marking](suspended-control-roots.md) fixes the original generator probe. External drivers and host callbacks still have root gaps.
+The numeric domain does not provide a decision driver, constraint solver, whole-state ownership, broader numeric comparisons, string domains, or guarded React output. A separate [engine Boolean protocol](boolean-decisions.md) now suspends `if` statements and supports a selected-state guarded fixture. It is not yet integrated with `evaluateSymbolicExpression` or the concrete runtime’s public contract. [Suspended-evaluator marking](suspended-control-roots.md) fixes the original generator probe. External drivers and pending-Promise reactions still have root gaps. [Declared host-job roots](host-job-roots.md) now retain timer and explicit microtask captures.
 
 ## Verification
 
