@@ -29,10 +29,13 @@ export type {
 export { createNumericDomain } from "./symbolic/numeric-domain.js";
 export type {
   NumericConstantExpression,
+  NumericConstantPredicate,
   NumericDomain,
   NumericDomainOptions,
   NumericExpression,
   NumericInputExpression,
   NumericOperationExpression,
+  NumericPredicate,
+  NumericSameValuePredicate,
 } from "./symbolic/numeric-domain.js";
 export { SymbolicEngineError } from "./symbolic/errors.js";

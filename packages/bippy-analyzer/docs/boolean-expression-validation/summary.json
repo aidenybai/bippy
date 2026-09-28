@@ -69,7 +69,7 @@
   "workers": 2,
   "test262TimeoutMilliseconds": 10000,
   "unitTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "8ca810a5 passes 1132 units but fails the unchanged smoke at 72/74; see ci-failure.json",
   "rejectedChecks": [
     "Initial pre-patch suite interrupted by a 45-second outer command timeout; no completed comparison. Process inspection found no test survivor.",
     "Follow-up baseline name filter matched no tests (104 skipped); not validation.",

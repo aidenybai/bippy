@@ -70,6 +70,7 @@ const build = async (): Promise<void> => {
       "abstract-number.patch",
       "boolean-decision.patch",
       "boolean-expressions.patch",
+      "number-predicates.patch",
     ])
       execFileSync(
         "git",

@@ -147,7 +147,7 @@ it.each([
   "amount ** 2",
   "amount & 1",
   "amount === amount",
-  "Object.is(amount + 1, amount)",
+  "new Set([amount]).has(amount)",
   "amount < 0",
   "Boolean(amount)",
   "String(amount)",

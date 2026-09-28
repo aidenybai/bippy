@@ -26,10 +26,10 @@ The current local suite passes 1,132 tests across 26 files. The unchanged local 
 
 ## React and remaining limits
 
-The inspected React revision is `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`. `ReactFiberHooks.js` uses `if (!is(newState, hook.memoizedState))` when applying reducer updates. Negation now has a decision boundary, but an unknown numeric `Object.is` result still lacks source-backed predicate support.
+The inspected React revision is `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`. `ReactFiberHooks.js` uses `if (!is(newState, hook.memoizedState))` when applying reducer updates. Negation has a decision boundary, and [Number SameValue predicates](number-predicates.md) now cover the native `Object.is` path.
 
 `ReactChildFiber.js` classifies children by type before creating text, element, and other fibers. Boolean children reach the empty-child result. Preserving the Boolean type and original logical operand matters for these paths. Source inspection is not symbolic React rendering evidence.
 
 Direct abstract operands still reject in logical assignments, loop truth tests, conversions, boxing, and same-type equality. A supported subexpression can first resolve a decision, such as the negation in `while (!enabled)`; this does not provide general loop exploration. `??` keeps its existing type-based nullish behavior and does not decide Boolean truthiness. Calling an opaque Boolean can still fail while engine262 formats the non-callable diagnostic. The analyzer does not invent a concrete payload to complete that message.
 
-There is no general engine-state owner, numeric predicate domain, package explorer, guarded React tree, or symbolic demo. The suspended-control GC gap remains open. These additions do not establish whole-state isolation or complete the [React checklist](symbolic-react-status.md).
+Number SameValue predicates now exist. There is still no general engine-state owner, constraint solver, package explorer, guarded React tree, or symbolic demo. The suspended-control GC gap remains open. These additions do not establish whole-state isolation or complete the [React checklist](symbolic-react-status.md).

@@ -14,9 +14,10 @@ The engine still executes JavaScript evaluation, calls, coercion, mutation, and 
 
 The package exports `createNumericDomain(options?)`. It returns:
 
-- `agentOptions`, containing the engine callback. Install it when creating a source-built engine Agent.
+- `agentOptions`, containing the arithmetic and SameValue predicate callbacks. Install it when creating a source-built engine Agent.
 - `createInput(name)`, returning an abstract Number. Repeated names within the same domain return the same input.
 - `getExpression(value)`, returning an immutable expression. Foreign abstract Numbers are rejected.
+- `getPredicate(value)`, returning a constant Boolean or [Number SameValue predicate](number-predicates.md).
 
 The expression kinds are `input`, `constant`, and `operation`. Operation nodes retain operand order and parentheses. Constants use strings to preserve `NaN`, infinities, and negative zero. Shared abstract operands reuse expression objects, forming a directed acyclic graph.
 
@@ -24,17 +25,17 @@ The domain records `(amount + 1) + 10` as nested additions. It does not replace 
 
 ## Boundaries and failure handling
 
-Only addition, subtraction, and unary negation have abstract operation support. Comparisons, numeric truth tests, string conversion, multiplication, division, remainder, and other concrete reads remain unsupported. Supported type-preserving operations, such as unary plus and `Number.prototype.valueOf()`, retain the abstract Number.
+Only addition, subtraction, and unary negation have abstract operation support. `Object.is` now supports [abstract Number predicates](number-predicates.md). Other comparisons, numeric truth tests, string conversion, multiplication, division, remainder, and other concrete reads remain unsupported. Supported type-preserving operations, such as unary plus and `Number.prototype.valueOf()`, retain the abstract Number.
 
 An unsupported read or domain budget failure aborts engine evaluation with a host error. It is not a catchable guest exception. Discard that Agent and its pending execution. The low-level domain API does not repair execution contexts or automatically poison an externally managed Agent. The tests discard their fixture Agent after these failures.
 
-`maxInputs` defaults to 128. `maxOperations` defaults to 10,000. Both must be positive safe integers. Input names contain 1 to 128 UTF-16 units. Options are copied before asynchronous engine loading. The operation budget counts recorded abstract operations across the domain’s lifetime and does not reset during branch restoration. It does not count ordinary concrete arithmetic.
+`maxInputs` defaults to 128. `maxOperations` defaults to 10,000. `maxPredicates` defaults to 10,000 distinct predicates. All three budgets must be positive safe integers. Input names contain 1 to 128 UTF-16 units. Options are copied before asynchronous engine loading. The operation budget counts recorded abstract operations across the domain’s lifetime and does not reset during branch restoration. It does not count ordinary concrete arithmetic.
 
 These limits are not a sandbox. They do not bound parsing, concrete execution, allocations, or report serialization. Expanding shared expression graphs into JSON can produce exponentially larger output. A report writer needs separate work and output limits.
 
-React’s `basicStateReducer` calls update functions, then `updateReducerImpl` compares state with `Object.is`. The inspected React revision is `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, in `packages/react-reconciler/src/ReactFiberHooks.js`. Unknown numeric comparisons still abort here, so additive terms alone cannot execute this symbolic hook path.
+React’s `basicStateReducer` calls update functions, then `updateReducerImpl` compares state with `Object.is`. The inspected React revision is `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, in `packages/react-reconciler/src/ReactFiberHooks.js`. The native `Object.is` path now emits opaque Boolean predicates. A [single-path React fixture](number-predicates.md) drives both bailout choices without replacing React hooks.
 
-The numeric domain does not provide unknown Boolean decisions, path guards, whole-state ownership, numeric comparisons, string domains, or guarded React output. A separate [engine Boolean protocol](boolean-decisions.md) now suspends `if` statements and supports a selected-state guarded fixture. It is not yet integrated with `evaluateSymbolicExpression` or the concrete runtime’s public contract. The suspended-generator GC gap remains open.
+The numeric domain does not provide a decision driver, constraint solver, whole-state ownership, broader numeric comparisons, string domains, or guarded React output. A separate [engine Boolean protocol](boolean-decisions.md) now suspends `if` statements and supports a selected-state guarded fixture. It is not yet integrated with `evaluateSymbolicExpression` or the concrete runtime’s public contract. The suspended-generator GC gap remains open.
 
 ## Verification
 

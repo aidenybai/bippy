@@ -10,6 +10,8 @@ The separate [numeric domain](docs/numeric-domain.md) represents unbounded Numbe
 
 An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements on unknown inputs. [Expression decisions](docs/boolean-expressions.md) also support `?:`, `&&`, `||`, and `!`. Selected-state tests fork guarded outcomes with unbounded numbers and no prefix replay. General state ownership and a package-level symbolic explorer remain missing.
 
+[Number SameValue predicates](docs/number-predicates.md) now drive actual React state bailouts with unknown Numbers. These are separate single-path runs, not isolated React branches. The [engine reuse audit](docs/engine-reuse-audit.md) defines what stays in engine262 and React, and why upstream preview/context copying cannot replace rollback.
+
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
 ## Run
