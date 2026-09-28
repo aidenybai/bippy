@@ -60,7 +60,7 @@
     "samples": [3627.196458, 3610.353709, 3610.6187500000005],
     "median": 3610.6187500000005
   },
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "all CI jobs pass at e83442bc: 937 units and 74/74 smoke; see ci-success.json",
   "files": {
     "engine/extensions/execution-machine.mts": "24e529cb30bb4cd62f35f563097c0f143a50560bd8191f1dfb63fae642210d6b",
     "engine/scripts/lower-generators.ts": "129a3a0e0d7141c5b8c625fb7a9c51a64782fa5e9d78114b5eec6b1e51d328c4",

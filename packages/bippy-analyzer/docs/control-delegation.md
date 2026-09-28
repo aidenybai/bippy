@@ -31,4 +31,6 @@ Engine SHA-256: `2e2c6b1a145c6b32e47432c493852ae35bb770f6a45be9636ef2e61cb5b1f3c
 
 The earlier docs-only revision `a3bc42e7` passes Linux CI, including 917 units and 74/74 smoke variants. Its engine bytes match `964f06c4`, whose AMD runner timed out on both numeric variants. Both results remain recorded. One passing run does not establish stable timing across runners.
 
-Linux validation for these delegation corrections is pending. No test selection, timeout, or worker limit changed. These corrections do not establish complete generator conformance, general state ownership, control-local GC roots, or symbolic React execution.
+[Linux CI at `e83442bc`](control-delegation-validation/ci-success.json) passes all jobs, including 937 units and 74/74 smoke. No test selection, timeout, or worker limit changed. These corrections do not establish complete generator conformance, general state ownership, control-local GC roots, or symbolic React execution.
+
+A [separate GC comparison](control-validation/gc-control-gap.json) still fails. Engine262 clears a weak reference to an object held by a suspended generator’s partial array result. Resuming still returns that object. Independent V8 retains the weak target across a task boundary and explicit collection. The missing control-root traversal remains open.
