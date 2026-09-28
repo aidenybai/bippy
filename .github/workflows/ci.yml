@@ -29,7 +29,16 @@ jobs:
       - run: pnpm --filter bippy-analyzer test:engine-build
       - run: pnpm --filter bippy-analyzer typecheck
       - run: pnpm --filter bippy-analyzer test
-      - run: pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'
+      - id: test262
+        run: pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'
+      - if: failure() && steps.test262.outcome == 'failure'
+        run: pnpm --filter bippy-analyzer exec tsx scripts/profile-substr.ts
+      - if: failure() && steps.test262.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyzer-substr-profiles
+          path: packages/bippy-analyzer/engine/.build/profiles/
+          include-hidden-files: true
 
   checks:
     name: ${{ matrix.task }}

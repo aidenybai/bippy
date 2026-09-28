@@ -27,4 +27,8 @@ The local unit suite passes 746 tests across 13 files, including the existing V8
 
 The 559-variant parameter/arguments selection retains 557 passes and the same two legacy caller failures. The comparison reuses the preceding `fc53c74f` receipt at `../parameter-binding-validation/after.json`. The new `after.json` retains candidate diagnostics. Input hashes, compiled hashes, and verdicts match. The historical selection remains 301/306 with the same five failures. These failing commands still exit with code 1.
 
+CI at `866abbf4` passed all 746 analyzer tests but still passed only 73/74 Test262 variants. The default numeric case timed out again. `latest-ci-failure.json` preserves that result. Neither local optimization has resolved the CI failure.
+
+After a failed Test262 gate, CI now runs `scripts/profile-substr.ts` and uploads its CPU profiles. This separate diagnostic runs one process at a time, with a 30-second diagnostic limit. It compares default V8 settings with `--no-maglev`. It does not change the gate’s selection, two-worker setting, 10-second timeout, or failing status. Profile results are not conformance verdicts.
+
 Full JavaScript, browser, and symbolic React parity remain unverified.
