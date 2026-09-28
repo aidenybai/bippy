@@ -45,4 +45,6 @@ A selected-state fixture explores both SameValue outcomes in both branch orders.
 
 [Validation receipts](number-predicate-validation/summary.json) retain tests, source hashes, concrete conformance comparisons, and failed checks. [The reuse audit](engine-reuse-audit.md) explains why debugger preview and `ExecutionContext.copy()` cannot replace branch rollback.
 
+[Linux CI at `0dbcb0e9`](number-predicate-validation/ci-failure.json) passes all 1,182 unit tests but fails both numeric `substr` smoke variants at the unchanged timeout. The other CI jobs pass. Separate iOS E2E reports 42 failures after a shared setup hook exceeds 300,000 ms; its twelve source tests pass. Web and Android E2E pass. The retained logs do not establish the iOS setup failure's cause.
+
 General ownership, complete suspended-control GC roots, broader predicates, symbolic strings, guarded React reports, repeated-state families, and the integrated demo remain incomplete. A constraint solver and guarded exploration API are still missing. The [completion checklist](symbolic-react-status.md) remains open.

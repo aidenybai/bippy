@@ -1,0 +1,86 @@
+{
+  "scope": "engine262-ephemeron-propagation-v1",
+  "symbolicReactComplete": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "da89eb16aa62b210bd0a705b63a7e45c9390ca0e8b2faa7e28ec02d48dd3d2cd",
+  "implementation": "Revisit unresolved weak entries until engine marking stops changing; no new roots or owner",
+  "complexity": "Repeated scans can require quadratic work; existing evaluation budgets do not bound native GC work",
+  "regressions": {
+    "total": 14,
+    "prepatchPassed": 8,
+    "prepatchFailed": 6,
+    "patchedPassed": 14,
+    "independentV8InitialObservations": 12,
+    "engineOnlyChecks": ["strong-root removal", "deleted entry", "finalization scheduling"]
+  },
+  "units": {
+    "passed": 1196,
+    "total": 1196,
+    "files": 30
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 603,
+      "passed": 603,
+      "exitCode": 0
+    },
+    {
+      "name": "published",
+      "total": 603,
+      "passed": 603,
+      "exitCode": 0
+    }
+  ],
+  "selection": [
+    ".test262/test/built-ins/WeakMap/**/*.js",
+    ".test262/test/built-ins/WeakSet/**/*.js",
+    ".test262/test/built-ins/WeakRef/**/*.js",
+    ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "publishedProbe": {
+    "source": "var root = {}, collection, reference; (() => { const middle = {}, target = {}; collection = new WeakMap([[middle, target], [root, middle]]); reference = new WeakRef(target); })();",
+    "observation": "JSON.stringify([reference.deref() !== undefined, collection.get(collection.get(root)) === reference.deref()])",
+    "published": [false, false],
+    "native": [true, true]
+  },
+  "controlGap": {
+    "source": "var reference;function create(){const target={value:7};reference=new WeakRef(target);return target;}function* run(){return [create(),yield 'pause'];}var iterator=run();iterator.next();",
+    "engine": [false, 7],
+    "native": [true, 7],
+    "fixed": false
+  },
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "retainedFailures": [
+    "Initial fixture arrow body returned undefined instead of an object; corrected before the collector baseline",
+    "Corrected prepatch regressions: six failures",
+    "Initial root check rejected Markdown table formatting; focused formatting followed by passing root check"
+  ],
+  "boundaries": [
+    "No complete live/suspended/saved control roots",
+    "No native capture/job/module root completeness",
+    "No general engine-state owner or shared-prefix React forks",
+    "No general guarded React report, repeated-state families, or integrated symbolic demo"
+  ],
+  "files": {
+    "engine/patches/ephemeron-roots.patch": "9486add3d5d08d52866bc6ed6f743b7d428c4a25d7fd52255b6c41f1ee01b476",
+    "engine/scripts/build.ts": "310ef050076b46d1f8eacbdd575c481d5a70b3ce528a445376296f586747aaa5",
+    "tests/gc-ephemerons.test.ts": "03e4f6dc5ff0af5308099f8b29e949fd8ac706d2943a5ec5e64cf515ac04f4fd",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "engine/extensions/execution-machine.mts": "24e529cb30bb4cd62f35f563097c0f143a50560bd8191f1dfb63fae642210d6b",
+    "engine/extensions/native-captures.mts": "e7fff23089ed8b9c46f47a7f716ea73ae1322c520bb872dbf2e858da8e80d98f",
+    "docs/engine-state-inventory.md": "d793bee61123d527caf7e12709dbcddcfa9ca41c269670c7e1c5c204e164b49c"
+  }
+}

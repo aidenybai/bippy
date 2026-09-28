@@ -39,7 +39,7 @@ The published-engine test suspends a real guest generator, copies its context, a
 
 `Agent.mark`, `ExecutionContext.mark`, and `api.gc` provide existing roots and traversal conventions. They are useful implementation inputs, but they do not describe all state that must rewind. The retained [suspended-control counterexample](control-validation/gc-control-gap.json) also proves that current reachability marking is incomplete.
 
-Do not infer a complete state owner from this traversal. Native captures, internal collections, execution records, jobs, module state, and host resources still need explicit treatment or rejection.
+Do not infer a complete state owner from this traversal. The [engine state inventory](engine-state-inventory.md) identifies existing records, capture conventions, and missing roots. Native captures, internal collections, execution records, jobs, module state, and host resources still need explicit treatment or rejection. The [weak-entry propagation correction](ephemeron-roots.md) fixes order-dependent marking, not continuation roots or rollback.
 
 ## Size and maintenance cost
 

@@ -143,7 +143,7 @@
   "workers": 2,
   "test262TimeoutMilliseconds": 10000,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "failed at 0dbcb0e9: 1182 units pass, smoke 72/74; see ci-failure.json",
   "rejectedChecks": [
     "A negated identity assertion attempted to inspect an opaque Boolean payload. Compare native identity as a Boolean instead; the retained failure is test formatting, not signed-zero cache equivalence.",
     "React Test Renderer runtime exports version but its installed type declaration does not. The fixture now uses an in-property check, matching the existing fixture pattern."
