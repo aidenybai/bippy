@@ -97,6 +97,12 @@ importers:
       '@types/node':
         specifier: 25.5.2
         version: 25.5.2
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      '@types/react-test-renderer':
+        specifier: 19.3.0
+        version: 19.3.0
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260404.1
         version: 7.0.0-dev.20260404.1
@@ -109,6 +115,12 @@ importers:
       jsbd:
         specifier: 0.0.11
         version: 0.0.11
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-test-renderer:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
       rollup:
         specifier: 4.60.1
         version: 4.60.1

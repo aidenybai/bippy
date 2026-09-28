@@ -38,7 +38,11 @@ Declared inputs remain unknown Booleans. Internal object tokens identify finite 
 
 The separate resolver work includes native build observation, corpus comparisons, a build CLI, and a Vite + React demo. That work is not integrated into this PR. A matching build graph does not prove module execution or React rendering.
 
-Still missing here: application loading, a concrete React runner, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.
+- [x] Execute supplied native-built JavaScript chunks through engine262's module loader and cache, including dynamic imports and top-level await.
+- [x] Run actual React and React Test Renderer inside engine262. Nine scenarios compare trees, state, lifecycle traces, and cleanup against V8.
+- [x] Add explicit zero-delay task-host boundaries, job/step budgets, failure retention, and runtime isolation checks. The complete local suite passes 705 tests across eight files.
+
+These are [concrete execution increments](docs/concrete-execution.md), not completion of the browser runtime stages. Still missing here: full application-loader integration, React DOM/browser execution, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.
 
 ## Rules for every stage
 
@@ -117,8 +121,8 @@ Completion check: CI builds the extension from pinned sources. Concrete executio
 
 - [ ] Integrate the existing resolver/build work without discarding its independent native comparisons or historical failures.
 - [ ] Preserve caller root, entrypoint, workspace ownership, native configuration, conditions, transforms, and virtual-module identities. Keep configuration execution opt-in.
-- [ ] Select and document the first executable artifact path, such as native built entry chunks. Do not replace native transforms with an analyzer-specific compiler.
-- [ ] Connect executable artifacts to engine262's module APIs. Test live bindings, cycles, re-exports, module singletons, dynamic imports, and top-level await where supported.
+- [x] Select and document the first executable artifact path: caller-supplied native-built JavaScript chunks with canonical URLs. Native Vite owns fixture transforms; no analyzer compiler is used.
+- [x] Connect supplied JavaScript artifacts to engine262's module APIs. Test live bindings, cycles, re-exports, module singletons, dynamic imports, and top-level await. Native-built entry and dynamic chunks also match an independent Node process.
 - [ ] Support the selected output formats deliberately. Handle CommonJS and bundler runtimes through their actual semantics rather than guessed export objects.
 - [ ] Resolve runtime chunk URLs and transformed asset references. Distinguish JavaScript modules, styles, data, assets, workers, and external boundaries.
 - [ ] Preserve source maps, module/export identity, original diagnostics, and cleanup failures.
@@ -127,6 +131,8 @@ Completion check: CI builds the extension from pinned sources. Concrete executio
 Completion check: a native-built module fixture and its dynamic chunk execute inside engine262. Native execution independently confirms imports, exports, errors, and module identity. Connect the full demo after its host APIs exist in stage 3. Browser bootstrap loading remains distinct from component-entry loading.
 
 ## 3. Run concrete React through engine262
+
+The first check uses React's own test renderer, not a custom host configuration. It covers selected concrete state, effects, keys, class errors, stores, transitions, and development Strict Mode behavior. The DOM/browser tasks below remain open.
 
 - [ ] Load actual React, its JSX runtime, React DOM, and the application into the same managed execution system. Prevent duplicate React instances.
 - [ ] Provide an explicit DOM/browser adapter. Choose and pin its implementation; distinguish a DOM emulator from a real browser.

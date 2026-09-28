@@ -1,8 +1,10 @@
 # bippy-analyzer
 
-A pinned engine262 dependency, its Test262 harness, and symbolic evaluation of pure scalar expressions. The source API returns guarded results for unknown Boolean inputs, including arithmetic, comparisons, bitwise operations, shifts, and short-circuit expressions. React rendering and mutable symbolic state are not supported yet.
+A source-built engine262 runtime, its Test262 harness, and symbolic evaluation of pure scalar expressions. The symbolic API returns guarded results for unknown Boolean inputs. The separate concrete runtime executes scripts and supplied JavaScript modules, with selected real React tests. React DOM and mutable symbolic state remain unsupported.
 
 See the [roadmap](ROADMAP.md) for the remaining implementation stages and completion checks. See [symbolic evaluation](docs/symbolic-evaluation.md) for the API, engine extension, PR #115 reuse, and current limits. The symbolic evaluator uses a [source-built engine262 extension](engine/README.md). The installed dependency and its CLI remain unmodified. The [parity report](docs/parity.md) states what the current tests establish and what remains unsupported.
+
+See [concrete execution](docs/concrete-execution.md) for `createConcreteRuntime()`, executable artifact loading, the restricted task host, and native React comparisons. React's own test renderer supplies the renderer used by these checks. They do not establish browser or symbolic React parity.
 
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
@@ -18,7 +20,7 @@ pnpm --filter bippy-analyzer typecheck
 pnpm --filter bippy-analyzer test:test262 '.test262/test/built-ins/Object/is/*.js'
 ```
 
-`test` and `typecheck` build the extended engine first. Tests check the engine API, realm isolation, guarded results, rejection boundaries, concrete substitutions, source maps, and artifact integrity. Scalar tests compare with both unmodified engine262 and native Node execution. They also check guard partitions and syntax-node evaluation order.
+`test` and `typecheck` build the extended engine first. Tests check the engine API, realm isolation, guarded results, rejection boundaries, concrete substitutions, source maps, and artifact integrity. Scalar tests compare with both unmodified engine262 and native Node execution. They also check guard partitions and syntax-node evaluation order. Concrete tests compare real React trees and lifecycle traces with V8, and native-built module execution with a Node subprocess.
 
 `test:engine-build` compares clean builds in different roots. `test:source-test262` uses the existing harness and published CLI with engine imports redirected to the built artifact. It accepts the same test paths as `test:test262` and does not hide failures.
 

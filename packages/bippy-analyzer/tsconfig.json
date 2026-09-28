@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
+    "jsx": "react-jsx",
     "noEmit": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
@@ -16,6 +17,7 @@
     "engine/scripts/**/*.ts",
     "scripts/**/*.ts",
     "tests/**/*.ts",
+    "tests/**/*.tsx",
     "vite.config.ts"
   ]
 }
