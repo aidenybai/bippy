@@ -5,6 +5,16 @@ import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { createNativeRuntime } from "./helpers/native-runtime.js";
 
 const programs = [
+  "function collect(first, second = arguments[0]) { return [first, second]; } return [collect(7), collect(8, 9)];",
+  "function collect(first, { [arguments[0]]: value } = { key: 13 }) { return value; } return collect('key');",
+  "function collect(first, second = eval('arg' + 'uments[0]')) { return [first, second]; } return collect(7);",
+  String.raw`function collect(value) { return arg\u0075ments[0]; } return collect(7);`,
+  String.raw`function collect(value) { return e\u0076al('arg' + 'uments[0]'); } return collect(7);`,
+  "function collect(value) { return () => eval('arg' + 'uments[0]'); } return collect(7)();",
+  "function collect(value) { 'use strict'; return eval('typeof arg' + 'uments'); } return collect(7);",
+  "function collect(run) { with ({ run }) { return run('typeof arg' + 'uments'); } } return collect(eval);",
+  "function collect(value) { if (value === 0) return () => value; const child = collect(value - 1); return () => [value, child()]; } return collect(3)();",
+  "function* collect(value) { yield value; yield value + 1; } return [...collect(7)];",
   "function collect(value) { const saved = arguments; value = 9; return [saved, () => value]; } const [saved, get] = collect(2); saved[0] = 7; return [saved[0], get()];",
   "function collect(value) { eval('value = 9'); return arguments; } const saved = collect(2); return [saved[0], Object.getOwnPropertyDescriptor(saved, '0').value];",
   "function collect(value) { Object.defineProperty(arguments, '0', { get() { return 8; } }); value = 9; return [value, arguments[0]]; } return collect(2);",
@@ -44,11 +54,26 @@ const getPublishedObservation = (source: string) => {
   }
 };
 
+const getOptimizedObservation = async (source: string) => {
+  const { api } = await getSymbolicEngine();
+  const previous = api.surroundingAgent;
+  api.setSurroundingAgent(new api.Agent({ startEventLoop: false, elideUnusedArguments: true }));
+  try {
+    const result = api.EnsureCompletion(new api.ManagedRealm().evaluateScriptSkipDebugger(source));
+    expect(result.Type).toBe("normal");
+    if (result.Value.type !== "String") throw new Error("Expected an optimized string observation");
+    return result.Value.value;
+  } finally {
+    api.setSurroundingAgent(previous);
+  }
+};
+
 it.each(programs)("preserves native and published parameter binding: %s", async (program) => {
   const source = `JSON.stringify((() => { ${program} })())`;
   const runtime = await createConcreteRuntime();
   try {
     const observation = runtime.readString(source);
+    expect(observation).toBe(await getOptimizedObservation(source));
     expect(observation).toBe(getPublishedObservation(source));
     expect(observation).toBe(createNativeRuntime().evaluate(source));
   } finally {
@@ -63,6 +88,7 @@ it.each([false, true])(
     const previous = api.surroundingAgent;
     const agent = new api.Agent({
       startEventLoop: false,
+      elideUnusedArguments: true,
       onDebugger: withDebugger ? () => {} : undefined,
     });
     api.setSurroundingAgent(agent);

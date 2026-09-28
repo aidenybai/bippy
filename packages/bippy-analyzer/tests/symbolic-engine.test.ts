@@ -450,7 +450,8 @@ describe("engine262 symbolic conditional evaluation", () => {
     expect(createHash("sha256").update(built).digest("hex")).toBe(engine.patchedSha256);
     expect(manifest.outputs["engine.mjs"]).toBe(engine.patchedSha256);
     expect(built).toContain("//# sourceMappingURL=engine.mjs.map");
-    expect(built.match(/hostDefinedOptions\.evaluateNode/g)).toHaveLength(1);
+    expect(built.match(/hostDefinedOptions\.evaluateNode/g)).toHaveLength(2);
+    expect(built.match(/hostDefinedOptions\.evaluateNode\?\.\(/g)).toHaveLength(1);
     expect(await readFile(filename, "utf8")).toBe(before);
   });
 });

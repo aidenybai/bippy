@@ -2,11 +2,11 @@
 import { registerHooks } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { outputDirectory, upstreamDirectory, verifyEngineBuild } from "../manifest.js";
+import { upstreamDirectory, verifyEngineBuild } from "../manifest.js";
 
 await verifyEngineBuild();
 const publishedEngine = pathToFileURL(join(upstreamDirectory, "lib/engine262.mjs")).href;
-const builtEngine = pathToFileURL(join(outputDirectory, "engine.mjs")).href;
+const builtEngine = new URL("./cli-api.ts", import.meta.url).href;
 registerHooks({
   resolve(specifier, context, nextResolve) {
     const resolved = nextResolve(specifier, context);

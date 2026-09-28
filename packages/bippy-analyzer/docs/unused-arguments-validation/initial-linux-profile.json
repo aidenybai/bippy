@@ -1,0 +1,76 @@
+{
+  "scope": "diagnostic-only-not-a-test262-verdict",
+  "node": "v26.10.0",
+  "versions": {
+    "node": "26.10.0",
+    "acorn": "8.18.0",
+    "ada": "4.0.0",
+    "amaro": "1.1.11",
+    "ares": "1.34.8",
+    "brotli": "1.2.0",
+    "cldr": "48.0",
+    "icu": "78.3",
+    "libffi": "3.8.0",
+    "lief": "0.17.0",
+    "llhttp": "9.4.3",
+    "merve": "1.2.2",
+    "modules": "147",
+    "napi": "10",
+    "nbytes": "0.1.4",
+    "ncrypto": "0.0.1",
+    "nghttp2": "1.70.0",
+    "nghttp3": "",
+    "ngtcp2": "",
+    "openssl": "3.5.8",
+    "simdjson": "4.6.11",
+    "simdutf": "7.7.0",
+    "sqlite": "3.53.4",
+    "tz": "2026c",
+    "undici": "8.10.2",
+    "unicode": "17.0",
+    "uv": "1.52.1",
+    "uvwasi": "0.0.23",
+    "v8": "14.6.202.34-node.34",
+    "zlib": "1.3.2.1-motley-285e94b",
+    "zstd": "1.5.7"
+  },
+  "platform": "linux",
+  "architecture": "x64",
+  "cpuModel": "AMD EPYC 7763 64-Core Processor",
+  "availableParallelism": 4,
+  "workers": 1,
+  "diagnosticTimeoutMilliseconds": 30000,
+  "sourceFiles": [
+    ".test262/harness/assert.js",
+    ".test262/harness/sta.js",
+    ".test262/test/annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js"
+  ],
+  "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+  "engineSha256": "56d555f298306c4c00042b2182e193f790d648242a339734e8a1b3a762f7cf01",
+  "results": [
+    {
+      "mode": {
+        "name": "default",
+        "flags": []
+      },
+      "profile": "default.cpuprofile",
+      "milliseconds": 11053.32191,
+      "status": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "mode": {
+        "name": "no-maglev",
+        "flags": ["--no-maglev"]
+      },
+      "profile": "no-maglev.cpuprofile",
+      "milliseconds": 11088.702906,
+      "status": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}
