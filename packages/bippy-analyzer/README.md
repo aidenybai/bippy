@@ -1,6 +1,8 @@
 # bippy-analyzer
 
-An unmodified, pinned engine262 dependency and the existing Test262 harness. No engine fork, patches, symbolic execution, or React integration yet.
+A pinned engine262 dependency, its Test262 harness, and symbolic evaluation of pure conditional expressions. The source API returns guarded results for unknown Boolean inputs. React rendering and mutable symbolic state are not supported yet.
+
+See [symbolic evaluation](docs/symbolic-evaluation.md) for the API, engine extension, PR #115 reuse, and current limits. The symbolic evaluator extends an integrity-checked copy of engine262. The installed dependency and its CLI remain unmodified.
 
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
@@ -15,7 +17,7 @@ pnpm --filter bippy-analyzer typecheck
 pnpm --filter bippy-analyzer test:test262 '.test262/test/built-ins/Object/is/*.js'
 ```
 
-`test` uses Vite+/Vitest to check the public engine API and realm isolation.
+`test` uses Vite+/Vitest to check the engine API, realm isolation, guarded results, rejection boundaries, and concrete substitutions against the unmodified engine.
 
 `test:test262` fetches and verifies the pinned suite, then invokes `test262-harness` against engine262's published CLI. Supply quoted test paths or globs relative to this package. Failures produce a nonzero exit code. The harness's default timeout is 10 seconds per variant.
 

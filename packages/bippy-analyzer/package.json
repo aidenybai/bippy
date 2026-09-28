@@ -2,6 +2,7 @@
   "name": "bippy-analyzer",
   "private": true,
   "type": "module",
+  "exports": "./src/index.ts",
   "scripts": {
     "test": "vp test",
     "setup:test262": "tsx scripts/setup-test262.ts",
