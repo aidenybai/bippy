@@ -34,10 +34,10 @@ A control checkpoint does not have an independent branch heap. Previously return
 
 ## Verification
 
-The control increments add 72 tests:
+The control increments add 92 tests:
 
-- `tests/control-machine.test.ts`: 23 native generator comparisons and 20,000 delegated frames without native stack recursion.
-- `tests/control-checkpoint.test.ts`: 26 capture, completion, identity, rejection, and poisoning checks, including an actual engine expression continuation.
+- `tests/control-machine.test.ts`: 42 native generator comparisons and 20,000 delegated frames without native stack recursion.
+- `tests/control-checkpoint.test.ts`: 27 capture, completion, identity, rejection, and poisoning checks, including an actual engine expression continuation.
 - `tests/native-captures.test.ts`: 18 metadata checks, including class-field/static-block receiver boundaries and outer receivers in computed keys.
 - `tests/engine-control-state.test.ts`: three checks for measured engine execution and selected state across resumed branches.
 - `tests/source-engine.test.ts`: one added check that the CLI executes in one process.
@@ -46,9 +46,9 @@ The selected-state fixture suspends actual `ScriptEvaluation` at `debugger`. It 
 
 This fixture verifies resumption without prefix replay. It does not declare unknown inputs or build a symbolic report. The native callback-array fixture is not an engine job-queue implementation.
 
-## Known control-protocol gap
+## Delegation protocol corrections
 
-A [native comparison](control-validation/delegate-next-gap.json) exposes an unfixed host-control mismatch: lowered `yield*` reads a foreign delegate's `next` getter on every resume, while native V8 caches it once. Three resumes read the getter three times rather than once. The existing generator comparisons do not establish full protocol parity. Engine262's separate guest iterator operations already cache `NextMethod`; this fixture does not demonstrate a guest generator failure.
+The [original mismatch](control-validation/delegate-next-gap.json) read a foreign delegate’s `next` getter three times over three resumes. The runtime now caches that method once and includes it in checkpoint state and owner roots. [Delegation comparisons](control-delegation.md) also verify result identity and getter timing, null abrupt methods, iterator validation, and direct method calls. Engine262’s separate guest iterator algorithms remain unchanged. These tests do not establish complete generator conformance.
 
 ## Remaining ownership gaps
 
@@ -68,8 +68,8 @@ The executable now starts `node --import tsx` directly. TypeScript loading still
 
 [Validation receipts](control-validation/summary.json) record source hashes, input comparisons, failures, corrected runs, and raw logs.
 
-[The first Linux run](control-validation/ci-failure.json) passed 889/890 tests. Its first checkpoint case exceeded the five-second unit timeout during cold loading. The Test262 step did not run; other CI jobs passed. Vitest had transformed the already-built engine inside the test process. The test configuration now loads that artifact directly through Node. A native module-namespace assertion fails with the old configuration and passes with the correction. All 890 tests pass locally after the change. No unit or Test262 timeout changed. [The next Linux run](control-validation/ci-smoke-failure.json) passes all 890 unit tests but fails the unchanged smoke at 72/74. Both numeric `substr` variants time out. Diagnostic profiling takes 14398.57 ms with default flags and 14943.93 ms without Maglev. These diagnostic runs do not change the failed gate result. [Control-runtime changes](control-performance.md) pass 909 Linux units but still time out on both numeric smoke variants. [Indexed internal lists](indexed-internal-lists.md) address the remaining helper overhead without changing the gate. Linux at `964f06c4` passes all 917 units but still fails both numeric smoke variants. Further performance work remains open.
+[The first Linux run](control-validation/ci-failure.json) passed 889/890 tests. Its first checkpoint case exceeded the five-second unit timeout during cold loading. The Test262 step did not run; other CI jobs passed. Vitest had transformed the already-built engine inside the test process. The test configuration now loads that artifact directly through Node. A native module-namespace assertion fails with the old configuration and passes with the correction. All 890 tests pass locally after the change. No unit or Test262 timeout changed. [The next Linux run](control-validation/ci-smoke-failure.json) passes all 890 unit tests but fails the unchanged smoke at 72/74. Both numeric `substr` variants time out. Diagnostic profiling takes 14398.57 ms with default flags and 14943.93 ms without Maglev. These diagnostic runs do not change the failed gate result. [Control-runtime changes](control-performance.md) pass 909 Linux units but still time out on both numeric smoke variants. [Indexed internal lists](indexed-internal-lists.md) address the remaining helper overhead without changing the gate. Linux at `964f06c4` passes all 917 units but still fails both numeric smoke variants. The docs-only revision `a3bc42e7` passes all CI jobs, including 917 units and 74/74 smoke, with identical engine bytes. Both results remain recorded. [Delegation corrections](control-delegation.md) have separate local evidence and await Linux confirmation.
 
 `engine/extensions/` is part of the build identity. The build checks its TypeScript, bundles it with engine262, and emits `CONTROL-LICENSE`. Completion dispatch retains Babel/Facebook MIT attribution. New direct Babel dependencies are exact versions, and unrelated lockfile resolutions remain unchanged.
 
-The full local suite passes 917 tests across 22 files, including separate collection-root checks. The unchanged smoke passes 74/74. The parameter/arguments selection retains 557/559 verdicts. The historical selection retains 301/306, but its three tail-call failures now time out rather than overflowing the native stack. No timeout changed. An additional 212 generator variants pass in both source-built and published engines, with identical input and compiled hashes. Relocated clean builds match engine SHA-256 `d0eba416803f0d343b0eff7c897c5bee2502b5cbe2c8283623d61a1577e5ce9f`.
+The full local suite passes 937 tests across 22 files, including separate collection-root checks. The unchanged smoke passes 74/74. The parameter/arguments selection retains 557/559 verdicts. The historical selection retains 301/306, but its three tail-call failures now time out rather than overflowing the native stack. No timeout changed. An additional 212 generator variants pass in both source-built and published engines, with identical input and compiled hashes. Relocated clean builds match engine SHA-256 `2e2c6b1a145c6b32e47432c493852ae35bb770f6a45be9636ef2e61cb5b1f3ce`.

@@ -57,7 +57,7 @@
   ],
   "medianBeforeMilliseconds": 3908.487792,
   "medianAfterMilliseconds": 3495.721625,
-  "linuxConfirmation": "failed: 917 units pass; numeric default and strict smoke variants time out (72/74); see ci-indexed-failure.json",
+  "linuxConfirmation": "mixed: 964f06c4 passes 917 units but times out on numeric smoke variants (72/74); docs-only a3bc42e7 passes all jobs, 917 units and 74/74 smoke with identical engine bytes; both CI receipts retained",
   "files": {
     "engine/patches/indexed-internal-lists.patch": "15e5d094d4ba8a8114e9bbfca0269c01da7dddd11a680afcb7afde0d1a82a378",
     "engine/scripts/build.ts": "bb5a92140575e76b765bf8ceec15d3c90996a1d9add4da8c772f455bb7442fd1",

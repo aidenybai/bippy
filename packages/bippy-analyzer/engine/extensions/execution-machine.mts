@@ -70,6 +70,7 @@ interface FrameState {
   operation: number;
   argument: unknown;
   delegate: object | undefined;
+  delegateNextMethod: unknown;
   method: ResumeMethod;
   receiver: unknown;
   captures: CaptureManifest;
@@ -134,7 +135,8 @@ export const captureControl = (
       const state = frame.captureControlState();
       states.push(state);
       controlOwnedObjects.push(frame, frame.l);
-      for (const value of [state.value, state.argument, state.receiver]) addValue(value);
+      for (const value of [state.value, state.argument, state.receiver, state.delegateNextMethod])
+        addValue(value);
       for (const key of Reflect.ownKeys(state.locals))
         addValue(Reflect.get(state.locals, key).value);
       for (const handler of state.handlers) addValue(handler.argument);
@@ -207,6 +209,7 @@ interface YieldStep {
 interface DelegateStep {
   kind: "delegate";
   iterator: object;
+  nextMethod: unknown;
   method: ResumeMethod;
   argument: unknown;
 }
@@ -224,6 +227,15 @@ let activeStack: ExecutionMachine[] | undefined;
 
 const isObject = (value: unknown): value is object =>
   (typeof value === "object" && value !== null) || typeof value === "function";
+
+export const getControlIterator = (value: unknown): object => {
+  if (value === null || value === undefined) throw new TypeError("Value is not iterable");
+  const method: unknown = Reflect.get(Object(value), Symbol.iterator, value);
+  if (typeof method !== "function") throw new TypeError("Value is not iterable");
+  const iterator: unknown = Reflect.apply(method, value, []);
+  if (!isObject(iterator)) throw new TypeError("Iterator is not an object");
+  return iterator;
+};
 
 export class ExecutionMachine
   implements IterableIterator<unknown, unknown, unknown>, MachineContext
@@ -244,6 +256,7 @@ export class ExecutionMachine
   private operation = NEXT;
   private argument: unknown;
   private delegate: object | undefined;
+  private delegateNextMethod: unknown;
   private method: ResumeMethod = "next";
   private checkpointFailure: Error | undefined;
 
@@ -295,6 +308,7 @@ export class ExecutionMachine
       operation: this.operation,
       argument: this.argument,
       delegate: this.delegate,
+      delegateNextMethod: this.delegateNextMethod,
       method: this.method,
       receiver: this.receiver,
       captures: this.captureBindings(),
@@ -318,6 +332,7 @@ export class ExecutionMachine
     this.operation = state.operation;
     this.argument = state.argument;
     this.delegate = state.delegate;
+    this.delegateNextMethod = state.delegateNextMethod;
     this.method = state.method;
   }
 
@@ -382,7 +397,9 @@ export class ExecutionMachine
     return this.a(FINISH, location);
   }
   d(iterator: object, location: number): unknown {
+    const nextMethod = isControlFrame(iterator) ? iterator.next : Reflect.get(iterator, "next");
     this.delegate = iterator;
+    this.delegateNextMethod = nextMethod;
     this.operation = NEXT;
     this.argument = undefined;
     this.n = location;
@@ -421,6 +438,7 @@ export class ExecutionMachine
         return {
           kind: "delegate",
           iterator: this.delegate,
+          nextMethod: this.delegateNextMethod,
           method: this.operation === NEXT ? "next" : this.method,
           argument: this.argument,
         };
@@ -440,6 +458,7 @@ export class ExecutionMachine
 
   receiveError(error: unknown): void {
     this.delegate = undefined;
+    this.delegateNextMethod = undefined;
     this.operation = THROW;
     this.argument = error;
     this.phase = "suspended";
@@ -449,11 +468,13 @@ export class ExecutionMachine
     this.argument = value;
     if (this.operation < RETURN) this.operation = NEXT;
     this.delegate = undefined;
+    this.delegateNextMethod = undefined;
     this.phase = "suspended";
   }
 
   missingMethod(method: ResumeMethod): void {
     this.delegate = undefined;
+    this.delegateNextMethod = undefined;
     if (method !== "return") {
       this.argument = new TypeError(`The iterator does not provide a '${method}' method`);
       this.operation = THROW;
@@ -498,13 +519,12 @@ const driveFrames = (stack: ExecutionMachine[]): IteratorResult<unknown> => {
     try {
       const iterator = step.iterator;
       const isOwned = isControlFrame(iterator);
-      const callback: unknown = isOwned
-        ? iterator[step.method]
-        : Reflect.get(iterator, step.method);
-      if (callback === undefined) {
+      const callback: unknown =
+        step.method === "next" ? step.nextMethod : Reflect.get(iterator, step.method);
+      if (callback === undefined || callback === null) {
         if (step.method === "throw") {
           const close: unknown = Reflect.get(step.iterator, "return");
-          if (close !== undefined) {
+          if (close !== undefined && close !== null) {
             if (typeof close !== "function") throw new TypeError("Iterator return is not callable");
             const closed: unknown = Reflect.apply(close, step.iterator, []);
             if (!isObject(closed)) throw new TypeError("Iterator result is not an object");
@@ -521,12 +541,11 @@ const driveFrames = (stack: ExecutionMachine[]): IteratorResult<unknown> => {
           const result: unknown = Reflect.apply(callback, step.iterator, [step.argument]);
           if (!isObject(result)) throw new TypeError("Iterator result is not an object");
           const done = Boolean(Reflect.get(result, "done"));
-          const value: unknown = Reflect.get(result, "value");
           if (!done) {
             for (const frame of stack) frame.suspend();
-            return { done: false, value };
+            return result as IteratorResult<unknown>;
           }
-          current.receiveValue(value);
+          current.receiveValue(Reflect.get(result, "value"));
         }
       }
     } catch (error) {

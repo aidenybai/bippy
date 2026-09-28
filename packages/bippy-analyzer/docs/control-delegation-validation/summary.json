@@ -1,0 +1,70 @@
+{
+  "scope": "synchronous-host-delegation-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "2e2c6b1a145c6b32e47432c493852ae35bb770f6a45be9636ef2e61cb5b1f3ce",
+  "units": {
+    "passed": 937,
+    "total": 937,
+    "files": 22
+  },
+  "addedNativeCases": 19,
+  "totalNativeCases": 42,
+  "addedCheckpointCases": 1,
+  "phasedBeforeFailures": {
+    "nextCaching": 3,
+    "forwardingAndNullMethods": 5,
+    "iteratorHelper": 4
+  },
+  "oracleCorrection": "Isolated V8 contexts prevent prototype mutation from contaminating later compiler work; the misleading failure is retained.",
+  "smoke": {
+    "passed": 74,
+    "total": 74,
+    "exitCode": 0
+  },
+  "historical": {
+    "passed": 301,
+    "total": 306,
+    "exitCode": 1
+  },
+  "interruptedRun": {
+    "accepted": false,
+    "reason": "130-second outer combined-command limit interrupted the historical selection after parameters completed",
+    "orphanEvaluatorPids": [79472, 79473],
+    "cleanup": "Working directories verified; exact PIDs killed with SIGKILL; historical selection rerun alone to completion."
+  },
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "selections": [
+    {
+      "name": "generators",
+      "total": 212,
+      "passed": 212,
+      "exitCode": 0,
+      "identicalInputCompiledHashesAndVerdicts": true
+    },
+    {
+      "name": "parameters",
+      "total": 559,
+      "passed": 557,
+      "exitCode": 1,
+      "identicalInputCompiledHashesAndVerdicts": true
+    }
+  ],
+  "benchmark": {
+    "node": "v26.4.0",
+    "engineSha256": "2e2c6b1a145c6b32e47432c493852ae35bb770f6a45be9636ef2e61cb5b1f3ce",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3627.196458, 3610.353709, 3610.6187500000005],
+    "median": 3610.6187500000005
+  },
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/extensions/execution-machine.mts": "24e529cb30bb4cd62f35f563097c0f143a50560bd8191f1dfb63fae642210d6b",
+    "engine/scripts/lower-generators.ts": "129a3a0e0d7141c5b8c625fb7a9c51a64782fa5e9d78114b5eec6b1e51d328c4",
+    "tests/control-machine.test.ts": "d3e5e012f2ac3b08a5da7bb4ac76f29c2b2dc9215666f0c0171d429c2c90c349",
+    "tests/control-checkpoint.test.ts": "31459a85c285c616cf3cbad84406223a665ab4b1998afc260c05769f6b60f79e"
+  }
+}

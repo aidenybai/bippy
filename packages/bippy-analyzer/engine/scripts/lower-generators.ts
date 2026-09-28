@@ -12,17 +12,25 @@ const require = createRequire(import.meta.url);
 
 const machineHelpers = (): PluginObject => {
   let helperIdentifier: syntax.Identifier | undefined;
+  let iteratorIdentifier: syntax.Identifier | undefined;
   let isUsed = false;
+  let isIteratorUsed = false;
   return {
     visitor: {},
     pre: (file) => {
       const identifier = file.scope.generateUidIdentifier("executionMachine");
       helperIdentifier = identifier;
+      const iterator = file.scope.generateUidIdentifier("getControlIterator");
+      iteratorIdentifier = iterator;
       const set: unknown = Reflect.get(file, "set");
       if (typeof set !== "function") throw new Error("Missing Babel helper hook");
       Reflect.apply(set, file, [
         "helperGenerator",
         (name: string) => {
+          if (name === "regeneratorValues") {
+            isIteratorUsed = true;
+            return syntax.cloneNode(iterator);
+          }
           if (name !== "regenerator") return undefined;
           isUsed = true;
           return syntax.cloneNode(identifier);
@@ -32,12 +40,14 @@ const machineHelpers = (): PluginObject => {
     post: (file) => {
       const identifier = helperIdentifier;
       if (!isUsed || !identifier) return;
+      const imports = [syntax.importSpecifier(identifier, syntax.identifier("executionMachine"))];
+      if (isIteratorUsed && iteratorIdentifier)
+        imports.push(
+          syntax.importSpecifier(iteratorIdentifier, syntax.identifier("getControlIterator")),
+        );
       file.path.unshiftContainer(
         "body",
-        syntax.importDeclaration(
-          [syntax.importSpecifier(identifier, syntax.identifier("executionMachine"))],
-          syntax.stringLiteral(controlSpecifier),
-        ),
+        syntax.importDeclaration(imports, syntax.stringLiteral(controlSpecifier)),
       );
       file.path.scope.crawl();
       file.path.traverse({

@@ -1,4 +1,5 @@
 import { expect, it } from "vite-plus/test";
+import { runInNewContext } from "node:vm";
 import { evaluateLowered } from "./helpers/control-fixture.js";
 
 interface MachineCase {
@@ -7,6 +8,101 @@ interface MachineCase {
 }
 
 const cases: MachineCase[] = [
+  {
+    name: "primitive iterable receiver and Unicode iteration",
+    source:
+      "const original=String.prototype[Symbol.iterator];const trace=[];Object.defineProperty(String.prototype,Symbol.iterator,{get(){trace.push(typeof this);return function(){trace.push(typeof this);return Reflect.apply(original,this,[]);};}});function* run(){yield*'a𝌆';}const result=[[...run()],trace];",
+  },
+  {
+    name: "invalid primitive iterables and iterator results",
+    source:
+      "function* run(value){try{return yield*value;}catch(error){return error.name;}}const result=[null,undefined,7,Symbol('value'),{[Symbol.iterator](){return 7;}}].map(value=>run(value).next());",
+  },
+  {
+    name: "next-only noniterable rejection",
+    source:
+      "function* run(){try{return yield*{next(){return {done:true,value:7};}};}catch(error){return error.name;}}const result=run().next();",
+  },
+  {
+    name: "legacy iterator noniterable rejection",
+    source:
+      "function* run(){try{return yield*{'@@iterator'(){return {next(){return {done:true,value:7};}};}};}catch(error){return error.name;}}const result=run().next();",
+  },
+  {
+    name: "array-like noniterable rejection",
+    source:
+      "function* run(){try{return yield*{0:7,length:1};}catch(error){return error.name;}}const result=run().next();",
+  },
+  {
+    name: "noncallable iterator method rejection",
+    source:
+      "function* run(){try{return yield*{[Symbol.iterator]:{call(){return {next(){return {done:true,value:7};}};}}};}catch(error){return error.name;}}const result=run().next();",
+  },
+  {
+    name: "iterator method call without consulting its call property",
+    source:
+      "const factory=()=>({next(){return {done:true,value:7};}});factory.call=()=>{throw Error('call property');};function* run(){try{return yield*{[Symbol.iterator]:factory};}catch(error){return error.message;}}const result=run().next();",
+  },
+  {
+    name: "forwarded delegate result identity without reading value",
+    source:
+      "const prototype={marker:1};let reads=0;const yielded=Object.create(prototype,{done:{value:false,enumerable:true},value:{get(){reads++;throw Error('value');},enumerable:true},extra:{value:7,enumerable:true}});const delegate={[Symbol.iterator](){return this;},next(){return yielded;}};function* run(){return yield*delegate;}let result;try{const step=run().next();result=[step===yielded,Object.getPrototypeOf(step)===prototype,Reflect.ownKeys(step),reads];}catch(error){result=[error.message,reads];}",
+  },
+  {
+    name: "forwarded delegate return result identity",
+    source:
+      "let reads=0;const yielded={done:false,get value(){reads++;throw Error('value');}};const delegate={[Symbol.iterator](){return this;},next(){return {done:false,value:1};},return(){return yielded;}};function* run(){return yield*delegate;}const iterator=run();iterator.next();let result;try{result=[iterator.return(7)===yielded,reads];}catch(error){result=[error.message,reads];}",
+  },
+  {
+    name: "forwarded delegate throw result identity",
+    source:
+      "let reads=0;const yielded={done:false,get value(){reads++;throw Error('value');}};const delegate={[Symbol.iterator](){return this;},next(){return {done:false,value:1};},throw(){return yielded;}};function* run(){return yield*delegate;}const iterator=run();iterator.next();let result;try{result=[iterator.throw(7)===yielded,reads];}catch(error){result=[error.message,reads];}",
+  },
+  {
+    name: "null delegate return method",
+    source:
+      "const delegate={[Symbol.iterator](){return this;},next(){return {done:false,value:1};},return:null};function* run(){return yield*delegate;}const iterator=run();iterator.next();let result;try{result=iterator.return(7);}catch(error){result=error.name;}",
+  },
+  {
+    name: "null delegate throw with null closing method",
+    source:
+      "const trace=[];const delegate={[Symbol.iterator](){return this;},next(){return {done:false,value:1};},throw:null,get return(){trace.push('return');return null;}};function* run(){try{return yield*delegate;}catch(error){return error.name;}}const iterator=run();iterator.next();const result=[iterator.throw(7),trace];",
+  },
+  {
+    name: "noncallable cached delegate next",
+    source:
+      "const trace=[];const delegate={[Symbol.iterator](){return this;},get next(){trace.push('next');return 17;},return(){trace.push('close');return {};}};function* run(){try{return yield*delegate;}catch(error){return error.name;}}const result=[run().next(),trace];",
+  },
+  {
+    name: "owned delegate next replacement after suspension",
+    source:
+      "function* child(){yield 1;return 2;}const delegate=child();function* run(){return yield*delegate;}const iterator=run();const result=[iterator.next()];delegate.next=()=>{throw Error('replacement');};try{result.push(iterator.next());}catch(error){result.push(error.message);}",
+  },
+  {
+    name: "cached delegate next getter",
+    source:
+      "let reads=0,count=0;const delegate={[Symbol.iterator](){return this;},get next(){reads++;return ()=>({done:++count>2,value:count});}};function* run(){return yield*delegate;}const iterator=run();const result=[iterator.next(),iterator.next(),iterator.next(),reads];",
+  },
+  {
+    name: "delegate next replacement after suspension",
+    source:
+      "let count=0;const delegate={[Symbol.iterator](){return this;},next(){return {done:++count>1,value:count};}};function* run(){return yield*delegate;}const iterator=run();const result=[iterator.next()];delegate.next=()=>{throw Error('replacement');};try{result.push(iterator.next());}catch(error){result.push(error.message);}",
+  },
+  {
+    name: "delegate next setup failure without delegate throw",
+    source:
+      "const trace=[];const delegate={[Symbol.iterator](){return this;},get next(){trace.push('next');throw Error('setup');},throw(){trace.push('throw');return {done:true,value:1};}};function* run(){try{return yield*delegate;}catch(error){return error.message;}}const result=[run().next(),trace];",
+  },
+  {
+    name: "dynamic delegate throw methods with cached next",
+    source:
+      "const trace=[];const delegate={[Symbol.iterator](){return this;},get next(){trace.push('next');return ()=>({done:false,value:1});},get throw(){trace.push('throw');return value=>({done:false,value});}};function* run(){return yield*delegate;}const iterator=run();const result=[iterator.next(),iterator.throw(2)];Object.defineProperty(delegate,'throw',{value(value){return {done:true,value:value+10};}});result.push(iterator.throw(3),trace);",
+  },
+  {
+    name: "dynamic delegate return methods with cached next",
+    source:
+      "const trace=[];const delegate={[Symbol.iterator](){return this;},get next(){trace.push('next');return ()=>({done:false,value:1});},get return(){trace.push('return');return value=>({done:false,value});}};function* run(){return yield*delegate;}const iterator=run();const result=[iterator.next(),iterator.return(2),iterator.next()];Object.defineProperty(delegate,'return',{value(value){return {done:true,value:value+10};}});result.push(iterator.return(3),trace);",
+  },
   {
     name: "ordinary for-of closures and iterator closing",
     source:
@@ -125,7 +221,11 @@ const cases: MachineCase[] = [
 ];
 
 it.each(cases)("lowers engine control without changing $name", async ({ source }) => {
-  const native: unknown = new Function(`"use strict";${source}\nreturn result;`)();
+  const native: unknown = runInNewContext(
+    `(function(){"use strict";${source}\nreturn result;})()`,
+    {},
+    { timeout: 10000 },
+  );
   expect(await evaluateLowered(source)).toEqual(native);
 });
 

@@ -105,6 +105,38 @@ it("restores captured locals in a completed creator frame", async () => {
   ).toEqual({ enabled: 11, disabled: 2, owned: 4 });
 });
 
+it("roots and restores the cached method after completing different delegates", async () => {
+  expect(
+    await evaluateLowered(`
+    function* child(){return yield 'decision';}
+    function* run(){const first=yield*child();return [first,yield*child()];}
+    const iterator=run();iterator.next();
+    const nextMethod=Object.getPrototypeOf(iterator).next;
+    let hasNextMethod=false;
+    const checkpoint=captureControl(iterator,{capture(roots){hasNextMethod=roots.values.includes(nextMethod);return {restore(){}};}});
+    iterator.next(2);
+    const first=iterator.next(3);
+    let hasCompletedMethod=true;
+    captureControl(iterator,{capture(roots){hasCompletedMethod=roots.values.includes(nextMethod);return {restore(){}};}});
+    checkpoint.restore();
+    iterator.next(5);
+    const second=iterator.next(7);
+    checkpoint.restore();
+    const returned=iterator.return(11);
+    checkpoint.restore();
+    iterator.next(13);
+    const third=iterator.next(17);
+    const result={hasNextMethod,hasCompletedMethod,first,second,returned,third};`),
+  ).toEqual({
+    hasNextMethod: true,
+    hasCompletedMethod: false,
+    first: { done: true, value: [2, 3] },
+    second: { done: true, value: [5, 7] },
+    returned: { done: true, value: 11 },
+    third: { done: true, value: [13, 17] },
+  });
+});
+
 it("restores a delegated continuation and its caller locals", async () => {
   expect(
     await evaluateLowered(`${scalarOwner}

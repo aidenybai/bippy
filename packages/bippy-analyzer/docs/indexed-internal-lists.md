@@ -29,6 +29,6 @@ The preceding revision `0d1b9483` passes all 909 Linux unit tests but still fail
 
 [Linux CI at `964f06c4`](indexed-internal-lists-validation/ci-indexed-failure.json) passes all 917 units but still fails both numeric smoke variants, for 72/74. All other CI jobs pass. Its AMD EPYC runner records 11632.47 ms by default and 11618.16 ms without Maglev in failure-only profiling. The preceding revision ran on an Intel Xeon; these runs are not a controlled performance comparison.
 
-The Test262 timeout remains 10 seconds, unit timeout 5 seconds, and worker count two. No selection changed. Further performance work is needed. Additional local validation retains the historical 301/306 result and passes 152/152 weak-reference/finalization variants.
+The Test262 timeout remains 10 seconds, unit timeout 5 seconds, and worker count two. No selection changed. The docs-only revision `a3bc42e7` subsequently [passes all CI jobs](indexed-internal-lists-validation/ci-success.json), including 917 units and 74/74 smoke. Its engine bytes are identical. Both results remain recorded because one success does not establish stable timing across runners. Additional local validation retains the historical 301/306 result and passes 152/152 weak-reference/finalization variants.
 
 A separate attempt to preserve all generator-free host functions during lowering was rejected: 99 focused tests pass, but its local median is 4045.87 ms. Its source and measurements are retained, not used by the build.
