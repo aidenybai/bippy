@@ -25,7 +25,7 @@ pnpm --filter bippy-analyzer test --run
 pnpm --filter bippy-analyzer typecheck
 ```
 
-The current local suite passes **718 tests across 11 files**, using at most two workers. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
+The current local and Linux CI suites pass **766 tests across 14 files**, using at most two workers. The previous scalar and engine suite contains 651 of those tests. The dedicated `tests/scalar-parity.test.ts` selection includes:
 
 - All 144 ordered pairs from 12 selected scalar literals for each of 23 binary/control operators. These produce 3,312 guarded expression templates and 13,248 Boolean witness runs per reference engine.
 - 192 generated cases from three fixed seeds, containing 160 distinct expressions. Each uses three declared Boolean inputs and checks all eight assignments, for 1,536 additional witness runs per reference engine.
@@ -62,11 +62,19 @@ The subsequent DOM increment runs actual React DOM and guest-owned LinkeDOM. Pro
 
 LinkeDOM exposed the pinned engine's missing Annex B `String.prototype.substr`. The maintained source patch reuses existing engine coercion and index operations. The [new Test262 selection](engine-substr-validation/summary.json) passes 30/30 on the built engine and 0/30 on the published engine. Inputs and compiled hashes match. The original 306-variant selection still has the same five failures. A 972-case scalar/UTF-16 matrix and six metadata/coercion checks match V8.
 
-The new bundle SHA-256 is `c7a3899d06b4c54f6ff0a0e4c9d7781770a04293043cf7b636466434d5a98d36`. No analyzer string polyfill or dependency-source repair is used. Existing lockfile dependency records remain unchanged. New records supply pinned LinkeDOM dependencies; React DOM and Playwright use existing locked versions.
+The DOM increment’s initial bundle SHA-256 was `c7a3899d06b4c54f6ff0a0e4c9d7781770a04293043cf7b636466434d5a98d36`. No analyzer string polyfill or dependency-source repair is used. Existing lockfile dependency records remain unchanged. New records supply pinned LinkeDOM dependencies; React DOM and Playwright use existing locked versions.
 
 Guest exception diagnostics retain original values without implicitly serializing their realm and syntax graphs. Four tests cover cached error diagnostics, primitive throws, the global object, and effectful guest getters/coercion methods. The earlier formatter out-of-memory report remains recorded.
 
 The task host still accepts zero-delay timers only. Queue draining is not a completion proof. These concrete tests do not broaden the symbolic-expression subset. Source-map remapping, full native resolver integration, general browser APIs, mutable branch state, symbolic React, and transitions between symbolic states remain unfinished.
+
+## Linux timeout regression
+
+At `c274ddc9`, [Linux analyzer CI](https://github.com/aidenybai/bippy/actions/runs/36393315028/job/108833815268) passes 766 unit tests and all 74 smoke variants. Both numeric `substr` variants pass with the original selection, two workers, and 10-second timeout. The previous run’s 72/74 failure and complete CPU profiles remain archived.
+
+The CLI opts into omitting unreferenced argument bindings under a conservative source check. Default agents and the concrete analyzer runtime retain those bindings. [Allocation rules and receipts](unused-arguments-validation/README.md) document the host-inspection restriction, preserved eval/escaped-identifier behavior, rejected changes, and independent checks. The current engine SHA-256 is `96eefcf1b15d2c61ec22e18cd16b73bc254fc103804bd843add502873e23749c`.
+
+The additional parameter/arguments selection remains 557/559, and the historical selection remains 301/306. Passing the smoke does not establish full JavaScript, browser, or symbolic React parity.
 
 ## Acceptance for later stages
 

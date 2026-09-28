@@ -59,6 +59,8 @@
     "initial-linux-profile": "cef6ff55f8a43bd4bc623f728f28966a63347cf7233a3ca6d6763404851fb0e5",
     "initial-ci-failure": "d7fa4a6d84f2395d59ec42bff97a3b7d384a34124239d4dc331f18a20591dbec",
     "validation-logs": "d0160b81e6d666f63b38ddbc20a16e3f0da4c14063952a3a3247befc7fd070c3",
-    "rejected-benchmarks": "8675a89879818d86b158d7f98953215adfb4ec657df506f321375147a59f6c19"
-  }
+    "rejected-benchmarks": "8675a89879818d86b158d7f98953215adfb4ec657df506f321375147a59f6c19",
+    "ci-success": "3789b19a9bb30e3a6e0f43e4946054c450f63f676fbf16bc36135c9044eb7e1f"
+  },
+  "ciSuccessReceipt": "ci-success.json"
 }

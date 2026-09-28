@@ -40,7 +40,7 @@ Three paired local runs alternate baseline and candidate order. They include CLI
 
 These timings are not Linux passing verdicts. Before this change, Linux run 36386405463 passed 72/74 smoke variants. Both numeric variants timed out. Its serial diagnostic profile took 11053.32 ms with default V8 flags and 11088.70 ms without Maglev. Diagnostic runs use a separate 30-second limit and cannot change the gate result.
 
-The candidate’s Linux result is pending. The gate still uses its original selection, two workers, and 10-second timeout.
+At `c274ddc9`, [Linux run 36393315028](https://github.com/aidenybai/bippy/actions/runs/36393315028/job/108833815268) passes 766 unit tests and all 74 smoke variants. Both numeric variants pass on Node 26.10.0. The gate retains its original selection, two workers, and 10-second timeout. Build, check, package tests, and typecheck jobs also pass.
 
 ## Receipts
 
@@ -49,5 +49,5 @@ The candidate’s Linux result is pending. The gate still uses its original sele
 - `benchmark.json` retains every paired local timing and process result.
 - `initial-ci-failure.json` retains the Linux failure log. `initial-linux-profile.json` records diagnostic commands and platform details.
 - `default.cpuprofile.gz` and `no-maglev.cpuprofile.gz` preserve the complete Linux profiles. The summary records compressed and original hashes.
-- `validation-logs.json` retains final checks and the initial focused test failure.
+- `validation-logs.json` retains final local checks and the initial focused test failure. `ci-success.json` retains the passing Linux analyzer log and its tested commit.
 - `rejected-benchmarks.json` retains the metadata-cache/lexical-environment, property-presence, identifier-lookup, and shared-descriptor measurements. None of those source changes remains in the build.
