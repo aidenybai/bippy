@@ -200,7 +200,8 @@ interface TryEntry {
 
 interface YieldStep {
   kind: "yield";
-  result: IteratorResult<unknown>;
+  done: boolean;
+  value: unknown;
 }
 
 interface DelegateStep {
@@ -401,7 +402,8 @@ export class ExecutionMachine
     if (this.isDone)
       return {
         kind: "yield",
-        result: { done: true, value: this.operation === RETURN ? this.argument : undefined },
+        done: true,
+        value: this.operation === RETURN ? this.argument : undefined,
       };
     while (true) {
       if (!this.delegate) {
@@ -427,7 +429,7 @@ export class ExecutionMachine
         const value = this.isDone
           ? this.argument
           : Reflect.apply(this.execute, this.receiver, [this]);
-        if (value !== CONTINUE) return { kind: "yield", result: { done: this.isDone, value } };
+        if (value !== CONTINUE) return { kind: "yield", done: this.isDone, value };
       } catch (error) {
         this.receiveError(error);
       } finally {
@@ -443,8 +445,8 @@ export class ExecutionMachine
     this.phase = "suspended";
   }
 
-  receiveResult(result: IteratorResult<unknown>): void {
-    this.argument = result.value;
+  receiveValue(value: unknown): void {
+    this.argument = value;
     if (this.operation < RETURN) this.operation = NEXT;
     this.delegate = undefined;
     this.phase = "suspended";
@@ -484,18 +486,21 @@ const driveFrames = (stack: ExecutionMachine[]): IteratorResult<unknown> => {
       continue;
     }
     if (step.kind === "yield") {
-      if (!step.result.done) {
+      if (!step.done) {
         for (const frame of stack) frame.suspend();
-        return step.result;
+        return { done: false, value: step.value };
       }
-      const result = step.result;
       stack.pop();
-      if (!stack.length) return result;
-      stack[stack.length - 1].receiveResult(result);
+      if (!stack.length) return { done: true, value: step.value };
+      stack[stack.length - 1].receiveValue(step.value);
       continue;
     }
     try {
-      const callback: unknown = Reflect.get(step.iterator, step.method);
+      const iterator = step.iterator;
+      const isOwned = isControlFrame(iterator);
+      const callback: unknown = isOwned
+        ? iterator[step.method]
+        : Reflect.get(iterator, step.method);
       if (callback === undefined) {
         if (step.method === "throw") {
           const close: unknown = Reflect.get(step.iterator, "return");
@@ -508,12 +513,9 @@ const driveFrames = (stack: ExecutionMachine[]): IteratorResult<unknown> => {
         current.missingMethod(step.method);
       } else {
         if (typeof callback !== "function") throw new TypeError("Iterator method is not callable");
-        if (
-          step.iterator instanceof ExecutionMachine &&
-          originalMethods[step.method] === callback
-        ) {
-          step.iterator.begin(step.method, step.argument);
-          stack.push(step.iterator);
+        if (isOwned && originalMethods[step.method] === callback) {
+          iterator.begin(step.method, step.argument);
+          stack.push(iterator);
           recordDepth(stack);
         } else {
           const result: unknown = Reflect.apply(callback, step.iterator, [step.argument]);
@@ -524,7 +526,7 @@ const driveFrames = (stack: ExecutionMachine[]): IteratorResult<unknown> => {
             for (const frame of stack) frame.suspend();
             return { done: false, value };
           }
-          current.receiveResult({ done: true, value });
+          current.receiveValue(value);
         }
       }
     } catch (error) {
@@ -556,7 +558,7 @@ const drive = (
   }
 };
 
-export const executionMachine = () => ({
+const helpers = Object.freeze({
   m: <Callback,>(callback: Callback): Callback => callback,
   w: (
     execute: (context: MachineContext) => unknown,
@@ -567,3 +569,5 @@ export const executionMachine = () => ({
     captures?: () => CaptureManifest,
   ): ExecutionMachine => new ExecutionMachine(execute, receiver, locations ?? [], locals, captures),
 });
+
+export const executionMachine = () => helpers;

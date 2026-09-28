@@ -8,6 +8,21 @@ interface MachineCase {
 
 const cases: MachineCase[] = [
   {
+    name: "ordinary for-of closures and iterator closing",
+    source:
+      "const trace=[];function collect(values){const callbacks=[];for(const value of values){callbacks.push(()=>value);if(value===2)break;}return callbacks.map(callback=>callback());}function* values(){try{yield 1;yield 2;yield 3;}finally{trace.push('close');}}function* run(){yield collect(values());return trace;}const iterator=run();const result=[iterator.next(),iterator.next()];",
+  },
+  {
+    name: "generator for-of captures across suspension",
+    source:
+      "function* run(){const callbacks=[];for(const value of [1,2]){callbacks.push(()=>value);yield value;}return callbacks.map(callback=>callback());}const iterator=run();const result=[iterator.next(),iterator.next(),iterator.next()];",
+  },
+  {
+    name: "foreign delegates without prototype inspection",
+    source:
+      "const iterator=new Proxy({[Symbol.iterator](){return this;},next(){return {done:true,value:7};}},{getPrototypeOf(){throw new Error('Unexpected prototype inspection');}});function* run(){return yield* iterator;}const result=run().next();",
+  },
+  {
     name: "resume values and updates",
     source:
       "function* run(value){value += yield value++;return value;}const iterator=run(2);const result=[iterator.next(99),iterator.next(4),iterator.next()];",
