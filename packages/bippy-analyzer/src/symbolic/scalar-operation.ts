@@ -34,6 +34,20 @@ export const getScalarOperation = (node: ParseNode.Expression): ScalarOperation 
         operandCount: 2,
         evaluate: (api) => api.Evaluate_ExponentiationExpression(node),
       };
+    case "ShiftExpression":
+      return {
+        children: [node.ShiftExpression, node.AdditiveExpression],
+        operandCount: 2,
+        evaluate: (api) => api.Evaluate_ShiftExpression(node),
+      };
+    case "BitwiseANDExpression":
+    case "BitwiseXORExpression":
+    case "BitwiseORExpression":
+      return {
+        children: [node.A, node.B],
+        operandCount: 2,
+        evaluate: (api) => api.Evaluate_BinaryBitwiseExpression(node),
+      };
     case "EqualityExpression":
       return {
         children: [node.EqualityExpression, node.RelationalExpression],

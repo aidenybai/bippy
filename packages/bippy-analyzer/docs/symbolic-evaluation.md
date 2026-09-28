@@ -66,6 +66,7 @@ Supported:
 - Arithmetic `+`, `-`, `*`, `/`, `%`, and `**` over concrete or guarded scalar values.
 - Equality `==`, `!=`, `===`, `!==`, and comparisons `<`, `<=`, `>`, `>=`.
 - Unary `+`, `-`, `!`, `~`, `typeof`, and `void`.
+- Bitwise `&`, `|`, `^` and shifts `<<`, `>>`, `>>>`, including engine-produced errors for unsupported type combinations.
 - Unknown Boolean inputs as values, operands, or conditions.
 - Nested ternaries, `&&`, `||`, and `??`, with conditional results used as operands or conditions.
 - Correlated decisions, guarded exceptions, and JSON serialization of results.
@@ -73,7 +74,7 @@ Supported:
 Rejected before execution, even in unreachable branches:
 
 - Calls, objects, arrays, property access, mutation, declarations, loops, and async work.
-- Object operators such as `in` and `instanceof`, optional chaining, and binary bitwise/shift operators.
+- Object operators such as `in` and `instanceof`, optional chaining, sequence expressions, and template literals.
 - Other syntax outside the listed subset, including undeclared inputs.
 
 Internal opaque engine objects identify guarded alternatives. Syntax validation and operand substitution prevent ordinary engine coercions from receiving these objects. Removing that boundary without extending the affected semantics would be incorrect. Branches share one realm only because accepted expressions cannot mutate application state or call user code. Copying Boolean assignment maps is not a heap snapshot or state isolation.
@@ -82,11 +83,15 @@ Defaults are 10,000 node entries and 64 alternatives per lifted expression or fi
 
 `steps` includes node entries that deliver cached operands. `visitedExpressions` omits those deliveries, so it can contain fewer entries than `steps`. Neither field counts all internal specification operations.
 
+Set `captureTrace: true` to include `evaluations`, an ordered array of guarded syntax-node visits. Each entry records the node type, source text, and start/end indices in the parsed `(${source}\n)` wrapper. Specializing its guards selects the syntax trace for a concrete Boolean assignment. It excludes cached operand deliveries and internal specification operations. Trace capture is off by default and does not change outcomes, step counts, or `visitedExpressions`.
+
 Source length is limited to 4,096 UTF-16 code units. Nesting is limited to 128 validation levels. You can declare up to eight unique input names, each at most 128 UTF-16 code units. These limits do not bound a single expensive operation, parsing, or host allocation. This is not a security sandbox.
 
 ## Validation
 
-The scalar tests substitute every Boolean assignment in each fixture and compare with the unmodified engine. Normal values and exception names also match independent Node execution; exception messages are compared only with engine262. The generated matrix covers 17 binary/control operators and six unary operators over 17 scalar literals.
+The scalar tests substitute every Boolean assignment in each fixture and compare with the unmodified engine. Normal values and exception names also match independent Node execution; exception messages are compared only with engine262. The oracle checks complete, disjoint guard partitions and compares specialized syntax traces, including evaluation order. It executes each reference witness once, including throwing cases.
+
+The earlier 17-operator and six-unary-operator matrix over 17 literals remains. A separate suite tests every selected literal pair for 23 binary/control operators, fixed-seed nested expressions, and integer boundaries. See the [parity goal and evidence](parity.md) for counts, commands, and limits.
 
 Regression tests cover correlated choices, short-circuit skips, exceptions before right operands, shared prefixes, JSON round trips, eight-input partitions, and budget failures at every dispatch boundary of a compound expression. These checks do not establish arbitrary JavaScript compatibility.
 

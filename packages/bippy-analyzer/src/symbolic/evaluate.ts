@@ -15,6 +15,7 @@ import type { ScalarOperation } from "./scalar-operation.js";
 export interface SymbolicOptions {
   maxSteps?: number;
   maxOutcomes?: number;
+  captureTrace?: boolean;
 }
 
 export interface ScalarObservation {
@@ -38,12 +39,25 @@ export interface GuardedOutcome {
   completion: NormalObservation | ThrowObservation;
 }
 
+export interface ExpressionEvaluation {
+  nodeType: string;
+  sourceText: string;
+  startIndex: number;
+  endIndex: number;
+}
+
+export interface GuardedEvaluation {
+  guard: Guard;
+  expression: ExpressionEvaluation;
+}
+
 export interface SymbolicExpressionResult {
   scope: "engine262-pure-scalar-expression-v2";
   inputs: string[];
   outcomes: GuardedOutcome[];
   steps: number;
   visitedExpressions: string[];
+  evaluations?: GuardedEvaluation[];
   originalEngineSha256: string;
   patchedEngineSha256: string;
 }
@@ -59,13 +73,23 @@ class SymbolicEvaluation {
   private replacements = new Map<ParseNode, Value>();
   private plan: ExpressionPlan = { operations: new Map() };
   private readonly visitedExpressions: string[] = [];
+  private readonly evaluations: GuardedEvaluation[] = [];
   private steps = 0;
 
   constructor(
     private readonly engine: SymbolicEngine,
     private readonly maxSteps: number,
     private readonly maxOutcomes: number,
+    private readonly captureTrace: boolean,
   ) {}
+
+  private getGuard = (assignments: ReadonlyMap<string, boolean>): Guard =>
+    andGuard(
+      Array.from(assignments, ([input, value]) => {
+        const guard = truthyGuard({ input, path: [], measure: "value" });
+        return value ? guard : negateGuard(guard);
+      }),
+    );
 
   private createChoice = (alternatives: GuardedValue[]): Value => {
     if (alternatives.length === 0) throw new SymbolicEngineError("No feasible scalar alternatives");
@@ -184,12 +208,7 @@ class SymbolicEvaluation {
     return outcomes.map((outcome) => {
       const completion = api.EnsureCompletion(outcome.completion);
       return {
-        guard: andGuard(
-          Array.from(outcome.assignments, ([input, value]) => {
-            const guard = truthyGuard({ input, path: [], measure: "value" });
-            return value ? guard : negateGuard(guard);
-          }),
-        ),
+        guard: this.getGuard(outcome.assignments),
         completion:
           completion instanceof api.ThrowCompletion
             ? {
@@ -254,7 +273,19 @@ class SymbolicEvaluation {
           throw new SymbolicEngineError(
             "Engine evaluation step budget exceeded; no complete result produced",
           );
-        if (!this.replacements.has(node)) this.visitedExpressions.push(node.sourceText);
+        if (!this.replacements.has(node)) {
+          this.visitedExpressions.push(node.sourceText);
+          if (this.captureTrace)
+            this.evaluations.push({
+              guard: this.getGuard(this.assignments),
+              expression: {
+                nodeType: node.type,
+                sourceText: node.sourceText,
+                startIndex: node.location.startIndex,
+                endIndex: node.location.endIndex,
+              },
+            });
+        }
       };
       options.evaluateNode = (node) => {
         const replacement = this.replacements.get(node);
@@ -269,6 +300,7 @@ class SymbolicEvaluation {
         outcomes,
         steps: this.steps,
         visitedExpressions: [...this.visitedExpressions],
+        ...(this.captureTrace ? { evaluations: [...this.evaluations] } : {}),
         originalEngineSha256: this.engine.originalSha256,
         patchedEngineSha256: this.engine.patchedSha256,
       };
@@ -286,6 +318,9 @@ export const evaluateSymbolicExpression = async (
   const inputNames = [...inputs];
   const maxSteps = options.maxSteps ?? 10000;
   const maxOutcomes = options.maxOutcomes ?? 64;
+  const captureTrace = options.captureTrace === undefined ? false : options.captureTrace;
+  if (typeof captureTrace !== "boolean")
+    throw new SymbolicEngineError("Trace capture must be a Boolean");
   if (
     !Number.isSafeInteger(maxSteps) ||
     maxSteps <= 0 ||
@@ -301,5 +336,8 @@ export const evaluateSymbolicExpression = async (
   )
     throw new SymbolicEngineError("Expression/input budget exceeded or duplicate input names");
   const engine = await getSymbolicEngine();
-  return new SymbolicEvaluation(engine, maxSteps, maxOutcomes).evaluate(source, inputNames);
+  return new SymbolicEvaluation(engine, maxSteps, maxOutcomes, captureTrace).evaluate(
+    source,
+    inputNames,
+  );
 };

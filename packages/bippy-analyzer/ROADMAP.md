@@ -27,7 +27,12 @@ Initial symbolic milestone: commit `3d5d5563` on [PR #149](https://github.com/ai
 
 - [x] Lift finite guarded scalar alternatives through engine arithmetic, comparisons, unary operations, ternaries, and short-circuit/nullish expressions.
 - [x] Preserve input correlations through intermediate values and skip right operands on throwing or short-circuited paths.
-- [x] Compare scalar fixtures and generated operator matrices with unmodified engine262 and native Node execution. The current local suite passes 166 tests across three files.
+- [x] Compare scalar fixtures and generated operator matrices with unmodified engine262 and native Node execution. The current local suite passes 651 tests across four files.
+
+- [x] Delegate bitwise and shift expressions to engine262's existing evaluators.
+- [x] Compare guarded syntax traces and complete outcome partitions against independent witnesses. Keep generated selections fixed and preserve all failures.
+
+The [parity goal and evidence](docs/parity.md) separates these scalar checks from the remaining application and React work.
 
 Declared inputs remain unknown Booleans. Internal object tokens identify finite guarded alternatives; syntax checks and operand substitution keep those tokens out of ordinary engine coercions. The [source-built extension](engine/README.md) does not yet provide unbounded numeric/string inputs, heap isolation, or a general constraint solver. See the [current implementation contract](docs/symbolic-evaluation.md), including the v2 scope and intermediate-choice budget.
 
@@ -39,6 +44,7 @@ Still missing here: application loading, a concrete React runner, general symbol
 
 - Keep implementation in the normal package source, API, tests, and CI. Do not create a parallel experimental implementation.
 - Reuse engine262's concrete operations. Extend their handling of unknown values instead of copying the old interpreter's operators or evaluator.
+- Prefer existing engine262 APIs and reviewed engine extensions over custom runtime code. Keep JavaScript semantics in engine262 and React semantics in actual React. Custom code should focus on abstraction, guards, state ownership, host boundaries, and reporting.
 - Execute actual React and runnable dependencies. Do not recreate hooks or silently replace child components, imports, or libraries with stubs.
 - Make unknown inputs explicit. An omitted prop is `undefined`; a TypeScript annotation does not declare a symbolic input.
 - Preserve initial state. A counter initialized to zero does not start as an arbitrary number merely because future states are symbolic.

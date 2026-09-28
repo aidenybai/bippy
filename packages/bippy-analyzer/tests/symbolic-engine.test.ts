@@ -2,131 +2,16 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { runInNewContext } from "node:vm";
 import * as concreteEngine from "@engine262/engine262";
 import { describe, expect, it } from "vite-plus/test";
-import {
-  evaluateSymbolicExpression,
-  SymbolicEngineError,
-  type NormalObservation,
-  type ThrowObservation,
-} from "../src/index.js";
+import { evaluateSymbolicExpression, SymbolicEngineError } from "../src/index.js";
+import { checkScalarExpression, decodeObservation } from "./helpers/scalar-oracle.js";
 import { constantGuard, evaluateGuard, negateGuard, truthyGuard } from "../src/symbolic/guards.js";
 import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { outputDirectory, verifyEngineBuild } from "../engine/manifest.js";
 import source from "../engine/source.json" with { type: "json" };
 
 const require = createRequire(import.meta.url);
-
-interface ConcreteResult {
-  kind: "normal" | "throw";
-  value?: unknown;
-  name?: string;
-  message?: string;
-}
-
-const getConcreteResult = (
-  source: string,
-  inputs: ReadonlyMap<string, boolean>,
-): ConcreteResult => {
-  const previousAgent = concreteEngine.surroundingAgent;
-  concreteEngine.setSurroundingAgent(new concreteEngine.Agent({ startEventLoop: false }));
-  try {
-    const realm = new concreteEngine.ManagedRealm();
-    const declarations = Array.from(inputs, ([name, value]) => `const ${name} = ${value};`).join(
-      "\n",
-    );
-    const result = concreteEngine.EnsureCompletion(
-      realm.evaluateScriptSkipDebugger(`${declarations}\n(${source}\n)`),
-    );
-    if (result instanceof concreteEngine.ThrowCompletion) {
-      const name = concreteEngine.EnsureCompletion(
-        realm.evaluateScriptSkipDebugger(
-          `try { ${declarations} (${source}\n); } catch (error) { error.name; }`,
-        ),
-      );
-      const message = concreteEngine.EnsureCompletion(
-        realm.evaluateScriptSkipDebugger(
-          `try { ${declarations} (${source}\n); } catch (error) { error.message; }`,
-        ),
-      );
-      expect(name).toBeInstanceOf(concreteEngine.NormalCompletion);
-      expect(message).toBeInstanceOf(concreteEngine.NormalCompletion);
-      return {
-        kind: "throw",
-        name:
-          name.Value instanceof concreteEngine.JSStringValue ? name.Value.stringValue() : undefined,
-        message:
-          message.Value instanceof concreteEngine.JSStringValue
-            ? message.Value.stringValue()
-            : undefined,
-      };
-    }
-    const value = result.Value;
-    if (value instanceof concreteEngine.NumberValue)
-      return { kind: "normal", value: value.numberValue() };
-    if (value instanceof concreteEngine.BigIntValue)
-      return { kind: "normal", value: value.bigintValue() };
-    if (value instanceof concreteEngine.JSStringValue)
-      return { kind: "normal", value: value.stringValue() };
-    if (value instanceof concreteEngine.BooleanValue) return { kind: "normal", value: value.value };
-    if (value instanceof concreteEngine.NullValue) return { kind: "normal", value: null };
-    if (value instanceof concreteEngine.UndefinedValue) return { kind: "normal", value: undefined };
-    throw new SymbolicEngineError("Unexpected concrete fixture result");
-  } finally {
-    concreteEngine.setSurroundingAgent(previousAgent);
-  }
-};
-
-const decodeObservation = (observation: NormalObservation | ThrowObservation): ConcreteResult => {
-  if (observation.kind === "throw") return observation;
-  const { value } = observation;
-  switch (value.type) {
-    case "Number":
-      return { kind: "normal", value: Number(value.value) };
-    case "BigInt":
-      return { kind: "normal", value: BigInt(String(value.value)) };
-    case "Undefined":
-      return { kind: "normal", value: undefined };
-    default:
-      return { kind: "normal", value: value.value };
-  }
-};
-
-const checkScalarExpression = async (source: string): Promise<void> => {
-  const result = await evaluateSymbolicExpression(source, ["enabled", "other"]);
-  expect(JSON.parse(JSON.stringify(result))).toEqual(result);
-  for (const enabled of [false, true]) {
-    for (const other of [false, true]) {
-      const inputs = new Map([
-        ["enabled", enabled],
-        ["other", other],
-      ]);
-      const matching = result.outcomes.filter(
-        (outcome) => evaluateGuard(outcome.guard, inputs) === true,
-      );
-      expect(matching, source).toHaveLength(1);
-      const observation = decodeObservation(matching[0].completion);
-      expect(observation, source).toEqual(getConcreteResult(source, inputs));
-      let native: ConcreteResult;
-      try {
-        native = { kind: "normal", value: runInNewContext(`(${source}\n)`, { enabled, other }) };
-      } catch (error) {
-        if (
-          typeof error !== "object" ||
-          error === null ||
-          !("name" in error) ||
-          typeof error.name !== "string"
-        )
-          throw error;
-        native = { kind: "throw", name: error.name };
-      }
-      expect(observation.kind, source).toBe(native.kind);
-      if (observation.kind === "throw") expect(observation.name, source).toBe(native.name);
-      else expect(observation, source).toEqual(native);
-    }
-  }
-};
 
 const scalarValues = [
   "undefined",
@@ -257,7 +142,7 @@ describe("engine262 symbolic conditional evaluation", () => {
   });
   it.each(cases)(
     "matches unmodified engine262 and Node for all Boolean substitutions: %s",
-    checkScalarExpression,
+    (source) => checkScalarExpression(source),
   );
 
   it.each([
@@ -327,8 +212,6 @@ describe("engine262 symbolic conditional evaluation", () => {
   });
 
   it.each([
-    "enabled & 1",
-    "enabled << 1",
     "enabled ? 1 in 2 : 3",
     "enabled ? 1 instanceof 2 : 3",
     "enabled && getValue()",
@@ -350,6 +233,28 @@ describe("engine262 symbolic conditional evaluation", () => {
     await expect(evaluateSymbolicExpression(source, ["enabled"])).rejects.toBeInstanceOf(
       SymbolicEngineError,
     );
+  });
+
+  it("captures guarded syntax visits without changing values, budgets, or the default trace", async () => {
+    const source = "(enabled ? 1 : 2) + (other ? 3 : 4)";
+    const options = { captureTrace: true };
+    const pending = evaluateSymbolicExpression(source, ["enabled", "other"], options);
+    options.captureTrace = false;
+    const { evaluations, ...traced } = await pending;
+    expect(evaluations?.length).toBeGreaterThan(0);
+    const normal = await evaluateSymbolicExpression(source, ["enabled", "other"]);
+    expect(normal).not.toHaveProperty("evaluations");
+    expect(traced).toEqual(normal);
+  });
+
+  it("rejects non-Boolean trace flags without coercing them", async () => {
+    for (const value of [null, 0, 1, "true", {}, []]) {
+      const options = { captureTrace: false };
+      Reflect.set(options, "captureTrace", value);
+      await expect(evaluateSymbolicExpression("1", [], options)).rejects.toThrow(
+        "Trace capture must be a Boolean",
+      );
+    }
   });
 
   it("reports the scalar-expression scope and bounds each intermediate or final choice", async () => {

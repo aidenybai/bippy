@@ -1,5 +1,7 @@
 export { evaluateSymbolicExpression } from "./symbolic/evaluate.js";
 export type {
+  ExpressionEvaluation,
+  GuardedEvaluation,
   GuardedOutcome,
   NormalObservation,
   ScalarObservation,
