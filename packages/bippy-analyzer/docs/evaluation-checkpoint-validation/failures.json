@@ -1,0 +1,397 @@
+{
+  "source": [
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-cond.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/conditional/tco-cond.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "2730a2a0e37b2692a0de3008c276ba41933d59294ae8b8e226e48c89a8a07c02",
+      "compiledSha256": "e8665152547178126927052bb519bc4a8d3a847822f0097af01e0bb48fdbb802"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-pos.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/conditional/tco-pos.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "7b70a56e00002f70163b173d7fe8826e12494c88f88b2a77264e889ba7a88c76",
+      "compiledSha256": "84594ec00cf3850c0085342d062e1e9816702b3c614bd391d9882e8ef9d92829"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/tco-right.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/logical-and/tco-right.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "820b720cc423902c8b987992cd593c563e9be860dde3a369fc63fb0143c3b468",
+      "compiledSha256": "b76cc5b0a355536eb556b0daa3f8f00028e5cddf90e0031965ee29a800c61a68"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/tco-right.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/logical-or/tco-right.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "1c885eb3b9fece476a5ddab1f613b4660013b0cad7d36e7abdc6a1f956dc3c06",
+      "compiledSha256": "f38a992e7b878030f0cdfdc2ec8df2860094cb24a276c6396612ad6ca9474a6a"
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-else-body.js",
+      "attrs": {
+        "description": "Statement within statement is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/statements/if/tco-else-body.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "1fb978d9e79a33f045c3bee8ab2a98cf9a80fd3dbc79dbb28b67b72aaf1a1dab",
+      "compiledSha256": "c8e0cded8dddde7cd22d6e50b818de8db920783d5ec0fe3a70f8edb8fdf049ac"
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-if-body.js",
+      "attrs": {
+        "description": "Statement within statement is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/statements/if/tco-if-body.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "16744bebe35744ea41ad12b9f7464120c1fb6eda9168a321c782975d8c3ee526",
+      "compiledSha256": "b809ff656173db5410ca1ee717e9450b960aedc3b34a96e95c4c4256f1ebc51a"
+    }
+  ],
+  "published": [
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-cond.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/conditional/tco-cond.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28798' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28798",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28798' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28798"
+      },
+      "contentsSha256": "2730a2a0e37b2692a0de3008c276ba41933d59294ae8b8e226e48c89a8a07c02",
+      "compiledSha256": "e8665152547178126927052bb519bc4a8d3a847822f0097af01e0bb48fdbb802"
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-pos.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/conditional/tco-pos.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799"
+      },
+      "contentsSha256": "7b70a56e00002f70163b173d7fe8826e12494c88f88b2a77264e889ba7a88c76",
+      "compiledSha256": "84594ec00cf3850c0085342d062e1e9816702b3c614bd391d9882e8ef9d92829"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/tco-right.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/logical-and/tco-right.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477"
+      },
+      "contentsSha256": "820b720cc423902c8b987992cd593c563e9be860dde3a369fc63fb0143c3b468",
+      "compiledSha256": "b76cc5b0a355536eb556b0daa3f8f00028e5cddf90e0031965ee29a800c61a68"
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/tco-right.js",
+      "attrs": {
+        "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/expressions/logical-or/tco-right.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477"
+      },
+      "contentsSha256": "1c885eb3b9fece476a5ddab1f613b4660013b0cad7d36e7abdc6a1f956dc3c06",
+      "compiledSha256": "f38a992e7b878030f0cdfdc2ec8df2860094cb24a276c6396612ad6ca9474a6a"
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-else-body.js",
+      "attrs": {
+        "description": "Statement within statement is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/statements/if/tco-else-body.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719"
+      },
+      "contentsSha256": "1fb978d9e79a33f045c3bee8ab2a98cf9a80fd3dbc79dbb28b67b72aaf1a1dab",
+      "compiledSha256": "c8e0cded8dddde7cd22d6e50b818de8db920783d5ec0fe3a70f8edb8fdf049ac"
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-if-body.js",
+      "attrs": {
+        "description": "Statement within statement is a candidate for tail-call optimization. (Strict Mode)",
+        "esid": "sec-static-semantics-hascallintailposition",
+        "flags": {
+          "onlyStrict": true
+        },
+        "features": ["tail-call-optimization"],
+        "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6115,
+      "relative": "language/statements/if/tco-if-body.js",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      },
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719"
+      },
+      "contentsSha256": "16744bebe35744ea41ad12b9f7464120c1fb6eda9168a321c782975d8c3ee526",
+      "compiledSha256": "b809ff656173db5410ca1ee717e9450b960aedc3b34a96e95c4c4256f1ebc51a"
+    }
+  ],
+  "identicalFailureDiagnostics": false
+}

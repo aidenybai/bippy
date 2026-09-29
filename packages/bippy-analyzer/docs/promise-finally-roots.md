@@ -22,7 +22,7 @@ The 16 cases cover:
 
 The baseline had 12 failures and four passes. All 16 now pass, including twelve independent V8 comparisons. Observers and cleanup functions stay outside the target’s lexical scope where needed, so unrelated environments cannot hide a missing capture.
 
-The final local suite passes 1,364 tests across 40 files. The unchanged smoke passes 74/74. The finally/WeakRef/FinalizationRegistry Test262 selection passes 208/210 in both engines, retaining two matching failures. [Receipts](promise-finally-root-validation/summary.json) include source hashes, reports, baseline failures, and boundary probes.
+The final local suite passes 1,364 tests across 40 files. The unchanged smoke passes 74/74. The finally/WeakRef/FinalizationRegistry Test262 selection passes 208/210 in both engines, retaining two matching failures. [Receipts](promise-finally-root-validation/summary.json) include source hashes, reports, baseline failures, and boundary probes. [Linux CI at `9e9a82b2`](promise-finally-root-validation/ci.json) also passes 1,364 units and 74/74 smoke. Its clean-build hash matches the local build. E2E and publish pass; historical timing failures remain recorded.
 
 The six tracked pending-reaction, all, allSettled, any, and finally probes now match V8 `[true,7]`. The unregistered manual-evaluator probe still loses its live target. These results do not establish complete GC coverage, automatic collection policy, or Promise rollback.
 

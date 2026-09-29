@@ -32,9 +32,9 @@ The caller must register an evaluator from the owning Agent. The current-Agent c
 
 If `iterator.next` throws a host error, the paused record stores that error. Further Agent evaluation and resumption rethrow it. The existing mark protocol receives the stored error; it does not recursively inspect arbitrary native error fields. Discard the failed Agent; this does not unwind guest `finally` blocks, cancel resources, or roll back state. Validation errors occur before advancement and do not poison execution. Debugger notifications and completion callbacks remain host callbacks outside this execution-error catch.
 
-Guest throws remain engine completions. Completion releases the registered evaluator before invoking the completion callback, so the callback can start another evaluation. Returned values and saved snapshots need their own roots after release.
+Guest throws remain engine completions. Completion releases the registered evaluator before invoking the completion callback. The callback can start another evaluation unless an [evaluation checkpoint](evaluation-checkpoints.md) remains open. Returned values and saved snapshots need their own roots after release.
 
-The pending request, pause mode, failure state, and resume lock are Agent state. `captureControl` alone does not rewind them. Do not treat a saved iterator as a complete Agent or React checkpoint.
+The pending request, pause mode, failure state, and resume lock are Agent state. `captureControl` alone does not rewind them. The [controlled evaluation checkpoint](evaluation-checkpoints.md) now coordinates control, registration, mode, and decision identity. It refuses to recover execution failures and still requires a state owner. Neither API provides a complete React checkpoint.
 
 ## React and regression evidence
 

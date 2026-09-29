@@ -69,7 +69,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "1364 units and 74/74 smoke pass; clean-build hash matches, see ci.json",
   "files": {
     "engine/patches/promise-finally-roots.patch": "401566be97aa8f0ec36bbef823639873eca4eb63c48754058d87895d13262d77",
     "engine/scripts/build.ts": "407adccaf7c2d4ae2bd699f5b52e35bf27c040d63fce1e054ecf5329ed75b3f7",
