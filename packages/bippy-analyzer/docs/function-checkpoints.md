@@ -10,7 +10,7 @@ Bound functions must use the canonical bound call and construction methods and t
 
 The implementation reuses the slot definitions from `OrdinaryFunctionCreate` and `BoundFunctionCreate`. The combined checkpoint still reports scope `selected-objects-and-bindings-v1`. Its ordinary-only counterpart still rejects functions.
 
-The original private-element, construction-tracking, ordinary-method, Agent ownership, preview, prototype-cycle, and LIFO rules remain. Class constructors, private-environment functions, direct native builtins, and callable proxies remain unsupported. A bound function can refer to an unsupported target; selecting the wrapper does not select or validate that target’s state.
+The original private-element, construction-tracking, ordinary-method, Agent ownership, preview, prototype-cycle, and LIFO rules remain. Class constructors, private-environment functions, and callable proxies remain unsupported. A later [builtin property policy](builtin-checkpoints.md) accepts canonical native builtins with read-only metadata; it does not own their native captures. A bound function can refer to an unsupported target; selecting the wrapper does not select or validate that target’s state.
 
 ## Restoration and references
 
@@ -26,7 +26,7 @@ Bound argument count contributes to capture and restore work even when the funct
 
 ## Evidence and React relevance
 
-`tests/function-checkpoint.test.ts` has 33 cases. Before implementation, 25 of the initial 29 cases failed; four unsupported-state cases already passed. The first patched run passed 28/29; the remaining fixture incorrectly expected an Agent field from `withFixture`. It now uses the current Agent. The receipts retain both failures.
+The original `tests/function-checkpoint.test.ts` increment had 33 cases. The later builtin policy replaces its `Math.max` rejection with positive builtin coverage, leaving 32 cases here. Before implementation, 25 of the initial 29 cases failed; four unsupported-state cases already passed. The first patched run passed 28/29; the remaining fixture incorrectly expected an Agent field from `withFixture`. It now uses the current Agent. The receipts retain both failures.
 
 Twenty-eight native V8 branch observations and fourteen baseline observations cover seven function forms in both branch orders. Tests preserve aliases and property-table identity across descriptor changes, deletion/reinsertion, prototype changes, and freezing. They also exercise bound construction, selected versus unselected closure bindings and bound objects, read-only metadata preflight, same-length argument replacement, class-list changes, and saved Object/Symbol property lifetimes. The async case observes the returned object, not async scheduling parity.
 

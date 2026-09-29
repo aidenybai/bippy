@@ -87,6 +87,7 @@ const build = async (): Promise<void> => {
       "data-graph-checkpoints.patch",
       "owner-storage-capture.patch",
       "constructor-checkpoints.patch",
+      "builtin-checkpoints.patch",
     ])
       execFileSync(
         "git",

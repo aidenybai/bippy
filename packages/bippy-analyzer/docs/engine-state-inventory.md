@@ -48,7 +48,7 @@ The [React checkpoint audit](react-checkpoint-audit.md) identifies the live fibe
 4. Reject unsupported records before branch mutation. A partial traversal must not produce a supposedly complete React result.
 5. Verify both branch orders, release, nested/reentrant execution, GC while suspended, pending async work, and independent concrete specialization.
 
-[Selected guest function properties](function-checkpoints.md) now restore with read-only ECMAScript or bound-function metadata. Captured environments, home objects, targets, receivers, and argument objects still require separate ownership. Direct native builtins, class constructors, private-environment functions, and callable proxies remain outside this selected policy.
+[Selected guest function properties](function-checkpoints.md) now restore with read-only ECMAScript or bound-function metadata. Captured environments, home objects, targets, receivers, and argument objects still require separate ownership. [Selected builtin properties](builtin-checkpoints.md) now restore under a read-only metadata policy. Their native captures and referenced records remain separately owned. Class constructors, private-environment functions, and callable proxies remain outside the selected-function policies.
 
 [Closed guest-data graph checkpoints](data-graph-checkpoints.md) now follow supported properties, prototypes, Map entries, and Set members under capture limits. Unsupported reachable state rejects before checkpoint registration. This policy rejects ordinary intrinsic prototype graphs and all functions; it does not own React state or native execution records.
 

@@ -90,7 +90,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "CI 36528998898/analyzer 109278199233 passes 1466 units and 74/74 unchanged smoke with matching relocated build hash. E2E 36528998856 and publish 36528998900 also pass. See ci.json; older timeouts remain archived.",
   "files": {
     "engine/patches/constructor-checkpoints.patch": "508c3d4a5cd485490d87377a3efa5defab9a949ec46004e108530136c811c9b7",
     "engine/scripts/build.ts": "db3b9c1989dc5dbb868f2ea405ef8ee11edac2a4f9b85da35abfb50353197eaa",

@@ -1,0 +1,88 @@
+diff --git a/src/abstract-ops/function-operations.mts b/src/abstract-ops/function-operations.mts
+index 1e3ec7c..0eb87a1 100644
+--- a/src/abstract-ops/function-operations.mts
++++ b/src/abstract-ops/function-operations.mts
+@@ -644,6 +644,22 @@ function* BuiltinCallOrConstruct(F: BuiltinFunctionObject, thisArgument: Value |
+   }
+ }
+ 
++export const builtinFunctionInternalSlots = Object.freeze([
++  'Prototype', 'Extensible', 'Realm', 'ScriptOrModule', 'InitialName', 'IsClassConstructor',
++]);
++
++export const hasBuiltinFunctionMethods = (object: ObjectValue): object is BuiltinFunctionObject => {
++  if (!isBuiltinFunctionObject(object)) return false;
++  const call = Object.getOwnPropertyDescriptor(object, 'Call');
++  const construct = Object.getOwnPropertyDescriptor(object, 'Construct');
++  const nativeFunction = Object.getOwnPropertyDescriptor(object, 'nativeFunction');
++  const async = Object.getOwnPropertyDescriptor(object, 'Async');
++  return call?.value === BuiltinFunctionCall
++    && (construct === undefined || ('value' in construct
++      && (construct.value === undefined || construct.value === BuiltinFunctionConstruct)))
++    && typeof nativeFunction?.value === 'function' && typeof async?.value === 'boolean';
++};
++
+ /** https://tc39.es/ecma262/#sec-createbuiltinfunction */
+ export function CreateBuiltinFunction(behaviour: NativeSteps, length: number, name: string | PropertyKeyValue | PrivateName, additionalInternalSlotsList: readonly string[], realm?: Realm, prototype?: ObjectValue | NullValue, prefix?: string, async = false): BuiltinFunctionObject {
+   if (typeof name === 'string') {
+@@ -662,7 +678,7 @@ export function CreateBuiltinFunction(behaviour: NativeSteps, length: number, na
+     prototype = realm.Intrinsics['%Function.prototype%'];
+   }
+   // 5. Let func be a new built-in function object that when called performs the action described by steps. The new function object has internal slots whose names are the elements of internalSlotsList.
+-  const func = X(MakeBasicObject(['Prototype', 'Extensible', 'Realm', 'ScriptOrModule', 'InitialName', 'IsClassConstructor'].concat(additionalInternalSlotsList))) as Mutable<BuiltinFunctionObject>;
++  const func = X(MakeBasicObject(builtinFunctionInternalSlots.concat(additionalInternalSlotsList))) as Mutable<BuiltinFunctionObject>;
+   func.Call = BuiltinFunctionCall;
+   if (behaviour.isConstructor) {
+     func.Construct = BuiltinFunctionConstruct;
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index d197547..436a964 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -7,6 +7,7 @@ import {
+   type DeclarativeEnvironmentBinding,
+   isMapObject, isSetObject, type MapObject, type SetObject,
+   hasECMAScriptFunctionMethods, getECMAScriptFunctionInternalSlots,
++  hasBuiltinFunctionMethods, builtinFunctionInternalSlots,
+ } from '#self';
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
+ 
+@@ -16,6 +17,7 @@ interface FunctionSlotState {
+ }
+ 
+ interface FunctionState {
++  internalSlots: readonly string[];
+   slots: FunctionSlotState[];
+   boundArguments?: readonly (Value | undefined)[];
+ }
+@@ -29,12 +31,20 @@ const getFunctionSlotNames = (object: ObjectValue, owner: Agent): readonly strin
+     return [...getECMAScriptFunctionInternalSlots(owner.feature('decorators')), 'Prototype', 'Extensible'];
+   }
+   if (hasBoundFunctionMethods(object) && Array.isArray(object.BoundArguments)) return boundFunctionInternalSlots;
++  if (hasBuiltinFunctionMethods(object)
++    && Object.getOwnPropertyDescriptor(object, 'IsClassConstructor')?.value === false
++    && object.internalSlotsList.every((name) => typeof name === 'string')
++    && new Set(object.internalSlotsList).size === object.internalSlotsList.length
++    && builtinFunctionInternalSlots.every((name, index) => object.internalSlotsList[index] === name)) {
++    return object.internalSlotsList;
++  }
+   return undefined;
+ };
+ 
+ const getFunctionState = (object: ObjectValue, names: readonly string[]): FunctionState => ({
+-  slots: [...names.filter((name) => name !== 'Prototype' && name !== 'Extensible'),
+-    'Call', 'Construct', 'Async', 'InitialName', 'scriptId'].map((name) => {
++  internalSlots: [...object.internalSlotsList],
++  slots: [...new Set([...names.filter((name) => name !== 'Prototype' && name !== 'Extensible'),
++    'Call', 'Construct', 'Async', 'InitialName', 'scriptId', 'nativeFunction', 'HostCapturedValues'])].map((name) => {
+     const descriptor = Object.getOwnPropertyDescriptor(object, name);
+     if (descriptor && !('value' in descriptor)) throw new TypeError('Checkpoint function metadata must use data properties');
+     return { name, descriptor };
+@@ -45,6 +55,8 @@ const getFunctionState = (object: ObjectValue, names: readonly string[]): Functi
+ const hasUnchangedFunctionState = (object: ObjectValue, state: FunctionState, owner: Agent): boolean => {
+   const names = getFunctionSlotNames(object, owner);
+   return !!names && object.internalSlotsList.length === names.length
++    && state.internalSlots.length === names.length
++    && state.internalSlots.every((name, index) => object.internalSlotsList[index] === name)
+     && names.every((name) => object.internalSlotsList.includes(name))
+     && state.slots.every(({ name, descriptor }) => {
+       const current = Object.getOwnPropertyDescriptor(object, name);

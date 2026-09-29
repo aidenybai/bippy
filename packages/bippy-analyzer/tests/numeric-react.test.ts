@@ -95,8 +95,17 @@ it.each([false, true])(
                   expect(() => api.createDataGraphCheckpoint({ roots: [fiber] })).toThrow(
                     "Checkpoint requires",
                   );
-                  const selected = api.createStateCheckpoint({ objects: [fiber, queue, update] });
-                  expect(selected.objectCount).toBe(3);
+                  const sameValue =
+                    runtime.realm.Intrinsics["%Object%"].properties.get("is")?.Value;
+                  if (
+                    !(sameValue instanceof api.ObjectValue) ||
+                    !api.isBuiltinFunctionObject(sameValue)
+                  )
+                    throw new Error("Expected intrinsic Object.is");
+                  const selected = api.createStateCheckpoint({
+                    objects: [fiber, queue, update, sameValue],
+                  });
+                  expect(selected.objectCount).toBe(4);
                   try {
                     expect(() => api.createDataGraphCheckpoint({ roots: [update] })).toThrow(
                       /Data graph cannot|Checkpoint requires/,

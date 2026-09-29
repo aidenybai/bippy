@@ -246,7 +246,6 @@ it("rejects accessor metadata without reading its value", async () => {
 
 it.each([
   "class {}",
-  "Math.max",
   "new Proxy(function(){},{})",
   `(() => {
       class Owner {

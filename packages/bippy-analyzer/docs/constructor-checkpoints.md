@@ -30,7 +30,7 @@ Embedded test programs across the analyzer now use readable multiline templates.
 
 The final local suite passes 1,466 tests across forty-five files. The unchanged smoke passes 74/74. New-expression, subclass, WeakRef, and FinalizationRegistry selections pass 487/487 in both engines with matching input hashes, compiled hashes, and verdicts. Typechecking, two relocated builds, frozen offline installation, and root checks pass. Engine SHA-256: `624b460e0ced4b1062a490812a0283d2e0bd6d7de690f9487626cc2760ad39db`.
 
-Linux validation for this increment is pending. The preceding owner-storage revision passes 1,436 Linux units but fails both numeric `substr` smoke variants at the unchanged timeout. Its [failure receipt](owner-storage-capture-validation/ci-failure.json) preserves logs and diagnostic profiles. Separate E2E and publish workflows pass.
+[Linux CI](constructor-checkpoint-validation/ci.json) passes all 1,466 units and 74/74 smoke, with a matching clean-build hash. E2E and publish also pass. Historical timeout receipts remain evidence; this does not establish stable Linux timing. The preceding owner-storage revision passes 1,436 Linux units but fails both numeric `substr` smoke variants at the unchanged timeout. Its [failure receipt](owner-storage-capture-validation/ci-failure.json) preserves logs and diagnostic profiles. Separate E2E and publish workflows pass.
 
 ## Remaining ownership work
 
