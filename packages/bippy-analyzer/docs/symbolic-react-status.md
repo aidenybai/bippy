@@ -6,6 +6,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Selected web-queue storage](web-queue-checkpoints.md) now restores macrotask membership through engine262’s original collections. The React diagnostic captures one pending job, then still rejects its user timer. Complete job/capture/timer ownership and guarded transition reports remain missing.
 
+[Builtin job-queue snapshots](job-queue-checkpoints.md) now restore microtask/category membership through engine262’s original Sets. Timer records and callback captures remain unowned. The React diagnostic still rejects its user timer; no general guarded transition API is enabled.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |
