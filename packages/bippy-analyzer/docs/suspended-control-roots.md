@@ -37,7 +37,7 @@ At `0a13888b`, two counterexamples still reported `[false,7]`: a weak target dis
 1. An external caller drives `ScriptEvaluation` directly to a debugger pause without `Agent.evaluate`. A partial array held only by that unregistered evaluator is not an Agent root.
 2. A concrete runtime timer holds a guest callback whose environment retains an object. Explicit host GC clears the weak reference before `drainJobs`, although the callback later reads the object. An independent V8 callback-queue model retains it and reports `[true,7]`. That model checks closure liveness, not browser timer scheduling.
 
-No automatic collection policy was added. These probes invoke host GC explicitly. The later [declared host-job roots](host-job-roots.md) fix the timer counterexample without changing React's effects. [Promise roots](promise-roots.md) also fix the pending-reaction probe. The unregistered external driver and a partial `Promise.all` result still fail.
+No automatic collection policy was added. These probes invoke host GC explicitly. The later [declared host-job roots](host-job-roots.md) fix the timer counterexample without changing React's effects. [Promise roots](promise-roots.md) also fix the pending-reaction probe. [Accumulator roots](promise-all-roots.md) now fix partial `Promise.all`. The unregistered external driver and partial allSettled/any probes still fail.
 
 Saved control snapshots also require an owner that retains their saved engine values. The control checkpoint closure alone is not an Agent root. This increment does not establish complete saved-state, native-capture, Promise, module, nested-driver, or host-resource coverage.
 

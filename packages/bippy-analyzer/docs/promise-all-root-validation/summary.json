@@ -1,0 +1,76 @@
+{
+  "scope": "engine262-promise-all-accumulator-roots-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "6e7d272c60d7ba8956766ed2467926535807fd5246895ccbc81ed03e743a80a7",
+  "implementation": [
+    "Declare original shared Values array and Capability record on CreatePromiseAllResolveElement callbacks",
+    "Reuse existing internal-slot, native-array and PromiseCapabilityRecord marking",
+    "Same helper covers Promise.all and SafePerformPromiseAll",
+    "No scheduling, resolution, counter, duplicate-call, native-closure discovery or accumulator-copy changes"
+  ],
+  "regressions": {
+    "initialCases": 8,
+    "initialFailures": 8,
+    "finalCases": 9,
+    "nativeComparisons": 6,
+    "correctedFixture": "Initial SafePerform test failed because CreateDataProperty evaluator was wrapped, not driven; fixed with skipDebugger"
+  },
+  "units": {
+    "passed": 1324,
+    "total": 1324,
+    "files": 38
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "23a6879c0bc5f38c32b7559e0db7d4ec7c01788ac3b44f4b263de00c36661db4",
+      "compressedSha256": "f947797a5b73c87abf9a01602f25b04be1b860f8452f01ebf2622df18553ae17"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "f0d6ec5dc5941ed6335beac7d496d38e22ccb5f057b24ea6a1b93c73d26dc7a3",
+      "compressedSha256": "8f725e6d3557c145a7ed3927c9e1e963d7b6c968e1650078f7922acad9d9908b"
+    }
+  ],
+  "conformance": {
+    "passed": 334,
+    "total": 348,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "identicalFailureDiagnostics": true,
+    "selection": [
+      ".test262/test/built-ins/Promise/all/**/*.js",
+      ".test262/test/built-ins/WeakRef/**/*.js",
+      ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+    ],
+    "failures": "14 matching unhandled-rejection failures retained"
+  },
+  "boundaries": [
+    "Partial allSettled results and any errors still lose live targets",
+    "Keyed combinators/finally/module/saved-state root policies remain incomplete",
+    "Unregistered external evaluators remain outside Agent-owned lifecycle",
+    "Consumed retained callbacks can retain captures; no eager reclamation guarantee",
+    "No branch ownership, rollback, symbolic lazy rendering or shared-prefix React forks"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/promise-all-roots.patch": "a60c48760f1c3c367531ee73d73f6c46ec5b6dcb033bd1fe00bb3f5d4e19de4a",
+    "engine/scripts/build.ts": "c754e694050785021c6da92abd77393eafc204b3e0f26478230aecf5fad5373a",
+    "tests/gc-promise-all.test.ts": "5ba3a9e8aa1a68cb068a5789eb46146e6d9b5b274d9937e13bca7c172bcba848",
+    "tests/helpers/concrete-gc.ts": "217f6532ee1fbd163f80f2f219f110f0c051f6943e08b7f72ddaef6e64198af5",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "docs/engine-state-inventory.md": "c0dd63a06435ccb193f6556ba9bf22e305531aedc92b28722de5f60b8cd57e12"
+  }
+}

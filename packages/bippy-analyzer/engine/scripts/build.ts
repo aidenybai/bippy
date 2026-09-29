@@ -79,6 +79,7 @@ const build = async (): Promise<void> => {
       "array-checkpoints.patch",
       "collection-checkpoints.patch",
       "set-zero.patch",
+      "promise-all-roots.patch",
     ])
       execFileSync(
         "git",

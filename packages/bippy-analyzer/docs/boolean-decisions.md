@@ -53,7 +53,7 @@ Both branch visitation orders verify:
 
 Each order specializes four outcomes at nine Number witnesses. Independent V8 and published-engine runs match all 72 observations per reference. The actual numeric expressions remain unbounded; the witnesses only check their specializations.
 
-The callback fixture does not use an engine job or timer queue. Its owner is specific to the selected program. It does not prove transitive ownership of execution records, native captures, internal collections, modules, host effects, or escaped functions. [Suspended-evaluator roots](suspended-control-roots.md) cover the original generator probe, and [Promise roots](promise-roots.md) fix the pending-reaction probe. External drivers and partial `Promise.all` results still have proven root gaps. [Host-job declarations](host-job-roots.md) now retain timer and explicit microtask captures.
+The callback fixture does not use an engine job or timer queue. Its owner is specific to the selected program. It does not prove transitive ownership of execution records, native captures, internal collections, modules, host effects, or escaped functions. [Suspended-evaluator roots](suspended-control-roots.md) cover the original generator probe, and [Promise roots](promise-roots.md) fix the pending-reaction probe. [Accumulator roots](promise-all-roots.md) now fix partial `Promise.all`. External drivers and partial allSettled/any results still have proven root gaps. [Host-job declarations](host-job-roots.md) now retain timer and explicit microtask captures.
 
 ## Remaining React work
 
