@@ -41,4 +41,6 @@ Local validation passes:
 
 [Validation receipts](error-checkpoint-validation/summary.json) retain commands, source hashes, failures, and probe results. The first patched build failed because the method validator required a second argument. The corrected build passes. No gate, timeout, worker count, or oracle was relaxed.
 
+[Linux CI for this revision](error-checkpoint-validation/ci-failure.json) passes 1,614 units with the matching engine hash. Both numeric `substr` smoke variants time out, leaving 72/74 passing. E2E and publish pass. Archived 30-second diagnostic profiles do not satisfy the unchanged ten-second gate.
+
 General React state ownership, guarded tree reports, event/effect transitions, repeated families, and demo integration remain incomplete.

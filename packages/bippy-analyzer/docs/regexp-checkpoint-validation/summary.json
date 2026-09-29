@@ -1,22 +1,22 @@
 {
-  "scope": "selected-initialized-error-properties-with-read-only-diagnostics",
-  "predecessor": "ce03b8b9652b6549cb3ce0154fe3d83a89f52e66",
-  "engineSha256": "f08528aa501861de4e4e0a5a245855eb91e9cbd82616a94368cefc6da1a0ff9d",
+  "scope": "selected-initialized-regexp-properties-with-read-only-matcher-metadata",
+  "predecessor": "a5e1312dc01a43fdbce1c88b1988520c48af001c",
+  "engineSha256": "c3e070cce0747909304b4d0ff32a98824f25eb06931ea67d16cb792eb3792d31",
   "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
   "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
   "reactFixtureVersion": "19.3.0",
   "inputs": [
     {
-      "file": "engine/patches/error-checkpoints.patch",
-      "sha256": "1cd1134b23daf9b67a54ac8c5b548120b400a86197a5991d508c13d25cab7305"
+      "file": "engine/patches/regexp-checkpoints.patch",
+      "sha256": "c40e07c16d999f931f7eddb486ea638a9b2b503ca68ed0e6ab38e0dea464c845"
     },
     {
       "file": "engine/scripts/build.ts",
-      "sha256": "546bbd32ed8a772a4d2adedc1a2cb9a75c7f7f9facbee3638490a1290342e758"
+      "sha256": "67297f4a9d8b63cc9382c9672f1a34af70de19c8c275100a0bbb72ee2e54891a"
     },
     {
-      "file": "tests/error-checkpoint.test.ts",
-      "sha256": "8abb1f48a6b5a15f02863d47289f6811617998d91f0ea3da9024dc65f9cee777"
+      "file": "tests/regexp-checkpoint.test.ts",
+      "sha256": "5edde1a807e0b37e2ecd33f6d7d6b9b356054481190c463359dc3a0957ce3023"
     },
     {
       "file": "tests/fixtures/symbolic-react-tree.tsx",
@@ -24,19 +24,19 @@
     },
     {
       "file": "engine/dist/engine.mjs",
-      "sha256": "f08528aa501861de4e4e0a5a245855eb91e9cbd82616a94368cefc6da1a0ff9d"
+      "sha256": "c3e070cce0747909304b4d0ff32a98824f25eb06931ea67d16cb792eb3792d31"
     }
   ],
   "reports": [
     {
       "file": "source.json.gz",
-      "sha256": "6c2fe34eb127cf5aa45fdda50eda4493bf7618a4cce62f0085a4751226d8b07b",
-      "uncompressedSha256": "4e6f42b055e5619a6373d3e47a667026a8e81a970c7f00649991bee74331ffec"
+      "sha256": "0273e8b91b088958f570fdd488cca922fe39970edbb1b442d027901a638bb3e7",
+      "uncompressedSha256": "4d0705e3ab014b09f26b6a902f06c2b2fc5898341a17c5fe304d842ffaa206f8"
     },
     {
       "file": "published.json.gz",
-      "sha256": "310a8f4fcbf81e4072ed9e072e33777365a5e28601aa3160f1945cc299f71752",
-      "uncompressedSha256": "adbbba3be210f325973e7fa6d96847516322dc7cbe503abddf3d226ff7949014"
+      "sha256": "84182ca7ac3894873705d89ac886779a47d2c9282e0935ab9f9f67e94225e0ae",
+      "uncompressedSha256": "1003a6efcc39a47cdb6a8164192e28158ad088ea878fc7f19bdbbe6ad2a57686"
     }
   ],
   "reactReports": [
@@ -44,9 +44,9 @@
       "enabled": false,
       "details": false,
       "report": {
-        "directRoots": 65503,
+        "directRoots": 65507,
         "controlObjects": 432,
-        "seen": 19586,
+        "seen": 19587,
         "counts": [
           ["Function", 684],
           ["Object", 2511],
@@ -64,7 +64,7 @@
           ["UndefinedValue", 1],
           ["GlobalEnvironmentRecord", 1],
           ["DeclarativeEnvironmentRecord", 94],
-          ["Array", 1848],
+          ["Array", 1849],
           ["FunctionEnvironmentRecord", 37],
           ["ArgumentsParameterMapData", 16],
           ["CallSite", 24],
@@ -78,15 +78,11 @@
           ["Set", 5],
           ["ReturnCompletion", 1]
         ],
-        "selectedObjects": 2193,
+        "selectedObjects": 2194,
         "unsupported": [
           [
             "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
             3
-          ],
-          [
-            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
-            1
           ]
         ]
       }
@@ -95,9 +91,9 @@
       "enabled": false,
       "details": true,
       "report": {
-        "directRoots": 65503,
+        "directRoots": 65507,
         "controlObjects": 432,
-        "seen": 19586,
+        "seen": 19587,
         "counts": [
           ["Function", 684],
           ["Object", 2511],
@@ -115,7 +111,7 @@
           ["UndefinedValue", 1],
           ["GlobalEnvironmentRecord", 1],
           ["DeclarativeEnvironmentRecord", 94],
-          ["Array", 1848],
+          ["Array", 1849],
           ["FunctionEnvironmentRecord", 37],
           ["ArgumentsParameterMapData", 16],
           ["CallSite", 24],
@@ -129,15 +125,11 @@
           ["Set", 5],
           ["ReturnCompletion", 1]
         ],
-        "selectedObjects": 2193,
+        "selectedObjects": 2194,
         "unsupported": [
           [
             "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
             3
-          ],
-          [
-            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
-            1
           ]
         ]
       }
@@ -146,9 +138,9 @@
       "enabled": true,
       "details": false,
       "report": {
-        "directRoots": 65503,
+        "directRoots": 65507,
         "controlObjects": 432,
-        "seen": 19586,
+        "seen": 19587,
         "counts": [
           ["Function", 684],
           ["Object", 2511],
@@ -166,7 +158,7 @@
           ["UndefinedValue", 1],
           ["GlobalEnvironmentRecord", 1],
           ["DeclarativeEnvironmentRecord", 94],
-          ["Array", 1848],
+          ["Array", 1849],
           ["FunctionEnvironmentRecord", 37],
           ["ArgumentsParameterMapData", 16],
           ["CallSite", 24],
@@ -180,15 +172,11 @@
           ["Set", 5],
           ["ReturnCompletion", 1]
         ],
-        "selectedObjects": 2193,
+        "selectedObjects": 2194,
         "unsupported": [
           [
             "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
             3
-          ],
-          [
-            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
-            1
           ]
         ]
       }
@@ -197,9 +185,9 @@
       "enabled": true,
       "details": true,
       "report": {
-        "directRoots": 65503,
+        "directRoots": 65507,
         "controlObjects": 432,
-        "seen": 19586,
+        "seen": 19587,
         "counts": [
           ["Function", 684],
           ["Object", 2511],
@@ -217,7 +205,7 @@
           ["UndefinedValue", 1],
           ["GlobalEnvironmentRecord", 1],
           ["DeclarativeEnvironmentRecord", 94],
-          ["Array", 1848],
+          ["Array", 1849],
           ["FunctionEnvironmentRecord", 37],
           ["ArgumentsParameterMapData", 16],
           ["CallSite", 24],
@@ -231,15 +219,11 @@
           ["Set", 5],
           ["ReturnCompletion", 1]
         ],
-        "selectedObjects": 2193,
+        "selectedObjects": 2194,
         "unsupported": [
           [
             "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
             3
-          ],
-          [
-            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state\"}",
-            1
           ]
         ]
       }
@@ -247,34 +231,86 @@
   ],
   "diagnosticDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  const chunk = await buildScriptFixture(\n    new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url),\n    \"production\",\n  );\n  source = chunk.code;\n});\n\nit.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ enabled, details }))))(\n  \"specializes a real React tree with correlated Boolean decisions, enabled=$enabled details=$details\",\n  async ({ enabled, details }) => {\n    const runtime = await createConcreteRuntime();\n    const native = createNativeRuntime();\n    const { api } = await getSymbolicEngine();\n    try {\n      runtime.evaluate(source);\n      native.evaluate(source);\n      expect(runtime.readString(\"JSON.stringify(fixture.versions)\")).toBe('[\"19.3.0\",\"19.3.0\"]');\n      runtime.evaluate(\"fixture.mount()\");\n      native.evaluate(\"fixture.mount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      const previous = api.surroundingAgent;\n      api.setSurroundingAgent(runtime.agent);\n      let enabledDecisions = 0;\n      let detailsDecisions = 0;\n      try {\n        const enabledInput = api.BooleanValue.createAbstract();\n        const detailsInput = api.BooleanValue.createAbstract();\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n        const compiled = api.EnsureCompletion(\n          runtime.realm.compileScript(`\n          fixture.update(enabled, details);\n          fixture.observe();\n        `),\n        );\n        if (compiled.Type !== \"normal\") throw Error(\"Expected compiled update\");\n        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n        let step = runtime.agent.resumeEvaluate({\n          pauseOnAbstractBoolean: true,\n          noBreakpoint: true,\n        });\n        while (!step.done) {\n          const decision = step.value;\n          if (!decision) throw Error(\"Unexpected debugger pause\");\n          if (enabledDecisions + detailsDecisions >= 16)\n            throw Error(\"Unexpected decision expansion\");\n          let choice: boolean;\n          if (decision.value === enabledInput) {\n            enabledDecisions++;\n            choice = enabled;\n          } else if (decision.value === detailsInput) {\n            detailsDecisions++;\n            choice = details;\n          } else {\n            throw Error(\"Decision lost input identity\");\n          }\n          if (enabledDecisions + detailsDecisions === 1) {\n            const seen = new Set<object>();\n            const counts = new Map<string, number>();\n            const sentinel = new Error(\"Unowned React tree state\");\n            const unsupported = new Map<string, number>();\n            let selectedObjects = 0;\n            expect(() => runtime.agent.captureEvaluation({\n              references: value => {\n                if (seen.size >= 50000) throw Error(\"Audit reference budget exceeded\");\n                seen.add(value);\n                const name = Object.getPrototypeOf(value)?.constructor?.name ?? \"null-prototype\";\n                counts.set(name, (counts.get(name) ?? 0) + 1);\n                const references: unknown[] = [];\n                if (Array.isArray(value)) references.push(...value);\n                else if (typeof Reflect.get(value, \"mark\") === \"function\") {\n                  Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n                }\n                return references;\n              },\n              capture: roots => {\n                for (const value of seen) {\n                  if (!(value instanceof api.ObjectValue)) continue;\n                  try {\n                    const checkpoint = api.createStateCheckpoint({ objects: [value] });\n                    checkpoint.release();\n                    selectedObjects++;\n                  } catch (error) {\n                    const keys: string[] = [];\n                    value.properties.forEach((_descriptor, key) => { if (typeof key === \"string\") keys.push(key); else if (key instanceof api.JSStringValue) keys.push(key.stringValue()); });\n                    const key = JSON.stringify({ slots: value.internalSlotsList, parameterMap: api.isArgumentExoticObject(value) ? value.ParameterMap === undefined ? \"unmapped\" : \"mapped\" : null, privateElements: value.PrivateElements.length, constructedBy: value.ConstructedBy.length, keys: keys.slice(0, 12), hasPrototype: \"Prototype\" in value, hasExtensible: \"Extensible\" in value, methods: [\"GetPrototypeOf\", \"SetPrototypeOf\", \"IsExtensible\", \"PreventExtensions\", \"GetOwnProperty\", \"DefineOwnProperty\", \"HasProperty\", \"Get\", \"Set\", \"Delete\", \"OwnPropertyKeys\"].filter(name => Reflect.get(value, name) !== Reflect.get(api.ObjectValue.prototype, name)), error: error instanceof Error ? error.message : \"unknown\" });\n                    unsupported.set(key, (unsupported.get(key) ?? 0) + 1);\n                  }\n                }\n                writeFileSync(`/tmp/bippy-react-tree-frontier-${enabled}-${details}.json`, JSON.stringify({ directRoots: roots.values.length, controlObjects: roots.controlOwnedObjects.length, seen: seen.size, counts: [...counts], selectedObjects, unsupported: [...unsupported] }, null, 2));\n                throw sentinel;\n              },\n            })).toThrow(sentinel);\n          }\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          step = runtime.agent.resumeEvaluate({\n            abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice },\n            noBreakpoint: true,\n          });\n        }\n        const completion = api.EnsureCompletion(step.value);\n        expect(completion.Type).toBe(\"normal\");\n        if (!(completion.Value instanceof api.JSStringValue))\n          throw Error(\"Expected committed tree observation\");\n        native.evaluate(`fixture.update(${enabled}, ${details})`);\n        expect(completion.Value.stringValue()).toBe(native.evaluate(\"fixture.observe()\"));\n      } finally {\n        api.setSurroundingAgent(previous);\n      }\n      expect(enabledDecisions).toBe(details ? 4 : 3);\n      expect(detailsDecisions).toBe(1);\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      runtime.evaluate(\"fixture.unmount()\");\n      native.evaluate(\"fixture.unmount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      expect(runtime.unhandledRejections.size).toBe(0);\n      expect(runtime.uncaughtExceptions).toEqual([]);\n    } finally {\n      runtime.dispose();\n    }\n  },\n);\n",
   "focused": {
-    "cases": 40,
-    "precedingEngineFailed": 40,
-    "currentPassed": 40,
-    "unchangedTestSource": true
+    "cases": 35,
+    "precedingEngineFailed": 35,
+    "currentPassed": 35,
+    "unchangedFinalTestSource": true
   },
   "nativeComparisons": {
-    "propertyBranches": 40,
-    "initialBaselines": 20,
+    "propertyBranches": 32,
+    "initialBaselines": 16,
     "agentBranches": 4,
     "prefixExecutionsPerAgentOrder": 1,
-    "limitation": "Native stack text and own-stack layout are excluded. Engine stack restoration compares against the original engine baseline."
+    "limitation": "Unicode matrix starts on code-point boundaries. Initial interior-surrogate cases exposed retained source/published mismatches against V8; they are not covered by the final green matrix."
+  },
+  "interiorSurrogate": {
+    "driver": "import { runInNewContext } from \"node:vm\";\nimport { createHash } from \"node:crypto\";\nimport { readFile } from \"node:fs/promises\";\nimport * as source from \"/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs\";\nimport * as published from \"/Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs\";\n\nconst programs = [\n  `var target = /[😀a]+/gu; target.lastIndex = 1; JSON.stringify([target.exec(\"😀aa\"), target.lastIndex]);`,\n  `var target = /()/gu; target.lastIndex = 1; JSON.stringify([target.exec(\"😀a\"), target.lastIndex]);`,\n];\nconst results = programs.map(program => ({ program, native: runInNewContext(program), engines: [source, published].map((api, index) => {\n  const previous = api.surroundingAgent;\n  const agent = new api.Agent({ startEventLoop: false });\n  api.setSurroundingAgent(agent);\n  try {\n    const realm = new api.ManagedRealm();\n    realm.pushTopContext();\n    const initialContexts = agent.executionContextStack.length;\n    try {\n      const completion = api.EnsureCompletion(realm.evaluateScriptSkipDebugger(program));\n      return { engine: index === 0 ? \"source\" : \"published\", initialContexts, finalContexts: agent.executionContextStack.length, result: api.inspect(completion.Value) };\n    } catch (error) {\n      return { engine: index === 0 ? \"source\" : \"published\", initialContexts, finalContexts: agent.executionContextStack.length, hostFailure: error instanceof Error ? error.message : String(error) };\n    }\n  } finally {\n    api.setSurroundingAgent(previous);\n  }\n}) }));\nconsole.log(JSON.stringify({ node: process.version, engineSha256: createHash(\"sha256\").update(await readFile(\"/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs\")).digest(\"hex\"), results, cleanup: \"Each probe abandons its isolated Agent, with event loops disabled. Surrounding Agent restored. No unwind or recovery is claimed.\" }, null, 2));\n",
+    "observations": {
+      "node": "v26.4.0",
+      "engineSha256": "c3e070cce0747909304b4d0ff32a98824f25eb06931ea67d16cb792eb3792d31",
+      "results": [
+        {
+          "program": "var target = /[😀a]+/gu; target.lastIndex = 1; JSON.stringify([target.exec(\"😀aa\"), target.lastIndex]);",
+          "native": "[[\"😀aa\"],4]",
+          "engines": [
+            {
+              "engine": "source",
+              "initialContexts": 1,
+              "finalContexts": 1,
+              "result": "'[[\\\"\\\\ude00aa\\\"],4]'"
+            },
+            {
+              "engine": "published",
+              "initialContexts": 1,
+              "finalContexts": 1,
+              "result": "'[[\\\"\\\\ude00aa\\\"],4]'"
+            }
+          ]
+        },
+        {
+          "program": "var target = /()/gu; target.lastIndex = 1; JSON.stringify([target.exec(\"😀a\"), target.lastIndex]);",
+          "native": "[[\"\",\"\"],0]",
+          "engines": [
+            {
+              "engine": "source",
+              "initialContexts": 1,
+              "finalContexts": 3,
+              "hostFailure": "match.EndIndex >= match.StartIndex && match.EndIndex <= S.length"
+            },
+            {
+              "engine": "published",
+              "initialContexts": 1,
+              "finalContexts": 3,
+              "hostFailure": "match.EndIndex >= match.StartIndex && match.EndIndex <= S.length"
+            }
+          ]
+        }
+      ],
+      "cleanup": "Each probe abandons its isolated Agent, with event loops disabled. Surrounding Agent restored. No unwind or recovery is claimed."
+    },
+    "specification": {
+      "url": "https://raw.githubusercontent.com/tc39/ecma262/main/spec.html",
+      "version": "Unpinned fetched content; hash and inspected clause retained",
+      "sha256": "17e1fe359da75a82ae164014e1c862287cbe2ffdc8297d45bcf6068c007a69af",
+      "excerpt": "<emu-clause id=\"sec-regexpbuiltinexec\" type=\"abstract operation\">\n        <h1>\n          RegExpBuiltinExec (\n            _regexp_: an initialized RegExp instance,\n            _string_: a String,\n          ): either a normal completion containing either an Array exotic object or *null*, or a throw completion\n        </h1>\n        <dl class=\"header\">\n        </dl>\n        <emu-alg>\n          1. Let _length_ be the length of _string_.\n          1. Let _lastIndex_ be ℝ(? ToLength(! Get(_regexp_, *\"lastIndex\"*))).\n          1. Let _flags_ be _regexp_.[[OriginalFlags]].\n          1. If _flags_ contains *\"g\"*, let _global_ be *true*; else let _global_ be *false*.\n          1. If _flags_ contains *\"y\"*, let _sticky_ be *true*; else let _sticky_ be *false*.\n          1. If _flags_ contains *\"d\"*, let _hasIndices_ be *true*; else let _hasIndices_ be *false*.\n          1. If _global_ is *false* and _sticky_ is *false*, set _lastIndex_ to 0.\n          1. Let _matcher_ be _regexp_.[[RegExpMatcher]].\n          1. If _flags_ contains *\"u\"* or _flags_ contains *\"v\"*, let _fullUnicode_ be *true*; else let _fullUnicode_ be *false*.\n          1. Let _matchSucceeded_ be *false*.\n          1. If _fullUnicode_ is *true*, let _input_ be StringToCodePoints(_string_); else let _input_ be a List whose elements are the code units that are the elements of _string_.\n          1. NOTE: Each element of _input_ is considered to be a character.\n          1. Repeat, while _matchSucceeded_ is *false*,\n            1. If _lastIndex_ > _length_, then\n              1. If _global_ is *true* or _sticky_ is *true*, then\n                1. Perform ? <emu-meta suppress-effects=\"user-code\">Set(_regexp_, *\"lastIndex\"*, *+0*<sub>𝔽</sub>, *true*)</emu-meta>.\n              1. Return *null*.\n            1. Let _inputIndex_ be the index into _input_ of the character that was obtained from element _lastIndex_ of _string_.\n            1. Let _result_ be _matcher_(_input_, _inputIndex_).\n            1. If _result_ is ~failure~, then\n              1. If _sticky_ is *true*, then\n                1. Perform ? <emu-meta suppress-effects=\"user-code\">Set(_regexp_, *\"lastIndex\"*, *+0*<sub>𝔽</sub>, *true*)</emu-meta>.\n                1. Return *null*.\n              1. Set _lastIndex_ to AdvanceStringIndex(_string_, _lastIndex_, _fullUnicode_).\n            1. Else,\n              1. Assert: _result_ is a MatchState.\n              1. Set _matchSucceeded_ to *true*.\n          1. Let _endIndex_ be _result_.[[EndIndex]].\n          1. If _fullUnicode_ is *true*, set _endIndex_ to GetStringIndex(_string_, _endIndex_).\n          1. If _global_ is *true* or _sticky_ is *true*, then\n            1. Perform ? <emu-meta suppress-effects=\"user-code\">Set(_regexp_, *\"lastIndex\"*, 𝔽(_endIndex_), *true*)</emu-meta>.\n          1. Let _capturingGroupsCount_ be the number of elements in _result_.[[Captures]].\n          1. Assert: _capturingGroupsCount_ = _regexp_.[[RegExpRecord]].[[CapturingGroupsCount]].\n          1. Assert: _capturingGroupsCount_ &lt; 2<sup>32</sup> - 1.\n          1. Let _array_ be ! ArrayCreate(_capturingGroupsCount_ + 1).\n          1. Assert: The mathematical value of _array_'s *\"length\"* property is _capturingGroupsCount_ + 1.\n          1. Perform ! CreateDataPropertyOrThrow(_array_, *\"index\"*, 𝔽(_lastIndex_)).\n          1. Perform ! CreateDataPropertyOrThrow(_array_, *\"input\"*, _string_).\n          1. Let _match_ be the Match Record { [[StartIndex]]: _lastIndex_, [[EndIndex]]: _endIndex_ }.\n          1. Let _indices_ be a new empty List.\n          1. Let _groupNames_ be a new empty List.\n          1. Append _match_ to _indices_.\n          1. Let _matchedSubstring_ be GetMatchString(_string_, _match_).\n          1. Perform ! CreateDataPropertyOrThrow(_array_, *\"0\"*, _matchedSubstring_).\n          1. If _regexp_ contains any |GroupName|, then\n            1. Let _groups_ be OrdinaryObjectCreate(*null*).\n            1. Let _hasGroups_ be *true*.\n          1. Else,\n            1. Let _groups_ be *undefined*.\n            1. Let _hasGroups_ be *false*.\n          1. Perform ! CreateDataPropertyOrThrow(_array_, *\"groups\"*, _groups_).\n          1. Let _matchedGroupNames_ be a new empty List.\n          1. For each integer _i_ such that 1 ≤ _i_ ≤ _capturingGroupsCount_, in ascending order, do\n            1. Let _capture_ be _i_<sup>th</sup> element of _result_.[[Captures]].\n            1. If _capture_ is *undefined*, then\n              1. Let _capturedValue_ be *undefined*.\n              1. Append *undefined* to _indices_.\n            1. Else,\n              1. Let _captureStart_ be _capture_.[[StartIndex]].\n              1. Let _captureEnd_ be _capture_.[[EndIndex]].\n              1. If _fullUnicode_ is *true*, then\n                1. Set _captureStart_ to GetStringIndex(_string_, _captureStart_).\n                1. Set _captureEnd_ to GetStringIndex(_string_, _captureEnd_).\n              1. Let _captureRecord_ be the Match Record { [[StartIndex]]: _captureStart_, [[EndIndex]]: _captureEnd_ }.\n              1. Let _capturedValue_ be GetMatchString(_string_, _captureRecord_).\n              1. Append _captureRecord_ to _indices_.\n            1. Perform ! CreateDataPropertyOrThrow(_array_, ! ToString(𝔽(_i_)), _capturedValue_).\n            1. If the _i_<sup>th</sup> capture of _regexp_ was defined with a |GroupName|, then\n              1. Let _groupName_ be the CapturingGroupName of that |GroupName|.\n              1. If _matchedGroupNames_ contains _groupName_, then\n                1. Assert: _capturedValue_ is *undefined*.\n                1. Append *undefined* to _groupNames_.\n              1. Else,\n                1. If _capturedValue_ is not *undefined*, append _groupName_ to _matchedGroupNames_.\n                1. NOTE: If there are multiple groups named _groupName_, _groups_ may already have an _groupName_ property at this point. However, because _groups_ is an ordinary object whose properties are all writable data properties, the call to CreateDataPropertyOrThrow is nevertheless guaranteed to succeed.\n                1. Perform ! CreateDataPropertyOrThrow(_groups_, _groupName_, _capturedValue_).\n                1. Append _groupName_ to _groupNames_.\n            1. Else,\n              1. Append *undefined* to _groupNames_.\n          1. If _hasIndices_ is *true*, then\n            1. Let _indicesArray_ be MakeMatchIndicesIndexPairArray(_string_, _indices_, _groupNames_, _hasGroups_).\n            1. Perform ! CreateDataPropertyOrThrow(_array_, *\"indices\"*, _indicesArray_).\n          1. Return _array_.\n        </emu-alg>\n      </emu-clause>"
+    }
   },
   "gates": {
-    "units": "1614/1614 across 51 files",
+    "units": "1649/1649 across 52 files",
     "types": "pass",
     "smoke": "74/74, unchanged two-worker ten-second gate",
-    "conformance": "468/468 in both engines with matching input/compiled hashes and verdicts; both exit 0",
+    "conformance": "442/442 in both engines with matching input/compiled hashes and verdicts; both exit 0",
     "relocatedBuilds": "Two matching clean builds",
     "offlineInstall": "pass",
     "rootCheck": "Zero errors, two existing warnings",
     "cleanup": "Main worktree unchanged; temporary audit test removed; no build lock",
-    "linux": "CI 36631711235 passes 1614 units with matching engine hash but fails both numeric substr smoke variants (72/74). See ci-failure.json and profiles. E2E and publish pass."
+    "linux": "not run yet"
   },
   "limitations": [
-    "Only initialized Error property storage restores. Host diagnostic slot descriptors and values stay read-only; native arrays, CallSites and contexts remain unowned.",
-    "Saved diagnostic message arrays root their guest values; this is not a stack-context GC contract.",
-    "No error constructor, exception handling, formatting, or stack algorithm was copied or replaced.",
-    "Ordinary-only/closed-data APIs and private-instance rejection remain strict.",
-    "Actual React probe only captures/releases selected storage then rejects broader ownership. No React restore, shared-prefix React fork, guarded output API, transitions, repeated families or integrated demo."
+    "Original matcher function, source, flags, record and parsed-pattern references remain read-only. Their native contents/captures are not copied or owned.",
+    "No regexp parsing, matching, indexing, replacement or backtracking algorithm changed.",
+    "Ordinary-only/closed-data APIs and private-instance rejection remain strict. Incomplete matcher metadata rejects.",
+    "Interior-surrogate matching remains an engine/native discrepancy. Empty matching leaves contexts active after host assertion; isolated probe Agents are abandoned, not recovered.",
+    "React probe only captures/releases selected storage then rejects broader ownership. Three WeakMaps and native records/contexts/captures/queues/effects still lack ownership. No shared-prefix React fork or public guarded tree/report API."
   ]
 }

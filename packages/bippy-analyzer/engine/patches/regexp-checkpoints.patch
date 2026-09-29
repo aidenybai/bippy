@@ -1,0 +1,144 @@
+diff --git a/src/abstract-ops/regexp-objects.mts b/src/abstract-ops/regexp-objects.mts
+index b2b1f48..1952ee8 100644
+--- a/src/abstract-ops/regexp-objects.mts
++++ b/src/abstract-ops/regexp-objects.mts
+@@ -26,9 +26,11 @@ import {
+ } from './all.mts';
+ import { surroundingAgent, Throw, type PlainCompletion } from '#self';
+ 
++export const regexpInternalSlots = Object.freeze(['RegExpMatcher', 'OriginalSource', 'OriginalFlags']);
++
+ /** https://tc39.es/ecma262/#sec-regexpalloc */
+ export function* RegExpAlloc(newTarget: FunctionObject): ValueEvaluator<RegExpObject> {
+-  const obj = Q(yield* OrdinaryCreateFromConstructor(newTarget, '%RegExp.prototype%', ['RegExpMatcher', 'OriginalSource', 'OriginalFlags'])) as Mutable<RegExpObject>;
++  const obj = Q(yield* OrdinaryCreateFromConstructor(newTarget, '%RegExp.prototype%', regexpInternalSlots)) as Mutable<RegExpObject>;
+   X(DefinePropertyOrThrow(obj, 'lastIndex', Descriptor({
+     Writable: true,
+     Enumerable: false,
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 67d595b..141cb7c 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -15,12 +15,19 @@ import {
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
+ import { ImmutablePrototypeObjectInternalMethods } from '../intrinsics/ObjectPrototype.mts';
+ import { errorInternalSlots } from '../intrinsics/Error.mts';
++import { regexpInternalSlots } from '../abstract-ops/regexp-objects.mts';
+ 
+ interface ReadonlySlotState {
+   name: string;
+   descriptor: PropertyDescriptor | undefined;
+ }
+ 
++interface ReadonlyObjectState {
++  kind: 'error' | 'regexp';
++  internalSlots: readonly string[];
++  slots: ReadonlySlotState[];
++}
++
+ interface FunctionState {
+   internalSlots: readonly string[];
+   slots: ReadonlySlotState[];
+@@ -52,19 +59,32 @@ const getReadonlySlots = (object: ObjectValue, names: readonly string[], kind: s
+   return { name, descriptor };
+ });
+ 
+-const hasErrorSlots = (object: ObjectValue): boolean => hasOrdinaryObjectMethods(object, ObjectValue.prototype.DefineOwnProperty)
+-  && object.internalSlotsList.length === errorInternalSlots.length + 2
+-  && ['Prototype', 'Extensible', ...errorInternalSlots].every((name) => object.internalSlotsList.includes(name));
+-
+-const getErrorSlots = (object: ObjectValue): ReadonlySlotState[] | undefined => {
+-  if (!hasErrorSlots(object)) return undefined;
+-  const slots = getReadonlySlots(object, errorInternalSlots, 'error');
+-  if (!Array.isArray(Object.getOwnPropertyDescriptor(object, 'HostDefinedStack')?.value)
+-    || typeof Object.getOwnPropertyDescriptor(object, 'HostDefinedFormattedStack')?.value !== 'string'
+-    || typeof Object.getOwnPropertyDescriptor(object, 'HostDefinedMessageString')?.value !== 'string') {
+-    throw new TypeError('Checkpoint requires initialized error metadata');
++const hasReadonlyObjectSlots = (object: ObjectValue, names: readonly string[]): boolean => object.internalSlotsList.length === names.length + 2
++  && ['Prototype', 'Extensible', ...names].every((name) => object.internalSlotsList.includes(name))
++  && hasOrdinaryObjectMethods(object, ObjectValue.prototype.DefineOwnProperty);
++
++const getReadonlyObjectState = (object: ObjectValue): ReadonlyObjectState | undefined => {
++  if (hasReadonlyObjectSlots(object, errorInternalSlots)) {
++    const slots = getReadonlySlots(object, errorInternalSlots, 'error');
++    if (!Array.isArray(Object.getOwnPropertyDescriptor(object, 'HostDefinedStack')?.value)
++      || typeof Object.getOwnPropertyDescriptor(object, 'HostDefinedFormattedStack')?.value !== 'string'
++      || typeof Object.getOwnPropertyDescriptor(object, 'HostDefinedMessageString')?.value !== 'string') {
++      throw new TypeError('Checkpoint requires initialized error metadata');
++    }
++    return { kind: 'error', internalSlots: errorInternalSlots, slots };
++  }
++  if (hasReadonlyObjectSlots(object, regexpInternalSlots)) {
++    const slots = getReadonlySlots(object, [...regexpInternalSlots, 'RegExpRecord', 'parsedPattern'], 'regexp');
++    if (typeof Object.getOwnPropertyDescriptor(object, 'RegExpMatcher')?.value !== 'function'
++      || typeof Object.getOwnPropertyDescriptor(object, 'OriginalSource')?.value !== 'string'
++      || typeof Object.getOwnPropertyDescriptor(object, 'OriginalFlags')?.value !== 'string'
++      || !Object.getOwnPropertyDescriptor(object, 'RegExpRecord')?.value
++      || !Object.getOwnPropertyDescriptor(object, 'parsedPattern')?.value) {
++      throw new TypeError('Checkpoint requires initialized regexp metadata');
++    }
++    return { kind: 'regexp', internalSlots: regexpInternalSlots, slots };
+   }
+-  return slots;
++  return undefined;
+ };
+ 
+ const getFunctionState = (object: ObjectValue, names: readonly string[]): FunctionState => ({
+@@ -175,7 +195,7 @@ interface OrdinaryObjectState {
+   argumentsState?: ArgumentsState;
+   argumentsMap?: ArgumentsMapState;
+   exotic?: ExoticObjectState;
+-  errorSlots?: ReadonlySlotState[];
++  readonlyObject?: ReadonlyObjectState;
+ }
+ 
+ interface BindingState {
+@@ -258,7 +278,7 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+       mark(state.argumentsMap?.data.realm);
+       for (const constructor of state.constructors) mark(constructor);
+       for (const slot of state.functionState?.slots ?? []) mark(slot.descriptor?.value);
+-      for (const slot of state.errorSlots ?? []) mark(slot.descriptor?.value);
++      for (const slot of state.readonlyObject?.slots ?? []) mark(slot.descriptor?.value);
+       for (const value of state.functionState?.boundArguments ?? []) mark(value);
+       for (const entry of state.map?.entries ?? []) {
+         mark(entry.key);
+@@ -351,7 +371,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     const argumentsMap = allowContainers && !graph ? getArgumentsMapState(object) : undefined;
+     const argumentsData = argumentsMap?.data;
+     const exotic = allowContainers && !graph ? getExoticObjectState(object) : undefined;
+-    const errorSlots = allowContainers && !graph ? getErrorSlots(object) : undefined;
++    const readonlyObject = allowContainers && !graph ? getReadonlyObjectState(object) : undefined;
+     const dataSlot = map ? 'MapData' : set ? 'SetData' : argumentsState ? 'ParameterMap'
+       : argumentsData ? 'ArgumentsParameterMapData' : exotic?.dataSlot;
+     const methods = argumentsState?.parameterMap ? ArgumentExoticObject
+@@ -364,7 +384,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
+     if ((map && set)
+       || !hasOrdinaryObjectMethods(object, defineOwnProperty, methods)
+-      || object.internalSlotsList.length !== (functionSlots?.length ?? (errorSlots ? errorSlots.length + 2 : dataSlot ? 3 : 2))
++      || object.internalSlotsList.length !== (functionSlots?.length ?? (readonlyObject ? readonlyObject.internalSlots.length + 2 : dataSlot ? 3 : 2))
+       || (functionSlots && !functionSlots.every((name) => object.internalSlotsList.includes(name)))
+       || (dataSlot && !object.internalSlotsList.includes(dataSlot))
+       || !object.internalSlotsList.includes('Prototype')
+@@ -427,7 +447,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       argumentsState,
+       argumentsMap,
+       exotic,
+-      errorSlots,
++      readonlyObject,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+@@ -484,9 +504,9 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           || (state.argumentsMap && getArgumentsParameterMapData(state.object) !== state.argumentsMap.data)) {
+           throw new TypeError('Checkpoint arguments metadata changed');
+         }
+-        if (state.errorSlots && (!hasErrorSlots(state.object)
+-          || !state.errorSlots.every((slot) => hasUnchangedSlot(state.object, slot)))) {
+-          throw new TypeError('Checkpoint error metadata changed');
++        if (state.readonlyObject && (!hasReadonlyObjectSlots(state.object, state.readonlyObject.internalSlots)
++          || !state.readonlyObject.slots.every((slot) => hasUnchangedSlot(state.object, slot)))) {
++          throw new TypeError(`Checkpoint ${state.readonlyObject.kind} metadata changed`);
+         }
+         if (state.exotic && (getExoticObjectState(state.object)?.methods !== state.exotic.methods
+           || !hasUnchangedSlot(state.object, state.exotic.slot))) {
