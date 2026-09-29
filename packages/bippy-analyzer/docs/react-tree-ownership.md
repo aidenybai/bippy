@@ -18,7 +18,9 @@ All four first-choice reports contain the same counts:
 - 94 declarative environments, 37 function environments, one global environment, and one object environment.
 - 1,848 native arrays, 14 execution contexts, 24 call sites, and 683 native functions.
 
-The rejected guest objects are:
+[Arguments checkpoints](arguments-checkpoints.md) now expose and restore the 16 mapped arguments and 13 lazy maps listed below. The updated probe accepts 2,187 guest objects and rejects ten. Native records, queues, and effects remain unowned, so this still does not permit general React branching.
+
+The original rejected guest objects are:
 
 | Count | Storage             | Evidence                                                                       |
 | ----- | ------------------- | ------------------------------------------------------------------------------ |
@@ -38,6 +40,6 @@ This diagnostic is not a complete ownership census. Marking edges omit weak-entr
 
 The existing cloned React source at `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51` supplies the internals reference. `ReactFiberBeginWork.js:updateContextProvider` pushes the provider value before reconciliation. `ReactFiberCommitEffects.js:commitHookEffectListMount` calls the effect and stores its destroy callback. Both paths explain why context stacks and effect records must belong to the branch, not only rendered host objects.
 
-The four specialization tests pass. The full suite passes 1,530 tests across 48 files, and typechecking passes. The engine remains unchanged at SHA-256 `653ba15d733596c6625d1415bf233b397f9fec0eac6c40ca76e84890799ed56d`. These checks do not validate shared-prefix restoration.
+The four specialization tests pass. The full suite passes 1,530 tests across 48 files, and typechecking passes. The engine remains unchanged at SHA-256 `653ba15d733596c6625d1415bf233b397f9fec0eac6c40ca76e84890799ed56d`. These checks do not validate shared-prefix restoration. [Linux CI](react-tree-validation/ci-failure.json) passes 1,530 units but fails both numeric `substr` smoke variants at the unchanged ten-second gate (72/74). The engine hash matches; E2E and publish pass. Diagnostic profiles remain archived and are not smoke passes.
 
 Implement rejecting ownership policies using the existing checkpoint, native-capture, and queue machinery. Verify both branch orders with one prefix before exposing a guarded explorer. General tree merging, event/effect transitions, repeated families, and demo integration remain incomplete.
