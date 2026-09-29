@@ -24,6 +24,8 @@ The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, wi
 
 [Immutable-prototype and string-object selection](intrinsic-checkpoints.md) now reuses the actual engine method tables. Property storage restores without materializing string indices. The immutable prototype and string payload stay read-only. This removes two intrinsic-prototype rejections from the React probe, not the remaining native-record, weak-state, and effect ownership gaps.
 
+[Initialized Error selection](error-checkpoints.md) shares the existing constructor slot list and property snapshots. Host diagnostic field descriptors are read-only. Diagnostic list contents and CallSite/context records still need ownership policies. This removes the four Error rejections, not those native-record gaps.
+
 ## Reuse existing capture support
 
 `ObjectValue.mark` reads the declared internal slots. It traverses the elements of `HostCapturedValues` explicitly. Array, Map, Set, and string iterators already use this convention. `Promise.prototype.finally` also uses it for selected builtin captures.

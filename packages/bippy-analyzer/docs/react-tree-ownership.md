@@ -18,7 +18,7 @@ All four first-choice reports contain the same counts:
 - 94 declarative environments, 37 function environments, one global environment, and one object environment.
 - 1,848 native arrays, 14 execution contexts, 24 call sites, and 683 native functions.
 
-[Arguments checkpoints](arguments-checkpoints.md) now expose and restore the 16 mapped arguments and 13 lazy maps listed below. That increment’s probe accepts 2,187 guest objects and rejects ten. [Intrinsic property checkpoints](intrinsic-checkpoints.md) now accept the two prototype objects as well, leaving eight guest-object rejections. Native records, queues, and effects remain unowned, so this still does not permit general React branching.
+[Arguments checkpoints](arguments-checkpoints.md) now expose and restore the 16 mapped arguments and 13 lazy maps listed below. That increment’s probe accepts 2,187 guest objects and rejects ten. [Intrinsic property checkpoints](intrinsic-checkpoints.md) now accept the two prototype objects as well, leaving eight guest-object rejections at that increment. [Initialized Error property selection](error-checkpoints.md) now accepts four more, leaving three WeakMaps and one RegExp. The diagnostic still rejects broader ownership without restoring React. Native records, queues, and effects remain unowned, so this still does not permit general React branching.
 
 The original rejected guest objects are:
 

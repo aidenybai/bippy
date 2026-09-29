@@ -31,4 +31,6 @@ Five targets cover both prototypes and empty, ASCII, and surrogate-containing bo
 
 Local gates pass 1,574 tests across 50 files, typechecking, the unchanged 74-variant smoke, and two relocated clean builds. Source and published engines pass the same 403 string/prototype/own-property-name variants with matching input hashes, compiled hashes, and verdicts. The engine SHA-256 is `e125a2a1cca5d228477d763e04a661fc9ac619d6eb64a30bd4c4ce2ce640dde7`. [Validation receipts](intrinsic-checkpoint-validation/summary.json) retain baselines, commands, hashes, and probe results.
 
+[Linux CI for this revision](intrinsic-checkpoint-validation/ci-failure.json) passes 1,574 units with the matching engine hash. Both numeric `substr` smoke variants time out, leaving 72/74 passing. E2E and publish pass. The archived 30-second diagnostic profiles do not satisfy the unchanged ten-second gate.
+
 General React ownership, shared-prefix React trees, guarded reports, transitions, repeated families, and demo integration remain incomplete.
