@@ -41,6 +41,8 @@ The published-engine test suspends a real guest generator, copies its context, a
 
 Do not infer a complete state owner from this traversal. The [engine state inventory](engine-state-inventory.md) identifies existing records, capture conventions, and missing roots. Native captures, internal collections, execution records, jobs, module state, and host resources still need explicit treatment or rejection. The [weak-entry propagation correction](ephemeron-roots.md) fixes order-dependent marking, not continuation roots or rollback.
 
+[Agent-owned decisions](agent-decisions.md) extend `Agent.resumeEvaluate` and its existing registered-evaluator root. The React numeric fixture now uses that lifecycle and collects at decision pauses. No extra dispatcher or driver registry was added. This still does not supply branch restoration.
+
 ## Size and maintenance cost
 
 At the original audit (`0dbcb0e9`), the two control runtime extensions contained 640 lines: `execution-machine.mts` has 592 and `native-captures.mts` has 48. Six control build helpers contain another 520 lines. The later machine marking method adds fourteen lines, bringing those extensions to 654 lines. These counts include interfaces and formatting. They exclude patches, general build/integrity tools, tests, and third-party implementations, so they are not a total project size.

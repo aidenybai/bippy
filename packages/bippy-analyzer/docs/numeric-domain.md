@@ -27,7 +27,7 @@ The domain records `(amount + 1) + 10` as nested additions. It does not replace 
 
 Only addition, subtraction, and unary negation have abstract operation support. `Object.is` now supports [abstract Number predicates](number-predicates.md). Other comparisons, numeric truth tests, string conversion, multiplication, division, remainder, and other concrete reads remain unsupported. Supported type-preserving operations, such as unary plus and `Number.prototype.valueOf()`, retain the abstract Number.
 
-An unsupported read or domain budget failure aborts engine evaluation with a host error. It is not a catchable guest exception. Discard that Agent and its pending execution. The low-level domain API does not repair execution contexts or automatically poison an externally managed Agent. The tests discard their fixture Agent after these failures.
+An unsupported read or domain budget failure aborts engine evaluation with a host error. It is not a catchable guest exception. Discard that Agent and its pending execution. The low-level domain API does not repair execution contexts or manage an external driver. The [Agent-owned lifecycle](agent-decisions.md) now stores errors thrown by its evaluator and rejects further execution, without rollback. The tests discard their fixture Agent after these failures.
 
 `maxInputs` defaults to 128. `maxOperations` defaults to 10,000. `maxPredicates` defaults to 10,000 distinct predicates. All three budgets must be positive safe integers. Input names contain 1 to 128 UTF-16 units. Options are copied before asynchronous engine loading. The operation budget counts recorded abstract operations across the domain’s lifetime and does not reset during branch restoration. It does not count ordinary concrete arithmetic.
 

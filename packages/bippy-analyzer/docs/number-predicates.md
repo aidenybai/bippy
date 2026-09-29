@@ -33,7 +33,7 @@ A test driver supplies one guarded SameValue choice and reuses it for subsequent
 
 The two symbolic runs match ten independent native React executions for render count, complete Test Renderer output, layout-effect events, and unmount output. The witnesses include NaN, infinities, signed zero, subnormal values, and rounding boundaries. They validate specializations, not a finite input domain.
 
-Each choice starts with a fresh runtime. These tests do not fork a React heap or preserve one shared React prefix across branches. They manually drive an engine script through the exposed Agent and realm; this is not a new public symbolic-runtime contract. Failure cleanup discards that runtime. The UI displays the concrete render count, not unknown numeric text.
+Each choice starts with a fresh runtime. These tests do not fork a React heap or preserve one shared React prefix across branches. The current fixture uses [Agent-owned decision suspension](agent-decisions.md), with explicit GC at every pause. It no longer manually advances an unregistered script iterator. This is not an analyzer-level symbolic-runtime contract. Failure cleanup discards that runtime. The UI displays the concrete render count, not unknown numeric text.
 
 The inspected React source uses native `Object.is` when available (`packages/shared/objectIs.js`). `ReactFiberHooks.js` calls updater functions through `basicStateReducer`, reuses eager state, and tests `!is(newState, hook.memoizedState)`. The implementation keeps those decisions in React.
 

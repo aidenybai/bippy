@@ -18,6 +18,8 @@ The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, wi
 | Host resources      | Analyzer `src/concrete/runtime.ts`: timer handles, callback/argument closures, console entries, errors, and rejection tracking                                                 | Timers/microtasks now declare captures and canceled timers release them. Diagnostic values, general host callbacks, branch ownership, and external-effect rollback remain unsupported.                                                                        |
 | Saved state         | `object-checkpoint.patch`, `binding-checkpoint.patch`, and `captureControl`                                                                                                    | Selected state snapshots have Agent-owned roots and LIFO release. Control snapshots are separate host closures. Their saved values are not automatically Agent roots.                                                                                         |
 
+[Agent-owned decisions](agent-decisions.md) now use the existing paused-evaluator root instead of an external driver registry. The pending decision, controlled mode, failure record, and active-resume flag also require ownership policies. They are not restored by `captureControl`. Nested controlled evaluation rejects before running another evaluator.
+
 ## Reuse existing capture support
 
 `ObjectValue.mark` reads the declared internal slots. It traverses the elements of `HostCapturedValues` explicitly. Array, Map, Set, and string iterators already use this convention. `Promise.prototype.finally` also uses it for selected builtin captures.

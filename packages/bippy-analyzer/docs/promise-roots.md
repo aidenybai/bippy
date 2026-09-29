@@ -28,6 +28,8 @@ The expanded Promise and weak-collection Test262 selection passes 2,011/2,061 in
 
 React source inspection uses checkout `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`. `ReactFiberThenable.js` attaches fulfillment/rejection closures to pending thenables and mutates their status and value/reason. This confirms that callback reachability matters. It is not symbolic Suspense verification.
 
+[Linux CI at `4c8b2670`](promise-root-validation/ci.json) passes all jobs, including 1,247 units and 74/74 smoke. The separate E2E and publish runs also pass. Earlier timing failures remain recorded; this does not establish stable Linux timing.
+
 ## Remaining root gaps
 
 An unregistered external evaluator still loses a live weak target. A separate partial `Promise.all` probe also fails: one input has resolved, another remains pending, and explicit GC clears a target held in the accumulated results. The engine later reads its value and reports `[false,7]`; V8 reports `[true,7]`.

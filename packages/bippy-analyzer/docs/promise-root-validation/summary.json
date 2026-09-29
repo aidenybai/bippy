@@ -94,7 +94,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "all CI jobs pass at 4c8b2670: 1247 units and 74/74 smoke; E2E and publish also pass; see ci.json",
   "files": {
     "engine/patches/promise-roots.patch": "e4be1c3438f35057a7ff3de7bce7ee67fb8273a39d7438fb1179cc4ecd454d5b",
     "engine/scripts/build.ts": "35d8e1df95b516ab088acd21714d0373192ef4252dd12810efe4156f429e1b4d",

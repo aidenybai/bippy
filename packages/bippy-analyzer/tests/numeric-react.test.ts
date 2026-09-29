@@ -48,31 +48,31 @@ it.each([false, true])(
       observations.push(runtime.readString("fixture.observe()"));
 
       api.setSurroundingAgent(runtime.agent);
-      let completed = false;
       try {
         const compiled = api.EnsureCompletion(runtime.realm.compileScript("fixture.increment()"));
         if (compiled.Type !== "normal") throw new Error("Expected a compiled increment");
-        const iterator = api.ScriptEvaluation(compiled.Value);
-        let step = iterator.next();
+        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);
+        let step = runtime.agent.resumeEvaluate({
+          pauseOnAbstractBoolean: true,
+          noBreakpoint: true,
+        });
         while (!step.done) {
-          if (step.value.suspend === "abstract-boolean") {
-            const decision = step.value;
-            const predicate = domain.getPredicate(decision.value);
-            if (decisions.length >= 10) throw new Error("Unexpected decision expansion");
-            if (decisions.length > 0) expect(predicate === decisions[0]).toBe(true);
-            decisions.push(predicate);
-            step = iterator.next({ resume: "abstract-boolean", decision, value: choice });
-          } else {
-            if (step.value.suspend !== "debugger" && step.value.suspend !== "potential-debugger")
-              throw new Error("Unexpected suspension");
-            step = iterator.next({ resume: "debugger", value: undefined });
-          }
+          const decision = step.value;
+          if (!decision) throw new Error("Unexpected debugger suspension");
+          const predicate = domain.getPredicate(decision.value);
+          if (decisions.length >= 10) throw new Error("Unexpected decision expansion");
+          if (decisions.length > 0) expect(predicate === decisions[0]).toBe(true);
+          decisions.push(predicate);
+          runtime.agent.AgentRecord.KeptAlive.clear();
+          api.gc();
+          step = runtime.agent.resumeEvaluate({
+            noBreakpoint: true,
+            abstractBooleanDecision: { resume: "abstract-boolean", decision, value: choice },
+          });
         }
         expect(api.EnsureCompletion(step.value).Type).toBe("normal");
-        completed = true;
+        expect(runtime.agent.isPaused()).toBe(false);
       } finally {
-        // HACK: Manual driving bypasses runtime poisoning; abandon its Agent on host failure.
-        if (!completed) runtime.agent.executionContextStack.length = 0;
         api.setSurroundingAgent(previous);
       }
       expect(decisions.length).toBeGreaterThan(0);

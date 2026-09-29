@@ -1,0 +1,202 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 2fd9ac4..1a421c5 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -13,6 +13,8 @@ import {
+   type Feature,
+   type GCMarker,
+   type ResumeEvaluateOptions,
++  type EvaluatorNextType,
++  type EvaluatorYieldType_AbstractBoolean,
+   type ParseNode,
+   type BreakpointLocation,
+   getBreakpointCandidateNodes,
+@@ -54,6 +56,14 @@ export interface AgentRecord {
+   readonly GetAvailableNamedTimeZoneIdentifierReturns: AvailableNamedTimeZoneIdentifierReturnRecord[];
+ }
+ 
++interface PausedEvaluator {
++  evaluator: ValueEvaluator;
++  onFinish: (completion: NormalCompletion<Value> | ThrowCompletion) => void;
++  controlled?: boolean;
++  decision?: EvaluatorYieldType_AbstractBoolean;
++  failure?: { error: unknown };
++}
++
+ /** https://tc39.es/ecma262/#sec-agents */
+ export class Agent {
+   // An agent comprises a set of ECMAScript execution contexts, an execution context stack, a running execution context, an Agent Record, and an executing thread. Except for the executing thread, the constituents of an agent belong exclusively to that agent.
+@@ -127,6 +137,7 @@ export class Agent {
+   mark(m: GCMarker) {
+     this.AgentRecord.KeptAlive.forEach(m);
+     m(this.#pausedEvaluator?.evaluator);
++    m(this.#pausedEvaluator?.failure?.error);
+     markStateCheckpoints(this, m);
+     this.executionContextStack.forEach(m);
+     this.jobQueue.mark(m);
+@@ -135,10 +146,8 @@ export class Agent {
+ 
+   // NON-SPEC
+   // #region Step-by-step evaluation
+-  #pausedEvaluator?: {
+-    evaluator: ValueEvaluator;
+-    onFinish: (completion: NormalCompletion<Value> | ThrowCompletion) => void;
+-  };
++  #pausedEvaluator?: PausedEvaluator;
++  #isResuming = false;
+ 
+   /**
+    * An event that is triggered when evaluators are finished and the agent is idle.
+@@ -149,6 +158,10 @@ export class Agent {
+   // NON-SPEC
+   /** Evaluate an evaluator. It will skip the debugger if the agent is already debugger-paused. */
+   evaluate<T extends Value>(evaluator: ValueEvaluator<T>, onFinished: (completion: NormalCompletion<T> | ThrowCompletion) => void, evaluationOptions?: ResumeEvaluateOptions | false): void {
++    if (this.#pausedEvaluator?.failure) throw this.#pausedEvaluator.failure.error;
++    if (this.#pausedEvaluator?.controlled || this.#pausedEvaluator?.decision) {
++      throw new TypeError('Cannot start an evaluator during controlled execution');
++    }
+     if (this.#pausedEvaluator) {
+       // cannot run a pausable evaluator when another evaluator is paused.
+       onFinished(EnsureCompletion(skipDebugger(evaluator)));
+@@ -167,49 +180,84 @@ export class Agent {
+     return !!this.#pausedEvaluator;
+   }
+ 
+-  resumeEvaluate(options?: ResumeEvaluateOptions): IteratorResult<void, ValueCompletion> {
+-    const { noBreakpoint } = options || {};
+-    if (!this.#pausedEvaluator) {
+-      throw new Error('No paused evaluator');
+-    }
+-    const { evaluator, onFinish } = this.#pausedEvaluator;
+-    let nextLocation;
+-    if (options?.pauseAt === 'step-over') {
+-      nextLocation = this.runningExecutionContext.callSite.nextNode;
+-    } else if (options?.pauseAt === 'step-out') {
+-      nextLocation = this.executionContextStack[this.executionContextStack.length - 2].callSite.lastCallNode;
+-    }
+-    let debuggerStatementCompletion = options?.debuggerStatementCompletion;
+-    while (true) {
+-      const state = evaluator.next({ resume: 'debugger', value: debuggerStatementCompletion });
+-      debuggerStatementCompletion = undefined;
+-      if (!state.done && state.value.suspend === 'abstract-boolean') {
+-        throw new TypeError('Abstract Boolean decision requires an explicit resume');
++  resumeEvaluate(options?: ResumeEvaluateOptions): IteratorResult<void | EvaluatorYieldType_AbstractBoolean, ValueCompletion> {
++    const paused = this.#pausedEvaluator;
++    if (!paused) throw new Error('No paused evaluator');
++    if (paused.failure) throw paused.failure.error;
++    if (this.#isResuming) throw new TypeError('Cannot resume an evaluator during execution');
++    this.#isResuming = true;
++    try {
++      const { noBreakpoint, abstractBooleanDecision, debuggerStatementCompletion } = options || {};
++      const requestedPause = options?.pauseOnAbstractBoolean;
++      if (requestedPause !== undefined && typeof requestedPause !== 'boolean') throw new TypeError('Abstract Boolean pause option must be a Boolean');
++      const pauseOnAbstractBoolean = requestedPause ?? paused.controlled ?? false;
++      if ((pauseOnAbstractBoolean || paused.controlled || abstractBooleanDecision !== undefined) && surroundingAgent !== this) {
++        throw new TypeError('Controlled evaluator belongs to another Agent');
++      }
++      let next: EvaluatorNextType = { resume: 'debugger', value: debuggerStatementCompletion };
++      if (abstractBooleanDecision !== undefined) {
++        if (!paused.decision) throw new TypeError('No pending abstract Boolean decision');
++        const choice = abstractBooleanDecision?.value;
++        if (abstractBooleanDecision?.resume !== 'abstract-boolean' || abstractBooleanDecision.decision !== paused.decision || typeof choice !== 'boolean') {
++          throw new TypeError('Invalid abstract Boolean decision response');
++        }
++        next = { resume: 'abstract-boolean', decision: paused.decision, value: choice };
++      } else if (paused.decision) {
++        if (!pauseOnAbstractBoolean) throw new TypeError('Abstract Boolean decision requires an explicit resume');
++        paused.controlled = true;
++        return { done: false, value: paused.decision };
++      }
++      if (pauseOnAbstractBoolean) paused.controlled = true;
++      const { evaluator, onFinish } = paused;
++      let nextLocation;
++      if (options?.pauseAt === 'step-over') {
++        nextLocation = this.runningExecutionContext.callSite.nextNode;
++      } else if (options?.pauseAt === 'step-out') {
++        nextLocation = this.executionContextStack[this.executionContextStack.length - 2].callSite.lastCallNode;
+       }
++      while (true) {
++        let state;
++        try {
++          state = evaluator.next(next);
++        } catch (error) {
++          paused.failure = { error };
++          throw error;
++        }
++        paused.decision = undefined;
++        next = { resume: 'debugger', value: undefined };
++        if (!state.done && state.value.suspend === 'abstract-boolean') {
++          paused.decision = state.value;
++          if (!pauseOnAbstractBoolean) throw new TypeError('Abstract Boolean decision requires an explicit resume');
++          return { done: false, value: state.value };
++        }
+ 
+-      if (!noBreakpoint && this.breakpointsEnabled && this.hostDefinedOptions.onDebugger && !this.debugger_isPreviewing && !state.done) {
+-        if (state.value.suspend === 'debugger') {
+-          this.hostDefinedOptions.onDebugger();
+-          return { done: false, value: undefined };
+-        } else if (state.value.suspend === 'potential-debugger') {
+-          if (options?.pauseAt === 'step-in' && shouldStepOnNode()) {
+-            this.hostDefinedOptions.onDebugger();
+-            return { done: false, value: undefined };
+-          }
+-          const callSite = surroundingAgent.runningExecutionContext.callSite;
+-          if (nextLocation && (callSite.lastNode === nextLocation || callSite.lastCallNode === nextLocation)) {
++        if (!noBreakpoint && this.breakpointsEnabled && this.hostDefinedOptions.onDebugger && !this.debugger_isPreviewing && !state.done) {
++          if (state.value.suspend === 'debugger') {
+             this.hostDefinedOptions.onDebugger();
+             return { done: false, value: undefined };
++          } else if (state.value.suspend === 'potential-debugger') {
++            if (options?.pauseAt === 'step-in' && shouldStepOnNode()) {
++              this.hostDefinedOptions.onDebugger();
++              return { done: false, value: undefined };
++            }
++            const callSite = surroundingAgent.runningExecutionContext.callSite;
++            if (nextLocation && (callSite.lastNode === nextLocation || callSite.lastCallNode === nextLocation)) {
++              this.hostDefinedOptions.onDebugger();
++              return { done: false, value: undefined };
++            }
+           }
+         }
+-      }
+ 
+-      if (state.done) {
+-        this.#pausedEvaluator = undefined;
+-        onFinish(EnsureCompletion(state.value));
+-        callCallback(this.onNoEvaluator);
+-        return state;
++        if (state.done) {
++          this.#pausedEvaluator = undefined;
++          this.#isResuming = false;
++          onFinish(EnsureCompletion(state.value));
++          callCallback(this.onNoEvaluator);
++          return state;
++        }
+       }
++    } finally {
++      this.#isResuming = false;
+     }
+   }
+ 
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index a426c26..3aab0c8 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -8,7 +8,7 @@ import {
+ } from '../completion.mts';
+ import { GlobalDeclarationInstantiation } from '../runtime-semantics/all.mts';
+ import {
+-  Evaluate, type PlainEvaluator, type ValueEvaluator,
++  Evaluate, type PlainEvaluator, type ValueEvaluator, type EvaluatorNextType_AbstractBoolean,
+ } from '../evaluator.mts';
+ import { kInternal } from '../utils/internal.mts';
+ import {
+@@ -136,6 +136,8 @@ export interface AgentHostDefined {
+ }
+ 
+ export interface ResumeEvaluateOptions {
++  pauseOnAbstractBoolean?: boolean;
++  abstractBooleanDecision?: EvaluatorNextType_AbstractBoolean;
+   noBreakpoint?: boolean;
+   pauseAt?: 'step-over' | 'step-in' | 'step-out';
+   debuggerStatementCompletion?: ValueCompletion;

@@ -25,7 +25,7 @@ Resume with the exact decision record and a host Boolean choice. The engine vali
 
 The driver owns path constraints. The engine does not enforce consistent choices across separate decisions on the same input. A driver must reuse an existing assignment or create guarded branches under a valid state owner.
 
-`skipDebugger` and the default Agent evaluator reject these suspensions rather than inventing a result. `RunSuspendedContext` forwards them through guest generator execution. Single-pass generator resumption is tested; checkpoint ownership across arbitrary guest generators is not established.
+`skipDebugger` and the default Agent evaluator reject these suspensions rather than inventing a result. The opt-in [Agent-owned decision lifecycle](agent-decisions.md) now retains and resumes them through `resumeEvaluate`. `RunSuspendedContext` forwards them through guest generator execution. Single-pass generator resumption is tested; checkpoint ownership across arbitrary guest generators is not established.
 
 ## Unsupported reads fail explicitly
 
