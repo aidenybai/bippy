@@ -83,7 +83,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "failed at 6eb84cf7: 1267 units pass, smoke 72/74; see ci-failure.json",
   "files": {
     "engine/patches/agent-decisions.patch": "ff20568c81d7960c72980c92e4154909e1085bfb3eb0dfc63d58feaf9b9bdf11",
     "engine/scripts/build.ts": "9995def12f81f5da88f18b4ef55abf4f3a4d3cafc330bba8cd5a6e3f2438e41e",

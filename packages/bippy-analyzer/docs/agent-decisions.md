@@ -46,7 +46,7 @@ React source inspection uses `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`. `ReactF
 
 The full local suite passes 1,267 tests across thirty-four files. The unchanged smoke passes 74/74. The if/debugger/logical/conditional/generator selection passes 393/399 in source and published engines. All input/compiled hashes and verdicts match. Six strict-tail-call failures remain, with different source/published diagnostics. The [validation receipts](agent-decision-validation/summary.json) retain those failures and the intermediate test/typecheck corrections.
 
-Engine SHA-256 is `92f7e382412f649f796ca889c1a7c6879d2b3e3ff4cb2b279c99af875d575d8a`. Linux validation for this increment is pending. No timeout, worker limit, or smoke selection changed.
+Engine SHA-256 is `92f7e382412f649f796ca889c1a7c6879d2b3e3ff4cb2b279c99af875d575d8a`. [Linux CI at `6eb84cf7`](agent-decision-validation/ci-failure.json) passes 1,267 units but fails both numeric smoke variants at the unchanged timeout. No timeout, worker limit, or smoke selection changed.
 
 ## Still missing
 

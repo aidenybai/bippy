@@ -175,6 +175,7 @@ This is the main gap between the current conditional evaluator and a symbolic Ja
 - [ ] Inventory mutable engine and host state. Define ownership for objects, environments, module bindings, execution records, internal collections, jobs, and external handles.
 - [ ] Choose checkpoint/journal or persistent-state mechanisms that preserve object identity and aliases. Do not use JSON or generic deep cloning as a heap snapshot.
 - [ ] Define branch continuation and resumption behavior, including exception unwinding and `finally`. Do not assume a suspended host generator can be cloned or that heap restoration also restores execution.
+- [x] Add [selected array restoration](docs/array-checkpoints.md) to the combined checkpoint, preserving identity, holes, length descriptors, integrity, and saved roots. This does not include unselected elements, iterators, or transitive React ownership.
 - [ ] Isolate variable assignments, captured bindings, allocations, arrays, property presence/order, deletion, descriptors, prototypes, and object integrity changes.
 - [ ] Cover internal-slot mutations for supported Maps, Sets, iterators, generators, Promises, typed arrays, and buffers. Keep unsupported categories explicit.
 - [ ] Evaluate actual functions, closures, methods, constructors, classes, getters, setters, and proxies through engine262. Preserve receiver identity, exceptions, and side effects.

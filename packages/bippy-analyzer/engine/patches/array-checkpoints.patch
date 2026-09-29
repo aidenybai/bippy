@@ -1,0 +1,108 @@
+diff --git a/src/abstract-ops/objects.mts b/src/abstract-ops/objects.mts
+index 076e29d..1826b33 100644
+--- a/src/abstract-ops/objects.mts
++++ b/src/abstract-ops/objects.mts
+@@ -36,14 +36,14 @@ export interface OrdinaryObject extends ObjectValue {
+   Extensible: boolean;
+ }
+ 
+-export function isOrdinaryObject(value: Value): value is OrdinaryObject {
++export const hasOrdinaryObjectMethods = (value: Value, defineOwnProperty: ObjectValue['DefineOwnProperty']): value is OrdinaryObject => {
+   return value instanceof ObjectValue
+     && value.GetPrototypeOf === ObjectValue.prototype.GetPrototypeOf
+     && value.SetPrototypeOf === ObjectValue.prototype.SetPrototypeOf
+     && value.IsExtensible === ObjectValue.prototype.IsExtensible
+     && value.PreventExtensions === ObjectValue.prototype.PreventExtensions
+     && value.GetOwnProperty === ObjectValue.prototype.GetOwnProperty
+-    && value.DefineOwnProperty === ObjectValue.prototype.DefineOwnProperty
++    && value.DefineOwnProperty === defineOwnProperty
+     && value.HasProperty === ObjectValue.prototype.HasProperty
+     && value.Get === ObjectValue.prototype.Get
+     && value.Set === ObjectValue.prototype.Set
+@@ -51,7 +51,10 @@ export function isOrdinaryObject(value: Value): value is OrdinaryObject {
+     && value.OwnPropertyKeys === ObjectValue.prototype.OwnPropertyKeys
+     && 'Prototype' in value
+     && 'Extensible' in value;
+-}
++};
++
++export const isOrdinaryObject = (value: Value): value is OrdinaryObject =>
++  hasOrdinaryObjectMethods(value, ObjectValue.prototype.DefineOwnProperty);
+ 
+ // TODO: ban other direct extension from ObjectValue in the linter
+ export type ExoticObject = ObjectValue;
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 3dcb95e..1ae690e 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -1,5 +1,6 @@
+ import {
+-  isOrdinaryObject, surroundingAgent, ObjectValue, Value,
++  isOrdinaryObject, hasOrdinaryObjectMethods, ArrayExoticObjectInternalMethods,
++  surroundingAgent, ObjectValue, Value,
+   DeclarativeEnvironmentRecord, FunctionEnvironmentRecord,
+   type Agent, type GCMarker, type OrdinaryObject,
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+@@ -8,6 +9,7 @@ import {
+ 
+ interface OrdinaryObjectState {
+   object: OrdinaryObject;
++  defineOwnProperty: ObjectValue['DefineOwnProperty'];
+   prototype: OrdinaryObject['Prototype'];
+   extensible: boolean;
+   properties: [PropertyKeyValue, FullyPopulatedDescriptor][];
+@@ -87,7 +89,7 @@ const assertEnvironment = (environment: DeclarativeEnvironmentRecord, owner: Age
+   }
+ };
+ 
+-export const createStateCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions = {}): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowArrays: boolean): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
+@@ -95,16 +97,20 @@ export const createStateCheckpoint = ({ objects = [], environments = [] }: State
+     if (object.ownerAgent !== owner) {
+       throw new TypeError('Checkpoint objects must belong to the current agent');
+     }
+-    if (!isOrdinaryObject(object)
++    if ((!isOrdinaryObject(object)
++      && !(allowArrays && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
+       || object.internalSlotsList.length !== 2
+       || !object.internalSlotsList.includes('Prototype')
+       || !object.internalSlotsList.includes('Extensible')
+       || object.PrivateElements.length !== 0
+       || object.ConstructedBy.length !== 0) {
+-      throw new TypeError('Checkpoint requires ordinary objects without additional internal state');
++      throw new TypeError(allowArrays
++        ? 'Checkpoint requires ordinary objects or arrays without additional internal state'
++        : 'Checkpoint requires ordinary objects without additional internal state');
+     }
+     states.push({
+       object,
++      defineOwnProperty: object.DefineOwnProperty,
+       prototype: object.Prototype,
+       extensible: object.Extensible,
+       properties: [...object.properties],
+@@ -147,6 +153,9 @@ export const createStateCheckpoint = ({ objects = [], environments = [] }: State
+       }
+       for (const state of environmentStates) assertEnvironment(state.environment, agent);
+       for (const state of states) {
++        if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty)) {
++          throw new TypeError('Checkpoint object internal methods changed');
++        }
+         if (agent.debugger_tryTouchDuringPreview(state.object) !== undefined) {
+           throw new Error('Object checkpoint cannot restore an existing object during preview');
+         }
+@@ -196,8 +205,11 @@ export const createStateCheckpoint = ({ objects = [], environments = [] }: State
+   };
+ };
+ 
++export const createStateCheckpoint = (options: StateCheckpointOptions = {}): StateCheckpoint =>
++  createCheckpoint(options, true);
++
+ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]): OrdinaryObjectCheckpoint => {
+-  const checkpoint = createStateCheckpoint({ objects });
++  const checkpoint = createCheckpoint({ objects }, false);
+   return {
+     scope: 'selected-ordinary-objects-v1', size: checkpoint.objectCount,
+     restore: checkpoint.restore, release: checkpoint.release,

@@ -4,7 +4,7 @@
 
 ## Captured state
 
-Each accepted object must use ordinary internal methods and have only the `Prototype` and `Extensible` internal slots. It must have no existing private elements or constructor tracking. Arrays, functions, proxies, collections, buffers, boxed primitives, promises, and other objects with additional state are rejected.
+Each accepted object must use ordinary internal methods and have only the `Prototype` and `Extensible` internal slots. It must have no existing private elements or constructor tracking. Arrays, functions, proxies, collections, buffers, boxed primitives, promises, and other objects with additional state are rejected. The separate [combined checkpoint API](array-checkpoints.md) now accepts canonical engine arrays.
 
 The checkpoint stores:
 
@@ -25,7 +25,7 @@ A checkpoint reports scope `selected-ordinary-objects-v1` and the number of dist
 
 Keep the owning agent current and release the checkpoint in cleanup. Restore only at a host-controlled execution boundary. Existing debugger preview restrictions still apply. The engine checks all selected objects before restoring any of them during preview.
 
-Restore also checks the projected ordinary prototype graph before changing objects. If an unselected prototype mutation would introduce a cycle, restore fails without applying the snapshots. Exotic prototype boundaries do not invoke traps during this check.
+Restore also checks unchanged internal methods and the projected ordinary prototype graph before changing objects. If an unselected prototype mutation would introduce a cycle, restore fails without applying the snapshots. Exotic prototype boundaries do not invoke traps during this check.
 
 Open checkpoints participate in engine garbage collection. Saved descriptor values, accessor functions, symbol keys, objects, and prototypes remain reachable. Release removes these roots and clears the stored snapshots. The subsequent [declarative-root fix](declarative-roots-validation/README.md) also preserves values captured by saved accessors; the initial checkpoint revision inherited an upstream bug in binding traversal.
 
