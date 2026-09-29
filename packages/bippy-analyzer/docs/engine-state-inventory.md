@@ -22,6 +22,8 @@ The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, wi
 
 [Arguments storage](arguments-checkpoints.md) now exposes the existing pending mapping table, parameter environment, realm, and lazy methods through engine metadata. Selected checkpoints restore argument properties, mapping state, and parameter bindings together. Live pending mappings and accessor `Env` slots supply roots; saved parameter cells retain their existing checkpoint roots. The React probe’s 29 arguments/map objects now accept selected capture, but this does not establish transitive ownership.
 
+[Immutable-prototype and string-object selection](intrinsic-checkpoints.md) now reuses the actual engine method tables. Property storage restores without materializing string indices. The immutable prototype and string payload stay read-only. This removes two intrinsic-prototype rejections from the React probe, not the remaining native-record, weak-state, and effect ownership gaps.
+
 ## Reuse existing capture support
 
 `ObjectValue.mark` reads the declared internal slots. It traverses the elements of `HostCapturedValues` explicitly. Array, Map, Set, and string iterators already use this convention. `Promise.prototype.finally` also uses it for selected builtin captures.

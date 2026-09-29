@@ -4,6 +4,8 @@
 
 ## Selection
 
+[Immutable-prototype and string objects](intrinsic-checkpoints.md) now use their canonical engine methods with the same property snapshots. Their immutable prototype or `StringData` slot remains read-only. String character indices remain virtual, and ordinary-only/closed-data policies stay strict.
+
 [Constructor-tracking storage](constructor-checkpoints.md) now restores `ConstructedBy` lists on otherwise-supported selected objects. Constructor properties and captured state remain separately owned. The ordinary-only and closed-data graph APIs still reject nonempty constructor lists.
 
 [Builtin function property checkpoints](builtin-checkpoints.md) accept canonical builtin methods and slot layouts with read-only metadata. Native captures, realm records, and additional slot contents still require separate ownership.
@@ -14,7 +16,7 @@
 
 Both lists are optional. The checkpoint copies their selections and removes duplicate identities. It reports scope `selected-objects-and-bindings-v1`, `objectCount`, `environmentCount`, and `bindingCount`.
 
-Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, Sets, arguments storage, and supported guest functions. The ordinary-only API still rejects these additional categories. Environment records must have exactly the `DeclarativeEnvironmentRecord`, `FunctionEnvironmentRecord`, or canonical `GlobalEnvironmentRecord` prototype. Capture rejects:
+Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, Sets, arguments storage, immutable-prototype objects, string objects, and supported guest functions. The ordinary-only API still rejects these additional categories. Environment records must have exactly the `DeclarativeEnvironmentRecord`, `FunctionEnvironmentRecord`, or canonical `GlobalEnvironmentRecord` prototype. Capture rejects:
 
 - Records owned by another agent.
 - Module environments, including indirect and deferred bindings.

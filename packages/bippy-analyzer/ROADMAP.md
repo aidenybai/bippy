@@ -45,6 +45,7 @@ The separate resolver work includes native build observation, corpus comparisons
 - [x] Add the missing Annex B `substr` intrinsic through an engine source patch. Preserve independent Test262 and V8 comparisons and the earlier engine failures.
 - [x] Serialize guest exception diagnostics without traversing their heap or invoking guest code. Keep original values available explicitly.
 - [x] Expose engine262’s argument parameter maps and lazy state to its existing checkpoints. [Argument aliases and roots](docs/arguments-checkpoints.md) restore in selected-state Agent forks; general React ownership remains incomplete.
+- [x] Reuse canonical engine methods to checkpoint immutable-prototype and string-object properties, including the two intrinsic prototypes found by the React probe. [These selected snapshots](docs/intrinsic-checkpoints.md) are not general intrinsic ownership.
 - [x] Compare four real React tree specializations from two opaque Boolean inputs with native execution and explicit trees. [The ownership probe](docs/react-tree-ownership.md) identifies unsupported state before the first choice. These witnesses do not restore or explore shared-prefix React branches.
 
 These are [concrete execution increments](docs/concrete-execution.md), not completion of the browser runtime stages. Still missing here: full application-loader integration, general browser host support, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.

@@ -36,4 +36,6 @@ The real React tree probe now accepts the 16 mapped arguments and 13 lazy parame
 
 Local verification passes 1,552 unit tests across 49 files, typechecking, 74/74 unchanged smoke, and two relocated clean builds. The engine SHA-256 is `c81d30b77544165445520709ff6559e6059ee702e0b369de0f9039d7c95d13f2`. Arguments/Reflect.ownKeys/WeakRef conformance passes 542/544 in both source and published engines with matching source/compiled hashes and verdicts. The two retained failures are `10.6-13-a-2.js` and `10.6-13-a-3.js`; this is not a green conformance result. See the [validation receipt](arguments-checkpoint-validation/summary.json).
 
+[Linux CI for this revision](arguments-checkpoint-validation/ci-failure.json) passes 1,552 units with the matching engine hash but passes only 72/74 smoke variants. Both numeric `substr` scenarios time out at the unchanged ten-second gate. E2E and publish pass. Archived 30-second diagnostic profiles are not smoke passes.
+
 General React ownership, shared-prefix React trees, guarded reports, transitions, repeated families, and demo integration remain incomplete.
