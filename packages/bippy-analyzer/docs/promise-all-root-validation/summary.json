@@ -64,7 +64,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "1324 units pass; numeric substr default/strict time out (72/74), see ci-failure.json",
   "files": {
     "engine/patches/promise-all-roots.patch": "a60c48760f1c3c367531ee73d73f6c46ec5b6dcb033bd1fe00bb3f5d4e19de4a",
     "engine/scripts/build.ts": "c754e694050785021c6da92abd77393eafc204b3e0f26478230aecf5fad5373a",

@@ -50,4 +50,4 @@ Engine SHA-256 is `92f7e382412f649f796ca889c1a7c6879d2b3e3ff4cb2b279c99af875d575
 
 ## Still missing
 
-Unregistered manual evaluators still have a reproduced root gap. [Accumulator roots](promise-all-roots.md) fix partial `Promise.all` results, but partial `Promise.allSettled` and `Promise.any` probes still fail. The React fixture still starts a fresh runtime for each choice. No shared-prefix React fork, transitive state owner, guarded tree/transition report, or integrated symbolic demo exists. The [React completion checklist](symbolic-react-status.md) remains incomplete.
+Unregistered manual evaluators still have a reproduced root gap. [Accumulator roots](promise-all-roots.md) fix partial `Promise.all` results, and [combinator roots](promise-combinator-roots.md) fix partial allSettled/any results. The [state inventory](engine-state-inventory.md) records remaining root gaps. The React fixture still starts a fresh runtime for each choice. No shared-prefix React fork, transitive state owner, guarded tree/transition report, or integrated symbolic demo exists. The [React completion checklist](symbolic-react-status.md) remains incomplete.

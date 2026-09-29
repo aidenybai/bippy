@@ -1,0 +1,80 @@
+{
+  "scope": "engine262-allsettled-any-accumulator-roots-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "bba3df5a5f3dc0e9b890b5757a4e64e4843dc83068b3e42f429aabccc6ad32f2",
+  "implementation": [
+    "Populate allSettled fulfillment Values/Capability slots, previously declared but unset",
+    "Declare/populate allSettled rejection Values/Capability and any rejection Errors/Capability slots",
+    "Retain original shared arrays and capability records via existing marking",
+    "No changes to scheduling, resolution, counters, AlreadyCalled sharing or input ordering"
+  ],
+  "regressions": {
+    "initialCases": 24,
+    "initialFailures": 24,
+    "finalCases": 24,
+    "nativeComparisons": 21,
+    "partialCases": 12,
+    "capabilityCases": 6,
+    "sharedAccumulatorCases": 3,
+    "discardedCycles": 3,
+    "review": "Detached-callback tests drop the unused sibling before GC to cover each accumulator path independently"
+  },
+  "units": {
+    "passed": 1348,
+    "total": 1348,
+    "files": 39
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "a3b4a0b42760f745ef10adca16743d779939c15ce15a6c7881dd30d93ca1d2cb",
+      "compressedSha256": "1735f9b52fc6ab7aa4a466707233eca2d8a139501a2228fe6b601bbfc24d3ebd"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "8c54a23a0c84c7feb531d5581aa77bf0bb9410907ffb7b633d34a0a7d9b9c9c4",
+      "compressedSha256": "e63dae22b033dc7922d18e14e06da1385604fe13c94ea64fb257259d30d7d842"
+    }
+  ],
+  "conformance": {
+    "passed": 532,
+    "total": 548,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "identicalFailureDiagnostics": true,
+    "selection": [
+      ".test262/test/built-ins/Promise/allSettled/**/*.js",
+      ".test262/test/built-ins/Promise/any/**/*.js",
+      ".test262/test/built-ins/WeakRef/**/*.js",
+      ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+    ],
+    "failures": "16 matching failures retained"
+  },
+  "boundaries": [
+    "Finally fulfilled values/rejected reasons still lose targets during pending cleanup",
+    "Keyed combinator/module/saved-state/unregistered external evaluator policies remain incomplete",
+    "Retained consumed callbacks can retain captures; no eager reclamation guarantee",
+    "No Promise restoration, transitive owner or shared-prefix React fork"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/promise-combinator-roots.patch": "37ef73a11ab25df83cc4f15e111356a1f377e9008e3964e64c9e4c4d0e1c30e6",
+    "engine/scripts/build.ts": "2fc906ba37ed865dbc738a67a4522cd298bb54ee54e79aaf984716bcf2cc2c25",
+    "tests/gc-promise-combinators.test.ts": "f238f36a005e84b6302639be5a32229f34159cfda6bbb329de2e2ff4148d41b3",
+    "tests/helpers/concrete-gc.ts": "217f6532ee1fbd163f80f2f219f110f0c051f6943e08b7f72ddaef6e64198af5",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "docs/engine-state-inventory.md": "082bef3a49aaf15b3eebb57378b695337334c60d5560b1e12889c1d73eb6ea51"
+  }
+}

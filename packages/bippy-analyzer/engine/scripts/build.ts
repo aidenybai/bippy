@@ -80,6 +80,7 @@ const build = async (): Promise<void> => {
       "collection-checkpoints.patch",
       "set-zero.patch",
       "promise-all-roots.patch",
+      "promise-combinator-roots.patch",
     ])
       execFileSync(
         "git",

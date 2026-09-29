@@ -30,6 +30,6 @@ The full local suite passes 1,228 tests across thirty-two files. The unchanged s
 
 ## Remaining root and ownership gaps
 
-An unregistered external `ScriptEvaluation` suspension still loses a live weak target. At `60d0a6ed`, a pending-Promise probe also reported engine `[false,7]` versus native V8 `[true,7]`. The later [Promise-root correction](promise-roots.md) fixes that reaction, marks capabilities, and annotates intrinsic reaction/assimilation jobs. [Accumulator roots](promise-all-roots.md) now fix partial `Promise.all`. Partial allSettled/any results still lose live targets.
+An unregistered external `ScriptEvaluation` suspension still loses a live weak target. At `60d0a6ed`, a pending-Promise probe also reported engine `[false,7]` versus native V8 `[true,7]`. The later [Promise-root correction](promise-roots.md) fixes that reaction, marks capabilities, and annotates intrinsic reaction/assimilation jobs. [Accumulator roots](promise-all-roots.md) now fix partial `Promise.all`. [Combinator roots](promise-combinator-roots.md) also fix allSettled/any. See the [state inventory](engine-state-inventory.md) for remaining root gaps.
 
 Saved snapshots, native captures, module state, diagnostic host values, and branch-owned queues still need explicit treatment. The [state inventory](engine-state-inventory.md) and [React completion checklist](symbolic-react-status.md) remain open. This correction is not general React branch isolation or a guarded transition API.

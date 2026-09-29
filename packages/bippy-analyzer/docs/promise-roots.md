@@ -32,7 +32,7 @@ React source inspection uses checkout `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`
 
 ## Remaining root gaps
 
-An unregistered external evaluator still loses a live weak target. The original partial `Promise.all` probe returned engine `[false,7]` versus V8 `[true,7]`. [Declared accumulator roots](promise-all-roots.md) now fix that probe. Partial `Promise.allSettled` results and `Promise.any` errors still produce that mismatch.
+An unregistered external evaluator still loses a live weak target. The original partial `Promise.all` probe returned engine `[false,7]` versus V8 `[true,7]`. [Declared accumulator roots](promise-all-roots.md) now fix that probe. [Combinator roots](promise-combinator-roots.md) also fix partial allSettled/any results. See the [state inventory](engine-state-inventory.md) for remaining root gaps.
 
 The accumulator probe attaches its observer outside the target's lexical environment. An initial version attached it inside that environment, which conservatively retained the target and masked the missing native capture. Both observations are recorded. Reaction marking does not discover every builtin's native captures. The remaining combinator and `finally` closures, module records, diagnostics, and saved continuations still need explicit policies and tests.
 
