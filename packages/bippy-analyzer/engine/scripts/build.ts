@@ -74,6 +74,7 @@ const build = async (): Promise<void> => {
       "ephemeron-roots.patch",
       "suspended-control-roots.patch",
       "host-job-roots.patch",
+      "promise-roots.patch",
     ])
       execFileSync(
         "git",

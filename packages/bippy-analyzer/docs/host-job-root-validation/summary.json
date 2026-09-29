@@ -170,7 +170,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "failed at 60d0a6ed: 1228 units pass, smoke 72/74; see ci-failure.json",
   "files": {
     "engine/patches/host-job-roots.patch": "122e7cb90ec13ebaed6b4addeb49bc240f2c1e32c7c30db98014ad4be1b4aeb6",
     "engine/scripts/build.ts": "4b9b7a80b758cbdba3d006b68ed6d04efe3deb013ae3784c3c7a4d3bb54f923d",

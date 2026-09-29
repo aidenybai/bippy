@@ -1,5 +1,6 @@
 import { expect, it } from "vite-plus/test";
-import { createConcreteRuntime, type ConcreteRuntime } from "../src/concrete/runtime.js";
+import { createConcreteRuntime } from "../src/concrete/runtime.js";
+import { getCollectedReference as collect } from "./helpers/concrete-gc.js";
 import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { getNativeGcObservation } from "./helpers/native-gc.js";
 
@@ -32,26 +33,6 @@ const getSetup = (registration: string, target: string): string => `
     handle = ${registration};
   })();
 `;
-
-const collect = async (runtime: ConcreteRuntime): Promise<string> => {
-  const { api } = await getSymbolicEngine();
-  const previous = api.surroundingAgent;
-  api.setSurroundingAgent(runtime.agent);
-  const pop = runtime.realm.pushTopContext();
-  try {
-    runtime.agent.AgentRecord.KeptAlive.clear();
-    api.gc();
-    const result = api.EnsureCompletion(
-      runtime.realm.evaluateScriptSkipDebugger("String(reference.deref() !== undefined)"),
-    );
-    if (result.Type !== "normal" || result.Value.type !== "String")
-      throw new Error("Expected a GC observation");
-    return result.Value.stringValue();
-  } finally {
-    pop?.();
-    api.setSurroundingAgent(previous);
-  }
-};
 
 const cases = fixtures.flatMap((fixture) =>
   ["{}", "Symbol('target')"].map((target) => ({ ...fixture, target })),

@@ -26,10 +26,10 @@ Engine tests cover pending callbacks, completion, cancellation before dequeue, t
 
 The full local suite passes 1,228 tests across thirty-two files. The unchanged smoke passes 74/74. The weak-collection and `Promise.prototype.then` Test262 selection passes 745/749 in both engines, with matching input/compiled hashes and verdicts. Both engines fail the default and strict variants of `rxn-handler-fulfilled-next-abrupt.js` and `rxn-handler-rejected-next-abrupt.js`, reporting an unhandled Promise rejection. These failures are retained, not excluded.
 
-[Validation receipts](host-job-root-validation/summary.json) retain the thirteen-case baseline, the initial missing-export typecheck failure, conformance results, and current probes. Engine SHA-256: `15d0f9a0459edd4f027e6dc8a717e171096b3de1d4c27a298495cdb7e0f3d34d`. No worker limit, timeout, or smoke selection changed. Linux validation for this increment remains pending.
+[Validation receipts](host-job-root-validation/summary.json) retain the thirteen-case baseline, the initial missing-export typecheck failure, conformance results, and current probes. Engine SHA-256: `15d0f9a0459edd4f027e6dc8a717e171096b3de1d4c27a298495cdb7e0f3d34d`. No worker limit, timeout, or smoke selection changed. [Linux CI at `60d0a6ed`](host-job-root-validation/ci-failure.json) passes 1,228 units but fails both numeric smoke variants at the unchanged timeout.
 
 ## Remaining root and ownership gaps
 
-An unregistered external `ScriptEvaluation` suspension still loses a live weak target. A new pending-Promise probe also reports engine `[false,7]` versus native V8 `[true,7]`: its reaction callback later reads an object whose weak reference the collector cleared. Declared host-job values do not replace missing Promise reaction/capability marking or annotate intrinsic Promise jobs automatically.
+An unregistered external `ScriptEvaluation` suspension still loses a live weak target. At `60d0a6ed`, a pending-Promise probe also reported engine `[false,7]` versus native V8 `[true,7]`. The later [Promise-root correction](promise-roots.md) fixes that reaction, marks capabilities, and annotates intrinsic reaction/assimilation jobs. A partial `Promise.all` result still loses a live target.
 
 Saved snapshots, native captures, module state, diagnostic host values, and branch-owned queues still need explicit treatment. The [state inventory](engine-state-inventory.md) and [React completion checklist](symbolic-react-status.md) remain open. This correction is not general React branch isolation or a guarded transition API.
