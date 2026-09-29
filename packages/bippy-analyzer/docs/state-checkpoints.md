@@ -1,12 +1,12 @@
 # Selected objects and bindings
 
-`binding-checkpoint.patch` adds `createStateCheckpoint({ objects, environments })` to the maintained engine API. It restores selected ordinary objects, [arrays](array-checkpoints.md), and selected declarative bindings together. It does not clone execution contexts or resume symbolic branches.
+`binding-checkpoint.patch` adds `createStateCheckpoint({ objects, environments })` to the maintained engine API. It restores selected ordinary objects, [arrays](array-checkpoints.md), [Maps and Sets](collection-checkpoints.md), and selected declarative bindings together. It does not clone execution contexts or resume symbolic branches.
 
 ## Selection
 
 Both lists are optional. The checkpoint copies their selections and removes duplicate identities. It reports scope `selected-objects-and-bindings-v1`, `objectCount`, `environmentCount`, and `bindingCount`.
 
-Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays. The ordinary-only API still rejects arrays. Environment records must have exactly the `DeclarativeEnvironmentRecord` or `FunctionEnvironmentRecord` prototype. Capture rejects:
+Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, and Sets. The ordinary-only API still rejects these containers. Environment records must have exactly the `DeclarativeEnvironmentRecord` or `FunctionEnvironmentRecord` prototype. Capture rejects:
 
 - Records owned by another agent.
 - Module environments, including indirect and deferred bindings.
@@ -27,7 +27,7 @@ The collector marks saved values independently of current cells. Assigning a dif
 
 `restore()` can run repeatedly. `release()` keeps current state and invalidates the checkpoint. Both require last-in-first-out access. `createOrdinaryObjectCheckpoint()` uses the same stack and retains its existing scope, `size`, and methods.
 
-Before changing selected data, restore checks environment restrictions, unchanged internal methods, debugger preview restrictions, and the projected ordinary prototype graph. Validation failures leave selected data unchanged. Binding restoration is forbidden during debugger preview. Host allocation failures are not rollback transactions.
+Before changing selected data, restore checks environment restrictions, unchanged internal methods and collection-list identities, debugger preview restrictions, and the projected ordinary prototype graph. Validation failures leave selected data unchanged. Binding restoration is forbidden during debugger preview. Host allocation failures are not rollback transactions.
 
 ## Excluded state
 
@@ -35,14 +35,14 @@ This is a storage checkpoint, not complete branch isolation. It does not restore
 
 - Unselected outer bindings, objects, or prototypes.
 - Global object bindings or the global declaration-name set when only the global declarative record is selected.
-- Mapped-argument properties, maps, sets, promises, typed arrays, buffers, or other excluded internal state.
+- Mapped-argument properties, weak collections, promises, typed arrays, buffers, or other excluded internal state.
 - Module loading, linking, caches, or evaluation state.
 - Pending jobs, timers, host resources, or external effects.
 - Execution stacks, suspended generators, or native collection iterators.
 
 Ready function records are accepted because guest code cannot rebind their initialized `this` value. Mutations to the referenced receiver object still require object selection. The API does not rewind constructor initialization or disposal. Do not modify engine record metadata through host code while a checkpoint is open.
 
-Use host-controlled execution boundaries and bound the number of records, bindings, properties, and open checkpoints. Syntax-step budgets do not bound native capture or restoration work. These APIs do not make a poisoned concrete runtime safe to resume.
+Use host-controlled execution boundaries and bound the number of records, bindings, properties, stored collection entries, and open checkpoints. Syntax-step budgets do not bound native capture or restoration work. These APIs do not make a poisoned concrete runtime safe to resume.
 
 ## Verification
 

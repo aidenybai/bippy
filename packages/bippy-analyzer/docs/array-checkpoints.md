@@ -31,10 +31,10 @@ Four branch scripts run in both visitation orders. Their observations match eigh
 
 The full local suite passes 1,288 tests across thirty-five files. The unchanged smoke passes 74/74. The selected Array constructor/length/isArray/push/pop/shift/unshift/splice Test262 paths pass 558/558 in both engines, with matching input hashes, compiled hashes, and verdicts. [Receipts](array-checkpoint-validation/summary.json) retain source hashes, logs, and compressed per-variant reports.
 
-Clean relocated builds reproduce engine SHA-256 `e098a9348caa9d016baf213e6fb5f270714529440cb6a8f1ef913e802b6da2ab`. Linux validation for this increment is pending. No timeout, worker limit, or smoke selection changed.
+Clean relocated builds reproduce engine SHA-256 `e098a9348caa9d016baf213e6fb5f270714529440cb6a8f1ef913e802b6da2ab`. Linux at `76200a44` passes 1,288 units but fails both numeric smoke variants (72/74). Other CI jobs, E2E, and publish pass. [The failure receipt](array-checkpoint-validation/ci-failure.json) retains logs and profiles. No timeout, worker limit, or smoke selection changed.
 
 ## React relevance and remaining ownership work
 
 React checkout `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, `ReactFiberHooks.js`, stores memo-cache data as arrays and allocates entries with `new Array(size)`. It copies or shares those arrays according to its feature flag. This source inspection motivates array restoration; it is not a branch-isolation test of the React compiler or reconciler.
 
-Unselected objects, array iterators, functions, jobs, modules, and Agent control metadata still need ownership policies. A selected array does not select its elements recursively. Maps, Sets, promises, typed arrays, and buffers remain excluded from this checkpoint API. The [React completion checklist](symbolic-react-status.md) remains open.
+Unselected objects, array iterators, functions, jobs, modules, and Agent control metadata still need ownership policies. A selected array does not select its elements recursively. [Selected Maps and Sets](collection-checkpoints.md) now have storage checkpoints. Weak collections, promises, typed arrays, and buffers remain excluded from this API. The [React completion checklist](symbolic-react-status.md) remains open.

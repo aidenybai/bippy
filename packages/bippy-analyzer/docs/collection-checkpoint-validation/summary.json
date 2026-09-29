@@ -1,0 +1,89 @@
+{
+  "scope": "engine262-selected-map-set-checkpoints-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "c1fa98d2162043bc09f2abf67b34d3361c51d86184b47c3e1f95b7d684aa7a13",
+  "api": {
+    "name": "createStateCheckpoint",
+    "unchangedScope": "selected-objects-and-bindings-v1",
+    "ordinaryOnlyApiStillRejectsCollections": true
+  },
+  "implementation": [
+    "Reuse existing object/binding snapshot and LIFO marking stack",
+    "Restore original MapData/SetData lists and original Map entry Key/Value cells",
+    "Retain tombstones, guest undefined, insertion order, aliases, prototypes and descriptors",
+    "Preflight list identity and internal methods before selected-data mutation",
+    "Mark saved Map keys/values and Set elements; release removes snapshot roots",
+    "Reuse CanonicalizeKeyedCollectionKey to correct Set negative-zero normalization"
+  ],
+  "regressions": {
+    "checkpointCases": 23,
+    "initialFailures": 23,
+    "firstPostpatchFailures": 2,
+    "firstPostpatchFailureReason": "Set retained negative zero before restoration",
+    "zeroCases": 4,
+    "zeroPrepatchFailures": 4,
+    "nativeBranchObservations": 12,
+    "nativeBaselineObservations": 4,
+    "nativeZeroObservations": 4,
+    "gcCases": 6
+  },
+  "units": {
+    "passed": 1315,
+    "total": 1315,
+    "files": 37
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "6d4c14f9ac02d75ea5df053321d5a020c25a4be0e68a572a46808374ea5a3905",
+      "compressedSha256": "6b7af041b8f84b8e659c76a568a0ff186e0b43eb4410ca4ca675f06ba3fc6321"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "b73d97e40f9aeb5517e992ee9a76faaf6f1b1230454e8181c637d2b475e8b278",
+      "compressedSha256": "fb3c017c2be85bd0f1d505a549e1cc2aa7a97d6cdb1d07af660ecbf72a20c5ea"
+    }
+  ],
+  "conformance": {
+    "passed": 1169,
+    "total": 1169,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "selection": [".test262/test/built-ins/Map/**/*.js", ".test262/test/built-ins/Set/**/*.js"],
+    "knownCoverageGap": "Existing zero-normalization test checks size, not stored sign"
+  },
+  "interrupted": {
+    "file": "source-interrupted.txt.gz",
+    "reason": "Tool command wall timeout at 200 seconds; incomplete report, not a pass. No surviving evaluators found. Completed rerun retains per-test 10-second gate.",
+    "originalSha256": "6713f98a69f220a48938824d3fdd2585cb402588283684ecd35100b60952c36f",
+    "compressedSha256": "717ed9651f26d5b637d3747e743f5d0732981230a606fb7d2084e18362beb157"
+  },
+  "boundaries": [
+    "Unselected iterator positions and referenced objects do not rewind",
+    "Weak collections, existing private state, proxies and additional slots reject",
+    "No native host-container, job, Promise, module, Agent-control or transitive ownership",
+    "No resumed collection callback, shared-prefix React fork, guarded report or integrated demo",
+    "Caller must bound stored entries including tombstones; syntax budgets do not bound native snapshots"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/collection-checkpoints.patch": "c5558a966e239f57fc3b067210df7a7a230cb034a47549f9e15c9d34fa344de5",
+    "engine/patches/set-zero.patch": "d86eafe447fb340faf6450620ef5cc683dca7919b89f0c62b9d522a3d65ec774",
+    "engine/scripts/build.ts": "b493e228869f9ec7ef33cda013bc0c2d4f9451da49ab3f988a91b1c3be77f0b6",
+    "tests/collection-checkpoint.test.ts": "452ef4f7abe5232addba56b90058c182e248ddf9d0af3afe7c10740ed4739a7c",
+    "tests/set-zero.test.ts": "c2c7974f970b3e8d57118e806f7060de2b3f0943602b844b28fe16700067d213",
+    "docs/engine-state-inventory.md": "b368d4a34eae44000ef8494320377243747e592dc867e30907a674b0ea18f677"
+  }
+}

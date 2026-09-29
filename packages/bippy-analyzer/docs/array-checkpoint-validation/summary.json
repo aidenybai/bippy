@@ -79,7 +79,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "1288 units pass; numeric smoke default and strict time out (72/74), see ci-failure.json",
   "files": {
     "engine/patches/array-checkpoints.patch": "4f399f62198e0c68b043ff54dfbae701e2cf4c46121d63291590651c021c19be",
     "engine/scripts/build.ts": "d7371545994a0cc4200e5bd6d97c978ec63317a731344489063e5760dd950b2c",

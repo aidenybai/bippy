@@ -77,6 +77,8 @@ const build = async (): Promise<void> => {
       "promise-roots.patch",
       "agent-decisions.patch",
       "array-checkpoints.patch",
+      "collection-checkpoints.patch",
+      "set-zero.patch",
     ])
       execFileSync(
         "git",

@@ -177,7 +177,8 @@ This is the main gap between the current conditional evaluator and a symbolic Ja
 - [ ] Define branch continuation and resumption behavior, including exception unwinding and `finally`. Do not assume a suspended host generator can be cloned or that heap restoration also restores execution.
 - [x] Add [selected array restoration](docs/array-checkpoints.md) to the combined checkpoint, preserving identity, holes, length descriptors, integrity, and saved roots. This does not include unselected elements, iterators, or transitive React ownership.
 - [ ] Isolate variable assignments, captured bindings, allocations, arrays, property presence/order, deletion, descriptors, prototypes, and object integrity changes.
-- [ ] Cover internal-slot mutations for supported Maps, Sets, iterators, generators, Promises, typed arrays, and buffers. Keep unsupported categories explicit.
+- [x] Add [selected Map/Set restoration](docs/collection-checkpoints.md), preserving internal lists, Map entry identities, insertion order, and saved roots. Unselected entries and iterator positions do not rewind.
+- [ ] Cover internal-slot mutations for supported Maps, Sets, iterators, generators, Promises, typed arrays, and buffers. Keep unsupported categories explicit. Selected Map/Set storage alone does not complete ownership.
 - [ ] Evaluate actual functions, closures, methods, constructors, classes, getters, setters, and proxies through engine262. Preserve receiver identity, exceptions, and side effects.
 - [ ] Handle unknown property keys and conditional object identities without inventing missing properties or conflating distinct allocations.
 - [ ] Merge normal and abrupt paths into guarded values and effects. Preserve mutations made before a throw, return, or other abrupt completion.
