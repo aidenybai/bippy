@@ -69,7 +69,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "1411 units and 74/74 smoke pass; clean-build hash matches, see ci.json",
   "files": {
     "engine/patches/function-checkpoints.patch": "2ec65d8f903c1ef867fa172e6076617ba9fa69e4f44b5b12b7c2e553981f90d5",
     "engine/scripts/build.ts": "424f8c9ce5bc4f45ef75e52225cd6fc64f5b3d2b271cf977dbcc8334bf457653",

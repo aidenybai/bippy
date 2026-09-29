@@ -46,4 +46,6 @@ The later [suspended-evaluator correction](suspended-control-roots.md) fixes the
 
 [Selected guest function properties](function-checkpoints.md) now restore with read-only ECMAScript or bound-function metadata. Captured environments, home objects, targets, receivers, and argument objects still require separate ownership. Direct native builtins, class constructors, private-environment functions, and callable proxies remain outside this selected policy.
 
+[Closed guest-data graph checkpoints](data-graph-checkpoints.md) now follow supported properties, prototypes, Map entries, and Set members under capture limits. Unsupported reachable state rejects before checkpoint registration. This policy rejects ordinary intrinsic prototype graphs and all functions; it does not own React state or native execution records.
+
 The current implementation does not meet these conditions. General symbolic React forks remain unimplemented. Do not substitute prefix replay or ignore unowned state.

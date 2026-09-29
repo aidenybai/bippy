@@ -1,0 +1,89 @@
+{
+  "scope": "closed-data-graph-v1",
+  "symbolicReactComplete": false,
+  "generalStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "6889e6071d100ee410dd643112bfc50c0d23d9746668ae8e1393da670b596c0d",
+  "implementation": [
+    "Extend existing selected-state capture traversal with explicit guest-data edges",
+    "Follow prototypes, own descriptors, Map keys/values and Set members; preserve original records",
+    "Reject unsupported nodes before checkpoint registration; no generic native-object walker",
+    "Copy roots by index and bound distinct objects and stored traversal entries",
+    "Reuse existing Agent roots, snapshot restoration and shared LIFO release"
+  ],
+  "regressions": {
+    "initialCases": 20,
+    "initialBroadAssertions": {
+      "failed": 12,
+      "misleadingPasses": 8
+    },
+    "correctedInitialFailures": 20,
+    "finalCases": 23,
+    "nativeBranchObservations": 8,
+    "nativeBaselineObservations": 2,
+    "agentPrefixExecutionsPerOrder": 1,
+    "branchOrders": 2,
+    "intermediateCorrection": "Broad rejection assertions accepted the missing API error; narrowed diagnostics fail all initial cases"
+  },
+  "units": {
+    "passed": 1434,
+    "total": 1434,
+    "files": 43
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "6075d86d73c75f7c4869a59054e0e70e260db283676ae35252b4f44c120c05ec",
+      "compressedSha256": "c8329badc6ad942162799b7c0211aca9d2ff6a416a67187a572e4b6564de7c4a"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "26a9d2205312caa0128ae10819adabd471ddb462e4dc00bb2edc31f5547713c7",
+      "compressedSha256": "7db4b672633db60357a73ceb7c675b351815f47c56f5763a394aebf042474891"
+    }
+  ],
+  "conformance": {
+    "passed": 736,
+    "total": 736,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "selection": [
+      ".test262/test/built-ins/Object/create/**/*.js",
+      ".test262/test/built-ins/Reflect/ownKeys/**/*.js",
+      ".test262/test/built-ins/Map/prototype/set/**/*.js",
+      ".test262/test/built-ins/Set/prototype/add/**/*.js"
+    ]
+  },
+  "budgets": {
+    "maxObjectsDefault": 10000,
+    "maxEntriesDefault": 100000,
+    "entries": "Root references, object prototypes, descriptors, stored Map records and Set slots including tombstones"
+  },
+  "boundaries": [
+    "Rejects functions, ordinary intrinsic prototype graphs, weak collections, proxies, promises, typed arrays and unsupported internal state",
+    "Owns supported reachable data at capture, not external bindings, host effects, jobs or execution contexts",
+    "Captured graph cannot prevent branch-created values escaping into unowned state",
+    "Capture traversal limits do not bound bytes, host metadata getters, allocation, parsing, GC or branch-created restoration work",
+    "Agent integration fixture declares its context-stack policy; no general execution owner",
+    "No shared-prefix React fork, guarded report or symbolic demo"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/data-graph-checkpoints.patch": "a1410c8fab3c758c986614b6d74c29b2555521da8426ac2a914dfaf76f960c76",
+    "engine/scripts/build.ts": "57166c6f8d543b5259a08c549aa47303751471b5197c374c8275d60bfe9ca288",
+    "tests/data-graph-checkpoint.test.ts": "ace586c6180a6045d6513f82ff98d3f52c74eb710cfd07463364e4cebc67c255",
+    "tests/helpers/engine-fixture.ts": "72c219f4e83c2eb77b48d5d38eb4fe4a25a37d37b78836df91307d385e108867",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17",
+    "docs/engine-state-inventory.md": "5ba7124f37931bc02ac2ddf523343093006c954df72b838929f4ddd331544b6e"
+  }
+}
