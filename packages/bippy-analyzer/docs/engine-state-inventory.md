@@ -2,6 +2,8 @@
 
 General React branching still needs an engine-state owner. This inventory identifies records already used by the current runtime. It is not an exhaustive internal-slot catalogue or proof of complete garbage collection (GC).
 
+[Selected native context snapshots](context-checkpoints.md) now restore context field references and original CallSite records. They do not own referenced native records, context-stack membership, captures, or queues. Selecting the React probe’s 20 contexts adds 20 original CallSites beyond its 24 visited records. A partial-owner React fork matches UI observations but leaks four branches’ timers, so native and host ownership remains incomplete.
+
 The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, with the maintained patches. Paths starting with `src/` in the table refer to upstream engine sources. Preserve these records and their identities instead of constructing a parallel runtime heap.
 
 | Record              | Existing engine representation and GC route                                                                                                                                    | Missing ownership or root coverage                                                                                                                                                                                                                                                                                                                                                                                                                                            |

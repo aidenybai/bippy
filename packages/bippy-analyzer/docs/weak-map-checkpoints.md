@@ -39,4 +39,6 @@ Two Agent runs compare four branches with independent V8 programs, one prefix pe
 
 Local gates pass 1,664 tests across 53 files, typechecking, and the unchanged 74-variant smoke. Source and published engines pass the same 411 selected WeakMap/WeakRef/Map get-set-delete conformance variants. Input hashes, compiled hashes, and verdicts match. Both commands exit zero. Two relocated builds produce SHA-256 `4b41a77cd0e4a12995624c7c9e9f51bc17c22e69bc59c50af5691981d98aaac6`.
 
+[Linux CI](weak-map-checkpoint-validation/ci-failure.json) passes 1,664 units with the matching engine hash, but both numeric `substr` smoke variants time out at ten seconds (72/74). E2E native fails with `proper-lockfile` error `ECOMPROMISED`, “Unable to update lock within the stale threshold”. Publish succeeds. These failures and diagnostic profiles remain archived.
+
 [Validation receipts](weak-map-checkpoint-validation/summary.json) retain baselines, logs, hashes, both diagnostic drivers, and their reports. General React ownership, guarded reports, transitions, repeated families, and demo integration remain incomplete.

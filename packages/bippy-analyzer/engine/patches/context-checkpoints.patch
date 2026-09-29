@@ -1,0 +1,239 @@
+diff --git a/src/execution-context/ExecutionContext.mts b/src/execution-context/ExecutionContext.mts
+index 6c23efe..bc163c4 100644
+--- a/src/execution-context/ExecutionContext.mts
++++ b/src/execution-context/ExecutionContext.mts
+@@ -76,21 +76,20 @@ export class ExecutionContext {
+   poppedForTailCall = false;
+ 
+ 
+-  copy() {
+-    const e = new ExecutionContext();
+-    e.CodeEvaluationState = this.CodeEvaluationState;
+-    e.Function = this.Function;
+-    e.Realm = this.Realm;
+-    e.ScriptOrModule = this.ScriptOrModule;
+-    e.VariableEnvironment = this.VariableEnvironment;
+-    e.LexicalEnvironment = this.LexicalEnvironment;
+-    e.PrivateEnvironment = this.PrivateEnvironment;
+-    e.HostDefined = this.HostDefined;
+-    e.HostCapturedValues = this.HostCapturedValues;
+-
+-    e.callSite = this.callSite.clone(e);
+-    e.promiseCapability = this.promiseCapability;
+-    return e;
++  copy(target = new ExecutionContext()) {
++    target.CodeEvaluationState = this.CodeEvaluationState;
++    target.Function = this.Function;
++    target.Realm = this.Realm;
++    target.ScriptOrModule = this.ScriptOrModule;
++    target.VariableEnvironment = this.VariableEnvironment;
++    target.LexicalEnvironment = this.LexicalEnvironment;
++    target.PrivateEnvironment = this.PrivateEnvironment;
++    target.HostDefined = this.HostDefined;
++    target.HostCapturedValues = this.HostCapturedValues;
++
++    target.callSite = this.callSite.clone(target, target.callSite);
++    target.promiseCapability = this.promiseCapability;
++    return target;
+   }
+ 
+   // NON-SPEC
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index e712557..dc64f2a 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -10,7 +10,7 @@ import {
+   hasBuiltinFunctionMethods, builtinFunctionInternalSlots,
+   ArgumentExoticObject, getArgumentsParameterMapData,
+   type ArgumentsParameterMapData, type ObjectInternalMethods,
+-  StringExoticObjectInternalMethods,
++  StringExoticObjectInternalMethods, ExecutionContext, CallSite,
+ } from '#self';
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
+ import { ImmutablePrototypeObjectInternalMethods } from '../intrinsics/ObjectPrototype.mts';
+@@ -229,8 +229,36 @@ interface GlobalEnvironmentState {
+   globalThis: ObjectValue;
+ }
+ 
++interface ContextState {
++  context: ExecutionContext;
++  snapshot: ExecutionContext;
++  callSite: CallSite;
++}
++
++interface CallSiteState {
++  callSite: CallSite;
++  snapshot: CallSite;
++}
++
++const assertNativeRecord = (value: object, prototype: object, keys: readonly PropertyKey[]): void => {
++  if (Object.getPrototypeOf(value) !== prototype || !Object.isExtensible(value)
++    || Reflect.ownKeys(value).length !== keys.length || !keys.every((key) => {
++      const descriptor = Object.getOwnPropertyDescriptor(value, key);
++      return descriptor && 'value' in descriptor && descriptor.writable && descriptor.enumerable && descriptor.configurable;
++    })) throw new TypeError('Checkpoint requires canonical context records');
++};
++
++const assertContext = (context: ExecutionContext, owner: Agent, keys: readonly PropertyKey[], siteKeys: readonly PropertyKey[]): void => {
++  assertNativeRecord(context, ExecutionContext.prototype, keys);
++  if (context.Realm?.GlobalObject.ownerAgent !== owner) throw new TypeError('Checkpoint contexts must belong to the current agent');
++  assertNativeRecord(context.callSite, CallSite.prototype, siteKeys);
++  if (context.callSite.context !== context) throw new TypeError('Checkpoint context CallSite owner changed');
++};
++
+ interface StateCheckpointFrame {
+   states: OrdinaryObjectState[];
++  contexts: ContextState[];
++  callSites: CallSiteState[];
+   environments: EnvironmentState[];
+   globals: GlobalEnvironmentState[];
+ }
+@@ -245,6 +273,8 @@ export interface OrdinaryObjectCheckpoint {
+ export interface StateCheckpointOptions {
+   objects?: readonly ObjectValue[];
+   environments?: readonly (DeclarativeEnvironmentRecord | GlobalEnvironmentRecord)[];
++  contexts?: readonly ExecutionContext[];
++  callSites?: readonly CallSite[];
+ }
+ 
+ export interface StateCheckpoint {
+@@ -252,6 +282,8 @@ export interface StateCheckpoint {
+   readonly objectCount: number;
+   readonly environmentCount: number;
+   readonly bindingCount: number;
++  readonly contextCount: number;
++  readonly callSiteCount: number;
+   restore(): void;
+   release(): void;
+ }
+@@ -280,6 +312,11 @@ const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
+ 
+ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+   for (const frame of checkpoints.get(agent) ?? []) {
++    for (const state of frame.contexts) {
++      mark(state.context);
++      mark(state.snapshot);
++    }
++    for (const state of frame.callSites) mark(state.snapshot.context);
+     for (const state of frame.states) {
+       mark(state.object);
+       mark(state.prototype);
+@@ -347,10 +384,35 @@ const getGlobalEnvironmentState = (environment: GlobalEnvironmentRecord, owner:
+   return { environment, objectRecord, declarativeRecord, bindingObject: objectRecord.BindingObject, globalThis: environment.GlobalThisValue };
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
++  const selectedContexts = new Set(contexts);
++  const selectedCallSites = new Set(callSites);
++  const contextStates: ContextState[] = [];
++  const callSiteStates: CallSiteState[] = [];
++  const template = selectedContexts.size || selectedCallSites.size ? new ExecutionContext() : undefined;
++  const contextKeys = template ? Reflect.ownKeys(template) : [];
++  const siteKeys = template ? Reflect.ownKeys(template.callSite) : [];
++  if (template && owner.debugger_isPreviewing) throw new Error('Context checkpoints do not support debugger preview');
++  for (const callSite of selectedCallSites) {
++    assertNativeRecord(callSite, CallSite.prototype, siteKeys);
++    selectedContexts.add(callSite.context);
++  }
++  for (const context of selectedContexts) {
++    assertContext(context, owner, contextKeys, siteKeys);
++    const snapshot = context.copy();
++    snapshot.Generator = context.Generator;
++    snapshot.poppedForTailCall = context.poppedForTailCall;
++    contextStates.push({ context, snapshot, callSite: context.callSite });
++    selectedCallSites.add(context.callSite);
++  }
++  for (const callSite of selectedCallSites) {
++    const snapshot = callSite.clone();
++    snapshot.nextNode = callSite.nextNode;
++    callSiteStates.push({ callSite, snapshot });
++  }
+   const pending = new Set(objects);
+   const selectedEnvironments = new Set<DeclarativeEnvironmentRecord>();
+   const globals: GlobalEnvironmentState[] = [];
+@@ -477,7 +539,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     }
+     environmentStates.push({ environment, bindings });
+   }
+-  const frame = { states, environments: environmentStates, globals };
++  const frame = { states, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
+   const stack = checkpoints.get(owner) ?? [];
+   stack.push(frame);
+   checkpoints.set(owner, stack);
+@@ -492,11 +554,22 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     objectCount: states.length,
+     environmentCount: environmentStates.length + globals.length,
+     bindingCount: environmentStates.reduce((count, state) => count + state.bindings.length, 0),
++    contextCount: contextStates.length,
++    callSiteCount: callSiteStates.length,
+     restore: () => {
+       const agent = assertActive();
+       if (environmentStates.length !== 0 && agent.debugger_isPreviewing) {
+         throw new Error('Checkpoint cannot restore bindings during preview');
+       }
++      if (contextStates.length && agent.debugger_isPreviewing) throw new Error('Context checkpoints do not support debugger preview');
++      for (const state of contextStates) {
++        assertContext(state.context, agent, contextKeys, siteKeys);
++        if (state.context.callSite !== state.callSite) throw new TypeError('Checkpoint context CallSite identity changed');
++      }
++      for (const state of callSiteStates) {
++        assertNativeRecord(state.callSite, CallSite.prototype, siteKeys);
++        if (state.callSite.context !== state.snapshot.context) throw new TypeError('Checkpoint CallSite context changed');
++      }
+       for (const state of globals) {
+         const current = getGlobalEnvironmentState(state.environment, agent);
+         if (current.objectRecord !== state.objectRecord || current.declarativeRecord !== state.declarativeRecord
+@@ -582,6 +655,15 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           for (const value of set.values) set.data.push(value);
+         }
+       }
++      for (const { context, snapshot } of contextStates) {
++        snapshot.copy(context);
++        context.Generator = snapshot.Generator;
++        context.poppedForTailCall = snapshot.poppedForTailCall;
++      }
++      for (const { callSite, snapshot } of callSiteStates) {
++        snapshot.clone(snapshot.context, callSite);
++        callSite.nextNode = snapshot.nextNode;
++      }
+       for (const { environment, bindings } of environmentStates) {
+         environment.bindings.clear();
+         for (const { name, binding, initialized, hasValue, value } of bindings) {
+@@ -599,6 +681,8 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       states.length = 0;
+       environmentStates.length = 0;
+       globals.length = 0;
++      contextStates.length = 0;
++      callSiteStates.length = 0;
+       owner = undefined;
+     },
+   };
+diff --git a/src/utils/stack.mts b/src/utils/stack.mts
+index 7b0e1c2..0cebcf0 100644
+--- a/src/utils/stack.mts
++++ b/src/utils/stack.mts
+@@ -24,13 +24,13 @@ export class CallSite {
+     this.context = context;
+   }
+ 
+-  clone(context = this.context) {
+-    const c = new CallSite(context);
+-    c.lastNode = this.lastNode;
+-    c.lastCallNode = this.lastCallNode;
+-    c.inheritedLastCallNode = this.inheritedLastCallNode;
+-    c.constructCall = this.constructCall;
+-    return c;
++  clone(context = this.context, target = new CallSite(context)) {
++    target.context = context;
++    target.lastNode = this.lastNode;
++    target.lastCallNode = this.lastCallNode;
++    target.inheritedLastCallNode = this.inheritedLastCallNode;
++    target.constructCall = this.constructCall;
++    return target;
+   }
+ 
+   isTopLevel() {

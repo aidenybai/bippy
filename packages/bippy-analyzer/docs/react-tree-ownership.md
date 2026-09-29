@@ -2,6 +2,8 @@
 
 `tests/symbolic-react-tree.test.ts` checks committed host trees from actual React/Test Renderer 19.3.0 running through engine262. It is a specialization fixture, not a shared-prefix explorer or a public symbolic tree API.
 
+[Later context-storage diagnostics](context-checkpoints.md) select 20 contexts and 44 CallSites with the guest storage. A partial-owner restoration probe matches eight native React observations with one prefix per order. Its timer variant leaks all four branches’ callbacks. These diagnostics do not establish sound ownership or expose a guarded explorer; the original specialization test remains unchanged.
+
 The fixture passes two opaque Boolean inputs through a context value object. Repeated decisions preserve each input’s identity. Four assignments cover correlated headings, attributes, disabled buttons, conditional children, and different child element types. Each pause forces engine GC. Native V8 execution and explicit expected trees independently check the results. Mount, update, job draining, layout cleanup, and unmount observations must match. JSON output omits callback-valued props; these tests do not verify event reports.
 
 The context value is an object, and the effect depends on that object. This does not establish support for opaque Booleans in `Object.is`, dependency-array comparisons, or host text conversion. Each assignment starts a fresh runtime. Those runs validate specialization; they do not implement symbolic branching.
