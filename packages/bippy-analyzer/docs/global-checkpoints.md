@@ -32,7 +32,7 @@ The tests cover branch-only `var`, lexical, and function declarations; function 
 
 The final local suite passes 1,526 tests across forty-seven files. The unchanged smoke passes 74/74. Global-code, variable-statement, and let-statement conformance passes 671/671 in both engines with matching input hashes, compiled hashes, and verdicts. Types, two relocated builds, frozen offline installation, root checks, and cleanup pass. Engine SHA-256: `653ba15d733596c6625d1415bf233b397f9fec0eac6c40ca76e84890799ed56d`.
 
-[Validation receipts](global-checkpoint-validation/summary.json) retain failures, source hashes, and commands. Linux validation for this increment is pending. The preceding builtin increment passes 1,504 Linux units but fails both numeric `substr` smoke variants at the unchanged timeout. Its [failure receipt](builtin-checkpoint-validation/ci-failure.json) preserves logs and diagnostic profiles; separate E2E and publish workflows pass.
+[Validation receipts](global-checkpoint-validation/summary.json) retain failures, source hashes, and commands. [Linux CI](global-checkpoint-validation/ci-failure.json) passes 1,526 units with the matching engine hash, but smoke passes only 72/74. Both numeric `substr` variants time out at the unchanged ten-second gate. Separate E2E and publish workflows pass. Archived 30-second diagnostic profiles do not satisfy the smoke gate. The preceding builtin increment passes 1,504 Linux units but fails both numeric `substr` smoke variants at the unchanged timeout. Its [failure receipt](builtin-checkpoint-validation/ci-failure.json) preserves logs and diagnostic profiles; separate E2E and publish workflows pass.
 
 ## Remaining work
 

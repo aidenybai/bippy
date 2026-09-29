@@ -44,6 +44,7 @@ The separate resolver work includes native build observation, corpus comparisons
 - [x] Execute production and development React DOM counter fixtures with guest-owned LinkeDOM. Compare HTML, lifecycle traces, programmatic clicks, and cleanup with V8 and real Chromium.
 - [x] Add the missing Annex B `substr` intrinsic through an engine source patch. Preserve independent Test262 and V8 comparisons and the earlier engine failures.
 - [x] Serialize guest exception diagnostics without traversing their heap or invoking guest code. Keep original values available explicitly.
+- [x] Compare four real React tree specializations from two opaque Boolean inputs with native execution and explicit trees. [The ownership probe](docs/react-tree-ownership.md) identifies unsupported state before the first choice. These witnesses do not restore or explore shared-prefix React branches.
 
 These are [concrete execution increments](docs/concrete-execution.md), not completion of the browser runtime stages. Still missing here: full application-loader integration, general browser host support, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.
 

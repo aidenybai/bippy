@@ -73,7 +73,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "CI 36533331532 passes 1526 units but fails both numeric substr smoke variants at the unchanged ten-second timeout (72/74). Engine hash matches. See ci-failure.json and compressed profiles. E2E and publish pass.",
   "files": {
     "engine/patches/global-checkpoints.patch": "167d54afc3d846bc540e6d1b008d03c76c60a614ed24f5071d790cb2fcca448e",
     "engine/scripts/build.ts": "f444719b64b1bae6b85ac7d9b17765ea50e74e51af8cd5e47925eb55531d8e8a",

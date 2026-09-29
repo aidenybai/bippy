@@ -41,6 +41,8 @@ The browser-checked sequence `0 → 1 → 6 → 0 → −5` must specialize from
 
 ## Next required increment
 
+[Real React tree specializations](react-tree-ownership.md) now exercise two opaque Boolean inputs across four committed trees. Repeated decisions preserve input identity, forced GC runs at each pause, and native execution checks tree and layout-cleanup observations. These are independent specialization witnesses, not a shared-prefix explorer. The first-choice ownership probe rejects 39 reachable guest objects and exposes native arrays and execution-context records that still need policies. Its marking-based discovery is not a complete ownership census.
+
 Follow the [engine reuse audit](engine-reuse-audit.md) rather than adding an analyzer interpreter or parallel runtime records. Upstream debugger preview and `ExecutionContext.copy()` do not supply rollback; published-engine tests verify these limits.
 
 [Engine control continuations](control-continuations.md) resume selected-state fixtures without replaying their prefix. The [engine state inventory](engine-state-inventory.md) identifies records already used by this runtime, not every internal-slot policy. [Closed guest-data graph capture](data-graph-checkpoints.md) now traverses supported data and rejects unsupported references under explicit limits. Its Agent fork fixture preserves aliases without prefix replay, but it rejects function and intrinsic prototype graphs. Complete the inventory and implement an engine-state owner before enabling general symbolic forks. It must cover native captures, internal collections, execution records, GC roots, and pending work, or reject them.

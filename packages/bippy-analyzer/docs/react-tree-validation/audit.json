@@ -1,0 +1,394 @@
+{
+  "scope": "diagnostic-not-an-execution-owner",
+  "engineSha256": "653ba15d733596c6625d1415bf233b397f9fec0eac6c40ca76e84890799ed56d",
+  "fixtureSha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b",
+  "testSha256": "c2645097c1391856ad2252b6387e2a5cc00908c9c446c8ec2b6e7ccb7b91a0b2",
+  "fixtureSource": "import * as React from \"react\";\nimport * as TestRenderer from \"react-test-renderer\";\n\ninterface Flags {\n  enabled: boolean;\n  details: boolean;\n}\n\nconst FlagsContext = React.createContext<Flags>({ enabled: false, details: false });\nconst events: string[] = [];\nlet renderer: ReturnType<typeof TestRenderer.create> | undefined;\nlet renders = 0;\n\nconst Content = () => {\n  const flags = React.useContext(FlagsContext);\n  const [count, setCount] = React.useState(0);\n  const commits = React.useRef(0);\n  const label = flags.enabled ? \"Enabled\" : \"Disabled\";\n  renders++;\n  React.useLayoutEffect(() => {\n    commits.current++;\n    events.push(`commit:${label}:${count}`);\n    return () => {\n      events.push(`cleanup:${label}:${count}`);\n    };\n  }, [flags, count]);\n  return (\n    <section data-status={flags.enabled ? \"enabled\" : \"disabled\"}>\n      <h1>{label}</h1>\n      <button disabled={!flags.enabled} onClick={() => setCount((previous) => previous + 1)}>\n        {count}\n      </button>\n      {flags.details ? (\n        <aside key=\"details\">\n          {flags.enabled ? <strong>Active details</strong> : <span>Inactive details</span>}\n        </aside>\n      ) : null}\n    </section>\n  );\n};\n\nexport const mount = () => {\n  renderer = TestRenderer.create(\n    <FlagsContext value={{ enabled: false, details: false }}>\n      <Content />\n    </FlagsContext>,\n  );\n};\n\nexport const update = (enabled: boolean, details: boolean) => {\n  if (!renderer) throw Error(\"Missing renderer\");\n  const current = renderer;\n  Reflect.apply(Reflect.get(current, \"unstable_flushSync\"), current, [\n    () => {\n      current.update(\n        <FlagsContext value={{ enabled, details }}>\n          <Content />\n        </FlagsContext>,\n      );\n    },\n  ]);\n};\n\nexport const observe = () => JSON.stringify({ tree: renderer?.toJSON(), renders, events });\nexport const unmount = () => renderer?.unmount();\nexport const versions = [React.version, \"version\" in TestRenderer ? TestRenderer.version : null];\n",
+  "diagnosticDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  const chunk = await buildScriptFixture(\n    new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url),\n    \"production\",\n  );\n  source = chunk.code;\n});\n\nit.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ enabled, details }))))(\n  \"specializes a real React tree with correlated Boolean decisions, enabled=$enabled details=$details\",\n  async ({ enabled, details }) => {\n    const runtime = await createConcreteRuntime();\n    const native = createNativeRuntime();\n    const { api } = await getSymbolicEngine();\n    try {\n      runtime.evaluate(source);\n      native.evaluate(source);\n      expect(runtime.readString(\"JSON.stringify(fixture.versions)\")).toBe('[\"19.3.0\",\"19.3.0\"]');\n      runtime.evaluate(\"fixture.mount()\");\n      native.evaluate(\"fixture.mount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      const previous = api.surroundingAgent;\n      api.setSurroundingAgent(runtime.agent);\n      let enabledDecisions = 0;\n      let detailsDecisions = 0;\n      try {\n        const enabledInput = api.BooleanValue.createAbstract();\n        const detailsInput = api.BooleanValue.createAbstract();\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n        const compiled = api.EnsureCompletion(\n          runtime.realm.compileScript(`\n          fixture.update(enabled, details);\n          fixture.observe();\n        `),\n        );\n        if (compiled.Type !== \"normal\") throw Error(\"Expected compiled update\");\n        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n        let step = runtime.agent.resumeEvaluate({\n          pauseOnAbstractBoolean: true,\n          noBreakpoint: true,\n        });\n        while (!step.done) {\n          const decision = step.value;\n          if (!decision) throw Error(\"Unexpected debugger pause\");\n          if (enabledDecisions + detailsDecisions >= 16)\n            throw Error(\"Unexpected decision expansion\");\n          let choice: boolean;\n          if (decision.value === enabledInput) {\n            enabledDecisions++;\n            choice = enabled;\n          } else if (decision.value === detailsInput) {\n            detailsDecisions++;\n            choice = details;\n          } else {\n            throw Error(\"Decision lost input identity\");\n          }\n          if (enabledDecisions + detailsDecisions === 1) {\n            const seen = new Set<object>();\n            const counts = new Map<string, number>();\n            const sentinel = new Error(\"Unowned React tree state\");\n            const unsupported = new Map<string, number>();\n            let selectedObjects = 0;\n            expect(() => runtime.agent.captureEvaluation({\n              references: value => {\n                if (seen.size >= 50000) throw Error(\"Audit reference budget exceeded\");\n                seen.add(value);\n                const name = Object.getPrototypeOf(value)?.constructor?.name ?? \"null-prototype\";\n                counts.set(name, (counts.get(name) ?? 0) + 1);\n                const references: unknown[] = [];\n                if (Array.isArray(value)) references.push(...value);\n                else if (typeof Reflect.get(value, \"mark\") === \"function\") {\n                  Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n                }\n                return references;\n              },\n              capture: roots => {\n                for (const value of seen) {\n                  if (!(value instanceof api.ObjectValue)) continue;\n                  try {\n                    const checkpoint = api.createStateCheckpoint({ objects: [value] });\n                    checkpoint.release();\n                    selectedObjects++;\n                  } catch (error) {\n                    const keys: string[] = [];\n                    value.properties.forEach((_descriptor, key) => { if (typeof key === \"string\") keys.push(key); else if (key instanceof api.JSStringValue) keys.push(key.stringValue()); });\n                    const key = JSON.stringify({ slots: value.internalSlotsList, parameterMap: api.isArgumentExoticObject(value) ? value.ParameterMap === undefined ? \"unmapped\" : \"mapped\" : null, privateElements: value.PrivateElements.length, constructedBy: value.ConstructedBy.length, keys: keys.slice(0, 12), hasPrototype: \"Prototype\" in value, hasExtensible: \"Extensible\" in value, methods: [\"GetPrototypeOf\", \"SetPrototypeOf\", \"IsExtensible\", \"PreventExtensions\", \"GetOwnProperty\", \"DefineOwnProperty\", \"HasProperty\", \"Get\", \"Set\", \"Delete\", \"OwnPropertyKeys\"].filter(name => Reflect.get(value, name) !== Reflect.get(api.ObjectValue.prototype, name)), error: error instanceof Error ? error.message : \"unknown\" });\n                    unsupported.set(key, (unsupported.get(key) ?? 0) + 1);\n                  }\n                }\n                writeFileSync(`/tmp/bippy-react-tree-frontier-${enabled}-${details}.json`, JSON.stringify({ directRoots: roots.values.length, controlObjects: roots.controlOwnedObjects.length, seen: seen.size, counts: [...counts], selectedObjects, unsupported: [...unsupported] }, null, 2));\n                throw sentinel;\n              },\n            })).toThrow(sentinel);\n          }\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          step = runtime.agent.resumeEvaluate({\n            abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice },\n            noBreakpoint: true,\n          });\n        }\n        const completion = api.EnsureCompletion(step.value);\n        expect(completion.Type).toBe(\"normal\");\n        if (!(completion.Value instanceof api.JSStringValue))\n          throw Error(\"Expected committed tree observation\");\n        native.evaluate(`fixture.update(${enabled}, ${details})`);\n        expect(completion.Value.stringValue()).toBe(native.evaluate(\"fixture.observe()\"));\n      } finally {\n        api.setSurroundingAgent(previous);\n      }\n      expect(enabledDecisions).toBe(details ? 4 : 3);\n      expect(detailsDecisions).toBe(1);\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      runtime.evaluate(\"fixture.unmount()\");\n      native.evaluate(\"fixture.unmount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      expect(runtime.unhandledRejections.size).toBe(0);\n      expect(runtime.uncaughtExceptions).toEqual([]);\n    } finally {\n      runtime.dispose();\n    }\n  },\n);\n",
+  "reports": [
+    {
+      "enabled": false,
+      "details": false,
+      "report": {
+        "directRoots": 65387,
+        "controlObjects": 432,
+        "seen": 19556,
+        "counts": [
+          ["Function", 683],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2197],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2158,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            6
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            13
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "enabled": false,
+      "details": true,
+      "report": {
+        "directRoots": 65387,
+        "controlObjects": 432,
+        "seen": 19556,
+        "counts": [
+          ["Function", 683],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2197],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2158,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            6
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            13
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "enabled": true,
+      "details": false,
+      "report": {
+        "directRoots": 65387,
+        "controlObjects": 432,
+        "seen": 19556,
+        "counts": [
+          ["Function", 683],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2197],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2158,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            6
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            13
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "enabled": true,
+      "details": true,
+      "report": {
+        "directRoots": 65387,
+        "controlObjects": 432,
+        "seen": 19556,
+        "counts": [
+          ["Function", 683],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2197],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2158,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            6
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            13
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"5\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"2\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ParameterMap\"],\"parameterMap\":\"mapped\",\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"0\",\"1\",\"length\",\"callee\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"Get\",\"Set\",\"Delete\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state\"}",
+            2
+          ]
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "The diagnostic follows existing mark methods and native arrays through captureEvaluation references. It is not a complete ownership or GC census.",
+    "WeakMap entries, undeclared native closure state, host state, and custom internal-method captures do not become owned by following marking edges.",
+    "Each guest object is captured and released separately. The probe never restores a React checkpoint. It throws a sentinel and resumes the original exact decision.",
+    "The detailed probe initially failed because isArgumentsObject was not exported. The corrected probe uses isArgumentExoticObject. Both logs are retained.",
+    "The four committed-tree tests use separate runtimes as specialization witnesses. No shared-prefix exploration or guarded report API exists."
+  ],
+  "logs": {
+    "first": "\n> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && vp test --run tests/symbolic-react-tree.test.ts\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  11:57:11\n   Duration  1.26s (transform 33ms, setup 0ms, import 101ms, tests 1.09s, environment 0ms)\n\n",
+    "frontier": "\n> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && vp test --run tests/symbolic-react-tree.test.ts\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  11:58:17\n   Duration  1.44s (transform 43ms, setup 0ms, import 120ms, tests 1.26s, environment 0ms)\n\n",
+    "frontier-detailed": "\n> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && vp test --run tests/symbolic-react-tree.test.ts\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n ❯ tests/symbolic-react-tree.test.ts (4 tests | 4 failed) 919ms\n   × specializes a real React tree with correlated Boolean decisions, enabled=false details=false 376ms\n   × specializes a real React tree with correlated Boolean decisions, enabled=false details=true 179ms\n   × specializes a real React tree with correlated Boolean decisions, enabled=true details=false 165ms\n   × specializes a real React tree with correlated Boolean decisions, enabled=true details=true 162ms\n\n⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯\n\n FAIL  tests/symbolic-react-tree.test.ts > specializes a real React tree with correlated Boolean decisions, enabled=false details=false\n FAIL  tests/symbolic-react-tree.test.ts > specializes a real React tree with correlated Boolean decisions, enabled=false details=true\n FAIL  tests/symbolic-react-tree.test.ts > specializes a real React tree with correlated Boolean decisions, enabled=true details=false\n FAIL  tests/symbolic-react-tree.test.ts > specializes a real React tree with correlated Boolean decisions, enabled=true details=true\nAssertionError: expected a thrown error to be Error: Unowned React tree state\n\n- Expected\n+ Received\n\n- Error {\n-   \"message\": \"Unowned React tree state\",\n+ TypeError {\n+   \"message\": \"api.isArgumentsObject is not a function\",\n  }\n\n ❯ tests/symbolic-react-tree.test.ts:104:17\n    102|                 throw sentinel;\n    103|               },\n    104|             })).toThrow(sentinel);\n       |                 ^\n    105|           }\n    106|           runtime.agent.AgentRecord.KeptAlive.clear();\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯\n\n\n Test Files  1 failed (1)\n      Tests  4 failed (4)\n   Start at  11:59:30\n   Duration  1.08s (transform 35ms, setup 0ms, import 104ms, tests 919ms, environment 0ms)\n\n/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer:\n ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bippy-analyzer@ test: `pnpm build:engine && vp test --run tests/symbolic-react-tree.test.ts`\nExit status 1\n",
+    "frontier-detailed-second": "\n> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && vp test --run tests/symbolic-react-tree.test.ts\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  12:00:03\n   Duration  1.38s (transform 41ms, setup 0ms, import 108ms, tests 1.21s, environment 0ms)\n\n",
+    "frontier-methods": "\n> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && vp test --run tests/symbolic-react-tree.test.ts\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  12:01:29\n   Duration  1.37s (transform 39ms, setup 0ms, import 109ms, tests 1.20s, environment 0ms)\n\n",
+    "types": "\n> bippy-analyzer@ typecheck /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && tsc --noEmit\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n",
+    "units": "\n> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> pnpm build:engine && vp test --run\n\n\n> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n> tsx engine/scripts/build.ts\n\nEngine build is current\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n\n Test Files  48 passed (48)\n      Tests  1530 passed (1530)\n   Start at  12:10:10\n   Duration  66.35s (transform 411ms, setup 0ms, import 2.14s, tests 110.24s, environment 2ms)\n\n",
+    "checkInitial": "\n> @bippy/monorepo@ check /Users/aidenybai/Developer/bippy-engine262-symbolic\n> vp check\n\n\u001b[1m\u001b[31merror:\u001b[39m\u001b[0m Formatting issues found\npackages/bippy-analyzer/docs/global-checkpoint-validation/ci-failure.json (0ms)\npackages/bippy-analyzer/docs/react-tree-ownership.md (14ms)\npackages/bippy-analyzer/docs/react-tree-validation/audit.json (0ms)\n\nFound formatting issues in 3 files (405ms, 18 threads). Run `vp check --fix` to fix them.\n ELIFECYCLE  Command failed with exit code 1.\n",
+    "checkFinal": "\n> @bippy/monorepo@ check /Users/aidenybai/Developer/bippy-engine262-symbolic\n> vp check\n\n\u001b[1m\u001b[94mpass:\u001b[39m\u001b[0m All 881 files are correctly formatted \u001b[2m(344ms, 18 threads)\u001b[0m\n\u001b[1m\u001b[33mwarn:\u001b[39m\u001b[0m Lint warnings found\n! unicorn(no-thenable): Do not add `then` to an object.\n     ,-[packages/e2e/fixtures/stress-app/src/fuzz.tsx:204:7]\n 203 |     ({\n 204 |       then(onFulfilled: (payload: { default: React.ComponentType<SpecProps> }) => void) {\n     :       ^^^^\n 205 |         onFulfilled({ default: SpecChildren });\n     `----\n  help: If an object is defined as 'thenable', once it's accidentally used in an await expression, it may cause problems\n\n  ! unicorn(no-thenable): Do not add `then` to an object.\n     ,-[packages/e2e/fixtures/refresh-app/src/scenarios/signatures.tsx:347:13]\n 346 |           ({\n 347 |             then(onFulfilled: (payload: { default: React.ComponentType<object> }) => void) {\n     :             ^^^^\n 348 |               onFulfilled({ default: ReactModule.memo(Hello) });\n     `----\n  help: If an object is defined as 'thenable', once it's accidentally used in an await expression, it may cause problems\n\nFound 0 errors and 2 warnings in 572 files (102ms, 18 threads)\n"
+  },
+  "verification": {
+    "hashes": "Engine, fixture, test, and compressed profiles verified",
+    "reports": "All four first-choice reports are identical",
+    "unchangedEngine": "No engine or runtime changes; the previous global checkpoint's local smoke, conformance, and build receipts remain revision-bound. They were not rerun for these tests.",
+    "isolation": "Main worktree status matches the saved baseline"
+  }
+}
