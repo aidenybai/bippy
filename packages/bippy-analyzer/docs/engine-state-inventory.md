@@ -6,6 +6,8 @@ General React branching still needs an engine-state owner. This inventory identi
 
 [Host-effect guards](checkpoint-host-effects.md) now reject selected scheduling, draining, and concrete host mutations while evaluation checkpoints are open. They do not snapshot queues or cover direct host queue access, custom callbacks, modules, or arbitrary native records.
 
+[Web macrotask snapshots](web-queue-checkpoints.md) now restore membership in the existing event-loop Map and type-index Sets. Saved jobs share the live queue’s marking code. This does not snapshot job fields, callback captures, microtasks, timer records, or scheduler execution state.
+
 The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, with the maintained patches. Paths starting with `src/` in the table refer to upstream engine sources. Preserve these records and their identities instead of constructing a parallel runtime heap.
 
 | Record              | Existing engine representation and GC route                                                                                                                                    | Missing ownership or root coverage                                                                                                                                                                                                                                                                                                                                                                                                                                            |

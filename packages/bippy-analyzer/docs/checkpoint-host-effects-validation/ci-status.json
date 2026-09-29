@@ -1,0 +1,1260 @@
+{
+  "revision": "98865f1fc51722a48141a58c723688f23447b7e8",
+  "run": 36642863179,
+  "analyzerJob": 109658948361,
+  "status": {
+    "conclusion": "success",
+    "headSha": "98865f1fc51722a48141a58c723688f23447b7e8",
+    "jobs": [
+      {
+        "completedAt": "2026-09-29T23:06:24Z",
+        "conclusion": "success",
+        "databaseId": 109658948361,
+        "name": "analyzer",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:56Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:58Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:56Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:59Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:00:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:25Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:00:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:37Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:59Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer exec playwright install --with-deps chromium",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:37Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:47Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer test:engine-build",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:51Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer typecheck",
+            "number": 8,
+            "startedAt": "2026-09-29T23:02:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:05:47Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer test",
+            "number": 9,
+            "startedAt": "2026-09-29T23:02:51Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:21Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'",
+            "number": 10,
+            "startedAt": "2026-09-29T23:05:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:21Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter bippy-analyzer exec tsx scripts/profile-substr.ts",
+            "number": 11,
+            "startedAt": "2026-09-29T23:06:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:21Z",
+            "conclusion": "skipped",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 12,
+            "startedAt": "2026-09-29T23:06:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:21Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 22,
+            "startedAt": "2026-09-29T23:06:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:21Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 23,
+            "startedAt": "2026-09-29T23:06:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:22Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 24,
+            "startedAt": "2026-09-29T23:06:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:22Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 25,
+            "startedAt": "2026-09-29T23:06:22Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863179/job/109658948361"
+      },
+      {
+        "completedAt": "2026-09-29T23:07:44Z",
+        "conclusion": "success",
+        "databaseId": 109658948675,
+        "name": "test",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:56Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:57Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:56Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:58Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:00:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:13Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:00:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:22Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:07:42Z",
+            "conclusion": "success",
+            "name": "Run pnpm run test",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:07:42Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-29T23:07:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:07:42Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-29T23:07:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:07:43Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-29T23:07:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:07:43Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-29T23:07:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:07:43Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-29T23:07:43Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863179/job/109658948675"
+      },
+      {
+        "completedAt": "2026-09-29T23:01:35Z",
+        "conclusion": "success",
+        "databaseId": 109658948706,
+        "name": "check",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:57Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:59Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:00Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:00:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:18Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:01:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:29Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:32Z",
+            "conclusion": "success",
+            "name": "Run pnpm run check",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:32Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:32Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-29T23:01:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:33Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-29T23:01:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:33Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-29T23:01:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:33Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-29T23:01:33Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863179/job/109658948706"
+      },
+      {
+        "completedAt": "2026-09-29T23:01:52Z",
+        "conclusion": "success",
+        "databaseId": 109658948849,
+        "name": "typecheck",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:58Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:00Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:01Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:01:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:23Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:01:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:41Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:23Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:49Z",
+            "conclusion": "success",
+            "name": "Run pnpm run typecheck",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:49Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:50Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-29T23:01:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:50Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-29T23:01:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:50Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-29T23:01:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:50Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-29T23:01:50Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863179/job/109658948849"
+      },
+      {
+        "completedAt": "2026-09-29T23:01:59Z",
+        "conclusion": "success",
+        "databaseId": 109658948916,
+        "name": "build",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:57Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:59Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:00Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:00:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:21Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:01:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:35Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:38Z",
+            "conclusion": "success",
+            "name": "Run pnpm run build",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:35Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:57Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:38Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:57Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-29T23:01:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:57Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-29T23:01:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:57Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-29T23:01:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:57Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-29T23:01:57Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863179/job/109658948916"
+      }
+    ],
+    "status": "completed"
+  },
+  "e2e": {
+    "run": 36642863164,
+    "conclusion": "success",
+    "headSha": "98865f1fc51722a48141a58c723688f23447b7e8",
+    "jobs": [
+      {
+        "completedAt": "2026-09-29T23:14:27Z",
+        "conclusion": "success",
+        "databaseId": 109658948521,
+        "name": "e2e-web",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:57Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:00Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:01Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:01:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:19Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:01:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:28Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:32Z",
+            "conclusion": "success",
+            "name": "Run pnpm build",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:28Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:09Z",
+            "conclusion": "success",
+            "name": "Run Metro artifact source-map test",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:30Z",
+            "conclusion": "success",
+            "name": "Install Playwright browsers",
+            "number": 8,
+            "startedAt": "2026-09-29T23:02:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:11:50Z",
+            "conclusion": "success",
+            "name": "Run Playwright tests",
+            "number": 9,
+            "startedAt": "2026-09-29T23:02:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:22Z",
+            "conclusion": "success",
+            "name": "Run Playwright tests against production builds",
+            "number": 10,
+            "startedAt": "2026-09-29T23:11:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:23Z",
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 11,
+            "startedAt": "2026-09-29T23:14:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:23Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 20,
+            "startedAt": "2026-09-29T23:14:23Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:24Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 21,
+            "startedAt": "2026-09-29T23:14:23Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:24Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 22,
+            "startedAt": "2026-09-29T23:14:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:24Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 23,
+            "startedAt": "2026-09-29T23:14:24Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863164/job/109658948521"
+      },
+      {
+        "completedAt": "2026-09-29T23:01:06Z",
+        "conclusion": "success",
+        "databaseId": 109658948803,
+        "name": "changes",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:57Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:00Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:04Z",
+            "conclusion": "success",
+            "name": "Run dorny/paths-filter@v3",
+            "number": 3,
+            "startedAt": "2026-09-29T23:01:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:04Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:04Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:04Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863164/job/109658948803"
+      },
+      {
+        "completedAt": "2026-09-29T23:06:17Z",
+        "conclusion": "success",
+        "databaseId": 109659025584,
+        "name": "e2e-native-android",
+        "startedAt": "2026-09-29T23:01:08Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:01:15Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:01:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:18Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:01:15Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:19Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:01:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:43Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:01:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:44Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-java@v5",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:53Z",
+            "conclusion": "success",
+            "name": "Run android-actions/setup-android@v4",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:54Z",
+            "conclusion": "success",
+            "name": "Run gradle/actions/setup-gradle@v6",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:05Z",
+            "conclusion": "success",
+            "name": "Install emulator runtime dependencies",
+            "number": 8,
+            "startedAt": "2026-09-29T23:01:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:05Z",
+            "conclusion": "success",
+            "name": "Enable KVM",
+            "number": 9,
+            "startedAt": "2026-09-29T23:02:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:06Z",
+            "conclusion": "success",
+            "name": "Run sdkmanager \"platforms;android-36\" \"build-tools;36.0.0\"",
+            "number": 10,
+            "startedAt": "2026-09-29T23:02:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:17Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile --prefer-offline",
+            "number": 11,
+            "startedAt": "2026-09-29T23:02:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:20Z",
+            "conclusion": "success",
+            "name": "Run pnpm build",
+            "number": 12,
+            "startedAt": "2026-09-29T23:02:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:22Z",
+            "conclusion": "success",
+            "name": "Restore Android app binaries",
+            "number": 13,
+            "startedAt": "2026-09-29T23:02:20Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:22Z",
+            "conclusion": "skipped",
+            "name": "Prebuild and build Android app",
+            "number": 14,
+            "startedAt": "2026-09-29T23:02:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:22Z",
+            "conclusion": "skipped",
+            "name": "Save Android app binaries",
+            "number": 15,
+            "startedAt": "2026-09-29T23:02:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:24Z",
+            "conclusion": "success",
+            "name": "Start Metro",
+            "number": 16,
+            "startedAt": "2026-09-29T23:02:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:12Z",
+            "conclusion": "success",
+            "name": "Run Android Detox tests",
+            "number": 17,
+            "startedAt": "2026-09-29T23:02:24Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:12Z",
+            "conclusion": "skipped",
+            "name": "Upload Android Metro log",
+            "number": 18,
+            "startedAt": "2026-09-29T23:06:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:12Z",
+            "conclusion": "skipped",
+            "name": "Upload Android Detox artifacts",
+            "number": 19,
+            "startedAt": "2026-09-29T23:06:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:13Z",
+            "conclusion": "success",
+            "name": "Post Run gradle/actions/setup-gradle@v6",
+            "number": 34,
+            "startedAt": "2026-09-29T23:06:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:14Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-java@v5",
+            "number": 35,
+            "startedAt": "2026-09-29T23:06:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:14Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 36,
+            "startedAt": "2026-09-29T23:06:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:14Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 37,
+            "startedAt": "2026-09-29T23:06:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:14Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 38,
+            "startedAt": "2026-09-29T23:06:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:06:14Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 39,
+            "startedAt": "2026-09-29T23:06:14Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863164/job/109659025584"
+      },
+      {
+        "completedAt": "2026-09-29T23:14:38Z",
+        "conclusion": "success",
+        "databaseId": 109659025657,
+        "name": "e2e-native",
+        "startedAt": "2026-09-29T23:01:13Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:01:16Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:01:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:19Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-29T23:01:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:21Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:01:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:02Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:01:21Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:02:09Z",
+            "conclusion": "success",
+            "name": "Pre-boot simulator",
+            "number": 5,
+            "startedAt": "2026-09-29T23:02:02Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:08:56Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile --prefer-offline",
+            "number": 6,
+            "startedAt": "2026-09-29T23:02:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:03Z",
+            "conclusion": "success",
+            "name": "Run pnpm build",
+            "number": 7,
+            "startedAt": "2026-09-29T23:08:56Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:29Z",
+            "conclusion": "success",
+            "name": "Install applesimutils and watchman",
+            "number": 8,
+            "startedAt": "2026-09-29T23:09:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:29Z",
+            "conclusion": "success",
+            "name": "Get Xcode version",
+            "number": 9,
+            "startedAt": "2026-09-29T23:09:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:33Z",
+            "conclusion": "success",
+            "name": "Restore iOS app binary",
+            "number": 10,
+            "startedAt": "2026-09-29T23:09:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:33Z",
+            "conclusion": "skipped",
+            "name": "Cache CocoaPods downloads",
+            "number": 11,
+            "startedAt": "2026-09-29T23:09:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:33Z",
+            "conclusion": "skipped",
+            "name": "Prebuild and build iOS app",
+            "number": 12,
+            "startedAt": "2026-09-29T23:09:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:33Z",
+            "conclusion": "skipped",
+            "name": "Save iOS app binary",
+            "number": 13,
+            "startedAt": "2026-09-29T23:09:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:44Z",
+            "conclusion": "success",
+            "name": "Start Metro",
+            "number": 14,
+            "startedAt": "2026-09-29T23:09:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:48Z",
+            "conclusion": "success",
+            "name": "Cache Detox framework",
+            "number": 15,
+            "startedAt": "2026-09-29T23:09:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:09:48Z",
+            "conclusion": "skipped",
+            "name": "Build Detox framework cache",
+            "number": 16,
+            "startedAt": "2026-09-29T23:09:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:03Z",
+            "conclusion": "success",
+            "name": "Run Detox tests",
+            "number": 17,
+            "startedAt": "2026-09-29T23:09:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:04Z",
+            "conclusion": "skipped",
+            "name": "Upload Metro log",
+            "number": 18,
+            "startedAt": "2026-09-29T23:14:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:04Z",
+            "conclusion": "skipped",
+            "name": "Upload Detox artifacts",
+            "number": 19,
+            "startedAt": "2026-09-29T23:14:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:06Z",
+            "conclusion": "success",
+            "name": "Post Cache Detox framework",
+            "number": 35,
+            "startedAt": "2026-09-29T23:14:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:06Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 36,
+            "startedAt": "2026-09-29T23:14:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:07Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 37,
+            "startedAt": "2026-09-29T23:14:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:08Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 38,
+            "startedAt": "2026-09-29T23:14:07Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:14:36Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 39,
+            "startedAt": "2026-09-29T23:14:08Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863164/job/109659025657"
+      }
+    ],
+    "status": "completed"
+  },
+  "publish": {
+    "run": 36642863170,
+    "conclusion": "success",
+    "headSha": "98865f1fc51722a48141a58c723688f23447b7e8",
+    "jobs": [
+      {
+        "completedAt": "2026-09-29T23:01:44Z",
+        "conclusion": "success",
+        "databaseId": 109658948527,
+        "name": "build",
+        "startedAt": "2026-09-29T23:00:54Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-29T23:00:56Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-29T23:00:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:57Z",
+            "conclusion": "success",
+            "name": "Checkout code",
+            "number": 2,
+            "startedAt": "2026-09-29T23:00:56Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:00:59Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-29T23:00:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:18Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-29T23:00:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:30Z",
+            "conclusion": "success",
+            "name": "Install dependencies",
+            "number": 5,
+            "startedAt": "2026-09-29T23:01:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:33Z",
+            "conclusion": "success",
+            "name": "Build",
+            "number": 6,
+            "startedAt": "2026-09-29T23:01:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:41Z",
+            "conclusion": "success",
+            "name": "Publish",
+            "number": 7,
+            "startedAt": "2026-09-29T23:01:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:41Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-29T23:01:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:41Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-29T23:01:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:41Z",
+            "conclusion": "success",
+            "name": "Post Checkout code",
+            "number": 14,
+            "startedAt": "2026-09-29T23:01:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-29T23:01:41Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-29T23:01:41Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36642863170/job/109658948527"
+      }
+    ],
+    "status": "completed"
+  },
+  "analyzerLog": "﻿2026-09-29T23:00:55.3924708Z Current runner version: '2.337.0'\n2026-09-29T23:00:55.3943482Z ##[group]Runner Image Provisioner\n2026-09-29T23:00:55.3944110Z Hosted Compute Agent\n2026-09-29T23:00:55.3944505Z Version: 20260828.587\n2026-09-29T23:00:55.3944941Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29\n2026-09-29T23:00:55.3945459Z Build Date: 2026-08-28T16:44:25Z\n2026-09-29T23:00:55.3945921Z Worker ID: {0c20ac2e-3190-4248-a351-b65e1567bcae}\n2026-09-29T23:00:55.3946408Z Azure Region: westus3\n2026-09-29T23:00:55.3946790Z ##[endgroup]\n2026-09-29T23:00:55.3947773Z ##[group]Operating System\n2026-09-29T23:00:55.3948182Z Ubuntu\n2026-09-29T23:00:55.3948519Z 24.04.5\n2026-09-29T23:00:55.3948860Z LTS\n2026-09-29T23:00:55.3949196Z ##[endgroup]\n2026-09-29T23:00:55.3949554Z ##[group]Runner Image\n2026-09-29T23:00:55.3949958Z Image: ubuntu-24.04\n2026-09-29T23:00:55.3950328Z Version: 20260920.314.1\n2026-09-29T23:00:55.3951184Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260920.314/images/ubuntu/Ubuntu2404-Readme.md\n2026-09-29T23:00:55.3952273Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260920.314\n2026-09-29T23:00:55.3953108Z ##[endgroup]\n2026-09-29T23:00:55.3953879Z ##[group]GITHUB_TOKEN Permissions\n2026-09-29T23:00:55.3955451Z Contents: read\n2026-09-29T23:00:55.3955851Z Metadata: read\n2026-09-29T23:00:55.3956223Z ##[endgroup]\n2026-09-29T23:00:55.3957718Z Secret source: Actions\n2026-09-29T23:00:55.3958343Z Cache mode: write\n2026-09-29T23:00:55.3959124Z Prepare workflow directory\n2026-09-29T23:00:55.4208542Z Prepare all required actions\n2026-09-29T23:00:55.4246159Z Getting action download info\n2026-09-29T23:00:55.7370791Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)\n2026-09-29T23:00:55.8068232Z Download action repository 'pnpm/action-setup@v4' (SHA:b906affcce14559ad1aafd4ab0e942779e9f58b1)\n2026-09-29T23:00:56.5909359Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)\n2026-09-29T23:00:56.7027164Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)\n2026-09-29T23:00:56.9369180Z Complete job name: analyzer\n2026-09-29T23:00:57.0055196Z ##[group]Run actions/checkout@v4\n2026-09-29T23:00:57.0055922Z with:\n2026-09-29T23:00:57.0056303Z   repository: aidenybai/bippy\n2026-09-29T23:00:57.0059553Z   token: ***\n2026-09-29T23:00:57.0059938Z   ssh-strict: true\n2026-09-29T23:00:57.0060323Z   ssh-user: git\n2026-09-29T23:00:57.0060709Z   persist-credentials: true\n2026-09-29T23:00:57.0061127Z   clean: true\n2026-09-29T23:00:57.0061519Z   sparse-checkout-cone-mode: true\n2026-09-29T23:00:57.0061967Z   fetch-depth: 1\n2026-09-29T23:00:57.0062355Z   fetch-tags: false\n2026-09-29T23:00:57.0062747Z   show-progress: true\n2026-09-29T23:00:57.0063311Z   lfs: false\n2026-09-29T23:00:57.0063685Z   submodules: false\n2026-09-29T23:00:57.0064088Z   set-safe-directory: true\n2026-09-29T23:00:57.0064522Z   allow-unsafe-pr-checkout: false\n2026-09-29T23:00:57.0065175Z ##[endgroup]\n2026-09-29T23:00:57.0882799Z Syncing repository: aidenybai/bippy\n2026-09-29T23:00:57.0884683Z ##[group]Getting Git version info\n2026-09-29T23:00:57.0885346Z Working directory is '/home/runner/work/bippy/bippy'\n2026-09-29T23:00:57.0886209Z [command]/usr/bin/git version\n2026-09-29T23:00:57.0923639Z git version 2.55.0\n2026-09-29T23:00:57.0938770Z ##[endgroup]\n2026-09-29T23:00:57.0950370Z Temporarily overriding HOME='/home/runner/work/_temp/ce76e241-9948-4207-8f02-e16099f646b4' before making global git config changes\n2026-09-29T23:00:57.0952461Z Adding repository directory to the temporary git global config as a safe directory\n2026-09-29T23:00:57.0954546Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/bippy/bippy\n2026-09-29T23:00:57.0991905Z Deleting the contents of '/home/runner/work/bippy/bippy'\n2026-09-29T23:00:57.0996472Z ##[group]Initializing the repository\n2026-09-29T23:00:57.0999794Z [command]/usr/bin/git init /home/runner/work/bippy/bippy\n2026-09-29T23:00:57.1071617Z hint: Using 'master' as the name for the initial branch. This default branch name\n2026-09-29T23:00:57.1073497Z hint: will change to \"main\" in Git 3.0. To configure the initial branch name\n2026-09-29T23:00:57.1074828Z hint: to use in all of your new repositories, which will suppress this warning,\n2026-09-29T23:00:57.1075618Z hint: call:\n2026-09-29T23:00:57.1075981Z hint:\n2026-09-29T23:00:57.1076462Z hint: \tgit config --global init.defaultBranch <name>\n2026-09-29T23:00:57.1076998Z hint:\n2026-09-29T23:00:57.1077492Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and\n2026-09-29T23:00:57.1078266Z hint: 'development'. The just-created branch can be renamed via this command:\n2026-09-29T23:00:57.1078890Z hint:\n2026-09-29T23:00:57.1079253Z hint: \tgit branch -m <name>\n2026-09-29T23:00:57.1079665Z hint:\n2026-09-29T23:00:57.1080197Z hint: Disable this message with \"git config set advice.defaultBranchName false\"\n2026-09-29T23:00:57.1081422Z Initialized empty Git repository in /home/runner/work/bippy/bippy/.git/\n2026-09-29T23:00:57.1083203Z [command]/usr/bin/git remote add origin https://github.com/aidenybai/bippy\n2026-09-29T23:00:57.1122689Z ##[endgroup]\n2026-09-29T23:00:57.1123610Z ##[group]Disabling automatic garbage collection\n2026-09-29T23:00:57.1125476Z [command]/usr/bin/git config --local gc.auto 0\n2026-09-29T23:00:57.1149093Z ##[endgroup]\n2026-09-29T23:00:57.1149718Z ##[group]Setting up auth\n2026-09-29T23:00:57.1153944Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-29T23:00:57.1177009Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-29T23:00:57.1431102Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-29T23:00:57.1455479Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-29T23:00:57.1635141Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-29T23:00:57.1658805Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-29T23:00:57.1836952Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***\n2026-09-29T23:00:57.1866529Z ##[endgroup]\n2026-09-29T23:00:57.1867250Z ##[group]Fetching the repository\n2026-09-29T23:00:57.1873612Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +afb8f9b4c037c2414296231551dc6e8b4cb0a1b6:refs/remotes/pull/149/merge\n2026-09-29T23:00:58.8320472Z From https://github.com/aidenybai/bippy\n2026-09-29T23:00:58.8321955Z  * [new ref]         afb8f9b4c037c2414296231551dc6e8b4cb0a1b6 -> pull/149/merge\n2026-09-29T23:00:58.8324539Z ##[endgroup]\n2026-09-29T23:00:58.8325192Z ##[group]Determining the checkout info\n2026-09-29T23:00:58.8326576Z ##[endgroup]\n2026-09-29T23:00:58.8331378Z [command]/usr/bin/git sparse-checkout disable\n2026-09-29T23:00:58.8370205Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig\n2026-09-29T23:00:58.8392371Z ##[group]Checking out the ref\n2026-09-29T23:00:58.8395558Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/149/merge\n2026-09-29T23:00:58.9409745Z Note: switching to 'refs/remotes/pull/149/merge'.\n2026-09-29T23:00:58.9410170Z \n2026-09-29T23:00:58.9410475Z You are in 'detached HEAD' state. You can look around, make experimental\n2026-09-29T23:00:58.9411167Z changes and commit them, and you can discard any commits you make in this\n2026-09-29T23:00:58.9411864Z state without impacting any branches by switching back to a branch.\n2026-09-29T23:00:58.9412278Z \n2026-09-29T23:00:58.9412577Z If you want to create a new branch to retain commits you create, you may\n2026-09-29T23:00:58.9413451Z do so (now or later) by using -c with the switch command. Example:\n2026-09-29T23:00:58.9414179Z \n2026-09-29T23:00:58.9414347Z   git switch -c <new-branch-name>\n2026-09-29T23:00:58.9414629Z \n2026-09-29T23:00:58.9414798Z Or undo this operation with:\n2026-09-29T23:00:58.9415043Z \n2026-09-29T23:00:58.9415175Z   git switch -\n2026-09-29T23:00:58.9415379Z \n2026-09-29T23:00:58.9415697Z Turn off this advice by setting config variable advice.detachedHead to false\n2026-09-29T23:00:58.9416228Z \n2026-09-29T23:00:58.9416716Z HEAD is now at afb8f9b Merge 98865f1fc51722a48141a58c723688f23447b7e8 into bdf46a3d944d6d79c751c97d3a916ab0312da9c8\n2026-09-29T23:00:58.9426726Z ##[endgroup]\n2026-09-29T23:00:58.9462064Z [command]/usr/bin/git log -1 --format=%H\n2026-09-29T23:00:58.9480848Z afb8f9b4c037c2414296231551dc6e8b4cb0a1b6\n2026-09-29T23:00:58.9709128Z ##[group]Run pnpm/action-setup@v4\n2026-09-29T23:00:58.9709422Z with:\n2026-09-29T23:00:58.9709640Z   dest: ~/setup-pnpm\n2026-09-29T23:00:58.9709868Z   run_install: null\n2026-09-29T23:00:58.9710082Z   cache: false\n2026-09-29T23:00:58.9710334Z   cache_dependency_path: pnpm-lock.yaml\n2026-09-29T23:00:58.9710614Z   package_json_file: package.json\n2026-09-29T23:00:58.9710893Z   standalone: false\n2026-09-29T23:00:58.9711113Z ##[endgroup]\n2026-09-29T23:00:59.0847350Z ##[group]Running self-installer...\n2026-09-29T23:00:59.3780338Z (node:2055) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n2026-09-29T23:00:59.3781603Z (Use `node --trace-deprecation ...` to show where the warning was created)\n2026-09-29T23:00:59.5406718Z Progress: resolved 1, reused 0, downloaded 0, added 0\n2026-09-29T23:00:59.5469412Z Packages: +1\n2026-09-29T23:00:59.5469834Z +\n2026-09-29T23:00:59.8866958Z Progress: resolved 1, reused 0, downloaded 1, added 1, done\n2026-09-29T23:00:59.9225973Z \n2026-09-29T23:00:59.9226170Z dependencies:\n2026-09-29T23:00:59.9226407Z + pnpm 10.12.1 (12.8.1 is available)\n2026-09-29T23:00:59.9226581Z \n2026-09-29T23:00:59.9243704Z Done in 710ms\n2026-09-29T23:00:59.9392471Z ##[endgroup]\n2026-09-29T23:00:59.9392798Z Installation Completed!\n2026-09-29T23:00:59.9579585Z ##[group]Run actions/setup-node@v4\n2026-09-29T23:00:59.9579803Z with:\n2026-09-29T23:00:59.9579968Z   node-version: 26\n2026-09-29T23:00:59.9580141Z   cache: pnpm\n2026-09-29T23:00:59.9580307Z   always-auth: false\n2026-09-29T23:00:59.9580483Z   check-latest: false\n2026-09-29T23:00:59.9582385Z   token: ***\n2026-09-29T23:00:59.9582559Z env:\n2026-09-29T23:00:59.9582783Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:00:59.9583425Z ##[endgroup]\n2026-09-29T23:01:00.0688124Z Attempting to download 26...\n2026-09-29T23:01:00.0769690Z (node:2069) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n2026-09-29T23:01:00.0770566Z (Use `node --trace-deprecation ...` to show where the warning was created)\n2026-09-29T23:01:01.0320110Z Acquiring 26.10.0 - x64 from https://github.com/actions/node-versions/releases/download/26.10.0-35737674515/node-26.10.0-linux-x64.tar.gz\n2026-09-29T23:01:01.5492194Z Extracting ...\n2026-09-29T23:01:01.5583637Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/abd85f52-008e-4118-8127-f85ee8109f90 -f /home/runner/work/_temp/98c5b850-1aa2-4753-8eac-a77d65314310\n2026-09-29T23:01:02.7094903Z Adding to the cache ...\n2026-09-29T23:01:04.6373886Z ##[group]Environment details\n2026-09-29T23:01:04.8106261Z node: v26.10.0\n2026-09-29T23:01:04.8106573Z npm: 11.19.1\n2026-09-29T23:01:04.8106795Z yarn: 1.22.22\n2026-09-29T23:01:04.8107269Z ##[endgroup]\n2026-09-29T23:01:04.8122224Z [command]/home/runner/setup-pnpm/node_modules/.bin/pnpm store path --silent\n2026-09-29T23:01:05.0918206Z /home/runner/setup-pnpm/node_modules/.bin/store/v10\n2026-09-29T23:01:05.3057556Z Cache hit for: node-cache-Linux-x64-pnpm-51be6a3df2a081e325d435586d6f6dfbeafe9cabdd75bf7a447fdcaf6b06fc87\n2026-09-29T23:01:05.3143883Z (node:2069) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n2026-09-29T23:01:06.5407532Z Received 33554432 of 895438206 (3.7%), 32.0 MBs/sec\n2026-09-29T23:01:07.5416753Z Received 205520896 of 895438206 (23.0%), 98.0 MBs/sec\n2026-09-29T23:01:08.5455122Z Received 402653184 of 895438206 (45.0%), 128.0 MBs/sec\n2026-09-29T23:01:09.5474003Z Received 557842432 of 895438206 (62.3%), 132.9 MBs/sec\n2026-09-29T23:01:10.5440976Z Received 666894336 of 895438206 (74.5%), 127.1 MBs/sec\n2026-09-29T23:01:11.5652217Z Received 805306368 of 895438206 (89.9%), 127.6 MBs/sec\n2026-09-29T23:01:12.2895824Z Received 895438206 of 895438206 (100.0%), 126.5 MBs/sec\n2026-09-29T23:01:12.2896572Z Cache Size: ~854 MB (895438206 B)\n2026-09-29T23:01:12.2954283Z [command]/usr/bin/tar -xf /home/runner/work/_temp/3b50daab-e267-41bd-8b51-b0eb4d9584f0/cache.tzst -P -C /home/runner/work/bippy/bippy --use-compress-program unzstd\n2026-09-29T23:01:25.4069394Z Cache restored successfully\n2026-09-29T23:01:25.4442015Z Cache restored from key: node-cache-Linux-x64-pnpm-51be6a3df2a081e325d435586d6f6dfbeafe9cabdd75bf7a447fdcaf6b06fc87\n2026-09-29T23:01:25.4637488Z ##[group]Run pnpm install --frozen-lockfile\n2026-09-29T23:01:25.4637858Z \u001b[36;1mpnpm install --frozen-lockfile\u001b[0m\n2026-09-29T23:01:25.5067284Z shell: /usr/bin/bash -e {0}\n2026-09-29T23:01:25.5067526Z env:\n2026-09-29T23:01:25.5067766Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:01:25.5068027Z ##[endgroup]\n2026-09-29T23:01:25.7616909Z Scope: all 30 workspace projects\n2026-09-29T23:01:25.8258031Z Lockfile is up to date, resolution step is skipped\n2026-09-29T23:01:26.1044240Z Packages: +2720\n2026-09-29T23:01:26.1044826Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n2026-09-29T23:01:26.1294412Z Progress: resolved 0, reused 1, downloaded 0, added 0\n2026-09-29T23:01:27.1214684Z Progress: resolved 0, reused 921, downloaded 0, added 0\n2026-09-29T23:01:28.1201295Z Progress: resolved 0, reused 2242, downloaded 0, added 169\n2026-09-29T23:01:29.1210917Z Progress: resolved 0, reused 2242, downloaded 0, added 214\n2026-09-29T23:01:30.1218873Z Progress: resolved 0, reused 2242, downloaded 0, added 247\n2026-09-29T23:01:31.1227911Z Progress: resolved 0, reused 2242, downloaded 0, added 322\n2026-09-29T23:01:32.1232823Z Progress: resolved 0, reused 2242, downloaded 0, added 568\n2026-09-29T23:01:33.1235137Z Progress: resolved 0, reused 2242, downloaded 0, added 845\n2026-09-29T23:01:34.1248294Z Progress: resolved 0, reused 2242, downloaded 0, added 1004\n2026-09-29T23:01:35.1249703Z Progress: resolved 0, reused 2242, downloaded 0, added 1609\n2026-09-29T23:01:36.1944381Z Progress: resolved 0, reused 2242, downloaded 0, added 2720\n2026-09-29T23:01:36.2004654Z Progress: resolved 0, reused 2242, downloaded 0, added 2720, done\n2026-09-29T23:01:36.8461205Z \n2026-09-29T23:01:36.8462375Z ╭ Warning ─────────────────────────────────────────────────────────────────────╮\n2026-09-29T23:01:36.8463275Z │                                                                              │\n2026-09-29T23:01:36.8464115Z │   Ignored build scripts: @parcel/watcher, detox, dtrace-provider, esbuild,   │\n2026-09-29T23:01:36.8464881Z │   sharp, unrs-resolver.                                                      │\n2026-09-29T23:01:36.8465550Z │   Run \"pnpm approve-builds\" to pick which dependencies should be allowed     │\n2026-09-29T23:01:36.8466349Z │   to run scripts.                                                            │\n2026-09-29T23:01:36.8467033Z │                                                                              │\n2026-09-29T23:01:36.8467761Z ╰──────────────────────────────────────────────────────────────────────────────╯\n2026-09-29T23:01:36.8468088Z \n2026-09-29T23:01:36.9832327Z Done in 11.4s using pnpm v10.12.1\n2026-09-29T23:01:37.0360019Z ##[group]Run pnpm --filter bippy-analyzer exec playwright install --with-deps chromium\n2026-09-29T23:01:37.0360722Z \u001b[36;1mpnpm --filter bippy-analyzer exec playwright install --with-deps chromium\u001b[0m\n2026-09-29T23:01:37.0416041Z shell: /usr/bin/bash -e {0}\n2026-09-29T23:01:37.0416255Z env:\n2026-09-29T23:01:37.0416464Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:01:37.0416721Z ##[endgroup]\n2026-09-29T23:01:37.7185980Z Installing dependencies...\n2026-09-29T23:01:37.7252230Z Switching to root user to install dependencies...\n2026-09-29T23:01:37.8056440Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]\n2026-09-29T23:01:37.8293947Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease\n2026-09-29T23:01:37.8294735Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]\n2026-09-29T23:01:37.8309636Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]\n2026-09-29T23:01:37.8344201Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]\n2026-09-29T23:01:37.8364609Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]\n2026-09-29T23:01:37.9329155Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [503 kB]\n2026-09-29T23:01:37.9520637Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [454 kB]\n2026-09-29T23:01:37.9712179Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1322 kB]\n2026-09-29T23:01:37.9784151Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [299 kB]\n2026-09-29T23:01:37.9804300Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Components [181 kB]\n2026-09-29T23:01:37.9828616Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1698 kB]\n2026-09-29T23:01:37.9900978Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [340 kB]\n2026-09-29T23:01:37.9920227Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Components [388 kB]\n2026-09-29T23:01:37.9942382Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1662 kB]\n2026-09-29T23:01:38.0018073Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [379 kB]\n2026-09-29T23:01:38.0038022Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse amd64 Components [940 B]\n2026-09-29T23:01:38.0196136Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Packages [40.6 kB]\n2026-09-29T23:01:38.0644530Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-backports/main amd64 Components [5788 B]\n2026-09-29T23:01:38.0649512Z Get:20 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Packages [31.0 kB]\n2026-09-29T23:01:38.0655119Z Get:21 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe Translation-en [18.6 kB]\n2026-09-29T23:01:38.0666862Z Get:22 http://azure.archive.ubuntu.com/ubuntu noble-backports/universe amd64 Components [12.6 kB]\n2026-09-29T23:01:38.0672837Z Get:23 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1063 kB]\n2026-09-29T23:01:38.0717768Z Get:24 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [220 kB]\n2026-09-29T23:01:38.0729387Z Get:25 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Components [46.3 kB]\n2026-09-29T23:01:38.0736451Z Get:26 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1216 kB]\n2026-09-29T23:01:38.0788736Z Get:27 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [244 kB]\n2026-09-29T23:01:38.0801643Z Get:28 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Components [76.3 kB]\n2026-09-29T23:01:38.0810216Z Get:29 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted amd64 Packages [1559 kB]\n2026-09-29T23:01:38.0877596Z Get:30 http://azure.archive.ubuntu.com/ubuntu noble-security/restricted Translation-en [359 kB]\n2026-09-29T23:01:45.1693247Z Fetched 12.5 MB in 1s (11.4 MB/s)\n2026-09-29T23:01:45.7790969Z Reading package lists...\n2026-09-29T23:01:45.7990208Z Reading package lists...\n2026-09-29T23:01:45.9457175Z Building dependency tree...\n2026-09-29T23:01:45.9463453Z Reading state information...\n2026-09-29T23:01:46.0730944Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).\n2026-09-29T23:01:46.0731370Z libasound2t64 set to manually installed.\n2026-09-29T23:01:46.0731758Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).\n2026-09-29T23:01:46.0732125Z libatk-bridge2.0-0t64 set to manually installed.\n2026-09-29T23:01:46.0732484Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).\n2026-09-29T23:01:46.0732799Z libatk1.0-0t64 set to manually installed.\n2026-09-29T23:01:46.0733455Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).\n2026-09-29T23:01:46.0733847Z libatspi2.0-0t64 set to manually installed.\n2026-09-29T23:01:46.0734367Z libcairo2 is already the newest version (1.18.0-3build1).\n2026-09-29T23:01:46.0734682Z libcairo2 set to manually installed.\n2026-09-29T23:01:46.0735202Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).\n2026-09-29T23:01:46.0735568Z libcups2t64 set to manually installed.\n2026-09-29T23:01:46.0735903Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).\n2026-09-29T23:01:46.0736228Z libdbus-1-3 set to manually installed.\n2026-09-29T23:01:46.0736568Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).\n2026-09-29T23:01:46.0736893Z libdrm2 set to manually installed.\n2026-09-29T23:01:46.0737219Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.2).\n2026-09-29T23:01:46.0737524Z libgbm1 set to manually installed.\n2026-09-29T23:01:46.0737841Z libnspr4 is already the newest version (2:4.35-1.1build1).\n2026-09-29T23:01:46.0738155Z libnspr4 set to manually installed.\n2026-09-29T23:01:46.0738455Z libnss3 is already the newest version (2:3.98-1ubuntu0.2).\n2026-09-29T23:01:46.0738747Z libnss3 set to manually installed.\n2026-09-29T23:01:46.0739068Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).\n2026-09-29T23:01:46.0739527Z libpango-1.0-0 set to manually installed.\n2026-09-29T23:01:46.0739845Z libx11-6 is already the newest version (2:1.8.7-1build1).\n2026-09-29T23:01:46.0740134Z libx11-6 set to manually installed.\n2026-09-29T23:01:46.0740420Z libxcb1 is already the newest version (1.15-1ubuntu2).\n2026-09-29T23:01:46.0740699Z libxcb1 set to manually installed.\n2026-09-29T23:01:46.0741137Z libxcomposite1 is already the newest version (1:0.4.5-1build3).\n2026-09-29T23:01:46.0741478Z libxcomposite1 set to manually installed.\n2026-09-29T23:01:46.0741809Z libxdamage1 is already the newest version (1:1.1.6-1build1).\n2026-09-29T23:01:46.0742116Z libxdamage1 set to manually installed.\n2026-09-29T23:01:46.0742433Z libxext6 is already the newest version (2:1.3.4-1build2).\n2026-09-29T23:01:46.0742721Z libxext6 set to manually installed.\n2026-09-29T23:01:46.0743141Z libxfixes3 is already the newest version (1:6.0.0-2build1).\n2026-09-29T23:01:46.0743455Z libxfixes3 set to manually installed.\n2026-09-29T23:01:46.0743777Z libxkbcommon0 is already the newest version (1.6.0-1build1).\n2026-09-29T23:01:46.0744086Z libxkbcommon0 set to manually installed.\n2026-09-29T23:01:46.0744397Z libxrandr2 is already the newest version (2:1.5.2-2build1).\n2026-09-29T23:01:46.0744698Z libxrandr2 set to manually installed.\n2026-09-29T23:01:46.0745086Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).\n2026-09-29T23:01:46.0745525Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).\n2026-09-29T23:01:46.0745868Z libfontconfig1 set to manually installed.\n2026-09-29T23:01:46.0746225Z libfreetype6 is already the newest version (2.13.2+dfsg-1ubuntu0.1).\n2026-09-29T23:01:46.0746557Z libfreetype6 set to manually installed.\n2026-09-29T23:01:46.0746885Z fonts-liberation is already the newest version (1:2.1.5-3).\n2026-09-29T23:01:46.0747508Z fonts-liberation set to manually installed.\n2026-09-29T23:01:46.0747833Z The following additional packages will be installed:\n2026-09-29T23:01:46.0748366Z   gir1.2-glib-2.0 libglib2.0-bin libglib2.0-data xfonts-encodings xfonts-utils\n2026-09-29T23:01:46.0748698Z   xserver-common\n2026-09-29T23:01:46.0748893Z Suggested packages:\n2026-09-29T23:01:46.0749090Z   low-memory-monitor\n2026-09-29T23:01:46.0749282Z Recommended packages:\n2026-09-29T23:01:46.0749525Z   fonts-ipafont-mincho fonts-tlwg-loma xfonts-base\n2026-09-29T23:01:46.0913656Z The following NEW packages will be installed:\n2026-09-29T23:01:46.0914244Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont\n2026-09-29T23:01:46.0918398Z   fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable\n2026-09-29T23:01:46.0919001Z   xfonts-utils\n2026-09-29T23:01:46.0921229Z The following packages will be upgraded:\n2026-09-29T23:01:46.0925769Z   gir1.2-glib-2.0 libglib2.0-0t64 libglib2.0-bin libglib2.0-data\n2026-09-29T23:01:46.0926288Z   xserver-common xvfb\n2026-09-29T23:01:46.1063110Z 6 upgraded, 9 newly installed, 0 to remove and 36 not upgraded.\n2026-09-29T23:01:46.1063494Z Need to get 23.9 MB of archives.\n2026-09-29T23:01:46.1063846Z After this operation, 79.6 MB of additional disk space will be used.\n2026-09-29T23:01:46.1064472Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]\n2026-09-29T23:01:46.1655724Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]\n2026-09-29T23:01:46.2690993Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-data all 2.80.0-6ubuntu3.9 [50.1 kB]\n2026-09-29T23:01:46.3140918Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-bin amd64 2.80.0-6ubuntu3.9 [97.9 kB]\n2026-09-29T23:01:46.3593418Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 gir1.2-glib-2.0 amd64 2.80.0-6ubuntu3.9 [183 kB]\n2026-09-29T23:01:46.4051089Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 libglib2.0-0t64 amd64 2.80.0-6ubuntu3.9 [1547 kB]\n2026-09-29T23:01:46.4585015Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]\n2026-09-29T23:01:46.5935948Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]\n2026-09-29T23:01:46.6388153Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]\n2026-09-29T23:01:46.7299608Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]\n2026-09-29T23:01:46.8768671Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]\n2026-09-29T23:01:46.9255912Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]\n2026-09-29T23:01:46.9707159Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]\n2026-09-29T23:01:47.0174999Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]\n2026-09-29T23:01:47.0637688Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 xserver-common all 2:21.1.12-1ubuntu1.8 [34.8 kB]\n2026-09-29T23:01:47.1089734Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 xvfb amd64 2:21.1.12-1ubuntu1.8 [877 kB]\n2026-09-29T23:01:47.3389434Z Fetched 23.9 MB in 1s (23.1 MB/s)\n2026-09-29T23:01:47.3569522Z Selecting previously unselected package fonts-ipafont-gothic.\n2026-09-29T23:01:47.3747747Z (Reading database ... \n2026-09-29T23:01:47.3748198Z (Reading database ... 5%\n2026-09-29T23:01:47.3748430Z (Reading database ... 10%\n2026-09-29T23:01:47.3748641Z (Reading database ... 15%\n2026-09-29T23:01:47.3748839Z (Reading database ... 20%\n2026-09-29T23:01:47.3749030Z (Reading database ... 25%\n2026-09-29T23:01:47.3749232Z (Reading database ... 30%\n2026-09-29T23:01:47.3749439Z (Reading database ... 35%\n2026-09-29T23:01:47.3749861Z (Reading database ... 40%\n2026-09-29T23:01:47.3750053Z (Reading database ... 45%\n2026-09-29T23:01:47.3750381Z (Reading database ... 50%\n2026-09-29T23:01:47.3777917Z (Reading database ... 55%\n2026-09-29T23:01:47.4399303Z (Reading database ... 60%\n2026-09-29T23:01:47.6462428Z (Reading database ... 65%\n2026-09-29T23:01:47.8519155Z (Reading database ... 70%\n2026-09-29T23:01:48.0412428Z (Reading database ... 75%\n2026-09-29T23:01:48.1607022Z (Reading database ... 80%\n2026-09-29T23:01:48.3407253Z (Reading database ... 85%\n2026-09-29T23:01:48.4459246Z (Reading database ... 90%\n2026-09-29T23:01:48.6063689Z (Reading database ... 95%\n2026-09-29T23:01:48.6064003Z (Reading database ... 100%\n2026-09-29T23:01:48.6064380Z (Reading database ... 202190 files and directories currently installed.)\n2026-09-29T23:01:48.6102234Z Preparing to unpack .../00-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...\n2026-09-29T23:01:48.6213860Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...\n2026-09-29T23:01:48.8548991Z Preparing to unpack .../01-libglib2.0-data_2.80.0-6ubuntu3.9_all.deb ...\n2026-09-29T23:01:48.8562190Z Unpacking libglib2.0-data (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...\n2026-09-29T23:01:48.8884194Z Preparing to unpack .../02-libglib2.0-bin_2.80.0-6ubuntu3.9_amd64.deb ...\n2026-09-29T23:01:48.8899260Z Unpacking libglib2.0-bin (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...\n2026-09-29T23:01:48.9327377Z Preparing to unpack .../03-gir1.2-glib-2.0_2.80.0-6ubuntu3.9_amd64.deb ...\n2026-09-29T23:01:48.9341536Z Unpacking gir1.2-glib-2.0:amd64 (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...\n2026-09-29T23:01:48.9685577Z Preparing to unpack .../04-libglib2.0-0t64_2.80.0-6ubuntu3.9_amd64.deb ...\n2026-09-29T23:01:48.9772150Z Unpacking libglib2.0-0t64:amd64 (2.80.0-6ubuntu3.9) over (2.80.0-6ubuntu3.8) ...\n2026-09-29T23:01:49.0200873Z Selecting previously unselected package fonts-freefont-ttf.\n2026-09-29T23:01:49.0308652Z Preparing to unpack .../05-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...\n2026-09-29T23:01:49.0313624Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...\n2026-09-29T23:01:49.1138960Z Selecting previously unselected package fonts-tlwg-loma-otf.\n2026-09-29T23:01:49.1248393Z Preparing to unpack .../06-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...\n2026-09-29T23:01:49.1254310Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...\n2026-09-29T23:01:49.1416640Z Selecting previously unselected package fonts-unifont.\n2026-09-29T23:01:49.1519779Z Preparing to unpack .../07-fonts-unifont_1%3a15.1.01-1build1_all.deb ...\n2026-09-29T23:01:49.1525275Z Unpacking fonts-unifont (1:15.1.01-1build1) ...\n2026-09-29T23:01:49.3310970Z Selecting previously unselected package fonts-wqy-zenhei.\n2026-09-29T23:01:49.3421610Z Preparing to unpack .../08-fonts-wqy-zenhei_0.9.45-8_all.deb ...\n2026-09-29T23:01:49.3502295Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...\n2026-09-29T23:01:49.7762724Z Selecting previously unselected package xfonts-encodings.\n2026-09-29T23:01:49.7872517Z Preparing to unpack .../09-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...\n2026-09-29T23:01:49.7877919Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...\n2026-09-29T23:01:49.8098407Z Selecting previously unselected package xfonts-utils.\n2026-09-29T23:01:49.8203789Z Preparing to unpack .../10-xfonts-utils_1%3a7.7+6build3_amd64.deb ...\n2026-09-29T23:01:49.8335609Z Unpacking xfonts-utils (1:7.7+6build3) ...\n2026-09-29T23:01:49.8575726Z Selecting previously unselected package xfonts-cyrillic.\n2026-09-29T23:01:49.8677893Z Preparing to unpack .../11-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...\n2026-09-29T23:01:49.8683074Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...\n2026-09-29T23:01:49.8944089Z Selecting previously unselected package xfonts-scalable.\n2026-09-29T23:01:49.9046909Z Preparing to unpack .../12-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...\n2026-09-29T23:01:49.9052024Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...\n2026-09-29T23:01:49.9329374Z Preparing to unpack .../13-xserver-common_2%3a21.1.12-1ubuntu1.8_all.deb ...\n2026-09-29T23:01:49.9344490Z Unpacking xserver-common (2:21.1.12-1ubuntu1.8) over (2:21.1.12-1ubuntu1.6) ...\n2026-09-29T23:01:49.9613454Z Preparing to unpack .../14-xvfb_2%3a21.1.12-1ubuntu1.8_amd64.deb ...\n2026-09-29T23:01:49.9629179Z Unpacking xvfb (2:21.1.12-1ubuntu1.8) over (2:21.1.12-1ubuntu1.6) ...\n2026-09-29T23:01:50.0203372Z Setting up fonts-wqy-zenhei (0.9.45-8) ...\n2026-09-29T23:01:50.1175322Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...\n2026-09-29T23:01:50.1187800Z Setting up libglib2.0-0t64:amd64 (2.80.0-6ubuntu3.9) ...\n2026-09-29T23:01:50.1349411Z Setting up libglib2.0-data (2.80.0-6ubuntu3.9) ...\n2026-09-29T23:01:50.1362243Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...\n2026-09-29T23:01:50.1375448Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...\n2026-09-29T23:01:50.1388468Z Setting up gir1.2-glib-2.0:amd64 (2.80.0-6ubuntu3.9) ...\n2026-09-29T23:01:50.1400644Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...\n2026-09-29T23:01:50.1453717Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode\n2026-09-29T23:01:50.1465130Z Setting up xserver-common (2:21.1.12-1ubuntu1.8) ...\n2026-09-29T23:01:50.1477779Z Setting up fonts-unifont (1:15.1.01-1build1) ...\n2026-09-29T23:01:50.1490225Z Setting up xvfb (2:21.1.12-1ubuntu1.8) ...\n2026-09-29T23:01:50.1503074Z Setting up libglib2.0-bin (2.80.0-6ubuntu3.9) ...\n2026-09-29T23:01:50.1516041Z Setting up xfonts-utils (1:7.7+6build3) ...\n2026-09-29T23:01:50.1545469Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...\n2026-09-29T23:01:50.1778342Z Setting up xfonts-scalable (1:1.0.3-1.3) ...\n2026-09-29T23:01:50.1999951Z Processing triggers for libc-bin (2.39-0ubuntu8.9) ...\n2026-09-29T23:01:50.3463774Z Processing triggers for man-db (2.12.0-4build2) ...\n2026-09-29T23:01:50.3480822Z Not building database; man-db/auto-update is not 'true'.\n2026-09-29T23:01:50.3490620Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...\n2026-09-29T23:01:50.8299402Z \n2026-09-29T23:01:50.8300077Z Running kernel seems to be up-to-date.\n2026-09-29T23:01:50.8300374Z \n2026-09-29T23:01:50.8300480Z Restarting services...\n2026-09-29T23:01:50.8659073Z  systemctl restart packagekit.service php8.3-fpm.service polkit.service udisks2.service\n2026-09-29T23:01:50.9723518Z \n2026-09-29T23:01:50.9724179Z Service restarts being deferred:\n2026-09-29T23:01:50.9724664Z  systemctl restart ModemManager.service\n2026-09-29T23:01:50.9725179Z  systemctl restart networkd-dispatcher.service\n2026-09-29T23:01:50.9725654Z \n2026-09-29T23:01:50.9725873Z No containers need to be restarted.\n2026-09-29T23:01:50.9726183Z \n2026-09-29T23:01:50.9726941Z No user sessions are running outdated binaries.\n2026-09-29T23:01:50.9727234Z \n2026-09-29T23:01:50.9727806Z No VM guests are running outdated hypervisor (qemu) binaries on this host.\n2026-09-29T23:01:51.6939289Z Downloading Chrome for Testing 153.0.8010.12 (playwright chromium v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-linux64.zip\n2026-09-29T23:01:52.0374044Z |                                                                                |   0% of 186.8 MiB\n2026-09-29T23:01:52.2848479Z |■■■■■■■■                                                                        |  10% of 186.8 MiB\n2026-09-29T23:01:52.4751648Z |■■■■■■■■■■■■■■■■                                                                |  20% of 186.8 MiB\n2026-09-29T23:01:52.7224584Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 186.8 MiB\n2026-09-29T23:01:52.8518118Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 186.8 MiB\n2026-09-29T23:01:52.9876762Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 186.8 MiB\n2026-09-29T23:01:53.1177377Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 186.8 MiB\n2026-09-29T23:01:53.2322318Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 186.8 MiB\n2026-09-29T23:01:53.3241111Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 186.8 MiB\n2026-09-29T23:01:53.4098393Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 186.8 MiB\n2026-09-29T23:01:53.5121161Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 186.8 MiB\n2026-09-29T23:01:56.1136805Z Chrome for Testing 153.0.8010.12 (playwright chromium v1243) downloaded to /home/runner/.cache/ms-playwright/chromium-1243\n2026-09-29T23:01:56.1139255Z Downloading FFmpeg (playwright ffmpeg v1011) from https://cdn.playwright.dev/dbazure/download/playwright/builds/ffmpeg/1011/ffmpeg-linux.zip\n2026-09-29T23:01:56.3845013Z |                                                                                |   0% of 2.3 MiB\n2026-09-29T23:01:56.3876186Z |■■■■■■■■                                                                        |  10% of 2.3 MiB\n2026-09-29T23:01:56.3895439Z |■■■■■■■■■■■■■■■■                                                                |  20% of 2.3 MiB\n2026-09-29T23:01:56.3910739Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 2.3 MiB\n2026-09-29T23:01:56.3928651Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 2.3 MiB\n2026-09-29T23:01:56.3939467Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 2.3 MiB\n2026-09-29T23:01:56.3946108Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 2.3 MiB\n2026-09-29T23:01:56.3954894Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 2.3 MiB\n2026-09-29T23:01:56.3967000Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 2.3 MiB\n2026-09-29T23:01:56.3979158Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 2.3 MiB\n2026-09-29T23:01:56.3987594Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 2.3 MiB\n2026-09-29T23:01:56.4427801Z FFmpeg (playwright ffmpeg v1011) downloaded to /home/runner/.cache/ms-playwright/ffmpeg-1011\n2026-09-29T23:01:56.4430167Z Downloading Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243) from https://cdn.playwright.dev/builds/cft/153.0.8010.12/linux64/chrome-headless-shell-linux64.zip\n2026-09-29T23:01:56.7852518Z |                                                                                |   0% of 114.3 MiB\n2026-09-29T23:01:56.9544687Z |■■■■■■■■                                                                        |  10% of 114.3 MiB\n2026-09-29T23:01:57.0051041Z |■■■■■■■■■■■■■■■■                                                                |  20% of 114.3 MiB\n2026-09-29T23:01:57.1111545Z |■■■■■■■■■■■■■■■■■■■■■■■■                                                        |  30% of 114.3 MiB\n2026-09-29T23:01:57.1833693Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                                |  40% of 114.3 MiB\n2026-09-29T23:01:57.2530930Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                        |  50% of 114.3 MiB\n2026-09-29T23:01:57.4653910Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 114.3 MiB\n2026-09-29T23:01:57.5462882Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 114.3 MiB\n2026-09-29T23:01:57.6405244Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 114.3 MiB\n2026-09-29T23:01:57.8118388Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 114.3 MiB\n2026-09-29T23:01:57.8631474Z |■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 114.3 MiB\n2026-09-29T23:01:59.7069874Z Chrome Headless Shell 153.0.8010.12 (playwright chromium-headless-shell v1243) downloaded to /home/runner/.cache/ms-playwright/chromium_headless_shell-1243\n2026-09-29T23:01:59.7711782Z ##[group]Run pnpm --filter bippy-analyzer test:engine-build\n2026-09-29T23:01:59.7712381Z \u001b[36;1mpnpm --filter bippy-analyzer test:engine-build\u001b[0m\n2026-09-29T23:01:59.7777476Z shell: /usr/bin/bash -e {0}\n2026-09-29T23:01:59.7777694Z env:\n2026-09-29T23:01:59.7777911Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:01:59.7778166Z ##[endgroup]\n2026-09-29T23:02:00.0786482Z \n2026-09-29T23:02:00.0787361Z > bippy-analyzer@ test:engine-build /home/runner/work/bippy/bippy/packages/bippy-analyzer\n2026-09-29T23:02:00.0788069Z > tsx engine/scripts/check-build.ts\n2026-09-29T23:02:00.0788309Z \n2026-09-29T23:02:47.0594922Z Two clean builds, different roots: 286266faf0645e5fd7c85c83ca6ea1f1dbb9b2c6701f684c9fd15804cde45c77\n2026-09-29T23:02:47.0953693Z ##[group]Run pnpm --filter bippy-analyzer typecheck\n2026-09-29T23:02:47.0954043Z \u001b[36;1mpnpm --filter bippy-analyzer typecheck\u001b[0m\n2026-09-29T23:02:47.1009133Z shell: /usr/bin/bash -e {0}\n2026-09-29T23:02:47.1009348Z env:\n2026-09-29T23:02:47.1009568Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:02:47.1009835Z ##[endgroup]\n2026-09-29T23:02:47.3504561Z \n2026-09-29T23:02:47.3505174Z > bippy-analyzer@ typecheck /home/runner/work/bippy/bippy/packages/bippy-analyzer\n2026-09-29T23:02:47.3505822Z > pnpm build:engine && tsc --noEmit\n2026-09-29T23:02:47.3506008Z \n2026-09-29T23:02:47.5555929Z \n2026-09-29T23:02:47.5556817Z > bippy-analyzer@ build:engine /home/runner/work/bippy/bippy/packages/bippy-analyzer\n2026-09-29T23:02:47.5557452Z > tsx engine/scripts/build.ts\n2026-09-29T23:02:47.5557648Z \n2026-09-29T23:02:48.2111941Z Engine build is current\n2026-09-29T23:02:51.5225323Z ##[group]Run pnpm --filter bippy-analyzer test\n2026-09-29T23:02:51.5225639Z \u001b[36;1mpnpm --filter bippy-analyzer test\u001b[0m\n2026-09-29T23:02:51.5280556Z shell: /usr/bin/bash -e {0}\n2026-09-29T23:02:51.5280770Z env:\n2026-09-29T23:02:51.5280989Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:02:51.5281244Z ##[endgroup]\n2026-09-29T23:02:51.7780105Z \n2026-09-29T23:02:51.7780898Z > bippy-analyzer@ test /home/runner/work/bippy/bippy/packages/bippy-analyzer\n2026-09-29T23:02:51.7782088Z > pnpm build:engine && vp test\n2026-09-29T23:02:51.7782306Z \n2026-09-29T23:02:51.9855637Z \n2026-09-29T23:02:51.9856563Z > bippy-analyzer@ build:engine /home/runner/work/bippy/bippy/packages/bippy-analyzer\n2026-09-29T23:02:51.9857265Z > tsx engine/scripts/build.ts\n2026-09-29T23:02:51.9857495Z \n2026-09-29T23:02:52.6333566Z Engine build is current\n2026-09-29T23:02:53.3540199Z \n2026-09-29T23:02:53.3543395Z \u001b[1m\u001b[30m\u001b[46m RUN \u001b[49m\u001b[39m\u001b[22m \u001b[36mv4.1.11 \u001b[39m\u001b[90m/home/runner/work/bippy/bippy/packages/bippy-analyzer\u001b[39m\n2026-09-29T23:02:53.3543843Z \n2026-09-29T23:02:55.7346304Z  \u001b[32m✓\u001b[39m tests/control-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m27 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1983\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:02:55.7398315Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m resumes an engine262 expression continuation without evaluating its prefix again \u001b[33m 312\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:02:55.7454480Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m resumes two alternatives without executing the effectful prefix again \u001b[33m 407\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:02:56.0438657Z  \u001b[32m✓\u001b[39m tests/control-machine.test.ts \u001b[2m(\u001b[22m\u001b[2m43 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 2313\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:02:56.0440104Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m lowers engine control without changing 'primitive iterable receiver and Unico…' \u001b[33m 316\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:02:56.9491179Z  \u001b[32m✓\u001b[39m tests/state-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m16 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 705\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:02:56.9491975Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores closure bindings and aliases across branch order \"bundle.left()\" \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:02.0910472Z  \u001b[32m✓\u001b[39m tests/number-predicates.test.ts \u001b[2m(\u001b[22m\u001b[2m46 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 4927\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:02.0912248Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains a SameValue predicate matching IEEE specializations: Object.is(amount + 1, amount) \u001b[33m 465\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:02.0914287Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks a SameValue state bailout with selected state and one prefix, reversed=false \u001b[33m 341\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:02.9946994Z  \u001b[32m✓\u001b[39m tests/global-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 770\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:03.7367252Z  \u001b[32m✓\u001b[39m tests/agent-decisions.test.ts \u001b[2m(\u001b[22m\u001b[2m20 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 607\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:04.9740148Z  \u001b[32m✓\u001b[39m tests/object-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m31 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1035\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:04.9740989Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores aliases, descriptors, order, prototype and integrity, reversed false \u001b[33m 491\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:06.0884966Z  \u001b[32m✓\u001b[39m tests/constructor-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m30 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 964\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:06.0886397Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks a selected constructed instance without replay, reversed=false \u001b[33m 350\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:07.5008875Z  \u001b[32m✓\u001b[39m tests/error-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m40 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1266\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:07.5010022Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores new Error(\"initial\", { cause: shared }), reversed=false \u001b[33m 341\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:08.5284538Z  \u001b[32m✓\u001b[39m tests/arguments-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 876\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:08.5285674Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores mapped arguments and aliases for shape 0, reverse=false \u001b[33m 356\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:09.8156007Z  \u001b[32m✓\u001b[39m tests/builtin-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m39 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1133\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:09.8183328Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks builtin properties without prefix replay, reversed=false \u001b[33m 342\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:10.6283764Z  \u001b[32m✓\u001b[39m tests/evaluation-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m14 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 685\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:10.6285387Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores Agent decisions and completion registration without replay, reversed=false \u001b[33m 330\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:11.5343314Z  \u001b[32m✓\u001b[39m tests/array-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m21 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 775\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:11.5345158Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores array descriptors, holes, aliases and integrity, reversed=false \u001b[33m 402\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:12.4661658Z  \u001b[32m✓\u001b[39m tests/weak-map-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m16 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 800\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:12.4662839Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores weak entries for {}, reversed=false \u001b[33m 341\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:13.7968844Z  \u001b[32m✓\u001b[39m tests/regexp-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m35 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1186\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:13.8046021Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores /a/g without recompiling, reversed=false \u001b[33m 351\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:14.5445133Z  \u001b[32m✓\u001b[39m tests/context-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m14 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 596\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:15.4150826Z  \u001b[32m✓\u001b[39m tests/data-graph-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m23 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 741\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:15.4152197Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores a closed graph with cycles, aliases and collections, reversed=false \u001b[33m 321\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.5325605Z  \u001b[32m✓\u001b[39m tests/collection-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 993\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.5327137Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores 'Map' lists, tombstones and identities, reversed=false \u001b[33m 430\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6065690Z  \u001b[32m✓\u001b[39m tests/symbolic-engine.test.ts \u001b[2m(\u001b[22m\u001b[2m138 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 20529\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6067237Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: + \u001b[33m 648\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6068438Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: - \u001b[33m 667\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6069630Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: * \u001b[33m 690\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6070382Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: / \u001b[33m 666\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6071251Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: % \u001b[33m 710\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6073311Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: ** \u001b[33m 735\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6074335Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: == \u001b[33m 723\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6075282Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: != \u001b[33m 677\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6076165Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: === \u001b[33m 718\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6077054Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: !== \u001b[33m 655\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6077963Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: < \u001b[33m 725\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6078901Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: <= \u001b[33m 718\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6079852Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: > \u001b[33m 707\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6081238Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: >= \u001b[33m 717\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6082187Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: && \u001b[33m 643\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6083264Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: || \u001b[33m 755\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6084204Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across the guarded scalar matrix: ?? \u001b[33m 649\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6085115Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across guarded unary coercions: + \u001b[33m 622\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6086201Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across guarded unary coercions: - \u001b[33m 669\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6087066Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across guarded unary coercions: ! \u001b[33m 715\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6087932Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across guarded unary coercions: ~ \u001b[33m 666\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6088873Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across guarded unary coercions: typeof \u001b[33m 667\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6089837Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches both engines across guarded unary coercions: void \u001b[33m 640\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:16.6092500Z      \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores the surrounding agent when any scalar dispatch exhausts its step budget \u001b[33m 460\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:18.0337536Z  \u001b[32m✓\u001b[39m tests/numeric-domain.test.ts \u001b[2m(\u001b[22m\u001b[2m48 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1361\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:18.0338852Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains an unbounded term matching native specializations: amount + 1 \u001b[33m 303\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:18.7582134Z  \u001b[32m✓\u001b[39m tests/parameter-binding.test.ts \u001b[2m(\u001b[22m\u001b[2m42 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1952\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:18.7583763Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m preserves native and published function evaluation: \n2026-09-29T23:03:18.7584432Z     function collect() {\n2026-09-29T23:03:18.7584857Z       function value() {\n2026-09-29T23:03:18.7585230Z         return 1;\n2026-09-29T23:03:18.7585553Z       }\n2026-09-29T23:03:18.7585871Z       function value() {\n2026-09-29T23:03:18.7586239Z         return 2;\n2026-09-29T23:03:18.7586568Z       }\n2026-09-29T23:03:18.7586867Z       var value;\n2026-09-29T23:03:18.7587203Z       return value();\n2026-09-29T23:03:18.7587524Z     }\n2026-09-29T23:03:18.7587824Z     return collect();\n2026-09-29T23:03:18.7588258Z    \u001b[33m 339\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:19.6256688Z  \u001b[32m✓\u001b[39m tests/intrinsic-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m22 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1443\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:19.6257537Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores Object.prototype properties and identity, reversed=false \u001b[33m 422\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:19.6355727Z  \u001b[32m✓\u001b[39m tests/checkpoint-host-effects.test.ts \u001b[2m(\u001b[22m\u001b[2m18 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 734\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:19.6384806Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m rejects setTimeout(() => {}, 0) before concrete host storage changes \u001b[33m 353\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.0399797Z  \u001b[32m✓\u001b[39m tests/guarded-control.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 2201\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.0401164Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks unknown 'statements' with unbounded amounts and selected state, reversed=false \u001b[33m 935\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.0402496Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks unknown 'statements' with unbounded amounts and selected state, reversed=true \u001b[33m 442\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.0403970Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks unknown 'expressions' with unbounded amounts and selected state, reversed=false \u001b[33m 417\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.0405773Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m forks unknown 'expressions' with unbounded amounts and selected state, reversed=true \u001b[33m 407\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.3359436Z  \u001b[32m✓\u001b[39m tests/boolean-expressions.test.ts \u001b[2m(\u001b[22m\u001b[2m106 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 2488\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:22.3419760Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m preserves 'conditional' evaluation and completion, enabled=false, fail=false \u001b[33m 338\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:23.4824215Z  \u001b[32m✓\u001b[39m tests/gc-promises.test.ts \u001b[2m(\u001b[22m\u001b[2m19 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1010\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:23.4830382Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains a pending and queued 'fulfill' handler's '{}' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.6098454Z  \u001b[32m✓\u001b[39m tests/function-checkpoint.test.ts \u001b[2m(\u001b[22m\u001b[2m32 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1003\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.6141366Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m restores 'ordinary' properties, reversed=false \u001b[33m 364\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.9767131Z  \u001b[32m✓\u001b[39m tests/source-engine.test.ts \u001b[2m(\u001b[22m\u001b[2m28 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 2752\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.9767838Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m source build matches the published engine: \n2026-09-29T23:03:24.9768165Z     const object = { value: 1 };\n2026-09-29T23:03:24.9768387Z     const alias = object;\n2026-09-29T23:03:24.9768585Z     alias.value++;\n2026-09-29T23:03:24.9768806Z     object.value\n2026-09-29T23:03:24.9769018Z    \u001b[33m 333\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.9769548Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m runs the CLI without a launcher child that could outlive harness termination \u001b[33m 542\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.9770186Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m accepts module flags before other CLI arguments \u001b[33m 492\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:24.9770769Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m rejects changed, missing, extra, and stale build artifacts \u001b[33m 490\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:26.0320680Z  \u001b[32m✓\u001b[39m tests/native-captures.test.ts \u001b[2m(\u001b[22m\u001b[2m18 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1096\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:26.0322232Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m uses frame capture metadata for emitters while tracking their escaping closures \u001b[33m 346\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:26.1602633Z  \u001b[32m✓\u001b[39m tests/gc-host-jobs.test.ts \u001b[2m(\u001b[22m\u001b[2m21 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1057\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:26.1604060Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains '{}' through a pending 'timer closure' and releases it \u001b[33m 365\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:27.0029678Z  \u001b[32m✓\u001b[39m tests/boolean-decision.test.ts \u001b[2m(\u001b[22m\u001b[2m37 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 844\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:28.3541301Z  \u001b[32m✓\u001b[39m tests/numeric-react.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1894\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:28.3542435Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m drives real React's unknown Number bailout, SameValue=false \u001b[33m 1255\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:28.3544526Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m drives real React's unknown Number bailout, SameValue=true \u001b[33m 555\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:28.4933426Z  \u001b[32m✓\u001b[39m tests/gc-promise-finally.test.ts \u001b[2m(\u001b[22m\u001b[2m16 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1351\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:28.4934928Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains a 'fulfill' '{}' while finally cleanup is pending \u001b[33m 408\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:29.1348570Z  \u001b[32m✓\u001b[39m tests/concrete-runtime.test.ts \u001b[2m(\u001b[22m\u001b[2m26 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 645\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:29.1350239Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m delegates microtask checkpoints and FIFO tasks to the engine event loop \u001b[33m 327\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:30.0995749Z  \u001b[32m✓\u001b[39m tests/gc-promise-all.test.ts \u001b[2m(\u001b[22m\u001b[2m9 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 832\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:30.0996874Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains partial Promise.all '{value:7}', reversed=false \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:30.4306624Z  \u001b[32m✓\u001b[39m tests/gc-promise-combinators.test.ts \u001b[2m(\u001b[22m\u001b[2m24 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1806\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:30.4308344Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains partial 'allSettled' 'fulfilled' '{}', reversed=false \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:30.9376459Z  \u001b[32m✓\u001b[39m tests/concrete-modules.test.ts \u001b[2m(\u001b[22m\u001b[2m11 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 552\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:30.9378029Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m executes native-built entry and dynamic chunks with live exports, singleton identity, and top-level await \u001b[33m 410\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:32.0478158Z  \u001b[32m✓\u001b[39m tests/gc-control.test.ts \u001b[2m(\u001b[22m\u001b[2m11 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 979\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:32.0484011Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains a suspended 'partial array' \u001b[33m 385\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:32.8405017Z  \u001b[32m✓\u001b[39m tests/engine-control-state.test.ts \u001b[2m(\u001b[22m\u001b[2m3 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 584\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:32.8406682Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m executes maintained algorithms through measured control frames \u001b[33m 311\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:33.3798489Z  \u001b[32m✓\u001b[39m tests/lazy-argument-accessors.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 406\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:33.3799275Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains accessor realm and aliases with debugger option false \u001b[33m 334\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:36.9900065Z  \u001b[32m✓\u001b[39m tests/symbolic-react-tree.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 3320\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:36.9901513Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m specializes a real React tree with correlated Boolean decisions, enabled=false details=false \u001b[33m 1297\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:36.9909545Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m specializes a real React tree with correlated Boolean decisions, enabled=false details=true \u001b[33m 705\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:36.9914963Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m specializes a real React tree with correlated Boolean decisions, enabled=true details=false \u001b[33m 627\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:36.9916693Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m specializes a real React tree with correlated Boolean decisions, enabled=true details=true \u001b[33m 613\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:37.9031766Z  \u001b[32m✓\u001b[39m tests/gc-bindings.test.ts \u001b[2m(\u001b[22m\u001b[2m8 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 788\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:37.9033196Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m marks values held by 'global lexical binding' \u001b[33m 354\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8885383Z  \u001b[32m✓\u001b[39m tests/concrete-react.test.ts \u001b[2m(\u001b[22m\u001b[2m10 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 8171\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8886566Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'counter' ('production') \u001b[33m 1308\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8887533Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'context' ('production') \u001b[33m 863\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8888420Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'keyed' ('production') \u001b[33m 925\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8889340Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'boundary' ('production') \u001b[33m 757\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8890258Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'async' ('production') \u001b[33m 596\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8891196Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'render-phase' ('production') \u001b[33m 468\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8892027Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'store' ('production') \u001b[33m 647\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8892576Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'transition' ('production') \u001b[33m 943\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8893487Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches native React: 'strict' ('development') \u001b[33m 920\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8894171Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains the invalid production React/development JSX fixture as a failing render \u001b[33m 497\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8934149Z  \u001b[32m✓\u001b[39m tests/gc-collections.test.ts \u001b[2m(\u001b[22m\u001b[2m16 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 855\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:38.8935547Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains '{}' through 'Map keys' \u001b[33m 332\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:40.2556676Z  \u001b[32m✓\u001b[39m tests/gc-ephemerons.test.ts \u001b[2m(\u001b[22m\u001b[2m14 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 1234\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:40.2558517Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m retains a 'object' chain with reverse=false and split=false \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:41.4224809Z  \u001b[32m✓\u001b[39m tests/string-substr.test.ts \u001b[2m(\u001b[22m\u001b[2m7 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 967\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:41.4254676Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches V8 for the fixed substr scalar and UTF-16 matrix \u001b[33m 849\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:41.9387033Z  \u001b[32m✓\u001b[39m tests/concrete-module-boundaries.test.ts \u001b[2m(\u001b[22m\u001b[2m7 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:41.9388701Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m rejects import attributes without executing the supplied JavaScript artifact \u001b[33m 302\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:42.5061419Z  \u001b[32m✓\u001b[39m tests/unused-arguments.test.ts \u001b[2m(\u001b[22m\u001b[2m10 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 445\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:42.7266394Z  \u001b[32m✓\u001b[39m tests/engine-reuse.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 56\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:43.3050245Z  \u001b[32m✓\u001b[39m tests/owner-storage-capture.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 440\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:43.3064300Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m captures storage inside an Agent owner callback, transitive=false \u001b[33m 408\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:51.9261439Z  \u001b[32m✓\u001b[39m tests/concrete-react-dom.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 12501\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:51.9262835Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m executes React DOM and a guest-owned DOM library: production \u001b[33m 6144\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:51.9264184Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m executes React DOM and a guest-owned DOM library: development \u001b[33m 6356\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:52.4338556Z  \u001b[32m✓\u001b[39m tests/concrete-diagnostics.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 376\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:52.9301362Z  \u001b[32m✓\u001b[39m tests/set-zero.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 382\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:52.9302459Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m canonicalizes Set zero for var target=new Set([-0]); \u001b[33m 302\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:03:53.1518496Z  \u001b[32m✓\u001b[39m tests/engine.test.ts \u001b[2m(\u001b[22m\u001b[2m1 test\u001b[22m\u001b[2m)\u001b[22m\u001b[32m 50\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3488861Z  \u001b[32m✓\u001b[39m tests/scalar-parity.test.ts \u001b[2m(\u001b[22m\u001b[2m485 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 123783\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3490118Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with 'undefined' \u001b[33m 949\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3491177Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with 'null' \u001b[33m 513\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3492213Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with 'false' \u001b[33m 517\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3493346Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with 'true' \u001b[33m 523\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3495748Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with '-0' \u001b[33m 484\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3496850Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with 'NaN' \u001b[33m 436\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3497863Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with 'Infinity' \u001b[33m 440\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3498791Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with '1' \u001b[33m 442\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3499746Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with '\\'1\\'' \u001b[33m 443\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3500708Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with '\\'\\'' \u001b[33m 464\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3501643Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with '0n' \u001b[33m 488\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3502442Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '+' with '1n' \u001b[33m 469\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3503604Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with 'undefined' \u001b[33m 423\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3505150Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with 'null' \u001b[33m 420\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3506035Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with 'false' \u001b[33m 431\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3506865Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with 'true' \u001b[33m 449\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3507450Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with '-0' \u001b[33m 499\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3508032Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with 'NaN' \u001b[33m 517\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3508618Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with 'Infinity' \u001b[33m 513\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3509195Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with '1' \u001b[33m 461\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3509766Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with '\\'1\\'' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3510331Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with '\\'\\'' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3510896Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with '0n' \u001b[33m 405\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3511461Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '-' with '1n' \u001b[33m 406\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3512219Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with 'undefined' \u001b[33m 408\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3513290Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with 'null' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3514322Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with 'false' \u001b[33m 418\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3515317Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with 'true' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3516324Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with '-0' \u001b[33m 403\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3517282Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with 'NaN' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3518511Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with 'Infinity' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3519112Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with '1' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3519687Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with '\\'1\\'' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3520269Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with '\\'\\'' \u001b[33m 424\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3520828Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with '0n' \u001b[33m 404\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3521392Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '*' with '1n' \u001b[33m 399\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3521987Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with 'undefined' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3522577Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with 'null' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3523459Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with 'false' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3524051Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with 'true' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3524826Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with '-0' \u001b[33m 417\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3525809Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with 'NaN' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3526806Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with 'Infinity' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3527904Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with '1' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3528640Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with '\\'1\\'' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3529221Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with '\\'\\'' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3529928Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with '0n' \u001b[33m 404\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3530747Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '/' with '1n' \u001b[33m 422\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3531745Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with 'undefined' \u001b[33m 401\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3532746Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with 'null' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3533916Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with 'false' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3534879Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with 'true' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3535811Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with '-0' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3536760Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with 'NaN' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3537738Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with 'Infinity' \u001b[33m 408\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3538716Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with '1' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3539672Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with '\\'1\\'' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3540646Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with '\\'\\'' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3541640Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with '0n' \u001b[33m 402\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3542632Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '%' with '1n' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3543454Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with 'undefined' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3544453Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with 'null' \u001b[33m 415\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3545144Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with 'false' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3545728Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with 'true' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3546298Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with '-0' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3546863Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with 'NaN' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3547454Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with 'Infinity' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3548026Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with '1' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3548590Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with '\\'1\\'' \u001b[33m 415\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3549158Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with '\\'\\'' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3549710Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with '0n' \u001b[33m 400\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3550300Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '**' with '1n' \u001b[33m 402\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3550878Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with 'undefined' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3551717Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with 'null' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3552332Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with 'false' \u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3552901Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with 'true' \u001b[33m 416\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3554045Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with '-0' \u001b[33m 401\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3554965Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with 'NaN' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3555942Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with 'Infinity' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3556861Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with '1' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3557870Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with '\\'1\\'' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3558781Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with '\\'\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3559756Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with '0n' \u001b[33m 405\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3560703Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '==' with '1n' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3561707Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with 'undefined' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3562750Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with 'null' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3563913Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with 'false' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3564887Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with 'true' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3565882Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with '-0' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3566874Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with 'NaN' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3567915Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with 'Infinity' \u001b[33m 418\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3568959Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with '1' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3569941Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with '\\'1\\'' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3570924Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with '\\'\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3571889Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with '0n' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3572857Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!=' with '1n' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3574054Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with 'undefined' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3574912Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with 'null' \u001b[33m 407\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3575513Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with 'false' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3576101Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with 'true' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3576671Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with '-0' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3577534Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with 'NaN' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3578546Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with 'Infinity' \u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3579762Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with '1' \u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3580735Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with '\\'1\\'' \u001b[33m 388\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3581711Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with '\\'\\'' \u001b[33m 425\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3582896Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with '0n' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3584016Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '===' with '1n' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3584946Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with 'undefined' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3585925Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with 'null' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3586854Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with 'false' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3587793Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with 'true' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3588689Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with '-0' \u001b[33m 412\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3589577Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with 'NaN' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3590511Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with 'Infinity' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3591408Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with '1' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3592340Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with '\\'1\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3593433Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with '\\'\\'' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3594423Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with '0n' \u001b[33m 387\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3595403Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '!==' with '1n' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3596413Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with 'undefined' \u001b[33m 422\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3597445Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with 'null' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3598524Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with 'false' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3599526Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with 'true' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3600548Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with '-0' \u001b[33m 408\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3601497Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with 'NaN' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3602514Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with 'Infinity' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3603719Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with '1' \u001b[33m 412\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3604732Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with '\\'1\\'' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3605741Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with '\\'\\'' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3606702Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with '0n' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3607679Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<' with '1n' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3608696Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with 'undefined' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3609956Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with 'null' \u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3610984Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with 'false' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3611990Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with 'true' \u001b[33m 411\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3613335Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with '-0' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3614406Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with 'NaN' \u001b[33m 401\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3615428Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with 'Infinity' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3616439Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with '1' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3617370Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with '\\'1\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3618482Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with '\\'\\'' \u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3619550Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with '0n' \u001b[33m 408\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3620534Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<=' with '1n' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3621553Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with 'undefined' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3622487Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with 'null' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3623670Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with 'false' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3624462Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with 'true' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3625146Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with '-0' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3626111Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with 'NaN' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3627142Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with 'Infinity' \u001b[33m 416\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3628164Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with '1' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3629117Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with '\\'1\\'' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3630051Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with '\\'\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3631029Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with '0n' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3631956Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>' with '1n' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3633106Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with 'undefined' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3634124Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with 'null' \u001b[33m 410\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3635125Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with 'false' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3636131Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with 'true' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3637129Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with '-0' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3638113Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with 'NaN' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3638951Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with 'Infinity' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3639879Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with '1' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3640495Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with '\\'1\\'' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3641156Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with '\\'\\'' \u001b[33m 409\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3641972Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with '0n' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3642713Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>=' with '1n' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3643723Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with 'undefined' \u001b[33m 376\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3644459Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with 'null' \u001b[33m 374\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3645044Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with 'false' \u001b[33m 374\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3645755Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with 'true' \u001b[33m 384\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3646402Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with '-0' \u001b[33m 382\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3647382Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with 'NaN' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3648057Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with 'Infinity' \u001b[33m 385\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3648738Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with '1' \u001b[33m 384\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3649316Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with '\\'1\\'' \u001b[33m 386\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3650131Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with '\\'\\'' \u001b[33m 374\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3650987Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with '0n' \u001b[33m 377\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3651574Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&&' with '1n' \u001b[33m 383\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3652295Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with 'undefined' \u001b[33m 403\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3652887Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with 'null' \u001b[33m 400\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3653981Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with 'false' \u001b[33m 385\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3654696Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with 'true' \u001b[33m 377\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3655322Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with '-0' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3655924Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with 'NaN' \u001b[33m 385\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3656659Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with 'Infinity' \u001b[33m 374\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3657561Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with '1' \u001b[33m 374\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3658194Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with '\\'1\\'' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3658869Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with '\\'\\'' \u001b[33m 384\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3659444Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with '0n' \u001b[33m 385\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3660231Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '||' with '1n' \u001b[33m 376\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3661107Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with 'undefined' \u001b[33m 386\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3661885Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with 'null' \u001b[33m 382\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3662554Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with 'false' \u001b[33m 370\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3663385Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with 'true' \u001b[33m 388\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3664503Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with '-0' \u001b[33m 376\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3665084Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with 'NaN' \u001b[33m 370\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3665775Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with 'Infinity' \u001b[33m 377\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3666358Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with '1' \u001b[33m 371\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3667218Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with '\\'1\\'' \u001b[33m 371\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3668022Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with '\\'\\'' \u001b[33m 371\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3668600Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with '0n' \u001b[33m 370\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3669243Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '??' with '1n' \u001b[33m 389\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3669834Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with 'undefined' \u001b[33m 422\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3670797Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with 'null' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3671475Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with 'false' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3672043Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with 'true' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3672693Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with '-0' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3673626Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with 'NaN' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3674609Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with 'Infinity' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3675201Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with '1' \u001b[33m 414\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3676072Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with '\\'1\\'' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3676704Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with '\\'\\'' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3677659Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with '0n' \u001b[33m 401\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3678466Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '&' with '1n' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3679176Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with 'undefined' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3679764Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with 'null' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3680598Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with 'false' \u001b[33m 407\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3681465Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with 'true' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3682037Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with '-0' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3682686Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with 'NaN' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3683476Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with 'Infinity' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3684503Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with '1' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3685280Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with '\\'1\\'' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3685958Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with '\\'\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3686528Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with '0n' \u001b[33m 417\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3687621Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '|' with '1n' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3688332Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with 'undefined' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3688923Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with 'null' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3689798Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with 'false' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3690387Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with 'true' \u001b[33m 401\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3691074Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with '-0' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3691701Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with 'NaN' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3692623Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with 'Infinity' \u001b[33m 422\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3693417Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with '1' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3694115Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with '\\'1\\'' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3695011Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with '\\'\\'' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3695578Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with '0n' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3696233Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '^' with '1n' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3696946Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with 'undefined' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3697906Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with 'null' \u001b[33m 412\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3698871Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with 'false' \u001b[33m 399\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3699845Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with 'true' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3700833Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with '-0' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3701519Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with 'NaN' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3702123Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with 'Infinity' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3702705Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with '1' \u001b[33m 402\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3703469Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with '\\'1\\'' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3704051Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with '\\'\\'' \u001b[33m 424\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3704619Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with '0n' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3705172Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '<<' with '1n' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3705753Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with 'undefined' \u001b[33m 397\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3706326Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with 'null' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3707080Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with 'false' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3707657Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with 'true' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3708218Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with '-0' \u001b[33m 421\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3708880Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with 'NaN' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3709476Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with 'Infinity' \u001b[33m 393\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3710043Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with '1' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3710611Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with '\\'1\\'' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3711196Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with '\\'\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3711764Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with '0n' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3712314Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>' with '1n' \u001b[33m 410\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3713070Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with 'undefined' \u001b[33m 394\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3713687Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with 'null' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3714261Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with 'false' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3714838Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with 'true' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3715403Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with '-0' \u001b[33m 396\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3715984Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with 'NaN' \u001b[33m 392\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3716564Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with 'Infinity' \u001b[33m 391\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3717125Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with '1' \u001b[33m 422\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3717690Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with '\\'1\\'' \u001b[33m 395\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3718258Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with '\\'\\'' \u001b[33m 390\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3718809Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with '0n' \u001b[33m 399\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3719361Z    \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m matches every selected literal pair for '>>>' with '1n' \u001b[33m 398\u001b[2mms\u001b[22m\u001b[39m\n2026-09-29T23:05:47.3719632Z \n2026-09-29T23:05:47.3719881Z \u001b[2m Test Files \u001b[22m \u001b[1m\u001b[32m55 passed\u001b[39m\u001b[22m\u001b[90m (55)\u001b[39m\n2026-09-29T23:05:47.3720300Z \u001b[2m      Tests \u001b[22m \u001b[1m\u001b[32m1696 passed\u001b[39m\u001b[22m\u001b[90m (1696)\u001b[39m\n2026-09-29T23:05:47.3720641Z \u001b[2m   Start at \u001b[22m 23:02:53\n2026-09-29T23:05:47.3721160Z \u001b[2m   Duration \u001b[22m 173.99s\u001b[2m (transform 642ms, setup 0ms, import 4.20s, tests 223.63s, environment 5ms)\u001b[22m\n2026-09-29T23:05:47.3721467Z \n2026-09-29T23:05:47.4085865Z ##[group]Run pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'\n2026-09-29T23:05:47.4087203Z \u001b[36;1mpnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'\u001b[0m\n2026-09-29T23:05:47.4143166Z shell: /usr/bin/bash -e {0}\n2026-09-29T23:05:47.4143585Z env:\n2026-09-29T23:05:47.4143808Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin\n2026-09-29T23:05:47.4144065Z ##[endgroup]\n2026-09-29T23:05:47.6853169Z \n2026-09-29T23:05:47.6854129Z > bippy-analyzer@ test:source-test262 /home/runner/work/bippy/bippy/packages/bippy-analyzer\n2026-09-29T23:05:47.6857210Z > pnpm --silent build:engine && pnpm --silent setup:test262 && test262-harness --host-type=engine262 --host-path=engine/scripts/cli.ts --host-args=--no-inspect --test262-dir=.test262 --threads=2 --error-for-failures=true .test262/test/built-ins/Object/is/\\*.js .test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js .test262/test/annexB/built-ins/String/prototype/substr/\\*.js\n2026-09-29T23:05:47.6859270Z \n2026-09-29T23:05:48.5347480Z Engine build is current\n2026-09-29T23:05:48.8920154Z hint: Using 'master' as the name for the initial branch. This default branch name\n2026-09-29T23:05:48.8920713Z hint: will change to \"main\" in Git 3.0. To configure the initial branch name\n2026-09-29T23:05:48.8921425Z hint: to use in all of your new repositories, which will suppress this warning,\n2026-09-29T23:05:48.8921805Z hint: call:\n2026-09-29T23:05:48.8921967Z hint:\n2026-09-29T23:05:48.8922232Z hint: \tgit config --global init.defaultBranch <name>\n2026-09-29T23:05:48.8922581Z hint:\n2026-09-29T23:05:48.8923233Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and\n2026-09-29T23:05:48.8923981Z hint: 'development'. The just-created branch can be renamed via this command:\n2026-09-29T23:05:48.8924471Z hint:\n2026-09-29T23:05:48.8924755Z hint: \tgit branch -m <name>\n2026-09-29T23:05:48.8925045Z hint:\n2026-09-29T23:05:48.8925573Z hint: Disable this message with \"git config set advice.defaultBranchName false\"\n2026-09-29T23:05:51.8268407Z From https://github.com/tc39/test262\n2026-09-29T23:05:51.8269062Z  * branch              045bf6f9966ce3291b8fbc1e0403cd97b9201b00 -> FETCH_HEAD\n2026-09-29T23:05:53.5530322Z HEAD is now at 045bf6f9 Test the format of a German date with a short weekday and no year (#3739)\n2026-09-29T23:05:53.8865623Z Test262 045bf6f9966ce3291b8fbc1e0403cd97b9201b00 ready at /home/runner/work/bippy/bippy/packages/bippy-analyzer/.test262\n2026-09-29T23:05:54.6290063Z \n2026-09-29T23:05:54.6437288Z PASS .test262/test/built-ins/Object/is/length.js\n2026-09-29T23:05:55.1950172Z PASS .test262/test/built-ins/Object/is/length.js\n2026-09-29T23:05:55.2043691Z PASS .test262/test/built-ins/Object/is/name.js\n2026-09-29T23:05:55.7114561Z PASS .test262/test/built-ins/Object/is/name.js\n2026-09-29T23:05:55.7185996Z PASS .test262/test/built-ins/Object/is/not-a-constructor.js\n2026-09-29T23:05:56.2263977Z PASS .test262/test/built-ins/Object/is/not-a-constructor.js\n2026-09-29T23:05:56.2387791Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-boolean.js\n2026-09-29T23:05:56.7317568Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-boolean.js\n2026-09-29T23:05:56.7418295Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-null.js\n2026-09-29T23:05:57.2360563Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-null.js\n2026-09-29T23:05:57.2476722Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-number.js\n2026-09-29T23:05:57.7516250Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-number.js\n2026-09-29T23:05:57.7602793Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-object.js\n2026-09-29T23:05:58.2750752Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-object.js\n2026-09-29T23:05:58.2773384Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-string.js\n2026-09-29T23:05:58.7697822Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-string.js\n2026-09-29T23:05:58.7802197Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-symbol.js\n2026-09-29T23:05:59.3090812Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-symbol.js\n2026-09-29T23:05:59.3194026Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-type.js\n2026-09-29T23:05:59.8154005Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-type.js\n2026-09-29T23:05:59.8232592Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-undefined.js\n2026-09-29T23:06:00.3865025Z PASS .test262/test/built-ins/Object/is/not-same-value-x-y-undefined.js\n2026-09-29T23:06:00.3890711Z PASS .test262/test/built-ins/Object/is/object-is.js\n2026-09-29T23:06:00.8800184Z PASS .test262/test/built-ins/Object/is/object-is.js\n2026-09-29T23:06:00.8828910Z PASS .test262/test/built-ins/Object/is/same-value-x-y-boolean.js\n2026-09-29T23:06:01.3820194Z PASS .test262/test/built-ins/Object/is/same-value-x-y-boolean.js\n2026-09-29T23:06:01.3879585Z PASS .test262/test/built-ins/Object/is/same-value-x-y-empty.js\n2026-09-29T23:06:01.8704522Z PASS .test262/test/built-ins/Object/is/same-value-x-y-empty.js\n2026-09-29T23:06:01.8784228Z PASS .test262/test/built-ins/Object/is/same-value-x-y-null.js\n2026-09-29T23:06:02.3721640Z PASS .test262/test/built-ins/Object/is/same-value-x-y-null.js\n2026-09-29T23:06:02.3782313Z PASS .test262/test/built-ins/Object/is/same-value-x-y-number.js\n2026-09-29T23:06:02.8864770Z PASS .test262/test/built-ins/Object/is/same-value-x-y-number.js\n2026-09-29T23:06:02.8917374Z PASS .test262/test/built-ins/Object/is/same-value-x-y-object.js\n2026-09-29T23:06:03.3748734Z PASS .test262/test/built-ins/Object/is/same-value-x-y-object.js\n2026-09-29T23:06:03.3772433Z PASS .test262/test/built-ins/Object/is/same-value-x-y-string.js\n2026-09-29T23:06:03.8834955Z PASS .test262/test/built-ins/Object/is/same-value-x-y-string.js\n2026-09-29T23:06:03.8888984Z PASS .test262/test/built-ins/Object/is/same-value-x-y-symbol.js\n2026-09-29T23:06:04.3806787Z PASS .test262/test/built-ins/Object/is/same-value-x-y-symbol.js\n2026-09-29T23:06:04.3850985Z PASS .test262/test/built-ins/Object/is/same-value-x-y-undefined.js\n2026-09-29T23:06:04.8701895Z PASS .test262/test/built-ins/Object/is/same-value-x-y-undefined.js\n2026-09-29T23:06:04.8772206Z PASS .test262/test/built-ins/Object/is/symbol-object-is-same-value.js\n2026-09-29T23:06:05.3752410Z PASS .test262/test/built-ins/Object/is/symbol-object-is-same-value.js\n2026-09-29T23:06:05.3806730Z PASS .test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js\n2026-09-29T23:06:05.9430138Z PASS .test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js\n2026-09-29T23:06:05.9457497Z PASS .test262/test/annexB/built-ins/String/prototype/substr/B.2.3.js\n2026-09-29T23:06:06.4558097Z PASS .test262/test/annexB/built-ins/String/prototype/substr/B.2.3.js\n2026-09-29T23:06:06.4638782Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-falsey.js\n2026-09-29T23:06:06.9859921Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-falsey.js\n2026-09-29T23:06:06.9928728Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-negative.js\n2026-09-29T23:06:07.5101549Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-negative.js\n2026-09-29T23:06:07.5188430Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-positive.js\n2026-09-29T23:06:08.0127674Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-positive.js\n2026-09-29T23:06:08.0200427Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-to-int-err.js\n2026-09-29T23:06:08.5326793Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-to-int-err.js\n2026-09-29T23:06:08.5410979Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-undef.js\n2026-09-29T23:06:09.0903804Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length-undef.js\n2026-09-29T23:06:09.1107062Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length.js\n2026-09-29T23:06:09.6518159Z PASS .test262/test/annexB/built-ins/String/prototype/substr/length.js\n2026-09-29T23:06:09.6848786Z PASS .test262/test/annexB/built-ins/String/prototype/substr/name.js\n2026-09-29T23:06:10.1465824Z PASS .test262/test/annexB/built-ins/String/prototype/substr/name.js\n2026-09-29T23:06:10.1961871Z PASS .test262/test/annexB/built-ins/String/prototype/substr/not-a-constructor.js\n2026-09-29T23:06:19.0549506Z PASS .test262/test/annexB/built-ins/String/prototype/substr/not-a-constructor.js\n2026-09-29T23:06:19.0669528Z PASS .test262/test/annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js\n2026-09-29T23:06:19.5642371Z PASS .test262/test/annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js\n2026-09-29T23:06:19.5713166Z PASS .test262/test/annexB/built-ins/String/prototype/substr/start-negative.js\n2026-09-29T23:06:20.0874442Z PASS .test262/test/annexB/built-ins/String/prototype/substr/start-negative.js\n2026-09-29T23:06:20.0943723Z PASS .test262/test/annexB/built-ins/String/prototype/substr/start-to-int-err.js\n2026-09-29T23:06:20.5947155Z PASS .test262/test/annexB/built-ins/String/prototype/substr/start-to-int-err.js\n2026-09-29T23:06:20.5967931Z PASS .test262/test/annexB/built-ins/String/prototype/substr/surrogate-pairs.js\n2026-09-29T23:06:21.1057007Z PASS .test262/test/annexB/built-ins/String/prototype/substr/surrogate-pairs.js\n2026-09-29T23:06:21.1124338Z PASS .test262/test/annexB/built-ins/String/prototype/substr/this-non-obj-coerce.js\n2026-09-29T23:06:21.6126107Z PASS .test262/test/annexB/built-ins/String/prototype/substr/this-non-obj-coerce.js\n2026-09-29T23:06:21.6136109Z PASS .test262/test/annexB/built-ins/String/prototype/substr/this-to-str-err.js\n2026-09-29T23:06:21.6138306Z PASS .test262/test/annexB/built-ins/String/prototype/substr/this-to-str-err.js\n2026-09-29T23:06:21.6138916Z Ran 74 tests\n2026-09-29T23:06:21.6140071Z 74 passed\n2026-09-29T23:06:21.6140335Z 0 failed\n2026-09-29T23:06:21.6407492Z Post job cleanup.\n2026-09-29T23:06:21.7388290Z (node:9138) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.\n2026-09-29T23:06:21.7389346Z (Use `node --trace-deprecation ...` to show where the warning was created)\n2026-09-29T23:06:21.7391244Z Cache hit occurred on the primary key node-cache-Linux-x64-pnpm-51be6a3df2a081e325d435586d6f6dfbeafe9cabdd75bf7a447fdcaf6b06fc87, not saving cache.\n2026-09-29T23:06:21.7479088Z Post job cleanup.\n2026-09-29T23:06:21.8589753Z Pruning is unnecessary.\n2026-09-29T23:06:21.8728654Z Post job cleanup.\n2026-09-29T23:06:21.9386985Z [command]/usr/bin/git version\n2026-09-29T23:06:21.9416669Z git version 2.55.0\n2026-09-29T23:06:21.9443251Z Temporarily overriding HOME='/home/runner/work/_temp/ed7cbcc9-e736-4722-af7e-3b4d853bf843' before making global git config changes\n2026-09-29T23:06:21.9444358Z Adding repository directory to the temporary git global config as a safe directory\n2026-09-29T23:06:21.9446921Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/bippy/bippy\n2026-09-29T23:06:21.9475608Z [command]/usr/bin/git config --local --name-only --get-regexp core\\.sshCommand\n2026-09-29T23:06:21.9500985Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'core\\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\"\n2026-09-29T23:06:21.9718895Z [command]/usr/bin/git config --local --name-only --get-regexp http\\.https\\:\\/\\/github\\.com\\/\\.extraheader\n2026-09-29T23:06:21.9739805Z http.https://github.com/.extraheader\n2026-09-29T23:06:21.9747827Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader\n2026-09-29T23:06:21.9774314Z [command]/usr/bin/git submodule foreach --recursive sh -c \"git config --local --name-only --get-regexp 'http\\.https\\:\\/\\/github\\.com\\/\\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\"\n2026-09-29T23:06:21.9954666Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\\.gitdir:\n2026-09-29T23:06:21.9978527Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url\n2026-09-29T23:06:22.0274110Z Cleaning up orphan processes\n2026-09-29T23:06:22.0769036Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, pnpm/action-setup@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/\n",
+  "limitation": "CI passes1696units/74smoke with matching engine hash. E2E/publish pass. Historical timing, conformance and publishing failures remain revision-bound evidence; no general ownership claim."
+}

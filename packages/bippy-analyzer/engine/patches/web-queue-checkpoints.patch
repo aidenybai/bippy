@@ -1,0 +1,147 @@
+diff --git a/src/host-defined/event-loop.mts b/src/host-defined/event-loop.mts
+index 4cb7361..53c5977 100644
+--- a/src/host-defined/event-loop.mts
++++ b/src/host-defined/event-loop.mts
+@@ -1,6 +1,6 @@
+ import { callCallback } from '../utils/callback.mts';
+ import {
+-  Agent,
++  Agent, surroundingAgent,
+   type GCMarker, type Job, type Markable,
+   runSingleJobInQueue,
+ } from '#self';
+@@ -63,6 +63,14 @@ export abstract class AbstractEventLoop implements EventLoop {
+ 
+   protected abstract get hasQueuedJobs(): boolean;
+ 
++  protected assertCanCheckpointQueue = (): void => {
++    if (surroundingAgent !== this.surroundingAgent) throw new TypeError('Queue checkpoint belongs to another Agent');
++    if (this.surroundingAgent.debugger_isPreviewing) throw new TypeError('Queue checkpoints do not support debugger preview');
++    if (this.#runType === 'automatic' || this.#flushState !== 'idle' || this.#pendingJobs.size) {
++      throw new TypeError('Queue checkpoints require an idle manual event loop without pending async jobs');
++    }
++  };
++
+   protected tryScheduleAutomaticFlush() {
+     this.#tryScheduleAutomaticFlush();
+   }
+@@ -199,12 +207,88 @@ export class MicroTaskEventLoop extends AbstractEventLoop {
+   }
+ }
+ 
++export interface EventLoopQueueCheckpoint {
++  readonly scope: 'web-event-loop-macrotask-membership-v1';
++  readonly jobCount: number;
++  restore: () => void;
++  release: () => void;
++}
++
++interface WebQueueState {
++  entries: [Job, string][];
++  queues: { type: string; queue: Set<Job>; jobs: Job[] }[];
++}
++
+ /** https://developer.mozilla.org/en-US/docs/Web/API/HTML_DOM_API/Microtask_guide/In_depth */
+ export class WebLikeEventLoop extends AbstractEventLoop {
+   protected jobsByType: Record<string, Set<Job>> = Object.create(null);
+ 
+   protected queuedJobs = new Map<Job, string>();
+ 
++  readonly #queueCheckpoints: WebQueueState[] = [];
++
++  captureQueue = (): EventLoopQueueCheckpoint => {
++    this.assertCanCheckpointQueue();
++    if (Object.getPrototypeOf(this) !== WebLikeEventLoop.prototype) throw new TypeError('Queue checkpoints require the canonical web event loop');
++    const queuedJobs: Map<Job, string> = Object.getOwnPropertyDescriptor(this, 'queuedJobs')?.value;
++    const jobsByType: Record<string, Set<Job>> = Object.getOwnPropertyDescriptor(this, 'jobsByType')?.value;
++    const validate = (): void => {
++      if (!queuedJobs || !jobsByType || Object.getOwnPropertyDescriptor(this, 'queuedJobs')?.value !== queuedJobs
++        || Object.getOwnPropertyDescriptor(this, 'jobsByType')?.value !== jobsByType
++        || Object.getPrototypeOf(queuedJobs) !== Map.prototype || Reflect.ownKeys(queuedJobs).length
++        || Object.getPrototypeOf(jobsByType) !== null
++        || !Object.isExtensible(jobsByType)) throw new TypeError('Queue checkpoint storage changed');
++      for (const key of Reflect.ownKeys(jobsByType)) {
++        const descriptor = Object.getOwnPropertyDescriptor(jobsByType, key)!;
++        if (typeof key !== 'string' || !('value' in descriptor) || !descriptor.writable || !descriptor.enumerable
++          || !descriptor.configurable || Object.getPrototypeOf(descriptor.value) !== Set.prototype || Reflect.ownKeys(descriptor.value).length) {
++          throw new TypeError('Queue checkpoint requires canonical type queues');
++        }
++      }
++    };
++    validate();
++    const state: WebQueueState = {
++      entries: Array.from(queuedJobs),
++      queues: Object.entries(jobsByType).map(([type, queue]) => ({ type, queue, jobs: Array.from(queue) })),
++    };
++    this.#queueCheckpoints.push(state);
++    let isReleased = false;
++    const assertActive = (): void => {
++      if (isReleased) throw new Error('Queue checkpoint is released');
++      if (surroundingAgent !== this.surroundingAgent) throw new TypeError('Queue checkpoint belongs to another Agent');
++      if (this.#queueCheckpoints.at(-1) !== state) throw new Error('Queue checkpoints require last-in-first-out access');
++    };
++    return {
++      scope: 'web-event-loop-macrotask-membership-v1',
++      jobCount: state.entries.length,
++      restore: () => {
++        assertActive();
++        this.assertCanCheckpointQueue();
++        validate();
++        for (const { type, queue } of state.queues) {
++          if (jobsByType[type] !== queue) throw new TypeError('Queue checkpoint type queue identity changed');
++        }
++        const savedTypes = new Set(state.queues.map(({ type }) => type));
++        for (const type of Object.keys(jobsByType)) {
++          if (!savedTypes.has(type)) delete jobsByType[type];
++        }
++        for (const { queue, jobs } of state.queues) {
++          queue.clear();
++          for (const job of jobs) queue.add(job);
++        }
++        queuedJobs.clear();
++        for (const [job, type] of state.entries) queuedJobs.set(job, type);
++      },
++      release: () => {
++        assertActive();
++        this.#queueCheckpoints.pop();
++        state.entries.length = 0;
++        state.queues.length = 0;
++        isReleased = true;
++      },
++    };
++  };
++
+   /**
+    * Enqueue a host job (macrotask) now.
+    */
+@@ -232,12 +316,16 @@ export class WebLikeEventLoop extends AbstractEventLoop {
+ 
+   override mark(marker: GCMarker): void {
+     super.mark(marker);
+-    for (const job of this.queuedJobs.keys()) {
++    const markJob = (job: Job): void => {
+       marker(job.capturedValues);
+       marker(job.job);
+       marker(job.callerRealm);
+       marker(job.callerScriptOrModule);
++    };
++    for (const state of this.#queueCheckpoints) {
++      for (const [job] of state.entries) markJob(job);
+     }
++    for (const job of this.queuedJobs.keys()) markJob(job);
+   }
+ }
+ 
+diff --git a/src/index.mts b/src/index.mts
+index f071aaf..1a81cb3 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -17,7 +17,7 @@ export {
+ } from './host-defined/object-checkpoint.mts';
+ export { runSingleJobInQueue, type JobQueue, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
+ export {
+-  type EventLoop, type EventLoopRunType, type NodeJSJobType, AbstractEventLoop, MicroTaskEventLoop, WebLikeEventLoop, NodeJSLikeEventLoop,
++  type EventLoopQueueCheckpoint, type EventLoop, type EventLoopRunType, type NodeJSJobType, AbstractEventLoop, MicroTaskEventLoop, WebLikeEventLoop, NodeJSLikeEventLoop,
+ } from './host-defined/event-loop.mts';
+ export * from './completion.mts';
+ export * from './parse.mts';

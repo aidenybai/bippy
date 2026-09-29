@@ -4,6 +4,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Selected context and CallSite snapshots](context-checkpoints.md) now support a diagnostic actual-React fork. Eight observations match native execution, with one prefix per branch order. This is not accepted branch isolation: a timer variant executes four branches’ callbacks after restoration instead of one. [Host-effect guards](checkpoint-host-effects.md) now reject that timer call before scheduling instead of returning branch results. Native captures and host queues still need ownership policies; rejection is not queue restoration.
 
+[Selected web-queue storage](web-queue-checkpoints.md) now restores macrotask membership through engine262’s original collections. The React diagnostic captures one pending job, then still rejects its user timer. Complete job/capture/timer ownership and guarded transition reports remain missing.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |
