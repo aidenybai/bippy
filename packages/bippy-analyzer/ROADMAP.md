@@ -180,6 +180,7 @@ This is the main gap between the current conditional evaluator and a symbolic Ja
 - [ ] Isolate variable assignments, captured bindings, allocations, arrays, property presence/order, deletion, descriptors, prototypes, and object integrity changes.
 - [x] Add [selected Map/Set restoration](docs/collection-checkpoints.md), preserving internal lists, Map entry identities, insertion order, and saved roots. Unselected entries and iterator positions do not rewind.
 - [ ] Cover internal-slot mutations for supported Maps, Sets, iterators, generators, Promises, typed arrays, and buffers. Keep unsupported categories explicit. Selected Map/Set storage alone does not complete ownership.
+- [x] Restore [selected ECMAScript and bound function properties](docs/function-checkpoints.md) while retaining read-only metadata and function identity. Captured environments and bound objects still require separate selection. This does not establish transitive function ownership.
 - [ ] Evaluate actual functions, closures, methods, constructors, classes, getters, setters, and proxies through engine262. Preserve receiver identity, exceptions, and side effects.
 - [ ] Handle unknown property keys and conditional object identities without inventing missing properties or conflating distinct allocations.
 - [ ] Merge normal and abrupt paths into guarded values and effects. Preserve mutations made before a throw, return, or other abrupt completion.

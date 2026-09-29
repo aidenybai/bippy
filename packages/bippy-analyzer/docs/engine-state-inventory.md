@@ -44,4 +44,6 @@ The later [suspended-evaluator correction](suspended-control-roots.md) fixes the
 4. Reject unsupported records before branch mutation. A partial traversal must not produce a supposedly complete React result.
 5. Verify both branch orders, release, nested/reentrant execution, GC while suspended, pending async work, and independent concrete specialization.
 
+[Selected guest function properties](function-checkpoints.md) now restore with read-only ECMAScript or bound-function metadata. Captured environments, home objects, targets, receivers, and argument objects still require separate ownership. Direct native builtins, class constructors, private-environment functions, and callable proxies remain outside this selected policy.
+
 The current implementation does not meet these conditions. General symbolic React forks remain unimplemented. Do not substitute prefix replay or ignore unowned state.

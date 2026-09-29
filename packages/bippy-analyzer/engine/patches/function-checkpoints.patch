@@ -1,0 +1,211 @@
+diff --git a/src/abstract-ops/function-operations.mts b/src/abstract-ops/function-operations.mts
+index 35b47bb..1e3ec7c 100644
+--- a/src/abstract-ops/function-operations.mts
++++ b/src/abstract-ops/function-operations.mts
+@@ -394,24 +394,7 @@ export function OrdinaryFunctionCreate(functionPrototype: ObjectValue, sourceTex
+   // 1. Assert: Type(functionPrototype) is Object.
+   Assert(functionPrototype instanceof ObjectValue);
+   // 2. Let internalSlotsList be the internal slots listed in Table 33.
+-  const internalSlotsList = [
+-    'Environment',
+-    'PrivateEnvironment',
+-    'FormalParameters',
+-    'ECMAScriptCode',
+-    'ConstructorKind',
+-    'Realm',
+-    'ScriptOrModule',
+-    'ThisMode',
+-    'Strict',
+-    'HomeObject',
+-    'SourceText',
+-    surroundingAgent.feature('decorators') ? 'Elements' : 'Fields',
+-    surroundingAgent.feature('decorators') ? 'Initializers' : 'PrivateMethods',
+-    'ClassFieldInitializerName',
+-    'IsClassConstructor',
+-    'HostInitialName',
+-  ];
++  const internalSlotsList = getECMAScriptFunctionInternalSlots(surroundingAgent.feature('decorators'));
+   // 3. Let F be ! OrdinaryObjectCreate(functionPrototype, internalSlotsList).
+   const F = X(OrdinaryObjectCreate(functionPrototype, internalSlotsList)) as Mutable<ECMAScriptFunctionObject>;
+   // 4. Set F.[[Call]] to the definition specified in 10.2.1.
+@@ -464,6 +447,29 @@ export function OrdinaryFunctionCreate(functionPrototype: ObjectValue, sourceTex
+   return F;
+ }
+ 
++export const hasECMAScriptFunctionMethods = (object: ObjectValue): object is ECMAScriptFunctionObject =>
++  isECMAScriptFunctionObject(object) && object.Call === FunctionCallSlot
++    && (!('Construct' in object) || object.Construct === FunctionConstructSlot);
++
++export const getECMAScriptFunctionInternalSlots = (decorators: boolean): string[] => [
++    'Environment',
++    'PrivateEnvironment',
++    'FormalParameters',
++    'ECMAScriptCode',
++    'ConstructorKind',
++    'Realm',
++    'ScriptOrModule',
++    'ThisMode',
++    'Strict',
++    'HomeObject',
++    'SourceText',
++    decorators ? 'Elements' : 'Fields',
++    decorators ? 'Initializers' : 'PrivateMethods',
++    'ClassFieldInitializerName',
++    'IsClassConstructor',
++    'HostInitialName',
++  ];
++
+ /** https://tc39.es/ecma262/#sec-makeconstructor */
+ export function MakeConstructor(F: Mutable<ECMAScriptFunctionObject> | BuiltinFunctionObject, writablePrototype?: boolean, prototype?: ObjectValue): void {
+   Assert(isECMAScriptFunctionObject(F) || F.Call === BuiltinFunctionCall);
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 5158f1d..9f67a47 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -6,7 +6,55 @@ import {
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+   type DeclarativeEnvironmentBinding,
+   isMapObject, isSetObject, type MapObject, type SetObject,
++  hasECMAScriptFunctionMethods, getECMAScriptFunctionInternalSlots,
+ } from '#self';
++import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
++
++interface FunctionSlotState {
++  name: string;
++  descriptor: PropertyDescriptor | undefined;
++}
++
++interface FunctionState {
++  slots: FunctionSlotState[];
++  boundArguments?: readonly (Value | undefined)[];
++}
++
++const getFunctionSlotNames = (object: ObjectValue, owner: Agent): readonly string[] | undefined => {
++  if (hasECMAScriptFunctionMethods(object) && !object.IsClassConstructor
++    && object.PrivateEnvironment === null && object.ClassFieldInitializerName === undefined
++    && (owner.feature('decorators')
++      ? object.Elements.length === 0 && object.Initializers.length === 0
++      : object.Fields.length === 0 && object.PrivateMethods.length === 0)) {
++    return [...getECMAScriptFunctionInternalSlots(owner.feature('decorators')), 'Prototype', 'Extensible'];
++  }
++  if (hasBoundFunctionMethods(object) && Array.isArray(object.BoundArguments)) return boundFunctionInternalSlots;
++  return undefined;
++};
++
++const getFunctionState = (object: ObjectValue, names: readonly string[]): FunctionState => ({
++  slots: [...names.filter((name) => name !== 'Prototype' && name !== 'Extensible'),
++    'Call', 'Construct', 'Async', 'InitialName', 'scriptId'].map((name) => {
++    const descriptor = Object.getOwnPropertyDescriptor(object, name);
++    if (descriptor && !('value' in descriptor)) throw new TypeError('Checkpoint function metadata must use data properties');
++    return { name, descriptor };
++  }),
++  boundArguments: hasBoundFunctionMethods(object) ? [...object.BoundArguments] : undefined,
++});
++
++const hasUnchangedFunctionState = (object: ObjectValue, state: FunctionState, owner: Agent): boolean => {
++  const names = getFunctionSlotNames(object, owner);
++  return !!names && object.internalSlotsList.length === names.length
++    && names.every((name) => object.internalSlotsList.includes(name))
++    && state.slots.every(({ name, descriptor }) => {
++      const current = Object.getOwnPropertyDescriptor(object, name);
++      return descriptor === undefined ? current === undefined : !!current && 'value' in current
++        && Object.is(current.value, descriptor.value) && current.writable === descriptor.writable
++        && current.enumerable === descriptor.enumerable && current.configurable === descriptor.configurable;
++    }) && (!state.boundArguments || (hasBoundFunctionMethods(object)
++      && object.BoundArguments.length === state.boundArguments.length
++      && state.boundArguments.every((value, index) => object.BoundArguments[index] === value)));
++};
+ 
+ interface MapEntryState {
+   entry: MapObject['MapData'][number];
+@@ -32,6 +80,7 @@ interface OrdinaryObjectState {
+   properties: [PropertyKeyValue, FullyPopulatedDescriptor][];
+   map?: MapState;
+   set?: SetState;
++  functionState?: FunctionState;
+ }
+ 
+ interface BindingState {
+@@ -80,6 +129,8 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+     for (const state of frame.states) {
+       mark(state.object);
+       mark(state.prototype);
++      for (const slot of state.functionState?.slots ?? []) mark(slot.descriptor?.value);
++      for (const value of state.functionState?.boundArguments ?? []) mark(value);
+       for (const entry of state.map?.entries ?? []) {
+         mark(entry.key);
+         mark(entry.value);
+@@ -124,17 +175,19 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     const map = allowContainers && isMapObject(object) ? object : undefined;
+     const set = allowContainers && isSetObject(object) ? object : undefined;
+     const dataSlot = map ? 'MapData' : set ? 'SetData' : undefined;
++    const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
+     if ((map && set)
+       || (!isOrdinaryObject(object)
+         && !(allowContainers && !dataSlot && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
+-      || object.internalSlotsList.length !== (dataSlot ? 3 : 2)
++      || object.internalSlotsList.length !== (functionSlots?.length ?? (dataSlot ? 3 : 2))
++      || (functionSlots && !functionSlots.every((name) => object.internalSlotsList.includes(name)))
+       || (dataSlot && !object.internalSlotsList.includes(dataSlot))
+       || !object.internalSlotsList.includes('Prototype')
+       || !object.internalSlotsList.includes('Extensible')
+       || object.PrivateElements.length !== 0
+       || object.ConstructedBy.length !== 0) {
+       throw new TypeError(allowContainers
+-        ? 'Checkpoint requires ordinary objects, arrays, maps, or sets without additional internal state'
++        ? 'Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state'
+         : 'Checkpoint requires ordinary objects without additional internal state');
+     }
+     states.push({
+@@ -143,6 +196,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       prototype: object.Prototype,
+       extensible: object.Extensible,
+       properties: [...object.properties],
++      functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+@@ -187,6 +241,9 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+         if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty)) {
+           throw new TypeError('Checkpoint object internal methods changed');
+         }
++        if (state.functionState && !hasUnchangedFunctionState(state.object, state.functionState, agent)) {
++          throw new TypeError('Checkpoint function metadata changed');
++        }
+         if ((state.map && (!isMapObject(state.object) || state.object.MapData !== state.map.data))
+           || (state.set && (!isSetObject(state.object) || state.object.SetData !== state.set.data))) {
+           throw new TypeError('Checkpoint collection data list changed');
+diff --git a/src/intrinsics/FunctionPrototype.mts b/src/intrinsics/FunctionPrototype.mts
+index 893620c..adc9261 100644
+--- a/src/intrinsics/FunctionPrototype.mts
++++ b/src/intrinsics/FunctionPrototype.mts
+@@ -99,6 +99,14 @@ function* BoundFunctionExoticObjectConstruct(this: BoundFunctionObject, argument
+   return Q(yield* Construct(target, args, newTarget));
+ }
+ 
++export const boundFunctionInternalSlots = Object.freeze([
++  'BoundTargetFunction', 'BoundThis', 'BoundArguments', 'Prototype', 'Extensible',
++]);
++
++export const hasBoundFunctionMethods = (object: ObjectValue): object is BoundFunctionObject =>
++  isBoundFunctionObject(object) && object.Call === BoundFunctionExoticObjectCall
++    && (!('Construct' in object) || object.Construct === BoundFunctionExoticObjectConstruct);
++
+ /** https://tc39.es/ecma262/#sec-boundfunctioncreate */
+ function* BoundFunctionCreate(targetFunction: ObjectValue, boundThis: Value, boundArgs: Arguments): ValueEvaluator<BoundFunctionObject> {
+   // 1. Assert: Type(targetFunction) is Object.
+@@ -106,13 +114,7 @@ function* BoundFunctionCreate(targetFunction: ObjectValue, boundThis: Value, bou
+   // 2. Let proto be ? targetFunction.[[GetPrototypeOf]]().
+   const proto = Q(yield* targetFunction.GetPrototypeOf());
+   // 3. Let internalSlotsList be the internal slots listed in Table 30, plus [[Prototype]] and [[Extensible]].
+-  const internalSlotsList = [
+-    'BoundTargetFunction',
+-    'BoundThis',
+-    'BoundArguments',
+-    'Prototype',
+-    'Extensible',
+-  ];
++  const internalSlotsList = boundFunctionInternalSlots;
+   // 4. Let obj be ! MakeBasicObject(internalSlotsList).
+   const obj = X(MakeBasicObject(internalSlotsList)) as Mutable<BoundFunctionObject>;
+   // 5. Set obj.[[Prototype]] to proto.

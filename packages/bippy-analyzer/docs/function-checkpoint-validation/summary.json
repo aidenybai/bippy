@@ -1,0 +1,80 @@
+{
+  "scope": "engine262-selected-function-properties-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "93084a26080e082aed0b34a62194602b1d8effcba0558b102c06267901a8d0a4",
+  "implementation": [
+    "Reuse function creation slot definitions and canonical call/construction methods",
+    "Restore guest descriptors/order/prototype/extensibility through existing selected storage checkpoint",
+    "Preflight read-only function metadata descriptors, empty class-element lists and bound argument entries",
+    "Mark saved metadata references and bound values through existing checkpoint roots"
+  ],
+  "regressions": {
+    "initialCases": 29,
+    "initialFailures": 25,
+    "initialPasses": 4,
+    "finalCases": 33,
+    "nativeBranchObservations": 28,
+    "nativeBaselineObservations": 14,
+    "branchOrders": 2,
+    "functionForms": 7,
+    "intermediateFailure": "Fixture incorrectly expected an Agent field from withFixture; uses surroundingAgent now"
+  },
+  "units": {
+    "passed": 1411,
+    "total": 1411,
+    "files": 42
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "142542865a4226c0c312f9b46e5e5d67263c423109d73d085f1193e3c346b465",
+      "compressedSha256": "2a2add86d5630dac04c0234e3c3df55f91825be90d10ed0a7932eaa878969495"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "7678434f94f81dea60d62cddd690518d6b21b94e08471048868171550653e8bb",
+      "compressedSha256": "73716b088debcace0d74a90ff5af68690577d8a8a0816d24a1298ffc374c55e2"
+    }
+  ],
+  "conformance": {
+    "passed": 842,
+    "total": 844,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "identicalFailureDiagnostics": true,
+    "selection": [
+      ".test262/test/built-ins/Function/prototype/bind/**/*.js",
+      ".test262/test/built-ins/Function/prototype/toString/**/*.js",
+      ".test262/test/language/expressions/function/**/*.js"
+    ],
+    "failures": "toString/built-in-function-object.js default and strict mode; both runs exit 1"
+  },
+  "boundaries": [
+    "Selected function properties only; no function cloning or altered invocation semantics",
+    "Environment/home-object/receiver/argument/target mutations require separate selection",
+    "Native builtins, classes, private-environment functions and callable proxies remain excluded",
+    "Generator/async functions do not select suspended instances, Promise state or pending jobs",
+    "Host/parser metadata is trusted; identity checks are not transitive snapshots or hostile-record validation",
+    "No rejecting transitive owner, shared-prefix React fork, guarded report or symbolic demo"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "pending",
+  "files": {
+    "engine/patches/function-checkpoints.patch": "2ec65d8f903c1ef867fa172e6076617ba9fa69e4f44b5b12b7c2e553981f90d5",
+    "engine/scripts/build.ts": "424f8c9ce5bc4f45ef75e52225cd6fc64f5b3d2b271cf977dbcc8334bf457653",
+    "tests/function-checkpoint.test.ts": "d6f68296cce8c782294d8972210d3760f18eadfbc4679c6638108a8208487b3f",
+    "tests/helpers/engine-fixture.ts": "72c219f4e83c2eb77b48d5d38eb4fe4a25a37d37b78836df91307d385e108867",
+    "docs/engine-state-inventory.md": "37aabfd0d476ba587cd008fa493765fd1cc5d37a7f58c88fdaad223a753bbbb1"
+  }
+}

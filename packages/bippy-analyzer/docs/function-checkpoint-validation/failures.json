@@ -1,0 +1,135 @@
+{
+  "source": [
+    {
+      "file": ".test262/test/built-ins/Function/prototype/toString/built-in-function-object.js",
+      "attrs": {
+        "esid": "sec-function.prototype.tostring",
+        "description": "toString of built-in Function object\n",
+        "info": "...\nIf func is a built-in Function object, then return an implementation-dependent String source code representation of func.\nThe representation must have the syntax of a NativeFunction.\n...\n\nNativeFunction:\n  function NativeFunctionAccessor_opt IdentifierName_opt ( FormalParameters ) { [ native code ] }\nNativeFunctionAccessor :\n  get\n  set\n",
+        "includes": [
+          "nativeFunctionMatcher.js",
+          "wellKnownIntrinsicObjects.js",
+          "assert.js",
+          "sta.js"
+        ],
+        "features": ["arrow-function", "Reflect", "Array.prototype.includes"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2018 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 35243,
+      "relative": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "4c25dd338c21508931ba9b573b4a2737d233bc27db26bfd45e9ffc93929cc9f0",
+      "compiledSha256": "29ba736e478bde0c0ab8991463ffb7b9f142a013f3c47230815ea54b3b5a5ae5"
+    },
+    {
+      "file": ".test262/test/built-ins/Function/prototype/toString/built-in-function-object.js",
+      "attrs": {
+        "esid": "sec-function.prototype.tostring",
+        "description": "toString of built-in Function object\n (Strict Mode)",
+        "info": "...\nIf func is a built-in Function object, then return an implementation-dependent String source code representation of func.\nThe representation must have the syntax of a NativeFunction.\n...\n\nNativeFunction:\n  function NativeFunctionAccessor_opt IdentifierName_opt ( FormalParameters ) { [ native code ] }\nNativeFunctionAccessor :\n  get\n  set\n",
+        "includes": [
+          "nativeFunctionMatcher.js",
+          "wellKnownIntrinsicObjects.js",
+          "assert.js",
+          "sta.js"
+        ],
+        "features": ["arrow-function", "Reflect", "Array.prototype.includes"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2018 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 35257,
+      "relative": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "866be24f6ea6f7c86b4a6006b5e2995f8908823253ef6d3fb543a94fd37ae952",
+      "compiledSha256": "63ba2d1207105188c9b89a52ac5c7d81915703edd5986f473950bd8f205d8b9a"
+    }
+  ],
+  "published": [
+    {
+      "file": ".test262/test/built-ins/Function/prototype/toString/built-in-function-object.js",
+      "attrs": {
+        "esid": "sec-function.prototype.tostring",
+        "description": "toString of built-in Function object\n",
+        "info": "...\nIf func is a built-in Function object, then return an implementation-dependent String source code representation of func.\nThe representation must have the syntax of a NativeFunction.\n...\n\nNativeFunction:\n  function NativeFunctionAccessor_opt IdentifierName_opt ( FormalParameters ) { [ native code ] }\nNativeFunctionAccessor :\n  get\n  set\n",
+        "includes": [
+          "nativeFunctionMatcher.js",
+          "wellKnownIntrinsicObjects.js",
+          "assert.js",
+          "sta.js"
+        ],
+        "features": ["arrow-function", "Reflect", "Array.prototype.includes"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2018 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 35243,
+      "relative": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "4c25dd338c21508931ba9b573b4a2737d233bc27db26bfd45e9ffc93929cc9f0",
+      "compiledSha256": "29ba736e478bde0c0ab8991463ffb7b9f142a013f3c47230815ea54b3b5a5ae5"
+    },
+    {
+      "file": ".test262/test/built-ins/Function/prototype/toString/built-in-function-object.js",
+      "attrs": {
+        "esid": "sec-function.prototype.tostring",
+        "description": "toString of built-in Function object\n (Strict Mode)",
+        "info": "...\nIf func is a built-in Function object, then return an implementation-dependent String source code representation of func.\nThe representation must have the syntax of a NativeFunction.\n...\n\nNativeFunction:\n  function NativeFunctionAccessor_opt IdentifierName_opt ( FormalParameters ) { [ native code ] }\nNativeFunctionAccessor :\n  get\n  set\n",
+        "includes": [
+          "nativeFunctionMatcher.js",
+          "wellKnownIntrinsicObjects.js",
+          "assert.js",
+          "sta.js"
+        ],
+        "features": ["arrow-function", "Reflect", "Array.prototype.includes"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2018 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 35257,
+      "relative": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      },
+      "result": {
+        "pass": false,
+        "message": "Test timed out"
+      },
+      "contentsSha256": "866be24f6ea6f7c86b4a6006b5e2995f8908823253ef6d3fb543a94fd37ae952",
+      "compiledSha256": "63ba2d1207105188c9b89a52ac5c7d81915703edd5986f473950bd8f205d8b9a"
+    }
+  ],
+  "identicalFailureDiagnostics": true
+}

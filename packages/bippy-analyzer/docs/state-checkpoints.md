@@ -1,12 +1,12 @@
 # Selected objects and bindings
 
-`binding-checkpoint.patch` adds `createStateCheckpoint({ objects, environments })` to the maintained engine API. It restores selected ordinary objects, [arrays](array-checkpoints.md), [Maps and Sets](collection-checkpoints.md), and selected declarative bindings together. It does not clone execution contexts or resume symbolic branches.
+`binding-checkpoint.patch` adds `createStateCheckpoint({ objects, environments })` to the maintained engine API. It restores selected ordinary objects, [arrays](array-checkpoints.md), [Maps and Sets](collection-checkpoints.md), [supported guest function properties](function-checkpoints.md), and selected declarative bindings together. It does not clone execution contexts or resume symbolic branches.
 
 ## Selection
 
 Both lists are optional. The checkpoint copies their selections and removes duplicate identities. It reports scope `selected-objects-and-bindings-v1`, `objectCount`, `environmentCount`, and `bindingCount`.
 
-Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, and Sets. The ordinary-only API still rejects these containers. Environment records must have exactly the `DeclarativeEnvironmentRecord` or `FunctionEnvironmentRecord` prototype. Capture rejects:
+Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, Sets, and supported guest functions. The ordinary-only API still rejects these additional categories. Environment records must have exactly the `DeclarativeEnvironmentRecord` or `FunctionEnvironmentRecord` prototype. Capture rejects:
 
 - Records owned by another agent.
 - Module environments, including indirect and deferred bindings.
@@ -27,7 +27,7 @@ The collector marks saved values independently of current cells. Assigning a dif
 
 `restore()` can run repeatedly. `release()` keeps current state and invalidates the checkpoint. Both require last-in-first-out access. `createOrdinaryObjectCheckpoint()` uses the same stack and retains its existing scope, `size`, and methods.
 
-Before changing selected data, restore checks environment restrictions, unchanged internal methods and collection-list identities, debugger preview restrictions, and the projected ordinary prototype graph. Validation failures leave selected data unchanged. Binding restoration is forbidden during debugger preview. Host allocation failures are not rollback transactions.
+Before changing selected data, restore checks environment restrictions, unchanged internal methods, function metadata, and collection-list identities, debugger preview restrictions, and the projected ordinary prototype graph. Validation failures leave selected data unchanged. Binding restoration is forbidden during debugger preview. Host allocation failures are not rollback transactions.
 
 ## Excluded state
 
