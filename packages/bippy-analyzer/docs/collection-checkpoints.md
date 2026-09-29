@@ -38,7 +38,7 @@ All 23 initial cases failed before implementation. The first implementation pass
 
 ## Remaining ownership work
 
-A selected collection does not select its entries recursively. WeakMap, WeakSet, iterators, native host containers, jobs, modules, Promise state, and Agent control metadata remain outside this extension. The tests do not resume a paused collection callback or isolate actual React branches.
+A selected collection does not select its entries recursively. [WeakMap selection](weak-map-checkpoints.md) now reuses these snapshots with saved-key retention. WeakSet, iterators, native host containers, jobs, modules, Promise state, and Agent control metadata remain outside this extension. The tests do not resume a paused collection callback or isolate actual React branches.
 
 React checkout `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51` provides two relevant uses. `ReactChildFiber.js:mapRemainingChildren` maps child keys to fibers. `ReactFiberWorkLoop.js:attachPingListener` stores lane sets in a possibly weak cache. These uses motivate collection restoration but do not verify branch-safe reconciliation or Suspense.
 

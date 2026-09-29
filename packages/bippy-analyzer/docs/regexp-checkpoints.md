@@ -33,4 +33,6 @@ The probe captures and releases selected storage, then rejects broader ownership
 
 Local gates pass 1,649 tests across 52 files, typechecking, and the unchanged 74-variant smoke. Source and published engines pass 442 selected exec/test/replace/flags/source conformance variants. Input hashes, compiled hashes, and verdicts match. Both commands exit zero. Two relocated builds produce SHA-256 `c3e070cce0747909304b4d0ff32a98824f25eb06931ea67d16cb792eb3792d31`.
 
+[Linux CI for this revision](regexp-checkpoint-validation/ci-failure.json) passes 1,649 units with the matching engine hash. Both numeric `substr` smoke variants time out, leaving 72/74 passing. E2E and publish pass. Archived 30-second diagnostic profiles do not satisfy the unchanged ten-second gate.
+
 General React ownership, shared-prefix trees, guarded reports, transitions, repeated families, and demo integration remain incomplete.

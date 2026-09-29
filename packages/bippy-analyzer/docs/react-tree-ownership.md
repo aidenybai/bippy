@@ -18,7 +18,9 @@ All four first-choice reports contain the same counts:
 - 94 declarative environments, 37 function environments, one global environment, and one object environment.
 - 1,848 native arrays, 14 execution contexts, 24 call sites, and 683 native functions.
 
-[Arguments checkpoints](arguments-checkpoints.md) now expose and restore the 16 mapped arguments and 13 lazy maps listed below. That increment’s probe accepts 2,187 guest objects and rejects ten. [Intrinsic property checkpoints](intrinsic-checkpoints.md) now accept the two prototype objects as well, leaving eight guest-object rejections at that increment. [Initialized Error property selection](error-checkpoints.md) now accepts four more, leaving three WeakMaps and one RegExp at that increment. [RegExp property selection](regexp-checkpoints.md) now accepts that RegExp object, leaving three WeakMaps. The diagnostic still rejects broader ownership without restoring React. Native records, queues, and effects remain unowned, so this still does not permit general React branching.
+[Arguments](arguments-checkpoints.md), [intrinsic prototypes](intrinsic-checkpoints.md), [Errors](error-checkpoints.md), [RegExp](regexp-checkpoints.md), and [WeakMaps](weak-map-checkpoints.md) now have selected storage policies. The original diagnostic accepts all 2,197 guest objects. Its rejection table below is historical, not the current unsupported set.
+
+[Expanded discovery](weak-map-checkpoints.md) follows collection entries and CallSite contexts as well. It finds 2,199 guest objects, 20 execution contexts, and 1,852 native arrays. One combined selected checkpoint captures those guest objects, 138 environments, and 814 binding cells, then releases them without restoration. Broader ownership still rejects. Native records, queues, effects, and omitted references remain unowned, so this does not permit general React branching.
 
 The original rejected guest objects are:
 
@@ -34,7 +36,7 @@ The original rejected guest objects are:
 
 The lazy maps are not ordinary property tables with different method names. In `arguments-operations.mts`, their methods close over `pendingMappings`, the original environment, and the realm. Reading a mapped index can install getter/setter functions, remove pending entries, and replace the methods. A correct owner must preserve those state changes and binding aliases. Copying visible properties alone cannot do so.
 
-This diagnostic is not a complete ownership census. Marking edges omit weak-entry ownership, undeclared native captures, host state, and custom internal-method captures. Supported individual object snapshots also do not restore native arrays, context fields, queues, or referenced records. Do not treat the 2,158 accepted objects as a nearly complete React checkpoint.
+This diagnostic is not a complete ownership census. Marking edges omit weak-entry ownership, undeclared native captures, host state, and custom internal-method captures. Supported individual object snapshots also do not restore native arrays, context fields, queues, or referenced records. Do not infer React ownership from accepted-object counts, including the expanded diagnostic’s 2,199 objects.
 
 ## Verification and next work
 

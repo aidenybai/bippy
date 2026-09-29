@@ -28,6 +28,8 @@ The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, wi
 
 [Initialized RegExp selection](regexp-checkpoints.md) reuses its allocation slot list and property snapshots. Matcher/source/flags/record/pattern fields are read-only. Native contents and active matching state remain unowned. Interior-surrogate matching still differs from V8 in both maintained and published engines, including a retained host-assertion case.
 
+[WeakMap selection](weak-map-checkpoints.md) now reuses Map list/entry snapshots and roots. Open checkpoints pin saved keys and values. Expanded React discovery follows collection entries and CallSite contexts: 2,199 guest objects and 814 binding cells accept one combined selected capture, released without restoration. Twenty execution contexts and other native/host storage still require ownership policies.
+
 ## Reuse existing capture support
 
 `ObjectValue.mark` reads the declared internal slots. It traverses the elements of `HostCapturedValues` explicitly. Array, Map, Set, and string iterators already use this convention. `Promise.prototype.finally` also uses it for selected builtin captures.

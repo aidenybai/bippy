@@ -315,7 +315,6 @@ it("restores a shared Map/Set/array graph and selected binding cells", async () 
 });
 
 it.each([
-  "new WeakMap()",
   "new WeakSet()",
   "new Proxy(new Map(),{})",
   `new (class extends Set {

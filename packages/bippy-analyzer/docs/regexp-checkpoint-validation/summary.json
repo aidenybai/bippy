@@ -304,7 +304,7 @@
     "offlineInstall": "pass",
     "rootCheck": "Zero errors, two existing warnings",
     "cleanup": "Main worktree unchanged; temporary audit test removed; no build lock",
-    "linux": "not run yet"
+    "linux": "CI 36634224823 passes 1649 units with matching engine hash but fails both numeric substr smoke variants (72/74). See ci-failure.json and profiles. E2E and publish pass."
   },
   "limitations": [
     "Original matcher function, source, flags, record and parsed-pattern references remain read-only. Their native contents/captures are not copied or owned.",

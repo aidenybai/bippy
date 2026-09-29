@@ -1,0 +1,90 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 141cb7c..e712557 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -5,7 +5,7 @@ import {
+   type Agent, type GCMarker, type OrdinaryObject,
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+   type DeclarativeEnvironmentBinding,
+-  isMapObject, isSetObject, type MapObject, type SetObject,
++  isMapObject, isSetObject, isWeakMapObject, type MapObject, type SetObject,
+   hasECMAScriptFunctionMethods, getECMAScriptFunctionInternalSlots,
+   hasBuiltinFunctionMethods, builtinFunctionInternalSlots,
+   ArgumentExoticObject, getArgumentsParameterMapData,
+@@ -119,11 +119,21 @@ interface MapEntryState {
+   value: Value | undefined;
+ }
+ 
+-interface MapState {
++interface MapStorage {
++  slot: 'MapData' | 'WeakMapData';
+   data: MapObject['MapData'];
++}
++
++interface MapState extends MapStorage {
+   entries: MapEntryState[];
+ }
+ 
++const getMapStorage = (object: ObjectValue, includeWeak: boolean): MapStorage | undefined => {
++  if (isMapObject(object)) return { slot: 'MapData', data: object.MapData };
++  if (includeWeak && isWeakMapObject(object)) return { slot: 'WeakMapData', data: object.WeakMapData };
++  return undefined;
++};
++
+ interface SetState {
+   data: SetObject['SetData'];
+   values: SetObject['SetData'];
+@@ -365,14 +375,14 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     if (object.ownerAgent !== owner) {
+       throw new TypeError('Checkpoint objects must belong to the current agent');
+     }
+-    const map = allowContainers && isMapObject(object) ? object : undefined;
++    const map = allowContainers ? getMapStorage(object, !graph) : undefined;
+     const set = allowContainers && isSetObject(object) ? object : undefined;
+     const argumentsState = allowContainers && !graph ? getArgumentsState(object) : undefined;
+     const argumentsMap = allowContainers && !graph ? getArgumentsMapState(object) : undefined;
+     const argumentsData = argumentsMap?.data;
+     const exotic = allowContainers && !graph ? getExoticObjectState(object) : undefined;
+     const readonlyObject = allowContainers && !graph ? getReadonlyObjectState(object) : undefined;
+-    const dataSlot = map ? 'MapData' : set ? 'SetData' : argumentsState ? 'ParameterMap'
++    const dataSlot = map ? map.slot : set ? 'SetData' : argumentsState ? 'ParameterMap'
+       : argumentsData ? 'ArgumentsParameterMapData' : exotic?.dataSlot;
+     const methods = argumentsState?.parameterMap ? ArgumentExoticObject
+       : argumentsData ? getArgumentsMapMethods(argumentsData) : exotic?.methods ?? ObjectValue.prototype;
+@@ -409,7 +419,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       selectedEnvironments.add(argumentsData.environment);
+     }
+     if (graph) {
+-      const entries = 1 + object.properties.size + (map?.MapData.length ?? set?.SetData.length ?? 0);
++      const entries = 1 + object.properties.size + (map?.data.length ?? set?.SetData.length ?? 0);
+       if (entries > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
+       graph.entries += entries;
+       addReference(object.Prototype);
+@@ -419,7 +429,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+         addReference(descriptor.Get);
+         addReference(descriptor.Set);
+       });
+-      for (const entry of map?.MapData ?? []) {
++      for (const entry of map?.data ?? []) {
+         addReference(entry.Key);
+         addReference(entry.Value);
+       }
+@@ -448,7 +458,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       argumentsMap,
+       exotic,
+       readonlyObject,
+-      map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
++      map: map ? { ...map, entries: map.data.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+   }
+@@ -520,7 +530,8 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+         if (state.functionState && !hasUnchangedFunctionState(state.object, state.functionState, agent)) {
+           throw new TypeError('Checkpoint function metadata changed');
+         }
+-        if ((state.map && (!isMapObject(state.object) || state.object.MapData !== state.map.data))
++        const currentMap = state.map ? getMapStorage(state.object, true) : undefined;
++        if ((state.map && (currentMap?.slot !== state.map.slot || currentMap.data !== state.map.data))
+           || (state.set && (!isSetObject(state.object) || state.object.SetData !== state.set.data))) {
+           throw new TypeError('Checkpoint collection data list changed');
+         }
