@@ -77,7 +77,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "CI 36521361015/analyzer 109254728006 reproduces the engine hash and passes 1434 units, but passes only 72/74 smoke variants; both numeric substr variants time out at the unchanged gate. E2E 36521360992 and publish 36521361092 pass. See ci-failure.json and diagnostic profiles.",
   "files": {
     "engine/patches/data-graph-checkpoints.patch": "a1410c8fab3c758c986614b6d74c29b2555521da8426ac2a914dfaf76f960c76",
     "engine/scripts/build.ts": "57166c6f8d543b5259a08c549aa47303751471b5197c374c8275d60bfe9ca288",

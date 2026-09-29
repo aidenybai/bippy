@@ -1,0 +1,34 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 38576b0..ccf6662 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -224,24 +224,26 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       if (entries > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
+       graph.entries += entries;
+       addReference(object.Prototype);
+-      for (const [key, descriptor] of object.properties) {
++      object.properties.forEach((descriptor, key) => {
+         addReference(key);
+         addReference(descriptor.Value);
+         addReference(descriptor.Get);
+         addReference(descriptor.Set);
+-      }
++      });
+       for (const entry of map?.MapData ?? []) {
+         addReference(entry.Key);
+         addReference(entry.Value);
+       }
+       for (const value of set?.SetData ?? []) addReference(value);
+     }
++    const properties: [PropertyKeyValue, FullyPopulatedDescriptor][] = [];
++    object.properties.forEach((descriptor, key) => properties.push([key, descriptor]));
+     states.push({
+       object,
+       defineOwnProperty: object.DefineOwnProperty,
+       prototype: object.Prototype,
+       extensible: object.Extensible,
+-      properties: [...object.properties],
++      properties,
+       functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,

@@ -3,6 +3,7 @@ import { createConcreteRuntime, createNumericDomain, type NumericPredicate } fro
 import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { buildScriptFixture } from "./helpers/build-script-fixture.js";
 import { createNativeRuntime } from "./helpers/native-runtime.js";
+import { getReactCheckpointRecords } from "./helpers/react-checkpoint-records.js";
 import { getExpressionSource, getPredicateSource } from "./helpers/numeric-expression.js";
 
 let source: string;
@@ -63,6 +64,51 @@ it.each([false, true])(
           if (decisions.length >= 10) throw new Error("Unexpected decision expansion");
           if (decisions.length > 0) expect(predicate === decisions[0]).toBe(true);
           decisions.push(predicate);
+          if (decisions.length === 1) {
+            const rejection = new Error("React transitive ownership is not implemented");
+            expect(() =>
+              runtime.agent.captureEvaluation({
+                capture: (roots) => {
+                  const { fiber, queue, update } = getReactCheckpointRecords(api, roots);
+                  expect(
+                    queue.properties.get("lastRenderedState")?.Value ===
+                      domain.createInput("amount"),
+                  ).toBe(true);
+                  expect(update.properties.get("hasEagerState")?.Value === api.Value.true).toBe(
+                    true,
+                  );
+                  const eagerState = update.properties.get("eagerState")?.Value;
+                  if (!(eagerState instanceof api.NumberValue))
+                    throw new Error("Expected eager Number state");
+                  expect(getExpressionSource(domain.getExpression(eagerState))).toBe(
+                    '((inputs["amount"])+(1))',
+                  );
+                  const dispatch = queue.properties.get("dispatch")?.Value;
+                  if (
+                    !(dispatch instanceof api.ObjectValue) ||
+                    !api.isBoundFunctionObject(dispatch)
+                  )
+                    throw new Error("Expected bound React dispatch");
+                  expect(dispatch.BoundArguments[0] === fiber).toBe(true);
+                  expect(dispatch.BoundArguments[1] === queue).toBe(true);
+                  expect(fiber.ConstructedBy).toHaveLength(1);
+                  expect(() => api.createStateCheckpoint({ objects: [fiber] })).toThrow(
+                    "Checkpoint requires",
+                  );
+                  const selected = api.createStateCheckpoint({ objects: [queue, update] });
+                  try {
+                    expect(() => api.createDataGraphCheckpoint({ roots: [update] })).toThrow(
+                      /Data graph cannot|Checkpoint requires/,
+                    );
+                  } finally {
+                    selected.release();
+                  }
+                  throw rejection;
+                },
+              }),
+            ).toThrow(rejection);
+            expect(runtime.agent.resumeEvaluate().value === decision).toBe(true);
+          }
           runtime.agent.AgentRecord.KeptAlive.clear();
           api.gc();
           step = runtime.agent.resumeEvaluate({

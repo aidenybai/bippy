@@ -35,6 +35,8 @@ Completion and debugger callbacks retain their existing host-error behavior. The
 
 ## State the owner must cover
 
+Storage checkpoints can now be created inside `owner.capture` without resuming lowered property iterators. The [actual React audit](react-checkpoint-audit.md) records that integration fix and its remaining ownership boundaries.
+
 The owner must restore execution contexts, reachable mutable records, and any permitted host effects. Restoring the Agent registration does not restore those records. An empty owner remains an explicit caller assertion, not proof of isolation.
 
 The tests select global-object properties and declarative bindings, and restore a saved context-stack list. They do not establish restoration of arbitrary context fields, function captures, jobs, modules, Promise state, React fibers, or host resources. Native marking still needs the explicit policies listed in the [state inventory](engine-state-inventory.md).

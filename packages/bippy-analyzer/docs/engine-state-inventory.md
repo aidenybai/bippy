@@ -36,6 +36,10 @@ The original collector discarded entries whose keys were not yet marked. Reverse
 
 The later [suspended-evaluator correction](suspended-control-roots.md) fixes the original partial-array counterexample through the existing marking protocol. [Declared host-job roots](host-job-roots.md) now fix the timer callback probe. [Promise roots](promise-roots.md) also fix the pending-reaction probe. [Accumulator roots](promise-all-roots.md) now fix the partial `Promise.all` result. [Combinator roots](promise-combinator-roots.md) also fix partial allSettled/any results. [Finally capture roots](promise-finally-roots.md) now fix values/reasons during pending cleanup. Unregistered external evaluators still lose live targets. Keyed combinators, modules, standalone control snapshots, and other native captures remain unverified. Their retained probes establish that root coverage remains incomplete.
 
+## Actual React suspension evidence
+
+The [React checkpoint audit](react-checkpoint-audit.md) identifies the live fiber, hook queue, and eager update at an actual bailout decision. Queue/update property capture now works inside the owner callback, after replacing lowered property-table iteration with native `forEach`. The fiber has one `ConstructedBy` entry and remains unsupported. Direct roots also include native functions, execution contexts, ReferenceRecords, and environments; the test-only record inspector is not a complete ownership traversal.
+
 ## Conditions for a general owner
 
 1. Register roots by Agent and lifetime. Include active, suspended, external, and saved continuations without retaining unrelated Agents.
