@@ -64,12 +64,18 @@ export class ConcreteRuntime {
         ]),
         HostPromiseRejectionTrackers: new Set([
           (promise, operation) => {
+            this.agent.assertCanPerformHostEffect();
             if (operation === "reject") this.unhandledRejections.add(promise);
             else this.unhandledRejections.delete(promise);
           },
         ]),
       },
-      uncaughtExceptionTrackers: new Set([(value) => this.uncaughtExceptions.push(value)]),
+      uncaughtExceptionTrackers: new Set([
+        (value) => {
+          this.agent.assertCanPerformHostEffect();
+          this.uncaughtExceptions.push(value);
+        },
+      ]),
     });
     this.agent.jobQueue.onNewJob.add(this.countJob);
     this.realm = this.withAgent(
@@ -86,12 +92,20 @@ export class ConcreteRuntime {
     this.withAgent(() => {
       const pop = this.realm.pushTopContext();
       try {
-        const install = (name: string, steps: NativeSteps): void => {
+        const install = (name: string, steps: OmitThisParameter<NativeSteps>): void => {
           this.unwrap(
             api.CreateNonEnumerableDataPropertyOrThrow(
               this.realm.GlobalObject,
               name,
-              api.CreateBuiltinFunction(steps, 0, name, []),
+              api.CreateBuiltinFunction(
+                (...parameters) => {
+                  this.agent.assertCanPerformHostEffect();
+                  return steps(...parameters);
+                },
+                0,
+                name,
+                [],
+              ),
             ),
           );
         };
@@ -145,6 +159,7 @@ export class ConcreteRuntime {
         for (const method of consoleMethods) {
           const callback = api.CreateBuiltinFunction(
             (args) => {
+              this.agent.assertCanPerformHostEffect();
               this.consoleEntries.push({
                 method,
                 arguments: args.map((value) => value ?? api.Value.undefined),
@@ -229,6 +244,7 @@ export class ConcreteRuntime {
   };
 
   dispose = (): void => {
+    this.agent.assertCanPerformHostEffect();
     this.isDisposed = true;
     for (const handle of this.timers.keys()) this.cancelTimer(handle);
   };

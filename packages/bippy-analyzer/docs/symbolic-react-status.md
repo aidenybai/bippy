@@ -2,7 +2,7 @@
 
 The active objective is “finish the symbolic stuff for React”. The [roadmap](../ROADMAP.md) defines the existing acceptance scope. Completion requires unknown inputs and state to produce guarded React output and transitions through actual React and engine262. Concrete rendering or a passing JavaScript smoke test alone does not meet that objective.
 
-[Selected context and CallSite snapshots](context-checkpoints.md) now support a diagnostic actual-React fork. Eight observations match native execution, with one prefix per branch order. This is not accepted branch isolation: a timer variant executes four branches’ callbacks after restoration instead of one. Native captures and host queues still need rejecting ownership policies.
+[Selected context and CallSite snapshots](context-checkpoints.md) now support a diagnostic actual-React fork. Eight observations match native execution, with one prefix per branch order. This is not accepted branch isolation: a timer variant executes four branches’ callbacks after restoration instead of one. [Host-effect guards](checkpoint-host-effects.md) now reject that timer call before scheduling instead of returning branch results. Native captures and host queues still need ownership policies; rejection is not queue restoration.
 
 ## Required evidence
 

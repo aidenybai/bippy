@@ -1,0 +1,109 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 202d40f..1635bc1 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -166,6 +166,12 @@ export class Agent {
+   #isNotifying = false;
+   readonly #evaluationCheckpoints: EvaluationCheckpointFrame[] = [];
+ 
++  assertCanPerformHostEffect = (): void => {
++    if (this.#isCheckpointing || this.#evaluationCheckpoints.length) {
++      throw new TypeError('Host effects are unsupported during evaluation checkpoints');
++    }
++  };
++
+   captureEvaluation = (owner: ContinuationStateOwner): EvaluationCheckpoint => {
+     if (surroundingAgent !== this) throw new TypeError('Evaluation checkpoint belongs to another Agent');
+     if (this.#isResuming || this.#isCheckpointing || this.#isNotifying) throw new TypeError('Cannot checkpoint during Agent execution');
+@@ -174,6 +180,7 @@ export class Agent {
+     if (!paused?.controlled) throw new TypeError('Evaluation checkpoint requires a controlled evaluator');
+     if (paused.failure) throw paused.failure.error;
+     if (!owner) throw new TypeError('Evaluation checkpoints require a state owner');
++    if (this.eventLoop.hasPendingJobs) throw new TypeError('Evaluation checkpoints do not support pending async host jobs');
+     const decision = paused.decision;
+     const controlled = paused.controlled;
+     const frame: EvaluationCheckpointFrame = { paused, roots: [] };
+diff --git a/src/execution-context/Job.mts b/src/execution-context/Job.mts
+index 3ce15aa..7be21d9 100644
+--- a/src/execution-context/Job.mts
++++ b/src/execution-context/Job.mts
+@@ -52,6 +52,7 @@ export function HostEnqueuePromiseJob(job: () => PlainEvaluator, realm: Realm |
+     return;
+   }
+ 
++  surroundingAgent.assertCanPerformHostEffect();
+   const callerRealm = realm || surroundingAgent.currentRealmRecord;
+   const scriptOrModule = GetActiveScriptOrModule();
+   surroundingAgent.jobQueue.enqueuePromiseJob({
+diff --git a/src/execution-context/WeakReference.mts b/src/execution-context/WeakReference.mts
+index 5009009..f5bcc23 100644
+--- a/src/execution-context/WeakReference.mts
++++ b/src/execution-context/WeakReference.mts
+@@ -9,6 +9,7 @@ import {
+ 
+ /** https://tc39.es/ecma262/#sec-host-cleanup-finalization-registry */
+ export function HostEnqueueFinalizationRegistryCleanupJob(finalizationRegistry: FinalizationRegistryObject): void {
++  surroundingAgent.assertCanPerformHostEffect();
+   const hostHook = surroundingAgent.hostDefinedOptions.hostHooks?.HostEnqueueFinalizationRegistryCleanupJob;
+   if (hostHook) {
+     hostHook(finalizationRegistry);
+diff --git a/src/host-defined/event-loop.mts b/src/host-defined/event-loop.mts
+index a672e42..4cb7361 100644
+--- a/src/host-defined/event-loop.mts
++++ b/src/host-defined/event-loop.mts
+@@ -88,12 +88,15 @@ export abstract class AbstractEventLoop implements EventLoop {
+    * ```
+    */
+   enqueueAsync(type: NodeJSJobType | string, job: Job, doAsyncEnqueue: (enqueue: () => void, cancel: () => void) => void): void {
++    this.surroundingAgent.assertCanPerformHostEffect();
+     this.#pendingJobs.add(job);
+     doAsyncEnqueue(() => {
++      this.surroundingAgent.assertCanPerformHostEffect();
+       this.#pendingJobs.delete(job);
+       this.enqueue(type, job);
+       this.#callNoPendingJobsCallback();
+     }, () => {
++      this.surroundingAgent.assertCanPerformHostEffect();
+       this.#pendingJobs.delete(job);
+       this.#callNoPendingJobsCallback();
+     });
+@@ -105,6 +108,7 @@ export abstract class AbstractEventLoop implements EventLoop {
+ 
+   /** Change the automatic run type of the event loop */
+   run(type: EventLoopRunType): void {
++    this.surroundingAgent.assertCanPerformHostEffect();
+     this.surroundingAgent.jobQueue.onNewJob.delete(this.#tryScheduleAutomaticFlush);
+     this.surroundingAgent.onNoEvaluator.delete(this.#tryScheduleAutomaticFlush);
+     this.#runType = type;
+@@ -116,6 +120,7 @@ export abstract class AbstractEventLoop implements EventLoop {
+   }
+ 
+   runOnce() {
++    this.surroundingAgent.assertCanPerformHostEffect();
+     if (this.surroundingAgent.executionContextStack.length > 0 || this.surroundingAgent.isPaused()) return;
+     if (this.#flushState === 'running') {
+       this.#flushState = 'rerun';
+@@ -179,6 +184,7 @@ export abstract class AbstractEventLoop implements EventLoop {
+ 
+ export class MicroTaskEventLoop extends AbstractEventLoop {
+   enqueue(_type: string, job: Job): void {
++    this.surroundingAgent.assertCanPerformHostEffect();
+     this.surroundingAgent.jobQueue.enqueueGenericJob(job);
+     this.tryScheduleAutomaticFlush();
+   }
+@@ -203,6 +209,7 @@ export class WebLikeEventLoop extends AbstractEventLoop {
+    * Enqueue a host job (macrotask) now.
+    */
+   enqueue(type: NodeJSJobType | string, job: Job): void {
++    this.surroundingAgent.assertCanPerformHostEffect();
+     this.jobsByType[type] ??= new Set<Job>();
+     this.jobsByType[type].add(job);
+     this.queuedJobs.set(job, type);
+@@ -262,6 +269,7 @@ export class NodeJSLikeEventLoop extends AbstractEventLoop {
+   protected queuedJobs = new Set<Job>();
+ 
+   enqueue(type: NodeJSJobType | string, job: Job): void {
++    this.surroundingAgent.assertCanPerformHostEffect();
+     const queueType = isNodeJSJobType(type) ? type : this.fallbackType;
+     this.jobsByType[queueType].add(job);
+     this.queuedJobs.add(job);

@@ -95,6 +95,7 @@ const build = async (): Promise<void> => {
       "regexp-checkpoints.patch",
       "weak-map-checkpoints.patch",
       "context-checkpoints.patch",
+      "checkpoint-host-effects.patch",
     ])
       execFileSync(
         "git",

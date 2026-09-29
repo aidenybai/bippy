@@ -40,6 +40,10 @@ React research uses checkout `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, includi
 - All 1,678 tests across 54 files pass, as do typechecking and two relocated clean builds.
 - The unchanged local smoke passes 74/74. Source and published engines match 361/363 selected variants, including input hashes, compiled hashes, verdicts, and exit code 1. Both fail the two `async-function/evaluation-body.js` scenarios.
 
+[Linux CI](context-checkpoint-validation/ci-status.json) passes 1,678 units and all 74 smoke variants with the matching engine hash. E2E passes. Publishing fails with a server 500 followed by 404, “There is no workflow defined for r6qTmyqoOv”. This green smoke run does not establish timing stability or remove earlier failures.
+
+[Later host-effect guards](checkpoint-host-effects.md) now reject the timer variant at its first user timer call, before scheduling. The preceding leak remains evidence that matching trees do not prove isolation. Queue restoration and transitive ownership remain unimplemented.
+
 ## Next required work
 
 Implement rejecting ownership for native captures and host queues using the existing engine records. The timer leak must fail capture or restore correctly before exposing these forks through a guarded React API. Native-record coverage, transition reports, repeated state families, and demo integration remain incomplete.

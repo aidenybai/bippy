@@ -2,6 +2,8 @@
 
 `Agent.captureEvaluation(owner)` coordinates lowered control with the Agent’s registered evaluator and pending decision. It requires an explicitly controlled, suspended evaluator and a caller-supplied state owner. It does not supply transitive heap ownership.
 
+[Covered host effects](checkpoint-host-effects.md) now reject while checkpoints are open or their capture/restore callbacks run. Capture also rejects pending async host jobs. These guards do not supply queue ownership or protect arbitrary host callbacks and direct collection access.
+
 ## Capture, restore, and release
 
 Register and suspend execution through [Agent-owned decisions](agent-decisions.md), then call `captureEvaluation`. The returned `EvaluationCheckpoint` provides `restore()` and `release()`.
