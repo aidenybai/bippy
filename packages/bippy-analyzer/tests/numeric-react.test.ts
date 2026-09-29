@@ -104,8 +104,10 @@ it.each([false, true])(
                     throw new Error("Expected intrinsic Object.is");
                   const selected = api.createStateCheckpoint({
                     objects: [fiber, queue, update, sameValue],
+                    environments: [runtime.realm.GlobalEnv],
                   });
-                  expect(selected.objectCount).toBe(4);
+                  expect(selected.objectCount).toBe(5);
+                  expect(selected.environmentCount).toBe(2);
                   try {
                     expect(() => api.createDataGraphCheckpoint({ roots: [update] })).toThrow(
                       /Data graph cannot|Checkpoint requires/,

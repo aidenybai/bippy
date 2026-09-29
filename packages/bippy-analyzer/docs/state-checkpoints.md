@@ -8,9 +8,11 @@
 
 [Builtin function property checkpoints](builtin-checkpoints.md) accept canonical builtin methods and slot layouts with read-only metadata. Native captures, realm records, and additional slot contents still require separate ownership.
 
+[Global environment selection](global-checkpoints.md) adds the wrapper’s backing object and declarative record to the existing snapshots. It validates the wrapper’s metadata without traversing referenced values. Counts include implicit backing objects and distinct declarative records, plus the global wrappers themselves in `environmentCount`.
+
 Both lists are optional. The checkpoint copies their selections and removes duplicate identities. It reports scope `selected-objects-and-bindings-v1`, `objectCount`, `environmentCount`, and `bindingCount`.
 
-Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, Sets, and supported guest functions. The ordinary-only API still rejects these additional categories. Environment records must have exactly the `DeclarativeEnvironmentRecord` or `FunctionEnvironmentRecord` prototype. Capture rejects:
+Objects follow the [ordinary-object restrictions](object-checkpoints.md), with the combined API also accepting canonical engine arrays, Maps, Sets, and supported guest functions. The ordinary-only API still rejects these additional categories. Environment records must have exactly the `DeclarativeEnvironmentRecord`, `FunctionEnvironmentRecord`, or canonical `GlobalEnvironmentRecord` prototype. Capture rejects:
 
 - Records owned by another agent.
 - Module environments, including indirect and deferred bindings.
@@ -38,7 +40,7 @@ Before changing selected data, restore checks environment restrictions, unchange
 This is a storage checkpoint, not complete branch isolation. It does not restore:
 
 - Unselected outer bindings, objects, or prototypes.
-- Global object bindings or the global declaration-name set when only the global declarative record is selected.
+- Global object bindings when only the global declarative record is selected. The pinned engine has no separate global declaration-name set.
 - Mapped-argument properties, weak collections, promises, typed arrays, buffers, or other excluded internal state.
 - Module loading, linking, caches, or evaluation state.
 - Pending jobs, timers, host resources, or external effects.

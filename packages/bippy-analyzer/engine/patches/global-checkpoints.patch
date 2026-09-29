@@ -1,0 +1,144 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 436a964..eb66c7f 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -1,7 +1,7 @@
+ import {
+   isOrdinaryObject, hasOrdinaryObjectMethods, ArrayExoticObjectInternalMethods,
+   surroundingAgent, ObjectValue, Value,
+-  DeclarativeEnvironmentRecord, FunctionEnvironmentRecord,
++  DeclarativeEnvironmentRecord, FunctionEnvironmentRecord, GlobalEnvironmentRecord, ObjectEnvironmentRecord,
+   type Agent, type GCMarker, type OrdinaryObject,
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+   type DeclarativeEnvironmentBinding,
+@@ -110,9 +110,18 @@ interface EnvironmentState {
+   bindings: BindingState[];
+ }
+ 
++interface GlobalEnvironmentState {
++  environment: GlobalEnvironmentRecord;
++  objectRecord: ObjectEnvironmentRecord;
++  declarativeRecord: DeclarativeEnvironmentRecord;
++  bindingObject: ObjectValue;
++  globalThis: ObjectValue;
++}
++
+ interface StateCheckpointFrame {
+   states: OrdinaryObjectState[];
+   environments: EnvironmentState[];
++  globals: GlobalEnvironmentState[];
+ }
+ 
+ export interface OrdinaryObjectCheckpoint {
+@@ -124,7 +133,7 @@ export interface OrdinaryObjectCheckpoint {
+ 
+ export interface StateCheckpointOptions {
+   objects?: readonly ObjectValue[];
+-  environments?: readonly DeclarativeEnvironmentRecord[];
++  environments?: readonly (DeclarativeEnvironmentRecord | GlobalEnvironmentRecord)[];
+ }
+ 
+ export interface StateCheckpoint {
+@@ -176,6 +185,11 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+         mark(descriptor);
+       }
+     }
++    for (const state of frame.globals) {
++      mark(state.environment);
++      mark(state.objectRecord);
++      mark(state.globalThis);
++    }
+     for (const state of frame.environments) {
+       mark(state.environment);
+       for (const binding of state.bindings) mark(binding.value);
+@@ -199,11 +213,42 @@ const assertEnvironment = (environment: DeclarativeEnvironmentRecord, owner: Age
+   }
+ };
+ 
++const getGlobalEnvironmentState = (environment: GlobalEnvironmentRecord, owner: Agent): GlobalEnvironmentState => {
++  const objectRecord = environment.ObjectRecord;
++  const declarativeRecord = environment.DeclarativeRecord;
++  if (environment.ownerAgent !== owner || objectRecord.ownerAgent !== owner || declarativeRecord.ownerAgent !== owner) {
++    throw new TypeError('Checkpoint environments must belong to the current agent');
++  }
++  if (Object.getPrototypeOf(environment) !== GlobalEnvironmentRecord.prototype
++    || Object.getPrototypeOf(objectRecord) !== ObjectEnvironmentRecord.prototype
++    || Object.getPrototypeOf(declarativeRecord) !== DeclarativeEnvironmentRecord.prototype
++    || environment.OuterEnv !== null || objectRecord.OuterEnv !== null || declarativeRecord.OuterEnv !== null
++    || objectRecord.IsWithEnvironment !== false) {
++    throw new TypeError('Checkpoint requires a canonical global environment');
++  }
++  if (!(environment.GlobalThisValue instanceof ObjectValue) || environment.GlobalThisValue.ownerAgent !== owner) {
++    throw new TypeError('Checkpoint global receiver must belong to the current agent');
++  }
++  return { environment, objectRecord, declarativeRecord, bindingObject: objectRecord.BindingObject, globalThis: environment.GlobalThisValue };
++};
++
+ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
+   const pending = new Set(objects);
++  const selectedEnvironments = new Set<DeclarativeEnvironmentRecord>();
++  const globals: GlobalEnvironmentState[] = [];
++  for (const environment of new Set(environments)) {
++    if (environment instanceof GlobalEnvironmentRecord) {
++      const state = getGlobalEnvironmentState(environment, owner);
++      globals.push(state);
++      pending.add(state.bindingObject);
++      selectedEnvironments.add(state.declarativeRecord);
++    } else {
++      selectedEnvironments.add(environment);
++    }
++  }
+   const addReference = (value: unknown): void => {
+     if (!graph || value === undefined) return;
+     if (!(value instanceof Value)) throw new TypeError('Data graph contains a non-guest reference');
+@@ -276,7 +321,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     });
+   }
+   const environmentStates: EnvironmentState[] = [];
+-  for (const environment of new Set(environments)) {
++  for (const environment of selectedEnvironments) {
+     assertEnvironment(environment, owner);
+     const bindings: BindingState[] = [];
+     for (const [name, binding] of environment.bindings) {
+@@ -290,7 +335,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     }
+     environmentStates.push({ environment, bindings });
+   }
+-  const frame = { states, environments: environmentStates };
++  const frame = { states, environments: environmentStates, globals };
+   const stack = checkpoints.get(owner) ?? [];
+   stack.push(frame);
+   checkpoints.set(owner, stack);
+@@ -303,13 +348,20 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+   return {
+     scope: 'selected-objects-and-bindings-v1',
+     objectCount: states.length,
+-    environmentCount: environmentStates.length,
++    environmentCount: environmentStates.length + globals.length,
+     bindingCount: environmentStates.reduce((count, state) => count + state.bindings.length, 0),
+     restore: () => {
+       const agent = assertActive();
+       if (environmentStates.length !== 0 && agent.debugger_isPreviewing) {
+         throw new Error('Checkpoint cannot restore bindings during preview');
+       }
++      for (const state of globals) {
++        const current = getGlobalEnvironmentState(state.environment, agent);
++        if (current.objectRecord !== state.objectRecord || current.declarativeRecord !== state.declarativeRecord
++          || current.bindingObject !== state.bindingObject || current.globalThis !== state.globalThis) {
++          throw new TypeError('Checkpoint global environment metadata changed');
++        }
++      }
+       for (const state of environmentStates) assertEnvironment(state.environment, agent);
+       for (const state of states) {
+         if (state.object.ConstructedBy !== state.constructedBy) {
+@@ -382,6 +434,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       if (stack.length === 0) checkpoints.delete(agent);
+       states.length = 0;
+       environmentStates.length = 0;
++      globals.length = 0;
+       owner = undefined;
+     },
+   };
