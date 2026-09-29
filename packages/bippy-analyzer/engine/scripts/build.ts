@@ -81,6 +81,7 @@ const build = async (): Promise<void> => {
       "set-zero.patch",
       "promise-all-roots.patch",
       "promise-combinator-roots.patch",
+      "promise-finally-roots.patch",
     ])
       execFileSync(
         "git",

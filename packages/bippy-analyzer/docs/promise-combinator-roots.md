@@ -25,7 +25,7 @@ The final local suite passes 1,348 tests across 39 files. The unchanged smoke pa
 
 ## Remaining ownership and root policies
 
-The prior allSettled and any probes now return `[true,7]` in the maintained engine and V8. Two new `finally` probes still return engine `[false,7]` versus V8 `[true,7]`. They cover a fulfilled value and rejected reason held while cleanup awaits a pending Promise.
+The prior allSettled and any probes now return `[true,7]` in the maintained engine and V8. Two `finally` probes recorded here returned engine `[false,7]` versus V8 `[true,7]`. They cover a fulfilled value and rejected reason held during pending cleanup. [Finally capture roots](promise-finally-roots.md) now fix both paths.
 
 Keyed combinators, remaining builtin captures, modules, saved continuations, and unregistered external evaluators still need explicit policies. No generic native-object walker or new collector was added. General branch ownership and Promise restoration remain incomplete.
 

@@ -27,6 +27,6 @@ The final suite passes 1,324 tests across 38 files, with 74/74 unchanged smoke v
 
 ## Remaining root and ownership gaps
 
-The partial allSettled/any probes recorded here returned engine `[false,7]` versus V8 `[true,7]`. [Combinator roots](promise-combinator-roots.md) now fix both paths. New `finally` probes still lose fulfilled values and rejected reasons during pending cleanup. Keyed combinators, modules, saved continuations, and unregistered external evaluators still need explicit policies.
+The partial allSettled/any probes recorded here returned engine `[false,7]` versus V8 `[true,7]`. [Combinator roots](promise-combinator-roots.md) now fix both paths. [Finally capture roots](promise-finally-roots.md) also fix the later value/reason probes during pending cleanup. Keyed combinators, modules, saved continuations, and unregistered external evaluators still need explicit policies.
 
 React source at `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, `ReactLazy.js`, stores the resolved module in its payload through a `then` callback. Keeping actual Promise records alive is necessary for async application execution. This inspection and these engine tests do not verify symbolic lazy rendering, shared-prefix React forks, or branch-safe Promise restoration. The [React completion checklist](symbolic-react-status.md) remains incomplete.

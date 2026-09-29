@@ -68,7 +68,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "1348 units and 74/74 smoke pass; clean-build hash matches, see ci.json",
   "files": {
     "engine/patches/promise-combinator-roots.patch": "37ef73a11ab25df83cc4f15e111356a1f377e9008e3964e64c9e4c4d0e1c30e6",
     "engine/scripts/build.ts": "2fc906ba37ed865dbc738a67a4522cd298bb54ee54e79aaf984716bcf2cc2c25",

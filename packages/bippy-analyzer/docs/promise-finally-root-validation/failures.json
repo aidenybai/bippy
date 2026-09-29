@@ -1,0 +1,74 @@
+[
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+    "attrs": {
+      "author": "Jordan Harband",
+      "description": "finally on rejected Promise calls the SpeciesConstructor",
+      "esid": "sec-promise.prototype.finally",
+      "features": ["Promise.prototype.finally"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2018 Jordan Harband. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: undefined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: undefined"
+    },
+    "contentsSha256": "b2a1bfff817f77c2e608f9cb5b3b31b952825ae1160e6319cdb78c44e59ef930",
+    "compiledSha256": "db29054d6049a0404fe7012fa16f4f67e831ed07f532818fe0f0b7b017ea969f"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+    "attrs": {
+      "author": "Jordan Harband",
+      "description": "finally on rejected Promise calls the SpeciesConstructor (Strict Mode)",
+      "esid": "sec-promise.prototype.finally",
+      "features": ["Promise.prototype.finally"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2018 Jordan Harband. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: undefined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: undefined"
+    },
+    "contentsSha256": "c90c2dd9e7b6ff71646cc44f083c7941deafde10002540c581b405ce47d2d751",
+    "compiledSha256": "c631ff44b5513d5ad7d999109e10aa2500c436a027cbee3e9dd9276b1a5d3860"
+  }
+]
