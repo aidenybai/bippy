@@ -92,10 +92,11 @@ it.each([false, true])(
                   expect(dispatch.BoundArguments[0] === fiber).toBe(true);
                   expect(dispatch.BoundArguments[1] === queue).toBe(true);
                   expect(fiber.ConstructedBy).toHaveLength(1);
-                  expect(() => api.createStateCheckpoint({ objects: [fiber] })).toThrow(
+                  expect(() => api.createDataGraphCheckpoint({ roots: [fiber] })).toThrow(
                     "Checkpoint requires",
                   );
-                  const selected = api.createStateCheckpoint({ objects: [queue, update] });
+                  const selected = api.createStateCheckpoint({ objects: [fiber, queue, update] });
+                  expect(selected.objectCount).toBe(3);
                   try {
                     expect(() => api.createDataGraphCheckpoint({ roots: [update] })).toThrow(
                       /Data graph cannot|Checkpoint requires/,

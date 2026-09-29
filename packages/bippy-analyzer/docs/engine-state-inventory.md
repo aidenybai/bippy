@@ -38,7 +38,7 @@ The later [suspended-evaluator correction](suspended-control-roots.md) fixes the
 
 ## Actual React suspension evidence
 
-The [React checkpoint audit](react-checkpoint-audit.md) identifies the live fiber, hook queue, and eager update at an actual bailout decision. Queue/update property capture now works inside the owner callback, after replacing lowered property-table iteration with native `forEach`. The fiber has one `ConstructedBy` entry and remains unsupported. Direct roots also include native functions, execution contexts, ReferenceRecords, and environments; the test-only record inspector is not a complete ownership traversal.
+The [React checkpoint audit](react-checkpoint-audit.md) identifies the live fiber, hook queue, and eager update at an actual bailout decision. Queue/update property capture now works inside the owner callback, after replacing lowered property-table iteration with native `forEach`. The fiber has one `ConstructedBy` entry. [Selected constructor-tracking storage](constructor-checkpoints.md) now preserves that original list and its ordered references. Fiber, queue, and update property capture succeeds, but their referenced graph remains unowned. Direct roots also include native functions, execution contexts, ReferenceRecords, and environments; the test-only record inspector is not a complete ownership traversal.
 
 ## Conditions for a general owner
 

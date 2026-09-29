@@ -48,7 +48,14 @@ it.each([false, true])(
       agent.hostDefinedOptions.onNodeEvaluation = (node) => {
         if (node.sourceText === "prefix++" && node.type === "UpdateExpression") prefixes++;
       };
-      const source = "var prefix=0,count=0;prefix++;if(enabled)count=11;else count=22;count;";
+      const source = `
+        var prefix = 0,
+          count = 0;
+        prefix++;
+        if (enabled) count = 11;
+        else count = 22;
+        count;
+      `;
       agent.evaluate(
         compile(source),
         (completion) => {
@@ -95,7 +102,15 @@ it.each([false, true])(
 it("restores exact request identity across nested captures and rejects stale replies", async () => {
   await withAbstractFixture((fixture) => {
     const { agent } = fixture;
-    const first = start(fixture, "var count=0;if(enabled)count++;if(enabled)count++;count;");
+    const first = start(
+      fixture,
+      `
+        var count = 0;
+        if (enabled) count++;
+        if (enabled) count++;
+        count;
+      `,
+    );
     const outer = capture(fixture);
     const next = agent.resumeEvaluate({
       abstractBooleanDecision: { resume: "abstract-boolean", decision: first, value: true },
@@ -127,7 +142,16 @@ it("roots saved evaluator values after completion and releases them without rewi
     const { api, agent, realm } = fixture;
     const decision = start(
       fixture,
-      "var reference;function create(){const held={};reference=new WeakRef(held);return held;}var result=[create(),enabled?1:2];result=null;",
+      `
+        var reference;
+        function create() {
+          const held = {};
+          reference = new WeakRef(held);
+          return held;
+        }
+        var result = [create(), enabled ? 1 : 2];
+        result = null;
+      `,
     );
     const saved = capture(fixture);
     agent.resumeEvaluate({
@@ -238,7 +262,14 @@ it("poisons the registered evaluator on owner restoration failure", async () => 
 it("does not recover an execution failure through a saved checkpoint", async () => {
   await withAbstractFixture((fixture) => {
     const { agent } = fixture;
-    const decision = start(fixture, "var count=0;if(enabled)count++;count;");
+    const decision = start(
+      fixture,
+      `
+        var count = 0;
+        if (enabled) count++;
+        count;
+      `,
+    );
     const saved = capture(fixture);
     const failure = new Error("execution failed");
     agent.hostDefinedOptions.onNodeEvaluation = (node) => {

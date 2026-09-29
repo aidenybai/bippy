@@ -12,15 +12,20 @@ it.each(cases)(
   "retains a pending and queued $outcome handler's $target",
   async ({ target, outcome }) => {
     const setup = `
-    var reference, seen, fulfill, reject;
-    var promise = new Promise((resolve, fail) => { fulfill = resolve; reject = fail; });
-    (() => {
-      const target = ${target};
-      reference = new WeakRef(target);
-      const observe = () => { seen = reference.deref() === target; };
-      promise.then(${outcome === "fulfill" ? "observe, undefined" : "undefined, observe"});
-    })();
-  `;
+      var reference, seen, fulfill, reject;
+      var promise = new Promise((resolve, fail) => {
+        fulfill = resolve;
+        reject = fail;
+      });
+      (() => {
+        const target = ${target};
+        reference = new WeakRef(target);
+        const observe = () => {
+          seen = reference.deref() === target;
+        };
+        promise.then(${outcome === "fulfill" ? "observe, undefined" : "undefined, observe"});
+      })();
+    `;
     const native = getNativeGcObservation(
       setup,
       `(${outcome}(), globalThis.gc(), await Promise.resolve(), ${observation})`,
@@ -47,14 +52,16 @@ it.each(cases)(
     const runtime = await createConcreteRuntime();
     try {
       runtime.evaluate(`
-      var reference, seen;
-      (() => {
-        const target = ${target};
-        reference = new WeakRef(target);
-        const observe = value => { seen = reference.deref() === value; };
-        Promise.${outcome === "fulfill" ? "resolve" : "reject"}(target).then().then(observe, observe);
-      })();
-    `);
+        var reference, seen;
+        (() => {
+          const target = ${target};
+          reference = new WeakRef(target);
+          const observe = (value) => {
+            seen = reference.deref() === value;
+          };
+          Promise.${outcome === "fulfill" ? "resolve" : "reject"}(target).then().then(observe, observe);
+        })();
+      `);
       expect(await getCollectedReference(runtime)).toBe("true");
       runtime.drainJobs();
       expect(runtime.readString(observation)).toBe("[true,true]");
@@ -71,15 +78,27 @@ it.each(["fulfill", "reject"])(
     const runtime = await createConcreteRuntime();
     try {
       runtime.evaluate(`
-      var reference, seen, fulfill, reject;
-      var promise = new Promise((resolve, fail) => { fulfill = resolve; reject = fail; });
-      promise.constructor = { [Symbol.species]: function(executor) {
-        const target = {};
-        reference = new WeakRef(target);
-        executor(() => { seen = reference.deref() === target; }, () => { seen = reference.deref() === target; });
-      }};
-      promise.then();
-    `);
+        var reference, seen, fulfill, reject;
+        var promise = new Promise((resolve, fail) => {
+          fulfill = resolve;
+          reject = fail;
+        });
+        promise.constructor = {
+          [Symbol.species]: function (executor) {
+            const target = {};
+            reference = new WeakRef(target);
+            executor(
+              () => {
+                seen = reference.deref() === target;
+              },
+              () => {
+                seen = reference.deref() === target;
+              }
+            );
+          },
+        };
+        promise.then();
+      `);
       expect(await getCollectedReference(runtime)).toBe("true");
       runtime.evaluate(`${outcome}()`);
       expect(await getCollectedReference(runtime)).toBe("true");
@@ -97,7 +116,9 @@ it("retains the reaction's result Promise until its queued job completes", async
   try {
     runtime.evaluate(`
       var fulfill;
-      var promise = new Promise(resolve => { fulfill = resolve; });
+      var promise = new Promise((resolve) => {
+        fulfill = resolve;
+      });
       var reference = new WeakRef(promise.then());
     `);
     expect(await getCollectedReference(runtime)).toBe("true");
@@ -116,15 +137,29 @@ it.each(["fulfill", "reject"])(
     const runtime = await createConcreteRuntime();
     try {
       runtime.evaluate(`
-      var reference, seen, fulfill, reject;
-      (() => {
-        const promise = new Promise((resolve, fail) => { fulfill = resolve; reject = fail; });
-        reference = new WeakRef(promise);
-        promise.then(() => { seen = true; }, () => { seen = true; });
-      })();
-    `);
+        var reference, seen, fulfill, reject;
+        (() => {
+          const promise = new Promise((resolve, fail) => {
+            fulfill = resolve;
+            reject = fail;
+          });
+          reference = new WeakRef(promise);
+          promise.then(
+            () => {
+              seen = true;
+            },
+            () => {
+              seen = true;
+            }
+          );
+        })();
+      `);
       expect(await getCollectedReference(runtime)).toBe("true");
-      runtime.evaluate(`${outcome}(); fulfill(); reject();`);
+      runtime.evaluate(`
+        ${outcome}();
+        fulfill();
+        reject();
+      `);
       runtime.drainJobs();
       expect(runtime.readString("String(seen)")).toBe("true");
       expect(await getCollectedReference(runtime)).toBe("false");
@@ -140,7 +175,12 @@ it("retains a thenable receiver until assimilation runs", async () => {
     runtime.evaluate(`
       var reference, seen;
       (() => {
-        const thenable = { then(resolve) { seen = reference.deref() === this; resolve(); } };
+        const thenable = {
+          then(resolve) {
+            seen = reference.deref() === this;
+            resolve();
+          },
+        };
         reference = new WeakRef(thenable);
         Promise.resolve(thenable);
       })();
@@ -162,10 +202,15 @@ it("retains a detached then callback and its captures until assimilation runs", 
       (() => {
         const target = {};
         reference = new WeakRef(target);
-        Promise.resolve({ get then() {
-          delete this.then;
-          return resolve => { seen = reference.deref() === target; resolve(); };
-        }});
+        Promise.resolve({
+          get then() {
+            delete this.then;
+            return (resolve) => {
+              seen = reference.deref() === target;
+              resolve();
+            };
+          },
+        });
       })();
     `);
     expect(await getCollectedReference(runtime)).toBe("true");
@@ -182,10 +227,14 @@ it("retains the assimilation job's result Promise", async () => {
   try {
     runtime.evaluate(`
       var reference, seen;
-      reference = new WeakRef(Promise.resolve({ then(resolve) {
-        seen = reference.deref() !== undefined;
-        resolve();
-      }}));
+      reference = new WeakRef(
+        Promise.resolve({
+          then(resolve) {
+            seen = reference.deref() !== undefined;
+            resolve();
+          },
+        })
+      );
     `);
     expect(await getCollectedReference(runtime)).toBe("true");
     runtime.drainJobs();
@@ -201,7 +250,9 @@ it("releases an unselected reaction before draining the selected job", async () 
   try {
     runtime.evaluate(`
       var reference, fulfill;
-      var promise = new Promise(resolve => { fulfill = resolve; });
+      var promise = new Promise((resolve) => {
+        fulfill = resolve;
+      });
       (() => {
         const target = {};
         reference = new WeakRef(target);
@@ -223,11 +274,15 @@ it("keeps Promise roots and collection independent across Agents", async () => {
   try {
     const setup = `
       var reference, fulfill;
-      var promise = new Promise(resolve => { fulfill = resolve; });
+      var promise = new Promise((resolve) => {
+        fulfill = resolve;
+      });
       (() => {
         const target = {};
         reference = new WeakRef(target);
-        promise.then(() => { if (reference.deref() !== target) throw new Error('lost target'); });
+        promise.then(() => {
+          if (reference.deref() !== target) throw new Error("lost target");
+        });
       })();
     `;
     first.evaluate(setup);

@@ -30,15 +30,20 @@ const branches: Branch[] = [
   { enabled: true, fail: true },
 ];
 const getSource = ({ enabled, fail }: Branch): string => `
-  var prefixRuns = 0; prefixRuns++;
-  var shared = { count: 0 }; var alias = shared;
-  let enabled = ${enabled}; let fail = ${fail};
+  var prefixRuns = 0;
+  prefixRuns++;
+  var shared = { count: 0 };
+  var alias = shared;
+  let enabled = ${enabled};
+  let fail = ${fail};
   debugger;
   try {
     if (enabled) shared.count++;
     if (fail) throw shared.count;
     shared.count;
-  } finally { alias.count += 10; }
+  } finally {
+    alias.count += 10;
+  }
 `;
 
 const getNativeObservation = (source: string): Observation => {
@@ -125,7 +130,10 @@ it.each([{ order: branches }, { order: [...branches].reverse() }])(
         });
         for (const branch of order) {
           checkpoint.restore();
-          realm.evaluateScriptSkipDebugger(`enabled = ${branch.enabled}; fail = ${branch.fail};`);
+          realm.evaluateScriptSkipDebugger(`
+            enabled = ${branch.enabled};
+            fail = ${branch.fail};
+          `);
           const completion = api.EnsureCompletion(api.skipDebugger(iterator));
           const result = api.EnsureCompletion(
             realm.evaluateScriptSkipDebugger("JSON.stringify([shared.count, prefixRuns])"),

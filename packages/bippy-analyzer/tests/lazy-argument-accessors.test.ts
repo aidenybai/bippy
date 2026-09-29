@@ -15,7 +15,13 @@ it.each([false, true])(
       const owner = new api.ManagedRealm();
       const result = api.EnsureCompletion(
         owner.evaluateScriptSkipDebugger(
-          "var getValue; (function(value) { getValue = () => value; return arguments; })(2)",
+          `
+            var getValue;
+            (function (value) {
+              getValue = () => value;
+              return arguments;
+            })(2)
+          `,
         ),
       );
       expect(result.Type).toBe("normal");
@@ -65,7 +71,13 @@ it("materializes mappings on preview reads without permitting writes to an exist
     const realm = new api.ManagedRealm();
     const result = api.EnsureCompletion(
       realm.evaluateScriptSkipDebugger(
-        "var getValue; (function(value) { getValue = () => value; return arguments; })(2)",
+        `
+          var getValue;
+          (function (value) {
+            getValue = () => value;
+            return arguments;
+          })(2)
+        `,
       ),
     );
     if (!api.isArgumentExoticObject(result.Value) || !result.Value.ParameterMap)
@@ -101,7 +113,9 @@ it("materializes own keys in numeric order after an out-of-order read", async ()
     const realm = new api.ManagedRealm();
     const result = api.EnsureCompletion(
       realm.evaluateScriptSkipDebugger(
-        "(function(first, second, third) { return arguments; })(1, 2, 3)",
+        `(function (first, second, third) {
+            return arguments;
+          })(1, 2, 3)`,
       ),
     );
     if (!api.isArgumentExoticObject(result.Value) || !result.Value.ParameterMap)

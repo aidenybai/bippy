@@ -36,7 +36,11 @@ it.each([
   "amount - '2'",
   "amount + true",
   "amount - null",
-  "({ valueOf(){ return amount; } }) + 1",
+  `({
+      valueOf() {
+        return amount;
+      },
+    }) + 1`,
   "(amount + 1) + 10",
   "amount + (1 + 10)",
   "amount - 1",
@@ -89,9 +93,24 @@ it("preserves association instead of simplifying IEEE Number expressions", async
 
 it("runs actual engine calls, mutation, throw, and finally with an unknown amount", async () => {
   await withNumericFixture(({ api, domain, evaluate, getNumber }) => {
-    evaluate(`var shared={count:amount},alias=shared,prefix=0,caught;
-      function update(){prefix++;shared.count=shared.count+1;throw shared.count;}
-      try{update();}catch(error){caught=error;}finally{shared.count=shared.count+10;}`);
+    evaluate(`
+      var shared = { count: amount },
+        alias = shared,
+        prefix = 0,
+        caught;
+      function update() {
+        prefix++;
+        shared.count = shared.count + 1;
+        throw shared.count;
+      }
+      try {
+        update();
+      } catch (error) {
+        caught = error;
+      } finally {
+        shared.count = shared.count + 10;
+      }
+    `);
     expect(evaluate("alias === shared").Value).toBe(api.Value.true);
     expect(getNumber("prefix").numberValue()).toBe(1);
     expect(getExpressionSource(domain.getExpression(getNumber("caught")))).toBe(
@@ -134,7 +153,12 @@ it("keeps input identity, immutable terms, and Number type without a concrete va
     if (expression.kind !== "operation") throw new Error("Expected an operation");
     expect(Object.isFrozen(expression.operands)).toBe(true);
     expect(expression.operands.every(Object.isFrozen)).toBe(true);
-    const shared = domain.getExpression(getNumber("var doubled=amount+1;doubled+doubled"));
+    const shared = domain.getExpression(
+      getNumber(`
+        var doubled = amount + 1;
+        doubled + doubled
+      `),
+    );
     if (shared.kind !== "operation") throw new Error("Expected an operation");
     expect(shared.operands[0]).toBe(shared.operands[1]);
   });
@@ -162,15 +186,25 @@ it.each([
 
 it("does not turn unsupported abstraction into a catchable guest exception", async () => {
   await withNumericFixture(({ evaluate }) => {
-    expect(() => evaluate("try { amount * 2; } catch(error) { 17; }")).toThrow(
-      "Unsupported concrete read of abstract Number",
-    );
+    expect(() =>
+      evaluate(`
+        try {
+          amount * 2;
+        } catch (error) {
+          17;
+        }
+      `),
+    ).toThrow("Unsupported concrete read of abstract Number");
   });
 });
 
 it("uses engine update and assignment semantics without changing the input identity", async () => {
   await withNumericFixture(({ domain, evaluate, getNumber }) => {
-    evaluate("var first=amount++;amount-=2;var read=()=>amount;");
+    evaluate(`
+      var first = amount++;
+      amount -= 2;
+      var read = () => amount;
+    `);
     expect(getNumber("first")).toBe(domain.createInput("amount"));
     expect(getExpressionSource(domain.getExpression(getNumber("read()")))).toBe(
       '((((inputs["amount"])+(1)))-(2))',
@@ -206,7 +240,15 @@ it("rejects a host handler that returns a non-Number", async () => {
 
 it("preserves engine coercion order and mixed-BigInt rejection", async () => {
   await withNumericFixture(({ api, domain, evaluate, getNumber }) => {
-    evaluate("var calls=0;var operand={valueOf(){calls++;return 2;}};");
+    evaluate(`
+      var calls = 0;
+      var operand = {
+        valueOf() {
+          calls++;
+          return 2;
+        },
+      };
+    `);
     expect(getExpressionSource(domain.getExpression(getNumber("amount + operand")))).toBe(
       '((inputs["amount"])+(2))',
     );

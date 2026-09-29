@@ -3,8 +3,35 @@ import { expect, it } from "vite-plus/test";
 import { withFixture } from "./helpers/engine-fixture.js";
 import { withAbstractFixture } from "./helpers/abstract-fixture.js";
 
-const setup = `var root=Object.create(null),child=Object.create(null),prototype=Object.create(null);child.value=1;prototype.inherited=10;Object.setPrototypeOf(child,prototype);child.parent=root;root.child=child;root.alias=child;root.array=[child];Object.setPrototypeOf(root.array,null);root.map=new Map([[child,prototype]]);Object.setPrototypeOf(root.map,null);root.set=new Set([child]);Object.setPrototypeOf(root.set,null);`;
-const observation = `JSON.stringify([root.child===root.alias,child.parent===root,root.array[0]===child,child.value,child.inherited,root.array.length,Map.prototype.get.call(root.map,child)===prototype,Set.prototype.has.call(root.set,child),Object.isExtensible(child),Object.getPrototypeOf(child)===prototype])`;
+const setup = `
+  var root = Object.create(null),
+    child = Object.create(null),
+    prototype = Object.create(null);
+  child.value = 1;
+  prototype.inherited = 10;
+  Object.setPrototypeOf(child, prototype);
+  child.parent = root;
+  root.child = child;
+  root.alias = child;
+  root.array = [child];
+  Object.setPrototypeOf(root.array, null);
+  root.map = new Map([[child, prototype]]);
+  Object.setPrototypeOf(root.map, null);
+  root.set = new Set([child]);
+  Object.setPrototypeOf(root.set, null);
+`;
+const observation = `JSON.stringify([
+    root.child === root.alias,
+    child.parent === root,
+    root.array[0] === child,
+    child.value,
+    child.inherited,
+    root.array.length,
+    Map.prototype.get.call(root.map, child) === prototype,
+    Set.prototype.has.call(root.set, child),
+    Object.isExtensible(child),
+    Object.getPrototypeOf(child) === prototype,
+  ])`;
 it.each([false, true])(
   "restores a closed graph with cycles, aliases and collections, reversed=%s",
   async (isReversed) => {
@@ -19,8 +46,22 @@ it.each([false, true])(
       const baseline = readString(observation);
       expect(baseline).toBe(runInNewContext(setup + observation));
       const actions = [
-        "root.alias.value=7;prototype.inherited=20;Array.prototype.push.call(root.array,null);Map.prototype.clear.call(root.map);Set.prototype.clear.call(root.set);Object.freeze(child);",
-        "root.alias=Object.create(null);root.array[0]=null;child.value=-5;Object.setPrototypeOf(child,null);Map.prototype.set.call(root.map,child,root);Object.preventExtensions(child);",
+        `
+          root.alias.value = 7;
+          prototype.inherited = 20;
+          Array.prototype.push.call(root.array, null);
+          Map.prototype.clear.call(root.map);
+          Set.prototype.clear.call(root.set);
+          Object.freeze(child);
+        `,
+        `
+          root.alias = Object.create(null);
+          root.array[0] = null;
+          child.value = -5;
+          Object.setPrototypeOf(child, null);
+          Map.prototype.set.call(root.map, child, root);
+          Object.preventExtensions(child);
+        `,
       ];
       try {
         for (const action of isReversed ? [...actions].reverse() : actions) {
@@ -40,8 +81,12 @@ it.each([false, true])(
   "forks Agent-owned decisions over a closed data graph without replay, reversed=%s",
   async (isReversed) => {
     await withAbstractFixture(({ api, agent, realm, compile, evaluate, createBoolean }) => {
-      const initial =
-        "var graph=Object.create(null);graph.child=Object.create(null);graph.child.value=1;graph.alias=graph.child;";
+      const initial = `
+        var graph = Object.create(null);
+        graph.child = Object.create(null);
+        graph.child.value = 1;
+        graph.alias = graph.child;
+      `;
       evaluate(initial);
       const root = realm.GlobalObject.properties.get(api.Value("graph"))?.Value;
       if (!(root instanceof api.ObjectValue)) throw Error("Expected graph");
@@ -51,8 +96,12 @@ it.each([false, true])(
       agent.hostDefinedOptions.onNodeEvaluation = (node) => {
         if (node.type === "UnaryExpression" && node.sourceText === "void 1") prefixes++;
       };
-      const source =
-        "void 1;if(enabled)graph.child.value+=3;else graph.alias.value-=2;graph.child.value+graph.alias.value;";
+      const source = `
+        void 1;
+        if (enabled) graph.child.value += 3;
+        else graph.alias.value -= 2;
+        graph.child.value + graph.alias.value;
+      `;
       agent.evaluate(
         compile(source),
         (completion) => {
@@ -108,7 +157,10 @@ it.each([
   "Promise.resolve(1)",
 ])("rejects unsupported reachable state: %s", async (expression) => {
   await withFixture(({ api, evaluate, getObject }) => {
-    evaluate(`var root=Object.create(null);root.child=(${expression});`);
+    evaluate(`
+      var root = Object.create(null);
+      root.child = (${expression})
+    `);
     const root = getObject("root");
     expect(() => api.createDataGraphCheckpoint({ roots: [root] })).toThrow(
       /Checkpoint requires|Data graph cannot/,
@@ -122,7 +174,16 @@ it.each([
 it("rejects accessor functions without executing guest getters", async () => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
     evaluate(
-      'var reads=0,root=Object.create(null);Object.defineProperty(root,"value",{get(){reads++;return 1}});',
+      `
+        var reads = 0,
+          root = Object.create(null);
+        Object.defineProperty(root, "value", {
+          get() {
+            reads++;
+            return 1;
+          },
+        });
+      `,
     );
     expect(() => api.createDataGraphCheckpoint({ roots: [getObject("root")] })).toThrow(
       "Data graph cannot own function state",
@@ -134,7 +195,10 @@ it("rejects accessor functions without executing guest getters", async () => {
 it("follows symbol-keyed data properties and rejects a hidden unsupported child", async () => {
   await withFixture(({ api, evaluate, getObject }) => {
     evaluate(
-      'var root=Object.create(null);Object.defineProperty(root,Symbol("key"),{value:new WeakMap()});',
+      `
+        var root = Object.create(null);
+        Object.defineProperty(root, Symbol("key"), { value: new WeakMap() });
+      `,
     );
     expect(() => api.createDataGraphCheckpoint({ roots: [getObject("root")] })).toThrow(
       "Checkpoint requires",
@@ -144,7 +208,10 @@ it("follows symbol-keyed data properties and rejects a hidden unsupported child"
 
 it("counts prototypes, roots, descriptors and collection tombstones against entry bounds", async () => {
   await withFixture(({ api, evaluate, getObject }) => {
-    evaluate("var root=Object.create(null);root.value=1;");
+    evaluate(`
+      var root = Object.create(null);
+      root.value = 1;
+    `);
     const root = getObject("root");
     expect(() => api.createDataGraphCheckpoint({ roots: [root], maxEntries: 2 })).toThrow(
       "entry budget",
@@ -156,7 +223,14 @@ it("counts prototypes, roots, descriptors and collection tombstones against entr
     expect(() => api.createDataGraphCheckpoint({ roots: [root], maxObjects: 1 })).toThrow(
       "object budget",
     );
-    evaluate("var map=new Map([[1,2],[3,4]]);map.clear();Object.setPrototypeOf(map,null);");
+    evaluate(`
+      var map = new Map([
+        [1, 2],
+        [3, 4],
+      ]);
+      map.clear();
+      Object.setPrototypeOf(map, null);
+    `);
     expect(() =>
       api.createDataGraphCheckpoint({ roots: [getObject("map")], maxEntries: 3 }),
     ).toThrow("entry budget");
@@ -201,11 +275,30 @@ it("ignores custom root iteration and retains shared LIFO release semantics", as
 it("follows collection-only keys, values, members and symbol-keyed children", async () => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
     evaluate(
-      'var key=Object.create(null),value=Object.create(null),member=Object.create(null),symbolChild=Object.create(null);key.count=1;value.count=2;member.count=3;symbolChild.count=4;var root=new Map([[key,value]]);Object.setPrototypeOf(root,null);root.members=new Set([member]);Object.setPrototypeOf(root.members,null);root[Symbol("child")]=symbolChild;',
+      `
+        var key = Object.create(null),
+          value = Object.create(null),
+          member = Object.create(null),
+          symbolChild = Object.create(null);
+        key.count = 1;
+        value.count = 2;
+        member.count = 3;
+        symbolChild.count = 4;
+        var root = new Map([[key, value]]);
+        Object.setPrototypeOf(root, null);
+        root.members = new Set([member]);
+        Object.setPrototypeOf(root.members, null);
+        root[Symbol("child")] = symbolChild;
+      `,
     );
     const checkpoint = api.createDataGraphCheckpoint({ roots: [getObject("root")] });
     expect(checkpoint.objectCount).toBe(6);
-    evaluate("key.count=10;value.count=20;member.count=30;symbolChild.count=40;");
+    evaluate(`
+      key.count = 10;
+      value.count = 20;
+      member.count = 30;
+      symbolChild.count = 40;
+    `);
     checkpoint.restore();
     expect(
       readString("JSON.stringify([key.count,value.count,member.count,symbolChild.count])"),
@@ -216,7 +309,10 @@ it("follows collection-only keys, values, members and symbol-keyed children", as
 
 it("does not leave a registered frame after unsupported-state or budget rejection", async () => {
   await withFixture(({ api, evaluate, getObject }) => {
-    evaluate("var root=Object.create(null);root.child=new WeakMap();");
+    evaluate(`
+      var root = Object.create(null);
+      root.child = new WeakMap();
+    `);
     const root = getObject("root");
     const outer = api.createStateCheckpoint({ objects: [root] });
     expect(() => api.createDataGraphCheckpoint({ roots: [root] })).toThrow("Checkpoint requires");
@@ -252,7 +348,15 @@ it("rejects reachable objects from another Agent", async () => {
 it("roots removed descendants until release", async () => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
     evaluate(
-      "var root=Object.create(null),reference;(()=>{const held=Object.create(null);root.child=held;reference=new WeakRef(held)})();",
+      `
+        var root = Object.create(null),
+          reference;
+        (() => {
+          const held = Object.create(null);
+          root.child = held;
+          reference = new WeakRef(held);
+        })();
+      `,
     );
     const checkpoint = api.createDataGraphCheckpoint({ roots: [getObject("root")] });
     evaluate("delete root.child");

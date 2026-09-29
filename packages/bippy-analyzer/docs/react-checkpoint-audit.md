@@ -1,6 +1,6 @@
 # Actual React checkpoint capture audit
 
-The numeric React fixture now attempts ownership capture at its first abstract `Object.is` decision. This exposed a storage-capture bug and identified a concrete fiber restriction. It does not establish React branch isolation.
+The numeric React fixture now attempts ownership capture at its first abstract `Object.is` decision. This exposed a storage-capture bug and identified a constructor-tracking restriction. The later [constructor checkpoint increment](constructor-checkpoints.md) removes that selected-property restriction. The inventory below records the preceding owner-storage build. It does not establish React branch isolation.
 
 ## Storage capture inside the owner callback
 
@@ -14,16 +14,16 @@ Two storage regressions now create selected and transitive data checkpoints insi
 
 The fixture uses installed React and Test Renderer 19.3.0. Source inspection uses React revision `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`, not a build of that checkout. `ReactFiberHooks.js:dispatchSetStateInternal` stores eager state on an update before its `Object.is` bailout decision.
 
-The test-only record inspector finds one fiber, hook queue, and eager update among direct control roots and data-valued environment bindings. It verifies:
+The test-only record inspector finds one fiber, hook queue, and eager update among direct control roots and data-valued environment bindings. At the owner-storage revision, it verified:
 
 - The queue retains the original unknown Number state.
 - The update has `hasEagerState = true` and the expression `amount + 1`.
 - The bound dispatch arguments reference that same fiber and queue.
 - Selected queue/update property capture succeeds inside the owner callback.
 - The closed-data graph rejects the update’s broader references.
-- Selected fiber capture still rejects its nonempty constructor-tracking state.
+- Selected fiber capture rejected its nonempty constructor-tracking state. The later constructor checkpoint increment captures the fiber, queue, and update together.
 
-The inspected fiber has one `ConstructedBy` entry and no private elements. The queue and update have neither. This is a concrete next ownership requirement; treating all three records as plain data would be incorrect under the current checkpoint contract.
+The inspected fiber has one `ConstructedBy` entry and no private elements. The queue and update have neither. Constructor checkpoints now restore that list explicitly rather than treating the fiber as plain data. This does not establish ownership of its referenced graph.
 
 The owner then rejects general ownership explicitly. The exact decision remains pending. Resuming afterward still matches ten independent native mount/update/unmount observations, including committed trees, render counts, effects, and Number state. This verifies failed-capture recovery, not a shared-prefix React fork. The queue/update snapshots are released without attempting React rollback.
 
@@ -39,6 +39,6 @@ The initial diagnostic used `properties.keys()` inside the owner and hit the sam
 
 The full local suite passes 1,436 tests across forty-four files. The unchanged smoke passes 74/74. Object.create, Reflect.ownKeys, Map.set, and Set.add pass 736/736 in both engines with matching input hashes, compiled hashes, and verdicts. Typechecking, two relocated builds, frozen offline installation, and the root check pass.
 
-The engine SHA-256 is `dd42a5734a8bcde1055fd819f207a1b8f6e478f04ee611d3bc23fbac34036c33`. Linux validation for this increment is pending. The preceding data-graph revision passed 1,434 Linux units but failed both numeric `substr` smoke variants at the unchanged timeout. Its [failure receipt](data-graph-checkpoint-validation/ci-failure.json) retains logs and diagnostic profiles; longer diagnostic runs are not smoke passes.
+The engine SHA-256 is `dd42a5734a8bcde1055fd819f207a1b8f6e478f04ee611d3bc23fbac34036c33`. [Linux validation](owner-storage-capture-validation/ci-failure.json) passes all 1,436 units and reproduces that hash, but fails both numeric `substr` smoke variants at the unchanged timeout. E2E and publish pass. The longer diagnostic profiles are not gate passes. The preceding data-graph revision passed 1,434 Linux units but failed both numeric `substr` smoke variants at the unchanged timeout. Its [failure receipt](data-graph-checkpoint-validation/ci-failure.json) retains logs and diagnostic profiles; longer diagnostic runs are not smoke passes.
 
-Constructor tracking, native captures, intrinsic and environment graphs, execution contexts, and queued work still need ownership policies. Guarded React trees, transitions, repeated state families, and demo integration remain incomplete.
+Transitive constructor ownership, native captures, intrinsic and environment graphs, execution contexts, and queued work still need ownership policies. Guarded React trees, transitions, repeated state families, and demo integration remain incomplete.

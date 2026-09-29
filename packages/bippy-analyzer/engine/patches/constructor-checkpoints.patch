@@ -1,0 +1,101 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index ccf6662..d197547 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -78,6 +78,8 @@ interface OrdinaryObjectState {
+   prototype: OrdinaryObject['Prototype'];
+   extensible: boolean;
+   properties: [PropertyKeyValue, FullyPopulatedDescriptor][];
++  constructedBy: ObjectValue['ConstructedBy'];
++  constructors: ObjectValue['ConstructedBy'];
+   map?: MapState;
+   set?: SetState;
+   functionState?: FunctionState;
+@@ -149,6 +151,7 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+     for (const state of frame.states) {
+       mark(state.object);
+       mark(state.prototype);
++      for (const constructor of state.constructors) mark(constructor);
+       for (const slot of state.functionState?.slots ?? []) mark(slot.descriptor?.value);
+       for (const value of state.functionState?.boundArguments ?? []) mark(value);
+       for (const entry of state.map?.entries ?? []) {
+@@ -205,6 +208,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     const dataSlot = map ? 'MapData' : set ? 'SetData' : undefined;
+     const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
+     if (graph && functionSlots) throw new TypeError('Data graph cannot own function state');
++    if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
+     if ((map && set)
+       || (!isOrdinaryObject(object)
+         && !(allowContainers && !dataSlot && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
+@@ -214,7 +218,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       || !object.internalSlotsList.includes('Prototype')
+       || !object.internalSlotsList.includes('Extensible')
+       || object.PrivateElements.length !== 0
+-      || object.ConstructedBy.length !== 0) {
++      || ((!allowContainers || graph) && object.ConstructedBy.length !== 0)) {
+       throw new TypeError(allowContainers
+         ? 'Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state'
+         : 'Checkpoint requires ordinary objects without additional internal state');
+@@ -236,6 +240,14 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       }
+       for (const value of set?.SetData ?? []) addReference(value);
+     }
++    for (const constructor of object.ConstructedBy) {
++      if (!(constructor instanceof ObjectValue) || typeof constructor.Construct !== 'function') {
++        throw new TypeError('Checkpoint constructor data requires guest constructors');
++      }
++      if (constructor.ownerAgent !== owner) {
++        throw new TypeError('Checkpoint constructor references must belong to the current agent');
++      }
++    }
+     const properties: [PropertyKeyValue, FullyPopulatedDescriptor][] = [];
+     object.properties.forEach((descriptor, key) => properties.push([key, descriptor]));
+     states.push({
+@@ -244,6 +256,8 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       prototype: object.Prototype,
+       extensible: object.Extensible,
+       properties,
++      constructedBy: object.ConstructedBy,
++      constructors: [...object.ConstructedBy],
+       functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+@@ -286,6 +300,9 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       }
+       for (const state of environmentStates) assertEnvironment(state.environment, agent);
+       for (const state of states) {
++        if (state.object.ConstructedBy !== state.constructedBy) {
++          throw new TypeError('Checkpoint constructor data list changed');
++        }
+         if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty)) {
+           throw new TypeError('Checkpoint object internal methods changed');
+         }
+@@ -316,13 +333,14 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           cursor = prototype;
+         }
+       }
+-      for (const { object, prototype, extensible, properties, map, set } of states) {
++      for (const { object, prototype, extensible, properties, constructedBy, constructors, map, set } of states) {
+         object.properties.clear();
+         for (const [key, descriptor] of properties) object.properties.set(key, descriptor);
+         object.Prototype = prototype;
+         object.Extensible = extensible;
+         object.PrivateElements.length = 0;
+-        object.ConstructedBy.length = 0;
++        constructedBy.length = 0;
++        for (const constructor of constructors) constructedBy.push(constructor);
+         if (map) {
+           map.data.length = 0;
+           for (const { entry, key, value } of map.entries) {
+diff --git a/src/value.mts b/src/value.mts
+index 8b06e54..3643a7e 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -845,6 +845,7 @@ export class ObjectValue extends Value implements ObjectInternalMethods<ObjectVa
+   // NON-SPEC
+   mark(m: GCMarker) {
+     m(this.properties);
++    this.ConstructedBy.forEach(m);
+     this.internalSlotsList.forEach((s) => {
+       // @ts-ignore
+       m(this[s]);

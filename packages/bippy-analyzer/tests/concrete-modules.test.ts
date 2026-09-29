@@ -53,11 +53,22 @@ it("executes native-built entry and dynamic chunks with live exports, singleton 
     const before = entry.observe();
     entry.increment();
     const same = await entry.load();
-    globalThis.observation = JSON.stringify({ before, same, after: entry.observe() });
+    globalThis.observation = JSON.stringify({
+      before,
+      same,
+      after: entry.observe(),
+    });
   `;
   const native = execFileSync(
     process.execPath,
-    ["--input-type=module", "--eval", `${source}\nconsole.log(observation);`],
+    [
+      "--input-type=module",
+      "--eval",
+      `
+      ${source}
+      console.log(observation);
+    `,
+    ],
     { encoding: "utf8", timeout: 10_000 },
   ).trim();
   const runtime = await createConcreteRuntime({ modules });
@@ -80,23 +91,33 @@ it("lets engine262 link cycles, preserve live bindings, and cache URL aliases", 
     modules: [
       {
         specifier: "https://fixture.invalid/first.js",
-        source: `import { read } from './second.js'; export let count = 0; export const increment = () => count++; export const observe = () => read();`,
+        source: `
+          import { read } from "./second.js";
+          export let count = 0;
+          export const increment = () => count++;
+          export const observe = () => read();
+        `,
       },
       {
         specifier: "https://fixture.invalid/second.js",
-        source: `import { count } from './first.js'; export const read = () => count;`,
+        source: `
+          import { count } from "./first.js";
+          export const read = () => count;
+        `,
       },
     ],
   });
   try {
     runtime.evaluate(
-      `
-      import('./first.js').then(async (first) => {
-        const alias = await import('./directory/../first.js');
-        first.increment();
-        globalThis.result = JSON.stringify([first === alias, first.observe(), alias.count]);
-      });
-    `,
+      `import("./first.js").then(async (first) => {
+          const alias = await import("./directory/../first.js");
+          first.increment();
+          globalThis.result = JSON.stringify([
+            first === alias,
+            first.observe(),
+            alias.count,
+          ]);
+        });`,
       "https://fixture.invalid/main.js",
     );
     runtime.drainJobs();
@@ -111,7 +132,10 @@ it("retains import errors and caches evaluation failures without rerunning effec
     modules: [
       {
         specifier: "https://fixture.invalid/fail.js",
-        source: `globalThis.runs++; throw new Error('module failed');`,
+        source: `
+          globalThis.runs++;
+          throw new Error("module failed");
+        `,
       },
     ],
   });
@@ -120,9 +144,20 @@ it("retains import errors and caches evaluation failures without rerunning effec
       globalThis.runs = 0;
       (async () => {
         let first;
-        try { await import('https://fixture.invalid/fail.js'); } catch (error) { first = error; }
-        try { await import('https://fixture.invalid/fail.js'); } catch (error) {
-          globalThis.result = JSON.stringify([first === error, runs, error.name, error.message]);
+        try {
+          await import("https://fixture.invalid/fail.js");
+        } catch (error) {
+          first = error;
+        }
+        try {
+          await import("https://fixture.invalid/fail.js");
+        } catch (error) {
+          globalThis.result = JSON.stringify([
+            first === error,
+            runs,
+            error.name,
+            error.message,
+          ]);
         }
       })();
     `);
@@ -139,7 +174,11 @@ it.each(["https://fixture.invalid/missing.js", "react", "./without-referrer.js",
     const runtime = await createConcreteRuntime();
     try {
       runtime.evaluate(
-        `import(${JSON.stringify(specifier)}).catch(error => { globalThis.message = error.message; });`,
+        `
+          import(${JSON.stringify(specifier)}).catch((error) => {
+            globalThis.message = error.message;
+          });
+        `,
       );
       runtime.drainJobs();
       expect(runtime.readString("message")).toContain("Cannot load module");
@@ -172,7 +211,9 @@ it("snapshots supplied sources before asynchronous engine loading", async () => 
   const runtime = await pending;
   try {
     runtime.evaluate(
-      `import('https://fixture.invalid/entry.js').then(module => { globalThis.result = module.value; });`,
+      `import("https://fixture.invalid/entry.js").then((module) => {
+          globalThis.result = module.value;
+        });`,
     );
     runtime.drainJobs();
     expect(runtime.readString("result")).toBe("original");

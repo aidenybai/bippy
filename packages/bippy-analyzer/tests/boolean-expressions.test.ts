@@ -70,7 +70,14 @@ const cases: ExpressionCase[] = [
   },
   {
     name: "getter",
-    expression: "({get value(){trace.push('get');return enabled;}}).value ? 1 : 2",
+    expression: `({
+        get value() {
+          trace.push("get");
+          return enabled;
+        },
+      }).value
+        ? 1
+        : 2`,
   },
   { name: "receiver", expression: "(enabled ? owner.method : owner.method)()" },
   { name: "and receiver", expression: "((enabled && owner.method) || owner.method)()" },
@@ -84,16 +91,32 @@ const cases: ExpressionCase[] = [
   },
   {
     name: "abrupt finally",
-    expression: "(()=>{try{return enabled && explode();}finally{trace.push('finally');}})()",
+    expression: `(() => {
+        try {
+          return enabled && explode();
+        } finally {
+          trace.push("finally");
+        }
+      })()`,
   },
   {
     name: "finally overrides",
-    expression: "(()=>{try{return !enabled;}finally{return fail ? 3 : 4;}})()",
+    expression: `(() => {
+        try {
+          return !enabled;
+        } finally {
+          return fail ? 3 : 4;
+        }
+      })()`,
   },
   {
     name: "generator",
-    expression:
-      "(()=>{function* run(){return enabled ? !fail : fail;}return run().next().value;})()",
+    expression: `(() => {
+        function* run() {
+          return enabled ? !fail : fail;
+        }
+        return run().next().value;
+      })()`,
   },
   {
     name: "callee evaluation",
@@ -102,11 +125,28 @@ const cases: ExpressionCase[] = [
 ];
 
 const getSource = (expression: string): string => `
-  var trace=[];
-  var read=(name,value)=>{trace.push(name);return value;};
-  var explode=()=>{trace.push('throw');throw 23;};
-  var owner={method:function(){'use strict';trace.push(this===undefined?'unbound':'bound');return 31;}};
-  try { ${expression}; } catch(error) { if(typeof error==='number') throw error; throw error.name; }
+  var trace = [];
+  var read = (name, value) => {
+    trace.push(name);
+    return value;
+  };
+  var explode = () => {
+    trace.push("throw");
+    throw 23;
+  };
+  var owner = {
+    method: function () {
+      "use strict";
+      trace.push(this === undefined ? "unbound" : "bound");
+      return 31;
+    },
+  };
+  try {
+    ${expression};
+  } catch (error) {
+    if (typeof error === "number") throw error;
+    throw error.name;
+  }
 `;
 
 const getNativeObservation = (
@@ -141,7 +181,11 @@ const getPublishedObservation = (
   try {
     const realm = new published.ManagedRealm();
     const completion = published.EnsureCompletion(
-      realm.evaluateScriptSkipDebugger(`var enabled=${enabled},fail=${fail};${source}`),
+      realm.evaluateScriptSkipDebugger(`
+        var enabled = ${enabled},
+          fail = ${fail};
+        ${source}
+      `),
     );
     const value = completion.Value;
     const trace = published.EnsureCompletion(

@@ -21,7 +21,15 @@ it.each([false, true])(
     await withAbstractFixture(({ api, createBoolean, compile, evaluate, getNumber }) => {
       const input = createBoolean("enabled");
       const iterator = compile(
-        "var reads=0;function read(){reads++;return enabled;} if(read()) 11;else 22;",
+        `
+          var reads = 0;
+          function read() {
+            reads++;
+            return enabled;
+          }
+          if (read()) 11;
+          else 22;
+        `,
       );
       const decision = getDecision(iterator);
       expect(decision.value).toBe(input);
@@ -53,7 +61,13 @@ it.each([false, true])("preserves if-without-else completion: %s", async (choice
 it.each([false, true])("forwards a decision through a guest generator: %s", async (choice) => {
   await withAbstractFixture(({ api, createBoolean, compile }) => {
     createBoolean("enabled");
-    const iterator = compile("function* run(){if(enabled) return 1;return 2;}run().next().value;");
+    const iterator = compile(`
+      function* run() {
+        if (enabled) return 1;
+        return 2;
+      }
+      run().next().value;
+    `);
     const decision = getDecision(iterator);
     let step = iterator.next({ resume: "abstract-boolean", decision, value: choice });
     while (!step.done) {
@@ -91,8 +105,14 @@ it.each([
   "Object.is(enabled, enabled)",
   "enabled == true",
   "enabled + 1",
-  "let value=enabled;value &&= 2;",
-  "let value=enabled;value ||= 2;",
+  `
+    let value = enabled;
+    value &&= 2;
+  `,
+  `
+    let value = enabled;
+    value ||= 2;
+  `,
   "for(;enabled;) break;",
   "do{}while(enabled);",
   "while(enabled) break;",
@@ -189,9 +209,12 @@ it("rejects an unknown Test262 debugger call flag before invoking its callback",
     agent.hostDefinedOptions.onNodeEvaluation = (node) => {
       if (node.sourceText === "called++" && node.type === "UpdateExpression") callbackVisits++;
     };
-    expect(() => evaluate("var called=0;$262.debugger(()=>called++,enabled)")).toThrow(
-      "Unsupported concrete read of abstract Boolean",
-    );
+    expect(() =>
+      evaluate(`
+        var called = 0;
+        $262.debugger(() => called++, enabled)
+      `),
+    ).toThrow("Unsupported concrete read of abstract Boolean");
     expect(callbackVisits).toBe(0);
   });
 });
@@ -199,8 +222,14 @@ it("rejects an unknown Test262 debugger call flag before invoking its callback",
 it("does not let guest catch consume an unsupported abstraction error", async () => {
   await withAbstractFixture(({ createBoolean, evaluate }) => {
     createBoolean("enabled");
-    expect(() => evaluate("try{String(enabled)}catch(error){17}")).toThrow(
-      "Unsupported concrete read of abstract Boolean",
-    );
+    expect(() =>
+      evaluate(`
+        try {
+          String(enabled);
+        } catch (error) {
+          17;
+        }
+      `),
+    ).toThrow("Unsupported concrete read of abstract Boolean");
   });
 });

@@ -43,7 +43,13 @@ const fixtures: SuspendedFixture[] = [
   {
     name: "throw through finally",
     body: "try { throw create(); } finally { yield 'pause'; }",
-    result: "(() => { try { iterator.next(); } catch (error) { return error; } })()",
+    result: `(() => {
+        try {
+          iterator.next();
+        } catch (error) {
+          return error;
+        }
+      })()`,
   },
   {
     name: "nested guest delegation",
@@ -55,14 +61,27 @@ const fixtures: SuspendedFixture[] = [
 const getSetup = (body: string): string => `
   var reference;
   function create() {
-    const target = { value: 7, read() { return this; } };
+    const target = {
+      value: 7,
+      read() {
+        return this;
+      },
+    };
     reference = new WeakRef(target);
     return target;
   }
-  function first(value) { return value; }
-  function Holder(value) { this.retained = value; }
-  function* inner() { return [create(), yield 'pause']; }
-  function* run() { ${body} }
+  function first(value) {
+    return value;
+  }
+  function Holder(value) {
+    this.retained = value;
+  }
+  function* inner() {
+    return [create(), yield "pause"];
+  }
+  function* run() {
+    ${body}
+  }
   var iterator = run();
   iterator.next();
 `;
@@ -96,11 +115,15 @@ it("retains temporaries during Agent-driven execution", async () => {
     };
     const compiled = api.EnsureCompletion(
       realm.compileScript(`
-      var reference, retained;
-      function create() { const target = {}; reference = new WeakRef(target); return target; }
-      function collect() {}
-      retained = [create(), collect()];
-    `),
+        var reference, retained;
+        function create() {
+          const target = {};
+          reference = new WeakRef(target);
+          return target;
+        }
+        function collect() {}
+        retained = [create(), collect()];
+      `),
     );
     if (compiled.Type !== "normal") throw new Error("Expected a compiled script");
     let isFinished = false;
@@ -116,9 +139,10 @@ it("retains temporaries during Agent-driven execution", async () => {
 
 it("does not finalize a partial array held by a suspended generator", async () => {
   await withFixture(({ api, evaluate }) => {
-    evaluate(`${getSetup("return [create(), yield 'pause'];")}
+    evaluate(`
+      ${getSetup("return [create(), yield 'pause'];")}
       var registry = new FinalizationRegistry(() => {});
-      registry.register(reference.deref(), 'held');
+      registry.register(reference.deref(), "held");
     `);
     api.surroundingAgent.AgentRecord.KeptAlive.clear();
     api.gc();
@@ -135,11 +159,17 @@ it("retains an Agent-owned debugger suspension and releases the completed evalua
     const realm = new api.ManagedRealm();
     const compiled = api.EnsureCompletion(
       realm.compileScript(`
-      var reference, retained;
-      function create() { const target = {}; reference = new WeakRef(target); return target; }
-      function pause() { debugger; }
-      retained = [create(), pause()];
-    `),
+        var reference, retained;
+        function create() {
+          const target = {};
+          reference = new WeakRef(target);
+          return target;
+        }
+        function pause() {
+          debugger;
+        }
+        retained = [create(), pause()];
+      `),
     );
     if (compiled.Type !== "normal") throw new Error("Expected a compiled script");
     let isFinished = false;

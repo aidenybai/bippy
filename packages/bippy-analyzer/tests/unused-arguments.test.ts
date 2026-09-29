@@ -9,7 +9,9 @@ interface ArgumentsCase {
   hasArguments: boolean;
 }
 
-const source = "(function collect(value) { return () => value; })(7)";
+const source = `(function collect(value) {
+    return () => value;
+  })(7)`;
 const cases: ArgumentsCase[] = [
   { name: "default host", source, options: {}, hasArguments: true },
   {
@@ -44,7 +46,9 @@ const cases: ArgumentsCase[] = [
   },
   {
     name: "default initializer",
-    source: "(function collect(value = arguments.length) { return () => value; })()",
+    source: `(function collect(value = arguments.length) {
+        return () => value;
+      })()`,
     options: { elideUnusedArguments: true },
     hasArguments: true,
   },
@@ -56,13 +60,18 @@ const cases: ArgumentsCase[] = [
   },
   {
     name: "conservative string match",
-    source: "(function collect(value) { 'arguments'; return () => value; })(7)",
+    source: `(function collect(value) {
+        "arguments";
+        return () => value;
+      })(7)`,
     options: { elideUnusedArguments: true },
     hasArguments: true,
   },
   {
     name: "nested eval",
-    source: "(function collect(value) { return () => eval('value'); })(7)",
+    source: `(function collect(value) {
+        return () => eval("value");
+      })(7)`,
     options: { elideUnusedArguments: true },
     hasArguments: true,
   },

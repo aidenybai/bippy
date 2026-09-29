@@ -17,7 +17,14 @@ it.each(
     ["{}", "Symbol('retained')"].map((target) => ({ ...collection, target })),
   ),
 )("retains $target through $name", async ({ create, read, target }) => {
-  const setup = `var collection, reference; (() => { const target = ${target}; reference = new WeakRef(target); collection = ${create}; })();`;
+  const setup = `
+    var collection, reference;
+    (() => {
+      const target = ${target};
+      reference = new WeakRef(target);
+      collection = ${create};
+    })();
+  `;
   const observation = `JSON.stringify([reference.deref() !== undefined, ${read}])`;
   const expected = getNativeGcObservation(setup, observation);
   expect(expected).toBe("[true,true]");
@@ -40,11 +47,21 @@ it("marks cyclic nested collections without invoking guest iteration methods", a
       nested.add(collection);
       collection.set(collection, collection);
     })();
-    collection.entries = collection.values = collection[Symbol.iterator] = () => { throw new Error('iteration'); };
-    collection.get(1).values = collection.get(1)[Symbol.iterator] = () => { throw new Error('iteration'); };
+    collection.entries =
+      collection.values =
+      collection[Symbol.iterator] =
+        () => {
+          throw new Error("iteration");
+        };
+    collection.get(1).values = collection.get(1)[Symbol.iterator] = () => {
+      throw new Error("iteration");
+    };
   `;
-  const observation =
-    "JSON.stringify([reference.deref() !== undefined, collection.get(1).has(reference.deref()), collection.get(collection) === collection])";
+  const observation = `JSON.stringify([
+      reference.deref() !== undefined,
+      collection.get(1).has(reference.deref()),
+      collection.get(collection) === collection,
+    ])`;
   const expected = getNativeGcObservation(setup, observation);
   expect(expected).toBe("[true,true,true]");
   await withFixture(({ api, evaluate, readString }) => {
@@ -65,7 +82,14 @@ it.each([
 ])("does not retain removed entries: $create / $remove", async ({ create, remove }) => {
   await withFixture(({ api, evaluate, readString }) => {
     evaluate(
-      `var collection, reference; (() => { const target = {}; collection = ${create}; reference = new WeakRef(target); })();`,
+      `
+        var collection, reference;
+        (() => {
+          const target = {};
+          collection = ${create};
+          reference = new WeakRef(target);
+        })();
+      `,
     );
     evaluate(remove);
     api.surroundingAgent.AgentRecord.KeptAlive.clear();
@@ -79,7 +103,14 @@ it.each(["new WeakMap([[target, {}]])", "new WeakSet([target])"])(
   async (create) => {
     await withFixture(({ api, evaluate, readString }) => {
       evaluate(
-        `var collection, reference; (() => { const target = {}; collection = ${create}; reference = new WeakRef(target); })();`,
+        `
+          var collection, reference;
+          (() => {
+            const target = {};
+            collection = ${create};
+            reference = new WeakRef(target);
+          })();
+        `,
       );
       api.surroundingAgent.AgentRecord.KeptAlive.clear();
       api.gc();
@@ -91,7 +122,15 @@ it.each(["new WeakMap([[target, {}]])", "new WeakSet([target])"])(
 it("does not schedule finalization for a strongly retained collection entry", async () => {
   await withFixture(({ api, evaluate, readString }) => {
     evaluate(
-      "var collection, registry = new FinalizationRegistry(() => {}); (() => { const target = {}; collection = new Set([target]); registry.register(target, 'held'); })();",
+      `
+        var collection,
+          registry = new FinalizationRegistry(() => {});
+        (() => {
+          const target = {};
+          collection = new Set([target]);
+          registry.register(target, "held");
+        })();
+      `,
     );
     api.surroundingAgent.AgentRecord.KeptAlive.clear();
     api.gc();

@@ -6,11 +6,21 @@ it.each([false, true])(
   "captures storage inside an Agent owner callback, transitive=%s",
   async (transitive) => {
     await withAbstractFixture(({ api, agent, realm, compile, evaluate, createBoolean }) => {
-      evaluate("var root=Object.create(null);root.value=1;");
+      evaluate(`
+        var root = Object.create(null);
+        root.value = 1;
+      `);
       createBoolean("enabled");
       const root = realm.GlobalObject.properties.get(api.Value("root"))?.Value;
       if (!(root instanceof api.ObjectValue)) throw Error("Expected root");
-      agent.evaluate(compile("root.value+=enabled?1:2;root.value;"), () => {}, false);
+      agent.evaluate(
+        compile(`
+          root.value += enabled ? 1 : 2;
+          root.value;
+        `),
+        () => {},
+        false,
+      );
       const step = agent.resumeEvaluate({ pauseOnAbstractBoolean: true });
       if (step.done || !step.value) throw Error("Expected decision");
       const contexts = [...agent.executionContextStack];

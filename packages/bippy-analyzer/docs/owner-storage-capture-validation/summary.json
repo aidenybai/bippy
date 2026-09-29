@@ -62,7 +62,7 @@
   "test262TimeoutMilliseconds": 10000,
   "workers": 2,
   "unitDefaultTimeoutMilliseconds": 5000,
-  "linuxConfirmation": "pending",
+  "linuxConfirmation": "CI 36524314762/analyzer 109263850898 reproduces the engine hash and passes 1436 units, but passes 72/74 smoke variants; both numeric substr variants time out at the unchanged gate. E2E 36524314887 and publish 36524314773 pass. See ci-failure.json and diagnostic profiles.",
   "files": {
     "engine/patches/owner-storage-capture.patch": "35f9a27f05093637e4f071a4307499d6f6ba1173b76330a1e4c3528e3c1628b3",
     "engine/scripts/build.ts": "57f409960e8a432512cc459a55c127f00ad66c0802bdd711aa418c357c7b0e14",

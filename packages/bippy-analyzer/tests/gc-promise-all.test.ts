@@ -10,11 +10,19 @@ it.each(
   ),
 )("retains partial Promise.all $target, reversed=$isReversed", async ({ target, isReversed }) => {
   const setup = `
-      var reference, aggregate, fulfill, seen;
-      var pending=new Promise(resolve=>{fulfill=resolve;});
-      (()=>{const held=${target};reference=new WeakRef(held);aggregate=Promise.all([${isReversed ? "pending,held" : "held,pending"}]);})();
-      aggregate.then(values=>{seen=values[${isReversed ? 1 : 0}]===reference.deref();});
-    `;
+    var reference, aggregate, fulfill, seen;
+    var pending = new Promise((resolve) => {
+      fulfill = resolve;
+    });
+    (() => {
+      const held = ${target};
+      reference = new WeakRef(held);
+      aggregate = Promise.all([${isReversed ? "pending,held" : "held,pending"}]);
+    })();
+    aggregate.then((values) => {
+      seen = values[${isReversed ? 1 : 0}] === reference.deref();
+    });
+  `;
   const native = getNativeGcObservation(
     setup,
     `(fulfill(),await aggregate,JSON.stringify([reference.deref()!==undefined,seen]))`,
@@ -38,8 +46,20 @@ it.each(
 it("retains the result capability when a custom then keeps only the fulfillment callback", async () => {
   const setup = `
     var reference, handler;
-    class Aggregate extends Promise { static resolve(value){return value;} }
-    reference=new WeakRef(Aggregate.all([{then(resolve){handler=resolve;}}]));
+    class Aggregate extends Promise {
+      static resolve(value) {
+        return value;
+      }
+    }
+    reference = new WeakRef(
+      Aggregate.all([
+        {
+          then(resolve) {
+            handler = resolve;
+          },
+        },
+      ])
+    );
   `;
   expect(getNativeGcObservation(setup, "String(reference.deref()!==undefined)")).toBe("true");
   const runtime = await createConcreteRuntime();
@@ -57,12 +77,24 @@ it("retains the result capability when a custom then keeps only the fulfillment 
 it("retains custom capability callback environments until the element callback is discarded", async () => {
   const setup = `
     var reference, handler, seen;
-    function Aggregate(executor){
-      const held={value:7};reference=new WeakRef(held);
-      executor(values=>{seen=reference.deref()===held && values[0]===7;},()=>held);
+    function Aggregate(executor) {
+      const held = { value: 7 };
+      reference = new WeakRef(held);
+      executor(
+        (values) => {
+          seen = reference.deref() === held && values[0] === 7;
+        },
+        () => held
+      );
     }
-    Aggregate.resolve=value=>value;
-    Promise.all.call(Aggregate,[{then(resolve){handler=resolve;}}]);
+    Aggregate.resolve = (value) => value;
+    Promise.all.call(Aggregate, [
+      {
+        then(resolve) {
+          handler = resolve;
+        },
+      },
+    ]);
   `;
   expect(getNativeGcObservation(setup, "(handler(7),String(seen))")).toBe("true");
   const runtime = await createConcreteRuntime();
@@ -82,12 +114,32 @@ it("retains one shared accumulator across detached callbacks without accepting d
   const runtime = await createConcreteRuntime();
   try {
     runtime.evaluate(`
-      var reference, handlers=[], result, seen;
-      class Aggregate extends Promise {static resolve(value){return value;}}
-      result=Aggregate.all([0,1].map(index=>({then(resolve){handlers[index]=resolve;}})));
-      result.then(values=>{seen=[values[0]===reference.deref(),values[1]];});
-      (()=>{const held={};reference=new WeakRef(held);handlers[0](held);})();
-      handlers[0](99);handlers[0]=null;
+      var reference,
+        handlers = [],
+        result,
+        seen;
+      class Aggregate extends Promise {
+        static resolve(value) {
+          return value;
+        }
+      }
+      result = Aggregate.all(
+        [0, 1].map((index) => ({
+          then(resolve) {
+            handlers[index] = resolve;
+          },
+        }))
+      );
+      result.then((values) => {
+        seen = [values[0] === reference.deref(), values[1]];
+      });
+      (() => {
+        const held = {};
+        reference = new WeakRef(held);
+        handlers[0](held);
+      })();
+      handlers[0](99);
+      handlers[0] = null;
     `);
     expect(await getCollectedReference(runtime)).toBe("true");
     runtime.evaluate("handlers[1](7);handlers=null");
@@ -105,10 +157,23 @@ it("retains partial SafePerformPromiseAll values through the same element helper
   const { api } = await getSymbolicEngine();
   try {
     const first = runtime.evaluate(
-      "var reference;(()=>{const held={};reference=new WeakRef(held);return Promise.resolve(held);})()",
+      `
+        var reference;
+        (() => {
+          const held = {};
+          reference = new WeakRef(held);
+          return Promise.resolve(held);
+        })()
+      `,
     );
     const second = runtime.evaluate(
-      "var fulfill;var pending=new Promise(resolve=>{fulfill=resolve;});pending",
+      `
+        var fulfill;
+        var pending = new Promise((resolve) => {
+          fulfill = resolve;
+        });
+        pending
+      `,
     );
     if (!api.isPromiseObject(first) || !api.isPromiseObject(second))
       throw new Error("Expected promises");
@@ -128,7 +193,12 @@ it("retains partial SafePerformPromiseAll values through the same element helper
       pop?.();
       api.setSurroundingAgent(previous);
     }
-    runtime.evaluate("var seen;aggregate.then(values=>{seen=values[0]===reference.deref();});");
+    runtime.evaluate(`
+      var seen;
+      aggregate.then((values) => {
+        seen = values[0] === reference.deref();
+      });
+    `);
     runtime.drainJobs();
     expect(await getCollectedReference(runtime)).toBe("true");
     runtime.evaluate("fulfill()");
@@ -145,8 +215,14 @@ it("does not retain discarded pending Promise.all cycles", async () => {
   const runtime = await createConcreteRuntime();
   try {
     runtime.evaluate(`
-      var reference, aggregate, pending=new Promise(()=>{});
-      (()=>{const held={};reference=new WeakRef(held);aggregate=Promise.all([held,pending]);})();
+      var reference,
+        aggregate,
+        pending = new Promise(() => {});
+      (() => {
+        const held = {};
+        reference = new WeakRef(held);
+        aggregate = Promise.all([held, pending]);
+      })();
     `);
     runtime.drainJobs();
     expect(await getCollectedReference(runtime)).toBe("true");

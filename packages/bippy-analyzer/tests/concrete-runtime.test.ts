@@ -38,11 +38,15 @@ it("cancels timers without running their callbacks", async () => {
   try {
     runtime.evaluate(`
       let result = "untouched";
-      const handle = setTimeout(() => { result = "wrong"; });
+      const handle = setTimeout(() => {
+        result = "wrong";
+      });
       clearTimeout(handle);
       clearTimeout(handle);
       clearTimeout(999);
-      setTimeout(() => { result = "done"; }, -0);
+      setTimeout(() => {
+        result = "done";
+      }, -0);
     `);
     runtime.drainJobs();
     expect(runtime.readString("result")).toBe("done");
@@ -55,8 +59,17 @@ it("retains console values without reading getters or coercing objects", async (
   const runtime = await createConcreteRuntime();
   try {
     runtime.evaluate(`
-      const value = { get message() { throw "observed getter"; }, toString() { throw "coerced"; } };
-      console.log(value, undefined); console.warn(value); console.error(value);
+      const value = {
+        get message() {
+          throw "observed getter";
+        },
+        toString() {
+          throw "coerced";
+        },
+      };
+      console.log(value, undefined);
+      console.warn(value);
+      console.error(value);
     `);
     expect(runtime.consoleEntries.map((entry) => entry.method)).toEqual(["log", "warn", "error"]);
     expect(runtime.consoleEntries[0].arguments[0]).toBe(runtime.evaluate("value"));
@@ -70,8 +83,12 @@ it("retains all uncaught task errors and rejected promises", async () => {
   const runtime = await createConcreteRuntime();
   try {
     runtime.evaluate(`
-      queueMicrotask(() => { throw "microtask"; });
-      setTimeout(() => { throw "timer"; });
+      queueMicrotask(() => {
+        throw "microtask";
+      });
+      setTimeout(() => {
+        throw "timer";
+      });
       Promise.reject("rejection");
     `);
     expect(() => runtime.drainJobs()).toThrow("Uncaught exceptions or unhandled rejections");
@@ -88,7 +105,10 @@ it("removes rejections handled before the observation checkpoint", async () => {
   const runtime = await createConcreteRuntime();
   try {
     runtime.evaluate(
-      `const promise = Promise.reject("handled"); queueMicrotask(() => promise.catch(() => {}));`,
+      `
+        const promise = Promise.reject("handled");
+        queueMicrotask(() => promise.catch(() => {}));
+      `,
     );
     runtime.drainJobs();
     expect(runtime.unhandledRejections.size).toBe(0);
@@ -140,8 +160,14 @@ it.each([
 
 it.each([
   "while (true) {}",
-  "const again = () => queueMicrotask(again); queueMicrotask(again)",
-  "const again = () => setTimeout(again); setTimeout(again)",
+  `
+    const again = () => queueMicrotask(again);
+    queueMicrotask(again)
+  `,
+  `
+    const again = () => setTimeout(again);
+    setTimeout(again)
+  `,
 ])("bounds work and rejects continuation after exhaustion: %s", async (source) => {
   const { api } = await getSymbolicEngine();
   const previous = api.surroundingAgent;
@@ -162,8 +188,18 @@ it.each([
 it("isolates realms, jobs, and disposal across overlapping factory calls", async () => {
   const [first, second] = await Promise.all([createConcreteRuntime(), createConcreteRuntime()]);
   try {
-    first.evaluate("globalThis.name = 'first'; setTimeout(() => { name += '-task' });");
-    second.evaluate("globalThis.name = 'second'; setTimeout(() => { name += '-task' });");
+    first.evaluate(`
+      globalThis.name = "first";
+      setTimeout(() => {
+        name += "-task";
+      });
+    `);
+    second.evaluate(`
+      globalThis.name = "second";
+      setTimeout(() => {
+        name += "-task";
+      });
+    `);
     second.drainJobs();
     expect(first.readString("name")).toBe("first");
     expect(second.readString("name")).toBe("second-task");

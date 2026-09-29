@@ -27,40 +27,56 @@ interface ConcreteObservation {
 }
 
 const getSource = (body: string): string => `
-  let prefixRuns=0;prefixRuns++;let conditionReads=0;
-  let shared={count:amount};let alias=shared;let scheduled;
-  const schedule=(callback)=>{scheduled=callback;};
-  const getEnabled=()=>{conditionReads++;return enabled;};
+  let prefixRuns = 0;
+  prefixRuns++;
+  let conditionReads = 0;
+  let shared = { count: amount };
+  let alias = shared;
+  let scheduled;
+  const schedule = (callback) => {
+    scheduled = callback;
+  };
+  const getEnabled = () => {
+    conditionReads++;
+    return enabled;
+  };
   try {
     ${body}
     shared.count;
-  } finally { shared.count=shared.count+10; }
+  } finally {
+    shared.count = shared.count + 10;
+  }
 `;
 const programs = [
   {
     name: "statements",
     source: getSource(`
-    if(getEnabled()) shared.count=shared.count+1;
-    if(enabled) alias.count=shared.count;
-    schedule(()=>alias.count);
-    if(fail) throw shared.count;
-  `),
+      if (getEnabled()) shared.count = shared.count + 1;
+      if (enabled) alias.count = shared.count;
+      schedule(() => alias.count);
+      if (fail) throw shared.count;
+    `),
   },
   {
     name: "expressions",
     source: getSource(`
-    getEnabled() ? shared.count=shared.count+1 : undefined;
-    enabled && (alias.count=shared.count);
-    schedule(()=>alias.count);
-    !fail || (()=>{throw shared.count;})();
-  `),
+      getEnabled() ? (shared.count = shared.count + 1) : undefined;
+      enabled && (alias.count = shared.count);
+      schedule(() => alias.count);
+      !fail ||
+        (() => {
+          throw shared.count;
+        })();
+    `),
   },
 ];
 const stateSource = `JSON.stringify({
-  count:Object.is(shared.count,-0)?'-0':String(shared.count),
-  deferred:Object.is(scheduled(),-0)?'-0':String(scheduled()),
-  prefix:prefixRuns,conditionReads,sameObject:alias===shared
-})`;
+    count: Object.is(shared.count, -0) ? "-0" : String(shared.count),
+    deferred: Object.is(scheduled(), -0) ? "-0" : String(scheduled()),
+    prefix: prefixRuns,
+    conditionReads,
+    sameObject: alias === shared,
+  })`;
 const getNumberText = (value: number): string => (Object.is(value, -0) ? "-0" : String(value));
 
 const getNativeObservation = (
@@ -94,7 +110,12 @@ const getPublishedObservation = (
     const realm = new published.ManagedRealm();
     const result = published.EnsureCompletion(
       realm.evaluateScriptSkipDebugger(
-        `var amount=${getNumberText(amount)},enabled=${guard.enabled},fail=${guard.fail};${source}`,
+        `
+          var amount = ${getNumberText(amount)},
+            enabled = ${guard.enabled},
+            fail = ${guard.fail};
+          ${source}
+        `,
       ),
     );
     const state = published.EnsureCompletion(realm.evaluateScriptSkipDebugger(stateSource));

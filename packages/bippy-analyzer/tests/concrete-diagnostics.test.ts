@@ -5,11 +5,27 @@ it.each([
   "new TypeError('fixture message')",
   "'primitive failure'",
   "globalThis",
-  "{ get message() { observations++; throw 'getter invoked'; }, toJSON() { observations++; throw 'toJSON invoked'; }, [Symbol.toPrimitive]() { observations++; throw 'coercion invoked'; } }",
+  `{
+    get message() {
+      observations++;
+      throw "getter invoked";
+    },
+    toJSON() {
+      observations++;
+      throw "toJSON invoked";
+    },
+    [Symbol.toPrimitive]() {
+      observations++;
+      throw "coercion invoked";
+    },
+  }`,
 ])("serializes diagnostics without traversing the guest heap: %s", async (expression) => {
   const runtime = await createConcreteRuntime();
   try {
-    runtime.evaluate(`globalThis.observations = 0; globalThis.thrown = (${expression});`);
+    runtime.evaluate(`
+      globalThis.observations = 0;
+      globalThis.thrown = (${expression})
+    `);
     try {
       runtime.evaluate("throw thrown");
       throw new Error("Expected a guest exception");

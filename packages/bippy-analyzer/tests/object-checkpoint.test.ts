@@ -6,7 +6,7 @@ import { withFixture } from "./helpers/engine-fixture.js";
 const setup = `
   var prefixRuns = (globalThis.prefixRuns ?? 0) + 1;
   var getterCalls = 0;
-  var key = Symbol('key');
+  var key = Symbol("key");
   var prototype = { inherited: 7 };
   var shared = { count: 1 };
   var target = Object.create(prototype);
@@ -14,38 +14,79 @@ const setup = `
   target.second = 2;
   target.link = shared;
   target[key] = 3;
-  var getter = () => { getterCalls++; throw new Error('getter must not run'); };
-  Object.defineProperty(target, 'hidden', { value: -0, writable: true, configurable: true });
-  Object.defineProperty(target, 'accessor', { get: getter, configurable: true });
+  var getter = () => {
+    getterCalls++;
+    throw new Error("getter must not run");
+  };
+  Object.defineProperty(target, "hidden", {
+    value: -0,
+    writable: true,
+    configurable: true,
+  });
+  Object.defineProperty(target, "accessor", { get: getter, configurable: true });
   var alias = target;
 `;
 const observe = `JSON.stringify({
-  keys: Reflect.ownKeys(target).map(key => typeof key === 'symbol' ? String(key) : key),
-  properties: Reflect.ownKeys(target).map(key => {
-    const descriptor = Object.getOwnPropertyDescriptor(target, key);
-    return [String(key), descriptor.enumerable, descriptor.configurable,
-      descriptor.writable, descriptor.get === getter,
-      descriptor.value === shared ? 'shared' : Object.is(descriptor.value, -0) ? '-0' : descriptor.value];
-  }),
-  count: shared.count,
-  prototype: Object.getPrototypeOf(target) === prototype,
-  extensible: Object.isExtensible(target),
-  alias: alias === target,
-  getterCalls,
-  prefixRuns
-})`;
+    keys: Reflect.ownKeys(target).map((key) =>
+      typeof key === "symbol" ? String(key) : key
+    ),
+    properties: Reflect.ownKeys(target).map((key) => {
+      const descriptor = Object.getOwnPropertyDescriptor(target, key);
+      return [
+        String(key),
+        descriptor.enumerable,
+        descriptor.configurable,
+        descriptor.writable,
+        descriptor.get === getter,
+        descriptor.value === shared
+          ? "shared"
+          : Object.is(descriptor.value, -0)
+          ? "-0"
+          : descriptor.value,
+      ];
+    }),
+    count: shared.count,
+    prototype: Object.getPrototypeOf(target) === prototype,
+    extensible: Object.isExtensible(target),
+    alias: alias === target,
+    getterCalls,
+    prefixRuns,
+  })`;
 const actions = [
-  `alias.first = 8; delete alias.second; alias.second = 9;
-   alias.link.count = 4; delete alias[key];
-   Object.defineProperty(alias, 'accessor', { value: 12 });
-   Object.setPrototypeOf(alias, null); Object.freeze(alias);`,
-  `delete target.first; target.first = 5; shared.count = 6;
-   Object.defineProperty(target, 'hidden', { value: NaN });
-   target[key] = 10; Object.seal(target);`,
-  `Object.defineProperty(target, 'writing', { configurable: true,
-      set(value) { shared.count = value; throw new Error('setter'); } });
-   try { target.writing = 11; } catch (error) { target.failure = error.message; }
-   finally { target.finalized = true; }`,
+  `
+    alias.first = 8;
+    delete alias.second;
+    alias.second = 9;
+    alias.link.count = 4;
+    delete alias[key];
+    Object.defineProperty(alias, "accessor", { value: 12 });
+    Object.setPrototypeOf(alias, null);
+    Object.freeze(alias);
+  `,
+  `
+    delete target.first;
+    target.first = 5;
+    shared.count = 6;
+    Object.defineProperty(target, "hidden", { value: NaN });
+    target[key] = 10;
+    Object.seal(target);
+  `,
+  `
+    Object.defineProperty(target, "writing", {
+      configurable: true,
+      set(value) {
+        shared.count = value;
+        throw new Error("setter");
+      },
+    });
+    try {
+      target.writing = 11;
+    } catch (error) {
+      target.failure = error.message;
+    } finally {
+      target.finalized = true;
+    }
+  `,
 ];
 
 const getPublishedObservation = (source: string) => {
@@ -75,12 +116,29 @@ it.each([false, true])(
       expect(checkpoint.scope).toBe("selected-ordinary-objects-v1");
       expect(checkpoint.size).toBe(2);
       const original = readString(observe);
-      expect(original).toBe(runInNewContext(`${setup};${observe}`));
+      expect(original).toBe(
+        runInNewContext(`
+        ${setup};
+        ${observe}
+      `),
+      );
       for (const action of isReversed ? [...actions].reverse() : actions) {
         evaluate(action);
         const result = readString(observe);
-        expect(result).toBe(getPublishedObservation(`${setup};${action};${observe}`));
-        expect(result).toBe(runInNewContext(`${setup};${action};${observe}`));
+        expect(result).toBe(
+          getPublishedObservation(`
+          ${setup};
+          ${action};
+          ${observe}
+        `),
+        );
+        expect(result).toBe(
+          runInNewContext(`
+          ${setup};
+          ${action};
+          ${observe}
+        `),
+        );
         checkpoint.restore();
         expect(target.properties === properties).toBe(true);
         expect(readString(observe)).toBe(original);
@@ -95,13 +153,22 @@ it.each([false, true])(
   async (includeParent) => {
     await withFixture(({ api, getObject, evaluate, readString }) => {
       const target = getObject(
-        "var parent = {}; var target = Object.create(parent); target.value = 1; target",
+        `
+          var parent = {};
+          var target = Object.create(parent);
+          target.value = 1;
+          target
+        `,
       );
       const checkpoint = api.createOrdinaryObjectCheckpoint(
         includeParent ? [target, getObject("parent")] : [target],
       );
       evaluate(
-        "Object.setPrototypeOf(target, null); Object.setPrototypeOf(parent, target); target.value = 2",
+        `
+          Object.setPrototypeOf(target, null);
+          Object.setPrototypeOf(parent, target);
+          target.value = 2
+        `,
       );
       if (includeParent) {
         checkpoint.restore();
@@ -125,7 +192,18 @@ it.each([false, true])(
 it("does not invoke exotic prototype traps during restore", async () => {
   await withFixture(({ api, getObject, evaluate, readString }) => {
     const target = getObject(
-      "var prototype = new Proxy({}, { getPrototypeOf() { throw new Error('trap'); } }); var target = Object.create(prototype); target",
+      `
+        var prototype = new Proxy(
+          {},
+          {
+            getPrototypeOf() {
+              throw new Error("trap");
+            },
+          }
+        );
+        var target = Object.create(prototype);
+        target
+      `,
     );
     const checkpoint = api.createOrdinaryObjectCheckpoint([target]);
     evaluate("Object.setPrototypeOf(target, null)");
@@ -137,7 +215,10 @@ it("does not invoke exotic prototype traps during restore", async () => {
 
 it("requires nested checkpoint order and supports repeated restores", async () => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
-    const target = getObject("var target = { value: 1 }; target");
+    const target = getObject(`
+      var target = { value: 1 };
+      target
+    `);
     const outer = api.createOrdinaryObjectCheckpoint([target]);
     evaluate("target.value = 2");
     const inner = api.createOrdinaryObjectCheckpoint([target]);
@@ -175,7 +256,14 @@ it.each([
   "new Error('value')",
   "[][Symbol.iterator]()",
   "new (class { #value = 1; })()",
-  "new Proxy({}, { ownKeys() { throw new Error('trap must not run'); } })",
+  `new Proxy(
+      {},
+      {
+        ownKeys() {
+          throw new Error("trap must not run");
+        },
+      }
+    )`,
 ])("rejects unsupported internal state: %s", async (expression) => {
   await withFixture(({ api, getObject }) => {
     const outer = api.createOrdinaryObjectCheckpoint([]);
@@ -207,7 +295,10 @@ it("rejects cross-agent capture, restore and release without closing the checkpo
 
 it("validates preview restrictions before restoring any object", async () => {
   await withFixture(({ api, getObject, evaluate, readString }) => {
-    const existing = getObject("var existing = { value: 1 }; existing");
+    const existing = getObject(`
+      var existing = { value: 1 };
+      existing
+    `);
     api.surroundingAgent.debugger_scopePreview(() => {
       const fresh = api.OrdinaryObjectCreate(api.Value.null);
       fresh.properties.set(
@@ -242,8 +333,17 @@ it("removes private brands installed after capture", async () => {
   await withFixture(({ api, getObject, evaluate, readString }) => {
     const target = getObject(`
       var target = {};
-      class Base { constructor() { return target; } }
-      class Stamp extends Base { #value = 1; static has(value) { return #value in value; } }
+      class Base {
+        constructor() {
+          return target;
+        }
+      }
+      class Stamp extends Base {
+        #value = 1;
+        static has(value) {
+          return #value in value;
+        }
+      }
       target;
     `);
     const checkpoint = api.createOrdinaryObjectCheckpoint([target]);
@@ -272,7 +372,11 @@ it("restores cyclic queue links without copying their identities", async () => {
       getObject("first"),
       getObject("second"),
     ]);
-    evaluate("first.next = first; second.next = second; queue.pending = first");
+    evaluate(`
+      first.next = first;
+      second.next = second;
+      queue.pending = first
+    `);
     checkpoint.restore();
     expect(
       readString(
@@ -285,9 +389,17 @@ it("restores cyclic queue links without copying their identities", async () => {
 
 it("does not claim to restore unselected objects or captured bindings", async () => {
   await withFixture(({ api, getObject, evaluate, readString }) => {
-    const target = getObject("let binding = 1; var target = { child: { value: 1 } }; target");
+    const target = getObject(`
+      let binding = 1;
+      var target = { child: { value: 1 } };
+      target
+    `);
     const checkpoint = api.createOrdinaryObjectCheckpoint([target]);
-    evaluate("binding = 2; target.child.value = 3; target.extra = 4");
+    evaluate(`
+      binding = 2;
+      target.child.value = 3;
+      target.extra = 4
+    `);
     checkpoint.restore();
     expect(
       readString("JSON.stringify([binding, target.child.value, Object.hasOwn(target, 'extra')])"),
@@ -322,20 +434,35 @@ it("preserves objects from distinct realms owned by the same agent", async () =>
 it.each([
   {
     name: "prototype",
-    setup:
-      "var holder = Object.create({ marker: 1 }); var reference = new WeakRef(Object.getPrototypeOf(holder)); holder",
+    setup: `
+      var holder = Object.create({ marker: 1 });
+      var reference = new WeakRef(Object.getPrototypeOf(holder));
+      holder
+    `,
     remove: "Object.setPrototypeOf(holder, null)",
   },
   {
     name: "symbol key",
-    setup:
-      "var holder = { [Symbol('key')]: 1 }; var reference = new WeakRef(Reflect.ownKeys(holder)[0]); holder",
+    setup: `
+      var holder = { [Symbol("key")]: 1 };
+      var reference = new WeakRef(Reflect.ownKeys(holder)[0]);
+      holder
+    `,
     remove: "Reflect.ownKeys(holder).forEach(key => delete holder[key])",
   },
   {
     name: "getter",
-    setup:
-      "var holder = { get value() { return 1; } }; var reference = new WeakRef(Object.getOwnPropertyDescriptor(holder, 'value').get); holder",
+    setup: `
+      var holder = {
+        get value() {
+          return 1;
+        },
+      };
+      var reference = new WeakRef(
+        Object.getOwnPropertyDescriptor(holder, "value").get
+      );
+      holder
+    `,
     remove: "delete holder.value",
   },
 ])("marks saved $name references as live", async (fixture) => {
@@ -356,7 +483,11 @@ it.each([
 it("keeps saved property values alive until release", async () => {
   await withFixture(({ api, getObject, evaluate, readString }) => {
     const holder = getObject(
-      "var holder = { child: {} }; var reference = new WeakRef(holder.child); holder",
+      `
+        var holder = { child: {} };
+        var reference = new WeakRef(holder.child);
+        holder
+      `,
     );
     const checkpoint = api.createOrdinaryObjectCheckpoint([holder]);
     evaluate("delete holder.child");

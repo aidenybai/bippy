@@ -31,28 +31,133 @@ const getPublishedResult = (source: string): string => {
 };
 
 const concreteCases = [
-  "const object = { value: 1 }; const alias = object; alias.value++; object.value",
-  "let value = 1; const get = () => value; value = 4; get()",
-  "let count = 0; const object = { get value() { return ++count; } }; object.value + object.value",
-  "let count = 0; const object = { set value(value) { count += value; } }; object.value = 4; count",
-  "const object = {}; Object.defineProperty(object, 'value', { value: 3 }); Reflect.set(object, 'value', 4)",
-  "let count = 0; const object = new Proxy({}, { get() { return ++count; } }); object.value + object.value",
-  "let count = 0; try { throw 2; } catch (error) { count = error; } finally { count++; } count",
-  "const get = () => { try { return 1; } finally { return 2; } }; get()",
-  "class Counter { #value = 0; increment() { return ++this.#value; } }; const counter = new Counter(); counter.increment() + counter.increment()",
-  "const values = [1, 2, 3].map(value => value * 2); values.reduce((sum, value) => sum + value, 0)",
-  "const object = {}; const values = new Map([[object, 3]]); values.get(object)",
+  `
+    const object = { value: 1 };
+    const alias = object;
+    alias.value++;
+    object.value
+  `,
+  `
+    let value = 1;
+    const get = () => value;
+    value = 4;
+    get()
+  `,
+  `
+    let count = 0;
+    const object = {
+      get value() {
+        return ++count;
+      },
+    };
+    object.value + object.value
+  `,
+  `
+    let count = 0;
+    const object = {
+      set value(value) {
+        count += value;
+      },
+    };
+    object.value = 4;
+    count
+  `,
+  `
+    const object = {};
+    Object.defineProperty(object, "value", { value: 3 });
+    Reflect.set(object, "value", 4)
+  `,
+  `
+    let count = 0;
+    const object = new Proxy(
+      {},
+      {
+        get() {
+          return ++count;
+        },
+      }
+    );
+    object.value + object.value
+  `,
+  `
+    let count = 0;
+    try {
+      throw 2;
+    } catch (error) {
+      count = error;
+    } finally {
+      count++;
+    }
+    count
+  `,
+  `
+    const get = () => {
+      try {
+        return 1;
+      } finally {
+        return 2;
+      }
+    };
+    get()
+  `,
+  `
+    class Counter {
+      #value = 0;
+      increment() {
+        return ++this.#value;
+      }
+    }
+    const counter = new Counter();
+    counter.increment() + counter.increment()
+  `,
+  `
+    const values = [1, 2, 3].map((value) => value * 2);
+    values.reduce((sum, value) => sum + value, 0)
+  `,
+  `
+    const object = {};
+    const values = new Map([[object, 3]]);
+    values.get(object)
+  `,
   "new Set([1, 1, 2]).size",
-  "const values = new Uint8Array([256, 257]); values[0] + values[1]",
+  `
+    const values = new Uint8Array([256, 257]);
+    values[0] + values[1]
+  `,
   "Object.is(-0, 0) === false && Object.is(NaN, NaN)",
   "2n ** 50n",
   "JSON.stringify(Object.keys({ b: 1, 2: 2, a: 3, 1: 4 }))",
-  "const get = function* () { yield 1; yield 2; }; Array.from(get()).join(',')",
-  "const value = Symbol('value'); const object = { [value]: 3 }; object[value]",
+  `
+    const get = function* () {
+      yield 1;
+      yield 2;
+    };
+    Array.from(get()).join(",")
+  `,
+  `
+    const value = Symbol("value");
+    const object = { [value]: 3 };
+    object[value]
+  `,
   "JSON.stringify([/k/iu.test('K'), /s/iu.test('ſ'), /[\\p{ASCII}&&\\p{Letter}]/v.test('a')])",
   "const π = 3; π + 1",
-  "let value = 0; for (let index = 0; index < 4; index++) { if (index === 2) continue; value += index; } value",
-  "'use strict'; const value = Object.freeze({ value: 1 }); try { value.value = 2; } catch (error) { error.name; }",
+  `
+    let value = 0;
+    for (let index = 0; index < 4; index++) {
+      if (index === 2) continue;
+      value += index;
+    }
+    value
+  `,
+  `
+    "use strict";
+    const value = Object.freeze({ value: 1 });
+    try {
+      value.value = 2;
+    } catch (error) {
+      error.name;
+    }
+  `,
 ];
 
 it.each(concreteCases)("source build matches the published engine: %s", async (source) => {

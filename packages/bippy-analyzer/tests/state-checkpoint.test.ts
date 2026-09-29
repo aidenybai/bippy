@@ -47,10 +47,33 @@ const setup = `
     const fixed = 7;
     return {
       original,
-      read: () => JSON.stringify([prefixRuns, count, current.value, current === original, fixed]),
-      left: () => { count++; current.value = 3; current = { value: 9 }; },
-      right: () => { count += 5; current.value *= 2; },
-      abrupt: () => { try { count = 2; fixed = 8; } catch (error) { current.value = error.name; } finally { count++; } }
+      read: () =>
+        JSON.stringify([
+          prefixRuns,
+          count,
+          current.value,
+          current === original,
+          fixed,
+        ]),
+      left: () => {
+        count++;
+        current.value = 3;
+        current = { value: 9 };
+      },
+      right: () => {
+        count += 5;
+        current.value *= 2;
+      },
+      abrupt: () => {
+        try {
+          count = 2;
+          fixed = 8;
+        } catch (error) {
+          current.value = error.name;
+        } finally {
+          count++;
+        }
+      },
     };
   })();
 `;
@@ -78,7 +101,11 @@ it.each([branches, [...branches].reverse()])(
           checkpoint.restore();
           expect(environment.bindings.get("count")).toBe(originalBinding);
           evaluate(branch);
-          const source = `${setup}\n${branch}; bundle.read()`;
+          const source = `
+            ${setup}
+            ${branch};
+            bundle.read()
+          `;
           expect(readString("bundle.read()")).toBe(runInNewContext(source));
           expect(readString("bundle.read()")).toBe(getPublishedObservation(source));
         }
@@ -95,7 +122,18 @@ it("restores function parameter and var cells without replacing the environment"
   await withFixture((fixture) => {
     const { api, evaluate, readString } = fixture;
     evaluate(
-      "var bundle = (function(parameter) { var count = 1; return { read: () => JSON.stringify([parameter, count]), mutate: () => { parameter = 9; count++; } }; })(3)",
+      `
+        var bundle = (function (parameter) {
+          var count = 1;
+          return {
+            read: () => JSON.stringify([parameter, count]),
+            mutate: () => {
+              parameter = 9;
+              count++;
+            },
+          };
+        })(3)
+      `,
     );
     const environment = getEnvironment(fixture, "bundle.read", "parameter");
     expect(environment).toBeInstanceOf(api.FunctionEnvironmentRecord);
@@ -112,7 +150,18 @@ it("restores separate default-parameter and body environments together", async (
   await withFixture((fixture) => {
     const { api, evaluate, readString } = fixture;
     evaluate(
-      "var bundle = (function(parameter = 3) { var count = 1; return { read: () => JSON.stringify([parameter, count]), mutate: () => { parameter = 9; count++; } }; })()",
+      `
+        var bundle = (function (parameter = 3) {
+          var count = 1;
+          return {
+            read: () => JSON.stringify([parameter, count]),
+            mutate: () => {
+              parameter = 9;
+              count++;
+            },
+          };
+        })()
+      `,
     );
     const parameterEnvironment = getEnvironment(fixture, "bundle.read", "parameter");
     const bodyEnvironment = getEnvironment(fixture, "bundle.read", "count");
@@ -130,7 +179,11 @@ it("restores separate default-parameter and body environments together", async (
 it("restores global lexical declarations and removes branch-only bindings", async () => {
   await withFixture((fixture) => {
     const { api, evaluate, readString } = fixture;
-    evaluate("let count = 1; const fixed = 3; var read = () => count;");
+    evaluate(`
+      let count = 1;
+      const fixed = 3;
+      var read = () => count;
+    `);
     const environment = getEnvironment(fixture, "read");
     const checkpoint = api.createStateCheckpoint({ environments: [environment] });
     evaluate("count = 4; let branchOnly = 9");
@@ -312,14 +365,23 @@ it("rejects prototype cycles before restoring selected bindings", async () => {
   await withFixture((fixture) => {
     const { api, evaluate, getObject, readString } = fixture;
     evaluate(
-      "let count = 1; var read = () => count; var parent = {}; var object = Object.create(parent)",
+      `
+        let count = 1;
+        var read = () => count;
+        var parent = {};
+        var object = Object.create(parent)
+      `,
     );
     const checkpoint = api.createStateCheckpoint({
       objects: [getObject("object")],
       environments: [getEnvironment(fixture, "read")],
     });
     evaluate(
-      "count = 2; Object.setPrototypeOf(object, null); Object.setPrototypeOf(parent, object)",
+      `
+        count = 2;
+        Object.setPrototypeOf(object, null);
+        Object.setPrototypeOf(parent, object)
+      `,
     );
     expect(() => checkpoint.restore()).toThrow("prototype cycle");
     expect(readString("String(count)")).toBe("2");
@@ -334,7 +396,14 @@ it("retains the original cell after deletion and garbage collection", async () =
   await withFixture(({ api, evaluate, readString }) => {
     const environment = new api.DeclarativeEnvironmentRecord(null);
     const value = evaluate(
-      "var reference; (() => { const value = {}; reference = new WeakRef(value); return value; })()",
+      `
+        var reference;
+        (() => {
+          const value = {};
+          reference = new WeakRef(value);
+          return value;
+        })()
+      `,
     );
     api.X(environment.CreateMutableBinding("saved", true));
     api.X(environment.InitializeBinding("saved", value));
@@ -354,7 +423,11 @@ it("retains the original cell after deletion and garbage collection", async () =
 it("keeps saved binding values alive independently of mutated cells", async () => {
   await withFixture((fixture) => {
     const { api, evaluate, readString } = fixture;
-    evaluate("let retained = {}; var reference = new WeakRef(retained); var read = () => retained");
+    evaluate(`
+      let retained = {};
+      var reference = new WeakRef(retained);
+      var read = () => retained
+    `);
     const environment = getEnvironment(fixture, "read");
     const checkpoint = api.createStateCheckpoint({ environments: [environment] });
     evaluate("retained = undefined");
@@ -374,7 +447,21 @@ it("does not restore unselected objects or outer bindings", async () => {
   await withFixture((fixture) => {
     const { api, evaluate, readString } = fixture;
     evaluate(
-      "let outer = 0; var bundle = (() => { let inner = 0; const object = { value: 0 }; return { read: () => JSON.stringify([outer, inner, object.value]), mutate: () => { outer++; inner++; object.value++; } }; })()",
+      `
+        let outer = 0;
+        var bundle = (() => {
+          let inner = 0;
+          const object = { value: 0 };
+          return {
+            read: () => JSON.stringify([outer, inner, object.value]),
+            mutate: () => {
+              outer++;
+              inner++;
+              object.value++;
+            },
+          };
+        })()
+      `,
     );
     const checkpoint = api.createStateCheckpoint({
       environments: [getEnvironment(fixture, "bundle.read")],

@@ -22,9 +22,17 @@ it("verifies that upstream ExecutionContext.copy shares generator control and en
     const evaluate = (source: string) =>
       api.EnsureCompletion(realm.evaluateScriptSkipDebugger(source));
     const iterator = evaluate(`
-      let shared={count:0};
-      function* run(){yield 0;shared.count++;yield 1;shared.count++;return 2;}
-      let iterator=run();iterator.next();iterator;
+      let shared = { count: 0 };
+      function* run() {
+        yield 0;
+        shared.count++;
+        yield 1;
+        shared.count++;
+        return 2;
+      }
+      let iterator = run();
+      iterator.next();
+      iterator;
     `).Value;
     if (!(iterator instanceof api.ObjectValue)) throw new Error("Expected a generator object");
     const context = Reflect.get(iterator, "GeneratorContext");
@@ -47,7 +55,12 @@ it("verifies that upstream debugger preview rejects mutation rather than rolling
   withPublishedRealm((realm) => {
     const evaluate = (source: string) =>
       api.EnsureCompletion(realm.evaluateScriptSkipDebugger(source));
-    expect(evaluate("let shared={count:1};shared.count=2;").Type).toBe("normal");
+    expect(
+      evaluate(`
+        let shared = { count: 1 };
+        shared.count = 2;
+      `).Type,
+    ).toBe("normal");
     const result = api.surroundingAgent.debugger_scopePreview(() => evaluate("shared.count=99"));
     expect(result.Type).toBe("throw");
     if (!(result.Value instanceof api.ObjectValue)) throw new Error("Expected a guest error");

@@ -17,7 +17,10 @@ it("evaluates JavaScript through the public API and isolates realm globals", () 
   try {
     const realm = new ManagedRealm();
     const result = realm.evaluateScriptSkipDebugger(
-      "const getTotal = (price) => price + 5; getTotal(10)",
+      `
+        const getTotal = (price) => price + 5;
+        getTotal(10)
+      `,
     );
     expect(ValueOfNormalCompletion(result)).toEqual(Value(15));
     const otherRealm = new ManagedRealm();

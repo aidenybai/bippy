@@ -169,7 +169,10 @@ it("retains the invalid production React/development JSX fixture as a failing re
   const capture = `
     globalThis.renderError = undefined;
     const recordError = console.error;
-    console.error = (...args) => { renderError = args[0]; recordError(...args); };
+    console.error = (...args) => {
+      renderError = args[0];
+      recordError(...args);
+    };
   `;
   try {
     for (const evaluator of [runtime, native]) {

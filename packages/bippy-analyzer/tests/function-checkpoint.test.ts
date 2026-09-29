@@ -5,7 +5,15 @@ import { withFixture } from "./helpers/engine-fixture.js";
 const cases = [
   { name: "ordinary", expression: "function(value){return value+1}", call: "target(2)" },
   { name: "arrow", expression: "value=>value+1", call: "target(2)" },
-  { name: "method", expression: "({method(value){return value+1}}).method", call: "target(2)" },
+  {
+    name: "method",
+    expression: `({
+        method(value) {
+          return value + 1;
+        },
+      }).method`,
+    call: "target(2)",
+  },
   {
     name: "generator",
     expression: "function*(value){yield value+1}",
@@ -14,12 +22,16 @@ const cases = [
   { name: "async", expression: "async value=>value+1", call: "typeof target(2)" },
   {
     name: "bound",
-    expression: "(function(value){return this.base+value}).bind({base:4},2)",
+    expression: `(function (value) {
+        return this.base + value;
+      }).bind({ base: 4 }, 2)`,
     call: "target()",
   },
   {
     name: "bound-constructor",
-    expression: "(function(value){this.value=value}).bind(null,4)",
+    expression: `(function (value) {
+        this.value = value;
+      }).bind(null, 4)`,
     call: "new target().value",
   },
 ];
@@ -27,8 +39,24 @@ it.each(
   cases.flatMap((fixture) => [false, true].map((isReversed) => ({ ...fixture, isReversed }))),
 )("restores $name properties, reversed=$isReversed", async ({ expression, call, isReversed }) => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
-    const setup = `var target=(${expression}),alias=target;var getter=()=>{throw Error('getter')};Object.defineProperty(target,'accessor',{get:getter,configurable:true});target.tag=1;`;
-    const observation = `JSON.stringify([${call},target===alias,target.tag,Reflect.ownKeys(target).map(String),Object.isExtensible(target),Object.getPrototypeOf(target)===null,Object.getOwnPropertyDescriptor(target,'accessor').get===getter])`;
+    const setup = `
+      var target = (${expression})
+      var alias = target;
+      var getter = () => {
+        throw Error("getter");
+      };
+      Object.defineProperty(target, "accessor", { get: getter, configurable: true });
+      target.tag = 1;
+    `;
+    const observation = `JSON.stringify([
+      ${call},
+      target === alias,
+      target.tag,
+      Reflect.ownKeys(target).map(String),
+      Object.isExtensible(target),
+      Object.getPrototypeOf(target) === null,
+      Object.getOwnPropertyDescriptor(target, "accessor").get === getter,
+    ])`;
     evaluate(setup);
     const target = getObject("target");
     const properties = target.properties;
@@ -40,8 +68,17 @@ it.each(
     const baseline = readString(observation);
     expect(baseline).toBe(runInNewContext(`${setup}${observation}`));
     const actions = [
-      'target.tag=2;Object.defineProperty(target,"name",{value:"changed"});Object.freeze(target);',
-      "delete target.tag;target.tag=3;Object.setPrototypeOf(target,null);Object.seal(target);",
+      `
+        target.tag = 2;
+        Object.defineProperty(target, "name", { value: "changed" });
+        Object.freeze(target);
+      `,
+      `
+        delete target.tag;
+        target.tag = 3;
+        Object.setPrototypeOf(target, null);
+        Object.seal(target);
+      `,
     ];
     try {
       for (const action of isReversed ? [...actions].reverse() : actions) {
@@ -59,7 +96,12 @@ it.each(
 
 it("restores explicitly selected closure bindings, not unselected captured values", async () => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
-    evaluate("var target=(()=>{let count=0;return ()=>++count})();");
+    evaluate(`
+      var target = (() => {
+        let count = 0;
+        return () => ++count;
+      })();
+    `);
     const target = getObject("target");
     if (
       !api.isECMAScriptFunctionObject(target) ||
@@ -97,7 +139,10 @@ it.each([
 ])("preflights changed %s before any object writes", async (name) => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
     evaluate(
-      `var target=${name.startsWith("Bound") ? "(function(){}).bind(null,1)" : "function(){}"},other={value:1};`,
+      `
+        var target = ${name.startsWith("Bound") ? "(function(){}).bind(null,1)" : "function(){}"},
+          other = { value: 1 };
+      `,
     );
     const target = getObject("target");
     const descriptor = Object.getOwnPropertyDescriptor(target, name);
@@ -117,18 +162,30 @@ it.each([
 it("does not implicitly rewind bound receivers or argument objects", async () => {
   await withFixture(({ api, evaluate, getObject, readString }) => {
     evaluate(
-      "var receiver={value:1},argument={value:2};var target=(function(argument){return this.value+argument.value}).bind(receiver,argument);",
+      `
+        var receiver = { value: 1 },
+          argument = { value: 2 };
+        var target = function (argument) {
+          return this.value + argument.value;
+        }.bind(receiver, argument);
+      `,
     );
     const target = getObject("target");
     const selected = api.createStateCheckpoint({ objects: [target] });
-    evaluate("receiver.value=10;argument.value=20;");
+    evaluate(`
+      receiver.value = 10;
+      argument.value = 20;
+    `);
     selected.restore();
     expect(readString("String(target())")).toBe("30");
     selected.release();
     const all = api.createStateCheckpoint({
       objects: [target, getObject("receiver"), getObject("argument")],
     });
-    evaluate("receiver.value=100;argument.value=200;");
+    evaluate(`
+      receiver.value = 100;
+      argument.value = 200;
+    `);
     all.restore();
     expect(readString("String(target())")).toBe("30");
     all.release();
@@ -191,7 +248,13 @@ it.each([
   "class {}",
   "Math.max",
   "new Proxy(function(){},{})",
-  "(()=>{class Owner { #value; method(){} };return Owner.prototype.method})()",
+  `(() => {
+      class Owner {
+        #value;
+        method() {}
+      }
+      return Owner.prototype.method;
+    })()`,
 ])("rejects unsupported function state: %s", async (expression) => {
   await withFixture(({ api, evaluate, getObject }) => {
     evaluate(`var target=(${expression});`);
@@ -205,7 +268,15 @@ it.each(["{}", "Symbol('held')"])(
     await withFixture(({ api, evaluate, getObject, readString }) => {
       const agent = api.surroundingAgent;
       evaluate(
-        `var reference;var target=function(){};(()=>{const held=${held};reference=new WeakRef(held);target.held=held})();`,
+        `
+          var reference;
+          var target = function () {};
+          (() => {
+            const held = ${held};
+            reference = new WeakRef(held);
+            target.held = held;
+          })();
+        `,
       );
       const checkpoint = api.createStateCheckpoint({ objects: [getObject("target")] });
       evaluate("delete target.held");

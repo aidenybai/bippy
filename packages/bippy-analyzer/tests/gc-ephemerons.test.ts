@@ -13,7 +13,7 @@ const getChainSetup = ({ target, reverse, split }: ChainOptions): string => `
   (() => {
     const keys = Array.from({ length: 6 }, () => ${target === "object" ? "({})" : "Symbol('key')"});
     root = keys[0];
-    references = keys.slice(1).map(key => new WeakRef(key));
+    references = keys.slice(1).map((key) => new WeakRef(key));
     membership = new WeakSet([keys[5]]);
     const entries = keys.slice(0, -1).map((key, index) => [key, keys[index + 1]]);
     ${reverse ? "entries.reverse();" : ""}
@@ -22,9 +22,9 @@ const getChainSetup = ({ target, reverse, split }: ChainOptions): string => `
 `;
 
 const observation = `JSON.stringify([
-  references.map(reference => reference.deref() !== undefined),
-  membership.has(references[references.length - 1].deref())
-])`;
+    references.map((reference) => reference.deref() !== undefined),
+    membership.has(references[references.length - 1].deref()),
+  ])`;
 
 const targets: ChainOptions["target"][] = ["object", "symbol"];
 const chains = targets.flatMap((target) =>
@@ -52,9 +52,13 @@ it.each(chains)(
 
 it.each([false, true])("marks newly discovered WeakMaps with reverse=%s", async (reverse) => {
   const setup = `
-    var root = {}, collection, reference;
+    var root = {},
+      collection,
+      reference;
     (() => {
-      const middle = {}, target = {}, nested = new WeakMap();
+      const middle = {},
+        target = {},
+        nested = new WeakMap();
       reference = new WeakRef(target);
       nested.set(middle, target);
       collection = new WeakMap(${reverse ? "[[middle, nested], [root, middle]]" : "[[root, middle], [middle, nested]]"});
@@ -75,9 +79,13 @@ it.each([false, true])("handles a weak cycle with a strong root=%s", async (isRo
   const setup = `
     var root, collection, references;
     (() => {
-      const first = {}, second = {};
+      const first = {},
+        second = {};
       ${isRooted ? "root = first;" : ""}
-      collection = new WeakMap([[second, first], [first, second]]);
+      collection = new WeakMap([
+        [second, first],
+        [first, second],
+      ]);
       references = [new WeakRef(first), new WeakRef(second)];
     })();
   `;
@@ -94,9 +102,10 @@ it.each([false, true])("handles a weak cycle with a strong root=%s", async (isRo
 
 it("does not finalize a value reached through a reversed ephemeron chain", async () => {
   await withFixture(({ api, evaluate }) => {
-    evaluate(`${getChainSetup({ target: "object", reverse: true, split: true })}
+    evaluate(`
+      ${getChainSetup({ target: "object", reverse: true, split: true })}
       var registry = new FinalizationRegistry(() => {});
-      registry.register(references[4].deref(), 'held');
+      registry.register(references[4].deref(), "held");
     `);
     api.surroundingAgent.AgentRecord.KeptAlive.clear();
     api.gc();
@@ -106,7 +115,8 @@ it("does not finalize a value reached through a reversed ephemeron chain", async
 
 it("does not mark values behind a deleted key", async () => {
   await withFixture(({ api, evaluate, readString }) => {
-    evaluate(`${getChainSetup({ target: "object", reverse: true, split: true })}
+    evaluate(`
+      ${getChainSetup({ target: "object", reverse: true, split: true })}
       collections[4].delete(root);
     `);
     api.surroundingAgent.AgentRecord.KeptAlive.clear();

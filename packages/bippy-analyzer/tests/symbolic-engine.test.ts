@@ -131,7 +131,12 @@ describe("engine262 symbolic conditional evaluation", () => {
       const realm = new api.ManagedRealm();
       const result = api.EnsureCompletion(
         realm.evaluateScriptSkipDebugger(
-          "const object = { count: 0 }; const increment = () => ++object.count; true ? increment() : increment(); object.count",
+          `
+            const object = { count: 0 };
+            const increment = () => ++object.count;
+            true ? increment() : increment();
+            object.count
+          `,
         ),
       );
       expect(result).toBeInstanceOf(api.NormalCompletion);

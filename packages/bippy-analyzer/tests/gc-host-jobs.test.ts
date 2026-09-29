@@ -13,20 +13,26 @@ interface HostJobFixture {
 const fixtures: HostJobFixture[] = [
   {
     name: "timer closure",
-    registration: "setTimeout(() => { seen = reference.deref() === target; }, 0)",
+    registration: `setTimeout(() => {
+        seen = reference.deref() === target;
+      }, 0)`,
     isTimer: true,
   },
   { name: "timer argument", registration: "setTimeout(observe, 0, target)", isTimer: true },
   {
     name: "microtask closure",
-    registration: "queueMicrotask(() => { seen = reference.deref() === target; })",
+    registration: `queueMicrotask(() => {
+        seen = reference.deref() === target;
+      })`,
     isTimer: false,
   },
 ];
 
 const getSetup = (registration: string, target: string): string => `
   var reference, handle, seen;
-  function observe(value) { seen = reference.deref() === value; }
+  function observe(value) {
+    seen = reference.deref() === value;
+  }
   (() => {
     const target = ${target};
     reference = new WeakRef(target);
@@ -42,7 +48,13 @@ it.each(cases)("retains $target through a pending $name and releases it", async 
   const setup = getSetup(fixture.registration, fixture.target);
   const observation = "JSON.stringify([reference.deref() !== undefined, seen])";
   const native = getNativeGcObservation(
-    `const pending = []; const setTimeout = (callback, delay, ...args) => pending.push(() => callback(...args)); const queueMicrotask = callback => pending.push(callback); ${setup}`,
+    `
+      const pending = [];
+      const setTimeout = (callback, delay, ...args) =>
+        pending.push(() => callback(...args));
+      const queueMicrotask = (callback) => pending.push(callback);
+      ${setup}
+    `,
     `(pending.shift()(), ${observation})`,
   );
   expect(native).toBe("[true,true]");
@@ -65,7 +77,10 @@ it.each(cases.filter((fixture) => fixture.isTimer))(
     try {
       runtime.evaluate(getSetup(fixture.registration, fixture.target));
       expect(await collect(runtime)).toBe("true");
-      runtime.evaluate("clearTimeout(handle); clearTimeout(handle);");
+      runtime.evaluate(`
+        clearTimeout(handle);
+        clearTimeout(handle);
+      `);
       expect(await collect(runtime)).toBe("false");
       expect(runtime.jobs).toBe(1);
       runtime.drainJobs();
@@ -94,7 +109,14 @@ it("retains declared captures while a realm job factory runs", async () => {
   const runtime = await createConcreteRuntime();
   try {
     const target = runtime.evaluate(
-      "var reference; (() => { const target = {}; reference = new WeakRef(target); return target; })()",
+      `
+        var reference;
+        (() => {
+          const target = {};
+          reference = new WeakRef(target);
+          return target;
+        })()
+      `,
     );
     let wasRetained = false;
     const job = {
@@ -141,7 +163,14 @@ it.each(["basic", "by-type", "microtask", "web", "node"])(
       const realm = new api.ManagedRealm();
       const result = api.EnsureCompletion(
         realm.evaluateScriptSkipDebugger(
-          "var reference; (() => { const target = {}; reference = new WeakRef(target); return target; })()",
+          `
+            var reference;
+            (() => {
+              const target = {};
+              reference = new WeakRef(target);
+              return target;
+            })()
+          `,
         ),
       );
       if (result.Type !== "normal") throw new Error("Expected a captured value");
@@ -235,7 +264,14 @@ it("retains a deferred host job and releases its canceled registration", async (
   const runtime = await createConcreteRuntime();
   try {
     const target = runtime.evaluate(
-      "var reference; (() => { const target = {}; reference = new WeakRef(target); return target; })()",
+      `
+        var reference;
+        (() => {
+          const target = {};
+          reference = new WeakRef(target);
+          return target;
+        })()
+      `,
     );
     let cancelPending: (() => void) | undefined;
     const job = {

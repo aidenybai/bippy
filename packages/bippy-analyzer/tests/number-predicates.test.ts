@@ -38,12 +38,14 @@ const witnesses = [
 ];
 
 const bailoutSource = `
-  let prefix=0;prefix++;
-  const state={value:amount,tag:'pending'};
-  const candidate=amount+1;
-  const same=Object.is(candidate,amount);
-  if(!same) state.value=candidate;
-  if(Object.is(amount,candidate)) state.tag='bailout';else state.tag='update';
+  let prefix = 0;
+  prefix++;
+  const state = { value: amount, tag: "pending" };
+  const candidate = amount + 1;
+  const same = Object.is(candidate, amount);
+  if (!same) state.value = candidate;
+  if (Object.is(amount, candidate)) state.tag = "bailout";
+  else state.tag = "update";
 `;
 
 const getBoolean = (fixture: AbstractFixture, source: string) => {
@@ -62,7 +64,11 @@ const getPublished = (source: string, amount: number, other = 0): boolean => {
     const realm = new published.ManagedRealm();
     const result = published.EnsureCompletion(
       realm.evaluateScriptSkipDebugger(
-        `var amount=${getNumberSource(amount)},other=${getNumberSource(other)};${source}`,
+        `
+          var amount = ${getNumberSource(amount)},
+            other = ${getNumberSource(other)};
+          ${source}
+        `,
       ),
     );
     if (result.Type !== "normal" || !(result.Value instanceof published.BooleanValue))
@@ -129,7 +135,10 @@ it.each(witnesses)("specializes two distinct unknown Numbers, left=%s", async (a
 
 it("uses intrinsic identity rather than the Object.is property name", async () => {
   await withAbstractFixture((fixture) => {
-    fixture.evaluate("var original=Object.is;Object.is=()=>17;");
+    fixture.evaluate(`
+      var original = Object.is;
+      Object.is = () => 17;
+    `);
     expect(fixture.getNumber("Object.is(amount,0)").numberValue()).toBe(17);
     const predicate = getBoolean(fixture, "original(amount,0)");
     expect(fixture.api.BooleanValue.isAbstract(predicate)).toBe(true);
@@ -171,7 +180,11 @@ it("keeps different-type comparisons concrete without coercing operands or calli
       "Object.is(amount, true)",
       "Object.is(amount, '1')",
       "Object.is(1n, amount)",
-      "Object.is(amount, {valueOf(){throw 1}})",
+      `Object.is(amount, {
+          valueOf() {
+            throw 1;
+          },
+        })`,
       "Object.is(Object(amount), amount)",
     ])
       expect(getBoolean(fixture, source)).toBe(fixture.api.Value.false);
@@ -190,10 +203,23 @@ it("retains argument evaluation order and immutable predicate callback records",
       calls++;
       return callback(predicate);
     };
-    getBoolean(fixture, "var order='';Object.is((order+='left',amount),(order+='right',amount+1))");
+    getBoolean(
+      fixture,
+      `
+        var order = "";
+        Object.is(((order += "left"), amount), ((order += "right"), amount + 1))
+      `,
+    );
     expect(fixture.evaluate("order").Value).toEqual(fixture.api.Value("leftright"));
     expect(calls).toBe(1);
-    expect(fixture.evaluate("Object.is((()=>{throw 7})(),amount)").Type).toBe("throw");
+    expect(
+      fixture.evaluate(`Object.is(
+          (() => {
+            throw 7;
+          })(),
+          amount
+        )`).Type,
+    ).toBe("throw");
     expect(calls).toBe(1);
   });
 });
@@ -205,7 +231,15 @@ it.each(["missing", "invalid"])("rejects a %s numeric predicate callback", async
       Reflect.set(fixture.agent.hostDefinedOptions, "evaluateAbstractNumberPredicate", () =>
         fixture.api.Value(1),
       );
-    expect(() => fixture.evaluate("try{Object.is(amount,0)}catch(error){false}")).toThrow(
+    expect(() =>
+      fixture.evaluate(`
+        try {
+          Object.is(amount, 0);
+        } catch (error) {
+          false;
+        }
+      `),
+    ).toThrow(
       mode === "missing"
         ? "No abstract Number predicate evaluator configured"
         : "must return a Boolean",
@@ -222,9 +256,12 @@ it("does not put opaque results into host-Boolean comparison helpers", async () 
     expect(() => fixture.api.IsStrictlyEqual(input, input)).toThrow(
       "Unsupported concrete read of abstract Number",
     );
-    expect(() => fixture.evaluate("if(!Object.is(amount+1, amount)) 1;else 2;")).toThrow(
-      "requires an explicit resume",
-    );
+    expect(() =>
+      fixture.evaluate(`
+        if (!Object.is(amount + 1, amount)) 1;
+        else 2;
+      `),
+    ).toThrow("requires an explicit resume");
   });
 });
 
@@ -399,7 +436,12 @@ it.each([false, true])(
         expect(Object.is(value, expectedSame ? amount : amount + 1)).toBe(true);
         if (typeof value !== "number") throw new Error("Expected a specialized Number");
         const valueSource = getNumberSource(value);
-        const comparison = `${bailoutSource};prefix===1 && state.tag===${JSON.stringify(observation.tag)} && Object.is(state.value,${valueSource})`;
+        const comparison = `
+          ${bailoutSource};
+          prefix === 1 &&
+            state.tag === ${JSON.stringify(observation.tag)} &&
+            Object.is(state.value, ${valueSource})
+        `;
         expect(runInNewContext(comparison, { amount }, { timeout: 1000 })).toBe(true);
         expect(getPublished(comparison, amount)).toBe(true);
       }

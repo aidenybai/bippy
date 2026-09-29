@@ -7,23 +7,41 @@ import { getNativeGcObservation as getNativeObservation } from "./helpers/native
 const cases = [
   {
     name: "global lexical binding",
-    setup: "let retained = {}; var reference = new WeakRef(retained);",
+    setup: `
+      let retained = {};
+      var reference = new WeakRef(retained);
+    `,
     observation: "JSON.stringify([typeof retained, reference.deref() === retained])",
   },
   {
     name: "captured block binding",
-    setup:
-      "var read; { const retained = {}; read = () => retained; } var reference = new WeakRef(read());",
+    setup: `
+      var read;
+      {
+        const retained = {};
+        read = () => retained;
+      }
+      var reference = new WeakRef(read());
+    `,
     observation: "JSON.stringify([typeof read(), reference.deref() === read()])",
   },
   {
     name: "captured parameter binding",
-    setup: "var read = (retained => () => retained)({}); var reference = new WeakRef(read());",
+    setup: `
+      var read = (
+        (retained) => () =>
+          retained
+      )({});
+      var reference = new WeakRef(read());
+    `,
     observation: "JSON.stringify([typeof read(), reference.deref() === read()])",
   },
   {
     name: "lexical symbol binding",
-    setup: "let retained = Symbol('retained'); var reference = new WeakRef(retained);",
+    setup: `
+      let retained = Symbol("retained");
+      var reference = new WeakRef(retained);
+    `,
     observation: "JSON.stringify([typeof retained, reference.deref() === retained])",
   },
 ];
@@ -40,10 +58,23 @@ it.each(cases)("marks values held by $name", async (fixture) => {
 });
 
 it("marks captured values reachable only through a saved getter", async () => {
-  const setup =
-    "var holder = (() => { const retained = {}; return { get value() { return retained; } }; })(); var reference = new WeakRef(holder.value);";
+  const setup = `
+    var holder = (() => {
+      const retained = {};
+      return {
+        get value() {
+          return retained;
+        },
+      };
+    })();
+    var reference = new WeakRef(holder.value);
+  `;
   const expected = getNativeObservation(
-    `${setup} var saved = Object.getOwnPropertyDescriptor(holder, 'value').get; delete holder.value;`,
+    `
+      ${setup}
+      var saved = Object.getOwnPropertyDescriptor(holder, "value").get;
+      delete holder.value;
+    `,
     "JSON.stringify([typeof saved(), reference.deref() === saved()])",
   );
   expect(expected).toBe('["object",true]');
@@ -67,7 +98,10 @@ it("marks captured values reachable only through a saved getter", async () => {
 it.each(["retained", "forwarded"])(
   "marks values held by %s module bindings",
   async (entrypoint) => {
-    const retainedSource = "const retained = {}; export const read = () => retained;";
+    const retainedSource = `
+      const retained = {};
+      export const read = () => retained;
+    `;
     const getForwardingSource = (specifier: string) =>
       `import { read as original } from ${JSON.stringify(specifier)}; export const read = () => original();`;
     const nativeRetainedUrl = `data:text/javascript,${encodeURIComponent(retainedSource)}`;
@@ -77,7 +111,10 @@ it.each(["retained", "forwarded"])(
         : `data:text/javascript,${encodeURIComponent(getForwardingSource(nativeRetainedUrl))}`;
     const observation = "JSON.stringify([typeof read(), reference.deref() === read()])";
     const expected = getNativeObservation(
-      `const { read } = await import(${JSON.stringify(nativeEntrypoint)}); const reference = new WeakRef(read());`,
+      `
+        const { read } = await import(${JSON.stringify(nativeEntrypoint)});
+        const reference = new WeakRef(read());
+      `,
       observation,
     );
     expect(expected).toBe('["object",true]');
@@ -112,7 +149,10 @@ it.each(["retained", "forwarded"])(
 
 it("stops retaining values after their binding is cleared", async () => {
   await withFixture(({ api, evaluate, readString }) => {
-    evaluate("let retained = {}; var reference = new WeakRef(retained);");
+    evaluate(`
+      let retained = {};
+      var reference = new WeakRef(retained);
+    `);
     evaluate("retained = undefined");
     api.surroundingAgent.AgentRecord.KeptAlive.clear();
     api.gc();

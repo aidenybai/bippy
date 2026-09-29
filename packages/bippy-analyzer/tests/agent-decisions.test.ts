@@ -39,7 +39,15 @@ it.each([false, true])("resumes an Agent-owned decision without replay: %s", asy
       idle++;
     });
     agent.evaluate(
-      compile("var reads=0;function read(){reads++;return enabled;}if(read()) 11;else 22;"),
+      compile(`
+        var reads = 0;
+        function read() {
+          reads++;
+          return enabled;
+        }
+        if (read()) 11;
+        else 22;
+      `),
       (completion) => {
         finishes++;
         expect(completion.Value).toEqual(api.Value(choice ? 11 : 22));
@@ -72,7 +80,14 @@ it.each(["clone", "value", "kind", "missing"])(
     await withAbstractFixture((fixture) => {
       const { agent, createBoolean, getNumber, api } = fixture;
       createBoolean("enabled");
-      const decision = start(fixture, "var entered=0;if(enabled) entered++;entered;");
+      const decision = start(
+        fixture,
+        `
+          var entered = 0;
+          if (enabled) entered++;
+          entered;
+        `,
+      );
       const response = {
         resume: kind === "kind" ? "debugger" : "abstract-boolean",
         decision: kind === "clone" ? { ...decision } : kind === "missing" ? undefined : decision,
@@ -99,7 +114,12 @@ it("rejects a stale reply between correlated decisions without advancing", async
     createBoolean("enabled");
     const first = start(
       fixture,
-      "var entered=0;if(enabled) entered++;if(enabled) entered++;entered;",
+      `
+        var entered = 0;
+        if (enabled) entered++;
+        if (enabled) entered++;
+        entered;
+      `,
     );
     const second = agent.resumeEvaluate({
       abstractBooleanDecision: { resume: "abstract-boolean", decision: first, value: true },
@@ -174,7 +194,14 @@ it("rejects a nested evaluator before its prefix executes", async () => {
   await withAbstractFixture((fixture) => {
     const { agent, createBoolean, compile, getNumber } = fixture;
     createBoolean("enabled");
-    const decision = start(fixture, "var entered=0;if(enabled) entered++;entered;");
+    const decision = start(
+      fixture,
+      `
+        var entered = 0;
+        if (enabled) entered++;
+        entered;
+      `,
+    );
     expect(() => agent.evaluate(compile("entered+=10"), () => {})).toThrow(
       "Cannot start an evaluator during controlled execution",
     );
@@ -194,7 +221,15 @@ it.each([false, true])(
       createBoolean("enabled");
       const decision = start(
         fixture,
-        `var reference, retained;function create(){const target={value:7};reference=new WeakRef(target);return target;}retained=[create(),enabled ? 1 : 2];`,
+        `
+          var reference, retained;
+          function create() {
+            const target = { value: 7 };
+            reference = new WeakRef(target);
+            return target;
+          }
+          retained = [create(), enabled ? 1 : 2];
+        `,
       );
       agent.AgentRecord.KeptAlive.clear();
       api.gc();
@@ -263,7 +298,16 @@ it("preserves debugger pauses around an abstract decision", async () => {
     agent.hostDefinedOptions.onDebugger = () => {
       debuggerCalls++;
     };
-    agent.evaluate(compile("debugger;if(enabled) 11;debugger;22;"), () => {}, false);
+    agent.evaluate(
+      compile(`
+        debugger;
+        if (enabled) 11;
+        debugger;
+        22;
+      `),
+      () => {},
+      false,
+    );
     expect(agent.resumeEvaluate({ pauseOnAbstractBoolean: true })).toEqual({
       done: false,
       value: undefined,
