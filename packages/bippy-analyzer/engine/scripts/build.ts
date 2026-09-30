@@ -108,6 +108,7 @@ const build = async (): Promise<void> => {
       "descriptor-checkpoints.patch",
       "descriptor-initializers.patch",
       "checkpoint-module-effects.patch",
+      "pending-module-loads.patch",
     ])
       execFileSync(
         "git",

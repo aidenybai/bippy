@@ -151,8 +151,14 @@ const withModuleCheckpoint = async (run: (fixture: ModuleCheckpointFixture) => v
     let payload: HostLoadImportedModulePayloadOpaque | undefined;
     const hooks = agent.hostDefinedOptions.hostHooks;
     agent.hostDefinedOptions.hostHooks = {
-      HostLoadImportedModule: (_referrer, _request, _hostDefined, received) => {
+      HostLoadImportedModule: (referrer, request, _hostDefined, received) => {
         payload = received;
+        api.FinishLoadingImportedModule(
+          referrer,
+          request,
+          received,
+          api.ThrowCompletion(api.Value.undefined),
+        );
       },
     };
     fixture.evaluate('import("file:///lazy.js")');

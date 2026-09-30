@@ -4,6 +4,56 @@ import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { buildScriptFixture } from "./helpers/build-script-fixture.js";
 import { createNativeRuntime } from "./helpers/native-runtime.js";
 
+it("rejects a paused React update before owner access while a module load is outstanding", async () => {
+  const runtime = await createConcreteRuntime();
+  const { api } = await getSymbolicEngine();
+  const previous = api.surroundingAgent;
+  try {
+    runtime.evaluate(source);
+    runtime.evaluate("fixture.mount()");
+    runtime.drainJobs();
+    let loads = 0;
+    runtime.agent.hostDefinedOptions.hostHooks = {
+      ...runtime.agent.hostDefinedOptions.hostHooks,
+      HostLoadImportedModule: () => {
+        loads++;
+      },
+    };
+    runtime.evaluate('import("file:///delayed.js")');
+    expect(loads).toBe(1);
+    api.setSurroundingAgent(runtime.agent);
+    const enabled = api.BooleanValue.createAbstract();
+    api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, "enabled", enabled));
+    const compiled = api.EnsureCompletion(
+      runtime.realm.compileScript("fixture.update(enabled, false)"),
+    );
+    if (compiled.Type !== "normal") throw Error("Expected update");
+    runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);
+    const pause = runtime.agent.resumeEvaluate({
+      pauseOnAbstractBoolean: true,
+      noBreakpoint: true,
+    });
+    if (pause.done || !pause.value) throw Error("Expected React decision");
+    expect(pause.value.value).toBe(enabled);
+    let reads = 0;
+    expect(() =>
+      runtime.agent.captureEvaluation({
+        get capture(): never {
+          reads++;
+          throw Error("Owner must not run");
+        },
+      }),
+    ).toThrow("Evaluation checkpoints do not support pending module loads");
+    expect(reads).toBe(0);
+    expect(
+      runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true }).value,
+    ).toBe(pause.value);
+  } finally {
+    api.setSurroundingAgent(previous);
+    runtime.dispose();
+  }
+});
+
 let source: string;
 beforeAll(async () => {
   const chunk = await buildScriptFixture(

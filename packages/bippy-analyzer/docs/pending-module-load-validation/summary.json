@@ -1,0 +1,583 @@
+{
+  "scope": "pending-engine-module-load-capture-rejection-v1",
+  "predecessor": "8c66bf0bb70a01e45f30d07f8dcd1e448cae203c",
+  "predecessorEngineSha256": "686fca718e419461046bfc761035979c26b3079d4164daf2b96f53468e51618d",
+  "engineSha256": "86d65d47240efb188d3944d98d31e7162ff7a88dc1662b72b19d96a27a142462",
+  "tests": [
+    {
+      "file": "tests/pending-module-loads.test.ts",
+      "sha256": "40869ce780aeaffe5760c7c6e5a8ba15f90b2f805661394fb3564ebb2e70f4c2"
+    },
+    {
+      "file": "tests/checkpoint-module-effects.test.ts",
+      "sha256": "97faf85017c8504b4a9ee808bd8e1a2261df003ccfa64f44a6f74bf6ed7cd112"
+    },
+    {
+      "file": "tests/symbolic-react-tree.test.ts",
+      "sha256": "bc1d02f2bc67c981df71e471e3c5415b48922fa9b573509b45be73a7120a6004"
+    }
+  ],
+  "focused": {
+    "before": {
+      "failed": 9,
+      "passed": 20
+    },
+    "current": 29,
+    "newCases": 11,
+    "existingCases": 18
+  },
+  "units": {
+    "passed": 1946,
+    "files": 68
+  },
+  "conformance": {
+    "source": {
+      "count": 72,
+      "files": 36,
+      "sha256": "140246643fd750609619abf335ee9ab0206667b7aa86d400b73968b8ec77476d",
+      "cases": [
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/always-create-new-promise.js",
+          "scenario": "default",
+          "contents": "1c5e9b31f4f9d4dab8e1b6a79c2848d77f64117fc478b2d3e8f464e0aa419e65",
+          "compiled": "59b28e1b7a0b48b1b023152c5f21884d4823a18a70ad0b57df115f12002356f2",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/always-create-new-promise.js",
+          "scenario": "strict mode",
+          "contents": "5596f7ebff24fd80f61b50cd753f0d1188c3600d69fbd634f0e0c59bde8f68be",
+          "compiled": "be7a7ed95f69f1803e51b20a1ac73789b2fa73a641b74da960f219ef88d497c3",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/assign-expr-get-value-abrupt-throws.js",
+          "scenario": "default",
+          "contents": "318c72055f8ada7446e18b78a1da79d0adef27156a78b4d78440829a1ef87543",
+          "compiled": "6d81e38386e2d9e76b3340bb44a00c0bd2f9a05e7f80daeec2bd0a0de81aa14e",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/assign-expr-get-value-abrupt-throws.js",
+          "scenario": "strict mode",
+          "contents": "be338b2b73af8863dd1860f9e864a8caa555ffb9b7ae9a0061154be5d237786f",
+          "compiled": "160ae6b34cccb19ec1ea060f8e3fb23eb228f7fd9f28a574b62158efb973ccf0",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/await-import-evaluation.js",
+          "scenario": "default",
+          "contents": "bd983b6bf322bd4c8f1b0061a2f1790a6960adb8f4ac7538e80d3b8fddbf09ad",
+          "compiled": "6ed5ae1b97c3c47e1be34fa873ea63eaf92a56b6ce377c303b187b6fb2bc5aef",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/await-import-evaluation.js",
+          "scenario": "strict mode",
+          "contents": "d0ccd7d9d7583762a35036a51db5d828b25b4706e30277e0310439d3a93a6441",
+          "compiled": "ec32cbffc69fa37ebacbad4800009d0bf5137bcb52377aa18212cced513029e7",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/custom-primitive.js",
+          "scenario": "default",
+          "contents": "e99c5b604d9eda1c559fea2e7d7f42045ecf2719199f4a34af03b90e5c7df47f",
+          "compiled": "e6f3a540b28ac303f9c81a744c1635b0d35762644bd910b23273c632618ef619",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/custom-primitive.js",
+          "scenario": "strict mode",
+          "contents": "76c14deb9f08981c0fad6069a2b71a75e727eef575aedde04c789670e88a98b4",
+          "compiled": "14d7ae461a4de6d3c95b9d4d2f4c9adc771de2b8b6b6f615a08d06ec3ec8a066",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/escape-sequence-import.js",
+          "scenario": "default",
+          "contents": "b05a783f6793b25d10067e9b3bd02b226d33943f4226b30f5089ffadcddd3272",
+          "compiled": "b52ba7b4ffb77865a8f5cc7194450e48bdda393fc12689a83e40427b625e9f56",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/escape-sequence-import.js",
+          "scenario": "strict mode",
+          "contents": "4b65b847dcd8d330b785f544778dc481f288e00237fce26ca3ef05879be07f55",
+          "compiled": "ff1aa03e86810dff22eef1d5776fab06cd7377b94d0774d7b55688971935569b",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-cls-anon.js",
+          "scenario": "default",
+          "contents": "4632a0cf50027d9b3ee26f06986f19f5bf74cca7529587b5e67082125321de35",
+          "compiled": "b54f26c1cd39df0a2e8ff6ee421bc5b14cded72e85db063caac633deefd8ace4",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-cls-anon.js",
+          "scenario": "strict mode",
+          "contents": "26c4d4b960a81c80922d1cda1de82e882b2e9b1d84e49eadd0c277d927a007eb",
+          "compiled": "258d7ae7868013af2d35bc28b3baec7db98d5c94ebb84a12822c1489f8e8a99e",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-cls-name-meth.js",
+          "scenario": "default",
+          "contents": "f8f65528022e1ffb44d5169d0f7cef802104291d2e8d29e57d0de5d3679091d5",
+          "compiled": "f9277e04539c5524c9c680168e55548dbc96450a4bd39e84f4aaf7d34f13adea",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-cls-name-meth.js",
+          "scenario": "strict mode",
+          "contents": "a310185e206ff1f6baa305ea08172c83b60533e897541ad65afd4e96999f46d2",
+          "compiled": "d5b9ba78d47ef69912dbb28574c7f331e814cb18392caff03224b3b81c8e1f37",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-cls-named.js",
+          "scenario": "default",
+          "contents": "c7b98e585b3b0e90e80951233dcf82c3001bd71c43f1f23d6d9407e56c487cd9",
+          "compiled": "7b2b49af95ba047646f0683d8a6bb10a424cd41e7de54e4b68665ffac7a324e6",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-cls-named.js",
+          "scenario": "strict mode",
+          "contents": "3fe4c4531e9b02efa44098beca7f069eef024d67a0d1c110742a9be339110d59",
+          "compiled": "4d85749d4265212c88034ac4f2a0d62fc76fab9ffcde67d8ad8abd601e0f6a77",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-cls-anon.js",
+          "scenario": "default",
+          "contents": "71f9cc4b4de9051f9431690d1ba31366c610ae361154312ceac0475047a7a968",
+          "compiled": "bc78f9dde084077d64191ebe9f592e0dd9ced603efc7899094f183a922980fad",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-cls-anon.js",
+          "scenario": "strict mode",
+          "contents": "da22c7b437e5f41fa76fd41b3abf06963dcad616e19519b3b9694e8d354e61e8",
+          "compiled": "f7b9917a54cb301d165169748c0b28008790b1f014e792de31ef86bcc9876e9e",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-cls-name-meth.js",
+          "scenario": "default",
+          "contents": "3d62c46f54cbd3b99c758871be699f4f214d32ec937e99081444b14aa57deb58",
+          "compiled": "e61dd68571c52e68e55f2de944b6c262e43715b2f8ff41b4f4f05c7e4e9b0e31",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-cls-name-meth.js",
+          "scenario": "strict mode",
+          "contents": "e5c394076a63e7c2a1e298eec56e61121e6aa839d6e3335872e3da1d25efdb3a",
+          "compiled": "61ae92313c53ffa992375851b1f270a9a4b3964c1a10e70e98e1ba3ce7dd737c",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-cls-named.js",
+          "scenario": "default",
+          "contents": "300d3974d07561add27504f570d22746ebf802f71e3412cb69f3f5a47816d657",
+          "compiled": "ad2599c740059e4ea9f95ce08c1cdd8114706090b209de55b8d25a411e77df34",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-cls-named.js",
+          "scenario": "strict mode",
+          "contents": "5e46824de3b41bd2d9dd5dd0c2c7404f37f3238640d2a1ff06aaec15547a88d4",
+          "compiled": "d7c7fe63e5e4a32fe68efc91743da46f27903438276f789d5a605383eb00c250",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-fn-anon.js",
+          "scenario": "default",
+          "contents": "ef59ca3d4ea38a5324816bba1c829b4768860e4797bcf80e0b9f5649e0549294",
+          "compiled": "55d7d18512b78b607f1184837c452a4eb67b718be1314fd4feed52a3db1ff147",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-fn-anon.js",
+          "scenario": "strict mode",
+          "contents": "9bc5d555f590d445457384b2919e080c1e57a59555e5669848b2d28714980269",
+          "compiled": "eabecb9eac6c9549cf473abf6ce54af1ede248b1eefbf9a4cf05f754a58e3dfd",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-fn-named.js",
+          "scenario": "default",
+          "contents": "cb07208f962f8b004585c2bb2b68a8da855a2dd637d4a7ab2b02bef85ef46eb7",
+          "compiled": "8329ee0590acd847311d2400eaa464e091239737354d6059e34742406f839bd1",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-fn-named.js",
+          "scenario": "strict mode",
+          "contents": "0c87bb1661fe7282e7429d2aefd1fdfac9327962292e4700585f6ddab2cd0470",
+          "compiled": "b3ec6830cec671e7349abfea1d91913b2aa2cae14bc0accdf24d5de1a96f9014",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-gen-anon.js",
+          "scenario": "default",
+          "contents": "e7c2b4cbfced58dc29d789b5b35892e9b20750880c1c1fde92df8a3c47144eed",
+          "compiled": "203f35718c030e844af681ec94f3cd3350aa85e243d2bd8ea79320dea0d70e88",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-gen-anon.js",
+          "scenario": "strict mode",
+          "contents": "ae53d7f366035c5f0bd040922483219c71bc58d76ae0a1a6d76e86f1838bf71f",
+          "compiled": "1ab5a26ae6af939614091b36301a4ee39a0db93ac2f042f5212b2fe455adee93",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-gen-named.js",
+          "scenario": "default",
+          "contents": "1e540f333ef1ee7c00295f0e7c7b02ceab1e980e023b787847a0ab2474d3fa86",
+          "compiled": "ca7b7a5bb1227f5013a086c0344bdf4a75e45049c128ac6f5c0bcfeca5de79a3",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-gen-named.js",
+          "scenario": "strict mode",
+          "contents": "5d1f29200e38c8a70c4f6e1544b3ebca67638c8d62565117b24c448b7e27fe6f",
+          "compiled": "e9cd389302891676e48d7cf8dde9b54bdf9fad10c21927938f6f2cadb150d8cb",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-in.js",
+          "scenario": "default",
+          "contents": "43bb33e4a1babfd94a2597d147fd108658cf42337cc81c82363b77e72d2604c3",
+          "compiled": "27f89f8f92eb93a2181917af61980dace6410ff08ee7f6937fe493e3687ef28c",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-export-dflt-expr-in.js",
+          "scenario": "strict mode",
+          "contents": "773e8e843efbc715f70b632ee01c7ed9a074567397aab498106d34cc1435bc23",
+          "compiled": "5c421626bddfa9c2ebc4a8c0f064ee44003cf42b8eb247fb22ac94dc8f45332e",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-rqstd-once.js",
+          "scenario": "default",
+          "contents": "4b446d93a0513f8597a7e73e7db0459a136180538ea3a78771830d7cdb7c4625",
+          "compiled": "5cd1c02607126bd14e251c8e812d7b7bfb72e15f7601e1041b583a4cfdf5ceab",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-rqstd-once.js",
+          "scenario": "strict mode",
+          "contents": "d55a6b75764091e6c7ea1bb44fc5c8e6b32d4eec498065e2824eca415be53353",
+          "compiled": "cb9200d742e0af530bebf72dfc5e2fc425ed549c2fd703decb3fbb62cebff4ad",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-self-once-module.js",
+          "scenario": "default",
+          "contents": "a87c6cab15ee3573d03badfa4334a4332691980666645d6a9659a5e90cf4e969",
+          "compiled": "5a547f0dee6e9facf8300c3a4d40741ae45a1f2658769d33a0180a2e649df6e4",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-self-once-module.js",
+          "scenario": "strict mode",
+          "contents": "41da41136eb71270a8825091b88bac0a3a26a2a3c0fcca25b2f1c991aac6f6c2",
+          "compiled": "0f276c5cd4eff48c214540d30e19b688719d614622c92c8489ede3f8d6c83717",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-self-once-script.js",
+          "scenario": "default",
+          "contents": "8c07e2317c4573dd5f680ed62c033f063f47bdd8bd2cfe0768c724da5181654a",
+          "compiled": "f5d33a90bacf1949616f03fde9172ae2766c070be629eb5ad75e7d0f508834df",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/eval-self-once-script.js",
+          "scenario": "strict mode",
+          "contents": "e16230b8abd7326fad253696f8605bd00ca7b1be1b1799b7d2603b3db8778fd4",
+          "compiled": "303a9cbade77ead3576964d703418ed0616aa15f31391b3b0ce5c61fe6f09d69",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/for-await-resolution-and-error-agen-yield.js",
+          "scenario": "default",
+          "contents": "bedda6330e0e05e30eca07b60f9985e1bf2ba0a2f57c801b9a38acf79bad58e9",
+          "compiled": "5d24b36d93a52d817661b488d3c7b89dbb2ac3fb4e7ae9166b02d7ffe0326066",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/for-await-resolution-and-error-agen-yield.js",
+          "scenario": "strict mode",
+          "contents": "1fb955b040a79622714163c4bcfc3659b07fd6b6a9f0d4077bddaa72feef0c71",
+          "compiled": "4ec57d039f5b476570c32615cfb96e95527b04221b29387b60947b4b190bd8c6",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/for-await-resolution-and-error-agen.js",
+          "scenario": "default",
+          "contents": "a42aa4ed9d40ccfff5aabc6009786e922f4d962232c65e617bb58106c288dfb4",
+          "compiled": "2b5472cc1e246dd7a2672faa7c0f77b44c0e241442c6402f587c3805f57073b7",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/for-await-resolution-and-error-agen.js",
+          "scenario": "strict mode",
+          "contents": "d920baa978e7bb7c47cb0466bd3911ff33cd8ace7d27cfe2bd84a3e0c3a527e5",
+          "compiled": "65a903537e924c31da814d273c1ca2538fee0f0e8b74ae82bbc1a7e753071afd",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/for-await-resolution-and-error.js",
+          "scenario": "default",
+          "contents": "a0184e7c165a2149e0980904df1bff9f01c38b83d28c0be54da0e596fbb3dbec",
+          "compiled": "8159034d282354fc88272aaa48447864999221a25b613ae2bbcf6d93d7c677de",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/for-await-resolution-and-error.js",
+          "scenario": "strict mode",
+          "contents": "5c0aa7b70cbaba8c64a099ca08233d196aeaa771fb5ae6826df41fba6f86ce30",
+          "compiled": "2715aa1b788f599cd7bacf787796eec909704cf2bfb95b3aaaea622717cf2769",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/import-errored-module.js",
+          "scenario": "default",
+          "contents": "a74b5b546348f577ad527577827cfa5109808b5e2e41a47691a7e157c36ae419",
+          "compiled": "1a522685dd4e0401612d539cb0a6e8afad022ed907ea8c8eb45316aa033881d1",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/import-errored-module.js",
+          "scenario": "strict mode",
+          "contents": "2103eb194d1ed953c7a3b59fd19bd1f19689e235fc86d20d3da61c6a63b527ac",
+          "compiled": "fbbc7860e36d95150061d5a2f022e64f617da6f3adec52d399bf47555cbd2d67",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+          "scenario": "default",
+          "contents": "f7d6e0dc1f7e7d28545ffcadec42b3ff1431db0206a763923e5442621094e8b6",
+          "compiled": "c2818dd9870b5103f7c0872cfee53ffe72c09b1b7c5a4edae70ce1f4ef849d10",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/import-fulfilled-member-of-errored-cycle.js",
+          "scenario": "strict mode",
+          "contents": "c38b32f4aa256737837c812f3a6c0860c539f923a59beda3eeb726281a7e4fa5",
+          "compiled": "538ae8ed44631835d35dbb00f9fa1a332c2e934336a410a908e03a00bb720996",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/imported-self-update.js",
+          "scenario": "default",
+          "contents": "155c1586dce6acb86ad99b97f61b630455265b83e345b157d088073551053591",
+          "compiled": "c1f347d04fac1dc4dd5492aae58a92164e57677cb38d2feba83a6f6c9213940a",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/imported-self-update.js",
+          "scenario": "strict mode",
+          "contents": "ee039a95cda856ae302bd7d51672bc29b790999e774ed2a9ab3f3d5de4924755",
+          "compiled": "f9496def6d29f3e7dd9787861bf864a14052a959ccc2662a167ff354b23dbdc8",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/indirect-resolution.js",
+          "scenario": "default",
+          "contents": "74f096e655d297bd0810c62b7b5afaa6a996ea967a783da7f44e8dff55930d83",
+          "compiled": "a744c1839def1954be18f39429011bb4329102e61f9f2f1f53c8eb83a9a0ab9e",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/indirect-resolution.js",
+          "scenario": "strict mode",
+          "contents": "1576cf2cc5a9881e350813fb4276490e4120c62d8dd719b5b438c179c2abf18c",
+          "compiled": "be0181527fdaf8fd2e00dec1a7343e6e7d1babebfe433734f3091462c6fdb986",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/returns-promise.js",
+          "scenario": "default",
+          "contents": "ce8c3be75221b071d1458f469290787178f2d243cc1f75482485b015b1a18c52",
+          "compiled": "3d5369e9d9e64445b0144a33bc49eedd17e8b9244e09dce441dd1efa0fa20bf5",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/returns-promise.js",
+          "scenario": "strict mode",
+          "contents": "b1c4ee762c4ef257d573ebf14a14f8561dcc3dd2fffe50173b865e724643664d",
+          "compiled": "fe4290dac2100c4aca61563cb3b7d5e122f296c1bacec25cb2eaef867106801a",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/reuse-namespace-object-from-import.js",
+          "scenario": "default",
+          "contents": "25097cae53c1c393ed34ca42b646553346a1c8ce66e194851a8d93de02910fd7",
+          "compiled": "53083c1cf2416726cb26737c8d365e44508ba6a3def5475a45a4677d90385c58",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/reuse-namespace-object-from-import.js",
+          "scenario": "strict mode",
+          "contents": "600156fc69c2fb7c234252ad946e3df921e5e4d328a9a01f2633dbb844a6c396",
+          "compiled": "3052b2386ba69431e1e6401548abfc80b042ae7f17714a42d545bb752d25023a",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/reuse-namespace-object-from-script.js",
+          "scenario": "default",
+          "contents": "5236e00e34399cf77da128fd3f9b34814e348e27dced5f0719059f8826e52cf9",
+          "compiled": "80266a68979f30300b69a04cf754b5c79d7ddbfa3ae326dee6307712a2ca0613",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/reuse-namespace-object-from-script.js",
+          "scenario": "strict mode",
+          "contents": "e75f5e2940a6387ac7c5f7459c24ed4233bbac247db6de6785acea8972f0265b",
+          "compiled": "5ab20253195ad28c589070d51a709f219891d376e6d3445e624b916aec98030a",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/reuse-namespace-object.js",
+          "scenario": "default",
+          "contents": "bbef8ad82335aaa13b2e78818f12e7bf0a79a7e9d45541e4308028c2cdc0595f",
+          "compiled": "488813040143dd5a7df074e1089d17d7504caa8d03a1c88246a764aec7a58809",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/reuse-namespace-object.js",
+          "scenario": "strict mode",
+          "contents": "56ac25f9d486fdbc3c01f2d472c45f12f97bce72028cc8ddcd2ab7fae712c338",
+          "compiled": "85349cc9b53e9ee12d91692b874db48bf00c26811526d4ce2b5611d965e598ea",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/update-to-dynamic-import.js",
+          "scenario": "default",
+          "contents": "8be30441f050be20a5a0c28d2f02ad86b8398444f492e18b06b879f2b9b7a203",
+          "compiled": "07e0ee847bb8871d114382a32a808ec040e69eb387c13ea2fc874fa618a53b6d",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/update-to-dynamic-import.js",
+          "scenario": "strict mode",
+          "contents": "5befc132410a268aab8482dba8e1bdb42e7c58acf0f22693d21858e65af7dc78",
+          "compiled": "9007d5bc5f7566ece13fcb00e93728c1c8b17a991c853c95c909f1740566cd72",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/usage-from-eval.js",
+          "scenario": "default",
+          "contents": "58eff12dea120f506c77fb826250694b8d468e03c9c2f5ad18884bb035290144",
+          "compiled": "04352a5cd474b4bd64a3166c196d813b9adaadea86327303be56eacce9b324bd",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/dynamic-import/usage-from-eval.js",
+          "scenario": "strict mode",
+          "contents": "b642629ea6c6b5da925f36edef3029a59d768f8b1c70e3b1cb8509b63cd2cf99",
+          "compiled": "315e4a68b5613c382b2a2bbad8f3976ee14c128660d9af3c1f855bea08f1db7c",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/distinct-for-each-module.js",
+          "scenario": "default",
+          "contents": "6312ebf01218a9f1c81c897b199f691f3984bedd98a9ee4117e858935817e8be",
+          "compiled": "2234ab05ee5cfa235793da33d70849f652c211f737c3a575d871c95f8e891330",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/distinct-for-each-module.js",
+          "scenario": "strict mode",
+          "contents": "36cdfe0e6cfd884fd6ddf0d4ad6ffb3d6a85fede4ab8d8c19bb8fc3662d1e4ee",
+          "compiled": "901072180a36b10c947c8a3c0a8a38a1a1e55b162d8dbaa58db2e5b0a54798b2",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/import-meta-is-an-ordinary-object.js",
+          "scenario": "default",
+          "contents": "81c528d2ec450b7621ea2713e4ac7d552e1b75f586f3688129179efb9727130a",
+          "compiled": "ad2655c392d82f31a8503f2cea34f43ca38993beb558724564b817b95497c4e2",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/import-meta-is-an-ordinary-object.js",
+          "scenario": "strict mode",
+          "contents": "5ad1e616c4822c36c79d93eac3661d60ddc1a87642f992e80ba973820b07b12a",
+          "compiled": "b2f1a1d34862f12532ae05e2f45aeca35ffae59c5c914ca1df8d1e23a4a02ed6",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/not-accessible-from-direct-eval.js",
+          "scenario": "default",
+          "contents": "6d3c7cac3b4c664396f85a6e48b7ee522183ff1dbe4a342bc4e9516e129d4630",
+          "compiled": "b560c7b63d4cb174b2d3d90117fa4ae8cd8787146db55142de0542bd24780f77",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/not-accessible-from-direct-eval.js",
+          "scenario": "strict mode",
+          "contents": "8334362d0271875f8a6d0356ba90f8724e35f2a744085435664d66bd98d3cc43",
+          "compiled": "3aa6cb8ca764d0a409fdfc09fa4bd4fa43208931a6e1a5f180f3a9ee129e8ae4",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/same-object-returned.js",
+          "scenario": "default",
+          "contents": "504c3ba3148f725f4f198a117344c834043ace26accbe7869759f97163c5a648",
+          "compiled": "55bc88859449edc7c88c77974cbd638ac08c68b175b23e6d093be33279c9ae18",
+          "pass": true
+        },
+        {
+          "file": ".test262/test/language/expressions/import.meta/same-object-returned.js",
+          "scenario": "strict mode",
+          "contents": "1f3bebcc24cdf9eaae287145bb7e848ae7e76613be5e7900cdbfeaf481bde170",
+          "compiled": "a2eadae9e7d8c1b579b6d5d5dacaf3ee7bf1f1258b3db592f66387a76562c892",
+          "pass": true
+        }
+      ]
+    },
+    "published": {
+      "reused": true,
+      "receipt": "../checkpoint-module-effect-validation/published.json.gz",
+      "sha256": "cfbf038b8b3c12c4d4e380e0535bd8ee98abe66932d127ed0d95431304a8d10e"
+    },
+    "matchingInputsAndCompiledHashes": true
+  },
+  "counterexample": {
+    "predecessor": {
+      "blocked": false,
+      "ownerCalls": 1,
+      "cacheHits": 1,
+      "contextDelta": 1
+    },
+    "maintained": {
+      "blocked": true,
+      "ownerCalls": 0,
+      "cacheHits": 0,
+      "contextDelta": 0
+    }
+  },
+  "implementation": {
+    "files": 3,
+    "insertions": 17,
+    "deletions": 3,
+    "patchSha256": "744630221d5a3e2dc6adcc89bc6523b15ff5cc375663b2dec97f44b970719c9b"
+  },
+  "limits": [
+    "Capture admission only. No callback wrapping, placeholder job, scheduling change, cache/context rollback, module snapshot or effect permission.",
+    "Native payload identity Set is scoped by Agent in a WeakMap. Failed hooks/completions remain pending; no cancellation API. Successful completion removes only its payload; nested shared graph state still has separate request wrappers.",
+    "No guest GC root policy is added. Native payload retention does not prove weak-lifetime parity, guest reachability, hostile-host safety or general ownership.",
+    "Direct caches/custom work outside HostLoadImportedModule and shared native storage remain unowned. Disposed runtime does not complete arbitrary module requests.",
+    "The new React test explicitly starts a deferred import before a paused update, checks rejection before owner access and preserved decision; no symbolic branch exploration or lazy/Suspense parity.",
+    "Previous module-effect payload fixture now completes its request before capturing. Initial React capture getter inferred void; explicit never fixes type only. Failed type log and same-final-source baseline retained.",
+    "Unchanged10second/twoworkerTest262gate and5secondunittimeout. Published72variantbaseline reused, not rerun. Narrow passes do not erase existing failures."
+  ],
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "engineSourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b"
+}
