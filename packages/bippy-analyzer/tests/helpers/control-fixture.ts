@@ -15,15 +15,16 @@ const evaluateFixture = async (
   source: string,
   globals: Readonly<Record<string, unknown>>,
   lower: boolean,
+  sourceModule?: string,
 ): Promise<unknown> => {
-  const input = `import { captureControl } from ${JSON.stringify(controlSpecifier)};\nimport { getNativeCaptures } from ${JSON.stringify(capturesSpecifier)};\n${source}\nexport { result };`;
+  const input = `import { captureControl } from ${JSON.stringify(controlSpecifier)};\nimport { getNativeCaptures, getNativeSourceModule } from ${JSON.stringify(capturesSpecifier)};\n${source}\nexport { result };`;
   const transformed = lower
-    ? await lowerGenerators(input, "control-fixture.mjs")
+    ? await lowerGenerators(input, "control-fixture.mjs", undefined, sourceModule)
     : await transformAsync(input, {
         filename: "control-fixture.mjs",
         configFile: false,
         babelrc: false,
-        plugins: [nativeCaptures],
+        plugins: [[nativeCaptures, { sourceModule }]],
       });
   if (!transformed?.code) throw new Error("Missing fixture transform");
   const code = transformed.code;
@@ -83,9 +84,11 @@ const evaluateFixture = async (
 export const evaluateLowered = (
   source: string,
   globals: Readonly<Record<string, unknown>> = {},
-): Promise<unknown> => evaluateFixture(source, globals, true);
+  sourceModule?: string,
+): Promise<unknown> => evaluateFixture(source, globals, true, sourceModule);
 
 export const evaluateNativeCaptures = (
   source: string,
   globals: Readonly<Record<string, unknown>> = {},
-): Promise<unknown> => evaluateFixture(source, globals, false);
+  sourceModule?: string,
+): Promise<unknown> => evaluateFixture(source, globals, false, sourceModule);

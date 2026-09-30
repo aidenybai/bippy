@@ -3,6 +3,10 @@ import * as syntax from "@babel/types";
 import { getCaptureManifest } from "./capture-manifest.js";
 import { capturesSpecifier, controlSpecifier } from "./control-paths.js";
 
+interface NativeCaptureOptions {
+  readonly sourceModule?: string;
+}
+
 interface ScopeRegistrations {
   path: NodePath<syntax.Program | syntax.BlockStatement>;
   statements: syntax.Statement[];
@@ -119,17 +123,28 @@ const isImmediateControlFactory = (path: NodePath<syntax.Function>): boolean => 
   );
 };
 
-export const nativeCaptures = (): PluginObject => {
+export const nativeCaptures = (
+  _babel: unknown,
+  { sourceModule }: NativeCaptureOptions = {},
+): PluginObject => {
   const manifests = new WeakMap<syntax.Node, syntax.ObjectExpression>();
   const scopes = new Map<syntax.Node, ScopeRegistrations>();
   const processed = new WeakSet<syntax.Node>();
   let helper: syntax.Identifier;
   let isUsed = false;
+  const registrationName =
+    sourceModule === undefined ? "registerNativeClosure" : "registerEngineClosure";
+  const getRegistration = (closure: syntax.Expression, factory: syntax.Expression) =>
+    syntax.callExpression(syntax.cloneNode(helper), [
+      closure,
+      factory,
+      ...(sourceModule === undefined ? [] : [syntax.stringLiteral(sourceModule)]),
+    ]);
   return {
     visitor: {
       Program: {
         enter: (path) => {
-          helper = path.scope.generateUidIdentifier("registerNativeClosure");
+          helper = path.scope.generateUidIdentifier(registrationName);
         },
         exit: (path) => {
           for (const registration of scopes.values())
@@ -138,7 +153,7 @@ export const nativeCaptures = (): PluginObject => {
             path.unshiftContainer(
               "body",
               syntax.importDeclaration(
-                [syntax.importSpecifier(helper, syntax.identifier("registerNativeClosure"))],
+                [syntax.importSpecifier(helper, syntax.identifier(registrationName))],
                 syntax.stringLiteral(capturesSpecifier),
               ),
             );
@@ -159,19 +174,14 @@ export const nativeCaptures = (): PluginObject => {
             if (!path.node.id) return;
             const statement = path.parentPath.isExportDeclaration() ? path.parentPath : path;
             statement.insertAfter(
-              syntax.expressionStatement(
-                syntax.callExpression(syntax.cloneNode(helper), [
-                  syntax.cloneNode(path.node.id),
-                  factory,
-                ]),
-              ),
+              syntax.expressionStatement(getRegistration(syntax.cloneNode(path.node.id), factory)),
             );
             isUsed = true;
           } else if (path.isClassExpression()) {
             const closure = getNamedClosure(path);
             if (!closure) return;
             isUsed = true;
-            path.replaceWith(syntax.callExpression(syntax.cloneNode(helper), [closure, factory]));
+            path.replaceWith(getRegistration(closure, factory));
             path.skip();
           }
         },
@@ -207,12 +217,7 @@ export const nativeCaptures = (): PluginObject => {
               statements: [],
             };
             registration.statements.push(
-              syntax.expressionStatement(
-                syntax.callExpression(syntax.cloneNode(helper), [
-                  syntax.cloneNode(path.node.id),
-                  factory,
-                ]),
-              ),
+              syntax.expressionStatement(getRegistration(syntax.cloneNode(path.node.id), factory)),
             );
             scopes.set(parent.node, registration);
             isUsed = true;
@@ -220,7 +225,7 @@ export const nativeCaptures = (): PluginObject => {
             const closure = getNamedClosure(path);
             if (!closure) return;
             isUsed = true;
-            path.replaceWith(syntax.callExpression(syntax.cloneNode(helper), [closure, factory]));
+            path.replaceWith(getRegistration(closure, factory));
             path.skip();
           }
         },

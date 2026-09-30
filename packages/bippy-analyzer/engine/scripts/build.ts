@@ -119,6 +119,7 @@ const build = async (): Promise<void> => {
       "agent-callback-captures.patch",
       "agent-notification-roots.patch",
       "scoped-gc-roots.patch",
+      "native-source-provenance.patch",
     ])
       execFileSync(
         "git",

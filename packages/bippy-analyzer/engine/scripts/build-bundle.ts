@@ -69,7 +69,12 @@ const getEnginePlugin = (sourceDirectory: string): Plugin => ({
       throw new EngineBuildError(`Engine transform produced no code or source map: ${filename}`);
     if (filename.startsWith(join(sourceDirectory, "src/host-defined/control") + sep))
       return { code: result.code, map: JSON.stringify(result.map) };
-    const lowered = await lowerGenerators(result.code, filename, result.map);
+    const lowered = await lowerGenerators(
+      result.code,
+      filename,
+      result.map,
+      getSourceName(filename, sourceDirectory),
+    );
     return { code: lowered.code, map: JSON.stringify(lowered.map) };
   },
 });

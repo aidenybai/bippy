@@ -127,6 +127,7 @@ export const lowerGenerators = async (
   source: string,
   filename: string,
   inputSourceMap?: NonNullable<FileResult["map"]>,
+  sourceModule?: string,
 ) => {
   const result = await transformAsync(source, {
     filename,
@@ -151,7 +152,7 @@ export const lowerGenerators = async (
     babelrc: false,
     sourceMaps: true,
     inputSourceMap: getInputSourceMap(result.map, filename),
-    plugins: [nativeCaptures],
+    plugins: [[nativeCaptures, { sourceModule }]],
   });
   if (!captured?.code || !captured.map)
     throw new EngineBuildError(`No native capture output for ${filename}`);

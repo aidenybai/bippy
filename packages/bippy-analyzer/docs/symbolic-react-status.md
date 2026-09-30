@@ -40,6 +40,8 @@ The opt-in [Script syntax policy](script-syntax-regions.md) now recognizes final
 
 [Scoped GC roots](scoped-gc-roots.md) now retain explorer completions through observer calls and report copying, including concrete no-fork React snapshots. Agent capture also retains recorded values before checkpoint publication. Neither change supplies a transitive owner or verifies the caller’s serialization.
 
+[Native source provenance](native-source-provenance.md) separates compiler-issued metadata from replaceable public declarations. Actual React dispatch uses a labeled original bound-call implementation. Labels do not own captures or authorize effects, and no automatic execution owner is implemented.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                                                                       |
