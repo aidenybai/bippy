@@ -40,3 +40,27 @@ export type {
   NumericSameValuePredicate,
 } from "./symbolic/numeric-domain.js";
 export { SymbolicEngineError } from "./symbolic/errors.js";
+export {
+  createGuardedHostTreeReport,
+  specializeGuardedHostTree,
+} from "./report/host-tree-report.js";
+export { HostTreeReportError } from "./report/host-tree-types.js";
+export type {
+  HostJsonObject,
+  HostJsonValue,
+  HostTreeCommitInput,
+  HostTreeDiagnostic,
+  GuardedHostTreeInput,
+  HostTextNode,
+  HostElementNode,
+  HostTreeNode,
+  HostTreeCommit,
+  GuardedHostTreeObservation,
+  HostTreeReportLimits,
+  HostTreeReportOptions,
+  GuardedHostTreeReport,
+  SelectedHostTreeObservation,
+  UncoveredHostTreeObservation,
+  AmbiguousHostTreeObservation,
+  HostTreeSpecialization,
+} from "./report/host-tree-types.js";

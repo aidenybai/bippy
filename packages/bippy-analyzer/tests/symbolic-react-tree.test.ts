@@ -1,4 +1,6 @@
 import { beforeAll, expect, it } from "vite-plus/test";
+import { createGuardedHostTreeReport, specializeGuardedHostTree } from "../src/index.js";
+import { andGuard, truthyGuard, negateGuard } from "../src/symbolic/guards.js";
 import { createConcreteRuntime } from "../src/concrete/runtime.js";
 import { getSymbolicEngine } from "../src/symbolic/load-engine.js";
 import { buildScriptFixture } from "./helpers/build-script-fixture.js";
@@ -136,6 +138,45 @@ it.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ ena
       native.drainJobs();
       const observation = runtime.readString("fixture.observe()");
       expect(observation).toBe(native.evaluate("fixture.observe()"));
+      const flags = new Map([
+        ["enabled", enabled],
+        ["details", details],
+      ]);
+      const guard = andGuard(
+        Array.from(flags, ([input, value]) => {
+          const condition = truthyGuard({ input, path: [], measure: "value" });
+          return value ? condition : negateGuard(condition);
+        }),
+      );
+      const snapshot = JSON.stringify(JSON.parse(observation).tree);
+      const report = createGuardedHostTreeReport(
+        ["enabled", "details"],
+        [
+          {
+            id: "supplied-specialization",
+            guard,
+            outcome: { kind: "commit", snapshot },
+          },
+        ],
+      );
+      const selected = specializeGuardedHostTree(report, flags);
+      expect(selected.kind).toBe("selected");
+      if (selected.kind !== "selected" || selected.outcome.kind !== "commit")
+        throw Error("Expected selected commit");
+      expect(JSON.parse(selected.outcome.snapshot)).toEqual(
+        JSON.parse(String(native.evaluate("fixture.observe()"))).tree,
+      );
+      expect(
+        specializeGuardedHostTree(
+          report,
+          new Map([
+            ["enabled", !enabled],
+            ["details", details],
+          ]),
+        ),
+      ).toEqual({ kind: "uncovered" });
+      expect(report.execution).toBe("not-verified");
+      expect(report.coverage).toBe("not-verified");
       const label = enabled ? "Enabled" : "Disabled";
       const events = ["commit:Disabled:0", "cleanup:Disabled:0", `commit:${label}:0`];
       expect(JSON.parse(observation)).toEqual({

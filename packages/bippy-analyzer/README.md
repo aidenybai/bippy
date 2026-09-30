@@ -12,6 +12,8 @@ An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements
 
 [Number SameValue predicates](docs/number-predicates.md) now drive actual React state bailouts with unknown Numbers. These are separate single-path runs, not isolated React branches. The [engine reuse audit](docs/engine-reuse-audit.md) defines what stays in engine262 and React, and why upstream preview/context copying cannot replace rollback.
 
+The [guarded host-tree report API](docs/guarded-host-tree-reports.md) stores supplied JSON snapshots and guarded diagnostics. It preserves whole-tree correlation and distinguishes selected, uncovered, and ambiguous observations. It does not execute React or establish branch isolation. Reports keep execution and coverage unverified.
+
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
 ## Run

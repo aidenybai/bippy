@@ -24,6 +24,8 @@ The initial 12-case predecessor failures and subsequent 17-case runs remain arch
 
 All 2,017 units across 73 files, types, two relocated builds, offline installation, and the unchanged local 74-case smoke pass. Fresh source conformance passes 623 variants. Input hashes, compiled hashes, and verdicts match reused published weak-reference and `Reflect.construct` reports. Those published reports were not rerun. [Validation receipts](callable-capture-validation/summary.json) contain the reports, hashes, and logs.
 
+Linux CI at `541a7683` passes 2,017 units but only 72 of 74 smoke variants. Both numeric `substr` variants exceed the unchanged ten-second timeout. The engine hash matches the local build. Thirty-second profiles take about 12.8 and 12.9 seconds; they are diagnostics, not gate passes. E2E and publishing succeed. [Final CI evidence](callable-capture-validation/ci-status.json) retains the logs and profiles.
+
 ## React ownership remains incomplete
 
 The React diagnostic still selects 2,199 guest objects and rejects its first timer in both orders. Each order has one prefix and no branch tree observation. It intentionally ignores class and proxy ownership warnings while exercising the host-effect guard.

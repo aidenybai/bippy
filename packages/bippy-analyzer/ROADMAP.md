@@ -224,6 +224,8 @@ Completion check: an unknown condition mutates an object through two aliases and
 
 ## 6. Build symbolic React trees
 
+A [public guarded host-tree report component](docs/guarded-host-tree-reports.md) now stores supplied snapshots and guarded diagnostics. Its content graph preserves whole-tree correlation, but does not merge execution states or prove isolation. Four real React specialization witnesses check report selection against native output. Engine-owned report production, identity, provenance, and shared-prefix exploration remain unfinished.
+
 - [ ] Run supported symbolic inputs through the concrete React integration. React must retain responsibility for hooks, reconciliation, and lifecycle behavior.
 - [ ] Isolate React's mutable runtime state, fibers, hook queues, refs, context, module state, and host DOM writes. Do not share mutable native wrappers across alternatives.
 - [ ] Adapt #115's output representation for elements, components, text, fragments, conditional branches, shared subtrees, and explicit unknown nodes.
