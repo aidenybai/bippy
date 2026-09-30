@@ -14,6 +14,8 @@ An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements
 
 The [guarded host-tree report API](docs/guarded-host-tree-reports.md) stores supplied JSON snapshots and guarded diagnostics. It preserves whole-tree correlation and distinguishes selected, uncovered, and ambiguous observations. It does not execute React or establish branch isolation. Reports keep execution and coverage unverified.
 
+The opt-in [script syntax region policy](docs/script-syntax-regions.md) validates finalized parser data without restoring or freezing it. This supplies a syntax integrity check, not general execution ownership or effect permission.
+
 The [caller-owned Boolean snapshot driver](docs/boolean-snapshot-exploration.md) connects one engine evaluation to guarded reports without prefix replay. It requires a supplied state owner and snapshot observer. It does not verify isolation or enable a general React renderer.
 
 The [native control-lowering contract](docs/native-lexical-scopes.md) preserves ordinary lexical scopes and lists rejected native source forms. Generator-scope TDZ and complete execution ownership remain unresolved.

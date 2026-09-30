@@ -33,4 +33,6 @@ Both visitation orders report four frozen tables and twelve parser lists. Each o
 
 The same discovery finds 2,477 native functions, of which 59 lack capture manifests. These include native constructors and helpers. That is a separate ownership problem; class names and reference counts do not prove safe execution. The later [class lexical-capture increment](native-class-captures.md) registers supported constructors but still reports class storage as unowned. Its expanded diagnostic retains 15 unregistered functions and rejects the first timer.
 
+A later opt-in [Script syntax region policy](script-syntax-regions.md) recognizes parser-created argument lists through provenance, not their `location` field alone. It validates their original syntax graph and source accessors without mutable-list snapshots. A React update test recognizes syntax lists and validates their regions, then rejects the remaining execution owner. This does not retroactively change this audit’s counts or authorize branch effects.
+
 General React branch isolation remains incomplete. The next owner policy must distinguish immutable metadata, already-selected storage, and unsupported native state before enabling branch effects.

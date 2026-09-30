@@ -114,6 +114,7 @@ const build = async (): Promise<void> => {
       "template-cache-roots.patch",
       "callable-captures.patch",
       "iterator-record-checkpoints.patch",
+      "script-syntax-regions.patch",
     ])
       execFileSync(
         "git",

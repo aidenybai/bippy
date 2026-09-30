@@ -30,6 +30,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 A [caller-owned Boolean snapshot driver](boolean-snapshot-exploration.md) now forks one engine evaluation without prefix replay and builds guarded reports. It neither supplies nor verifies the state owner. An intentionally incomplete owner produces a wrong sibling result while the report stays unverified. The actual React test rejects ownership before producing any branch observations.
 
+The opt-in [Script syntax policy](script-syntax-regions.md) now recognizes finalized parser regions, including original argument lists and location records. Validation detects persistent changes without freezing or restoring syntax. Actual React syntax validates, but the test still rejects remaining execution ownership before producing a branch observation.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                                                                       |
