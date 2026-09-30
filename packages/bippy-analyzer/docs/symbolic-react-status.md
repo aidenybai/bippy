@@ -30,6 +30,8 @@ The [argument accumulator storage policy](argument-accumulator-storage.md) now r
 
 [Native lexical scope preservation](native-lexical-scopes.md) repairs ordinary capture-getter TDZ behavior and rejects known unsupported lowering forms before mutation. Generator-scope TDZ remains unresolved. The React diagnostic still rejects its first timer in both orders; no branch observations or ownership proof are added.
 
+[Private discovery policies](control-capture-policy.md) now distinguish explicit capture expansion from opacity and reject unclassified dependencies or observed ambient names. Tests use supplied native-control owners; production Agent checkpoints still use the legacy contract. No source label grants permission, and no new Script or React fork is admitted.
+
 [Private storage plans](object-storage-plans.md) now separate object snapshots from their schema-known dependencies. The aliased-call pause exposes Realm, Script, environment, native Call, and intrinsic-prototype edges. A test-only owner rejects the completion callback before branch execution. There is still no production automatic owner or new accepted React fork.
 
 [Agent idle membership](idle-membership.md) now restores automatically with evaluation checkpoints. Both-order self-removal/insertion tests match four independent Node observations with one prefix per order. Callback contents and effects remain unowned without further policies. This is not React scheduler ownership or new shared-prefix React rendering evidence.

@@ -1,0 +1,99 @@
+{
+  "scope": "private explicit control discovery policies, not execution ownership",
+  "engine": "bce554a9376c260b0991ec583d7ac7e77655fc5e190d158a97eb608490d63e28",
+  "predecessor": "81baae2020487cadf73045f584d0c2d537758f06",
+  "production": "Existing public captureControl and Agent callers use the legacy adapter into shared discovery. The strict internal-module entry currently has standalone lowered-control test consumers, not a production automatic owner. No public engine API export or automatic capability admission.",
+  "policies": {
+    "expand": "Explicit references plus original native captures",
+    "opaque": "Explicit references, no direct native capture expansion; policy must account for omitted state/capabilities",
+    "unknown": "Reject before direct metadata",
+    "ambient": "Observed names require literal true approval before capture; names hidden by opacity remain the policy obligation",
+    "legacy": "Absent/nullish references still mean empty list with metadata expansion"
+  },
+  "boundaries": [
+    "Native metadata, reflection and policy callbacks are trusted",
+    "No proof of ownership, immutability, provenance or confinement",
+    "No GC/direct-metadata/control-factory/restore/future-call gate",
+    "No whole-graph preflight, effects permission or general budget",
+    "No default source-module allowlist",
+    "Unowned counter still reaches two under an incomplete opaque policy",
+    "No accepted automatic Script or React branch"
+  ],
+  "baseline": {
+    "engine": "7ebf85fd3aee0b06e50aa21ced5db44d4d094fd5ce40bd5d96904553dd3338fd",
+    "failed": 25,
+    "controls": 2,
+    "classification": "Absent private extension export, not25semantic fixes",
+    "controlsDescription": "No public engine export; legacy empty-reference expansion",
+    "identicalFinalTests": true,
+    "restoredOnlyExecutionMachineFile": true
+  },
+  "validation": {
+    "newTests": 27,
+    "focused": 70,
+    "units": 2469,
+    "files": 102,
+    "types": "pass",
+    "relocatedBuilds": 2,
+    "offlineInstall": "pass",
+    "rootCheck": {
+      "errors": 0,
+      "warnings": 2,
+      "files": 633
+    },
+    "smoke": 74,
+    "timeoutMs": {
+      "units": 5000,
+      "test262": 10000
+    },
+    "workers": 2,
+    "ciJobMinutes": 10
+  },
+  "observations": {
+    "loweredNativeFixtures": "Both orders, one prefix each, original state/alias, manually supplied original storage restoration, 11/12 branches",
+    "automaticSelection": false,
+    "newReactEvidence": false
+  },
+  "intermediateFailures": [
+    "TS18048: optional inspection not narrowed by mode alias; fixed explicit object check",
+    "Stale build after failed compilation caused18 dependent test failures",
+    "One embedded iterator fixture had missing brace; corrected; raw failure retained"
+  ],
+  "review": "Read-only review found no critical or warnings. Added suggested opaque-descendant rejection and exact ambient-failure/receiver/recovery cases. Reviewer ran no gates.",
+  "conformance": {
+    "fresh": true,
+    "selection": [
+      ".test262/test/built-ins/WeakRef/**/*.js",
+      ".test262/test/language/expressions/yield/*.js"
+    ],
+    "sourcePassed": 181,
+    "publishedPassed": 181,
+    "failed": 0,
+    "identicalInputsCompiledVerdicts": true,
+    "normalizedSha256": "720777d977f5bac2f7d53c467edb94b407ae6140f4ef4e3d6f5e5070e8fec357"
+  },
+  "commands": [
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ],
+  "files": [
+    {
+      "filename": "engine/extensions/execution-machine.mts",
+      "sha256": "43fea8a3ed711750b54b87e17584026bde6a9f400feb09d8b4535f38a5eb7063"
+    },
+    {
+      "filename": "tests/control-capture-policy.test.ts",
+      "sha256": "d94547c221ebfd7f40a797449b2621ec2577e8628e992d041c154e3accd9217a"
+    }
+  ],
+  "incomplete": [
+    "Audited native capability contracts",
+    "Automatic Agent/Realm/Script/context/environment storage ownership",
+    "Actual automatic aliased-closure Script fork",
+    "Shared-prefix React isolation",
+    "Automatic verified reports/transitions/repeated families/demo"
+  ]
+}

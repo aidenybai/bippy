@@ -52,10 +52,23 @@ export interface ControlCheckpoint {
   restore: () => void;
 }
 
-export interface ContinuationStateOwner {
+interface CaptureLifecycle {
   beginCapture?: () => void;
-  references?: (value: object) => readonly unknown[];
   capture: (roots: ContinuationStateRoots) => ControlCheckpoint;
+}
+
+export interface ContinuationStateOwner extends CaptureLifecycle {
+  references?: (value: object) => readonly unknown[];
+}
+
+export interface ControlCaptureInspection {
+  mode: "expand" | "opaque";
+  references: readonly unknown[];
+}
+
+export interface ControlCapturePolicy extends CaptureLifecycle {
+  inspect: (value: object) => ControlCaptureInspection | undefined;
+  admitAmbient?: (name: string) => boolean;
 }
 
 interface FrameState {
@@ -96,6 +109,40 @@ export const captureControl = (
   owner: ContinuationStateOwner,
   getAdditionalRoots: () => readonly unknown[] = () => [],
   onCaptureRoots?: (values: readonly unknown[]) => void,
+): ControlCheckpoint =>
+  captureControlState(
+    iterator,
+    owner,
+    (value) => ({
+      mode: "expand",
+      references: owner.references?.(value) ?? [],
+    }),
+    getAdditionalRoots,
+    onCaptureRoots,
+  );
+
+export const captureControlWithPolicy = (
+  iterator: unknown,
+  policy: ControlCapturePolicy,
+  getAdditionalRoots: () => readonly unknown[] = () => [],
+  onCaptureRoots?: (values: readonly unknown[]) => void,
+): ControlCheckpoint =>
+  captureControlState(
+    iterator,
+    policy,
+    (value) => policy.inspect(value),
+    getAdditionalRoots,
+    onCaptureRoots,
+    (name) => policy.admitAmbient?.(name) === true,
+  );
+
+const captureControlState = (
+  iterator: unknown,
+  owner: CaptureLifecycle,
+  inspect: (value: object) => ControlCaptureInspection | undefined,
+  getAdditionalRoots: () => readonly unknown[],
+  onCaptureRoots?: (values: readonly unknown[]) => void,
+  admitAmbient?: (name: string) => boolean,
 ): ControlCheckpoint => {
   if (!isControlFrame(iterator)) throw new Error("Cannot checkpoint a foreign continuation");
   if (!owner || typeof owner.capture !== "function")
@@ -131,13 +178,22 @@ export const captureControl = (
       if (!isObject(frame) || visited.has(frame)) continue;
       visited.add(frame);
       if (!isControlFrame(frame)) {
+        const inspection = inspect(frame);
+        const mode = inspection?.mode;
+        if (!inspection || (mode !== "expand" && mode !== "opaque"))
+          throw new Error("Unclassified control dependency");
+        const declaredReferences = inspection.references;
+        if (declaredReferences === undefined)
+          throw new Error("Control capture policies require explicit references");
         const references: unknown[] = [];
-        for (const reference of owner.references?.(frame) ?? []) {
+        for (const reference of declaredReferences) {
           values.push(reference);
           references.push(reference);
         }
-        const captures = getNativeCaptures(frame);
-        if (captures) addCaptures(captures);
+        if (mode === "expand") {
+          const captures = getNativeCaptures(frame);
+          if (captures) addCaptures(captures);
+        }
         for (const reference of references) pending.push(reference);
         continue;
       }
@@ -154,6 +210,11 @@ export const captureControl = (
         if (!isControlFrame(state.delegate))
           throw new Error("Cannot checkpoint a foreign delegate");
         pending.push(state.delegate);
+      }
+    }
+    if (admitAmbient) {
+      for (const name of ambientNames) {
+        if (!admitAmbient(name)) throw new Error(`Unclassified control ambient: ${name}`);
       }
     }
     const heap = owner.capture({ values, ambientNames: [...ambientNames], controlOwnedObjects });

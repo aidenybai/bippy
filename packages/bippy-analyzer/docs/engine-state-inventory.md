@@ -42,6 +42,8 @@ The [argument accumulator policy](argument-accumulator-storage.md) now recognize
 
 [Descriptor-to-data graph snapshots](descriptor-data-graph.md) now compose existing canonical record schemas with closed guest-data traversal. Native initializer roots automatically select their supported payload graphs in one original checkpoint frame. Unsupported guest dependencies reject, but canonical prototype copies still pass the record schema. This is a storage projection under trusted engine representations, not allocation provenance or a general native-state owner.
 
+[Private control discovery policies](control-capture-policy.md) add explicit expansion/opacity decisions and default rejection of unknown dependencies and observed ambient names. This is an internal composition contract, not implemented automatic ownership. Opacity does not gate GC, future calls, or other metadata paths, and does not own omitted cells or referents.
+
 [Private object storage plans](object-storage-plans.md) now share the existing object schema and snapshot construction with labelled reference visitation. Mapped-argument selections remain explicit plan outputs. The execution view exposes Realm/Script/environment/native-function and storage-container dependencies rather than omitting them. These references remain unowned; plans mix saved and live metadata and do not publish GC roots or checkpoints.
 
 The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, with the maintained patches. Paths starting with `src/` in the table refer to upstream engine sources. Preserve these records and their identities instead of constructing a parallel runtime heap.
