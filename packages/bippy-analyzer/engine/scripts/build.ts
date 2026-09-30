@@ -110,6 +110,7 @@ const build = async (): Promise<void> => {
       "checkpoint-module-effects.patch",
       "pending-module-loads.patch",
       "module-load-roots.patch",
+      "module-cache-roots.patch",
     ])
       execFileSync(
         "git",

@@ -1,0 +1,56 @@
+diff --git a/src/execution-context/Realm.mts b/src/execution-context/Realm.mts
+index bf48d55..f20371d 100644
+--- a/src/execution-context/Realm.mts
++++ b/src/execution-context/Realm.mts
+@@ -91,6 +91,7 @@ import { bootstrapTemporal } from '../intrinsics/Temporal/Temporal.mts';
+ import {
+   type ObjectValue, type GlobalEnvironmentRecord, type ParseNode, type LoadedModuleRequestRecord, type ManagedRealmHostDefined, type GCMarker,
+   ManagedRealm,
++  ModuleCache,
+   type Mutable,
+   DefinePropertyOrThrow,
+   Descriptor,
+@@ -121,6 +122,8 @@ export abstract class Realm {
+   mark(m: GCMarker) {
+     m(this.GlobalObject);
+     m(this.GlobalEnv);
++    const cache = this.HostDefined.resolverCache;
++    if (cache instanceof ModuleCache) m(cache);
+     for (const v of Object.values(this.Intrinsics)) {
+       m(v);
+     }
+diff --git a/src/parse.mts b/src/parse.mts
+index fe18d80..3b1dc6f 100644
+--- a/src/parse.mts
++++ b/src/parse.mts
+@@ -77,6 +77,7 @@ export class ScriptRecord {
+ 
+   mark(m: GCMarker) {
+     m(this.Realm);
++    for (const entry of this.LoadedModules) m(entry.Module);
+   }
+ 
+   constructor(record: Omit<ScriptRecord, 'mark'>) {
+diff --git a/src/utils/module.mts b/src/utils/module.mts
+index ba47165..74b6351 100644
+--- a/src/utils/module.mts
++++ b/src/utils/module.mts
+@@ -1,6 +1,6 @@
+ import {
+   AbstractModuleRecord,
+-  CyclicModuleRecord, Realm, ScriptRecord, type ModuleRequestRecord, type PlainCompletion,
++  CyclicModuleRecord, Realm, ScriptRecord, type ModuleRequestRecord, type PlainCompletion, type GCMarker,
+ } from '#self';
+ 
+ interface ModuleCacheEntry {
+@@ -26,6 +26,10 @@ export class ModuleCache {
+ 
+   #cache = new Map<ModuleCacheKey, ModuleCacheEntry>();
+ 
++  mark(marker: GCMarker): void {
++    for (const entry of this.#cache.values()) marker(entry.result);
++  }
++
+   static toCacheKey(moduleRequest: ModuleCacheKeyObject): ModuleCacheKey {
+     const { Specifier, Attributes } = moduleRequest;
+     const sorted: Record<string, string> = {};

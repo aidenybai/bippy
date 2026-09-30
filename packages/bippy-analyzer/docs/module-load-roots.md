@@ -30,7 +30,7 @@ All 1,962 units across 69 files, types, two relocated builds, offline installati
 
 Pending-load admission checks and host-effect guards remain enabled. Retention is not restoration, and a correct WeakRef observation is not proof of branch ownership.
 
-This patch adds no referrer, native module-cache, arbitrary callback, or host-metadata roots. Other module-record fields and asynchronous evaluation still require a separate audit. The synthetic namespace tests isolate named graph edges; they do not establish complete module-graph reachability.
+This patch adds no referrer, native module-cache, arbitrary callback, or host-metadata roots. The [completed-cache follow-up](module-cache-roots.md) now marks builtin cache results and reachable script records’ loaded modules. Pending referrers, other module-record fields, and asynchronous evaluation still require a separate audit. The synthetic namespace tests isolate named graph edges; they do not establish complete module-graph reachability.
 
 Registry entries retain their capabilities until successful protocol completion. Abandoned or failed requests can therefore retain values while their Agent remains reachable. There is no cancellation or eager-collection guarantee. Payloads and marker callbacks remain trusted host data, not a sandbox or a bound on collection work.
 
