@@ -43,6 +43,7 @@ it.each([false, true])(
     await withAbstractFixture((fixture) => {
       const { agent, api, realm, compile, createBoolean } = fixture;
       createBoolean("enabled");
+      const replacement = compile("99");
       let prefixes = 0;
       const observations: string[] = [];
       agent.hostDefinedOptions.onNodeEvaluation = (node) => {
@@ -84,7 +85,7 @@ it.each([false, true])(
           expect(realm.GlobalObject.properties.get(api.Value("prefix"))?.Value).toEqual(
             api.Value(1),
           );
-          expect(() => agent.evaluate(compile("99"), () => {}, false)).toThrow(
+          expect(() => agent.evaluate(replacement, () => {}, false)).toThrow(
             "checkpoints are open",
           );
         }
@@ -93,7 +94,7 @@ it.each([false, true])(
       }
       expect(prefixes).toBe(1);
       expect(observations.length).toBe(2);
-      agent.evaluate(compile("99"), () => {}, false);
+      agent.evaluate(replacement, () => {}, false);
       expect(agent.resumeEvaluate().done).toBe(true);
     });
   },

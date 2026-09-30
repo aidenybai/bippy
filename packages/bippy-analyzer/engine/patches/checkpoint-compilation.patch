@@ -1,0 +1,74 @@
+diff --git a/src/api.mts b/src/api.mts
+index 9d9a452..924b4b8 100644
+--- a/src/api.mts
++++ b/src/api.mts
+@@ -259,6 +259,7 @@ export class ManagedRealm extends Realm {
+   }
+ 
+   compileScript(sourceText: string, hostDefined?: ParseScriptHostDefined): PlainCompletion<ScriptRecord> {
++    surroundingAgent.assertCanPerformHostEffect();
+     const pop = this.pushTopContext();
+     const s = ParseScript(sourceText, this, hostDefined);
+     pop?.();
+@@ -269,6 +270,7 @@ export class ManagedRealm extends Realm {
+   }
+ 
+   compileModule(sourceText: string, hostDefined?: ModuleRecordHostDefined) {
++    surroundingAgent.assertCanPerformHostEffect();
+     const pop = this.pushTopContext();
+     const s = ParseModule(sourceText, this, hostDefined);
+     pop?.();
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index b15fba6..7a5f8f1 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -453,6 +453,8 @@ export class Agent {
+   parsedSources = new Map<string, ScriptRecord | SourceTextModuleRecord | DynamicParsedCodeRecord>();
+ 
+   addParsedSource(source: ScriptRecord | SourceTextModuleRecord) {
++    this.assertCanPerformHostEffect();
++    if (surroundingAgent !== this) surroundingAgent.assertCanPerformHostEffect();
+     const id = `${this.#script_id}`;
+     if (source.HostDefined) {
+       source.HostDefined.scriptId = id;
+@@ -466,6 +468,8 @@ export class Agent {
+   #dynamicParsedSourceIds = new Map<string, string>();
+ 
+   addDynamicParsedSource(realm: Realm, sourceText: string, ast?: unknown[] | ParseNode.Expression | ParseNode.Script): string | undefined {
++    this.assertCanPerformHostEffect();
++    if (surroundingAgent !== this) surroundingAgent.assertCanPerformHostEffect();
+     if (this.debugger_isPreviewing) {
+       return undefined;
+     }
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index d979b46..612da39 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -206,6 +206,7 @@ export function* ScriptEvaluation(scriptRecord: ScriptRecord): ValueEvaluator {
+ }
+ 
+ export function* HostEnsureCanCompileStrings(calleeRealm: Realm, parameterStrings: readonly string[], bodyString: string, direct: boolean): PlainEvaluator {
++  surroundingAgent.assertCanPerformHostEffect();
+   const completion = surroundingAgent.hostDefinedOptions.hostHooks?.HostEnsureCanCompileStrings?.(calleeRealm, parameterStrings, bodyString, direct);
+   if (!completion) {
+     return NormalCompletion(undefined);
+diff --git a/src/parse.mts b/src/parse.mts
+index 6da4e82..50f04ce 100644
+--- a/src/parse.mts
++++ b/src/parse.mts
+@@ -99,6 +99,7 @@ export interface ParseScriptHostDefined {
+   readonly doNotTrackScriptId?: boolean;
+ }
+ export function ParseScript(sourceText: string, realm: Realm, hostDefined: ParseScriptHostDefined = {}): ScriptRecord | ObjectValue[] {
++  surroundingAgent.assertCanPerformHostEffect();
+   // 1. Assert: sourceText is an ECMAScript source text (see clause 10).
+   // 2. Parse sourceText using Script as the goal symbol and analyse the parse result for
+   //    any Early Error conditions. If the parse was successful and no early errors were found,
+@@ -141,6 +142,7 @@ export function ParseScript(sourceText: string, realm: Realm, hostDefined: Parse
+ }
+ 
+ export function ParseModule(sourceText: string, realm: Realm, hostDefined: ModuleRecordHostDefined = {}) {
++  surroundingAgent.assertCanPerformHostEffect();
+   // 1. Assert: sourceText is an ECMAScript source text (see clause 10).
+   // 2. Parse sourceText using Module as the goal symbol and analyse the parse result for
+   //    any Early Error conditions. If the parse was successful and no early errors were found,

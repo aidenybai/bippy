@@ -124,6 +124,7 @@ const build = async (): Promise<void> => {
       "descriptor-data-graph.patch",
       "idle-membership.patch",
       "object-storage-plans.patch",
+      "checkpoint-compilation.patch",
     ])
       execFileSync(
         "git",
