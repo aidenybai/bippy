@@ -112,6 +112,7 @@ const build = async (): Promise<void> => {
       "module-load-roots.patch",
       "module-cache-roots.patch",
       "template-cache-roots.patch",
+      "callable-captures.patch",
     ])
       execFileSync(
         "git",
