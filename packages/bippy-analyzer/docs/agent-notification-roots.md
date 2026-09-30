@@ -46,6 +46,6 @@ Fresh source and published Test262 runs match for 181 WeakRef and yield variants
 
 Unregistered closures and arbitrary native record referents remain opaque. A function capture declaration does not grant transitive traversal of every object it references. The two negative controls retain that boundary.
 
-Native capture getters and existing marker methods remain trusted. Rooting a callback does not make its effects reversible. Idle subscription membership still does not rewind, and standalone manually advanced evaluators remain outside Agent-managed root lifetimes.
+Native capture getters and existing marker methods remain trusted. Rooting a callback does not make its effects reversible. The later [idle-membership policy](idle-membership.md) now rewinds subscriptions through evaluation checkpoints, independently of GC marking. Standalone manually advanced evaluators remain outside Agent-managed root lifetimes.
 
 The private root stack is not a checkpoint API. Host-effect guards and restrictions on checkpoints across separate evaluations or job drains remain enabled. General React execution ownership, guarded transitions, repeated-state families, automatic reports, and the integrated demo remain incomplete.

@@ -122,6 +122,7 @@ const build = async (): Promise<void> => {
       "native-source-provenance.patch",
       "argument-accumulator-storage.patch",
       "descriptor-data-graph.patch",
+      "idle-membership.patch",
     ])
       execFileSync(
         "git",

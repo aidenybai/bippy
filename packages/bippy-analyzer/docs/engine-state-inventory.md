@@ -38,6 +38,8 @@ The [argument accumulator policy](argument-accumulator-storage.md) now recognize
 
 [Owner reference inspection](discovery-order.md) now precedes direct native capture expansion for non-control objects. Original descendant priority remains unchanged, and returned references become discovery roots before metadata executes. This allows local rejection before a public capture factory runs through that path. It does not gate GC, control-frame callbacks, restore, or future execution. Omitted inspection remains permissive.
 
+[Automatic idle-membership restoration](idle-membership.md) now saves the Agent’s original notification Set and order in `captureEvaluation`. Self-removal and branch-added callbacks no longer alter sibling subscriptions. Capture-time membership changes reject; callback contents, future execution, ambient capabilities, external iterators, and effects remain separately unowned. This supersedes the earlier idle-membership gaps above, not the remaining notification ownership gaps.
+
 [Descriptor-to-data graph snapshots](descriptor-data-graph.md) now compose existing canonical record schemas with closed guest-data traversal. Native initializer roots automatically select their supported payload graphs in one original checkpoint frame. Unsupported guest dependencies reject, but canonical prototype copies still pass the record schema. This is a storage projection under trusted engine representations, not allocation provenance or a general native-state owner.
 
 The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, with the maintained patches. Paths starting with `src/` in the table refer to upstream engine sources. Preserve these records and their identities instead of constructing a parallel runtime heap.

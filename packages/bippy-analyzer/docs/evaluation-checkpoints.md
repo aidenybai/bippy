@@ -10,12 +10,15 @@ Register and suspend execution through [Agent-owned decisions](agent-decisions.m
 
 Capture delegates to the existing `captureControl`. It forwards the owner’s `beginCapture`, `references`, and `capture` callbacks. The evaluator, completion callback, and current idle callbacks now enter discovery before owner capture. [Registered notification captures](agent-callback-captures.md) contribute their bindings and dependencies to the same traversal. Unregistered closures and mutable referents remain unowned.
 
+[Idle subscription membership](idle-membership.md) is now saved automatically after `beginCapture`. Membership and metadata changes during subsequent discovery or owner capture reject before publication. This covers the original Set and ordering, not callback referents or effects.
+
 Restoration proceeds in this order:
 
-1. Check the current Agent, lifecycle phase, debugger-preview state, and last-in-first-out (LIFO) order.
+1. Check the current Agent, lifecycle phase, debugger-preview state, last-in-first-out (LIFO) order, and idle-Set metadata.
 2. Restore lowered control and captured bindings through `captureControl`.
 3. Run the owner’s restoration through that same control checkpoint.
-4. Restore the original evaluator registration, controlled mode, and exact pending-decision record.
+4. Validate idle-Set metadata again, then restore its original membership and order.
+5. Restore the original evaluator registration, controlled mode, and exact pending-decision record.
 
 A completed evaluator can therefore return to its saved decision without running its prefix again. Completion callbacks run for each completed branch. The driver remains responsible for correlation, feasibility, and observations.
 

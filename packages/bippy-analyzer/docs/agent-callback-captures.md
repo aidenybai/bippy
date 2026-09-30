@@ -42,7 +42,7 @@ An actual React update reaches its first opaque decision. A fixture owner detect
 
 ## Remaining boundaries
 
-Idle callback Set membership and registration changes do not rewind. Unregistered closures, mutable referents, ambient effects, native classes/proxies, and arbitrary callback behavior remain the owner’s responsibility. Omitting `references` is still a caller assertion, not an automatic coverage check.
+Discovery alone does not rewind idle callback Set membership. The later [idle-membership policy](idle-membership.md) now restores the original Set and order automatically in evaluation checkpoints. Unregistered closures, mutable referents, ambient effects, native classes/proxies, and arbitrary callback behavior remain the owner’s responsibility. Omitting `references` is still a caller assertion, not an automatic coverage check.
 
 A separate [live notification root policy](agent-notification-roots.md) now retains declared callbacks, completion values, and Agent-managed fallback evaluators during their active lifetimes. It does not add ownership or registration rollback. Standalone control checkpoints still have no automatic Agent GC roots.
 

@@ -30,6 +30,8 @@ The [argument accumulator storage policy](argument-accumulator-storage.md) now r
 
 [Native lexical scope preservation](native-lexical-scopes.md) repairs ordinary capture-getter TDZ behavior and rejects known unsupported lowering forms before mutation. Generator-scope TDZ remains unresolved. The React diagnostic still rejects its first timer in both orders; no branch observations or ownership proof are added.
 
+[Agent idle membership](idle-membership.md) now restores automatically with evaluation checkpoints. Both-order self-removal/insertion tests match four independent Node observations with one prefix per order. Callback contents and effects remain unowned without further policies. This is not React scheduler ownership or new shared-prefix React rendering evidence.
+
 [Descriptor-to-data graph snapshots](descriptor-data-graph.md) now select supported guest dependencies from canonical native descriptor roots. Four actual conversion forks match eight Node observations across both orders, with one prefix each. Actual React dependencies still reject with zero branch observations. This removes manual guest-object selections for that storage projection, not the remaining execution-owner requirement.
 
 [Reference inspection before direct metadata expansion](discovery-order.md) now lets an owner reject a native callback before its public capture factory executes through discovery. Actual React preserves its pause with zero callback metadata reads and zero branch observations. GC and restore metadata access remain separate; this is not a complete admission policy or execution owner.

@@ -56,4 +56,6 @@ The exact predecessor fails all 23 new tests because the API is absent. These ar
 
 The preceding discovery-order CI run exceeded its ten-minute job deadline during unit execution. Browser/dependency installation took about five minutes forty seconds; smoke and profiling were skipped. E2E and publishing passed. No complete unit or smoke verdict is inferred, and no gate timeout changed.
 
+The descriptor-graph commit itself subsequently [passed CI, E2E, and publishing](descriptor-data-graph-validation/ci-status.json). Analyzer job `110017478853` confirms 2,384 unit tests and all 74 smoke cases. The earlier deadline cancellation remains a separate failure.
+
 Automatic execution ownership, general shared-prefix React isolation, automatic reports, guarded transitions, repeated-state families, and demo integration remain incomplete.
