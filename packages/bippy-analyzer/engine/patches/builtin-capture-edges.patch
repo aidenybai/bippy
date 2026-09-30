@@ -1,0 +1,41 @@
+diff --git a/src/abstract-ops/function-operations.mts b/src/abstract-ops/function-operations.mts
+index 0eb87a1..4f9dd5e 100644
+--- a/src/abstract-ops/function-operations.mts
++++ b/src/abstract-ops/function-operations.mts
+@@ -1,3 +1,4 @@
++import { registerNativeClosure } from '../host-defined/control/native-captures.mts';
+ import { ExecutionContext } from '../execution-context/ExecutionContext.mts';
+ import {
+   Descriptor,
+@@ -710,7 +711,10 @@ export function CreateBuiltinFunction(behaviour: NativeSteps, length: number, na
+ }
+ 
+ /** This is a helper function to define non-spec host functions. */
+-CreateBuiltinFunction.from = (steps: CanBeNativeSteps, name = steps.name, async = false) => CreateBuiltinFunction(Reflect.apply.bind(null, steps, null), steps.length, name, [], surroundingAgent.currentRealmRecord, undefined, undefined, async);
++CreateBuiltinFunction.from = (steps: CanBeNativeSteps, name = steps.name, async = false) => CreateBuiltinFunction(registerNativeClosure(
++  Reflect.apply.bind(null, steps, null),
++  () => ({ bindings: [{ name: 'steps', get: () => steps }], ambientNames: [] }),
++), steps.length, name, [], surroundingAgent.currentRealmRecord, undefined, undefined, async);
+ 
+ export function markBuiltinFunctionAsConstructor(steps: NativeSteps) {
+   steps.isConstructor = true;
+diff --git a/src/value.mts b/src/value.mts
+index 3643a7e..fa3ae0c 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -23,6 +23,7 @@ import {
+   Z,
+   F, R, type OrdinaryObject, type FunctionObject,
+   type BuiltinFunctionObject,
++  isBuiltinFunctionObject,
+   type ECMAScriptFunctionObject,
+   type DefaultConstructorBuiltinFunction, EnvironmentRecord,
+   Throw,
+@@ -845,6 +846,7 @@ export class ObjectValue extends Value implements ObjectInternalMethods<ObjectVa
+   // NON-SPEC
+   mark(m: GCMarker) {
+     m(this.properties);
++    if (isBuiltinFunctionObject(this)) m(this.nativeFunction);
+     this.ConstructedBy.forEach(m);
+     this.internalSlotsList.forEach((s) => {
+       // @ts-ignore

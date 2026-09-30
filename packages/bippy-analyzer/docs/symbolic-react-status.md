@@ -8,6 +8,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Builtin job-queue snapshots](job-queue-checkpoints.md) restore microtask/category membership through engine262’s original Sets. [Concrete host snapshots](concrete-host-checkpoints.md) now add timer records, handles, capture-array contents, and diagnostics. Arbitrary native callback state remains unowned. The React diagnostic still rejects its user timer; no general guarded transition API is enabled.
 
+[Builtin behaviour references](builtin-capture-edges.md) now expose previously omitted native functions to continuation-owner discovery. The React diagnostic finds 2,406 registered and 65 unregistered functions. It still rejects the first user timer; these counts are not a transitive ownership proof.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |

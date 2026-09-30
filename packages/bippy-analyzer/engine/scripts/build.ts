@@ -99,6 +99,7 @@ const build = async (): Promise<void> => {
       "web-queue-checkpoints.patch",
       "job-queue-checkpoints.patch",
       "host-state-roots.patch",
+      "builtin-capture-edges.patch",
     ])
       execFileSync(
         "git",
