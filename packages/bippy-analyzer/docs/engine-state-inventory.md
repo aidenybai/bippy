@@ -8,7 +8,7 @@ General React branching still needs an engine-state owner. This inventory identi
 
 [Web macrotask snapshots](web-queue-checkpoints.md) now restore membership in the existing event-loop Map and type-index Sets. Saved jobs share the live queue’s marking code. This does not snapshot job fields, callback captures, microtasks, timer records, or scheduler execution state.
 
-[Builtin job-queue snapshots](job-queue-checkpoints.md) now restore Basic/ByType queue membership and category indexes in the original Sets. Notification membership, Job fields, captures, Promise counters, and concrete timer state remain separate.
+[Builtin job-queue snapshots](job-queue-checkpoints.md) restore Basic/ByType queue membership and category indexes in the original Sets. [Concrete host snapshots](concrete-host-checkpoints.md) restore the existing runtime’s timer records, capture arrays, handles, and diagnostics, with declared Markable host roots. Notification membership, arbitrary Job fields/captures, and Promise counters remain separate.
 
 The source reference is engine262 `a600354c2954300d62d108bf9ed3459a8e4a289b`, with the maintained patches. Paths starting with `src/` in the table refer to upstream engine sources. Preserve these records and their identities instead of constructing a parallel runtime heap.
 

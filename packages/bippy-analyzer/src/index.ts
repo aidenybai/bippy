@@ -4,6 +4,7 @@ export type {
   ConcreteRuntime,
   ConcreteRuntimeOptions,
   ConcreteConsoleEntry,
+  ConcreteHostCheckpoint,
 } from "./concrete/runtime.js";
 export { ConcreteGuestError, ConcreteRuntimeError } from "./concrete/errors.js";
 export type { ConcreteGuestDiagnostic } from "./concrete/errors.js";

@@ -1,0 +1,64 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 1635bc1..ca17545 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -145,6 +145,7 @@ export class Agent {
+ 
+   // NON-SPEC
+   mark(m: GCMarker) {
++    m(this.hostDefinedOptions.hostDefinedState);
+     this.AgentRecord.KeptAlive.forEach(m);
+     m(this.#pausedEvaluator?.evaluator);
+     m(this.#pausedEvaluator?.failure?.error);
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 3aab0c8..61597d5 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -114,6 +114,7 @@ export interface DebuggerPauseReason {
+ }
+ 
+ export interface AgentHostDefined {
++  hostDefinedState?: Markable;
+   evaluateAbstractNumber?(operation: AbstractNumberOperation): NumberValue;
+   evaluateAbstractNumberPredicate?(predicate: AbstractNumberPredicate): BooleanValue;
+   elideUnusedArguments?: boolean;
+diff --git a/src/host-defined/event-loop.mts b/src/host-defined/event-loop.mts
+index 53c5977..27cd9b1 100644
+--- a/src/host-defined/event-loop.mts
++++ b/src/host-defined/event-loop.mts
+@@ -210,6 +210,7 @@ export class MicroTaskEventLoop extends AbstractEventLoop {
+ export interface EventLoopQueueCheckpoint {
+   readonly scope: 'web-event-loop-macrotask-membership-v1';
+   readonly jobCount: number;
++  assertActive: () => void;
+   restore: () => void;
+   release: () => void;
+ }
+@@ -261,6 +262,7 @@ export class WebLikeEventLoop extends AbstractEventLoop {
+     return {
+       scope: 'web-event-loop-macrotask-membership-v1',
+       jobCount: state.entries.length,
++      assertActive,
+       restore: () => {
+         assertActive();
+         this.assertCanCheckpointQueue();
+diff --git a/src/host-defined/job-queue.mts b/src/host-defined/job-queue.mts
+index 12ed106..ae15ccc 100644
+--- a/src/host-defined/job-queue.mts
++++ b/src/host-defined/job-queue.mts
+@@ -67,6 +67,7 @@ export interface JobQueue extends Markable {
+ export interface JobQueueCheckpoint {
+   readonly scope: 'selected-job-queue-membership-v1';
+   readonly jobCount: number;
++  assertActive: () => void;
+   restore: () => void;
+   release: () => void;
+ }
+@@ -122,6 +123,7 @@ const captureJobQueue = (queue: JobQueue, collections: Set<Job>[]): JobQueueChec
+   return {
+     scope: 'selected-job-queue-membership-v1',
+     jobCount: state.jobs[0]!.length,
++    assertActive,
+     restore: () => {
+       assertActive();
+       validate();

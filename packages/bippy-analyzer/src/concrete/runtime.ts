@@ -1,5 +1,7 @@
 import type {
   Agent,
+  GCMarker,
+  JobQueueCheckpoint,
   ManagedRealm,
   NativeSteps,
   PlainCompletion,
@@ -25,6 +27,34 @@ export interface ConcreteConsoleEntry {
   arguments: Value[];
 }
 
+export interface ConcreteHostCheckpoint {
+  readonly scope: "concrete-zero-delay-host-state-v1";
+  readonly timerCount: number;
+  restore: () => void;
+  release: () => void;
+}
+
+interface TimerState {
+  handle: number;
+  capturedValues: Value[];
+  values: Value[];
+}
+
+interface ConsoleState {
+  entry: ConcreteConsoleEntry;
+  method: ConcreteConsoleEntry["method"];
+  arguments: Value[];
+  values: Value[];
+}
+
+interface HostState {
+  nextTimer: number;
+  timers: TimerState[];
+  console: ConsoleState[];
+  unhandled: PromiseObject[];
+  uncaught: Value[];
+}
+
 interface RuntimeFailure {
   error: unknown;
 }
@@ -44,6 +74,7 @@ export class ConcreteRuntime {
   private failure: RuntimeFailure | undefined;
   private nextTimer = 0;
   private readonly timers = new Map<number, Value[]>();
+  private readonly hostCheckpoints: HostState[] = [];
 
   constructor(
     private readonly engine: SymbolicEngine,
@@ -54,6 +85,7 @@ export class ConcreteRuntime {
     const { api } = engine;
     this.agent = new api.Agent({
       startEventLoop: false,
+      hostDefinedState: this,
       onNodeEvaluation: () => {
         if (++this.steps > maxSteps)
           throw new ConcreteRuntimeError("Concrete step budget exceeded; runtime cannot continue");
@@ -192,6 +224,109 @@ export class ConcreteRuntime {
     });
   }
 
+  mark = (marker: GCMarker): void => {
+    marker(this.realm);
+    for (const values of this.timers.values()) marker(values);
+    for (const entry of this.consoleEntries) marker(entry.arguments);
+    for (const promise of this.unhandledRejections) marker(promise);
+    marker(this.uncaughtExceptions);
+    for (const state of this.hostCheckpoints) {
+      for (const timer of state.timers) marker(timer.values);
+      for (const entry of state.console) marker(entry.values);
+      marker(state.unhandled);
+      marker(state.uncaught);
+    }
+  };
+
+  captureHostState = (): ConcreteHostCheckpoint =>
+    this.withAgent(() => {
+      const { api } = this.engine;
+      const { jobQueue, eventLoop } = this.agent;
+      if (!(jobQueue instanceof api.BasicJobQueue) && !(jobQueue instanceof api.ByTypeJobQueue))
+        throw new ConcreteRuntimeError("Host checkpoints require a builtin job queue");
+      if (!(eventLoop instanceof api.WebLikeEventLoop))
+        throw new ConcreteRuntimeError("Host checkpoints require the web event loop");
+      const state: HostState = {
+        nextTimer: this.nextTimer,
+        timers: Array.from(this.timers, ([handle, capturedValues]) => ({
+          handle,
+          capturedValues,
+          values: capturedValues.slice(),
+        })),
+        console: this.consoleEntries.map((entry) => ({
+          entry,
+          method: entry.method,
+          arguments: entry.arguments,
+          values: entry.arguments.slice(),
+        })),
+        unhandled: Array.from(this.unhandledRejections),
+        uncaught: this.uncaughtExceptions.slice(),
+      };
+      const macrotasks = eventLoop.captureQueue();
+      let microtasks: JobQueueCheckpoint;
+      try {
+        microtasks = jobQueue.captureQueue();
+      } catch (error) {
+        macrotasks.release();
+        throw error;
+      }
+      this.hostCheckpoints.push(state);
+      let isReleased = false;
+      const assertActive = (): void => {
+        if (isReleased) throw new ConcreteRuntimeError("Host checkpoint is released");
+        if (this.hostCheckpoints.at(-1) !== state)
+          throw new ConcreteRuntimeError("Host checkpoints require last-in-first-out access");
+      };
+      return {
+        scope: "concrete-zero-delay-host-state-v1",
+        timerCount: state.timers.length,
+        restore: () => {
+          assertActive();
+          this.withAgent(() => {
+            microtasks.assertActive();
+            macrotasks.assertActive();
+            microtasks.restore();
+            macrotasks.restore();
+            for (const values of this.timers.values()) values.length = 0;
+            this.timers.clear();
+            for (const timer of state.timers) {
+              timer.capturedValues.length = 0;
+              for (const value of timer.values) timer.capturedValues.push(value);
+              this.timers.set(timer.handle, timer.capturedValues);
+            }
+            this.nextTimer = state.nextTimer;
+            this.consoleEntries.length = 0;
+            for (const saved of state.console) {
+              saved.arguments.length = 0;
+              for (const value of saved.values) saved.arguments.push(value);
+              saved.entry.method = saved.method;
+              saved.entry.arguments = saved.arguments;
+              this.consoleEntries.push(saved.entry);
+            }
+            this.unhandledRejections.clear();
+            for (const promise of state.unhandled) this.unhandledRejections.add(promise);
+            this.uncaughtExceptions.length = 0;
+            for (const value of state.uncaught) this.uncaughtExceptions.push(value);
+          });
+        },
+        release: () => {
+          assertActive();
+          this.withAgent(() => {
+            microtasks.assertActive();
+            macrotasks.assertActive();
+            microtasks.release();
+            macrotasks.release();
+            this.hostCheckpoints.pop();
+            state.timers.length = 0;
+            state.console.length = 0;
+            state.unhandled.length = 0;
+            state.uncaught.length = 0;
+            isReleased = true;
+          }, true);
+        },
+      };
+    });
+
   private cancelTimer = (handle: number): void => {
     const capturedValues = this.timers.get(handle);
     if (capturedValues) capturedValues.length = 0;
@@ -209,16 +344,17 @@ export class ConcreteRuntime {
     return completion instanceof this.engine.api.NormalCompletion ? completion.Value : completion;
   };
 
-  private withAgent = <Result>(run: () => Result): Result => {
-    if (this.isDisposed) throw new ConcreteRuntimeError("Concrete runtime is disposed");
-    if (this.failure) throw this.failure.error;
+  private withAgent = <Result>(run: () => Result, allowUnavailable = false): Result => {
+    if (!allowUnavailable && this.isDisposed)
+      throw new ConcreteRuntimeError("Concrete runtime is disposed");
+    if (!allowUnavailable && this.failure) throw this.failure.error;
     const { api } = this.engine;
     const previous = api.surroundingAgent;
     api.setSurroundingAgent(this.agent);
     try {
       return run();
     } catch (error) {
-      if (!(error instanceof ConcreteGuestError)) this.failure = { error };
+      if (!(error instanceof ConcreteGuestError)) this.failure ??= { error };
       throw error;
     } finally {
       api.setSurroundingAgent(previous);
@@ -245,6 +381,8 @@ export class ConcreteRuntime {
 
   dispose = (): void => {
     this.agent.assertCanPerformHostEffect();
+    if (this.hostCheckpoints.length)
+      throw new ConcreteRuntimeError("Cannot dispose while host checkpoints are open");
     this.isDisposed = true;
     for (const handle of this.timers.keys()) this.cancelTimer(handle);
   };
