@@ -1,0 +1,15 @@
+diff --git a/src/execution-context/Realm.mts b/src/execution-context/Realm.mts
+index f20371d..f030eb7 100644
+--- a/src/execution-context/Realm.mts
++++ b/src/execution-context/Realm.mts
+@@ -127,8 +127,8 @@ export abstract class Realm {
+     for (const v of Object.values(this.Intrinsics)) {
+       m(v);
+     }
+-    for (const v of Object.values(this.TemplateMap)) {
+-      m(v);
++    for (const entry of this.TemplateMap) {
++      m(entry.Array);
+     }
+     for (const v of this.LoadedModules) {
+       m(v.Module);

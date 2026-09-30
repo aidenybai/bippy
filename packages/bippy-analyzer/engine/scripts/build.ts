@@ -111,6 +111,7 @@ const build = async (): Promise<void> => {
       "pending-module-loads.patch",
       "module-load-roots.patch",
       "module-cache-roots.patch",
+      "template-cache-roots.patch",
     ])
       execFileSync(
         "git",
