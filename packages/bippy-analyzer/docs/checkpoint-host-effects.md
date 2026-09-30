@@ -6,13 +6,14 @@ The [partial-owner React timer probe](context-checkpoints.md) exposed four branc
 
 `Agent.assertCanPerformHostEffect()` checks the existing checkpoint stack and capture/restore flag. It throws `TypeError: Host effects are unsupported during evaluation checkpoints`.
 
-The guard runs before these mutations:
+The guard runs before these operations:
 
 - Concrete timer registration and cancellation, including handles, capture arrays, job budgets, and event-loop insertion.
 - Concrete microtask insertion and console recording.
 - Concrete Promise-rejection and uncaught-exception tracking, and runtime disposal.
 - Engine Promise-job enqueueing and finalization cleanup hooks or scheduling.
 - Builtin event-loop enqueueing, async registration, async completion/cancellation, run-mode changes, and draining.
+- [Shared host clock reads and Math.random](checkpoint-nondeterminism.md), before hook lookup, entropy use, or Realm random-state mutation.
 
 Capture rejects existing pending async host jobs before invoking the owner. Queued synchronous jobs are distinct from pending async registration. Existing queued jobs are not copied or restored, and the guarded event-loop entry points cannot drain them while a checkpoint is open. Release all checkpoints before disposal or supported host work.
 
