@@ -32,6 +32,6 @@ All 1,946 units across 68 files, types, two relocated builds, offline installati
 
 This is an admission check, not module-state ownership. Native cache maps, module graphs, callbacks, and pending Promise state remain unowned. Direct cache operations and custom host work outside `HostLoadImportedModule` are not tracked. Sharing native storage across Agents still requires a separate ownership policy.
 
-The registry retains native payload identities until successful completion. It does not add guest GC roots or prove weak-lifetime behavior. Runtime disposal does not finish requests or cancel arbitrary external work. A stopped event loop is not proof that a loader has finished.
+The registry retains native payload identities until successful completion. The [capability-root follow-up](module-load-roots.md) now uses that registry to retain pending capabilities and named graph-module edges. Neither change establishes complete reachability or weak-lifetime parity. Runtime disposal does not finish requests or cancel arbitrary external work. A stopped event loop is not proof that a loader has finished.
 
 Capture with no pending requests still requires a sound state owner. General React branch isolation, guarded reports, transitions, and repeated-state families remain incomplete.
