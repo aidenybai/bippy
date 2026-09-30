@@ -1,0 +1,42 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 849daed..e6ddb5e 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -170,10 +170,15 @@ export class Agent {
+   readonly #evaluationCheckpoints: EvaluationCheckpointFrame[] = [];
+   readonly #activeEvaluationRoots: (readonly unknown[])[] = [];
+ 
+-  #withEvaluationRoots = (roots: readonly unknown[], callback: () => void): void => {
++  withGCRoots = <Result,>(roots: readonly unknown[], callback: () => Result): Result => {
++    if (surroundingAgent !== this) throw new TypeError('GC roots belong to another Agent');
++    return this.#withEvaluationRoots([...roots], callback);
++  };
++
++  #withEvaluationRoots = <Result,>(roots: readonly unknown[], callback: () => Result): Result => {
+     this.#activeEvaluationRoots.push(roots);
+     try {
+-      callback();
++      return callback();
+     } finally {
+       this.#activeEvaluationRoots.pop();
+     }
+@@ -206,14 +211,17 @@ export class Agent {
+       if (typeof captureState !== 'function') throw new TypeError('Evaluation checkpoints require a state owner');
+       const beginCapture = owner.beginCapture;
+       const references = owner.references;
+-      continuation = captureControl(paused.evaluator, {
++      const scopedRoots = this.#activeEvaluationRoots.flat();
++      const captureRoots: unknown[] = [];
++      continuation = this.#withEvaluationRoots(captureRoots, () => captureControl(paused.evaluator, {
+         beginCapture: () => beginCapture?.call(owner),
+         references: (value) => references?.call(owner, value) ?? [],
+         capture: (roots) => {
+           frame.roots = roots.values;
+           return captureState.call(owner, roots);
+         },
+-      }, () => [paused.evaluator, paused.onFinish, ...this.onNoEvaluator]);
++      }, () => [paused.evaluator, paused.onFinish, ...this.onNoEvaluator, ...scopedRoots],
++      (values) => captureRoots.push(values)));
+       this.#evaluationCheckpoints.push(frame);
+     } finally {
+       this.#isCheckpointing = false;

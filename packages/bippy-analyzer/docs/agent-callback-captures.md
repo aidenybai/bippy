@@ -16,6 +16,8 @@ This closes a discovery gap. It does not supply a transitive owner or permission
 
 The Agent supplies its evaluator, completion callback, and current idle callbacks through this provider. Reading idle callbacks after `beginCapture` includes callbacks installed by that hook. Duplicate objects and cycles use the existing visited set.
 
+An optional fourth `onCaptureRoots` argument now exposes the live discovery-value array before `beginCapture`. The Agent uses [scoped GC roots](scoped-gc-roots.md) to retain saved references during discovery and owner capture, before checkpoint publication. This does not undo metadata-hook mutations or establish ownership.
+
 Registered callback bindings now use the original binding validation and restoration. Captured references reach `owner.references` before `owner.capture`. Saved values join the Agent checkpoint’s GC roots, including values a callback later replaces.
 
 Root-provider or capture-getter failure publishes no Agent checkpoint. The original decision remains available. Capture failure does not undo mutations made by discovery hooks. Reentry and direct continuation resumption reject during root discovery. Native metadata, getters, root providers, and owner callbacks remain trusted code, not sandboxed code.

@@ -231,7 +231,8 @@ export const createBooleanSnapshotExplorer = async (): Promise<BooleanSnapshotEx
             });
             return;
           }
-          append(guard, observe(api.EnsureCompletion(step.value)));
+          const completion = api.EnsureCompletion(step.value);
+          agent.withGCRoots([completion], () => append(guard, observe(completion)));
         };
         api.setSurroundingAgent(agent);
         if (maxResumes === 0) incomplete(constantGuard(true), "Exploration resume limit reached");

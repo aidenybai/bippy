@@ -95,6 +95,7 @@ export const captureControl = (
   iterator: unknown,
   owner: ContinuationStateOwner,
   getAdditionalRoots: () => readonly unknown[] = () => [],
+  onCaptureRoots?: (values: readonly unknown[]) => void,
 ): ControlCheckpoint => {
   if (!isControlFrame(iterator)) throw new Error("Cannot checkpoint a foreign continuation");
   if (!owner || typeof owner.capture !== "function")
@@ -103,12 +104,13 @@ export const captureControl = (
     throw new Error("Cannot checkpoint during execution or another checkpoint");
   isCheckpointing = true;
   try {
+    const values: unknown[] = [];
+    onCaptureRoots?.(values);
     owner.beginCapture?.();
     const pending: unknown[] = [iterator];
     const visited = new Set<object>();
     const states: FrameState[] = [];
     const bindings: SavedBinding[] = [];
-    const values: unknown[] = [];
     const ambientNames = new Set<string>();
     const controlOwnedObjects: object[] = [];
     const addValue = (value: unknown): void => {

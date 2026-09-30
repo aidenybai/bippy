@@ -29,6 +29,8 @@ Owner admission, restore, observer, host, and report-builder failures abort trav
 
 The driver restores the surrounding Agent and prevents same-Agent exploration reentrancy, including through option getters. Callbacks, metadata, native getters, proxies, and direct Agent access remain trusted, not sandboxed. Observers must not start another evaluation on the same Agent. Existing completion callbacks still run at every terminal path and need their own ownership policy.
 
+The driver retains each normalized completion through observation and outcome copying with [scoped GC roots](scoped-gc-roots.md). This covers no-fork results after Agent notification roots end. Roots release on return or failure. Other native values held by an observer still need declared roots; retention does not verify serialization or ownership.
+
 ## Limits and unsupported paths
 
 `maxForks` defaults to 127 and accepts integers from 0 through 255. `maxResumes` defaults to 10,000 and accepts integers from 0 through 1,000,000. Counters apply to the entire traversal and do not rewind. The frozen `exploration` metadata records both limits, actual counters, branch order, and unverified ownership. Zero resumes returns an incomplete root guard without execution.

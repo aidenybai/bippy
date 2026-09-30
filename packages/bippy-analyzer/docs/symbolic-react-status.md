@@ -38,6 +38,8 @@ The opt-in [Script syntax policy](script-syntax-regions.md) now recognizes final
 
 [Live Agent notification roots](agent-notification-roots.md) now preserve declared callback captures and completion values outside saved checkpoints. Two separate React updates retain detached completion targets through opaque pauses and notification-time collection. This adds GC coverage, not branch restoration, scheduling authority, or a verified React owner.
 
+[Scoped GC roots](scoped-gc-roots.md) now retain explorer completions through observer calls and report copying, including concrete no-fork React snapshots. Agent capture also retains recorded values before checkpoint publication. Neither change supplies a transitive owner or verifies the caller’s serialization.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                                                                       |
