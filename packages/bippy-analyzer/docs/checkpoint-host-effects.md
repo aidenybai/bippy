@@ -14,6 +14,7 @@ The guard runs before these operations:
 - Engine Promise-job enqueueing and finalization cleanup hooks or scheduling.
 - Builtin event-loop enqueueing, async registration, async completion/cancellation, run-mode changes, and draining.
 - [Shared host clock reads and Math.random](checkpoint-nondeterminism.md), before hook lookup, entropy use, or Realm random-state mutation.
+- [Six module operations](checkpoint-module-effects.md), before their host lookups or `FinishLoadingImportedModule` writes. Cached meta reads remain available. This does not own already-started loader callbacks or native caches.
 
 Capture rejects existing pending async host jobs before invoking the owner. Queued synchronous jobs are distinct from pending async registration. Existing queued jobs are not copied or restored, and the guarded event-loop entry points cannot drain them while a checkpoint is open. Release all checkpoints before disposal or supported host work.
 

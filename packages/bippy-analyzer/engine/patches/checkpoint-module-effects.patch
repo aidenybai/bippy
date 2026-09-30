@@ -1,0 +1,56 @@
+diff --git a/src/abstract-ops/module-records.mts b/src/abstract-ops/module-records.mts
+index 9ae3706..a6fd097 100644
+--- a/src/abstract-ops/module-records.mts
++++ b/src/abstract-ops/module-records.mts
+@@ -928,6 +928,7 @@ export function GetImportedModule(referrer: CyclicModuleRecord, request: ModuleR
+ 
+ /** https://tc39.es/ecma262/#sec-FinishLoadingImportedModule */
+ export function FinishLoadingImportedModule(referrer: ScriptRecord | CyclicModuleRecord | Realm, moduleRequest: ModuleRequestRecord, payload: HostLoadImportedModulePayloadOpaque, result: PlainCompletion<AbstractModuleRecord>) {
++  surroundingAgent.assertCanPerformHostEffect();
+   const payload_ = payload.data;
+   result = EnsureCompletion(result);
+   // 1. If result is a normal completion, then
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 61597d5..e6d59c3 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -234,6 +234,7 @@ export function HostHasSourceTextAvailable(func: FunctionObject): boolean {
+ }
+ 
+ export function HostGetSupportedImportAttributes(): readonly string[] {
++  surroundingAgent.assertCanPerformHostEffect();
+   if (surroundingAgent.hostDefinedOptions.supportedImportAttributes) {
+     return surroundingAgent.hostDefinedOptions.supportedImportAttributes;
+   }
+@@ -242,6 +243,7 @@ export function HostGetSupportedImportAttributes(): readonly string[] {
+ 
+ /** https://tc39.es/ecma262/#sec-hostgetmodulesourcemodulerecord */
+ export function HostGetModuleSourceModuleRecord(specifier: ObjectValue): AbstractModuleRecord | 'not-a-source' {
++  surroundingAgent.assertCanPerformHostEffect();
+   const HostHook = surroundingAgent.hostDefinedOptions.hostHooks?.HostGetModuleSourceModuleRecord;
+   if (HostHook) {
+     return HostHook(specifier);
+@@ -251,6 +253,7 @@ export function HostGetModuleSourceModuleRecord(specifier: ObjectValue): Abstrac
+ 
+ // #sec-HostLoadImportedModule
+ export function HostLoadImportedModule(referrer: CyclicModuleRecord | ScriptRecord | Realm, moduleRequest: ModuleRequestRecord, hostDefined: ModuleRecordHostDefined | undefined, payload: HostLoadImportedModulePayloadOpaque) {
++  surroundingAgent.assertCanPerformHostEffect();
+   const HostHook = surroundingAgent.hostDefinedOptions.hostHooks?.HostLoadImportedModule;
+   if (HostHook) {
+     HostHook(referrer, moduleRequest, hostDefined, payload);
+@@ -268,6 +271,7 @@ export type HostLoadImportedModulePayloadOpaque = {
+ 
+ /** https://tc39.es/ecma262/#sec-hostgetimportmetaproperties */
+ export function HostGetImportMetaProperties(moduleRecord: AbstractModuleRecord) {
++  surroundingAgent.assertCanPerformHostEffect();
+   const realm = surroundingAgent.currentRealmRecord;
+   if (realm.HostDefined.getImportMetaProperties) {
+     return X(realm.HostDefined.getImportMetaProperties(moduleRecord.HostDefined?.public));
+@@ -277,6 +281,7 @@ export function HostGetImportMetaProperties(moduleRecord: AbstractModuleRecord)
+ 
+ /** https://tc39.es/ecma262/#sec-hostfinalizeimportmeta */
+ export function HostFinalizeImportMeta(importMeta: ObjectValue, moduleRecord: AbstractModuleRecord) {
++  surroundingAgent.assertCanPerformHostEffect();
+   const realm = surroundingAgent.currentRealmRecord;
+   if (realm.HostDefined.finalizeImportMeta) {
+     return X(realm.HostDefined.finalizeImportMeta(importMeta, moduleRecord.HostDefined?.public));
