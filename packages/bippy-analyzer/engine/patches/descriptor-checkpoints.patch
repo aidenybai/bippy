@@ -1,0 +1,163 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 9f9d16b..5b9c9b8 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -1,6 +1,6 @@
+ import {
+   hasOrdinaryObjectMethods, ArrayExoticObjectInternalMethods,
+-  surroundingAgent, ObjectValue, Value,
++  surroundingAgent, ObjectValue, Value, Descriptor, IsCallable, IsDataDescriptor, IsAccessorDescriptor,
+   DeclarativeEnvironmentRecord, FunctionEnvironmentRecord, GlobalEnvironmentRecord, ObjectEnvironmentRecord,
+   type Agent, type GCMarker, type OrdinaryObject,
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+@@ -53,7 +53,7 @@ const getFunctionSlotNames = (object: ObjectValue, owner: Agent): readonly strin
+   return undefined;
+ };
+ 
+-const getReadonlySlots = (object: ObjectValue, names: readonly string[], kind: string): ReadonlySlotState[] => names.map((name) => {
++const getReadonlySlots = (object: object, names: readonly string[], kind: string): ReadonlySlotState[] => names.map((name) => {
+   const descriptor = Object.getOwnPropertyDescriptor(object, name);
+   if (descriptor && !('value' in descriptor)) throw new TypeError(`Checkpoint ${kind} metadata must use data properties`);
+   return { name, descriptor };
+@@ -94,7 +94,7 @@ const getFunctionState = (object: ObjectValue, names: readonly string[]): Functi
+   boundArguments: hasBoundFunctionMethods(object) ? [...object.BoundArguments] : undefined,
+ });
+ 
+-const hasUnchangedSlot = (object: ObjectValue, { name, descriptor }: ReadonlySlotState): boolean => {
++const hasUnchangedSlot = (object: object, { name, descriptor }: ReadonlySlotState): boolean => {
+   const current = Object.getOwnPropertyDescriptor(object, name);
+   return descriptor === undefined ? current === undefined : !!current && 'value' in current
+     && Object.is(current.value, descriptor.value) && current.writable === descriptor.writable
+@@ -240,6 +240,34 @@ interface CallSiteState {
+   snapshot: CallSite;
+ }
+ 
++interface DescriptorState {
++  record: Descriptor;
++  extensible: boolean;
++  slots: ReadonlySlotState[];
++}
++
++const descriptorFields = Object.freeze(Object.keys(Descriptor({})));
++
++const assertDescriptorLayout = (record: Descriptor): void => {
++  if (Object.getPrototypeOf(record) !== Descriptor.prototype || Reflect.ownKeys(record).length !== descriptorFields.length
++    || !descriptorFields.every((name) => {
++      const field = Object.getOwnPropertyDescriptor(record, name);
++      return field && 'value' in field;
++    })) throw new TypeError('Checkpoint requires canonical Descriptor records');
++};
++
++const getDescriptorState = (record: Descriptor, owner: Agent): DescriptorState => {
++  assertDescriptorLayout(record);
++  if ((record.Value !== undefined && !(record.Value instanceof Value))
++    || [record.Writable, record.Enumerable, record.Configurable].some((flag) => flag !== undefined && typeof flag !== 'boolean')
++    || [record.Get, record.Set].some((value) => value !== undefined && value !== Value.undefined && !IsCallable(value))
++    || (IsDataDescriptor(record) && IsAccessorDescriptor(record))) throw new TypeError('Checkpoint requires valid Descriptor fields');
++  for (const value of [record.Value, record.Get, record.Set]) {
++    if (value instanceof ObjectValue && value.ownerAgent !== owner) throw new TypeError('Checkpoint Descriptor values must belong to the current agent');
++  }
++  return { record, extensible: Object.isExtensible(record), slots: getReadonlySlots(record, descriptorFields, 'Descriptor') };
++};
++
+ interface NativeListEntry {
+   index: number;
+   value: unknown;
+@@ -314,6 +342,7 @@ interface StateCheckpointFrame {
+   states: OrdinaryObjectState[];
+   references: ReferenceState[];
+   nativeLists: NativeListState[];
++  descriptors: DescriptorState[];
+   contexts: ContextState[];
+   callSites: CallSiteState[];
+   environments: EnvironmentState[];
+@@ -334,6 +363,7 @@ export interface StateCheckpointOptions {
+   callSites?: readonly CallSite[];
+   referenceRecords?: readonly ReferenceRecord[];
+   nativeLists?: readonly unknown[][];
++  descriptors?: readonly Descriptor[];
+ }
+ 
+ export interface StateCheckpoint {
+@@ -345,6 +375,7 @@ export interface StateCheckpoint {
+   readonly callSiteCount: number;
+   readonly referenceRecordCount: number;
+   readonly nativeListCount: number;
++  readonly descriptorCount: number;
+   restore(): void;
+   release(): void;
+ }
+@@ -373,6 +404,10 @@ const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
+ 
+ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+   for (const frame of checkpoints.get(agent) ?? []) {
++    for (const state of frame.descriptors) {
++      mark(state.record);
++      for (const slot of state.slots) mark(slot.descriptor?.value);
++    }
+     for (const state of frame.nativeLists) {
+       mark(state.list);
+       for (const entry of state.entries) mark(entry.value);
+@@ -453,10 +488,13 @@ const getGlobalEnvironmentState = (environment: GlobalEnvironmentRecord, owner:
+   return { environment, objectRecord, declarativeRecord, bindingObject: objectRecord.BindingObject, globalThis: environment.GlobalThisValue };
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [], nativeLists = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [], nativeLists = [], descriptors = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
++  const selectedDescriptors = new Set(descriptors);
++  const hasExplicitDescriptors = selectedDescriptors.size > 0;
++  if (hasExplicitDescriptors && owner.debugger_isPreviewing) throw new Error('Descriptor checkpoints do not support debugger preview');
+   const nativeListStates: NativeListState[] = [];
+   for (const list of new Set(nativeLists)) {
+     if (owner.debugger_isPreviewing) throw new Error('Native list checkpoints do not support debugger preview');
+@@ -586,7 +624,10 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+       }
+     }
+     const properties: [PropertyKeyValue, FullyPopulatedDescriptor][] = [];
+-    object.properties.forEach((descriptor, key) => properties.push([key, descriptor]));
++    object.properties.forEach((descriptor, key) => {
++      properties.push([key, descriptor]);
++      selectedDescriptors.add(descriptor);
++    });
+     states.push({
+       object,
+       defineOwnProperty: object.DefineOwnProperty,
+@@ -619,7 +660,9 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     }
+     environmentStates.push({ environment, bindings });
+   }
+-  const frame = { states, nativeLists: nativeListStates, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
++  const descriptorStates: DescriptorState[] = [];
++  for (const record of selectedDescriptors) descriptorStates.push(getDescriptorState(record, owner));
++  const frame = { states, descriptors: descriptorStates, nativeLists: nativeListStates, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
+   const stack = checkpoints.get(owner) ?? [];
+   stack.push(frame);
+   checkpoints.set(owner, stack);
+@@ -638,8 +681,16 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     callSiteCount: callSiteStates.length,
+     referenceRecordCount: referenceStates.length,
+     nativeListCount: nativeListStates.length,
++    descriptorCount: descriptorStates.length,
+     restore: () => {
+       const agent = assertActive();
++      if (hasExplicitDescriptors && agent.debugger_isPreviewing) throw new Error('Descriptor checkpoints do not support debugger preview');
++      for (const state of descriptorStates) {
++        assertDescriptorLayout(state.record);
++        if (Object.isExtensible(state.record) !== state.extensible || !state.slots.every((slot) => hasUnchangedSlot(state.record, slot))) {
++          throw new TypeError('Checkpoint Descriptor metadata changed');
++        }
++      }
+       if (nativeListStates.length && agent.debugger_isPreviewing) throw new Error('Native list checkpoints do not support debugger preview');
+       for (const state of nativeListStates) getNativeListState(state.list, agent);
+       if (referenceStates.length && agent.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
+@@ -780,6 +831,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+       states.length = 0;
+       referenceStates.length = 0;
+       nativeListStates.length = 0;
++      descriptorStates.length = 0;
+       environmentStates.length = 0;
+       globals.length = 0;
+       contextStates.length = 0;

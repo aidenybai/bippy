@@ -18,6 +18,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Clock and random guards](checkpoint-nondeterminism.md) now reject additional unowned operations during evaluation checkpoints. The original React diagnostic still stops at its timer. A variant with an explicit application clock read stops earlier, before `Date.now()` consults the host. This is not time/random restoration or complete host isolation.
 
+[Final Descriptor validation](descriptor-checkpoints.md) now covers explicit records and saved property-table descriptors. The React diagnostic selects 5,998 records and still rejects its timer. A separate shared-prefix reproduction leaks `ToPropertyDescriptor`’s mutable plain initializer across branch orders. That unresolved record is not a final Descriptor and is not covered by the new read-only policy.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |
