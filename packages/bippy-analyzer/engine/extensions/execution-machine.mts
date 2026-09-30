@@ -94,6 +94,7 @@ const validateLocals = (locals: Record<string, unknown>): Record<string, Propert
 export const captureControl = (
   iterator: unknown,
   owner: ContinuationStateOwner,
+  getAdditionalRoots: () => readonly unknown[] = () => [],
 ): ControlCheckpoint => {
   if (!isControlFrame(iterator)) throw new Error("Cannot checkpoint a foreign continuation");
   if (!owner || typeof owner.capture !== "function")
@@ -122,6 +123,7 @@ export const captureControl = (
       }
       for (const name of manifest.ambientNames) ambientNames.add(name);
     };
+    for (const value of getAdditionalRoots()) addValue(value);
     while (pending.length) {
       const frame = pending.pop();
       if (!isObject(frame) || visited.has(frame)) continue;

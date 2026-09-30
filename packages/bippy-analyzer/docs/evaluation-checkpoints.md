@@ -8,7 +8,7 @@
 
 Register and suspend execution through [Agent-owned decisions](agent-decisions.md), then call `captureEvaluation`. The returned `EvaluationCheckpoint` provides `restore()` and `release()`.
 
-Capture delegates to the existing `captureControl`. It forwards the owner’s `beginCapture`, `references`, and `capture` callbacks. The owner receives control roots plus the evaluator, completion callback, and current idle callbacks. Callback references do not expose native closure captures.
+Capture delegates to the existing `captureControl`. It forwards the owner’s `beginCapture`, `references`, and `capture` callbacks. The evaluator, completion callback, and current idle callbacks now enter discovery before owner capture. [Registered notification captures](agent-callback-captures.md) contribute their bindings and dependencies to the same traversal. Unregistered closures and mutable referents remain unowned.
 
 Restoration proceeds in this order:
 

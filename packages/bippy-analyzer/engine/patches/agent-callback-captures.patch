@@ -1,0 +1,18 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 7d38b1d..4c13f11 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -198,10 +198,10 @@ export class Agent {
+         beginCapture: () => beginCapture?.call(owner),
+         references: (value) => references?.call(owner, value) ?? [],
+         capture: (roots) => {
+-          frame.roots = [...roots.values, paused.evaluator, paused.onFinish, ...this.onNoEvaluator];
+-          return captureState.call(owner, { ...roots, values: frame.roots });
++          frame.roots = roots.values;
++          return captureState.call(owner, roots);
+         },
+-      });
++      }, () => [paused.evaluator, paused.onFinish, ...this.onNoEvaluator]);
+       this.#evaluationCheckpoints.push(frame);
+     } finally {
+       this.#isCheckpointing = false;

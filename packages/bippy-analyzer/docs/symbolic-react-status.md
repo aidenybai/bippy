@@ -34,6 +34,8 @@ The opt-in [Script syntax policy](script-syntax-regions.md) now recognizes final
 
 [Number remainder, strict equality, and exact term interning](numeric-parity.md) now preserve repeated parity decisions in selected script forks. Seven real React runs retain count expressions and match native snapshots and layout events, including `0 → 1 → 6 → 0 → −5`. They specialize predicates on separate runs; they do not prove React branch isolation, guarded transitions, or repeated-state families.
 
+[Agent callback discovery](agent-callback-captures.md) now includes registered notification bindings before owner capture. Four script forks fix a native counter leak in both orders. Actual React reaches a known unowned completion dependency and rejects before owner capture. Idle subscription membership, callback effects, and complete transitive ownership remain unverified.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                                                                       |
