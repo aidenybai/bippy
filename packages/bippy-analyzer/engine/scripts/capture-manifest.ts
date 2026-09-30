@@ -83,7 +83,7 @@ export const getCaptureManifest = (
         syntax.arrowFunctionExpression([], syntax.cloneNode(identifier)),
       ),
     ];
-    if (!binding.constant && binding.kind !== "module") {
+    if (!binding.constant && binding.kind !== "module" && binding.kind !== "const") {
       const argument = closurePath.scope.generateUidIdentifier("capturedValue");
       properties.push(
         syntax.objectProperty(

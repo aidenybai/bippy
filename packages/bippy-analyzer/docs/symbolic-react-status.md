@@ -26,6 +26,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Final Descriptor validation](descriptor-checkpoints.md) now covers explicit records and saved property-table descriptors. The React diagnostic selects 5,998 records and still rejects its timer. A separate shared-prefix reproduction exposed `ToPropertyDescriptor`’s mutable initializer leaking across branch orders. [Explicit initializer selection](descriptor-initializers.md) now fixes that case, separately from final-descriptor validation. The React diagnostic encounters zero initializers at its current pause, so it does not establish React coverage of this storage.
 
+[Native lexical scope preservation](native-lexical-scopes.md) repairs ordinary capture-getter TDZ behavior and rejects known unsupported lowering forms before mutation. Generator-scope TDZ remains unresolved. The React diagnostic still rejects its first timer in both orders; no branch observations or ownership proof are added.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |

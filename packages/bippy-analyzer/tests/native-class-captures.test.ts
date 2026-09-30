@@ -70,9 +70,12 @@ it.each([
   ]);
 });
 
-it("does not hoist class registration across the TDZ or invoke getters and constructors", async () => {
-  expect(
-    await evaluateNativeCaptures(`
+it.each([false, true])(
+  "does not hoist class registration across the TDZ or invoke getters and constructors: lowered=%s",
+  async (isLowered) => {
+    const evaluate = isLowered ? evaluateLowered : evaluateNativeCaptures;
+    expect(
+      await evaluate(`
     let calls = 0, before;
     try {before = Reader;} catch (error) {before = error.name;}
     class Reader {
@@ -86,8 +89,9 @@ it("does not hoist class registration across the TDZ or invoke getters and const
     const later = 7;
     const result = [before, calls, error, binding.get(), binding.set === undefined];
   `),
-  ).toEqual(["ReferenceError", 0, "ReferenceError", 7, true]);
-});
+    ).toEqual(["ReferenceError", 0, "ReferenceError", 7, true]);
+  },
+);
 
 it("keeps class initialization, heritage, names, private state and computed-key order native", async () => {
   const program = `

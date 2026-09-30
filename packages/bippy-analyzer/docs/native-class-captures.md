@@ -19,11 +19,13 @@ A rejecting owner can refuse `[[ClassState]]` before branch execution. The lexic
 
 Classes that escape during static initialization have no registration until evaluation completes. Computed property-name inference and anonymous default class declarations remain unsupported. Arbitrary foreign classes, callable constructor wrappers, and methods do not acquire metadata from this change. Class manifests conservatively include referenced outer bindings, not an exact proof of all retained state.
 
-## Validation
+## Registration validation
 
-The final 13 cases pass. The exact predecessor fails 10 cases and passes three controls. Tests cover counter restoration, identity, names, heritage, construction, freezing, private names, shadows, early escape, and explicit ownership rejection. Six native observations independently check branch results and class evaluation behavior.
+The registration increment’s final 13 cases pass. The exact predecessor fails 10 cases and passes three controls. Tests cover counter restoration, identity, names, heritage, construction, freezing, private names, shadows, early escape, and explicit ownership rejection. Six native observations independently check branch results and class evaluation behavior.
 
-An initial test expected a captured getter to throw before a later `const` initialization. Through the full lowering pipeline, it returned `undefined`. That pipeline’s block-scoping transform does not preserve this temporal-dead-zone behavior. The final test isolates the metadata transform and verifies its lazy getter and class registration behavior. This is narrower evidence, not a fix to the full pipeline. The initial failure remains in the [receipts](native-class-capture-validation/summary.json).
+An initial test expected a captured getter to throw before a later `const` initialization. Through the full lowering pipeline, it returned `undefined`. The registration increment narrowed that test to the metadata transform; it did not fix lowering. The initial failure remains in the [receipts](native-class-capture-validation/summary.json).
+
+[Native lexical scope preservation](native-lexical-scopes.md) now repairs this ordinary-scope discrepancy and runs the test through both pipelines. Generator-scope TDZ behavior remains unresolved. Neither change establishes class storage ownership.
 
 All 2,000 units across 72 files, types, two relocated builds, offline installation, and the unchanged local 74-case smoke pass. New source conformance passes 623 variants. These match reused published weak-reference results and a fresh 20-case `Reflect.construct` selection by input hashes, compiled hashes, and verdicts.
 

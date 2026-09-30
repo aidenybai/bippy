@@ -7,6 +7,7 @@ import { controlSpecifier } from "./control-paths.js";
 import { EngineBuildError } from "../errors.js";
 import { getInputSourceMap } from "./get-input-source-map.js";
 import { lowerGeneratorLoops } from "./lower-generator-loops.js";
+import { lowerGeneratorBindings } from "./lower-generator-bindings.js";
 
 const require = createRequire(import.meta.url);
 
@@ -138,7 +139,7 @@ export const lowerGenerators = async (
       require.resolve("@babel/plugin-transform-parameters"),
       require.resolve("@babel/plugin-transform-destructuring"),
       lowerGeneratorLoops,
-      require.resolve("@babel/plugin-transform-block-scoping"),
+      lowerGeneratorBindings,
       require.resolve("@babel/plugin-transform-regenerator"),
     ],
   });

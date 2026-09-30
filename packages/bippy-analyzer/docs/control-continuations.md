@@ -4,7 +4,7 @@ The maintained build now lowers engine262’s host generators into explicit cont
 
 ## Build and runtime
 
-`engine/scripts/lower-generators.ts` runs after upstream completion macros, TypeScript removal, and decorators. Pinned Babel transforms handle parameters, destructuring, loops, block scope, and generator lowering. The build composes source maps across these steps.
+`engine/scripts/lower-generators.ts` runs after upstream completion macros, TypeScript removal, and decorators. Pinned Babel transforms handle parameters, destructuring, loops, block scope, and generator lowering. [Native lexical scope preservation](native-lexical-scopes.md) limits block-scoping visitors to generators and rejects known unsupported native forms before transformation. Generator-scope TDZ remains unresolved. The build composes source maps across these steps.
 
 `engine/extensions/execution-machine.mts` drives the resulting program counters, activation-local records, delegated frames, and completion handlers. Normal execution can delegate to foreign iterators. Control capture rejects foreign delegates because it cannot snapshot their execution state.
 

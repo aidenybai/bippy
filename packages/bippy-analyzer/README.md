@@ -14,6 +14,8 @@ An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements
 
 The [guarded host-tree report API](docs/guarded-host-tree-reports.md) stores supplied JSON snapshots and guarded diagnostics. It preserves whole-tree correlation and distinguishes selected, uncovered, and ambiguous observations. It does not execute React or establish branch isolation. Reports keep execution and coverage unverified.
 
+The [native control-lowering contract](docs/native-lexical-scopes.md) preserves ordinary lexical scopes and lists rejected native source forms. Generator-scope TDZ and complete execution ownership remain unresolved.
+
 Requires **Node 26+**. The published engine uses native APIs such as `Map.prototype.getOrInsertComputed` that Node 24 lacks.
 
 ## Run
