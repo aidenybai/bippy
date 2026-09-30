@@ -42,7 +42,7 @@ An actual React update reaches its first opaque decision. A fixture owner detect
 
 Idle callback Set membership and registration changes do not rewind. Unregistered closures, mutable referents, ambient effects, native classes/proxies, and arbitrary callback behavior remain the owner’s responsibility. Omitting `references` is still a caller assertion, not an automatic coverage check.
 
-This change does not alter live completion/idle callback marking outside saved checkpoints or during notification execution. That lifetime coverage remains a separate GC audit gap. Standalone control checkpoints still have no automatic Agent GC roots.
+A separate [live notification root policy](agent-notification-roots.md) now retains declared callbacks, completion values, and Agent-managed fallback evaluators during their active lifetimes. It does not add ownership or registration rollback. Standalone control checkpoints still have no automatic Agent GC roots.
 
 The host-effect guard remains enabled. Checkpoints still cannot span separate registered evaluations or job drains. General React ownership, guarded transitions, repeated-state families, automatic report production, and the integrated demo remain incomplete.
 

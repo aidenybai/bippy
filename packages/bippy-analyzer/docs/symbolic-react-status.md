@@ -36,6 +36,8 @@ The opt-in [Script syntax policy](script-syntax-regions.md) now recognizes final
 
 [Agent callback discovery](agent-callback-captures.md) now includes registered notification bindings before owner capture. Four script forks fix a native counter leak in both orders. Actual React reaches a known unowned completion dependency and rejects before owner capture. Idle subscription membership, callback effects, and complete transitive ownership remain unverified.
 
+[Live Agent notification roots](agent-notification-roots.md) now preserve declared callback captures and completion values outside saved checkpoints. Two separate React updates retain detached completion targets through opaque pauses and notification-time collection. This adds GC coverage, not branch restoration, scheduling authority, or a verified React owner.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                                                                       |
