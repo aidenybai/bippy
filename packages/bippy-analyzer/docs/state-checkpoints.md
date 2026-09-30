@@ -2,6 +2,8 @@
 
 `binding-checkpoint.patch` adds `createStateCheckpoint({ objects, environments })` to the maintained engine API. It restores selected ordinary objects, [arrays](array-checkpoints.md), [Maps and Sets](collection-checkpoints.md), [supported guest function properties](function-checkpoints.md), and selected declarative bindings together. It does not resume symbolic branches. Optional [context and CallSite selections](context-checkpoints.md) now reuse engine copying for shallow native field snapshots, without owning referenced native state. [Selected ReferenceRecords](reference-checkpoints.md) also restore their original `ReferencedName` values without owning referent contents.
 
+[Native-list selections](native-list-checkpoints.md) restore indexed entries, holes, and length in original implementation arrays. Selection remains shallow and rejects unsupported layouts.
+
 ## Selection
 
 [WeakMap storage](weak-map-checkpoints.md) uses the existing Map entry snapshots and restore loop. Saved entries pin their keys and values until release. Referenced storage remains shallow, and ordinary-only/closed-data policies stay strict.

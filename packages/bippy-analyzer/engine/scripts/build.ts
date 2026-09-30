@@ -103,6 +103,7 @@ const build = async (): Promise<void> => {
       "native-capture-registration.patch",
       "native-capture-roots.patch",
       "reference-checkpoints.patch",
+      "native-list-checkpoints.patch",
     ])
       execFileSync(
         "git",

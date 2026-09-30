@@ -14,6 +14,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Selected ReferenceRecords](reference-checkpoints.md) now restore cached property keys. Eight computed-assignment cases match 16 native branch observations, with one prefix per case. The actual React diagnostic selects 20 records per order and still rejects its first branch timer. This repairs one native-state gap, not the general owner or guarded report API.
 
+[Selected native-list snapshots](native-list-checkpoints.md) now fix argument accumulation across branches. Eight fork cases match 16 native observations. The React diagnostic selects 1,842 arrays, rejects 16 layouts, and still rejects its first branch timer. Unselected layouts and mutable element contents remain separate ownership problems.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |

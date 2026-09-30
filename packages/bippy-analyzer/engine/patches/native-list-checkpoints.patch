@@ -1,0 +1,142 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 5448ad0..9f9d16b 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -240,6 +240,42 @@ interface CallSiteState {
+   snapshot: CallSite;
+ }
+ 
++interface NativeListEntry {
++  index: number;
++  value: unknown;
++}
++
++interface NativeListState {
++  list: unknown[];
++  length: number;
++  entries: NativeListEntry[];
++}
++
++const getNativeListState = (list: unknown[], owner: Agent): NativeListState => {
++  if (!Array.isArray(list) || Object.getPrototypeOf(list) !== Array.prototype || !Object.isExtensible(list)) {
++    throw new TypeError('Checkpoint requires canonical native lists');
++  }
++  const lengthDescriptor = Object.getOwnPropertyDescriptor(list, 'length');
++  if (!lengthDescriptor?.writable) throw new TypeError('Checkpoint requires writable native list length');
++  const length: number = lengthDescriptor.value;
++  const entries: NativeListEntry[] = [];
++  for (const key of Reflect.ownKeys(list)) {
++    if (key === 'length') continue;
++    const index = typeof key === 'string' ? Number(key) : NaN;
++    const descriptor = Object.getOwnPropertyDescriptor(list, key);
++    if (!descriptor || !Number.isInteger(index) || index < 0 || index >= length || String(index) !== key
++      || !('value' in descriptor) || !descriptor.writable || !descriptor.enumerable || !descriptor.configurable) {
++      throw new TypeError('Checkpoint requires canonical native list entries');
++    }
++    const value: unknown = descriptor.value;
++    if ((value instanceof ObjectValue || value instanceof EnvironmentRecord) && value.ownerAgent !== owner) {
++      throw new TypeError('Checkpoint native list values must belong to the current agent');
++    }
++    entries.push({ index, value });
++  }
++  return { list, length, entries };
++};
++
+ interface ReferenceState {
+   reference: ReferenceRecord;
+   snapshot: ReferenceRecord;
+@@ -277,6 +313,7 @@ const assertReference = (reference: ReferenceRecord, owner: Agent): void => {
+ interface StateCheckpointFrame {
+   states: OrdinaryObjectState[];
+   references: ReferenceState[];
++  nativeLists: NativeListState[];
+   contexts: ContextState[];
+   callSites: CallSiteState[];
+   environments: EnvironmentState[];
+@@ -296,6 +333,7 @@ export interface StateCheckpointOptions {
+   contexts?: readonly ExecutionContext[];
+   callSites?: readonly CallSite[];
+   referenceRecords?: readonly ReferenceRecord[];
++  nativeLists?: readonly unknown[][];
+ }
+ 
+ export interface StateCheckpoint {
+@@ -306,6 +344,7 @@ export interface StateCheckpoint {
+   readonly contextCount: number;
+   readonly callSiteCount: number;
+   readonly referenceRecordCount: number;
++  readonly nativeListCount: number;
+   restore(): void;
+   release(): void;
+ }
+@@ -334,6 +373,10 @@ const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
+ 
+ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+   for (const frame of checkpoints.get(agent) ?? []) {
++    for (const state of frame.nativeLists) {
++      mark(state.list);
++      for (const entry of state.entries) mark(entry.value);
++    }
+     for (const state of frame.references) {
+       mark(state.reference);
+       mark(state.snapshot);
+@@ -410,10 +453,15 @@ const getGlobalEnvironmentState = (environment: GlobalEnvironmentRecord, owner:
+   return { environment, objectRecord, declarativeRecord, bindingObject: objectRecord.BindingObject, globalThis: environment.GlobalThisValue };
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [], nativeLists = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
++  const nativeListStates: NativeListState[] = [];
++  for (const list of new Set(nativeLists)) {
++    if (owner.debugger_isPreviewing) throw new Error('Native list checkpoints do not support debugger preview');
++    nativeListStates.push(getNativeListState(list, owner));
++  }
+   const referenceStates: ReferenceState[] = [];
+   for (const reference of new Set(referenceRecords)) {
+     if (owner.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
+@@ -571,7 +619,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     }
+     environmentStates.push({ environment, bindings });
+   }
+-  const frame = { states, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
++  const frame = { states, nativeLists: nativeListStates, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
+   const stack = checkpoints.get(owner) ?? [];
+   stack.push(frame);
+   checkpoints.set(owner, stack);
+@@ -589,8 +637,11 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     contextCount: contextStates.length,
+     callSiteCount: callSiteStates.length,
+     referenceRecordCount: referenceStates.length,
++    nativeListCount: nativeListStates.length,
+     restore: () => {
+       const agent = assertActive();
++      if (nativeListStates.length && agent.debugger_isPreviewing) throw new Error('Native list checkpoints do not support debugger preview');
++      for (const state of nativeListStates) getNativeListState(state.list, agent);
+       if (referenceStates.length && agent.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
+       for (const { reference, snapshot } of referenceStates) {
+         assertReference(reference, agent);
+@@ -695,6 +746,13 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+           for (const value of set.values) set.data.push(value);
+         }
+       }
++      for (const { list, length, entries } of nativeListStates) {
++        list.length = 0;
++        list.length = length;
++        for (const { index, value } of entries) Object.defineProperty(list, index, {
++          value, writable: true, enumerable: true, configurable: true,
++        });
++      }
+       for (const { reference, snapshot } of referenceStates) reference.ReferencedName = snapshot.ReferencedName;
+       for (const { context, snapshot } of contextStates) {
+         snapshot.copy(context);
+@@ -721,6 +779,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+       if (stack.length === 0) checkpoints.delete(agent);
+       states.length = 0;
+       referenceStates.length = 0;
++      nativeListStates.length = 0;
+       environmentStates.length = 0;
+       globals.length = 0;
+       contextStates.length = 0;
