@@ -71,6 +71,7 @@ The separate resolver work includes native build observation, corpus comparisons
 - [x] Preserve [ordinary native lexical scopes](docs/native-lexical-scopes.md), including lazy capture getters’ TDZ and const immutability. Reject known unsupported native lowering forms before transformation. Generator-scope TDZ and execution ownership remain unresolved.
 - [x] Register [native class lexical captures](docs/native-class-captures.md) without replacing constructors. Both-order counter regressions restore a class-only binding after its creator returns. `[[ClassState]]` remains explicitly unowned; registration does not restore fields, prototypes, private state, or detached methods.
 - [x] Declare [callable proxy target, handler, and trap references](docs/callable-captures.md) through existing native metadata. Both-order target/trap counter leaks now restore, and declared values survive GC. Proxy and referenced storage remain explicitly unowned.
+- [x] Add a [caller-owned Boolean checkpoint driver](docs/boolean-snapshot-exploration.md) that produces guarded snapshot reports without prefix replay. Owner validation and snapshot meaning remain caller responsibilities; reports stay unverified and general React exploration remains blocked.
 - [x] Compare four real React tree specializations from two opaque Boolean inputs with native execution and explicit trees. [The ownership probe](docs/react-tree-ownership.md) identifies unsupported state before the first choice. These witnesses do not restore or explore shared-prefix React branches.
 
 These are [concrete execution increments](docs/concrete-execution.md), not completion of the browser runtime stages. Still missing here: full application-loader integration, general browser host support, general symbolic values, branch-local mutable state, symbolic React trees, and event transitions.
@@ -226,7 +227,7 @@ Completion check: an unknown condition mutates an object through two aliases and
 
 ## 6. Build symbolic React trees
 
-A [public guarded host-tree report component](docs/guarded-host-tree-reports.md) now stores supplied snapshots and guarded diagnostics. Its content graph preserves whole-tree correlation, but does not merge execution states or prove isolation. Four real React specialization witnesses check report selection against native output. Engine-owned report production, identity, provenance, and shared-prefix exploration remain unfinished.
+A [public guarded host-tree report component](docs/guarded-host-tree-reports.md) now stores supplied snapshots and guarded diagnostics. Its content graph preserves whole-tree correlation, but does not merge execution states or prove isolation. Four real React specialization witnesses check report selection against native output. A [caller-owned driver](docs/boolean-snapshot-exploration.md) now connects engine decisions to supplied snapshot observers. Automatic React report production, identity, provenance, and sound shared-prefix React exploration remain unfinished.
 
 - [ ] Run supported symbolic inputs through the concrete React integration. React must retain responsibility for hooks, reconciliation, and lifecycle behavior.
 - [ ] Isolate React's mutable runtime state, fibers, hook queues, refs, context, module state, and host DOM writes. Do not share mutable native wrappers across alternatives.

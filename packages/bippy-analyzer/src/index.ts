@@ -40,6 +40,15 @@ export type {
   NumericSameValuePredicate,
 } from "./symbolic/numeric-domain.js";
 export { SymbolicEngineError } from "./symbolic/errors.js";
+export { createBooleanSnapshotExplorer } from "./symbolic/boolean-snapshot-explorer.js";
+export type {
+  BooleanSnapshotInput,
+  BooleanSnapshotStateOwner,
+  BooleanSnapshotExplorationOptions,
+  BooleanSnapshotTraversal,
+  BooleanSnapshotExploration,
+  BooleanSnapshotExplorer,
+} from "./symbolic/boolean-snapshot-explorer.js";
 export {
   createGuardedHostTreeReport,
   specializeGuardedHostTree,

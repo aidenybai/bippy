@@ -8,11 +8,13 @@ See [concrete execution](docs/concrete-execution.md) for `createConcreteRuntime(
 
 The separate [numeric domain](docs/numeric-domain.md) represents unbounded Number inputs through engine addition, subtraction, and unary negation. It preserves expression structure through calls and mutation, but rejects unsupported concrete reads. It does not yet provide guarded decisions or symbolic React output.
 
-An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements on unknown inputs. [Expression decisions](docs/boolean-expressions.md) also support `?:`, `&&`, `||`, and `!`. Selected-state tests fork guarded outcomes with unbounded numbers and no prefix replay. General state ownership and a package-level symbolic explorer remain missing.
+An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements on unknown inputs. [Expression decisions](docs/boolean-expressions.md) also support `?:`, `&&`, `||`, and `!`. Selected-state tests fork guarded outcomes with unbounded numbers and no prefix replay. General state ownership and integrated symbolic React exploration remain missing.
 
 [Number SameValue predicates](docs/number-predicates.md) now drive actual React state bailouts with unknown Numbers. These are separate single-path runs, not isolated React branches. The [engine reuse audit](docs/engine-reuse-audit.md) defines what stays in engine262 and React, and why upstream preview/context copying cannot replace rollback.
 
 The [guarded host-tree report API](docs/guarded-host-tree-reports.md) stores supplied JSON snapshots and guarded diagnostics. It preserves whole-tree correlation and distinguishes selected, uncovered, and ambiguous observations. It does not execute React or establish branch isolation. Reports keep execution and coverage unverified.
+
+The [caller-owned Boolean snapshot driver](docs/boolean-snapshot-exploration.md) connects one engine evaluation to guarded reports without prefix replay. It requires a supplied state owner and snapshot observer. It does not verify isolation or enable a general React renderer.
 
 The [native control-lowering contract](docs/native-lexical-scopes.md) preserves ordinary lexical scopes and lists rejected native source forms. Generator-scope TDZ and complete execution ownership remain unresolved.
 

@@ -1,0 +1,105 @@
+{
+  "scope": "caller-owned-boolean-evaluation-v1",
+  "predecessor": "3e102175d8df7b9bab423c384df01029c582c6cf",
+  "engineSha256": "9c36ae0e92a0035a00896fbaebb4e9cb8f0957a4c6536e16385d93ae9f4ddb72",
+  "engineArtifactChanged": false,
+  "sourceHashes": {
+    "src/index.ts": "191cf125dace03d0e8875715724e99b95265628cac7030e999ed99f652dc9497",
+    "src/symbolic/boolean-snapshot-explorer.ts": "7e5ae3c883ee29f1ca3cdbfdf93e59588ea7c5b58aa3f86c505a4437867ab3e2",
+    "tests/boolean-snapshot-explorer.test.ts": "0ae5d78ec6ab2b1f91ea708b7866b5c874a5a25c36b445f99d97fecff291e85c",
+    "tests/boolean-snapshot-react.test.ts": "87ffa1051bccad165b8d8db9a7a7a8c49b99691a420c0937bb0c713952bfc0e3",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17"
+  },
+  "publicApi": "createBooleanSnapshotExplorer().explore(options)",
+  "baseline": {
+    "failed": 28,
+    "passed": 0,
+    "description": "Only src/index.ts restored byte-for-byte to predecessor; new implementation remains unimported. Tests fail because the public factory is missing, not because of an engine semantic regression. Final test hashes verified."
+  },
+  "focused": {
+    "passed": 28,
+    "selectedOwnerCases": 27,
+    "actualReactRejectionCases": 1,
+    "branchOrders": 2,
+    "sharedPrefixesPerOrder": 1,
+    "forksPerOrder": 3,
+    "resumesPerOrder": 9,
+    "commitsPerOrder": 4,
+    "freshNativeSpecializations": 16,
+    "forcedCollection": true
+  },
+  "units": {
+    "passed": 2143,
+    "files": 79
+  },
+  "smoke": {
+    "passed": 74,
+    "failed": 0,
+    "workers": 2,
+    "timeoutSeconds": 10
+  },
+  "unitTimeoutSeconds": 5,
+  "relocatedBuilds": 2,
+  "offlineInstall": true,
+  "rootCheck": {
+    "errors": 0,
+    "warnings": 2,
+    "files": 607
+  },
+  "conformance": {
+    "newSelectionRun": false,
+    "reusedEvidence": "../native-lexical-scope-validation/summary.json",
+    "variants": 201,
+    "sourcePassed": 201,
+    "publishedPassed": 201,
+    "reason": "Generated engine bytes unchanged; new driver behavior is checked by shared-prefix and native-oracle tests, not inferred from Test262."
+  },
+  "policy": {
+    "maxInputs": 128,
+    "defaultMaxForks": 127,
+    "hardMaxForks": 255,
+    "defaultMaxResumes": 10000,
+    "hardMaxResumes": 1000000,
+    "defaultOrder": [false, true],
+    "reportExecution": "not-verified",
+    "reportCoverage": "not-verified",
+    "ownership": "not-verified",
+    "stats": "Frozen limits, counts and branch order attached under exploration",
+    "guard": "Original Agent host-effect guard remains active during captured branches"
+  },
+  "counterexample": {
+    "owner": "Restores context-stack membership but omits guest storage",
+    "order": [true, false],
+    "falseBranchObserved": "1",
+    "nativeFalseBranch": "0",
+    "reportStillUnverified": true,
+    "meaning": "Driver cannot certify arbitrary supplied owners; this is retained unsound-owner evidence, not accepted isolation."
+  },
+  "react": {
+    "referenceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+    "inspectedSource": "packages/react-test-renderer/src/ReactTestRenderer.js:toJSON",
+    "prefixes": 1,
+    "captureAttempts": 1,
+    "releaseCallbacks": 1,
+    "branchObservations": 0,
+    "error": "React transitive ownership is not implemented",
+    "meaning": "Actual update reaches opaque Boolean pause and rejecting owner. No successful React branch report, transition, repeat family, or general owner is claimed."
+  },
+  "retainedFindings": [
+    "First11 cases:4 failed/7 passed. Two failures compared freshly allocated NumberValue wrappers by identity; changed to value equality. One guest-throw wrapper comparison failed likewise.",
+    "Opaque while condition invokes unsupported concrete Boolean read. The repeated-decision witness now uses a supported if inside a concrete while loop; no loop-protocol extension is claimed.",
+    "Initial observer type ValueCompletion includes raw values. Normalize with original EnsureCompletion and expose NormalCompletion<Value>|ThrowCompletion.",
+    "Readonly review identified late reentrancy locking through option getters. Lock now covers validation and execution; getter-reentrancy regression passes.",
+    "Review caught an unexecuted copying fixture using forbidden numeric host-tree roots. It now returns valid JSON text snapshots.",
+    "Intermediate2140-unit run precedes three added policy/cleanup cases. Final2143-unit run follows attached traversal metadata and verifies final code."
+  ],
+  "limits": [
+    "Caller supplies synchronous owner and observer. Root discovery, storage policies and transitive execution ownership are not supplied or verified.",
+    "Prefix effects occur once before first checkpoint and are not rolled back. No job draining, application loader, event graph, or replay implementation.",
+    "Resumes/forks are bounded globally. Concrete execution, native operations, allocation, capture, observers and GC require separate limits; no wall-clock or memory sandbox.",
+    "Healthy fork restoration leaves Agent at its first fork; failures release leases but do not promise rollback, universal cleanup or safe Agent reuse.",
+    "Primary failures abort sibling exploration, return no partial report, and preserve identity unless aggregated with cleanup errors.",
+    "Observer snapshot meaning, guest getter/toJSON effects, completion callbacks and native metadata remain caller responsibilities.",
+    "Host-tree content identity is not React state/fiber identity. General React ownership, automatic renderer/report producer, transitions, repeated families and demo remain incomplete."
+  ]
+}
