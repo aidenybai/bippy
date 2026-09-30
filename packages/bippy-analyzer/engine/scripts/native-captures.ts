@@ -9,9 +9,15 @@ interface ScopeRegistrations {
 }
 
 const getInferredName = (
-  path: NodePath<syntax.FunctionExpression | syntax.ArrowFunctionExpression>,
+  path: NodePath<
+    syntax.FunctionExpression | syntax.ArrowFunctionExpression | syntax.ClassExpression
+  >,
 ): string | undefined | false => {
-  if (syntax.isFunctionExpression(path.node) && path.node.id) return undefined;
+  if (
+    (syntax.isFunctionExpression(path.node) || syntax.isClassExpression(path.node)) &&
+    path.node.id
+  )
+    return undefined;
   const parent = path.parent;
   if (syntax.isVariableDeclarator(parent) && syntax.isIdentifier(parent.id)) return parent.id.name;
   if (syntax.isAssignmentExpression(parent) && syntax.isIdentifier(parent.left))
@@ -38,6 +44,21 @@ const getInferredName = (
     return false;
   }
   return undefined;
+};
+
+const getNamedClosure = (
+  path: NodePath<
+    syntax.FunctionExpression | syntax.ArrowFunctionExpression | syntax.ClassExpression
+  >,
+): syntax.Expression | undefined => {
+  const name = getInferredName(path);
+  if (name === false) return undefined;
+  if (name === undefined) return path.node;
+  return syntax.memberExpression(
+    syntax.objectExpression([syntax.objectProperty(syntax.stringLiteral(name), path.node, true)]),
+    syntax.stringLiteral(name),
+    true,
+  );
 };
 
 const isControlCall = (
@@ -123,6 +144,38 @@ export const nativeCaptures = (): PluginObject => {
             );
         },
       },
+      Class: {
+        enter: (path) => {
+          if (processed.has(path.node)) return;
+          manifests.set(path.node, getCaptureManifest(path));
+        },
+        exit: (path) => {
+          const captures = manifests.get(path.node);
+          if (!captures || processed.has(path.node)) return;
+          processed.add(path.node);
+          const factory = syntax.arrowFunctionExpression([], captures);
+          processed.add(factory);
+          if (path.isClassDeclaration()) {
+            if (!path.node.id) return;
+            const statement = path.parentPath.isExportDeclaration() ? path.parentPath : path;
+            statement.insertAfter(
+              syntax.expressionStatement(
+                syntax.callExpression(syntax.cloneNode(helper), [
+                  syntax.cloneNode(path.node.id),
+                  factory,
+                ]),
+              ),
+            );
+            isUsed = true;
+          } else if (path.isClassExpression()) {
+            const closure = getNamedClosure(path);
+            if (!closure) return;
+            isUsed = true;
+            path.replaceWith(syntax.callExpression(syntax.cloneNode(helper), [closure, factory]));
+            path.skip();
+          }
+        },
+      },
       Function: {
         enter: (path) => {
           if (processed.has(path.node) || isControlArgument(path, 5)) {
@@ -164,18 +217,8 @@ export const nativeCaptures = (): PluginObject => {
             scopes.set(parent.node, registration);
             isUsed = true;
           } else if (path.isFunctionExpression() || path.isArrowFunctionExpression()) {
-            const name = getInferredName(path);
-            if (name === false) return;
-            const closure =
-              name === undefined
-                ? path.node
-                : syntax.memberExpression(
-                    syntax.objectExpression([
-                      syntax.objectProperty(syntax.stringLiteral(name), path.node, true),
-                    ]),
-                    syntax.stringLiteral(name),
-                    true,
-                  );
+            const closure = getNamedClosure(path);
+            if (!closure) return;
             isUsed = true;
             path.replaceWith(syntax.callExpression(syntax.cloneNode(helper), [closure, factory]));
             path.skip();

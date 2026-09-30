@@ -31,6 +31,6 @@ Both visitation orders report four frozen tables and twelve parser lists. Each o
 
 [Audit receipts](react-native-array-audit/summary.json) contain the driver, complete reports, source hashes, and focused run. The driver scans incoming own data properties and trusted capture bindings without invoking property getters. This diagnostic is not a complete graph traversal or an ownership verifier.
 
-The same discovery finds 2,477 native functions, of which 59 lack capture manifests. These include native constructors and helpers. That is a separate ownership problem; class names and reference counts do not prove safe execution.
+The same discovery finds 2,477 native functions, of which 59 lack capture manifests. These include native constructors and helpers. That is a separate ownership problem; class names and reference counts do not prove safe execution. The later [class lexical-capture increment](native-class-captures.md) registers supported constructors but still reports class storage as unowned. Its expanded diagnostic retains 15 unregistered functions and rejects the first timer.
 
 General React branch isolation remains incomplete. The next owner policy must distinguish immutable metadata, already-selected storage, and unsupported native state before enabling branch effects.

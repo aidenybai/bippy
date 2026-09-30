@@ -2,10 +2,10 @@ import type { NodePath } from "@babel/core";
 import * as syntax from "@babel/types";
 
 export const getCaptureManifest = (
-  closurePath: NodePath<syntax.Function>,
+  closurePath: NodePath<syntax.Function | syntax.Class>,
 ): syntax.ObjectExpression => {
   const bindings = new Set<NonNullable<ReturnType<typeof closurePath.scope.getBinding>>>();
-  const ambientNames = new Set<string>();
+  const ambientNames = new Set<string>(closurePath.isClass() ? ["[[ClassState]]"] : []);
   let capturesThis = false;
   let capturesArguments = false;
   const isLexical = (reference: NodePath): boolean => {

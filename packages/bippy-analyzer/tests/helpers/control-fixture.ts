@@ -5,19 +5,28 @@ import { dirname, resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 import { rollup } from "rollup";
 import { lowerGenerators } from "../../engine/scripts/lower-generators.js";
+import { nativeCaptures } from "../../engine/scripts/native-captures.js";
 import { controlSpecifier, capturesSpecifier } from "../../engine/scripts/control-paths.js";
 
 const directory = resolve(import.meta.dirname, "../../engine/extensions");
 const require = createRequire(import.meta.url);
 
-export const evaluateLowered = async (
+const evaluateFixture = async (
   source: string,
-  globals: Readonly<Record<string, unknown>> = {},
+  globals: Readonly<Record<string, unknown>>,
+  lower: boolean,
 ): Promise<unknown> => {
-  const lowered = await lowerGenerators(
-    `import { captureControl } from ${JSON.stringify(controlSpecifier)};\nimport { getNativeCaptures } from ${JSON.stringify(capturesSpecifier)};\n${source}\nexport { result };`,
-    "control-fixture.mjs",
-  );
+  const input = `import { captureControl } from ${JSON.stringify(controlSpecifier)};\nimport { getNativeCaptures } from ${JSON.stringify(capturesSpecifier)};\n${source}\nexport { result };`;
+  const transformed = lower
+    ? await lowerGenerators(input, "control-fixture.mjs")
+    : await transformAsync(input, {
+        filename: "control-fixture.mjs",
+        configFile: false,
+        babelrc: false,
+        plugins: [nativeCaptures],
+      });
+  if (!transformed?.code) throw new Error("Missing fixture transform");
+  const code = transformed.code;
   const bundle = await rollup({
     input: "control-fixture",
     onwarn: (warning) => {
@@ -33,7 +42,7 @@ export const evaluateLowered = async (
           if (specifier.startsWith(".") && importer) return resolve(dirname(importer), specifier);
         },
         load: async (filename) => {
-          if (filename === "\0control-fixture") return lowered.code;
+          if (filename === "\0control-fixture") return code;
           if (filename.startsWith(directory)) {
             const result = await transformAsync(await readFile(filename, "utf8"), {
               filename,
@@ -70,3 +79,13 @@ export const evaluateLowered = async (
   if (isFailed) throw failure;
   return observation;
 };
+
+export const evaluateLowered = (
+  source: string,
+  globals: Readonly<Record<string, unknown>> = {},
+): Promise<unknown> => evaluateFixture(source, globals, true);
+
+export const evaluateNativeCaptures = (
+  source: string,
+  globals: Readonly<Record<string, unknown>> = {},
+): Promise<unknown> => evaluateFixture(source, globals, false);
