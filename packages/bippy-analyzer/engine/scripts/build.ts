@@ -102,6 +102,7 @@ const build = async (): Promise<void> => {
       "builtin-capture-edges.patch",
       "native-capture-registration.patch",
       "native-capture-roots.patch",
+      "reference-checkpoints.patch",
     ])
       execFileSync(
         "git",

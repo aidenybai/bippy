@@ -12,6 +12,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Concrete callback declarations](concrete-native-captures.md) now expose installed host callbacks and queued jobs through the same metadata registry. The updated diagnostic finds 58 unregistered functions and still rejects its first user timer. [Declared native-capture marking](native-capture-roots.md) now retains reachable declared bindings, but unregistered functions and arbitrary native records remain outside traversal. Root retention is not complete execution ownership.
 
+[Selected ReferenceRecords](reference-checkpoints.md) now restore cached property keys. Eight computed-assignment cases match 16 native branch observations, with one prefix per case. The actual React diagnostic selects 20 records per order and still rejects its first branch timer. This repairs one native-state gap, not the general owner or guarded report API.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |
