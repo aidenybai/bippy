@@ -113,6 +113,7 @@ const build = async (): Promise<void> => {
       "module-cache-roots.patch",
       "template-cache-roots.patch",
       "callable-captures.patch",
+      "iterator-record-checkpoints.patch",
     ])
       execFileSync(
         "git",

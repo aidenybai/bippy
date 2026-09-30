@@ -1,0 +1,1249 @@
+{
+  "revision": "3b90a65275410c265af6e58a41b0fec84a8efc88",
+  "ciRun": 36691504405,
+  "analyzerJob": 109809543784,
+  "ci": {
+    "conclusion": "failure",
+    "jobs": [
+      {
+        "completedAt": "2026-09-30T08:51:11Z",
+        "conclusion": "failure",
+        "databaseId": 109809543784,
+        "name": "analyzer",
+        "startedAt": "2026-09-30T08:43:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:40Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:43Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:44Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:05Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:14Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-30T08:44:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:38Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer exec playwright install --with-deps chromium",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:45:43Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer test:engine-build",
+            "number": 7,
+            "startedAt": "2026-09-30T08:44:38Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:45:49Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer typecheck",
+            "number": 8,
+            "startedAt": "2026-09-30T08:45:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:03Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer test",
+            "number": 9,
+            "startedAt": "2026-09-30T08:45:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:45Z",
+            "conclusion": "failure",
+            "name": "Run pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'",
+            "number": 10,
+            "startedAt": "2026-09-30T08:50:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:08Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter bippy-analyzer exec tsx scripts/profile-substr.ts",
+            "number": 11,
+            "startedAt": "2026-09-30T08:50:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:09Z",
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 12,
+            "startedAt": "2026-09-30T08:51:08Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:09Z",
+            "conclusion": "skipped",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 22,
+            "startedAt": "2026-09-30T08:51:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:09Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 23,
+            "startedAt": "2026-09-30T08:51:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:10Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 24,
+            "startedAt": "2026-09-30T08:51:09Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:10Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 25,
+            "startedAt": "2026-09-30T08:51:10Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504405/job/109809543784"
+      },
+      {
+        "completedAt": "2026-09-30T08:44:39Z",
+        "conclusion": "success",
+        "databaseId": 109809544113,
+        "name": "typecheck",
+        "startedAt": "2026-09-30T08:43:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:41Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:45Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:46Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:10Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:28Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-30T08:44:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "success",
+            "name": "Run pnpm run typecheck",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:28Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:37Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:37Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-30T08:44:37Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504405/job/109809544113"
+      },
+      {
+        "completedAt": "2026-09-30T08:44:20Z",
+        "conclusion": "success",
+        "databaseId": 109809544120,
+        "name": "check",
+        "startedAt": "2026-09-30T08:43:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:41Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:44Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:46Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:04Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:13Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-30T08:44:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:17Z",
+            "conclusion": "success",
+            "name": "Run pnpm run check",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:17Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-30T08:44:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:17Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-30T08:44:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:17Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-30T08:44:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:18Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-30T08:44:17Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:18Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-30T08:44:18Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504405/job/109809544120"
+      },
+      {
+        "completedAt": "2026-09-30T08:50:52Z",
+        "conclusion": "success",
+        "databaseId": 109809544136,
+        "name": "test",
+        "startedAt": "2026-09-30T08:43:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:40Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:43Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:44Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:08Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:16Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-30T08:44:08Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:48Z",
+            "conclusion": "success",
+            "name": "Run pnpm run test",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:48Z",
+            "conclusion": "skipped",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-30T08:50:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:49Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-30T08:50:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:49Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-30T08:50:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:49Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-30T08:50:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:49Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-30T08:50:49Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504405/job/109809544136"
+      },
+      {
+        "completedAt": "2026-09-30T08:44:39Z",
+        "conclusion": "success",
+        "databaseId": 109809544209,
+        "name": "build",
+        "startedAt": "2026-09-30T08:43:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:40Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:42Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:44Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:59Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:08Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-30T08:43:59Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:12Z",
+            "conclusion": "success",
+            "name": "Run pnpm run build",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:08Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "success",
+            "name": "Run pnpm --filter conformance exec tsx scripts/check-built.ts",
+            "number": 7,
+            "startedAt": "2026-09-30T08:44:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 12,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:36Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 13,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:37Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "startedAt": "2026-09-30T08:44:36Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:37Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "startedAt": "2026-09-30T08:44:37Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504405/job/109809544209"
+      }
+    ],
+    "status": "completed"
+  },
+  "e2eRun": 36691504950,
+  "e2e": {
+    "conclusion": "failure",
+    "headSha": "3b90a65275410c265af6e58a41b0fec84a8efc88",
+    "status": "completed",
+    "url": "https://github.com/aidenybai/bippy/actions/runs/36691504950"
+  },
+  "e2eJobs": {
+    "jobs": [
+      {
+        "completedAt": "2026-09-30T08:54:06Z",
+        "conclusion": "success",
+        "databaseId": 109809546428,
+        "name": "e2e-web",
+        "startedAt": "2026-09-30T08:43:39Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:41Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:44Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:45Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:07Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:19Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-09-30T08:44:07Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:22Z",
+            "conclusion": "success",
+            "name": "Run pnpm build",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:19Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:49Z",
+            "conclusion": "success",
+            "name": "Run Metro artifact source-map test",
+            "number": 7,
+            "startedAt": "2026-09-30T08:44:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:45:12Z",
+            "conclusion": "success",
+            "name": "Install Playwright browsers",
+            "number": 8,
+            "startedAt": "2026-09-30T08:44:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:52:10Z",
+            "conclusion": "success",
+            "name": "Run Playwright tests",
+            "number": 9,
+            "startedAt": "2026-09-30T08:45:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:54:03Z",
+            "conclusion": "success",
+            "name": "Run Playwright tests against production builds",
+            "number": 10,
+            "startedAt": "2026-09-30T08:52:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:54:04Z",
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@v4",
+            "number": 11,
+            "startedAt": "2026-09-30T08:54:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:54:04Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 20,
+            "startedAt": "2026-09-30T08:54:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:54:04Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 21,
+            "startedAt": "2026-09-30T08:54:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:54:04Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 22,
+            "startedAt": "2026-09-30T08:54:04Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:54:04Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 23,
+            "startedAt": "2026-09-30T08:54:04Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504950/job/109809546428"
+      },
+      {
+        "completedAt": "2026-09-30T08:43:49Z",
+        "conclusion": "success",
+        "databaseId": 109809546707,
+        "name": "changes",
+        "startedAt": "2026-09-30T08:43:38Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:40Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:39Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:43Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:47Z",
+            "conclusion": "success",
+            "name": "Run dorny/paths-filter@v3",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:43Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:47Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 6,
+            "startedAt": "2026-09-30T08:43:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:47Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 7,
+            "startedAt": "2026-09-30T08:43:47Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504950/job/109809546707"
+      },
+      {
+        "completedAt": "2026-09-30T09:00:13Z",
+        "conclusion": "failure",
+        "databaseId": 109809620622,
+        "name": "e2e-native",
+        "startedAt": "2026-09-30T08:43:56Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:44:00Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:05Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:44:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:08Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:44:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:45:01Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:44:08Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:45:11Z",
+            "conclusion": "success",
+            "name": "Pre-boot simulator",
+            "number": 5,
+            "startedAt": "2026-09-30T08:45:01Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:10Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile --prefer-offline",
+            "number": 6,
+            "startedAt": "2026-09-30T08:45:11Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:50:18Z",
+            "conclusion": "success",
+            "name": "Run pnpm build",
+            "number": 7,
+            "startedAt": "2026-09-30T08:50:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:06Z",
+            "conclusion": "success",
+            "name": "Install applesimutils and watchman",
+            "number": 8,
+            "startedAt": "2026-09-30T08:50:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:06Z",
+            "conclusion": "success",
+            "name": "Get Xcode version",
+            "number": 9,
+            "startedAt": "2026-09-30T08:51:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:10Z",
+            "conclusion": "success",
+            "name": "Restore iOS app binary",
+            "number": 10,
+            "startedAt": "2026-09-30T08:51:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:10Z",
+            "conclusion": "skipped",
+            "name": "Cache CocoaPods downloads",
+            "number": 11,
+            "startedAt": "2026-09-30T08:51:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:10Z",
+            "conclusion": "skipped",
+            "name": "Prebuild and build iOS app",
+            "number": 12,
+            "startedAt": "2026-09-30T08:51:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:10Z",
+            "conclusion": "skipped",
+            "name": "Save iOS app binary",
+            "number": 13,
+            "startedAt": "2026-09-30T08:51:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:29Z",
+            "conclusion": "success",
+            "name": "Start Metro",
+            "number": 14,
+            "startedAt": "2026-09-30T08:51:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:35Z",
+            "conclusion": "success",
+            "name": "Cache Detox framework",
+            "number": 15,
+            "startedAt": "2026-09-30T08:51:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:51:35Z",
+            "conclusion": "skipped",
+            "name": "Build Detox framework cache",
+            "number": 16,
+            "startedAt": "2026-09-30T08:51:35Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:44Z",
+            "conclusion": "failure",
+            "name": "Run Detox tests",
+            "number": 17,
+            "startedAt": "2026-09-30T08:51:35Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:47Z",
+            "conclusion": "success",
+            "name": "Upload Metro log",
+            "number": 18,
+            "startedAt": "2026-09-30T08:59:44Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:48Z",
+            "conclusion": "success",
+            "name": "Upload Detox artifacts",
+            "number": 19,
+            "startedAt": "2026-09-30T08:59:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:48Z",
+            "conclusion": "skipped",
+            "name": "Post Cache Detox framework",
+            "number": 35,
+            "startedAt": "2026-09-30T08:59:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:48Z",
+            "conclusion": "skipped",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 36,
+            "startedAt": "2026-09-30T08:59:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:49Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 37,
+            "startedAt": "2026-09-30T08:59:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:59:50Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 38,
+            "startedAt": "2026-09-30T08:59:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T09:00:11Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 39,
+            "startedAt": "2026-09-30T08:59:50Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504950/job/109809620622"
+      },
+      {
+        "completedAt": "2026-09-30T08:48:43Z",
+        "conclusion": "success",
+        "databaseId": 109809620757,
+        "name": "e2e-native-android",
+        "startedAt": "2026-09-30T08:43:51Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-09-30T08:43:55Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-09-30T08:43:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:57Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "startedAt": "2026-09-30T08:43:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:43:58Z",
+            "conclusion": "success",
+            "name": "Run pnpm/action-setup@v4",
+            "number": 3,
+            "startedAt": "2026-09-30T08:43:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:13Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@v4",
+            "number": 4,
+            "startedAt": "2026-09-30T08:43:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:13Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-java@v5",
+            "number": 5,
+            "startedAt": "2026-09-30T08:44:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:20Z",
+            "conclusion": "success",
+            "name": "Run android-actions/setup-android@v4",
+            "number": 6,
+            "startedAt": "2026-09-30T08:44:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:20Z",
+            "conclusion": "success",
+            "name": "Run gradle/actions/setup-gradle@v6",
+            "number": 7,
+            "startedAt": "2026-09-30T08:44:20Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:30Z",
+            "conclusion": "success",
+            "name": "Install emulator runtime dependencies",
+            "number": 8,
+            "startedAt": "2026-09-30T08:44:20Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:30Z",
+            "conclusion": "success",
+            "name": "Enable KVM",
+            "number": 9,
+            "startedAt": "2026-09-30T08:44:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:32Z",
+            "conclusion": "success",
+            "name": "Run sdkmanager \"platforms;android-36\" \"build-tools;36.0.0\"",
+            "number": 10,
+            "startedAt": "2026-09-30T08:44:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:41Z",
+            "conclusion": "success",
+            "name": "Run pnpm install --frozen-lockfile --prefer-offline",
+            "number": 11,
+            "startedAt": "2026-09-30T08:44:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:45Z",
+            "conclusion": "success",
+            "name": "Run pnpm build",
+            "number": 12,
+            "startedAt": "2026-09-30T08:44:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:46Z",
+            "conclusion": "success",
+            "name": "Restore Android app binaries",
+            "number": 13,
+            "startedAt": "2026-09-30T08:44:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:46Z",
+            "conclusion": "skipped",
+            "name": "Prebuild and build Android app",
+            "number": 14,
+            "startedAt": "2026-09-30T08:44:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:46Z",
+            "conclusion": "skipped",
+            "name": "Save Android app binaries",
+            "number": 15,
+            "startedAt": "2026-09-30T08:44:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:44:50Z",
+            "conclusion": "success",
+            "name": "Start Metro",
+            "number": 16,
+            "startedAt": "2026-09-30T08:44:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:40Z",
+            "conclusion": "success",
+            "name": "Run Android Detox tests",
+            "number": 17,
+            "startedAt": "2026-09-30T08:44:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:40Z",
+            "conclusion": "skipped",
+            "name": "Upload Android Metro log",
+            "number": 18,
+            "startedAt": "2026-09-30T08:48:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:40Z",
+            "conclusion": "skipped",
+            "name": "Upload Android Detox artifacts",
+            "number": 19,
+            "startedAt": "2026-09-30T08:48:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:41Z",
+            "conclusion": "success",
+            "name": "Post Run gradle/actions/setup-gradle@v6",
+            "number": 34,
+            "startedAt": "2026-09-30T08:48:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:41Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-java@v5",
+            "number": 35,
+            "startedAt": "2026-09-30T08:48:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:41Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@v4",
+            "number": 36,
+            "startedAt": "2026-09-30T08:48:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:41Z",
+            "conclusion": "success",
+            "name": "Post Run pnpm/action-setup@v4",
+            "number": 37,
+            "startedAt": "2026-09-30T08:48:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:42Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 38,
+            "startedAt": "2026-09-30T08:48:41Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-09-30T08:48:42Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 39,
+            "startedAt": "2026-09-30T08:48:42Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/aidenybai/bippy/actions/runs/36691504950/job/109809620757"
+      }
+    ]
+  },
+  "publishRun": 36691504418,
+  "publish": {
+    "conclusion": "success",
+    "headSha": "3b90a65275410c265af6e58a41b0fec84a8efc88",
+    "status": "completed",
+    "url": "https://github.com/aidenybai/bippy/actions/runs/36691504418"
+  },
+  "units": 2055,
+  "smoke": {
+    "passed": 72,
+    "failed": 2,
+    "workers": 2,
+    "timeoutSeconds": 10,
+    "failingFile": "annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js",
+    "variants": ["default", "strict"]
+  },
+  "engineSha256": "35147d7cd4b99737bb3e96a35a223ac1dafd929df37dc85b448ed0ebb11345cd",
+  "analyzerLogSha256": "d9deb0393b1643fcfc5a33c154d5457dd7b48678b5980cffc82dd0920fc78245",
+  "e2eLogSha256": "311fb07594a8633213a6c857c00b3e1fb1144e50f4be849c2f68d0e5742dfde5",
+  "profiles": {
+    "scope": "diagnostic-only-not-a-test262-verdict",
+    "node": "v26.10.0",
+    "versions": {
+      "node": "26.10.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.3",
+      "libffi": "3.8.0",
+      "lief": "0.17.0",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "147",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "3.5.8",
+      "simdjson": "4.6.11",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2026c",
+      "undici": "8.10.2",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "14.6.202.34-node.34",
+      "zlib": "1.3.2.1-motley-285e94b",
+      "zstd": "1.5.7"
+    },
+    "platform": "linux",
+    "architecture": "x64",
+    "cpuModel": "AMD EPYC 9V74 80-Core Processor",
+    "availableParallelism": 4,
+    "workers": 1,
+    "diagnosticTimeoutMilliseconds": 30000,
+    "sourceFiles": [
+      ".test262/harness/assert.js",
+      ".test262/harness/sta.js",
+      ".test262/test/annexB/built-ins/String/prototype/substr/start-and-length-as-numbers.js"
+    ],
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "engineSha256": "35147d7cd4b99737bb3e96a35a223ac1dafd929df37dc85b448ed0ebb11345cd",
+    "results": [
+      {
+        "mode": {
+          "name": "default",
+          "flags": []
+        },
+        "profile": "default.cpuprofile",
+        "milliseconds": 11341.864922,
+        "status": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "mode": {
+          "name": "no-maglev",
+          "flags": ["--no-maglev"]
+        },
+        "profile": "no-maglev.cpuprofile",
+        "milliseconds": 11444.371319000002,
+        "status": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    ]
+  },
+  "limitation": "Numeric smoke timeouts remain failures. Thirty-second profiles are diagnostics only. E2E native core beforeAll exceeds300000ms; native job42failed/12passed. Root cause not diagnosed. Publishing succeeds."
+}

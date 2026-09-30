@@ -1,0 +1,144 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 3b8672e..8799341 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -2,7 +2,7 @@ import {
+   hasOrdinaryObjectMethods, ArrayExoticObjectInternalMethods,
+   surroundingAgent, ObjectValue, Value, Descriptor, DescriptorInitializer, IsCallable, IsDataDescriptor, IsAccessorDescriptor,
+   DeclarativeEnvironmentRecord, FunctionEnvironmentRecord, GlobalEnvironmentRecord, ObjectEnvironmentRecord,
+-  type Agent, type GCMarker, type OrdinaryObject,
++  type Agent, type GCMarker, type OrdinaryObject, type IteratorRecord,
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+   type DeclarativeEnvironmentBinding,
+   isMapObject, isSetObject, isWeakMapObject, type MapObject, type SetObject,
+@@ -310,6 +310,13 @@ const getNativeListState = (list: unknown[], owner: Agent): NativeListState => {
+   return { list, length, entries };
+ };
+ 
++interface IteratorRecordState {
++  record: IteratorRecord;
++  iterator: ObjectValue;
++  nextMethod: Value;
++  done: boolean;
++}
++
+ interface ReferenceState {
+   reference: ReferenceRecord;
+   snapshot: ReferenceRecord;
+@@ -344,7 +351,18 @@ const assertReference = (reference: ReferenceRecord, owner: Agent): void => {
+   }
+ };
+ 
++const assertIteratorRecord = (record: IteratorRecord, owner: Agent): void => {
++  assertNativeRecord(record, Object.prototype, ['Iterator', 'NextMethod', 'Done'], 'iterator');
++  if (!(record.Iterator instanceof ObjectValue) || !(record.NextMethod instanceof Value) || typeof record.Done !== 'boolean') {
++    throw new TypeError('Checkpoint requires valid iterator fields');
++  }
++  if (record.Iterator.ownerAgent !== owner || (record.NextMethod instanceof ObjectValue && record.NextMethod.ownerAgent !== owner)) {
++    throw new TypeError('Checkpoint iterator values must belong to the current agent');
++  }
++};
++
+ interface StateCheckpointFrame {
++  iterators: IteratorRecordState[];
+   states: OrdinaryObjectState[];
+   references: ReferenceState[];
+   nativeLists: NativeListState[];
+@@ -368,6 +386,7 @@ export interface StateCheckpointOptions {
+   contexts?: readonly ExecutionContext[];
+   callSites?: readonly CallSite[];
+   referenceRecords?: readonly ReferenceRecord[];
++  iteratorRecords?: readonly IteratorRecord[];
+   nativeLists?: readonly unknown[][];
+   descriptors?: readonly Descriptor[];
+   descriptorInitializers?: readonly DescriptorInitializer[];
+@@ -381,6 +400,7 @@ export interface StateCheckpoint {
+   readonly contextCount: number;
+   readonly callSiteCount: number;
+   readonly referenceRecordCount: number;
++  readonly iteratorRecordCount: number;
+   readonly nativeListCount: number;
+   readonly descriptorCount: number;
+   readonly descriptorInitializerCount: number;
+@@ -412,6 +432,12 @@ const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
+ 
+ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+   for (const frame of checkpoints.get(agent) ?? []) {
++    for (const state of frame.iterators) {
++      mark(state.record.Iterator);
++      mark(state.record.NextMethod);
++      mark(state.iterator);
++      mark(state.nextMethod);
++    }
+     for (const state of frame.descriptors) {
+       mark(state.record);
+       for (const slot of state.slots) mark(slot.descriptor?.value);
+@@ -496,7 +522,7 @@ const getGlobalEnvironmentState = (environment: GlobalEnvironmentRecord, owner:
+   return { environment, objectRecord, declarativeRecord, bindingObject: objectRecord.BindingObject, globalThis: environment.GlobalThisValue };
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [], nativeLists = [], descriptors = [], descriptorInitializers = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [], iteratorRecords = [], nativeLists = [], descriptors = [], descriptorInitializers = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
+@@ -509,6 +535,12 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     if (owner.debugger_isPreviewing) throw new Error('Native list checkpoints do not support debugger preview');
+     nativeListStates.push(getNativeListState(list, owner));
+   }
++  const iteratorStates: IteratorRecordState[] = [];
++  for (const record of new Set(iteratorRecords)) {
++    if (owner.debugger_isPreviewing) throw new Error('Iterator checkpoints do not support debugger preview');
++    assertIteratorRecord(record, owner);
++    iteratorStates.push({ record, iterator: record.Iterator, nextMethod: record.NextMethod, done: record.Done });
++  }
+   const referenceStates: ReferenceState[] = [];
+   for (const reference of new Set(referenceRecords)) {
+     if (owner.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
+@@ -672,7 +704,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+   const descriptorStates: DescriptorState[] = [];
+   for (const record of selectedDescriptors) descriptorStates.push(getDescriptorState(record, owner));
+   for (const record of selectedInitializers) descriptorStates.push(getDescriptorState(record, owner, true));
+-  const frame = { states, descriptors: descriptorStates, nativeLists: nativeListStates, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
++  const frame = { states, iterators: iteratorStates, descriptors: descriptorStates, nativeLists: nativeListStates, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
+   const stack = checkpoints.get(owner) ?? [];
+   stack.push(frame);
+   checkpoints.set(owner, stack);
+@@ -690,6 +722,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     contextCount: contextStates.length,
+     callSiteCount: callSiteStates.length,
+     referenceRecordCount: referenceStates.length,
++    iteratorRecordCount: iteratorStates.length,
+     nativeListCount: nativeListStates.length,
+     descriptorCount: selectedDescriptors.size,
+     descriptorInitializerCount: selectedInitializers.size,
+@@ -708,6 +741,13 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+       }
+       if (nativeListStates.length && agent.debugger_isPreviewing) throw new Error('Native list checkpoints do not support debugger preview');
+       for (const state of nativeListStates) getNativeListState(state.list, agent);
++      if (iteratorStates.length && agent.debugger_isPreviewing) throw new Error('Iterator checkpoints do not support debugger preview');
++      for (const state of iteratorStates) {
++        assertIteratorRecord(state.record, agent);
++        if (state.record.Iterator !== state.iterator || state.record.NextMethod !== state.nextMethod) {
++          throw new TypeError('Checkpoint iterator metadata changed');
++        }
++      }
+       if (referenceStates.length && agent.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
+       for (const { reference, snapshot } of referenceStates) {
+         assertReference(reference, agent);
+@@ -824,6 +864,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+           value, writable: true, enumerable: true, configurable: true,
+         });
+       }
++      for (const state of iteratorStates) state.record.Done = state.done;
+       for (const { reference, snapshot } of referenceStates) reference.ReferencedName = snapshot.ReferencedName;
+       for (const { context, snapshot } of contextStates) {
+         snapshot.copy(context);
+@@ -849,6 +890,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+       stack.pop();
+       if (stack.length === 0) checkpoints.delete(agent);
+       states.length = 0;
++      iteratorStates.length = 0;
+       referenceStates.length = 0;
+       nativeListStates.length = 0;
+       descriptorStates.length = 0;

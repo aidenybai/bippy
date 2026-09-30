@@ -70,4 +70,6 @@ The final tests against the predecessor public exports produce 42 failures and o
 
 The engine artifact is unchanged. [Validation receipts](host-tree-report-validation/summary.json) record the source hashes and commands. React source inspection used `ReactTestRenderer.js:toJSON` at revision `d083ec1da1e5252abd3ddfdde6dfbc09701a2c51`. That function omits hidden instances and extracts rendered children separately from props. PR #115’s `SymbolicTree` and `SymbolicCommit` informed the guarded-commit representation; no interpreter or hook implementation was copied.
 
+Linux CI at `3b90a652` passes 2,055 units but only 72 of 74 smoke variants. Both numeric `substr` variants exceed the unchanged ten-second timeout. E2E also fails: the native core suite exceeds its 300,000 ms setup timeout. The native job reports 42 failed and 12 passed tests. Publishing succeeds. [Final CI evidence](host-tree-report-validation/ci-status.json) retains the logs and diagnostic profiles. Neither failure is reclassified as a pass.
+
 Branch isolation remains blocked. An engine-owned report producer, component identity and provenance, transitions, repeated families, the demo, and the analysis CLI remain unfinished. See the [completion checklist](symbolic-react-status.md) before treating this report format as a completed analyzer.

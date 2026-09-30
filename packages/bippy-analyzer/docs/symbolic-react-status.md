@@ -6,6 +6,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Guarded host-tree reports](guarded-host-tree-reports.md) now expose a public snapshot report and specialization API. Four existing opaque-Boolean React witnesses compare selected reports with native observations. This representation does not solve shared-prefix isolation or verify coverage.
 
+[Selected iterator-record snapshots](iterator-record-checkpoints.md) fix a shared-prefix destructuring leak: exhaustion in one branch previously removed values or cleanup calls from the next. Eight forks now match 16 native observations. The current React pause selects zero such records and still rejects its first timer. This is not general iterator or React state ownership.
+
 [Selected web-queue storage](web-queue-checkpoints.md) now restores macrotask membership through engine262’s original collections. The React diagnostic captures one pending job, then still rejects its user timer. Complete job/capture/timer ownership and guarded transition reports remain missing.
 
 [Builtin job-queue snapshots](job-queue-checkpoints.md) restore microtask/category membership through engine262’s original Sets. [Concrete host snapshots](concrete-host-checkpoints.md) now add timer records, handles, capture-array contents, and diagnostics. Arbitrary native callback state remains unowned. The React diagnostic still rejects its user timer; no general guarded transition API is enabled.
