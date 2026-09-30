@@ -106,6 +106,7 @@ const build = async (): Promise<void> => {
       "native-list-checkpoints.patch",
       "checkpoint-nondeterminism.patch",
       "descriptor-checkpoints.patch",
+      "descriptor-initializers.patch",
     ])
       execFileSync(
         "git",

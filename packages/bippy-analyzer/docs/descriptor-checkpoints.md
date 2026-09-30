@@ -25,7 +25,7 @@ The collector visits live records and saved field values until release. This roo
 
 ## A separate mutable initializer leak
 
-`ToPropertyDescriptor` first fills a plain native `desc` object. It constructs a final `Descriptor` only after conversion. That initializer is not covered by this policy.
+The predecessor’s `ToPropertyDescriptor` first filled a plain native `desc` object. It constructed a final `Descriptor` only after conversion. That initializer was not covered by the read-only policy. [Selected initializer storage](descriptor-initializers.md) now gives the mutable record a separate policy.
 
 The retained diagnostic pauses inside this guest getter:
 
@@ -43,7 +43,7 @@ Object.defineProperty(target, "value", input);
 
 The driver restores guest objects, global bindings, contexts, and control, then forces collection. It executes one prefix per branch order. False then true matches native execution. True then false leaves `11` in the native initializer’s `Value` field, where the independent native result is `undefined`.
 
-The diagnostic still fails on this revision. A shape-only rule that treats an empty native object as immutable would miss this mutation. The [receipt](descriptor-checkpoint-validation/summary.json) includes the full driver and failed output. General native-record ownership must cover this initializer separately.
+The original diagnostic does not select initializer storage. The new selected-initializer tests fix this leak through explicit selection, not through the read-only policy. A shape-only rule that treats an empty native object as immutable would miss this mutation. The [receipt](descriptor-checkpoint-validation/summary.json) includes the full driver and failed output. General native-record ownership must cover this initializer separately.
 
 ## Verification
 

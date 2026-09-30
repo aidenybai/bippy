@@ -4,7 +4,7 @@
 
 [Native-list selections](native-list-checkpoints.md) restore indexed entries, holes, and length in original implementation arrays. Selection remains shallow and rejects unsupported layouts.
 
-[Descriptor selections](descriptor-checkpoints.md) validate final engine records as read-only metadata. Every saved property-table descriptor is included automatically. `descriptors` adds explicit records and `descriptorCount` reports distinct explicit and implied selections. Referent contents and mutable descriptor initializer records remain unowned.
+[Descriptor selections](descriptor-checkpoints.md) validate final engine records as read-only metadata. Every saved property-table descriptor is included automatically. `descriptors` adds explicit records and `descriptorCount` reports distinct explicit and implied selections. Referent contents remain unowned. [Mutable descriptor initializers](descriptor-initializers.md) use separate `descriptorInitializers` selection and `descriptorInitializerCount`, with in-place field restoration rather than read-only validation.
 
 ## Selection
 
