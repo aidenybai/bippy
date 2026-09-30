@@ -1,5 +1,7 @@
 import type {
   Agent,
+  CaptureManifest,
+  CapturedBinding,
   GCMarker,
   JobQueueCheckpoint,
   ManagedRealm,
@@ -124,16 +126,31 @@ export class ConcreteRuntime {
     this.withAgent(() => {
       const pop = this.realm.pushTopContext();
       try {
+        const getHostCaptures = (bindings: readonly CapturedBinding[] = []): CaptureManifest => ({
+          bindings: [
+            { name: "[[ThisValue]]", get: () => this },
+            { name: "api", get: () => api },
+            { name: "ConcreteRuntimeError", get: () => ConcreteRuntimeError },
+            { name: "getHostCaptures", get: () => getHostCaptures },
+            ...bindings,
+          ],
+          ambientNames: [],
+        });
+        api.registerNativeClosure(getHostCaptures, getHostCaptures);
         const install = (name: string, steps: OmitThisParameter<NativeSteps>): void => {
+          api.registerNativeClosure(steps, getHostCaptures);
           this.unwrap(
             api.CreateNonEnumerableDataPropertyOrThrow(
               this.realm.GlobalObject,
               name,
               api.CreateBuiltinFunction(
-                (...parameters) => {
-                  this.agent.assertCanPerformHostEffect();
-                  return steps(...parameters);
-                },
+                api.registerNativeClosure(
+                  (...parameters: Parameters<OmitThisParameter<NativeSteps>>) => {
+                    this.agent.assertCanPerformHostEffect();
+                    return steps(...parameters);
+                  },
+                  () => getHostCaptures([{ name: "steps", get: () => steps }]),
+                ),
                 0,
                 name,
                 [],
@@ -154,18 +171,23 @@ export class ConcreteRuntime {
           const handle = ++this.nextTimer;
           const capturedValues = [callback, ...args.map((value) => value ?? api.Value.undefined)];
           this.timers.set(handle, capturedValues);
+          const job = () => {
+            if (!this.timers.delete(handle)) return api.GetValue(api.Value.undefined);
+            const [scheduledCallback = api.Value.undefined, ...scheduledArguments] = capturedValues;
+            capturedValues.length = 0;
+            return api.Call(scheduledCallback, api.Value.undefined, scheduledArguments);
+          };
           this.agent.eventLoop.enqueue("timers", {
             queueName: "Timers",
             callerRealm: this.realm,
             callerScriptOrModule: api.GetActiveScriptOrModule(),
             capturedValues,
-            job: () => {
-              if (!this.timers.delete(handle)) return api.GetValue(api.Value.undefined);
-              const [scheduledCallback = api.Value.undefined, ...scheduledArguments] =
-                capturedValues;
-              capturedValues.length = 0;
-              return api.Call(scheduledCallback, api.Value.undefined, scheduledArguments);
-            },
+            job: api.registerNativeClosure(job, () =>
+              getHostCaptures([
+                { name: "handle", get: () => handle },
+                { name: "capturedValues", get: () => capturedValues },
+              ]),
+            ),
           });
           return api.Value(handle);
         });
@@ -178,26 +200,32 @@ export class ConcreteRuntime {
         install("queueMicrotask", ([callback]) => {
           if (!callback || !api.IsCallable(callback))
             throw new ConcreteRuntimeError("Only callable microtask callbacks are supported");
+          const job = () => api.Call(callback, api.Value.undefined, []);
           this.agent.jobQueue.enqueueGenericJob({
             queueName: "Microtasks",
             callerRealm: this.realm,
             callerScriptOrModule: api.GetActiveScriptOrModule(),
             capturedValues: [callback],
-            job: () => api.Call(callback, api.Value.undefined, []),
+            job: api.registerNativeClosure(job, () =>
+              getHostCaptures([{ name: "callback", get: () => callback }]),
+            ),
           });
           return api.Value.undefined;
         });
         const consoleObject = api.OrdinaryObjectCreate(this.realm.Intrinsics["%Object.prototype%"]);
         for (const method of consoleMethods) {
           const callback = api.CreateBuiltinFunction(
-            (args) => {
-              this.agent.assertCanPerformHostEffect();
-              this.consoleEntries.push({
-                method,
-                arguments: args.map((value) => value ?? api.Value.undefined),
-              });
-              return api.Value.undefined;
-            },
+            api.registerNativeClosure(
+              (args: Parameters<OmitThisParameter<NativeSteps>>[0]) => {
+                this.agent.assertCanPerformHostEffect();
+                this.consoleEntries.push({
+                  method,
+                  arguments: args.map((value) => value ?? api.Value.undefined),
+                });
+                return api.Value.undefined;
+              },
+              () => getHostCaptures([{ name: "method", get: () => method }]),
+            ),
             0,
             method,
             [],

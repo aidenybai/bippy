@@ -10,6 +10,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Builtin behaviour references](builtin-capture-edges.md) now expose previously omitted native functions to continuation-owner discovery. The React diagnostic finds 2,406 registered and 65 unregistered functions. It still rejects the first user timer; these counts are not a transitive ownership proof.
 
+[Concrete callback declarations](concrete-native-captures.md) now expose installed host callbacks and queued jobs through the same metadata registry. The updated diagnostic finds 58 unregistered functions and still rejects its first user timer. Declared references are not complete ownership or automatic collector roots.
+
 ## Required evidence
 
 | Deliverable                                                                         | Current artifact and verification                                                                                            | Status and missing evidence                                                                                                                                                                                                                                                                                                                                                                   |
