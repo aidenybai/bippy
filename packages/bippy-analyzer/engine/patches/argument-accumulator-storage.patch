@@ -1,0 +1,86 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 8799341..358adab 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -16,6 +16,7 @@ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsi
+ import { ImmutablePrototypeObjectInternalMethods } from '../intrinsics/ObjectPrototype.mts';
+ import { errorInternalSlots } from '../intrinsics/Error.mts';
+ import { regexpInternalSlots } from '../abstract-ops/regexp-objects.mts';
++import { getArgumentAccumulatorInfo } from './control/argument-accumulators.mts';
+ 
+ interface ReadonlySlotState {
+   name: string;
+@@ -310,6 +311,31 @@ const getNativeListState = (list: unknown[], owner: Agent): NativeListState => {
+   return { list, length, entries };
+ };
+ 
++export interface ArgumentAccumulatorStorage {
++  readonly scope: 'engine-argument-accumulator-storage-v1';
++  readonly kind: 'arguments' | 'template-substitutions';
++  readonly list: unknown[];
++  readonly references: readonly unknown[];
++  readonly borrowedReferences: readonly object[];
++}
++
++export const getArgumentAccumulatorStorage = (value: unknown): ArgumentAccumulatorStorage | undefined => {
++  if ((typeof value !== 'object' || value === null) && typeof value !== 'function') return undefined;
++  const allocation = getArgumentAccumulatorInfo(value);
++  if (!allocation) return undefined;
++  if (allocation.agent !== surroundingAgent) throw new TypeError('Argument accumulator belongs to another Agent');
++  if (surroundingAgent.debugger_isPreviewing) throw new TypeError('Argument accumulator inspection does not support debugger preview');
++  if (!Array.isArray(value)) throw new TypeError('Invalid argument accumulator');
++  const state = getNativeListState(value, surroundingAgent);
++  return Object.freeze({
++    scope: 'engine-argument-accumulator-storage-v1',
++    kind: allocation.kind,
++    list: value,
++    references: Object.freeze(state.entries.map((entry) => entry.value)),
++    borrowedReferences: Object.freeze([Array.prototype]),
++  });
++};
++
+ interface IteratorRecordState {
+   record: IteratorRecord;
+   iterator: ObjectValue;
+diff --git a/src/index.mts b/src/index.mts
+index b217a5e..2fbe99a 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -15,6 +15,7 @@ export {
+   createOrdinaryObjectCheckpoint, createStateCheckpoint, createDataGraphCheckpoint,
+   type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
+   type DataGraphCheckpoint, type DataGraphCheckpointOptions,
++  getArgumentAccumulatorStorage, type ArgumentAccumulatorStorage,
+ } from './host-defined/object-checkpoint.mts';
+ export { runSingleJobInQueue, type JobQueue, type JobQueueCheckpoint, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
+ export {
+diff --git a/src/runtime-semantics/ArgumentListEvaluation.mts b/src/runtime-semantics/ArgumentListEvaluation.mts
+index 9c2bc5e..a890f7f 100644
+--- a/src/runtime-semantics/ArgumentListEvaluation.mts
++++ b/src/runtime-semantics/ArgumentListEvaluation.mts
+@@ -2,6 +2,7 @@ import {
+   Value, Descriptor, type Arguments,
+ } from '../value.mts';
+ import { Evaluate, type PlainEvaluator } from '../evaluator.mts';
++import { createArgumentAccumulator } from '../host-defined/control/argument-accumulators.mts';
+ import { Q, X } from '../completion.mts';
+ import { OutOfRange, isArray } from '../utils/language.mts';
+ import { TemplateStrings } from '../static-semantics/all.mts';
+@@ -104,7 +105,7 @@ function* ArgumentListEvaluation_TemplateLiteral(TemplateLiteral: ParseNode.Temp
+     case TemplateLiteral.TemplateSpanList.length > 1: {
+       const templateLiteral = TemplateLiteral;
+       const siteObj = GetTemplateObject(templateLiteral);
+-      const restSub = [];
++      const restSub = createArgumentAccumulator('template-substitutions');
+       const expressions = TemplateLiteral.ExpressionList;
+       for (let expressionIndex = 0; expressionIndex < expressions.length; expressionIndex += 1) {
+         const Expression = expressions[expressionIndex];
+@@ -133,7 +134,7 @@ function* ArgumentListEvaluation_TemplateLiteral(TemplateLiteral: ParseNode.Temp
+ //     `(` ArgumentList `)`
+ //     `(` ArgumentList `,` `)`
+ function* ArgumentListEvaluation_Arguments(Arguments: ParseNode.Arguments): PlainEvaluator<Arguments> {
+-  const precedingArgs = [];
++  const precedingArgs = createArgumentAccumulator('arguments');
+   for (let argumentIndex = 0; argumentIndex < Arguments.length; argumentIndex += 1) {
+     const element = Arguments[argumentIndex];
+     if (element.type === 'AssignmentRestElement') {

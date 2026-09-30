@@ -18,6 +18,8 @@ The active objective is “finish the symbolic stuff for React”. The [roadmap]
 
 [Selected ReferenceRecords](reference-checkpoints.md) now restore cached property keys. Eight computed-assignment cases match 16 native branch observations, with one prefix per case. The actual React diagnostic selects 20 records per order and still rejects its first branch timer. This repairs one native-state gap, not the general owner or guarded report API.
 
+The [argument accumulator storage policy](argument-accumulator-storage.md) now replaces shape-based selection for two original runtime allocations. It validates registered arrays and exposes their current references and borrowed prototype. Eight selected-state forks match sixteen native observations in both orders. Actual React selects this storage, then rejects broader execution ownership with zero branch observations. Array registration does not certify its referents or effects.
+
 [Selected native-list snapshots](native-list-checkpoints.md) now fix argument accumulation across branches. Eight fork cases match 16 native observations. The React diagnostic selects 1,842 arrays, rejects 16 layouts, and still rejects its first branch timer. Unselected layouts and mutable element contents remain separate ownership problems.
 
 [Clock and random guards](checkpoint-nondeterminism.md) now reject additional unowned operations during evaluation checkpoints. The original React diagnostic still stops at its timer. A variant with an explicit application clock read stops earlier, before `Date.now()` consults the host. This is not time/random restoration or complete host isolation.
