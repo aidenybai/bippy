@@ -1,0 +1,274 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 06c4cd7..190b3c1 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -209,6 +209,163 @@ interface OrdinaryObjectState {
+   readonlyObject?: ReadonlyObjectState;
+ }
+ 
++interface ObjectStorageReference {
++  path: string;
++  kind: 'data' | 'native' | 'implementation' | 'weak-key' | 'weak-value';
++  value: unknown;
++}
++
++interface ObjectStoragePlan {
++  state: OrdinaryObjectState;
++  objects: ObjectValue[];
++  environments: DeclarativeEnvironmentRecord[];
++  visitReferences: (scope: 'data' | 'execution', visit: (reference: ObjectStorageReference) => void) => void;
++}
++
++const visitObjectStorageReferences = (state: OrdinaryObjectState, scope: 'data' | 'execution', visit: (reference: ObjectStorageReference) => void): void => {
++  const add = (path: string, value: unknown, kind: ObjectStorageReference['kind'] = 'data'): void => {
++    visit({ path, kind, value });
++  };
++  add('Prototype', state.prototype);
++  state.properties.forEach(([key, descriptor], index) => {
++    add(`properties[${index}].key`, key);
++    add(`properties[${index}].Value`, descriptor.Value);
++    add(`properties[${index}].Get`, descriptor.Get);
++    add(`properties[${index}].Set`, descriptor.Set);
++  });
++  state.map?.entries.forEach((entry, index) => {
++    const weak = state.map!.slot === 'WeakMapData';
++    add(`${state.map!.slot}[${index}].Key`, entry.key, weak ? 'weak-key' : 'data');
++    add(`${state.map!.slot}[${index}].Value`, entry.value, weak ? 'weak-value' : 'data');
++  });
++  state.set?.values.forEach((value, index) => add(`SetData[${index}]`, value));
++  if (scope === 'data') return;
++  add('ownerAgent', state.object.ownerAgent, 'native');
++  add('nativePrototype', Object.getPrototypeOf(state.object), 'implementation');
++  add('DefineOwnProperty', state.defineOwnProperty, 'implementation');
++  add('properties', state.object.properties, 'native');
++  add('internalSlotsList', state.object.internalSlotsList, 'native');
++  add('PrivateElements', state.object.PrivateElements, 'native');
++  add('ConstructedBy', state.constructedBy, 'native');
++  state.constructors.forEach((value, index) => add(`ConstructedBy[${index}]`, value));
++  state.properties.forEach(([, descriptor], index) => add(`properties[${index}].descriptor`, descriptor, 'native'));
++  for (const slot of state.functionState?.slots ?? []) add(slot.name, slot.descriptor?.value, 'native');
++  state.functionState?.boundArguments?.forEach((value, index) => add(`BoundArguments[${index}]`, value));
++  for (const slot of state.readonlyObject?.slots ?? []) add(slot.name, slot.descriptor?.value, 'native');
++  if (state.exotic) {
++    add('exoticMethods', state.exotic.methods, 'implementation');
++    add(state.exotic.slot.name, state.exotic.slot.descriptor?.value, 'native');
++  }
++  if (state.argumentsState) add('ParameterMap', state.argumentsState.parameterMap);
++  if (state.argumentsMap) {
++    const data = state.argumentsMap.data;
++    add('ArgumentsParameterMapData', data, 'native');
++    add('ArgumentsParameterMapData.environment', data.environment, 'native');
++    add('ArgumentsParameterMapData.realm', data.realm, 'native');
++    add('ArgumentsParameterMapData.pendingMappings', data.pendingMappings, 'native');
++    add('GetOwnProperty', state.argumentsMap.getOwnProperty, 'implementation');
++    add('OwnPropertyKeys', state.argumentsMap.ownPropertyKeys, 'implementation');
++    add('ArgumentsParameterMapData.getOwnProperty', data.getOwnProperty, 'implementation');
++    add('ArgumentsParameterMapData.ownPropertyKeys', data.ownPropertyKeys, 'implementation');
++    state.argumentsMap.pendingMappings.forEach(([key, name], index) => {
++      add(`ArgumentsParameterMapData.pendingMappings[${index}].key`, key);
++      add(`ArgumentsParameterMapData.pendingMappings[${index}].name`, name, 'native');
++    });
++  }
++  if (state.map) {
++    add(state.map.slot, state.map.data, 'native');
++    state.map.entries.forEach((entry, index) => add(`${state.map!.slot}[${index}]`, entry.entry, 'native'));
++  }
++  if (state.set) add('SetData', state.set.data, 'native');
++};
++
++const getObjectStoragePlan = (object: ObjectValue, owner: Agent, allowContainers: boolean, graph?: DataGraphBudget): ObjectStoragePlan => {
++  const isDataGraph = !!graph;
++  if (!(object instanceof ObjectValue)) throw new TypeError('Checkpoint objects must be guest objects');
++  if (object.ownerAgent !== owner) {
++    throw new TypeError('Checkpoint objects must belong to the current agent');
++  }
++  const map = allowContainers ? getMapStorage(object, !isDataGraph) : undefined;
++  const set = allowContainers && isSetObject(object) ? object : undefined;
++  const argumentsState = allowContainers && !isDataGraph ? getArgumentsState(object) : undefined;
++  const argumentsMap = allowContainers && !isDataGraph ? getArgumentsMapState(object) : undefined;
++  const argumentsData = argumentsMap?.data;
++  const exotic = allowContainers && !isDataGraph ? getExoticObjectState(object) : undefined;
++  const readonlyObject = allowContainers && !isDataGraph ? getReadonlyObjectState(object) : undefined;
++  const dataSlot = map ? map.slot : set ? 'SetData' : argumentsState ? 'ParameterMap'
++    : argumentsData ? 'ArgumentsParameterMapData' : exotic?.dataSlot;
++  const methods = argumentsState?.parameterMap ? ArgumentExoticObject
++    : argumentsData ? getArgumentsMapMethods(argumentsData) : exotic?.methods ?? ObjectValue.prototype;
++  const defineOwnProperty = argumentsState?.parameterMap ? ArgumentExoticObject.DefineOwnProperty
++    : exotic?.methods.DefineOwnProperty ?? (allowContainers && !dataSlot && object.DefineOwnProperty === ArrayExoticObjectInternalMethods.DefineOwnProperty
++      ? ArrayExoticObjectInternalMethods.DefineOwnProperty : ObjectValue.prototype.DefineOwnProperty);
++  const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
++  if (isDataGraph && functionSlots) throw new TypeError('Data graph cannot own function state');
++  if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
++  if ((map && set)
++    || !hasOrdinaryObjectMethods(object, defineOwnProperty, methods)
++    || object.internalSlotsList.length !== (functionSlots?.length ?? (readonlyObject ? readonlyObject.internalSlots.length + 2 : dataSlot ? 3 : 2))
++    || (functionSlots && !functionSlots.every((name) => object.internalSlotsList.includes(name)))
++    || (dataSlot && !object.internalSlotsList.includes(dataSlot))
++    || !object.internalSlotsList.includes('Prototype')
++    || !object.internalSlotsList.includes('Extensible')
++    || object.PrivateElements.length !== 0
++    || ((!allowContainers || isDataGraph) && object.ConstructedBy.length !== 0)) {
++    throw new TypeError(allowContainers
++      ? 'Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state'
++      : 'Checkpoint requires ordinary objects without additional internal state');
++  }
++  const objects: ObjectValue[] = [];
++  const environments: DeclarativeEnvironmentRecord[] = [];
++  if (argumentsState?.parameterMap) {
++    if (!getArgumentsParameterMapData(argumentsState.parameterMap)) {
++      throw new TypeError('Checkpoint requires an engine arguments parameter map');
++    }
++    objects.push(argumentsState.parameterMap);
++  }
++  if (argumentsData) {
++    if (!(argumentsData.environment instanceof DeclarativeEnvironmentRecord)
++      || argumentsData.realm.GlobalObject.ownerAgent !== owner) {
++      throw new TypeError('Checkpoint requires a same-Agent arguments environment and realm');
++    }
++    environments.push(argumentsData.environment);
++  }
++  if (graph) {
++    const entries = 1 + object.properties.size + (map?.data.length ?? set?.SetData.length ?? 0);
++    if (entries > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
++    graph.entries += entries;
++  }
++  for (const constructor of object.ConstructedBy) {
++    if (!(constructor instanceof ObjectValue) || typeof constructor.Construct !== 'function') {
++      throw new TypeError('Checkpoint constructor data requires guest constructors');
++    }
++    if (constructor.ownerAgent !== owner) {
++      throw new TypeError('Checkpoint constructor references must belong to the current agent');
++    }
++  }
++  const properties: [PropertyKeyValue, FullyPopulatedDescriptor][] = [];
++  object.properties.forEach((descriptor, key) => {
++    properties.push([key, descriptor]);
++  });
++  const state: OrdinaryObjectState = {
++    object,
++    defineOwnProperty: object.DefineOwnProperty,
++    prototype: object.Prototype,
++    extensible: object.Extensible,
++    properties,
++    constructedBy: object.ConstructedBy,
++    constructors: [...object.ConstructedBy],
++    functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
++    argumentsState,
++    argumentsMap,
++    exotic,
++    readonlyObject,
++    map: map ? { ...map, entries: map.data.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
++    set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
++  };
++  return { state, objects, environments, visitReferences: (scope, visit) => visitObjectStorageReferences(state, scope, visit) };
++};
++
+ interface BindingState {
+   name: string;
+   binding: DeclarativeEnvironmentBinding;
+@@ -637,99 +794,12 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+   };
+   for (const object of pending) {
+     if (graph && states.length >= graph.maxObjects) throw new RangeError('Data graph object budget exceeded');
+-    if (!(object instanceof ObjectValue)) throw new TypeError('Checkpoint objects must be guest objects');
+-    if (object.ownerAgent !== owner) {
+-      throw new TypeError('Checkpoint objects must belong to the current agent');
+-    }
+-    const map = allowContainers ? getMapStorage(object, !graph) : undefined;
+-    const set = allowContainers && isSetObject(object) ? object : undefined;
+-    const argumentsState = allowContainers && !graph ? getArgumentsState(object) : undefined;
+-    const argumentsMap = allowContainers && !graph ? getArgumentsMapState(object) : undefined;
+-    const argumentsData = argumentsMap?.data;
+-    const exotic = allowContainers && !graph ? getExoticObjectState(object) : undefined;
+-    const readonlyObject = allowContainers && !graph ? getReadonlyObjectState(object) : undefined;
+-    const dataSlot = map ? map.slot : set ? 'SetData' : argumentsState ? 'ParameterMap'
+-      : argumentsData ? 'ArgumentsParameterMapData' : exotic?.dataSlot;
+-    const methods = argumentsState?.parameterMap ? ArgumentExoticObject
+-      : argumentsData ? getArgumentsMapMethods(argumentsData) : exotic?.methods ?? ObjectValue.prototype;
+-    const defineOwnProperty = argumentsState?.parameterMap ? ArgumentExoticObject.DefineOwnProperty
+-      : exotic?.methods.DefineOwnProperty ?? (allowContainers && !dataSlot && object.DefineOwnProperty === ArrayExoticObjectInternalMethods.DefineOwnProperty
+-        ? ArrayExoticObjectInternalMethods.DefineOwnProperty : ObjectValue.prototype.DefineOwnProperty);
+-    const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
+-    if (graph && functionSlots) throw new TypeError('Data graph cannot own function state');
+-    if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
+-    if ((map && set)
+-      || !hasOrdinaryObjectMethods(object, defineOwnProperty, methods)
+-      || object.internalSlotsList.length !== (functionSlots?.length ?? (readonlyObject ? readonlyObject.internalSlots.length + 2 : dataSlot ? 3 : 2))
+-      || (functionSlots && !functionSlots.every((name) => object.internalSlotsList.includes(name)))
+-      || (dataSlot && !object.internalSlotsList.includes(dataSlot))
+-      || !object.internalSlotsList.includes('Prototype')
+-      || !object.internalSlotsList.includes('Extensible')
+-      || object.PrivateElements.length !== 0
+-      || ((!allowContainers || graph) && object.ConstructedBy.length !== 0)) {
+-      throw new TypeError(allowContainers
+-        ? 'Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state'
+-        : 'Checkpoint requires ordinary objects without additional internal state');
+-    }
+-    if (argumentsState?.parameterMap) {
+-      if (!getArgumentsParameterMapData(argumentsState.parameterMap)) {
+-        throw new TypeError('Checkpoint requires an engine arguments parameter map');
+-      }
+-      pending.add(argumentsState.parameterMap);
+-    }
+-    if (argumentsData) {
+-      if (!(argumentsData.environment instanceof DeclarativeEnvironmentRecord)
+-        || argumentsData.realm.GlobalObject.ownerAgent !== owner) {
+-        throw new TypeError('Checkpoint requires a same-Agent arguments environment and realm');
+-      }
+-      selectedEnvironments.add(argumentsData.environment);
+-    }
+-    if (graph) {
+-      const entries = 1 + object.properties.size + (map?.data.length ?? set?.SetData.length ?? 0);
+-      if (entries > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
+-      graph.entries += entries;
+-      addReference(object.Prototype);
+-      object.properties.forEach((descriptor, key) => {
+-        addReference(key);
+-        addReference(descriptor.Value);
+-        addReference(descriptor.Get);
+-        addReference(descriptor.Set);
+-      });
+-      for (const entry of map?.data ?? []) {
+-        addReference(entry.Key);
+-        addReference(entry.Value);
+-      }
+-      for (const value of set?.SetData ?? []) addReference(value);
+-    }
+-    for (const constructor of object.ConstructedBy) {
+-      if (!(constructor instanceof ObjectValue) || typeof constructor.Construct !== 'function') {
+-        throw new TypeError('Checkpoint constructor data requires guest constructors');
+-      }
+-      if (constructor.ownerAgent !== owner) {
+-        throw new TypeError('Checkpoint constructor references must belong to the current agent');
+-      }
+-    }
+-    const properties: [PropertyKeyValue, FullyPopulatedDescriptor][] = [];
+-    object.properties.forEach((descriptor, key) => {
+-      properties.push([key, descriptor]);
+-      selectedDescriptors.add(descriptor);
+-    });
+-    states.push({
+-      object,
+-      defineOwnProperty: object.DefineOwnProperty,
+-      prototype: object.Prototype,
+-      extensible: object.Extensible,
+-      properties,
+-      constructedBy: object.ConstructedBy,
+-      constructors: [...object.ConstructedBy],
+-      functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
+-      argumentsState,
+-      argumentsMap,
+-      exotic,
+-      readonlyObject,
+-      map: map ? { ...map, entries: map.data.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+-      set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+-    });
++    const plan = getObjectStoragePlan(object, owner, allowContainers, graph);
++    for (const implicitObject of plan.objects) pending.add(implicitObject);
++    for (const environment of plan.environments) selectedEnvironments.add(environment);
++    if (graph) plan.visitReferences('data', (reference) => addReference(reference.value));
++    for (const [, descriptor] of plan.state.properties) selectedDescriptors.add(descriptor);
++    states.push(plan.state);
+   }
+   const environmentStates: EnvironmentState[] = [];
+   for (const environment of selectedEnvironments) {
