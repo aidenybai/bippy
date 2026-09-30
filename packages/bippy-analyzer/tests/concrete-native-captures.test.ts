@@ -195,7 +195,7 @@ it("lets a rejecting continuation owner discover the concrete runtime before bra
   }
 });
 
-it("does not turn declared native captures into automatic collector roots", async () => {
+it("roots declared native captures behind a live builtin until that root is removed", async () => {
   const { api } = await getSymbolicEngine();
   const runtime = await createConcreteRuntime();
   const previous = api.surroundingAgent;
@@ -212,8 +212,12 @@ it("does not turn declared native captures into automatic collector roots", asyn
     runtime.evaluate("target = null");
     runtime.agent.AgentRecord.KeptAlive.clear();
     api.gc();
-    expect(runtime.readString("String(reference.deref() === undefined)")).toBe("true");
+    expect(runtime.readString("String(reference.deref() === undefined)")).toBe("false");
     expect(api.getNativeCaptures(callback)?.bindings[0]?.get()).toBe(target);
+    runtime.evaluate("retained = null");
+    runtime.agent.AgentRecord.KeptAlive.clear();
+    api.gc();
+    expect(runtime.readString("String(reference.deref() === undefined)")).toBe("true");
   } finally {
     pop?.();
     api.setSurroundingAgent(previous);

@@ -21,7 +21,7 @@ Read-only bindings preserve reference identity, not the referenced objects’ co
 
 Twelve tests fail on the exact predecessor and pass now. They verify lazy registration, identity and descriptor preservation, all seven installed callbacks, queued job references, restored capture-array aliases, and a rejecting continuation owner. That owner can now find the concrete runtime before capturing or executing a branch. Failed capture preserves its exact pending decision.
 
-A negative GC regression declares a guest target behind a live builtin callback. The target still disappears from a WeakRef after collection because the collector ignores native functions. Registration does not provide automatic live-closure roots. The existing runtime marking and declared Job captures remain necessary.
+The initial negative GC regression declared a guest target behind a live builtin callback and observed its premature loss. [Declared native-capture marking](native-capture-roots.md) now fixes that case and verifies collection after removing the root. Registration still requires complete trusted declarations; unregistered functions and arbitrary native records remain outside traversal. Runtime marking and declared Job captures remain supported.
 
 The actual React diagnostic discovers 2,476 native functions, including 2,418 registered functions and 58 unregistered functions. Compared with the previous diagnostic, seven unnamed callbacks and one timer job gain declarations; the error constructor adds one unregistered function. Each order still executes one prefix, captures one timer, and rejects the first branch-created timer before observations.
 

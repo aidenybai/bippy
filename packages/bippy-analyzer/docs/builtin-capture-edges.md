@@ -31,7 +31,7 @@ Both versions execute one prefix, capture one concrete timer, and reject the fir
 
 ## Remaining boundaries
 
-The collector still ignores native functions. Emitting a function from `mark` does not make the collector traverse its capture manifest. Controlled capture can follow registered manifests and root their values through its existing mechanisms; this is not general live-closure GC coverage.
+This increment originally left native functions opaque to the collector. [Declared native-capture marking](native-capture-roots.md) now follows their registered bindings. Unregistered functions and arbitrary native records remain outside traversal; emitting or registering a function is not proof of complete closure coverage or restoration.
 
 Mutable native arrays, records, callback state, class methods, module state, and ambient references still need ownership policies. Builtin property snapshots do not restore these references’ contents. The host-effect guard remains enabled. There is still no complete React owner, guarded transition API, repeated-state report, or symbolic demo.
 
