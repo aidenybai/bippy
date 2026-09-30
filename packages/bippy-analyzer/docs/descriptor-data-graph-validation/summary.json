@@ -1,0 +1,95 @@
+{
+  "scope": "descriptor-data-graph-v1",
+  "predecessor": "7f6297f7a70b3063a346c7454b4557ae81d8b20a",
+  "engine": "3737e9393e848277b2cc7683abd9523f542c1c3c30b9a23bffc03fb3b3bb99d9",
+  "boundary": "Canonical native schema projection plus existing closed guest data traversal. Trusted native representation/reflection/prototypes. Prototype copies pass schema. No native allocation provenance, automatic execution owner, effects, React isolation, transitions, repeats, or verified reports.",
+  "commands": [
+    "pnpm --filter bippy-analyzer build:engine",
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ],
+  "baseline": {
+    "newTests": 23,
+    "failed": 23,
+    "controls": 0,
+    "engine": "1d1229a926b67e94b5246c295999c3ac35cd15602e6dd49e807627720ee81d35",
+    "classification": "Absent API, not semantic regressions; identical final tests; only new production patch disabled"
+  },
+  "verification": {
+    "newTests": 23,
+    "focused": 117,
+    "units": 2384,
+    "files": 99,
+    "smoke": 74,
+    "types": "pass",
+    "relocatedBuilds": 2,
+    "offlineInstall": "pass",
+    "rootCheck": {
+      "errors": 0,
+      "warnings": 2,
+      "files": 630
+    },
+    "unitTimeoutMs": 5000,
+    "test262TimeoutMs": 10000,
+    "workers": 2,
+    "ciJobMinutes": 10
+  },
+  "observations": {
+    "conversionForks": 4,
+    "nodeSpecializations": 8,
+    "prefixPerFork": 1,
+    "automaticGuestSelection": "payload/child/target from sole initializer root",
+    "callerSelected": "context-stack membership",
+    "react": "one prefix, one capture attempt, zero branch observations, unsupported storage, original pause and no published frame"
+  },
+  "intermediate": [
+    "Initial70focused pass; expanded114pass1fail because React assertion expected function rejection but actual generic unsupported-storage rejection occurred first. Same fixture; assertion corrected. Raw log retained.",
+    "Read-only review found no critical/warnings within trusted schema projection; requested root Get/Set function rejection coverage added; reviewer ran no gates."
+  ],
+  "conformance": {
+    "fresh": true,
+    "selection": [
+      ".test262/test/built-ins/Object/create/*.js",
+      ".test262/test/built-ins/Reflect/defineProperty/*.js"
+    ],
+    "source": {
+      "passed": 664,
+      "failed": 0
+    },
+    "published": {
+      "passed": 664,
+      "failed": 0
+    },
+    "identicalInputsCompiledVerdicts": true,
+    "normalizedSha256": "f5939f6e0c3fd9e147787a87c1db6a0f2c9645e32a622320bb6314402c9210e2"
+  },
+  "files": [
+    {
+      "filename": "engine/patches/descriptor-data-graph.patch",
+      "sha256": "c9ebcffc3f36196c7f23174bc2680684e0ae31a1b3098fa618f0d3691fd74fb8"
+    },
+    {
+      "filename": "engine/scripts/build.ts",
+      "sha256": "692ba862279cf32a77942b169b955cb2f905ec93f00a652631f676c81dcff808"
+    },
+    {
+      "filename": "tests/descriptor-data-graph.test.ts",
+      "sha256": "3244ebec226ead36880b6ef726bf90e682a945a7ae68cbf3fde428fc6c687ae5"
+    },
+    {
+      "filename": "tests/descriptor-data-graph-react.test.ts",
+      "sha256": "ba746f581de2c279a6ffc63708de4e1807db2f9f8288dbdf597dfa18d695ecb0"
+    }
+  ],
+  "incomplete": [
+    "sound automatic execution ownership",
+    "React shared-prefix branches and complete dependency policies",
+    "guarded transitions/repeated families",
+    "automatic verified reports",
+    "demo/resolver integration",
+    "CI deadline and historical Linux substr timing failures"
+  ]
+}

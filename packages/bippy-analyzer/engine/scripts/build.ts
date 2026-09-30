@@ -121,6 +121,7 @@ const build = async (): Promise<void> => {
       "scoped-gc-roots.patch",
       "native-source-provenance.patch",
       "argument-accumulator-storage.patch",
+      "descriptor-data-graph.patch",
     ])
       execFileSync(
         "git",

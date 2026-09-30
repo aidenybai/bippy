@@ -55,4 +55,6 @@ The identical-final-source predecessor fails 13 cases and passes four controls. 
 
 The preceding argument-storage CI run exceeded its ten-minute job limit. Browser/dependency installation used about six minutes; unit tests were interrupted, and smoke/profiling steps were skipped. E2E and publishing passed. An interrupted unit run is not a pass, and no gate timeout changed.
 
+The discovery-order run itself also [exceeded the ten-minute deadline](discovery-order-validation/ci-status.json). Browser/dependency installation ran from 16:52:43 to 16:58:23 UTC. Builds and types passed; units began at 16:59:16 and were interrupted at 17:02:16 without a complete verdict. Smoke, profiling, and artifact upload were skipped. E2E and publishing passed. The initial in-progress snapshot remains beside the final status and raw analyzer log.
+
 The automatic execution owner, shared-prefix React isolation, automatic reports, guarded transitions, repeated-state families, and integrated demo remain missing.

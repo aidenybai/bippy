@@ -1,0 +1,110 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 358adab..06c4cd7 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -434,12 +434,31 @@ export interface StateCheckpoint {
+   release(): void;
+ }
+ 
+-export interface DataGraphCheckpointOptions {
+-  roots: readonly ObjectValue[];
++interface GraphCheckpointOptions<Root> {
++  roots: readonly Root[];
+   maxObjects?: number;
+   maxEntries?: number;
+ }
+ 
++export interface DataGraphCheckpointOptions extends GraphCheckpointOptions<ObjectValue> {}
++
++export interface DescriptorGraphCheckpointOptions extends GraphCheckpointOptions<Descriptor> {}
++
++export interface DescriptorGraphCheckpoint {
++  readonly scope: 'descriptor-data-graph-v1';
++  readonly objectCount: number;
++  readonly descriptorCount: number;
++  readonly descriptorInitializerCount: number;
++  readonly entryCount: number;
++  restore: () => void;
++  release: () => void;
++}
++
++interface DataGraphPlan<Root> {
++  roots: Root[];
++  graph: DataGraphBudget;
++}
++
+ export interface DataGraphCheckpoint {
+   readonly scope: 'closed-data-graph-v1';
+   readonly objectCount: number;
+@@ -929,23 +948,55 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+   };
+ };
+ 
+-export const createDataGraphCheckpoint = ({ roots, maxObjects = 10000, maxEntries = 100000 }: DataGraphCheckpointOptions): DataGraphCheckpoint => {
++const getDataGraphPlan = <Root,>({ roots, maxObjects = 10000, maxEntries = 100000 }: GraphCheckpointOptions<Root>): DataGraphPlan<Root> => {
+   if (![maxObjects, maxEntries].every((limit) => Number.isSafeInteger(limit) && limit > 0)) {
+     throw new RangeError('Data graph budgets must be positive safe integers');
+   }
+   if (!Array.isArray(roots)) throw new TypeError('Data graph roots must be an array');
+   const rootCount = roots.length;
+   if (rootCount > maxEntries) throw new RangeError('Data graph entry budget exceeded');
+-  const copiedRoots: ObjectValue[] = [];
++  const copiedRoots: Root[] = [];
+   for (let index = 0; index < rootCount; index++) copiedRoots.push(roots[index]);
+-  const graph: DataGraphBudget = { maxObjects, maxEntries, entries: rootCount };
+-  const checkpoint = createCheckpoint({ objects: copiedRoots }, true, graph);
++  return { roots: copiedRoots, graph: { maxObjects, maxEntries, entries: rootCount } };
++};
++
++export const createDataGraphCheckpoint = (options: DataGraphCheckpointOptions): DataGraphCheckpoint => {
++  const { roots, graph } = getDataGraphPlan(options);
++  const checkpoint = createCheckpoint({ objects: roots }, true, graph);
+   return {
+     scope: 'closed-data-graph-v1', objectCount: checkpoint.objectCount, entryCount: graph.entries,
+     restore: checkpoint.restore, release: checkpoint.release,
+   };
+ };
+ 
++export const createDescriptorGraphCheckpoint = (options: DescriptorGraphCheckpointOptions): DescriptorGraphCheckpoint => {
++  const owner = surroundingAgent;
++  const { roots, graph } = getDataGraphPlan(options);
++  if (owner.debugger_isPreviewing) throw new Error('Descriptor checkpoints do not support debugger preview');
++  const objects = new Set<ObjectValue>();
++  const descriptors: Descriptor[] = [];
++  const descriptorInitializers: DescriptorInitializer[] = [];
++  for (const record of new Set(roots)) {
++    if (descriptorFields.length > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
++    graph.entries += descriptorFields.length;
++    const isInitializer = record instanceof DescriptorInitializer;
++    const state = getDescriptorState(record, owner, isInitializer);
++    if (isInitializer) descriptorInitializers.push(record);
++    else descriptors.push(record);
++    for (const slot of state.slots) {
++      const value: unknown = slot.descriptor?.value;
++      if (value instanceof ObjectValue) objects.add(value);
++    }
++  }
++  if (surroundingAgent !== owner) throw new Error('Descriptor graph belongs to another agent');
++  const checkpoint = createCheckpoint({ objects: [...objects], descriptors, descriptorInitializers }, true, graph);
++  return {
++    scope: 'descriptor-data-graph-v1', objectCount: checkpoint.objectCount,
++    descriptorCount: checkpoint.descriptorCount, descriptorInitializerCount: checkpoint.descriptorInitializerCount,
++    entryCount: graph.entries, restore: checkpoint.restore, release: checkpoint.release,
++  };
++};
++
+ export const createStateCheckpoint = (options: StateCheckpointOptions = {}): StateCheckpoint =>
+   createCheckpoint(options, true);
+ 
+diff --git a/src/index.mts b/src/index.mts
+index 2fbe99a..d5cd883 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -16,6 +16,7 @@ export {
+   type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
+   type DataGraphCheckpoint, type DataGraphCheckpointOptions,
+   getArgumentAccumulatorStorage, type ArgumentAccumulatorStorage,
++  createDescriptorGraphCheckpoint, type DescriptorGraphCheckpoint, type DescriptorGraphCheckpointOptions,
+ } from './host-defined/object-checkpoint.mts';
+ export { runSingleJobInQueue, type JobQueue, type JobQueueCheckpoint, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
+ export {

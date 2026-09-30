@@ -12,9 +12,11 @@ The scope is `closed-data-graph-v1`. Capture follows these engine records withou
 
 Ordinary objects, canonical arrays, Maps, and Sets use the existing storage restrictions. Cycles and aliases retain their original identities. Primitive values are retained without reading opaque payloads. Function references, weak collections, proxies, promises, typed arrays, private state, and other unsupported records reject capture.
 
-Every reachable prototype also belongs to the graph. Consequently, an ordinary `{}` is currently rejected: its prototype leads to unsupported native functions. The accepted fixtures use null-terminated data-only prototype graphs. There is no borrowed-intrinsic exception, skipped prototype, implicit function boundary, or generic native-object walker.
+Every reachable prototype also belongs to the graph. Consequently, an ordinary `{}` is currently rejected because its intrinsic prototype is outside the supported data-only scope. The accepted fixtures use null-terminated data-only prototype graphs. There is no borrowed-intrinsic exception, skipped prototype, implicit function boundary, or generic native-object walker.
 
 Capture finishes traversal and validation before registering the existing checkpoint frame. A rejection leaves the shared checkpoint stack unchanged. The existing `createStateCheckpoint` API remains explicitly selected; it does not gain implicit traversal.
+
+[Descriptor-to-data checkpoints](descriptor-data-graph.md) now project canonical final descriptors and mutable initializers into this same guest traversal. Their referents are selected automatically in one original state-checkpoint frame. Canonical native layout remains a trusted storage schema, not allocation provenance or complete execution ownership.
 
 ## Restore and release
 
