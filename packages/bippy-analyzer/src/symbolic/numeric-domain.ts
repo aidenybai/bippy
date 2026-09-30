@@ -1,5 +1,6 @@
 import type {
   AbstractNumberOperation,
+  AbstractNumberPredicate,
   AgentHostDefined,
   BooleanValue,
   NumberValue,
@@ -33,13 +34,24 @@ export interface NumericConstantPredicate {
   readonly value: boolean;
 }
 
-export interface NumericSameValuePredicate {
-  readonly kind: "same-value";
+interface NumericComparisonPredicate {
+  readonly kind: "same-value" | "strict-equal";
   readonly left: NumericExpression;
   readonly right: NumericExpression;
 }
 
-export type NumericPredicate = NumericConstantPredicate | NumericSameValuePredicate;
+export interface NumericSameValuePredicate extends NumericComparisonPredicate {
+  readonly kind: "same-value";
+}
+
+export interface NumericStrictEqualPredicate extends NumericComparisonPredicate {
+  readonly kind: "strict-equal";
+}
+
+export type NumericPredicate =
+  | NumericConstantPredicate
+  | NumericSameValuePredicate
+  | NumericStrictEqualPredicate;
 
 export interface NumericDomainOptions {
   maxInputs?: number;
@@ -48,7 +60,7 @@ export interface NumericDomainOptions {
 }
 
 export interface NumericDomain {
-  readonly scope: "engine262-additive-number-domain-v1";
+  readonly scope: "engine262-number-expression-domain-v2";
   readonly agentOptions: Readonly<
     Required<Pick<AgentHostDefined, "evaluateAbstractNumber" | "evaluateAbstractNumberPredicate">>
   >;
@@ -73,8 +85,18 @@ export const createNumericDomain = async (
   const { api } = await getSymbolicEngine();
   const inputs = new Map<string, NumberValue>();
   const expressions = new WeakMap<NumberValue, NumericExpression>();
-  const predicates = new WeakMap<BooleanValue, NumericSameValuePredicate>();
-  const predicateCache = new Map<NumberValue | string, Map<NumberValue | string, BooleanValue>>();
+  const predicates = new WeakMap<
+    BooleanValue,
+    NumericSameValuePredicate | NumericStrictEqualPredicate
+  >();
+  const predicateCaches = new Map<
+    AbstractNumberPredicate["operator"],
+    Map<NumberValue | string, Map<NumberValue | string, BooleanValue>>
+  >();
+  const operationCaches = new Map<
+    AbstractNumberOperation["operator"],
+    Map<NumberValue | string, Map<NumberValue | string | undefined, NumberValue>>
+  >();
   let operations = 0;
   let predicateCount = 0;
 
@@ -94,18 +116,32 @@ export const createNumericDomain = async (
 
   const agentOptions: NumericDomain["agentOptions"] = Object.freeze({
     evaluateAbstractNumberPredicate: ({ operator, operands }) => {
-      if (operator !== "sameValue" || operands.length !== 2)
+      if ((operator !== "sameValue" && operator !== "equal") || operands.length !== 2)
         throw new SymbolicEngineError("Unsupported abstract numeric predicate");
       const [left, right] = operands;
       const leftExpression = getExpression(left);
       const rightExpression = getExpression(right);
       if (!operands.some(api.NumberValue.isAbstract))
         throw new SymbolicEngineError("Expected an abstract numeric operand");
-      if (left === right) return api.Value.true;
-      const leftKey = leftExpression.kind === "constant" ? leftExpression.value : left;
-      const rightKey = rightExpression.kind === "constant" ? rightExpression.value : right;
+      if (operator === "sameValue" && left === right) return api.Value.true;
+      if (
+        operator === "equal" &&
+        [leftExpression, rightExpression].some(
+          (expression) => expression.kind === "constant" && expression.value === "NaN",
+        )
+      )
+        return api.Value.false;
+      const getKey = (value: NumberValue, expression: NumericExpression) =>
+        expression.kind === "constant"
+          ? operator === "equal" && expression.value === "-0"
+            ? "0"
+            : expression.value
+          : value;
+      const leftKey = getKey(left, leftExpression);
+      const rightKey = getKey(right, rightExpression);
+      const predicateCache = predicateCaches.get(operator);
       const existing =
-        predicateCache.get(leftKey)?.get(rightKey) ?? predicateCache.get(rightKey)?.get(leftKey);
+        predicateCache?.get(leftKey)?.get(rightKey) ?? predicateCache?.get(rightKey)?.get(leftKey);
       if (existing) return existing;
       if (predicateCount >= maxPredicates)
         throw new SymbolicEngineError("Abstract numeric predicate budget exceeded");
@@ -113,15 +149,20 @@ export const createNumericDomain = async (
       predicates.set(
         value,
         Object.freeze({
-          kind: "same-value",
+          kind: operator === "sameValue" ? "same-value" : "strict-equal",
           left: leftExpression,
           right: rightExpression,
         }),
       );
-      let row = predicateCache.get(leftKey);
+      let cache = predicateCache;
+      if (!cache) {
+        cache = new Map();
+        predicateCaches.set(operator, cache);
+      }
+      let row = cache.get(leftKey);
       if (!row) {
         row = new Map();
-        predicateCache.set(leftKey, row);
+        cache.set(leftKey, row);
       }
       row.set(rightKey, value);
       predicateCount++;
@@ -129,7 +170,7 @@ export const createNumericDomain = async (
     },
     evaluateAbstractNumber: ({ operator, operands }) => {
       if (
-        !["add", "subtract", "unaryMinus"].includes(operator) ||
+        !["add", "subtract", "unaryMinus", "remainder"].includes(operator) ||
         operands.length !== (operator === "unaryMinus" ? 1 : 2)
       )
         throw new SymbolicEngineError("Unsupported abstract numeric operation");
@@ -138,6 +179,12 @@ export const createNumericDomain = async (
       const operandExpressions = operands.map(getExpression);
       if (!operands.some(api.NumberValue.isAbstract))
         throw new SymbolicEngineError("Expected an abstract numeric operand");
+      operations++;
+      const keys = operandExpressions.map((expression, index) =>
+        expression.kind === "constant" ? expression.value : operands[index],
+      );
+      const existing = operationCaches.get(operator)?.get(keys[0])?.get(keys[1]);
+      if (existing) return existing;
       const value = api.NumberValue.createAbstract();
       expressions.set(
         value,
@@ -147,13 +194,23 @@ export const createNumericDomain = async (
           operands: Object.freeze(operandExpressions),
         }),
       );
-      operations++;
+      let cache = operationCaches.get(operator);
+      if (!cache) {
+        cache = new Map();
+        operationCaches.set(operator, cache);
+      }
+      let row = cache.get(keys[0]);
+      if (!row) {
+        row = new Map();
+        cache.set(keys[0], row);
+      }
+      row.set(keys[1], value);
       return value;
     },
   });
 
   return Object.freeze({
-    scope: "engine262-additive-number-domain-v1",
+    scope: "engine262-number-expression-domain-v2",
     agentOptions,
     createInput: (name: string): NumberValue => {
       if (typeof name !== "string" || name.length === 0 || name.length > 128)

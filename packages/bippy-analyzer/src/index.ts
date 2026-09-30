@@ -38,6 +38,7 @@ export type {
   NumericOperationExpression,
   NumericPredicate,
   NumericSameValuePredicate,
+  NumericStrictEqualPredicate,
 } from "./symbolic/numeric-domain.js";
 export { SymbolicEngineError } from "./symbolic/errors.js";
 export { createBooleanSnapshotExplorer } from "./symbolic/boolean-snapshot-explorer.js";

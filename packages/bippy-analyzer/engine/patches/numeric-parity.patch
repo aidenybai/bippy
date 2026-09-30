@@ -1,0 +1,100 @@
+diff --git a/src/intrinsics/Object.mts b/src/intrinsics/Object.mts
+index 85fc150..af87ec0 100644
+--- a/src/intrinsics/Object.mts
++++ b/src/intrinsics/Object.mts
+@@ -8,7 +8,7 @@ import {
+   Descriptor,
+   SymbolValue,
+   JSStringValue,
+-  BooleanValue,
++  evaluateAbstractNumberPredicate,
+   NumberValue,
+ } from '../value.mts';
+ import { Q, X, type ValueEvaluator } from '../completion.mts';
+@@ -330,13 +330,7 @@ function* Object_hasOwn([O = Value.undefined, P = Value.undefined]: Arguments):
+ function Object_is([value1 = Value.undefined, value2 = Value.undefined]: Arguments) {
+   if (value1 instanceof NumberValue && value2 instanceof NumberValue
+     && (NumberValue.isAbstract(value1) || NumberValue.isAbstract(value2))) {
+-    const options = surroundingAgent.hostDefinedOptions;
+-    if (!options.evaluateAbstractNumberPredicate) throw new TypeError('No abstract Number predicate evaluator configured');
+-    const result = options.evaluateAbstractNumberPredicate(Object.freeze({
+-      operator: 'sameValue', operands: Object.freeze([value1, value2]),
+-    }));
+-    if (!(result instanceof BooleanValue)) throw new TypeError('Abstract Number predicate evaluator must return a Boolean');
+-    return result;
++    return evaluateAbstractNumberPredicate('sameValue', [value1, value2]);
+   }
+   // 1. Return SameValue(value1, value2).
+   return Value(SameValue(value1, value2));
+diff --git a/src/runtime-semantics/EqualityExpression.mts b/src/runtime-semantics/EqualityExpression.mts
+index fcd3617..92e61ff 100644
+--- a/src/runtime-semantics/EqualityExpression.mts
++++ b/src/runtime-semantics/EqualityExpression.mts
+@@ -1,6 +1,6 @@
+ import { Q, X } from '../completion.mts';
+ import { Evaluate, type ValueEvaluator } from '../evaluator.mts';
+-import { Value } from '../value.mts';
++import { Value, NumberValue, evaluateAbstractNumberPredicate } from '../value.mts';
+ import { OutOfRange } from '../utils/language.mts';
+ import type { ParseNode } from '../parser/ParseNode.mts';
+ import {
+@@ -8,6 +8,7 @@ import {
+   GetValue,
+   IsStrictlyEqual,
+   BooleanValue,
++  ResolveBooleanCondition,
+ } from '#self';
+ 
+ /** https://tc39.es/ecma262/#sec-equality-operators-runtime-semantics-evaluation */
+@@ -25,6 +26,13 @@ export function* Evaluate_EqualityExpression({ EqualityExpression, operator, Rel
+   const rref = Q(yield* Evaluate(RelationalExpression));
+   // 4. Let rval be ? GetValue(rref).
+   const rval = Q(yield* GetValue(rref));
++  if ((operator === '===' || operator === '!==') && lval instanceof NumberValue && rval instanceof NumberValue
++    && (NumberValue.isAbstract(lval) || NumberValue.isAbstract(rval))) {
++    const result = evaluateAbstractNumberPredicate('equal', [rval, lval]);
++    if (operator === '===') return result;
++    const isEqual = yield* ResolveBooleanCondition(result);
++    return Value(!isEqual);
++  }
+   switch (operator) {
+     case '==':
+       // 5. Return the result of performing Abstract Equality Comparison rval == lval.
+diff --git a/src/value.mts b/src/value.mts
+index 6305387..293fb0a 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -275,15 +275,23 @@ Object.setPrototypeOf(wellKnownSymbols, null);
+ Object.freeze(wellKnownSymbols);
+ 
+ export interface AbstractNumberOperation {
+-  readonly operator: 'add' | 'subtract' | 'unaryMinus';
++  readonly operator: 'add' | 'subtract' | 'unaryMinus' | 'remainder';
+   readonly operands: readonly NumberValue[];
+ }
+ 
+ export interface AbstractNumberPredicate {
+-  readonly operator: 'sameValue';
++  readonly operator: 'sameValue' | 'equal';
+   readonly operands: readonly NumberValue[];
+ }
+ 
++export const evaluateAbstractNumberPredicate = (operator: AbstractNumberPredicate['operator'], operands: NumberValue[]): BooleanValue => {
++  const options = surroundingAgent.hostDefinedOptions;
++  if (!options.evaluateAbstractNumberPredicate) throw new TypeError('No abstract Number predicate evaluator configured');
++  const result = options.evaluateAbstractNumberPredicate(Object.freeze({ operator, operands: Object.freeze(operands) }));
++  if (!(result instanceof BooleanValue)) throw new TypeError('Abstract Number predicate evaluator must return a Boolean');
++  return result;
++};
++
+ const abstractNumbers = new WeakSet<NumberValue>();
+ 
+ /** https://tc39.es/ecma262/#sec-ecmascript-language-types-number-type */
+@@ -371,6 +379,7 @@ export class NumberValue extends PrimitiveValue {
+ 
+   /** https://tc39.es/ecma262/#sec-numeric-types-number-remainder */
+   static remainder(n: NumberValue, d: NumberValue) {
++    if (abstractNumbers.has(n) || abstractNumbers.has(d)) return NumberValue.evaluateAbstract('remainder', [n, d]);
+     return F(n.value % d.value);
+   }
+ 

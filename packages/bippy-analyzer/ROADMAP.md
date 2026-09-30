@@ -34,7 +34,7 @@ Initial symbolic milestone: commit `3d5d5563` on [PR #149](https://github.com/ai
 
 The [parity goal and evidence](docs/parity.md) separates these scalar checks from the remaining application and React work.
 
-Declared inputs remain unknown Booleans. Internal object tokens identify finite guarded alternatives; syntax checks and operand substitution keep those tokens out of ordinary engine coercions. The [source-built extension](engine/README.md) does not yet provide unbounded numeric/string inputs, heap isolation, or a general constraint solver. See the [current implementation contract](docs/symbolic-evaluation.md), including the v2 scope and intermediate-choice budget.
+Declared inputs remain unknown Booleans. Internal object tokens identify finite guarded alternatives; syntax checks and operand substitution keep those tokens out of ordinary engine coercions. This scalar API does not provide unbounded numeric/string inputs, heap isolation, or a general constraint solver. A separate [numeric domain](docs/numeric-domain.md) now represents unbounded Numbers through supported engine operations. See the [current implementation contract](docs/symbolic-evaluation.md), including the v2 scope and intermediate-choice budget.
 
 The separate resolver work includes native build observation, corpus comparisons, a build CLI, and a Vite + React demo. That work is not integrated into this PR. A matching build graph does not prove module execution or React rendering.
 
@@ -183,6 +183,7 @@ Completion check: the demo mounts and responds to supported interactions through
 ## 4. General symbolic values and conditions
 
 - [x] Lift finite guarded scalar alternatives through the existing engine operations, with Boolean inputs, correlation checks, and independent concrete comparisons. This is a bounded first increment, not completion of the general-value tasks below.
+- [x] Add [Number remainder, strict-equality predicates, and exact ordered term interning](docs/numeric-parity.md). Selected script forks retain one prefix and repeated parity correlation in both orders. Seven real React specializations match native update/lifecycle observations. These do not establish React branch ownership or complete the demo.
 - [ ] Replace the Boolean-token-only contract with explicit abstract values and expressions integrated with engine execution.
 - [ ] Define constants, inputs, operations, conditional values, references, and explicit unknown results. Share repeated expressions instead of copying entire alternative trees.
 - [ ] Carry over useful guard normalization, contradiction checks, numeric constraints, string constraints, membership, and witness generation from #115.

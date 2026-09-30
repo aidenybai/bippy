@@ -6,7 +6,7 @@ See the [roadmap](ROADMAP.md) for the remaining implementation stages and comple
 
 See [concrete execution](docs/concrete-execution.md) for `createConcreteRuntime()`, executable artifact loading, the restricted task host, and native React comparisons. React supplies both renderers used by these checks. A guest-owned LinkeDOM counter matches native V8 and Chromium observations. These selected checks do not establish general browser or symbolic React parity.
 
-The separate [numeric domain](docs/numeric-domain.md) represents unbounded Number inputs through engine addition, subtraction, and unary negation. It preserves expression structure through calls and mutation, but rejects unsupported concrete reads. It does not yet provide guarded decisions or symbolic React output.
+The separate [numeric domain](docs/numeric-domain.md) represents unbounded Number inputs through engine addition, subtraction, unary negation, and remainder. It preserves expression structure through calls and mutation, but rejects unsupported concrete reads. [Strict-equality predicates and exact term sharing](docs/numeric-parity.md) preserve repeated parity decisions. The domain does not solve general constraints or own React branches.
 
 An [engine Boolean protocol](docs/boolean-decisions.md) suspends `if` statements on unknown inputs. [Expression decisions](docs/boolean-expressions.md) also support `?:`, `&&`, `||`, and `!`. Selected-state tests fork guarded outcomes with unbounded numbers and no prefix replay. General state ownership and integrated symbolic React exploration remain missing.
 

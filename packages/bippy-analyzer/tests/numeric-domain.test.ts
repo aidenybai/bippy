@@ -167,10 +167,8 @@ it("keeps input identity, immutable terms, and Number type without a concrete va
 it.each([
   "amount * 2",
   "amount / 2",
-  "amount % 2",
   "amount ** 2",
   "amount & 1",
-  "amount === amount",
   "new Set([amount]).has(amount)",
   "amount < 0",
   "Boolean(amount)",

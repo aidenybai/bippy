@@ -12,16 +12,17 @@ Low-level `SameValue`, `SameValueZero`, strict equality, and ordering helpers re
 
 ## Numeric domain extension
 
-`createNumericDomain()` now supplies both arithmetic and predicate callbacks through `agentOptions`. Its additive expression scope remains unchanged. `getPredicate(BooleanValue)` returns an immutable record:
+`createNumericDomain()` now supplies both arithmetic and predicate callbacks through `agentOptions`. Its expression scope is now `engine262-number-expression-domain-v2`, with [remainder and numeric strict equality](numeric-parity.md). `getPredicate(BooleanValue)` returns an immutable record:
 
 - `constant`, containing a known Boolean.
 - `same-value`, containing the left and right numeric expression graphs.
+- `strict-equal`, containing numeric operands for `===` or the equality decision used by `!==`.
 
-A comparison of the exact same owned Number value returns true, including for unknown NaN or signed zero. Other comparisons retain a predicate. Repeated operand identities reuse the same abstract Boolean, including reversed operands because SameValue is symmetric. Concrete keys use their numeric strings, preserving the distinction between positive and negative zero and reusing NaN.
+A SameValue comparison of the exact same owned Number value returns true, including for unknown NaN or signed zero. Other SameValue comparisons retain a predicate. Repeated operand identities reuse the same abstract Boolean, including reversed operands because SameValue is symmetric. Concrete keys use their numeric strings, preserving the distinction between positive and negative zero and reusing NaN.
 
-The cache does not merge separately recomputed arithmetic expressions. It does not solve relations between predicates or prove arbitrary guards feasible. For example, a composite expression that always produces NaN can remain an unsolved predicate. Consumers must not label every chosen branch feasible without evidence.
+The expression cache now interns exact repeated operations, so identical ordered computations can reuse the same predicate. It preserves signed constants and does not reassociate expressions. It does not solve relations between predicates or prove arbitrary guards feasible. For example, a composite expression that always produces NaN can remain an unsolved predicate. Consumers must not label every chosen branch feasible without evidence.
 
-`maxPredicates` defaults to 10,000 and must be a positive safe integer. Options are copied before asynchronous loading. The budget counts distinct recorded predicates across the domain lifetime, including across branch restoration. Cache hits, reflexive comparisons, and concrete comparisons do not consume it. The cache retains its keys and results for the lifetime of its callback closures. This is not a CPU, allocation, or serialization limit.
+`maxPredicates` defaults to 10,000 and must be a positive safe integer. Options are copied before asynchronous loading. The budget counts distinct recorded predicates across the domain lifetime, including across branch restoration. Cache hits, reflexive SameValue comparisons, known-false NaN strict comparisons, and concrete comparisons do not consume it. The cache retains its keys and results for the lifetime of its callback closures. This is not a CPU, allocation, or serialization limit.
 
 Foreign abstract Number operands and Boolean predicate results reject. Missing or invalid engine callbacks also reject with host errors. As with other abstraction failures, discard the affected Agent rather than treating the error as a guest exception.
 
@@ -47,4 +48,4 @@ A selected-state fixture explores both SameValue outcomes in both branch orders.
 
 [Linux CI at `0dbcb0e9`](number-predicate-validation/ci-failure.json) passes all 1,182 unit tests but fails both numeric `substr` smoke variants at the unchanged timeout. The other CI jobs pass. Separate iOS E2E reports 42 failures after a shared setup hook exceeds 300,000 ms; its twelve source tests pass. Web and Android E2E pass. The retained logs do not establish the iOS setup failure's cause.
 
-General ownership, complete suspended-control GC roots, broader predicates, symbolic strings, guarded React reports, repeated-state families, and the integrated demo remain incomplete. A constraint solver and guarded exploration API are still missing. The [completion checklist](symbolic-react-status.md) remains open.
+General ownership, complete suspended-control GC roots, broader predicates, symbolic strings, guarded React reports, repeated-state families, and the integrated demo remain incomplete. A constraint solver and sound general React explorer are still missing. The [caller-owned Boolean driver](boolean-snapshot-exploration.md) does not supply or verify React state ownership. The [completion checklist](symbolic-react-status.md) remains open.
