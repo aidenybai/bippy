@@ -131,9 +131,14 @@ export const captureControl = (
       if (!isObject(frame) || visited.has(frame)) continue;
       visited.add(frame);
       if (!isControlFrame(frame)) {
+        const references: unknown[] = [];
+        for (const reference of owner.references?.(frame) ?? []) {
+          values.push(reference);
+          references.push(reference);
+        }
         const captures = getNativeCaptures(frame);
         if (captures) addCaptures(captures);
-        for (const reference of owner.references?.(frame) ?? []) addValue(reference);
+        for (const reference of references) pending.push(reference);
         continue;
       }
       const state = frame.captureControlState();

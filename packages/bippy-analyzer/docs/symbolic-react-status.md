@@ -30,6 +30,8 @@ The [argument accumulator storage policy](argument-accumulator-storage.md) now r
 
 [Native lexical scope preservation](native-lexical-scopes.md) repairs ordinary capture-getter TDZ behavior and rejects known unsupported lowering forms before mutation. Generator-scope TDZ remains unresolved. The React diagnostic still rejects its first timer in both orders; no branch observations or ownership proof are added.
 
+[Reference inspection before direct metadata expansion](discovery-order.md) now lets an owner reject a native callback before its public capture factory executes through discovery. Actual React preserves its pause with zero callback metadata reads and zero branch observations. GC and restore metadata access remain separate; this is not a complete admission policy or execution owner.
+
 A [caller-owned Boolean snapshot driver](boolean-snapshot-exploration.md) now forks one engine evaluation without prefix replay and builds guarded reports. It neither supplies nor verifies the state owner. An intentionally incomplete owner produces a wrong sibling result while the report stays unverified. The actual React test rejects ownership before producing any branch observations.
 
 The opt-in [Script syntax policy](script-syntax-regions.md) now recognizes finalized parser regions, including original argument lists and location records. Validation detects persistent changes without freezing or restoring syntax. Actual React syntax validates, but the test still rejects remaining execution ownership before producing a branch observation.

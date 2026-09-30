@@ -57,4 +57,6 @@ Reversing the production patch reproduces predecessor engine bytes. All 21 new t
 
 The [validation receipt](argument-accumulator-storage-validation/summary.json) records hashes and raw logs. Native source provenance CI also remains failed: 2,323 units passed, but two numeric `substr` smoke variants exceeded ten seconds. Its longer diagnostic profiles do not change that gate result.
 
+This increment’s CI run later exceeded the analyzer job’s ten-minute limit. Browser/dependency installation took about six minutes, and unit execution was interrupted. Smoke and profiling were skipped. The [CI receipt](argument-accumulator-storage-validation/ci-status.json) retains the cancellation annotation and logs; E2E and publishing passed. No complete unit or smoke result is inferred from that run.
+
 General React ownership, shared-prefix isolation, automatic reports, guarded transitions, repeated-state families, and demo integration remain incomplete.

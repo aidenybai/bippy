@@ -24,6 +24,8 @@ The implementation reuses existing control work from the separate development wo
 
 The mandatory owner receives root values, ambient names, and control-owned objects. Its synchronous `capture()` must return a restoration operation. Its optional `references()` method can discover additional owned state. The owner must capture mutable external state or reject it. Supplying an empty restoration callback does not establish heap isolation.
 
+For non-control objects, [owner reference inspection](discovery-order.md) now precedes direct native capture expansion. Returned references enter the discovery-root array before metadata executes, while original descendant traversal priority remains unchanged. This permits early local rejection, not whole-graph preflight or control over GC/restore metadata access.
+
 Capture and restore reject active execution or reentrant capture. They reject overridden continuation methods, accessor locals, and immutable local records. Restore validates these conditions before writing control state. Read-only captures must still have their saved identities.
 
 Restore reinstates captured cells and control before invoking the owner’s restoration operation. If that mutation phase fails, captured continuations become poisoned. Abandon the affected analysis because external state may be partially restored. Validation failures before mutation do not poison control.
