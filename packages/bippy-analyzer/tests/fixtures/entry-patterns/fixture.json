@@ -1,0 +1,3 @@
+{
+  "notes": "Entry that only calls an imported initApp() (the root render lives in a sibling module reached through the import graph) after a side-effect import populates a registry the mounted tree reads, root render inside a function body, React.createElement through a default import, Object.assign statics on a component, and <lowercase.Provider> member tags."
+}

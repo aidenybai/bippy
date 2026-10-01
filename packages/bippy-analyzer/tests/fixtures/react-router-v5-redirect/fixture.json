@@ -1,0 +1,30 @@
+{
+  "route": "/app",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "externalPackages": [
+    "react-router-dom-v5",
+    "react-router",
+    "history",
+    "hoist-non-react-statics",
+    "react-is"
+  ],
+  "expectedStats": {
+    "unknownCount": 0,
+    "branchCount": 0
+  },
+  "notes": "react-router v5 with lazy pages under Suspense and `Redirect` at both levels: the page opens at /app, whose `exact` layout `Redirect` replaces the history entry with /app/dashboard on mount, so the layout `Switch` matches the dashboard route once the router re-renders on the new location, and the sibling `NavLink`s evaluate their `Route` match against it.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "page": {
+      "cookie": "",
+      "localStorage": {},
+      "sessionStorage": {},
+      "userAgent": "Mozilla/5.0 (X11; Linux x64) AppleWebKit/537.36 (KHTML, like Gecko) HappyDOM/20.11.6",
+      "language": "en-US",
+      "maxTouchPoints": 0
+    }
+  }
+}

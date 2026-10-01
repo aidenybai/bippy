@@ -1,0 +1,8 @@
+{
+  "name": "fixture-storybook-styled-components",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "styled-components": "6.5.3"
+  }
+}

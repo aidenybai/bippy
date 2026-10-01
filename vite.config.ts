@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig } from "vite-plus";
 import { conformanceTestConfig } from "./packages/conformance/vite.config.js";
 
@@ -8,11 +9,19 @@ export default defineConfig({
   staged: {
     "*.{js,ts,tsx}": "vp check --fix",
   },
-  test: conformanceTestConfig,
+  test: {
+    ...conformanceTestConfig,
+    projects: [
+      ...(conformanceTestConfig.projects ?? []),
+      resolve(import.meta.dirname, "packages/bippy-analyzer/vite.config.ts"),
+    ],
+  },
   fmt: {
     ignorePatterns: [
       "**/routeTree.gen.ts",
       "packages/bippy/src/react-internals/generated/**",
+      "packages/bippy-analyzer/corpus/results.json",
+      "packages/bippy-analyzer/src/host/realms/*.json",
       reactDevToolsHookSources,
     ],
     semi: true,
@@ -36,6 +45,7 @@ export default defineConfig({
       "dist",
       "coverage",
       "pnpm-lock.yaml",
+      "packages/bippy-analyzer/tests/components/compiled-*.js",
       reactDevToolsHookSources,
     ],
   },

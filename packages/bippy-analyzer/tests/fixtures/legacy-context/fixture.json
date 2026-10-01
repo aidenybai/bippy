@@ -1,0 +1,7 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "skipRuntime": true,
+  "expectedStats": { "branchCount": 0, "unknownCount": 0, "opaqueCount": 0 },
+  "notes": "React 16 legacy context (disableLegacyContext = false): `childContextTypes` + `getChildContext()` merge into the context stack, `contextTypes` masks what a class (`this.context`) or a function component (second argument) sees, and `contextType` still wins over the legacy stack. Static-only because the harness renders through React 19, which no longer threads legacy context; asserted in legacy-context.test.ts."
+}

@@ -1,0 +1,19 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStats": { "branchCount": 0, "unknownCount": 0 },
+  "expectedStates": 1,
+  "externalPackages": ["react-redux"],
+  "notes": "`createStore(reducer, compose(applyMiddleware(...)))`: the enhancer builds the store through `enhancer(createStore)(reducer, undefined)`, so a root reducer that inspects its state (redux-persist's `persistReducer` reads `state._persist`) runs `@@redux/INIT` on `undefined`, not on the enhancer, and its slice keys pick the recorded store. `compose(f, g)(x)` is `f(g(x))`.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "stores": [
+      {
+        "cart": { "items": ["lens", "frame"] },
+        "auth": { "user": null },
+        "_persist": { "version": -1, "rehydrated": true }
+      }
+    ]
+  }
+}

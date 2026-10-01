@@ -1,0 +1,946 @@
+{
+  "baseCommit": "5550f6b7843a239f47e040435df5b6621b45ad3a",
+  "scope": "Same-capture initial-page membership; original repositories and dependency versions; unchanged budgets. Does not establish workflow completeness.",
+  "failures": [
+    "The first Financial-Dashboard capture attempt could not launch the missing Playwright browser. The matching browser was installed before the fresh successful capture.",
+    "Analyzing react-router source directly under the Financial-Dashboard SPA profile failed with Maximum call stack size exceeded. The existing React Router adapter is used in the selected policy.",
+    "Personal Tracker dependency analysis exposes a TaskCardBody mismatch and incomplete replay. Its existing manifest/result rows are retained. Seeded symbolic IDs and dates lose structure across JSON.stringify/storage/JSON.parse; fixing this requires preserving serialization semantics and uncertainty."
+  ],
+  "entries": [
+    {
+      "id": "sagargupta16-financial-dashboard",
+      "selected": true,
+      "originalEntry": {
+        "id": "sagargupta16-financial-dashboard",
+        "repository": "https://github.com/Sagargupta16/Financial-Dashboard",
+        "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
+        "description": "Sagargupta16/Financial-Dashboard",
+        "framework": "spa",
+        "workingDirectory": ".",
+        "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@11.25.0 dlx pnpm --config.verify-deps-before-run=false install --frozen-lockfile",
+        "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@11.25.0 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54635 --strictPort",
+        "env": {
+          "NODE_OPTIONS": "",
+          "BROWSER": "none",
+          "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+          "PUPPETEER_SKIP_DOWNLOAD": "1"
+        },
+        "url": "http://127.0.0.1:54635/Financial-Dashboard/",
+        "readyTimeoutMs": 120000,
+        "settleMs": 3000,
+        "static": {
+          "rootDirectory": ".",
+          "tsconfig": "tsconfig.json",
+          "entry": "src/index.tsx"
+        },
+        "notes": "Preserve original declared pnpm11.25.0 (Node>=22.13), workspace build approval/overrides, Husky prepare, SheetJS URL dependency, React Router8, original Financial-Dashboard base, Google Analytics and empty upload state. Do not run deploy/analyze scripts, supply financial files, alter calculations or claim financial/tax correctness. Retain the original partial 642-fiber capture and passing sampled replay under original pnpm11.25/React Router8 and Financial-Dashboard base. Preserve header-only CSV, empty initial processor data, analytics and workspace approvals/overrides. No file upload, transactions, financial calculation or chart correctness is claimed. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1047785666 identifies a distinct non-fork repository."
+      },
+      "previousResult": {
+        "id": "sagargupta16-financial-dashboard",
+        "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
+        "framework": "spa",
+        "capturedAt": "2026-09-13T03:12:28.094Z",
+        "durationMs": 879,
+        "runtime": {
+          "reactVersion": "19.2.8",
+          "rendererName": "react-dom",
+          "buildType": "development",
+          "roots": 1,
+          "fibers": 642,
+          "commits": 4,
+          "pageErrors": [],
+          "title": "Financial Dashboard - Smart Personal Finance Analytics"
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 16,
+            "textCount": 0,
+            "branchCount": 1,
+            "repeatCount": 0,
+            "opaqueCount": 2,
+            "unknownCount": 0,
+            "modulesLoaded": 92
+          },
+          "diagnostics": []
+        },
+        "report": {
+          "status": "partial",
+          "matchedFibers": 3,
+          "matchedText": 0,
+          "opaqueSubtrees": 1,
+          "opaqueSkippedFibers": 638,
+          "slotsMatched": 0,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 1,
+          "repeatIterations": 0,
+          "transparentFibers": 0,
+          "runtimeFibers": 641,
+          "staticFibers": 8,
+          "coverage": 1,
+          "strictCoverage": 0.0046801872074883,
+          "divergence": null,
+          "stepsUsed": 5,
+          "budgetExhausted": false
+        },
+        "stateSpace": {
+          "states": 3,
+          "stateCount": 3,
+          "clusters": 1,
+          "tree": {
+            "nodes": 16,
+            "inputs": 2,
+            "guards": 4,
+            "branches": 1,
+            "repeats": 0,
+            "opaque": 3,
+            "wildcards": 0
+          },
+          "matchedState": {
+            "index": 1,
+            "conditions": [
+              {
+                "kind": "transition",
+                "commit": 1,
+                "commitCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "Suspense boundary may be suspended when observed",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ]
+          },
+          "closestState": null,
+          "omitted": null,
+          "coverage": {
+            "sides": [
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 0,
+                "guard": "eq(choice(commit), 0)",
+                "status": "possible"
+              },
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 1,
+                "guard": "eq(choice(commit), 1)",
+                "status": "witnessed"
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "Suspense boundary may be suspended when observed",
+                "location": null,
+                "side": 0,
+                "guard": "eq(choice(#1), 0)",
+                "status": "witnessed"
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "Suspense boundary may be suspended when observed",
+                "location": null,
+                "side": 1,
+                "guard": "not(eq(choice(#1), 0))",
+                "status": "possible"
+              }
+            ],
+            "witnessed": 2,
+            "possible": 2,
+            "unreachable": 0
+          }
+        },
+        "stateReplay": {
+          "verification": "sample-passed",
+          "incomplete": [],
+          "states": 3,
+          "assignments": 2,
+          "replayed": 2,
+          "maxReplayed": 16,
+          "mismatched": []
+        },
+        "anchor": null,
+        "note": "runtime replayed from 2026-09-13T02:21:01.060Z",
+        "failure": null
+      },
+      "baseline": {
+        "id": "sagargupta16-financial-dashboard",
+        "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
+        "framework": "spa",
+        "capturedAt": "2026-09-14T11:53:27.158Z",
+        "durationMs": 7527,
+        "runtime": {
+          "reactVersion": "19.2.8",
+          "rendererName": "react-dom",
+          "buildType": "development",
+          "roots": 1,
+          "fibers": 642,
+          "commits": 4,
+          "pageErrors": [],
+          "title": "Financial Dashboard - Smart Personal Finance Analytics"
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 16,
+            "textCount": 0,
+            "branchCount": 1,
+            "repeatCount": 0,
+            "opaqueCount": 2,
+            "unknownCount": 0,
+            "modulesLoaded": 92
+          },
+          "diagnostics": []
+        },
+        "report": {
+          "status": "partial",
+          "matchedFibers": 3,
+          "matchedText": 0,
+          "opaqueSubtrees": 1,
+          "opaqueSkippedFibers": 638,
+          "slotsMatched": 0,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 1,
+          "repeatIterations": 0,
+          "transparentFibers": 0,
+          "runtimeFibers": 641,
+          "staticFibers": 8,
+          "coverage": 1,
+          "strictCoverage": 0.0046801872074883,
+          "divergence": null,
+          "stepsUsed": 5,
+          "budgetExhausted": false
+        },
+        "stateSpace": {
+          "states": 3,
+          "stateCount": 3,
+          "clusters": 1,
+          "tree": {
+            "nodes": 16,
+            "inputs": 2,
+            "guards": 4,
+            "branches": 1,
+            "repeats": 0,
+            "opaque": 3,
+            "wildcards": 0
+          },
+          "matchedState": {
+            "index": 1,
+            "conditions": [
+              {
+                "kind": "transition",
+                "commit": 1,
+                "commitCount": 2
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "Suspense boundary may be suspended when observed",
+                "location": null,
+                "alternativeIndex": 0,
+                "alternativeCount": 2
+              }
+            ]
+          },
+          "closestState": null,
+          "omitted": null,
+          "coverage": {
+            "sides": [
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 0,
+                "guard": "eq(choice(commit), 0)",
+                "status": "possible"
+              },
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 1,
+                "guard": "eq(choice(commit), 1)",
+                "status": "witnessed"
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "Suspense boundary may be suspended when observed",
+                "location": null,
+                "side": 0,
+                "guard": "eq(choice(#1), 0)",
+                "status": "witnessed"
+              },
+              {
+                "kind": "branch",
+                "variable": "choice(#1)",
+                "reason": "Suspense boundary may be suspended when observed",
+                "location": null,
+                "side": 1,
+                "guard": "not(eq(choice(#1), 0))",
+                "status": "possible"
+              }
+            ],
+            "witnessed": 2,
+            "possible": 2,
+            "unreachable": 0
+          }
+        },
+        "stateReplay": {
+          "verification": "sample-passed",
+          "incomplete": [],
+          "states": 3,
+          "assignments": 2,
+          "replayed": 2,
+          "maxReplayed": 16,
+          "mismatched": []
+        },
+        "anchor": null,
+        "note": null,
+        "failure": null
+      },
+      "probe": {
+        "id": "sagargupta16-financial-dashboard",
+        "revision": "b376f5ffc3a9ca0a3e959c69d77f34f4522b669f",
+        "framework": "react-router",
+        "capturedAt": "2026-09-14T12:06:28.841Z",
+        "durationMs": 1193,
+        "runtime": {
+          "reactVersion": "19.2.8",
+          "rendererName": "react-dom",
+          "buildType": "development",
+          "roots": 1,
+          "fibers": 642,
+          "commits": 4,
+          "pageErrors": [],
+          "title": "Financial Dashboard - Smart Personal Finance Analytics"
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 637,
+            "textCount": 45,
+            "branchCount": 0,
+            "repeatCount": 0,
+            "opaqueCount": 0,
+            "unknownCount": 0,
+            "modulesLoaded": 1856
+          },
+          "diagnostics": [
+            {
+              "code": "dynamic-key",
+              "count": 2
+            }
+          ]
+        },
+        "report": {
+          "status": "exact",
+          "matchedFibers": 588,
+          "matchedText": 44,
+          "opaqueSubtrees": 0,
+          "opaqueSkippedFibers": 0,
+          "slotsMatched": 0,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 0,
+          "repeatIterations": 0,
+          "transparentFibers": 9,
+          "runtimeFibers": 632,
+          "staticFibers": 632,
+          "coverage": 1,
+          "strictCoverage": 1,
+          "divergence": null,
+          "stepsUsed": 632,
+          "budgetExhausted": false
+        },
+        "stateSpace": {
+          "states": 3,
+          "stateCount": 3,
+          "clusters": 0,
+          "tree": {
+            "nodes": 928,
+            "inputs": 1,
+            "guards": 3,
+            "branches": 0,
+            "repeats": 0,
+            "opaque": 0,
+            "wildcards": 0
+          },
+          "matchedState": {
+            "index": 2,
+            "conditions": [
+              {
+                "kind": "transition",
+                "commit": 2,
+                "commitCount": 3
+              }
+            ]
+          },
+          "closestState": null,
+          "omitted": null,
+          "coverage": {
+            "sides": [
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 0,
+                "guard": "eq(choice(commit), 0)",
+                "status": "possible"
+              },
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 1,
+                "guard": "eq(choice(commit), 1)",
+                "status": "possible"
+              },
+              {
+                "kind": "commit",
+                "variable": "commit",
+                "reason": "committed render",
+                "location": null,
+                "side": 2,
+                "guard": "eq(choice(commit), 2)",
+                "status": "witnessed"
+              }
+            ],
+            "witnessed": 1,
+            "possible": 2,
+            "unreachable": 0
+          }
+        },
+        "stateReplay": {
+          "verification": "sample-passed",
+          "incomplete": [],
+          "states": 3,
+          "assignments": 1,
+          "replayed": 1,
+          "maxReplayed": 16,
+          "mismatched": []
+        },
+        "anchor": null,
+        "note": "runtime replayed from 2026-09-14T11:53:34.083Z",
+        "failure": null
+      },
+      "provenance": {
+        "capturePath": "/private/tmp/bippy-pr115-corpus-bottom/.out/sagargupta16-financial-dashboard.capture.json",
+        "captureSha256": "9b076c823fc111138f292cc782abadcb2f0d32e42d65595b388c0d54ba9ab9c6",
+        "trackedContentSha256": "0fa352f1accd823fe244ba3e05f6c5553b71a3feedb648b07d5e6dea77d2154d",
+        "trackedFilesUnchanged": true,
+        "runtimeIdenticalBetweenComparisons": true
+      },
+      "repeatedIdentically": true
+    },
+    {
+      "id": "lethai2597-personal-tracker",
+      "selected": false,
+      "originalEntry": {
+        "id": "lethai2597-personal-tracker",
+        "repository": "https://github.com/lethai2597/personal-tracker",
+        "revision": "c2f5a86b3943e0f2254ac1077f7e9ff279ab930d",
+        "description": "lethai2597/personal-tracker",
+        "framework": "spa",
+        "workingDirectory": ".",
+        "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+        "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54634 --strictPort",
+        "env": {
+          "NODE_OPTIONS": "",
+          "BROWSER": "none",
+          "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+          "PUPPETEER_SKIP_DOWNLOAD": "1"
+        },
+        "url": "http://127.0.0.1:54634/",
+        "readyTimeoutMs": 120000,
+        "settleMs": 3000,
+        "static": {
+          "rootDirectory": ".",
+          "tsconfig": "tsconfig.app.json",
+          "entry": "src/main.tsx"
+        },
+        "notes": "Preserve original automatic seedSampleDataIfEmpty on a first visit, settings application before paint, rAF theme class, welcome modal, local storage, board/timer/bookmark/habit initialization and confirm provider. No manual data seeding, dismissal, timer start or private data. Automatic checked-in seeding is original app behavior, not an invented harness input. Retain the sparse partial initial capture, 180224 bounded states, 180008 omissions and incomplete replay. Original first-visit sample seeding precedes mount; preserve welcome UI, theme rAF and all storage behavior. No manual seed, tour dismissal, timer start or data input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1267231720 identifies a distinct non-fork repository."
+      },
+      "testedPolicy": {
+        "id": "lethai2597-personal-tracker",
+        "repository": "https://github.com/lethai2597/personal-tracker",
+        "revision": "c2f5a86b3943e0f2254ac1077f7e9ff279ab930d",
+        "description": "lethai2597/personal-tracker",
+        "framework": "spa",
+        "workingDirectory": ".",
+        "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+        "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54634 --strictPort",
+        "env": {
+          "NODE_OPTIONS": "",
+          "BROWSER": "none",
+          "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+          "PUPPETEER_SKIP_DOWNLOAD": "1"
+        },
+        "url": "http://127.0.0.1:54634/",
+        "readyTimeoutMs": 120000,
+        "settleMs": 3000,
+        "static": {
+          "rootDirectory": ".",
+          "tsconfig": "tsconfig.app.json",
+          "entry": "src/main.tsx",
+          "externalPackageAllowList": ["@radix-ui/*", "lucide-react", "@dnd-kit/*"]
+        },
+        "notes": "Preserve original automatic seedSampleDataIfEmpty on a first visit, settings application before paint, rAF theme class, welcome modal, local storage, board/timer/bookmark/habit initialization and confirm provider. No manual data seeding, dismissal, timer start or private data. Automatic checked-in seeding is original app behavior, not an invented harness input. Retain the sparse partial initial capture, 180224 bounded states, 180008 omissions and incomplete replay. Original first-visit sample seeding precedes mount; preserve welcome UI, theme rAF and all storage behavior. No manual seed, tour dismissal, timer start or data input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1267231720 identifies a distinct non-fork repository."
+      },
+      "provenance": {
+        "capturePath": "/private/tmp/bippy-pr115-corpus-bottom/.out/lethai2597-personal-tracker.capture.json",
+        "captureSha256": "7c2a035b2dd93d9cd24d945e4c752c46b144cb0187aba47eb5464f0a4ed5b6f7",
+        "trackedContentSha256": "2379533e7b4f7b7d97f7936ec8ed939d0208bc2780bb4a9331f16739ec8dd081",
+        "trackedFilesUnchanged": true,
+        "runtimeIdenticalBetweenComparisons": true
+      },
+      "baseline": {
+        "report": {
+          "status": "partial",
+          "matchedFibers": 1,
+          "matchedText": 0,
+          "opaqueSubtrees": 1,
+          "opaqueSkippedFibers": 1249,
+          "slotsMatched": 0,
+          "slotsUnmatched": 1,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [
+            {
+              "path": "root > <StrictMode> [Mode] > <TooltipProvider> (opaque)",
+              "reason": "Provider from @radix-ui/react-tooltip is not analyzed",
+              "head": "<TooltipProvider> [FunctionComponent]",
+              "skippedFibers": 1249,
+              "divergence": {
+                "path": "root > <StrictMode> [Mode] > <TooltipProvider> (opaque) > <ConfirmProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <motion.div> [ForwardRef] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <BookmarkCard> [FunctionComponent] > <BentoCard> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+                "expected": "<end of children>",
+                "actual": "<div> key=\"3sy5r05omu17a702\" [HostComponent]"
+              }
+            }
+          ],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 0,
+          "repeatIterations": 0,
+          "transparentFibers": 0,
+          "runtimeFibers": 1250,
+          "staticFibers": 355,
+          "coverage": 1,
+          "strictCoverage": 0.0008,
+          "divergence": null,
+          "stepsUsed": 2570,
+          "budgetExhausted": false
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 744,
+            "textCount": 71,
+            "branchCount": 72,
+            "repeatCount": 7,
+            "opaqueCount": 100,
+            "unknownCount": 49,
+            "modulesLoaded": 49
+          },
+          "diagnostics": [
+            {
+              "code": "dynamic-key",
+              "count": 5
+            },
+            {
+              "code": "dynamic-props",
+              "count": 2
+            }
+          ]
+        },
+        "stateCount": 180224,
+        "omitted": 180000,
+        "replay": "sample-incomplete"
+      },
+      "probe": {
+        "report": {
+          "status": "mismatch",
+          "matchedFibers": 0,
+          "matchedText": 0,
+          "opaqueSubtrees": 0,
+          "opaqueSkippedFibers": 0,
+          "slotsMatched": 0,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 0,
+          "repeatIterations": 0,
+          "transparentFibers": 0,
+          "runtimeFibers": 1250,
+          "staticFibers": 659,
+          "coverage": 0,
+          "strictCoverage": 0,
+          "divergence": {
+            "path": "root > <StrictMode> [Mode] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <ConfirmProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <motion.div> [ForwardRef] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <TodoCard> [FunctionComponent] > <BentoCard> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <KanbanBoard> [FunctionComponent] > <DndContext> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <Column> key=\"backlog\" [FunctionComponent] > <div> [HostComponent] > <SortableContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <SortableTaskCard> [FunctionComponent] > <button> [HostComponent] > <TaskCardBody> [FunctionComponent][2]",
+            "expected": "<end of children>",
+            "actual": "<div> [HostComponent]"
+          },
+          "stepsUsed": 154,
+          "budgetExhausted": false
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 1117,
+            "textCount": 62,
+            "branchCount": 73,
+            "repeatCount": 7,
+            "opaqueCount": 7,
+            "unknownCount": 49,
+            "modulesLoaded": 1630
+          },
+          "diagnostics": [
+            {
+              "code": "dynamic-key",
+              "count": 4
+            },
+            {
+              "code": "unknown-context",
+              "count": 1
+            }
+          ]
+        },
+        "stateCount": 131072,
+        "omitted": 130848,
+        "replay": "sample-incomplete"
+      },
+      "fullResults": [
+        "/private/tmp/bippy-pr115-bottom-next-baseline.json",
+        "/private/tmp/bippy-pr115-bottom-next-probe.json"
+      ]
+    },
+    {
+      "id": "melau-eddy-react-tailwind-admin-dash",
+      "selected": true,
+      "originalEntry": {
+        "id": "melau-eddy-react-tailwind-admin-dash",
+        "repository": "https://github.com/melau-eddy/react-tailwind-admin-dash",
+        "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
+        "description": "melau-eddy/react-tailwind-admin-dash",
+        "framework": "spa",
+        "workingDirectory": ".",
+        "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+        "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54633 --strictPort",
+        "env": {
+          "NODE_OPTIONS": "",
+          "BROWSER": "none",
+          "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+          "PUPPETEER_SKIP_DOWNLOAD": "1"
+        },
+        "url": "http://127.0.0.1:54633/",
+        "readyTimeoutMs": 120000,
+        "settleMs": 3000,
+        "static": {
+          "rootDirectory": ".",
+          "tsconfig": "tsconfig.json",
+          "entry": "src/main.tsx"
+        },
+        "notes": "Preserve original Home route, in-render data-router creation, Recharts, Sass, checked-in dashboard data and original saas dependency spelling. Review original environment/data workflow before capture; no dependency spelling fix, fabricated financial data or login input. The original 120-second navigation timeout has no runtime snapshot or report. Preserve that failure and the repeat helper's absent-capture error. A separately recorded fresh attempt with identical source/commands/budgets captures 590 fibers and 117 commits without page errors. Its partial comparison repeats against that fresh capture; preserve original Sass warnings and checked-in dashboard data rather than fabricate a response or remove styles. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 945044957 identifies a distinct non-fork repository."
+      },
+      "previousResult": {
+        "id": "melau-eddy-react-tailwind-admin-dash",
+        "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
+        "framework": "spa",
+        "capturedAt": "2026-09-13T03:33:20.649Z",
+        "durationMs": 625,
+        "runtime": {
+          "reactVersion": "18.3.1",
+          "rendererName": "react-dom",
+          "buildType": "development",
+          "roots": 1,
+          "fibers": 590,
+          "commits": 117,
+          "pageErrors": [],
+          "title": "React Admin Dashboard"
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 4,
+            "textCount": 0,
+            "branchCount": 0,
+            "repeatCount": 0,
+            "opaqueCount": 1,
+            "unknownCount": 0,
+            "modulesLoaded": 14
+          },
+          "diagnostics": []
+        },
+        "report": {
+          "status": "partial",
+          "matchedFibers": 2,
+          "matchedText": 0,
+          "opaqueSubtrees": 1,
+          "opaqueSkippedFibers": 586,
+          "slotsMatched": 0,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 0,
+          "repeatIterations": 0,
+          "transparentFibers": 1,
+          "runtimeFibers": 588,
+          "staticFibers": 3,
+          "coverage": 1,
+          "strictCoverage": 0.003401360544217687,
+          "divergence": null,
+          "stepsUsed": 3,
+          "budgetExhausted": false
+        },
+        "stateSpace": {
+          "states": 1,
+          "stateCount": 1,
+          "clusters": 0,
+          "tree": {
+            "nodes": 3,
+            "inputs": 0,
+            "guards": 0,
+            "branches": 0,
+            "repeats": 0,
+            "opaque": 1,
+            "wildcards": 0
+          },
+          "matchedState": {
+            "index": 0,
+            "conditions": []
+          },
+          "closestState": null,
+          "omitted": null,
+          "coverage": {
+            "sides": [],
+            "witnessed": 0,
+            "possible": 0,
+            "unreachable": 0
+          }
+        },
+        "stateReplay": {
+          "verification": "sample-passed",
+          "incomplete": [],
+          "states": 1,
+          "assignments": 1,
+          "replayed": 1,
+          "maxReplayed": 16,
+          "mismatched": []
+        },
+        "anchor": null,
+        "note": "runtime replayed from 2026-09-13T03:12:14.470Z",
+        "failure": null
+      },
+      "baseline": {
+        "id": "melau-eddy-react-tailwind-admin-dash",
+        "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
+        "framework": "spa",
+        "capturedAt": "2026-09-14T12:09:30.611Z",
+        "durationMs": 6806,
+        "runtime": {
+          "reactVersion": "18.3.1",
+          "rendererName": "react-dom",
+          "buildType": "development",
+          "roots": 1,
+          "fibers": 590,
+          "commits": 103,
+          "pageErrors": [],
+          "title": "React Admin Dashboard"
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 4,
+            "textCount": 0,
+            "branchCount": 0,
+            "repeatCount": 0,
+            "opaqueCount": 1,
+            "unknownCount": 0,
+            "modulesLoaded": 14
+          },
+          "diagnostics": []
+        },
+        "report": {
+          "status": "partial",
+          "matchedFibers": 2,
+          "matchedText": 0,
+          "opaqueSubtrees": 1,
+          "opaqueSkippedFibers": 586,
+          "slotsMatched": 0,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 0,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 0,
+          "repeatIterations": 0,
+          "transparentFibers": 1,
+          "runtimeFibers": 588,
+          "staticFibers": 3,
+          "coverage": 1,
+          "strictCoverage": 0.003401360544217687,
+          "divergence": null,
+          "stepsUsed": 3,
+          "budgetExhausted": false
+        },
+        "stateSpace": {
+          "states": 1,
+          "stateCount": 1,
+          "clusters": 0,
+          "tree": {
+            "nodes": 3,
+            "inputs": 0,
+            "guards": 0,
+            "branches": 0,
+            "repeats": 0,
+            "opaque": 1,
+            "wildcards": 0
+          },
+          "matchedState": {
+            "index": 0,
+            "conditions": []
+          },
+          "closestState": null,
+          "omitted": null,
+          "coverage": {
+            "sides": [],
+            "witnessed": 0,
+            "possible": 0,
+            "unreachable": 0
+          }
+        },
+        "stateReplay": {
+          "verification": "sample-passed",
+          "incomplete": [],
+          "states": 1,
+          "assignments": 1,
+          "replayed": 1,
+          "maxReplayed": 16,
+          "mismatched": []
+        },
+        "anchor": null,
+        "note": null,
+        "failure": null
+      },
+      "probe": {
+        "id": "melau-eddy-react-tailwind-admin-dash",
+        "revision": "a9e3956e60357e943fdc13f2bf25890ebf3dd0a0",
+        "framework": "react-router",
+        "capturedAt": "2026-09-14T12:11:00.426Z",
+        "durationMs": 574,
+        "runtime": {
+          "reactVersion": "18.3.1",
+          "rendererName": "react-dom",
+          "buildType": "development",
+          "roots": 1,
+          "fibers": 590,
+          "commits": 103,
+          "pageErrors": [],
+          "title": "React Admin Dashboard"
+        },
+        "static": {
+          "stats": {
+            "fiberCount": 275,
+            "textCount": 14,
+            "branchCount": 0,
+            "repeatCount": 0,
+            "opaqueCount": 24,
+            "unknownCount": 0,
+            "modulesLoaded": 14
+          },
+          "diagnostics": []
+        },
+        "report": {
+          "status": "partial",
+          "matchedFibers": 235,
+          "matchedText": 14,
+          "opaqueSubtrees": 24,
+          "opaqueSkippedFibers": 330,
+          "slotsMatched": 12,
+          "slotsUnmatched": 0,
+          "opaqueRenamed": 4,
+          "unmatchedSlots": [],
+          "wildcardAbsorbedFibers": 0,
+          "wildcards": [],
+          "branchesResolved": 0,
+          "repeatIterations": 0,
+          "transparentFibers": 10,
+          "runtimeFibers": 579,
+          "staticFibers": 273,
+          "coverage": 1,
+          "strictCoverage": 0.43005181347150256,
+          "divergence": null,
+          "stepsUsed": 2929,
+          "budgetExhausted": false
+        },
+        "stateSpace": {
+          "states": 1,
+          "stateCount": 1,
+          "clusters": 0,
+          "tree": {
+            "nodes": 273,
+            "inputs": 0,
+            "guards": 0,
+            "branches": 0,
+            "repeats": 0,
+            "opaque": 24,
+            "wildcards": 0
+          },
+          "matchedState": {
+            "index": 0,
+            "conditions": []
+          },
+          "closestState": null,
+          "omitted": null,
+          "coverage": {
+            "sides": [],
+            "witnessed": 0,
+            "possible": 0,
+            "unreachable": 0
+          }
+        },
+        "stateReplay": {
+          "verification": "sample-passed",
+          "incomplete": [],
+          "states": 1,
+          "assignments": 1,
+          "replayed": 1,
+          "maxReplayed": 16,
+          "mismatched": []
+        },
+        "anchor": null,
+        "note": "runtime replayed from 2026-09-14T12:09:36.952Z",
+        "failure": null
+      },
+      "provenance": {
+        "capturePath": "/private/tmp/bippy-pr115-corpus-bottom/.out/melau-eddy-react-tailwind-admin-dash.capture.json",
+        "captureSha256": "3c0aeae9f37c6563b77fcb907688a54d80c88c987f87b9625d4d636ff8fdd7ff",
+        "trackedContentSha256": "e496a2829386e43b151b0c7c84f03efc34c6d578262fd4918557039b9d4758d1",
+        "trackedFilesUnchanged": true,
+        "runtimeIdenticalBetweenComparisons": true
+      },
+      "repeatedIdentically": true
+    }
+  ]
+}

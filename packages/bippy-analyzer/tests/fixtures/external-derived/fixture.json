@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 0.5,
+  "notes": "Values derived from an opaque package call (useStatus().error) have unknown truthiness, so the conditional chain must become a branch instead of a single guessed path."
+}

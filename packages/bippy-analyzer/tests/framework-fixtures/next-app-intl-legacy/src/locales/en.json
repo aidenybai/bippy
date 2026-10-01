@@ -1,0 +1,6 @@
+{
+  "Index": {
+    "title": "Welcome",
+    "greeting": "Hello, {name}!"
+  }
+}

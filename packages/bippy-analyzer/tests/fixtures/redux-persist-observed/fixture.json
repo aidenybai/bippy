@@ -1,0 +1,17 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["react-redux"],
+  "notes": "redux-persist's `persistReducer` keeps the wrapped reducer's state keys plus `_persist`, so `configureStore` still recognises the store the page recorded; `PersistGate` lifts its children once the persistor has bootstrapped, which the recorded `_persist.rehydrated` flag answers instead of re-running the asynchronous storage read.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "stores": [
+      {
+        "theme": { "mode": "light", "isCompact": false },
+        "auth": { "user": null },
+        "_persist": { "version": -1, "rehydrated": true }
+      }
+    ]
+  }
+}

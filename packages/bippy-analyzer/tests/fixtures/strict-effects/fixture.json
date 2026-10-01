@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "StrictMode at the root child makes React unmount and remount every effect after the first commit; the rendered log records that replay, class lifecycles and the cleanups of an unmounting subtree."
+}

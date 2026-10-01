@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A CSS module import evaluates to what the bundler's CSS-modules transform exports: `:export` values exactly, class names as strings whose hashed text is unknown."
+}

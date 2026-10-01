@@ -6,7 +6,7 @@
     "build:extension": "nr --filter bippy build && nr --filter @bippy/e2e-chrome-extension build",
     "build:metro-artifact": "nr --filter bippy build && nr --filter @bippy/e2e-expo build:source-artifact",
     "test:extension": "nr build:extension && playwright test --project=chrome-extension",
-    "test:metro-artifact": "nr build:metro-artifact && node --test tests/artifacts/metro-source-map.test.mjs",
+    "test:metro-artifact": "nr build:metro-artifact && tsx --test tests/artifacts/metro-source-map.test.ts",
     "test:web": "nr build:extension && playwright test",
     "test:web:production": "nr --filter bippy build && playwright test --config playwright.production.config.ts",
     "test:native": "detox test --configuration ios.sim.debug",
@@ -22,6 +22,7 @@
     "detox": "latest",
     "jest": "latest",
     "ts-jest": "latest",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

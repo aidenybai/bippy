@@ -1,0 +1,4 @@
+{
+  "skipRuntime": true,
+  "notes": "Dedicated tests vary the dev command mode and check the installed Vite configuration factory, plugin filtering and configResolved hooks."
+}

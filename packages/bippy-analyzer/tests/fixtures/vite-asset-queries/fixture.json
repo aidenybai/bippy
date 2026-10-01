@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Vite dev URLs for asset import queries: a small svg inlines as a data URL for `?url` and `?inline`, `?no-inline` and non-svg `?url` files get the root-relative served URL. The fixture's vite.config.ts is evaluated for its `root`."
+}

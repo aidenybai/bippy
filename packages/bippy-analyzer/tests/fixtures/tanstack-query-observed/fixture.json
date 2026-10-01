@@ -1,0 +1,32 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["@tanstack/react-query"],
+  "notes": "The query cache observed at runtime is replayed into the static render, so the success branch is the only one left.",
+  "observations": {
+    "globals": {},
+    "queries": [
+      {
+        "queryHash": "[\"todos\",{\"page\":1,\"status\":\"open\"}]",
+        "status": "success",
+        "fetchStatus": "idle",
+        "data": {
+          "items": [
+            { "id": 1, "title": "write parser" },
+            { "id": 2, "title": "capture query cache" }
+          ],
+          "nextPage": null
+        },
+        "error": null,
+        "dataUpdateCount": 1,
+        "dataUpdatedAt": 0,
+        "errorUpdateCount": 0,
+        "errorUpdatedAt": 0,
+        "fetchFailureCount": 0,
+        "fetchFailureReason": null,
+        "isInvalidated": false,
+        "isStale": true
+      }
+    ]
+  }
+}

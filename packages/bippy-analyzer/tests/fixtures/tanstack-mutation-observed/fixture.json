@@ -1,0 +1,23 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["@tanstack/react-query"],
+  "notes": "The mutation cache observed at runtime is replayed: the keyed login mutation that ran on mount picks the MFA branch, the keyed mutation absent from the cache is idle, and so is the keyless one because no keyless mutation ran.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "mutations": [
+      {
+        "mutationHash": "[\"login\"]",
+        "status": "success",
+        "data": { "status": "mfa-required", "methods": ["totp", "sms"] },
+        "error": null,
+        "variables": "ada@example.com",
+        "failureCount": 0,
+        "failureReason": null,
+        "isPaused": false,
+        "submittedAt": 0
+      }
+    ]
+  }
+}

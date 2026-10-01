@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "lib": ["esnext", "dom"],
+    "types": ["react", "react-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["./shared/*"],
+      "~/*": ["./*"]
+    },
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": ["."]
+}

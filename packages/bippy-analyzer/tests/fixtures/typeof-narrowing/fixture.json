@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "`typeof value === \"string\"` / `\"number\"` / `\"undefined\"` on values the source leaves opaque (stored phrases read back through JSON.parse, as node-polyglot's phrase lookup): the passing side becomes some value of that type, so the string-only code behind the check (`transformPhrase`) neither throws nor forks."
+}

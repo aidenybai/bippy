@@ -1,0 +1,28 @@
+{
+  "entry": "src/main.tsx",
+  "framework": "spa",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 1,
+  "notes": "The SWR cache observed at runtime is replayed into the static render, so the fetched post is the only state left; a hook with a null key stays idle.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "swr": [
+      {
+        "key": "@\"https://example.test/api/post/1\",undefined,",
+        "data": {
+          "id": "1",
+          "text": "hello from swr",
+          "author": {
+            "name": "ada",
+            "verified": true
+          },
+          "tags": ["static", "runtime"]
+        },
+        "isValidating": false,
+        "isLoading": false
+      }
+    ]
+  }
+}

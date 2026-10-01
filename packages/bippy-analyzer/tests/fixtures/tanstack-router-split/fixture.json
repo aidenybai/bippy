@@ -1,0 +1,13 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "route": "/",
+  "externalPackages": [
+    "@tanstack/react-router",
+    "@tanstack/router-core",
+    "@tanstack/history",
+    "@tanstack/react-store",
+    "@tanstack/store"
+  ],
+  "notes": "The app's own vite.config.ts runs @tanstack/router-plugin with autoCodeSplitting, so the static side analyzes the plugin's transformed route modules: the index route's component is moved into a ?tsr-split=component query module and loaded through lazyRouteComponent, giving the static tree the same Lazy boundary the served modules have."
+}

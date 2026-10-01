@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Lookups keyed by a runtime string whose candidates are the same React export (`Fragment`) or the same opaque imported binding (`EventEmitter`): alternatives analysis can never tell apart collapse instead of leaving a branch."
+}

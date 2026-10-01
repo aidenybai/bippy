@@ -1,0 +1,6 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 1,
+  "minStrictCoverage": 0.1,
+  "notes": "auth-shell is opaque and, like Clerk's provider, buries the children it was passed under two dozen wrapper layers; the slot search must still find them so the page is compared instead of skipped."
+}

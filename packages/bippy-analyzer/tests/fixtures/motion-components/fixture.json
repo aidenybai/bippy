@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Motion components from two installed versions: framer-motion 11.0.3 only names the forwardRef by its render function (`MotionComponent`), motion 12 sets `displayName` to `motion.<tag>`. Both packages are pared-down copies of `createMotionComponent` so the version-gated naming is exercised at runtime."
+}

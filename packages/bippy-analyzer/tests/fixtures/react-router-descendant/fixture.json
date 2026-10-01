@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/posts/42/edit/title",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Descendant <Routes> nested under a `:resource/*` route (the react-admin Resource shape): each level matches the URL left over by its parent's pathnameBase, inherits params, and the ranking prefers `:id/*` over `/*`."
+}

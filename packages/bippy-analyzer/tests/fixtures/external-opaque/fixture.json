@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 0.4,
+  "notes": "ui-kit is not on the allow list, so its subtree is opaque; only the host siblings around it are checked."
+}

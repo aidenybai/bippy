@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10" style="fill:red;stroke-width:2px">
+  <title>Logo &amp; mark</title>
+  <defs>
+    <linearGradient id="g"><stop offset="0" stop-color="#fff"/></linearGradient>
+  </defs>
+  <use xlink:href="#g"/>
+  <text x="1" y="5">hi</text>
+</svg>

@@ -1,0 +1,245 @@
+{
+  "baseCommit": "10f91f81",
+  "originalEntry": {
+    "id": "lethai2597-personal-tracker",
+    "repository": "https://github.com/lethai2597/personal-tracker",
+    "revision": "c2f5a86b3943e0f2254ac1077f7e9ff279ab930d",
+    "description": "lethai2597/personal-tracker",
+    "framework": "spa",
+    "workingDirectory": ".",
+    "install": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false exec npm ci",
+    "dev": "pnpm --config.verify-deps-before-run=false --package=node@22.16.0 --package=pnpm@10.12.1 --package=npm@10.9.2 dlx pnpm --config.verify-deps-before-run=false run dev --host 127.0.0.1 --port 54634 --strictPort",
+    "env": {
+      "NODE_OPTIONS": "",
+      "BROWSER": "none",
+      "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1",
+      "PUPPETEER_SKIP_DOWNLOAD": "1"
+    },
+    "url": "http://127.0.0.1:54634/",
+    "readyTimeoutMs": 120000,
+    "settleMs": 3000,
+    "static": {
+      "rootDirectory": ".",
+      "tsconfig": "tsconfig.app.json",
+      "entry": "src/main.tsx"
+    },
+    "notes": "Preserve original automatic seedSampleDataIfEmpty on a first visit, settings application before paint, rAF theme class, welcome modal, local storage, board/timer/bookmark/habit initialization and confirm provider. No manual data seeding, dismissal, timer start or private data. Automatic checked-in seeding is original app behavior, not an invented harness input. Retain the sparse partial initial capture, 180224 bounded states, 180008 omissions and incomplete replay. Original first-visit sample seeding precedes mount; preserve welcome UI, theme rAF and all storage behavior. No manual seed, tour dismissal, timer start or data input is supplied. All original tracked source/locks and installed versions verify after native capture; actual runner probes are retained. Same-capture repetitions preserve native errors and every omission. Initial fiber membership does not establish attributes, pixels, interactions or whole-space completeness. GitHub repository ID 1267231720 identifies a distinct non-fork repository."
+  },
+  "capture": {
+    "path": "/private/tmp/bippy-pr115-corpus-bottom/.out/lethai2597-personal-tracker.capture.json",
+    "sha256": "7c2a035b2dd93d9cd24d945e4c752c46b144cb0187aba47eb5464f0a4ed5b6f7",
+    "sourceRevision": "c2f5a86b3943e0f2254ac1077f7e9ff279ab930d",
+    "trackedSourceAndLocksUnchanged": true,
+    "repeatedIdentically": true
+  },
+  "comparisons": [
+    {
+      "capturedAt": "2026-09-13T03:01:40.142Z",
+      "framework": "spa",
+      "runtime": {
+        "reactVersion": "19.2.7",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1251,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Personal Tracker"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 744,
+          "textCount": 71,
+          "branchCount": 72,
+          "repeatCount": 7,
+          "opaqueCount": 100,
+          "unknownCount": 49,
+          "modulesLoaded": 49
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 6
+          },
+          {
+            "code": "dynamic-props",
+            "count": 2
+          }
+        ]
+      },
+      "report": {
+        "status": "partial",
+        "matchedFibers": 1,
+        "matchedText": 0,
+        "opaqueSubtrees": 1,
+        "opaqueSkippedFibers": 1249,
+        "slotsMatched": 0,
+        "slotsUnmatched": 1,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [
+          {
+            "path": "root > <StrictMode> [Mode] > <TooltipProvider> (opaque)",
+            "reason": "Provider from @radix-ui/react-tooltip is not analyzed",
+            "head": "<TooltipProvider> [FunctionComponent]",
+            "skippedFibers": 1249,
+            "divergence": {
+              "path": "root > <StrictMode> [Mode] > <TooltipProvider> (opaque) > <ConfirmProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <motion.div> [ForwardRef] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <BookmarkCard> [FunctionComponent] > <BentoCard> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <div> [HostComponent] > <div> [HostComponent][1]",
+              "expected": "<end of children>",
+              "actual": "<div> key=\"y0pqcjjgmtz5f87a\" [HostComponent]"
+            }
+          }
+        ],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 1250,
+        "staticFibers": 355,
+        "coverage": 1,
+        "strictCoverage": 0.0008,
+        "divergence": null,
+        "stepsUsed": 2570,
+        "budgetExhausted": false
+      },
+      "stateCount": 180224,
+      "enumerated": 256,
+      "omissions": 180008,
+      "replay": "sample-incomplete"
+    },
+    {
+      "capturedAt": "2026-09-14T12:11:01.001Z",
+      "framework": "spa",
+      "runtime": {
+        "reactVersion": "19.2.7",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1251,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Personal Tracker"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1117,
+          "textCount": 62,
+          "branchCount": 73,
+          "repeatCount": 7,
+          "opaqueCount": 7,
+          "unknownCount": 49,
+          "modulesLoaded": 1630
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 4
+          },
+          {
+            "code": "unknown-context",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "mismatch",
+        "matchedFibers": 0,
+        "matchedText": 0,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 0,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 1250,
+        "staticFibers": 659,
+        "coverage": 0,
+        "strictCoverage": 0,
+        "divergence": {
+          "path": "root > <StrictMode> [Mode] > <TooltipProvider> [FunctionComponent] > <TooltipProviderProvider> [FunctionComponent] > <TooltipProviderContext> [ContextProvider] > <ConfirmProvider> [FunctionComponent] > <ContextProvider> [ContextProvider] > <App> [FunctionComponent] > <div> [HostComponent] > <div> [HostComponent] > <motion.div> [ForwardRef] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <TodoCard> [FunctionComponent] > <BentoCard> [FunctionComponent] > <section> [HostComponent] > <div> [HostComponent] > <KanbanBoard> [FunctionComponent] > <DndContext> [SimpleMemoComponent] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <Column> key=\"backlog\" [FunctionComponent] > <div> [HostComponent] > <SortableContext> [FunctionComponent] > <ContextProvider> [ContextProvider] > <div> [HostComponent] > <SortableTaskCard> [FunctionComponent] > <button> [HostComponent] > <TaskCardBody> [FunctionComponent][2]",
+          "expected": "<end of children>",
+          "actual": "<div> [HostComponent]"
+        },
+        "stepsUsed": 154,
+        "budgetExhausted": false
+      },
+      "stateCount": 131072,
+      "enumerated": 256,
+      "omissions": 130848,
+      "replay": "sample-incomplete"
+    },
+    {
+      "capturedAt": "2026-09-14T13:02:39.594Z",
+      "framework": "spa",
+      "runtime": {
+        "reactVersion": "19.2.7",
+        "rendererName": "react-dom",
+        "buildType": "development",
+        "roots": 1,
+        "fibers": 1251,
+        "commits": 2,
+        "pageErrors": [],
+        "title": "Personal Tracker"
+      },
+      "static": {
+        "stats": {
+          "fiberCount": 1611,
+          "textCount": 67,
+          "branchCount": 68,
+          "repeatCount": 0,
+          "opaqueCount": 0,
+          "unknownCount": 28,
+          "modulesLoaded": 1782
+        },
+        "diagnostics": [
+          {
+            "code": "dynamic-key",
+            "count": 4
+          },
+          {
+            "code": "unknown-context",
+            "count": 1
+          }
+        ]
+      },
+      "report": {
+        "status": "exact",
+        "matchedFibers": 1206,
+        "matchedText": 44,
+        "opaqueSubtrees": 0,
+        "opaqueSkippedFibers": 0,
+        "slotsMatched": 0,
+        "slotsUnmatched": 0,
+        "opaqueRenamed": 0,
+        "unmatchedSlots": [],
+        "wildcardAbsorbedFibers": 0,
+        "wildcards": [],
+        "branchesResolved": 48,
+        "repeatIterations": 0,
+        "transparentFibers": 0,
+        "runtimeFibers": 1250,
+        "staticFibers": 1347,
+        "coverage": 1,
+        "strictCoverage": 1,
+        "divergence": null,
+        "stepsUsed": 1326,
+        "budgetExhausted": false
+      },
+      "stateCount": 83261924352,
+      "enumerated": 256,
+      "omissions": 83261924096,
+      "replay": "sample-incomplete"
+    }
+  ],
+  "limits": [
+    "Exactness covers the saved initial-page tree; replay remains sample-incomplete and all omissions remain recorded in results.json.",
+    "JSON replacers, revivers, accessors, toJSON hooks and arbitrary unknown object shapes still fall back to unknown values.",
+    "A separate attempt to analyze the admin dashboard chart sources was stopped after more than eight minutes without a result. Its previously verified 43.0052% row is unchanged.",
+    "The broad suite has existing CommonJS fixture and native namespace-export expectation failures, reproduced from the untouched base. Default macOS temp aliases and Node 26 Web Storage also cause baseline failures; canonical TMPDIR and disabled native Web Storage remove those environment failures."
+  ]
+}

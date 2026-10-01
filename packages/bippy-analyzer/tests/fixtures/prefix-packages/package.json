@@ -1,0 +1,5 @@
+{
+  "name": "fixture-prefix-packages",
+  "private": true,
+  "type": "module"
+}

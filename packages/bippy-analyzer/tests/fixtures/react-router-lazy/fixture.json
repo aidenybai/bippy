@@ -1,0 +1,7 @@
+{
+  "framework": "react-router",
+  "route": "/about",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Routes whose `lazy` loads the module on demand: the async function is evaluated as the router awaits it, with the dynamic import resolved through the module graph."
+}

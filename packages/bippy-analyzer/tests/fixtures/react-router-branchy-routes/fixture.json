@@ -1,0 +1,9 @@
+{
+  "framework": "react-router",
+  "route": "/posts/hello",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 2,
+  "expectOmitted": false,
+  "notes": "A route object whose `id` and `path` both hinge on one host condition the source does not decide (canvas 2d support). The config is distributed into two concrete route tables that share the decision, so the space has two states, one per route table."
+}

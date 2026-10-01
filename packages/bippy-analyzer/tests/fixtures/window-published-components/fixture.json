@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.jsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Components published as `window.<Name>` by a side-effect import and referenced as bare globals elsewhere."
+}
