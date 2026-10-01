@@ -1,0 +1,81 @@
+{
+  "scope": "engine262-finally-capture-roots-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "69d683b85a29ac5d4aca3ccb5192c2010ab35fb901f4a8a74503de4499d7679c",
+  "implementation": [
+    "Annotate value thunk and rejection thrower with original value/reason via HostCapturedValues",
+    "Retain species constructor alongside onFinally on both outer callbacks",
+    "Reuse existing builtin capture marking; no scheduling, species selection, resolution or forwarding changes"
+  ],
+  "regressions": {
+    "initialCases": 16,
+    "initialFailures": 12,
+    "initialPasses": 4,
+    "finalCases": 16,
+    "nativeComparisons": 12,
+    "pendingValueCases": 4,
+    "cleanupCaptureCases": 4,
+    "speciesCases": 2,
+    "detachedThunkCases": 2,
+    "cleanupRejectionReleaseCases": 2,
+    "discardedCycles": 2
+  },
+  "units": {
+    "passed": 1364,
+    "total": 1364,
+    "files": 40
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "9cabaa90881695915d46b77b4857174a2c2a7a61f9347ea41c9b7f06fe8a8057",
+      "compressedSha256": "a4f6dcc9abe8b08c78bcd71f7315b1112b83961b666857429d2bafd8a7f78036"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "c69c00a134bd2a0800fcaa4c8492faa1ff5d9a914259ee2dc8934e5822543a14",
+      "compressedSha256": "fe933ebb81e48742f9509471804c9b54c5298c4567103b60dca72be46de72cab"
+    }
+  ],
+  "conformance": {
+    "passed": 208,
+    "total": 210,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "identicalFailureDiagnostics": true,
+    "selection": [
+      ".test262/test/built-ins/Promise/prototype/finally/**/*.js",
+      ".test262/test/built-ins/WeakRef/**/*.js",
+      ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+    ],
+    "failures": "2 matching failures retained"
+  },
+  "boundaries": [
+    "Six registered-runtime Promise probes and timer now match V8; not complete GC coverage",
+    "Unregistered manual evaluator still loses target",
+    "Keyed combinators/modules/saved snapshots/host diagnostics and other captures need policies",
+    "Retained callbacks can retain captures; no eager reclamation guarantee",
+    "No Promise rollback, transitive owner, view-transition parity or shared-prefix React fork"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "1364 units and 74/74 smoke pass; clean-build hash matches, see ci.json",
+  "files": {
+    "engine/patches/promise-finally-roots.patch": "401566be97aa8f0ec36bbef823639873eca4eb63c48754058d87895d13262d77",
+    "engine/scripts/build.ts": "407adccaf7c2d4ae2bd699f5b52e35bf27c040d63fce1e054ecf5329ed75b3f7",
+    "tests/gc-promise-finally.test.ts": "ab4f47f1e796b268a1bd0564a978245fdbd88438bbb7dd5fc33ada7feee62270",
+    "tests/helpers/concrete-gc.ts": "217f6532ee1fbd163f80f2f219f110f0c051f6943e08b7f72ddaef6e64198af5",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "docs/engine-state-inventory.md": "9cc566e74993e72cc7430ebf72b907623db6bb90ef882a3fcce52534f199c4d7"
+  }
+}

@@ -1,0 +1,29 @@
+diff --git a/src/intrinsics/Promise.mts b/src/intrinsics/Promise.mts
+index 419baf5..56f5c55 100644
+--- a/src/intrinsics/Promise.mts
++++ b/src/intrinsics/Promise.mts
+@@ -122,6 +122,11 @@ function* GetPromiseResolve(promiseConstructor: FunctionObject) {
+   return promiseResolve;
+ }
+ 
++interface PromiseAllAccumulatorFunctionObject extends PromiseAllResolveElementFunctionObject {
++  readonly Values: Value[];
++  readonly Capability: PromiseCapabilityRecord;
++}
++
+ function CreatePromiseAllResolveElement(index: number, values: Value[], resultCapability: PromiseCapabilityRecord, remainingElementsCount: { Value: number }): FunctionObject {
+   const fulfilledSteps = function* fulfilled([value = Value.undefined]: Arguments): ValueEvaluator {
+     const F = surroundingAgent.activeFunctionObject as PromiseAllResolveElementFunctionObject;
+@@ -136,9 +141,11 @@ function CreatePromiseAllResolveElement(index: number, values: Value[], resultCa
+     }
+     return Value.undefined;
+   };
+-  const onFulfilled = CreateBuiltinFunction(fulfilledSteps, 1, '', ['AlreadyCalled', 'Index']) as Mutable<PromiseAllResolveElementFunctionObject>;
++  const onFulfilled = CreateBuiltinFunction(fulfilledSteps, 1, '', ['AlreadyCalled', 'Index', 'Values', 'Capability']) as Mutable<PromiseAllAccumulatorFunctionObject>;
+   onFulfilled.AlreadyCalled = { Value: false };
+   onFulfilled.Index = index;
++  onFulfilled.Values = values;
++  onFulfilled.Capability = resultCapability;
+   return onFulfilled;
+ }
+ 

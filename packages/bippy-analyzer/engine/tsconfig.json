@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmitOnError": true,
+    "stripInternal": true,
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "skipLibCheck": true,
+    "rootDir": ".build/source/src",
+    "outDir": ".build/output/declaration",
+    "paths": { "#self": ["./.build/source/src/index.mts"] }
+  },
+  "include": [".build/source/src/**/*.mts"]
+}

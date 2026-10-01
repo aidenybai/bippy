@@ -1,0 +1,70 @@
+diff --git a/src/abstract-ops/module-records.mts b/src/abstract-ops/module-records.mts
+index a6fd097..2bd0fd3 100644
+--- a/src/abstract-ops/module-records.mts
++++ b/src/abstract-ops/module-records.mts
+@@ -29,7 +29,7 @@ import {
+   type ArrayBufferObject,
+ } from './all.mts';
+ import {
+-  surroundingAgent, HostLoadImportedModule, HostPromiseRejectionTracker,
++  surroundingAgent, HostLoadImportedModule, HostPromiseRejectionTracker, completeModuleLoad,
+ } from '#self';
+ import {
+   Realm,
+@@ -951,6 +951,7 @@ export function FinishLoadingImportedModule(referrer: ScriptRecord | CyclicModul
+     // a. Perform ContinueDynamicImport(payload, moduleRequest.[[Phase]], result).
+     ContinueDynamicImport(payload_, moduleRequest.Phase, result);
+   }
++  completeModuleLoad(surroundingAgent, payload);
+   // 4. Return unused.
+ }
+ 
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index ca17545..84a36a0 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -1,8 +1,7 @@
+ import type { Protocol } from 'devtools-protocol';
+ import { shouldStepOnNode } from '../host-defined/debugger-util.mts';
+ import { markStateCheckpoints } from '../host-defined/object-checkpoint.mts';
+-import {
+-} from '../host-defined/engine.mts';
++import { hasPendingModuleLoads } from '../host-defined/engine.mts';
+ import { isArray } from '../utils/language.mts';
+ import { callCallback } from '../utils/callback.mts';
+ import {
+@@ -182,6 +181,7 @@ export class Agent {
+     if (paused.failure) throw paused.failure.error;
+     if (!owner) throw new TypeError('Evaluation checkpoints require a state owner');
+     if (this.eventLoop.hasPendingJobs) throw new TypeError('Evaluation checkpoints do not support pending async host jobs');
++    if (hasPendingModuleLoads(this)) throw new TypeError('Evaluation checkpoints do not support pending module loads');
+     const decision = paused.decision;
+     const controlled = paused.controlled;
+     const frame: EvaluationCheckpointFrame = { paused, roots: [] };
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index e6d59c3..6b4b6a6 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -251,9 +251,22 @@ export function HostGetModuleSourceModuleRecord(specifier: ObjectValue): Abstrac
+   return 'not-a-source';
+ }
+ 
++const pendingModuleLoads = new WeakMap<Agent, Set<HostLoadImportedModulePayloadOpaque>>();
++
++export const hasPendingModuleLoads = (agent: Agent): boolean => Boolean(pendingModuleLoads.get(agent)?.size);
++
++export const completeModuleLoad = (agent: Agent, payload: HostLoadImportedModulePayloadOpaque): void => {
++  const pending = pendingModuleLoads.get(agent);
++  pending?.delete(payload);
++  if (!pending?.size) pendingModuleLoads.delete(agent);
++};
++
+ // #sec-HostLoadImportedModule
+ export function HostLoadImportedModule(referrer: CyclicModuleRecord | ScriptRecord | Realm, moduleRequest: ModuleRequestRecord, hostDefined: ModuleRecordHostDefined | undefined, payload: HostLoadImportedModulePayloadOpaque) {
+   surroundingAgent.assertCanPerformHostEffect();
++  let pending = pendingModuleLoads.get(surroundingAgent);
++  if (!pending) pendingModuleLoads.set(surroundingAgent, pending = new Set());
++  pending.add(payload);
+   const HostHook = surroundingAgent.hostDefinedOptions.hostHooks?.HostLoadImportedModule;
+   if (HostHook) {
+     HostHook(referrer, moduleRequest, hostDefined, payload);

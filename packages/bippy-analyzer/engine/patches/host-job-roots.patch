@@ -1,0 +1,116 @@
+diff --git a/src/execution-context/ExecutionContext.mts b/src/execution-context/ExecutionContext.mts
+index 35658a0..6c23efe 100644
+--- a/src/execution-context/ExecutionContext.mts
++++ b/src/execution-context/ExecutionContext.mts
+@@ -67,6 +67,8 @@ export class ExecutionContext {
+   // NON-SPEC
+   HostDefined?: ExecutionContextHostDefined;
+ 
++  HostCapturedValues?: readonly Value[];
++
+   callSite = new CallSite(this);
+ 
+   promiseCapability?: PromiseCapabilityRecord;
+@@ -84,6 +86,7 @@ export class ExecutionContext {
+     e.LexicalEnvironment = this.LexicalEnvironment;
+     e.PrivateEnvironment = this.PrivateEnvironment;
+     e.HostDefined = this.HostDefined;
++    e.HostCapturedValues = this.HostCapturedValues;
+ 
+     e.callSite = this.callSite.clone(e);
+     e.promiseCapability = this.promiseCapability;
+@@ -92,6 +95,7 @@ export class ExecutionContext {
+ 
+   // NON-SPEC
+   mark(m: GCMarker) {
++    m(this.HostCapturedValues);
+     m(this.CodeEvaluationState);
+     m(this.Generator);
+     m(this.Function);
+diff --git a/src/execution-context/Job.mts b/src/execution-context/Job.mts
+index 525ab25..9d60f23 100644
+--- a/src/execution-context/Job.mts
++++ b/src/execution-context/Job.mts
+@@ -16,6 +16,7 @@ import {
+ /** https://tc39.es/ecma262/#job */
+ export interface Job {
+   readonly queueName: string;
++  readonly capturedValues?: readonly Value[];
+   readonly job: () => PlainEvaluator<unknown>;
+   readonly callerRealm: Realm | undefined;
+   readonly callerScriptOrModule: AbstractModuleRecord | ScriptRecord | null;
+diff --git a/src/host-defined/event-loop.mts b/src/host-defined/event-loop.mts
+index b63fe9d..a672e42 100644
+--- a/src/host-defined/event-loop.mts
++++ b/src/host-defined/event-loop.mts
+@@ -169,6 +169,7 @@ export abstract class AbstractEventLoop implements EventLoop {
+ 
+   mark(marker: GCMarker): void {
+     for (const job of this.#pendingJobs) {
++      marker(job.capturedValues);
+       marker(job.callerRealm);
+       marker(job.callerScriptOrModule);
+       marker(job.job);
+@@ -225,6 +226,7 @@ export class WebLikeEventLoop extends AbstractEventLoop {
+   override mark(marker: GCMarker): void {
+     super.mark(marker);
+     for (const job of this.queuedJobs.keys()) {
++      marker(job.capturedValues);
+       marker(job.job);
+       marker(job.callerRealm);
+       marker(job.callerScriptOrModule);
+@@ -303,6 +305,7 @@ export class NodeJSLikeEventLoop extends AbstractEventLoop {
+   override mark(marker: GCMarker): void {
+     super.mark(marker);
+     for (const job of this.queuedJobs) {
++      marker(job.capturedValues);
+       marker(job.job);
+       marker(job.callerRealm);
+       marker(job.callerScriptOrModule);
+diff --git a/src/host-defined/job-queue.mts b/src/host-defined/job-queue.mts
+index 7a83661..7c26364 100644
+--- a/src/host-defined/job-queue.mts
++++ b/src/host-defined/job-queue.mts
+@@ -11,9 +11,13 @@ export function runSingleJobInQueue(job: Job, onError: (error: Value) => void, f
+ 
+   // 1. Perform any implementation-defined preparation steps.
+   const { callerRealm, callerScriptOrModule, job: evaluator } = job;
++  if (!callerRealm && job.capturedValues?.length) {
++    throw new TypeError('Captured job values require a caller realm');
++  }
+   if (callerRealm) {
+     // Spec: If a Realm Record is provided, these operations schedule the job to be performed at some future time in the provided realm, in the agent that owns the realm.
+     const newContext = new ExecutionContext();
++    newContext.HostCapturedValues = job.capturedValues;
+     surroundingAgent.executionContextStack.push(newContext);
+     newContext.Function = Value.null;
+     newContext.Realm = callerRealm;
+@@ -95,6 +99,7 @@ export class BasicJobQueue extends Set<Job> implements JobQueue, Markable {
+ 
+   mark(marker: GCMarker): void {
+     for (const job of this) {
++      marker(job.capturedValues);
+       marker(job.job);
+       marker(job.callerRealm);
+       marker(job.callerScriptOrModule);
+@@ -183,6 +188,7 @@ export class ByTypeJobQueue implements JobQueue, Markable {
+ 
+   mark(marker: GCMarker): void {
+     for (const job of this.#all) {
++      marker(job.capturedValues);
+       marker(job.job);
+       marker(job.callerRealm);
+       marker(job.callerScriptOrModule);
+diff --git a/src/index.mts b/src/index.mts
+index fa9403f..315dbda 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -14,7 +14,7 @@ export {
+   createOrdinaryObjectCheckpoint, createStateCheckpoint,
+   type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
+ } from './host-defined/object-checkpoint.mts';
+-export { runSingleJobInQueue, type JobQueue, BasicJobQueue } from './host-defined/job-queue.mts';
++export { runSingleJobInQueue, type JobQueue, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
+ export {
+   type EventLoop, type EventLoopRunType, type NodeJSJobType, AbstractEventLoop, MicroTaskEventLoop, WebLikeEventLoop, NodeJSLikeEventLoop,
+ } from './host-defined/event-loop.mts';

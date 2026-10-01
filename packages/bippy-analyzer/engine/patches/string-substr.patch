@@ -1,0 +1,19 @@
+diff --git a/src/intrinsics/StringPrototype.mts b/src/intrinsics/StringPrototype.mts
+index 8ee55ce..2458f09 100644
+--- a/src/intrinsics/StringPrototype.mts
++++ b/src/intrinsics/StringPrototype.mts
+@@ -610,0 +611,12 @@ function* StringProto_startsWith([searchString = Value.undefined, position = Val
++const StringProto_substr = function* ([start = Value.undefined, length = Value.undefined]: Arguments, { thisValue }: FunctionCallContext): ValueEvaluator {
++  Q(RequireObjectCoercible(thisValue));
++  const string = Q(yield* ToString(thisValue));
++  const size = string.length;
++  const intStart = Q(yield* ToClampedIndex(start, size));
++  let intLength = size;
++  if (length !== Value.undefined) {
++    intLength = clamp(0, Q(yield* ToIntegerOrInfinity(length)), size);
++  }
++  return Value(string.slice(intStart, Math.min(intStart + intLength, size)));
++};
++
+@@ -796,0 +809 @@ export function bootstrapStringPrototype(realmRec: Realm) {
++    ['substr', StringProto_substr, 2],

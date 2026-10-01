@@ -1,0 +1,50 @@
+{
+  "node": "v26.4.0",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "harnessVersion": "10.0.0",
+  "baselineCommit": "b116d2a3",
+  "baselineEngineSha256": "c7a3899d06b4c54f6ff0a0e4c9d7781770a04293043cf7b636466434d5a98d36",
+  "candidateEngineSha256": "2eb90ebe3cf4d15f5a659fa2e73537530bfe7aad91e09e82a023dedcaecf4147",
+  "patchHashes": {
+    "simple-parameters": "c39dd1aaa1159865764da8bfea097ae0de233917c5c9744bd8b95bd1c0148448",
+    "string-substr": "1eeb3e22877a6da3ab94a8891044a33f018ca64956cb1ea718807c30f55131ed"
+  },
+  "selection": [
+    ".test262/test/language/arguments-object/**/*.js",
+    ".test262/test/language/expressions/function/*.js"
+  ],
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "identicalInputsAndCompiledHashes": true,
+  "identicalVerdicts": true,
+  "before": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "after": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "failures": [
+    {
+      "file": ".test262/test/language/arguments-object/10.6-13-a-2.js",
+      "scenario": "default"
+    },
+    {
+      "file": ".test262/test/language/arguments-object/10.6-13-a-3.js",
+      "scenario": "default"
+    }
+  ],
+  "receiptHashes": {
+    "before": "93f84a5e153d4c77171df5620d1749ef9deb665ea22d9a50767068fae81c1c14",
+    "after": "5f84928528e485812f3031e5c6e8f9ed7f193b7d9e6b8856d022185c8f917837",
+    "benchmark": "8f47995dca63c9030dbc78f46207700b11cf70871abba1f937ab4db8990d06ad",
+    "initial-ci-failure": "1f085df3dbdf710b8a9890bf4805f29b33c73f6243a8443eadd30c5644ec69d5",
+    "validation-logs": "777d46075ed47fce25ea283cf003ae2650a3da41a4a6c2a1c8b626325ee3bc81"
+  }
+}

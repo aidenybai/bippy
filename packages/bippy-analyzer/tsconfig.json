@@ -4,11 +4,20 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
+    "jsx": "react-jsx",
     "noEmit": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["scripts/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "engine/*.ts",
+    "engine/scripts/**/*.ts",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "vite.config.ts"
+  ]
 }

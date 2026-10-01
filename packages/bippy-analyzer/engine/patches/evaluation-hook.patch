@@ -1,0 +1,14 @@
+diff --git a/src/evaluator.mts b/src/evaluator.mts
+index 3544678..bba20f3 100644
+--- a/src/evaluator.mts
++++ b/src/evaluator.mts
+@@ -116,0 +117,3 @@ export function* Evaluate(node: ParseNode): Evaluator<unknown> {
++  const override = surroundingAgent.hostDefinedOptions.evaluateNode?.(node, surroundingAgent.currentRealmRecord);
++  if (override !== undefined) return yield* override;
++
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 05c12e8..57cded5 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -125,0 +126 @@ export interface AgentHostDefined {
++  evaluateNode?(node: ParseNode, realm: Realm): ValueEvaluator | undefined;

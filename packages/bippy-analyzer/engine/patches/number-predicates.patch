@@ -1,0 +1,64 @@
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 0ca71ca..a426c26 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -1,4 +1,4 @@
+-import { Value, type NumberValue, type AbstractNumberOperation } from '../value.mts';
++import { Value, type BooleanValue, type NumberValue, type AbstractNumberOperation, type AbstractNumberPredicate } from '../value.mts';
+ import {
+   EnsureCompletion,
+   NormalCompletion,
+@@ -115,6 +115,7 @@ export interface DebuggerPauseReason {
+ 
+ export interface AgentHostDefined {
+   evaluateAbstractNumber?(operation: AbstractNumberOperation): NumberValue;
++  evaluateAbstractNumberPredicate?(predicate: AbstractNumberPredicate): BooleanValue;
+   elideUnusedArguments?: boolean;
+   errorStackAttachNativeStack?: boolean;
+   features?: readonly string[];
+diff --git a/src/intrinsics/Object.mts b/src/intrinsics/Object.mts
+index c11cb05..85fc150 100644
+--- a/src/intrinsics/Object.mts
++++ b/src/intrinsics/Object.mts
+@@ -8,6 +8,8 @@ import {
+   Descriptor,
+   SymbolValue,
+   JSStringValue,
++  BooleanValue,
++  NumberValue,
+ } from '../value.mts';
+ import { Q, X, type ValueEvaluator } from '../completion.mts';
+ import { AddEntriesFromIterable } from './Map.mts';
+@@ -326,6 +328,16 @@ function* Object_hasOwn([O = Value.undefined, P = Value.undefined]: Arguments):
+ 
+ /** https://tc39.es/ecma262/#sec-object.is */
+ function Object_is([value1 = Value.undefined, value2 = Value.undefined]: Arguments) {
++  if (value1 instanceof NumberValue && value2 instanceof NumberValue
++    && (NumberValue.isAbstract(value1) || NumberValue.isAbstract(value2))) {
++    const options = surroundingAgent.hostDefinedOptions;
++    if (!options.evaluateAbstractNumberPredicate) throw new TypeError('No abstract Number predicate evaluator configured');
++    const result = options.evaluateAbstractNumberPredicate(Object.freeze({
++      operator: 'sameValue', operands: Object.freeze([value1, value2]),
++    }));
++    if (!(result instanceof BooleanValue)) throw new TypeError('Abstract Number predicate evaluator must return a Boolean');
++    return result;
++  }
+   // 1. Return SameValue(value1, value2).
+   return Value(SameValue(value1, value2));
+ }
+diff --git a/src/value.mts b/src/value.mts
+index ee4476f..8b06e54 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -278,6 +278,11 @@ export interface AbstractNumberOperation {
+   readonly operands: readonly NumberValue[];
+ }
+ 
++export interface AbstractNumberPredicate {
++  readonly operator: 'sameValue';
++  readonly operands: readonly NumberValue[];
++}
++
+ const abstractNumbers = new WeakSet<NumberValue>();
+ 
+ /** https://tc39.es/ecma262/#sec-ecmascript-language-types-number-type */

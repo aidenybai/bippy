@@ -1,0 +1,40 @@
+{
+  "scope": "lowered-host-yield-star-next-method-caching",
+  "fixed": false,
+  "engineSha256": "d0eba416803f0d343b0eff7c897c5bee2502b5cbe2c8283623d61a1577e5ce9f",
+  "node": "v26.4.0",
+  "observation": {
+    "source": "let reads=0,count=0;const delegate={[Symbol.iterator](){return this;},get next(){reads++;return ()=>({done:++count>2,value:count});}};function* run(){return yield*delegate;}const iterator=run();const result=[iterator.next(),iterator.next(),iterator.next(),reads];",
+    "native": [
+      {
+        "done": false,
+        "value": 1
+      },
+      {
+        "done": false,
+        "value": 2
+      },
+      {
+        "value": 3,
+        "done": true
+      },
+      1
+    ],
+    "lowered": [
+      {
+        "done": false,
+        "value": 1
+      },
+      {
+        "done": false,
+        "value": 2
+      },
+      {
+        "done": true,
+        "value": 3
+      },
+      3
+    ]
+  },
+  "boundary": "Engine guest iterator operations already cache NextMethod; this fixture probes host control lowering."
+}

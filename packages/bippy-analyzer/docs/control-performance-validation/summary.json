@@ -1,0 +1,54 @@
+{
+  "scope": "control-dispatch-and-native-host-loops-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "963fd3c6767af14cffb462430fef2e7ffba2e8224453f6c32d84690a0782ce85",
+  "units": {
+    "passed": 909,
+    "total": 909,
+    "files": 22
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74,
+    "exitCode": 0
+  },
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "selections": [
+    {
+      "name": "parameters",
+      "total": 559,
+      "passed": 557,
+      "failed": 2,
+      "exitCode": 1,
+      "identicalInputsCompiledHashesAndVerdicts": true
+    },
+    {
+      "name": "generators",
+      "total": 212,
+      "passed": 212,
+      "failed": 0,
+      "exitCode": 0,
+      "identicalInputsCompiledHashesAndVerdicts": true
+    }
+  ],
+  "medianBeforeMilliseconds": 4874.575584,
+  "medianAfterMilliseconds": 3908.487792,
+  "linuxConfirmation": "pending",
+  "priorLinuxFailure": "../control-validation/ci-smoke-failure.json",
+  "files": {
+    "engine/extensions/execution-machine.mts": "827f24953701a7ba96b0d223baadf15dba3e67c55d3246f11736eb35b9d704bd",
+    "engine/scripts/lower-generators.ts": "4c77ba1ec007ab2f43b75ff3279b5af4da47af120576cd384c6d6548e44d5634",
+    "engine/scripts/lower-generator-loops.ts": "681b28794feda543637dbc41ad32ecb17a270ec3f9d86e26982fbbaf4bb3cccd",
+    "tests/control-machine.test.ts": "fd11b5b74871520f9c936d8b639b0953b35452c977eceb99907a19ce7277a570"
+  },
+  "receiptHashes": {
+    "parameters": "7383d3d0e3643eac2682075c57c0f9e40596708bbdf94dcfd3ecb4b20c456a1d",
+    "generators": "d9595a4d28d02a3a22480f12d909c3357b8b16e6a16194a57f30ef57d703117a",
+    "logs": "3d178e455c67e373b7773c0987856ae4d33bc6d2ac82ac2b07aac9b2a1741d69",
+    "benchmarks": "5ea1c848b225c24b0b9417fe09f5b918d6649f36ec2c54305245f1feff610d62"
+  }
+}

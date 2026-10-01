@@ -1,0 +1,74 @@
+{
+  "scope": "supplied-guarded-host-tree-report-component-not-an-explorer",
+  "predecessor": "541a7683306a9963c4a6f3ba2af6459ef4d132a1",
+  "sourceHashes": {
+    "src/index.ts": "dc3ba0a38bac8e83655eab282938f3698786cd3bed2274bf5b3c0544eeaa7752",
+    "src/report/host-tree-report.ts": "eade38b09809dd2949127e0d6bd17b820951a3b2ab3c57ede6d3f02661af0628",
+    "src/report/host-tree-types.ts": "db759b4c627be32cb3b673288112149d368761dbd170d5af82643d9888fca207",
+    "tests/host-tree-report.test.ts": "269cc557f2e0e4fbcf86411a103594e446ad4cfb1c4df7bd0d242c09aee79174",
+    "tests/symbolic-react-tree.test.ts": "307afc3a5317e1e5742bba4a6e17e30bf019cbf6307dac5ec6d971bb9c3e38c8",
+    "tests/fixtures/symbolic-react-tree.tsx": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b",
+    "tests/helpers/build-script-fixture.ts": "711b4a40cbe84ba8285e450876a6dc85253d41567d8a5c52d36397541ad8357a",
+    "tests/helpers/native-runtime.ts": "2e47ac8ee5a136fe23758572d1f84b290ed124c7bf60ac3e0bb919919c7cefb0",
+    "src/symbolic/guards.ts": "94589c30b07aa595c7aef49709795692cfa7ec1138c6c6ced841bb843ed38799"
+  },
+  "engineSha256": "35147d7cd4b99737bb3e96a35a223ac1dafd929df37dc85b448ed0ebb11345cd",
+  "engineChanged": false,
+  "runtime": {
+    "node": "v26.4.0",
+    "platform": "darwin",
+    "architecture": "arm64"
+  },
+  "results": {
+    "reportTests": 38,
+    "reactSpecializations": 4,
+    "unchangedAdmissionControl": 1,
+    "predecessorPublicExports": {
+      "failed": 42,
+      "passed": 1,
+      "total": 43
+    },
+    "maintainedFocused": {
+      "passed": 43,
+      "total": 43
+    },
+    "units": {
+      "passed": 2055,
+      "files": 74
+    },
+    "smoke": {
+      "passed": 74,
+      "failed": 0,
+      "workers": 2,
+      "timeoutSeconds": 10
+    },
+    "relocatedBuilds": 2,
+    "offlineInstall": true,
+    "rootCheck": {
+      "errors": 0,
+      "warnings": 2,
+      "files": 600
+    }
+  },
+  "predecessorMethod": "Only the public index exports were restored byte-for-byte to HEAD. New report implementation files remained unimported. Failures establish missing exports, not an engine semantic regression.",
+  "retainedFailures": [
+    "Initial formatter parse failure: missing closing brace.",
+    "Initial public-export baseline: 31 failed and 11 passed. Ten invalid-input assertions accepted a missing API TypeError because the expected error constructor was undefined. Final assertions require the report error name and code.",
+    "Initial root check failed documentation formatting; the first receipt check failed CI JSON formatting. Both were fixed.",
+    "A changing assignment getter caused selection to read inconsistent values. The targeted failing test is retained; final selection copies each Boolean once.",
+    "The prior 42-case baseline and 2054-unit intermediate result remain archived; final-source results replace neither failure history nor gate settings."
+  ],
+  "reactReference": {
+    "revision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+    "source": "packages/react-test-renderer/src/ReactTestRenderer.js:toJSON",
+    "executedVersion": "19.3.0"
+  },
+  "boundaries": [
+    "Caller supplies guarded snapshot text. No branch discovery, replay, or symbolic execution is performed by the report API.",
+    "Execution and coverage remain not-verified.",
+    "Content references do not establish state, fiber, DOM, callback, or component identity.",
+    "Snapshot encoding can omit callbacks, keys, hidden children and other non-JSON state. This component does not recover them.",
+    "No shared-prefix React isolation, transitions, repeated state families, integrated demo, or analysis CLI.",
+    "No new selected Test262 differential suite. The engine is unchanged; the original 74-case smoke gate was rerun."
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "scope": "automatic Agent idle membership within existing captureEvaluation",
+  "engine": "9c1b6210ec612c854ba508945765eb018b1b255670b33fd1c8c82bb5f654c572",
+  "predecessor": "c04570920ed6e53e7b1a23554529f3ead66988f3",
+  "boundary": "Original Set membership/order only. Native builtins/reflection/representations trusted. Callback referents, ambient capabilities, effects, external iterators and future additions remain separately owned. Hook mutation not rolled back; caller owns resources after failure. No React scheduler or full execution owner.",
+  "baseline": {
+    "engine": "3737e9393e848277b2cc7683abd9523f542c1c3c30b9a23bffc03fb3b3bb99d9",
+    "initialFailed": 2,
+    "finalFailed": 24,
+    "controls": 3,
+    "controlCases": [
+      "saved callback GC retention",
+      "throwing reference hook",
+      "throwing owner hook"
+    ],
+    "identicalFinalTests": true,
+    "disabledOnlyNewPatch": true
+  },
+  "validation": {
+    "newTests": 27,
+    "focused": 96,
+    "units": 2411,
+    "files": 100,
+    "types": "pass",
+    "relocatedBuilds": 2,
+    "offlineInstall": "pass",
+    "rootCheck": {
+      "errors": 0,
+      "warnings": 2,
+      "files": 631
+    },
+    "smoke": 74,
+    "timeoutMs": {
+      "units": 5000,
+      "test262": 10000
+    },
+    "workers": 2,
+    "ciJobMinutes": 10
+  },
+  "observations": {
+    "scriptForks": 2,
+    "prefixesPerFork": 1,
+    "nodeObservations": 4,
+    "originalSetIdentity": true,
+    "callerOwned": "context-stack membership and observation callbacks",
+    "incompleteOwnerCounter": 2,
+    "newReactBranchEvidence": false
+  },
+  "intermediate": [
+    "18pass1fail GC setup: callback registered before setup evaluate self-removed before capture. Registered after setup instead; failed result retained.",
+    "Review catch-only poison assertion could accept no throw. Final getFailure requires throw, exact identity after repair, and poisoned resume. Added metadata, hook failure, owner-restoration ordering and frozen-Set cases.",
+    "Root check found build.ts insertion indentation. Formatted; types/relocated builds/full units/focused/root check rerun, identical engine bytes."
+  ],
+  "conformance": {
+    "fresh": true,
+    "selection": [
+      ".test262/test/built-ins/WeakRef/**/*.js",
+      ".test262/test/language/expressions/yield/*.js"
+    ],
+    "sourcePassed": 181,
+    "publishedPassed": 181,
+    "failed": 0,
+    "identicalInputsCompiledVerdicts": true,
+    "normalizedSha256": "720777d977f5bac2f7d53c467edb94b407ae6140f4ef4e3d6f5e5070e8fec357"
+  },
+  "commands": [
+    "pnpm --filter bippy-analyzer build:engine",
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ],
+  "files": [
+    {
+      "filename": "engine/patches/idle-membership.patch",
+      "sha256": "a0a7e81594312d6d0afa1e4ebc06d3b6a1a1abe72f6c26828b2e87d9caa9f224"
+    },
+    {
+      "filename": "engine/scripts/build.ts",
+      "sha256": "ea48c968135ed7ad6861ed46e056e5268035119e1579b2cba8aed6211f8c09af"
+    },
+    {
+      "filename": "tests/idle-membership-checkpoint.test.ts",
+      "sha256": "924827c6aeff670250cbc216ae75163e86af9eb9794aa1b40c1ab3a239c8717f"
+    }
+  ],
+  "incomplete": [
+    "native callback admission and complete storage dependencies",
+    "Realm/Script/context/native ownership and confinement",
+    "general shared-prefix React isolation",
+    "automatic reports/transitions/repeated families/demo integration"
+  ]
+}

@@ -1,0 +1,1502 @@
+{
+  "scope": "declared-agent-notification-captures",
+  "predecessor": "c3044b881e544ea427e6cb9c23c1eb0738a36a95",
+  "predecessorEngineSha256": "a8bf0d4cfc23c576bb33ddca0d1be78f1b5c5ba4235aee1b7d9a919a5a28581c",
+  "engineSha256": "3d97b1608fbd4225d8c8ad33bd3e468aeddb022dd85ab2fed67af23ab1b88f96",
+  "sourceHashes": {
+    "engine/scripts/build.ts": "d9fc4a002d1b0020d647f71f09f52fae0bdc8e3bd2a3320a7a8f969055920af5",
+    "engine/extensions/execution-machine.mts": "e56f6041d570f9a512996da070f8153ff23cc947b95dc4979d498427b92d8e04",
+    "engine/patches/agent-callback-captures.patch": "075c1cd7181b583d8ebda685c47b2cc40235822caeb9560d48438031da0f983e",
+    "tests/agent-callback-checkpoint.test.ts": "a13b2c1a6324815e3250dd2e6803adc767e2e44f8de939c554e6475f3079e0cc",
+    "tests/agent-callback-react.test.ts": "d95fea3e0145a2fc404fbdf6bd2a1268ba677f6775e87939a04038a990a33143"
+  },
+  "baseline": {
+    "failed": 13,
+    "passed": 2,
+    "description": "Restore predecessor execution-machine and patch list, rebuild exact predecessor engine bytes, run final identical tests, restore implementation. Failures cover late root discovery and absent root-provider behavior, not13 independent bugs. Two incomplete-owner record-leak controls remain unverified."
+  },
+  "focused": {
+    "passed": 56,
+    "files": 4,
+    "newCases": 15,
+    "callbackCases": 14,
+    "reactCases": 1,
+    "forks": 4,
+    "prefixesPerFork": 1,
+    "nativeComparisons": 8,
+    "savedReferentGCCases": 2
+  },
+  "units": {
+    "passed": 2259,
+    "files": 86
+  },
+  "unitTimeoutSeconds": 5,
+  "smoke": {
+    "passed": 74,
+    "failed": 0,
+    "workers": 2,
+    "timeoutSeconds": 10
+  },
+  "relocatedBuilds": 2,
+  "offlineInstall": true,
+  "rootCheck": {
+    "errors": 0,
+    "warnings": 2,
+    "files": 615
+  },
+  "conformance": {
+    "source": {
+      "variants": 201,
+      "passed": 201,
+      "sha256": "49544832f67a5dc6cfda8337e8befb9310f058c4aa176e20d0bed0ff0583a152"
+    },
+    "published": {
+      "variants": 201,
+      "passed": 201,
+      "sha256": "65e41782f2a31de9bffc21841be0f9ce17a467ca25e3c0481d69b1d24235d68a",
+      "reused": false
+    },
+    "matchingInputCompiledHashesAndVerdicts": true,
+    "cases": [
+      {
+        "file": ".test262/test/language/expressions/class/constructor-this-tdz-during-initializers.js",
+        "scenario": "default",
+        "contentsSha256": "0d82b85ad9ef7be1d1d61283a7ff8a120f64c988dadfa817dc1fd86d7a169b1d",
+        "compiledSha256": "800c7d1b9773bf08d3751abb271c5afe5ec8d437cef195f70430437573f15e8b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/class/constructor-this-tdz-during-initializers.js",
+        "scenario": "strict mode",
+        "contentsSha256": "78e4523bb6cb5162c09a0ddcabe2c5fd3ee95168975b6cb67b0b96d45dd65798",
+        "compiledSha256": "5e66a540d5d25dd3a93f370a5193468f765d079004914286b5e6a7982fc85f86",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/arguments-object-attributes.js",
+        "scenario": "default",
+        "contentsSha256": "aed3976e4c2eda3a80d3b2a9dc35ed3cd34e13c78407e3cb0ec57c9ffadf57bf",
+        "compiledSha256": "77d72a9ad9ba924138627cd2c2258d02a2c2c4b1062dfbcd80b144d74f6d422c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/arguments-object-attributes.js",
+        "scenario": "strict mode",
+        "contentsSha256": "14f2e652175bbb4d007e47b0c33ec7ba602052cc9de50484f05026d0b79f91ad",
+        "compiledSha256": "9ec9521dabc4b03c090f3504834ea2591cf771a51fd1346641e169f4a60f5447",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/captured-free-vars.js",
+        "scenario": "default",
+        "contentsSha256": "5cb5b283fa4a81511f7656301082691c137d95d3aa6ba81d899495fd7e035856",
+        "compiledSha256": "184d50c7d717b0a3314384c7d18b4c55bbffb51189861c523cf98e6f5f63d764",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/captured-free-vars.js",
+        "scenario": "strict mode",
+        "contentsSha256": "41fd43c8f701846163cc14748a0cac0b369ab91d12600c040acaf432f59ab84a",
+        "compiledSha256": "dd92c069c7ab6602d78d4e28960462aa4c1f2fd364a67fbe0f3ffec9d9e28156",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/formal-parameters-after-reassignment-non-strict.js",
+        "scenario": "default",
+        "contentsSha256": "f536ec91f04754497da01f5c83ff030fd92ccfa218dc6f162f647444d02634ec",
+        "compiledSha256": "438edbc5aebb377ec7737e437cfb6d9a221762271df78b392c2806c8450d6820",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/formal-parameters-after-reassignment-strict.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e337f39bcb33f0f6ffdfaced116878be36643e592672f9acf0853b6be42a17a6",
+        "compiledSha256": "051ec3cb989d8be5a9414bf092bbad92b4f9a923e63dd785920bccd33a55cb11",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/formal-parameters.js",
+        "scenario": "default",
+        "contentsSha256": "5c069f75cd34d3493c046aa8c493c2790a9261eacfcef06a7172cde5675e3090",
+        "compiledSha256": "6816b09edc796620e804796589b57ac7090a25573924060ac6aeb934c3152ef8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/formal-parameters.js",
+        "scenario": "strict mode",
+        "contentsSha256": "62ec7d7932e5081295f0b72dc256cf0b83c4f7c23b1076f1a0ac9f9c08b0db9e",
+        "compiledSha256": "30b51699035cb8329df442038318da9a6d33fa4378f4d8cc20c783d842678340",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/from-catch.js",
+        "scenario": "default",
+        "contentsSha256": "66c8821d4fc191fed2a658839c1f424da435a5e2ca72bf2fb26b166c5147a9e5",
+        "compiledSha256": "8a7133baf5ef08825fa3a8ae26233d4d18af60719a21872965d38ee703fe6ca7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/from-catch.js",
+        "scenario": "strict mode",
+        "contentsSha256": "bdf65b14a49551700b73bcacd106f3f655b875b39da90d526cf294553eb42af5",
+        "compiledSha256": "1c37dfaf9e77dbf341326174fcaa90efaa76d3737c26b8c2761203215312538b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/from-try.js",
+        "scenario": "default",
+        "contentsSha256": "3ca0ba4c6c91f4fb5e461cf29b7eaf3ba00b9c79df722ef24f9762d1f02f5df7",
+        "compiledSha256": "9133a858c107fce9abe1b431f64abded00412117ef3de58767367b255b97c9b9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/from-try.js",
+        "scenario": "strict mode",
+        "contentsSha256": "86efdba2f331495e0ad53530a5ea6b950adce8eee2524f2189002e3dd2d895d6",
+        "compiledSha256": "f4ff8ef2f99dee9e515dded255f167ca14894f0edd8f220b0bf1b4c88383165a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/from-with.js",
+        "scenario": "default",
+        "contentsSha256": "3bbe115e647c847cb1a7d7c78e7945757d3d9a4f5f0a67cd1f6f2059a30d0353",
+        "compiledSha256": "556f4f71525e40e7ec05508b955c2a4adefc0728b0ba6d01642b00d3531ee414",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/in-iteration-stmt.js",
+        "scenario": "default",
+        "contentsSha256": "70ac2b5cce11e068194a6a704b43eb5caf162347af407cec28e61102cec17afe",
+        "compiledSha256": "4ace22d8f92497053a7a31d951aaa6164cd1503f927f19d944d0d7a36993f112",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/in-iteration-stmt.js",
+        "scenario": "strict mode",
+        "contentsSha256": "bb7dc1f0b3704426f8b8358d710d0cbf8a5e14a71ddd303a0aef9fdbf8c0e94b",
+        "compiledSha256": "7adbd47f0c130ce83cdf5cbbb9ac7f56cfd507cfc154f50067f3d3826498a349",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/in-rltn-expr.js",
+        "scenario": "default",
+        "contentsSha256": "ff566c3418e3e779bfb6d893e9246df14d3cc04d051a068e8db08a9d82b9fcb5",
+        "compiledSha256": "e669d2e83e18115730dd1bf1cb909c609ab2fcd12614ee48e9000272455ebda6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/in-rltn-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "23e1ff6624d725a21f5b020d19514e75dfa4bb7bed4995de55a4e8ab54bfa68e",
+        "compiledSha256": "ac3d2686ec6fd0acf04e3d08314fa438c5ee671a2efc6820671b3fd841ea9718",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/invalid-left-hand-side.js",
+        "scenario": "default",
+        "contentsSha256": "35edf06df3dce2f45e686be9349dbdeca4c08a4856f0131b675169128ab28583",
+        "compiledSha256": "425bfdd35a26d7a56c93917a0c0bab8a037f78b8497eea9fae6ae0b006b7ffd0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/invalid-left-hand-side.js",
+        "scenario": "strict mode",
+        "contentsSha256": "6ccae6e0fa890521855a580fedaeaa13e149dcd648d777dd6cb9b51241a54ab4",
+        "compiledSha256": "d7256f69fb56aef9b6145a7e55e93681f433fd70e04b9ee514ef497a9013fcbc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/iter-value-specified.js",
+        "scenario": "default",
+        "contentsSha256": "f58fe33408413cab4f433ef42b45039e2429a43a95c577ddac27b62ffea1e4ff",
+        "compiledSha256": "0aaeab07fbb50950947d97a8ac737e90b838a8357b01542d792320e76679d726",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/iter-value-specified.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c9004b50884f8caf35261a952cf12192492da17e6496f12cf0dba721ebf96af9",
+        "compiledSha256": "b74975173283ba81f276f7658cc4fd247f2948c5c2a4a8831d8b4f35878e22ab",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/iter-value-unspecified.js",
+        "scenario": "default",
+        "contentsSha256": "e51cadf84438e6c1e919ba31521d18cb0ef6f8d15843aa479d80a50c17f3a841",
+        "compiledSha256": "28af92f13e998743bbf47aea9020eed6884e06d91b22f541e63fa74536ecfd2a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/iter-value-unspecified.js",
+        "scenario": "strict mode",
+        "contentsSha256": "34ec70ec6b80d9d19de9c1de2eb7c53a6948a3ec3aa4f72351d33a10ca63489a",
+        "compiledSha256": "6ec13fa4853d5aa969a5519dc596137e0a909e2759188f515acbc42b0487b53f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-iter.js",
+        "scenario": "default",
+        "contentsSha256": "7af909540f686c98f3513e40cf3393764b09d5e076e02831e15046c026cbc25c",
+        "compiledSha256": "746bcd4c735e8a8fa8cd8798f2ec68f97aecf1ee1f772ae9dc211d8df54bdb11",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-iter.js",
+        "scenario": "strict mode",
+        "contentsSha256": "31a69b724ded4d6c38202f3bfc806b7307bb8492d80d5edc7795957c7e969b7c",
+        "compiledSha256": "9015f249a8275158e436a9df2b8ef6ec84c2ba9cf4af23d5c638b0c7846a3cb3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-omitted.js",
+        "scenario": "default",
+        "contentsSha256": "d325772a4a4625278abf44c1d02214fd414db2eef945a24d38b5987fb7ea0971",
+        "compiledSha256": "36e204e840c98e2965b25f5db93981004ee05dd18e8f4ae01872b14eee8592bc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-omitted.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5f6f0262713100a3a269b24b48b856dd7a081e14cb5a64fe3683ff6090b03268",
+        "compiledSha256": "bc4121ffdc58be53a94f99343f5d04ee29cc48dfa760a1d03dcdce17dee17402",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-primitive.js",
+        "scenario": "default",
+        "contentsSha256": "d9d466291590f94b6ea4a34086188af52dd04515cab4fae5774a87e0150bc6f8",
+        "compiledSha256": "c36ddaf9e6bef7b77796b395dd4d888d53b44f159986caa536221b563572de86",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-primitive.js",
+        "scenario": "strict mode",
+        "contentsSha256": "86e5afb5fdf0fb5b391ac22380bbd0b93c9c0389d93937f8c99e826539b9f37f",
+        "compiledSha256": "9ff99b7bc231b0274b301a027bffb2632c1bbf9812b917c725aca17269c69b67",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-regexp.js",
+        "scenario": "default",
+        "contentsSha256": "a3079a2ab0890fd0f843c3637d2c076adf2443e33096a2f658d62ac9848246fb",
+        "compiledSha256": "6666d7a1d8d94308be1e8f2fceb28de9d74d2db8da1f9fd79af8962b992d9690",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-regexp.js",
+        "scenario": "strict mode",
+        "contentsSha256": "84f3fa306bd21df5b06f4a0a798a408e9eeb49d9221186bcac661a7b1f98db29",
+        "compiledSha256": "3870dd7241a81a1882ff70373df439439572403052cb0eb78d035cd359f57210",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-template-middle.js",
+        "scenario": "default",
+        "contentsSha256": "0acc7040ad22238ee92cc0ebe44d685bf0d624fc2b7fe17fce0223f0c651fd69",
+        "compiledSha256": "54e3b40530249c39c79d32f6692a11a50f1a0bb759079a49bead976b5672f887",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-template-middle.js",
+        "scenario": "strict mode",
+        "contentsSha256": "4e525a52c36a5393586e0051b5612e127c4c4eaebe61eef3ffbf2c967ace32be",
+        "compiledSha256": "84f8c1f904bf0c6f1058843186bc7830a8541b5b8f3c914b5415d6909a8682c2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-unresolvable.js",
+        "scenario": "default",
+        "contentsSha256": "7a58ab6a8b26cbdc41ee2882e8a6e2bff12e7d216aa132863a8806f7aa5a5426",
+        "compiledSha256": "0ef6fd246577d0b24ef5af40e36dd88dd5abb2cae0ee61fa57c544bcb635f624",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-unresolvable.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5a0578a836675bdf1bff144dca9388747199fb6d2ef566ca75369d022b86d662",
+        "compiledSha256": "770a5f54e9758b05b53774982ce325753e6379fadd2d0b64529d136cfd2ea919",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-yield.js",
+        "scenario": "default",
+        "contentsSha256": "d592fca0d56f4891d804f2c492d03ba5c36e5212e3cfdebc8f950f633580d6ae",
+        "compiledSha256": "0215a3033f354d9239d0b4ea5d592ed85060b6743be349e8ae58c11b72d84a16",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/rhs-yield.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5e42ae22f20be2ed2fb634f8c37361d60146e66b018367a5761ed807f8845c73",
+        "compiledSha256": "1af889250af9db281ac656f41e2f7ed5ae086a289a449e6533c836cc311c2882",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-array.js",
+        "scenario": "default",
+        "contentsSha256": "5780e7875e50506790f821f1ead435b8ee1821fb22b17065532c2f3de5491228",
+        "compiledSha256": "176ffa27a9299a5796bb37d54d1f2ac5e5464542676b774b0086948988ed8a0c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-array.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5b4e8eb4fd5392994f974c5961c20309b6b0d94487bd80e1e045bb2685cd818d",
+        "compiledSha256": "60584f681b75802299b3d8775513ba9718b86533086a7b1f14398a407ec78939",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-in-iteration-stmt.js",
+        "scenario": "default",
+        "contentsSha256": "a7faef64ceadf4280d642f0fb5600e8dc9ed2cdcee5a2af17276c3be92553f17",
+        "compiledSha256": "87eff2cfc22585e1fd154a8f59121a802ab7928ad99f84138ebe7e253cfce5d5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-in-iteration-stmt.js",
+        "scenario": "strict mode",
+        "contentsSha256": "03d3c9550e4b8626beecaefe798e9d2b623ff6535d2a2648fd9f728d7301bb9d",
+        "compiledSha256": "a4236a04ec573998d1740962324e4f27e10bf2f8a224d648db0328b61118cd4b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-in-rltn-expr.js",
+        "scenario": "default",
+        "contentsSha256": "cac81782a436589304f09ac48294431224d055fcfb45a416ced45afedd5741a8",
+        "compiledSha256": "c795bcb922efa2236de9d350ea799ad8b4725f40d3c6cdc4ba6dfedf3a247387",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-in-rltn-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "4cbb13e18003009c13ef607ea6a88d01a7658e044b90ae32c765bfddb284c1bc",
+        "compiledSha256": "14891004b83bbb713b19143b5ccba61f75424b3cd3357697c5cd620f92471f63",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-iterable.js",
+        "scenario": "default",
+        "contentsSha256": "35ffb023894ca465391885b1862e2bdb823da2d0e2e552fba6f5ad249ba86c2d",
+        "compiledSha256": "e1237f6c8c5b26ebc588a51a54a8810e02ff1947b0663b0bf440cb3cffd77179",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-iterable.js",
+        "scenario": "strict mode",
+        "contentsSha256": "0f475d37c28b53242ef978853391eb3646c0920a03f25d31f96244fcd86e2ad7",
+        "compiledSha256": "25b49a72ac52c82eb94dd0116e94547616755c5d31ac18151e1fb2d39d0be0a2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-return-is-null.js",
+        "scenario": "default",
+        "contentsSha256": "7f92b5825ae677983388bdf344579cf078b347b14a8e05e812655f64b8f958e5",
+        "compiledSha256": "77c5800c63b09bb9006b7a3770afaea286e4dfec2799adf3a0110bcdb9887a83",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-return-is-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b25bff0d6adb17b4d748908e08be6f763eb45c402be8a302606b1f9faed5ccbc",
+        "compiledSha256": "90d34eb687153acfb1eda81ebb38af29a1e4dc62b501598f2806aaaab12a12aa",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-get-call-err.js",
+        "scenario": "default",
+        "contentsSha256": "8781dce5db7a83fd49d682760ce911739979abd7c51756202ace237b0cdbb5af",
+        "compiledSha256": "b37279ae285ed17e3ef0470fd837a05ed661448bb377962b401caa136517724f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-get-call-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cc4ecbe05e6c9b67f9a315baabab4740512077c7a3d6a05b3feabc63c3c7d358",
+        "compiledSha256": "b2ff17be472c6d9e4821637f5afc0ea9984158d7a620f32892dd66cfc3c51a44",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-get-call-non-obj.js",
+        "scenario": "default",
+        "contentsSha256": "562c1934e69eb31ad14ab00dc03e9092094d0199362c557416819c36557f69c0",
+        "compiledSha256": "9832c490f20759b0a30223734f6293626aed3a1a32a3ce5e47469f50dec49f7e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-get-call-non-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "8db256220cd0028ff6b327dfcd140902e2b1a07b4b200b1c2c28328f2a429672",
+        "compiledSha256": "4d55f886b9c3c6be7b26dcda387c4504927c7fa19df3a3277016c54ef1d7e872",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-get-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "2eab459aff4505fd92810c27777e158cedc3248cb0f7411a2403ec0f564edce5",
+        "compiledSha256": "5449b97f670b41fe741f9c4c1cbfac727e2c6a7c74686bd1818dda2815f28157",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-get-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "89e89281a781dcec85ec0b40c1b3d219d71174dd14af602564d21db96a318703",
+        "compiledSha256": "167eb1d3754c1efc0b07a519fac08708ea0732b3ee5aa21537966edaa71ecf2c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-call-err.js",
+        "scenario": "default",
+        "contentsSha256": "c11a44c970187e2fb379a06964a1aec82707f7a0e6b0d3d69c3ff29becdbaf29",
+        "compiledSha256": "29ad23f2c4a020880d3e903ac9d4724ea5c536819ebb70e3450c582f72fac3ea",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-call-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "61d8689dd8015ec021a2d819b7e3afbda8890d9ca1365e6a9ef040dc9b844440",
+        "compiledSha256": "df476b272d61e3d5e4f3730d6dc2cc2c80a74302133b29e9caa1b0fe2ae4ab6c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-call-non-obj.js",
+        "scenario": "default",
+        "contentsSha256": "dec35b4a35b044252669ae46fd79e5579984221f8f14b95afc44967487d113c8",
+        "compiledSha256": "832bfd4e0c0ce58e706ee434f5e2c28164d05b0f4c2c43c2b761330df5ef4669",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-call-non-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "01a30262c058a17dd1fa233101131aba49b7cfe2d8a186bc363b0b880e19e86f",
+        "compiledSha256": "7d48ad7748494557152c634a98ba113c1a4ccc72cdefc271db1f56fa76a0f7cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "f333186ef3db88ce320e5705a0b251ede0bb7e064808b0881f106b221d5e05f4",
+        "compiledSha256": "a783e36eeef1a0fca3e8da67f6c93a1ae512b5930c20de0293294bb8fc33bc10",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "72db4321239e59fbe2f2cc54693f0e5f14f6fd8472a71393568bdcf7691038ca",
+        "compiledSha256": "10fd86e9176ef9a367c4d8d8c28a07cc8551de10f37f9a279f7711ec152fd68d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-invoke.js",
+        "scenario": "default",
+        "contentsSha256": "8e56da92999b9048a2e458c6be5faf7c889365ad37d99269d249c21fed66b7ac",
+        "compiledSha256": "2908ab2d8c1b6c305710fcc71cc70ed5e1b52cea4964afc3945785bbbf6acffe",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-next-invoke.js",
+        "scenario": "strict mode",
+        "contentsSha256": "39ba05d9495f83a874642e1c380f165e46c7f3c1feac6a1f01588b281e2dd53a",
+        "compiledSha256": "a535bd63e51ef04b271db6a4c516dc3f9239440c9175220bd6ea445c64fb973f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-done-err.js",
+        "scenario": "default",
+        "contentsSha256": "46fc45145be4ec0f9fa05555c2cf4f7e15662b93424099e8b2b5907ed7f190aa",
+        "compiledSha256": "6ad51ebd3684ae98c0846292cd249306707f8dec1ad714f4e76fed962b6c3848",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-done-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c95ec04bc0d39dc22fd3298ba1ceb706facc084d381d2f5f276e8a7e609ab2e4",
+        "compiledSha256": "ca1b94af54273e8dc2aac8f3e70a6a6c572de9d573473c06941fe28ab1ce1512",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-done-no-value.js",
+        "scenario": "default",
+        "contentsSha256": "5deb5b9701dfc9149437fbfdd45cc10a360ca747fc5cdb30667affd10f09794a",
+        "compiledSha256": "14c91b2d734d1ef0d7b991c84eef24e163ef45574e29982e994c3fe8ec5d509d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-done-no-value.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9d8b737313cd9fec357df54a0aa4ea6a46e478ef4a4deb118361b861c0a499c0",
+        "compiledSha256": "efc8f437dd4a34cd994ef338f73c1c1efae4d4061d10f0b2e645586de2942514",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-value-err.js",
+        "scenario": "default",
+        "contentsSha256": "e5ebbf0eb0c9247d47a7f1bd5ee65b5ae0c6d50bea6bae1a28fcfc7aba2f3e78",
+        "compiledSha256": "081722800828cf1282d19dd5d7bf8320e0a5842ac1d6dd6cfd0aeb6e901eb32f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-value-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "fa5ac8fbaaf7f3cd877c4653925f069647dd3eac39843ca1ff3218de43aa8d56",
+        "compiledSha256": "22d0d22a2c3b2817b55576279ded1e2447b2c2c380196c8c584f68e50e4aafc5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-value-final.js",
+        "scenario": "default",
+        "contentsSha256": "ca97124e696689309970ef451376c43cd95379f09346ad99dbb639fbd16ce34b",
+        "compiledSha256": "c5a0ed17c7c1f8578b7e5c7cd1c8fba2f7cc13039b57e6e82b21bf82f90e516b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-nrml-res-value-final.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3aec5c1612ce3b4db1c66f35c099753a30f9f9d547f1186ee2114013a5db22bf",
+        "compiledSha256": "276718f84ea1d36d5bf1c3bb0ba58ab3a0fe45009e43788d06e43afc5605009e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-no-rtrn.js",
+        "scenario": "default",
+        "contentsSha256": "34622011a875f0d1aabbac11c74fe824456bcc32136eabd74870f1645c0a0c45",
+        "compiledSha256": "bee1abbd33165a0e94d98d7e8a54069e89a2a9f0d6931ecad9b17ccd978ad367",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-no-rtrn.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b1408d4cf63b42462b17a27912c34e842faa0ec364ce81e10e0c95ba285f816e",
+        "compiledSha256": "b83c2b446229861fd5d6f324e083bd3bae55fc2ab9add124655e6a08b250a533",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-done-err.js",
+        "scenario": "default",
+        "contentsSha256": "eeb5e74e4a9932cb61efa900e113dac3c41aa8b63e12bbcfb49fe243ca505eee",
+        "compiledSha256": "450f1e2a64f1860fd47f892083aab172e7b9876a841db1332f1f67a69f449e77",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-done-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d4d18b8e8fdbda966371a13834607af207ae03b5db216d72e7a2c072dd2020a3",
+        "compiledSha256": "234c56ffbdf5287cd0e66cedcd229129a6e669fa5c1b357808de41bd8fb72db3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-done-no-value.js",
+        "scenario": "default",
+        "contentsSha256": "43e4c77ea537f9f474eb605cc13c2a021aa45e8fbd7ce95086ae80a4be71ce24",
+        "compiledSha256": "b7c5608cc0d84d45b93fb242331b34392045a39225bd165a3bbf33e74f47c90e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-done-no-value.js",
+        "scenario": "strict mode",
+        "contentsSha256": "aa33c08806d067b8a96d9de24507c7c3232deea2d4e5cd35d70e4cf5e7a764f2",
+        "compiledSha256": "f0dd1b9be3a3c871027e18e8624706e528ef8ee5cb23ff03f74f3d39eaade4fa",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-value-err.js",
+        "scenario": "default",
+        "contentsSha256": "5d57c6f2e62cf6f44dc47a22b329139d96c24e5926d744758cf886da31ba8079",
+        "compiledSha256": "dc04671557a4b36d64a45e6290545dd5b94a48b26015218a1660d33b2001ab00",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-value-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7a7df78144fb4ed85811198a6a966bd676dc9731b4a0cb14313da77c09cdea6d",
+        "compiledSha256": "c2297f5afbe1ef799291f9115fc9a2309acc8e5ffc953bbb83d496c6311c6f02",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-value-final.js",
+        "scenario": "default",
+        "contentsSha256": "59bd97cda76a87d740891552da235c93a902a834dba13e3ccc3dc815ff43a0ce",
+        "compiledSha256": "07bcff21d4bbca5a531ba232c191120c5fde05db10e6908060d58317a7b71fce",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-res-value-final.js",
+        "scenario": "strict mode",
+        "contentsSha256": "2dac772750898286649963a573299ef618ec05c9da70ccc5cffabe1187dd539e",
+        "compiledSha256": "158b7929a8e504a1ecb5255921f810aa76af9051bd868fc2080d18596bd530e7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-call-err.js",
+        "scenario": "default",
+        "contentsSha256": "143bff3554ef94d97e208f2f4b7801ea47b0cbe125615fe252609fb321898682",
+        "compiledSha256": "689d4bacc2526c134b10ef3f5f9f2ec2ba10db6244d4b9fd3ad05d446e6b2842",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-call-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cc19f1763f4bb5f3e612f31087bb6375ea9354cca87839faaea1480d85dc314c",
+        "compiledSha256": "bdb7a977d440440659d8df9b95ae167bec7cb0431e85b50586dae0ca60ecadb9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-call-non-obj.js",
+        "scenario": "default",
+        "contentsSha256": "7ce1d78c92a8f0bef135fd7097ed5d4283194b37a4f5952fc635a6c01bf64f83",
+        "compiledSha256": "256013c8a8a9818cc09409b6e7a00672053a4320962c078d30254e248b02ff64",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-call-non-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cf3709057ea114729bc519f89290b6466477ba75e796b229a5c6bf2464882ddd",
+        "compiledSha256": "8bb0c156a94db1e6bb7d65894a4a28ec9bb2c0af0974e3e4f164a7c9c06b98ad",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "50bb3ce88b1b3ba64ac71d9bdb2ccdd440df010dab648f4c2dabb9a5f781509f",
+        "compiledSha256": "70481eeefee2a754032f8a7a6cd5e5563a19654dbad70256f6702650cd7d561d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "010e2477c521cfe121ccef170304f4d13c17fb84093841d54851b396a9942b6e",
+        "compiledSha256": "6be5486f1d0d837fe3b74ac90e4d55bb638e793972e1735b94e62da401b00325",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-invoke.js",
+        "scenario": "default",
+        "contentsSha256": "b3b65d99530d016c6b4e8d5bd285834ad17e318bf8e72542d4b468e6d9da7d26",
+        "compiledSha256": "5617853692bcfc61226782a6bf890e34ddd6bb719642ce379db2e546299e358c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-rtrn-rtrn-invoke.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f257b5bfdcbff6965a8d588aa8356626b7908b2de6d9176ba5fe0fee2c047ec7",
+        "compiledSha256": "20571e3e0125a2ee07c62826302e5255fe222d53bcc45014279bf5dd78d2e85c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-done-err.js",
+        "scenario": "default",
+        "contentsSha256": "53b30089b2e67e8da7cd3c586b15c3ef7c694e691a60e53314063ac44313940c",
+        "compiledSha256": "37d2188158a19c13dea50df50532c7898f20c540ec45603b7163ed84e18e0dab",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-done-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9ca766b71f466aa662707526cf6a6b9eedd8aa814aa51e6f66494088d1a3bbef",
+        "compiledSha256": "bc9dd1043d32326c59114a24078569b5428a3e2aadb9daf2c3313164ccd332d0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-done-no-value.js",
+        "scenario": "default",
+        "contentsSha256": "33e994ca8e5b723cd2d6af99dc7f7457c8e7e4cdcbb82d85475c00450efe3362",
+        "compiledSha256": "5db9a330a7d8366bf9081d9456c092c213325ab8e8a0e2d838e3e4c8bc9d688b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-done-no-value.js",
+        "scenario": "strict mode",
+        "contentsSha256": "41340ddb3276d4464b8dfbefd48e9de17a8d3cb46072c9706de866091b7d1f4a",
+        "compiledSha256": "0a3a03bc0ef5aa5f60b66b1d28eb9395b3dd52869fcfd88892a1e4128e0584e7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-value-err.js",
+        "scenario": "default",
+        "contentsSha256": "580d436a047dfd6dc8c7525a75dbc7841f43db2ec1b4a7242e70d5203ec14138",
+        "compiledSha256": "3d733b4e79368731f244968515cd4296fe1e400229f4bb057c1ed0c48aecac9c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-value-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "43ba3385b16fa378fed19cc5b6fbdf565af2b0caf88654118d1305c4da5f5d2b",
+        "compiledSha256": "d2539bef9cbff1dae00b7d888110092f3a24b57892c7ceb62cc7eb8136b60ab1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-value-final.js",
+        "scenario": "default",
+        "contentsSha256": "617be5c51ee1ae1ea55d07f0916bce62425aac2db3fa7c0db7e45b719b36c266",
+        "compiledSha256": "154e4c00165c0b4720f346113a256643728ab521a87ea9cb40829f375d9f1a2f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-res-value-final.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b7c778e4ecc5288c59f561069e86a1075e55df829485083b5d13314e94271e4d",
+        "compiledSha256": "f30ae200a4df0946fbac50341e59e687c8c4b1cba6028d10b0a4d0e837406fb9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-call-err.js",
+        "scenario": "default",
+        "contentsSha256": "9e03f619cab1470dea7d7e7fcda4eb596c70ff8a41c8f2704328602aa03227aa",
+        "compiledSha256": "29e880a22e77303a67732d3bf8bb0ad45bfb2bc8bfe851ac77d614a0663acf1b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-call-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "167ea13acdd05f6605fb4c0359579cc7b1037de9abe566571ad8b037f1916160",
+        "compiledSha256": "0e6f546667c0d6cf49b69b02ca43f499c68515b3caefd6c9a0514ae1d8e09c80",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-call-non-obj.js",
+        "scenario": "default",
+        "contentsSha256": "325d9ff53516dcd02ebc267b76286099a42b12eab6bbb71002e464e5234123ba",
+        "compiledSha256": "6185268ad26ce498ee7a886bce39966bdd32a3adafd57a0848650f48228e1bbd",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-call-non-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cdb2c0ec149e8c5869e2212342b15079a3792787485d90e6637736e40e7f35e8",
+        "compiledSha256": "610f399262e41d750aa489cb5b01dc8e73a04e2c81c83a5e5b6edcfbdcfb6aa8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "ff4d2d9c85d962d071d911addf937dc34b297ca8aa3550bd0a17f0a744045757",
+        "compiledSha256": "30c1687db8a3a4fea516cdf1d21790d69f53c9c0b1e50a3b76f4f965edcc943e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e0a5c7c1aa1d52d0e7abf8a3922bd4bfd8bd2737b47bc6e9dfebc25b15f73781",
+        "compiledSha256": "758763942a5be6e3d7318e4a3cb223456a1d8d14b19d686fe7f01bf93c66935b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-invoke.js",
+        "scenario": "default",
+        "contentsSha256": "37e0cf9ef04e9034562fa310d5000409f702639ec4156463ee9ac53c9b78a394",
+        "compiledSha256": "a57e07a4f88786ce3c21057f9556c2f3716b215a485fda7dcb5242d85736146c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-thrw-invoke.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d809ff5bac49e4eae0d011903c28e5d5348fe0e63e872107c3d1c94b93ea4d93",
+        "compiledSha256": "8b8236f20c94d5a38c302b1bca6425098aaf0ac3fa0c112ebea57e0f7c33b2f2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-no-rtrn.js",
+        "scenario": "default",
+        "contentsSha256": "43bc5183ca7866c5ebab0b157429d1b03d83fe9da19a52d7aa43d99eba7b74df",
+        "compiledSha256": "45bbb0329b84c94c049e71b69cea896b16626e82aee45370d23295f8cbecb45d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-no-rtrn.js",
+        "scenario": "strict mode",
+        "contentsSha256": "28dc3cb3c28884fe67243942c718a91092d05d403231828dfdcdec43a8af71a6",
+        "compiledSha256": "1f7bc1469dd01866d147bebad859bf801022a4095f87502d617c8523ea1e33cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-call-err.js",
+        "scenario": "default",
+        "contentsSha256": "177baa1ed689d785515f454839393d7984579254fc07f464ca429b7042ed9c55",
+        "compiledSha256": "ff1246757fcdfb4fb02474e827c3ba181cef848079a7e9c6bbf67d889d13ef00",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-call-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "134c015ac5fcded8bf7f17b2eda3b3bff5d045eeb7c7f5ecd1442a727226eb02",
+        "compiledSha256": "d0e3c8c53d363fd731d9ba3a4c96d381f8d0b81e51e8e9b28c32db33da8cc6c0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-call-non-obj.js",
+        "scenario": "default",
+        "contentsSha256": "140807d9526b53c0de4eabb82bb4806a8dea9a70c4a7655687e879d93b90c97c",
+        "compiledSha256": "6cf279d87c5d0da1c9c62f97265f8dd0ad5aa35aecfbfbf7efc93b16cbdda4f7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-call-non-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "322279df415616698f73f27b5d7d1e01f3c0c4adf791e4bf6a90683536e7f475",
+        "compiledSha256": "999ec2da39a0b98bb4a2e7e285d861074394fd29f240bc95a0c800cdcb5e0a61",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "41826128533c8ab79b0bd0a3b110b8492d55e48628ebcbc568ca9503b1060b21",
+        "compiledSha256": "e06389312d6b1e4c1ca05e29343af0fce9272c28471c59baa7eeec3784197300",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f0754dca54198b40aa941af08d8793376ea81e6ee01f598fb38fe4adf4d19164",
+        "compiledSha256": "e392615d9524c813f0e69707a1e2e5a42d04431a0828cb0a55c8cdb5b7cd3572",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-invoke.js",
+        "scenario": "default",
+        "contentsSha256": "7ae09774bb46e784d205cfeb652fa90cc3e8614d365014af6d5d26a888fbeba7",
+        "compiledSha256": "ff41f87ba083278ba5d9504db45db57c564b3b77e049c4af8a3757308a0492e7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-iter-thrw-violation-rtrn-invoke.js",
+        "scenario": "strict mode",
+        "contentsSha256": "4b16358f03a94bc8ff446e008c7a2217392f90ac8d03889c50bc566c81d50fd8",
+        "compiledSha256": "1b7ab11774a277bbad6985b50f4c5b8e5ba5139aaab7f68c0f95b6f6592b9aa8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-unresolvable.js",
+        "scenario": "default",
+        "contentsSha256": "7df9369532137f738a33651d418daec546acab0fec1db91b8ce964f7f0dc21fa",
+        "compiledSha256": "b51e1942abc925597cbf3e591ed1a99e6656ed3ab5ab067b1fa57ce749d5d354",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-rhs-unresolvable.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3b0f4456ae7f2938e14c95f28bc02cb8b967c621d8896b3614d8d9b4b4d9eda3",
+        "compiledSha256": "4132b66ad8f24b78657a8000586eb0fba7271bcf6c14cd3b96704774209c350b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-string.js",
+        "scenario": "default",
+        "contentsSha256": "c2e4a04bb98fcea93e34caaf672a4209664324b718e5f9f0653eb4b89470a7ef",
+        "compiledSha256": "3d8671d756e0f46efac119c2cff72f7080351fc5133aadac92e70d2129fdffcf",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-string.js",
+        "scenario": "strict mode",
+        "contentsSha256": "905b2d7c327f2f49d9208abc488ca2fbc67612df7160fdfe4d4d143f358432a1",
+        "compiledSha256": "39cf3dd66a81467cab02b77fb188ef87e6a0b04c80117ebec2f32e0a906f5e45",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-throw-is-null.js",
+        "scenario": "default",
+        "contentsSha256": "d54fa2d033570052c07899b146144c976d4b2c6286f895b0dd5936c49751018b",
+        "compiledSha256": "129da6fa627ae0551a05063e80409f5c5f7ca801d18230570294fe24ec7c1892",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/star-throw-is-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "8beae9e4339938b24ed80755ffa3ac05e4c03c38f8e3e559c53da9c892065cd4",
+        "compiledSha256": "aa7191b0fa7048d4cc88acbd1a8d8f26261f0888f3fb5d85898f36d83c443b75",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/then-return.js",
+        "scenario": "default",
+        "contentsSha256": "811c3964697c40260fd91da6a62d34eb9271ef963d238523177adc1232ce5ad0",
+        "compiledSha256": "e1a157000b99bb9d9d3a06fb8653c1ef4e0e5c7f97923b65ab9d64669a393d7c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/then-return.js",
+        "scenario": "strict mode",
+        "contentsSha256": "640b982bbe3aefd4a9b699d68c4a931ce791c33bb1f5741ccddf2f6a1fe62a72",
+        "compiledSha256": "0f79566bf1667d09aee3799f79b4e5c039fadf49ed51155cff05f1d83f264e7f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/within-for.js",
+        "scenario": "default",
+        "contentsSha256": "7e0dd297c000d1722d8211c4951a81fc744074b762bbb70c412dfd7cac6873cf",
+        "compiledSha256": "6090c4963865d6eecaafa5d3c0a939794667df2a8d81e5ef1146fcc730f7d979",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/yield/within-for.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d509beafa306029148b5ef1507d59c45c14c8b29c759f367badd75303f11a922",
+        "compiledSha256": "ed3fdcfa57f127c053172e89ba410ac9df2adbbe79f51e0423ef2d9817b283f8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/block-local-closure-get-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "e3b0882a6e5065131ccd24b90d3d2416b6d2a127f1c22b7fd9e7f372948f52f9",
+        "compiledSha256": "4f166bbb00f1839df79c30ce7b912e081d0e40fbe16f907953f1a27888269864",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/block-local-closure-get-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "2b920b74736490787a2b030590e1f17158edaa8d7ce0fb4edbca632661e553b9",
+        "compiledSha256": "c55bb8cbdd253663189abf66807707b9d7445b9553c4153096d199d553bcd574",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/block-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "default",
+        "contentsSha256": "cedbfcdc3630f17fb3ae6eefac2f756fde65b16386c0719ba54a955d25032e52",
+        "compiledSha256": "a39d07dab5e6b107aa8882ceeb8192e595facb9e750c3d57e4171a7e7dd6776c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/block-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9051808545ff84ea3c40813b4a3479bc76f37cfc45a39660329fb9adb17c135f",
+        "compiledSha256": "99a28f66b5ebb4c5dad6251064b5ac8b2b554c3d2461146a4814c27b4d6f9057",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/block-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "default",
+        "contentsSha256": "edde5ad4377824975f1500860c8ca02230b6604da6dfa71fbcfa4a5ab17897e9",
+        "compiledSha256": "06e3a116ee79435e9fcfa91c842b5f5be2e1a0568a44437c6e83be972f9d3b74",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/block-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "75653ba24ed9bfaf0d0d8af622dba7d030b9dc376475748ca9f11f2fe4c5fea0",
+        "compiledSha256": "2e1623053e455ee563645a0e7ac9eb810dffedf328303c4fc1b15cfe967cfba3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/cptn-value.js",
+        "scenario": "default",
+        "contentsSha256": "8ebdd7f4d05f0717e0a4a2df0113a24cdaf4de0f8c2ec5216d50246cb6a79fe4",
+        "compiledSha256": "1f127f4c9616d533e9602c3e672f2c85f1d2a6aab70053ff122dccd3389ab30b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/cptn-value.js",
+        "scenario": "strict mode",
+        "contentsSha256": "626e0f270871f85f9d29e57c784b4b01159ee13a88b92a11806d001955728007",
+        "compiledSha256": "fccfd289548a1220754980c5e9131076770d780b1e4adae38d73ea02019f31ef",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-arrow.js",
+        "scenario": "default",
+        "contentsSha256": "d8e1e425396a6bc3c37c041bf7a0c30e01c389904c1d6613d020c7e09b9e65ff",
+        "compiledSha256": "49a72c07a5787b8f8c7db516bf236c1a1b9e751f0979fb46b4324c92fb81171b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-arrow.js",
+        "scenario": "strict mode",
+        "contentsSha256": "df374d4c75b16aaba731cf64d8f30905cd79b4c7d97c9272c8d1269e059cd104",
+        "compiledSha256": "85175d40ccfd78e71b73e45796cff541e9ed7f773ac249b4dab14b6397381f4d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-class.js",
+        "scenario": "default",
+        "contentsSha256": "eb20ab54bfe249525cbb43687dc532a30bd16e217ce5e52f9d501c04e1d6a931",
+        "compiledSha256": "df0deef3ffdbe8f41a6cea400d931819e6c421a19955b9b59f1c60eac6323825",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-class.js",
+        "scenario": "strict mode",
+        "contentsSha256": "6c49765b1cb9c72d52420b1935a7889b630d9d8c3d6bc53b55f821df8ceae619",
+        "compiledSha256": "fbd36422a52f173cc191573c009431de7a41b148665e0c6efcaddb10659ae2eb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-cover.js",
+        "scenario": "default",
+        "contentsSha256": "6c6a75fbec64e474a4e4a70d2a4820c72552dafaa7166fdec66ce51203fe8b50",
+        "compiledSha256": "e02ed8f260c000cce9044717114288b683b3b3203a6882952d85f38615bb55a8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-cover.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3c7430dd016592ab2e4060eefbd5e6f32b0ada56ef0dacf449150cc84cde79ee",
+        "compiledSha256": "c5ff72c3aaf67b21bb2decf0733580cce582bb02293d72b17e245a11739a61bc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-fn.js",
+        "scenario": "default",
+        "contentsSha256": "8ff4afe8418845b2e9776443faea75249bf5f0c46bb63e91bfaee0f46d741006",
+        "compiledSha256": "345ee8e669cf3fba5a81abce38f90f13a1eaacac9eea07bceb69a6fadc6354ac",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-fn.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7094156ad625f2d9b0c0e8d8ea8f1a97ed11667fc84571c62888377982869e18",
+        "compiledSha256": "6b8933a42504df567353d3dc4245cf4e2052b8731b483a09bfb1ec0b9d48930d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-gen.js",
+        "scenario": "default",
+        "contentsSha256": "62543eed9149c591716731461f6d71aa3550d45ecab4cd2f109784b422b8b5f3",
+        "compiledSha256": "240be01deb15da7d5d71eb1d02fee42a2fdbbb65656edf35c8d675a6fa3c21bb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/fn-name-gen.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e02f1e849554c5a51f5535d37ec4272b425e40bf3f09212cfb413875e46b7f94",
+        "compiledSha256": "c6657a64c9bebffe274fcb44ff1507026b9de8a3f1cf791f947e390d7e2407fc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/function-local-closure-get-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "d3bbb9c985cf5a5c7e49ec548ffc456599eac3291f926130d099bc40b71e9030",
+        "compiledSha256": "d72591be6c05aeeba64a43ecfe7ae7db40c2a244a595f670cfb38e825031c575",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/function-local-closure-get-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "eecd28fe6d2b3fcc35b5fad0a274cf9806ca27c093212e9c05fc0e09b88ebe3a",
+        "compiledSha256": "b2bc488114e391366eff4bedfeca4a8bee424f55c093e540e53eed78029f7858",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/function-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "default",
+        "contentsSha256": "62bd9c81d49ddb9776eb9fa05205a8dfafc6213860323a999779ab7bfb8a9f05",
+        "compiledSha256": "b09ccdd6c686d2c3756bd1794e3bf86fb0559f13ead744a39c82b9d478a0081e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/function-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cd6b462cabc3f96613a90a47391ee039f028a83998d5c780a751c9b14d097d0d",
+        "compiledSha256": "e514e5beb68ca0ee75f3d8d39e7e1e8718a65c56ef188a30e755c5599f18d332",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/function-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "default",
+        "contentsSha256": "7a5a4ebdf7d1f9ed883a7b6236b2b77a4b13e5da8335a3e1519eeacb6c714d8a",
+        "compiledSha256": "1c4a459ca4fbce093de35ff3dd3f450289c84f3787f080aab0da6a31496bd22e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/function-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "44ea741b2b87657e7cdbfede828cc20852b032de928f7b01be5c6bc663440645",
+        "compiledSha256": "af43df97e9d0a76af642091dcf2d82a1f13d472441ac56dbfe149fc52c36423a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/global-closure-get-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "6f4cf9133646beb55431da5460ad26b36217a130253be413e74cfe0f5158dcaf",
+        "compiledSha256": "209230bedcdcabb33f39cd1c750fa79d69476d714c9a2ef171d5ffcfd6894fc4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/global-closure-get-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "fa4c85da54b1fc966c7640b952e6502ebdc58fea13ddb3b0d0200f8f84f97717",
+        "compiledSha256": "e0bf542179b92cb0643e247499ade47b2eba2164b99abc77c5bb2638dc53a1b8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/global-use-before-initialization-in-declaration-statement.js",
+        "scenario": "default",
+        "contentsSha256": "1e21b270907b1951e6883e9fa5d83b29ee96ff6049ea6bd2d4db711dc21cca41",
+        "compiledSha256": "751186daf998ef9983b5057877884b16b6ab305cfac4652e0ab6b5d5e13674b8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/global-use-before-initialization-in-declaration-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f0eae9f11f1c747ce67d30b67db31d56df37e0115343a63cb297ba2aa04c0662",
+        "compiledSha256": "98956e665a93fcca1be51ff3b8f9880687834e7a4354138a416f50b2d0966c21",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/global-use-before-initialization-in-prior-statement.js",
+        "scenario": "default",
+        "contentsSha256": "879d8513efd81c314698884233fdea0b742dc6a5ac068d57560208a5c1148ce4",
+        "compiledSha256": "f0f9f408ea78d1042b4275384191760f337abf164f6757045e7b57c484dca45d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/global-use-before-initialization-in-prior-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "69846a81ebfd352010e5dba298c924fc9d54dcde327c17d38b1a7684fb90f6b8",
+        "compiledSha256": "c20fa47d4b0270ab915c37d0cd2ded74ce2fcae69d06bbf10197a1d9e19f66ac",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/redeclaration-error-from-within-strict-mode-function-const.js",
+        "scenario": "default",
+        "contentsSha256": "4ddcb0dd866ec903c843e3ee30a6f4623c0794436dba2ffa2d0d1e0d64def8a8",
+        "compiledSha256": "33b94435c159a0c037160c75b7a9f22e1b9d7143e190a292e368d7c183c065da",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/static-init-await-binding-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "0a830f288982dd9ab52b7b8650c10dd38ea41831a18901abe787640fc2152032",
+        "compiledSha256": "472ff6c2086850b5ad0c0b427d5eabbc02e48218f55b3682756bf220dd6c14b9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/static-init-await-binding-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "62cec65a5c5991f9307dee30a9901c9b51f05b88bbc5f212c7cd5cc28f5606f1",
+        "compiledSha256": "b08de5ab7dfdf5a6f9fcffc5ee402a6853598084e4f48e7f63dc840e76c4547a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/static-init-await-binding-valid.js",
+        "scenario": "default",
+        "contentsSha256": "8abdc1efdb26bac24975d96a89356c44a7a0653535f05915b325884504a76a72",
+        "compiledSha256": "5f382e46f3ccf8cf2a364cafc5517aaa5272dfe8569012e39f4b8af531a96e1b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/const/static-init-await-binding-valid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "86ea1ee2ca4367712fb3ec67826185157beec4e2646e9ef25fb5ca5fdc1aedd1",
+        "compiledSha256": "4a53628262049362e8458ee83758fb9b4301750537c086ff496a2dc4f42dca3b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-closure-get-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "9b67748e02579d1a7f1b3a58dc84cfd939169476d09a4ce4830c817de6dc8ff2",
+        "compiledSha256": "16519e8048a37b0cd512d4cc5f1a37243f5c412721ba71ff97ec1c29687a9437",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-closure-get-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "31a5581d0d36db04dc8150b166cf2c75faef9881a25a01cc0cf53ad1d1217d08",
+        "compiledSha256": "0b758a1a00477fcaeafd83f9c6c8b4b1f9aa85b2c75bd70622e58f5126694ba0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-closure-set-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "b440f669a0b2ddb98f365b918b3f0889e54e86627fb491df957e67a7508b35b0",
+        "compiledSha256": "5accf3deb8025deea65327b849df595c203a474ac118ad0e92db9fa4d1c33e48",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-closure-set-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "45654a7a7038282a0ad0d59700d4d996e82b5713c5e15b01543f1bfbb13eebfc",
+        "compiledSha256": "f5262ca9e8a1b4c14a84fb9cb5b25dd044999699a82f7c6e46fcf73c095ca258",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "default",
+        "contentsSha256": "06cf9b6133a96a320153f3fbcc8c8316ae39bf218b4ad4a4502a372fee77cd95",
+        "compiledSha256": "29c766ec09e608d45fe2d8438a5f2d6630582d157084c1b59c83d1ad765c08e0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d5d637baddc51eaa24dabb1ec515c0477b610e0982738c40198f324693c4298f",
+        "compiledSha256": "7974a57cdb6001e9cf398d8e2141204e7647d2a4b510178d88429fbac4a6d822",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "default",
+        "contentsSha256": "b441f6a8740e2c98e1561704b052cbe9051e62fd3737953283df85951e27cc3e",
+        "compiledSha256": "d00276e564a3a4f8bd68d0d1b729454fb2f512a7cf6dbe4ac7d93b201a35fb8c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/block-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7e433262c78e808dd9ae258adf45571c04c9fb21041a1dabd52709e45dda7a02",
+        "compiledSha256": "7d8b9c45af2458ea681665aa5bb5bb6971bb0585a638c0e5d12272cdb73801ef",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/cptn-value.js",
+        "scenario": "default",
+        "contentsSha256": "833e0b165311cbf44898480df5c07baeda855c2c770c00d8b549dc4017f5b835",
+        "compiledSha256": "2dd0c874f1bd2c2fea636a9a77d0922288127f83f29e30d68b2975347be9f40b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/cptn-value.js",
+        "scenario": "strict mode",
+        "contentsSha256": "0f4055e2bb14492b4a61ba2d5321aee9230ac24c0d2f55787459063ef0e6f7b5",
+        "compiledSha256": "5559d715ee4f59a06a94d7c2367107308b84aca8f7168081a377eef3a69fe9ac",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-arrow.js",
+        "scenario": "default",
+        "contentsSha256": "60e108856c30e4384ef0818ca621f05906dc3d37ff6e2a26e1e85b1e09c0359a",
+        "compiledSha256": "f3ad8558343510254fd7da86be1c5420bb28af731256da943d707d8507bfc0a6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-arrow.js",
+        "scenario": "strict mode",
+        "contentsSha256": "ec5b6a34212a4060d5f48d2d4f0af8c37691da201699cef61a2fa528653fc246",
+        "compiledSha256": "78860ba8ad612819be2b52fa83116bd8072efbf4034c40cae8804a2cb8c10c6b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-class.js",
+        "scenario": "default",
+        "contentsSha256": "0b97ca8364182c4812379d539b7cbe29611ef3854bfb587a68b4b8db73df87c9",
+        "compiledSha256": "a70b7912d93f7168551a596cc1796d9ff8c83e38348230a12fef9fe52129f702",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-class.js",
+        "scenario": "strict mode",
+        "contentsSha256": "652a5d346225df9e14a16b9a5cd590893ced1b76daa8f309fe40762ed4f1f465",
+        "compiledSha256": "f8128ab48b39c79a8ecdded95dfd0f0029dabe3e48d7e9ede6d82c52ebc75fe2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-cover.js",
+        "scenario": "default",
+        "contentsSha256": "7b226fd197035ee4dc05ae8780b0d25b3cc9d7134ef2d28e89094276daf4cc76",
+        "compiledSha256": "6fafed29b8a0adbbe8c9e677c68af4601bebf68cb05e934c15ed1c93436d3f41",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-cover.js",
+        "scenario": "strict mode",
+        "contentsSha256": "751581b9d44f7467a3bc966bf564036c0ddbff2f1abcea2932be8011aa91397f",
+        "compiledSha256": "71eabb19a15abdc91db2c443050955ad36c40dd621726a59f62c16a72e0cc274",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-fn.js",
+        "scenario": "default",
+        "contentsSha256": "482eb226ec875ea1ed3f0f0371321256e85a42c6e5c7e5ed480a1a4d513a918c",
+        "compiledSha256": "2d0ac94c312a01cbce849bac6733b9930c5b0bfde7d78860714affe50191f52a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-fn.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7adcc97285a0e2696e24f21eafc75a5d6a13c10cc1463a4227a7d05976830ccc",
+        "compiledSha256": "bd3cdd470fb1a6139aa5a14ca4eca208407510ce57f4b81320ca267bedd765d3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-gen.js",
+        "scenario": "default",
+        "contentsSha256": "2770c9e60d32c64a63758b60941462e8c221bda722eef992728a5aa2b39dad23",
+        "compiledSha256": "2e0a4c65e75156412c2b4f37e59ac86982618675fa94f2c5a46137440ba036c2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/fn-name-gen.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e30d40f9f8273ffabb80bc4bd39a4f77e8efe3a6cd0756e2443d62e2f2202b49",
+        "compiledSha256": "50cd79d9f909ce91c14a0f626dd230a01a1b34395ceb3c6bcfda34273a828817",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-closure-get-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "b79269cd997687a917787931e61dcc6282c8de179616044f92359e79c13dcd3b",
+        "compiledSha256": "1d8a974c4d8b4f39ece605a696bd051553defefcd33710f53533604c4185ccaf",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-closure-get-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "616db85e59db0b2f1d09af20bb7939e8372b943414c692bf53f02fb45a42790c",
+        "compiledSha256": "ce883cf792ace7c7765f15ad887c34d82a250c3969f7ee4a4a7de0514775638b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-closure-set-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "f5c6def43b141a30685b86ec47b9af4280e9411430d22eef9f3706a460e6d71c",
+        "compiledSha256": "93d775500c6252e99e6223e59a47fe7713c01a6bfacf1476f6250215760b806c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-closure-set-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "debc2b9392403b5341bfec552e7f17f0aa36ef7a4eeb16a8c072ff6f84dc816c",
+        "compiledSha256": "18bf7a0023a658c3ca907da655d87e2809c1b9000a91d602adad0b659414cfc2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "default",
+        "contentsSha256": "13a925281f837ea7b297ee486e1f011ecfdcb51b0898a7338dd7c58b073e47c2",
+        "compiledSha256": "eb0ab96eda0e1fed2064bded75495df87cb0d9bf080abbe388448967004074ae",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-use-before-initialization-in-declaration-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "70ec67ba0abb3c1b3c3790064bfe35cd463c1d298569af55a40af8328bc4607b",
+        "compiledSha256": "6f6d371ea386c65d27e6074ffa9f9918df71702a4794361723253c94e6e17f3b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "default",
+        "contentsSha256": "8182b4f28dda77982890ae448f5b0a16e8045d5b0dfcdff3739cc8935411d750",
+        "compiledSha256": "2db83563a50517a32de1583b38fd251c213ef6969d59f19e15ac9369a83f0431",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/function-local-use-before-initialization-in-prior-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1326467f4d24ab7cae6f5ca27d02849f923736456643ec24d4e583a61352f9fc",
+        "compiledSha256": "3b575fc5820564c25be010219e88203232ef549b44b9ab00eeedbdb5c3298c58",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-closure-get-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "6d095899d56da01b424fc02308838510f5f81e02fa21811c13195312cd5bde60",
+        "compiledSha256": "dad41faf7731ea204749435d4fe0cb7486d7ac716d29f6a87eadfb9f8bedd316",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-closure-get-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "8eca82f306341e0ef0bc42a8e13253b3d26e982526012264456c40a1cff7dc24",
+        "compiledSha256": "a72f857331c6e8fdaa89be1782d1f73340635c9e9f5ed36395e08103355c5d46",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-closure-set-before-initialization.js",
+        "scenario": "default",
+        "contentsSha256": "a58ec6031437fb9b3832cbaf8a5edc4c5e08647ec2225d8db8b9a4862e6f097d",
+        "compiledSha256": "11e5c44415b5b34de31d6ba3b5053a8a2a09b3366d56d635103227180c21abc3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-closure-set-before-initialization.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5bf2298c498e46717510cfe26a8a826bb8142bd60eeee832506484d8d2012f28",
+        "compiledSha256": "f52fea06aad65ca7d83d2b1463a64333c114ec36bfbf08e0eee3f316ed59103b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-use-before-initialization-in-declaration-statement.js",
+        "scenario": "default",
+        "contentsSha256": "483520461750a0c80cf7357200a886c7bd42aa4e0965c6eb788ccf17e09713e5",
+        "compiledSha256": "eb2e0285f7a0ba65eb7f307c3a732f91d51bda16d8c2c186224564a0cc9b702e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-use-before-initialization-in-declaration-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "45894d36dec20cf49429bb7e2e33e6bc7f7b0cc68454d449ef04223d5195219d",
+        "compiledSha256": "f614a7679bf9ed1c620eb7b79feb1c32b0c8a5d241ddd1a342886f7d02a75a83",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-use-before-initialization-in-prior-statement.js",
+        "scenario": "default",
+        "contentsSha256": "6daca398760b82b45ad78dfa2301db92d252f110368c1561278bb3dfd4471e4b",
+        "compiledSha256": "10030c1718a3928bd23eddbe699bb23756751538fe8428d666d6a2fe3be29b2f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/global-use-before-initialization-in-prior-statement.js",
+        "scenario": "strict mode",
+        "contentsSha256": "067a57330efeceacf2116b9de3e1813d73ace7abedde96d3d5f49f87ce2817f1",
+        "compiledSha256": "f1ab99fa2cd893e84a61e823ca232e75b57a0b0cb7f4e50fc357c800054bc534",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/redeclaration-error-from-within-strict-mode-function.js",
+        "scenario": "default",
+        "contentsSha256": "54a3ea21617c3b6c940391e6e9f6bdd1693748de9c4c4d5d796a8eff5402c163",
+        "compiledSha256": "7dbb4d91c312880712c744765f765c45b01b3bbae1e9029ee1cc6f59bcf278d6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/static-init-await-binding-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "0969f23e837fe743ecbfff9174e7d5fe66f67a046c8c276ef013cee31d63824d",
+        "compiledSha256": "0c5578926612a8cf261d1342a98782903789d250e5bc749edbfb3be1ce642548",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/static-init-await-binding-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d4d66c7b92db726e69cca4f640bf332ea3f3c5172387cee23e5f394033f69695",
+        "compiledSha256": "e722c3213e3c9af2de2faf2493467e4ba89ba6fb2b06e8e3434e9ffbdb35f0a3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/static-init-await-binding-valid.js",
+        "scenario": "default",
+        "contentsSha256": "d2185021d1c3c9fedde79d0f26dad4d81cfdb48116fa484eff0b1b07b83445f6",
+        "compiledSha256": "ad97121563c035102a5eda0a265258f30d8a1a3395128ff2abfaf98d6b453219",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/statements/let/static-init-await-binding-valid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1aeed93338fcf26bf5e7dbd6366d5f68f76947f81bc54aa2e7219249c78d4016",
+        "compiledSha256": "083ce208118dbed5d9077b132e409054ed6e03f6f702e5f6e5d57fb418a5de88",
+        "pass": true
+      }
+    ],
+    "note": "Fresh concrete let/const/class-TDZ/yield selection. Does not exercise checkpoint APIs or establish native lowering TDZ completeness."
+  },
+  "protocol": {
+    "api": "captureControl(iterator, owner, getAdditionalRoots?)",
+    "roots": "Agent evaluator, completion callback, current idle callbacks",
+    "order": "Existing guard, beginCapture, additional-root provider, normal discovery, owner.capture",
+    "registeredCaptures": "Existing binding validation/restoration and owner reference traversal",
+    "gc": "Saved binding values enter existing Agent checkpoint roots; live callback marking otherwise unchanged"
+  },
+  "react": {
+    "referenceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+    "inspectedSource": "packages/react-reconciler/src/ReactFiberWorkLoop.js passive effect scheduling; Agent notifications remain a distinct host boundary",
+    "libraryVersion": "19.3.0",
+    "prefixes": 1,
+    "ownerCaptureCalls": 0,
+    "notifications": 0,
+    "error": "Unowned completion callback state",
+    "scope": "Fixture policy sees a known unsupported native record through a registered completion callback at an actual React pause. No full census, accepted owner, branch observations or React forks."
+  },
+  "retainedFindings": [
+    "Initial seven reproducer cases fail before implementation. Added failure, readonly, GC, incompleteness and root-provider coverage before the final-source baseline.",
+    "Initial TypeScript errors: onNoEvaluator is internal and stripped from public declarations; tests now inspect the original Set without exposing a new public member. ValueCompletion is normalized with EnsureCompletion.",
+    "Initial root check rejects new patch-list indentation. Formatting the build script preserves engine bytes; two clean relocated builds were rerun afterward.",
+    "Read-only review found no scoped defects. Suggested direct provider failure/reentry test was added and included in final baseline and gate runs."
+  ],
+  "limitations": [
+    "Discovery/registration are not ownership. No fail-closed automatic execution owner or coverage certificate is supplied.",
+    "Idle callback Set membership does not rewind; mutable referents and arbitrary effects remain caller-owned. Deliberate incomplete-owner tests still leak.",
+    "Unregistered closures remain opaque. Native metadata, getters, additional-root provider and owner callbacks remain trusted and synchronous.",
+    "No new callback GC coverage outside saved checkpoints or during live notification execution; this remains a separate audit gap.",
+    "Original host-effect guard unchanged; checkpoints cannot span separate registered evaluations or job drains.",
+    "No general React isolation, automatic guarded reports, event/effect transitions, repeated-state families or integrated demo."
+  ]
+}

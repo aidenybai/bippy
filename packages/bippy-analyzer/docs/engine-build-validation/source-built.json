@@ -1,0 +1,4750 @@
+{
+  "scope": "harness-verdicts-only",
+  "accepted": true,
+  "originalReportSha256": "26893d3a364aac7e782c55d1dfbc45362007667c77b7de7009380e994f23ac09",
+  "exitCode": 1,
+  "total": 306,
+  "passed": 301,
+  "failed": 5,
+  "outcomes": [
+    {
+      "file": ".test262/test/built-ins/Object/is/length.js",
+      "scenario": "default",
+      "contentsSha256": "29487268910888ccd18880f42a6d821bd0bbc71ec5a956341aa3d8da5bcfdeb6",
+      "compiledSha256": "d7f0d1f5139617b046538dc9665b120fc68cfcf3b163552bb7b5a477d64debbc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/length.js",
+      "scenario": "strict mode",
+      "contentsSha256": "28bb742cce279b870a05e7f92e33ad4028b26bf6131855cd293c55780751d13d",
+      "compiledSha256": "0e05d52913f16e725d9dddabd8bfe1116f0d03ddbbe9d48b7a72533ccd4a52a6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/name.js",
+      "scenario": "default",
+      "contentsSha256": "eb31fd84b90c7b330af7187ed0e823913abc95a2bc18b655c9794ca72882708f",
+      "compiledSha256": "e3ece3d6c9d036ae8c3bc91328dd9b7c756e21bc188f0f7b52410affbff32b75",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a0eb4ef8e08f6c6c7c0b1db17f797aef2c2c81dacbe83d41ca8f18a0e16da3ff",
+      "compiledSha256": "2e5054e70c93425731fc49cf0cfd84644eb3feeb1560a93917ce87b434eea3e9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-a-constructor.js",
+      "scenario": "default",
+      "contentsSha256": "cc2200c6233b97b406d0b7e013a71183dd5b7f0d218d104cbdce284a5fb8a8be",
+      "compiledSha256": "12a1b7e2a60e86c5852ddf4b34e8a896edb1ef4deaa7ab50fc373a0ca0f0504a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-a-constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5c194e66c43c3249e1e2bf594895d96bfc18cdd5b7c987815d3e41e7ab82093c",
+      "compiledSha256": "1d9699c346e9132771616f59bc3de8ebb9ccab34f9bbc81d0ceab63297823719",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-boolean.js",
+      "scenario": "default",
+      "contentsSha256": "77ab951a914d961100764e242688416e540b3e48e1e4e50f4a9ca11d2cc75eef",
+      "compiledSha256": "af5fe1ce1d4cc854d4ba9c3fcf148a17c22207d7c1219c95de6fb36df941d14e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-boolean.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1b80e6a8944603899c8f74bfa5b33729ea44142a75ff006d76a880efa02312cd",
+      "compiledSha256": "ad36b22b82431590ec75d569e241bfd0edae82628bca5123088c3b2c9be06f5d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-null.js",
+      "scenario": "default",
+      "contentsSha256": "b47cbc7fd6f6b362d32e30433275ef929931e8d4ddc97c93e47f99954cbc3c61",
+      "compiledSha256": "4d2f14e0aef95fd8fe8543cac70047d7845bd2336fe1527d4db62fc66ecd4a2c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-null.js",
+      "scenario": "strict mode",
+      "contentsSha256": "608defc460651a07fc3cef9d0d291e172cd282ad1f518b4328645260d0fe606d",
+      "compiledSha256": "99c756b52166e0f642fe9684b0c39cb78705c11684508745fb9fd5cfb3712d08",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-number.js",
+      "scenario": "default",
+      "contentsSha256": "66981fb404fd07139742bfdb440e379b9417a3dbe0f500cdb4b0ead490f2ccab",
+      "compiledSha256": "0dce990628f413827640e9af19f6641f64eb4a62b8885a09fd480c6378435b2e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-number.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6c8ca37b35d9b120bf0988ae15bd8e7a1bdb1f79d26eb5f41f0e2698f4d764d8",
+      "compiledSha256": "4964d2c1da8925b4c4cebebaa03f8429ae4e06bc47a448d9f99a98a5cd63d8e0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-object.js",
+      "scenario": "default",
+      "contentsSha256": "7bbcaa328ba523ef5187b89cf49d92e3f948c52cf124d2081ba48eb42261bd1f",
+      "compiledSha256": "810dd76dd4f89dc7557f0ea1bb19ef5ebc72ff552b1a142b991e212fab14b03b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b6925412e1890961b8c8e4e63058ad4aee274ed9659c998dd91e6005c4adc0cc",
+      "compiledSha256": "89ee73a207cede5dc7096c65d9d8da5e4367cee45cd3f465c9040fce5e8eb9de",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-string.js",
+      "scenario": "default",
+      "contentsSha256": "a4e51325dd1e401c017a71ef9172648be2bc3bea2bd852e07f7c566dfc5cf2c3",
+      "compiledSha256": "1c8024e649b2d9b01c3e494ca9bc9a1c95c2181b76af45eb6c5629995b993998",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-string.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6c09721f7b0d3899599629f58b2dad96897469ba98d3ccc9661dadc25920cfb4",
+      "compiledSha256": "1177c62a62330df86519a34edc3d475b696b10e4b51cd717dfba05b649c60199",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-symbol.js",
+      "scenario": "default",
+      "contentsSha256": "e0d2562590c571dafd894c44f07c802a6507fa66d4e1e665474d826fe472cc31",
+      "compiledSha256": "51b0edae48bd6fce80d38f13630dfc491bdabdde73938172718f16a23c93e19a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-symbol.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6abb47994e421fbb35c4cb97d5ed5c6b718f37a0fc5eb0a241f86fbe232fb01d",
+      "compiledSha256": "fa3609627bc6540e042a9a651840aca3c250b3bb9ec52b70ef7671b00227f25d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-type.js",
+      "scenario": "default",
+      "contentsSha256": "e03ed0096b7553011ef799fdd56a470d1f7e896933f2793e93b432115bc172b7",
+      "compiledSha256": "fc3ee11b314f3fd5244e9348b5300636d6dd873b37bda39ec2a56e2e603bb0ca",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-type.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6b27319c60ada455d187409ee062a4b60c083e7f2d5c714d4f2e5ec6e8a43083",
+      "compiledSha256": "d04b3986fce095a22f67f4a4d9b29cdce4264fb631e1274fd73c35164d1b8340",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-undefined.js",
+      "scenario": "default",
+      "contentsSha256": "84553b7a128220700b441482606c5cd9dee311783a5a917afe0d44c543ae0066",
+      "compiledSha256": "7b0e4ded50704f70bec9f238c44438ea06e7cf00ef5c8a1585b3cbfb213751ff",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-undefined.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7fc33f1c52b9d0edb6a8e8ac3f209dbd885a8bac711ee399d420f183a3a2590e",
+      "compiledSha256": "27d541c1b8afd3c21f4638eeef4ed061225481f4de1cff6cd068a6aee3c14959",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/object-is.js",
+      "scenario": "default",
+      "contentsSha256": "eae8c763b6c76e64516f29987991fdf137f3432b7591b2112ecff67f8bc776f3",
+      "compiledSha256": "f9613a3e9d79bdae1deaa90f457741a61b876671a5208b0a9dfd904f88bbfc89",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/object-is.js",
+      "scenario": "strict mode",
+      "contentsSha256": "502d028e30dc3573e9b749ab43e773851e19181bded42b6e01ab3f025ca81b56",
+      "compiledSha256": "ac42fde6526f5147f5ffa97e661e66772b552b37805bccbc9883bbdf6f3e300a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-boolean.js",
+      "scenario": "default",
+      "contentsSha256": "577abb92c6da1bd9f5ff216d706ee930a6c6ff33ef5ed8ee1c965150b066f4c1",
+      "compiledSha256": "6679c41889963ba13eafd7658ce1abae5842dc0ae49b9f4fb4333f56bdc3910a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-boolean.js",
+      "scenario": "strict mode",
+      "contentsSha256": "bf1b65f28546ce22ecf69b211ac1a0aa700d814dd12a9841acd4c786ec30f34c",
+      "compiledSha256": "3a785429a8ad9849172be14de748d243eb8b704e7823be479f8c48b0bf5dbc28",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-empty.js",
+      "scenario": "default",
+      "contentsSha256": "964367eab20651784dc15349e573fad83c3b4120fea5b674099da201b36f4252",
+      "compiledSha256": "9506a39363811d629e75126c23c5495aca00a180d549893167ac87e175ca25f8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-empty.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f9209f211f23ae474b9dc205c7574702af175604e0b023d7db9b87259135c6a9",
+      "compiledSha256": "95e54955c4dd8a558735cd0be86a9cd2928d69ecaeecc0424d277036da0770db",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-null.js",
+      "scenario": "default",
+      "contentsSha256": "5f131972dec2656ed3c0f670521e7d7ea798fbcdb6c7152c111602c5a827edf1",
+      "compiledSha256": "1a81991d5a7bc964efdeb6600a91fdb61a11379c4657ddd02ff54b8881ae316d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-null.js",
+      "scenario": "strict mode",
+      "contentsSha256": "247efca65d2954ee51994b181bda0b2dfde6a0b6fbf18fe223e63a8e1bff4a14",
+      "compiledSha256": "d27c5747d6ec73a9c0259ddf279837859cf51e6711b7b2230c13f094bca59d79",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-number.js",
+      "scenario": "default",
+      "contentsSha256": "07c493f167858e53cc40fa96f85a0fdc31126264a5d435a5b5e2c96dfa5c75cd",
+      "compiledSha256": "926666f3ad814162a2e92a6fc1eb2891a073f28b38126daf4fdfc7e4e9719e83",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-number.js",
+      "scenario": "strict mode",
+      "contentsSha256": "95e91575060cc2ad357a20d58e66862e619d01b606a39b8ff6b6cc8dbb231a3a",
+      "compiledSha256": "51829396b27d08b6fc95d975fb95fe53e7ccdfe08551c649d4ad5628929d2f40",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-object.js",
+      "scenario": "default",
+      "contentsSha256": "8afa8cc8aa65820b4d761e10cc8608ea9490e63d23f3fd42f577a326d2b545d3",
+      "compiledSha256": "42b84edde357426290f996bf4f782ee57a16dd51f154bacd7a0dcf475d31ad7d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "547005e86bfcefc3124b98f04e60eaf3bce2698124dac31ffd23f20b846f0293",
+      "compiledSha256": "23d35a14df6d8107b5db567a3abbf9cac431f0e4c1ae05ce49419708917662e6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-string.js",
+      "scenario": "default",
+      "contentsSha256": "e57ab85738b70443843e8926189794233392879c2196045e10c9f3d58eac3ce9",
+      "compiledSha256": "1b2122e663331d361e2f69370102df35b939542cc3f2820ca461b3289202926b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-string.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c2124189630c6b97a5b240a06dd63a2c7f8a159774fa3271e4e5e1c498e7c1b5",
+      "compiledSha256": "44e97ae4ce66c0a988a589fc37ab2d8588c165a9590c05647ff1b32e6d9362b1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-symbol.js",
+      "scenario": "default",
+      "contentsSha256": "cc4a167f4f6c0822370943a5595b83be2a3e4e078130504c30dce05f4457f361",
+      "compiledSha256": "f5a98c01c72b4680b734cc535b8a18e438da197515579b39fc65bedfaf2b4515",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-symbol.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4d87537c7f99d8e63ccb77b34953e8d8e14f19735dea1c373b3083b4732cf0b3",
+      "compiledSha256": "08071326771f8b13983a65f414ab30f8cccf4e778e1849e7dda7e4f38c6fd2cd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-undefined.js",
+      "scenario": "default",
+      "contentsSha256": "e886b9e4abe3ad1687a9a8a75de3a9550a935380bfa248072f2292f70aca7847",
+      "compiledSha256": "c1919408e2d3833eadc19a232d68e32a02a7e2d9a17b61b010659cc16566ed95",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-undefined.js",
+      "scenario": "strict mode",
+      "contentsSha256": "abaca7c5eee56c8b9e6b06e4e74bc828521c2eeac1e19ef69d141ec63e5977ca",
+      "compiledSha256": "260ee73d1f311f9d7891aa2a94d8f6325416016d116d33e1e1466a71ed91e294",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/symbol-object-is-same-value.js",
+      "scenario": "default",
+      "contentsSha256": "fb8e13ccbb6886eea6a759dd2f347b6a78612af125db244604624e617f2be154",
+      "compiledSha256": "3963787e7ac6c217b7af8fa1b3754deffd3a9406b7a38e759fe1e13cd6a3f556",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/symbol-object-is-same-value.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8610bb5d1f141c8701a487913c4f8d2666a9e30012a4d2a6f36b568f2d9c7fe6",
+      "compiledSha256": "c27248f2321af21ef0f4e6763963cc74a392ae514aa253c8cf47a89aedbbd89f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/arg-non-thenable.js",
+      "scenario": "default",
+      "contentsSha256": "f2776e05f336dc061e5ee7ba78dfcfce25728a456c38ab260b3455158f662b24",
+      "compiledSha256": "98a04d1e80903d116206e401051b7c2f84c84ad1690d36212ee2f7d4cd9dc373",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/arg-non-thenable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "92069de6366ea833c7a62b70c8ec62d0a66e491f335520d742fad605524a45fb",
+      "compiledSha256": "a81711ad7fffdd9fa670c605bdaea4a5fcf728c03a134931cdfadec58d41dfc2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/arg-poisoned-then.js",
+      "scenario": "default",
+      "contentsSha256": "34bcce5858ba2ea1d1bcbfbe8f425062d196153f41ac47c702b3ccc840eb5815",
+      "compiledSha256": "193214538733fc4aefd7d0a5054a5ad87dae2b9aa5a049de6f4c990c30dd2ad6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/arg-poisoned-then.js",
+      "scenario": "strict mode",
+      "contentsSha256": "83ce160db0b6eecfa2c5e099bca0096dbc8b012a00eb3d27379bf0b78dab0f3b",
+      "compiledSha256": "42fda8c064d1cfe1110ea8e92cd06b8d4b70535905e88fb10f26d30ab3e69dd1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/arg-uniq-ctor.js",
+      "scenario": "default",
+      "contentsSha256": "d647b05c572e235e6c122458583a2597f41ce2f360ab174e32a931d8334847e7",
+      "compiledSha256": "451dbbfd695149a1fe8e6a27d294c8c853e23b88f00074c381a2b5862f1f966f",
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got Unhandled: promise rejection: TypeError: null is not an object"
+      },
+      "rawResult": {
+        "stderr": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+        "stdout": "",
+        "error": {
+          "name": "Unhandled",
+          "message": "promise rejection: TypeError: null is not an object",
+          "stack": [
+            {
+              "source": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+              "fileName": "Unhandled",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/arg-uniq-ctor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1fba51a7e211725e1353c0a929917d7c6e07ac306522bce239b7c631678f8372",
+      "compiledSha256": "70e580332a3c79f1e453ab9854eadbf1e3c2c03cf8e221e892c18fb9a2600b9c",
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got Unhandled: promise rejection: TypeError: null is not an object"
+      },
+      "rawResult": {
+        "stderr": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+        "stdout": "",
+        "error": {
+          "name": "Unhandled",
+          "message": "promise rejection: TypeError: null is not an object",
+          "stack": [
+            {
+              "source": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+              "fileName": "Unhandled",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/capability-executor-called-twice.js",
+      "scenario": "default",
+      "contentsSha256": "3c270db052794a4ff11b016b653c36e64035eacc6433f20f4b274f4e279100ee",
+      "compiledSha256": "323d339a840f4c257b5dad02b325e4d3e5ef16f79ee498e821e62efd3931e840",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/capability-executor-called-twice.js",
+      "scenario": "strict mode",
+      "contentsSha256": "11c574ab7bd302d6c1ce5d55e95f78338b0451a96e23cb46fbb49dbe2c2f43d9",
+      "compiledSha256": "0cee6778d06b858627e4e72fb3f004a6bac12056eeab0d45d579ed615ebc9525",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/capability-executor-not-callable.js",
+      "scenario": "default",
+      "contentsSha256": "8b39884833813d35432f82ce12a31fe0dcd2f667444b25934e61268fd21ecedf",
+      "compiledSha256": "57a9763a6ed308e3384ede23443134db3a1ee08441c2899f52c76195f0ed968f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/capability-executor-not-callable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "17172b1c3f3e606325aac45655d47a696c5009d777c03efee49c2aa8fdff75f1",
+      "compiledSha256": "4da8163f407f2b40549efa4ee53cecb7f33c754512b39b30c41c4dd3b9689983",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/capability-invocation-error.js",
+      "scenario": "default",
+      "contentsSha256": "637c94c359616510441645bfe6428c7ed2864fb418fb58d2b00c29def9758a07",
+      "compiledSha256": "27d877e400d8ee048d62cb1427e70030681f0128ed113c73d8ddc49ef8de3ea1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/capability-invocation-error.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3e44478e2dbb85b7e0ee26f541d3f6ba7950d2495ec8dc8d346c95eb41b2c502",
+      "compiledSha256": "42808a778850c82609f0e196edc0be27fb384f674f4bf365ed7e45a21bf44bbc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/context-non-object-with-promise.js",
+      "scenario": "default",
+      "contentsSha256": "53e318ad6884e04cc05affc07cc1a0566118f9175f0720353bec732dc8ae0b9d",
+      "compiledSha256": "398a08bc29aaffc00f7047fb41de1ffd4d5cb30092f389f5906512ad2356de60",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/context-non-object-with-promise.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8c6c1c102251aff494a9ca2d3c0c48fa1aaf3ac21bdc67f0bb884d291c80f9b2",
+      "compiledSha256": "6b2883ec00e11b82e0c5c5fa83427cb4ee1d7226fe56c35a32ca4c73c2b67ec7",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-ctor-throws.js",
+      "scenario": "default",
+      "contentsSha256": "b73f5dbb75edecf3591b2e6bf1ecf2ed761a6ca4dd55a4789bba30e318994896",
+      "compiledSha256": "07bcb6df9dfec07f6baece4e490fb7051567ae79fcad28df444c24dcc4beedaa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-ctor-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6236e791e38b0fe562e1d7e1b22e25c0216265ebc7c669cde2b565cc3d7c09bf",
+      "compiledSha256": "3a7ad7a5a6926bfda4b51f48a9c0b71f71acfccf259719777e0073b7b05fd7f9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-ctor.js",
+      "scenario": "default",
+      "contentsSha256": "087c1a6f077a24bc8330f6412e050ab154706138e6d8598e89393f65ff75ef30",
+      "compiledSha256": "7a9eebecb2ba11e17078aeb5ac6ea0aa03a45eb27789cec7c0591c26a78dd3db",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-ctor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9230131538fbabaeb5b54a6647fb0312e9859fe8640b6c048d0987fb7f048247",
+      "compiledSha256": "9e14ded3c523dd92ede90a75e34ee0ee26818ac92e639d0ed105b810c83fed41",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-non-ctor.js",
+      "scenario": "default",
+      "contentsSha256": "5461b6bfab8f2a4035b334405c89bb1ec7a48195d8a90a4e0f3d785dfa94e15f",
+      "compiledSha256": "aabe2f3715e5a5a08e2be82d9d9f193b9c4f90ae50ac0552bb10ea56a78b7bb4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-non-ctor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f6ac1d227127bd9a78675f5b9cc0727b97c41a69c64c843d63affb9e0b1f70fe",
+      "compiledSha256": "af30fb0044f62e4369054a7070a66859cee19302b5d86c23fc44a3b3db2554dd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-non-object.js",
+      "scenario": "default",
+      "contentsSha256": "23dbe4f0ef4f02aa2d0514899de0930472ba51683c1c5ca005d84c2479ca8faf",
+      "compiledSha256": "9b3868d8e695b3d90340bd31c77012c52a09c53a13526debfb41544856121af3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/ctx-non-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a67c792e9d55270c8e158bfb1c6b5ba8b41a9d4cfd6ec1c63bb0a5e439ed9261",
+      "compiledSha256": "d81a34f592e93a2c6010ec983b4c7541c48e79d51a2c45b0b1e9e731329c0532",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/length.js",
+      "scenario": "default",
+      "contentsSha256": "002f3def1d9a78b90be4342770cf485cdd7c58b3aab8d54d3a8dca0af4a6c110",
+      "compiledSha256": "c29618e810348184d91439052b3eab7758d75449827b43cfc1435f977fd4324b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/length.js",
+      "scenario": "strict mode",
+      "contentsSha256": "507f001be42070b62301c7e9ed48184f2c4c4b90eeca63526ab7622dce4b19f6",
+      "compiledSha256": "1ba396d4ee5c66af117fdb175d11e9d1807a6d0e273a2192589ca82accd0de08",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/name.js",
+      "scenario": "default",
+      "contentsSha256": "f029ead29f9aca593920615ffeac73d98e2c2b1ce69a6d311cfa80ae81795fbc",
+      "compiledSha256": "3eba087304875c408f5e568de926ed6e6c9e32a99e7ca6eb6016c13a08842ce4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/name.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9135d6f057d0713f805f1658e260ae3181cc960334df6e4d2ab11fee39df6f1c",
+      "compiledSha256": "fff9595cb76fd86f29846910ee6415785f15fb2f901ec5baeeff7c40421338a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/not-a-constructor.js",
+      "scenario": "default",
+      "contentsSha256": "30239903d9396d893c5264784d53317cbd6df53f07dedd5dfce2ff72ae82f061",
+      "compiledSha256": "5c644209af975ec87a064f20ed811e6c3440b1fd502bd63e7377c3ae7fa4f077",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/not-a-constructor.js",
+      "scenario": "strict mode",
+      "contentsSha256": "70bf12ec59ea8e12a932697bf4cbf851b6459b86db33243e286b080e1e8d7c57",
+      "compiledSha256": "eb463b78b8f6d13e2fcf4aa6801c802439f9aa45853bfd862c9dff56c04c8a85",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/prop-desc.js",
+      "scenario": "default",
+      "contentsSha256": "d4e5fb40f3902508ac270c33f812cf9f53c5dc15c8c46ba2ea57a603629366f0",
+      "compiledSha256": "7690ea1f504a63b1a5bf54a6f47fa54d8f0bb89cf6798aab1a11d6771d4d4c7b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/prop-desc.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ae04f10fc1d1760286d1682f365d3174724bb43dd054ea3772f00409d18c4795",
+      "compiledSha256": "be0c83f9d81ce819ce791b5e1cf8e28423cbbcc29410bcdd6a3a9a262bacb466",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-from-promise-capability.js",
+      "scenario": "default",
+      "contentsSha256": "ff09722807ac9c407ce0beb0ceba163b572abe40b8dffd5fde7d4b6cf81e10ff",
+      "compiledSha256": "e7cbe0900b3d00155862d20dfe590831e7a6dda6d158d3ee9535fc157bb0c20f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-from-promise-capability.js",
+      "scenario": "strict mode",
+      "contentsSha256": "92b24c55358f4a95b1ea520df5662cbd713c1240ff574a6e61023bf270d6253d",
+      "compiledSha256": "c4628e34044fb234f0cb1f3141927fe7ec723243365cf43c84ec33e4527aa1e3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-non-obj.js",
+      "scenario": "default",
+      "contentsSha256": "e83006ebe73fccafe5fb4e58e3a1ebeab449b1fd8c298dc8eec432a56fb81445",
+      "compiledSha256": "93994a6ae3febe11a24b08f8d7894c7eafde248831e43d636213bb4a9f5d45ea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-non-obj.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ff6b15b2d3a32ea8876853c01ac90a31ca5a70221891dae294a7fe6cf598fcab",
+      "compiledSha256": "ffc887a689c5a4b94471adb8f4804032665e435ffcbfb80515eea3f34c639b8c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-non-thenable.js",
+      "scenario": "default",
+      "contentsSha256": "8e3cbe44a6133807ff5205fb6e2c4a4d04f861cf60288e3690ebc4a01fe23a5a",
+      "compiledSha256": "30718280ffc389c659663b09f20d6adb350819f01985319c961ba48076aacc4a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-non-thenable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1445727fcf265338c4bbcd5f35e75c6c7e29daa2269a97be086d0de262e489da",
+      "compiledSha256": "85f2c158658182a58bab321b2bafe96fd39c0cd9630bab64eee01b06a0611ea0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-poisoned-then.js",
+      "scenario": "default",
+      "contentsSha256": "b6d869357a9d26006e5ae662972dd01882a02c8e65f928d5b8f9e6fc39e695f5",
+      "compiledSha256": "3ef19afe0c4cf71799f5c383c083cc44a668f23cc1586d7c3ebfeb717b156eb0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-poisoned-then.js",
+      "scenario": "strict mode",
+      "contentsSha256": "19463408b4931274f5731acd8fd86bacd41fd0978d589e75ad98c05c69303bf2",
+      "compiledSha256": "84d62e3e28691bdef12839765583b8a7a51281dd79b3e02155ff1e18ecc840a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-prms-cstm-then.js",
+      "scenario": "default",
+      "contentsSha256": "8ab42bb220db8dee716d7851c4e09c52269ec24f3d368b81f43dc8e4f0a3e9f7",
+      "compiledSha256": "fbd0c8fca4babdbfa80778c2212cceb479acff041f148ef0c61f06d2329dd51e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-prms-cstm-then.js",
+      "scenario": "strict mode",
+      "contentsSha256": "cb5711522c79e7c5dafdd2aacbef5022b4db3a311fff63f4ba7ad5b99d9ff706",
+      "compiledSha256": "5e8c3c942217d456d63d83854cb6f52cb399afb5b3aa0ac1ea810211be24ea2e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-self.js",
+      "scenario": "default",
+      "contentsSha256": "bfb715a10b0e350d08051782b77394a539adfd5d35f7f4115753c1b03e942b5c",
+      "compiledSha256": "bd851b05ebd440b7037a69bd9d687770f5c088017165da94a233064b50280c90",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-self.js",
+      "scenario": "strict mode",
+      "contentsSha256": "069ed586d7a50dc320475ae3760ce93aa1fc7f8a95df83596fa6cbc8715d36b3",
+      "compiledSha256": "b000975f30c34f89b14cbf6bcd0a7114ddf34b22d4ac144cf4e951f8f89a71eb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-thenable.js",
+      "scenario": "default",
+      "contentsSha256": "9c5927ad9308011e4acfa8c362bb6a9693afdccfda3767b2740ec93f80dd7804",
+      "compiledSha256": "a6509f46135510f1da66d65ffa73b1a68cfd44ca96b6fc842a965c083f58df6f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/resolve-thenable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "684a6cb47745584c24c243b1bd6874601790916b9cb9b82df5b8560d57f53e8f",
+      "compiledSha256": "faf25439d065cfa7f0b358033ca4a871499d681e89553837cb045a852e6c878c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A1.1_T1.js",
+      "scenario": "default",
+      "contentsSha256": "07127af6647f07df424121fe0d7d7baf3587279a5596da8363ddba50fe173369",
+      "compiledSha256": "7cba4a661ae00907f5c9ccf23d12cfa1b71d859bf4082d9302f7f221304837d0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A1.1_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5475bceb401cb72845c64812549cb86c466ef8255be310a010c9ac134a247681",
+      "compiledSha256": "12f580dd544d40bbd1cfff00dac43783e6b8d2fe1fe840f919f03594e6d03743",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A2.1_T1.js",
+      "scenario": "default",
+      "contentsSha256": "68739be5c5c711ecb1db8b52aea67173b71379279e0e5ec628e3d964178e6296",
+      "compiledSha256": "af524d2a20c7628c863e769be2b47d3053fda714387255911e6f7ec701495087",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A2.1_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1db9db8f8a1a8e6a8231cc10a8f07f5c552831db8f69753594c00935255e4dc0",
+      "compiledSha256": "02bb80b73aedf03981d0dd5c557c3147d0dd99e6b84c887c8f0d851c36705d70",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A2.2_T1.js",
+      "scenario": "default",
+      "contentsSha256": "cfadf6dfc97b1fb55fee9c1d039782b1e84ec58a2b109f63faf1c6eff999539c",
+      "compiledSha256": "a1f720149b5c42a34a881ebb4f128f10512c1926a64298a91984a6346058ba84",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A2.2_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "91321c38794d68ff55f66406e532f62e64b73dde71fc94cbfe46da7d51fa9d94",
+      "compiledSha256": "68e9f1753004f34d667d78d98313e53fa5c3901de7bca5e463cbb797304fbb51",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A2.3_T1.js",
+      "scenario": "default",
+      "contentsSha256": "a752765af58bf3255821681c7e41d859c427879c83998c5ab310c8457af1d4f2",
+      "compiledSha256": "be3622b33f4a5f4372458d238a71209bd716b2ebca7cf081999440e65fdd92a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A2.3_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "50413d4a0fc73982d1f67fca72dbb5b10c00da9256cf3a74e8d21504053c00c6",
+      "compiledSha256": "e31364edd797006a5bfe89e50aae262fc0661af400fbced1dde605182a403014",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A3.1_T1.js",
+      "scenario": "default",
+      "contentsSha256": "836811967aa371b7a1836492b652bfe75eea9b59d80e4e0aaceff1be840f9251",
+      "compiledSha256": "0a59dbea490be0686c6e6164e9a4ecbb81580fb46f4668bd364cfce61ffae0f4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A3.1_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "dd0f1afd481c1b8fd7f2cebc8b28cf5722812f9de4720bbff7fc995f46060414",
+      "compiledSha256": "61696e3679ceb613057c1aa8a8bbadcc237b51232d5f96cf5c169603b6c9e0a9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A4.1_T1.js",
+      "scenario": "default",
+      "contentsSha256": "10d3c910a337f3369e242cc5f6f52d0380b21afb231d7d2fb06606736f920139",
+      "compiledSha256": "531d95b84b721f37f829a3052c79f1297bf31b8c3cb8acd4a882e7aad4d1abb9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.4.4.5_A4.1_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "59dfb1cf73ba0850c7d37047b0a92e036c87dcf3edaf04555051999b5ad0b974",
+      "compiledSha256": "7efe70e7dca2fd4c3386caa327b91aadb8b2127bb0337cedcc9fece62bd47f00",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.Promise_resolve_foreign_thenable_1.js",
+      "scenario": "default",
+      "contentsSha256": "7ccda23ed81cb4303745e2550d81fb50d01f63b0aa669cf1c0c8b8de009fd8f6",
+      "compiledSha256": "477aae6a5442da5e57b1ce3beb7f122b9b5856f16798a67430b1b28b12ecbbc8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.Promise_resolve_foreign_thenable_1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "430d9a8d5f8efbced9af69da778a237494167a2417d48769dff28a46c15e16fe",
+      "compiledSha256": "2198973622ed1e9962223f31522e1ffe47784c4ee1aae4a9adde372359c6e89d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.Promise_resolve_foreign_thenable_2.js",
+      "scenario": "default",
+      "contentsSha256": "9c85f38f138b23b85d8955860a7b8d2c1f54a7d1f38b8b324b164e9ae33f2f49",
+      "compiledSha256": "d806485566a302e4642095824ef2ada93679d9f48f826b07a771a9c98cb847b9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/built-ins/Promise/resolve/S25.Promise_resolve_foreign_thenable_2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b0d1663e26a9f9ff039ca7d5d1677cf3f7f8a07c1188c7c75dd8da083881144d",
+      "compiledSha256": "edbcf0eb4c106803ee4e613926b9705ba55c8c7535d6d6cfa801b65058208145",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js",
+      "scenario": "default",
+      "contentsSha256": "0e4c301d9ce738451dbe8073f793b11956a84b8d39af282bac5dba3940b8128d",
+      "compiledSha256": "3b2f0f3d85f9b82fc20e19c7bfc058a314e32e22b6a0c88ed28826c675bca126",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6b93e04d65bb131500676301e332a593484e2fa547511ffbfc7e51d11d4b4d0a",
+      "compiledSha256": "14eb141d3b474daf80161ead9b489e8461111287f4bbc0b73a31f171d934caa6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-10.js",
+      "scenario": "default",
+      "contentsSha256": "4a2673ea8908b4a228bb50baec1c3fa80f0b8e4663ab815cc29aa00b91f90417",
+      "compiledSha256": "6c9b1449db29acb0fafa1b7a1ec5918382734ffa45e092fd1bdcc6b7a4725d2d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-10.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6f804d5dfaac140e5a6167ec640b99d43af4b9c194e773cf2a1af01ab963056a",
+      "compiledSha256": "554352b4344c5436708e306e95e899996ac0a119e0da9299bcc0e5b08e1a730c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-11.js",
+      "scenario": "default",
+      "contentsSha256": "715e0c02768ad10e164bc736dedc9356e70a3a0cc9da22d1d6a97a9f3e6876b4",
+      "compiledSha256": "b98527e0c91bff5097c1a8806e07d3bd2ad2b3393351e730d9ae0863d8815506",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-11.js",
+      "scenario": "strict mode",
+      "contentsSha256": "13363fd99f0cfc5b6d375bed85df03e5ed175025a1b652b08a518f6b85255766",
+      "compiledSha256": "e255809ecd760922d57c20df61603f48b6a6089a7e69188c07e49c9022e8df22",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-12.js",
+      "scenario": "default",
+      "contentsSha256": "031e4bc07f969ca893eb0d1d84a8928f48fe1acfbe5bedc92a19351c58af41be",
+      "compiledSha256": "b2c739b9b3340a76a9fb6a76739d855d2257e9b5541810da4322ebe42e28bc51",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-12.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b55a7e1fec386b8f5ccb52887300a036e03e0cc645e94d7b4494b9d5c44599fd",
+      "compiledSha256": "cad8dfc0c0e39e30a1ddc7020893b92d742ff7a177748e8d007a30e1d1107a03",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-13.js",
+      "scenario": "default",
+      "contentsSha256": "3265b559f9ba913509eb4a074276753d762e43b0ffd0f434a7ac90cdda4a6a14",
+      "compiledSha256": "1e7cb85dab4f974c6ab3b14e2f21c0e3d685a128c465c814644eb2193076c643",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-14.js",
+      "scenario": "default",
+      "contentsSha256": "64d0afd7b5ed584548f9c47799526b53707113d4f12495e73b4bebdcc09e9c92",
+      "compiledSha256": "e518ee95cd10d092158ea176538767d646badf4fbd76765aeecbe33c8807c847",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-15.js",
+      "scenario": "default",
+      "contentsSha256": "6da852fe31d5b4317624c3a0028f4f6cbe4a493fa804157e1d65731d79dfcfca",
+      "compiledSha256": "8b8c4f8fc719a629b03e3cfaa698983002abda9522ab2162a4650a8a7e3051ab",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-16.js",
+      "scenario": "default",
+      "contentsSha256": "4edc8c2b59c38585f31d96f40f8ce24ca21bd723cbdd8ce39f15b4bdd4cc593a",
+      "compiledSha256": "8b42d4a28fa6c44834fe9c9e93172490606ad94713cbd27dd16ece26fb34a9ce",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-3.js",
+      "scenario": "default",
+      "contentsSha256": "b7bad5651220e18ded8986a790ccb6097a00d04c19e4034cafe1b8d6f0173859",
+      "compiledSha256": "909fc3d868804e9e43d7eb82fca1b7ed000f25d49aa7cc731350c7ac219d7b5d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "058dd30562c0ee915d7a99c13a06dea2c277ad15529794668f1bae1c03bc1154",
+      "compiledSha256": "b150cd08c14a10b28b5216531c9f0f22154877a47ec68cf77c1cf1d285e7934f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-4.js",
+      "scenario": "default",
+      "contentsSha256": "001f4bfc58d01adbc4d4a1223caadadbdbb3c4f2379f60c0d4a0d2ade71e751a",
+      "compiledSha256": "9a67cdc1534d239b7ca7a8b8f2463dc580216a30d13e74d41086ce41527ee38e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-4.js",
+      "scenario": "strict mode",
+      "contentsSha256": "776c392324ddd4462a3f0ab8763ef8ca97427cd1b705c62216505d371b403022",
+      "compiledSha256": "3b6b357be74a22989990d3941c2a0cb8cd1745bab1c2ab547d17ff731cf79c49",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-6.js",
+      "scenario": "default",
+      "contentsSha256": "ffb6d82bc0c8ad321c850666bfc7b8b280f79a010b58501b9f9f0a79ab093050",
+      "compiledSha256": "c33c2305a704d0d63aef92706d9f8b7a129c4ab0e689c54b9be38e15f9c75df5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-6.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f17b1fcacb84e6c221732269c779d7193ac2651fd0847b561ee59cbca0005f26",
+      "compiledSha256": "37100c9d6f955070b884d371bb12b042dc4ec4b7b6098627dc80739bb8bdb7d1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-7.js",
+      "scenario": "default",
+      "contentsSha256": "32e6c57b100d2692e81b34ddaec24620c0c418756b8793984f18e27dcb88dd80",
+      "compiledSha256": "09ed7b6287763d3485b79810aee04d5879c1831c185ea885f674f26f85ab60a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-7.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e14e4bd1cb8171607b92aa0cb004d38b81f07e35a3db4c808d092a35fecdba00",
+      "compiledSha256": "b9417e0d018cfd2729d32f4d1fad48802e16a91a33ecd3f42877c6c428b1ec75",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-8.js",
+      "scenario": "default",
+      "contentsSha256": "78871c56cbdf9eaaf5f6aa078f39b6feb20c3746e9492869f64305359e0e2681",
+      "compiledSha256": "ca1b7ad8b6c36681995c7d7031d521df1285de2087f60e9440c224bf18cc6f7c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-8.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ff0907ad39ca902f85a338f3ac8de30feda5118aa4d4775f8c9dbeab89312f8b",
+      "compiledSha256": "849850bd375dc1a433412fbcf7c49f4c1c6bcee6ac53ec50a6455dcdf944422b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-9.js",
+      "scenario": "default",
+      "contentsSha256": "5a23f3694dad943c90cdf8c8421947052e12b3271b2821e360ab6acefdc00d55",
+      "compiledSha256": "538da15245565b0c58520beb691f3812050b487de8ef410fcedda8df1d684bd8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/12.14-9.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a6811f4219fd49b18b144d4592227e4cd8e463594a83d5682bfaa64f10497fd1",
+      "compiledSha256": "027b33b0f68587ff44b581c9c0ec0ccc356e4ff7b69e03eb846736b3edbce534",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/catch-parameter-boundnames-restriction-arguments-eval-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "eb412e85f5929a14f7166c13eb12192589907bafc665b99e0ad9240fc7994746",
+      "compiledSha256": "6a63f38d5a7d5e8c70c2cdf86aad4d0725b4d8180a37b2146e0d389bf57b5418",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/catch-parameter-boundnames-restriction-arguments-negative-early.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f24e4cfed05602c84e5eb75679aea6851160e42995ea5e081b4385fc35278210",
+      "compiledSha256": "e9dfd099f22ad9482294f98a0213a1881a3910b5710479a903e7ea335739a82c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'arguments cannot be used as an identifier in strict mode' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "arguments cannot be used as an identifier in strict mode",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'arguments cannot be used as an identifier in strict mode' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/catch-parameter-boundnames-restriction-eval-eval-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "84793287a2bac57b342aa343465b3646dbb5819587a93c89af444a87f5a609aa",
+      "compiledSha256": "6f2bb555a69f226bd03d2a5d6d541e9c7daaee77c9f0d2aceb1825e66766eb38",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/catch-parameter-boundnames-restriction-eval-negative-early.js",
+      "scenario": "strict mode",
+      "contentsSha256": "33aa61c1ca3c73c2303c4dabb0a5feac910f3c08a983672d369278b416aed0da",
+      "compiledSha256": "1b9284a170a1d25b8af45cac66ec2b23b2f5635c746dd4401fb6f707e3bab50f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'eval cannot be used as an identifier in strict mode' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "eval cannot be used as an identifier in strict mode",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'eval cannot be used as an identifier in strict mode' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values-fn-finally-abrupt.js",
+      "scenario": "default",
+      "contentsSha256": "13383b6b86366ea9a45d846cc7a33c6ece40f5f7d8912dbf10b0790e061a3ce9",
+      "compiledSha256": "413e8ba62a97608d4965de6523a94d90a0bd49761c6d92d2d460e8fbe7c906be",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values-fn-finally-abrupt.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b0bad11aafcd2b7bafecccb7467916e41ecdf883fc33c6cf8010a345a1eee0a7",
+      "compiledSha256": "451d06423a32a01e92e49accf2d6b5127146c62a3b300b236780c2cd1cf27dc9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values-fn-finally-normal.js",
+      "scenario": "default",
+      "contentsSha256": "10565e4479b5661e81e31d699846e0e9a4404df6f335750d40903dccf276d216",
+      "compiledSha256": "43bf09a2e6dafa492d3763607473e4998a1775b400c6d80c20ca5abe6eef580f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values-fn-finally-normal.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8b64fcc19d9a6d6e4ad21e2c7c57c9104b7376d80ed00b675f6757d76db9b9d9",
+      "compiledSha256": "9395f08e0bb663c5b1ba1bd908199bcfa0955c4126a235ec00061568350add2f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values-fn-finally-return.js",
+      "scenario": "default",
+      "contentsSha256": "96e5475c960d8f059a724556b5bc6e9ef696c74c23b2769b86720ee3fb9acd2d",
+      "compiledSha256": "5de7e8855d626cc647784bc29b906671b0c72598f7785c0b340b9632632ae2a1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values-fn-finally-return.js",
+      "scenario": "strict mode",
+      "contentsSha256": "39481fac784b1f50dd5fe318e3b50f225122b4e21b658ff9b9cb6678a918d015",
+      "compiledSha256": "4cd905e618ebce0a343dfb2ab713551b2beb5afd177aeb7e6dda934ab02b3b15",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values.js",
+      "scenario": "default",
+      "contentsSha256": "e3d0d2c53a4aeef35362dd92c8e7ce1fe40776897085ff995e77d03fa969963e",
+      "compiledSha256": "711168bac3555963e1724cf42a294fda4052a29e66d605117a0ee1a4c8664152",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/completion-values.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9a81c344dfced6a520fe1555f8c79d3bd51565cbc2bcc9802877bcbd4be99d49",
+      "compiledSha256": "6c1263662512441bb15a1d4b52172b1c062fe95ba74790e03fa65b94b2b53cb3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-empty-break.js",
+      "scenario": "default",
+      "contentsSha256": "c2cf4026516edba19b5a7ad7cce69c793f3a7e3c8cee34179eeb7c556f4ab237",
+      "compiledSha256": "2f334f88bd10930ffc19d29d71fd7f9e20a296f37c7aa45efc8c4c2fb5e8a4fd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-empty-break.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d0540cbc7c40da185b03a69078bade045572f2f08f447b8ffb346f7021672c96",
+      "compiledSha256": "b680ba14db1cf518b47f9ae979fc1121ffa0c6f85ab6d47fb44f3bd0bf2468fa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-empty-continue.js",
+      "scenario": "default",
+      "contentsSha256": "faa12db3dbe80ef2b6cfc3cd59d802a56fb34b02342d9bd0923a10d4242bd362",
+      "compiledSha256": "36eaac266f3b22afcdfebc64e47d674aab93116b6f26370b9f2fa958d1b5880e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-empty-continue.js",
+      "scenario": "strict mode",
+      "contentsSha256": "667aed202980e3f61eda23b5f27d2f565a227699df3d7df6ae930c217b8fec1c",
+      "compiledSha256": "2398daa21cab545adeef833afc9fc90503413669a093438e929a0d5bc31684a2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-finally-empty-break.js",
+      "scenario": "default",
+      "contentsSha256": "728a2899cb10b594f48b2c4952280080340994c25fdb754796dde24e2de889a9",
+      "compiledSha256": "a1d7f0b256b3bc1e0f928da98ad6aad5cd5c27017bf8216d05ec783b5c7cf175",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-finally-empty-break.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e8d3acd65dbd5bfbee6c5826b096f78946d79ac43f5a4f8cba3b5dae7c325798",
+      "compiledSha256": "2bc90fc9223a2d0fdf74d3d15fd47eadcf8f3e3313bd7e3d14cc25d3676db5ca",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-finally-empty-continue.js",
+      "scenario": "default",
+      "contentsSha256": "5862ae5444b75a899fb00ce7d3695a211dbf1f2d32abfa5cc437720063185db0",
+      "compiledSha256": "c277e55efb580eb7eaf7dcd2a0b95c6a7517c69e5bde62496a4c0411f456a4df",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch-finally-empty-continue.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ab99b900e4928cbabcd6e0d75543f91bfad559e1366d34ba2e82f3ee295c7b18",
+      "compiledSha256": "49fe195cc872215de6480be63cff7f5eca0a1071d3bcbf571c13747a19e8efc8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch.js",
+      "scenario": "default",
+      "contentsSha256": "38448c6a5f23c142151b0c65127c2e7db1be2d1f8373c795bce9b3b56fd95c87",
+      "compiledSha256": "bba98d22e41c59185872f293706ac6172b5964853465f5154cd737e02ff05922",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "eec4024145cfb35e2e828d60d66ae4aadb520360242d5b9b597580f72c97c356",
+      "compiledSha256": "fa02817b81bce3604bcf5e928751f510075b88c5710a30fc1fbd3e33713114ef",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-empty-break.js",
+      "scenario": "default",
+      "contentsSha256": "c5907034baae972b7e4092cd1c822d21800ad68749b3f2215c0ba4c6d68a7781",
+      "compiledSha256": "fbc1471a85da69718ab32bd15ab3626530bc966bdc6cf6d934751f737f98b645",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-empty-break.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b4b3452c738e127ca9badfeb3b75f31f5ed895beafd4e382e775b9d26bdc41e9",
+      "compiledSha256": "8ab5ce47f550dc83342b2385054a2cc57b153d43239f7455b1440d655954fed9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-empty-continue.js",
+      "scenario": "default",
+      "contentsSha256": "870b0c37f258fc8c7d28525967b04c0c50a3df165b42c641f77b5a90b9015bc6",
+      "compiledSha256": "c739b37c9833e24cea9bf773024a2f0b01b2901f8b0b97d01cdc1fa21d05848d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-empty-continue.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2e83c2e29865d760ea3cca83284eaef1e923fa7e5589ce82fd94d48af8744db6",
+      "compiledSha256": "f9afa417721c0bfa68afc1c640f566fa1a92925cc9574e61230d730c20623bc8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-from-catch.js",
+      "scenario": "default",
+      "contentsSha256": "6309513787ba8c1dd2ba9a75b4962ec0ef7a2965153f8a16a532c4addbab9f21",
+      "compiledSha256": "0dba78e4644e8ea3277b542a6e3edd908b0883dcdded449e683fb0c4d067c487",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-from-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c8eaf522aab5f602008c66d0f036597e781da02fc3809ff8e0793aa535693ff6",
+      "compiledSha256": "e320d3fa9caced7decd11ed9d5b79f72f0cf436df9b920d61aadc077e77d4a08",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-skip-catch.js",
+      "scenario": "default",
+      "contentsSha256": "b9757f7a475e22dff24877fd2d54d8429d1a6bca9a56893585fd8975a86e8586",
+      "compiledSha256": "1aafce8d889157234397987c12a02c2b2f9da507e8972f3f1ca9de4db1d1dea1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-skip-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4e785fabb557db0c6e099595b70ce4e4e06699888d9917b5c6a43a0f311a3fc7",
+      "compiledSha256": "e70ccffeb366e697ae8003f2897e44104e378c6d0620b030ce1c41f807e4a9f3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-wo-catch.js",
+      "scenario": "default",
+      "contentsSha256": "341ac51951f499169f352a55016852fc68ea948a14c08bc513a8b5c0838f2bf1",
+      "compiledSha256": "ed151c49878b30a12d95e40ec2e318bcfa11ad9cf6d326ab4267916b4eaa823b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-finally-wo-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e3706f35c8323721e7ca87b6d78fb27d1df1ec16a4cbff352f063857ed5ae6cd",
+      "compiledSha256": "90e944a3ad312438e7f9f9ef78c2e554d955016467bb11545680df2bd6faf81f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-try.js",
+      "scenario": "default",
+      "contentsSha256": "fe3a04209f9f0204fbeb6fbbe2cfe3fb7a6d929a5dc254e4a07919992653a007",
+      "compiledSha256": "700c9d659726c0ef6641e9ff6c74ba68e22bae5045ebcd1b30310d0bb47117da",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/cptn-try.js",
+      "scenario": "strict mode",
+      "contentsSha256": "98e8d256d830d3b77e5ef8f6a251d61e2dcee16e3736ecd50cb038b3c3255175",
+      "compiledSha256": "cba076de108566f50d8f01af69389dca0636bf68e8e508408dcc010b22e2a416",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/early-catch-duplicates.js",
+      "scenario": "default",
+      "contentsSha256": "2dc1165cad24bf3def8b776144bbdb1e92ff1f8de18310968f89460d6ed4323a",
+      "compiledSha256": "b3e9dd4eb152b4dd799ed722fd95fb3c365acd75228eb9f4f73655da15d2d29d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Identifier x already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/early-catch-duplicates.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0acc01dea5a2bb728f8c5802003f9eccd67656fbd9b735f35befc556b7cb1b29",
+      "compiledSha256": "4cb3d0b98879ae465847e3e629048fe14796efa294a7e4e5a2ed5803c6f2f971",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Identifier x already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/early-catch-function.js",
+      "scenario": "default",
+      "contentsSha256": "de66a2169a151cd220c417ca0223cf1abaa6a6592df754db49788cdf08c2a9da",
+      "compiledSha256": "a9c72babe9e66018539c25b0793eb1287428445dd1fd3d81012a014d9b7d7c1b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Function e already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Function e already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Function e already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/early-catch-function.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0ae4074b03dcc44ce825ba3668b7b9cfb2c65569c10b333b0816b4dc2138619f",
+      "compiledSha256": "e168a92578f8d65b885af875c484830b68b425fc288b0d6215c401d66dcf5975",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Function e already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Function e already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Function e already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/early-catch-lex.js",
+      "scenario": "default",
+      "contentsSha256": "371ca9ca533d98a1d58e34f145c17070e48a1e0c46385c1b44e488ee682ea65a",
+      "compiledSha256": "b774ee3b353b8d143717577df5939df28d986f0e201330c5dbb12391c52f7dfc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Identifier x already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/early-catch-lex.js",
+      "scenario": "strict mode",
+      "contentsSha256": "509c05a0e95a3b3c40d6677aecc3f18bd0093735d668b10fae6d91f698ee0023",
+      "compiledSha256": "aeb74ecbc275adf43bd11fb343be8c5e3d0e9c4c468873441248f08b18b07732",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Identifier x already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Identifier x already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-finally.js",
+      "scenario": "default",
+      "contentsSha256": "4f3c392b021fe16507431df7117583403b76eae0476056bd1a158b898d31c34e",
+      "compiledSha256": "4f98a94970c35a7b78e9a5449c697d998aa78b2b92e696675e6dd28fb64778ff",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4928b693e368e59ee6b13eafc8ea842ae3177e3ab2b9bd7e978325f684f64ed3",
+      "compiledSha256": "ec98f8bb1c33fef5800624e98227b962a10b2bf12a6a9d4f303255ffb231dff6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-lexical.js",
+      "scenario": "default",
+      "contentsSha256": "70cffdf4be2b97accf28f006606578ee03b02cccc7a2792a9b831168a92ca21f",
+      "compiledSha256": "8bc885f1031eb4e02baa76c02403ffbbb3f92d361b98f1afb7c27c50f60ebb92",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-lexical.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d46bd81b3bb6125c12942f12a5248d84df9b278e104b499925676b1476d1815d",
+      "compiledSha256": "b484d896567f8183d3dd9f6f8878690ab18df82b611adb4bdecbd9447b68fbad",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-parens.js",
+      "scenario": "default",
+      "contentsSha256": "9b92d14fadcef0f95f29740688a132fc0fb9d95b3d9ff17929f15788159f0f76",
+      "compiledSha256": "779934895a62b77687d5a3dad73fc62ea17d394471aba88de595a5487c129c9f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-parens.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7bf31489361719c22f05e89218bc409570b2d289504f3996b5457a2885898b09",
+      "compiledSha256": "fda0362985a4ceb8e9c0e6fd78258e8a92c8ff3a59f653a957e3d65f82204471",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-throws.js",
+      "scenario": "default",
+      "contentsSha256": "883a6d49492100a52df8db3f525ab84d8066529c5edfa04e0a4ae7b2e949f623",
+      "compiledSha256": "3a717d38407a64bd8670fa938d74c06d0c93db31a00863330dca20b1ffff8207",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2d8c8e87ba2f2c6a34fb0a2447d19340ccc153345abb40fd9664da41dc9d5a5a",
+      "compiledSha256": "ad64f4aecbc0c58664114e7dc7ab123682332050798d3b34e2769425e9a2d279",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding.js",
+      "scenario": "default",
+      "contentsSha256": "275b5edaff2bab36585bb2434d3a3a63835818155002e410771a74086b959ab1",
+      "compiledSha256": "f98397b2153b16d73c05b44f4fa86dae2796a0211650f1ebefd1f8bc67adf072",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/optional-catch-binding.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9086fada1fb8643cce491a62b02626c119d04e4bd8136bc0d8148d029a860edf",
+      "compiledSha256": "b474d1edbc74244f0a6bec1d49b009a9563070afb6ae1bdba7f29b8c22012a0b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A1.js",
+      "scenario": "default",
+      "contentsSha256": "340715c68abcfbb117ddae673fd3259140db52e8f75292332cdaca8a8875e51c",
+      "compiledSha256": "58f31dc018155b4bdd24bdbe9fe0808b4dd432e7f1ccf6ed9c6c5ded3fdb1a77",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "40e9acd3375025dbfdcecee10a80034456ec0bcdd42ed4b61ef9dc3cbc9929be",
+      "compiledSha256": "84731171c4e336a00f6480a06ea53a68c0fe2e9621e7f383eb72d22762ce3655",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T1.js",
+      "scenario": "default",
+      "contentsSha256": "522d7ffe2cdb11412c24e5beb71a52e592097a56fd8d6b11b64d989f5eaf753d",
+      "compiledSha256": "69aa86b06cbf5867015f302292df239ec0d35196215314fad897cbfbad58b2e2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fd79adb695e94778a732d27f4d9afd5c381e4f65b3fac22f0318ff66aeef984b",
+      "compiledSha256": "e181c6351050e3557ce2caa1a6192cd44a8812cf92e874247fb3b915bc63e124",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T2.js",
+      "scenario": "default",
+      "contentsSha256": "073073c2181b9a33a832c93e2dbb3b8ee27bc2e68244b62308dfac375a7eba7d",
+      "compiledSha256": "cfc92b5f897617ec34953017cf7d7229da4f3c40e896a50485eef9ca4aa28112",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e5f319c04804ac101da390257274d37187c07daa1660230ec72d0ddc2356cd9e",
+      "compiledSha256": "7d1d415a551ad41b3299844830994085dbdf3857777e4671294ff66678641df8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T3.js",
+      "scenario": "default",
+      "contentsSha256": "2231c7efce8f613f1a4d68f112248464f89a1487cd4628065161d9a66031331e",
+      "compiledSha256": "d09a147f62920df10dea623da1d402c42d7094010ee768680ab82252c8c48653",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f0057e2e5ca938ad4147ec4f55533fe47f93a1a6317b0402d505fd911938bb1f",
+      "compiledSha256": "f3a3ba748764b434f3ca411323f4edc2e5e870e3f0c12f42247beddcb9fe7397",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T4.js",
+      "scenario": "default",
+      "contentsSha256": "68bd7e0f8dfb5bcd22a678936f386f02a9552bbe3d6e03222186d3ddc411252a",
+      "compiledSha256": "a254142d02f33d0fa4460586f592ed0748bab3c0b54289a44772ad31569fab8d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T4.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0dca5250ababd6a12a679bf5b5982a6c59fa224e6f6bd84a85078e7ea53a6e89",
+      "compiledSha256": "c06f3f0cb2bce8a529e14041c069559ef9aaf2c907e97c41e34c7f31d121a5b1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T5.js",
+      "scenario": "default",
+      "contentsSha256": "4ea55a79a451e49cf40e45523b27a123d03d909600849fa4372ff2082b6b1ad7",
+      "compiledSha256": "fd67fcf7709902006289a58389e01e5fb44e0d3cc04dd0f4ad855ee311adf6a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A10_T5.js",
+      "scenario": "strict mode",
+      "contentsSha256": "139b7d8afbb8b852b0e861e7f68abc75955e1614cc4758e85913787455a95ba6",
+      "compiledSha256": "865b658cd9e52788f8345ec7edf774ed9a7ffe77f0acd554faae0da1ad079b52",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T1.js",
+      "scenario": "default",
+      "contentsSha256": "5e983cc20ec3b4fae86c17431934099e00a85f37de816dba99ead48caa5273cc",
+      "compiledSha256": "724025b30516425e28f67fb94053c1df68c67b07b8283bbc5e7a9a26881caaa5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9f2d7d7af1cae538aab0d412b4636f1f9a5c34c6b477684ab7735f48a8f67882",
+      "compiledSha256": "c1b30efbd3287806d589746c54de7ae5066865ed6e3249b8d0e57e0796db4930",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T2.js",
+      "scenario": "default",
+      "contentsSha256": "43966029fc8c32380e98fc5d26d0745387cca2f528ee714e244727e79a29a24b",
+      "compiledSha256": "94900bfc9ce8ac46d97d78e56d5f26b6a254cffe156e3909c7a5f277e9291d83",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "0463bd6cce01386d51b9a496356b70fadb518ac0847542f61e96877eaaba51b7",
+      "compiledSha256": "0b1ea8ff6d2c0e1c6ffa77a5a0af726dfd85239b795c43ce6f4376096fa5e516",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T3.js",
+      "scenario": "default",
+      "contentsSha256": "9eef71269a629e5860a586e873bfbcfa6f8792314562138be40a55f30da2fc5a",
+      "compiledSha256": "fd5d97651655c9b5aa65669069577375667d47b14aa4c65d83414a0ac2deba70",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "397b51bf3c7f4e6644949d84796d42e1924090d11c9939058eaa20cc45a75040",
+      "compiledSha256": "668b8e1e84847f7232250958dc18dd03501e8d9ea21e9e2022ed0ff06c965519",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T4.js",
+      "scenario": "default",
+      "contentsSha256": "54e7a42bb7c38e9d48edb7f1785585528d423263fbd7c574470f7ad65ac4c282",
+      "compiledSha256": "4e7170acf9fb4eb99f7923fea6e5fa9d84b1283f062a5fe10e9e5fce4a1e7c77",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A11_T4.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e572946b536ffa820bcdcbee055a469ddc5ac650bd0a1b0bacd9e6231e4566f2",
+      "compiledSha256": "714140782a550467387791b9eec7e452acc4721268758f599b6d75dc3c38bdda",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T1.js",
+      "scenario": "default",
+      "contentsSha256": "29d5918a3ff95d5704d619cdba184caea074bc9e3e9c65b944752b9e654b5f5f",
+      "compiledSha256": "e2ddce09cb990d039828413e7e1e67445ed00018fd0052ebc41ce50b363be6e8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c7d22a593f1c55ba611d57d6fc945ae8851659b839026e8e1122965317e8c505",
+      "compiledSha256": "a3911c978cffb81b77b09fa92099490f1533267711d44e324b7a1ca0e5496b3b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T2.js",
+      "scenario": "default",
+      "contentsSha256": "57e59f1602b4b8b0e72a1bdc7251dd00cca7094fc7604258bb52c38bdda16bed",
+      "compiledSha256": "5cefd35de23f4309c591e755e231f17fff43fcd103815e25a5e00f779c83c936",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4fc0a1b775e76882b4b8c6e87dd5d08027188138595f0d9dd986b4de40974151",
+      "compiledSha256": "afe3e57f51a8f80a1667bc103b8907f558e4a7f9ccd44feb8b4b915c8bf03f46",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T3.js",
+      "scenario": "default",
+      "contentsSha256": "05a2e38d1641fdb9e2cf9659547b539211146ac0b54fb5cad7eb4ecc49fed8ba",
+      "compiledSha256": "cefa913022edb9b22ae64808990990bcd9e4cdd114cff338cbdc01048966ee39",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "43aff2a24becfe1c29e03782d59d98825195481ad3e4a1b08f4e4d9d2373ef0b",
+      "compiledSha256": "2eb96a6441bf567d43c363b334a9b15908294bac2c5866317dd826cd1d32fd27",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T4.js",
+      "scenario": "default",
+      "contentsSha256": "9204534280948d5773aa493003a77547165b28c02417f498046732cebeb76e04",
+      "compiledSha256": "3a19b02131d444c794325e8320eb388245fba6cbf37fdcf8acab94030b90678a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A12_T4.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5ede3193d3a2d2876fc7450708d2e781afbee8d5f709757cb518f1f1e11fb5d1",
+      "compiledSha256": "ff68b9a8e203d190ef1148eac30f4ee4b3b68f7f411c18b0b6a2eae9d671a406",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A13_T1.js",
+      "scenario": "default",
+      "contentsSha256": "2b204180944e1a9c0423c4945494f02cdb25d98a3a2ca9b373e80ad3f8a2a0db",
+      "compiledSha256": "2980aee49e4c1c195029aa4777aa88f7849b0ee87bc88f388e645725e3ef55b6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A13_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d93464978d319c76cf5d52a1b5563dd6367867130a2b387fd142726fb4f2e763",
+      "compiledSha256": "bfc1b7694aff8f1acb9c2bdb3a79857f20dca5ec6e1e9468dce3d2b4dd8f5585",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A13_T2.js",
+      "scenario": "default",
+      "contentsSha256": "04ae21558edf04a7748f9f22105909a57d6f071adcbeda67879d4d944f4f2040",
+      "compiledSha256": "0152e4ce6996110a92dc7558bec5d30d79a5aa8f4a73d0d7645dc338236bc73c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A13_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ef1c76117daeb6689e030d70c7eb544657933492634c406e5a7dbb6f5c911fac",
+      "compiledSha256": "374488a859e83bed7d1f4dfba1fe3d0af40db80e19fd3261d548cf9b53ce802c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A13_T3.js",
+      "scenario": "default",
+      "contentsSha256": "3e3eecd05a7f9800deaecc27ef877b2d8074b41c438e73e7b2e2d3e2c899380a",
+      "compiledSha256": "f027183d5a9b66de5bb1ca86b02e1f7c934e3faace7067c24c48d4687ca8d6d2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A13_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4978aa446d37350ce2dbf99150526edec23a4a70da1aad32a8a18e1d493bc12f",
+      "compiledSha256": "f68f2f5fd919411b00da7a8de0ba3d4f44556f6d916fe30ab693322cb1b17696",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A14.js",
+      "scenario": "default",
+      "contentsSha256": "6fa8752296e118b79ab1720eafdc61003122f217eee16032a1a2458d3465ab83",
+      "compiledSha256": "5de03d566997a28fcbf0dd9bfee0dc0c396981f4ad17ead5a726bd34a14fc90f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A15.js",
+      "scenario": "default",
+      "contentsSha256": "24c93d2fbb9bb2ca8d7a1bd0d8e397756ec584375d5a28c14c9f82c5ecc7cb3c",
+      "compiledSha256": "d4aba0d181307193e2a16c8da6f6629887356711038f4ee43f08100af051fb56",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A15.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6479c170af75a3ce95aa05fd0aba711b51cc1362b6ea449f6331843d2a35b6c1",
+      "compiledSha256": "d27e4aca47ba19e84da2bc3c7abb0ea2816edf37f8f09e9ebfb2715460d6d09c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T1.js",
+      "scenario": "default",
+      "contentsSha256": "8819f04ea8fe144981f71bb6d0c93ac3ef27892ee0b58c8c48ba35b08db59d6a",
+      "compiledSha256": "381b6c932793be24de57c3d49d4e4c9f25388151ea3616aa2b5cf09d55637018",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ebd7c8b9bdd14f31b0f252623b6ace3525e2dca60c912a8567505e9dac23b33a",
+      "compiledSha256": "f15ae8d7f26585170ed198ea3103c8db5473fb05bf1d840c64c82e28b70e77fa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T10.js",
+      "scenario": "default",
+      "contentsSha256": "85ff1a296bd77212da8dcf63a949d909356bbe38adf2f8a8a0ce1aead1e5eb57",
+      "compiledSha256": "d1e26a0f41e4969e27d8246f26614a6412c4d44fd17ae7c2d8d5da3f9ad81738",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T10.js",
+      "scenario": "strict mode",
+      "contentsSha256": "41c4d55cce8e723053e7880188ef28d7f2c74ae421552b9e904f94185c4cbd2d",
+      "compiledSha256": "3a6e54650a6684159fef9a0f1e122bdd951c2298c2b44c764b09540dbabbb3ee",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T11.js",
+      "scenario": "default",
+      "contentsSha256": "bf5e022ecbd33adb52cc81464111270b3c13c5c3c786bb1595b74eba8499360c",
+      "compiledSha256": "da1624f0987d3c818dfb9160fc462188811c9f2d176fca4c5e2f2da583dde620",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T11.js",
+      "scenario": "strict mode",
+      "contentsSha256": "dffc18633e3daebf43bf0fb2534bacfc5d2e625f7e50637cb0c11174b0a40713",
+      "compiledSha256": "22019acd5c64acd5090a5c7fb006e3cf5dd12ef6abdadb8dea5d3194bc9b8811",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T12.js",
+      "scenario": "default",
+      "contentsSha256": "3052e9daf4f7ca34583b5841fdf35f9a5e5d6123883a514908860187ee422db9",
+      "compiledSha256": "dcc6582dc664766182c1318a216b0b0683581f693d3f919954ae5a028dac176e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Missing catch or finally clause in try statement' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Missing catch or finally clause in try statement",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Missing catch or finally clause in try statement' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T12.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9514822d9e900d836eadedf8ad8e057ad714ac00f1af3e7e82a9ac7324a087cf",
+      "compiledSha256": "4cd2e491c8cb284da096532f001b4f2548b15396e4b6fe9b53b272d271178a8a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Missing catch or finally clause in try statement' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Missing catch or finally clause in try statement",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Missing catch or finally clause in try statement' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T13.js",
+      "scenario": "default",
+      "contentsSha256": "45d80113a43312707ead8a2e12e6c5632979c01f1f466a49dbb208fb43384c53",
+      "compiledSha256": "22bee40ea086ca4423c4fedd48a99bf7e34f31fcd9ae0cbba0cafc560927e2ac",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T13.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fba0eff4bdd2abccaf3509dfd5ea2cafb59d9c2590fbd327d5d164f1c52828b5",
+      "compiledSha256": "2df87aa0a385904416362d2c1478c12c52ed9d05d82b93e5da784a20d06bd834",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T14.js",
+      "scenario": "default",
+      "contentsSha256": "c2fd563bcdb7a0de12dc732907d2d7e2d7363387d891cbff7c299bae38fa1b73",
+      "compiledSha256": "9f492e5c26347a1ac3d7d1b40b539094aa898d3eea9876324f5f3cf95500dbde",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T14.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a6eedd1d9b521b1f8dece8670c3c729dc2bda9739fb85937c7ac444bbb6d37c2",
+      "compiledSha256": "fb1d7e444e66a2298f9a09fd46bf9bebbbf5e3be41d5815c0de6a5fd7477ee1a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T15.js",
+      "scenario": "default",
+      "contentsSha256": "811963777ebaaab01fa2bcad53f92fa4ef666d2a1421f3f252a4bea077b64031",
+      "compiledSha256": "f9467890cd54bc06530e35f48483a8b26214bf9244035e443e81572f95108312",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T15.js",
+      "scenario": "strict mode",
+      "contentsSha256": "69aac15180ccc0bba2192b9653a10c68722b0aa4645cf5aea0856e93236cb306",
+      "compiledSha256": "110c520fc33d292624a06bc18c393759d5dc216c1a45d52cb8e705f19a14c77e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T2.js",
+      "scenario": "default",
+      "contentsSha256": "c03e6dfd5884adf3dcc4ae81b30352ba2c35263302ddda8f41f44dc9b3ca537a",
+      "compiledSha256": "8e721ffda38a21a9ac916ce433f8502b30351f2c2568e34a09c3efadeb08891d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fb4bc8d106000e66a3e701e9c5320ebdbfa916644239fe6b3c023b6e91994ec5",
+      "compiledSha256": "4ef2498a7b5bad45a4cede21fc2d1fac88429a1235c2c1fbdd8d184009a1ff18",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T3.js",
+      "scenario": "default",
+      "contentsSha256": "b52485b005bf5dfeb9617ff8f0cabbcefe312506c31827bec76fccff6c6a3909",
+      "compiledSha256": "c7f6eae345ea752bb6ff6bf1f24cd58e8f82048aa274d1ce0a3cae770c6fbc59",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c374d76ac657adc7ad7f3fb0c4bf9a3b8b95eeb58fa2f06c1ad0c8cb5548948f",
+      "compiledSha256": "eb876cdfde544f800bff5e366319ce23fd4e0b781bb7bd67d2560ff6996ec870",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T5.js",
+      "scenario": "default",
+      "contentsSha256": "1e4bf5ad46c4e3ac015be10a92f462cc5c37fd9dcde4f848383866733a010cc7",
+      "compiledSha256": "0c9f40b4526794d608561aab048a45c53c19ec67d06b0043b8b80914163d611b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T5.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e5b69823e39a03460f57af972c95a55f6ee121fc266b55564109f7697dc23454",
+      "compiledSha256": "32e4b476304a2ba142fd710e8af22e829f8c88f0f7572ae51325b508ad0d4849",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T6.js",
+      "scenario": "default",
+      "contentsSha256": "a572170f3014d6d5f27a6e6c622bfd9375b43dd84875ac9624dfbbb858ae8dc5",
+      "compiledSha256": "35b7efeb729b43b1209083a16d607549bebca65027dfa72d304d5dd384e429a6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T6.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2a0b481ad9c7eb8f74c4262d156725b74c72497454c0806c85413ea204acd1e5",
+      "compiledSha256": "d6179bbd9fad9851604ca119d3cecc3824ffe906c2538aef700bc9c49f77430b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T7.js",
+      "scenario": "default",
+      "contentsSha256": "9437bdbb144bbe75a50aad0a3e0f01cbdea1e3f0a2e771c9ae298e0502c3f123",
+      "compiledSha256": "b38fb2c0d875ff4c2932df2c8414683274b5837bb3f74fac4fdc0d22c3b44378",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T7.js",
+      "scenario": "strict mode",
+      "contentsSha256": "641d3e6dbdb0c4859be0aed94389e7cc7919804bb215be0c67cfc7164e56cea6",
+      "compiledSha256": "e34dc471e114ba4023c75b739fa9428eb57478cb5c32eca52fa895024670fc31",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T8.js",
+      "scenario": "default",
+      "contentsSha256": "07713660f506f5ad42cd0c1a2ef4b2590220446483f07d0163aefeeaeaaf0700",
+      "compiledSha256": "211a35c3609285e3d13da8e644242ae268ba1addc2bc79e016a53ba687cb2b7b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T8.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2059661a185e1b30d2ee2854e107ca2b5f173e4c638e5c7b976c23e4c4f15aab",
+      "compiledSha256": "5dab4b084fbd61816d2d2ea371402c7dde02ced1e666b7f03d245f88292af40d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T9.js",
+      "scenario": "default",
+      "contentsSha256": "dbd167203b5fe8dbdad270c1f7221765517099ba0ef1e06e863dbdb15b90b952",
+      "compiledSha256": "4fbef36ca68736440c47d917dddacfb9c6d79f4e90b7275272c509cc3e1b9adb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A16_T9.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9638379362ad0112591af99f3b60371befbf3d5e0315d46eba058b89921a475b",
+      "compiledSha256": "8ad3405a9f6f2a39c6890c7912f945395332d828ef3330f75023a0d1560c73b1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Unexpected token",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Unexpected token' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A17.js",
+      "scenario": "default",
+      "contentsSha256": "7134e9decc2785d6aad1e9c63d8a9ba310a4d5033c8c3242293b922e73b2ed5c",
+      "compiledSha256": "6627db7d92be2443a3985254cc5d1b6c9e724c502c47afe4c0c6e6d346ee7680",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A17.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a2285a7d4fdf8210528a1c1027fcfc87bbc12cbfb123787ab7ed5a94ed357797",
+      "compiledSha256": "5de0d9cde483d536b49bc9c4267738b0d0d56fe0c3c4a020fb2b8b50cf85ab22",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T1.js",
+      "scenario": "default",
+      "contentsSha256": "04143e42651ffbdd8e696abcdade7b9f3e605baf1bd2efeeb8d4611d8fb63b70",
+      "compiledSha256": "29465f6d0f95958198c2e24f49ec070bc431f32985fe478806dff2ea5d10c9c9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9769ebb219ea903813411d54d8600ceba0911a1bacb0d646041658d475f6a72d",
+      "compiledSha256": "26db2744c9bc3b14197a042e0d04e26812effb757ff62871aa1ca1477827879b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T2.js",
+      "scenario": "default",
+      "contentsSha256": "4da678ae7022b0a8583e248572843bd9b3b50f0d2ef5f1e42766dc1d64494a10",
+      "compiledSha256": "68ba64a27c672a3fa7a4876e14623b67abe30460e790cf6cb123a4e784162ef2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "58b9a0ffb4a999d2e08e60f949f8ee4540ce136fdf2a2b5096bfed90ac4db14b",
+      "compiledSha256": "64536a65900a6613ecb93fd13bc9fbf3e8ea22c14050a3d9ab07a14ec2b62b9c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T3.js",
+      "scenario": "default",
+      "contentsSha256": "847ae956fc634fbc790e79b4f5c1c218549dc6847f2a378e1cf9183def4b5677",
+      "compiledSha256": "20b1c6fd524f178080e1ba0bcd7f91fa0c9472ef698223e1c93c7981f779ea77",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ca8abe7dda5104be7a11bd526b21fbc7939aab59268dbb5ee911828f372f56f4",
+      "compiledSha256": "8ed2043e1df8d545a0319aa62413dffd79311c52f0ff8970e22f951bf3351039",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T4.js",
+      "scenario": "default",
+      "contentsSha256": "c86b03fdfb4c5a2226f44e6aaba855ed4a7889774d70bda85ab5035569c385a9",
+      "compiledSha256": "3fff819c46b3eeda0d8b49bd3816d7a1cbb1f367ac78f586e6da5d451581d063",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T4.js",
+      "scenario": "strict mode",
+      "contentsSha256": "01ff833c317361158afd374d03bd9ffe3e34c12a74b21d333dc5be3ce2aa01e0",
+      "compiledSha256": "f522cfcc9466c1a6306a7e04d7feacc6e48626c5d78f2efd3a72729088b24ba0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T5.js",
+      "scenario": "default",
+      "contentsSha256": "55fd45d219b9b7188cb1d896230d18d2d2e3f75e95d9817267088e5f238e20e0",
+      "compiledSha256": "8abf720f8cdc313cfaf61e21ce24033aed03b869d40ce9126c5af0e212cfebec",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T5.js",
+      "scenario": "strict mode",
+      "contentsSha256": "edd2199b443308cbd5a631cf6eb866ceb17b4fe9a9600aae1628be612b1509d1",
+      "compiledSha256": "df8628e15ccb472832ad89c181e95c81622f1d41d4e9e6618fa7a88ed74c7881",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T6.js",
+      "scenario": "default",
+      "contentsSha256": "e8149f2db2a6bc52e28be7941f71a2e0ef2751ec5bbc742496f0ed00e4144c9e",
+      "compiledSha256": "83e02caa490d243c5697f63a7778514d46b48d3d049a11007e4ea0bd5ab9ff8b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T6.js",
+      "scenario": "strict mode",
+      "contentsSha256": "94682413c689e96c38361a2c0676d8459cd845f3034712ce0c8a6d9e0f731627",
+      "compiledSha256": "5cfaa2a7da0dde1f0cf626eeefb8764e3485c31e61d42c5358ae128ba8659c43",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T7.js",
+      "scenario": "default",
+      "contentsSha256": "19fc48e80c01905e50009bf02581c98bc2cd637cbf4c4c78ac2b9798928aec6d",
+      "compiledSha256": "cd7e16ba0ca7ccda06dd91514246f46aaf1f63b9e5ab1aa68347914d2290773c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A18_T7.js",
+      "scenario": "strict mode",
+      "contentsSha256": "ff6416efbde379baff54a21beff1c1f7702727e59381ae858282100c8f8884bc",
+      "compiledSha256": "6ba977428c29bc698eef4db569b04e51628b5733746ea2a9042c2b01304681d1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A19_T1.js",
+      "scenario": "default",
+      "contentsSha256": "1cf8b3ea967566786d7a4940ef72c4560eb6d2df38f2921fb2cfda0022a961d9",
+      "compiledSha256": "29da698628d282ccd80fcc4e76d827cdbee00102e4a659d2df42b06ec1ce1ef5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A19_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "146fc46cf09cdb5455422d3183535c369b047ca397eed611044f2fee7e605c26",
+      "compiledSha256": "1a7e6ac2fd7631b06b3d3cb79f7fd7b0d0671253f87fedf0fec05a3187499aa1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A19_T2.js",
+      "scenario": "default",
+      "contentsSha256": "5c903a64ab872556b3a10dbd7465f1c02a0b297a3aeaf1c095bf9eb2cc4b8bb9",
+      "compiledSha256": "5d031afb2b74871df93f364a613c85510980868e486673a26ca4f6a9895f0aed",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A19_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "426b91729207ed808776888022e312d84ff9fab9714427b8c2c3b4c33adff3b7",
+      "compiledSha256": "b156967c33d03720958f1c86d3efd5c46808b7f1be3bff504d89167cfca2a76f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A2.js",
+      "scenario": "default",
+      "contentsSha256": "2212e74577559d0b38d2eaddc906b225f4312920d1f91e23abfaeaa8f12bb0db",
+      "compiledSha256": "7b8a2deff4f9d87dec2f4c8a12cb65138a86d1379bddedf833d1adf0e6d28627",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "803019fde0749f3a6b7f45e5e35e5af18fbec976e2559f21da37e6e0739f62aa",
+      "compiledSha256": "000654166b572f30c42949178c35b7a6853da74ead5496ad9a1f0c5bcba83ae5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A3.js",
+      "scenario": "default",
+      "contentsSha256": "b4e3d6c55596443e2009982c293d530bed74e8d43525563077cefaf56987a54e",
+      "compiledSha256": "449cd433a3fa917f9728580b7d355c53b79f462cb6f3528f57d84f5e993f839d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "40a7bd4312b94e23019eec2a2721a32b0da6def406c609b9348d22c80b04cab9",
+      "compiledSha256": "c8c53708635a167252bdf185802c84ae6fc8a4decae9d13e1e9de9f74d3eeffe",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A4.js",
+      "scenario": "default",
+      "contentsSha256": "7a2bfde82fb24737f59dfb209b9ed0cae07efcc715ec879f3e8ab770abc28673",
+      "compiledSha256": "7185af6e36f1031bf7acf9d5bbf483a23b7280c4e3fe5119726ba95901dab9f8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A5.js",
+      "scenario": "default",
+      "contentsSha256": "4da02c0b767962a689591d24295eed1b0a21d66c1aab79631c31bbc838aa0f85",
+      "compiledSha256": "8a03602e13787d8e386d62e7b5dba772fa09625276a6b324a106927a1b148af5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A5.js",
+      "scenario": "strict mode",
+      "contentsSha256": "8a71db82502b38a60d6ddc0b03e85881c6769d27821c60532eb2858dbed06fc0",
+      "compiledSha256": "ae5a89a05bad689f0daf30e0bef3e5d26f7e7fdabd70000b7922184023c87346",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A6.js",
+      "scenario": "default",
+      "contentsSha256": "ee40e69cfc910b381fd4ca6982aa078ca45ef35bb88ae1a929253b7d921fbe75",
+      "compiledSha256": "999918c1ba2502b707b8dfecfe987aed597fa9431b5394b32775f8162491ea52",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A6.js",
+      "scenario": "strict mode",
+      "contentsSha256": "69d8503a47ae4c421e5f73be64b1ab403e12dbf8c01b1488e713963574097ec7",
+      "compiledSha256": "238829dbd76b0e8ccc9bf4eade7a9736de6495663c6c48b2048f7f8f0bf2f8cc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A7_T1.js",
+      "scenario": "default",
+      "contentsSha256": "fb05f6503cf31488cddc68c56d5b2dac6db93bf1ce1998713a58633ade5fb2e5",
+      "compiledSha256": "372fce549e7035dfdfa7836e2b7e0369a94a90fb43fdd07e7ce5a010c2e825b3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A7_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7a6410eb7a8a2a697663534cd062d78fe765571ac7cb3d9183204d3ee4c4e88f",
+      "compiledSha256": "5d849f34384afbdbae33164ef1339da9ed2f1c08d8934af173d1a2a77e68c279",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A7_T2.js",
+      "scenario": "default",
+      "contentsSha256": "71c8a17ebcc4e442faa57f6c37a39ac610d63a40954d4b5234b3227180b93140",
+      "compiledSha256": "80f1a8ef41750ff937de31c14e631eb72bddcff3cef12e4df8a648daaba0b6cf",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A7_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "87987b36cb718526c800465913be010fe1627c59a05e4fa0c2d1b5a46e6100ad",
+      "compiledSha256": "033bbb52cfee56078fd792d7d8d32fc9417cb5b4b566d7e5cf38baffdafa7929",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A7_T3.js",
+      "scenario": "default",
+      "contentsSha256": "17064b0472b1a8acbd6f660ae1bb5a63061f0704ffbedd6c473dc5aa61fa539f",
+      "compiledSha256": "e392dd0c43c6966d694fbffb1361bb2571bd04e5d63c431ccd4b0b45b97a2fa1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A7_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "3e3343055d794ae900075e7918ac0a12b1b10b91a7883a8e60cb782a3aacbdf4",
+      "compiledSha256": "cea98f4312271bc01d149dda0bd449dd7ee05476cdca39e50ae71e13720496fc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A8.js",
+      "scenario": "default",
+      "contentsSha256": "21dc13d2a166ab1f224cfb2a7c45648f3eeecbf36d863ddef9a78c82d05b4257",
+      "compiledSha256": "1a19684bf5aed3da4aaf2b27723fb5ff58f2b8037af9505fadcd208b5e4ceb62",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A8.js",
+      "scenario": "strict mode",
+      "contentsSha256": "972886c2413c2b6dc482c2b7391e82b780d2a02257a64fd6c19abc152f10283c",
+      "compiledSha256": "30041c23995050e438bf02b76823a389447c4772b44df4eb5e8f8f6bd84c5af2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T1.js",
+      "scenario": "default",
+      "contentsSha256": "2dcd9837e0e80cfabc33f3eb945fa31da2052c7e313cc57e844eee52604cbbb2",
+      "compiledSha256": "2d4969ab752e9580a024c6cc7d244dba0b5cc7bf95086e27f89219acbd68328e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T1.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2a37b452e0036189d7f54488510c4cfeec6de3dd42f060a3a1e03ae42f608501",
+      "compiledSha256": "7bca89b70140d4e22e7c402539a39d5758b7cc3b17d922d1b5e60fc37fac1d72",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T2.js",
+      "scenario": "default",
+      "contentsSha256": "c68dbdd7f67ec7c3d81f6eb76df6b9a7eba58a318489ee4afde8ef0282c60b30",
+      "compiledSha256": "d422db05f2d7e950e2dbdcc76002e3738660b13e5c12f4fb358bd2f1a6140f7d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T2.js",
+      "scenario": "strict mode",
+      "contentsSha256": "fcdc3f81c2c7555522d91cda5a7ddecbe4eb5229d092df4fe307a1b71246f25d",
+      "compiledSha256": "3fbd89548e6ccd95ea5a682f0502ddbd9d52239841f45ffa1b7f99695ae5d566",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T3.js",
+      "scenario": "default",
+      "contentsSha256": "55f230c9c903971fa27c375ce873025520c0c09158676e3dc9adb9fe4ff25c4c",
+      "compiledSha256": "c95c0f207dba15714dbb66f7db184eae608998a4b64364926035d4858ddd2eb6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T3.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e42232677f39a51104fd5f49e8087d990df0718ce1ee9fc4654c499e25b537bd",
+      "compiledSha256": "5900f2b37caea63ab798227e93682e8dbbd1fe559ca1a75761c4eac62ef5e35b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T4.js",
+      "scenario": "default",
+      "contentsSha256": "4588504c49900169311b91915a1dc32d08282064ab482adba486bdbda059f4f5",
+      "compiledSha256": "1387c394ba843fd5f1dd6629b9db1cd5c08e2223d6f16516b0f88c4db6acc97e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T4.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c58dfe19c7c1b8154162b6848ee6848b2dc7a4876356d9e2ff20ee7fd8d1ff4a",
+      "compiledSha256": "3518dfa61ad8f2995b65b05d885c74ca8e9f49806a6b70d3294fa73b862f88d3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T5.js",
+      "scenario": "default",
+      "contentsSha256": "8402ffef9faba9c5761e08b54a23f31810bda6c801228ad6e095908134b460d1",
+      "compiledSha256": "bd0faf4905f35fad54b2d30df26cdad62b42b67a1cc1c29de5b61a74d3047ac8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/S12.14_A9_T5.js",
+      "scenario": "strict mode",
+      "contentsSha256": "bb35f846261b45f6232e2d423c2623e813ece5abab4c700fb94aa17397b3393d",
+      "compiledSha256": "a1af06a8cc874601b2ff73322186fce2ccc7cca94875980238ed770991628bae",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-block-lex-close.js",
+      "scenario": "default",
+      "contentsSha256": "00619620bf31a1db8cbb9364fbcfd625cf1c695b51bfaaa601062c7399aaf965",
+      "compiledSha256": "dfcb683ae4555d7e263c52e6b1c28b67f1c7b235ca3e632db51ebe004f8551cd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-block-lex-close.js",
+      "scenario": "strict mode",
+      "contentsSha256": "12c916e8e7702279a340952c47627a33303b83621934a892019163762f770a24",
+      "compiledSha256": "453e7bbd91a48ae38b1fbf7c8715a85633503f2450f91c004482b3adee1582db",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-block-lex-open.js",
+      "scenario": "default",
+      "contentsSha256": "29eca6b6ce9e0678eb4f92029d785a2774e346cb4a59d7a3f1006603ff9752e4",
+      "compiledSha256": "de54477ae282f23c5ffee14f473672e91159cb5779083086bb3f7139204401b6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-block-lex-open.js",
+      "scenario": "strict mode",
+      "contentsSha256": "dc2171afc5ca0dc1e1778788c3cb8d7885010bdb46d419213a450b6542ce8779",
+      "compiledSha256": "9834e91d4c3daea752661dc8de6a67649493f08a8979d54cde5107c90d68bc4d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-block-var-none.js",
+      "scenario": "default",
+      "contentsSha256": "99922b92f52ee274bbf883751cdeefc5016f4d8c4b1e170bd5608f67be9c1548",
+      "compiledSha256": "c6ad6d2e43bab1b38c4d83a65e1d2a9f8ea8dab273120ed1c1824ac367367df6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-block-var-none.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c1c0d6382048a6186335f43378d8e221bf6fcff2c8564b60cdc28e7d2ea5e098",
+      "compiledSha256": "3e5f967f8ccba2cdcff24d60cdf75b21ec4e50523480e618ea73f40019384a35",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-param-lex-close.js",
+      "scenario": "default",
+      "contentsSha256": "ee66e29ed1fd851cc5ed4a407794ca912d71f81f54810a447f47d1422ec874c4",
+      "compiledSha256": "6cfcf2d02329c413b0bbbc8371c5317a21a3a7ad3f50f97ddace43ccf81c189a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-param-lex-close.js",
+      "scenario": "strict mode",
+      "contentsSha256": "978d18a0cce24e3e665c8f77305fb88f3b9eba7a81d67c1690d1b5b8e5f69f33",
+      "compiledSha256": "9b39b05ad11c72a63910b2e072e0dc1cca7d9fddb4b7f990ceedc02a3bad3868",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-param-lex-open.js",
+      "scenario": "default",
+      "contentsSha256": "d013ffe2c90850876485fd14c78fac1fec8b91f071bed0cda3fa199a05eb4dcf",
+      "compiledSha256": "ca3a0cbeebbcfdd742130aca63bbfa37ceeb651011ac610d3a96c7230c6c0a28",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-param-lex-open.js",
+      "scenario": "strict mode",
+      "contentsSha256": "07742ea2fd5c7da922a31a9f9f6e1674c24333c8801c7b56d22c93c853247d57",
+      "compiledSha256": "107f95e0294533b1bd734527e2fafbaf02efd7263c86b710646f45a739a7f35a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/scope-catch-param-var-none.js",
+      "scenario": "default",
+      "contentsSha256": "b1aea86c959d7e31cc2c077e5fd7026e58b8110ab6854c1bf11b90b0f6a9a367",
+      "compiledSha256": "249dd54950738a51b3bfe225c9e5829b862f9bcc3c50b1c42895c8ccf4e0406e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/static-init-await-binding-invalid.js",
+      "scenario": "default",
+      "contentsSha256": "834c7e41c9403f36ab98529be0bd7f7b9d203cf0b05f92b619e098f6fe452e88",
+      "compiledSha256": "04f51cd0dcd1b2eaa5fae8597fdb430bf6784bf9fa863c14210bff23dcb4ed6c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "await cannot be used as an identifier inside async functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/static-init-await-binding-invalid.js",
+      "scenario": "strict mode",
+      "contentsSha256": "954f931853b880d573455acd67033ac09abcdf32c007acb446909c887a520674",
+      "compiledSha256": "9c593198dec47af423ce9062a8cf2ad58375d0727b328a3fe49204841b9819ce",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "await cannot be used as an identifier inside async functions or modules",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'await cannot be used as an identifier inside async functions or modules' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/static-init-await-binding-valid.js",
+      "scenario": "default",
+      "contentsSha256": "efba17e6f827a536e324b15ad3ac18396d77589ae24b60cb3ba99561632beb57",
+      "compiledSha256": "0ef8dcc2958c674d1b0c4bc9009d01206eb942ca095625954af0627b51078b6a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/static-init-await-binding-valid.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1aa8949f99a6fe267e5579ff7bbcc71dfa99fbcb86a0f1e1ef68766ceb325edf",
+      "compiledSha256": "8a58ce92dbca48892fa4ae84dedf0be9fcd0adc6454978df323319fb20ef476d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/tco-catch-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a9e32d031d74ddc7664eccf810ada7662cd45fdb664934f5568ac3f77353ccdf",
+      "compiledSha256": "8c65c91aa9cc2e4a4fe74c216d69d0e62671eabb6b5d7b35f0a77c5af737e5e1",
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got export: function OrdinaryObjectCreate<const T extends string>(proto: ObjectValue | NullValue, additionalInternalSlotsList?: readonly T[]) {"
+      },
+      "rawResult": {
+        "stderr": "{ name: 'export', message: 'function OrdinaryObjectCreate<const T extends string>(proto: ObjectValue | NullValue, additionalInternalSlotsList?: readonly T[]) {' }",
+        "stdout": "",
+        "error": {
+          "name": "export",
+          "message": "function OrdinaryObjectCreate<const T extends string>(proto: ObjectValue | NullValue, additionalInternalSlotsList?: readonly T[]) {",
+          "stack": [
+            {
+              "source": "{ name: 'export', message: 'function OrdinaryObjectCreate<const T extends string>(proto: ObjectValue | NullValue, additionalInternalSlotsList?: readonly T[]) {' }",
+              "fileName": "export",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/tco-catch.js",
+      "scenario": "strict mode",
+      "contentsSha256": "54e9a8056db83a542c4b5205a2c7df425be751ad0d698b57c93215b4a66f4794",
+      "compiledSha256": "83c8b9afddda12a24e1ba81d13ce3f405d95a1860ec8fa79ce76e875eb02f865",
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got RangeError: Maximum call stack size exceeded"
+      },
+      "rawResult": {
+        "stderr": "{ name: 'RangeError', message: 'Maximum call stack size exceeded' }",
+        "stdout": "",
+        "error": {
+          "name": "RangeError",
+          "message": "Maximum call stack size exceeded",
+          "stack": [
+            {
+              "source": "{ name: 'RangeError', message: 'Maximum call stack size exceeded' }",
+              "fileName": "RangeError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/try/tco-finally.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e3d38336d2750c54281b1f0b674ba31f2846eb6e6ffc23483b0bc0c1dfc8731b",
+      "compiledSha256": "d83e3b64c5aa6d79c172660b99d1b65ed5bbae7678738be839beca8305ec744e",
+      "result": {
+        "pass": false,
+        "message": "Expected no error, got export: function RequireInternalSlot(O: Value, internalSlot: string): ThrowCompletion | undefined {"
+      },
+      "rawResult": {
+        "stderr": "{ name: 'export', message: 'function RequireInternalSlot(O: Value, internalSlot: string): ThrowCompletion | undefined {' }",
+        "stdout": "",
+        "error": {
+          "name": "export",
+          "message": "function RequireInternalSlot(O: Value, internalSlot: string): ThrowCompletion | undefined {",
+          "stack": [
+            {
+              "source": "{ name: 'export', message: 'function RequireInternalSlot(O: Value, internalSlot: string): ThrowCompletion | undefined {' }",
+              "fileName": "export",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

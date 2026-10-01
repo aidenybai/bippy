@@ -1,0 +1,202 @@
+diff --git a/src/abstract-ops/objects.mts b/src/abstract-ops/objects.mts
+index e129303..dc24668 100644
+--- a/src/abstract-ops/objects.mts
++++ b/src/abstract-ops/objects.mts
+@@ -40,7 +40,7 @@ export interface OrdinaryObject extends ObjectValue {
+ export const hasOrdinaryObjectMethods = (value: Value, defineOwnProperty: ObjectValue['DefineOwnProperty'], methods: Partial<ObjectInternalMethods<OrdinaryObject>> = ObjectValue.prototype): value is OrdinaryObject => {
+   return value instanceof ObjectValue
+     && value.GetPrototypeOf === ObjectValue.prototype.GetPrototypeOf
+-    && value.SetPrototypeOf === ObjectValue.prototype.SetPrototypeOf
++    && value.SetPrototypeOf === (methods.SetPrototypeOf ?? ObjectValue.prototype.SetPrototypeOf)
+     && value.IsExtensible === ObjectValue.prototype.IsExtensible
+     && value.PreventExtensions === ObjectValue.prototype.PreventExtensions
+     && value.GetOwnProperty === (methods.GetOwnProperty ?? ObjectValue.prototype.GetOwnProperty)
+diff --git a/src/abstract-ops/string-objects.mts b/src/abstract-ops/string-objects.mts
+index b59f2a0..e774fbd 100644
+--- a/src/abstract-ops/string-objects.mts
++++ b/src/abstract-ops/string-objects.mts
+@@ -27,7 +27,7 @@ import {
+ } from './all.mts';
+ import type { PlainEvaluator } from '#self';
+ 
+-const InternalMethods = {
++export const StringExoticObjectInternalMethods = {
+   * GetOwnProperty(propertyKey) {
+     const string = this;
+     if (propertyKey instanceof JSStringValue) propertyKey = propertyKey.stringValue();
+@@ -97,9 +97,9 @@ export function StringCreate(value: string, prototype: ObjectValue) {
+   const string = MakeBasicObject(['Prototype', 'Extensible', 'StringData']) as Mutable<StringObject>;
+   string.Prototype = prototype;
+   string.StringData = value;
+-  string.GetOwnProperty = InternalMethods.GetOwnProperty;
+-  string.DefineOwnProperty = InternalMethods.DefineOwnProperty;
+-  string.OwnPropertyKeys = InternalMethods.OwnPropertyKeys;
++  string.GetOwnProperty = StringExoticObjectInternalMethods.GetOwnProperty;
++  string.DefineOwnProperty = StringExoticObjectInternalMethods.DefineOwnProperty;
++  string.OwnPropertyKeys = StringExoticObjectInternalMethods.OwnPropertyKeys;
+   const length = value.length;
+   X(DefinePropertyOrThrow(string, 'length', Descriptor({
+     Value: F(length),
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 69c467d..06573c7 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -9,18 +9,20 @@ import {
+   hasECMAScriptFunctionMethods, getECMAScriptFunctionInternalSlots,
+   hasBuiltinFunctionMethods, builtinFunctionInternalSlots,
+   ArgumentExoticObject, getArgumentsParameterMapData,
+-  type ArgumentsParameterMapData,
++  type ArgumentsParameterMapData, type ObjectInternalMethods,
++  StringExoticObjectInternalMethods,
+ } from '#self';
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
++import { ImmutablePrototypeObjectInternalMethods } from '../intrinsics/ObjectPrototype.mts';
+ 
+-interface FunctionSlotState {
++interface ReadonlySlotState {
+   name: string;
+   descriptor: PropertyDescriptor | undefined;
+ }
+ 
+ interface FunctionState {
+   internalSlots: readonly string[];
+-  slots: FunctionSlotState[];
++  slots: ReadonlySlotState[];
+   boundArguments?: readonly (Value | undefined)[];
+ }
+ 
+@@ -54,18 +56,21 @@ const getFunctionState = (object: ObjectValue, names: readonly string[]): Functi
+   boundArguments: hasBoundFunctionMethods(object) ? [...object.BoundArguments] : undefined,
+ });
+ 
++const hasUnchangedSlot = (object: ObjectValue, { name, descriptor }: ReadonlySlotState): boolean => {
++  const current = Object.getOwnPropertyDescriptor(object, name);
++  return descriptor === undefined ? current === undefined : !!current && 'value' in current
++    && Object.is(current.value, descriptor.value) && current.writable === descriptor.writable
++    && current.enumerable === descriptor.enumerable && current.configurable === descriptor.configurable;
++};
++
+ const hasUnchangedFunctionState = (object: ObjectValue, state: FunctionState, owner: Agent): boolean => {
+   const names = getFunctionSlotNames(object, owner);
+   return !!names && object.internalSlotsList.length === names.length
+     && state.internalSlots.length === names.length
+     && state.internalSlots.every((name, index) => object.internalSlotsList[index] === name)
+     && names.every((name) => object.internalSlotsList.includes(name))
+-    && state.slots.every(({ name, descriptor }) => {
+-      const current = Object.getOwnPropertyDescriptor(object, name);
+-      return descriptor === undefined ? current === undefined : !!current && 'value' in current
+-        && Object.is(current.value, descriptor.value) && current.writable === descriptor.writable
+-        && current.enumerable === descriptor.enumerable && current.configurable === descriptor.configurable;
+-    }) && (!state.boundArguments || (hasBoundFunctionMethods(object)
++    && state.slots.every((slot) => hasUnchangedSlot(object, slot))
++    && (!state.boundArguments || (hasBoundFunctionMethods(object)
+       && object.BoundArguments.length === state.boundArguments.length
+       && state.boundArguments.every((value, index) => object.BoundArguments[index] === value)));
+ };
+@@ -118,6 +123,26 @@ const getArgumentsMapMethods = (data: ArgumentsParameterMapData) => data.pending
+   ? ObjectValue.prototype
+   : { GetOwnProperty: data.getOwnProperty, OwnPropertyKeys: data.ownPropertyKeys };
+ 
++interface ExoticObjectState {
++  methods: Partial<ObjectInternalMethods<OrdinaryObject>>;
++  slot: ReadonlySlotState;
++  dataSlot: 'StringData' | undefined;
++}
++
++const getExoticObjectState = (object: ObjectValue): ExoticObjectState | undefined => {
++  if (!object.internalSlotsList.includes('Prototype') || !object.internalSlotsList.includes('Extensible')) return undefined;
++  const isString = object.internalSlotsList.length === 3 && object.internalSlotsList.includes('StringData')
++    && typeof Object.getOwnPropertyDescriptor(object, 'StringData')?.value === 'string';
++  const methods = isString ? StringExoticObjectInternalMethods
++    : object.internalSlotsList.length === 2 && object.SetPrototypeOf === ImmutablePrototypeObjectInternalMethods.SetPrototypeOf
++      ? ImmutablePrototypeObjectInternalMethods : undefined;
++  if (!methods) return undefined;
++  const name = isString ? 'StringData' : 'Prototype';
++  const descriptor = Object.getOwnPropertyDescriptor(object, name);
++  if (!descriptor || !('value' in descriptor)) throw new TypeError('Checkpoint exotic metadata must use data properties');
++  return { methods, slot: { name, descriptor }, dataSlot: isString ? 'StringData' : undefined };
++};
++
+ interface OrdinaryObjectState {
+   object: OrdinaryObject;
+   defineOwnProperty: ObjectValue['DefineOwnProperty'];
+@@ -131,6 +156,7 @@ interface OrdinaryObjectState {
+   functionState?: FunctionState;
+   argumentsState?: ArgumentsState;
+   argumentsMap?: ArgumentsMapState;
++  exotic?: ExoticObjectState;
+ }
+ 
+ interface BindingState {
+@@ -304,13 +330,14 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     const argumentsState = allowContainers && !graph ? getArgumentsState(object) : undefined;
+     const argumentsMap = allowContainers && !graph ? getArgumentsMapState(object) : undefined;
+     const argumentsData = argumentsMap?.data;
++    const exotic = allowContainers && !graph ? getExoticObjectState(object) : undefined;
+     const dataSlot = map ? 'MapData' : set ? 'SetData' : argumentsState ? 'ParameterMap'
+-      : argumentsData ? 'ArgumentsParameterMapData' : undefined;
++      : argumentsData ? 'ArgumentsParameterMapData' : exotic?.dataSlot;
+     const methods = argumentsState?.parameterMap ? ArgumentExoticObject
+-      : argumentsData ? getArgumentsMapMethods(argumentsData) : ObjectValue.prototype;
++      : argumentsData ? getArgumentsMapMethods(argumentsData) : exotic?.methods ?? ObjectValue.prototype;
+     const defineOwnProperty = argumentsState?.parameterMap ? ArgumentExoticObject.DefineOwnProperty
+-      : allowContainers && !dataSlot && object.DefineOwnProperty === ArrayExoticObjectInternalMethods.DefineOwnProperty
+-        ? ArrayExoticObjectInternalMethods.DefineOwnProperty : ObjectValue.prototype.DefineOwnProperty;
++      : exotic?.methods.DefineOwnProperty ?? (allowContainers && !dataSlot && object.DefineOwnProperty === ArrayExoticObjectInternalMethods.DefineOwnProperty
++        ? ArrayExoticObjectInternalMethods.DefineOwnProperty : ObjectValue.prototype.DefineOwnProperty);
+     const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
+     if (graph && functionSlots) throw new TypeError('Data graph cannot own function state');
+     if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
+@@ -324,7 +351,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       || object.PrivateElements.length !== 0
+       || ((!allowContainers || graph) && object.ConstructedBy.length !== 0)) {
+       throw new TypeError(allowContainers
+-        ? 'Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state'
++        ? 'Checkpoint requires ordinary objects or supported exotic objects and functions without additional internal state'
+         : 'Checkpoint requires ordinary objects without additional internal state');
+     }
+     if (argumentsState?.parameterMap) {
+@@ -378,6 +405,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
+       argumentsState,
+       argumentsMap,
++      exotic,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+@@ -434,8 +462,12 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           || (state.argumentsMap && getArgumentsParameterMapData(state.object) !== state.argumentsMap.data)) {
+           throw new TypeError('Checkpoint arguments metadata changed');
+         }
++        if (state.exotic && (getExoticObjectState(state.object)?.methods !== state.exotic.methods
++          || !hasUnchangedSlot(state.object, state.exotic.slot))) {
++          throw new TypeError('Checkpoint exotic metadata changed');
++        }
+         const methods = state.argumentsState?.parameterMap ? ArgumentExoticObject
+-          : state.argumentsMap ? getArgumentsMapMethods(state.argumentsMap.data) : ObjectValue.prototype;
++          : state.argumentsMap ? getArgumentsMapMethods(state.argumentsMap.data) : state.exotic?.methods ?? ObjectValue.prototype;
+         if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty, methods)) {
+           throw new TypeError('Checkpoint object internal methods changed');
+         }
+diff --git a/src/intrinsics/ObjectPrototype.mts b/src/intrinsics/ObjectPrototype.mts
+index a5fa027..cc7ac04 100644
+--- a/src/intrinsics/ObjectPrototype.mts
++++ b/src/intrinsics/ObjectPrototype.mts
+@@ -283,7 +283,7 @@ function* ObjectProto___proto___setter([proto = Value.undefined]: Arguments, { t
+   return Value.undefined;
+ }
+ 
+-const InternalMethods = {
++export const ImmutablePrototypeObjectInternalMethods = {
+   /** https://tc39.es/ecma262/multipage/ordinary-and-exotic-objects-behaviours.html#sec-immutable-prototype-exotic-objects-setprototypeof-v */
+   * SetPrototypeOf(V) {
+     // 1. Return ? SetImmutablePrototype(O, V).
+@@ -304,7 +304,7 @@ export function makeObjectPrototype(realmRec: Realm) {
+ 
+   // * has the internal methods defined for ordinary objects, except for the [[SetPrototypeOf]] method, which is as defined in 10.4.7.1.
+   //   (Thus, it is an immutable prototype exotic object.)
+-  proto.SetPrototypeOf = InternalMethods.SetPrototypeOf;
++  proto.SetPrototypeOf = ImmutablePrototypeObjectInternalMethods.SetPrototypeOf;
+ 
+   // * is %Object.prototype%.
+   realmRec.Intrinsics['%Object.prototype%'] = proto;

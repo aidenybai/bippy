@@ -1,0 +1,6 @@
+diff --git a/src/runtime-semantics/EvaluateBody.mts b/src/runtime-semantics/EvaluateBody.mts
+index 18ae8c5..7cee909 100644
+--- a/src/runtime-semantics/EvaluateBody.mts
++++ b/src/runtime-semantics/EvaluateBody.mts
+@@ -150 +149,0 @@ export function* EvaluateBody_AssignmentExpression(AssignmentExpression: ParseNo
+-    // @ts-expect-error

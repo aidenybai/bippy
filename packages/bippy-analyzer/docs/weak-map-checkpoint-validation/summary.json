@@ -1,0 +1,440 @@
+{
+  "scope": "selected-weak-map-storage-with-saved-entry-retention",
+  "predecessor": "bd0088a0a93bf1aac5ce57b80f66849e3701b307",
+  "engineSha256": "4b41a77cd0e4a12995624c7c9e9f51bc17c22e69bc59c50af5691981d98aaac6",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/weak-map-checkpoints.patch",
+      "sha256": "f3c6712c8e1d3a22975609d97a9f3b4445549fdff8198f590e2acfb612c22fd9"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "fd0d232585313b727d10a452b7ada0bdfe30b1106ecf428d38c90e7d594e1efa"
+    },
+    {
+      "file": "tests/weak-map-checkpoint.test.ts",
+      "sha256": "68ae2d022ba9c0c62285e954d5a814d04053d07b4552c589497d1676ec78eb6b"
+    },
+    {
+      "file": "tests/collection-checkpoint.test.ts",
+      "sha256": "977e7222fdbb5166bf2040fadb9d93ee5bd17fbcb7658fbd6886e8b8dd509a17"
+    },
+    {
+      "file": "tests/fixtures/symbolic-react-tree.tsx",
+      "sha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "4b41a77cd0e4a12995624c7c9e9f51bc17c22e69bc59c50af5691981d98aaac6"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "20cc7ff2bb05c28bdf261bec7ef1b1712799667628a46dc695d40fed1fbad93c",
+      "uncompressedSha256": "3bfb91567851d789a4c2c9789878339b9bbaf95a8f0019e5f8498686d23bf19b"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "2bd5de6a14de96614f8a04a1ccb4cc9cf66395ca8242c2c4acb2339024df6806",
+      "uncompressedSha256": "c7480f47f99f563de88fa4aaaa08edfedc378913884f6c412897fe7637cf04c6"
+    }
+  ],
+  "reactReports": [
+    {
+      "enabled": false,
+      "details": false,
+      "report": {
+        "directRoots": 65507,
+        "controlObjects": 432,
+        "seen": 19587,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1849],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2197,
+        "unsupported": []
+      }
+    },
+    {
+      "enabled": false,
+      "details": true,
+      "report": {
+        "directRoots": 65507,
+        "controlObjects": 432,
+        "seen": 19587,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1849],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2197,
+        "unsupported": []
+      }
+    },
+    {
+      "enabled": true,
+      "details": false,
+      "report": {
+        "directRoots": 65507,
+        "controlObjects": 432,
+        "seen": 19587,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1849],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2197,
+        "unsupported": []
+      }
+    },
+    {
+      "enabled": true,
+      "details": true,
+      "report": {
+        "directRoots": 65507,
+        "controlObjects": 432,
+        "seen": 19587,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1849],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2197,
+        "unsupported": []
+      }
+    }
+  ],
+  "expandedReports": [
+    {
+      "enabled": false,
+      "details": false,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814
+        }
+      }
+    },
+    {
+      "enabled": false,
+      "details": true,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814
+        }
+      }
+    },
+    {
+      "enabled": true,
+      "details": false,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814
+        }
+      }
+    },
+    {
+      "enabled": true,
+      "details": true,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814
+        }
+      }
+    }
+  ],
+  "diagnosticDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  const chunk = await buildScriptFixture(\n    new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url),\n    \"production\",\n  );\n  source = chunk.code;\n});\n\nit.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ enabled, details }))))(\n  \"specializes a real React tree with correlated Boolean decisions, enabled=$enabled details=$details\",\n  async ({ enabled, details }) => {\n    const runtime = await createConcreteRuntime();\n    const native = createNativeRuntime();\n    const { api } = await getSymbolicEngine();\n    try {\n      runtime.evaluate(source);\n      native.evaluate(source);\n      expect(runtime.readString(\"JSON.stringify(fixture.versions)\")).toBe('[\"19.3.0\",\"19.3.0\"]');\n      runtime.evaluate(\"fixture.mount()\");\n      native.evaluate(\"fixture.mount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      const previous = api.surroundingAgent;\n      api.setSurroundingAgent(runtime.agent);\n      let enabledDecisions = 0;\n      let detailsDecisions = 0;\n      try {\n        const enabledInput = api.BooleanValue.createAbstract();\n        const detailsInput = api.BooleanValue.createAbstract();\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n        const compiled = api.EnsureCompletion(\n          runtime.realm.compileScript(`\n          fixture.update(enabled, details);\n          fixture.observe();\n        `),\n        );\n        if (compiled.Type !== \"normal\") throw Error(\"Expected compiled update\");\n        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n        let step = runtime.agent.resumeEvaluate({\n          pauseOnAbstractBoolean: true,\n          noBreakpoint: true,\n        });\n        while (!step.done) {\n          const decision = step.value;\n          if (!decision) throw Error(\"Unexpected debugger pause\");\n          if (enabledDecisions + detailsDecisions >= 16)\n            throw Error(\"Unexpected decision expansion\");\n          let choice: boolean;\n          if (decision.value === enabledInput) {\n            enabledDecisions++;\n            choice = enabled;\n          } else if (decision.value === detailsInput) {\n            detailsDecisions++;\n            choice = details;\n          } else {\n            throw Error(\"Decision lost input identity\");\n          }\n          if (enabledDecisions + detailsDecisions === 1) {\n            const seen = new Set<object>();\n            const counts = new Map<string, number>();\n            const sentinel = new Error(\"Unowned React tree state\");\n            const unsupported = new Map<string, number>();\n            let selectedObjects = 0;\n            expect(() => runtime.agent.captureEvaluation({\n              references: value => {\n                if (seen.size >= 50000) throw Error(\"Audit reference budget exceeded\");\n                seen.add(value);\n                const name = Object.getPrototypeOf(value)?.constructor?.name ?? \"null-prototype\";\n                counts.set(name, (counts.get(name) ?? 0) + 1);\n                const references: unknown[] = [];\n                if (Array.isArray(value)) references.push(...value);\n                else if (typeof Reflect.get(value, \"mark\") === \"function\") {\n                  Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n                }\n                return references;\n              },\n              capture: roots => {\n                for (const value of seen) {\n                  if (!(value instanceof api.ObjectValue)) continue;\n                  try {\n                    const checkpoint = api.createStateCheckpoint({ objects: [value] });\n                    checkpoint.release();\n                    selectedObjects++;\n                  } catch (error) {\n                    const keys: string[] = [];\n                    value.properties.forEach((_descriptor, key) => { if (typeof key === \"string\") keys.push(key); else if (key instanceof api.JSStringValue) keys.push(key.stringValue()); });\n                    const key = JSON.stringify({ slots: value.internalSlotsList, parameterMap: api.isArgumentExoticObject(value) ? value.ParameterMap === undefined ? \"unmapped\" : \"mapped\" : null, privateElements: value.PrivateElements.length, constructedBy: value.ConstructedBy.length, keys: keys.slice(0, 12), hasPrototype: \"Prototype\" in value, hasExtensible: \"Extensible\" in value, methods: [\"GetPrototypeOf\", \"SetPrototypeOf\", \"IsExtensible\", \"PreventExtensions\", \"GetOwnProperty\", \"DefineOwnProperty\", \"HasProperty\", \"Get\", \"Set\", \"Delete\", \"OwnPropertyKeys\"].filter(name => Reflect.get(value, name) !== Reflect.get(api.ObjectValue.prototype, name)), error: error instanceof Error ? error.message : \"unknown\" });\n                    unsupported.set(key, (unsupported.get(key) ?? 0) + 1);\n                  }\n                }\n                writeFileSync(`/tmp/bippy-react-tree-frontier-${enabled}-${details}.json`, JSON.stringify({ directRoots: roots.values.length, controlObjects: roots.controlOwnedObjects.length, seen: seen.size, counts: [...counts], selectedObjects, unsupported: [...unsupported] }, null, 2));\n                throw sentinel;\n              },\n            })).toThrow(sentinel);\n          }\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          step = runtime.agent.resumeEvaluate({\n            abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice },\n            noBreakpoint: true,\n          });\n        }\n        const completion = api.EnsureCompletion(step.value);\n        expect(completion.Type).toBe(\"normal\");\n        if (!(completion.Value instanceof api.JSStringValue))\n          throw Error(\"Expected committed tree observation\");\n        native.evaluate(`fixture.update(${enabled}, ${details})`);\n        expect(completion.Value.stringValue()).toBe(native.evaluate(\"fixture.observe()\"));\n      } finally {\n        api.setSurroundingAgent(previous);\n      }\n      expect(enabledDecisions).toBe(details ? 4 : 3);\n      expect(detailsDecisions).toBe(1);\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      runtime.evaluate(\"fixture.unmount()\");\n      native.evaluate(\"fixture.unmount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      expect(runtime.unhandledRejections.size).toBe(0);\n      expect(runtime.uncaughtExceptions).toEqual([]);\n    } finally {\n      runtime.dispose();\n    }\n  },\n);\n",
+  "expandedDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  const chunk = await buildScriptFixture(\n    new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url),\n    \"production\",\n  );\n  source = chunk.code;\n});\n\nit.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ enabled, details }))))(\n  \"specializes a real React tree with correlated Boolean decisions, enabled=$enabled details=$details\",\n  async ({ enabled, details }) => {\n    const runtime = await createConcreteRuntime();\n    const native = createNativeRuntime();\n    const { api } = await getSymbolicEngine();\n    try {\n      runtime.evaluate(source);\n      native.evaluate(source);\n      expect(runtime.readString(\"JSON.stringify(fixture.versions)\")).toBe('[\"19.3.0\",\"19.3.0\"]');\n      runtime.evaluate(\"fixture.mount()\");\n      native.evaluate(\"fixture.mount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      const previous = api.surroundingAgent;\n      api.setSurroundingAgent(runtime.agent);\n      let enabledDecisions = 0;\n      let detailsDecisions = 0;\n      try {\n        const enabledInput = api.BooleanValue.createAbstract();\n        const detailsInput = api.BooleanValue.createAbstract();\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n        const compiled = api.EnsureCompletion(\n          runtime.realm.compileScript(`\n          fixture.update(enabled, details);\n          fixture.observe();\n        `),\n        );\n        if (compiled.Type !== \"normal\") throw Error(\"Expected compiled update\");\n        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n        let step = runtime.agent.resumeEvaluate({\n          pauseOnAbstractBoolean: true,\n          noBreakpoint: true,\n        });\n        while (!step.done) {\n          const decision = step.value;\n          if (!decision) throw Error(\"Unexpected debugger pause\");\n          if (enabledDecisions + detailsDecisions >= 16)\n            throw Error(\"Unexpected decision expansion\");\n          let choice: boolean;\n          if (decision.value === enabledInput) {\n            enabledDecisions++;\n            choice = enabled;\n          } else if (decision.value === detailsInput) {\n            detailsDecisions++;\n            choice = details;\n          } else {\n            throw Error(\"Decision lost input identity\");\n          }\n          if (enabledDecisions + detailsDecisions === 1) {\n            const seen = new Set<object>();\n            const counts = new Map<string, number>();\n            const sentinel = new Error(\"Unowned React tree state\");\n            const unsupported = new Map<string, number>();\n            let selectedObjects = 0;\n            expect(() => runtime.agent.captureEvaluation({\n              references: value => {\n                if (seen.size >= 50000) throw Error(\"Audit reference budget exceeded\");\n                seen.add(value);\n                const name = Object.getPrototypeOf(value)?.constructor?.name ?? \"null-prototype\";\n                counts.set(name, (counts.get(name) ?? 0) + 1);\n                const references: unknown[] = [];\n                if (value instanceof api.ObjectValue) {\n                  const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n                  for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n                }\n                if (value instanceof api.CallSite) references.push(value.context);\n                if (Array.isArray(value)) references.push(...value);\n                else if (typeof Reflect.get(value, \"mark\") === \"function\") {\n                  Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n                }\n                return references;\n              },\n              capture: roots => {\n                for (const value of seen) {\n                  if (!(value instanceof api.ObjectValue)) continue;\n                  try {\n                    const checkpoint = api.createStateCheckpoint({ objects: [value] });\n                    checkpoint.release();\n                    selectedObjects++;\n                  } catch (error) {\n                    const keys: string[] = [];\n                    value.properties.forEach((_descriptor, key) => { if (typeof key === \"string\") keys.push(key); else if (key instanceof api.JSStringValue) keys.push(key.stringValue()); });\n                    const key = JSON.stringify({ slots: value.internalSlotsList, parameterMap: api.isArgumentExoticObject(value) ? value.ParameterMap === undefined ? \"unmapped\" : \"mapped\" : null, privateElements: value.PrivateElements.length, constructedBy: value.ConstructedBy.length, keys: keys.slice(0, 12), hasPrototype: \"Prototype\" in value, hasExtensible: \"Extensible\" in value, methods: [\"GetPrototypeOf\", \"SetPrototypeOf\", \"IsExtensible\", \"PreventExtensions\", \"GetOwnProperty\", \"DefineOwnProperty\", \"HasProperty\", \"Get\", \"Set\", \"Delete\", \"OwnPropertyKeys\"].filter(name => Reflect.get(value, name) !== Reflect.get(api.ObjectValue.prototype, name)), error: error instanceof Error ? error.message : \"unknown\" });\n                    unsupported.set(key, (unsupported.get(key) ?? 0) + 1);\n                  }\n                }\n                let combined: unknown;\n                try {\n                  const checkpoint = api.createStateCheckpoint({\n                    objects: [...seen].filter(value => value instanceof api.ObjectValue),\n                    environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n                  });\n                  combined = { objectCount: checkpoint.objectCount, environmentCount: checkpoint.environmentCount, bindingCount: checkpoint.bindingCount };\n                  checkpoint.release();\n                } catch (error) {\n                  combined = { error: error instanceof Error ? error.message : String(error) };\n                }\n                writeFileSync(`/tmp/bippy-react-tree-record-frontier-${enabled}-${details}.json`, JSON.stringify({ directRoots: roots.values.length, controlObjects: roots.controlOwnedObjects.length, seen: seen.size, counts: [...counts], selectedObjects, unsupported: [...unsupported], combined }, null, 2));\n                throw sentinel;\n              },\n            })).toThrow(sentinel);\n          }\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          step = runtime.agent.resumeEvaluate({\n            abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice },\n            noBreakpoint: true,\n          });\n        }\n        const completion = api.EnsureCompletion(step.value);\n        expect(completion.Type).toBe(\"normal\");\n        if (!(completion.Value instanceof api.JSStringValue))\n          throw Error(\"Expected committed tree observation\");\n        native.evaluate(`fixture.update(${enabled}, ${details})`);\n        expect(completion.Value.stringValue()).toBe(native.evaluate(\"fixture.observe()\"));\n      } finally {\n        api.setSurroundingAgent(previous);\n      }\n      expect(enabledDecisions).toBe(details ? 4 : 3);\n      expect(detailsDecisions).toBe(1);\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      runtime.evaluate(\"fixture.unmount()\");\n      native.evaluate(\"fixture.unmount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      expect(runtime.unhandledRejections.size).toBe(0);\n      expect(runtime.uncaughtExceptions).toEqual([]);\n    } finally {\n      runtime.dispose();\n    }\n  },\n);\n",
+  "focused": {
+    "cases": 16,
+    "precedingEngineFailed": 16,
+    "currentPassed": 16,
+    "unchangedTestSource": true,
+    "supersededRejection": "Removed new WeakMap() from the old unsupported collection matrix; WeakSet/proxy/private rejection coverage remains."
+  },
+  "nativeComparisons": {
+    "propertyBranches": 16,
+    "initialComparisons": 6,
+    "restoredSubclassBaselines": 4,
+    "agentBranches": 4,
+    "prefixExecutionsPerAgentOrder": 1
+  },
+  "gates": {
+    "units": "1664/1664 across 53 files",
+    "types": "pass",
+    "smoke": "74/74, unchanged two-worker ten-second gate",
+    "conformance": "411/411 in both engines with matching input/compiled hashes and verdicts; both exit 0",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors, two existing warnings",
+    "cleanup": "Main worktree unchanged; temporary audit tests removed; no build lock",
+    "linux": "not run yet"
+  },
+  "limitations": [
+    "Saved keys and values are strong checkpoint roots until release; native GC lifetimes/finalization timing are not equivalent while a snapshot is open.",
+    "Referenced guest storage remains shallow. WeakSet, proxies/private instances and closed-data weak graphs still reject.",
+    "No collector or WeakMap algorithm was changed. Existing Map list/record restoration and marking handle the weak storage.",
+    "Expanded diagnostic follows collection entries and CallSite contexts, but is still not complete ownership discovery. It captures/releases one combined selected checkpoint without restoring React.",
+    "Native records, 20 context fields sets, captures, queues, module state and host effects remain unowned. No shared-prefix React fork or public guarded tree/report API."
+  ]
+}

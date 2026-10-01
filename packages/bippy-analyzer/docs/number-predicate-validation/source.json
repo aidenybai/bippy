@@ -1,0 +1,985 @@
+{
+  "name": "source",
+  "total": 42,
+  "passed": 42,
+  "exitCode": 0,
+  "originalReportSha256": "7307ffe7d52ec1fa60696c632077ee68518def8c26778f06df4851e9d2b9edc3",
+  "outcomes": [
+    {
+      "file": ".test262/test/built-ins/Object/is/length.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n17 ECMAScript Standard Built-in Objects\n",
+        "includes": ["propertyHelper.js", "assert.js", "sta.js"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 24624,
+      "relative": "built-ins/Object/is/length.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "29487268910888ccd18880f42a6d821bd0bbc71ec5a956341aa3d8da5bcfdeb6",
+      "compiledSha256": "d7f0d1f5139617b046538dc9665b120fc68cfcf3b163552bb7b5a477d64debbc"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/length.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n17 ECMAScript Standard Built-in Objects\n (Strict Mode)",
+        "includes": ["propertyHelper.js", "assert.js", "sta.js"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 24638,
+      "relative": "built-ins/Object/is/length.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "28bb742cce279b870a05e7f92e33ad4028b26bf6131855cd293c55780751d13d",
+      "compiledSha256": "0e05d52913f16e725d9dddabd8bfe1116f0d03ddbbe9d48b7a72533ccd4a52a6"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/name.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n17 ECMAScript Standard Built-in Objects\n",
+        "includes": ["propertyHelper.js", "assert.js", "sta.js"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 24624,
+      "relative": "built-ins/Object/is/name.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "eb31fd84b90c7b330af7187ed0e823913abc95a2bc18b655c9794ca72882708f",
+      "compiledSha256": "e3ece3d6c9d036ae8c3bc91328dd9b7c756e21bc188f0f7b52410affbff32b75"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/name.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n17 ECMAScript Standard Built-in Objects\n (Strict Mode)",
+        "includes": ["propertyHelper.js", "assert.js", "sta.js"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 24638,
+      "relative": "built-ins/Object/is/name.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a0eb4ef8e08f6c6c7c0b1db17f797aef2c2c81dacbe83d41ca8f18a0e16da3ff",
+      "compiledSha256": "2e5054e70c93425731fc49cf0cfd84644eb3feeb1560a93917ce87b434eea3e9"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-a-constructor.js",
+      "attrs": {
+        "esid": "sec-ecmascript-standard-built-in-objects",
+        "description": "Object.is does not implement [[Construct]], is not new-able\n",
+        "info": "ECMAScript Function Objects\n\nBuilt-in function objects that are not identified as constructors do not\nimplement the [[Construct]] internal method unless otherwise specified in\nthe description of a particular function.\n\nsec-evaluatenew\n\n...\n7. If IsConstructor(constructor) is false, throw a TypeError exception.\n...\n",
+        "includes": ["isConstructor.js", "assert.js", "sta.js"],
+        "features": ["Reflect.construct", "Object.is", "arrow-function"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2020 Rick Waldron. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 6211,
+      "relative": "built-ins/Object/is/not-a-constructor.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "cc2200c6233b97b406d0b7e013a71183dd5b7f0d218d104cbdce284a5fb8a8be",
+      "compiledSha256": "12a1b7e2a60e86c5852ddf4b34e8a896edb1ef4deaa7ab50fc373a0ca0f0504a"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-a-constructor.js",
+      "attrs": {
+        "esid": "sec-ecmascript-standard-built-in-objects",
+        "description": "Object.is does not implement [[Construct]], is not new-able\n (Strict Mode)",
+        "info": "ECMAScript Function Objects\n\nBuilt-in function objects that are not identified as constructors do not\nimplement the [[Construct]] internal method unless otherwise specified in\nthe description of a particular function.\n\nsec-evaluatenew\n\n...\n7. If IsConstructor(constructor) is false, throw a TypeError exception.\n...\n",
+        "includes": ["isConstructor.js", "assert.js", "sta.js"],
+        "features": ["Reflect.construct", "Object.is", "arrow-function"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2020 Rick Waldron. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 6225,
+      "relative": "built-ins/Object/is/not-a-constructor.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "5c194e66c43c3249e1e2bf594895d96bfc18cdd5b7c987815d3e41e7ab82093c",
+      "compiledSha256": "1d9699c346e9132771616f59bc3de8ebb9ccab34f9bbc81d0ceab63297823719"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-boolean.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 8. If Type(x) is Boolean, then\n  a. If x and y are both true or both false,\n      return true; otherwise, return false.\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-boolean.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "77ab951a914d961100764e242688416e540b3e48e1e4e50f4a9ca11d2cc75eef",
+      "compiledSha256": "af5fe1ce1d4cc854d4ba9c3fcf148a17c22207d7c1219c95de6fb36df941d14e"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-boolean.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 8. If Type(x) is Boolean, then\n  a. If x and y are both true or both false,\n      return true; otherwise, return false.\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-boolean.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "1b80e6a8944603899c8f74bfa5b33729ea44142a75ff006d76a880efa02312cd",
+      "compiledSha256": "ad36b22b82431590ec75d569e241bfd0edae82628bca5123088c3b2c9be06f5d"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-null.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 3. If Type(x) is different from Type(y), return false. ... 5. If Type(x) is Null, return true. ...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-null.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "b47cbc7fd6f6b362d32e30433275ef929931e8d4ddc97c93e47f99954cbc3c61",
+      "compiledSha256": "4d2f14e0aef95fd8fe8543cac70047d7845bd2336fe1527d4db62fc66ecd4a2c"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-null.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 3. If Type(x) is different from Type(y), return false. ... 5. If Type(x) is Null, return true. ...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-null.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "608defc460651a07fc3cef9d0d291e172cd282ad1f518b4328645260d0fe606d",
+      "compiledSha256": "99c756b52166e0f642fe9684b0c39cb78705c11684508745fb9fd5cfb3712d08"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-number.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Number, then\n  a. If x is NaN and y is NaN, return true.\n  b. If x is +0 and y is -0, return false.\n  c. If x is -0 and y is +0, return false.\n  d. If x is the same Number value as y, return true.\n  e. Return false.\n...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-number.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "66981fb404fd07139742bfdb440e379b9417a3dbe0f500cdb4b0ead490f2ccab",
+      "compiledSha256": "0dce990628f413827640e9af19f6641f64eb4a62b8885a09fd480c6378435b2e"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-number.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Number, then\n  a. If x is NaN and y is NaN, return true.\n  b. If x is +0 and y is -0, return false.\n  c. If x is -0 and y is +0, return false.\n  d. If x is the same Number value as y, return true.\n  e. Return false.\n...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-number.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6c8ca37b35d9b120bf0988ae15bd8e7a1bdb1f79d26eb5f41f0e2698f4d764d8",
+      "compiledSha256": "4964d2c1da8925b4c4cebebaa03f8429ae4e06bc47a448d9f99a98a5cd63d8e0"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-object.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 10. Return true if x and y are the same Object value. Otherwise, return false.\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7bbcaa328ba523ef5187b89cf49d92e3f948c52cf124d2081ba48eb42261bd1f",
+      "compiledSha256": "810dd76dd4f89dc7557f0ea1bb19ef5ebc72ff552b1a142b991e212fab14b03b"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-object.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 10. Return true if x and y are the same Object value. Otherwise, return false.\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "b6925412e1890961b8c8e4e63058ad4aee274ed9659c998dd91e6005c4adc0cc",
+      "compiledSha256": "89ee73a207cede5dc7096c65d9d8da5e4367cee45cd3f465c9040fce5e8eb9de"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-string.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 7. If Type(x) is String, then\n  a. If x and y are exactly the same sequence of code units \n    (same length and same code units at corresponding indices) \n    return true; otherwise, return false.\n...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-string.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "a4e51325dd1e401c017a71ef9172648be2bc3bea2bd852e07f7c566dfc5cf2c3",
+      "compiledSha256": "1c8024e649b2d9b01c3e494ca9bc9a1c95c2181b76af45eb6c5629995b993998"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-string.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 7. If Type(x) is String, then\n  a. If x and y are exactly the same sequence of code units \n    (same length and same code units at corresponding indices) \n    return true; otherwise, return false.\n...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-string.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6c09721f7b0d3899599629f58b2dad96897469ba98d3ccc9661dadc25920cfb4",
+      "compiledSha256": "1177c62a62330df86519a34edc3d475b696b10e4b51cd717dfba05b649c60199"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-symbol.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Symbol, then\n  a. If x and y are both the same Symbol value, \n      return true; otherwise, return false.\n...\n",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-symbol.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e0d2562590c571dafd894c44f07c802a6507fa66d4e1e665474d826fe472cc31",
+      "compiledSha256": "51b0edae48bd6fce80d38f13630dfc491bdabdde73938172718f16a23c93e19a"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-symbol.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Symbol, then\n  a. If x and y are both the same Symbol value, \n      return true; otherwise, return false.\n...\n (Strict Mode)",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-symbol.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6abb47994e421fbb35c4cb97d5ed5c6b718f37a0fc5eb0a241f86fbe232fb01d",
+      "compiledSha256": "fa3609627bc6540e042a9a651840aca3c250b3bb9ec52b70ef7671b00227f25d"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-type.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 3. If Type(x) is different from Type(y), return false. ...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-type.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e03ed0096b7553011ef799fdd56a470d1f7e896933f2793e93b432115bc172b7",
+      "compiledSha256": "fc3ee11b314f3fd5244e9348b5300636d6dd873b37bda39ec2a56e2e603bb0ca"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-type.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 3. If Type(x) is different from Type(y), return false. ...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-type.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "6b27319c60ada455d187409ee062a4b60c083e7f2d5c714d4f2e5ec6e8a43083",
+      "compiledSha256": "d04b3986fce095a22f67f4a4d9b29cdce4264fb631e1274fd73c35164d1b8340"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-undefined.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 4. If Type(x) is Undefined, return true. ...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/not-same-value-x-y-undefined.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "84553b7a128220700b441482606c5cd9dee311783a5a917afe0d44c543ae0066",
+      "compiledSha256": "7b0e4ded50704f70bec9f238c44438ea06e7cf00ef5c8a1585b3cbfb213751ff"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/not-same-value-x-y-undefined.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 4. If Type(x) is Undefined, return true. ...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/not-same-value-x-y-undefined.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "7fc33f1c52b9d0edb6a8e8ac3f209dbd885a8bac711ee399d420f183a3a2590e",
+      "compiledSha256": "27d541c1b8afd3c21f4638eeef4ed061225481f4de1cff6cd068a6aee3c14959"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/object-is.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n17 ECMAScript Standard Built-in Objects\n",
+        "includes": ["propertyHelper.js", "assert.js", "sta.js"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 24624,
+      "relative": "built-ins/Object/is/object-is.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "eae8c763b6c76e64516f29987991fdf137f3432b7591b2112ecff67f8bc776f3",
+      "compiledSha256": "f9613a3e9d79bdae1deaa90f457741a61b876671a5208b0a9dfd904f88bbfc89"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/object-is.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n17 ECMAScript Standard Built-in Objects\n (Strict Mode)",
+        "includes": ["propertyHelper.js", "assert.js", "sta.js"],
+        "flags": {}
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 24638,
+      "relative": "built-ins/Object/is/object-is.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "502d028e30dc3573e9b749ab43e773851e19181bded42b6e01ab3f025ca81b56",
+      "compiledSha256": "ac42fde6526f5147f5ffa97e661e66772b552b37805bccbc9883bbdf6f3e300a"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-boolean.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 8. If Type(x) is Boolean, then\n  a. If x and y are both true or both false,\n      return true; otherwise, return false.\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-boolean.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "577abb92c6da1bd9f5ff216d706ee930a6c6ff33ef5ed8ee1c965150b066f4c1",
+      "compiledSha256": "6679c41889963ba13eafd7658ce1abae5842dc0ae49b9f4fb4333f56bdc3910a"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-boolean.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 8. If Type(x) is Boolean, then\n  a. If x and y are both true or both false,\n      return true; otherwise, return false.\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-boolean.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "bf1b65f28546ce22ecf69b211ac1a0aa700d814dd12a9841acd4c786ec30f34c",
+      "compiledSha256": "3a785429a8ad9849172be14de748d243eb8b704e7823be479f8c48b0bf5dbc28"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-empty.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 4. If Type(x) is Undefined, return true. ...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-empty.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "964367eab20651784dc15349e573fad83c3b4120fea5b674099da201b36f4252",
+      "compiledSha256": "9506a39363811d629e75126c23c5495aca00a180d549893167ac87e175ca25f8"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-empty.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 4. If Type(x) is Undefined, return true. ...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-empty.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "f9209f211f23ae474b9dc205c7574702af175604e0b023d7db9b87259135c6a9",
+      "compiledSha256": "95e54955c4dd8a558735cd0be86a9cd2928d69ecaeecc0424d277036da0770db"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-null.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 3. If Type(x) is different from Type(y), return false. ... 5. If Type(x) is Null, return true. ...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-null.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "5f131972dec2656ed3c0f670521e7d7ea798fbcdb6c7152c111602c5a827edf1",
+      "compiledSha256": "1a81991d5a7bc964efdeb6600a91fdb61a11379c4657ddd02ff54b8881ae316d"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-null.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 3. If Type(x) is different from Type(y), return false. ... 5. If Type(x) is Null, return true. ...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-null.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "247efca65d2954ee51994b181bda0b2dfde6a0b6fbf18fe223e63a8e1bff4a14",
+      "compiledSha256": "d27c5747d6ec73a9c0259ddf279837859cf51e6711b7b2230c13f094bca59d79"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-number.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Number, then\n  a. If x is NaN and y is NaN, return true.\n  b. If x is +0 and y is -0, return false.\n  c. If x is -0 and y is +0, return false.\n  d. If x is the same Number value as y, return true.\n  e. Return false.\n...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-number.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "07c493f167858e53cc40fa96f85a0fdc31126264a5d435a5b5e2c96dfa5c75cd",
+      "compiledSha256": "926666f3ad814162a2e92a6fc1eb2891a073f28b38126daf4fdfc7e4e9719e83"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-number.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Number, then\n  a. If x is NaN and y is NaN, return true.\n  b. If x is +0 and y is -0, return false.\n  c. If x is -0 and y is +0, return false.\n  d. If x is the same Number value as y, return true.\n  e. Return false.\n...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-number.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "95e91575060cc2ad357a20d58e66862e619d01b606a39b8ff6b6cc8dbb231a3a",
+      "compiledSha256": "51829396b27d08b6fc95d975fb95fe53e7ccdfe08551c649d4ad5628929d2f40"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-object.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 10. Return true if x and y are the same Object value. Otherwise, return false.\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "8afa8cc8aa65820b4d761e10cc8608ea9490e63d23f3fd42f577a326d2b545d3",
+      "compiledSha256": "42b84edde357426290f996bf4f782ee57a16dd51f154bacd7a0dcf475d31ad7d"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-object.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 10. Return true if x and y are the same Object value. Otherwise, return false.\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-object.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "547005e86bfcefc3124b98f04e60eaf3bce2698124dac31ffd23f20b846f0293",
+      "compiledSha256": "23d35a14df6d8107b5db567a3abbf9cac431f0e4c1ae05ce49419708917662e6"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-string.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 7. If Type(x) is String, then\n  a. If x and y are exactly the same sequence of code units \n    (same length and same code units at corresponding indices) \n    return true; otherwise, return false.\n...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-string.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e57ab85738b70443843e8926189794233392879c2196045e10c9f3d58eac3ce9",
+      "compiledSha256": "1b2122e663331d361e2f69370102df35b939542cc3f2820ca461b3289202926b"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-string.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 7. If Type(x) is String, then\n  a. If x and y are exactly the same sequence of code units \n    (same length and same code units at corresponding indices) \n    return true; otherwise, return false.\n...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-string.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "c2124189630c6b97a5b240a06dd63a2c7f8a159774fa3271e4e5e1c498e7c1b5",
+      "compiledSha256": "44e97ae4ce66c0a988a589fc37ab2d8588c165a9590c05647ff1b32e6d9362b1"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-symbol.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Symbol, then\n  a. If x and y are both the same Symbol value, \n      return true; otherwise, return false.\n...\n",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-symbol.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "cc4a167f4f6c0822370943a5595b83be2a3e4e078130504c30dce05f4457f361",
+      "compiledSha256": "f5a98c01c72b4680b734cc535b8a18e438da197515579b39fc65bedfaf2b4515"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-symbol.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n... 6. If Type(x) is Symbol, then\n  a. If x and y are both the same Symbol value, \n      return true; otherwise, return false.\n...\n (Strict Mode)",
+        "features": ["Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-symbol.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "4d87537c7f99d8e63ccb77b34953e8d8e14f19735dea1c373b3083b4732cf0b3",
+      "compiledSha256": "08071326771f8b13983a65f414ab30f8cccf4e778e1849e7dda7e4f38c6fd2cd"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-undefined.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 4. If Type(x) is Undefined, return true. ...\n",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/same-value-x-y-undefined.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "e886b9e4abe3ad1687a9a8a75de3a9550a935380bfa248072f2292f70aca7847",
+      "compiledSha256": "c1919408e2d3833eadc19a232d68e32a02a7e2d9a17b61b010659cc16566ed95"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/same-value-x-y-undefined.js",
+      "attrs": {
+        "es6id": "19.1.2.10",
+        "description": "Object.is ( value1, value2 )\n7.2.9 SameValue(x, y)\n... 4. If Type(x) is Undefined, return true. ...\n (Strict Mode)",
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2015 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/same-value-x-y-undefined.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "abaca7c5eee56c8b9e6b06e4e74bc828521c2eeac1e19ef69d141ec63e5977ca",
+      "compiledSha256": "260ee73d1f311f9d7891aa2a94d8f6325416016d116d33e1e1466a71ed91e294"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/symbol-object-is-same-value.js",
+      "attrs": {
+        "esid": "sec-object.is",
+        "description": "Object.is/SameValue: Symbol\n",
+        "features": ["Object.is", "Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "default",
+      "insertionIndex": 5667,
+      "relative": "built-ins/Object/is/symbol-object-is-same-value.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "fb8e13ccbb6886eea6a759dd2f347b6a78612af125db244604624e617f2be154",
+      "compiledSha256": "3963787e7ac6c217b7af8fa1b3754deffd3a9406b7a38e759fe1e13cd6a3f556"
+    },
+    {
+      "file": ".test262/test/built-ins/Object/is/symbol-object-is-same-value.js",
+      "attrs": {
+        "esid": "sec-object.is",
+        "description": "Object.is/SameValue: Symbol\n (Strict Mode)",
+        "features": ["Object.is", "Symbol"],
+        "flags": {},
+        "includes": ["assert.js", "sta.js"]
+      },
+      "copyright": "// Copyright (C) 2013 the V8 project authors. All rights reserved.",
+      "scenario": "strict mode",
+      "insertionIndex": 5681,
+      "relative": "built-ins/Object/is/symbol-object-is-same-value.js",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null
+      },
+      "result": {
+        "pass": true
+      },
+      "contentsSha256": "8610bb5d1f141c8701a487913c4f8d2666a9e30012a4d2a6f36b568f2d9c7fe6",
+      "compiledSha256": "c27248f2321af21ef0f4e6763963cc74a392ae514aa253c8cf47a89aedbbd89f"
+    }
+  ]
+}

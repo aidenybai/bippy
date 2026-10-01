@@ -1,0 +1,62 @@
+diff --git a/src/abstract-ops/module-records.mts b/src/abstract-ops/module-records.mts
+index 2bd0fd3..4fb48b1 100644
+--- a/src/abstract-ops/module-records.mts
++++ b/src/abstract-ops/module-records.mts
+@@ -29,7 +29,7 @@ import {
+   type ArrayBufferObject,
+ } from './all.mts';
+ import {
+-  surroundingAgent, HostLoadImportedModule, HostPromiseRejectionTracker, completeModuleLoad,
++  surroundingAgent, HostLoadImportedModule, HostPromiseRejectionTracker, completeModuleLoad, type GCMarker,
+ } from '#self';
+ import {
+   Realm,
+@@ -183,6 +183,12 @@ export class GraphLoadingState {
+     this.HostDefined = HostDefined;
+     this.PreviouslyImportedNames = PreviouslyImportedNames;
+   }
++
++  mark(marker: GCMarker): void {
++    marker(this.PromiseCapability);
++    for (const module of this.Visited) marker(module);
++    for (const entry of this.PreviouslyImportedNames) marker(entry.Module);
++  }
+ }
+ 
+ /** https://tc39.es/ecma262/#sec-InnerModuleLoading */
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 84a36a0..7d38b1d 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -1,7 +1,7 @@
+ import type { Protocol } from 'devtools-protocol';
+ import { shouldStepOnNode } from '../host-defined/debugger-util.mts';
+ import { markStateCheckpoints } from '../host-defined/object-checkpoint.mts';
+-import { hasPendingModuleLoads } from '../host-defined/engine.mts';
++import { hasPendingModuleLoads, markPendingModuleLoads } from '../host-defined/engine.mts';
+ import { isArray } from '../utils/language.mts';
+ import { callCallback } from '../utils/callback.mts';
+ import {
+@@ -153,6 +153,7 @@ export class Agent {
+       m(frame.paused?.failure?.error);
+     }
+     markStateCheckpoints(this, m);
++    markPendingModuleLoads(this, m);
+     this.executionContextStack.forEach(m);
+     this.jobQueue.mark(m);
+     this.eventLoop.mark(m);
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 6b4b6a6..209c68d 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -255,6 +255,10 @@ const pendingModuleLoads = new WeakMap<Agent, Set<HostLoadImportedModulePayloadO
+ 
+ export const hasPendingModuleLoads = (agent: Agent): boolean => Boolean(pendingModuleLoads.get(agent)?.size);
+ 
++export const markPendingModuleLoads = (agent: Agent, marker: GCMarker): void => {
++  for (const payload of pendingModuleLoads.get(agent) ?? []) marker(payload.data);
++};
++
+ export const completeModuleLoad = (agent: Agent, payload: HostLoadImportedModulePayloadOpaque): void => {
+   const pending = pendingModuleLoads.get(agent);
+   pending?.delete(payload);

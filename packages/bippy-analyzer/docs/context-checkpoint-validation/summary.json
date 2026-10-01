@@ -1,0 +1,423 @@
+{
+  "scope": "selected-context-fields-and-callsites-not-transitive-ownership",
+  "predecessor": "d4abee681caccb19521fc67a08f804d933f4130a",
+  "engineSha256": "141ff80b36b25af3cc0eb7df6365cf15abbea696ea02b24c8682ad429579fc0d",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/context-checkpoints.patch",
+      "sha256": "daf06cb9ae149bc5561736c2768142d7fcbcae029338c72457464356671cb1cf"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "064c2eae6f2fd2533a3683b60f9d555027c0aebce810b30904eb86750fcca0a5"
+    },
+    {
+      "file": "tests/context-checkpoint.test.ts",
+      "sha256": "f02986da3ae65d3f04172eb54d3260dfd383dcd4a0d8750f1254ded0ceeb51f0"
+    },
+    {
+      "file": "tests/fixtures/symbolic-react-tree.tsx",
+      "sha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "141ff80b36b25af3cc0eb7df6365cf15abbea696ea02b24c8682ad429579fc0d"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "68f128b2de2b8d70f95f56e25651c8cdd51055ab3b4e85ca706511bba3d49cb4",
+      "uncompressedSha256": "ddd2fc7101b7bd9cfe829f95d97504e859c4cb2913f1edc41aaf46523e23371a"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "de5434f2aa2dc1de9e8819273cbfd78889821c7ae8c6f131ba9192ca734f0b0b",
+      "uncompressedSha256": "6e4d5021c3e3bed92acf22067d4d73ba1e09a1fb451493d84c44b7fa57ec3a12"
+    }
+  ],
+  "reactReports": [
+    {
+      "enabled": false,
+      "details": false,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814,
+          "contextCount": 20,
+          "callSiteCount": 44
+        }
+      }
+    },
+    {
+      "enabled": false,
+      "details": true,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814,
+          "contextCount": 20,
+          "callSiteCount": 44
+        }
+      }
+    },
+    {
+      "enabled": true,
+      "details": false,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814,
+          "contextCount": 20,
+          "callSiteCount": 44
+        }
+      }
+    },
+    {
+      "enabled": true,
+      "details": true,
+      "report": {
+        "directRoots": 65644,
+        "controlObjects": 432,
+        "seen": 19616,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2516],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2199],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2212],
+          ["Descriptor", 5997],
+          ["JSStringValue", 2178],
+          ["NumberValue", 1660],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 97],
+          ["Array", 1852],
+          ["FunctionEnvironmentRecord", 40],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ExecutionContext", 20],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2199,
+        "unsupported": [],
+        "combined": {
+          "objectCount": 2199,
+          "environmentCount": 138,
+          "bindingCount": 814,
+          "contextCount": 20,
+          "callSiteCount": 44
+        }
+      }
+    }
+  ],
+  "partialForkReports": [
+    {
+      "prefixCount": 1,
+      "observations": [
+        {
+          "enabled": false,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "enabled": false,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "enabled": true,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "enabled": true,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 5
+        }
+      ],
+      "limitation": "Experimental partial owner only. Native records, captures, queues and host state have not been validated or owned."
+    },
+    {
+      "prefixCount": 1,
+      "observations": [
+        {
+          "enabled": true,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "enabled": true,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "enabled": false,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "enabled": false,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 4
+        }
+      ],
+      "limitation": "Experimental partial owner only. Native records, captures, queues and host state have not been validated or owned."
+    }
+  ],
+  "timerLeakReports": [
+    {
+      "prefixCount": 1,
+      "observations": [
+        {
+          "enabled": false,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "enabled": false,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "enabled": true,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "enabled": true,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "leakedTimers": 4,
+          "expectedForOneBranch": 1
+        }
+      ],
+      "limitation": "Experimental partial owner only. Native records, captures, queues and host state have not been validated or owned."
+    },
+    {
+      "prefixCount": 1,
+      "observations": [
+        {
+          "enabled": true,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"strong\",\"props\":{},\"children\":[\"Active details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "enabled": true,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"enabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Enabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":false},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Enabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "enabled": false,
+          "details": true,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]},{\"type\":\"aside\",\"props\":{},\"children\":[{\"type\":\"span\",\"props\":{},\"children\":[\"Inactive details\"]}]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 5
+        },
+        {
+          "enabled": false,
+          "details": false,
+          "actual": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "expected": "{\"tree\":{\"type\":\"section\",\"props\":{\"data-status\":\"disabled\"},\"children\":[{\"type\":\"h1\",\"props\":{},\"children\":[\"Disabled\"]},{\"type\":\"button\",\"props\":{\"disabled\":true},\"children\":[\"0\"]}]},\"renders\":2,\"events\":[\"commit:Disabled:0\",\"cleanup:Disabled:0\",\"commit:Disabled:0\"]}",
+          "decisions": 4
+        },
+        {
+          "leakedTimers": 4,
+          "expectedForOneBranch": 1
+        }
+      ],
+      "limitation": "Experimental partial owner only. Native records, captures, queues and host state have not been validated or owned."
+    }
+  ],
+  "captureDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  const chunk = await buildScriptFixture(\n    new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url),\n    \"production\",\n  );\n  source = chunk.code;\n});\n\nit.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ enabled, details }))))(\n  \"specializes a real React tree with correlated Boolean decisions, enabled=$enabled details=$details\",\n  async ({ enabled, details }) => {\n    const runtime = await createConcreteRuntime();\n    const native = createNativeRuntime();\n    const { api } = await getSymbolicEngine();\n    try {\n      runtime.evaluate(source);\n      native.evaluate(source);\n      expect(runtime.readString(\"JSON.stringify(fixture.versions)\")).toBe('[\"19.3.0\",\"19.3.0\"]');\n      runtime.evaluate(\"fixture.mount()\");\n      native.evaluate(\"fixture.mount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      const previous = api.surroundingAgent;\n      api.setSurroundingAgent(runtime.agent);\n      let enabledDecisions = 0;\n      let detailsDecisions = 0;\n      try {\n        const enabledInput = api.BooleanValue.createAbstract();\n        const detailsInput = api.BooleanValue.createAbstract();\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n        const compiled = api.EnsureCompletion(\n          runtime.realm.compileScript(`\n          fixture.update(enabled, details);\n          fixture.observe();\n        `),\n        );\n        if (compiled.Type !== \"normal\") throw Error(\"Expected compiled update\");\n        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n        let step = runtime.agent.resumeEvaluate({\n          pauseOnAbstractBoolean: true,\n          noBreakpoint: true,\n        });\n        while (!step.done) {\n          const decision = step.value;\n          if (!decision) throw Error(\"Unexpected debugger pause\");\n          if (enabledDecisions + detailsDecisions >= 16)\n            throw Error(\"Unexpected decision expansion\");\n          let choice: boolean;\n          if (decision.value === enabledInput) {\n            enabledDecisions++;\n            choice = enabled;\n          } else if (decision.value === detailsInput) {\n            detailsDecisions++;\n            choice = details;\n          } else {\n            throw Error(\"Decision lost input identity\");\n          }\n          if (enabledDecisions + detailsDecisions === 1) {\n            const seen = new Set<object>();\n            const counts = new Map<string, number>();\n            const sentinel = new Error(\"Unowned React tree state\");\n            const unsupported = new Map<string, number>();\n            let selectedObjects = 0;\n            expect(() => runtime.agent.captureEvaluation({\n              references: value => {\n                if (seen.size >= 50000) throw Error(\"Audit reference budget exceeded\");\n                seen.add(value);\n                const name = Object.getPrototypeOf(value)?.constructor?.name ?? \"null-prototype\";\n                counts.set(name, (counts.get(name) ?? 0) + 1);\n                const references: unknown[] = [];\n                if (value instanceof api.ObjectValue) {\n                  const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n                  for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n                }\n                if (value instanceof api.CallSite) references.push(value.context);\n                if (Array.isArray(value)) references.push(...value);\n                else if (typeof Reflect.get(value, \"mark\") === \"function\") {\n                  Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n                }\n                return references;\n              },\n              capture: roots => {\n                for (const value of seen) {\n                  if (!(value instanceof api.ObjectValue)) continue;\n                  try {\n                    const checkpoint = api.createStateCheckpoint({ objects: [value] });\n                    checkpoint.release();\n                    selectedObjects++;\n                  } catch (error) {\n                    const keys: string[] = [];\n                    value.properties.forEach((_descriptor, key) => { if (typeof key === \"string\") keys.push(key); else if (key instanceof api.JSStringValue) keys.push(key.stringValue()); });\n                    const key = JSON.stringify({ slots: value.internalSlotsList, parameterMap: api.isArgumentExoticObject(value) ? value.ParameterMap === undefined ? \"unmapped\" : \"mapped\" : null, privateElements: value.PrivateElements.length, constructedBy: value.ConstructedBy.length, keys: keys.slice(0, 12), hasPrototype: \"Prototype\" in value, hasExtensible: \"Extensible\" in value, methods: [\"GetPrototypeOf\", \"SetPrototypeOf\", \"IsExtensible\", \"PreventExtensions\", \"GetOwnProperty\", \"DefineOwnProperty\", \"HasProperty\", \"Get\", \"Set\", \"Delete\", \"OwnPropertyKeys\"].filter(name => Reflect.get(value, name) !== Reflect.get(api.ObjectValue.prototype, name)), error: error instanceof Error ? error.message : \"unknown\" });\n                    unsupported.set(key, (unsupported.get(key) ?? 0) + 1);\n                  }\n                }\n                let combined: unknown;\n                try {\n                  const checkpoint = api.createStateCheckpoint({\n                    objects: [...seen].filter(value => value instanceof api.ObjectValue),\n                    environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n                    contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n                    callSites: [...seen].filter(value => value instanceof api.CallSite),\n                  });\n                  combined = { objectCount: checkpoint.objectCount, environmentCount: checkpoint.environmentCount, bindingCount: checkpoint.bindingCount, contextCount: checkpoint.contextCount, callSiteCount: checkpoint.callSiteCount };\n                  checkpoint.release();\n                } catch (error) {\n                  combined = { error: error instanceof Error ? error.message : String(error) };\n                }\n                writeFileSync(`/tmp/bippy-react-tree-context-frontier-${enabled}-${details}.json`, JSON.stringify({ directRoots: roots.values.length, controlObjects: roots.controlOwnedObjects.length, seen: seen.size, counts: [...counts], selectedObjects, unsupported: [...unsupported], combined }, null, 2));\n                throw sentinel;\n              },\n            })).toThrow(sentinel);\n          }\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          step = runtime.agent.resumeEvaluate({\n            abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice },\n            noBreakpoint: true,\n          });\n        }\n        const completion = api.EnsureCompletion(step.value);\n        expect(completion.Type).toBe(\"normal\");\n        if (!(completion.Value instanceof api.JSStringValue))\n          throw Error(\"Expected committed tree observation\");\n        native.evaluate(`fixture.update(${enabled}, ${details})`);\n        expect(completion.Value.stringValue()).toBe(native.evaluate(\"fixture.observe()\"));\n      } finally {\n        api.setSurroundingAgent(previous);\n      }\n      expect(enabledDecisions).toBe(details ? 4 : 3);\n      expect(detailsDecisions).toBe(1);\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      runtime.evaluate(\"fixture.unmount()\");\n      native.evaluate(\"fixture.unmount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      expect(runtime.unhandledRejections.size).toBe(0);\n      expect(runtime.uncaughtExceptions).toEqual([]);\n    } finally {\n      runtime.dispose();\n    }\n  },\n);\n",
+  "partialForkDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nit.each([false, true])(\"diagnoses a partial-owner React fork, reversed=%s\", async (isReversed) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: () => {\n          const state = api.createStateCheckpoint({\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n          });\n          storage = state;\n          return { restore: () => {\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n  } finally {\n    writeFileSync(`/tmp/bippy-react-partial-context-fork-${isReversed}.json`, JSON.stringify({ prefixCount, observations, limitation: \"Experimental partial owner only. Native records, captures, queues and host state have not been validated or owned.\" }, null, 2));\n    runtime.dispose();\n  }\n});\n",
+  "timerLeakDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nit.each([false, true])(\"diagnoses a partial-owner React fork, reversed=%s\", async (isReversed) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: () => {\n          const state = api.createStateCheckpoint({\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n          });\n          storage = state;\n          return { restore: () => {\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    writeFileSync(`/tmp/bippy-react-partial-context-timer-leak-${isReversed}.json`, JSON.stringify({ prefixCount, observations, limitation: \"Experimental partial owner only. Native records, captures, queues and host state have not been validated or owned.\" }, null, 2));\n    runtime.dispose();\n  }\n});\n",
+  "focused": {
+    "cases": 14,
+    "precedingEngineFailed": 13,
+    "existingShallowCasePassed": 1,
+    "currentPassed": 14,
+    "unchangedTestSource": true
+  },
+  "nativeComparisons": {
+    "scopedAgentBranches": 4,
+    "reactPartialOwnerBranches": 8,
+    "reactTimerVariantBranches": 8,
+    "prefixExecutionsPerOrder": 1,
+    "timerLeakPerOrder": "4 callbacks execute; selected branch requires 1"
+  },
+  "gates": {
+    "units": "1678/1678 across 54 files",
+    "types": "pass",
+    "smoke": "74/74, unchanged two-worker ten-second gate",
+    "conformance": "361/363 in both engines with matching input/compiled hashes and verdicts; both exit 1; evaluation-body.js default/strict fail",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors, two existing warnings",
+    "cleanup": "Main worktree unchanged; temporary audit tests removed; no build lock",
+    "linux": "not run yet"
+  },
+  "limitations": [
+    "Shallow native field snapshots do not restore referenced native record contents, generators, control, Agent stack membership, queues, modules or host effects.",
+    "The diagnostic partial owner resumes actual React from one saved prefix but does not validate all native ownership. Matching trees do not establish branch isolation; the timer variant disproves it.",
+    "The first diagnostic replaced the runtime step observer. The final drivers chain it and preserve original budgets. The old log remains archived.",
+    "Marking is not complete discovery: context selection adds 20 original CallSites beyond the 24 explicitly visited.",
+    "No public guarded React explorer, transition report, repeated-state families or integrated symbolic demo."
+  ]
+}

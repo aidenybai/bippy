@@ -1,0 +1,66 @@
+{
+  "scope": "indexed-engine-internal-lists-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "d0eba416803f0d343b0eff7c897c5bee2502b5cbe2c8283623d61a1577e5ce9f",
+  "units": {
+    "passed": 917,
+    "total": 917,
+    "files": 22
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74,
+    "exitCode": 0
+  },
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "selections": [
+    {
+      "name": "parameters",
+      "total": 559,
+      "passed": 557,
+      "failed": 2,
+      "exitCode": 1,
+      "identicalInputsCompiledHashesAndVerdicts": true,
+      "reference": "0d1b9483 source receipt"
+    },
+    {
+      "name": "generators",
+      "total": 212,
+      "passed": 212,
+      "failed": 0,
+      "exitCode": 0,
+      "identicalInputsCompiledHashesAndVerdicts": true,
+      "reference": "0d1b9483 source receipt"
+    },
+    {
+      "name": "using",
+      "total": 85,
+      "passed": 85,
+      "failed": 0,
+      "exitCode": 0,
+      "identicalInputsCompiledHashesAndVerdicts": true,
+      "reference": "published engine"
+    },
+    {
+      "name": "await-using",
+      "total": 123,
+      "passed": 123,
+      "failed": 0,
+      "exitCode": 0,
+      "identicalInputsCompiledHashesAndVerdicts": true,
+      "reference": "published engine"
+    }
+  ],
+  "medianBeforeMilliseconds": 3908.487792,
+  "medianAfterMilliseconds": 3495.721625,
+  "linuxConfirmation": "mixed: 964f06c4 passes 917 units but times out on numeric smoke variants (72/74); docs-only a3bc42e7 passes all jobs, 917 units and 74/74 smoke with identical engine bytes; both CI receipts retained",
+  "files": {
+    "engine/patches/indexed-internal-lists.patch": "15e5d094d4ba8a8114e9bbfca0269c01da7dddd11a680afcb7afde0d1a82a378",
+    "engine/scripts/build.ts": "bb5a92140575e76b765bf8ceec15d3c90996a1d9add4da8c772f455bb7442fd1",
+    "tests/parameter-binding.test.ts": "d0e4821f82439a609dc39a700128c9da87cc925abcd357d512d15b2004a056f5"
+  }
+}

@@ -1,0 +1,292 @@
+{
+  "scope": "Agent evaluation checkpoint compilation and source registration rejection",
+  "engine": "7ada069b25d5336ab1fe159157a27978a12098ebf6e3ce99b88feeaf18be66c9",
+  "predecessor": "60b4c28c6e0cad6e503fb63b1969dd88ee75c8da",
+  "entrypoints": [
+    "HostEnsureCanCompileStrings",
+    "ParseScript",
+    "ParseModule",
+    "ManagedRealm.compileScript",
+    "ManagedRealm.compileModule",
+    "Agent.addParsedSource",
+    "Agent.addDynamicParsedSource"
+  ],
+  "semantics": [
+    "Guard before hook/options/helper lookup, parsing, registration, identifiers and context pushes at the listed entrypoints",
+    "Recipient and surrounding Agent checks on direct registrations",
+    "Cache hits and untracked compilation do not bypass rejection",
+    "Function parameter/body coercions precede the guard and are not rolled back",
+    "Nonstring eval, guest replacements, ordinary function syntax and JSON.stringify remain available",
+    "Valid JSON.parse/JSON.rawJSON/ParseJSON/ParseJSONModule reach Script parsing and reject; invalid JSON can throw a guest SyntaxError before the guard",
+    "Release permits compilation; capture/restore/terminal-open-checkpoint lifetime remain guarded"
+  ],
+  "boundaries": [
+    "Not automatic ownership, a source registry checkpoint, or full native/parser confinement",
+    "Native records, raw Parser/wrappedParse, RegExp parsing and arbitrary host implementations remain trusted",
+    "Direct native field/Map mutation is not intercepted",
+    "Standalone storage/control checkpoints do not gain Agent guards",
+    "No new public API, parser, interpreter, restore algorithm or effect permission",
+    "No new React branch evidence"
+  ],
+  "baseline": {
+    "engine": "bce554a9376c260b0991ec583d7ac7e77655fc5e190d158a97eb608490d63e28",
+    "newCases": {
+      "failed": 62,
+      "controls": 14
+    },
+    "classification": "Missing effect rejection through existing APIs, not absent APIs or62independent bugs",
+    "updatedEvaluationCasesPassed": 14,
+    "identicalFinalTests": true,
+    "disabledOnlyNewPatch": true
+  },
+  "validation": {
+    "newTests": 76,
+    "focused": 141,
+    "units": 2545,
+    "files": 103,
+    "types": "pass",
+    "relocatedBuilds": 2,
+    "offlineInstall": "pass",
+    "rootCheck": {
+      "errors": 0,
+      "warnings": 2,
+      "files": 634
+    },
+    "smoke": 74,
+    "timeoutMs": {
+      "units": 5000,
+      "test262": 10000
+    },
+    "workers": 2,
+    "ciJobMinutes": 10
+  },
+  "retainedFailures": [
+    "Initial two eval/Function tests failed because resume did not throw",
+    "TS2345 optional guest property values fixed by checked getCounter helper",
+    "Internal ParseJSON initially assumed public;TS2339/two failed tests corrected to compiled capture binding access",
+    "Two existing evaluation-start assertions reached the new earlier compilation guard; precompile replacement now preserves their original target assertion and later reuse",
+    "Initial root check contained one new unused-api warning; removed, final check has only2existingwarnings",
+    "Receipt caught the last typecheck failure: terminal-release fixture read Type without EnsureCompletion; fixed normalization and reran identical-final-source predecessor/types/units/focused/check"
+  ],
+  "review": "Read-only review found no critical. Its JSON compatibility warning prompted valid/invalid JSON coverage and documentation; added exact restore/resume poison identity assertions. Reviewer ran no gates.",
+  "conformance": {
+    "fresh": true,
+    "selection": [
+      ".test262/test/built-ins/eval/*.js",
+      ".test262/test/built-ins/Function/*.js",
+      ".test262/test/built-ins/JSON/parse/*.js",
+      ".test262/test/built-ins/JSON/rawJSON/*.js"
+    ],
+    "variants": 443,
+    "source": {
+      "passed": 422,
+      "failed": 21
+    },
+    "predecessor": {
+      "passed": 422,
+      "failed": 21
+    },
+    "published": {
+      "passed": 422,
+      "failed": 21
+    },
+    "identicalInputsCompiledVerdicts": true,
+    "normalizedSha256": "c2b0063f5b411a602416830b8d66d02bdbec26e1862860c6213d4e74d987d810",
+    "failures": [
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-12gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-14gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-75gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-76gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-77gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-78gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-79gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-80gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-81gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-82gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-83gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-84gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-85gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-86gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-87gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-88gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-89gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-90gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-91gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-92gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      },
+      {
+        "file": ".test262/test/built-ins/Function/15.3.5.4_2-93gs.js",
+        "scenario": "default",
+        "result": {
+          "pass": false,
+          "message": "Expected no error, got TypeError: The caller, callee, and arguments properties may not be accessed on functions or the arguments objects for calls to them"
+        }
+      }
+    ],
+    "classification": "Matching failures in Function caller/arguments tests; not443passes"
+  },
+  "files": [
+    {
+      "filename": "engine/patches/checkpoint-compilation.patch",
+      "sha256": "1246bf450423a8a1a6a93f02e1e2278b0159ee96399e6885af4a219e6b24b474"
+    },
+    {
+      "filename": "engine/scripts/build.ts",
+      "sha256": "99a94105119d362c00e10f2faf2de07eba52e061801e62c7c43d9ca658b70d94"
+    },
+    {
+      "filename": "tests/checkpoint-compilation.test.ts",
+      "sha256": "70ae8eedf78a2c9986803c90c2e1c77cdf28e50c01e77d668424b861b40548e3"
+    },
+    {
+      "filename": "tests/evaluation-checkpoint.test.ts",
+      "sha256": "c465ab9444f571ccd6cd3121f7879a74e763f10bda7756f7d8ff376fc8689d50"
+    }
+  ],
+  "incomplete": [
+    "Automatic synchronous-Script owner and native capability contracts",
+    "Realm/Script/context/environment ownership",
+    "Actual automatic aliased Script branches",
+    "Shared-prefix React isolation",
+    "Automatic reports/transitions/repeated families/demo"
+  ]
+}

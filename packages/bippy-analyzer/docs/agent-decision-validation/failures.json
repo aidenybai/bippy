@@ -1,0 +1,180 @@
+{
+  "source": [
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-cond.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-pos.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/tco-right.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/tco-right.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-else-body.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-if-body.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "",
+        "stdout": "",
+        "error": null,
+        "timeout": true
+      }
+    }
+  ],
+  "published": [
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-cond.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28919' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28919",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28919' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/conditional/tco-pos.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28803' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28803",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28803' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-and/tco-right.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:1743' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:1743",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:1743' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/expressions/logical-or/tco-right.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:1743' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:1743",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:1743' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-else-body.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/if/tco-if-body.js",
+      "scenario": "strict mode",
+      "rawResult": {
+        "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+        "stdout": "",
+        "error": {
+          "name": "file",
+          "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719",
+          "stack": [
+            {
+              "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+              "fileName": "file",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

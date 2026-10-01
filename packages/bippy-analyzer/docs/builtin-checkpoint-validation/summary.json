@@ -1,0 +1,91 @@
+{
+  "scope": "engine262-selected-builtin-properties-v1",
+  "symbolicReactComplete": false,
+  "generalStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactSource": "packages/shared/objectIs.js",
+  "reactFixtureVersion": "19.3.0",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "330d9dd26093b2ec7b33f3d2fb686e31d8a863fd7c88fb95663bf62883778a4a",
+  "implementation": [
+    "Reuse builtin creation slot prefix and canonical method identities",
+    "Restore selected builtin properties with original function identity",
+    "Validate native behavior, metadata descriptors and exact slot sequence before writes",
+    "Do not restore mutable referenced records, capture arrays or native closures"
+  ],
+  "regressions": {
+    "initialCases": 32,
+    "initialFailures": 26,
+    "initialExistingRejections": 6,
+    "initialPatchedFailures": 4,
+    "initialPatchedFailureReason": "V8 and engine262 differ in intrinsic Object/Array installation order",
+    "finalBuiltinCases": 39,
+    "finalBaselineFailures": 29,
+    "finalBaselineExistingRejections": 10,
+    "finalBaselineTimeouts": 0,
+    "identicalFinalTestSourceHashes": true,
+    "nativePropertyBranchObservations": 28,
+    "nativePropertyBaselines": 14,
+    "nativeAgentBranches": 4,
+    "nativeReactSequencesPreserved": 10,
+    "keyOrderOracle": "Compare branch-created key order independently and full restored order against engine-local baseline"
+  },
+  "units": {
+    "passed": 1504,
+    "total": 1504,
+    "files": 46
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "6a399abe1ab36e412c92402b8262fd8dbd6d1ebd9fc0c0d21d4126b2fc246622",
+      "compressedSha256": "1afb7f89420dc8e469795409064e529ae16299ca1dad20a06d45fa995a86c9a8"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "fb4a3aaa8d1cbd96b19a917ff95bf5607f8076e65625391f7ec89ab294589c11",
+      "compressedSha256": "4f5b45ed2809ac132ac8936e2e376e439ba6204edbff47061410321fbbccad28"
+    }
+  ],
+  "conformance": {
+    "passed": 356,
+    "total": 358,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "failures": "Both Function/prototype/toString/built-in-function-object.js variants time out in both engines",
+    "selection": [
+      ".test262/test/built-ins/Function/prototype/call/**/*.js",
+      ".test262/test/built-ins/Function/prototype/apply/**/*.js",
+      ".test262/test/built-ins/Function/prototype/toString/**/*.js",
+      ".test262/test/built-ins/Reflect/construct/**/*.js"
+    ]
+  },
+  "boundaries": [
+    "Native captures, realms and additional slot records remain separately owned",
+    "Class constructors, private-environment functions and callable proxies remain excluded",
+    "Closed-data and ordinary-only APIs still reject builtin functions",
+    "Actual React captures/releases selected Object.is properties but never restores React",
+    "No shared-prefix React fork, guarded report, event transitions, repeated families or symbolic demo",
+    "Native metadata is trusted, not a hostile-host sandbox"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "CI 36531269711/analyzer 109285269446 reproduces the engine hash and passes 1504 units, but passes 72/74 smoke variants; both numeric substr variants time out at the unchanged gate. E2E 36531269704 and publish 36531269801 pass. See ci-failure.json and diagnostic profiles.",
+  "files": {
+    "engine/patches/builtin-checkpoints.patch": "0c8f21ffaeeb994174f258d7c004ec9a381446f716ea0a1ed79c9bbf57ccf6e4",
+    "engine/scripts/build.ts": "cda72ad3e8ac1f332cd8e16a8631bcd532951b4f160a1c19f6556e97eb03dee6",
+    "tests/builtin-checkpoint.test.ts": "5b314a9fe6e4623c2806d907c1792b786d9ffdbcbeb317c9ae4d368cb20e0ae5",
+    "tests/function-checkpoint.test.ts": "0f16f069083afc1e375ebd42e86db912638514334f9e8415fa609d8bf76d5377",
+    "tests/numeric-react.test.ts": "8d701f83d00c40121b4d3de3a2a99af41b003c3562f95444f7ea7c5c60b867b7",
+    "tests/fixtures/numeric-react.tsx": "62893df5eee21a8fd5d0e79b2dab40f31f919aee04ce6cb7eb640b9d38a2d98c",
+    "docs/builtin-checkpoints.md": "19b80dcab2ce55e62d9e056bebdc8b14771d30b5a71ddb190ecef02621831727",
+    "docs/engine-state-inventory.md": "1b485194f9ef36ff76172938894d44ef9056dc74856c973fc2102abf4ca18380"
+  }
+}

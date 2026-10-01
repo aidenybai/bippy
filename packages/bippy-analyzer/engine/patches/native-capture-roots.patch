@@ -1,0 +1,33 @@
+diff --git a/src/api.mts b/src/api.mts
+index 0cd9c3a..9d9a452 100644
+--- a/src/api.mts
++++ b/src/api.mts
+@@ -34,7 +34,7 @@ import type { PromiseObject } from './intrinsics/Promise.mts';
+ import type { ParseNode } from './parser/ParseNode.mts';
+ import type { ModuleCache } from './utils/module.mts';
+ import {
+-  surroundingAgent, type GCMarker,
++  surroundingAgent, type GCMarker, getNativeCaptures,
+   CreateIntrinsics,
+   SetDefaultGlobalBindings,
+   OrdinaryObjectCreate,
+@@ -75,7 +75,7 @@ export function gc() {
+   const ephemeronQueue: WeakMapObject['WeakMapData'][number][] = [];
+ 
+   const markCb: GCMarker = (O) => {
+-    if (typeof O !== 'object' || O === null) {
++    if ((typeof O !== 'object' && typeof O !== 'function') || O === null) {
+       return;
+     }
+ 
+@@ -84,7 +84,9 @@ export function gc() {
+     }
+     marked.add(O);
+ 
+-    if (isWeakRef(O)) {
++    if (typeof O === 'function') {
++      for (const binding of getNativeCaptures(O)?.bindings ?? []) markCb(binding.get());
++    } else if (isWeakRef(O)) {
+       weakrefs.add(O);
+       markCb(O.properties);
+       markCb(O.Prototype);

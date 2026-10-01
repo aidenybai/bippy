@@ -1,0 +1,40 @@
+diff --git a/src/api.mts b/src/api.mts
+index 62d5d52..0cd9c3a 100644
+--- a/src/api.mts
++++ b/src/api.mts
+@@ -117,6 +117,10 @@ export function gc() {
+       O.SetData.forEach(markCb);
+     } else if ('mark' in O) {
+       (O as Markable).mark(markCb);
++    } else if (Array.isArray(O)) {
++      for (let index = 0; index < O.length; index++) {
++        markCb(O[index]);
++      }
+     }
+   };
+ 
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 24b9a66..2fd9ac4 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -126,6 +126,7 @@ export class Agent {
+   // NON-SPEC
+   mark(m: GCMarker) {
+     this.AgentRecord.KeptAlive.forEach(m);
++    m(this.#pausedEvaluator?.evaluator);
+     markStateCheckpoints(this, m);
+     this.executionContextStack.forEach(m);
+     this.jobQueue.mark(m);
+diff --git a/src/execution-context/ExecutionContext.mts b/src/execution-context/ExecutionContext.mts
+index 7600a1f..35658a0 100644
+--- a/src/execution-context/ExecutionContext.mts
++++ b/src/execution-context/ExecutionContext.mts
+@@ -92,6 +92,8 @@ export class ExecutionContext {
+ 
+   // NON-SPEC
+   mark(m: GCMarker) {
++    m(this.CodeEvaluationState);
++    m(this.Generator);
+     m(this.Function);
+     m(this.Realm);
+     m(this.ScriptOrModule);

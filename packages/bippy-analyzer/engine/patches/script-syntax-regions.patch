@@ -1,0 +1,324 @@
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 209c68d..d979b46 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -114,6 +114,7 @@ export interface DebuggerPauseReason {
+ }
+ 
+ export interface AgentHostDefined {
++  scriptSyntax?: import('./script-syntax.mts').ScriptSyntaxLimits;
+   hostDefinedState?: Markable;
+   evaluateAbstractNumber?(operation: AbstractNumberOperation): NumberValue;
+   evaluateAbstractNumberPredicate?(predicate: AbstractNumberPredicate): BooleanValue;
+diff --git a/src/host-defined/script-syntax.mts b/src/host-defined/script-syntax.mts
+new file mode 100644
+index 0000000..0e55ed7
+--- /dev/null
++++ b/src/host-defined/script-syntax.mts
+@@ -0,0 +1,185 @@
++import { surroundingAgent, type Agent, type ParseNode } from '#self';
++
++export interface ScriptSyntaxLimits {
++  readonly maxRecords?: number;
++  readonly maxEntries?: number;
++}
++
++export interface ScriptSyntaxRegion {
++  readonly scope: 'read-only-parsed-script-syntax-v1';
++  readonly root: ParseNode.Script;
++  readonly recordCount: number;
++  readonly entryCount: number;
++  readonly maxRecords: number;
++  readonly maxEntries: number;
++  readonly sourceOwnerCount: number;
++  readonly borrowedReferences: readonly object[];
++  readonly validate: () => void;
++}
++
++interface SyntaxField {
++  readonly key: PropertyKey;
++  readonly descriptor: PropertyDescriptor;
++}
++
++interface SyntaxRecord {
++  readonly value: object;
++  readonly prototype: object | null;
++  readonly extensible: boolean;
++  readonly fields: readonly SyntaxField[];
++}
++
++interface SyntaxGetter {
++  readonly getter: unknown;
++  readonly sourceOwner?: object;
++}
++
++interface SyntaxRegistration {
++  readonly agent: Agent;
++  readonly region: ScriptSyntaxRegion;
++}
++
++const nodeGetters = new WeakMap<object, SyntaxGetter>();
++const arrowMethods = new WeakMap<object, unknown>();
++const regions = new WeakMap<object, SyntaxRegistration>();
++
++export const registerSyntaxNode = (node: object, sourceOwner?: object) => {
++  nodeGetters.set(node, { getter: Object.getOwnPropertyDescriptor(node, 'sourceText')?.get, sourceOwner });
++};
++
++export const registerSyntaxArrowInfo = (info: object) => {
++  arrowMethods.set(info, Object.getOwnPropertyDescriptor(info, 'merge')?.value);
++};
++
++export const getScriptSyntaxRegion = (value: object): ScriptSyntaxRegion | undefined => {
++  const registered = regions.get(value);
++  if (!registered) return undefined;
++  if (registered.agent !== surroundingAgent) throw new Error('Script syntax belongs to another agent');
++  return registered.region;
++};
++
++export const registerScriptSyntax = (root: ParseNode.Script, limits: ScriptSyntaxLimits): void => {
++  const maxRecords = limits.maxRecords ?? 100000;
++  const maxEntries = limits.maxEntries ?? 1000000;
++  if (!Number.isSafeInteger(maxRecords) || maxRecords < 0 || maxRecords > 1000000) throw new Error('Invalid script syntax maxRecords');
++  if (!Number.isSafeInteger(maxEntries) || maxEntries < 0 || maxEntries > 8000000) throw new Error('Invalid script syntax maxEntries');
++  const agent = surroundingAgent;
++  const records = new Map<object, SyntaxRecord>();
++  const work: (() => void)[] = [];
++  const sourceOwners = new Map<object, PropertyDescriptor>();
++  let entryCount = 0;
++
++  const addRecord = (value: object, prototype: object, visit: (field: SyntaxField) => void) => {
++    if (records.has(value)) return;
++    if (records.size >= maxRecords) throw new Error('Script syntax exceeded maxRecords');
++    if (Object.getPrototypeOf(value) !== prototype) throw new Error('Unsupported script syntax prototype');
++    const fields: SyntaxField[] = [];
++    for (const key of Reflect.ownKeys(value)) {
++      if (++entryCount > maxEntries) throw new Error('Script syntax exceeded maxEntries');
++      if (typeof key !== 'string') throw new Error('Unsupported script syntax key');
++      const descriptor = Object.getOwnPropertyDescriptor(value, key);
++      if (!descriptor) throw new Error('Missing script syntax descriptor');
++      fields.push({ key, descriptor });
++    }
++    records.set(value, { value, prototype, extensible: Object.isExtensible(value), fields });
++    work.push(() => { for (const field of fields) visit(field); });
++  };
++
++  const primitive = (value: unknown) => value === null || (typeof value !== 'object' && typeof value !== 'function' && typeof value !== 'symbol');
++  const data = (field: SyntaxField): unknown => {
++    if (!('value' in field.descriptor)) throw new Error('Unsupported script syntax accessor');
++    return field.descriptor.value;
++  };
++  const callable = (value: unknown) => {
++    if (typeof value !== 'function') throw new Error('Unsupported script syntax function');
++    addRecord(value, Function.prototype, (field) => {
++      if (!primitive(data(field))) throw new Error('Unsupported script syntax function storage');
++    });
++  };
++  const position = (value: unknown) => {
++    if (!value || typeof value !== 'object') throw new Error('Unsupported script syntax position');
++    addRecord(value, Object.prototype, (field) => {
++      if ((field.key !== 'line' && field.key !== 'column') || typeof data(field) !== 'number') throw new Error('Unsupported script syntax position');
++    });
++  };
++  const location = (value: unknown) => {
++    if (!value || typeof value !== 'object') throw new Error('Unsupported script syntax location');
++    addRecord(value, Object.prototype, (field) => {
++      if (field.key === 'start' || field.key === 'end') position(data(field));
++      else if ((field.key !== 'startIndex' && field.key !== 'endIndex') || typeof data(field) !== 'number') throw new Error('Unsupported script syntax location');
++    });
++  };
++  const visit = (value: unknown): void => {
++    if (primitive(value)) return;
++    if (!value || typeof value !== 'object') throw new Error('Unsupported script syntax reference');
++    if (Array.isArray(value)) {
++      addRecord(value, Array.prototype, (field) => {
++        if (field.key === 'location') location(data(field));
++        else if (field.key === 'length' || (typeof field.key === 'string' && /^(0|[1-9][0-9]*)$/.test(field.key))) visit(data(field));
++        else throw new Error('Unsupported script syntax list field');
++      });
++      return;
++    }
++    if (nodeGetters.has(value)) {
++      addRecord(value, Object.prototype, (field) => {
++        if (field.key === 'sourceText') {
++          const registered = nodeGetters.get(value);
++          if (!registered || field.descriptor.get !== registered.getter || field.descriptor.set || 'value' in field.descriptor) throw new Error('Unsupported script source accessor');
++          if (registered.sourceOwner) {
++            const source = Object.getOwnPropertyDescriptor(registered.sourceOwner, 'source');
++            if (!source || !('value' in source) || typeof source.value !== 'string') throw new Error('Unsupported parser source storage');
++            sourceOwners.set(registered.sourceOwner, source);
++          }
++          callable(field.descriptor.get);
++        } else if (field.key === 'location') location(data(field));
++        else visit(data(field));
++      });
++      return;
++    }
++    if (arrowMethods.has(value)) {
++      addRecord(value, Object.prototype, (field) => {
++        const referenced = data(field);
++        if (field.key === 'merge') {
++          if (referenced !== arrowMethods.get(value)) throw new Error('Unsupported script arrow method');
++          callable(referenced);
++        } else if (field.key === 'isAsync' || field.key === 'hasTrailingComma') {
++          if (typeof referenced !== 'boolean') throw new Error('Unsupported script arrow flag');
++        } else if (field.key === 'yieldExpressions' || field.key === 'awaitExpressions' || field.key === 'awaitIdentifiers') visit(referenced);
++        else throw new Error('Unsupported script arrow field');
++      });
++      return;
++    }
++    throw new Error('Unregistered script syntax reference');
++  };
++
++  visit(root);
++  while (work.length) work.pop()!();
++  const region: ScriptSyntaxRegion = Object.freeze({
++    scope: 'read-only-parsed-script-syntax-v1',
++    root,
++    recordCount: records.size,
++    entryCount,
++    maxRecords,
++    maxEntries,
++    sourceOwnerCount: sourceOwners.size,
++    borrowedReferences: Object.freeze([Object.prototype, Array.prototype, Function.prototype, String.prototype]),
++    validate: () => {
++      if (surroundingAgent !== agent) throw new Error('Script syntax belongs to another agent');
++      for (const [owner, expected] of sourceOwners) {
++        const current = Object.getOwnPropertyDescriptor(owner, 'source');
++        if (!current || !('value' in current) || current.value !== expected.value || current.configurable !== expected.configurable || current.enumerable !== expected.enumerable || current.writable !== expected.writable) throw new Error('Read-only parser source changed');
++      }
++      for (const record of records.values()) {
++        const keys = Reflect.ownKeys(record.value);
++        if (Object.getPrototypeOf(record.value) !== record.prototype || Object.isExtensible(record.value) !== record.extensible || keys.length !== record.fields.length) throw new Error('Read-only script syntax changed');
++        for (let index = 0; index < keys.length; index++) {
++          const field = record.fields[index];
++          const current = Object.getOwnPropertyDescriptor(record.value, keys[index]);
++          const expected = field.descriptor;
++          if (keys[index] !== field.key || !current || current.configurable !== expected.configurable || current.enumerable !== expected.enumerable || current.writable !== expected.writable || current.get !== expected.get || current.set !== expected.set || ('value' in current) !== ('value' in expected) || !Object.is(current.value, expected.value)) throw new Error('Read-only script syntax changed');
++        }
++      }
++    },
++  });
++  for (const value of records.keys()) regions.set(value, { agent, region });
++};
+diff --git a/src/index.mts b/src/index.mts
+index ab6eaf1..db5973e 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -10,6 +10,7 @@ export * from './static-semantics/all.mts';
+ export * from './runtime-semantics/all.mts';
+ export * from './value.mts';
+ export * from './host-defined/engine.mts';
++export { getScriptSyntaxRegion, type ScriptSyntaxRegion, type ScriptSyntaxLimits } from './host-defined/script-syntax.mts';
+ export {
+   createOrdinaryObjectCheckpoint, createStateCheckpoint, createDataGraphCheckpoint,
+   type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
+diff --git a/src/parse.mts b/src/parse.mts
+index 3b1dc6f..6da4e82 100644
+--- a/src/parse.mts
++++ b/src/parse.mts
+@@ -1,3 +1,4 @@
++import { registerScriptSyntax } from './host-defined/script-syntax.mts';
+ import { Parser, type ParserOptions } from './parser/Parser.mts';
+ import { RegExpParser, type RegExpParserContext } from './parser/RegExpParser.mts';
+ import {
+@@ -106,7 +107,9 @@ export function ParseScript(sourceText: string, realm: Realm, hostDefined: Parse
+   //    early error detection may be interweaved in an implementation-dependent manner. If more
+   //    than one parsing error or early error is present, the number and ordering of error
+   //    objects in the list is implementation-dependent, but at least one must be present.
++  const syntaxLimits = surroundingAgent.hostDefinedOptions.scriptSyntax;
+   const parseOptions = {
++    trackScriptSyntax: syntaxLimits !== undefined,
+     source: sourceText,
+     specifier: hostDefined.specifier,
+     json: hostDefined[kInternal]?.json,
+@@ -123,6 +126,7 @@ export function ParseScript(sourceText: string, realm: Realm, hostDefined: Parse
+     return body;
+   }
+   setNodeParent(body, undefined);
++  if (syntaxLimits) registerScriptSyntax(body, syntaxLimits);
+   // 4. Return Script Record { [[Realm]]: realm, [[ECMAScriptCode]]: body, [[HostDefined]]: hostDefined }.
+   const script = new ScriptRecord({
+     Realm: realm,
+diff --git a/src/parser/Parser.mts b/src/parser/Parser.mts
+index f8ede9c..2db2080 100644
+--- a/src/parser/Parser.mts
++++ b/src/parser/Parser.mts
+@@ -1,3 +1,4 @@
++import { registerSyntaxNode } from '../host-defined/script-syntax.mts';
+ import { LanguageParser } from './LanguageParser.mts';
+ import type {
+   ParseNode,
+@@ -7,6 +8,7 @@ import { Scope } from './Scope.mts';
+ import { surroundingAgent, type Feature } from '#self';
+ 
+ export interface ParserOptions {
++  readonly trackScriptSyntax?: boolean;
+   readonly source: string;
+   readonly decoratingSource?: string;
+   readonly specifier?: string;
+@@ -15,6 +17,7 @@ export interface ParserOptions {
+ }
+ 
+ export class Parser extends LanguageParser {
++  readonly trackScriptSyntax: boolean;
+   protected readonly source: string;
+ 
+   protected readonly specifier?: string;
+@@ -31,9 +34,10 @@ export class Parser extends LanguageParser {
+   protected readonly decoratingSource?: string;
+ 
+   constructor({
+-    source, specifier, json = false, allowAllPrivateNames = false, decoratingSource,
++    source, specifier, json = false, allowAllPrivateNames = false, decoratingSource, trackScriptSyntax = false,
+   }: ParserOptions) {
+     super();
++    this.trackScriptSyntax = trackScriptSyntax;
+     this.source = source;
+     this.specifier = specifier;
+     this.decoratingSource = decoratingSource;
+@@ -67,6 +71,7 @@ export class Parser extends LanguageParser {
+         return s.slice(node.location.startIndex, node.location.endIndex);
+       },
+     };
++    if (this.trackScriptSyntax) registerSyntaxNode(node);
+     return node;
+   }
+ 
+@@ -83,6 +88,7 @@ export class Parser extends LanguageParser {
+   finishNode(node: ParseNode.Unfinished, type: ParseNode['type']) {
+     node.type = type;
+     this.markLocationEnd(node);
++    if (this.trackScriptSyntax && (type === 'Script' || type === 'ScriptBody' || type === 'Module' || type === 'ModuleBody')) registerSyntaxNode(node, this);
+     return node;
+   }
+ }
+diff --git a/src/parser/Scope.mts b/src/parser/Scope.mts
+index 1b4c403..0aa8c83 100644
+--- a/src/parser/Scope.mts
++++ b/src/parser/Scope.mts
+@@ -1,3 +1,4 @@
++import { registerSyntaxArrowInfo } from '../host-defined/script-syntax.mts';
+ import {
+   Assert, Parser, Throw, type ErrorObject,
+ } from '../index.mts';
+@@ -354,7 +355,7 @@ export class Scope {
+   }
+ 
+   pushArrowInfo(isAsync = false) {
+-    this.arrowInfoStack.push({
++    const info: ArrowInfo = {
+       isAsync,
+       hasTrailingComma: false,
+       yieldExpressions: [],
+@@ -365,7 +366,9 @@ export class Scope {
+         this.awaitExpressions.push(...other.awaitExpressions);
+         this.awaitIdentifiers.push(...other.awaitIdentifiers);
+       },
+-    });
++    };
++    if (this.parser.trackScriptSyntax) registerSyntaxArrowInfo(info);
++    this.arrowInfoStack.push(info);
+   }
+ 
+   popArrowInfo() {

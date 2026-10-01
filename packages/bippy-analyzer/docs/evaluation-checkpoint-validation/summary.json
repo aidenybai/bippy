@@ -1,0 +1,88 @@
+{
+  "scope": "engine262-controlled-evaluation-checkpoint-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "bd4ed47d7231bb12483e79e03620a7ef44c40f164818f8445767bf2b477e0223",
+  "implementation": [
+    "Agent.captureEvaluation delegates to captureControl and caller-supplied owner",
+    "Restore original registered evaluator, controlled mode and exact decision after owner restoration",
+    "Agent marks saved control-root lists until LIFO release; no new collector or dispatcher",
+    "Execution failures remain terminal; restoration failures poison registration",
+    "Block checkpoint access during execution, owner callbacks, completion notifications and debugger preview"
+  ],
+  "regressions": {
+    "initialCases": 10,
+    "initialFailures": 10,
+    "finalCases": 14,
+    "nativeComparisons": 4,
+    "branchOrders": 2,
+    "prefixExecutionsPerOrder": 1,
+    "intermediateFailures": [
+      "Owner callback test tried compiling while control checkpoint was active",
+      "Two additional tests exposed completion-callback and debugger-preview access",
+      "Typecheck caught two closure-narrowing errors"
+    ]
+  },
+  "units": {
+    "passed": 1378,
+    "total": 1378,
+    "files": 41
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "0a8d739109971cb243cd66f8c2771efd79bc6e7d9b53ccf19033e39736b990d2",
+      "compressedSha256": "6986bcb384442b5ce388474fe8af9236f004a67b500969637e5093dde6758ff5"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "7a96dd884cff5ae88e90b97316753312fa8bfaa22f61b993ff2d1c6a2be3a057",
+      "compressedSha256": "4155ce39691c3e497f881b748dfb73aca4f154ede3791fc43b9c67fb92f88ee5"
+    }
+  ],
+  "conformance": {
+    "passed": 393,
+    "total": 399,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "identicalFailureDiagnostics": false,
+    "selection": [
+      ".test262/test/language/statements/if/**/*.js",
+      ".test262/test/language/statements/debugger/**/*.js",
+      ".test262/test/language/expressions/conditional/**/*.js",
+      ".test262/test/language/expressions/logical-and/**/*.js",
+      ".test262/test/language/expressions/logical-or/**/*.js",
+      ".test262/test/language/expressions/logical-not/**/*.js",
+      ".test262/test/built-ins/GeneratorPrototype/**/*.js"
+    ],
+    "failures": "6 strict-tail-call failures retained; both runs exit 1"
+  },
+  "boundaries": [
+    "Caller owns contexts, heap records and external effects; an empty owner is not isolation proof",
+    "New registered evaluations and job drains cannot run under an open evaluation checkpoint after completion",
+    "Release removes saved roots, not caller heap checkpoints or host resources",
+    "Native closure captures and unknown records are not discovered recursively",
+    "Unregistered manual evaluator still loses target",
+    "No transitive owner, shared-prefix React fork, guarded report or symbolic demo"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "1378 units and 74/74 smoke pass; clean-build hash matches, see ci.json",
+  "files": {
+    "engine/patches/evaluation-checkpoints.patch": "7b904ec335b36302ac292a01e987da8801b99932def7b026e02400f5fbe607d9",
+    "engine/scripts/build.ts": "0b88bd803066395a3f7c554b6ddc31d349c13f1fc0e658d2a4ef8402691901db",
+    "engine/extensions/execution-machine.mts": "e3864a42efd90c2898ddab0959d41198a247e9f4c35a040077cd965ca45753b9",
+    "tests/evaluation-checkpoint.test.ts": "eab885c606978bc9f4c54fbceaa492b4cdf7e39d79bbde5c7f41c6504e6434b3",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17",
+    "docs/engine-state-inventory.md": "04cb542f2d068ad7ae4a1cb89de30ffec145991d3262d184de01b1ce67e7e7f3"
+  }
+}

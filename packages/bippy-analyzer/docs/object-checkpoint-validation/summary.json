@@ -1,0 +1,50 @@
+{
+  "scope": "selected-ordinary-objects-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "baselineCommit": "07565a92",
+  "baselineEngineSha256": "96eefcf1b15d2c61ec22e18cd16b73bc254fc103804bd843add502873e23749c",
+  "engineSha256": "da115b2eeb8743868db509c127cdccfa49832490e61dce7a720a42eac8959d29",
+  "patchSha256": "ab1ea6bd1a5ec4712990660789919a29d20ea9f1f21778c8eeafa88012e2c520",
+  "testSha256": "d905ef7ac68804b283b2cf569fe27a104577bc61a4e19f3eb1537ce6a03feced",
+  "focusedTests": 31,
+  "totalUnitTests": 797,
+  "unitTestFiles": 15,
+  "smoke": {
+    "total": 74,
+    "passed": 74,
+    "failed": 0
+  },
+  "historical": {
+    "total": 306,
+    "passed": 301,
+    "failed": 5,
+    "exitCode": 1
+  },
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "parameterSelection": [
+    ".test262/test/language/arguments-object/**/*.js",
+    ".test262/test/language/expressions/function/*.js"
+  ],
+  "beforeReceipt": "../unused-arguments-validation/after.json",
+  "before": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "after": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "identicalInputsCompiledHashesAndVerdicts": true,
+  "receiptHashes": {
+    "after": "e40319caea448e2eabe3d5aa05832b6c30b4cf1b9fff5678151e2415adcd17d2",
+    "validation-logs": "76254112becba4c732156d1fc5b8f8bf3d08d4ecb579fb24dcab81f231ee7d8d"
+  }
+}

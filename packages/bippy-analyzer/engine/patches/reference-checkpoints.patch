@@ -1,0 +1,144 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index dc64f2a..5448ad0 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -10,7 +10,7 @@ import {
+   hasBuiltinFunctionMethods, builtinFunctionInternalSlots,
+   ArgumentExoticObject, getArgumentsParameterMapData,
+   type ArgumentsParameterMapData, type ObjectInternalMethods,
+-  StringExoticObjectInternalMethods, ExecutionContext, CallSite,
++  StringExoticObjectInternalMethods, ExecutionContext, CallSite, ReferenceRecord, PrivateName, EnvironmentRecord,
+ } from '#self';
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
+ import { ImmutablePrototypeObjectInternalMethods } from '../intrinsics/ObjectPrototype.mts';
+@@ -240,12 +240,17 @@ interface CallSiteState {
+   snapshot: CallSite;
+ }
+ 
+-const assertNativeRecord = (value: object, prototype: object, keys: readonly PropertyKey[]): void => {
++interface ReferenceState {
++  reference: ReferenceRecord;
++  snapshot: ReferenceRecord;
++}
++
++const assertNativeRecord = (value: object, prototype: object, keys: readonly PropertyKey[], kind = 'context'): void => {
+   if (Object.getPrototypeOf(value) !== prototype || !Object.isExtensible(value)
+     || Reflect.ownKeys(value).length !== keys.length || !keys.every((key) => {
+       const descriptor = Object.getOwnPropertyDescriptor(value, key);
+       return descriptor && 'value' in descriptor && descriptor.writable && descriptor.enumerable && descriptor.configurable;
+-    })) throw new TypeError('Checkpoint requires canonical context records');
++    })) throw new TypeError(`Checkpoint requires canonical ${kind} records`);
+ };
+ 
+ const assertContext = (context: ExecutionContext, owner: Agent, keys: readonly PropertyKey[], siteKeys: readonly PropertyKey[]): void => {
+@@ -255,8 +260,23 @@ const assertContext = (context: ExecutionContext, owner: Agent, keys: readonly P
+   if (context.callSite.context !== context) throw new TypeError('Checkpoint context CallSite owner changed');
+ };
+ 
++const assertReference = (reference: ReferenceRecord, owner: Agent): void => {
++  assertNativeRecord(reference, ReferenceRecord.prototype, ['Base', 'ReferencedName', 'Strict', 'ThisValue'], 'reference');
++  if ((reference.Base !== 'unresolvable' && !(reference.Base instanceof Value) && !(reference.Base instanceof EnvironmentRecord))
++    || (!(reference.ReferencedName instanceof Value) && !(reference.ReferencedName instanceof PrivateName))
++    || typeof reference.Strict !== 'boolean' || (reference.ThisValue !== undefined && !(reference.ThisValue instanceof Value))) {
++    throw new TypeError('Checkpoint requires valid reference fields');
++  }
++  for (const value of [reference.Base, reference.ReferencedName, reference.ThisValue]) {
++    if ((value instanceof ObjectValue || value instanceof EnvironmentRecord) && value.ownerAgent !== owner) {
++      throw new TypeError('Checkpoint reference values must belong to the current agent');
++    }
++  }
++};
++
+ interface StateCheckpointFrame {
+   states: OrdinaryObjectState[];
++  references: ReferenceState[];
+   contexts: ContextState[];
+   callSites: CallSiteState[];
+   environments: EnvironmentState[];
+@@ -275,6 +295,7 @@ export interface StateCheckpointOptions {
+   environments?: readonly (DeclarativeEnvironmentRecord | GlobalEnvironmentRecord)[];
+   contexts?: readonly ExecutionContext[];
+   callSites?: readonly CallSite[];
++  referenceRecords?: readonly ReferenceRecord[];
+ }
+ 
+ export interface StateCheckpoint {
+@@ -284,6 +305,7 @@ export interface StateCheckpoint {
+   readonly bindingCount: number;
+   readonly contextCount: number;
+   readonly callSiteCount: number;
++  readonly referenceRecordCount: number;
+   restore(): void;
+   release(): void;
+ }
+@@ -312,6 +334,10 @@ const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
+ 
+ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+   for (const frame of checkpoints.get(agent) ?? []) {
++    for (const state of frame.references) {
++      mark(state.reference);
++      mark(state.snapshot);
++    }
+     for (const state of frame.contexts) {
+       mark(state.context);
+       mark(state.snapshot);
+@@ -384,10 +410,16 @@ const getGlobalEnvironmentState = (environment: GlobalEnvironmentRecord, owner:
+   return { environment, objectRecord, declarativeRecord, bindingObject: objectRecord.BindingObject, globalThis: environment.GlobalThisValue };
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [], contexts = [], callSites = [], referenceRecords = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
++  const referenceStates: ReferenceState[] = [];
++  for (const reference of new Set(referenceRecords)) {
++    if (owner.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
++    assertReference(reference, owner);
++    referenceStates.push({ reference, snapshot: new ReferenceRecord(reference) });
++  }
+   const selectedContexts = new Set(contexts);
+   const selectedCallSites = new Set(callSites);
+   const contextStates: ContextState[] = [];
+@@ -539,7 +571,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     }
+     environmentStates.push({ environment, bindings });
+   }
+-  const frame = { states, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
++  const frame = { states, references: referenceStates, environments: environmentStates, globals, contexts: contextStates, callSites: callSiteStates };
+   const stack = checkpoints.get(owner) ?? [];
+   stack.push(frame);
+   checkpoints.set(owner, stack);
+@@ -556,8 +588,16 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+     bindingCount: environmentStates.reduce((count, state) => count + state.bindings.length, 0),
+     contextCount: contextStates.length,
+     callSiteCount: callSiteStates.length,
++    referenceRecordCount: referenceStates.length,
+     restore: () => {
+       const agent = assertActive();
++      if (referenceStates.length && agent.debugger_isPreviewing) throw new Error('Reference checkpoints do not support debugger preview');
++      for (const { reference, snapshot } of referenceStates) {
++        assertReference(reference, agent);
++        if (reference.Base !== snapshot.Base || reference.Strict !== snapshot.Strict || reference.ThisValue !== snapshot.ThisValue) {
++          throw new TypeError('Checkpoint reference metadata changed');
++        }
++      }
+       if (environmentStates.length !== 0 && agent.debugger_isPreviewing) {
+         throw new Error('Checkpoint cannot restore bindings during preview');
+       }
+@@ -655,6 +695,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+           for (const value of set.values) set.data.push(value);
+         }
+       }
++      for (const { reference, snapshot } of referenceStates) reference.ReferencedName = snapshot.ReferencedName;
+       for (const { context, snapshot } of contextStates) {
+         snapshot.copy(context);
+         context.Generator = snapshot.Generator;
+@@ -679,6 +720,7 @@ const createCheckpoint = ({ objects = [], environments = [], contexts = [], call
+       stack.pop();
+       if (stack.length === 0) checkpoints.delete(agent);
+       states.length = 0;
++      referenceStates.length = 0;
+       environmentStates.length = 0;
+       globals.length = 0;
+       contextStates.length = 0;

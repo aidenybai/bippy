@@ -1,0 +1,1147 @@
+{
+  "scope": "checkpoint-clock-and-random-rejection-v1",
+  "predecessor": "5e9ea9a64be986aadba4a27311d8a0316aa98ee1",
+  "engineSha256": "f0b9c2dbcdcd9f6af5a949c7b787643c38c89d052592d7c0e7fcff2544aff40f",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/checkpoint-nondeterminism.patch",
+      "sha256": "590c951a190993c82a580d1d912019c0784d91a8d42b36a34ab869fb39ba6e18"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "380f61a61c32f32ab083f10131290715fdf6bd461e7fcf9bea820d0f0b1db077"
+    },
+    {
+      "file": "tests/checkpoint-nondeterminism.test.ts",
+      "sha256": "bb09f6e5efb947ac4d5f92ae15e0917ad3393a3456ba8b62dc3aa2fd216e5920"
+    },
+    {
+      "file": "tests/helpers/abstract-fixture.ts",
+      "sha256": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "f0b9c2dbcdcd9f6af5a949c7b787643c38c89d052592d7c0e7fcff2544aff40f"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "d2dd623fae7c52d7cddf37ef72619f592e3ca120028defb9374e20b7d05f6a57",
+      "uncompressedSha256": "7c35852f851ad34b21c73edb4f27a4902e4fc639f2361ae0f11fc1b03ea149e9"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "23a279becb1f2b6f29f014a7c87567f471ada87a67f39419a7d9ce0e5a440a58",
+      "uncompressedSha256": "b2d2af42086ebfceddd3e79f554fafa3d33344c18bd9efd53f6a1863b764b7d5"
+    }
+  ],
+  "reactReports": [
+    {
+      "engine": "predecessor",
+      "isReversed": false,
+      "observation": {
+        "phase": "timer",
+        "failureStack": "TypeError: Host effects are unsupported during evaluation checkpoints\n    at Agent.assertCanPerformHostEffect (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92696:15)\n    at ObjectValue.unwrap.api.CreateNonEnumerableDataPropertyOrThrow.api.CreateBuiltinFunction.api.registerNativeClosure.getHostCaptures.name [as nativeFunction] (/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/src/concrete/runtime.ts:149:32)\n    at BuiltinCallOrConstruct.executionMachine.w.calleeContext.calleeContext (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:135266:30)\n    at ExecutionMachine.step (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:408:61)\n    at driveFrames (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:458:22)\n    at drive (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:530:12)\n    at ExecutionMachine.next (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:318:12)\n    at Agent.resumeEvaluate (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92981:29)\n    at diagnosePartialFork (/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/tests/react-nondeterminism-rejection.test.ts:142:36)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)",
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21436,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic records the first rejection phase. The maintained guard rejects an explicit application Date.now call after React update, before the previous timer boundary; selection counts are not execution ownership."
+      }
+    },
+    {
+      "engine": "predecessor",
+      "isReversed": true,
+      "observation": {
+        "phase": "timer",
+        "failureStack": "TypeError: Host effects are unsupported during evaluation checkpoints\n    at Agent.assertCanPerformHostEffect (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92696:15)\n    at ObjectValue.unwrap.api.CreateNonEnumerableDataPropertyOrThrow.api.CreateBuiltinFunction.api.registerNativeClosure.getHostCaptures.name [as nativeFunction] (/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/src/concrete/runtime.ts:149:32)\n    at BuiltinCallOrConstruct.executionMachine.w.calleeContext.calleeContext (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:135266:30)\n    at ExecutionMachine.step (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:408:61)\n    at driveFrames (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:458:22)\n    at drive (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:530:12)\n    at ExecutionMachine.next (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:318:12)\n    at Agent.resumeEvaluate (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92981:29)\n    at diagnosePartialFork (/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/tests/react-nondeterminism-rejection.test.ts:142:36)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)",
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21436,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic records the first rejection phase. The maintained guard rejects an explicit application Date.now call after React update, before the previous timer boundary; selection counts are not execution ownership."
+      }
+    },
+    {
+      "engine": "maintained",
+      "isReversed": false,
+      "observation": {
+        "phase": "clock",
+        "failureStack": "TypeError: Host effects are unsupported during evaluation checkpoints\n    at Agent.assertCanPerformHostEffect (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92696:15)\n    at HostSystemUTCEpochNanoseconds (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:132544:20)\n    at SystemUTCEpochMilliseconds (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:132556:29)\n    at ObjectValue.Date_now [as nativeFunction] (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:211801:13)\n    at BuiltinCallOrConstruct.executionMachine.w.calleeContext.calleeContext (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:135267:30)\n    at ExecutionMachine.step (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:408:61)\n    at driveFrames (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:458:22)\n    at drive (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:530:12)\n    at ExecutionMachine.next (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:318:12)\n    at Agent.resumeEvaluate (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92981:29)",
+        "prefixCount": 1,
+        "reachedTimer": false,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21436,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic records the first rejection phase. The maintained guard rejects an explicit application Date.now call after React update, before the previous timer boundary; selection counts are not execution ownership."
+      }
+    },
+    {
+      "engine": "maintained",
+      "isReversed": true,
+      "observation": {
+        "phase": "clock",
+        "failureStack": "TypeError: Host effects are unsupported during evaluation checkpoints\n    at Agent.assertCanPerformHostEffect (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92696:15)\n    at HostSystemUTCEpochNanoseconds (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:132544:20)\n    at SystemUTCEpochMilliseconds (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:132556:29)\n    at ObjectValue.Date_now [as nativeFunction] (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:211801:13)\n    at BuiltinCallOrConstruct.executionMachine.w.calleeContext.calleeContext (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:135267:30)\n    at ExecutionMachine.step (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:408:61)\n    at driveFrames (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:458:22)\n    at drive (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:530:12)\n    at ExecutionMachine.next (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:318:12)\n    at Agent.resumeEvaluate (file:///Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs:92981:29)",
+        "prefixCount": 1,
+        "reachedTimer": false,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21436,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic records the first rejection phase. The maintained guard rejects an explicit application Date.now call after React update, before the previous timer boundary; selection counts are not execution ownership."
+      }
+    }
+  ],
+  "reactDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  let referenceRecordCount: number | undefined;\n  let nativeListCount: number | undefined;\n  const rejectedLists: { keys: string[]; error: string }[] = [];\n  let frontier: unknown;\n  let failureStack = \"\";\n  const recordShapes = new Map<string, number>();\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        Date.now();\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: roots => {\n          for (const value of seen) {\n            if (typeof value === \"function\" || Array.isArray(value) || value instanceof api.Value || value instanceof api.EnvironmentRecord || value instanceof api.ExecutionContext || value instanceof api.CallSite || value instanceof api.ReferenceRecord) continue;\n            const prototype = Object.getPrototypeOf(value);\n            const constructor = prototype && Object.getOwnPropertyDescriptor(prototype, \"constructor\")?.value;\n            const name = typeof constructor === \"function\" ? Object.getOwnPropertyDescriptor(constructor, \"name\")?.value : \"null\";\n            const shape = `${name}: ${Reflect.ownKeys(value).map(String).sort().join(\",\")}`;\n            recordShapes.set(shape, (recordShapes.get(shape) ?? 0) + 1);\n          }\n          const functions = [...seen].filter(value => typeof value === \"function\");\n          const registered = functions.filter(value => api.getNativeCaptures(value) !== undefined);\n          const unregistered = functions.filter(value => api.getNativeCaptures(value) === undefined);\n          const names = [...new Set(unregistered.map(value => value.name))].sort();\n          frontier = {\n            distinctReferences: seen.size,\n            guestObjects: [...seen].filter(value => value instanceof api.ObjectValue).length,\n            nativeArrays: [...seen].filter(value => Array.isArray(value)).length,\n            nativeFunctions: functions.length,\n            registered: registered.length,\n            functionsWithStepsBinding: registered.filter(value => api.getNativeCaptures(value)?.bindings.some(binding => binding.name === \"steps\")).length,\n            unregistered: Object.fromEntries(names.map(name => [name, unregistered.filter(value => value.name === name).length])),\n          };\n          const nativeLists: unknown[][] = [];\n          for (const value of seen) {\n            if (!Array.isArray(value) || roots.controlOwnedObjects.includes(value)) continue;\n            try {\n              const selected = api.createStateCheckpoint({ nativeLists: [value] });\n              selected.release();\n              nativeLists.push(value);\n            } catch (error) {\n              rejectedLists.push({ keys: Reflect.ownKeys(value).map(String), error: String(error) });\n            }\n          }\n          const state = api.createStateCheckpoint({\n            nativeLists,\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n            referenceRecords: [...seen].filter(value => value instanceof api.ReferenceRecord),\n          });\n          storage = state;\n          referenceRecordCount = state.referenceRecordCount;\n          nativeListCount = state.nativeListCount;\n          expect(nativeListCount).toBeGreaterThan(0);\n          expect(referenceRecordCount).toBeGreaterThan(0);\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } catch (error) {\n    if (error instanceof Error) failureStack = error.stack ?? \"\";\n    throw error;\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    const phase = failureStack.includes(\"HostSystemUTCEpochNanoseconds\") ? \"clock\" : reachedTimer ? \"timer\" : \"unknown\";\n    expect(phase).toBe(process.env.BIPPY_REJECTION_PHASE ?? \"clock\");\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-nondeterminism-${phase}-${isReversed}.json`, JSON.stringify({ phase, failureStack, recordShapes: Object.fromEntries(recordShapes), prefixCount, reachedTimer, timerCount, referenceRecordCount, nativeListCount, rejectedLists, frontier, observations, limitation: \"Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic records the first rejection phase. The maintained guard rejects an explicit application Date.now call after React update, before the previous timer boundary; selection counts are not execution ownership.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+  "nativeRecordAudit": {
+    "engineSha256": "a79952e24c45bdc91d029efdef015a1fe4c48da260e98b3febbec1ec4492b2ab",
+    "driver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  let referenceRecordCount: number | undefined;\n  let nativeListCount: number | undefined;\n  const rejectedLists: { keys: string[]; error: string }[] = [];\n  let frontier: unknown;\n  const recordShapes = new Map<string, number>();\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: roots => {\n          for (const value of seen) {\n            if (typeof value === \"function\" || Array.isArray(value) || value instanceof api.Value || value instanceof api.EnvironmentRecord || value instanceof api.ExecutionContext || value instanceof api.CallSite || value instanceof api.ReferenceRecord) continue;\n            const prototype = Object.getPrototypeOf(value);\n            const constructor = prototype && Object.getOwnPropertyDescriptor(prototype, \"constructor\")?.value;\n            const name = typeof constructor === \"function\" ? Object.getOwnPropertyDescriptor(constructor, \"name\")?.value : \"null\";\n            const shape = `${name}: ${Reflect.ownKeys(value).map(String).sort().join(\",\")}`;\n            recordShapes.set(shape, (recordShapes.get(shape) ?? 0) + 1);\n          }\n          const functions = [...seen].filter(value => typeof value === \"function\");\n          const registered = functions.filter(value => api.getNativeCaptures(value) !== undefined);\n          const unregistered = functions.filter(value => api.getNativeCaptures(value) === undefined);\n          const names = [...new Set(unregistered.map(value => value.name))].sort();\n          frontier = {\n            distinctReferences: seen.size,\n            guestObjects: [...seen].filter(value => value instanceof api.ObjectValue).length,\n            nativeArrays: [...seen].filter(value => Array.isArray(value)).length,\n            nativeFunctions: functions.length,\n            registered: registered.length,\n            functionsWithStepsBinding: registered.filter(value => api.getNativeCaptures(value)?.bindings.some(binding => binding.name === \"steps\")).length,\n            unregistered: Object.fromEntries(names.map(name => [name, unregistered.filter(value => value.name === name).length])),\n          };\n          const nativeLists: unknown[][] = [];\n          for (const value of seen) {\n            if (!Array.isArray(value) || roots.controlOwnedObjects.includes(value)) continue;\n            try {\n              const selected = api.createStateCheckpoint({ nativeLists: [value] });\n              selected.release();\n              nativeLists.push(value);\n            } catch (error) {\n              rejectedLists.push({ keys: Reflect.ownKeys(value).map(String), error: String(error) });\n            }\n          }\n          const state = api.createStateCheckpoint({\n            nativeLists,\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n            referenceRecords: [...seen].filter(value => value instanceof api.ReferenceRecord),\n          });\n          storage = state;\n          referenceRecordCount = state.referenceRecordCount;\n          nativeListCount = state.nativeListCount;\n          expect(nativeListCount).toBeGreaterThan(0);\n          expect(referenceRecordCount).toBeGreaterThan(0);\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-native-record-audit-${isReversed}.json`, JSON.stringify({ recordShapes: Object.fromEntries(recordShapes), prefixCount, reachedTimer, timerCount, referenceRecordCount, nativeListCount, rejectedLists, frontier, observations, limitation: \"Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+    "log": "\u001b[1m\u001b[2mnote:\u001b[0m\u001b[0m You are running \u001b[94m`vp test`\u001b[39m as a Vite+ built-in command. If you meant to run the test npm script, use \u001b[94m`vpr test`\u001b[39m instead.\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  19:43:06\n   Duration  1.28s (transform 45ms, setup 0ms, import 125ms, tests 1.08s, environment 0ms)\n\n",
+    "reports": [
+      {
+        "isReversed": false,
+        "report": {
+          "recordShapes": {
+            "Object: suspend,value": 1,
+            "Object: location,parent,sourceText,strict,type,value": 4,
+            "Agent: AgentRecord,assertCanPerformHostEffect,breakpointsByFunction,breakpointsEnabled,captureEvaluation,eventLoop,executionContextStack,finalizationRegistryScheduledForCleanup,hostDefinedOptions,jobQueue,onNoEvaluator,parsedSources,pauseOnExceptions": 1,
+            "ScriptRecord: ECMAScriptCode,HostDefined,LoadedModules,Realm": 2,
+            "ManagedRealm: AgentSignifier,GlobalEnv,GlobalObject,HostDefined,Intrinsics,LoadedModules,TemplateMap,randomState,topContext": 1,
+            "PropertyKeyMap: ": 2212,
+            "Descriptor: Configurable,Enumerable,Get,Set,Value,Writable": 5998,
+            "Object: -1,1,Backward,Forward": 1,
+            "null: Basic_Emoji,Emoji_Keycap_Sequence,RGI_Emoji,RGI_Emoji_Flag_Sequence,RGI_Emoji_Modifier_Sequence,RGI_Emoji_Tag_Sequence,RGI_Emoji_ZWJ_Sequence": 1,
+            "null: AHex,ASCII,ASCII_Hex_Digit,Alpha,Alphabetic,Any,Assigned,Bidi_C,Bidi_Control,Bidi_M,Bidi_Mirrored,CI,CWCF,CWCM,CWKCF,CWL,CWT,CWU,Case_Ignorable,Cased,Changes_When_Casefolded,Changes_When_Casemapped,Changes_When_Lowercased,Changes_When_NFKC_Casefolded,Changes_When_Titlecased,Changes_When_Uppercased,DI,Dash,Default_Ignorable_Code_Point,Dep,Deprecated,Dia,Diacritic,EBase,EComp,EMod,EPres,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Ext,ExtPict,Extended_Pictographic,Extender,Gr_Base,Gr_Ext,Grapheme_Base,Grapheme_Extend,Hex,Hex_Digit,IDC,IDS,IDSB,IDST,IDS_Binary_Operator,IDS_Trinary_Operator,ID_Continue,ID_Start,Ideo,Ideographic,Join_C,Join_Control,LOE,Logical_Order_Exception,Lower,Lowercase,Math,NChar,Noncharacter_Code_Point,Pat_Syn,Pat_WS,Pattern_Syntax,Pattern_White_Space,QMark,Quotation_Mark,RI,Radical,Regional_Indicator,SD,STerm,Sentence_Terminal,Soft_Dotted,Term,Terminal_Punctuation,UIdeo,Unified_Ideograph,Upper,Uppercase,VS,Variation_Selector,White_Space,XIDC,XIDS,XID_Continue,XID_Start,space": 1,
+            "Object: General_Category,Script,Script_Extensions,description": 1,
+            "null: General_Category,Script,Script_Extensions,gc,sc,scx": 1,
+            "Object: SimpleOrCommonCaseFoldingMapping,characterMatchPropertyValue,getStringPropertySet,isCharacter,iterateByCodePoint,iterateCharacterByCodePoint,str_normalization,str_toLocaleLowercase,str_toLocaleUppercase,str_toLowercase,str_toUppercase,toCharacter,toCodePoint,toCodeUnit,toUppercase": 1,
+            "RegExp: lastIndex": 2,
+            "Object: DefineOwnProperty,GetOwnProperty,OwnPropertyKeys": 1,
+            "null: asyncDispose,asyncIterator,dispose,hasInstance,isConcatSpreadable,iterator,match,matchAll,replace,search,species,split,toPrimitive,toStringTag,unscopables": 1,
+            "Object: DefineOwnProperty": 1,
+            "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+            "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,Set": 1,
+            "null: ADD,AND,ARROW,ASSIGN,ASSIGN_ADD,ASSIGN_AND,ASSIGN_BIT_AND,ASSIGN_BIT_OR,ASSIGN_BIT_XOR,ASSIGN_DIV,ASSIGN_EXP,ASSIGN_MOD,ASSIGN_MUL,ASSIGN_NULLISH,ASSIGN_OR,ASSIGN_SAR,ASSIGN_SHL,ASSIGN_SHR,ASSIGN_SUB,AT,AWAIT,BIGINT,BIT_AND,BIT_NOT,BIT_OR,BIT_XOR,BREAK,CASE,CATCH,CLASS,COLON,COMMA,CONDITIONAL,CONST,CONTINUE,DEBUGGER,DEC,DEFAULT,DELETE,DIV,DO,ELLIPSIS,ELSE,ENUM,EOS,EQ,EQ_STRICT,ESCAPED_KEYWORD,EXP,EXPORT,EXTENDS,FALSE,FINALLY,FOR,FUNCTION,GT,GTE,IDENTIFIER,IF,IMPORT,IN,INC,INSTANCEOF,LBRACE,LBRACK,LPAREN,LT,LTE,MOD,MUL,NE,NEW,NE_STRICT,NOT,NULL,NULLISH,NUMBER,OPTIONAL,OR,PERIOD,PRIVATE_IDENTIFIER,RBRACE,RBRACK,RETURN,RPAREN,SAR,SEMICOLON,SHL,SHR,STRING,SUB,SUPER,SWITCH,TEMPLATE,THIS,THROW,TRUE,TRY,TYPEOF,VAR,VOID,WHILE,WITH,YIELD": 1,
+            "Object: 0,1,ASYNC,NORMAL": 1,
+            "WeakMap: ": 1,
+            "Map: ": 1,
+            "Object: BigInt64,BigUint64,Float16,Float32,Float64,Int16,Int32,Int8,Uint16,Uint32,Uint8,Uint8C": 1,
+            "Object: canonicalNaNBits,exponentBias,exponentBits,fractionBits": 3,
+            "Object: BigInt64Array,BigUint64Array,Float16Array,Float32Array,Float64Array,Int16Array,Int32Array,Int8Array,Uint16Array,Uint32Array,Uint8Array,Uint8ClampedArray": 1,
+            "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,HasProperty,OwnPropertyKeys,PreventExtensions,Set": 1,
+            "Object: 10,11,12,13,9": 1,
+            "Float64Array: 0": 1,
+            "BigUint64Array: 0": 1,
+            "Object: Call,Construct,DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+            "Object: FunctionStatementList,directives,location,parent,sourceText,strict,type": 522,
+            "Object: BindingIdentifier,Initializer,location,parent,sourceText,strict,type": 938,
+            "Object: deletable,indirect,initialized,mark,mutable,strict,value": 814,
+            "Object: ExpressionBody,location,parent,sourceText,strict,type": 7,
+            "ArgumentsParameterMapData: environment,getOwnProperty,ownPropertyKeys,pendingMappings,realm": 16,
+            "null: AbruptCompletion,AbstractEventLoop,AbstractModuleRecord,Add24HourDaysToTimeDuration,AddDaysToISODate,AddDisposableResource,AddDurationToDate,AddDurationToDateTime,AddDurationToInstant,AddDurationToTime,AddDurationToYearMonth,AddDurationToZonedDateTime,AddDurations,AddEpochNanoseconds,AddRestrictedFunctionProperties,AddTime,AddTimeDuration,AddTimeDurationToEpochNanoseconds,AddToKeptObjects,AddValueToKeyedGroup,AddZonedDateTime,AdjustDateDurationRecord,Agent,AgentCanSuspend,AgentSignifier,AllImportAttributesSupported,AllocateArrayBuffer,ApplyDecoratorsAndDefineMethod,ApplyDecoratorsToClassDefinition,ApplyDecoratorsToElementDefinition,ApplyStringOrNumericBinaryOperator,ApplyUnsignedRoundingMode,ArgumentExoticObject,ArgumentListEvaluation,ArgumentsParameterMapData,ArrayBufferByteLength,ArrayBufferCopyAndDetach,ArrayCreate,ArrayExoticObjectInternalMethods,ArraySetLength,ArraySpeciesCreate,Assert,AsyncBlockStart,AsyncFromSyncIteratorContinuation,AsyncFunctionStart,AsyncGeneratorAwaitReturn,AsyncGeneratorEnqueue,AsyncGeneratorRequestRecord,AsyncGeneratorResume,AsyncGeneratorStart,AsyncGeneratorValidate,AsyncGeneratorYield,AsyncIteratorClose,AvailableCalendars,AvailableNamedTimeZoneIdentifiers,Await,BalanceISODateTime,BalanceISOYearMonth,BalanceTime,BaseValue,BasicJobQueue,BigIntValue,BindingClassDeclarationEvaluation,BindingEvaluation,BindingInitialization,BlockDeclarationInstantiation,BodyText,BooleanValue,BoundNames,BreakCompletion,BubbleRelativeDuration,BuildEvaluationList,BuildLinkingList,ByTypeJobQueue,CalendarDateAdd,CalendarDateFromFields,CalendarDateToISO,CalendarDateUntil,CalendarExtraFields,CalendarFieldKeysToIgnore,CalendarISOToDate,CalendarMergeFields,CalendarMonthDayFromFields,CalendarMonthDayToISOReferenceDate,CalendarResolveFields,CalendarYearMonthFromFields,Call,CallFrame,CallSite,CanBeHeldWeakly,CanonicalNumericIndexString,Canonicalize,CanonicalizeCalendar,CanonicalizeKeyedCollectionKey,CharacterValue,ClassDefinitionEvaluation,ClassElementDefinitionRecord,ClassFieldDefinitionEvaluation,ClassFieldDefinitionEvaluation_decorator,ClassFieldDefinitionRecord,ClassStaticBlockDefinitionEvaluation,ClassStaticBlockDefinitionRecord,CleanupFinalizationRegistry,ClearKeptObjects,CloneArrayBuffer,CodePointAt,CodePointsToString,CombineDateAndTimeDuration,CompareArrayElements,CompareEpochNanoseconds,CompareISODate,CompareISODateTime,CompareSurpasses,CompareTimeDuration,CompareTimeRecord,CompilePattern,CompletePropertyDescriptor,Completion,CompletionImpl,ComputeNudgeWindow,Construct,ConstructorMethod,ContainsArguments,ContainsExpression,ContainsUsing,ContinueCompletion,ContinueDynamicImport,ContinueModuleLoading,CopyDataBlockBytes,CopyDataProperties,CopyNameAndLength,CountLeftCapturingParensWithin,CreateAddInitializerFunction,CreateArrayFromList,CreateArrayIterator,CreateAsyncFromSyncIterator,CreateBuiltinFunction,CreateByteDataBlock,CreateBytesModule,CreateDataProperty,CreateDataPropertyOrThrow,CreateDateDurationRecord,CreateDecoratorAccessObject,CreateDecoratorContextObject,CreateDefaultExportSyntheticModule,CreateDisposableResource,CreateDynamicFunction,CreateFieldInitializerFunction,CreateISODateRecord,CreateIntrinsics,CreateIteratorFromClosure,CreateIteratorResultObject,CreateListFromArrayLike,CreateListIteratorRecord,CreateMappedArgumentsObject,CreateMethodProperty,CreateMonthCode,CreateNegatedTemporalDuration,CreateNonEnumerableDataPropertyOrThrow,CreateResolvingFunctions,CreateTemporalDate,CreateTemporalDateTime,CreateTemporalDuration,CreateTemporalInstant,CreateTemporalMonthDay,CreateTemporalTime,CreateTemporalYearMonth,CreateTemporalZonedDateTime,CreateTextModule,CreateTimeRecord,CreateTypeErrorCopy,CreateUnmappedArgumentsObject,CyclicModuleRecord,DataBlock,DateDurationDays,DateDurationSign,DateFromTime,DateProto_toISOString,Day,DayFromYear,DayWithinYear,Decimal,DeclarationPart,DeclarativeEnvironmentRecord,DecoratorEvaluation,DecoratorListEvaluation,DefaultTemporalLargestUnit,DefineField,DefineMethod,DefineMethodProperty,DefinePropertyOrThrow,DeletePropertyOrThrow,Descriptor,DestructuringAssignmentEvaluation,DetachArrayBuffer,DifferenceEpochNanoseconds,DifferenceISODateTime,DifferencePlainDateTimeWithRounding,DifferencePlainDateTimeWithTotal,DifferenceTemporalInstant,DifferenceTemporalPlainDate,DifferenceTemporalPlainDateTime,DifferenceTemporalPlainTime,DifferenceTemporalPlainYearMonth,DifferenceTemporalZonedDateTime,DifferenceTime,DifferenceZonedDateTime,DifferenceZonedDateTimeWithRounding,DifferenceZonedDateTimeWithTotal,DisambiguatePossibleEpochNanoseconds,DisposeResources,DurationSign,DynamicParsedCodeRecord,EnsureCompletion,EnumerableOwnProperties,EnvironmentRecord,EpochDaysToEpochMilliseconds,EscapeRegExpPattern,EvalDeclarationInstantiation,Evaluate,EvaluateAsyncFunctionBody,EvaluateAsyncGeneratorBody,EvaluateBody,EvaluateBody_AssignmentExpression,EvaluateCall,EvaluateClassStaticBlockBody,EvaluateConciseBody,EvaluateFunctionBody,EvaluateGeneratorBody,EvaluateModuleSync,EvaluatePropertyAccessWithExpressionKey,EvaluatePropertyAccessWithIdentifierKey,EvaluateStringOrNumericBinaryExpression,Evaluate_AdditiveExpression,Evaluate_AnyFunctionBody,Evaluate_ArrayLiteral,Evaluate_ArrowFunction,Evaluate_AssignmentExpression,Evaluate_AsyncArrowFunction,Evaluate_AsyncFunctionExpression,Evaluate_AsyncGeneratorExpression,Evaluate_AwaitExpression,Evaluate_BinaryBitwiseExpression,Evaluate_Block,Evaluate_BreakStatement,Evaluate_BreakableStatement,Evaluate_CallExpression,Evaluate_CaseClause,Evaluate_ClassDeclaration,Evaluate_ClassExpression,Evaluate_CoalesceExpression,Evaluate_CommaOperator,Evaluate_ConditionalExpression,Evaluate_ContinueStatement,Evaluate_DebuggerStatement,Evaluate_EmptyStatement,Evaluate_EqualityExpression,Evaluate_ExponentiationExpression,Evaluate_ExportDeclaration,Evaluate_ExpressionBody,Evaluate_ExpressionStatement,Evaluate_ForBinding,Evaluate_FunctionDeclaration,Evaluate_FunctionExpression,Evaluate_FunctionStatementList,Evaluate_GeneratorExpression,Evaluate_HoistableDeclaration,Evaluate_IdentifierReference,Evaluate_IfStatement,Evaluate_ImportCall,Evaluate_ImportDeclaration,Evaluate_ImportMeta,Evaluate_LabelledStatement,Evaluate_LexicalDeclaration,Evaluate_Literal,Evaluate_LogicalANDExpression,Evaluate_LogicalORExpression,Evaluate_MemberExpression,Evaluate_Module,Evaluate_ModuleBody,Evaluate_MultiplicativeExpression,Evaluate_NewExpression,Evaluate_NewTarget,Evaluate_ObjectLiteral,Evaluate_OptionalExpression,Evaluate_ParenthesizedExpression,Evaluate_PropertyName,Evaluate_RegularExpressionLiteral,Evaluate_RelationalExpression,Evaluate_RelationalExpression_PrivateIdentifier,Evaluate_ReturnStatement,Evaluate_Script,Evaluate_ScriptBody,Evaluate_ShiftExpression,Evaluate_StatementList,Evaluate_SuperCall,Evaluate_SuperProperty,Evaluate_SwitchStatement,Evaluate_TaggedTemplateExpression,Evaluate_TemplateLiteral,Evaluate_This,Evaluate_ThrowStatement,Evaluate_TryStatement,Evaluate_UnaryExpression,Evaluate_UpdateExpression,Evaluate_VariableDeclarationList,Evaluate_VariableStatement,Evaluate_WithStatement,Evaluate_YieldExpression,ExcludeImportedNames,ExecutionContext,ExecutionContextStack,ExpectedArgumentCount,ExportEntries,ExportEntriesForModule,ExportFromDeclarationModuleRequest,F,FEATURES,FinishLoadingImportedModule,Flag,FlagText,ForDeclarationBindingInitialization,FormatCalendarAnnotation,FormatDateTimeUTCOffsetRounded,FormatFractionalSeconds,FormatISODateTime,FormatOffsetTimeZoneIdentifier,FormatTimeString,FormatUTCOffsetNanoseconds,FromPropertyDescriptor,FunctionDeclarationInstantiation,FunctionEnvironmentRecord,FunctionKind,GatherAsynchronousTransitiveDependencies,GatherAsynchronousTransitiveDependenciesForRequests,GeneratorResume,GeneratorResumeAbrupt,GeneratorStart,GeneratorValidate,GeneratorYield,Get,GetActiveScriptOrModule,GetArrayBufferMaxByteLengthOption,GetAvailableNamedTimeZoneIdentifier,GetDifferenceSettings,GetDirectionOption,GetDisposeMethod,GetEpochNanosecondsFor,GetFunctionRealm,GetGeneratorKind,GetGlobalObject,GetISODateTimeFor,GetIdentifierReference,GetImportedModule,GetIterator,GetIteratorDirect,GetIteratorFlattenable,GetIteratorFromMethod,GetMatchIndexPair,GetMatchString,GetMethod,GetModuleNamespace,GetNamedTimeZoneEpochNanoseconds,GetNamedTimeZoneNextTransition,GetNamedTimeZoneOffsetNanoseconds,GetNamedTimeZonePreviousTransition,GetNewOptionalIndirectExportsModuleRequests,GetNewTarget,GetOffsetNanosecondsFor,GetOptionsObject,GetPossibleEpochNanoseconds,GetPrototypeFromConstructor,GetRoundingIncrementOption,GetRoundingModeOption,GetShadowRealmContext,GetStartOfDay,GetStringIndex,GetSubstitution,GetTemporalCalendarIdentifierWithISODefault,GetTemporalDisambiguationOption,GetTemporalFractionalSecondDigitsOption,GetTemporalOffsetOption,GetTemporalOverflowOption,GetTemporalRelativeToOption,GetTemporalShowCalendarNameOption,GetTemporalShowOffsetOption,GetTemporalShowTimeZoneNameOption,GetTemporalUnitValuedOption,GetThisEnvironment,GetThisValue,GetUTCEpochNanoseconds,GetUnsignedRoundingMode,GetV,GetValue,GetValueFromBuffer,GetViewByteLength,GetViewValue,GetWrappedValue,GlobalDeclarationInstantiation,GlobalEnvironmentRecord,GraphLoadingState,GroupBy,HasInitializer,HasName,HasOwnProperty,HasProperty,HostCallJobCallback,HostEnqueueFinalizationRegistryCleanupJob,HostEnqueuePromiseJob,HostEnsureCanCompileStrings,HostFinalizeImportMeta,HostGetImportMetaProperties,HostGetModuleSourceModuleRecord,HostGetSupportedImportAttributes,HostHasSourceTextAvailable,HostLoadImportedModule,HostMakeJobCallback,HostPromiseRejectionTracker,HostResizeArrayBuffer,HostSystemUTCEpochNanoseconds,HourFromTime,HoursPerDay,ISODateSurpasses,ISODateTimeWithinLimits,ISODateToEpochDays,ISODateToFields,ISODateWithinLimits,ISODayOfWeek,ISODayOfYear,ISODaysInMonth,ISOWeekOfYear,ISOYearMonthWithinLimits,IfAbruptCloseAsyncIterator,IfAbruptCloseIterator,IfAbruptCloseIterators,IfAbruptRejectPromise,ImportEntries,ImportEntriesForModule,ImportedLocalNames,ImportedNames,InLeapYear,IncrementModuleAsyncEvaluationCount,InitializeBoundName,InitializeFieldOrAccessor,InitializeInstanceElements,InitializePrivateMethods,InitializeReferencedBinding,InnerModuleEvaluation,InnerModuleLinking,InnerModuleLoading,InstallErrorCause,InstanceofOperator,InstantiateArrowFunctionExpression,InstantiateAsyncArrowFunctionExpression,InstantiateAsyncFunctionExpression,InstantiateAsyncGeneratorFunctionExpression,InstantiateFunctionObject,InstantiateFunctionObject_AsyncFunctionDeclaration,InstantiateFunctionObject_AsyncGeneratorDeclaration,InstantiateFunctionObject_FunctionDeclaration,InstantiateFunctionObject_GeneratorDeclaration,InstantiateGeneratorFunctionExpression,InstantiateOrdinaryFunctionExpression,InternalDurationSign,InterpretISODateTimeOffset,InterpretTemporalDateTimeFields,IntrinsicsFunctionToString,Invoke,IsAccessorDescriptor,IsAnonymousFunctionDefinition,IsArray,IsArrayBufferViewOutOfBounds,IsAwaitUsingDeclaration,IsBigIntElementType,IsCallable,IsCharacterClass,IsCompatiblePropertyDescriptor,IsComputedPropertyKey,IsConcatSpreadable,IsConstantDeclaration,IsConstructor,IsDataDescriptor,IsDestructuring,IsDetachedBuffer,IsError,IsExtensible,IsFixedLengthArrayBuffer,IsFunctionDefinition,IsGenericDescriptor,IsIdentifierRef,IsInTailPosition,IsIntegralNumber,IsLessThan,IsLooselyEqual,IsModuleSCCEvaluated,IsPartialTemporalObject,IsPrivateReference,IsPromise,IsPropertyKey,IsPropertyReference,IsRegExp,IsSharedArrayBuffer,IsSimpleParameterList,IsStatic,IsStrict,IsStrictlyEqual,IsStringPrefix,IsStringWellFormedUnicode,IsSuperReference,IsTypedArrayFixedLength,IsTypedArrayOutOfBounds,IsUnresolvableReference,IsUnsignedElementType,IsUsingDeclaration,IsValidDuration,IsValidISODate,IsValidIntegerIndex,IsValidTime,IsViewOutOfBounds,IsWithinEpochNanosecondsInterval,IteratorBindingInitialization_ArrayBindingPattern,IteratorBindingInitialization_FormalParameters,IteratorClose,IteratorCloseAll,IteratorComplete,IteratorNext,IteratorStep,IteratorStepValue,IteratorToList,IteratorValue,IteratorZip,JSStringValue,KeyForSymbol,KeyedBindingInitialization,LabelledEvaluation,LargerOfTwoTemporalUnits,LengthOfArrayLike,LexicallyDeclaredNames,LexicallyScopedDeclarations,ListAppendUnique,LocalTime,MV_StringNumericLiteral,MakeAutoAccessorGetter,MakeAutoAccessorSetter,MakeBasicObject,MakeClassConstructor,MakeConstructor,MakeDataViewWithBufferWitnessRecord,MakeDate,MakeDay,MakeFullYear,MakeMatchIndicesIndexPairArray,MakeMethod,MakePrivateReference,MakeRealm,MakeTime,MakeTypedArrayWithBufferWitnessRecord,ManagedRealm,MaxEpochNanoseconds,MaximumTemporalDurationRoundingIncrement,MergeImportedNames,MethodDefinitionEvaluation,MicroTaskEventLoop,MidnightTimeRecord,MillisecondFromTime,MillisecondsPerDay,MillisecondsPerHour,MillisecondsPerMinute,MillisecondsPerSecond,MinEpochNanoseconds,MinuteFromTime,MinutesPerHour,ModuleCache,ModuleEnvironmentRecord,ModuleNamespaceCreate,ModuleRecord,ModuleRequests,ModuleRequestsKeyEqual,MonthFromTime,NamedEvaluation,NanosecondsPerDay,NanosecondsPerHour,NanosecondsPerMicrosecond,NanosecondsPerMillisecond,NanosecondsPerMinute,NanosecondsPerSecond,NegateRoundingMode,NewPromiseCapability,NoTimeZone,NodeJSLikeEventLoop,NonConstructorElements,NonISOCalendarDateToISO,NonISOCalendarISOToDate,NonISODateAdd,NonISODateUntil,NonISOFieldKeysToIgnore,NonISOMonthDayToISOReferenceDate,NonISOResolveFields,NoonTimeRecord,NormalCompletion,NormalCompletionImpl,NudgeToCalendarUnit,NudgeToDayOrTime,NudgeToZonedTime,NullValue,NumberToBigInt,NumberValue,NumericToRawBytes,NumericValue,ObjectEnvironmentRecord,ObjectValue,OptionalIndirectExportEntries,OrdinaryCallBindThis,OrdinaryCallEvaluateBody,OrdinaryCreateFromConstructor,OrdinaryDefineOwnProperty,OrdinaryDelete,OrdinaryFunctionCreate,OrdinaryGet,OrdinaryGetOwnProperty,OrdinaryGetPrototypeOf,OrdinaryHasInstance,OrdinaryHasProperty,OrdinaryIsExtensible,OrdinaryObjectCreate,OrdinaryOwnPropertyKeys,OrdinaryPreventExtensions,OrdinarySet,OrdinarySetPrototypeOf,OrdinarySetWithOwnDescriptor,OrdinaryToPrimitive,OrdinaryWrappedFunctionCall,OutOfRange,PadISOYear,ParseDateTimeUTCOffset,ParseJSONModule,ParseModule,ParsePattern,ParseScript,Parser,PerformEval,PerformPromiseThen,PerformShadowRealmEval,PrepareCalendarFields,PrepareForOrdinaryCall,PrepareForTailCall,PrepareForWrappedFunctionCall,PrimitiveValue,PrivateBoundIdentifiers,PrivateElementFind,PrivateElementRecord,PrivateEnvironmentRecord,PrivateFieldAdd,PrivateGet,PrivateMethodOrAccessorAdd,PrivateName,PrivateSet,PromiseCapabilityRecord,PromiseReactionRecord,PromiseResolve,PropName,PropertyBindingInitialization,PropertyDefinitionEvaluation_PropertyDefinitionList,PropertyKeyMap,ProxyCreate,PutValue,Q,R,RawBytesToNumeric,RawTokens,ReadyForSyncExecution,Realm,ReferenceRecord,RegExpAlloc,RegExpCreate,RegExpHasFlag,RegExpInitialize,RegExpParser,RegExpState,RegulateISODate,RegulateTime,RequireInternalSlot,RequireObjectCoercible,ResolveBinding,ResolveBooleanCondition,ResolvePrivateIdentifier,ResolveThisBinding,ResolvedBindingRecord,RestBindingInitialization,ReturnCompletion,ReturnCompletion_,RoundEpochNanoseconds,RoundISODateTime,RoundNumberToIncrement,RoundNumberToIncrementAsIfPositive,RoundRelativeDuration,RoundTime,RoundTimeDuration,RoundTimeDurationToIncrement,RunCallerContext,RunSuspendedContext,SafePerformPromiseAll,SameType,SameValue,SameValueNonNumber,SameValueZero,ScriptEvaluation,ScriptRecord,SecondFromTime,SecondsPerMinute,Set,SetDefaultGlobalBindings,SetFunctionLength,SetFunctionName,SetImmutablePrototype,SetIntegrityLevel,SetValueInBuffer,SetViewValue,SetterThatIgnoresPrototypeProperties,ShadowRealmImportValue,SnapToInteger,SourceTextModuleRecord,SpeciesConstructor,StringCreate,StringExoticObjectInternalMethods,StringGetOwnProperty,StringIndexOf,StringPad,StringToBigInt,StringToCodePoints,StringToNumber,StringValue,Symbol(Symbol.toStringTag),SymbolDescriptiveString,SymbolValue,SyntheticModuleRecord,SystemDateTime,SystemTimeZoneIdentifier,SystemUTCEpochMilliseconds,SystemUTCEpochNanoseconds,TV,Table69_NonbinaryUnicodeProperties,Table70_BinaryUnicodeProperties,Table71_BinaryPropertyOfStrings,TemplateStrings,TemporalDateToString,TemporalDurationFromInternal,TemporalDurationToString,TemporalInstantToString,TemporalMonthDayToString,TemporalUnitLength,TemporalYearMonthToString,TemporalZonedDateTimeToString,TestIntegrityLevel,ThisBigIntValue,ThisBooleanValue,ThisNumberValue,ThisStringValue,ThisSymbolValue,Throw,ThrowCompletion,ThrowCompletion_,TimeClip,TimeDurationFromComponents,TimeDurationFromEpochNanosecondsDifference,TimeDurationSign,TimeFromYear,TimeRecordToString,TimeValueToISODateTimeRecord,TimeWithinDay,TimeZoneEquals,ToAbsoluteIndex,ToBigInt,ToBigInt64,ToBigUint64,ToBoolean,ToClampedIndex,ToFixedSizeInteger,ToIndex,ToInt16,ToInt32,ToInt8,ToIntegerOrInfinity,ToInternalDurationRecord,ToInternalDurationRecordWith24HourDays,ToLength,ToNumber,ToNumeric,ToObject,ToOffsetString,ToPartialDurationRecord,ToPartialTimeRecord,ToPrimitive,ToPropertyDescriptor,ToPropertyKey,ToSecondsStringPrecisionRecord,ToString,ToTemporalCalendarIdentifier,ToTemporalDate,ToTemporalDateTime,ToTemporalDuration,ToTemporalInstant,ToTemporalMonthDay,ToTemporalTime,ToTemporalTimeZoneIdentifier,ToTemporalYearMonth,ToTemporalZonedDateTime,ToTimeRecordOrMidnight,ToUint16,ToUint32,ToUint8,ToUint8Clamp,ToZeroPaddedDecimalString,Token,TokenData,TopLevelLexicallyDeclaredNames,TopLevelLexicallyScopedDeclarations,TopLevelVarDeclaredNames,TopLevelVarScopedDeclarations,TotalRelativeDuration,TotalTimeDuration,TrimString,TypedArrayByteLength,TypedArrayCreate,TypedArrayGetElement,TypedArrayLength,TypedArraySetElement,UTC,UTF16EncodeCodePoint,UTF16SurrogatePairToCodePoint,UndefinedValue,Unicode,UpdateEmpty,ValidateAndApplyPropertyDescriptor,ValidateISODaysRange,ValidateShadowRealmObject,ValidateTemporalRoundingIncrement,ValidateTemporalUnitValue,Value,ValueOfNormalCompletion,VarDeclaredNames,VarScopedDeclarations,WeakRefDeref,WebLikeEventLoop,WeekDay,WrappedFunctionCreate,X,YearFromTime,Yield,Z,ZeroDateDuration,activeFunctionObject,boostTest262Harness,builtinFunctionInternalSlots,captureControl,captureStack,composeModuleLoaders,createBuiltinModuleLoader,createDataGraphCheckpoint,createOrdinaryObjectCheckpoint,createStateCheckpoint,createTest262Intrinsics,currentRealmRecord,evalQ,gc,generatorBrandToErrorMessageType,getActiveScriptId,getArgumentsParameterMapData,getBreakpointCandidateNodes,getCurrentStack,getECMAScriptFunctionInternalSlots,getHostDefinedErrorDetails,getNativeCaptures,hasBuiltinFunctionMethods,hasECMAScriptFunctionMethods,hasOrdinaryObjectMethods,hasSourceTextInternalSlot,hostSupportResizableArrayBuffer,importBundledTest262Harness,inspect,intrinsics,isArgumentExoticObject,isArrayBufferObject,isArrayExoticObject,isArrayIndex,isBoundFunctionObject,isBuiltinFunctionObject,isCalendarUnit,isDataViewObject,isDateObject,isDateUnit,isECMAScriptFunctionObject,isErrorObject,isEvaluator,isFinalizationRegistryObject,isFunctionObject,isIntegerIndex,isLeadingSurrogate,isMapObject,isModuleNamespaceObject,isNamedTimeZoneIdentifier,isNonNegativeInteger,isOffsetTimeZoneIdentifier,isOrdinaryObject,isPromiseObject,isProxyExoticObject,isRegExpObject,isSetObject,isShadowRealmObject,isStrictModeCode,isTemporalDurationObject,isTemporalInstantObject,isTemporalPlainDateObject,isTemporalPlainDateTimeObject,isTemporalPlainMonthDayObject,isTemporalPlainTimeObject,isTemporalPlainYearMonthObject,isTemporalZonedDateTimeObject,isTimeUnit,isTrailingSurrogate,isTypedArrayObject,isWeakMapObject,isWeakRef,isWeakSetObject,isWrappedFunctionExoticObject,kInternal,markBuiltinFunctionAsConstructor,maxTimeDuration,measureSynchronousExecution,parseNodeToBreakpointLocation,performDevtoolsEval,refineLeftHandSideExpression,regexpInternalSlots,registerNativeClosure,runSingleJobInQueue,runningExecutionContext,setSurroundingAgent,skipDebugger,sourceTextMatchedBy,surroundingAgent,typedArrayInfoByName,typedArrayInfoByType,unwrapCompletion,wellKnownSymbols,wrappedParse": 1,
+            "ConcreteRuntime: agent,cancelTimer,captureHostState,consoleEntries,countJob,dispose,drainJobs,engine,evaluate,failure,hostCheckpoints,isDisposed,jobs,mark,maxJobs,nextTimer,readString,realm,scope,steps,timers,uncaughtExceptions,unhandledRejections,unwrap,withAgent": 1,
+            "Object: Greedy,Max,Min": 1,
+            "ConcreteCharSet: characterModeOnly,chars": 1,
+            "Object: CapturingGroupsCount,DotAll,IgnoreCase,Multiline,Unicode,UnicodeSets": 1,
+            "Object: Expression,IdentifierName,MemberExpression,PrivateIdentifier,location,parent,sourceText,strict,type": 7,
+            "Object: AssignmentExpression_a,AssignmentExpression_b,ShortCircuitExpression,location,parent,sourceText,strict,type": 2,
+            "Object: location,name,parent,sourceText,strict,type": 3,
+            "Object: done,value": 7,
+            "Object: e,f,n,s": 7,
+            "Object: BindingList,LetOrConst,location,parent,sourceText,strict,type": 5,
+            "NormalCompletion: Value": 43,
+            "Object: Expression,location,parent,sourceText,strict,type": 54,
+            "Object: resume,value": 1,
+            "Object: Arguments,CallExpression,location,parent,sourceText,strict,type": 14,
+            "Object: escaped,location,name,parent,sourceText,strict,type": 37,
+            "Object: AssignmentExpression,AssignmentOperator,LeftHandSideExpression,location,parent,sourceText,strict,type": 8,
+            "Object: UnaryExpression,location,operator,parent,sourceText,strict,type": 5,
+            "Object: Expression,Statement_a,location,parent,sourceText,strict,type": 8,
+            "Object: Expression,StatementList,location,parent,sourceText,strict,type": 22,
+            "Object: CaseClauses_a,location,parent,sourceText,strict,type": 1,
+            "Set: ": 5,
+            "Object: CaseBlock,Expression,location,parent,sourceText,strict,type": 1,
+            "Object: Expression,Statement_a,Statement_b,location,parent,sourceText,strict,type": 2,
+            "Object: VariableDeclarationList,location,parent,sourceText,strict,type": 8,
+            "Object: EqualityExpression,RelationalExpression,location,operator,parent,sourceText,strict,type": 4,
+            "Object: Expression_b,Statement,location,parent,sourceText,strict,type": 1,
+            "Object: LabelIdentifier,location,parent,sourceText,strict,type": 1,
+            "Object: StatementList,location,parent,sourceText,strict,type": 8,
+            "Object: Block,CatchParameter,location,parent,sourceText,strict,type": 1,
+            "Object: Block,Catch,Finally,location,parent,sourceText,strict,type": 2,
+            "Object: Expression,Statement,location,parent,sourceText,strict,type": 3,
+            "Object: LabelIdentifier,LabelledItem,location,parent,sourceText,strict,type": 1,
+            "Object: ExpressionList,location,parent,sourceText,strict,type": 3,
+            "Object: LogicalANDExpression,LogicalORExpression,location,parent,sourceText,strict,type": 2,
+            "Object: Expression_a,Statement,VariableDeclarationList,location,parent,sourceText,strict,type": 1,
+            "Object: BitwiseORExpression,LogicalANDExpression,location,parent,sourceText,strict,type": 2,
+            "ReturnCompletion: Target,Value": 1,
+            "Object: NewTarget,thisValue": 1,
+            "Object: ElementList,hasTrailingComma,location,parent,sourceText,strict,type": 1,
+            "Object: ScriptBody,location,parent,sourceText,strict,type": 1
+          },
+          "prefixCount": 1,
+          "reachedTimer": true,
+          "timerCount": 1,
+          "referenceRecordCount": 20,
+          "nativeListCount": 1842,
+          "rejectedLists": [
+            {
+              "keys": ["0", "1", "2", "3", "4", "5", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "2", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            }
+          ],
+          "frontier": {
+            "distinctReferences": 21435,
+            "guestObjects": 2199,
+            "nativeArrays": 1858,
+            "nativeFunctions": 2476,
+            "registered": 2418,
+            "functionsWithStepsBinding": 3,
+            "unregistered": {
+              "AbruptCompletion": 1,
+              "ArgumentsParameterMapData": 1,
+              "AssertError": 1,
+              "BigIntValue": 1,
+              "BooleanValue": 1,
+              "CharSet": 1,
+              "Completion": 1,
+              "ConcreteCharSet": 1,
+              "ConcreteRuntimeError": 1,
+              "ConcreteStringSet": 1,
+              "CyclicModuleRecord": 1,
+              "DataBlock": 1,
+              "DateParser": 1,
+              "Decimal": 1,
+              "DeclarativeEnvironmentRecord": 1,
+              "Descriptor": 1,
+              "DynamicParsedCodeRecord": 1,
+              "EnvironmentRecord": 1,
+              "ExecutionContext": 1,
+              "FunctionEnvironmentRecord": 1,
+              "GlobalEnvironmentRecord": 1,
+              "GraphLoadingState": 1,
+              "JSONValidator": 1,
+              "JSStringValue": 1,
+              "ManagedRealm": 1,
+              "MatchState": 1,
+              "NormalCompletion": 1,
+              "NullValue": 1,
+              "NumberValue": 1,
+              "ObjectEnvironmentRecord": 1,
+              "ObjectValue": 1,
+              "OutOfRange": 1,
+              "Parser": 1,
+              "PrivateEnvironmentRecord": 1,
+              "PrivateName": 1,
+              "PromiseCapabilityRecord": 1,
+              "PromiseReactionRecord": 1,
+              "PropertyKeyMap": 1,
+              "Realm": 1,
+              "ReferenceRecord": 1,
+              "RegExpParser": 1,
+              "ResolvedBindingRecord": 1,
+              "ReturnCompletion": 1,
+              "ScriptRecord": 1,
+              "SourceTextModuleRecord": 1,
+              "SymbolValue": 1,
+              "ThrowCompletion": 1,
+              "TimSort": 1,
+              "UndefinedValue": 1,
+              "Value": 1,
+              "VirtualCharSet": 1,
+              "apply": 1,
+              "atob": 1,
+              "btoa": 1,
+              "executionMachine": 1,
+              "getControlIterator": 1,
+              "isArray": 1,
+              "next": 1
+            }
+          },
+          "observations": [],
+          "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership."
+        }
+      },
+      {
+        "isReversed": true,
+        "report": {
+          "recordShapes": {
+            "Object: suspend,value": 1,
+            "Object: location,parent,sourceText,strict,type,value": 4,
+            "Agent: AgentRecord,assertCanPerformHostEffect,breakpointsByFunction,breakpointsEnabled,captureEvaluation,eventLoop,executionContextStack,finalizationRegistryScheduledForCleanup,hostDefinedOptions,jobQueue,onNoEvaluator,parsedSources,pauseOnExceptions": 1,
+            "ScriptRecord: ECMAScriptCode,HostDefined,LoadedModules,Realm": 2,
+            "ManagedRealm: AgentSignifier,GlobalEnv,GlobalObject,HostDefined,Intrinsics,LoadedModules,TemplateMap,randomState,topContext": 1,
+            "PropertyKeyMap: ": 2212,
+            "Descriptor: Configurable,Enumerable,Get,Set,Value,Writable": 5998,
+            "Object: -1,1,Backward,Forward": 1,
+            "null: Basic_Emoji,Emoji_Keycap_Sequence,RGI_Emoji,RGI_Emoji_Flag_Sequence,RGI_Emoji_Modifier_Sequence,RGI_Emoji_Tag_Sequence,RGI_Emoji_ZWJ_Sequence": 1,
+            "null: AHex,ASCII,ASCII_Hex_Digit,Alpha,Alphabetic,Any,Assigned,Bidi_C,Bidi_Control,Bidi_M,Bidi_Mirrored,CI,CWCF,CWCM,CWKCF,CWL,CWT,CWU,Case_Ignorable,Cased,Changes_When_Casefolded,Changes_When_Casemapped,Changes_When_Lowercased,Changes_When_NFKC_Casefolded,Changes_When_Titlecased,Changes_When_Uppercased,DI,Dash,Default_Ignorable_Code_Point,Dep,Deprecated,Dia,Diacritic,EBase,EComp,EMod,EPres,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Ext,ExtPict,Extended_Pictographic,Extender,Gr_Base,Gr_Ext,Grapheme_Base,Grapheme_Extend,Hex,Hex_Digit,IDC,IDS,IDSB,IDST,IDS_Binary_Operator,IDS_Trinary_Operator,ID_Continue,ID_Start,Ideo,Ideographic,Join_C,Join_Control,LOE,Logical_Order_Exception,Lower,Lowercase,Math,NChar,Noncharacter_Code_Point,Pat_Syn,Pat_WS,Pattern_Syntax,Pattern_White_Space,QMark,Quotation_Mark,RI,Radical,Regional_Indicator,SD,STerm,Sentence_Terminal,Soft_Dotted,Term,Terminal_Punctuation,UIdeo,Unified_Ideograph,Upper,Uppercase,VS,Variation_Selector,White_Space,XIDC,XIDS,XID_Continue,XID_Start,space": 1,
+            "Object: General_Category,Script,Script_Extensions,description": 1,
+            "null: General_Category,Script,Script_Extensions,gc,sc,scx": 1,
+            "Object: SimpleOrCommonCaseFoldingMapping,characterMatchPropertyValue,getStringPropertySet,isCharacter,iterateByCodePoint,iterateCharacterByCodePoint,str_normalization,str_toLocaleLowercase,str_toLocaleUppercase,str_toLowercase,str_toUppercase,toCharacter,toCodePoint,toCodeUnit,toUppercase": 1,
+            "RegExp: lastIndex": 2,
+            "Object: DefineOwnProperty,GetOwnProperty,OwnPropertyKeys": 1,
+            "null: asyncDispose,asyncIterator,dispose,hasInstance,isConcatSpreadable,iterator,match,matchAll,replace,search,species,split,toPrimitive,toStringTag,unscopables": 1,
+            "Object: DefineOwnProperty": 1,
+            "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+            "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,Set": 1,
+            "null: ADD,AND,ARROW,ASSIGN,ASSIGN_ADD,ASSIGN_AND,ASSIGN_BIT_AND,ASSIGN_BIT_OR,ASSIGN_BIT_XOR,ASSIGN_DIV,ASSIGN_EXP,ASSIGN_MOD,ASSIGN_MUL,ASSIGN_NULLISH,ASSIGN_OR,ASSIGN_SAR,ASSIGN_SHL,ASSIGN_SHR,ASSIGN_SUB,AT,AWAIT,BIGINT,BIT_AND,BIT_NOT,BIT_OR,BIT_XOR,BREAK,CASE,CATCH,CLASS,COLON,COMMA,CONDITIONAL,CONST,CONTINUE,DEBUGGER,DEC,DEFAULT,DELETE,DIV,DO,ELLIPSIS,ELSE,ENUM,EOS,EQ,EQ_STRICT,ESCAPED_KEYWORD,EXP,EXPORT,EXTENDS,FALSE,FINALLY,FOR,FUNCTION,GT,GTE,IDENTIFIER,IF,IMPORT,IN,INC,INSTANCEOF,LBRACE,LBRACK,LPAREN,LT,LTE,MOD,MUL,NE,NEW,NE_STRICT,NOT,NULL,NULLISH,NUMBER,OPTIONAL,OR,PERIOD,PRIVATE_IDENTIFIER,RBRACE,RBRACK,RETURN,RPAREN,SAR,SEMICOLON,SHL,SHR,STRING,SUB,SUPER,SWITCH,TEMPLATE,THIS,THROW,TRUE,TRY,TYPEOF,VAR,VOID,WHILE,WITH,YIELD": 1,
+            "Object: 0,1,ASYNC,NORMAL": 1,
+            "WeakMap: ": 1,
+            "Map: ": 1,
+            "Object: BigInt64,BigUint64,Float16,Float32,Float64,Int16,Int32,Int8,Uint16,Uint32,Uint8,Uint8C": 1,
+            "Object: canonicalNaNBits,exponentBias,exponentBits,fractionBits": 3,
+            "Object: BigInt64Array,BigUint64Array,Float16Array,Float32Array,Float64Array,Int16Array,Int32Array,Int8Array,Uint16Array,Uint32Array,Uint8Array,Uint8ClampedArray": 1,
+            "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,HasProperty,OwnPropertyKeys,PreventExtensions,Set": 1,
+            "Object: 10,11,12,13,9": 1,
+            "Float64Array: 0": 1,
+            "BigUint64Array: 0": 1,
+            "Object: Call,Construct,DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+            "Object: FunctionStatementList,directives,location,parent,sourceText,strict,type": 522,
+            "Object: BindingIdentifier,Initializer,location,parent,sourceText,strict,type": 938,
+            "Object: deletable,indirect,initialized,mark,mutable,strict,value": 814,
+            "Object: ExpressionBody,location,parent,sourceText,strict,type": 7,
+            "ArgumentsParameterMapData: environment,getOwnProperty,ownPropertyKeys,pendingMappings,realm": 16,
+            "null: AbruptCompletion,AbstractEventLoop,AbstractModuleRecord,Add24HourDaysToTimeDuration,AddDaysToISODate,AddDisposableResource,AddDurationToDate,AddDurationToDateTime,AddDurationToInstant,AddDurationToTime,AddDurationToYearMonth,AddDurationToZonedDateTime,AddDurations,AddEpochNanoseconds,AddRestrictedFunctionProperties,AddTime,AddTimeDuration,AddTimeDurationToEpochNanoseconds,AddToKeptObjects,AddValueToKeyedGroup,AddZonedDateTime,AdjustDateDurationRecord,Agent,AgentCanSuspend,AgentSignifier,AllImportAttributesSupported,AllocateArrayBuffer,ApplyDecoratorsAndDefineMethod,ApplyDecoratorsToClassDefinition,ApplyDecoratorsToElementDefinition,ApplyStringOrNumericBinaryOperator,ApplyUnsignedRoundingMode,ArgumentExoticObject,ArgumentListEvaluation,ArgumentsParameterMapData,ArrayBufferByteLength,ArrayBufferCopyAndDetach,ArrayCreate,ArrayExoticObjectInternalMethods,ArraySetLength,ArraySpeciesCreate,Assert,AsyncBlockStart,AsyncFromSyncIteratorContinuation,AsyncFunctionStart,AsyncGeneratorAwaitReturn,AsyncGeneratorEnqueue,AsyncGeneratorRequestRecord,AsyncGeneratorResume,AsyncGeneratorStart,AsyncGeneratorValidate,AsyncGeneratorYield,AsyncIteratorClose,AvailableCalendars,AvailableNamedTimeZoneIdentifiers,Await,BalanceISODateTime,BalanceISOYearMonth,BalanceTime,BaseValue,BasicJobQueue,BigIntValue,BindingClassDeclarationEvaluation,BindingEvaluation,BindingInitialization,BlockDeclarationInstantiation,BodyText,BooleanValue,BoundNames,BreakCompletion,BubbleRelativeDuration,BuildEvaluationList,BuildLinkingList,ByTypeJobQueue,CalendarDateAdd,CalendarDateFromFields,CalendarDateToISO,CalendarDateUntil,CalendarExtraFields,CalendarFieldKeysToIgnore,CalendarISOToDate,CalendarMergeFields,CalendarMonthDayFromFields,CalendarMonthDayToISOReferenceDate,CalendarResolveFields,CalendarYearMonthFromFields,Call,CallFrame,CallSite,CanBeHeldWeakly,CanonicalNumericIndexString,Canonicalize,CanonicalizeCalendar,CanonicalizeKeyedCollectionKey,CharacterValue,ClassDefinitionEvaluation,ClassElementDefinitionRecord,ClassFieldDefinitionEvaluation,ClassFieldDefinitionEvaluation_decorator,ClassFieldDefinitionRecord,ClassStaticBlockDefinitionEvaluation,ClassStaticBlockDefinitionRecord,CleanupFinalizationRegistry,ClearKeptObjects,CloneArrayBuffer,CodePointAt,CodePointsToString,CombineDateAndTimeDuration,CompareArrayElements,CompareEpochNanoseconds,CompareISODate,CompareISODateTime,CompareSurpasses,CompareTimeDuration,CompareTimeRecord,CompilePattern,CompletePropertyDescriptor,Completion,CompletionImpl,ComputeNudgeWindow,Construct,ConstructorMethod,ContainsArguments,ContainsExpression,ContainsUsing,ContinueCompletion,ContinueDynamicImport,ContinueModuleLoading,CopyDataBlockBytes,CopyDataProperties,CopyNameAndLength,CountLeftCapturingParensWithin,CreateAddInitializerFunction,CreateArrayFromList,CreateArrayIterator,CreateAsyncFromSyncIterator,CreateBuiltinFunction,CreateByteDataBlock,CreateBytesModule,CreateDataProperty,CreateDataPropertyOrThrow,CreateDateDurationRecord,CreateDecoratorAccessObject,CreateDecoratorContextObject,CreateDefaultExportSyntheticModule,CreateDisposableResource,CreateDynamicFunction,CreateFieldInitializerFunction,CreateISODateRecord,CreateIntrinsics,CreateIteratorFromClosure,CreateIteratorResultObject,CreateListFromArrayLike,CreateListIteratorRecord,CreateMappedArgumentsObject,CreateMethodProperty,CreateMonthCode,CreateNegatedTemporalDuration,CreateNonEnumerableDataPropertyOrThrow,CreateResolvingFunctions,CreateTemporalDate,CreateTemporalDateTime,CreateTemporalDuration,CreateTemporalInstant,CreateTemporalMonthDay,CreateTemporalTime,CreateTemporalYearMonth,CreateTemporalZonedDateTime,CreateTextModule,CreateTimeRecord,CreateTypeErrorCopy,CreateUnmappedArgumentsObject,CyclicModuleRecord,DataBlock,DateDurationDays,DateDurationSign,DateFromTime,DateProto_toISOString,Day,DayFromYear,DayWithinYear,Decimal,DeclarationPart,DeclarativeEnvironmentRecord,DecoratorEvaluation,DecoratorListEvaluation,DefaultTemporalLargestUnit,DefineField,DefineMethod,DefineMethodProperty,DefinePropertyOrThrow,DeletePropertyOrThrow,Descriptor,DestructuringAssignmentEvaluation,DetachArrayBuffer,DifferenceEpochNanoseconds,DifferenceISODateTime,DifferencePlainDateTimeWithRounding,DifferencePlainDateTimeWithTotal,DifferenceTemporalInstant,DifferenceTemporalPlainDate,DifferenceTemporalPlainDateTime,DifferenceTemporalPlainTime,DifferenceTemporalPlainYearMonth,DifferenceTemporalZonedDateTime,DifferenceTime,DifferenceZonedDateTime,DifferenceZonedDateTimeWithRounding,DifferenceZonedDateTimeWithTotal,DisambiguatePossibleEpochNanoseconds,DisposeResources,DurationSign,DynamicParsedCodeRecord,EnsureCompletion,EnumerableOwnProperties,EnvironmentRecord,EpochDaysToEpochMilliseconds,EscapeRegExpPattern,EvalDeclarationInstantiation,Evaluate,EvaluateAsyncFunctionBody,EvaluateAsyncGeneratorBody,EvaluateBody,EvaluateBody_AssignmentExpression,EvaluateCall,EvaluateClassStaticBlockBody,EvaluateConciseBody,EvaluateFunctionBody,EvaluateGeneratorBody,EvaluateModuleSync,EvaluatePropertyAccessWithExpressionKey,EvaluatePropertyAccessWithIdentifierKey,EvaluateStringOrNumericBinaryExpression,Evaluate_AdditiveExpression,Evaluate_AnyFunctionBody,Evaluate_ArrayLiteral,Evaluate_ArrowFunction,Evaluate_AssignmentExpression,Evaluate_AsyncArrowFunction,Evaluate_AsyncFunctionExpression,Evaluate_AsyncGeneratorExpression,Evaluate_AwaitExpression,Evaluate_BinaryBitwiseExpression,Evaluate_Block,Evaluate_BreakStatement,Evaluate_BreakableStatement,Evaluate_CallExpression,Evaluate_CaseClause,Evaluate_ClassDeclaration,Evaluate_ClassExpression,Evaluate_CoalesceExpression,Evaluate_CommaOperator,Evaluate_ConditionalExpression,Evaluate_ContinueStatement,Evaluate_DebuggerStatement,Evaluate_EmptyStatement,Evaluate_EqualityExpression,Evaluate_ExponentiationExpression,Evaluate_ExportDeclaration,Evaluate_ExpressionBody,Evaluate_ExpressionStatement,Evaluate_ForBinding,Evaluate_FunctionDeclaration,Evaluate_FunctionExpression,Evaluate_FunctionStatementList,Evaluate_GeneratorExpression,Evaluate_HoistableDeclaration,Evaluate_IdentifierReference,Evaluate_IfStatement,Evaluate_ImportCall,Evaluate_ImportDeclaration,Evaluate_ImportMeta,Evaluate_LabelledStatement,Evaluate_LexicalDeclaration,Evaluate_Literal,Evaluate_LogicalANDExpression,Evaluate_LogicalORExpression,Evaluate_MemberExpression,Evaluate_Module,Evaluate_ModuleBody,Evaluate_MultiplicativeExpression,Evaluate_NewExpression,Evaluate_NewTarget,Evaluate_ObjectLiteral,Evaluate_OptionalExpression,Evaluate_ParenthesizedExpression,Evaluate_PropertyName,Evaluate_RegularExpressionLiteral,Evaluate_RelationalExpression,Evaluate_RelationalExpression_PrivateIdentifier,Evaluate_ReturnStatement,Evaluate_Script,Evaluate_ScriptBody,Evaluate_ShiftExpression,Evaluate_StatementList,Evaluate_SuperCall,Evaluate_SuperProperty,Evaluate_SwitchStatement,Evaluate_TaggedTemplateExpression,Evaluate_TemplateLiteral,Evaluate_This,Evaluate_ThrowStatement,Evaluate_TryStatement,Evaluate_UnaryExpression,Evaluate_UpdateExpression,Evaluate_VariableDeclarationList,Evaluate_VariableStatement,Evaluate_WithStatement,Evaluate_YieldExpression,ExcludeImportedNames,ExecutionContext,ExecutionContextStack,ExpectedArgumentCount,ExportEntries,ExportEntriesForModule,ExportFromDeclarationModuleRequest,F,FEATURES,FinishLoadingImportedModule,Flag,FlagText,ForDeclarationBindingInitialization,FormatCalendarAnnotation,FormatDateTimeUTCOffsetRounded,FormatFractionalSeconds,FormatISODateTime,FormatOffsetTimeZoneIdentifier,FormatTimeString,FormatUTCOffsetNanoseconds,FromPropertyDescriptor,FunctionDeclarationInstantiation,FunctionEnvironmentRecord,FunctionKind,GatherAsynchronousTransitiveDependencies,GatherAsynchronousTransitiveDependenciesForRequests,GeneratorResume,GeneratorResumeAbrupt,GeneratorStart,GeneratorValidate,GeneratorYield,Get,GetActiveScriptOrModule,GetArrayBufferMaxByteLengthOption,GetAvailableNamedTimeZoneIdentifier,GetDifferenceSettings,GetDirectionOption,GetDisposeMethod,GetEpochNanosecondsFor,GetFunctionRealm,GetGeneratorKind,GetGlobalObject,GetISODateTimeFor,GetIdentifierReference,GetImportedModule,GetIterator,GetIteratorDirect,GetIteratorFlattenable,GetIteratorFromMethod,GetMatchIndexPair,GetMatchString,GetMethod,GetModuleNamespace,GetNamedTimeZoneEpochNanoseconds,GetNamedTimeZoneNextTransition,GetNamedTimeZoneOffsetNanoseconds,GetNamedTimeZonePreviousTransition,GetNewOptionalIndirectExportsModuleRequests,GetNewTarget,GetOffsetNanosecondsFor,GetOptionsObject,GetPossibleEpochNanoseconds,GetPrototypeFromConstructor,GetRoundingIncrementOption,GetRoundingModeOption,GetShadowRealmContext,GetStartOfDay,GetStringIndex,GetSubstitution,GetTemporalCalendarIdentifierWithISODefault,GetTemporalDisambiguationOption,GetTemporalFractionalSecondDigitsOption,GetTemporalOffsetOption,GetTemporalOverflowOption,GetTemporalRelativeToOption,GetTemporalShowCalendarNameOption,GetTemporalShowOffsetOption,GetTemporalShowTimeZoneNameOption,GetTemporalUnitValuedOption,GetThisEnvironment,GetThisValue,GetUTCEpochNanoseconds,GetUnsignedRoundingMode,GetV,GetValue,GetValueFromBuffer,GetViewByteLength,GetViewValue,GetWrappedValue,GlobalDeclarationInstantiation,GlobalEnvironmentRecord,GraphLoadingState,GroupBy,HasInitializer,HasName,HasOwnProperty,HasProperty,HostCallJobCallback,HostEnqueueFinalizationRegistryCleanupJob,HostEnqueuePromiseJob,HostEnsureCanCompileStrings,HostFinalizeImportMeta,HostGetImportMetaProperties,HostGetModuleSourceModuleRecord,HostGetSupportedImportAttributes,HostHasSourceTextAvailable,HostLoadImportedModule,HostMakeJobCallback,HostPromiseRejectionTracker,HostResizeArrayBuffer,HostSystemUTCEpochNanoseconds,HourFromTime,HoursPerDay,ISODateSurpasses,ISODateTimeWithinLimits,ISODateToEpochDays,ISODateToFields,ISODateWithinLimits,ISODayOfWeek,ISODayOfYear,ISODaysInMonth,ISOWeekOfYear,ISOYearMonthWithinLimits,IfAbruptCloseAsyncIterator,IfAbruptCloseIterator,IfAbruptCloseIterators,IfAbruptRejectPromise,ImportEntries,ImportEntriesForModule,ImportedLocalNames,ImportedNames,InLeapYear,IncrementModuleAsyncEvaluationCount,InitializeBoundName,InitializeFieldOrAccessor,InitializeInstanceElements,InitializePrivateMethods,InitializeReferencedBinding,InnerModuleEvaluation,InnerModuleLinking,InnerModuleLoading,InstallErrorCause,InstanceofOperator,InstantiateArrowFunctionExpression,InstantiateAsyncArrowFunctionExpression,InstantiateAsyncFunctionExpression,InstantiateAsyncGeneratorFunctionExpression,InstantiateFunctionObject,InstantiateFunctionObject_AsyncFunctionDeclaration,InstantiateFunctionObject_AsyncGeneratorDeclaration,InstantiateFunctionObject_FunctionDeclaration,InstantiateFunctionObject_GeneratorDeclaration,InstantiateGeneratorFunctionExpression,InstantiateOrdinaryFunctionExpression,InternalDurationSign,InterpretISODateTimeOffset,InterpretTemporalDateTimeFields,IntrinsicsFunctionToString,Invoke,IsAccessorDescriptor,IsAnonymousFunctionDefinition,IsArray,IsArrayBufferViewOutOfBounds,IsAwaitUsingDeclaration,IsBigIntElementType,IsCallable,IsCharacterClass,IsCompatiblePropertyDescriptor,IsComputedPropertyKey,IsConcatSpreadable,IsConstantDeclaration,IsConstructor,IsDataDescriptor,IsDestructuring,IsDetachedBuffer,IsError,IsExtensible,IsFixedLengthArrayBuffer,IsFunctionDefinition,IsGenericDescriptor,IsIdentifierRef,IsInTailPosition,IsIntegralNumber,IsLessThan,IsLooselyEqual,IsModuleSCCEvaluated,IsPartialTemporalObject,IsPrivateReference,IsPromise,IsPropertyKey,IsPropertyReference,IsRegExp,IsSharedArrayBuffer,IsSimpleParameterList,IsStatic,IsStrict,IsStrictlyEqual,IsStringPrefix,IsStringWellFormedUnicode,IsSuperReference,IsTypedArrayFixedLength,IsTypedArrayOutOfBounds,IsUnresolvableReference,IsUnsignedElementType,IsUsingDeclaration,IsValidDuration,IsValidISODate,IsValidIntegerIndex,IsValidTime,IsViewOutOfBounds,IsWithinEpochNanosecondsInterval,IteratorBindingInitialization_ArrayBindingPattern,IteratorBindingInitialization_FormalParameters,IteratorClose,IteratorCloseAll,IteratorComplete,IteratorNext,IteratorStep,IteratorStepValue,IteratorToList,IteratorValue,IteratorZip,JSStringValue,KeyForSymbol,KeyedBindingInitialization,LabelledEvaluation,LargerOfTwoTemporalUnits,LengthOfArrayLike,LexicallyDeclaredNames,LexicallyScopedDeclarations,ListAppendUnique,LocalTime,MV_StringNumericLiteral,MakeAutoAccessorGetter,MakeAutoAccessorSetter,MakeBasicObject,MakeClassConstructor,MakeConstructor,MakeDataViewWithBufferWitnessRecord,MakeDate,MakeDay,MakeFullYear,MakeMatchIndicesIndexPairArray,MakeMethod,MakePrivateReference,MakeRealm,MakeTime,MakeTypedArrayWithBufferWitnessRecord,ManagedRealm,MaxEpochNanoseconds,MaximumTemporalDurationRoundingIncrement,MergeImportedNames,MethodDefinitionEvaluation,MicroTaskEventLoop,MidnightTimeRecord,MillisecondFromTime,MillisecondsPerDay,MillisecondsPerHour,MillisecondsPerMinute,MillisecondsPerSecond,MinEpochNanoseconds,MinuteFromTime,MinutesPerHour,ModuleCache,ModuleEnvironmentRecord,ModuleNamespaceCreate,ModuleRecord,ModuleRequests,ModuleRequestsKeyEqual,MonthFromTime,NamedEvaluation,NanosecondsPerDay,NanosecondsPerHour,NanosecondsPerMicrosecond,NanosecondsPerMillisecond,NanosecondsPerMinute,NanosecondsPerSecond,NegateRoundingMode,NewPromiseCapability,NoTimeZone,NodeJSLikeEventLoop,NonConstructorElements,NonISOCalendarDateToISO,NonISOCalendarISOToDate,NonISODateAdd,NonISODateUntil,NonISOFieldKeysToIgnore,NonISOMonthDayToISOReferenceDate,NonISOResolveFields,NoonTimeRecord,NormalCompletion,NormalCompletionImpl,NudgeToCalendarUnit,NudgeToDayOrTime,NudgeToZonedTime,NullValue,NumberToBigInt,NumberValue,NumericToRawBytes,NumericValue,ObjectEnvironmentRecord,ObjectValue,OptionalIndirectExportEntries,OrdinaryCallBindThis,OrdinaryCallEvaluateBody,OrdinaryCreateFromConstructor,OrdinaryDefineOwnProperty,OrdinaryDelete,OrdinaryFunctionCreate,OrdinaryGet,OrdinaryGetOwnProperty,OrdinaryGetPrototypeOf,OrdinaryHasInstance,OrdinaryHasProperty,OrdinaryIsExtensible,OrdinaryObjectCreate,OrdinaryOwnPropertyKeys,OrdinaryPreventExtensions,OrdinarySet,OrdinarySetPrototypeOf,OrdinarySetWithOwnDescriptor,OrdinaryToPrimitive,OrdinaryWrappedFunctionCall,OutOfRange,PadISOYear,ParseDateTimeUTCOffset,ParseJSONModule,ParseModule,ParsePattern,ParseScript,Parser,PerformEval,PerformPromiseThen,PerformShadowRealmEval,PrepareCalendarFields,PrepareForOrdinaryCall,PrepareForTailCall,PrepareForWrappedFunctionCall,PrimitiveValue,PrivateBoundIdentifiers,PrivateElementFind,PrivateElementRecord,PrivateEnvironmentRecord,PrivateFieldAdd,PrivateGet,PrivateMethodOrAccessorAdd,PrivateName,PrivateSet,PromiseCapabilityRecord,PromiseReactionRecord,PromiseResolve,PropName,PropertyBindingInitialization,PropertyDefinitionEvaluation_PropertyDefinitionList,PropertyKeyMap,ProxyCreate,PutValue,Q,R,RawBytesToNumeric,RawTokens,ReadyForSyncExecution,Realm,ReferenceRecord,RegExpAlloc,RegExpCreate,RegExpHasFlag,RegExpInitialize,RegExpParser,RegExpState,RegulateISODate,RegulateTime,RequireInternalSlot,RequireObjectCoercible,ResolveBinding,ResolveBooleanCondition,ResolvePrivateIdentifier,ResolveThisBinding,ResolvedBindingRecord,RestBindingInitialization,ReturnCompletion,ReturnCompletion_,RoundEpochNanoseconds,RoundISODateTime,RoundNumberToIncrement,RoundNumberToIncrementAsIfPositive,RoundRelativeDuration,RoundTime,RoundTimeDuration,RoundTimeDurationToIncrement,RunCallerContext,RunSuspendedContext,SafePerformPromiseAll,SameType,SameValue,SameValueNonNumber,SameValueZero,ScriptEvaluation,ScriptRecord,SecondFromTime,SecondsPerMinute,Set,SetDefaultGlobalBindings,SetFunctionLength,SetFunctionName,SetImmutablePrototype,SetIntegrityLevel,SetValueInBuffer,SetViewValue,SetterThatIgnoresPrototypeProperties,ShadowRealmImportValue,SnapToInteger,SourceTextModuleRecord,SpeciesConstructor,StringCreate,StringExoticObjectInternalMethods,StringGetOwnProperty,StringIndexOf,StringPad,StringToBigInt,StringToCodePoints,StringToNumber,StringValue,Symbol(Symbol.toStringTag),SymbolDescriptiveString,SymbolValue,SyntheticModuleRecord,SystemDateTime,SystemTimeZoneIdentifier,SystemUTCEpochMilliseconds,SystemUTCEpochNanoseconds,TV,Table69_NonbinaryUnicodeProperties,Table70_BinaryUnicodeProperties,Table71_BinaryPropertyOfStrings,TemplateStrings,TemporalDateToString,TemporalDurationFromInternal,TemporalDurationToString,TemporalInstantToString,TemporalMonthDayToString,TemporalUnitLength,TemporalYearMonthToString,TemporalZonedDateTimeToString,TestIntegrityLevel,ThisBigIntValue,ThisBooleanValue,ThisNumberValue,ThisStringValue,ThisSymbolValue,Throw,ThrowCompletion,ThrowCompletion_,TimeClip,TimeDurationFromComponents,TimeDurationFromEpochNanosecondsDifference,TimeDurationSign,TimeFromYear,TimeRecordToString,TimeValueToISODateTimeRecord,TimeWithinDay,TimeZoneEquals,ToAbsoluteIndex,ToBigInt,ToBigInt64,ToBigUint64,ToBoolean,ToClampedIndex,ToFixedSizeInteger,ToIndex,ToInt16,ToInt32,ToInt8,ToIntegerOrInfinity,ToInternalDurationRecord,ToInternalDurationRecordWith24HourDays,ToLength,ToNumber,ToNumeric,ToObject,ToOffsetString,ToPartialDurationRecord,ToPartialTimeRecord,ToPrimitive,ToPropertyDescriptor,ToPropertyKey,ToSecondsStringPrecisionRecord,ToString,ToTemporalCalendarIdentifier,ToTemporalDate,ToTemporalDateTime,ToTemporalDuration,ToTemporalInstant,ToTemporalMonthDay,ToTemporalTime,ToTemporalTimeZoneIdentifier,ToTemporalYearMonth,ToTemporalZonedDateTime,ToTimeRecordOrMidnight,ToUint16,ToUint32,ToUint8,ToUint8Clamp,ToZeroPaddedDecimalString,Token,TokenData,TopLevelLexicallyDeclaredNames,TopLevelLexicallyScopedDeclarations,TopLevelVarDeclaredNames,TopLevelVarScopedDeclarations,TotalRelativeDuration,TotalTimeDuration,TrimString,TypedArrayByteLength,TypedArrayCreate,TypedArrayGetElement,TypedArrayLength,TypedArraySetElement,UTC,UTF16EncodeCodePoint,UTF16SurrogatePairToCodePoint,UndefinedValue,Unicode,UpdateEmpty,ValidateAndApplyPropertyDescriptor,ValidateISODaysRange,ValidateShadowRealmObject,ValidateTemporalRoundingIncrement,ValidateTemporalUnitValue,Value,ValueOfNormalCompletion,VarDeclaredNames,VarScopedDeclarations,WeakRefDeref,WebLikeEventLoop,WeekDay,WrappedFunctionCreate,X,YearFromTime,Yield,Z,ZeroDateDuration,activeFunctionObject,boostTest262Harness,builtinFunctionInternalSlots,captureControl,captureStack,composeModuleLoaders,createBuiltinModuleLoader,createDataGraphCheckpoint,createOrdinaryObjectCheckpoint,createStateCheckpoint,createTest262Intrinsics,currentRealmRecord,evalQ,gc,generatorBrandToErrorMessageType,getActiveScriptId,getArgumentsParameterMapData,getBreakpointCandidateNodes,getCurrentStack,getECMAScriptFunctionInternalSlots,getHostDefinedErrorDetails,getNativeCaptures,hasBuiltinFunctionMethods,hasECMAScriptFunctionMethods,hasOrdinaryObjectMethods,hasSourceTextInternalSlot,hostSupportResizableArrayBuffer,importBundledTest262Harness,inspect,intrinsics,isArgumentExoticObject,isArrayBufferObject,isArrayExoticObject,isArrayIndex,isBoundFunctionObject,isBuiltinFunctionObject,isCalendarUnit,isDataViewObject,isDateObject,isDateUnit,isECMAScriptFunctionObject,isErrorObject,isEvaluator,isFinalizationRegistryObject,isFunctionObject,isIntegerIndex,isLeadingSurrogate,isMapObject,isModuleNamespaceObject,isNamedTimeZoneIdentifier,isNonNegativeInteger,isOffsetTimeZoneIdentifier,isOrdinaryObject,isPromiseObject,isProxyExoticObject,isRegExpObject,isSetObject,isShadowRealmObject,isStrictModeCode,isTemporalDurationObject,isTemporalInstantObject,isTemporalPlainDateObject,isTemporalPlainDateTimeObject,isTemporalPlainMonthDayObject,isTemporalPlainTimeObject,isTemporalPlainYearMonthObject,isTemporalZonedDateTimeObject,isTimeUnit,isTrailingSurrogate,isTypedArrayObject,isWeakMapObject,isWeakRef,isWeakSetObject,isWrappedFunctionExoticObject,kInternal,markBuiltinFunctionAsConstructor,maxTimeDuration,measureSynchronousExecution,parseNodeToBreakpointLocation,performDevtoolsEval,refineLeftHandSideExpression,regexpInternalSlots,registerNativeClosure,runSingleJobInQueue,runningExecutionContext,setSurroundingAgent,skipDebugger,sourceTextMatchedBy,surroundingAgent,typedArrayInfoByName,typedArrayInfoByType,unwrapCompletion,wellKnownSymbols,wrappedParse": 1,
+            "ConcreteRuntime: agent,cancelTimer,captureHostState,consoleEntries,countJob,dispose,drainJobs,engine,evaluate,failure,hostCheckpoints,isDisposed,jobs,mark,maxJobs,nextTimer,readString,realm,scope,steps,timers,uncaughtExceptions,unhandledRejections,unwrap,withAgent": 1,
+            "Object: Greedy,Max,Min": 1,
+            "ConcreteCharSet: characterModeOnly,chars": 1,
+            "Object: CapturingGroupsCount,DotAll,IgnoreCase,Multiline,Unicode,UnicodeSets": 1,
+            "Object: Expression,IdentifierName,MemberExpression,PrivateIdentifier,location,parent,sourceText,strict,type": 7,
+            "Object: AssignmentExpression_a,AssignmentExpression_b,ShortCircuitExpression,location,parent,sourceText,strict,type": 2,
+            "Object: location,name,parent,sourceText,strict,type": 3,
+            "Object: done,value": 7,
+            "Object: e,f,n,s": 7,
+            "Object: BindingList,LetOrConst,location,parent,sourceText,strict,type": 5,
+            "NormalCompletion: Value": 43,
+            "Object: Expression,location,parent,sourceText,strict,type": 54,
+            "Object: resume,value": 1,
+            "Object: Arguments,CallExpression,location,parent,sourceText,strict,type": 14,
+            "Object: escaped,location,name,parent,sourceText,strict,type": 37,
+            "Object: AssignmentExpression,AssignmentOperator,LeftHandSideExpression,location,parent,sourceText,strict,type": 8,
+            "Object: UnaryExpression,location,operator,parent,sourceText,strict,type": 5,
+            "Object: Expression,Statement_a,location,parent,sourceText,strict,type": 8,
+            "Object: Expression,StatementList,location,parent,sourceText,strict,type": 22,
+            "Object: CaseClauses_a,location,parent,sourceText,strict,type": 1,
+            "Set: ": 5,
+            "Object: CaseBlock,Expression,location,parent,sourceText,strict,type": 1,
+            "Object: Expression,Statement_a,Statement_b,location,parent,sourceText,strict,type": 2,
+            "Object: VariableDeclarationList,location,parent,sourceText,strict,type": 8,
+            "Object: EqualityExpression,RelationalExpression,location,operator,parent,sourceText,strict,type": 4,
+            "Object: Expression_b,Statement,location,parent,sourceText,strict,type": 1,
+            "Object: LabelIdentifier,location,parent,sourceText,strict,type": 1,
+            "Object: StatementList,location,parent,sourceText,strict,type": 8,
+            "Object: Block,CatchParameter,location,parent,sourceText,strict,type": 1,
+            "Object: Block,Catch,Finally,location,parent,sourceText,strict,type": 2,
+            "Object: Expression,Statement,location,parent,sourceText,strict,type": 3,
+            "Object: LabelIdentifier,LabelledItem,location,parent,sourceText,strict,type": 1,
+            "Object: ExpressionList,location,parent,sourceText,strict,type": 3,
+            "Object: LogicalANDExpression,LogicalORExpression,location,parent,sourceText,strict,type": 2,
+            "Object: Expression_a,Statement,VariableDeclarationList,location,parent,sourceText,strict,type": 1,
+            "Object: BitwiseORExpression,LogicalANDExpression,location,parent,sourceText,strict,type": 2,
+            "ReturnCompletion: Target,Value": 1,
+            "Object: NewTarget,thisValue": 1,
+            "Object: ElementList,hasTrailingComma,location,parent,sourceText,strict,type": 1,
+            "Object: ScriptBody,location,parent,sourceText,strict,type": 1
+          },
+          "prefixCount": 1,
+          "reachedTimer": true,
+          "timerCount": 1,
+          "referenceRecordCount": 20,
+          "nativeListCount": 1842,
+          "rejectedLists": [
+            {
+              "keys": ["0", "1", "2", "3", "4", "5", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "2", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "length"],
+              "error": "TypeError: Checkpoint requires canonical native lists"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "3", "4", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "2", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            },
+            {
+              "keys": ["0", "1", "length", "location"],
+              "error": "TypeError: Checkpoint requires canonical native list entries"
+            }
+          ],
+          "frontier": {
+            "distinctReferences": 21435,
+            "guestObjects": 2199,
+            "nativeArrays": 1858,
+            "nativeFunctions": 2476,
+            "registered": 2418,
+            "functionsWithStepsBinding": 3,
+            "unregistered": {
+              "AbruptCompletion": 1,
+              "ArgumentsParameterMapData": 1,
+              "AssertError": 1,
+              "BigIntValue": 1,
+              "BooleanValue": 1,
+              "CharSet": 1,
+              "Completion": 1,
+              "ConcreteCharSet": 1,
+              "ConcreteRuntimeError": 1,
+              "ConcreteStringSet": 1,
+              "CyclicModuleRecord": 1,
+              "DataBlock": 1,
+              "DateParser": 1,
+              "Decimal": 1,
+              "DeclarativeEnvironmentRecord": 1,
+              "Descriptor": 1,
+              "DynamicParsedCodeRecord": 1,
+              "EnvironmentRecord": 1,
+              "ExecutionContext": 1,
+              "FunctionEnvironmentRecord": 1,
+              "GlobalEnvironmentRecord": 1,
+              "GraphLoadingState": 1,
+              "JSONValidator": 1,
+              "JSStringValue": 1,
+              "ManagedRealm": 1,
+              "MatchState": 1,
+              "NormalCompletion": 1,
+              "NullValue": 1,
+              "NumberValue": 1,
+              "ObjectEnvironmentRecord": 1,
+              "ObjectValue": 1,
+              "OutOfRange": 1,
+              "Parser": 1,
+              "PrivateEnvironmentRecord": 1,
+              "PrivateName": 1,
+              "PromiseCapabilityRecord": 1,
+              "PromiseReactionRecord": 1,
+              "PropertyKeyMap": 1,
+              "Realm": 1,
+              "ReferenceRecord": 1,
+              "RegExpParser": 1,
+              "ResolvedBindingRecord": 1,
+              "ReturnCompletion": 1,
+              "ScriptRecord": 1,
+              "SourceTextModuleRecord": 1,
+              "SymbolValue": 1,
+              "ThrowCompletion": 1,
+              "TimSort": 1,
+              "UndefinedValue": 1,
+              "Value": 1,
+              "VirtualCharSet": 1,
+              "apply": 1,
+              "atob": 1,
+              "btoa": 1,
+              "executionMachine": 1,
+              "getControlIterator": 1,
+              "isArray": 1,
+              "next": 1
+            }
+          },
+          "observations": [],
+          "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership."
+        }
+      }
+    ],
+    "limitation": "Shape counts and names do not establish ownership or mutability policy. Existing marking-based discovery is incomplete."
+  },
+  "focused": {
+    "finalCases": 19,
+    "precedingFailed": 17,
+    "precedingPassed": 2,
+    "currentPassed": 19,
+    "unchangedFinalTestSources": true,
+    "nativeConversionComparison": 1,
+    "randomSequenceComparison": "Two fresh engine realms with seed123; not V8 RNG equivalence"
+  },
+  "reuse": "Two guard calls only: Math_random and HostSystemUTCEpochNanoseconds use existing Agent.assertCanPerformHostEffect before seed/hook lookup, entropy/state mutation or native Date.now. No new nondeterminism model or rollback.",
+  "sourceResearch": [
+    "Math.mts: Realm.randomState BigUint64Array and shared Float64Array/BigUint64Array scratch; seed hook and native Math.random fallback",
+    "date-objects.mts: HostSystemUTCEpochNanoseconds invokes host hook or native Date.now",
+    "temporal/now.mts: SystemUTCEpochNanoseconds delegates to same primitive",
+    "React scheduler/src/forks/Scheduler.js: performance.now if available, Date.now fallback. This source does not prove the test renderer's paused suffix reads the clock."
+  ],
+  "corrections": [
+    "Initial test type errors: a decision narrowed outside a callback needed a retained const; ManagedRealm randomSeed returns string, not number. Corrected before final predecessor/current validation.",
+    "Initial maintained React diagnostic expected a clock rejection without adding a clock read. It reached the original timer and failed that expectation. Corrected SAME before/after driver explicitly calls application Date.now after fixture.update. Do not attribute that explicit call to React's internals. Initial failure retained."
+  ],
+  "gates": {
+    "units": "1850/1850 across64files",
+    "types": "pass",
+    "smoke": "74/74 unchanged ten-second/two-worker gate",
+    "conformance": "New source+published Math.random/Date/Temporal.Now.instant196/196, matching input+compiledhashes/verdicts, exits0. Prior tail-call and other failures remain.",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors,two existing warnings,588files",
+    "cleanup": "Main worktree unchanged; temporary diagnostics removed; no build lock",
+    "linux": "not run yet",
+    "adHocReceiptRunner": "Bun"
+  },
+  "commands": [
+    "pnpm --filter bippy-analyzer test --run tests/checkpoint-nondeterminism.test.ts",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm --filter bippy-analyzer test:source-test262 --reporter=json '.test262/test/built-ins/Math/random/*.js' '.test262/test/built-ins/Date/now/*.js' '.test262/test/built-ins/Date/*.js' '.test262/test/built-ins/Temporal/Now/instant/*.js'",
+    "pnpm --filter bippy-analyzer test:test262 --threads=2 --reporter=json <samepatterns>",
+    "pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ],
+  "limitations": [
+    "Safe rejection, not clock/random rollback. Seeded RNG still mutates unowned Realm state. Intrinsic identity controls rejection; ordinary guest replacements and explicit UTC date conversion remain allowed.",
+    "Guest catch cannot absorb host failures; resumed evaluator becomes terminal. Release available. Failed capture registers no checkpoint and preserves pending choice. No hostile-host sandbox or guarantee all external effects are guarded.",
+    "ActualReact+explicitapplicationclock rejects before previous timer. Both orders oneprefix/noobservations. Original React diagnostic still reaches timer. General ownership, guarded reports, transitions/repeats and demo remain incomplete."
+  ]
+}

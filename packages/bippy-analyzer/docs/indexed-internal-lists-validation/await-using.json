@@ -1,0 +1,1741 @@
+{
+  "originalReportSha256": "95d3653f082a6459cfeb764a3246ad4516498c65da2dc5894c3613bb7bddb801",
+  "total": 123,
+  "passed": 123,
+  "failed": 0,
+  "exitCode": 0,
+  "outcomes": [
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-allows-null-initializer.js",
+      "scenario": "default",
+      "contentsSha256": "99bb70c76a9ecf79ea2a255de9272294018e20ac92b6352322ee302c9ef58179",
+      "compiledSha256": "9c54a2ba1ce88fd9c5b1ffe6292c7d929b841e92e9e24224a547b9426accc7dd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-allows-null-initializer.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5f7b77c1d3b77e9f75da29230062c6293e8c7b97c1d7c31641bee45d3ce3e4f3",
+      "compiledSha256": "8c00bcdb1892074693d2fc611a6406df19b414056a2f78edb2617b5e704315e0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-allows-undefined-initializer.js",
+      "scenario": "default",
+      "contentsSha256": "b2f43b61878f4dcc2cc3fa9ed3e4927dbde5003d787a17187e82846d5425b3aa",
+      "compiledSha256": "aa62a7271879112c20d6c81afad56a6bd76fde9509df44e418780ca1bcef2366",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-allows-undefined-initializer.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e8eaa0dfc9a9311ce71dcb478cfa835243f4f4798db3a457e0fd2553b9e263f5",
+      "compiledSha256": "d053208eb1f69015cdc3354aebbed8aab6fd7ef38a90a81a95f30d064802e313",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-does-not-imply-await-if-not-evaluated.js",
+      "scenario": "default",
+      "contentsSha256": "fe6de91e040ea12fecb2d984ea328d7bfb2aaad8819c1a4aa8c2b047951394a6",
+      "compiledSha256": "f8e5f36b2e7faf722259af30af7cc568e19dd0e7d46aead9295b4a64219ebcd9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-does-not-imply-await-if-not-evaluated.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4c6b8394dff4d19bd2d97563b88035de708b2a6d25d0fd0f0f599dc9523319f5",
+      "compiledSha256": "300ce0d01303d838100f285ca8b64eb820d3ebd3c0b1a446daa6f21407ac3360",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-implies-await-if-evaluated.js",
+      "scenario": "default",
+      "contentsSha256": "d81e1829b8822cecd07a2148d9f102a550324f006971346caa926ba1dc555be9",
+      "compiledSha256": "d5b7333e751c0b55a8f578cbc08d69e420a1a1e400d7b69353056f20b8800da9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-implies-await-if-evaluated.js",
+      "scenario": "strict mode",
+      "contentsSha256": "db17e6d13ec259ff2ed0bce6962faae0c5c487f4db3014d2471ea2271f1ee806",
+      "compiledSha256": "703cba6903e3f8eedeca65fa9c333d3f76301f1bb93bfa2d08dd0e9f8eaa9954",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-Symbol.asyncDispose-allows-non-promise-return-value.js",
+      "scenario": "default",
+      "contentsSha256": "b373c863c80019ea2690ca77cb4c227973d8b8f433cd44ca03588cc9b323acc5",
+      "compiledSha256": "81def954993c7086b2e557931e524e2cfafdcff9c88e7cacaf38a1e99f15898b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-Symbol.asyncDispose-allows-non-promise-return-value.js",
+      "scenario": "strict mode",
+      "contentsSha256": "47bc1e31c67cb59c3f73ad43f685e43011e655f7099d63b3b59cf7e01e033191",
+      "compiledSha256": "4c7ecf3bc2c34f035875b143d8bb8a2d4274172bf3ad846bc3fda804c27b555b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-Symbol.asyncDispose-allows-promiselike-return-value.js",
+      "scenario": "default",
+      "contentsSha256": "097d16d29215a32ff9e5c2b7f68883aaaf94807e6b83ead5dcea9da942422f82",
+      "compiledSha256": "8280845c414c0aac01d8d27d604a6fb01b61e5c7c62aeedc6aa56b4a59e99500",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/await-using-Symbol.asyncDispose-allows-promiselike-return-value.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5c8bde8c1bd99318ebb776b3b23872372cf01a0b87ae3f5837364e53b353780c",
+      "compiledSha256": "e98b71a98103b7a320ba9ad7cb04891fe85da13dd46c76687e64786a490cca0c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/block-local-closure-get-before-initialization.js",
+      "scenario": "default",
+      "contentsSha256": "27802abd3abad55fa01e53aab132fb479b9adeb3763e04dfb144a17fe0c74e2e",
+      "compiledSha256": "b8522981b3c8e25b63d2c79357b02216be8bf8806a495503a5c4675b2fac27f8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/block-local-closure-get-before-initialization.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4eef4e5b7f2e580af4aff8cfa9a1af65f0bacff224ff0e0997dce496e87095cb",
+      "compiledSha256": "3d3197e4e0bf64de69706840f0ac81c0dc52e38f4686ceaf15ae2826f4b8d041",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/block-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "default",
+      "contentsSha256": "486393d68cff787352a6e43017dd8cc43c99185be2df6f315af4567b5849feca",
+      "compiledSha256": "24e496111637fb7c4b117b08eac971c0698a5963a7b0c82ce6f36e4e4f79aa74",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/block-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "c40d91be546d78977179020795952f622d85f6f84e0e3fdac59d5a7174c98e5b",
+      "compiledSha256": "12fa522134643d52c4f107b343273cee109c296221638c11d38d39e84e6c2eef",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/block-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "default",
+      "contentsSha256": "c572336646dfb0b77ae85df85f28cc2c3d73867e0fe92e4e44e0b1add0c3c019",
+      "compiledSha256": "721af478446bf4c14718f3158c4ec935e09e9b2d3f1198550b3a40522c4c2371",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/block-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "beaabdf4770c0796629ea352fb0986ded8dd2afbbe546b92cc697607b81be3b8",
+      "compiledSha256": "bdd8ca417688beba1dbc5cf9c66d604d89170479182b6c04f13749f91c391905",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-arrow.js",
+      "scenario": "default",
+      "contentsSha256": "07b365795fbcdb4e5232e5c66dc4eee089adba062569f99320dd20c6f2032fd0",
+      "compiledSha256": "163e83d5744ca062a3c8e2f6e45a180f937aac2ca194f7b4142b7c8a0ad58574",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-arrow.js",
+      "scenario": "strict mode",
+      "contentsSha256": "50b59742739aad025fcce21a3cba5f3e6ffd9856498eff6fd2c76310de1b9a2a",
+      "compiledSha256": "c3636fa9a8b3ae4618f0a033d247491e88939f1e00818557845fefffe62d9f84",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-class.js",
+      "scenario": "default",
+      "contentsSha256": "cb18344c594ccfeafd1e1a647aafef0627cb88699198beaa6a096c087a350528",
+      "compiledSha256": "87dd4ab004c63339aa440698e55c8064da4a673f8086c78df5e5d2d677c11425",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-class.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1ee199185927c4f82893b3b4f28c3953c9ffd1045c447668392b93f1bba7995c",
+      "compiledSha256": "d5c23aea3ad622212fc7e1462cb3f399daadd348f776cbffc4d01f3e7fc0dabe",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-cover.js",
+      "scenario": "default",
+      "contentsSha256": "8a05e8bef5761277e227a275805efb8570059bc236076ac3fabe1fdf2742cc2e",
+      "compiledSha256": "015ac89a564fcc1a22c8dc4411185cbe277e9b72d40d0c3964a3b1635b27e6ea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-cover.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5419683843de8e814f25fb35e2683924679c4ffb2f8c97e680c686ec32c49a8b",
+      "compiledSha256": "781593091a676b7d592816a22a1f4b95f0404788029e7553ee5b97fe15f5e9a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-fn.js",
+      "scenario": "default",
+      "contentsSha256": "10af2de23a6bc835e4a5350e88f0c5809dbcc8cb7bc3879a6ca6a6df11f3a0c2",
+      "compiledSha256": "5a89dd4f6c731c2dd1763088ca70e614fed36cfcdc425b8facad7cc7d6b2247c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-fn.js",
+      "scenario": "strict mode",
+      "contentsSha256": "526f55e7f8a000acd100d86c1c3cbacf0a083c040dd491ca69aa6f5d88dd0915",
+      "compiledSha256": "7910b91803144a5913dca0a967a0bc9b07feefc8a54f77b4521917dcfaa84236",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-gen.js",
+      "scenario": "default",
+      "contentsSha256": "e1c7114c94c0aa99b03b4f703bac0fb96a68524ccf3fa4ca256f51b11a3ac38f",
+      "compiledSha256": "630745bc75e0b7ba4b3afc57779cc13c1a8fb834a0179119dce640de48e8f6d8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/fn-name-gen.js",
+      "scenario": "strict mode",
+      "contentsSha256": "66ce01ef6cd3ae0d949b1a57a24c940dd4fa39f6ae4ba1dd0de56d0ed4b989ee",
+      "compiledSha256": "48c8ae88d466e02d3aaecb3c9bba797d7ab0472a265caa8aa2f81ed5e4b0904a",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/function-local-closure-get-before-initialization.js",
+      "scenario": "default",
+      "contentsSha256": "86608572e4727334fc66cae8597284a3136682fb35bf39da8d4e5b214cd9bbb7",
+      "compiledSha256": "e4d66b5e785b627c89203448bea4885f4475e675b662b6ef9926cbe49da6a533",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/function-local-closure-get-before-initialization.js",
+      "scenario": "strict mode",
+      "contentsSha256": "f5914aced0c50e4c6500465f47950ab88f745911517a907d167949b5341db4f4",
+      "compiledSha256": "8b435f242a720745048a61ef482f40d153a104d178557c6c8698a630cf330efb",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/function-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "default",
+      "contentsSha256": "730cce3ee1b6b1e545891dcb67510dede76abd0853ee97f52f5258b1d4de51ef",
+      "compiledSha256": "783667b29f058cc17c1faa54476ebb1b2fb0eed4792554e3add3b803e6c47fa6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/function-local-use-before-initialization-in-declaration-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4d5d91a8de684f94378f0300d4372b572423c752b8ae14bf35d219fcdabcc50e",
+      "compiledSha256": "f41e469dcd8ba5a26bac6e56cb42a6e48c718d0d2d75dc39634bc28ced8a3fc4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/function-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "default",
+      "contentsSha256": "4eedb82d9d550fd69e7b0a48beace588e2233e002365262a3e744bdfda99271d",
+      "compiledSha256": "07dda49d5de34127bdf810bd0b145ef88b3fbeb5cf571273b110f1bc9a0fd2a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/function-local-use-before-initialization-in-prior-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6569d582dbf8383cbc1ea08184ddd50eaa166b9dd2b9b4dbd12e8985424962c2",
+      "compiledSha256": "f4d666874ac6eca56f3899785e05633fb18c83186024ffb389721c42a73978bf",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-does-not-read-Symbol.dispose-if-Symbol.asyncDispose-exists.js",
+      "scenario": "default",
+      "contentsSha256": "15d71dc8cd8caafb96a3fb151cb3597ea41b74019c740f12d857f9437bcacade",
+      "compiledSha256": "156b437c8cbad4f4df59116557fb91cadc5f13761a484bf8f0cd2fc91b72f749",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-does-not-read-Symbol.dispose-if-Symbol.asyncDispose-exists.js",
+      "scenario": "strict mode",
+      "contentsSha256": "10d02fa21108f18fec1e8fe70505e6648b5fd6f310ed61eeda581245619a84bf",
+      "compiledSha256": "b61fb5c85412a8daaa523c635071af5207545514e62211ba3583744664143197",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.asyncDispose-property-once.js",
+      "scenario": "default",
+      "contentsSha256": "828e49c3dd6e1f8c9fb23364e4ce9b0b43cf1d662ff1b89bb2f23c46e1aa6ea5",
+      "compiledSha256": "a8af1ad98f35f41b7ccdaf6cf5c2007ab576b9732fd0e242de1a1a55cb41d31f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.asyncDispose-property-once.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4a093ee5b9b8db8d8325391ae5150723c8e710672aeaa1c0246bc281f33e8c35",
+      "compiledSha256": "22e2eb05cfb8cbb60f6bc14bae67e7575a1233bc58fcfe3ac80a8cbdd993fde0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.dispose-after-Symbol.asyncDispose-is-null.js",
+      "scenario": "default",
+      "contentsSha256": "39e955710729c33abf5d2203d7e3f6027641b327822e05d14d1bf34fe8e93182",
+      "compiledSha256": "ec0a8359916d2d09854f976fc9a32bd40ce2db0337b8bf5b299b35c61c8e1625",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.dispose-after-Symbol.asyncDispose-is-null.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9af9416cdd2caee386f057524cf1ed195e194e155d3938cb77e7b1f1b5d42c83",
+      "compiledSha256": "6641acd66ec62f7bddb0af6e062cdd273d773f388d11e0ef5f784b84b179d98d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.dispose-after-Symbol.asyncDispose-is-undefined.js",
+      "scenario": "default",
+      "contentsSha256": "1343156eeef5de9814b62c6e56f2133fa89efc83e49c537cbc8e2559517eff85",
+      "compiledSha256": "c9435b77e69f126850a4ed222e7c6195954c9a4d377bac836c9cd0e50d84ea0e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.dispose-after-Symbol.asyncDispose-is-undefined.js",
+      "scenario": "strict mode",
+      "contentsSha256": "54de52a8bb7019dcb0a78744182fb8d6b3623db9468e3ce11242d2a578b47fce",
+      "compiledSha256": "060c045d6091bf67b3716bf58e90b1bd6d174f38370693d8492a80bbeae628ea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.dispose-property-once.js",
+      "scenario": "default",
+      "contentsSha256": "c56dec3bceeba83b6abfedffa4c23fe4ee7ec82e268f2495842022160db4bc67",
+      "compiledSha256": "63a1567e49e1893793e47e93dd2b93db2df362c4322005e985ee4a9929f4d130",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/gets-initializer-Symbol.dispose-property-once.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e8adecf17180ed8365d3674d9460572c16ca36c5d4c01734a4d20596a4606ee1",
+      "compiledSha256": "d0886841d9153500220013eea82c2b7d8e0c5de11dee3730d19acab28ca5c629",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/global-closure-get-before-initialization.js",
+      "scenario": "default",
+      "contentsSha256": "17c3732249f85a096c9f6f626dc9970fe28601133c83d139949ad67cedfd813e",
+      "compiledSha256": "3c5e405cf924d44be22966a2809749bb0e3a6ea98da552a4154936ea1a32ccfa",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/global-closure-get-before-initialization.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e56c52e460d039b2a797e21c0eecc9c17b8c6af8af46ed610b95ba71af26ca85",
+      "compiledSha256": "4ded904f06c504bba18f0c29c52f6518741cd8fcd2eac73d775d29a736e2f3ee",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/global-use-before-initialization-in-declaration-statement.js",
+      "scenario": "default",
+      "contentsSha256": "6a3d2fd7921fd4cfd5c03112ca51e1444ea1c66a371361124ae7bfae9e6dcf82",
+      "compiledSha256": "79412e0aaba624f91930d577f3cb9e791953baf7c003c0a98b84e9a2a03975f8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/global-use-before-initialization-in-declaration-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "19473ed1f0ba7ee4fdd32ea64f022a2104e544ecf828b09a2070cb3f88a935cb",
+      "compiledSha256": "b20d37fc0c17e605bb3c1eef2c9d716468cdf7555f97aa5d2e9ce5f3187bb28c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/global-use-before-initialization-in-prior-statement.js",
+      "scenario": "default",
+      "contentsSha256": "7136cd96e8c275369529c05f4ea805de48855cec240290d5da9f8527407a63e4",
+      "compiledSha256": "161c7cdc41fc9d01693a7ad361fdb988c2421aec035c736d5b2db7bf96af37f9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/global-use-before-initialization-in-prior-statement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "dde2a461cc0d8e8666ebf19d3e30efca676dfbbe62f17220c766397e810a96c7",
+      "compiledSha256": "55fb680532d84fc8714abb5c1ea235e1a1e7cd087c520373a76047bda65e21b2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-asyncfunctionbody.js",
+      "scenario": "default",
+      "contentsSha256": "4a6f088c0a7b009fe4bf53345dce5efd665b3eab5cd3d03999a87a2c7d3bf5e1",
+      "compiledSha256": "689dd6bc87869d27e6e518337b73e092acf05eade4f6047cde9c59c291e16543",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-asyncfunctionbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b87a90043951da11acd3891dc63a797de2d776dc2791920d6a9956db66e754ba",
+      "compiledSha256": "3062431a53379cbe0dd56d09255a621ce3e0ab84fa088128a809785756e66181",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-asyncgeneratorbody.js",
+      "scenario": "default",
+      "contentsSha256": "dae273206175f782cba5ca96baa28d2fca4e6733d4accd0974ea02b26a10679d",
+      "compiledSha256": "b4d3d269021c87a44630bce543cffcff1b8687a622d2f63d8ec1d3d1b75a31b3",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-asyncgeneratorbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "5e9c65e9fd9db170d76b26c2719cf1c34898c4f6a682d203b99a66cc240e0f28",
+      "compiledSha256": "94afee1787b46f5caba55df4faa93190993294ce67677db40ac8abfb3035c7b6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-block.js",
+      "scenario": "default",
+      "contentsSha256": "c0652c206269e1db15ef5d2c0809df62a8a84ea5c8614ba5a184e3f1a11e7fd2",
+      "compiledSha256": "5651e2023212aad170dc4e20c0b64f96f5562e9d4d39c2679f2f7b1b3842be62",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-block.js",
+      "scenario": "strict mode",
+      "contentsSha256": "78285adede336affed97474e46b638e0f3daf24eb44b53d62a73be672917be0f",
+      "compiledSha256": "d6dfa988cdce0c7d7c34b7de1afad376891d12a2c3d01b2b66c6649d4156a35d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-each-iteration-of-forofstatement.js",
+      "scenario": "default",
+      "contentsSha256": "720630e1fe876579c9d712924fc96fada138770402a9cbbaed267befbe10732b",
+      "compiledSha256": "ffd12ec6e9153dfddff19fd6adf3f2e1b47b30d72a19d14129c888c137f1e064",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-each-iteration-of-forofstatement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "85fb58cf603f0cc2c0a228c01bf5960a37f5e58a52ba1cd910cdd61d149e11ec",
+      "compiledSha256": "a9c70d7039a147df4cae97874640cb6b7c3adb7270f9497a5454350dd4e47cd1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-forstatement.js",
+      "scenario": "default",
+      "contentsSha256": "547d13ed18e9a036c141d2528572c6b79e2647e5efaf536939ea9ee438b250ad",
+      "compiledSha256": "ca984faf10cdfd4e7b6c4a4c3562771cb475fa669e3b1e996818042f655981e2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-at-end-of-forstatement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "577a037746aaa7481ba6ef7fcb0d41f30724e8d1c75fc7e2768016e63e09eb8a",
+      "compiledSha256": "435d86b3163d8ccb60f91327bbf3bea9effe23a8389e98e371d70ba555e9e565",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-if-subsequent-initializer-throws-in-forstatement-head.js",
+      "scenario": "default",
+      "contentsSha256": "4a02b0e0f4bef1c5d9554cafb1d5fff1a4be9145ef2e6f752c4ea980da3a5920",
+      "compiledSha256": "9607046010c2a686a838f12812d876ba3ce1913f99019b691005727ed78e67a0",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-if-subsequent-initializer-throws-in-forstatement-head.js",
+      "scenario": "strict mode",
+      "contentsSha256": "16a33007f6c9abb8c202f1cad131449fb50e3f2b03a88bf466185a0bd0f8145c",
+      "compiledSha256": "ef97505e8751931e09306a3364a656b048f5f5a288344bafc069fd1f1c7e3f98",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-if-subsequent-initializer-throws.js",
+      "scenario": "default",
+      "contentsSha256": "605f7d85d4ac0c40ecbea9847637159b66c438a69baaf143043390a09b37af8a",
+      "compiledSha256": "b64fea6a98eff6cc4231773d440cb3a056abad5b41bd9767420a26b19c62356d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-called-if-subsequent-initializer-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "036a147172e80c63ee52d040edaff211090aa3fdb168598269e3add7a3960d49",
+      "compiledSha256": "b98e3800f15641ba11ff91ae9977abfd4e106f9e15ec4047fe1c79a871c17d84",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-imported-module.js",
+      "scenario": "default",
+      "contentsSha256": "6b82c72679ddab23e76bd4789daa8492b27711a12984844655d2df1f0c8e8d97",
+      "compiledSha256": "071c33601ed3e08db38b85b5c254310dac5e71cc4e7053037f5fb53f912bd377",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-imported-module.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e1055ac91880efaa826b8b58d16e7e7d4dc943bba590e1259ff60aaf3ce4d413",
+      "compiledSha256": "cc73213123e886c9f0bdbdf5d21aabd4ceebe35c0a3da3bd7b8eed70c3062e83",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-module.js",
+      "scenario": "default",
+      "contentsSha256": "212643cb69e8cf95a2bc43ff5fc0be657fd61537e49f9448cdec4e5f714d0b8c",
+      "compiledSha256": "0de54b5be8b9c9c4a25cf478b3a945c08c411f68b4185a48868f83e0324e5fbd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.asyncDispose-disposed-at-end-of-module.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9a8d7cea7625adc31f67eb122719a239014723bb143854c431651b1642b3c9cb",
+      "compiledSha256": "c5ca25a48f6729b98dc3cf6a2e17fe619e3fa3b0f094a91f37408f6b9dd45d3b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-asyncfunctionbody.js",
+      "scenario": "default",
+      "contentsSha256": "896976cabbf6bfddca7886acf4a4e0f9141ff141e7cfa50e5da370edd13bcb1f",
+      "compiledSha256": "94fd2bff2874fd9f20fd87f940f8f89635f6c33b9c140d49b9a6efa5f09d3eb8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-asyncfunctionbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "d508f3246f80b751a4ed0f277492f89387da91dbcc872a0aa9c420cd66c954db",
+      "compiledSha256": "0a2cb6657e660dbc06447b8c57dc553f4145d62815a9240f8c3e73cda19f4ca2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-asyncgeneratorbody.js",
+      "scenario": "default",
+      "contentsSha256": "b61625879391239ac844f5e5f7b13d9ceb5971954b24fadaf3e457c5c9474b06",
+      "compiledSha256": "709a3ea5b5cd8021cffc342bdb6a99e47cf6702abd9f2f7f85f01fd3f2deecf6",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-asyncgeneratorbody.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2359a5bb843234342ece78b0b7818e0aa42dc2943ad6ac3eeab48d8d99d6b596",
+      "compiledSha256": "10fc3b13ae5063c998d835face862b1ecf9017e98b0b5b2e7f4580a60efd9800",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-block.js",
+      "scenario": "default",
+      "contentsSha256": "e0133efbc5c17ade4da88953ce3da2adc09f4d18b010b93d6f18599fc798ac20",
+      "compiledSha256": "14067706763d05961f86971e5142103f875ef6103cde7c2aa4285d7b7cc32410",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-block.js",
+      "scenario": "strict mode",
+      "contentsSha256": "97f4e375ce422c3dd8970a96a4edcfb61094809a4f0b2e32a604b59fdd9b8bb1",
+      "compiledSha256": "d56176601132e5cd026ffe283197cd4efb12cae64a7417f07df82b77bd99cad7",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-each-iteration-of-forofstatement.js",
+      "scenario": "default",
+      "contentsSha256": "0e81bf352e9dbb98e386f23345348670bb2a4529fba7c1098469cda1064487f4",
+      "compiledSha256": "9f92c06f0efe9d999dc7d31e52d047e1008206975f74434c7369b3bde26bf0e9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-each-iteration-of-forofstatement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "71aea6a67cd30c5086c47085a9169e70854f691a382cef4b16fdaa0fe82888e6",
+      "compiledSha256": "b2fbd4fa823d48454a8458539498a4b12483d50ea228bb7632b06bfda078d298",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-forstatement.js",
+      "scenario": "default",
+      "contentsSha256": "547d13ed18e9a036c141d2528572c6b79e2647e5efaf536939ea9ee438b250ad",
+      "compiledSha256": "ca984faf10cdfd4e7b6c4a4c3562771cb475fa669e3b1e996818042f655981e2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-at-end-of-forstatement.js",
+      "scenario": "strict mode",
+      "contentsSha256": "577a037746aaa7481ba6ef7fcb0d41f30724e8d1c75fc7e2768016e63e09eb8a",
+      "compiledSha256": "435d86b3163d8ccb60f91327bbf3bea9effe23a8389e98e371d70ba555e9e565",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-if-subsequent-initializer-throws-in-forstatement-head.js",
+      "scenario": "default",
+      "contentsSha256": "1ea55e9e42a382fac0c39726c1f838440eb7a11eabed05fe48b7c35d14b12fdd",
+      "compiledSha256": "faf7c7e0dfbecda2601c50d2350e6c0b47388edd396e53ca501d1b609f63e2a5",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-if-subsequent-initializer-throws-in-forstatement-head.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1a1dd4bbc55ad5a7133a4cb4e3e68494cb53c2f1548b846998a24c0ad8dd72d0",
+      "compiledSha256": "852261486d40a1737951e65276710d3d51e121ba71be72938a583cdb0b834f57",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-if-subsequent-initializer-throws.js",
+      "scenario": "default",
+      "contentsSha256": "637f2556cab90922acfdca2a30e7ee56c80a91894cde79b42af1f5e56b1a588d",
+      "compiledSha256": "7b3e1b3ceee4001a8b31bf384f24f52e6b7170a33cc7cb463c7bfc5aa0e17083",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-called-if-subsequent-initializer-throws.js",
+      "scenario": "strict mode",
+      "contentsSha256": "9f4cb11d7dd503f347408f0d985189f1bac5ae5e1095ebe52e9abe323a781348",
+      "compiledSha256": "b35e63000ddc82d67f358a99083d9c901186c568327c458f72b44922cf9d2362",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-imported-module.js",
+      "scenario": "default",
+      "contentsSha256": "e15addbfb5b97d5a12bbfacf9628eb5d6dcb3f591d92a1f5091c032afb2304ea",
+      "compiledSha256": "19f03e1ea2c8c247353a726d7e872db2dad80480e460c9b5933dd54e43f8fc1d",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-imported-module.js",
+      "scenario": "strict mode",
+      "contentsSha256": "7de82d1c6aa21056266b0ac5fe77358216fb1825c7659f9ebec7db93b6ec2716",
+      "compiledSha256": "16fe3e98f45d712edbb86f31069a092daa848978513912ef2f66482d8377d827",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-module.js",
+      "scenario": "default",
+      "contentsSha256": "a40dc96ad009591ed25adfe2732353c7a65413a8edfec6d6547c97ca7451d7ae",
+      "compiledSha256": "9378ad981464c667d66cef1ea8a200668bc650c0681886753986192dabb774ca",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/initializer-Symbol.dispose-disposed-at-end-of-module.js",
+      "scenario": "strict mode",
+      "contentsSha256": "895140942ba6f20898b836526af5f77b57b9bbb3799567c32b13f6e44fb7a4ea",
+      "compiledSha256": "4d7871068ffeedfbc4c7f4559216ee446f9e82d1b941d2b056357c767ce6a039",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/multiple-resources-disposed-in-reverse-order.js",
+      "scenario": "default",
+      "contentsSha256": "8aaf24e22e89e01f52356359f669c2be57ced7fddd56b52e97eae247b26d5994",
+      "compiledSha256": "84eb70ccf699e0333e954f8fac48270cb9fa3c97422e6482246b0a8b8ef62446",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/multiple-resources-disposed-in-reverse-order.js",
+      "scenario": "strict mode",
+      "contentsSha256": "a92b1af3584f859673c44d200ffd08cf24707ee75d6599d8f4b8bfe4263fa4ad",
+      "compiledSha256": "eaadaf1acb56af2a0bfa4bf789b7157d48733c6b3a40a9e8a52868edb7af45c9",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/puts-initializer-on-top-of-disposableresourcestack-multiple-bindings.js",
+      "scenario": "default",
+      "contentsSha256": "5a42d48c0fd423c11af59c4e99a201b98c3317681ac01e2eaafca8337dbfd18e",
+      "compiledSha256": "8f7ba59853ce034a1396ec0d3e68e6f656bad45680f57ff69ff47d9b88abb750",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/puts-initializer-on-top-of-disposableresourcestack-multiple-bindings.js",
+      "scenario": "strict mode",
+      "contentsSha256": "55cdf8b817572f14263cef7416d1a0365135fa76958af5fe8840e7769a5587fa",
+      "compiledSha256": "dca7b2c619439ca4ccd474fe99fa11ead145f5caddac7c154a0f0b97a48d5e27",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/puts-initializer-on-top-of-disposableresourcestack-subsequent-usings.js",
+      "scenario": "default",
+      "contentsSha256": "04f8b39b59b06cb051d81fd51eda4b6dc81856eceedc97eef062045418ab58d0",
+      "compiledSha256": "53923838492973690908266a563127b3d73781de7a01962ae433b8ba7e87644e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/puts-initializer-on-top-of-disposableresourcestack-subsequent-usings.js",
+      "scenario": "strict mode",
+      "contentsSha256": "80725bfae97dce2db5fc6a18ab2045f5dfd29b7df399366674789b200e3bedc4",
+      "compiledSha256": "25525c3523a8157611af163c5ac6412dbe9825c696e87e183e118a5757bbaccd",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/redeclaration-error-from-within-strict-mode-function-await-using.js",
+      "scenario": "default",
+      "contentsSha256": "7ffc266de79611afe6156501059009e1c5f467f1298421598f025d963b2aaed6",
+      "compiledSha256": "0e705c848ae71d2f47c605866e153103be7ba36d56e875b3557dc690a076429c",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "{ name: 'SyntaxError', message: 'Variable f already declared' }",
+        "stdout": "",
+        "error": {
+          "name": "SyntaxError",
+          "message": "Variable f already declared",
+          "stack": [
+            {
+              "source": "{ name: 'SyntaxError', message: 'Variable f already declared' }",
+              "fileName": "SyntaxError",
+              "lineNumber": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.asyncDispose-getter.js",
+      "scenario": "default",
+      "contentsSha256": "378bbd49c72af79268731d027f05f052e72c1fde6e99d5bbd09ec0caec6f1433",
+      "compiledSha256": "d0520291bf651f4337563b1df355274ad6260ff2005596a403b6e55990482ce4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.asyncDispose-getter.js",
+      "scenario": "strict mode",
+      "contentsSha256": "2cd98feb3669b55cb9d899a6ed3e535156f23c24e4a4f62b7a661e8140695952",
+      "compiledSha256": "05ff02419ad4510a3d8d2deb0a3fb8245a52e3cef37b3e276d42843a219723ba",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.asyncDispose-method-called-with-correct-this.js",
+      "scenario": "default",
+      "contentsSha256": "ecfc73d7c21b8829ac693430a7b5bfe736301900de64c863da7bd99c3e3dc1a0",
+      "compiledSha256": "19b47b0c866272f9c21ce2012304901ede05561d09d6bdd89b01d17c4c365643",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.asyncDispose-method-called-with-correct-this.js",
+      "scenario": "strict mode",
+      "contentsSha256": "447fb3dabe5177a2c6e434f9557146f1998624257a23fe566ed7370bebd6c594",
+      "compiledSha256": "d81dec229c9e2c6c45b31a48fa72461a8fdbb40b539d690e8f59c4690f47bb53",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.asyncDispose-method-not-async.js",
+      "scenario": "default",
+      "contentsSha256": "e75d5492095d89c71b2507ccedee614cbe73b22bb28fcb8119f1e1e5fea4c327",
+      "compiledSha256": "e025ee1fa569dfc7ba99688b3592e7d06fd0b592192fd27a3dc7b79c178fff1f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.asyncDispose-method-not-async.js",
+      "scenario": "strict mode",
+      "contentsSha256": "4f7ce72a56363e0c94a521146ab3f502b1552656c916c7755c5eb3770d76d136",
+      "compiledSha256": "02d2fa42a6bd04c815acb836411991329aaed8d364e92aaa40a3bcd709720a93",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.dispose-getter.js",
+      "scenario": "default",
+      "contentsSha256": "77a4ada4bce64f758bd119a4d8fce706d6cf9f2dd275c926aed3edeccbef92cb",
+      "compiledSha256": "e0087921241636eb44e088b98df24adc36fba37ed2495e5dd8627025ca62ace7",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.dispose-getter.js",
+      "scenario": "strict mode",
+      "contentsSha256": "6e073693366242494aac4803be7bed3f2081bde9af4ad72cccc632d35a39f425",
+      "compiledSha256": "583d59ac1a28acd09abb7dcc4fd7af5f4c023ec4ab063e488db8888de58f1eea",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.dispose-method-called-with-correct-this.js",
+      "scenario": "default",
+      "contentsSha256": "c20e196b6912e3cd48355f081f976bf4e63e459f079315018e319a4779f307d7",
+      "compiledSha256": "96115a532d9d7d15301e52bbd6059aa5a6873b452e6a8aad636c1743c5fd6b23",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/Symbol.dispose-method-called-with-correct-this.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e967c8e304df7d0de7d52d345beb655cc537283cdea8aa5f908d98fa7baeb76b",
+      "compiledSha256": "774529544e933bca05fc289d4ead280492fad2b4fd4ccbf5b6d3a81c368efed4",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-error-as-is-if-only-one-error-during-disposal.js",
+      "scenario": "default",
+      "contentsSha256": "b146e59150e5f4fd3a2cc81fd99439cd97c2a18c7b72b8a3e74f672bde602ad5",
+      "compiledSha256": "1102e792b416d916175f7a9c37e6f2304e7a3cc00e0ec0bc97c0d9c99e209856",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-error-as-is-if-only-one-error-during-disposal.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1f2c910c6179084627697958921edc87dfc7f154d58fb9b75d6d7d380c8a6fc9",
+      "compiledSha256": "fb2361b6551ac0cf100a636e5ee43664de77863d8ff0c025617ce2bf3bee9fdc",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-missing-both-Symbol.asyncDispose-and-Symbol.dispose.js",
+      "scenario": "default",
+      "contentsSha256": "7a8874fd43e593e72b5da030a4ee0622792cf626b9865fc8a285a48fc03ed77c",
+      "compiledSha256": "8c1a9ac2ae19dbe9923bd20ef1f8dac8926317a75962fd7ae573a460057d8889",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-missing-both-Symbol.asyncDispose-and-Symbol.dispose.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e3d76287d623d5b515a040c50b0ccc931eecea4334c777f5df74fd2e37e6fa20",
+      "compiledSha256": "95fb931207984562244aad58756d8f3f6b36b9d2cd586f2cdc6a9f53029ee4d2",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-not-object.js",
+      "scenario": "default",
+      "contentsSha256": "a30c9af37ffb4e98b892b73e262139b0b18c50f1badc88480f191d13f3dfa4a5",
+      "compiledSha256": "6e1b37775b47c6c1fc3aad96954f8511b414c1e89af42da794888c3272c7b453",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-not-object.js",
+      "scenario": "strict mode",
+      "contentsSha256": "710e78591a38fb3c345e1c6eb22b0860997f7bad11cf2f3e5baf48a6587cfebb",
+      "compiledSha256": "c1309e47f2abe7496160a4c16adc37eb5d6c2ed7cc691c04cfcac2dc885ab2b1",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.asyncDispose-property-is-null.js",
+      "scenario": "default",
+      "contentsSha256": "a3e2ba473f504003401f30f9beeedad01d6cedf143e6e1ce7f35c68209fb4f44",
+      "compiledSha256": "9d7551e9771bd83fe7ac80b4d1c0b4fc4c6631a437dfc89040448d72bd457a01",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.asyncDispose-property-is-null.js",
+      "scenario": "strict mode",
+      "contentsSha256": "be27863dc907e3a8ddac0997a70121a449b7416fd824c076d35796363b5bf5dc",
+      "compiledSha256": "4321826f312cc4e15b378028639665d6acea7bd67f8a60f7c9af5ca9ace03a77",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.asyncDispose-property-is-undefined.js",
+      "scenario": "default",
+      "contentsSha256": "899ed0b436fb3f1714384abbc5fbb39c763dbd96d93aa81b922cf91091087acc",
+      "compiledSha256": "0308e9964a8792a1ee87d4c47cfec9f17c91f7c25a19bb01d22250185f496a93",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.asyncDispose-property-is-undefined.js",
+      "scenario": "strict mode",
+      "contentsSha256": "411791d3f9694d37f4a3aa41e9f2eb37aa2e9825586e2439daf05edad0d8e070",
+      "compiledSha256": "daf21d67b303e89a01af12f77399617aeb4198c8dfd477dedb78870da09cd833",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.asyncDispose-property-not-callable.js",
+      "scenario": "default",
+      "contentsSha256": "c6a9e45284c0e55f4ddfd65d7c7bd96aba44de8490963c0162e8a3958ce9eefc",
+      "compiledSha256": "12b71a74792e14cce582b57892f447ef6c53d6967822902cefd7a2247e3f81df",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.asyncDispose-property-not-callable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "e5d99939619d18024125ce15b11d7bc9fbcd49e622d5dc5caac44f1c5cbca798",
+      "compiledSha256": "36a2f0542c63aa3168cf31313fa038435384744500b0d214017280117c0c8ed8",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.dispose-property-is-null.js",
+      "scenario": "default",
+      "contentsSha256": "21628b077c31267cc7dc2986db5bf5c018924fdc3c4acc7992499b88231dc3fa",
+      "compiledSha256": "3e15139a7721023e48a242389a34b95eb5784edd6aa5ebd31beae13051aaa229",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.dispose-property-is-null.js",
+      "scenario": "strict mode",
+      "contentsSha256": "957658e1f08401f34351400433117554c805f2f6d5c3513f51d2c20299a7af90",
+      "compiledSha256": "376266883eba7cc1470c2024bb4dd1b0c3432ae51f66a98def731cc431dbc349",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.dispose-property-is-undefined.js",
+      "scenario": "default",
+      "contentsSha256": "d74f89f8f11af2507f4e64fe44c8c805c973b0e39e4649fcb25d791e81d95745",
+      "compiledSha256": "f1d2a6e7c52a728d0bace165fe340417eb70e5ce9dafe853ebe5056501be5c5e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.dispose-property-is-undefined.js",
+      "scenario": "strict mode",
+      "contentsSha256": "bd43492b441a071d6f453eb3422ca56f57ddf123c92b09b11f73b49c7093dc04",
+      "compiledSha256": "88504ac4156b8f6ea70bac85417b191f0091de2b3a2cfe400fee8fd660ba8e49",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.dispose-property-not-callable.js",
+      "scenario": "default",
+      "contentsSha256": "19ed911fd0f44203353e25e317c20c3528bf628c66380ffc49bcf7393e521225",
+      "compiledSha256": "35d1fce95fc75f6a3d5ce9576de8896bb5c8c3cee03b39a01a8ddc3840699d09",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-if-initializer-Symbol.dispose-property-not-callable.js",
+      "scenario": "strict mode",
+      "contentsSha256": "b5d3f87cffc124631fad9d19adbc645a3f46bf8818c5b796d9de9a07747fc5ed",
+      "compiledSha256": "63a2b2db3fc78605eabe0d4e880eb50653c192470421e7029d7cc31c797d690f",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-suppressederror-if-multiple-errors-during-disposal.js",
+      "scenario": "default",
+      "contentsSha256": "ecee1535f117b91c77372140bd4b9b1cf85a1c8af8fd4201c88a907bd4c1e198",
+      "compiledSha256": "06e1fee01ac8fb82211aa8fcc7c123ab2fda3acc2bf486d8c674a77bba391a3b",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    },
+    {
+      "file": ".test262/test/language/statements/await-using/throws-suppressederror-if-multiple-errors-during-disposal.js",
+      "scenario": "strict mode",
+      "contentsSha256": "1d22748c2912f2eb3c14fd67e54f62d3e06181a4659da775460003d5fff4e9ec",
+      "compiledSha256": "29754ffd88c99a63260d82461129c88b65bf89427cc85caad5049ba8bc72d99e",
+      "result": {
+        "pass": true
+      },
+      "rawResult": {
+        "stderr": "",
+        "stdout": "Test262:AsyncTestComplete\n",
+        "error": null
+      }
+    }
+  ]
+}

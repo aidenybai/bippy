@@ -1,0 +1,107 @@
+{
+  "scope": "engine262-promise-reaction-and-job-roots-v1",
+  "symbolicReactComplete": false,
+  "completePromiseRoots": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "122d99522fb6ac0ae431e355de57a8614fa5bb90042b0218cb59be8bafd1c38a",
+  "implementation": [
+    "Capability and reaction mark methods",
+    "Reaction and assimilation jobs declare existing Value references",
+    "Resolve/reject builtins share and clear a HostCapturedValues list",
+    "No new queue, heap walker, native capture discovery, or branch owner"
+  ],
+  "regressions": {
+    "initialCases": 16,
+    "initialPrepatchFailures": 15,
+    "initialPassingUnreachableCycle": 1,
+    "finalCases": 19,
+    "independentV8PendingHandlerObservations": 4
+  },
+  "units": {
+    "passed": 1247,
+    "total": 1247,
+    "files": 33
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "total": 2061,
+      "passed": 2011,
+      "exitCode": 1,
+      "uncompressedSha256": "3e36b1df7698a874e47f816f5185e030e23c087005f3650ba295bca2316138e2",
+      "compressedSha256": "1645c4bec934f64de615227bd4bac18d2011c47322c9f969b98612bedeae6246"
+    },
+    {
+      "filename": "published.json.gz",
+      "total": 2061,
+      "passed": 2011,
+      "exitCode": 1,
+      "uncompressedSha256": "79b6ee7cfa3e4448439e2bbe4665c989aadcd49000d510235fd33031a77b6de0",
+      "compressedSha256": "8832c8843f93276df7e1968d767b1b29c8e22d08390e08479fee4663c2e568ad"
+    }
+  ],
+  "selection": [
+    ".test262/test/built-ins/Promise/**/*.js",
+    ".test262/test/built-ins/WeakMap/**/*.js",
+    ".test262/test/built-ins/WeakSet/**/*.js",
+    ".test262/test/built-ins/WeakRef/**/*.js",
+    ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "identicalFailureDiagnostics": true,
+  "failureCount": 50,
+  "fixedPendingReaction": {
+    "name": "pending-reaction",
+    "source": "var reference, seen, fulfill; var promise = new Promise(resolve => { fulfill = resolve; }); (() => { const target = { value: 7 }; reference = new WeakRef(target); promise.then(() => { seen = target.value; }); })();",
+    "drainBeforeGc": false,
+    "nativeResume": "await promise",
+    "observation": "JSON.stringify([reference.deref() !== undefined, seen])",
+    "engine": [true, 7],
+    "native": [true, 7],
+    "matches": true
+  },
+  "remainingPromiseAllAccumulator": {
+    "name": "promise-all-accumulator",
+    "source": "var reference, seen, fulfill, aggregate; var promise = new Promise(resolve => { fulfill = resolve; }); (() => { const target = { value: 7 }; reference = new WeakRef(target); aggregate = Promise.all([target, promise]); })(); aggregate.then(values => { seen = values[0].value; });",
+    "drainBeforeGc": true,
+    "nativeResume": "await aggregate",
+    "observation": "JSON.stringify([reference.deref() !== undefined, seen])",
+    "engine": [false, 7],
+    "native": [true, 7],
+    "matches": false
+  },
+  "remainingExternalDriver": {
+    "source": "var reference, retained; function create(){const target={value:7};reference=new WeakRef(target);return target;} function pause(){debugger;} retained=[create(),pause()];",
+    "observation": "JSON.stringify([reference.deref() !== undefined, retained[0].value])",
+    "engine": [false, 7],
+    "usesAgentEvaluate": false,
+    "fixed": false
+  },
+  "boundaries": [
+    "Builtin native captures including combinators/finally remain incomplete",
+    "Module/diagnostic/saved-state roots and whole-state ownership remain incomplete",
+    "No guarded React reports or shared-prefix React forks"
+  ],
+  "retainedResearchFailure": "Shared research clone exceeded Git alternate-object nesting depth; archived the existing baseline into a fresh temporary repository instead. No project source change resulted.",
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "all CI jobs pass at 4c8b2670: 1247 units and 74/74 smoke; E2E and publish also pass; see ci.json",
+  "files": {
+    "engine/patches/promise-roots.patch": "e4be1c3438f35057a7ff3de7bce7ee67fb8273a39d7438fb1179cc4ecd454d5b",
+    "engine/scripts/build.ts": "35d8e1df95b516ab088acd21714d0373192ef4252dd12810efe4156f429e1b4d",
+    "tests/gc-promises.test.ts": "bbecfb47ba153574e11a825e5ba1bca092fd164b2b599b3f97d74b71c4ecb167",
+    "tests/gc-host-jobs.test.ts": "1c477635e092043a0b539dcceb50adb253cf103989bddf68d4cb8f9212165c3d",
+    "tests/helpers/concrete-gc.ts": "217f6532ee1fbd163f80f2f219f110f0c051f6943e08b7f72ddaef6e64198af5",
+    "tests/helpers/native-gc.ts": "32f5ca658f522b9b7b7dc29cad02fccfcb21dcee28e0a9eb0b97e094a4175d99",
+    "docs/engine-state-inventory.md": "2e760a2d1d3a703d72f68f0675978f38dec406dadba4f24f55e3a5664adcdffc"
+  }
+}

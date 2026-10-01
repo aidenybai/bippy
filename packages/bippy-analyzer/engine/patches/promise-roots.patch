@@ -1,0 +1,171 @@
+diff --git a/src/abstract-ops/promise-operations.mts b/src/abstract-ops/promise-operations.mts
+index 513fa5d..e27edf9 100644
+--- a/src/abstract-ops/promise-operations.mts
++++ b/src/abstract-ops/promise-operations.mts
+@@ -38,6 +38,7 @@ import {
+   type ValueEvaluator, type JobCallbackRecord, type PromiseObject,
+   type ValueCompletion,
+   type FunctionObject,
++  type GCMarker,
+ } from '#self';
+ 
+ // This file covers abstract operations defined in
+@@ -58,7 +59,7 @@ export interface PromiseAllRejectElementFunctionObject extends BuiltinFunctionOb
+ 
+ /** https://tc39.es/ecma262/#sec-promisecapability-records */
+ export class PromiseCapabilityRecord {
+-  constructor(value: PromiseCapabilityRecord) {
++  constructor(value: Omit<PromiseCapabilityRecord, 'mark'>) {
+     this.Promise = value.Promise;
+     this.Resolve = value.Resolve;
+     this.Reject = value.Reject;
+@@ -69,6 +70,12 @@ export class PromiseCapabilityRecord {
+   readonly Resolve: FunctionObject;
+ 
+   readonly Reject: FunctionObject;
++
++  mark = (marker: GCMarker): void => {
++    marker(this.Promise);
++    marker(this.Resolve);
++    marker(this.Reject);
++  };
+ }
+ 
+ /** https://tc39.es/ecma262/#sec-promisereaction-records */
+@@ -79,7 +86,7 @@ export class PromiseReactionRecord {
+ 
+   readonly Handler: JobCallbackRecord | undefined;
+ 
+-  constructor(O: PromiseReactionRecord) {
++  constructor(O: Omit<PromiseReactionRecord, 'mark'>) {
+     Assert(O.Capability instanceof PromiseCapabilityRecord
+         || O.Capability === undefined);
+     Assert(O.Type === 'Fulfill' || O.Type === 'Reject');
+@@ -89,11 +96,17 @@ export class PromiseReactionRecord {
+     this.Type = O.Type;
+     this.Handler = O.Handler;
+   }
++
++  mark = (marker: GCMarker): void => {
++    marker(this.Capability);
++    marker(this.Handler?.Callback);
++  };
+ }
+ 
+ /** https://tc39.es/ecma262/#sec-createresolvingfunctions */
+ export function CreateResolvingFunctions(toResolve: PromiseObject) {
+   const promiseOrEmpty: { Value: PromiseObject | undefined } = { Value: toResolve };
++  const capturedValues: Value[] = [toResolve];
+   // 2. Let resolveSteps be the algorithm steps defined in Promise Resolve Functions.
+   const resolveSteps = function* PromiseResolveFunctions([resolution = Value.undefined]: Arguments): ValueEvaluator {
+     if (!promiseOrEmpty.Value) {
+@@ -102,6 +115,7 @@ export function CreateResolvingFunctions(toResolve: PromiseObject) {
+     const promise = promiseOrEmpty.Value;
+     Q(surroundingAgent.debugger_tryTouchDuringPreview(promise));
+     promiseOrEmpty.Value = undefined;
++    capturedValues.length = 0;
+     // 7. If SameValue(resolution, promise) is true, then
+     if (SameValue(resolution, promise)) {
+       // a. Let selfResolutionError be a newly created TypeError object.
+@@ -140,12 +154,13 @@ export function CreateResolvingFunctions(toResolve: PromiseObject) {
+     // 14. Let job be NewPromiseResolveThenableJob(promise, resolution, thenJobCallback).
+     const job = NewPromiseResolveThenableJob(promise, resolution, thenJobCallback);
+     // 15. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+-    HostEnqueuePromiseJob(job.Job, job.Realm);
++    HostEnqueuePromiseJob(job.Job, job.Realm, job.CapturedValues);
+     // 16. Return undefined.
+     return Value.undefined;
+   };
+   // 4. Let resolve be CreateBuiltinFunction(resolveSteps, 1, "", « »).
+-  const resolve = CreateBuiltinFunction(resolveSteps, 1, Value(''), []);
++  const resolve = CreateBuiltinFunction(resolveSteps, 1, Value(''), ['HostCapturedValues']);
++  resolve.HostCapturedValues = capturedValues;
+   // 7. Let rejectSteps be the algorithm steps defined in Promise Reject Functions.
+   const rejectSteps = function PromiseRejectFunctions([reason = Value.undefined]: Arguments): ValueCompletion<UndefinedValue> {
+     if (!promiseOrEmpty.Value) {
+@@ -154,11 +169,13 @@ export function CreateResolvingFunctions(toResolve: PromiseObject) {
+     const promise = promiseOrEmpty.Value;
+     Q(surroundingAgent.debugger_tryTouchDuringPreview(promise));
+     promiseOrEmpty.Value = undefined;
++    capturedValues.length = 0;
+     RejectPromise(promise, reason);
+     return Value.undefined;
+   };
+   // 9. Let reject be CreateBuiltinFunction(rejectSteps, 1, "", « »).
+-  const reject = CreateBuiltinFunction(rejectSteps, 1, Value(''), []);
++  const reject = CreateBuiltinFunction(rejectSteps, 1, Value(''), ['HostCapturedValues']);
++  reject.HostCapturedValues = capturedValues;
+   // 12. Return the Record { [[Resolve]]: resolve, [[Reject]]: reject }.
+   return {
+     Resolve: resolve,
+@@ -195,7 +212,7 @@ function NewPromiseResolveThenableJob(promiseToResolve: PromiseObject, thenable:
+   }
+   // 5. NOTE: _thenRealm_ is never *null*. When _then_.[[Callback]] is a revoked Proxy and no code runs, _thenRealm_ is used to create error objects.
+   // 6. Return { [[Job]]: job, [[Realm]]: thenRealm }.
+-  return { Job: job, Realm: thenRealm };
++  return { Job: job, Realm: thenRealm, CapturedValues: [promiseToResolve, thenable, then.Callback] };
+ }
+ 
+ /** https://tc39.es/ecma262/#sec-fulfillpromise */
+@@ -273,7 +290,7 @@ function TriggerPromiseReactions(reactions: readonly PromiseReactionRecord[], ar
+     // a. Let job be NewPromiseReactionJob(reaction, argument).
+     const job = NewPromiseReactionJob(reaction, argument);
+     // b. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+-    HostEnqueuePromiseJob(job.Job, job.Realm);
++    HostEnqueuePromiseJob(job.Job, job.Realm, job.CapturedValues);
+   });
+   // 2. Return undefined.
+   return Value.undefined;
+@@ -359,7 +376,12 @@ function NewPromiseReactionJob(reaction: PromiseReactionRecord, argument: Value)
+     //    is a revoked Proxy and no ECMAScript code runs, _handlerRealm_ is used to create error objects.
+   }
+   // 4. Return { [[Job]]: job, [[Realm]]: handlerRealm }.
+-  return { Job: job, Realm: handlerRealm };
++  const capturedValues = [argument];
++  if (reaction.Handler) capturedValues.push(reaction.Handler.Callback);
++  if (reaction.Capability) {
++    capturedValues.push(reaction.Capability.Promise, reaction.Capability.Resolve, reaction.Capability.Reject);
++  }
++  return { Job: job, Realm: handlerRealm, CapturedValues: capturedValues };
+ }
+ 
+ /** https://tc39.es/ecma262/#sec-performpromisethen */
+@@ -416,7 +438,7 @@ export function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, o
+     // b. Let fulfillJob be NewPromiseReactionJob(fulfillReaction, value).
+     const fulfillJob = NewPromiseReactionJob(fulfillReaction, value);
+     // c. Perform HostEnqueuePromiseJob(fulfillJob.[[Job]], fulfillJob.[[Realm]]).
+-    HostEnqueuePromiseJob(fulfillJob.Job, fulfillJob.Realm);
++    HostEnqueuePromiseJob(fulfillJob.Job, fulfillJob.Realm, fulfillJob.CapturedValues);
+   } else {
+     // a. Assert: The value of promise.[[PromiseState]] is rejected.
+     Assert(promise.PromiseState === 'rejected');
+@@ -429,7 +451,7 @@ export function PerformPromiseThen(promise: PromiseObject, onFulfilled: Value, o
+     // d. Let rejectJob be NewPromiseReactionJob(rejectReaction, reason).
+     const rejectJob = NewPromiseReactionJob(rejectReaction, reason);
+     // e. Perform HostEnqueuePromiseJob(rejectJob.[[Job]], rejectJob.[[Realm]]).
+-    HostEnqueuePromiseJob(rejectJob.Job, rejectJob.Realm);
++    HostEnqueuePromiseJob(rejectJob.Job, rejectJob.Realm, rejectJob.CapturedValues);
+   }
+   // 12. Set promise.[[PromiseIsHandled]] to true.
+   promise.PromiseIsHandled = true;
+diff --git a/src/execution-context/Job.mts b/src/execution-context/Job.mts
+index 9d60f23..3ce15aa 100644
+--- a/src/execution-context/Job.mts
++++ b/src/execution-context/Job.mts
+@@ -47,7 +47,7 @@ export function* HostCallJobCallback(jobCallback: JobCallbackRecord, V: Value, a
+ // Atomics: HostEnqueueGenericJob
+ 
+ /** https://tc39.es/ecma262/#sec-hostenqueuepromisejob */
+-export function HostEnqueuePromiseJob(job: () => PlainEvaluator, realm: Realm | null) {
++export function HostEnqueuePromiseJob(job: () => PlainEvaluator, realm: Realm | null, capturedValues?: readonly Value[]) {
+   if (surroundingAgent.debugger_isPreviewing) {
+     return;
+   }
+@@ -56,6 +56,7 @@ export function HostEnqueuePromiseJob(job: () => PlainEvaluator, realm: Realm |
+   const scriptOrModule = GetActiveScriptOrModule();
+   surroundingAgent.jobQueue.enqueuePromiseJob({
+     queueName: 'PromiseJobs',
++    capturedValues,
+     job,
+     callerRealm,
+     callerScriptOrModule: scriptOrModule,

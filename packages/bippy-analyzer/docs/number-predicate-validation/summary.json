@@ -1,0 +1,172 @@
+{
+  "scope": "engine262-number-same-value-predicates-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "03d31134ed7db229ae314f26464f07ea2f74a536c5f1a0929ba2fa20c561353c",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "engineBoundary": "Object.is Number operands only; SameValue/SameValueZero/IsStrictlyEqual host-Boolean helpers are unchanged",
+  "domain": {
+    "defaultMaxPredicates": 10000,
+    "budget": "Distinct recorded predicates for the callback lifetime; no branch reset",
+    "correlation": "Same operand identities, symmetric operands, canonical concrete Number strings",
+    "reflexivity": "Same owned Number identity returns true",
+    "feasibilitySolver": false,
+    "structuralExpressionInterning": false
+  },
+  "units": {
+    "passed": 1182,
+    "total": 1182,
+    "files": 29,
+    "addedPredicateCases": 46,
+    "addedReactCases": 2,
+    "addedReuseAuditCases": 2
+  },
+  "specialization": {
+    "expressions": 12,
+    "singleInputWitnesses": 17,
+    "twoInputWitnessPairs": 289,
+    "observationsPerReference": 493,
+    "references": ["native V8", "published engine262"]
+  },
+  "checkpointFixture": {
+    "orders": 2,
+    "outcomesPerRun": 2,
+    "prefixExecutions": 1,
+    "repeatedPredicateDecisionsPerOutcome": 1,
+    "numericWitnesses": 17,
+    "programObservationsPerReference": 34,
+    "bothGuardsHaveWitnesses": true,
+    "owner": "Selected object, global declarative bindings, context stack; not a general owner"
+  },
+  "actualReact": {
+    "react": "19.3.0",
+    "renderer": "19.3.0",
+    "symbolicRuns": 2,
+    "nativeSpecializations": 10,
+    "numericInput": "Opaque Number amount, never a concrete witness",
+    "stateOutcomes": ["amount", "amount + 1"],
+    "observations": [
+      "renders",
+      "complete Test Renderer JSON",
+      "layout commit/cleanup events",
+      "unmount"
+    ],
+    "constraints": [
+      "Separate runtime per choice, no React prefix-sharing or branch rollback",
+      "Manual low-level ScriptEvaluation driver, not a public symbolic runtime",
+      "UI displays concrete render count, not unknown numeric text",
+      "React performs hooks, state updates, equality consumers, reconciliation, and effects"
+    ]
+  },
+  "engineReuseAudit": {
+    "publishedEngineTests": 2,
+    "contextCopy": "Shares native generator continuation and environment references; not an independent branch",
+    "preview": "Rejects existing-object writes rather than rewinding prior state",
+    "controlExtensionLines": 640,
+    "controlBuildHelperLines": 520,
+    "finiteScalarAdapterLines": 549,
+    "limits": "Counts exclude general build tools, patches, tests, and third-party implementations; no new dispatch or owner implementation added",
+    "files": {
+      "engine/extensions/execution-machine.mts": {
+        "sha256": "24e529cb30bb4cd62f35f563097c0f143a50560bd8191f1dfb63fae642210d6b",
+        "lines": 592
+      },
+      "engine/extensions/native-captures.mts": {
+        "sha256": "e7fff23089ed8b9c46f47a7f716ea73ae1322c520bb872dbf2e858da8e80d98f",
+        "lines": 48
+      },
+      "engine/scripts/lower-generators.ts": {
+        "sha256": "129a3a0e0d7141c5b8c625fb7a9c51a64782fa5e9d78114b5eec6b1e51d328c4",
+        "lines": 158
+      },
+      "engine/scripts/capture-manifest.ts": {
+        "sha256": "aaddcec4bfc31e2e9d174c9059e8742b01b8ac073485420c04b0d2c4aed1b27f",
+        "lines": 131
+      },
+      "engine/scripts/native-captures.ts": {
+        "sha256": "91b1b9701414750c8eae0a339422c8ab4f8d57be86cf8aa440eb381c8b93b86d",
+        "lines": 187
+      },
+      "engine/scripts/lower-generator-loops.ts": {
+        "sha256": "681b28794feda543637dbc41ad32ecb17a270ec3f9d86e26982fbbaf4bb3cccd",
+        "lines": 22
+      },
+      "engine/scripts/control-paths.ts": {
+        "sha256": "cc6444159587b2727dd2083557ff69b02a42dfe9061554a8e17838359de83a7a",
+        "lines": 2
+      },
+      "engine/scripts/get-input-source-map.ts": {
+        "sha256": "238e9380d3c82f47f98922de069eee678d6fac1e20c4ee1b259cab643a7711db",
+        "lines": 20
+      },
+      "src/symbolic/evaluate.ts": {
+        "sha256": "3a1785b7ab024c2575c8de4acfeeb7ada3875a4816766e6fb0885338a7144fa8",
+        "lines": 343
+      },
+      "src/symbolic/guards.ts": {
+        "sha256": "94589c30b07aa595c7aef49709795692cfa7ec1138c6c6ced841bb843ed38799",
+        "lines": 67
+      },
+      "src/symbolic/scalar-operation.ts": {
+        "sha256": "85b5066da1c6840a86110af3bda6140db7862d1bb970b305622725c3b5e1e22b",
+        "lines": 94
+      },
+      "src/symbolic/validate-expression.ts": {
+        "sha256": "81648dd5f252bb045d92334cc2e71f8109d485c29b05ef46117e1cab93c946fd",
+        "lines": 45
+      }
+    }
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 42,
+      "passed": 42,
+      "exitCode": 0
+    },
+    {
+      "name": "published",
+      "total": 42,
+      "passed": 42,
+      "exitCode": 0
+    }
+  ],
+  "test262Selection": [".test262/test/built-ins/Object/is/*.js"],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "workers": 2,
+  "test262TimeoutMilliseconds": 10000,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "failed at 0dbcb0e9: 1182 units pass, smoke 72/74; see ci-failure.json",
+  "rejectedChecks": [
+    "A negated identity assertion attempted to inspect an opaque Boolean payload. Compare native identity as a Boolean instead; the retained failure is test formatting, not signed-zero cache equivalence.",
+    "React Test Renderer runtime exports version but its installed type declaration does not. The fixture now uses an in-property check, matching the existing fixture pattern."
+  ],
+  "boundaries": [
+    "No general engine-state owner or guarded React report",
+    "No complete suspended-control GC roots",
+    "No general numeric/Boolean feasibility solver",
+    "No symbolic strings, repeated-state families, or integrated demo"
+  ],
+  "files": {
+    "engine/patches/number-predicates.patch": "0f77ef4334789551cb55d55a45e59f7c399c281e668fe8b3827f1b18c3518f99",
+    "engine/scripts/build.ts": "45a6679dc8e18eb4dc6dca5b263b8bfda8f97b81ee58480b296e555d4cfdb9cf",
+    "src/index.ts": "9b5af22cba6c4cf280fb67c860f5f150b5cb8409956776e14717588fa4248c19",
+    "src/symbolic/numeric-domain.ts": "15b7dcb1b50446690bd7f3d418a707b9380394b462fbdab7b720b3e343f82b76",
+    "tests/number-predicates.test.ts": "284c2e51e2ef4fcc751a2400c610cd4020f4233ccdd920bbfe6eeec23d9bc7f1",
+    "tests/numeric-domain.test.ts": "9cbb21c2460afd0249d3b7780ec918b5b65b0fb5e585e04def6e1cce15594fce",
+    "tests/numeric-react.test.ts": "a57cace8207573a9faf5da6b2277c94f2c5a453108439404a31056939b868dee",
+    "tests/fixtures/numeric-react.tsx": "62893df5eee21a8fd5d0e79b2dab40f31f919aee04ce6cb7eb640b9d38a2d98c",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17",
+    "tests/helpers/numeric-expression.ts": "df1b5f26fcdce2218bdba7c6ef45e3f98f42dec4af0ea8e9c8addaea1fd010f8",
+    "tests/helpers/native-runtime.ts": "2e47ac8ee5a136fe23758572d1f84b290ed124c7bf60ac3e0bb919919c7cefb0",
+    "tests/helpers/build-script-fixture.ts": "711b4a40cbe84ba8285e450876a6dc85253d41567d8a5c52d36397541ad8357a",
+    "tests/engine-reuse.test.ts": "15383a119257829a9f914e46880c579a427f3fd4aa7e0ba0f929af3929da63cc"
+  }
+}

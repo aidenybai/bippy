@@ -1,0 +1,78 @@
+{
+  "initial": [
+    {
+      "name": "generatorTdz",
+      "source": "function* run() {let failure; try {later;} catch(error) {failure = error.name;} const later = 7; yield [failure, later];} const result = run().next().value;",
+      "native": ["ReferenceError", 7],
+      "lowered": [null, 7]
+    },
+    {
+      "name": "staticVar",
+      "source": "function* run() {let value = 0; for(let index = 0; index < 1; index++) {(() => index)(); class Reader {static {var value = 7;}}} yield value;} const result = run().next().value;",
+      "native": 0,
+      "lowered": 7
+    }
+  ],
+  "generatorGapsBefore": [
+    {
+      "name": "generatorClass",
+      "source": "function* run() {class Reader {} yield Reader; return Reader;} const iterator = run(); const first = iterator.next().value; let error, same; try {same = iterator.next().value === first;} catch(caught) {error = caught.name;} const result = [typeof first, error, same];",
+      "native": ["function", null, true],
+      "lowered": ["function", "ReferenceError", null]
+    },
+    {
+      "name": "blockFunction",
+      "source": "function* run() {\"use strict\"; function read() {return 1;} {function read() {return 2;}} yield read();} const result = run().next().value;",
+      "native": 1,
+      "lowered": 2
+    },
+    {
+      "name": "generatorTdz",
+      "source": "function* run() {let failure; try {later;} catch(error) {failure = error.name;} const later = 7; yield [failure, later];} const result = run().next().value;",
+      "native": ["ReferenceError", 7],
+      "lowered": [null, 7]
+    },
+    {
+      "name": "staticVar",
+      "source": "function* run() {let value = 0; for(let index = 0; index < 1; index++) {(() => index)(); class Reader {static {var value = 7;}}} yield value;} const result = run().next().value;",
+      "native": 0,
+      "lowered": {
+        "failure": "/Users/aidenybai/Developer/bippy-engine262-symbolic/control-fixture.mjs: Generator lowering cannot preserve declarations in nested native methods or static blocks"
+      }
+    }
+  ],
+  "final": [
+    {
+      "name": "generatorClass",
+      "source": "function* run() {class Reader {} yield Reader; return Reader;} const iterator = run(); const first = iterator.next().value; let error, same; try {same = iterator.next().value === first;} catch(caught) {error = caught.name;} const result = [typeof first, error, same];",
+      "native": ["function", null, true],
+      "lowered": {
+        "failure": "/Users/aidenybai/Developer/bippy-engine262-symbolic/control-fixture.mjs: Generator-local class declarations are unsupported by control lowering"
+      }
+    },
+    {
+      "name": "blockFunction",
+      "source": "function* run() {\"use strict\"; function read() {return 1;} {function read() {return 2;}} yield read();} const result = run().next().value;",
+      "native": 1,
+      "lowered": {
+        "failure": "/Users/aidenybai/Developer/bippy-engine262-symbolic/control-fixture.mjs: Generator block-scoped function declarations are unsupported by control lowering"
+      }
+    },
+    {
+      "name": "generatorTdz",
+      "source": "function* run() {let failure; try {later;} catch(error) {failure = error.name;} const later = 7; yield [failure, later];} const result = run().next().value;",
+      "native": ["ReferenceError", 7],
+      "lowered": [null, 7]
+    },
+    {
+      "name": "staticVar",
+      "source": "function* run() {let value = 0; for(let index = 0; index < 1; index++) {(() => index)(); class Reader {static {var value = 7;}}} yield value;} const result = run().next().value;",
+      "native": 0,
+      "lowered": {
+        "failure": "/Users/aidenybai/Developer/bippy-engine262-symbolic/control-fixture.mjs: Generator-local class declarations are unsupported by control lowering"
+      }
+    }
+  ],
+  "driver": "import { runInNewContext } from 'node:vm';\nimport { evaluateLowered } from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/tests/helpers/control-fixture.ts';\nconst programs = {\n  generatorClass: 'function* run() {class Reader {} yield Reader; return Reader;} const iterator = run(); const first = iterator.next().value; let error, same; try {same = iterator.next().value === first;} catch(caught) {error = caught.name;} const result = [typeof first, error, same];',\n  blockFunction: 'function* run() {\"use strict\"; function read() {return 1;} {function read() {return 2;}} yield read();} const result = run().next().value;',\n  generatorTdz: 'function* run() {let failure; try {later;} catch(error) {failure = error.name;} const later = 7; yield [failure, later];} const result = run().next().value;',\n  staticVar: 'function* run() {let value = 0; for(let index = 0; index < 1; index++) {(() => index)(); class Reader {static {var value = 7;}}} yield value;} const result = run().next().value;',\n};\nconst reports = [];\nfor(const [name, source] of Object.entries(programs)) {\n  let lowered;\n  try {lowered = await evaluateLowered(source);} catch(error) {lowered = {failure: error instanceof Error ? error.message : String(error)};}\n  reports.push({name,source,native:runInNewContext(`${source}; result`),lowered});\n}\nconsole.log(JSON.stringify(reports,null,2));\n",
+  "encoding": "JSON null in arrays represents observed undefined here, not a guest null value."
+}

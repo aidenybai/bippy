@@ -1,0 +1,82 @@
+{
+  "scope": "engine262-additive-number-domain-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "9bbd96219ffde3001ccbea863da4f18d4f87e56a7c5ceb131ac292485b5870d6",
+  "units": {
+    "passed": 985,
+    "total": 985,
+    "files": 23,
+    "addedNumericDomainCases": 48
+  },
+  "nativeSpecializations": {
+    "expressions": 17,
+    "witnessesPerExpression": 23,
+    "total": 391
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74,
+    "exitCode": 0
+  },
+  "historical": {
+    "passed": 301,
+    "total": 306,
+    "exitCode": 1
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 438,
+      "passed": 438,
+      "exitCode": 0
+    },
+    {
+      "name": "published",
+      "total": 438,
+      "passed": 438,
+      "exitCode": 0
+    }
+  ],
+  "numericTest262Selection": [
+    ".test262/test/language/expressions/addition/*.js",
+    ".test262/test/language/expressions/subtraction/*.js",
+    ".test262/test/language/expressions/unary-minus/*.js",
+    ".test262/test/built-ins/Number/*.js"
+  ],
+  "identicalNumericTest262InputCompiledHashesAndVerdicts": true,
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "benchmark": {
+    "node": "v26.4.0",
+    "engineSha256": "9bbd96219ffde3001ccbea863da4f18d4f87e56a7c5ceb131ac292485b5870d6",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3561.256458, 3547.7005830000003, 3570.153791999999],
+    "median": 3561.256458
+  },
+  "benchmarkClaim": "Three sequential local samples only; no controlled performance improvement claim.",
+  "linuxConfirmation": "3274e013 passes 985 units but fails the unchanged smoke at 72/74; see ci-failure.json",
+  "initialFailures": "Wrong fixture completion type failed TypeScript. Unsupported host errors left engine execution contexts active, so normal top-context cleanup masked the intended errors. The corrected fixture discards its owned Agent rather than resuming it. An initial declare-only Number field changed inherited-setter behavior; a retained before test failed. Keeping the original class field with a definite-assignment assertion fixes it.",
+  "boundaries": [
+    "Addition/subtraction/unary negation only",
+    "No unknown decisions, Boolean combination, numeric comparisons, string domain, guarded React output, or whole-state owner",
+    "Host failures require discarding the Agent",
+    "DAG serialization and concrete execution are not bounded by domain budgets",
+    "Suspended-control GC remains incomplete"
+  ],
+  "reactReference": {
+    "revision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+    "file": "packages/react-reconciler/src/ReactFiberHooks.js",
+    "operations": ["basicStateReducer", "updateReducerImpl"],
+    "remainingBlocker": "Object.is state comparisons require further symbolic semantics."
+  },
+  "files": {
+    "engine/patches/abstract-number.patch": "132fd2559431b6d2bb3c1674fd4c86ca8dee3fe54cd43a446943bd43147e7e55",
+    "engine/scripts/build.ts": "ef4cc0c912846e830f98f5730488f1ec160e72d4b8317c2ab6e13949e23fecab",
+    "src/symbolic/numeric-domain.ts": "d652d38f05d3e16e93889100daf9e734bcff030871ea5a185fa06b0b6729113e",
+    "src/index.ts": "ba7dbd9e858c891e8588d2cbfc0005d918275f71a81c8b5d70e67b3ef044c793",
+    "tests/numeric-domain.test.ts": "9430281bd8143e28e4489ec7cc89f3772d3d322ea7f810dbaee4c4c6f154c245"
+  }
+}

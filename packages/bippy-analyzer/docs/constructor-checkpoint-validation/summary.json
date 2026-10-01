@@ -1,0 +1,144 @@
+{
+  "scope": "engine262-selected-constructor-tracking-v1",
+  "symbolicReactComplete": false,
+  "generalStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "624b460e0ced4b1062a490812a0283d2e0bd6d7de690f9487626cc2760ad39db",
+  "implementation": [
+    "Restore original selected constructor tracking lists and ordered references",
+    "Preflight list identity, capture array shape and same-Agent guest constructor references",
+    "Mark live and saved constructor references through existing collector hooks",
+    "Retain ordinary-only and closed-data rejection of constructor tracking"
+  ],
+  "regressions": {
+    "initialCases": 27,
+    "initialFailures": 24,
+    "initialExistingRejections": 3,
+    "finalConstructorCases": 30,
+    "nativePropertyBranchObservations": 28,
+    "nativePropertyBaselines": 14,
+    "nativeAgentBranches": 4,
+    "nativeReactSequencesPreserved": 10,
+    "garbageCollection": "Engine constructor metadata root invariants, not native V8 constructor WeakRef liveness parity"
+  },
+  "units": {
+    "passed": 1466,
+    "total": 1466,
+    "files": 45
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "c0e442436c4ede3a2969242bd2d9eb332af3f47310449257e5825e9ffdd78e7e",
+      "compressedSha256": "4be7c8b5391aab7e6d53a5af34799387f137d7d7675e09179c1b047de2e16ee1"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "be05976dd881dbd31a18ba01c5425c97c4345bd3fd73b3488df62e3fe93272dd",
+      "compressedSha256": "318fe2d65e476f888a421cd51d3a9e8fb88af94768f99e2d19a7de36f725fa5f"
+    }
+  ],
+  "conformance": {
+    "passed": 487,
+    "total": 487,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "selection": [
+      ".test262/test/language/expressions/new/**/*.js",
+      ".test262/test/language/statements/class/subclass/**/*.js",
+      ".test262/test/built-ins/WeakRef/**/*.js",
+      ".test262/test/built-ins/FinalizationRegistry/**/*.js"
+    ]
+  },
+  "readability": {
+    "policy": "Readable multiline embedded programs; preserve expression/statement boundaries and exact-source fixtures",
+    "intermediateFailures": [35, 12, 22],
+    "finalSuitePasses": true,
+    "finalFixtureBaseline": {
+      "cases": 32,
+      "failures": 29,
+      "correctnessFailures": 28,
+      "timeoutFailures": 1,
+      "unchangedTimeoutMilliseconds": 5000,
+      "repeatedAttempts": 2,
+      "existingRejections": 3,
+      "patchedPasses": 32,
+      "identicalTestSourceHashes": true
+    },
+    "failureCauses": [
+      "Inserted expression terminators",
+      "ASI-sensitive leading newlines",
+      "Comma-expression grouping",
+      "Wrapping statement templates as expressions"
+    ]
+  },
+  "boundaries": [
+    "Constructors, environments, prototypes and native captures remain separately owned",
+    "Private instance state and unsupported internal slots still reject",
+    "Actual React captures and releases selected fiber/queue/update state; it does not restore React",
+    "No shared-prefix React fork, guarded report, event transitions, repeated families or symbolic demo",
+    "Native metadata is trusted, not a hostile-host sandbox"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "CI 36528998898/analyzer 109278199233 passes 1466 units and 74/74 unchanged smoke with matching relocated build hash. E2E 36528998856 and publish 36528998900 also pass. See ci.json; older timeouts remain archived.",
+  "files": {
+    "engine/patches/constructor-checkpoints.patch": "508c3d4a5cd485490d87377a3efa5defab9a949ec46004e108530136c811c9b7",
+    "engine/scripts/build.ts": "db3b9c1989dc5dbb868f2ea405ef8ee11edac2a4f9b85da35abfb50353197eaa",
+    "tests/constructor-checkpoint.test.ts": "b59217b9ebffd9ad06c095bea4353a78ed939634d8ca1240fff31ceb41095c77",
+    "tests/fixtures/numeric-react.tsx": "62893df5eee21a8fd5d0e79b2dab40f31f919aee04ce6cb7eb640b9d38a2d98c",
+    "docs/constructor-checkpoints.md": "093d4b62a61702944abf74707021a1ac8c9f70d3aea18ceb9c190aa062aaaa24",
+    "docs/engine-state-inventory.md": "69e03a0cae3cd497e1bb099e3882d0ba131aded9571911732215b3af0c75dfb3",
+    "tests/agent-decisions.test.ts": "d46377d1af5da617cd6355425dafedf2a598289cb9afe55faedfa23047175180",
+    "tests/array-checkpoint.test.ts": "c847660e6a47e761dec0bad17f83d6e3ffdac4aeb79159b59cac46053752335f",
+    "tests/boolean-decision.test.ts": "faee872e27a83b63ed87ada54495f4041eb93fa1362340c59774ec5cf294aa48",
+    "tests/boolean-expressions.test.ts": "b80a4bc60468268dee082fc89b9c07ac0467abe3c9d2720429d1f31aaa42d94b",
+    "tests/collection-checkpoint.test.ts": "23362ae134e0f6e97be4cfe9a15a619a98a66189e067da8698046b88149efe61",
+    "tests/concrete-diagnostics.test.ts": "a4dfddcfa24f21c25e18f585fed764a53e81e28d1d53ff88a0215a87d9b9ceca",
+    "tests/concrete-module-boundaries.test.ts": "c7643fc3bbbca5dcfa8dc55298135c496efc4b6f0004a7bf819613051a7a3825",
+    "tests/concrete-modules.test.ts": "6c05e0684f4d4d034b9110c6843094ef0fdbb4e37903644414b7ff329a325b33",
+    "tests/concrete-react.test.ts": "eb5a3914bae8110837160be357d46035b044cb3bb1112944b752051fe2f7f28e",
+    "tests/concrete-runtime.test.ts": "9db29d5fa829d085fb1e6d4905e0afb944b5b5ed256c7b204069b9063e44b08d",
+    "tests/control-checkpoint.test.ts": "05cc27fc5f212928f40895b7283b7d2962b042ad435cf4af16fe2de561b34b3f",
+    "tests/control-machine.test.ts": "0003c7b836b65223ce615012c5cb02fe300d28e549cb4b7c7fd817f4f2420e8a",
+    "tests/data-graph-checkpoint.test.ts": "f08e5e171dda450153ca96c05f7caf85795ee06cf543ca048882c54f9a195dfe",
+    "tests/engine-control-state.test.ts": "a323b21f5a256c1e6ccad85bf5c6c31aa3aa9562f4fe23c0a20dfb9714383691",
+    "tests/engine-reuse.test.ts": "c3dc0258d9f9406d6ca503f1db3f5d85b9924bea44bcbcc02701c2d7c42bb4af",
+    "tests/engine.test.ts": "4d8f7d244daa6d62016a03c80679ed87ec0e9550be90a70b8889be92e8a6ac2a",
+    "tests/evaluation-checkpoint.test.ts": "d98fc9853f65331851f6eba6c1f6bf4652ec44ea20116d23894867ae423fe699",
+    "tests/function-checkpoint.test.ts": "887204f3ebf87faf0eb0b240fe746acf10e9a1df433a220d162636cb55cfcfdc",
+    "tests/gc-bindings.test.ts": "7204b9c9bbd7851f498283cbfb09ca1a4bed4386d802a6d31cb20c690e3a17fd",
+    "tests/gc-collections.test.ts": "fa7da9a1e7cef104c005c6b7abb79fe8f18256bb8362299724c98fd869bb566c",
+    "tests/gc-control.test.ts": "cc6fa6bef7f980bd172323f391511f88e800963785e4a73f85615789f56ca12b",
+    "tests/gc-ephemerons.test.ts": "03f0232e07c40a7524314810fec3d58c1629c031689015284f15980ec218c6c0",
+    "tests/gc-host-jobs.test.ts": "693924f237ae14e64313bb7118fd2375aaf27c4851b4a1a30f869dd558e3661d",
+    "tests/gc-promise-all.test.ts": "1681314da36caa6f57f0d9127b43f5adb11763a499f432710eae026d790c1128",
+    "tests/gc-promise-combinators.test.ts": "1601b90aeb5aa132dca2838de1e0e35e78bc2d558044cc354c10b638771be0c6",
+    "tests/gc-promise-finally.test.ts": "3ec6d54aea618eed439f0331363333dd4fc7010845cc6b7c5475c44a4306fc1e",
+    "tests/gc-promises.test.ts": "b22b53a3b556957843cbe7d01ff19d4e923e37c57707cc571b2484ef78eaf0e8",
+    "tests/guarded-control.test.ts": "31d205a6187173e5958d8576bb3c3ea2fe737985c13ec0ea5d5143cdb51a84ea",
+    "tests/lazy-argument-accessors.test.ts": "c3c1892d29d16e6b4e32ad6a6295d056343d07071a175e63e54b07196e5d64ab",
+    "tests/native-captures.test.ts": "478bad8fe61b54021bff4ac72531866255dffef0b6b48bba6c90878a60f2f8fe",
+    "tests/number-predicates.test.ts": "57b3e3780a513e2b8342cdea3e4fa654f6853392a60b7b6d8934c7ca676ce61e",
+    "tests/numeric-domain.test.ts": "44dc3f717f8f034b09aee02bb0c46d4dcf703e1c50652ffacb9d42041c8d91c5",
+    "tests/numeric-react.test.ts": "bc01003429b7c0004d362126c56054ef54f1ed818d41f08c1174818cc18234ff",
+    "tests/object-checkpoint.test.ts": "795f2b2739ad24b89f82b2a702cc1575636dd3994063b43cfa7a6a562b8a8b7a",
+    "tests/owner-storage-capture.test.ts": "3bb9eb24e1ed95bc80a026c5149a857df6a4ea7ca74586ce406c55eba8f9400c",
+    "tests/parameter-binding.test.ts": "0db7b9fe3fb07afd27162dcfe7ce4a3bd7faaea474aa6f437e8e1d3b3b6904c7",
+    "tests/set-zero.test.ts": "3092e711a976d35e152a2100e499faadf3138270d6663d46e29143a767956b57",
+    "tests/source-engine.test.ts": "6776e25155fbf7baefec0cf979540b6f42b55e1332722a6a874f9c584a5f9262",
+    "tests/state-checkpoint.test.ts": "6cdf0b018133b133771f9e204f308bf30672af031bc96066bf0fdff94e4d29d1",
+    "tests/string-substr.test.ts": "1e014ac9ef6a2e61d9f72998fdfa91b8fc47f903e309bf039d693f67647c07c1",
+    "tests/symbolic-engine.test.ts": "78b26539e34bb32361de75f3e6d186720c97e5fefcae076860139a91dbc9533f",
+    "tests/unused-arguments.test.ts": "49a14789a84b1b4db209243dd89d212e1b13bbad22a5fa4ee8313a709e8215ca"
+  }
+}

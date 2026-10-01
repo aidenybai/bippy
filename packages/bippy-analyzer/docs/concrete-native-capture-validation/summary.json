@@ -1,0 +1,234 @@
+{
+  "scope": "declared-concrete-native-captures-v1",
+  "predecessor": "0d52839ac1a573c5e05e4e17fc7f3223158ebcfb",
+  "engineSha256": "d3dfdf0df0671c269ae9a084e0d7562077d8ec6dd5b2c1ba84dacab8f6f69d8f",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/native-capture-registration.patch",
+      "sha256": "3435618b05ad0aaaf7ad68e272669c60d493afdbcc2209ad7652fb5bee14a025"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "008471dde0310a3e4ccda80cf553f593d3ab8a81cb99dcddfc7dfcbcae1dce32"
+    },
+    {
+      "file": "src/concrete/runtime.ts",
+      "sha256": "7c20fa67f6f8227427a11306e5b76f08089a82386665d4fdaef06be7fb2ac925"
+    },
+    {
+      "file": "tests/concrete-native-captures.test.ts",
+      "sha256": "638b023bea37f7a14df6498b7119bfd961f898a4acb3fbcb56ebc2d95af4401b"
+    },
+    {
+      "file": "tests/fixtures/symbolic-react-tree.tsx",
+      "sha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "d3dfdf0df0671c269ae9a084e0d7562077d8ec6dd5b2c1ba84dacab8f6f69d8f"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "6814f59f2021a961e0c78518cc3ac145e42948fd5bd73d3d7a9a12f4610f493d",
+      "uncompressedSha256": "eea92ef8f94b30f128cd49557403bf26ea1c0ed42da01dd918ea0434dec8c969"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "efb5774a1181529892e23d21ceaff442e99a50c31741d723a496c4c1535d211b",
+      "uncompressedSha256": "77e5f3ba19febb287d2f2585a3c705ac3e1ebbf2de3288279317c0d0989c4565"
+    }
+  ],
+  "reactReports": [
+    {
+      "isReversed": false,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "frontier": {
+          "distinctReferences": 21435,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Concrete installed callbacks and jobs declare their runtime and captured references through engine metadata. This diagnostic still rejects its first branch timer. Unregistered functions and other native storage remain unowned; census is not an ownership proof."
+      }
+    },
+    {
+      "isReversed": true,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "frontier": {
+          "distinctReferences": 21435,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Concrete installed callbacks and jobs declare their runtime and captured references through engine metadata. This diagnostic still rejects its first branch timer. Unregistered functions and other native storage remain unowned; census is not an ownership proof."
+      }
+    }
+  ],
+  "reactDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  let frontier: unknown;\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: () => {\n          const functions = [...seen].filter(value => typeof value === \"function\");\n          const registered = functions.filter(value => api.getNativeCaptures(value) !== undefined);\n          const unregistered = functions.filter(value => api.getNativeCaptures(value) === undefined);\n          const names = [...new Set(unregistered.map(value => value.name))].sort();\n          frontier = {\n            distinctReferences: seen.size,\n            guestObjects: [...seen].filter(value => value instanceof api.ObjectValue).length,\n            nativeArrays: [...seen].filter(value => Array.isArray(value)).length,\n            nativeFunctions: functions.length,\n            registered: registered.length,\n            functionsWithStepsBinding: registered.filter(value => api.getNativeCaptures(value)?.bindings.some(binding => binding.name === \"steps\")).length,\n            unregistered: Object.fromEntries(names.map(name => [name, unregistered.filter(value => value.name === name).length])),\n          };\n          const state = api.createStateCheckpoint({\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n          });\n          storage = state;\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-concrete-captures-rejection-${isReversed}.json`, JSON.stringify({ prefixCount, reachedTimer, timerCount, frontier, observations, limitation: \"Concrete installed callbacks and jobs declare their runtime and captured references through engine metadata. This diagnostic still rejects its first branch timer. Unregistered functions and other native storage remain unowned; census is not an ownership proof.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+  "focused": {
+    "cases": 12,
+    "precedingFailed": 12,
+    "currentPassed": 12,
+    "unchangedTestSource": true,
+    "controlledRejectCases": 1,
+    "explicitNegativeGcCases": 1
+  },
+  "corrections": [
+    "Renamed diagnostic adapters metric to functionsWithStepsBinding. A binding name cannot identify a from-adapter. Current three matches are concrete guard wrappers, not new bind adapters. Original and corrected run logs retained."
+  ],
+  "reuse": "One engine export exposes existing registerNativeClosure. Runtime declares known captures with existing readonly binding manifests; no new registry, interpreter, closure scanner or snapshot algorithm. Same timer arrays are restored by existing concrete host checkpoints.",
+  "gates": {
+    "units": "1763/1763 across60files",
+    "types": "pass",
+    "smoke": "74/74, unchanged two-worker ten-second gate",
+    "conformance": "New source matches reused unchanged published baseline:536/538, two matching builtin toString timeouts, input/compiled hashes/verdicts match, exits1",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors,two existing warnings",
+    "cleanup": "Main worktree unchanged; temporary audit tests removed; no build lock",
+    "linux": "not run yet"
+  },
+  "limitations": [
+    "Trusted conservative declarations are not automatic closure inspection or completeness verification. Readonly references do not own referents. Shared namespace/constructor, native records/arrays, class methods, module state and arbitrary callbacks remain separate.",
+    "Agent observers, rejection trackers and module-loader callbacks are not all declared by this increment.",
+    "Collector still ignores native functions. Negative WeakRef test proves declared captures behind a live builtin do not become automatic roots.",
+    "React reports2418registered/58unregistered; still rejectsfirstuserTimer afteroneprefix/order. Existing host-effect guard remains. No general explorer/transitions/repeated families/demo."
+  ]
+}

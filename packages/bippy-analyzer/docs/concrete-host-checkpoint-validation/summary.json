@@ -1,0 +1,104 @@
+{
+  "scope": "concrete-zero-delay-host-state-v1",
+  "predecessor": "cb6bf6eab5c788bd32520ae74103014f88751969",
+  "engineSha256": "2e7130883472eff02cfe5a651c36915e6bf5f4e16ee55a3ee81ee2e8955e6c43",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/host-state-roots.patch",
+      "sha256": "492f85cc628818b8a4a11340f6b4dbd94640b2d35ee23f53c0b8e5629e7ba27a"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "a7ec00204955ef6433231fd4430132d157a7f8e5ef91809e1e8125e29f122c59"
+    },
+    {
+      "file": "src/concrete/runtime.ts",
+      "sha256": "a9d53aa70ffd0b29ffa318bc5e4285a334e004ebc1626efb6ac19304a8790d6d"
+    },
+    {
+      "file": "src/index.ts",
+      "sha256": "984ef4461e23ae5b124acddb8c97730cb49491ed5694385cfa0122a064c3b13d"
+    },
+    {
+      "file": "tests/concrete-host-checkpoint.test.ts",
+      "sha256": "1656fc01990513ef5fba776b196909ce38e50480c4c9708d7c7a9ebfcc06b4b6"
+    },
+    {
+      "file": "tests/fixtures/symbolic-react-tree.tsx",
+      "sha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "2e7130883472eff02cfe5a651c36915e6bf5f4e16ee55a3ee81ee2e8955e6c43"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "aee51c4f8cc92bbdfa165067ccadfbed3946a0dff21c9b14137a73f81afae22e",
+      "uncompressedSha256": "f95c0279da0d4018fde3e14e76293b11992a267e7f645de4a29b8c7e33c94df3"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "775d0dc1a0f2634eca23d099d9383d326bf70522fe9919506043a0431873cc95",
+      "uncompressedSha256": "85a1633751015a9e64bfb098769df9c295c07cf2d22fbc0f311363b2608b8830"
+    }
+  ],
+  "reactReports": [
+    {
+      "isReversed": false,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "observations": [],
+        "limitation": "Captures and restores concrete timer records and queue memberships, but still rejects the first branch timer. General native callback state and complete execution ownership remain unowned."
+      }
+    },
+    {
+      "isReversed": true,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "observations": [],
+        "limitation": "Captures and restores concrete timer records and queue memberships, but still rejects the first branch timer. General native callback state and complete execution ownership remain unowned."
+      }
+    }
+  ],
+  "reactDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: () => {\n          const state = api.createStateCheckpoint({\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n          });\n          storage = state;\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-host-state-rejection-${isReversed}.json`, JSON.stringify({ prefixCount, reachedTimer, timerCount, observations, limitation: \"Captures and restores concrete timer records and queue memberships, but still rejects the first branch timer. General native callback state and complete execution ownership remain unowned.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+  "focused": {
+    "cases": 13,
+    "precedingFailed": 13,
+    "currentPassed": 13,
+    "unchangedFinalTestSource": true,
+    "nativeBranchObservations": 4,
+    "nativeRestoredBaselines": 2,
+    "orders": 2
+  },
+  "corrections": [
+    "Initial protected queuedJobs test access failed TypeScript2445; use stored descriptor inspection, consistent with existing queue tests.",
+    "Strengthened budget failure identity check to assert outside catch, so a missing throw cannot pass. Final source rerun on exact predecessor and maintained build."
+  ],
+  "reuse": "Six inserted engine lines expose hostDefinedState through existing Markable traversal and existing queue assertActive checks. Runtime snapshots its own timer/diagnostic records and composes existing engine queues. Timer callback/scheduling implementation unchanged.",
+  "gates": {
+    "units": "1741/1741 across58files",
+    "types": "pass",
+    "smoke": "74/74, unchanged two-worker ten-second gate",
+    "conformance": "New source matches reused unchanged published baseline:367/373, six matching failures, input/compiled hashes/verdicts match, exits1",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors,two existing warnings",
+    "cleanup": "Main worktree unchanged; temporary audit tests removed; no build lock",
+    "linux": "not run yet"
+  },
+  "limitations": [
+    "Restores host timer/diagnostic storage and engine queue membership, not guest heap, Promise state, arbitrary native closure captures/counters, module caches, Agent options or execution control.",
+    "Lifetime steps/jobs and failure state do not rewind. Unsupported restore failures may partially write and poison the runtime; release remains available.",
+    "Live host roots and saved values use engine collector protocol. Not arbitrary native closure discovery, byte/work bounds or a sandbox.",
+    "Actual React captures1timer but still rejects first user timer. Existing evaluation host-effect guard unchanged; no general explorer/transitions/repeated families/demo."
+  ]
+}

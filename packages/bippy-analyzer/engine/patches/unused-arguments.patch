@@ -1,0 +1,21 @@
+--- a/src/runtime-semantics/FunctionDeclarationInstantiation.mts
++++ b/src/runtime-semantics/FunctionDeclarationInstantiation.mts
+@@ -27,0 +28,2 @@
++const argumentsObservationPattern = /arguments|eval|\\/;
++
+@@ -95,0 +98,9 @@
++  if (argumentsObjectNeeded && surroundingAgent.hostDefinedOptions.elideUnusedArguments
++    && !argumentsObservationPattern.test(code.sourceText)
++    && formals.every(parameter => !argumentsObservationPattern.test(parameter.sourceText))
++    && !surroundingAgent.hostDefinedOptions.onDebugger
++    && !surroundingAgent.hostDefinedOptions.onNodeEvaluation
++    && !surroundingAgent.hostDefinedOptions.evaluateNode
++    && !surroundingAgent.breakpointsByFunction.has(surroundingAgent.intrinsic('%GeneratorFunction.prototype.prototype.next%'))) {
++    argumentsObjectNeeded = false;
++  }
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 05c12e8..ba5d0c9 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -116,0 +117 @@ export interface AgentHostDefined {
++  elideUnusedArguments?: boolean;

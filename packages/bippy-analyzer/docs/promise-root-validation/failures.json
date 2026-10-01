@@ -1,0 +1,952 @@
+[
+  {
+    "file": ".test262/test/built-ins/Promise/all/capability-resolve-throws-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/capability-resolve-throws-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-resolve-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-resolve-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-resolve-get-once-multiple-calls.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: 1' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: 1",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: 1' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-resolve-get-once-multiple-calls.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: 1' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: 1",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: 1' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-then-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-then-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-then-get-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/invoke-then-get-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/iter-next-val-err-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/iter-next-val-err-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/iter-step-err-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/all/iter-step-err-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/capability-resolve-throws-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/capability-resolve-throws-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-resolve-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-resolve-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-get-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-get-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-next-val-err-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-next-val-err-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-step-err-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-step-err-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/ctx-ctor.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/ctx-ctor.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/returns-promise.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/returns-promise.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: undefined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/finally/subclass-species-constructor-reject-count.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: undefined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-fulfilled-next-abrupt.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-fulfilled-next-abrupt.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-rejected-next-abrupt.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/prototype/then/rxn-handler-rejected-next-abrupt.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/invoke-resolve-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: ReferenceError: \"err\" is not defined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: ReferenceError: \"err\" is not defined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: ReferenceError: \"err\" is not defined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/invoke-resolve-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: ReferenceError: \"err\" is not defined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: ReferenceError: \"err\" is not defined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: ReferenceError: \"err\" is not defined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/invoke-then-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/invoke-then-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/invoke-then-get-error-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/invoke-then-get-error-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/iter-next-val-err-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/iter-next-val-err-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/iter-step-err-no-close.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/race/iter-step-err-no-close.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/reject/ctx-ctor.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: undefined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/reject/ctx-ctor.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: undefined",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: undefined' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/resolve/arg-uniq-ctor.js",
+    "scenario": "default",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: TypeError: null is not an object",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/resolve/arg-uniq-ctor.js",
+    "scenario": "strict mode",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: TypeError: null is not an object",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: TypeError: null is not an object' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    }
+  }
+]

@@ -1,0 +1,91 @@
+{
+  "scope": "engine262-selected-array-checkpoints-v1",
+  "symbolicReactComplete": false,
+  "transitiveStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "e098a9348caa9d016baf213e6fb5f270714529440cb6a8f1ef913e802b6da2ab",
+  "implementation": [
+    "Reuse array length/index descriptors in the existing property table",
+    "Extract existing ordinary-method identity checks, allowing exact engine array definition method only in combined API",
+    "Capture accepted definition-method identity and validate current methods before restore",
+    "Preserve ordinary-only API array rejection and shared LIFO/GC/preview/ownership policies",
+    "No array copy, generic heap walker, transitive selection, or new scheduler"
+  ],
+  "api": {
+    "name": "createStateCheckpoint",
+    "unchangedScope": "selected-objects-and-bindings-v1",
+    "objectCountIncludesArrays": true,
+    "ordinaryCheckpointAcceptsArrays": false
+  },
+  "regressions": {
+    "initialCases": 18,
+    "initialPrepatchFailures": 18,
+    "finalCases": 21,
+    "branchScripts": 4,
+    "branchOrders": 2,
+    "nativeBranchObservations": 8,
+    "nativeBaselineAndLengthObservations": 4,
+    "savedElementGcCases": 2
+  },
+  "units": {
+    "passed": 1288,
+    "total": 1288,
+    "files": 35
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "total": 558,
+      "passed": 558,
+      "exitCode": 0,
+      "uncompressedSha256": "769ff8184951840c48467ab985c6ee7b654df7672b9ad9617dd884929e23aa3f",
+      "compressedSha256": "88ece29c89d0121b18810b7eb5eb0c5a2b63713dd7dbe4789ba73c3ad405b8c2"
+    },
+    {
+      "filename": "published.json.gz",
+      "total": 558,
+      "passed": 558,
+      "exitCode": 0,
+      "uncompressedSha256": "5adcd06e67be1cc1653a31fccc086610be1e4e5e456ac3724211d1f580850a87",
+      "compressedSha256": "89a2e72d7de5c4f807a17418dbac985417ee2fafe4b2647affbabb31f01b26c1"
+    }
+  ],
+  "selection": [
+    ".test262/test/built-ins/Array/*.js",
+    ".test262/test/built-ins/Array/length/**/*.js",
+    ".test262/test/built-ins/Array/isArray/**/*.js",
+    ".test262/test/built-ins/Array/prototype/push/**/*.js",
+    ".test262/test/built-ins/Array/prototype/pop/**/*.js",
+    ".test262/test/built-ins/Array/prototype/shift/**/*.js",
+    ".test262/test/built-ins/Array/prototype/unshift/**/*.js",
+    ".test262/test/built-ins/Array/prototype/splice/**/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "boundaries": [
+    "Unselected elements and iterator positions do not rewind; explicit tests retain these boundaries",
+    "Proxies, typed arrays, existing private state and extra internal slots reject",
+    "No Map/Set/Promise/module/job/Agent-control ownership",
+    "No heap discovery, React forks, guarded reports, or integrated symbolic demo",
+    "Caller bounds snapshot properties/records; evaluator budgets do not bound all native work"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "1288 units pass; numeric smoke default and strict time out (72/74), see ci-failure.json",
+  "files": {
+    "engine/patches/array-checkpoints.patch": "4f399f62198e0c68b043ff54dfbae701e2cf4c46121d63291590651c021c19be",
+    "engine/scripts/build.ts": "d7371545994a0cc4200e5bd6d97c978ec63317a731344489063e5760dd950b2c",
+    "tests/array-checkpoint.test.ts": "aa449c27f6822417846cb1ca221ddafca4ecedbe85dd464385e8ff7ae1ce7fa7",
+    "tests/object-checkpoint.test.ts": "a29f9658d7b88172d32fb83b6b4f70f47b71f95dd566256b9faef285528fddf0",
+    "tests/state-checkpoint.test.ts": "7cd37ce165f3171e179df8773337ed1c426c14be3019dbf55e103410d4eedc1c",
+    "docs/engine-state-inventory.md": "2d724ebc24d3dfc0d2cbd0a2dd48401b452f2c1ce77dbfefedc287b196182138"
+  }
+}

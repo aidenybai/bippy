@@ -1,0 +1,553 @@
+{
+  "scope": "selected-descriptor-initializers-v1",
+  "predecessor": "14d9c7fec878615ecc57697841f63291757fd040",
+  "engineSha256": "16cb86ba3e7016f4220898f3de07e5cdc75559342ec0ed93c877a161c33e1720",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/descriptor-initializers.patch",
+      "sha256": "89a5d244d0b95a99c95658afe9c12c6be8ab776c4b9c5a84b74e301be4eec922"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "f6705e7367eda9e908a6a65eed74f8b5a338744b7082c1b4f47176d0e52407d2"
+    },
+    {
+      "file": "tests/descriptor-initializer.test.ts",
+      "sha256": "bec34e2dc36d67f95e2c75f0064284f9a94ec180969c6af2a1d1c0ff415456fb"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "16cb86ba3e7016f4220898f3de07e5cdc75559342ec0ed93c877a161c33e1720"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "614b5116fa6e851e7220f965447038c6eaf76535dd4712d014a33cf211ade293",
+      "uncompressedSha256": "71ad27a2064747fb4e4e8ed6ca54e462422d344a925d0b73b9ca40d01af4f35c"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "75f00220e8f48028bd19a14e7cd0d13bb7357917a52277178cdabaa37958a4d0",
+      "uncompressedSha256": "dd217c048ca008ba82d7ae5ef6a10eeea5a775717e216a65f2b465a9f16404d3"
+    }
+  ],
+  "reactReports": [
+    {
+      "isReversed": false,
+      "report": {
+        "descriptorInitializerCount": 0,
+        "descriptorCount": 5998,
+        "recordShapes": {
+          "Object: suspend,value": 1,
+          "Object: location,parent,sourceText,strict,type,value": 4,
+          "Agent: AgentRecord,assertCanPerformHostEffect,breakpointsByFunction,breakpointsEnabled,captureEvaluation,eventLoop,executionContextStack,finalizationRegistryScheduledForCleanup,hostDefinedOptions,jobQueue,onNoEvaluator,parsedSources,pauseOnExceptions": 1,
+          "ScriptRecord: ECMAScriptCode,HostDefined,LoadedModules,Realm": 2,
+          "ManagedRealm: AgentSignifier,GlobalEnv,GlobalObject,HostDefined,Intrinsics,LoadedModules,TemplateMap,randomState,topContext": 1,
+          "PropertyKeyMap: ": 2212,
+          "Descriptor: Configurable,Enumerable,Get,Set,Value,Writable": 5998,
+          "Object: -1,1,Backward,Forward": 1,
+          "null: Basic_Emoji,Emoji_Keycap_Sequence,RGI_Emoji,RGI_Emoji_Flag_Sequence,RGI_Emoji_Modifier_Sequence,RGI_Emoji_Tag_Sequence,RGI_Emoji_ZWJ_Sequence": 1,
+          "null: AHex,ASCII,ASCII_Hex_Digit,Alpha,Alphabetic,Any,Assigned,Bidi_C,Bidi_Control,Bidi_M,Bidi_Mirrored,CI,CWCF,CWCM,CWKCF,CWL,CWT,CWU,Case_Ignorable,Cased,Changes_When_Casefolded,Changes_When_Casemapped,Changes_When_Lowercased,Changes_When_NFKC_Casefolded,Changes_When_Titlecased,Changes_When_Uppercased,DI,Dash,Default_Ignorable_Code_Point,Dep,Deprecated,Dia,Diacritic,EBase,EComp,EMod,EPres,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Ext,ExtPict,Extended_Pictographic,Extender,Gr_Base,Gr_Ext,Grapheme_Base,Grapheme_Extend,Hex,Hex_Digit,IDC,IDS,IDSB,IDST,IDS_Binary_Operator,IDS_Trinary_Operator,ID_Continue,ID_Start,Ideo,Ideographic,Join_C,Join_Control,LOE,Logical_Order_Exception,Lower,Lowercase,Math,NChar,Noncharacter_Code_Point,Pat_Syn,Pat_WS,Pattern_Syntax,Pattern_White_Space,QMark,Quotation_Mark,RI,Radical,Regional_Indicator,SD,STerm,Sentence_Terminal,Soft_Dotted,Term,Terminal_Punctuation,UIdeo,Unified_Ideograph,Upper,Uppercase,VS,Variation_Selector,White_Space,XIDC,XIDS,XID_Continue,XID_Start,space": 1,
+          "Object: General_Category,Script,Script_Extensions,description": 1,
+          "null: General_Category,Script,Script_Extensions,gc,sc,scx": 1,
+          "Object: SimpleOrCommonCaseFoldingMapping,characterMatchPropertyValue,getStringPropertySet,isCharacter,iterateByCodePoint,iterateCharacterByCodePoint,str_normalization,str_toLocaleLowercase,str_toLocaleUppercase,str_toLowercase,str_toUppercase,toCharacter,toCodePoint,toCodeUnit,toUppercase": 1,
+          "RegExp: lastIndex": 2,
+          "Object: DefineOwnProperty,GetOwnProperty,OwnPropertyKeys": 1,
+          "null: asyncDispose,asyncIterator,dispose,hasInstance,isConcatSpreadable,iterator,match,matchAll,replace,search,species,split,toPrimitive,toStringTag,unscopables": 1,
+          "Object: DefineOwnProperty": 1,
+          "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+          "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,Set": 1,
+          "null: ADD,AND,ARROW,ASSIGN,ASSIGN_ADD,ASSIGN_AND,ASSIGN_BIT_AND,ASSIGN_BIT_OR,ASSIGN_BIT_XOR,ASSIGN_DIV,ASSIGN_EXP,ASSIGN_MOD,ASSIGN_MUL,ASSIGN_NULLISH,ASSIGN_OR,ASSIGN_SAR,ASSIGN_SHL,ASSIGN_SHR,ASSIGN_SUB,AT,AWAIT,BIGINT,BIT_AND,BIT_NOT,BIT_OR,BIT_XOR,BREAK,CASE,CATCH,CLASS,COLON,COMMA,CONDITIONAL,CONST,CONTINUE,DEBUGGER,DEC,DEFAULT,DELETE,DIV,DO,ELLIPSIS,ELSE,ENUM,EOS,EQ,EQ_STRICT,ESCAPED_KEYWORD,EXP,EXPORT,EXTENDS,FALSE,FINALLY,FOR,FUNCTION,GT,GTE,IDENTIFIER,IF,IMPORT,IN,INC,INSTANCEOF,LBRACE,LBRACK,LPAREN,LT,LTE,MOD,MUL,NE,NEW,NE_STRICT,NOT,NULL,NULLISH,NUMBER,OPTIONAL,OR,PERIOD,PRIVATE_IDENTIFIER,RBRACE,RBRACK,RETURN,RPAREN,SAR,SEMICOLON,SHL,SHR,STRING,SUB,SUPER,SWITCH,TEMPLATE,THIS,THROW,TRUE,TRY,TYPEOF,VAR,VOID,WHILE,WITH,YIELD": 1,
+          "Object: 0,1,ASYNC,NORMAL": 1,
+          "WeakMap: ": 1,
+          "Map: ": 1,
+          "Object: BigInt64,BigUint64,Float16,Float32,Float64,Int16,Int32,Int8,Uint16,Uint32,Uint8,Uint8C": 1,
+          "Object: canonicalNaNBits,exponentBias,exponentBits,fractionBits": 3,
+          "Object: BigInt64Array,BigUint64Array,Float16Array,Float32Array,Float64Array,Int16Array,Int32Array,Int8Array,Uint16Array,Uint32Array,Uint8Array,Uint8ClampedArray": 1,
+          "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,HasProperty,OwnPropertyKeys,PreventExtensions,Set": 1,
+          "Object: 10,11,12,13,9": 1,
+          "Float64Array: 0": 1,
+          "BigUint64Array: 0": 1,
+          "Object: Call,Construct,DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+          "Object: FunctionStatementList,directives,location,parent,sourceText,strict,type": 522,
+          "Object: BindingIdentifier,Initializer,location,parent,sourceText,strict,type": 938,
+          "Object: deletable,indirect,initialized,mark,mutable,strict,value": 814,
+          "Object: ExpressionBody,location,parent,sourceText,strict,type": 7,
+          "ArgumentsParameterMapData: environment,getOwnProperty,ownPropertyKeys,pendingMappings,realm": 16,
+          "null: AbruptCompletion,AbstractEventLoop,AbstractModuleRecord,Add24HourDaysToTimeDuration,AddDaysToISODate,AddDisposableResource,AddDurationToDate,AddDurationToDateTime,AddDurationToInstant,AddDurationToTime,AddDurationToYearMonth,AddDurationToZonedDateTime,AddDurations,AddEpochNanoseconds,AddRestrictedFunctionProperties,AddTime,AddTimeDuration,AddTimeDurationToEpochNanoseconds,AddToKeptObjects,AddValueToKeyedGroup,AddZonedDateTime,AdjustDateDurationRecord,Agent,AgentCanSuspend,AgentSignifier,AllImportAttributesSupported,AllocateArrayBuffer,ApplyDecoratorsAndDefineMethod,ApplyDecoratorsToClassDefinition,ApplyDecoratorsToElementDefinition,ApplyStringOrNumericBinaryOperator,ApplyUnsignedRoundingMode,ArgumentExoticObject,ArgumentListEvaluation,ArgumentsParameterMapData,ArrayBufferByteLength,ArrayBufferCopyAndDetach,ArrayCreate,ArrayExoticObjectInternalMethods,ArraySetLength,ArraySpeciesCreate,Assert,AsyncBlockStart,AsyncFromSyncIteratorContinuation,AsyncFunctionStart,AsyncGeneratorAwaitReturn,AsyncGeneratorEnqueue,AsyncGeneratorRequestRecord,AsyncGeneratorResume,AsyncGeneratorStart,AsyncGeneratorValidate,AsyncGeneratorYield,AsyncIteratorClose,AvailableCalendars,AvailableNamedTimeZoneIdentifiers,Await,BalanceISODateTime,BalanceISOYearMonth,BalanceTime,BaseValue,BasicJobQueue,BigIntValue,BindingClassDeclarationEvaluation,BindingEvaluation,BindingInitialization,BlockDeclarationInstantiation,BodyText,BooleanValue,BoundNames,BreakCompletion,BubbleRelativeDuration,BuildEvaluationList,BuildLinkingList,ByTypeJobQueue,CalendarDateAdd,CalendarDateFromFields,CalendarDateToISO,CalendarDateUntil,CalendarExtraFields,CalendarFieldKeysToIgnore,CalendarISOToDate,CalendarMergeFields,CalendarMonthDayFromFields,CalendarMonthDayToISOReferenceDate,CalendarResolveFields,CalendarYearMonthFromFields,Call,CallFrame,CallSite,CanBeHeldWeakly,CanonicalNumericIndexString,Canonicalize,CanonicalizeCalendar,CanonicalizeKeyedCollectionKey,CharacterValue,ClassDefinitionEvaluation,ClassElementDefinitionRecord,ClassFieldDefinitionEvaluation,ClassFieldDefinitionEvaluation_decorator,ClassFieldDefinitionRecord,ClassStaticBlockDefinitionEvaluation,ClassStaticBlockDefinitionRecord,CleanupFinalizationRegistry,ClearKeptObjects,CloneArrayBuffer,CodePointAt,CodePointsToString,CombineDateAndTimeDuration,CompareArrayElements,CompareEpochNanoseconds,CompareISODate,CompareISODateTime,CompareSurpasses,CompareTimeDuration,CompareTimeRecord,CompilePattern,CompletePropertyDescriptor,Completion,CompletionImpl,ComputeNudgeWindow,Construct,ConstructorMethod,ContainsArguments,ContainsExpression,ContainsUsing,ContinueCompletion,ContinueDynamicImport,ContinueModuleLoading,CopyDataBlockBytes,CopyDataProperties,CopyNameAndLength,CountLeftCapturingParensWithin,CreateAddInitializerFunction,CreateArrayFromList,CreateArrayIterator,CreateAsyncFromSyncIterator,CreateBuiltinFunction,CreateByteDataBlock,CreateBytesModule,CreateDataProperty,CreateDataPropertyOrThrow,CreateDateDurationRecord,CreateDecoratorAccessObject,CreateDecoratorContextObject,CreateDefaultExportSyntheticModule,CreateDisposableResource,CreateDynamicFunction,CreateFieldInitializerFunction,CreateISODateRecord,CreateIntrinsics,CreateIteratorFromClosure,CreateIteratorResultObject,CreateListFromArrayLike,CreateListIteratorRecord,CreateMappedArgumentsObject,CreateMethodProperty,CreateMonthCode,CreateNegatedTemporalDuration,CreateNonEnumerableDataPropertyOrThrow,CreateResolvingFunctions,CreateTemporalDate,CreateTemporalDateTime,CreateTemporalDuration,CreateTemporalInstant,CreateTemporalMonthDay,CreateTemporalTime,CreateTemporalYearMonth,CreateTemporalZonedDateTime,CreateTextModule,CreateTimeRecord,CreateTypeErrorCopy,CreateUnmappedArgumentsObject,CyclicModuleRecord,DataBlock,DateDurationDays,DateDurationSign,DateFromTime,DateProto_toISOString,Day,DayFromYear,DayWithinYear,Decimal,DeclarationPart,DeclarativeEnvironmentRecord,DecoratorEvaluation,DecoratorListEvaluation,DefaultTemporalLargestUnit,DefineField,DefineMethod,DefineMethodProperty,DefinePropertyOrThrow,DeletePropertyOrThrow,Descriptor,DescriptorInitializer,DestructuringAssignmentEvaluation,DetachArrayBuffer,DifferenceEpochNanoseconds,DifferenceISODateTime,DifferencePlainDateTimeWithRounding,DifferencePlainDateTimeWithTotal,DifferenceTemporalInstant,DifferenceTemporalPlainDate,DifferenceTemporalPlainDateTime,DifferenceTemporalPlainTime,DifferenceTemporalPlainYearMonth,DifferenceTemporalZonedDateTime,DifferenceTime,DifferenceZonedDateTime,DifferenceZonedDateTimeWithRounding,DifferenceZonedDateTimeWithTotal,DisambiguatePossibleEpochNanoseconds,DisposeResources,DurationSign,DynamicParsedCodeRecord,EnsureCompletion,EnumerableOwnProperties,EnvironmentRecord,EpochDaysToEpochMilliseconds,EscapeRegExpPattern,EvalDeclarationInstantiation,Evaluate,EvaluateAsyncFunctionBody,EvaluateAsyncGeneratorBody,EvaluateBody,EvaluateBody_AssignmentExpression,EvaluateCall,EvaluateClassStaticBlockBody,EvaluateConciseBody,EvaluateFunctionBody,EvaluateGeneratorBody,EvaluateModuleSync,EvaluatePropertyAccessWithExpressionKey,EvaluatePropertyAccessWithIdentifierKey,EvaluateStringOrNumericBinaryExpression,Evaluate_AdditiveExpression,Evaluate_AnyFunctionBody,Evaluate_ArrayLiteral,Evaluate_ArrowFunction,Evaluate_AssignmentExpression,Evaluate_AsyncArrowFunction,Evaluate_AsyncFunctionExpression,Evaluate_AsyncGeneratorExpression,Evaluate_AwaitExpression,Evaluate_BinaryBitwiseExpression,Evaluate_Block,Evaluate_BreakStatement,Evaluate_BreakableStatement,Evaluate_CallExpression,Evaluate_CaseClause,Evaluate_ClassDeclaration,Evaluate_ClassExpression,Evaluate_CoalesceExpression,Evaluate_CommaOperator,Evaluate_ConditionalExpression,Evaluate_ContinueStatement,Evaluate_DebuggerStatement,Evaluate_EmptyStatement,Evaluate_EqualityExpression,Evaluate_ExponentiationExpression,Evaluate_ExportDeclaration,Evaluate_ExpressionBody,Evaluate_ExpressionStatement,Evaluate_ForBinding,Evaluate_FunctionDeclaration,Evaluate_FunctionExpression,Evaluate_FunctionStatementList,Evaluate_GeneratorExpression,Evaluate_HoistableDeclaration,Evaluate_IdentifierReference,Evaluate_IfStatement,Evaluate_ImportCall,Evaluate_ImportDeclaration,Evaluate_ImportMeta,Evaluate_LabelledStatement,Evaluate_LexicalDeclaration,Evaluate_Literal,Evaluate_LogicalANDExpression,Evaluate_LogicalORExpression,Evaluate_MemberExpression,Evaluate_Module,Evaluate_ModuleBody,Evaluate_MultiplicativeExpression,Evaluate_NewExpression,Evaluate_NewTarget,Evaluate_ObjectLiteral,Evaluate_OptionalExpression,Evaluate_ParenthesizedExpression,Evaluate_PropertyName,Evaluate_RegularExpressionLiteral,Evaluate_RelationalExpression,Evaluate_RelationalExpression_PrivateIdentifier,Evaluate_ReturnStatement,Evaluate_Script,Evaluate_ScriptBody,Evaluate_ShiftExpression,Evaluate_StatementList,Evaluate_SuperCall,Evaluate_SuperProperty,Evaluate_SwitchStatement,Evaluate_TaggedTemplateExpression,Evaluate_TemplateLiteral,Evaluate_This,Evaluate_ThrowStatement,Evaluate_TryStatement,Evaluate_UnaryExpression,Evaluate_UpdateExpression,Evaluate_VariableDeclarationList,Evaluate_VariableStatement,Evaluate_WithStatement,Evaluate_YieldExpression,ExcludeImportedNames,ExecutionContext,ExecutionContextStack,ExpectedArgumentCount,ExportEntries,ExportEntriesForModule,ExportFromDeclarationModuleRequest,F,FEATURES,FinishLoadingImportedModule,Flag,FlagText,ForDeclarationBindingInitialization,FormatCalendarAnnotation,FormatDateTimeUTCOffsetRounded,FormatFractionalSeconds,FormatISODateTime,FormatOffsetTimeZoneIdentifier,FormatTimeString,FormatUTCOffsetNanoseconds,FromPropertyDescriptor,FunctionDeclarationInstantiation,FunctionEnvironmentRecord,FunctionKind,GatherAsynchronousTransitiveDependencies,GatherAsynchronousTransitiveDependenciesForRequests,GeneratorResume,GeneratorResumeAbrupt,GeneratorStart,GeneratorValidate,GeneratorYield,Get,GetActiveScriptOrModule,GetArrayBufferMaxByteLengthOption,GetAvailableNamedTimeZoneIdentifier,GetDifferenceSettings,GetDirectionOption,GetDisposeMethod,GetEpochNanosecondsFor,GetFunctionRealm,GetGeneratorKind,GetGlobalObject,GetISODateTimeFor,GetIdentifierReference,GetImportedModule,GetIterator,GetIteratorDirect,GetIteratorFlattenable,GetIteratorFromMethod,GetMatchIndexPair,GetMatchString,GetMethod,GetModuleNamespace,GetNamedTimeZoneEpochNanoseconds,GetNamedTimeZoneNextTransition,GetNamedTimeZoneOffsetNanoseconds,GetNamedTimeZonePreviousTransition,GetNewOptionalIndirectExportsModuleRequests,GetNewTarget,GetOffsetNanosecondsFor,GetOptionsObject,GetPossibleEpochNanoseconds,GetPrototypeFromConstructor,GetRoundingIncrementOption,GetRoundingModeOption,GetShadowRealmContext,GetStartOfDay,GetStringIndex,GetSubstitution,GetTemporalCalendarIdentifierWithISODefault,GetTemporalDisambiguationOption,GetTemporalFractionalSecondDigitsOption,GetTemporalOffsetOption,GetTemporalOverflowOption,GetTemporalRelativeToOption,GetTemporalShowCalendarNameOption,GetTemporalShowOffsetOption,GetTemporalShowTimeZoneNameOption,GetTemporalUnitValuedOption,GetThisEnvironment,GetThisValue,GetUTCEpochNanoseconds,GetUnsignedRoundingMode,GetV,GetValue,GetValueFromBuffer,GetViewByteLength,GetViewValue,GetWrappedValue,GlobalDeclarationInstantiation,GlobalEnvironmentRecord,GraphLoadingState,GroupBy,HasInitializer,HasName,HasOwnProperty,HasProperty,HostCallJobCallback,HostEnqueueFinalizationRegistryCleanupJob,HostEnqueuePromiseJob,HostEnsureCanCompileStrings,HostFinalizeImportMeta,HostGetImportMetaProperties,HostGetModuleSourceModuleRecord,HostGetSupportedImportAttributes,HostHasSourceTextAvailable,HostLoadImportedModule,HostMakeJobCallback,HostPromiseRejectionTracker,HostResizeArrayBuffer,HostSystemUTCEpochNanoseconds,HourFromTime,HoursPerDay,ISODateSurpasses,ISODateTimeWithinLimits,ISODateToEpochDays,ISODateToFields,ISODateWithinLimits,ISODayOfWeek,ISODayOfYear,ISODaysInMonth,ISOWeekOfYear,ISOYearMonthWithinLimits,IfAbruptCloseAsyncIterator,IfAbruptCloseIterator,IfAbruptCloseIterators,IfAbruptRejectPromise,ImportEntries,ImportEntriesForModule,ImportedLocalNames,ImportedNames,InLeapYear,IncrementModuleAsyncEvaluationCount,InitializeBoundName,InitializeFieldOrAccessor,InitializeInstanceElements,InitializePrivateMethods,InitializeReferencedBinding,InnerModuleEvaluation,InnerModuleLinking,InnerModuleLoading,InstallErrorCause,InstanceofOperator,InstantiateArrowFunctionExpression,InstantiateAsyncArrowFunctionExpression,InstantiateAsyncFunctionExpression,InstantiateAsyncGeneratorFunctionExpression,InstantiateFunctionObject,InstantiateFunctionObject_AsyncFunctionDeclaration,InstantiateFunctionObject_AsyncGeneratorDeclaration,InstantiateFunctionObject_FunctionDeclaration,InstantiateFunctionObject_GeneratorDeclaration,InstantiateGeneratorFunctionExpression,InstantiateOrdinaryFunctionExpression,InternalDurationSign,InterpretISODateTimeOffset,InterpretTemporalDateTimeFields,IntrinsicsFunctionToString,Invoke,IsAccessorDescriptor,IsAnonymousFunctionDefinition,IsArray,IsArrayBufferViewOutOfBounds,IsAwaitUsingDeclaration,IsBigIntElementType,IsCallable,IsCharacterClass,IsCompatiblePropertyDescriptor,IsComputedPropertyKey,IsConcatSpreadable,IsConstantDeclaration,IsConstructor,IsDataDescriptor,IsDestructuring,IsDetachedBuffer,IsError,IsExtensible,IsFixedLengthArrayBuffer,IsFunctionDefinition,IsGenericDescriptor,IsIdentifierRef,IsInTailPosition,IsIntegralNumber,IsLessThan,IsLooselyEqual,IsModuleSCCEvaluated,IsPartialTemporalObject,IsPrivateReference,IsPromise,IsPropertyKey,IsPropertyReference,IsRegExp,IsSharedArrayBuffer,IsSimpleParameterList,IsStatic,IsStrict,IsStrictlyEqual,IsStringPrefix,IsStringWellFormedUnicode,IsSuperReference,IsTypedArrayFixedLength,IsTypedArrayOutOfBounds,IsUnresolvableReference,IsUnsignedElementType,IsUsingDeclaration,IsValidDuration,IsValidISODate,IsValidIntegerIndex,IsValidTime,IsViewOutOfBounds,IsWithinEpochNanosecondsInterval,IteratorBindingInitialization_ArrayBindingPattern,IteratorBindingInitialization_FormalParameters,IteratorClose,IteratorCloseAll,IteratorComplete,IteratorNext,IteratorStep,IteratorStepValue,IteratorToList,IteratorValue,IteratorZip,JSStringValue,KeyForSymbol,KeyedBindingInitialization,LabelledEvaluation,LargerOfTwoTemporalUnits,LengthOfArrayLike,LexicallyDeclaredNames,LexicallyScopedDeclarations,ListAppendUnique,LocalTime,MV_StringNumericLiteral,MakeAutoAccessorGetter,MakeAutoAccessorSetter,MakeBasicObject,MakeClassConstructor,MakeConstructor,MakeDataViewWithBufferWitnessRecord,MakeDate,MakeDay,MakeFullYear,MakeMatchIndicesIndexPairArray,MakeMethod,MakePrivateReference,MakeRealm,MakeTime,MakeTypedArrayWithBufferWitnessRecord,ManagedRealm,MaxEpochNanoseconds,MaximumTemporalDurationRoundingIncrement,MergeImportedNames,MethodDefinitionEvaluation,MicroTaskEventLoop,MidnightTimeRecord,MillisecondFromTime,MillisecondsPerDay,MillisecondsPerHour,MillisecondsPerMinute,MillisecondsPerSecond,MinEpochNanoseconds,MinuteFromTime,MinutesPerHour,ModuleCache,ModuleEnvironmentRecord,ModuleNamespaceCreate,ModuleRecord,ModuleRequests,ModuleRequestsKeyEqual,MonthFromTime,NamedEvaluation,NanosecondsPerDay,NanosecondsPerHour,NanosecondsPerMicrosecond,NanosecondsPerMillisecond,NanosecondsPerMinute,NanosecondsPerSecond,NegateRoundingMode,NewPromiseCapability,NoTimeZone,NodeJSLikeEventLoop,NonConstructorElements,NonISOCalendarDateToISO,NonISOCalendarISOToDate,NonISODateAdd,NonISODateUntil,NonISOFieldKeysToIgnore,NonISOMonthDayToISOReferenceDate,NonISOResolveFields,NoonTimeRecord,NormalCompletion,NormalCompletionImpl,NudgeToCalendarUnit,NudgeToDayOrTime,NudgeToZonedTime,NullValue,NumberToBigInt,NumberValue,NumericToRawBytes,NumericValue,ObjectEnvironmentRecord,ObjectValue,OptionalIndirectExportEntries,OrdinaryCallBindThis,OrdinaryCallEvaluateBody,OrdinaryCreateFromConstructor,OrdinaryDefineOwnProperty,OrdinaryDelete,OrdinaryFunctionCreate,OrdinaryGet,OrdinaryGetOwnProperty,OrdinaryGetPrototypeOf,OrdinaryHasInstance,OrdinaryHasProperty,OrdinaryIsExtensible,OrdinaryObjectCreate,OrdinaryOwnPropertyKeys,OrdinaryPreventExtensions,OrdinarySet,OrdinarySetPrototypeOf,OrdinarySetWithOwnDescriptor,OrdinaryToPrimitive,OrdinaryWrappedFunctionCall,OutOfRange,PadISOYear,ParseDateTimeUTCOffset,ParseJSONModule,ParseModule,ParsePattern,ParseScript,Parser,PerformEval,PerformPromiseThen,PerformShadowRealmEval,PrepareCalendarFields,PrepareForOrdinaryCall,PrepareForTailCall,PrepareForWrappedFunctionCall,PrimitiveValue,PrivateBoundIdentifiers,PrivateElementFind,PrivateElementRecord,PrivateEnvironmentRecord,PrivateFieldAdd,PrivateGet,PrivateMethodOrAccessorAdd,PrivateName,PrivateSet,PromiseCapabilityRecord,PromiseReactionRecord,PromiseResolve,PropName,PropertyBindingInitialization,PropertyDefinitionEvaluation_PropertyDefinitionList,PropertyKeyMap,ProxyCreate,PutValue,Q,R,RawBytesToNumeric,RawTokens,ReadyForSyncExecution,Realm,ReferenceRecord,RegExpAlloc,RegExpCreate,RegExpHasFlag,RegExpInitialize,RegExpParser,RegExpState,RegulateISODate,RegulateTime,RequireInternalSlot,RequireObjectCoercible,ResolveBinding,ResolveBooleanCondition,ResolvePrivateIdentifier,ResolveThisBinding,ResolvedBindingRecord,RestBindingInitialization,ReturnCompletion,ReturnCompletion_,RoundEpochNanoseconds,RoundISODateTime,RoundNumberToIncrement,RoundNumberToIncrementAsIfPositive,RoundRelativeDuration,RoundTime,RoundTimeDuration,RoundTimeDurationToIncrement,RunCallerContext,RunSuspendedContext,SafePerformPromiseAll,SameType,SameValue,SameValueNonNumber,SameValueZero,ScriptEvaluation,ScriptRecord,SecondFromTime,SecondsPerMinute,Set,SetDefaultGlobalBindings,SetFunctionLength,SetFunctionName,SetImmutablePrototype,SetIntegrityLevel,SetValueInBuffer,SetViewValue,SetterThatIgnoresPrototypeProperties,ShadowRealmImportValue,SnapToInteger,SourceTextModuleRecord,SpeciesConstructor,StringCreate,StringExoticObjectInternalMethods,StringGetOwnProperty,StringIndexOf,StringPad,StringToBigInt,StringToCodePoints,StringToNumber,StringValue,Symbol(Symbol.toStringTag),SymbolDescriptiveString,SymbolValue,SyntheticModuleRecord,SystemDateTime,SystemTimeZoneIdentifier,SystemUTCEpochMilliseconds,SystemUTCEpochNanoseconds,TV,Table69_NonbinaryUnicodeProperties,Table70_BinaryUnicodeProperties,Table71_BinaryPropertyOfStrings,TemplateStrings,TemporalDateToString,TemporalDurationFromInternal,TemporalDurationToString,TemporalInstantToString,TemporalMonthDayToString,TemporalUnitLength,TemporalYearMonthToString,TemporalZonedDateTimeToString,TestIntegrityLevel,ThisBigIntValue,ThisBooleanValue,ThisNumberValue,ThisStringValue,ThisSymbolValue,Throw,ThrowCompletion,ThrowCompletion_,TimeClip,TimeDurationFromComponents,TimeDurationFromEpochNanosecondsDifference,TimeDurationSign,TimeFromYear,TimeRecordToString,TimeValueToISODateTimeRecord,TimeWithinDay,TimeZoneEquals,ToAbsoluteIndex,ToBigInt,ToBigInt64,ToBigUint64,ToBoolean,ToClampedIndex,ToFixedSizeInteger,ToIndex,ToInt16,ToInt32,ToInt8,ToIntegerOrInfinity,ToInternalDurationRecord,ToInternalDurationRecordWith24HourDays,ToLength,ToNumber,ToNumeric,ToObject,ToOffsetString,ToPartialDurationRecord,ToPartialTimeRecord,ToPrimitive,ToPropertyDescriptor,ToPropertyKey,ToSecondsStringPrecisionRecord,ToString,ToTemporalCalendarIdentifier,ToTemporalDate,ToTemporalDateTime,ToTemporalDuration,ToTemporalInstant,ToTemporalMonthDay,ToTemporalTime,ToTemporalTimeZoneIdentifier,ToTemporalYearMonth,ToTemporalZonedDateTime,ToTimeRecordOrMidnight,ToUint16,ToUint32,ToUint8,ToUint8Clamp,ToZeroPaddedDecimalString,Token,TokenData,TopLevelLexicallyDeclaredNames,TopLevelLexicallyScopedDeclarations,TopLevelVarDeclaredNames,TopLevelVarScopedDeclarations,TotalRelativeDuration,TotalTimeDuration,TrimString,TypedArrayByteLength,TypedArrayCreate,TypedArrayGetElement,TypedArrayLength,TypedArraySetElement,UTC,UTF16EncodeCodePoint,UTF16SurrogatePairToCodePoint,UndefinedValue,Unicode,UpdateEmpty,ValidateAndApplyPropertyDescriptor,ValidateISODaysRange,ValidateShadowRealmObject,ValidateTemporalRoundingIncrement,ValidateTemporalUnitValue,Value,ValueOfNormalCompletion,VarDeclaredNames,VarScopedDeclarations,WeakRefDeref,WebLikeEventLoop,WeekDay,WrappedFunctionCreate,X,YearFromTime,Yield,Z,ZeroDateDuration,activeFunctionObject,boostTest262Harness,builtinFunctionInternalSlots,captureControl,captureStack,composeModuleLoaders,createBuiltinModuleLoader,createDataGraphCheckpoint,createOrdinaryObjectCheckpoint,createStateCheckpoint,createTest262Intrinsics,currentRealmRecord,evalQ,gc,generatorBrandToErrorMessageType,getActiveScriptId,getArgumentsParameterMapData,getBreakpointCandidateNodes,getCurrentStack,getECMAScriptFunctionInternalSlots,getHostDefinedErrorDetails,getNativeCaptures,hasBuiltinFunctionMethods,hasECMAScriptFunctionMethods,hasOrdinaryObjectMethods,hasSourceTextInternalSlot,hostSupportResizableArrayBuffer,importBundledTest262Harness,inspect,intrinsics,isArgumentExoticObject,isArrayBufferObject,isArrayExoticObject,isArrayIndex,isBoundFunctionObject,isBuiltinFunctionObject,isCalendarUnit,isDataViewObject,isDateObject,isDateUnit,isECMAScriptFunctionObject,isErrorObject,isEvaluator,isFinalizationRegistryObject,isFunctionObject,isIntegerIndex,isLeadingSurrogate,isMapObject,isModuleNamespaceObject,isNamedTimeZoneIdentifier,isNonNegativeInteger,isOffsetTimeZoneIdentifier,isOrdinaryObject,isPromiseObject,isProxyExoticObject,isRegExpObject,isSetObject,isShadowRealmObject,isStrictModeCode,isTemporalDurationObject,isTemporalInstantObject,isTemporalPlainDateObject,isTemporalPlainDateTimeObject,isTemporalPlainMonthDayObject,isTemporalPlainTimeObject,isTemporalPlainYearMonthObject,isTemporalZonedDateTimeObject,isTimeUnit,isTrailingSurrogate,isTypedArrayObject,isWeakMapObject,isWeakRef,isWeakSetObject,isWrappedFunctionExoticObject,kInternal,markBuiltinFunctionAsConstructor,maxTimeDuration,measureSynchronousExecution,parseNodeToBreakpointLocation,performDevtoolsEval,refineLeftHandSideExpression,regexpInternalSlots,registerNativeClosure,runSingleJobInQueue,runningExecutionContext,setSurroundingAgent,skipDebugger,sourceTextMatchedBy,surroundingAgent,typedArrayInfoByName,typedArrayInfoByType,unwrapCompletion,wellKnownSymbols,wrappedParse": 1,
+          "ConcreteRuntime: agent,cancelTimer,captureHostState,consoleEntries,countJob,dispose,drainJobs,engine,evaluate,failure,hostCheckpoints,isDisposed,jobs,mark,maxJobs,nextTimer,readString,realm,scope,steps,timers,uncaughtExceptions,unhandledRejections,unwrap,withAgent": 1,
+          "Object: Greedy,Max,Min": 1,
+          "ConcreteCharSet: characterModeOnly,chars": 1,
+          "Object: CapturingGroupsCount,DotAll,IgnoreCase,Multiline,Unicode,UnicodeSets": 1,
+          "Object: Expression,IdentifierName,MemberExpression,PrivateIdentifier,location,parent,sourceText,strict,type": 7,
+          "Object: AssignmentExpression_a,AssignmentExpression_b,ShortCircuitExpression,location,parent,sourceText,strict,type": 2,
+          "Object: location,name,parent,sourceText,strict,type": 3,
+          "Object: done,value": 7,
+          "Object: e,f,n,s": 7,
+          "Object: BindingList,LetOrConst,location,parent,sourceText,strict,type": 5,
+          "NormalCompletion: Value": 43,
+          "Object: Expression,location,parent,sourceText,strict,type": 54,
+          "Object: resume,value": 1,
+          "Object: Arguments,CallExpression,location,parent,sourceText,strict,type": 14,
+          "Object: escaped,location,name,parent,sourceText,strict,type": 37,
+          "Object: AssignmentExpression,AssignmentOperator,LeftHandSideExpression,location,parent,sourceText,strict,type": 8,
+          "Object: UnaryExpression,location,operator,parent,sourceText,strict,type": 5,
+          "Object: Expression,Statement_a,location,parent,sourceText,strict,type": 8,
+          "Object: Expression,StatementList,location,parent,sourceText,strict,type": 22,
+          "Object: CaseClauses_a,location,parent,sourceText,strict,type": 1,
+          "Set: ": 5,
+          "Object: CaseBlock,Expression,location,parent,sourceText,strict,type": 1,
+          "Object: Expression,Statement_a,Statement_b,location,parent,sourceText,strict,type": 2,
+          "Object: VariableDeclarationList,location,parent,sourceText,strict,type": 8,
+          "Object: EqualityExpression,RelationalExpression,location,operator,parent,sourceText,strict,type": 4,
+          "Object: Expression_b,Statement,location,parent,sourceText,strict,type": 1,
+          "Object: LabelIdentifier,location,parent,sourceText,strict,type": 1,
+          "Object: StatementList,location,parent,sourceText,strict,type": 8,
+          "Object: Block,CatchParameter,location,parent,sourceText,strict,type": 1,
+          "Object: Block,Catch,Finally,location,parent,sourceText,strict,type": 2,
+          "Object: Expression,Statement,location,parent,sourceText,strict,type": 3,
+          "Object: LabelIdentifier,LabelledItem,location,parent,sourceText,strict,type": 1,
+          "Object: ExpressionList,location,parent,sourceText,strict,type": 3,
+          "Object: LogicalANDExpression,LogicalORExpression,location,parent,sourceText,strict,type": 2,
+          "Object: Expression_a,Statement,VariableDeclarationList,location,parent,sourceText,strict,type": 1,
+          "Object: BitwiseORExpression,LogicalANDExpression,location,parent,sourceText,strict,type": 2,
+          "ReturnCompletion: Target,Value": 1,
+          "Object: NewTarget,thisValue": 1,
+          "Object: ElementList,hasTrailingComma,location,parent,sourceText,strict,type": 1,
+          "Object: ScriptBody,location,parent,sourceText,strict,type": 1
+        },
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21436,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2477,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DescriptorInitializer": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected final Descriptor records and implied saved property descriptors validate read-only fields and metadata. Explicitly selected DescriptorInitializer records restore mutable fields. Referent contents, other records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership."
+      }
+    },
+    {
+      "isReversed": true,
+      "report": {
+        "descriptorInitializerCount": 0,
+        "descriptorCount": 5998,
+        "recordShapes": {
+          "Object: suspend,value": 1,
+          "Object: location,parent,sourceText,strict,type,value": 4,
+          "Agent: AgentRecord,assertCanPerformHostEffect,breakpointsByFunction,breakpointsEnabled,captureEvaluation,eventLoop,executionContextStack,finalizationRegistryScheduledForCleanup,hostDefinedOptions,jobQueue,onNoEvaluator,parsedSources,pauseOnExceptions": 1,
+          "ScriptRecord: ECMAScriptCode,HostDefined,LoadedModules,Realm": 2,
+          "ManagedRealm: AgentSignifier,GlobalEnv,GlobalObject,HostDefined,Intrinsics,LoadedModules,TemplateMap,randomState,topContext": 1,
+          "PropertyKeyMap: ": 2212,
+          "Descriptor: Configurable,Enumerable,Get,Set,Value,Writable": 5998,
+          "Object: -1,1,Backward,Forward": 1,
+          "null: Basic_Emoji,Emoji_Keycap_Sequence,RGI_Emoji,RGI_Emoji_Flag_Sequence,RGI_Emoji_Modifier_Sequence,RGI_Emoji_Tag_Sequence,RGI_Emoji_ZWJ_Sequence": 1,
+          "null: AHex,ASCII,ASCII_Hex_Digit,Alpha,Alphabetic,Any,Assigned,Bidi_C,Bidi_Control,Bidi_M,Bidi_Mirrored,CI,CWCF,CWCM,CWKCF,CWL,CWT,CWU,Case_Ignorable,Cased,Changes_When_Casefolded,Changes_When_Casemapped,Changes_When_Lowercased,Changes_When_NFKC_Casefolded,Changes_When_Titlecased,Changes_When_Uppercased,DI,Dash,Default_Ignorable_Code_Point,Dep,Deprecated,Dia,Diacritic,EBase,EComp,EMod,EPres,Emoji,Emoji_Component,Emoji_Modifier,Emoji_Modifier_Base,Emoji_Presentation,Ext,ExtPict,Extended_Pictographic,Extender,Gr_Base,Gr_Ext,Grapheme_Base,Grapheme_Extend,Hex,Hex_Digit,IDC,IDS,IDSB,IDST,IDS_Binary_Operator,IDS_Trinary_Operator,ID_Continue,ID_Start,Ideo,Ideographic,Join_C,Join_Control,LOE,Logical_Order_Exception,Lower,Lowercase,Math,NChar,Noncharacter_Code_Point,Pat_Syn,Pat_WS,Pattern_Syntax,Pattern_White_Space,QMark,Quotation_Mark,RI,Radical,Regional_Indicator,SD,STerm,Sentence_Terminal,Soft_Dotted,Term,Terminal_Punctuation,UIdeo,Unified_Ideograph,Upper,Uppercase,VS,Variation_Selector,White_Space,XIDC,XIDS,XID_Continue,XID_Start,space": 1,
+          "Object: General_Category,Script,Script_Extensions,description": 1,
+          "null: General_Category,Script,Script_Extensions,gc,sc,scx": 1,
+          "Object: SimpleOrCommonCaseFoldingMapping,characterMatchPropertyValue,getStringPropertySet,isCharacter,iterateByCodePoint,iterateCharacterByCodePoint,str_normalization,str_toLocaleLowercase,str_toLocaleUppercase,str_toLowercase,str_toUppercase,toCharacter,toCodePoint,toCodeUnit,toUppercase": 1,
+          "RegExp: lastIndex": 2,
+          "Object: DefineOwnProperty,GetOwnProperty,OwnPropertyKeys": 1,
+          "null: asyncDispose,asyncIterator,dispose,hasInstance,isConcatSpreadable,iterator,match,matchAll,replace,search,species,split,toPrimitive,toStringTag,unscopables": 1,
+          "Object: DefineOwnProperty": 1,
+          "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+          "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,Set": 1,
+          "null: ADD,AND,ARROW,ASSIGN,ASSIGN_ADD,ASSIGN_AND,ASSIGN_BIT_AND,ASSIGN_BIT_OR,ASSIGN_BIT_XOR,ASSIGN_DIV,ASSIGN_EXP,ASSIGN_MOD,ASSIGN_MUL,ASSIGN_NULLISH,ASSIGN_OR,ASSIGN_SAR,ASSIGN_SHL,ASSIGN_SHR,ASSIGN_SUB,AT,AWAIT,BIGINT,BIT_AND,BIT_NOT,BIT_OR,BIT_XOR,BREAK,CASE,CATCH,CLASS,COLON,COMMA,CONDITIONAL,CONST,CONTINUE,DEBUGGER,DEC,DEFAULT,DELETE,DIV,DO,ELLIPSIS,ELSE,ENUM,EOS,EQ,EQ_STRICT,ESCAPED_KEYWORD,EXP,EXPORT,EXTENDS,FALSE,FINALLY,FOR,FUNCTION,GT,GTE,IDENTIFIER,IF,IMPORT,IN,INC,INSTANCEOF,LBRACE,LBRACK,LPAREN,LT,LTE,MOD,MUL,NE,NEW,NE_STRICT,NOT,NULL,NULLISH,NUMBER,OPTIONAL,OR,PERIOD,PRIVATE_IDENTIFIER,RBRACE,RBRACK,RETURN,RPAREN,SAR,SEMICOLON,SHL,SHR,STRING,SUB,SUPER,SWITCH,TEMPLATE,THIS,THROW,TRUE,TRY,TYPEOF,VAR,VOID,WHILE,WITH,YIELD": 1,
+          "Object: 0,1,ASYNC,NORMAL": 1,
+          "WeakMap: ": 1,
+          "Map: ": 1,
+          "Object: BigInt64,BigUint64,Float16,Float32,Float64,Int16,Int32,Int8,Uint16,Uint32,Uint8,Uint8C": 1,
+          "Object: canonicalNaNBits,exponentBias,exponentBits,fractionBits": 3,
+          "Object: BigInt64Array,BigUint64Array,Float16Array,Float32Array,Float64Array,Int16Array,Int32Array,Int8Array,Uint16Array,Uint32Array,Uint8Array,Uint8ClampedArray": 1,
+          "Object: DefineOwnProperty,Delete,Get,GetOwnProperty,HasProperty,OwnPropertyKeys,PreventExtensions,Set": 1,
+          "Object: 10,11,12,13,9": 1,
+          "Float64Array: 0": 1,
+          "BigUint64Array: 0": 1,
+          "Object: Call,Construct,DefineOwnProperty,Delete,Get,GetOwnProperty,GetPrototypeOf,HasProperty,IsExtensible,OwnPropertyKeys,PreventExtensions,Set,SetPrototypeOf": 1,
+          "Object: FunctionStatementList,directives,location,parent,sourceText,strict,type": 522,
+          "Object: BindingIdentifier,Initializer,location,parent,sourceText,strict,type": 938,
+          "Object: deletable,indirect,initialized,mark,mutable,strict,value": 814,
+          "Object: ExpressionBody,location,parent,sourceText,strict,type": 7,
+          "ArgumentsParameterMapData: environment,getOwnProperty,ownPropertyKeys,pendingMappings,realm": 16,
+          "null: AbruptCompletion,AbstractEventLoop,AbstractModuleRecord,Add24HourDaysToTimeDuration,AddDaysToISODate,AddDisposableResource,AddDurationToDate,AddDurationToDateTime,AddDurationToInstant,AddDurationToTime,AddDurationToYearMonth,AddDurationToZonedDateTime,AddDurations,AddEpochNanoseconds,AddRestrictedFunctionProperties,AddTime,AddTimeDuration,AddTimeDurationToEpochNanoseconds,AddToKeptObjects,AddValueToKeyedGroup,AddZonedDateTime,AdjustDateDurationRecord,Agent,AgentCanSuspend,AgentSignifier,AllImportAttributesSupported,AllocateArrayBuffer,ApplyDecoratorsAndDefineMethod,ApplyDecoratorsToClassDefinition,ApplyDecoratorsToElementDefinition,ApplyStringOrNumericBinaryOperator,ApplyUnsignedRoundingMode,ArgumentExoticObject,ArgumentListEvaluation,ArgumentsParameterMapData,ArrayBufferByteLength,ArrayBufferCopyAndDetach,ArrayCreate,ArrayExoticObjectInternalMethods,ArraySetLength,ArraySpeciesCreate,Assert,AsyncBlockStart,AsyncFromSyncIteratorContinuation,AsyncFunctionStart,AsyncGeneratorAwaitReturn,AsyncGeneratorEnqueue,AsyncGeneratorRequestRecord,AsyncGeneratorResume,AsyncGeneratorStart,AsyncGeneratorValidate,AsyncGeneratorYield,AsyncIteratorClose,AvailableCalendars,AvailableNamedTimeZoneIdentifiers,Await,BalanceISODateTime,BalanceISOYearMonth,BalanceTime,BaseValue,BasicJobQueue,BigIntValue,BindingClassDeclarationEvaluation,BindingEvaluation,BindingInitialization,BlockDeclarationInstantiation,BodyText,BooleanValue,BoundNames,BreakCompletion,BubbleRelativeDuration,BuildEvaluationList,BuildLinkingList,ByTypeJobQueue,CalendarDateAdd,CalendarDateFromFields,CalendarDateToISO,CalendarDateUntil,CalendarExtraFields,CalendarFieldKeysToIgnore,CalendarISOToDate,CalendarMergeFields,CalendarMonthDayFromFields,CalendarMonthDayToISOReferenceDate,CalendarResolveFields,CalendarYearMonthFromFields,Call,CallFrame,CallSite,CanBeHeldWeakly,CanonicalNumericIndexString,Canonicalize,CanonicalizeCalendar,CanonicalizeKeyedCollectionKey,CharacterValue,ClassDefinitionEvaluation,ClassElementDefinitionRecord,ClassFieldDefinitionEvaluation,ClassFieldDefinitionEvaluation_decorator,ClassFieldDefinitionRecord,ClassStaticBlockDefinitionEvaluation,ClassStaticBlockDefinitionRecord,CleanupFinalizationRegistry,ClearKeptObjects,CloneArrayBuffer,CodePointAt,CodePointsToString,CombineDateAndTimeDuration,CompareArrayElements,CompareEpochNanoseconds,CompareISODate,CompareISODateTime,CompareSurpasses,CompareTimeDuration,CompareTimeRecord,CompilePattern,CompletePropertyDescriptor,Completion,CompletionImpl,ComputeNudgeWindow,Construct,ConstructorMethod,ContainsArguments,ContainsExpression,ContainsUsing,ContinueCompletion,ContinueDynamicImport,ContinueModuleLoading,CopyDataBlockBytes,CopyDataProperties,CopyNameAndLength,CountLeftCapturingParensWithin,CreateAddInitializerFunction,CreateArrayFromList,CreateArrayIterator,CreateAsyncFromSyncIterator,CreateBuiltinFunction,CreateByteDataBlock,CreateBytesModule,CreateDataProperty,CreateDataPropertyOrThrow,CreateDateDurationRecord,CreateDecoratorAccessObject,CreateDecoratorContextObject,CreateDefaultExportSyntheticModule,CreateDisposableResource,CreateDynamicFunction,CreateFieldInitializerFunction,CreateISODateRecord,CreateIntrinsics,CreateIteratorFromClosure,CreateIteratorResultObject,CreateListFromArrayLike,CreateListIteratorRecord,CreateMappedArgumentsObject,CreateMethodProperty,CreateMonthCode,CreateNegatedTemporalDuration,CreateNonEnumerableDataPropertyOrThrow,CreateResolvingFunctions,CreateTemporalDate,CreateTemporalDateTime,CreateTemporalDuration,CreateTemporalInstant,CreateTemporalMonthDay,CreateTemporalTime,CreateTemporalYearMonth,CreateTemporalZonedDateTime,CreateTextModule,CreateTimeRecord,CreateTypeErrorCopy,CreateUnmappedArgumentsObject,CyclicModuleRecord,DataBlock,DateDurationDays,DateDurationSign,DateFromTime,DateProto_toISOString,Day,DayFromYear,DayWithinYear,Decimal,DeclarationPart,DeclarativeEnvironmentRecord,DecoratorEvaluation,DecoratorListEvaluation,DefaultTemporalLargestUnit,DefineField,DefineMethod,DefineMethodProperty,DefinePropertyOrThrow,DeletePropertyOrThrow,Descriptor,DescriptorInitializer,DestructuringAssignmentEvaluation,DetachArrayBuffer,DifferenceEpochNanoseconds,DifferenceISODateTime,DifferencePlainDateTimeWithRounding,DifferencePlainDateTimeWithTotal,DifferenceTemporalInstant,DifferenceTemporalPlainDate,DifferenceTemporalPlainDateTime,DifferenceTemporalPlainTime,DifferenceTemporalPlainYearMonth,DifferenceTemporalZonedDateTime,DifferenceTime,DifferenceZonedDateTime,DifferenceZonedDateTimeWithRounding,DifferenceZonedDateTimeWithTotal,DisambiguatePossibleEpochNanoseconds,DisposeResources,DurationSign,DynamicParsedCodeRecord,EnsureCompletion,EnumerableOwnProperties,EnvironmentRecord,EpochDaysToEpochMilliseconds,EscapeRegExpPattern,EvalDeclarationInstantiation,Evaluate,EvaluateAsyncFunctionBody,EvaluateAsyncGeneratorBody,EvaluateBody,EvaluateBody_AssignmentExpression,EvaluateCall,EvaluateClassStaticBlockBody,EvaluateConciseBody,EvaluateFunctionBody,EvaluateGeneratorBody,EvaluateModuleSync,EvaluatePropertyAccessWithExpressionKey,EvaluatePropertyAccessWithIdentifierKey,EvaluateStringOrNumericBinaryExpression,Evaluate_AdditiveExpression,Evaluate_AnyFunctionBody,Evaluate_ArrayLiteral,Evaluate_ArrowFunction,Evaluate_AssignmentExpression,Evaluate_AsyncArrowFunction,Evaluate_AsyncFunctionExpression,Evaluate_AsyncGeneratorExpression,Evaluate_AwaitExpression,Evaluate_BinaryBitwiseExpression,Evaluate_Block,Evaluate_BreakStatement,Evaluate_BreakableStatement,Evaluate_CallExpression,Evaluate_CaseClause,Evaluate_ClassDeclaration,Evaluate_ClassExpression,Evaluate_CoalesceExpression,Evaluate_CommaOperator,Evaluate_ConditionalExpression,Evaluate_ContinueStatement,Evaluate_DebuggerStatement,Evaluate_EmptyStatement,Evaluate_EqualityExpression,Evaluate_ExponentiationExpression,Evaluate_ExportDeclaration,Evaluate_ExpressionBody,Evaluate_ExpressionStatement,Evaluate_ForBinding,Evaluate_FunctionDeclaration,Evaluate_FunctionExpression,Evaluate_FunctionStatementList,Evaluate_GeneratorExpression,Evaluate_HoistableDeclaration,Evaluate_IdentifierReference,Evaluate_IfStatement,Evaluate_ImportCall,Evaluate_ImportDeclaration,Evaluate_ImportMeta,Evaluate_LabelledStatement,Evaluate_LexicalDeclaration,Evaluate_Literal,Evaluate_LogicalANDExpression,Evaluate_LogicalORExpression,Evaluate_MemberExpression,Evaluate_Module,Evaluate_ModuleBody,Evaluate_MultiplicativeExpression,Evaluate_NewExpression,Evaluate_NewTarget,Evaluate_ObjectLiteral,Evaluate_OptionalExpression,Evaluate_ParenthesizedExpression,Evaluate_PropertyName,Evaluate_RegularExpressionLiteral,Evaluate_RelationalExpression,Evaluate_RelationalExpression_PrivateIdentifier,Evaluate_ReturnStatement,Evaluate_Script,Evaluate_ScriptBody,Evaluate_ShiftExpression,Evaluate_StatementList,Evaluate_SuperCall,Evaluate_SuperProperty,Evaluate_SwitchStatement,Evaluate_TaggedTemplateExpression,Evaluate_TemplateLiteral,Evaluate_This,Evaluate_ThrowStatement,Evaluate_TryStatement,Evaluate_UnaryExpression,Evaluate_UpdateExpression,Evaluate_VariableDeclarationList,Evaluate_VariableStatement,Evaluate_WithStatement,Evaluate_YieldExpression,ExcludeImportedNames,ExecutionContext,ExecutionContextStack,ExpectedArgumentCount,ExportEntries,ExportEntriesForModule,ExportFromDeclarationModuleRequest,F,FEATURES,FinishLoadingImportedModule,Flag,FlagText,ForDeclarationBindingInitialization,FormatCalendarAnnotation,FormatDateTimeUTCOffsetRounded,FormatFractionalSeconds,FormatISODateTime,FormatOffsetTimeZoneIdentifier,FormatTimeString,FormatUTCOffsetNanoseconds,FromPropertyDescriptor,FunctionDeclarationInstantiation,FunctionEnvironmentRecord,FunctionKind,GatherAsynchronousTransitiveDependencies,GatherAsynchronousTransitiveDependenciesForRequests,GeneratorResume,GeneratorResumeAbrupt,GeneratorStart,GeneratorValidate,GeneratorYield,Get,GetActiveScriptOrModule,GetArrayBufferMaxByteLengthOption,GetAvailableNamedTimeZoneIdentifier,GetDifferenceSettings,GetDirectionOption,GetDisposeMethod,GetEpochNanosecondsFor,GetFunctionRealm,GetGeneratorKind,GetGlobalObject,GetISODateTimeFor,GetIdentifierReference,GetImportedModule,GetIterator,GetIteratorDirect,GetIteratorFlattenable,GetIteratorFromMethod,GetMatchIndexPair,GetMatchString,GetMethod,GetModuleNamespace,GetNamedTimeZoneEpochNanoseconds,GetNamedTimeZoneNextTransition,GetNamedTimeZoneOffsetNanoseconds,GetNamedTimeZonePreviousTransition,GetNewOptionalIndirectExportsModuleRequests,GetNewTarget,GetOffsetNanosecondsFor,GetOptionsObject,GetPossibleEpochNanoseconds,GetPrototypeFromConstructor,GetRoundingIncrementOption,GetRoundingModeOption,GetShadowRealmContext,GetStartOfDay,GetStringIndex,GetSubstitution,GetTemporalCalendarIdentifierWithISODefault,GetTemporalDisambiguationOption,GetTemporalFractionalSecondDigitsOption,GetTemporalOffsetOption,GetTemporalOverflowOption,GetTemporalRelativeToOption,GetTemporalShowCalendarNameOption,GetTemporalShowOffsetOption,GetTemporalShowTimeZoneNameOption,GetTemporalUnitValuedOption,GetThisEnvironment,GetThisValue,GetUTCEpochNanoseconds,GetUnsignedRoundingMode,GetV,GetValue,GetValueFromBuffer,GetViewByteLength,GetViewValue,GetWrappedValue,GlobalDeclarationInstantiation,GlobalEnvironmentRecord,GraphLoadingState,GroupBy,HasInitializer,HasName,HasOwnProperty,HasProperty,HostCallJobCallback,HostEnqueueFinalizationRegistryCleanupJob,HostEnqueuePromiseJob,HostEnsureCanCompileStrings,HostFinalizeImportMeta,HostGetImportMetaProperties,HostGetModuleSourceModuleRecord,HostGetSupportedImportAttributes,HostHasSourceTextAvailable,HostLoadImportedModule,HostMakeJobCallback,HostPromiseRejectionTracker,HostResizeArrayBuffer,HostSystemUTCEpochNanoseconds,HourFromTime,HoursPerDay,ISODateSurpasses,ISODateTimeWithinLimits,ISODateToEpochDays,ISODateToFields,ISODateWithinLimits,ISODayOfWeek,ISODayOfYear,ISODaysInMonth,ISOWeekOfYear,ISOYearMonthWithinLimits,IfAbruptCloseAsyncIterator,IfAbruptCloseIterator,IfAbruptCloseIterators,IfAbruptRejectPromise,ImportEntries,ImportEntriesForModule,ImportedLocalNames,ImportedNames,InLeapYear,IncrementModuleAsyncEvaluationCount,InitializeBoundName,InitializeFieldOrAccessor,InitializeInstanceElements,InitializePrivateMethods,InitializeReferencedBinding,InnerModuleEvaluation,InnerModuleLinking,InnerModuleLoading,InstallErrorCause,InstanceofOperator,InstantiateArrowFunctionExpression,InstantiateAsyncArrowFunctionExpression,InstantiateAsyncFunctionExpression,InstantiateAsyncGeneratorFunctionExpression,InstantiateFunctionObject,InstantiateFunctionObject_AsyncFunctionDeclaration,InstantiateFunctionObject_AsyncGeneratorDeclaration,InstantiateFunctionObject_FunctionDeclaration,InstantiateFunctionObject_GeneratorDeclaration,InstantiateGeneratorFunctionExpression,InstantiateOrdinaryFunctionExpression,InternalDurationSign,InterpretISODateTimeOffset,InterpretTemporalDateTimeFields,IntrinsicsFunctionToString,Invoke,IsAccessorDescriptor,IsAnonymousFunctionDefinition,IsArray,IsArrayBufferViewOutOfBounds,IsAwaitUsingDeclaration,IsBigIntElementType,IsCallable,IsCharacterClass,IsCompatiblePropertyDescriptor,IsComputedPropertyKey,IsConcatSpreadable,IsConstantDeclaration,IsConstructor,IsDataDescriptor,IsDestructuring,IsDetachedBuffer,IsError,IsExtensible,IsFixedLengthArrayBuffer,IsFunctionDefinition,IsGenericDescriptor,IsIdentifierRef,IsInTailPosition,IsIntegralNumber,IsLessThan,IsLooselyEqual,IsModuleSCCEvaluated,IsPartialTemporalObject,IsPrivateReference,IsPromise,IsPropertyKey,IsPropertyReference,IsRegExp,IsSharedArrayBuffer,IsSimpleParameterList,IsStatic,IsStrict,IsStrictlyEqual,IsStringPrefix,IsStringWellFormedUnicode,IsSuperReference,IsTypedArrayFixedLength,IsTypedArrayOutOfBounds,IsUnresolvableReference,IsUnsignedElementType,IsUsingDeclaration,IsValidDuration,IsValidISODate,IsValidIntegerIndex,IsValidTime,IsViewOutOfBounds,IsWithinEpochNanosecondsInterval,IteratorBindingInitialization_ArrayBindingPattern,IteratorBindingInitialization_FormalParameters,IteratorClose,IteratorCloseAll,IteratorComplete,IteratorNext,IteratorStep,IteratorStepValue,IteratorToList,IteratorValue,IteratorZip,JSStringValue,KeyForSymbol,KeyedBindingInitialization,LabelledEvaluation,LargerOfTwoTemporalUnits,LengthOfArrayLike,LexicallyDeclaredNames,LexicallyScopedDeclarations,ListAppendUnique,LocalTime,MV_StringNumericLiteral,MakeAutoAccessorGetter,MakeAutoAccessorSetter,MakeBasicObject,MakeClassConstructor,MakeConstructor,MakeDataViewWithBufferWitnessRecord,MakeDate,MakeDay,MakeFullYear,MakeMatchIndicesIndexPairArray,MakeMethod,MakePrivateReference,MakeRealm,MakeTime,MakeTypedArrayWithBufferWitnessRecord,ManagedRealm,MaxEpochNanoseconds,MaximumTemporalDurationRoundingIncrement,MergeImportedNames,MethodDefinitionEvaluation,MicroTaskEventLoop,MidnightTimeRecord,MillisecondFromTime,MillisecondsPerDay,MillisecondsPerHour,MillisecondsPerMinute,MillisecondsPerSecond,MinEpochNanoseconds,MinuteFromTime,MinutesPerHour,ModuleCache,ModuleEnvironmentRecord,ModuleNamespaceCreate,ModuleRecord,ModuleRequests,ModuleRequestsKeyEqual,MonthFromTime,NamedEvaluation,NanosecondsPerDay,NanosecondsPerHour,NanosecondsPerMicrosecond,NanosecondsPerMillisecond,NanosecondsPerMinute,NanosecondsPerSecond,NegateRoundingMode,NewPromiseCapability,NoTimeZone,NodeJSLikeEventLoop,NonConstructorElements,NonISOCalendarDateToISO,NonISOCalendarISOToDate,NonISODateAdd,NonISODateUntil,NonISOFieldKeysToIgnore,NonISOMonthDayToISOReferenceDate,NonISOResolveFields,NoonTimeRecord,NormalCompletion,NormalCompletionImpl,NudgeToCalendarUnit,NudgeToDayOrTime,NudgeToZonedTime,NullValue,NumberToBigInt,NumberValue,NumericToRawBytes,NumericValue,ObjectEnvironmentRecord,ObjectValue,OptionalIndirectExportEntries,OrdinaryCallBindThis,OrdinaryCallEvaluateBody,OrdinaryCreateFromConstructor,OrdinaryDefineOwnProperty,OrdinaryDelete,OrdinaryFunctionCreate,OrdinaryGet,OrdinaryGetOwnProperty,OrdinaryGetPrototypeOf,OrdinaryHasInstance,OrdinaryHasProperty,OrdinaryIsExtensible,OrdinaryObjectCreate,OrdinaryOwnPropertyKeys,OrdinaryPreventExtensions,OrdinarySet,OrdinarySetPrototypeOf,OrdinarySetWithOwnDescriptor,OrdinaryToPrimitive,OrdinaryWrappedFunctionCall,OutOfRange,PadISOYear,ParseDateTimeUTCOffset,ParseJSONModule,ParseModule,ParsePattern,ParseScript,Parser,PerformEval,PerformPromiseThen,PerformShadowRealmEval,PrepareCalendarFields,PrepareForOrdinaryCall,PrepareForTailCall,PrepareForWrappedFunctionCall,PrimitiveValue,PrivateBoundIdentifiers,PrivateElementFind,PrivateElementRecord,PrivateEnvironmentRecord,PrivateFieldAdd,PrivateGet,PrivateMethodOrAccessorAdd,PrivateName,PrivateSet,PromiseCapabilityRecord,PromiseReactionRecord,PromiseResolve,PropName,PropertyBindingInitialization,PropertyDefinitionEvaluation_PropertyDefinitionList,PropertyKeyMap,ProxyCreate,PutValue,Q,R,RawBytesToNumeric,RawTokens,ReadyForSyncExecution,Realm,ReferenceRecord,RegExpAlloc,RegExpCreate,RegExpHasFlag,RegExpInitialize,RegExpParser,RegExpState,RegulateISODate,RegulateTime,RequireInternalSlot,RequireObjectCoercible,ResolveBinding,ResolveBooleanCondition,ResolvePrivateIdentifier,ResolveThisBinding,ResolvedBindingRecord,RestBindingInitialization,ReturnCompletion,ReturnCompletion_,RoundEpochNanoseconds,RoundISODateTime,RoundNumberToIncrement,RoundNumberToIncrementAsIfPositive,RoundRelativeDuration,RoundTime,RoundTimeDuration,RoundTimeDurationToIncrement,RunCallerContext,RunSuspendedContext,SafePerformPromiseAll,SameType,SameValue,SameValueNonNumber,SameValueZero,ScriptEvaluation,ScriptRecord,SecondFromTime,SecondsPerMinute,Set,SetDefaultGlobalBindings,SetFunctionLength,SetFunctionName,SetImmutablePrototype,SetIntegrityLevel,SetValueInBuffer,SetViewValue,SetterThatIgnoresPrototypeProperties,ShadowRealmImportValue,SnapToInteger,SourceTextModuleRecord,SpeciesConstructor,StringCreate,StringExoticObjectInternalMethods,StringGetOwnProperty,StringIndexOf,StringPad,StringToBigInt,StringToCodePoints,StringToNumber,StringValue,Symbol(Symbol.toStringTag),SymbolDescriptiveString,SymbolValue,SyntheticModuleRecord,SystemDateTime,SystemTimeZoneIdentifier,SystemUTCEpochMilliseconds,SystemUTCEpochNanoseconds,TV,Table69_NonbinaryUnicodeProperties,Table70_BinaryUnicodeProperties,Table71_BinaryPropertyOfStrings,TemplateStrings,TemporalDateToString,TemporalDurationFromInternal,TemporalDurationToString,TemporalInstantToString,TemporalMonthDayToString,TemporalUnitLength,TemporalYearMonthToString,TemporalZonedDateTimeToString,TestIntegrityLevel,ThisBigIntValue,ThisBooleanValue,ThisNumberValue,ThisStringValue,ThisSymbolValue,Throw,ThrowCompletion,ThrowCompletion_,TimeClip,TimeDurationFromComponents,TimeDurationFromEpochNanosecondsDifference,TimeDurationSign,TimeFromYear,TimeRecordToString,TimeValueToISODateTimeRecord,TimeWithinDay,TimeZoneEquals,ToAbsoluteIndex,ToBigInt,ToBigInt64,ToBigUint64,ToBoolean,ToClampedIndex,ToFixedSizeInteger,ToIndex,ToInt16,ToInt32,ToInt8,ToIntegerOrInfinity,ToInternalDurationRecord,ToInternalDurationRecordWith24HourDays,ToLength,ToNumber,ToNumeric,ToObject,ToOffsetString,ToPartialDurationRecord,ToPartialTimeRecord,ToPrimitive,ToPropertyDescriptor,ToPropertyKey,ToSecondsStringPrecisionRecord,ToString,ToTemporalCalendarIdentifier,ToTemporalDate,ToTemporalDateTime,ToTemporalDuration,ToTemporalInstant,ToTemporalMonthDay,ToTemporalTime,ToTemporalTimeZoneIdentifier,ToTemporalYearMonth,ToTemporalZonedDateTime,ToTimeRecordOrMidnight,ToUint16,ToUint32,ToUint8,ToUint8Clamp,ToZeroPaddedDecimalString,Token,TokenData,TopLevelLexicallyDeclaredNames,TopLevelLexicallyScopedDeclarations,TopLevelVarDeclaredNames,TopLevelVarScopedDeclarations,TotalRelativeDuration,TotalTimeDuration,TrimString,TypedArrayByteLength,TypedArrayCreate,TypedArrayGetElement,TypedArrayLength,TypedArraySetElement,UTC,UTF16EncodeCodePoint,UTF16SurrogatePairToCodePoint,UndefinedValue,Unicode,UpdateEmpty,ValidateAndApplyPropertyDescriptor,ValidateISODaysRange,ValidateShadowRealmObject,ValidateTemporalRoundingIncrement,ValidateTemporalUnitValue,Value,ValueOfNormalCompletion,VarDeclaredNames,VarScopedDeclarations,WeakRefDeref,WebLikeEventLoop,WeekDay,WrappedFunctionCreate,X,YearFromTime,Yield,Z,ZeroDateDuration,activeFunctionObject,boostTest262Harness,builtinFunctionInternalSlots,captureControl,captureStack,composeModuleLoaders,createBuiltinModuleLoader,createDataGraphCheckpoint,createOrdinaryObjectCheckpoint,createStateCheckpoint,createTest262Intrinsics,currentRealmRecord,evalQ,gc,generatorBrandToErrorMessageType,getActiveScriptId,getArgumentsParameterMapData,getBreakpointCandidateNodes,getCurrentStack,getECMAScriptFunctionInternalSlots,getHostDefinedErrorDetails,getNativeCaptures,hasBuiltinFunctionMethods,hasECMAScriptFunctionMethods,hasOrdinaryObjectMethods,hasSourceTextInternalSlot,hostSupportResizableArrayBuffer,importBundledTest262Harness,inspect,intrinsics,isArgumentExoticObject,isArrayBufferObject,isArrayExoticObject,isArrayIndex,isBoundFunctionObject,isBuiltinFunctionObject,isCalendarUnit,isDataViewObject,isDateObject,isDateUnit,isECMAScriptFunctionObject,isErrorObject,isEvaluator,isFinalizationRegistryObject,isFunctionObject,isIntegerIndex,isLeadingSurrogate,isMapObject,isModuleNamespaceObject,isNamedTimeZoneIdentifier,isNonNegativeInteger,isOffsetTimeZoneIdentifier,isOrdinaryObject,isPromiseObject,isProxyExoticObject,isRegExpObject,isSetObject,isShadowRealmObject,isStrictModeCode,isTemporalDurationObject,isTemporalInstantObject,isTemporalPlainDateObject,isTemporalPlainDateTimeObject,isTemporalPlainMonthDayObject,isTemporalPlainTimeObject,isTemporalPlainYearMonthObject,isTemporalZonedDateTimeObject,isTimeUnit,isTrailingSurrogate,isTypedArrayObject,isWeakMapObject,isWeakRef,isWeakSetObject,isWrappedFunctionExoticObject,kInternal,markBuiltinFunctionAsConstructor,maxTimeDuration,measureSynchronousExecution,parseNodeToBreakpointLocation,performDevtoolsEval,refineLeftHandSideExpression,regexpInternalSlots,registerNativeClosure,runSingleJobInQueue,runningExecutionContext,setSurroundingAgent,skipDebugger,sourceTextMatchedBy,surroundingAgent,typedArrayInfoByName,typedArrayInfoByType,unwrapCompletion,wellKnownSymbols,wrappedParse": 1,
+          "ConcreteRuntime: agent,cancelTimer,captureHostState,consoleEntries,countJob,dispose,drainJobs,engine,evaluate,failure,hostCheckpoints,isDisposed,jobs,mark,maxJobs,nextTimer,readString,realm,scope,steps,timers,uncaughtExceptions,unhandledRejections,unwrap,withAgent": 1,
+          "Object: Greedy,Max,Min": 1,
+          "ConcreteCharSet: characterModeOnly,chars": 1,
+          "Object: CapturingGroupsCount,DotAll,IgnoreCase,Multiline,Unicode,UnicodeSets": 1,
+          "Object: Expression,IdentifierName,MemberExpression,PrivateIdentifier,location,parent,sourceText,strict,type": 7,
+          "Object: AssignmentExpression_a,AssignmentExpression_b,ShortCircuitExpression,location,parent,sourceText,strict,type": 2,
+          "Object: location,name,parent,sourceText,strict,type": 3,
+          "Object: done,value": 7,
+          "Object: e,f,n,s": 7,
+          "Object: BindingList,LetOrConst,location,parent,sourceText,strict,type": 5,
+          "NormalCompletion: Value": 43,
+          "Object: Expression,location,parent,sourceText,strict,type": 54,
+          "Object: resume,value": 1,
+          "Object: Arguments,CallExpression,location,parent,sourceText,strict,type": 14,
+          "Object: escaped,location,name,parent,sourceText,strict,type": 37,
+          "Object: AssignmentExpression,AssignmentOperator,LeftHandSideExpression,location,parent,sourceText,strict,type": 8,
+          "Object: UnaryExpression,location,operator,parent,sourceText,strict,type": 5,
+          "Object: Expression,Statement_a,location,parent,sourceText,strict,type": 8,
+          "Object: Expression,StatementList,location,parent,sourceText,strict,type": 22,
+          "Object: CaseClauses_a,location,parent,sourceText,strict,type": 1,
+          "Set: ": 5,
+          "Object: CaseBlock,Expression,location,parent,sourceText,strict,type": 1,
+          "Object: Expression,Statement_a,Statement_b,location,parent,sourceText,strict,type": 2,
+          "Object: VariableDeclarationList,location,parent,sourceText,strict,type": 8,
+          "Object: EqualityExpression,RelationalExpression,location,operator,parent,sourceText,strict,type": 4,
+          "Object: Expression_b,Statement,location,parent,sourceText,strict,type": 1,
+          "Object: LabelIdentifier,location,parent,sourceText,strict,type": 1,
+          "Object: StatementList,location,parent,sourceText,strict,type": 8,
+          "Object: Block,CatchParameter,location,parent,sourceText,strict,type": 1,
+          "Object: Block,Catch,Finally,location,parent,sourceText,strict,type": 2,
+          "Object: Expression,Statement,location,parent,sourceText,strict,type": 3,
+          "Object: LabelIdentifier,LabelledItem,location,parent,sourceText,strict,type": 1,
+          "Object: ExpressionList,location,parent,sourceText,strict,type": 3,
+          "Object: LogicalANDExpression,LogicalORExpression,location,parent,sourceText,strict,type": 2,
+          "Object: Expression_a,Statement,VariableDeclarationList,location,parent,sourceText,strict,type": 1,
+          "Object: BitwiseORExpression,LogicalANDExpression,location,parent,sourceText,strict,type": 2,
+          "ReturnCompletion: Target,Value": 1,
+          "Object: NewTarget,thisValue": 1,
+          "Object: ElementList,hasTrailingComma,location,parent,sourceText,strict,type": 1,
+          "Object: ScriptBody,location,parent,sourceText,strict,type": 1
+        },
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21436,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2477,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DescriptorInitializer": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected final Descriptor records and implied saved property descriptors validate read-only fields and metadata. Explicitly selected DescriptorInitializer records restore mutable fields. Referent contents, other records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership."
+      }
+    }
+  ],
+  "reactDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  let referenceRecordCount: number | undefined;\n  let nativeListCount: number | undefined;\n  let descriptorCount: number | undefined;\n  let descriptorInitializerCount: number | undefined;\n  const rejectedLists: { keys: string[]; error: string }[] = [];\n  let frontier: unknown;\n  const recordShapes = new Map<string, number>();\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: roots => {\n          for (const value of seen) {\n            if (typeof value === \"function\" || Array.isArray(value) || value instanceof api.Value || value instanceof api.EnvironmentRecord || value instanceof api.ExecutionContext || value instanceof api.CallSite || value instanceof api.ReferenceRecord) continue;\n            const prototype = Object.getPrototypeOf(value);\n            const constructor = prototype && Object.getOwnPropertyDescriptor(prototype, \"constructor\")?.value;\n            const name = typeof constructor === \"function\" ? Object.getOwnPropertyDescriptor(constructor, \"name\")?.value : \"null\";\n            const shape = `${name}: ${Reflect.ownKeys(value).map(String).sort().join(\",\")}`;\n            recordShapes.set(shape, (recordShapes.get(shape) ?? 0) + 1);\n          }\n          const functions = [...seen].filter(value => typeof value === \"function\");\n          const registered = functions.filter(value => api.getNativeCaptures(value) !== undefined);\n          const unregistered = functions.filter(value => api.getNativeCaptures(value) === undefined);\n          const names = [...new Set(unregistered.map(value => value.name))].sort();\n          frontier = {\n            distinctReferences: seen.size,\n            guestObjects: [...seen].filter(value => value instanceof api.ObjectValue).length,\n            nativeArrays: [...seen].filter(value => Array.isArray(value)).length,\n            nativeFunctions: functions.length,\n            registered: registered.length,\n            functionsWithStepsBinding: registered.filter(value => api.getNativeCaptures(value)?.bindings.some(binding => binding.name === \"steps\")).length,\n            unregistered: Object.fromEntries(names.map(name => [name, unregistered.filter(value => value.name === name).length])),\n          };\n          const nativeLists: unknown[][] = [];\n          for (const value of seen) {\n            if (!Array.isArray(value) || roots.controlOwnedObjects.includes(value)) continue;\n            try {\n              const selected = api.createStateCheckpoint({ nativeLists: [value] });\n              selected.release();\n              nativeLists.push(value);\n            } catch (error) {\n              rejectedLists.push({ keys: Reflect.ownKeys(value).map(String), error: String(error) });\n            }\n          }\n          const state = api.createStateCheckpoint({\n            descriptors: [...seen].filter(value => value instanceof api.Descriptor && !(value instanceof api.DescriptorInitializer)),\n            descriptorInitializers: [...seen].filter(value => value instanceof api.DescriptorInitializer),\n            nativeLists,\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n            referenceRecords: [...seen].filter(value => value instanceof api.ReferenceRecord),\n          });\n          storage = state;\n          descriptorCount = state.descriptorCount;\n          descriptorInitializerCount = state.descriptorInitializerCount;\n          expect(descriptorCount).toBeGreaterThan(0);\n          referenceRecordCount = state.referenceRecordCount;\n          nativeListCount = state.nativeListCount;\n          expect(nativeListCount).toBeGreaterThan(0);\n          expect(referenceRecordCount).toBeGreaterThan(0);\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-initializer-rejection-${isReversed}.json`, JSON.stringify({ descriptorInitializerCount, descriptorCount, recordShapes: Object.fromEntries(recordShapes), prefixCount, reachedTimer, timerCount, referenceRecordCount, nativeListCount, rejectedLists, frontier, observations, limitation: \"Selected final Descriptor records and implied saved property descriptors validate read-only fields and metadata. Explicitly selected DescriptorInitializer records restore mutable fields. Referent contents, other records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+  "predecessorLeak": "descriptor-checkpoint-validation/summary.json retains original one-prefix true-to-false stale Value=11 versus native undefined. This increment fixes explicit initializer selection, not the original unselected driver.",
+  "focused": {
+    "finalCases": 31,
+    "precedingFailed": 30,
+    "precedingPassed": 1,
+    "currentPassed": 31,
+    "unchangedFinalTestSources": true,
+    "agentForks": 10,
+    "nativeBranchObservations": 20,
+    "nativeGcControlComparison": 1,
+    "prefix": "one per order, no replay",
+    "gcControl": "Already passed on predecessor. No newly reproduced GC failure claimed for that evaluator test."
+  },
+  "reuse": "46 insertions/13 deletions across value.mts, spec-types.mts, object-checkpoint.mts. DescriptorInitializer derives from original Descriptor constructor/mark; declares mutable fields. ToPropertyDescriptor only changes record allocation/import; conversion control flow, assignments, checks, final Descriptor construction unchanged. Shared descriptor slot snapshots/Agent/LIFO/preflight/saved roots, no generic heap copier.",
+  "boundaries": [
+    "Mutable initializer has six own native-undefined fields instead of predecessor's empty plain object. No guest exposure; conversion reads values. Final descriptors remain read-only and reject initializer instances. Initializer selection rejects final records.",
+    "Explicit selection restores original record identity and all six fields. Mixed intermediate data/accessor fields accepted; actual conversion owns final guest TypeError. Unsupported native layout/attributes/types/foreign guest values reject before selected writes. Scalar-only records lack allocation-Agent provenance; direct object fields checked.",
+    "GC marker inherited; saved/live values retained until release. Referent contents, native prototypes, general records and host effects remain separate. No automatic transitive discovery/selection or new snapshot work budget.",
+    "Actual React finds zero initializer records at its pause,5998finaldescriptors/oneprefix/onetimer each order; first timer still rejects. This is not React initializer coverage. General owner, guarded tree/report, transitions/repeats/demo incomplete."
+  ],
+  "corrections": [
+    "Initial subclass super({}) failed TS2345 against original AccessorDescriptorInit&DataDescriptorInit constructor signature. Protected constructor now accepts Partial of those fields, consistent with existing partial factory overloads. Failure retained.",
+    "Combined source+published command exceeded240secondtooltimeout after source1190completed. Published partial report preserved; no remaining engine processes at check. Separate complete published run supplies1190comparison. Ten-second individual test timeout and two workers unchanged."
+  ],
+  "interruption": {
+    "file": "published-interrupted.json.gz",
+    "sha256": "6be8a6105b48fbeb9f40911c3787bb40f3209c6cf7952430b9b1bb0085a03343",
+    "rawSha256": "cb393985bd7353b97934b7b1aef32006f9e06e9c1d95bc2defe745c5a58cb67c",
+    "bytes": 413912,
+    "stderr": "Test262 045bf6f9966ce3291b8fbc1e0403cd97b9201b00 ready at /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/.test262\n",
+    "complete": false,
+    "passClaim": false
+  },
+  "gates": {
+    "units": "1921/1921 across66files",
+    "types": "pass",
+    "smoke": "74/74 unchanged ten-second/two-worker gate",
+    "conformance": "New source+published1190/1190, matching input+compiledhashes/verdicts, exits0. Prior unrelated failures remain.",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors,two existing warnings,590files",
+    "cleanup": "Main worktree unchanged; temporary diagnostics removed; no build lock",
+    "linux": "not run yet",
+    "adHocReceiptRunner": "Bun"
+  },
+  "commands": [
+    "pnpm --filter bippy-analyzer test --run tests/descriptor-initializer.test.ts",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm --filter bippy-analyzer test:source-test262 --reporter=json '.test262/test/built-ins/Object/defineProperty/15.2.3.6-3-*.js' '.test262/test/built-ins/Object/defineProperties/15.2.3.7-5-*.js' '.test262/test/built-ins/Reflect/defineProperty/*.js'",
+    "pnpm --filter bippy-analyzer test:test262 --threads=2 --reporter=json <samepatterns>",
+    "pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ]
+}

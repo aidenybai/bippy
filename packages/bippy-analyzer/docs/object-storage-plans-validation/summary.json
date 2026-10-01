@@ -1,0 +1,99 @@
+{
+  "scope": "private selected object storage planning and schema reference visitation",
+  "engine": "7ebf85fd3aee0b06e50aa21ced5db44d4d094fd5ce40bd5d96904553dd3338fd",
+  "predecessor": "3230cabec10c85d04b060be4a05d2a0850128b15",
+  "boundary": "No public API, production automatic owner, arbitrary native heap copier, changed GC/restore algorithm or effect permission. Execution references unowned and mix saved/live metadata. Native representations/reflection remain trusted. Private plan alone is not complete validation, collector rooting, provenance or confinement.",
+  "baseline": {
+    "engine": "9c1b6210ec612c854ba508945765eb018b1b255670b33fd1c8c82bb5f654c572",
+    "failed": 25,
+    "controls": 6,
+    "classification": "Missing private compiled helper; not25semanticfixes",
+    "controlCases": [
+      "property entry budget before copying",
+      "Map entry budget before copying",
+      "Set entry budget before copying",
+      "schema before entry budget",
+      "object budget before next schema",
+      "native record smuggling rejection"
+    ],
+    "identicalFinalTests": true,
+    "disabledOnlyNewPatch": true
+  },
+  "validation": {
+    "newTests": 31,
+    "focused": 130,
+    "units": 2442,
+    "files": 101,
+    "types": "pass",
+    "relocatedBuilds": 2,
+    "offlineInstall": "pass",
+    "rootCheck": {
+      "errors": 0,
+      "warnings": 2,
+      "files": 632
+    },
+    "smoke": 74,
+    "timeoutMs": {
+      "units": 5000,
+      "test262": 10000
+    },
+    "workers": 2,
+    "ciJobMinutes": 10
+  },
+  "observations": {
+    "actualScript": "paused aliased closure exposes Environment/Realm/ScriptOrModule/nativeCall/syntax and state prototype; test-only owner rejects first nativecompletioncallback; no admittedbranch or production automaticowner",
+    "planRooting": "explicit negativecontrol target collected while plan retained byhost",
+    "newReactBranchEvidence": false
+  },
+  "changes": [
+    "Extract original perobject schema/snapshot builder; return implicit mappedargument selections",
+    "Stream labelled data/execution reference views; preserve collection order/tombstones and weakkey/value distinction",
+    "Legacy closed guestgraph consumes data view, retaining original trusted implementation boundary",
+    "Object snapshot construction now precedes dataedge traversal; trusted nativecopy failure can precede invalidoutgoingreference failure; logical budget ordering remains preserved"
+  ],
+  "review": [
+    "Read-only review found no critical within stated trust boundary; requested map/set budget-copy sentinels, rejection precedence, exact edge ordering/tombstones; added",
+    "Added mixed saved/live metadata control; replaced eageredgearray with streamingvisitor; test proves throwingvisitor skipslaternativegetter",
+    "Reviewer ran no gates; main agent ran all validation"
+  ],
+  "conformance": {
+    "fresh": true,
+    "selection": [
+      ".test262/test/built-ins/Object/create/*.js",
+      ".test262/test/built-ins/Reflect/defineProperty/*.js"
+    ],
+    "sourcePassed": 664,
+    "publishedPassed": 664,
+    "failed": 0,
+    "identicalInputsCompiledVerdicts": true,
+    "normalizedSha256": "f5939f6e0c3fd9e147787a87c1db6a0f2c9645e32a622320bb6314402c9210e2"
+  },
+  "commands": [
+    "pnpm --filter bippy-analyzer build:engine",
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ],
+  "files": [
+    {
+      "filename": "engine/patches/object-storage-plans.patch",
+      "sha256": "099a90ae89abb158443f0dd501e5f56284b7cf0022c475fe24890de2eb569d7c"
+    },
+    {
+      "filename": "engine/scripts/build.ts",
+      "sha256": "d4d2e72841336319a16f2e507e84aa8b596902551d01ef0d39654fd8ca5ba312"
+    },
+    {
+      "filename": "tests/object-storage-plans.test.ts",
+      "sha256": "4258eb470fc3d152221c1d002a9f97fd2b4530ce885a694f64bf16f55166c894"
+    }
+  ],
+  "incomplete": [
+    "production automatic execution owner",
+    "Realm/Script/nativecallable/context/environment policies",
+    "general sharedprefix React isolation",
+    "automatic reports/transitions/repeatedfamilies/demo"
+  ]
+}

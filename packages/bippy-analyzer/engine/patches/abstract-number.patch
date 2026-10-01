@@ -1,0 +1,92 @@
+diff --git a/src/host-defined/engine.mts b/src/host-defined/engine.mts
+index 0ac65c8..0ca71ca 100644
+--- a/src/host-defined/engine.mts
++++ b/src/host-defined/engine.mts
+@@ -1,4 +1,4 @@
+-import { Value } from '../value.mts';
++import { Value, type NumberValue, type AbstractNumberOperation } from '../value.mts';
+ import {
+   EnsureCompletion,
+   NormalCompletion,
+@@ -114,6 +114,7 @@ export interface DebuggerPauseReason {
+ }
+ 
+ export interface AgentHostDefined {
++  evaluateAbstractNumber?(operation: AbstractNumberOperation): NumberValue;
+   elideUnusedArguments?: boolean;
+   errorStackAttachNativeStack?: boolean;
+   features?: readonly string[];
+diff --git a/src/value.mts b/src/value.mts
+index abce4b7..90969d4 100644
+--- a/src/value.mts
++++ b/src/value.mts
+@@ -259,17 +259,44 @@ export const wellKnownSymbols = {
+ Object.setPrototypeOf(wellKnownSymbols, null);
+ Object.freeze(wellKnownSymbols);
+ 
++export interface AbstractNumberOperation {
++  readonly operator: 'add' | 'subtract' | 'unaryMinus';
++  readonly operands: readonly NumberValue[];
++}
++
++const abstractNumbers = new WeakSet<NumberValue>();
++
+ /** https://tc39.es/ecma262/#sec-ecmascript-language-types-number-type */
+ export class NumberValue extends PrimitiveValue {
+   declare readonly type: 'Number'; // defined on prototype by static block
+ 
+-  readonly value: number;
++  readonly value!: number;
+ 
+-  private constructor(value: number) {
++  private constructor(value: number | undefined) {
+     super();
+-    this.value = value;
++    if (value === undefined) {
++      Object.defineProperty(this, 'value', {
++        enumerable: true,
++        get: () => { throw new TypeError('Unsupported concrete read of abstract Number'); },
++      });
++      abstractNumbers.add(this);
++    } else {
++      this.value = value;
++    }
+   }
+ 
++  static createAbstract = (): NumberValue => Object.freeze(new NumberValue(undefined));
++
++  static isAbstract = (value: NumberValue): boolean => abstractNumbers.has(value);
++
++  private static evaluateAbstract = (operator: AbstractNumberOperation['operator'], operands: NumberValue[]): NumberValue => {
++    const options = surroundingAgent?.hostDefinedOptions;
++    if (!options?.evaluateAbstractNumber) throw new TypeError('No abstract Number evaluator configured');
++    const result = options.evaluateAbstractNumber(Object.freeze({ operator, operands: Object.freeze(operands) }));
++    if (!(result instanceof NumberValue)) throw new TypeError('Abstract Number evaluator must return a Number');
++    return result;
++  };
++
+   numberValue() {
+     return this.value;
+   }
+@@ -292,6 +319,7 @@ export class NumberValue extends PrimitiveValue {
+ 
+   /** https://tc39.es/ecma262/#sec-numeric-types-number-unaryMinus */
+   static unaryMinus(x: NumberValue) {
++    if (abstractNumbers.has(x)) return NumberValue.evaluateAbstract('unaryMinus', [x]);
+     if (x.isNaN()) {
+       return F(NaN);
+     }
+@@ -328,11 +356,13 @@ export class NumberValue extends PrimitiveValue {
+ 
+   /** https://tc39.es/ecma262/#sec-numeric-types-number-add */
+   static add(x: NumberValue, y: NumberValue) {
++    if (abstractNumbers.has(x) || abstractNumbers.has(y)) return NumberValue.evaluateAbstract('add', [x, y]);
+     return F(x.value + y.value);
+   }
+ 
+   /** https://tc39.es/ecma262/#sec-numeric-types-number-subtract */
+   static subtract(x: NumberValue, y: NumberValue) {
++    if (abstractNumbers.has(x) || abstractNumbers.has(y)) return NumberValue.evaluateAbstract('subtract', [x, y]);
+     return F(x.value - y.value);
+   }
+ 

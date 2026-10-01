@@ -1,0 +1,91 @@
+{
+  "scope": "reject-covered-host-effects-during-evaluation-checkpoints",
+  "predecessor": "a78326056736ce9193ed2aa3ec7522a8359f2de3",
+  "engineSha256": "286266faf0645e5fd7c85c83ca6ea1f1dbb9b2c6701f684c9fd15804cde45c77",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/checkpoint-host-effects.patch",
+      "sha256": "8f92ff082d4dff32e254048c6c8f54d96fe84f2cd875d72c1943b9d0b639b037"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "867b9be5b88ebd97304482ace86afb73a6c77575171e32123a8babb6a6a6e81c"
+    },
+    {
+      "file": "src/concrete/runtime.ts",
+      "sha256": "e11fd42198464c62c7f72b46a265c4367578f025ebc536140d814e5380a6e60c"
+    },
+    {
+      "file": "tests/checkpoint-host-effects.test.ts",
+      "sha256": "0879f55a520e9f04517d1c15cb172a67d1d6ad7f5cddb01b337dd4f90c047b7c"
+    },
+    {
+      "file": "tests/fixtures/symbolic-react-tree.tsx",
+      "sha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "286266faf0645e5fd7c85c83ca6ea1f1dbb9b2c6701f684c9fd15804cde45c77"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "cd987c50c678da6f9ce3909f2e267632902508a3eee0a07eea70922db4e6fbfb",
+      "uncompressedSha256": "68190078b4c1edbea09edefb584157604bb92b8ee4218e0667187a9de8ba9500"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "0e857eed7f3467302d1189fb000cccfc6975db7bbdf975e91b5cd7616a4d83a3",
+      "uncompressedSha256": "ade389f3dcb5580fc31c9b3545a70a1ecb67009cc2a6a4920e8613c5baf25f6e"
+    }
+  ],
+  "reactReports": [
+    {
+      "isReversed": false,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "observations": [],
+        "limitation": "Rejects the first branch timer. This is not queue restoration or complete execution ownership."
+      }
+    },
+    {
+      "isReversed": true,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "observations": [],
+        "limitation": "Rejects the first branch timer. This is not queue restoration or complete execution ownership."
+      }
+    }
+  ],
+  "reactDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: () => {\n          const state = api.createStateCheckpoint({\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n          });\n          storage = state;\n          return { restore: () => {\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-host-effect-rejection-${isReversed}.json`, JSON.stringify({ prefixCount, reachedTimer, observations, limitation: \"Rejects the first branch timer. This is not queue restoration or complete execution ownership.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+  "focused": {
+    "cases": 18,
+    "precedingFailed": 18,
+    "currentPassed": 18,
+    "unchangedTestSource": true
+  },
+  "gates": {
+    "units": "1696/1696 across 55 files",
+    "types": "pass after correcting receiver-independent host-step type",
+    "smoke": "74/74, unchanged two-worker ten-second gate",
+    "conformance": "367/373 in both engines, matching input/compiled hashes/verdicts, both exit 1",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors, two existing warnings",
+    "cleanup": "Main worktree unchanged; temporary audit tests removed; no build lock",
+    "linux": "not run yet"
+  },
+  "limitations": [
+    "Rejects covered operations; does not restore queues, timers, host state or transitive native captures.",
+    "Direct host queue access, custom event loops/hooks, module caches and arbitrary callbacks are not covered. Not a sandbox or complete effect owner.",
+    "Guest mutations before a host rejection are not undone. Resume failures are terminal; release checkpoints and discard the Agent.",
+    "Actual React probe now rejects its first user timer in both orders, after one prefix, before returning any branch observation. It no longer reports leaking trees as branch results.",
+    "No public guarded React explorer, transition report, repeated-state families or integrated symbolic demo."
+  ]
+}

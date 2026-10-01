@@ -1,0 +1,202 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 06573c7..67d595b 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -14,6 +14,7 @@ import {
+ } from '#self';
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
+ import { ImmutablePrototypeObjectInternalMethods } from '../intrinsics/ObjectPrototype.mts';
++import { errorInternalSlots } from '../intrinsics/Error.mts';
+ 
+ interface ReadonlySlotState {
+   name: string;
+@@ -45,14 +46,31 @@ const getFunctionSlotNames = (object: ObjectValue, owner: Agent): readonly strin
+   return undefined;
+ };
+ 
++const getReadonlySlots = (object: ObjectValue, names: readonly string[], kind: string): ReadonlySlotState[] => names.map((name) => {
++  const descriptor = Object.getOwnPropertyDescriptor(object, name);
++  if (descriptor && !('value' in descriptor)) throw new TypeError(`Checkpoint ${kind} metadata must use data properties`);
++  return { name, descriptor };
++});
++
++const hasErrorSlots = (object: ObjectValue): boolean => hasOrdinaryObjectMethods(object, ObjectValue.prototype.DefineOwnProperty)
++  && object.internalSlotsList.length === errorInternalSlots.length + 2
++  && ['Prototype', 'Extensible', ...errorInternalSlots].every((name) => object.internalSlotsList.includes(name));
++
++const getErrorSlots = (object: ObjectValue): ReadonlySlotState[] | undefined => {
++  if (!hasErrorSlots(object)) return undefined;
++  const slots = getReadonlySlots(object, errorInternalSlots, 'error');
++  if (!Array.isArray(Object.getOwnPropertyDescriptor(object, 'HostDefinedStack')?.value)
++    || typeof Object.getOwnPropertyDescriptor(object, 'HostDefinedFormattedStack')?.value !== 'string'
++    || typeof Object.getOwnPropertyDescriptor(object, 'HostDefinedMessageString')?.value !== 'string') {
++    throw new TypeError('Checkpoint requires initialized error metadata');
++  }
++  return slots;
++};
++
+ const getFunctionState = (object: ObjectValue, names: readonly string[]): FunctionState => ({
+   internalSlots: [...object.internalSlotsList],
+-  slots: [...new Set([...names.filter((name) => name !== 'Prototype' && name !== 'Extensible'),
+-    'Call', 'Construct', 'Async', 'InitialName', 'scriptId', 'nativeFunction', 'HostCapturedValues'])].map((name) => {
+-    const descriptor = Object.getOwnPropertyDescriptor(object, name);
+-    if (descriptor && !('value' in descriptor)) throw new TypeError('Checkpoint function metadata must use data properties');
+-    return { name, descriptor };
+-  }),
++  slots: getReadonlySlots(object, [...new Set([...names.filter((name) => name !== 'Prototype' && name !== 'Extensible'),
++    'Call', 'Construct', 'Async', 'InitialName', 'scriptId', 'nativeFunction', 'HostCapturedValues'])], 'function'),
+   boundArguments: hasBoundFunctionMethods(object) ? [...object.BoundArguments] : undefined,
+ });
+ 
+@@ -157,6 +175,7 @@ interface OrdinaryObjectState {
+   argumentsState?: ArgumentsState;
+   argumentsMap?: ArgumentsMapState;
+   exotic?: ExoticObjectState;
++  errorSlots?: ReadonlySlotState[];
+ }
+ 
+ interface BindingState {
+@@ -239,6 +258,7 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+       mark(state.argumentsMap?.data.realm);
+       for (const constructor of state.constructors) mark(constructor);
+       for (const slot of state.functionState?.slots ?? []) mark(slot.descriptor?.value);
++      for (const slot of state.errorSlots ?? []) mark(slot.descriptor?.value);
+       for (const value of state.functionState?.boundArguments ?? []) mark(value);
+       for (const entry of state.map?.entries ?? []) {
+         mark(entry.key);
+@@ -331,6 +351,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     const argumentsMap = allowContainers && !graph ? getArgumentsMapState(object) : undefined;
+     const argumentsData = argumentsMap?.data;
+     const exotic = allowContainers && !graph ? getExoticObjectState(object) : undefined;
++    const errorSlots = allowContainers && !graph ? getErrorSlots(object) : undefined;
+     const dataSlot = map ? 'MapData' : set ? 'SetData' : argumentsState ? 'ParameterMap'
+       : argumentsData ? 'ArgumentsParameterMapData' : exotic?.dataSlot;
+     const methods = argumentsState?.parameterMap ? ArgumentExoticObject
+@@ -343,7 +364,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
+     if ((map && set)
+       || !hasOrdinaryObjectMethods(object, defineOwnProperty, methods)
+-      || object.internalSlotsList.length !== (functionSlots?.length ?? (dataSlot ? 3 : 2))
++      || object.internalSlotsList.length !== (functionSlots?.length ?? (errorSlots ? errorSlots.length + 2 : dataSlot ? 3 : 2))
+       || (functionSlots && !functionSlots.every((name) => object.internalSlotsList.includes(name)))
+       || (dataSlot && !object.internalSlotsList.includes(dataSlot))
+       || !object.internalSlotsList.includes('Prototype')
+@@ -406,6 +427,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       argumentsState,
+       argumentsMap,
+       exotic,
++      errorSlots,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+@@ -462,6 +484,10 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           || (state.argumentsMap && getArgumentsParameterMapData(state.object) !== state.argumentsMap.data)) {
+           throw new TypeError('Checkpoint arguments metadata changed');
+         }
++        if (state.errorSlots && (!hasErrorSlots(state.object)
++          || !state.errorSlots.every((slot) => hasUnchangedSlot(state.object, slot)))) {
++          throw new TypeError('Checkpoint error metadata changed');
++        }
+         if (state.exotic && (getExoticObjectState(state.object)?.methods !== state.exotic.methods
+           || !hasUnchangedSlot(state.object, state.exotic.slot))) {
+           throw new TypeError('Checkpoint exotic metadata changed');
+diff --git a/src/intrinsics/AggregateError.mts b/src/intrinsics/AggregateError.mts
+index 7e367ad..8711e4a 100644
+--- a/src/intrinsics/AggregateError.mts
++++ b/src/intrinsics/AggregateError.mts
+@@ -6,7 +6,7 @@ import { Q, X, type ValueEvaluator } from '../completion.mts';
+ import { captureStack } from '../utils/stack.mts';
+ import { setErrorHostInternalSlot } from './Error.mts';
+ import { bootstrapConstructor } from './bootstrap.mts';
+-import { ErrorHostInternalSlots, type ErrorObject } from './Error.mts';
++import { errorInternalSlots, type ErrorObject } from './Error.mts';
+ import { surroundingAgent } from '#self';
+ import {
+   ToString,
+@@ -31,10 +31,7 @@ function* AggregateErrorConstructor([errors = Value.undefined, message = Value.u
+     newTarget = NewTarget;
+   }
+   // 2. Let O be ? OrdinaryCreateFromConstructor(newTarget, "%AggregateError.prototype%", « [[ErrorData]] »).
+-  const O = Q(yield* OrdinaryCreateFromConstructor(newTarget, '%AggregateError.prototype%', [
+-    'ErrorData',
+-    ...ErrorHostInternalSlots,
+-  ])) as ErrorObject;
++  const O = Q(yield* OrdinaryCreateFromConstructor(newTarget, '%AggregateError.prototype%', errorInternalSlots)) as ErrorObject;
+   // 3. If message is not undefined, then
+   if (message !== Value.undefined) {
+     // a. Let msg be ? ToString(message).
+diff --git a/src/intrinsics/Error.mts b/src/intrinsics/Error.mts
+index 61d5eaa..454b851 100644
+--- a/src/intrinsics/Error.mts
++++ b/src/intrinsics/Error.mts
+@@ -43,6 +43,8 @@ export const ErrorHostInternalSlots = Object.freeze([
+   'HostDefinedMessageString',
+ ] as const);
+ 
++export const errorInternalSlots = Object.freeze(['ErrorData', ...ErrorHostInternalSlots]);
++
+ export function* setErrorHostInternalSlot(O: ErrorObject, { nativeStack, stack }: ReturnType<typeof captureStack>, errorStringPredefined?: string): PlainEvaluator {
+   const errorString = errorStringPredefined ?? (Q(yield* Call(surroundingAgent.intrinsic('%Error.prototype.toString%'), O)) as JSStringValue).stringValue();
+   const errorStack = callSiteToErrorStack(stack, nativeStack);
+@@ -63,10 +65,7 @@ function* ErrorConstructor([message = Value.undefined, options = Value.undefined
+     newTarget = NewTarget;
+   }
+   // 2. Let O be ? OrdinaryCreateFromConstructor(newTarget, "%Error.prototype%", « [[ErrorData]] »).
+-  const O = Q(yield* OrdinaryCreateFromConstructor(newTarget as FunctionObject, '%Error.prototype%', [
+-    'ErrorData',
+-    ...ErrorHostInternalSlots,
+-  ])) as ErrorObject;
++  const O = Q(yield* OrdinaryCreateFromConstructor(newTarget as FunctionObject, '%Error.prototype%', errorInternalSlots)) as ErrorObject;
+   // 3. If message is not undefined, then
+   if (message !== Value.undefined) {
+     // a. Let msg be ? ToString(message).
+diff --git a/src/intrinsics/NativeError.mts b/src/intrinsics/NativeError.mts
+index e920a09..25f7213 100644
+--- a/src/intrinsics/NativeError.mts
++++ b/src/intrinsics/NativeError.mts
+@@ -9,7 +9,7 @@ import { Q, X, type ValueEvaluator } from '../completion.mts';
+ import { captureStack } from '../utils/stack.mts';
+ import { setErrorHostInternalSlot } from './Error.mts';
+ import { bootstrapConstructor, bootstrapPrototype } from './bootstrap.mts';
+-import { ErrorHostInternalSlots, type ErrorObject } from './Error.mts';
++import { errorInternalSlots, type ErrorObject } from './Error.mts';
+ import {
+   surroundingAgent,
+ } from '#self';
+@@ -48,10 +48,7 @@ export function bootstrapNativeError(realmRec: Realm) {
+         newTarget = NewTarget;
+       }
+       // 2. Let O be ? OrdinaryCreateFromConstructor(newTarget, "%NativeError.prototype%", « [[ErrorData]] »).
+-      const O = Q(yield* OrdinaryCreateFromConstructor(newTarget as FunctionObject, `%${name}.prototype%`, [
+-        'ErrorData',
+-        ...ErrorHostInternalSlots,
+-      ])) as ErrorObject;
++      const O = Q(yield* OrdinaryCreateFromConstructor(newTarget as FunctionObject, `%${name}.prototype%`, errorInternalSlots)) as ErrorObject;
+       // 3. If message is not undefined, then
+       if (message !== Value.undefined) {
+         // a. Let msg be ? ToString(message).
+diff --git a/src/intrinsics/SuppressedError.mts b/src/intrinsics/SuppressedError.mts
+index 24872e4..2401d61 100644
+--- a/src/intrinsics/SuppressedError.mts
++++ b/src/intrinsics/SuppressedError.mts
+@@ -7,7 +7,7 @@ import {
+ import { Q, X, type ValueEvaluator } from '../completion.mts';
+ import { captureStack } from '../utils/stack.mts';
+ import { setErrorHostInternalSlot } from './Error.mts';
+-import { ErrorHostInternalSlots, type ErrorObject } from './Error.mts';
++import { errorInternalSlots, type ErrorObject } from './Error.mts';
+ import { bootstrapConstructor } from './bootstrap.mts';
+ import {
+   CreateNonEnumerableDataPropertyOrThrow,
+@@ -26,10 +26,7 @@ function* SuppressedErrorConstructor(
+   const newTarget = NewTarget instanceof UndefinedValue
+     ? surroundingAgent.activeFunctionObject as FunctionObject
+     : NewTarget;
+-  const obj = Q(yield* OrdinaryCreateFromConstructor(newTarget, '%SuppressedError.prototype%', [
+-    'ErrorData',
+-    ...ErrorHostInternalSlots,
+-  ])) as ErrorObject;
++  const obj = Q(yield* OrdinaryCreateFromConstructor(newTarget, '%SuppressedError.prototype%', errorInternalSlots)) as ErrorObject;
+   if (message !== Value.undefined) {
+     const messageString = Value(Q(yield* ToString(message)));
+     X(CreateNonEnumerableDataPropertyOrThrow(obj, 'message', messageString));

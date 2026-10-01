@@ -1,0 +1,340 @@
+{
+  "scope": "selected-arguments-and-parameter-bindings-not-general-react-ownership",
+  "predecessor": "c196089d56b2e69955be68fc0d935d7bd35a7156",
+  "engineSha256": "c81d30b77544165445520709ff6559e6059ee702e0b369de0f9039d7c95d13f2",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "inputs": [
+    {
+      "file": "engine/patches/arguments-checkpoints.patch",
+      "sha256": "9f6ee15b5397e662536e7975c9cad0dafb5d91422493e18760922f2a4432274a"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "db0b697f68f0779ed24f118998d3e083f4da3ba6ee400e3d60ab298b2b3c23cb"
+    },
+    {
+      "file": "tests/arguments-checkpoint.test.ts",
+      "sha256": "9aca9a3e974db00c017ad0d08109e3586a504597a61f12cf4239ec7e9b381497"
+    },
+    {
+      "file": "tests/fixtures/symbolic-react-tree.tsx",
+      "sha256": "96131a41e858e0309be65bafe028a011bef7a9fd260f189876b8f6d951231c0b"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "c81d30b77544165445520709ff6559e6059ee702e0b369de0f9039d7c95d13f2"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "2d00a45735957419c40716039367d8c1c350f3f8e0f867fd61414e8de5a56272",
+      "uncompressedSha256": "9e7c033871f0b3a7d716d8c54f7b8d97d1949b5debd9b7155f161a191973557b"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "459e55e7adbf2d3598db2f3b9e7083d2e114b70086aa1e82fa9e8066dd40a8a3",
+      "uncompressedSha256": "429d174ae109a914b1d6959298c5360c5343ba1ed1978371886c7125656a4b51"
+    }
+  ],
+  "reactReports": [
+    {
+      "enabled": false,
+      "details": false,
+      "report": {
+        "directRoots": 65503,
+        "controlObjects": 432,
+        "seen": 19586,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2187,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "enabled": false,
+      "details": true,
+      "report": {
+        "directRoots": 65503,
+        "controlObjects": 432,
+        "seen": 19586,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2187,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "enabled": true,
+      "details": false,
+      "report": {
+        "directRoots": 65503,
+        "controlObjects": 432,
+        "seen": 19586,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2187,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "enabled": true,
+      "details": true,
+      "report": {
+        "directRoots": 65503,
+        "controlObjects": 432,
+        "seen": 19586,
+        "counts": [
+          ["Function", 684],
+          ["Object", 2511],
+          ["BooleanValue", 4],
+          ["Agent", 1],
+          ["ScriptRecord", 2],
+          ["ManagedRealm", 1],
+          ["ObjectValue", 2197],
+          ["NullValue", 1],
+          ["PropertyKeyMap", 2210],
+          ["Descriptor", 5995],
+          ["JSStringValue", 2176],
+          ["NumberValue", 1659],
+          ["SymbolValue", 34],
+          ["UndefinedValue", 1],
+          ["GlobalEnvironmentRecord", 1],
+          ["DeclarativeEnvironmentRecord", 94],
+          ["Array", 1848],
+          ["FunctionEnvironmentRecord", 37],
+          ["ArgumentsParameterMapData", 16],
+          ["CallSite", 24],
+          ["ConcreteCharSet", 1],
+          ["ObjectEnvironmentRecord", 1],
+          ["ExecutionContext", 14],
+          ["null-prototype", 4],
+          ["RegExp", 2],
+          ["ReferenceRecord", 20],
+          ["NormalCompletion", 42],
+          ["Set", 5],
+          ["ReturnCompletion", 1]
+        ],
+        "selectedObjects": 2187,
+        "unsupported": [
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"hasOwnProperty\",\"isPrototypeOf\",\"propertyIsEnumerable\",\"toLocaleString\",\"toString\",\"valueOf\",\"__defineGetter__\",\"__defineSetter__\",\"__lookupGetter__\",\"__lookupSetter__\",\"__proto__\",\"constructor\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"SetPrototypeOf\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"StringData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"length\",\"charAt\",\"charCodeAt\",\"codePointAt\",\"concat\",\"endsWith\",\"includes\",\"indexOf\",\"isWellFormed\",\"at\",\"lastIndexOf\",\"localeCompare\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[\"GetOwnProperty\",\"DefineOwnProperty\",\"OwnPropertyKeys\"],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"WeakMapData\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            3
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"ErrorData\",\"HostDefinedStack\",\"HostDefinedMessage\",\"HostDefinedFormattedStack\",\"HostDefinedMessageString\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"message\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            4
+          ],
+          [
+            "{\"slots\":[\"Prototype\",\"Extensible\",\"RegExpMatcher\",\"OriginalSource\",\"OriginalFlags\"],\"parameterMap\":null,\"privateElements\":0,\"constructedBy\":0,\"keys\":[\"lastIndex\"],\"hasPrototype\":true,\"hasExtensible\":true,\"methods\":[],\"error\":\"Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state\"}",
+            1
+          ]
+        ]
+      }
+    }
+  ],
+  "diagnosticDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  const chunk = await buildScriptFixture(\n    new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url),\n    \"production\",\n  );\n  source = chunk.code;\n});\n\nit.each([false, true].flatMap((enabled) => [false, true].map((details) => ({ enabled, details }))))(\n  \"specializes a real React tree with correlated Boolean decisions, enabled=$enabled details=$details\",\n  async ({ enabled, details }) => {\n    const runtime = await createConcreteRuntime();\n    const native = createNativeRuntime();\n    const { api } = await getSymbolicEngine();\n    try {\n      runtime.evaluate(source);\n      native.evaluate(source);\n      expect(runtime.readString(\"JSON.stringify(fixture.versions)\")).toBe('[\"19.3.0\",\"19.3.0\"]');\n      runtime.evaluate(\"fixture.mount()\");\n      native.evaluate(\"fixture.mount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      const previous = api.surroundingAgent;\n      api.setSurroundingAgent(runtime.agent);\n      let enabledDecisions = 0;\n      let detailsDecisions = 0;\n      try {\n        const enabledInput = api.BooleanValue.createAbstract();\n        const detailsInput = api.BooleanValue.createAbstract();\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n        api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n        const compiled = api.EnsureCompletion(\n          runtime.realm.compileScript(`\n          fixture.update(enabled, details);\n          fixture.observe();\n        `),\n        );\n        if (compiled.Type !== \"normal\") throw Error(\"Expected compiled update\");\n        runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n        let step = runtime.agent.resumeEvaluate({\n          pauseOnAbstractBoolean: true,\n          noBreakpoint: true,\n        });\n        while (!step.done) {\n          const decision = step.value;\n          if (!decision) throw Error(\"Unexpected debugger pause\");\n          if (enabledDecisions + detailsDecisions >= 16)\n            throw Error(\"Unexpected decision expansion\");\n          let choice: boolean;\n          if (decision.value === enabledInput) {\n            enabledDecisions++;\n            choice = enabled;\n          } else if (decision.value === detailsInput) {\n            detailsDecisions++;\n            choice = details;\n          } else {\n            throw Error(\"Decision lost input identity\");\n          }\n          if (enabledDecisions + detailsDecisions === 1) {\n            const seen = new Set<object>();\n            const counts = new Map<string, number>();\n            const sentinel = new Error(\"Unowned React tree state\");\n            const unsupported = new Map<string, number>();\n            let selectedObjects = 0;\n            expect(() => runtime.agent.captureEvaluation({\n              references: value => {\n                if (seen.size >= 50000) throw Error(\"Audit reference budget exceeded\");\n                seen.add(value);\n                const name = Object.getPrototypeOf(value)?.constructor?.name ?? \"null-prototype\";\n                counts.set(name, (counts.get(name) ?? 0) + 1);\n                const references: unknown[] = [];\n                if (Array.isArray(value)) references.push(...value);\n                else if (typeof Reflect.get(value, \"mark\") === \"function\") {\n                  Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n                }\n                return references;\n              },\n              capture: roots => {\n                for (const value of seen) {\n                  if (!(value instanceof api.ObjectValue)) continue;\n                  try {\n                    const checkpoint = api.createStateCheckpoint({ objects: [value] });\n                    checkpoint.release();\n                    selectedObjects++;\n                  } catch (error) {\n                    const keys: string[] = [];\n                    value.properties.forEach((_descriptor, key) => { if (typeof key === \"string\") keys.push(key); else if (key instanceof api.JSStringValue) keys.push(key.stringValue()); });\n                    const key = JSON.stringify({ slots: value.internalSlotsList, parameterMap: api.isArgumentExoticObject(value) ? value.ParameterMap === undefined ? \"unmapped\" : \"mapped\" : null, privateElements: value.PrivateElements.length, constructedBy: value.ConstructedBy.length, keys: keys.slice(0, 12), hasPrototype: \"Prototype\" in value, hasExtensible: \"Extensible\" in value, methods: [\"GetPrototypeOf\", \"SetPrototypeOf\", \"IsExtensible\", \"PreventExtensions\", \"GetOwnProperty\", \"DefineOwnProperty\", \"HasProperty\", \"Get\", \"Set\", \"Delete\", \"OwnPropertyKeys\"].filter(name => Reflect.get(value, name) !== Reflect.get(api.ObjectValue.prototype, name)), error: error instanceof Error ? error.message : \"unknown\" });\n                    unsupported.set(key, (unsupported.get(key) ?? 0) + 1);\n                  }\n                }\n                writeFileSync(`/tmp/bippy-react-tree-frontier-${enabled}-${details}.json`, JSON.stringify({ directRoots: roots.values.length, controlObjects: roots.controlOwnedObjects.length, seen: seen.size, counts: [...counts], selectedObjects, unsupported: [...unsupported] }, null, 2));\n                throw sentinel;\n              },\n            })).toThrow(sentinel);\n          }\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          step = runtime.agent.resumeEvaluate({\n            abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice },\n            noBreakpoint: true,\n          });\n        }\n        const completion = api.EnsureCompletion(step.value);\n        expect(completion.Type).toBe(\"normal\");\n        if (!(completion.Value instanceof api.JSStringValue))\n          throw Error(\"Expected committed tree observation\");\n        native.evaluate(`fixture.update(${enabled}, ${details})`);\n        expect(completion.Value.stringValue()).toBe(native.evaluate(\"fixture.observe()\"));\n      } finally {\n        api.setSurroundingAgent(previous);\n      }\n      expect(enabledDecisions).toBe(details ? 4 : 3);\n      expect(detailsDecisions).toBe(1);\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      runtime.evaluate(\"fixture.unmount()\");\n      native.evaluate(\"fixture.unmount()\");\n      runtime.drainJobs();\n      native.drainJobs();\n      expect(runtime.readString(\"fixture.observe()\")).toBe(native.evaluate(\"fixture.observe()\"));\n      expect(runtime.unhandledRejections.size).toBe(0);\n      expect(runtime.uncaughtExceptions).toEqual([]);\n    } finally {\n      runtime.dispose();\n    }\n  },\n);\n",
+  "ownKeysDiscrepancy": {
+    "source": "\n  var saved;\n  (function(parameter) { saved = arguments; })();\n  Object.defineProperty(saved, \"0\", { get() { return 61; }, configurable: true });\n  Object.setPrototypeOf(saved, null);\n  JSON.stringify({ keys: Reflect.ownKeys(saved).map(key => String(key)),\n    hasIndex: Object.hasOwn(saved, \"0\"), value: saved[0] });\n",
+    "node": "v26.4.0",
+    "native": "{\"keys\":[\"length\",\"callee\",\"Symbol(Symbol.iterator)\"],\"hasIndex\":true,\"value\":61}",
+    "published": "{\"keys\":[\"0\",\"length\",\"callee\",\"Symbol(Symbol.iterator)\"],\"hasIndex\":true,\"value\":61}"
+  },
+  "focused": {
+    "cases": 22,
+    "precedingEngineFailed": 21,
+    "precedingEnginePassed": 1,
+    "currentPassed": 22,
+    "unchangedTestSource": true
+  },
+  "nativeComparisons": {
+    "mappedBranches": 18,
+    "mappedRestoredBaselines": 18,
+    "agentBranches": 4,
+    "prefixExecutionsPerAgentOrder": 1
+  },
+  "gates": {
+    "units": "1552/1552 across 49 files",
+    "types": "pass",
+    "smoke": "74/74, unchanged two-worker ten-second gate",
+    "conformance": "542/544 in both engines; matching input/compiled hashes, verdicts and failure diagnostics; both exit 1",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "linux": "CI 36622904945 passes 1552 units with matching engine hash but fails both numeric substr smoke variants (72/74). See ci-failure.json and profiles. E2E and publish pass.",
+    "rootCheck": "Pass: zero errors, two existing warnings, 573 files",
+    "cleanup": "Main worktree unchanged; temporary audit test removed; no build lock"
+  },
+  "limitations": [
+    "No React restore or shared-prefix React fork. The diagnostic captures/releases individual storage and rejects broader ownership.",
+    "Mapped selections include all parameter-environment binding cells, not only aliased parameters. Referenced objects/outer environments/receiver state remain separate.",
+    "Ordinary-only and closed-data APIs reject arguments. Contexts, native arrays, weak state, modules, queues and host effects remain unowned.",
+    "The React marking-based probe is not an exhaustive ownership census. Ten visited guest objects still reject, alongside unowned native records and omitted captures.",
+    "The native matrix creates index zero before redefining it to avoid the retained V8 own-key discrepancy. A separate engine checkpoint regression keeps the original non-enumerable-index case."
+  ],
+  "ownKeysDiscrepancyNode24": {
+    "source": "\n  var saved;\n  (function(parameter) { saved = arguments; })();\n  Object.defineProperty(saved, \"0\", { get() { return 61; }, configurable: true });\n  Object.setPrototypeOf(saved, null);\n  JSON.stringify({ keys: Reflect.ownKeys(saved).map(key => String(key)),\n    hasIndex: Object.hasOwn(saved, \"0\"), value: saved[0] });\n",
+    "node": "v24.19.0",
+    "native": "{\"keys\":[\"length\",\"callee\",\"Symbol(Symbol.iterator)\"],\"hasIndex\":true,\"value\":61}",
+    "published": "{\"keys\":[\"0\",\"length\",\"callee\",\"Symbol(Symbol.iterator)\"],\"hasIndex\":true,\"value\":61}"
+  }
+}

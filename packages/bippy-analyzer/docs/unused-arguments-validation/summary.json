@@ -1,0 +1,66 @@
+{
+  "node": "v26.4.0",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "harnessVersion": "10.0.0",
+  "baselineCommit": "866abbf4",
+  "baselineEngineSha256": "56d555f298306c4c00042b2182e193f790d648242a339734e8a1b3a762f7cf01",
+  "candidateEngineSha256": "96eefcf1b15d2c61ec22e18cd16b73bc254fc103804bd843add502873e23749c",
+  "patchSha256": "281b5c6f0ca7a3831279bb88800d3347ab6885390239cb76f68d58178721b253",
+  "cliApiSha256": "bb358c9e11d76106faa8e4d23c83db2ecb9b9b6c8e01b55dcc1b1b2e588df8fd",
+  "agentOptionDefault": false,
+  "cliAgentOptionDefault": true,
+  "selection": [
+    ".test262/test/language/arguments-object/**/*.js",
+    ".test262/test/language/expressions/function/*.js"
+  ],
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "identicalInputsAndCompiledHashes": true,
+  "identicalVerdicts": true,
+  "beforeReceipt": "../lazy-argument-accessors-validation/after.json",
+  "before": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "after": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "failures": [
+    {
+      "file": ".test262/test/language/arguments-object/10.6-13-a-2.js",
+      "scenario": "default"
+    },
+    {
+      "file": ".test262/test/language/arguments-object/10.6-13-a-3.js",
+      "scenario": "default"
+    }
+  ],
+  "profiles": [
+    {
+      "file": "default.cpuprofile.gz",
+      "sha256": "4095dc205373a0f6fb8e6b9c036a4bb0d7b9208be64e7f7c0fe7a2ba50eaa5e4",
+      "uncompressedSha256": "3f00a3f7882a129fce9bc6c7dbbfe4715c2f14592f54ca3c480a5d56538b0ed8"
+    },
+    {
+      "file": "no-maglev.cpuprofile.gz",
+      "sha256": "2bb76deb0f7d7f388a5852a63b068ea550ad780fb56f995600e0091cc63d51e8",
+      "uncompressedSha256": "00c1e71973f2f6ddc27e14c02b520341bfdcbacb87a0413ac4f96eda518d9523"
+    }
+  ],
+  "receiptHashes": {
+    "after": "4aff3c824f4a75528857007c97722ceab84be8987127d9cdfcc76145da7a3be2",
+    "benchmark": "74d4449287f2e25df870c6abf2d6130eb89a29ed499d988beb72d55e16e97add",
+    "initial-linux-profile": "cef6ff55f8a43bd4bc623f728f28966a63347cf7233a3ca6d6763404851fb0e5",
+    "initial-ci-failure": "d7fa4a6d84f2395d59ec42bff97a3b7d384a34124239d4dc331f18a20591dbec",
+    "validation-logs": "d0160b81e6d666f63b38ddbc20a16e3f0da4c14063952a3a3247befc7fd070c3",
+    "rejected-benchmarks": "8675a89879818d86b158d7f98953215adfb4ec657df506f321375147a59f6c19",
+    "ci-success": "3789b19a9bb30e3a6e0f43e4946054c450f63f676fbf16bc36135c9044eb7e1f"
+  },
+  "ciSuccessReceipt": "ci-success.json"
+}

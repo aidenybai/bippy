@@ -13,6 +13,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  analyzer:
+    name: analyzer
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter bippy-analyzer exec playwright install --with-deps chromium
+      - run: pnpm --filter bippy-analyzer test:engine-build
+      - run: pnpm --filter bippy-analyzer typecheck
+      - run: pnpm --filter bippy-analyzer test
+      - id: test262
+        run: pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'
+      - if: failure() && steps.test262.outcome == 'failure'
+        run: pnpm --filter bippy-analyzer exec tsx scripts/profile-substr.ts
+      - if: failure() && steps.test262.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyzer-substr-profiles
+          path: packages/bippy-analyzer/engine/.build/profiles/
+          include-hidden-files: true
+
   checks:
     name: ${{ matrix.task }}
     runs-on: ubuntu-latest

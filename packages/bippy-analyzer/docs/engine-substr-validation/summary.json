@@ -1,0 +1,29 @@
+{
+  "scope": "String.prototype.substr Annex B selection only",
+  "node": "v26.4.0",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "publishedEngineSha256": "bbc66b6f71a0f36e23c5ea07bbf3cc2c390de9c6c7bb1f4a0ecf5791b2b2600b",
+  "builtEngineSha256": "c7a3899d06b4c54f6ff0a0e4c9d7781770a04293043cf7b636466434d5a98d36",
+  "patchSha256": "2ce08916abbab0bd830cf91413433acca5af23fca6470f1f8ccc4adce4f5ed5d",
+  "selection": ".test262/test/annexB/built-ins/String/prototype/substr/*.js",
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "files": 15,
+  "variants": 30,
+  "published": {
+    "passed": 0,
+    "failed": 30,
+    "exitCode": 1
+  },
+  "sourceBuilt": {
+    "passed": 30,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "identicalInputsAndCompiledHashes": true,
+  "receipts": {
+    "published": "0865e2fbcc9a52d5612afa8058f278d4e714c7c07a80845eb31b5738f9ad4387",
+    "source-built": "3b13d1d55fae45f11c478a76b667882586cc42d250d04cb82d52b02ad672971d"
+  }
+}

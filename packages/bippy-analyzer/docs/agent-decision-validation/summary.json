@@ -1,0 +1,96 @@
+{
+  "scope": "engine262-agent-owned-abstract-decisions-v1",
+  "symbolicReactComplete": false,
+  "wholeStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "92f7e382412f649f796ca889c1a7c6879d2b3e3ff4cb2b279c99af875d575d8a",
+  "implementation": [
+    "Extend existing Agent.resumeEvaluate and registered evaluator root",
+    "Opt-in abstract pauses persist per evaluation; requests repeat without advancement",
+    "Validate exact request/kind/host Boolean before advancement; read choice once",
+    "Reject nested controlled evaluation, reentrant resume, and wrong current Agent",
+    "Poison registered evaluator after iterator.next host throw; guest throws remain completions",
+    "Release before completion callback; no root registry or extra dispatcher",
+    "Stored execution errors enter the existing Agent marking protocol"
+  ],
+  "regressions": {
+    "initialCases": 16,
+    "initialPrepatchFailures": 16,
+    "finalCases": 20,
+    "partialArrayGcChoices": 2,
+    "nativeReactSpecializations": 10,
+    "actualReactCases": 2,
+    "gcAtEveryReactDecision": true
+  },
+  "retainedCorrections": [
+    "Ten first postpatch tests attempted nested guest observations, now explicitly disallowed; inspect known data records instead",
+    "Initial typecheck accessed internal onNoEvaluator omitted from declarations; test now inspects existing callback Set through Reflect",
+    "Final review found stored execution errors missing from direct Agent roots; added a pre-fix failing mark-contract assertion and corrected it. Earlier engine e5e7136 receipts remain in logs; final engine has the error-root fix"
+  ],
+  "units": {
+    "passed": 1267,
+    "total": 1267,
+    "files": 34
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "total": 399,
+      "passed": 393,
+      "exitCode": 1,
+      "uncompressedSha256": "80fc072941b541a17b4c94f49a1aa09781f83000ef44ff947aa6558d373423e5",
+      "compressedSha256": "8d753a36235c1bafe0ed337673a8e4637707899d9372fe3b86267863722869dc"
+    },
+    {
+      "filename": "published.json.gz",
+      "total": 399,
+      "passed": 393,
+      "exitCode": 1,
+      "uncompressedSha256": "c1629a38bd29020c55365548c6706b03a330d218ebea7ae84480ff956fadc0cc",
+      "compressedSha256": "13acb569a7c35f1e82b2a7828785a487831917546483d5dcbbdfd21e96e6e334"
+    }
+  ],
+  "selection": [
+    ".test262/test/language/statements/if/**/*.js",
+    ".test262/test/language/statements/debugger/**/*.js",
+    ".test262/test/language/expressions/conditional/**/*.js",
+    ".test262/test/language/expressions/logical-and/**/*.js",
+    ".test262/test/language/expressions/logical-or/**/*.js",
+    ".test262/test/language/expressions/logical-not/**/*.js",
+    ".test262/test/built-ins/GeneratorPrototype/**/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "identicalFailureDiagnostics": false,
+  "failureCount": 6,
+  "boundaries": [
+    "Driver owns consistency/feasibility",
+    "No proof of arbitrary iterator Agent provenance",
+    "No registered execution recovery, cancellation, guest unwinding, or rollback after host failure",
+    "Preflight errors do not poison; debugger/finish callbacks are outside iterator.next error catch",
+    "Returned values and saved snapshots need separate roots",
+    "Agent private decision/mode/failure/lock state not covered by captureControl",
+    "No shared-prefix React forks or guarded report API",
+    "External manual-driver and partial Promise.all roots still fail"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "failed at 6eb84cf7: 1267 units pass, smoke 72/74; see ci-failure.json",
+  "files": {
+    "engine/patches/agent-decisions.patch": "ff20568c81d7960c72980c92e4154909e1085bfb3eb0dfc63d58feaf9b9bdf11",
+    "engine/scripts/build.ts": "9995def12f81f5da88f18b4ef55abf4f3a4d3cafc330bba8cd5a6e3f2438e41e",
+    "tests/agent-decisions.test.ts": "ef445ef4bc88226175b14c28cd61559d716cf68b285c12fc4aee035d8c0ae042",
+    "tests/numeric-react.test.ts": "6f74ccc31d593c4dc4c1d690bb557978a22a3959d28ce9a6588cd4de1433ad5d",
+    "tests/fixtures/numeric-react.tsx": "62893df5eee21a8fd5d0e79b2dab40f31f919aee04ce6cb7eb640b9d38a2d98c",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17",
+    "docs/engine-state-inventory.md": "d42b3c12a02ad9e845479fcd896bc73e37553ee9d626b5f1a5065e9d07aeddfd"
+  }
+}

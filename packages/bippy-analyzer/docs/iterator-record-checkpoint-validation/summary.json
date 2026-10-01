@@ -1,0 +1,2362 @@
+{
+  "scope": "selected-iterator-record-done-storage-v1",
+  "predecessor": "3b90a65275410c265af6e58a41b0fec84a8efc88",
+  "predecessorEngineSha256": "35147d7cd4b99737bb3e96a35a223ac1dafd929df37dc85b448ed0ebb11345cd",
+  "engineSha256": "41c8d38a8660f6f590b0105ec0ad850a7878f630f1ef656cfa4e4c5afc176a71",
+  "sourceHashes": {
+    "tests/iterator-record-checkpoint.test.ts": "c902deaa669904af712284d53428fe47ce64ed07a41497e182a3269da76a4199",
+    "tests/iterator-record-storage.test.ts": "343d6e7f0106d7bccdd5e7739a5b75cbb693bf9fd49e8c510eeea473f5eeda79",
+    "tests/helpers/abstract-fixture.ts": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17",
+    "engine/patches/iterator-record-checkpoints.patch": "c0a69b2e1388d5c3e758aec0de44d30af4b759cd3700a56a81fc72629258fde2",
+    "engine/scripts/build.ts": "d8d4ecf6611c5a878a5b5bf13e633e74ebdce027ed1e6abe32d05da443007730"
+  },
+  "implementation": {
+    "files": 1,
+    "insertions": 45,
+    "deletions": 3,
+    "record": "Existing plain IteratorRecord interface and objects",
+    "restored": ["Done"],
+    "validatedReferences": ["Iterator", "NextMethod"]
+  },
+  "focused": {
+    "predecessor": {
+      "failed": 28,
+      "passed": 0
+    },
+    "maintained": {
+      "passed": 28
+    },
+    "forkCases": 8,
+    "nativeObservations": 16,
+    "semanticForkFailuresOnPredecessor": 6,
+    "missingCountAssertionForkFailuresOnPredecessor": 2
+  },
+  "units": {
+    "passed": 2083,
+    "files": 76
+  },
+  "smoke": {
+    "passed": 74,
+    "failed": 0,
+    "workers": 2,
+    "timeoutSeconds": 10
+  },
+  "unitTimeoutSeconds": 5,
+  "relocatedBuilds": 2,
+  "offlineInstall": true,
+  "rootCheck": {
+    "errors": 0,
+    "warnings": 2,
+    "files": 602
+  },
+  "conformance": {
+    "source": {
+      "variants": 313,
+      "passed": 313,
+      "sha256": "28bfe0cd4340c07aaa3a1aa9fafed77f837ca9e654ea388c7a0d4c7e0ce29211"
+    },
+    "published": {
+      "variants": 313,
+      "passed": 313,
+      "sha256": "59d056fa6cc5a1cb08b6c9c2e4cf603d5bf9d76e1a8beb117ac437007a4b5534",
+      "reused": false
+    },
+    "matchingInputCompiledHashesAndVerdicts": true,
+    "cases": [
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-assignment.js",
+        "scenario": "default",
+        "contentsSha256": "d34f2e4bb39eb9844d85d379d9bd8eeffee40f6ca7e626c1e91458d19210d60e",
+        "compiledSha256": "cf8bd436380958a959834649f57e7c7fcf7a7e69b25fbd683f06db0d9284fc97",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-assignment.js",
+        "scenario": "strict mode",
+        "contentsSha256": "72d6501d43e1db4997b9d53cd44cef0105859035c9408a73b03dcf65a88b4278",
+        "compiledSha256": "b6f704d94cd4b3b5e6d9b7c8db276b0bd158ac4052c099a1e107217146b426be",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-evaluation.js",
+        "scenario": "default",
+        "contentsSha256": "538a2b15f17df601e42ecd0c91cdf4416bc790053855f751792e242571acfea2",
+        "compiledSha256": "23043d4b8df64fa8af2e06ac37d93ddb5777e39227340cdd8952304e865e4641",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-evaluation.js",
+        "scenario": "strict mode",
+        "contentsSha256": "29da53139d3236f9d45f0aa5520a935992a8fb1d710e24127aa4ea2e1b425f0b",
+        "compiledSha256": "b43b91175e04e835f31951e01217b06d17b233d32af3bc57ba09dac2df46d814",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-arrow.js",
+        "scenario": "default",
+        "contentsSha256": "a3f6a8c7a9afcd2b267798778785e869f4f6c419e5ddaea19d5e63eb962d764a",
+        "compiledSha256": "d3f6076522967ab6c4360249c15e4fd7c085c116cb41f48cf78b44fa4d50bcf1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-arrow.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c766df098fadfa647f260b3be7d5ca94e4e329003949d1d7c415f914cb2a374b",
+        "compiledSha256": "75ecfa6171feb1d91a2e86480267531108673eb1f7ae261df6f1bd3bf0fe450b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-class.js",
+        "scenario": "default",
+        "contentsSha256": "bb1e7af45cfa2d360f3c56325c967deef112e590f22dafb2c58cbb03aed063ff",
+        "compiledSha256": "fab5bfd221b6e253527389eb03654c76c1394ec2d326fa782aaffe29d68b029b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-class.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5328194a720cfba89d7c1800b3683dd2894f849e1406327f81eef384607832b6",
+        "compiledSha256": "f640e7f914c9365325242df2684a8d15d00b7f63b08a392c2a9f4d762981e6cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-cover.js",
+        "scenario": "default",
+        "contentsSha256": "6fae1ee1d485fd7a64982e4996a2514f2ae6b2e7db4c94c7fbdf8067bf8d5de1",
+        "compiledSha256": "05e3f44b79dc25e23b99c1326e4b1d8a91aebb0732d21476624d829f4260950a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-cover.js",
+        "scenario": "strict mode",
+        "contentsSha256": "eb95bc200af1660900fd85e9e1757b7f93a608619d0a399ea88fc604e6366b5b",
+        "compiledSha256": "57a4bf0c8bd3269b1810ce6fb77cccbf0fd2f3eeea869398db26a4c02bce1173",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-fn.js",
+        "scenario": "default",
+        "contentsSha256": "ea692024bf5dde3cfdc48cb2bd4acd94a628957d68a4682bcd9cb835169aa752",
+        "compiledSha256": "092d60e0c57a268c33a5c11201b47af5504178c5392ed1c017286df69f980284",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-fn.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7255cd0c5596724fbc21d5c367b1f61a9bdebd885e2fad1b28d89ee417321f2e",
+        "compiledSha256": "c34a3652f934651c6d131eed3a5f4951e3fa9b3d7a02e69d232c9d6502d25a19",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-gen.js",
+        "scenario": "default",
+        "contentsSha256": "b4c2d280d5284db82eac5d20daa60d9f926c67d55178597bcab1032e4ad9c697",
+        "compiledSha256": "f3586fe88546f7fbc1e3ea53963ed38ce613e09fe13067e5c155d7d558c7ab63",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-fn-name-gen.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d676fa15b6accfb6adf3310b00f583d0fd10bd09ddca0ea8f5a605fde6afce7f",
+        "compiledSha256": "4f89287cfab3e0331faeeaf28c2b019166e412687e17bc45e428a154359d7a21",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-in.js",
+        "scenario": "default",
+        "contentsSha256": "2b7b77d2380bc91526671716f7d28f74376de1f420b62db972009ef712fb8647",
+        "compiledSha256": "af75b9c6e9bb716f8bdbf498a600d8a03995a1b009995d6dd17a8053c47e3229",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-in.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1393f9fc0d71760021b28633f282dd5a3b2996e25e5545b324559d6c9f827164",
+        "compiledSha256": "4201d554a230265e75d0704d11d306a2e6ab23073c22bcf0417a33cb87a6161b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-let.js",
+        "scenario": "default",
+        "contentsSha256": "9ce9a4e3272f972bc7b216d97dd841259a1f93c26971943b594c50d246ab63d6",
+        "compiledSha256": "3637fb80a3f865a2e6bcaaa616b3cabaf8fb51d95fff3f24b287f7c9f711267f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-let.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b7884642b21b78a6db7d726f465d5ad3b4e2dc9924698e38797a048ee4515653",
+        "compiledSha256": "0042e1f8eb0cb7a2b6c54f4e0c3b16bdbab5db134218b4c5b194428852ebc6e2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-order.js",
+        "scenario": "default",
+        "contentsSha256": "7a07fa9a0d0c3b4ad2bbb2206931fc97684d2fccc8f952984ec50cebb3aa741d",
+        "compiledSha256": "aaf9e1370369bc221e8b6ebd894e63272ee9bc24b1032ac063724f55f43e4812",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-order.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a347880082e7ef12466a561daa9719373bfaa624eb454572cbe86681bf4d0377",
+        "compiledSha256": "1571021ff475ef36d540fd639c37940dcbfd863f1e180e83b43a5411fde69912",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-simple-no-strict.js",
+        "scenario": "default",
+        "contentsSha256": "2c463e2dc9b3419cc7a9c36a1f96cc35dd04ac13ab94287269dca3a1d5d5bd33",
+        "compiledSha256": "41038dd9691a253fc39647ed0910c640bd530185c6031afa8fc88f85f85dea65",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "be6403ce2269d0270a4bb38f408d064a633922b0fb92e741b7e13a3554b6a632",
+        "compiledSha256": "5179dbaa52eb5667a96b9131d9be37c6649bc77c7c14c8cc6dba00f5c826c502",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "774bc6e1d45d94800ab97e220040e1494b4e4de1dbdcad25e5ff3e21c63d7ac8",
+        "compiledSha256": "643fd7832525c94acf502f6cde5570518be69cfcb0e7a232e516b5abec556887",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1c3b69e1eda9ee754506e988e8dfe791a583dddfa82f1e185e8b23f99b31a1c8",
+        "compiledSha256": "f3d6b6c4b0526aa788cc57d47ac37d2c8f94e4d54684e646d8ca00509354f993",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-init-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "1dad11d9e5e212121fbb7c7ff95c02b43e8bd14695f4de5d8e9f49d940f3e8c7",
+        "compiledSha256": "c1cf5728d979f9fb0b2d195a9c6ec1e16865eb86fc07298b9ef27cb02aeae1d1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "af402c06988d511201a08df736159a18fb16229eae1d8a0baa91e165e8ad994a",
+        "compiledSha256": "723cecc34d91076a876db8bc953c9d38963468a550c2e7a4c51a7f4f48f697c8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cdcd929c643d08222f95e0c7b2a40769a5c6c997969530d835db26d3ddfdc088",
+        "compiledSha256": "747796c68afc9ad43e010388a14fd1997a8703473906d725dc7dac2bf58bc1b0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "d669fe84ef61ae7f9f404fff676b1bf95030d630c284263a8e3f985991af7386",
+        "compiledSha256": "6e460a9dbd786caa389c6222b95e596ee86ebc3e74b8dcb9f8c4a384ae36e0f2",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "78baff1a72ae1fa3b8030f88f4c49e12a0ac0695476412760e4b0c57b38c5ead",
+        "compiledSha256": "f96906ec06a8b04c8649e4cba89ce8fe236bcf4a85a540860d4e279485a0a738",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "a3b9f76d95b84d9337463dd6ed06bf2ce85c6d3a30c6143b368a4f4df5744cd7",
+        "compiledSha256": "19e3b3113391dd0775a4a75c7f6720a87076c5dbdd37aacc30056f29931518db",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "6437bcd91f52356af929f4dfad73cae7c332907fe80f3407ed3d4b7b8fe5259d",
+        "compiledSha256": "b1d9e45d213e896ea1ecc9cbc224f7145aafeb830239054b87bc538d3421917a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "aec8be6de060ebc649d29264e179a9ac9e2f0387b5e047d3a6ffc897f7616f5f",
+        "compiledSha256": "b7b3ac40785c17892b2c11c7d6060ec2a8d2bb38e3493fd5a15743574dd3520a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9112b78e718285d38871b432d47bd4726b6bd144a3c5a0c294903f8571fe2804",
+        "compiledSha256": "b7729e5bfc5ed24da7067523749e7bdee8934282d81bc8493821e22a99683606",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close.js",
+        "scenario": "default",
+        "contentsSha256": "723da165e9b0712bb0c64a55f3c02260fef06b0f38ce66aee412d583db894588",
+        "compiledSha256": "cf32258342751fedcbf1b2ed7547f0176590c7f524ce8f1cd8371da38a33036b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-nrml-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "111099d1503ff7aa8f9b754de96d1d806c278a1ed7435c720d80152b29e3ef49",
+        "compiledSha256": "7a2f9c2565d03e3ec6f958bd999e70f0bbfe0a24b059c844d9d61eb736c1e0e7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "8aa718b354969ad1de09a4ad4dc1c2078671f48d521732ac4959ad544f70cd82",
+        "compiledSha256": "2a1291c4274e8d4ebf480e8a45c0a404f522a87c5636bb540200f67e79ea9a4f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f51444d7a99f639210654268250051863aff22d496efc165ef72d35796289b57",
+        "compiledSha256": "db42460a6c99a4aa8509e5d2754c472b5f003dbde7509dabaaf79356b8ceb67c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "03f509c8350cee214749fcd92b54578b55a13c2d28c00450d740f3768ae9f4a4",
+        "compiledSha256": "968c406a072415a98bd4aa028041679273566a52c8d9e9e45a6cd01d698372a0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "6d41eee1f93cd8dc55e37ce92e0f51d8c57f1cb245070157591551d1af67e6da",
+        "compiledSha256": "9a3714d233929f6ae5fa349e883295646575dc24524bf3b68a609f4b2a9e52d1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close.js",
+        "scenario": "default",
+        "contentsSha256": "47d348e730e316b86fc839cceb949b9f7a77f5cfdbf90789d27847f7fc64e16d",
+        "compiledSha256": "83c157a5fd57ddac11cde1613991870465d9d81f31c13e772ae7523041bae521",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-rtrn-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "8b08fc24ae916cf92fba9d56ca03c64d481999eecb19aa45cf8a0d5afc193b36",
+        "compiledSha256": "d8ef0b74e66dfa82bc45950d726d67c31243ba3343cdaf94b44ff770222d5896",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-thrw-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "56c852e1dfa8dd9782423798654de5e3ce0fca7b331562b8a8374f37d04acb75",
+        "compiledSha256": "6743a993a9626bb0320b06959890f0cc1a876a690e8bc12d674e9e52dec22c13",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-thrw-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "821ffc1329bef7bb782ae9e06a69253eeadf47dc64f1873a96811fbd71e7aaff",
+        "compiledSha256": "704a121b0e8b35b1d9d0fe8d62f90c1142eb934c1ea8f4ebe21486f27f86ca78",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-thrw-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "af046f03c671b34e5bab700ba762d44fb7db95c1cf0c8c982d665b229da8bd5c",
+        "compiledSha256": "a299778feed10ba106e33fa100684f2a6f97524aabc1c9990f88e0dca6985631",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-thrw-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e520946a913d109cf2c4bc2a5d96aa56b73b083e0e2c09fee98264956645cd45",
+        "compiledSha256": "e7f3607abe43c46c1f481de5ede54c49d6485a569e8cfd5302bd71a4d8b51551",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-thrw-close.js",
+        "scenario": "default",
+        "contentsSha256": "a28b1c14237d8566589d212350bf1974e93648e2aa5952a89fab96cc62fe9b2e",
+        "compiledSha256": "e33bc7f762f9734cd2c18106a29f1b4fb71186fad5e43e364c221c2d5139d929",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-iter-thrw-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "6da70fe9e5bb9831d2f989105972928b0d758eac99eca661d3dd45b3c8a3b237",
+        "compiledSha256": "09154b1bc0111e542e44600575a2fdd6781243e3356ba0d11d9836b1699470d3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "812043f9af0e1c8d63441141c67a2782b2dff8433c06e15f5d3d002ab1ee54ce",
+        "compiledSha256": "daa6b1115a2fe12124ef5b8d3f2b1fd0c4199a8a5744f9d5d27d41cc875f9a71",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "ba6662c89d9a4956dd4988f1643a2127806a13c58b2b6abed6ca106bbe06c001",
+        "compiledSha256": "998d1728acd06df00586324b9e1827b2c0c03d9e8add09edb2189158ca3564b9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-null.js",
+        "scenario": "default",
+        "contentsSha256": "cb47cfc9471a6f9e4a8d9c5606093e853be52b7c23a75e0c0bc0f5fe819880ac",
+        "compiledSha256": "e5d27bf13236b817d3bec5d3543e6b6b4e3a858b28f0a8b075321ebe2f157192",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "67976fd65ed5b86a7f0fe38d62e11bcbd250ce70bf5b99f7f1d82d6b0270ecf6",
+        "compiledSha256": "7f67a6f6fb481a8eb231e29aaccdf55bd4b909e2090fde784edb953a824d19e4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-undefined-hole.js",
+        "scenario": "default",
+        "contentsSha256": "44a87a56fe3d8ee485687844701b372591fe55d70f631348a1d8a7311005c6de",
+        "compiledSha256": "990fcff49b73d1d591b921d0a75133417b773f6fd34c415e6008b534e3b3c754",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-undefined-hole.js",
+        "scenario": "strict mode",
+        "contentsSha256": "aa2c665772ffecaa0cb3966722a89d41d36cc516d5ad37809a32ec2a68d93ed5",
+        "compiledSha256": "dffd8a6adaed3bcfe882bd0e877c438480e4e93d028cef3c43a1f67a393a5704",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-undefined-own.js",
+        "scenario": "default",
+        "contentsSha256": "c59cbf1cf12cbca5d10d45a3ab1a51ca812df186de5b0b9101caaab91ff42deb",
+        "compiledSha256": "72d521f877223e347a9b48f946d7688d532c06f4a9e7f5dd2648f95b12721340",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-undefined-own.js",
+        "scenario": "strict mode",
+        "contentsSha256": "dd38a69e4fdd83cb8510315f364936373aeaa93e94202e08f1383ec2991a5857",
+        "compiledSha256": "1b2d0fb659439101c489a0692247e5eebe4b8c490ed2f5363b09f67e7e110f12",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-undefined.js",
+        "scenario": "default",
+        "contentsSha256": "5f730340c78ce467955eb3000961a8a5a7c730db4ae9ad3691895ec5bbc81d41",
+        "compiledSha256": "d567ccf25df14f4795951c852af82f65066ac4a083e1cda3fddefa34cc70fc95",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-undefined.js",
+        "scenario": "strict mode",
+        "contentsSha256": "be30135c91c232bc1282adcec68dca14d45175a4b3363a5bc9550f40d703c8ae",
+        "compiledSha256": "c94bd78dc026243ef7eff0f7c0c8f06f363f8591e47197715f62b7ca0a8ef2fe",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "0f55d9407402c28b8aeda3dc48fe9be8d12d06dd3c01007df945d2bfd5e5d8b5",
+        "compiledSha256": "989ea6a63f33b40459e08169210bee2ce9830d46d24ce36cb3a38dc766999ff6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "fe94b2b86023f7c2eff7dfe13e01702c7c440335f0b027ed9a086eead17e8cb0",
+        "compiledSha256": "a3b53f604bcb2bedc17eb28b9709e053e394209175b4e55fca1691bd8117d36f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1e8a35fb3ac0e63527dba2f82374cf296c925578bc8945b6690de8a0019b5f4f",
+        "compiledSha256": "8e7026f968ac176b96ab854bf3cb92ee57a17e1daea13c443dd3619ec80da43c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "438eb037a416f39252190650eba5453d5df02f07b763ac8fa511c7b6c3e64b48",
+        "compiledSha256": "461128f660f19a9b50d551e413082eba642fdb28b57b8fea8bdad59b80f93d25",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array.js",
+        "scenario": "default",
+        "contentsSha256": "52562258f4e72d781252ecc1185fbb64d2b0669c7ee3bfebdb1a63a84aea85a1",
+        "compiledSha256": "ea4bc87f7b4b5681b266279136dbb3e6b9bd88abbee0118bbb76572be19d8fa5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-array.js",
+        "scenario": "strict mode",
+        "contentsSha256": "4145f138e6cea9fd0fb78bcdd931f72bc0ff9749184df668ea65084882f1408b",
+        "compiledSha256": "ea4ec63bf75c7dfae2ac56e7ca140b11ed0d4d742dd019c2d47c16fcbf3d4de9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-memberexpr-optchain-prop-ref-init.js",
+        "scenario": "default",
+        "contentsSha256": "ad5aee7efd0f3219c8e8e55a496fa2c21be781c76c8dc1bd8bc788ad139bb359",
+        "compiledSha256": "7a9537be5669c641677112843904262836b38d3f5f95ac9046aaba40fa2200dd",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-memberexpr-optchain-prop-ref-init.js",
+        "scenario": "strict mode",
+        "contentsSha256": "59753e944471cbb5bd38cdbcfe79102c7fc4f0c9fda55aa70df877c03476471c",
+        "compiledSha256": "a05432964c8db66472c1c947f2d04788c7e48f6326dbc4b960484ab301157904",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "c1cec58cccb8cc51a2f656db1e1d1369a3fd046a98cb0587e588f62205fd9e0f",
+        "compiledSha256": "cea2f40fb213ab7b489b520f129bbbccdc24796d9fd2bbf27c630705b4294f89",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "dcf91721e9ec4c78c664070fd82a4f27b21749b5d749f0ddb7aef59cbb85db26",
+        "compiledSha256": "8e40adeea4c3b98cf47156a4b1ef6e273b850bf66644e3138a6b44b0cc8ebec4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-null.js",
+        "scenario": "default",
+        "contentsSha256": "b00c45d2bd553672b28b03f4c116d8d35f5f285ffea832dfce704ce243be6746",
+        "compiledSha256": "2952f2fd265027397537e1521ba1ff4b6e24c1b0794b8b63085182b026a6ee30",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7e355748aaee5fe9fdd9dde9b7e150356a00a75da50ef626536e085cc4af6e2a",
+        "compiledSha256": "bc5f8c05a96632abe41066f32ee0f852c1e099e155ff09cc3ba22f7c68d124d5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-undefined-hole.js",
+        "scenario": "default",
+        "contentsSha256": "0e9bc5e6cd41e7eabde1c9f2a05e1b2f5a5708f6c8aacf213ef5db3fcca87e1b",
+        "compiledSha256": "1000b319b9f66b312ab4cac25fbf4d4dd6bfb45d50e7dd117dae28d7643683fe",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-undefined-hole.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a8ec6f564abbf07928ea31d286948e04ca69a17aae7669ab940756f86572acff",
+        "compiledSha256": "96e5cce07b9886ce4497725c3bb4aa6f5e361cf6ba5ae16a29acad7208d574a1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-undefined-own.js",
+        "scenario": "default",
+        "contentsSha256": "be91577859f06784222a14c1c59a557e0a0e61a5292b5f51470e84f1ee97b37d",
+        "compiledSha256": "94d406da50ceaa9b628a86f8ae46b90b229148d5f83240d4f9591354ec3a532b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-undefined-own.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3ebd463e5242f6854ee8918a0e6817fbc0fc8d104fbe1d4480f324bb9809a1b1",
+        "compiledSha256": "8458e10c2708d5c4f99596a8084f30650884ee2b59d7cf35d058b36d1c61f953",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-undefined.js",
+        "scenario": "default",
+        "contentsSha256": "b7277d4eaeb0404bb40a9b20fc2f455131f51d468f75cb28017c1092080be5f8",
+        "compiledSha256": "afc4b29f032fa132c7d5f4c37f27da027407462f85e6ba7652d664767ccaad63",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-undefined.js",
+        "scenario": "strict mode",
+        "contentsSha256": "24179e463b53af91085d5945a522545c2fd1508667c3d468cf4b1bd263bfbd8b",
+        "compiledSha256": "861acb4ef5dc59800993cc01c1f74e301ea246ca8107a8e817f4848a7f5d8f2f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "efe36b8bc1a4e4d8c551f7bc50db772070c76351ec9ec51b25d69d67c1fe430e",
+        "compiledSha256": "927101d94bbf7f5b70455231d7c19c0112164111f95a8874f840604bfcb22e6f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5b1ea2196ab630fd7e82b58fffdfe5caef6f7c19f022e42a962b5088194af2a7",
+        "compiledSha256": "2e9a5108b7f09fcb2ba38886b6599648837e4de6c0df940d5996619c440d0872",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "750e526c8efc5a3a08729783185c0abd910dd2eed716f1bfcc9e75a0d94264ae",
+        "compiledSha256": "05f3f63158ad778a323c947ecf9f3d0093564b2ca0f9a669b0a0a3744e29dbe8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "251405156a6342547210bb8fab6ec7a71d1181f49dfe0ece79f7c0a20cb8d35b",
+        "compiledSha256": "7d0f387c113864d7ede3747b7dbd3be4260e90f7e5368e0ea3a13a8a6afa431f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj.js",
+        "scenario": "default",
+        "contentsSha256": "538b85a99f1e0297b4f2673429ecc7f8658155010f88284e253db068954c6c9c",
+        "compiledSha256": "847439fbd98bb2d0332cfc41e578d31f4df80e9fac089224c564db4510358159",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-nested-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "179cf270acae66a3b137a6534ed3a393fea596ca053fee09acf3fbb117e588fe",
+        "compiledSha256": "cdca8427095875ea75e8b659423c9535b2a3cf9d22e03f19a561fd81f8299b38",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-const.js",
+        "scenario": "default",
+        "contentsSha256": "a91146edd0fe7ecf17c0641b6d1f8c7bfb2e1582509f884e3c2f17881f12fb18",
+        "compiledSha256": "c00745203c111dd15151044811319c49593591f3747789e8ded7ff61ed75033c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-const.js",
+        "scenario": "strict mode",
+        "contentsSha256": "234c6cbd1c5680839121097bcc6c824bec66b2e075c1f853e3ec24df16e7e64e",
+        "compiledSha256": "fb7c49d301d6ab902c1200a3ac4e6fdf993b53b555b079a0a1329d73d15eaccd",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-let.js",
+        "scenario": "default",
+        "contentsSha256": "071ec714bf754975a81c7e7ad2d3f9cd3c7503f7b23d7ef263442d0a54eed403",
+        "compiledSha256": "db7c3153176fec1b53eb68adb110026435e62da7147ded97d516d05d63a57699",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-let.js",
+        "scenario": "strict mode",
+        "contentsSha256": "249698ebe7305256ac80bbfc534593f0a79e17fee96c55055178a1daf55993de",
+        "compiledSha256": "8ca77881a5444263d2761ee34ed92e47ab9d013c448ba6fbc623e5e51e4c679a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-optchain-prop-ref-init.js",
+        "scenario": "default",
+        "contentsSha256": "758d9840ac85aa4eb1996e9d76f9d9bb36272452955895bb706101526c8f42cb",
+        "compiledSha256": "b9bad12ba41bdc6e8bd61b31dfb1680287a74169941e3a5f4895d02e2a279800",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-optchain-prop-ref-init.js",
+        "scenario": "strict mode",
+        "contentsSha256": "182f320e3e7f1862ff6f0ba8d038ecea637e2d80a34e2307d238fbde1a1d81b8",
+        "compiledSha256": "9e1042688d010a7aa00c567de0de92fa6934d4e51867a9445ae6f4d6a2f11d29",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-prop-ref-init-active.js",
+        "scenario": "default",
+        "contentsSha256": "cdb83eed62737785e0e4a6b35bb578608155c591352d224d3bdc16f0fe6ebc47",
+        "compiledSha256": "eabbdff417ee8222abf498d5e0c4b83ef9c0bec4b31bbbb7881e8d6b37e1f52c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-prop-ref-init-active.js",
+        "scenario": "strict mode",
+        "contentsSha256": "18b54d8856f6c01952e4b9a7c1d6fee9d387030cc0dfac54f91f782acd721e31",
+        "compiledSha256": "eca7a6edc48911e323d8f654a447150c20eacf878af4771d286d381e7293ac52",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-prop-ref-init.js",
+        "scenario": "default",
+        "contentsSha256": "fc1b1eb4acca533ba55c6eb3e0838f96c754c380266347ff7ef94dc438be8505",
+        "compiledSha256": "524df5251298f91360a4f6f32d17166c9ec6943d2710db7b74b8bade45ab4cce",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-prop-ref-init.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e31bc1c7dde4b83bf721c4558f65d99a39fe7b6d874bbe62cb534d21d35f8df0",
+        "compiledSha256": "ea6932c57f79eb98c7edc6703d3af0a9883fd616222f423d84e4f1225b64c4ad",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-prop-ref.js",
+        "scenario": "default",
+        "contentsSha256": "c14dca5130d2c23ce791e8cf9d70e75f5a95bef6b476d075bad5159ae2d938df",
+        "compiledSha256": "2d8962018f5fa37346ce7c92915aa0f18e0e1b27b7f9ba34718f863b893120f0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-obj-literal-prop-ref.js",
+        "scenario": "strict mode",
+        "contentsSha256": "fec8bb07de4cc2bddf570dab88103cc03972a6fb39b01a84fe90a954c336001b",
+        "compiledSha256": "2b8e79987fc5d658ecb46a9413875d4da77292bcaad7e01a11f65f49fe9ed4ca",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-prop-ref-no-get.js",
+        "scenario": "default",
+        "contentsSha256": "3739e5719209613face5fa9c31ff470a9083a1047d602d540620456d7c738714",
+        "compiledSha256": "2156e5e742d52e71688c4cadc3b6d731a9a29a77de2f6dccec8c7d3eef6f58a9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-prop-ref-no-get.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d1b2e90e9e508b1e77a9e0250560eb35293cc7f3fcb17bef26f3706272973d22",
+        "compiledSha256": "9419dfd019137f883ac4385ac775046d8717ecabca41cdae90870db38aebfb99",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-prop-ref-user-err.js",
+        "scenario": "default",
+        "contentsSha256": "f38f17bb2094e9dacd52b4a4abb6425bc2b0b96ee0c50af3d583a2fbe2724270",
+        "compiledSha256": "92e7dec21b7a34a3dfe4e631d05af5906ce2c9245a476157ad53ff9de98338f7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-prop-ref-user-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b77e7d97040465eb90eb5aff50c82d451edc3890ef97f7f6855de1015c1a276a",
+        "compiledSha256": "faf1624cc41eed71935a71b20d491014235d9f81fcdec18d9e566393d3d71e12",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-prop-ref.js",
+        "scenario": "default",
+        "contentsSha256": "e41d41c65386097fbc5a9371c9560a306389474f5e34b538bc397031562e12ba",
+        "compiledSha256": "40e3f4efca03a61b606848ce8c9b2b76dbb23b59895cec0390fe70a02fc7d2b6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-prop-ref.js",
+        "scenario": "strict mode",
+        "contentsSha256": "37f903376d28acaa657b5ffdd3e33dbbb5c1cd3aaf56dd9299635d5c5adc70c7",
+        "compiledSha256": "43f70b86ebfeaef39b3916240e9993b84dd79b89c3ca0cabf9f516bc0d399a19",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-unresolvable-no-strict.js",
+        "scenario": "default",
+        "contentsSha256": "b025094d14122615fbf803e2e2aaca4abaf580d88151f106c909798fd554b2ad",
+        "compiledSha256": "34b8faf202e11d1b83d2d4d94c638b08b4cf60c5f5d255733fcb0fda5058c3fc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-put-unresolvable-strict.js",
+        "scenario": "strict mode",
+        "contentsSha256": "15e019a4878934b82baea925546ea336f590a547f43604e02869045833b43d4e",
+        "compiledSha256": "fde61fc2400cda986883d7a30ffb085f98661ceb76586a3e92a3fe84a03ce5cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-identifier.js",
+        "scenario": "default",
+        "contentsSha256": "95b98dc0f64a08776b2cfd1a1a5c50e0d566d48878c943aa04db6758ce5d3764",
+        "compiledSha256": "816fb34e0d7715e33d4d88648e3cc73d56f732777192fc24b39a89b1de18c836",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-identifier.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f6bddf81ded19e0845c241990f966375e093d24b63e3796f99c4784181dde5a5",
+        "compiledSha256": "8f8fd26976459d3eeacc488cf18a4ef042647d82504df876c84222518c790ac0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-simple-no-strict.js",
+        "scenario": "default",
+        "contentsSha256": "153f1a484b2e52f5e3d319810692460f0d79d2c7a7ce4cd7c8d240d19359ec10",
+        "compiledSha256": "35ab86da37a11b16fd1459cf91bb46ceac1844b503140e2be46bb252a10a1a56",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-simple-strict.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a97f9b7a18a91b14bb06dd6a908b512ef0d165bf4f143e52c80d7b86ef12b43e",
+        "compiledSha256": "c17964ec2ba4c2da25ceb9139a1ff1a9946567d8d7a07def2dc9cd4d365c6bcc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "e11ebdd13ba43e736c01d96905868d9bd0c1aedb71bcc014e82dc0cb491bc72a",
+        "compiledSha256": "c82bcf1c2264d827602573e470a27a7df815f22e9a2da3289e0a61a4a9764a27",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "846f27169ce7f206170ac1a5b3135442df99e02e590f7894bbf8c10cbb418cf3",
+        "compiledSha256": "785a471534f2d076c1eca4494727fa288d1097439cab02f945d3db15ffaf7abb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-yield-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "0cf44bafa9f101e3ad0aad22a619c3a720fd7e35a7b1cd81e134e5fd884c337a",
+        "compiledSha256": "e8bbdcf8e3f0c09d3ed81e1db72cf107e1c9b99ab6a7d82189860c1ad2971497",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-target-yield-valid.js",
+        "scenario": "default",
+        "contentsSha256": "83735d824c4d685b7ec699f5a55b0d2c638e6026df83a6a7e3ae187c9745be4d",
+        "compiledSha256": "1186c82d7da078b6b1bbf84f18080b200ea551c379d5487728ada8dec14ca646",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-abpt.js",
+        "scenario": "default",
+        "contentsSha256": "27300bbda4dec1ebffb9dbe8f7d2cd03e890cfe17b63c50ec2afbe0f20ce3057",
+        "compiledSha256": "daa36fad94c520f02c73dc72ee4ecc5a7eccf9ae2f9b47a62f6df2edd3a9395d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-abpt.js",
+        "scenario": "strict mode",
+        "contentsSha256": "00c24166acc70a37116fb9307ceeb71a9431506555e5a86a64d9c519a6607e50",
+        "compiledSha256": "48bbf5cab8085aea608ae9e7258eb9756845251f80542d5b92ba8cba5652cb17",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "fccb5c16b8ef432c2a4ffabe0b2ab9eb29ebbe8ebdaed73563e6bef389e7ea28",
+        "compiledSha256": "3e3164fa0de4203e5aa93f09d53e4ba20c81e2f31b03da39dc9abf57cab96e76",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c88d2af2b7823046616a3e3ebf27930018957818ca237a571ed76108837bbcf2",
+        "compiledSha256": "97a5c1f3c469647528c808f83d4efcdde855fdb5c0b7ca60c267dca154d9cb11",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "a603d78a57a94304e53f6f2ac51bbc1c357805d948eaa38d484fe62270b6c6f0",
+        "compiledSha256": "1a66285484c75278eccb21e250ed8d9b68bb91f87e4356dbbe6c1d8bdb7b8784",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e637182ee46902810523f49ce8d8b10397460df574fb0d67cb3baa2b567cc7c1",
+        "compiledSha256": "31fa51b6398db8d76ac5933a51f465335cf1eb477569d3cd9796b222364349c0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "a6d70c76f612618d2172ace6e218ad9478f763efc1600c4468f865eda8ee4358",
+        "compiledSha256": "2e805cfd9d806f2d4e0205ff2047b04477790fad8f6c8b6553794c46a24d569b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "af833976bc9e9b6b7f513cbe550f8844589621028eb0245fa29e8c8ff78cfd19",
+        "compiledSha256": "99fa8ada1e17b05f98bc2be85c54a028cb71c8907738c11a246709242fb7b429",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close.js",
+        "scenario": "default",
+        "contentsSha256": "bf6ec13b978920ec5ce502774802ddae8ffd2a3ce3c495e8c5c993008d216e5f",
+        "compiledSha256": "7e61342b5a988f6518966228e611188c0abda658b69d2563f2188647493df189",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-elision-iter-nrml-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "cd44282cfdd017499a9ac84622d8547b589243d66285b03861ce87cacc4c8b00",
+        "compiledSha256": "38536dbe1079cb2fe15e2b2071507bd4322ecd2bd87c1b5ae207de06d510d885",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "cea5da3e1843e6eaea3492e35ce6e4afcd98388d862c233c434700d61526e376",
+        "compiledSha256": "fc05cfb5caec0caa7198136a5a15dc5d425e99b400e65d761f32be0745d0a5f1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1171ce6ed6e04577b41f114cc2fd732bfa56d0907ed3c3c6df301be39b3b474b",
+        "compiledSha256": "181b33a06a852655f64c64c322a66c3f4a340955fc17dc30b446f7bc89c27b44",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "742ae4049762f6c20e5020773e328b59a0c8e122b8849b976bd9c4dafa7ba5bf",
+        "compiledSha256": "695ff745caaa18199263975330f7ee769cdf0904a521c61f8ebd8215abeaf2f5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "effaca176440905ac5641872b02c8e352ed718d3e53f9ba7d18822a9fcc79315",
+        "compiledSha256": "8b11f8c400e303e3b9312fb45d3071ce2ad6f595a3fea89c24be40cbe6c912dd",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "20fafe14d9ee023959612b287b06685bba421fdcb89a8c50eeaf03b52f371b09",
+        "compiledSha256": "0b49fee5ad2494bde4174627889b8ecbbeed8164d37ad13674b3a024730208c4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c5f0bdda730151517b9e31cfe4d82222efa50faeccef51896bb21f2cf154ca6c",
+        "compiledSha256": "db1f8c3a7958bbfd93dc4cbe3c4892e78f51151bfd3fc716669c6fe0d7dca63f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "d83ef09998ab713949da1354c07da58f76c0fb03bb27c405e4e42f612d499580",
+        "compiledSha256": "abfab62b91e00e78cb3ab5bd3e839a55bab57534166946453769b910e04f8209",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b626302312d425d9db765a407ec2eca9d8393dcc3698b8d3359615afd12caa85",
+        "compiledSha256": "7242bda212bef3b4d03d896967423e47c54cb727e0ef94649fee787219803d65",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close.js",
+        "scenario": "default",
+        "contentsSha256": "f3b7aeaccd4f667aab64139b5bb04c2b41b7ff9165380b5e764cba205cc7df66",
+        "compiledSha256": "c4f7cc84f9972ade9decb0445d0ed2a07d67a1eaf0ce120310b09ad4aed9ad0b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-nrml-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d433d63b9e48b8f462df75aab9ad595229963022a65297aeb320fb1519c1a7d1",
+        "compiledSha256": "c73140b7287924fa0dec7872e2fbfc1cc796df17a44a6cc79789fc6b68f27fa6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "a3ed3335a1053d24b02a48b1ba4054fd8a04ea83b9d8272790b39333d4989f2a",
+        "compiledSha256": "30808ce57c3cb929799e9402e9976b2dd2bedc1ae183508d11e7eedab30c973c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "598b30e262f08feb34aa8897feae0edfb3ed7fcc0beebbf43737160f75d354ee",
+        "compiledSha256": "a791614cd2c73fa6ee5f2251dd75d664393b185a4a4be123c8c36950d3aa60cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "92ecfae086658360991c9e82c0a8132cbded4050189750b19a15bf8ca881eade",
+        "compiledSha256": "346c943228588086109ab998d2cbf1228fc5ad709bd82dccd43c1f887eb07d05",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5106de57a7d9a76c9c36bb47cd0031b605503d7fd5e2fdc9c390593e2861c29f",
+        "compiledSha256": "5db7e45689573d7ca946aa1c6a8e144c146a3a838b0c3994c07211a3c9517590",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close.js",
+        "scenario": "default",
+        "contentsSha256": "b72074cd6d3ab1a8e3aa5a5c2ce314215134e2647430cc4cf56f2db3941636ae",
+        "compiledSha256": "c6dba57ea5b27732bfff8d065cd4c825cc524970c852601d42cb0c3539a385ac",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-rtrn-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "0486211660827d963b756415670e9c10572a49c1df9079f555735fa9ea9c904e",
+        "compiledSha256": "2d83bcbab94fb88c928969154eec9eabff53a0f12604a6de4dcd84d1d082c80c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-thrw-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "caf40ea9eb77e973f5e2ee88f86ee2400acdb2cd1d34f4d5fdd4e103fd70cd8b",
+        "compiledSha256": "4732578839e3ddb217a44e98ec66238264288af225484b08823fce6432de9379",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-thrw-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "8c5eabd5cb19662c37f85c60b2ea4a4c6d411f7a57e90dde726e1b27f6c39b03",
+        "compiledSha256": "1cde989f73e49bac5f3ed811a35ed0015e7153580ac0781fa830a672c45e2edf",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-thrw-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "660060501e198527d82f9d090844a8e4eee35db131c2007b7e8061ff208190b3",
+        "compiledSha256": "28fc6a9ed8c8edf8b3c267b062555d892dd049a63cd2a84c34a80527f1a6213b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-thrw-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "8862eeefcff68735c8defb018c54f31428b03c27cee7800c30595213ef6bba3a",
+        "compiledSha256": "8fad75bcadb0227c25c0b324c7be5f7246c86128884edffb2701672d01352722",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-thrw-close.js",
+        "scenario": "default",
+        "contentsSha256": "51c16dd570e23a905414ad9a6b27425b4f6a4dd178364fe1fa2aa32f4af12423",
+        "compiledSha256": "32e592342ec06c588bbc038ed3a570b78a228648d24b0f98684fbd547aa261a4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-list-thrw-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5edc2b30cc5a771a512cac6a89fa648d4b2ba6010bd9a70902ee2d08b4ea1218",
+        "compiledSha256": "072a9fa22595cac2c63d3fb40fe2f5b7cbd47fc4dbf74a0b6257d835caa7dfca",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-nrml-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "5b23723f17efea9a938613dd5ca4571cd1e918643279b7224b4cc3541ea15374",
+        "compiledSha256": "f169396efd5c86a7f4122bfd74c457906872d166c568a761969347922e30be46",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-nrml-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e3a62af7543198ea05b8dbbeb6645fd96540c40fe79b625e9484a8f0bdf31562",
+        "compiledSha256": "f58cd77f1fcf839e654bfa525b7ed68a0de49a9aa9b6e94e819d552b1bb873d1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "4b55ecca45cdcc7665f2d61165659b1d26117046adb5c6671db72d93608bb3ca",
+        "compiledSha256": "8aaa71a31c08e7c54336838c5775a80bda3408f83fa6f622170f0814a3a03db6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "2188fd8b4ed78af9a5fc9549ce619e9bcdbe078b1e6cca69df26876f6ddf380c",
+        "compiledSha256": "08b831ca837714b8ef1b50bedd0389f0185448634553462bc03fe79b060eac03",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "82429652ec1adfda558a0a296d2611991474906af5dd3686182bc45ea3ea723a",
+        "compiledSha256": "1a6809c335ea66f41108722b4a819f4531c139192ec087492ba7cb5fefce475d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c111db23624d3f14c89cb524e9a312e93310917ac87fa7bbe17b37b11eaa17cf",
+        "compiledSha256": "623e89369fd919a73dd099b78458d57a624ec96c74a6d2cec73e5bd224914ac6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close.js",
+        "scenario": "default",
+        "contentsSha256": "213ac8bc4e20c655fe575e17f89a4c002ca3540187ee7940c39936201c9593f0",
+        "compiledSha256": "70da150f286f8e0fd6213a5e0919c1c6736eb132378dd4f6ad97404ad2800d09",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-rtrn-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9fed4f020669df31ffd7a2b98e6badc28b883d964d47a8f74993957617801836",
+        "compiledSha256": "2d07296272e17dd1f5659afe4b28c485be22194b909bc1059470d1dc2d0ae2c8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-thrw-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "b696c4025a3a084ed5eb674ad947674d3783843113cca8261e6bab71437dc565",
+        "compiledSha256": "f58d51a4c27f93148d6a80ddc83fcb7da9764b41c404961f87d77c444e62cab6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-thrw-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b92cdf3294ad8d85cb5c7b0fcb3fba192002cccf7ff44f5ff5438a6c51a8554b",
+        "compiledSha256": "186732e3cea09d428e998d262c2dc556eeb6678e44e7234dfa8f14f5a4139478",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-thrw-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "7124a648ade38f29a69a8b4d0c69f4d1cbedea954a8139a176ad46d83a5754d4",
+        "compiledSha256": "9baff97e7989629d81c296cd2eb97a55b1aae1cd306f6d2df79132610575ddc4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-thrw-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7c9c481639539b948109aea623b2dc732faac65196815f42b6db4573c19555b1",
+        "compiledSha256": "e0362029c2bd55eb498dcdccc5be5341982443d06ef76b0ecbca38ddd67ac767",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-thrw-close.js",
+        "scenario": "default",
+        "contentsSha256": "5cfd5cd4437a201c66fe1637103e9208384965b61ebe060696329908510e6099",
+        "compiledSha256": "01a6df53fdbff68901f1c268d4b152be8886474c55f568b8e41e8c0c8ccaf377",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elem-trlg-iter-rest-thrw-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "57f67efa375e1f1e805282ed8e6512d3de4a4f504f1e37b9ce982c848568bfd9",
+        "compiledSha256": "e1414c49fc285be31b440a69a6ee90e0433594dd2e8a18cbf7563769510ad41b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-abpt.js",
+        "scenario": "default",
+        "contentsSha256": "cbf10adb9ce23c04d46919d07ae5595425dc9bfca0795a336edfbc34919e313f",
+        "compiledSha256": "8b095b541554401efc85e470de83c8421efbfbb37c4f74fef741f08c8b146b90",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-abpt.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c9d80b3f35fcbb24bd4a367b7dd94527a4449ee0aaad6f694eb102b4c9751680",
+        "compiledSha256": "10c6c2686e471890954f5515d028239d49549622aa2dab39479e86fe2691bc1e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "56c9022dc755b7ade41cf4b67338756a8877e8725ece68ffbb2038b6aa19e498",
+        "compiledSha256": "71735430fb82dab707033700b7ed83044a30794b05f7ac53f0096cd2db34c832",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "fc872286e147ab9986bf995dbab23f8af6b843dda87bf368003c7b1ada6cae6d",
+        "compiledSha256": "076317a742bde626d3def340bb0b15968cd1ac8c4a1a93617e3f0ad9a21c179e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "62a4b7754ecfb7bd82728edab4935d34875bdacd950f879570f80f0aeb23b6ee",
+        "compiledSha256": "08385eff98415a726c23dc4b2e9124da67f07d657f30619c69d19cc28cdfccbf",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a0fc6ac7516ebb3f3bf8187abe0c815a2d0e229fe8ef9d3fb59a9371b0dd094b",
+        "compiledSha256": "a068eadfdf633027a964033035602d94dea22faa2ef81683a66e08ae9beb441c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "80792e1ea180aebf7eef3c6822311d662ddca6e0b622a92eb15c005460cdbce0",
+        "compiledSha256": "4b4f2d6fae8a34c012827a6e7758384a41a00dee3108eb431c0156aef9a787de",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "500043fd53b1f795ab414a8ccbffcc0e87b285614c07dde137e14ea4d43ca1b0",
+        "compiledSha256": "97ce8c30c93b67ecc3eb6be180d91774ca23e42d570a97de1a81097866b144a9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "4b28b87b6f6170306455389e04e36f513e0383a4d0f5ebfa47d9308bf550e213",
+        "compiledSha256": "fa1aa50fac9b0b4de226cb6134f2dca5bc6a44e67af88e4e9658ab50a784d01b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b3d5c8ae33633f2ff022b256494fde6c937b0861d190294cb7d330cfb43f097d",
+        "compiledSha256": "a9284ebf31e5bc7c8261b9fb69a52b51f0e1d2cb20477529e1f0b452e734f241",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close.js",
+        "scenario": "default",
+        "contentsSha256": "8f47a134b5e0151ee3ae7fedc2dfa29fd72fa29cb32edabd6593d257235dd4d3",
+        "compiledSha256": "ec9756bbb238dc34f10e9d431b2750d6235bfb9ebd0ecdfb8d20ce4d137b96fd",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-iter-nrml-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "2401e76e988d063335346bba5ad7f8b00667d2e5fe43e2317a2089b669210d5d",
+        "compiledSha256": "639963fa7fa4193de24426c96d225e1bba75a9ad1695928ce5526ba6fdd98de6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-array.js",
+        "scenario": "default",
+        "contentsSha256": "01d10e0c8fa5097101851f5028a77a0438f79e36ef997143be901be0b3d8ca2f",
+        "compiledSha256": "7fcf62fd7d52cde21b7a6bf06ecd8e87f98b8612f22adebc82af96b9fac162a8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-array.js",
+        "scenario": "strict mode",
+        "contentsSha256": "27db1e522b9ac2714b661352940fa0cba7337494e1eacb81520975b013d53309",
+        "compiledSha256": "b1acd6f1d339ff35a07d81fcec4cfb0505a1fcf97f0dbff28172b00405e43066",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-bool.js",
+        "scenario": "default",
+        "contentsSha256": "f5dc29272de88ecb7d949d37df176b69718e5cab4933eebc4984c9744c9c5f49",
+        "compiledSha256": "b8f62ac61402c79a840e0e2b77f66ed95dd91b5ff8eacd9a9b04d4625c4c9490",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-bool.js",
+        "scenario": "strict mode",
+        "contentsSha256": "4bab1a60d52f97886204bebeca6d696c21a38278f4d497cbb6e20e23f6a1c3ca",
+        "compiledSha256": "684693e924685a1d81fc69a2ad727f9327c196709f8deaa60b2106ec2492b81a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-null.js",
+        "scenario": "default",
+        "contentsSha256": "ee6adb3a10cddf062b8ac760f472681e3607d53fd27d416935074780b1889d4a",
+        "compiledSha256": "8dca2e960073e6c4ca73403db48ac15f8793598c01820b7a3cbbf71685dcb472",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f51742a50e56b64fd65357bf67c2c82848f91361f17c19e5d8ec64322fc4fce7",
+        "compiledSha256": "27d20db46749dba65e17655b5b012ee48d26584f5c016f61d3ad102c06c6a361",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-num.js",
+        "scenario": "default",
+        "contentsSha256": "54f6271e91351ff0789aa0ecfb3dac7ffbc9ac0cc755abd7b0d8eb31baa24107",
+        "compiledSha256": "dba49575cfbb8d1074dc461dc798548ced80864d1c46914aec730cec5f302752",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-num.js",
+        "scenario": "strict mode",
+        "contentsSha256": "74b661bce5e060807dd5f8f43e6b8e078b03762c8197ac9b4b0e4510f6859696",
+        "compiledSha256": "9b04b923bde45318caf072ff654c59bbf2c426c4e7737e34f7c14f7e9f4680ad",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-string.js",
+        "scenario": "default",
+        "contentsSha256": "2d81cc9ed866283a7b05a850b0f9c8b7e080ed0890a0f26877b29c2e6abdfd0a",
+        "compiledSha256": "b093fe73006c218ff231b10686f296cf0e35217c660ab4bb0dd0f8b57366c64e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-string.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f9239d9976012fa8ce7af90e700e9acf571c4414ab7e41ac687ff17a2fe45757",
+        "compiledSha256": "1a7f8888c141157c2dc0fff3fc9fceb682a9befb5e9394e21d5cbe4437a77377",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-symbol.js",
+        "scenario": "default",
+        "contentsSha256": "53efb7d5a27c9e2c2c58c19b402ab8c2743c6d09c1874b8a091a47caae5d1c7a",
+        "compiledSha256": "53810db443df719febe14fd3faf9de7eb5cdb5d61150b397f4afcb768fbf92dc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-symbol.js",
+        "scenario": "strict mode",
+        "contentsSha256": "34077b54cc4872ee73c37751f6fac410b6f8e4e002021caff41bb8394cd078a9",
+        "compiledSha256": "8dd904991fc4c794e98288d180e94ed16f1f091a9a5ade2903a029c1accce086",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-undef.js",
+        "scenario": "default",
+        "contentsSha256": "cca528c35a9f98ad1daf7ec2f4a6cb557a0e42a23d2f3a37d41f963779b77fa2",
+        "compiledSha256": "53309f6e78d3d6c115cc142163f4e152b7779288afcd78ed27eb82d5890d73eb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-elision-val-undef.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f5533f5e366f205e01a0bf1f35d42e2bf02458a3029f83d9e0d2703adc759c89",
+        "compiledSha256": "5332f50dec8bd32662e1ce083e84f3458487142f0f26b636369a62d33aa01269",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "4395c6cd4b50a3b15b451d486f42113246a314a1a4e8cac4b42563d73018f126",
+        "compiledSha256": "a71c1b01e2a951e01a0ed5949100b1baf99bb321b443921f1bfad7a2b45659c4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "93b212869b259faf917e6cb225ab617fcae264ee28550d6c99b5b9848ac39a96",
+        "compiledSha256": "c3a939aefe7dcefac60901b654af15af6ca17cbaa139e2cc87e6c79bddbaa50c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "bd647042d2c45e1c1fb1c67d70f042cdd7477cda34ceed3db135b2f34fd715cc",
+        "compiledSha256": "6e03bfe7f2df58c30f037bcb656cce3aa8bb7603f8bb73d42ad8f76dc34c7555",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "654953f9c9973bed11c73c425ec998bf01e44f9b5212e41baa9534ca1ce71afa",
+        "compiledSha256": "b6f3707a6b63cdabc079b63fb0fcf255c0ea1f661f7c88f98e68938b40037f46",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-close.js",
+        "scenario": "default",
+        "contentsSha256": "b4812a1162a7127301609a9f7849c3ea4b69d14f100b0b9278a4523163565490",
+        "compiledSha256": "d9e3252fcc62e38501ecd030a56b8ffb1c6b01197067f42cf8555ac45c307459",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "fdb2607ad28414e6fdbdbac1cd1a88ebb9843548b13f2cea5a9f357802ad3c68",
+        "compiledSha256": "8b14eca92485349281d0710a32e4dde66c9fbf3053ecd546fe60e24444ed98e0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "a6d8857ebd210760ba9d4e9a403d933367a27d5a58aba4d08470da42cece2776",
+        "compiledSha256": "2d275f138d40133d056cec38921b032f65b06672cf40f00e7070fa098d3fb726",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-iter-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b2cca8ce34157c20c9728c0067a79218e59d573c0c301cf230c376687cc416f9",
+        "compiledSha256": "3a02a6c00da66d72ac4650659c7344eaf190506214f13d27b64be5dee3a06d8c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-array.js",
+        "scenario": "default",
+        "contentsSha256": "dc59a921988b52d05d6f8ba5772fd60450c153683dd70189d5b82022ae2f02af",
+        "compiledSha256": "46d5074b180fefed8e759b381ad0e8992c0d2a526969956d0ca4aec82d821f67",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-array.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9431c62c8a15979f6fb354f8bf90c0c1fded3b76ff596c4f9270109586009fb8",
+        "compiledSha256": "7f60c19356251ed6622c068e3f7facdc9587b8ddf7d4ccc64c55f4917389b3b0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-bool.js",
+        "scenario": "default",
+        "contentsSha256": "bde27da6168faafbc2cdb0d179dfd296728cd41c3fd669656aa7de2f9b2631e8",
+        "compiledSha256": "d3f0f357d0b7523a0d6afee722d8744de62e5a773a508d2db6258efb766c26b5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-bool.js",
+        "scenario": "strict mode",
+        "contentsSha256": "80d24a973db3702d474f3f2a5eb0f436fa8b456be6c2f24a2e93f4447cd6b158",
+        "compiledSha256": "8ff43b31ae85c7d0e412954f6b4aa1ba3fb48a51a8b5530f92374eb0e81d3870",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-null.js",
+        "scenario": "default",
+        "contentsSha256": "b70276f79481c90635b8c617ac0d3cad89bc4149d8ee0b5a6cb8fcbab40cd838",
+        "compiledSha256": "2249a5bb7d86e8bc66fe3cdfcb90127f30da17cec16713a18453125e6f72e1dc",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "0d3b61ecfe7b9ae58b1d3c47e3dda845bc25015fca27e4037e0b3a18ee3b4acf",
+        "compiledSha256": "3279fcc679a4e5a51bfe3d252c38a4f9e5f100d20dcaa00850fb2766b0309dc7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-num.js",
+        "scenario": "default",
+        "contentsSha256": "e8e52fc49871693a03474c5f6fbbec5958b81f32c79e2fcb64eabf18af94f896",
+        "compiledSha256": "6e3586be1eafe5a1c93e3e1e4acbbda239a75bffceb0cad6a20d90bb94ea50cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-num.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d3c6f536d1d3584df6fd5baf03a3b1deea60e25f9a9a77edecbe6e6aa0134892",
+        "compiledSha256": "fb3831b301bba544bd7bfc6d397e403b92e882362c937a9306bce9f350428ad9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-string.js",
+        "scenario": "default",
+        "contentsSha256": "4f663329d7f83523eb49c646d6b1d761af9535aef8386e3cb5a84128bd636ceb",
+        "compiledSha256": "4a25066a141439f5c166a9c768c2b00bf64c0ae7f0a53755a2f06a42b21a3684",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-string.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9e751f068ed3fdb216bc79006289a78e9be5bdf64851938f2265fe8d7c6f3eab",
+        "compiledSha256": "f49e24547193407fddd91bcf8d83ea668cb41fdba478c2cc30123701c0193d88",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-symbol.js",
+        "scenario": "default",
+        "contentsSha256": "ee1847eb1bd85a8089ea2f4f3f100423714cafce03662ad58e506d46545dc736",
+        "compiledSha256": "65a89a933c5e5983a7d89ede382e49dec59929cec1d05d6b3216072d23677bb4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-symbol.js",
+        "scenario": "strict mode",
+        "contentsSha256": "b886d231be7f510acd75978b7dfea99ba525bd8b2e56bc3831ecac47fa866043",
+        "compiledSha256": "a351949bb9faf6c6008712e5ec0d6e5decdec28be86c226bbb34c5f6c3f5da40",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-undef.js",
+        "scenario": "default",
+        "contentsSha256": "37d0433346d2eaf18c1ea51315a02af2229b8903f1daa256f6d42cd964e2e4e4",
+        "compiledSha256": "9cb99cdd9e9f2bc7ba633d69225bdd16cfdd1e56b0e99d7c1d6427f6f2bcd94e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-empty-val-undef.js",
+        "scenario": "strict mode",
+        "contentsSha256": "501fd211228f2c7495b8065721ab32dd5428e1188b01cfacaad11f5ec75e370c",
+        "compiledSha256": "e05d5558699796e095410c1e4a30b3f2ba0916033bbcb138645ef92720811588",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-iteration.js",
+        "scenario": "default",
+        "contentsSha256": "14b5d07afde5da770a8a7b509d65069e56ea03f2da54f220ba77617f45171dd8",
+        "compiledSha256": "6503987917fb28890488cb2348281acd0f9e81c6a4af38a526f3b04a49dc259f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-iteration.js",
+        "scenario": "strict mode",
+        "contentsSha256": "18adbefc025d09db0c15baf2f16a417390e62236f73bfd60a4c2649c66890fe3",
+        "compiledSha256": "b75714c7c6862c3426cc0900eff119339ffd54469d626f0145f957d05a29bfcb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-after-element.js",
+        "scenario": "default",
+        "contentsSha256": "6204e034836aca326fc6fb11375df5a2a42adad488666ed8e561984a89b12ebd",
+        "compiledSha256": "5be56e28b957f75dccffb637f28a9737b8a1be4bf90506d343bfd45b6d8ecf26",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-after-element.js",
+        "scenario": "strict mode",
+        "contentsSha256": "bb979182b4041b6239e63b781aa8f9f87cd8662c0b6fcb2368657ec9f54ccf28",
+        "compiledSha256": "1d96e1b9ba35c6eae2e7590faf7fa08832ac9876d3c055a2a381b45038dbf266",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-after-elision.js",
+        "scenario": "default",
+        "contentsSha256": "189e627f5dc6df47698051d4099ab9f9ae21a30daf664de81e34632127da9eae",
+        "compiledSha256": "5bb5400e0e472203cb5fe5ec2fa26b0549cfc3b07acbc0ddd451e908aa2ebebd",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-after-elision.js",
+        "scenario": "strict mode",
+        "contentsSha256": "4c924dff4a49e0cdd2692a3dea36745ede9bff9e96aa5c1c228173786f02c8be",
+        "compiledSha256": "5f4dda582e550690c5e01c42b9a434e6aa80c7918f393cf5609346a114171e38",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-before-element.js",
+        "scenario": "default",
+        "contentsSha256": "dc6da2f56d1900126cd363204fe7f647692984809c68697ca5ae28d8d47ef1f1",
+        "compiledSha256": "e2e0517c7eb4e7d5a4de69e396b699ee264eccf361c4207a07ded9317adaeb16",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-before-element.js",
+        "scenario": "strict mode",
+        "contentsSha256": "bbdeb56cca2d1f9f37325b8442836527787e19d6bf0beaa5f5b96252c56578f0",
+        "compiledSha256": "b4df5e7aca81b6ee712505c64c1de09d69b78628958b92d373cf46dfa172f23f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-before-elision.js",
+        "scenario": "default",
+        "contentsSha256": "e8860defe8ec44be6cff252a5fb9bca5e62aff5afc90c955d2fb91d0f7ba384c",
+        "compiledSha256": "3193482ad81e61bd7038d7d93b541cf86c6bb48d3e7142f616f0bdd8ccfdcdde",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-before-elision.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7b9edbf7b9d35efc361ea1383313ecde8ac879047f74957f44328f0242d09dd0",
+        "compiledSha256": "9ea215da83b35d5f63e5a86a31c65952445539ebe8b06683e9e34ac719967db8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-before-rest.js",
+        "scenario": "default",
+        "contentsSha256": "93edf6fc7ea61d5a9938f9b529e6456d61205d288e124465f5c9883f3b96853e",
+        "compiledSha256": "176fcb3f53501950e4c776750eeffb148575a699e0fa6c204fe8735560c235f8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-before-rest.js",
+        "scenario": "strict mode",
+        "contentsSha256": "84732554192640df8c1d142fde4d7771867989ff39e12a38700f00a6d83a172b",
+        "compiledSha256": "96cafa832c0d63aa56fc8635d9b412b3b390bda0fa02cb468dd1af9c20848ce5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-elision-iter-abpt.js",
+        "scenario": "default",
+        "contentsSha256": "f339672cd0d745e2b28e72733bd37bf2b642241b0814d7ebb9f0f19f21dbf8ee",
+        "compiledSha256": "1dab82afcd4c75fb50d0c0ae2f9036ddf01a6030928971831a73e326dfcaffaa",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-elision-iter-abpt.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3400632f58fce81857f0be472815c3fbf5a0f9d4f6cfc7bfb1c8343fcad523ba",
+        "compiledSha256": "0ae68ee5da9a37caf55dba8a669a7d14ec858313c9cc2297dd8e5f336fd13781",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-elision.js",
+        "scenario": "default",
+        "contentsSha256": "79038e0e3807a568d933e096322277833b13bb720f9e2a400e705a8120b90c2b",
+        "compiledSha256": "75e0aa99c3a3f1b74f1d83edd9d077015962757b23575b86a29ea88d91629e88",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-elision.js",
+        "scenario": "strict mode",
+        "contentsSha256": "ec813b05079e470bb97267c75ece0e3d2cdb97550364f5164b8f82a505ac861c",
+        "compiledSha256": "4fa28563a363912a97d833790f981333188386e1c46bcaa918fe6d61668a042b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-init.js",
+        "scenario": "default",
+        "contentsSha256": "a571e1224d7ffea8257692abda50a5c50bb03e31d4ae623cd8abaad3a282673e",
+        "compiledSha256": "2d43b0c45712c9f3264f5adc3c624fb3a9921ee589e0b027d4f9bf61caf30332",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-init.js",
+        "scenario": "strict mode",
+        "contentsSha256": "2bd1d1394bfbaa6375277a4f870b72e1f57a47575ac5e5cc3da053e2438f0c91",
+        "compiledSha256": "8078c5b3a84d9fb94c0d7986e2a67963af20d6e6ab501d29b212dc12bd6477a8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-get-err.js",
+        "scenario": "default",
+        "contentsSha256": "1836264ce74abd8c948ab4123e273762c8675ccc8a499982acf3897564d27713",
+        "compiledSha256": "0ac341e203f4deef1fa5fe4dc399c3054a3c2119f80c53c02737177eeddec5cb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-get-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "c148857303f18aa1684a2eb036e40f2bbebedf605e706d57ea03964a9639931c",
+        "compiledSha256": "c178e989a59c41a0572fd5d458321c6eead243ec873e37321cb21f1268f11481",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-nrml-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "145afc5563513a269e4aef0c12464409754976dfa09b477575ecbf37203113cc",
+        "compiledSha256": "e4553b6fae6c1e0e1830083afeb69e211cc889b71ef942160e86ee4af0872746",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-nrml-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3067e3de1981ad479be6e2a50362bb1ad8c6c0b5bef45b9c6b31dbb95d48bd76",
+        "compiledSha256": "a4b16e8577189de15a1c3ed062d306189f00b033d5e268437adc963798322c2c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "0fed840fad5fc64bcb7de3fb5a952c23422084147c7437bd11e459177fab3448",
+        "compiledSha256": "48cfa49ffe3b5d26887498e35567b93b371c2876e333efc9983f9dea7dacb05e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "933f35bfd4700ab2d21200caaebd1910ce8661f72973b49bd287bc1e4b8539eb",
+        "compiledSha256": "b01505f30f0f9835e37b7e128bea3314e48a4e62a02ea78f034cc3772825795c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close-null.js",
+        "scenario": "default",
+        "contentsSha256": "c008bd7d6ab0c99c27e7f9846be6bf49657eace7ae9bbe0914fc69c5670e0a3d",
+        "compiledSha256": "a57fed704993986695700ebc88a8688cd3b8ae80c4a233928018cddf1ad7d895",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "9812c5222fd67b2a4057780f4eeb6700a6ec69efdf98cd3cab85cc0e71657401",
+        "compiledSha256": "52e41d1a70eb34f178df46fcb24cd2edc01ed2e61b2b2e3a2c62c02193211ad7",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close.js",
+        "scenario": "default",
+        "contentsSha256": "61a079afcf8b8cb99e3fba67fd07dd161c4af65773e08a61758c0c1fe8c80a19",
+        "compiledSha256": "a3e1e7ebbc0ee499f5d0ff0d09793adc8908e439f90fe03caac84ded5b8e1337",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-rtrn-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "6830d0740563f2e484071c87fbbe1cce11ae1f0492d458f383c60b3da6536a45",
+        "compiledSha256": "f2a3ab54020d49304c88205dd347373d325d48624b4a939d5350c9719af27683",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-thrw-close-err.js",
+        "scenario": "default",
+        "contentsSha256": "b7a2b4d667d3586cbe1d4524ec56414e099455a1f261db1a701317d77c8e48b2",
+        "compiledSha256": "619e403a5a5578ae5e1812c08a6a363eb3992873bfd49cebe9d01964cd9d12bf",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-thrw-close-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e1c34f7c18d3b4ddb2905a7963f0097e3d08627b4e9ef676d177095be4a89353",
+        "compiledSha256": "96901ba4e3e2990e5e0ad728903bf557847ae94cb40f9c2f2f7388c91de3bfec",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-thrw-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "64692779660188418df0a3c4b3da0145e2be57ed95cf2c9e95b9485b5eb7c52c",
+        "compiledSha256": "6bb83222433006532b186715e450f828cfed8429ad34834a29ef81c9726de337",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-thrw-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1e81a0390ab3f3518c908c700a1c7677aefcfaa17e2fcc26021f535948979d9a",
+        "compiledSha256": "af6d1653d9918d8c5b7aaf22bb99c8912f801553124621d74412a6ee7f4f52fa",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-thrw-close.js",
+        "scenario": "default",
+        "contentsSha256": "0fd6f6805586aabd81d18bb4b8da3105d5fddcd65af900aca522a55251c53281",
+        "compiledSha256": "e987c60080eb63a9fb3854d81e219482535e3d4ddd0a131547a310a1cd2948a1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iter-thrw-close.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5f1829ef496994a87472be6f6a6e18060f1a8eb41fcbd7735f898ef61ac5db1a",
+        "compiledSha256": "008c40e1345b013b440db9110cfb17d19cb32381611f53037ac75a2f01399bbb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iteration.js",
+        "scenario": "default",
+        "contentsSha256": "6c21eb3d20b08c5770e3a67c85c15dfb3e098c770d4848b917ee858dd3c14b25",
+        "compiledSha256": "f4da3b386daaeaa29a23ed233cb6efdc8c4064848ba743ed5403f16add60d121",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-iteration.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1958d5d19914f8220cd1adceb3277f97ee22f486525f577f513e2df92aef1a15",
+        "compiledSha256": "b053a9f1efa9ff7d8257d79ea48bf8c6bd1b3ab588083a6d62e28a001706bf6f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-lref-err.js",
+        "scenario": "default",
+        "contentsSha256": "a4f13f0be11e964ad0f5a1ea119a7d2413ef6bace579383e8f2a223e25b95f16",
+        "compiledSha256": "2c6fbf9f711efd60854ef7452735b7b3a113e53f92f15dd6dc630f64068e1dd5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-lref-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "584a964fe214ada0037d854bfe7c4604abea89d29de2fa8333a1fcf6dae0277e",
+        "compiledSha256": "189397c4375ad5345f3054a47679a32110eae42e96d77d71ae83d719a69ca910",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-lref.js",
+        "scenario": "default",
+        "contentsSha256": "cf72f954aa224bb8f9d4dd02239250ec767bfdca969857f1bc34559237c20ea3",
+        "compiledSha256": "98df016ebb2dc7d560cdf72779ccdfa35f17550e3543aa106381ec90a127c984",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-lref.js",
+        "scenario": "strict mode",
+        "contentsSha256": "340b199c6fc55a75d75b5f9035c971335e1ae620f1f9d664a7209fecffcb5962",
+        "compiledSha256": "94a821a26c5639e90d0dd62d61ebac763e2af2ae9e2557f9d8a2704a276ac568",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "61e7e7dbc476774a593ab49bf106020f383b1950d5970d61fa599d4989a23dfe",
+        "compiledSha256": "f89933d48e145ae26223b5cb937ce1422f60376e2bc69d5504d69e0e153e03af",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "ccfbcf91583293d7322d65658782de6b5719ec23d0f31faebca95fa8f16aade6",
+        "compiledSha256": "e9f76b16c5fe8bc718ae8fa5bdd91c49d75e7529fdb92a84d66ad689e26997c1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-iter-thrw-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "4147ad491505b39cc06c420fe8a8250089d6e32c9ae312d8d837b2b9b46cb4b8",
+        "compiledSha256": "541654acfed22ed47261dc0916e88402bdeffcbe8343197d3b467fba1c9565ec",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-iter-thrw-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a26487906b2c703f44a9a66a855447e13c79d887f3d26f502cac8102ab672992",
+        "compiledSha256": "446eeff730e8975ed4287bb6499b233ba91cbe54ef7b73b18469bc15173d5a87",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-null.js",
+        "scenario": "default",
+        "contentsSha256": "01590d11df6082d7f71a3b47321b270fa0a8069ea15f16c2396693c20b4855c4",
+        "compiledSha256": "39ec75e2e50f9ad43f85b8625a25c9f7150850b0927faa850a0d4fba0c33c1be",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "76202da420b473af68e32e33bcc96f74e6972dcfa47c0197d25de6cb2a40980b",
+        "compiledSha256": "94034ee7ae220ba04a2f45e0598e35a4550f485d23f2dc06d0ca3849b40e2a02",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-undefined-hole.js",
+        "scenario": "default",
+        "contentsSha256": "c3919d13422b93ec199e8d1c1a74fe8655eb0288148523a836eaa176a1c3d550",
+        "compiledSha256": "7b99e4b0df34a8578c8653e518ccbe6be7ab353f928a002cedf76fa29eff66e6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-undefined-hole.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3863b067342d0caded054082b13061e30bd4a95d0d6162c053318df76771aa3c",
+        "compiledSha256": "e550383fc76447db91e7b77c5a01d977e60f679106c311a55f458dd6fade122f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-undefined-own.js",
+        "scenario": "default",
+        "contentsSha256": "cc50af0cd3d005506ae881af63da8c558d7ab3db847e75a676d9e4f8715b3fd5",
+        "compiledSha256": "1992ce5f1abd527061e8300f8dd1a0f6597a8503508aa02b78d44226a03bc54f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-undefined-own.js",
+        "scenario": "strict mode",
+        "contentsSha256": "de0c3c1d65955f62e5f76610198ceadaf2f3118f993cf21d4a05bc9102ba9b5d",
+        "compiledSha256": "c13d7a625d64a0a6ff92b8f94df49a55ad74ff2a61ef1686c2ea848005b6a329",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-undefined.js",
+        "scenario": "default",
+        "contentsSha256": "ee63d7e8bbcf6c36464fcbc958fbc16fce36b0068fda3f4e0338a2b693e31f90",
+        "compiledSha256": "94787e6841b136670b5a3d5a7e53f95020c458cbdc699057f9d75c26c8bc0427",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-undefined.js",
+        "scenario": "strict mode",
+        "contentsSha256": "aa3af34e16be543dc62c98db2ba710f792c7bf4d5b547656412e9d39f6e6ef14",
+        "compiledSha256": "d60ee6982d2d1a364f595449bd2c7742349bb5b90a77451ff0868556eb20c8eb",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "6a6200ec09fe75be20407d96d69340667244d06076136f8babc1853466ee4bb7",
+        "compiledSha256": "5bbb1fa52b3191f9fd0796a14cbf87f9ae01fa044c5fae65576343e637831862",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "81179b556ff128baa1e3359d36900ae23a6f44c04f70f1a3247e8add42e496fe",
+        "compiledSha256": "4145e02b438e13bb51f69d8f3ed61e6d6f379119041dbfa6284e0ae741f5bfd0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a44f28b43a79d179b1993ceca28e6fd29d63bdd102040a18543c9034a1be4469",
+        "compiledSha256": "0ba4ba6b5eceee6b6644c828db8d79dcbb039cd11e67cd5257d9e59eb9f4c88e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "062ec3e127eeb089b8e178d3f70453e88f56c82195a4dc07b10c0c81d488ef2d",
+        "compiledSha256": "e86dc652d3fe61601e1e2c26ce15ce1c2ad6b090058b15cc122e12cc2408c361",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array.js",
+        "scenario": "default",
+        "contentsSha256": "6ea231dcf5b97a4e52f7f679e1e8c29b095b142b0198636f3aef00475246d804",
+        "compiledSha256": "f5a2db0b055716a503615f8227e219418d88711f00a90fdf5052e6f58813a14b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-array.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f5ca2a82f64fa2ab6f1d302f3d678a266f7ec74584d300b7d1283dbc5ffddb1c",
+        "compiledSha256": "2ca57c3b6467f2773caa70f93cdd93867606d71e3bce4b0e88addc3eacb62035",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "4cee56e591e6a2fec581080669601fc048308441a4eebbf41734adb15e3869cb",
+        "compiledSha256": "f0dfeb3485e2976ea518d687569d53e924ab7162de0e2bbb748b32e964b10527",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "43df30de913c4fd16129463f1e4f6df4f0e6b498dd89a5f454385fdd6b4edc26",
+        "compiledSha256": "2527d6b6566c5469e55bff38f8065b127bacc326c278807f9e6f6c5bdd2ddd03",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-null.js",
+        "scenario": "default",
+        "contentsSha256": "e57cb7f79f36d827ef414e44eaf8d8cb78d91d37e442e5e3954204201fc4faed",
+        "compiledSha256": "c8d31063743b6767ad82df29d13c1781b0978c5ec2e3474c3bd432aaea9104c0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1ab9131940097b15d8c9feeb9bd37fadd83bbd464aa01bbd5b9a670e19cbf5a2",
+        "compiledSha256": "6235376e2f98487ba5c1118f787bdc2f7e85c83604a62500c4342efc8c9335e5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-undefined-hole.js",
+        "scenario": "default",
+        "contentsSha256": "e62386011415cb058a522d5e4e19897a90705d1e597c2467d000629e20974524",
+        "compiledSha256": "e534c65f9e9503bb8ff7fa7c31f32739467913988da3c1d69c7cd47835f7b265",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-undefined-hole.js",
+        "scenario": "strict mode",
+        "contentsSha256": "0ef784e9637b6c20523f834e8520fb70de9be3c5216bc61d34919266c2a923a6",
+        "compiledSha256": "85932365b645922ac1915070033137de39ba1186b82c771d9a1692df97aa3f81",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-undefined-own.js",
+        "scenario": "default",
+        "contentsSha256": "880dce732013fe532cedc77f210b1a5f7a349839d07206900472ddf7376d87c2",
+        "compiledSha256": "0b614dbfe91d2d8535f6c4498bbbcefbab50eeed5104bf52b07c76b779045baa",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-undefined-own.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a03969687533bff99e5b1736e28de27e78057d7b1fb1c01a1976cce9e038212c",
+        "compiledSha256": "1b13818413d1dcfe79e8379b3248975afa44952ff948806aab2ee78865730a41",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-undefined.js",
+        "scenario": "default",
+        "contentsSha256": "696bca01a9b55e7d52a576fae1da3327c6dbdf3c0ce5973cba1f60a8219fb70d",
+        "compiledSha256": "84719aca5bc3e8edf274234759c339725b4bdbaad7cc1f60275bb3015f8ec0c0",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-undefined.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a5e18af8e6ff371e9f78bb397e0319d4e0a9b45cdaa71958e87b5b39004c3a6b",
+        "compiledSha256": "d2d002b4207c844f0d8087eb894ca2e90fbedc0366c232e9c3608e5f04171b7c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "aa6d3c14b58658042b400c3563c174182ed1fd24313930dca0e76fa5399b568c",
+        "compiledSha256": "e0ea3fd9ebc9c564b61f1dffae8f0f83a7dccd989818daba01808348104975f6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "7fa4eb24fd1cc2fa0f8a3a449e7893e3d1b9125ea396fb567e5372b55a50dcd4",
+        "compiledSha256": "7d6fa5399ee3cf31a732357fe6dbadd1c1a5dc900a746bdc0ec7ceb200bc9b69",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "95c3d56e288e262164182969165cd401e665673b491460d6e1242a2ba0d865c6",
+        "compiledSha256": "c0dfb88df8db1e02e48fbe2f96af90cdc76e2c76aa024bdc5011ba72119a410d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "16cc6b56d1ac134eae49fa67880947450f3158b59801da90aa0a419ee6995efb",
+        "compiledSha256": "426fda6d274a346154903333237a8726fd5891c627d7028d5d1e14c4cdd66db6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj.js",
+        "scenario": "default",
+        "contentsSha256": "23410b0ac34b34bed1328ac19bdb260a80a7070cc6c7d3ae0e4859d747dd517d",
+        "compiledSha256": "9949a63be184485c6e1d8da81190dfa5a75e04b53fe253f97beafb7fdd6d9cd3",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-nested-obj.js",
+        "scenario": "strict mode",
+        "contentsSha256": "1d037afe54209cde82a592677c5ab592457ba668860bf95c3ea02f2954603c02",
+        "compiledSha256": "4633b1c5e4e1c92449d6dc4ded6410a14231a2530b58d023c492fd01ca9ab5fe",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-const.js",
+        "scenario": "default",
+        "contentsSha256": "110e3106c5f7aeb4dd0eae9eda4051ee5b3b02bb2b48a910d7e6433084838a8c",
+        "compiledSha256": "f123d32fb6cd48ee5615c117a8e0cf5bab22f402e22b7be853677f7fbc25290b",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-const.js",
+        "scenario": "strict mode",
+        "contentsSha256": "e99a9217972a1f2cefe20ee79d6c40271b0ef3eec48b877ebb9d7db17bd334e6",
+        "compiledSha256": "55e0c5645ff459d33fb0dae49f18b1645979e30d5840037fc929aa9cd5e78836",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-let.js",
+        "scenario": "default",
+        "contentsSha256": "8e50aa078d3a0dae78caa276b5a7133229e21228d048fa614b58f222d44e48f1",
+        "compiledSha256": "e2d5c03668a6d377474ed2534ae0bfe5cb0e1d6c37dbe735797e41f6d7b9110c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-let.js",
+        "scenario": "strict mode",
+        "contentsSha256": "dae16ca1524d4a91a4759716440f6374b2130e448d871423fd2edf65c27d547e",
+        "compiledSha256": "ac4c60c8726dc8092c3cd6974c98f5ff34b97a1e341f55219eefb40e062f7608",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref-no-get.js",
+        "scenario": "default",
+        "contentsSha256": "2cd49f29fd04af5aa0e9176e28b866a1ffbc4be3f39a817498f5d72e9fdf2916",
+        "compiledSha256": "859f9e80941c1d96505c363d2543bf0a93ef739805c47c313e86c243ef09a85a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref-no-get.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f6684000429bfd34e74fb7c8835432529a775ccc5c3ef7fc046a5315c5f773d4",
+        "compiledSha256": "8794dd758837f421998e1d97e956efbdc3de2f839f22fbaedd3845f918b1ab39",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref-user-err-iter-close-skip.js",
+        "scenario": "default",
+        "contentsSha256": "a713be41c4ed6848b888c926ae2f79312c0336a4db238a7605d96677d79a1c48",
+        "compiledSha256": "ecf1fd294056e60138cd4223f8e08db5858db826f2b0e7464b656f9a26beb2b8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref-user-err-iter-close-skip.js",
+        "scenario": "strict mode",
+        "contentsSha256": "27e7701b262a5e597855d78f8bf867e0bb97605436f0d2560e44f5bcd12b6e0e",
+        "compiledSha256": "7ea4d4e7cd5f9bbbc7089cfd5599c36e3a3eb339c6e027738011d7a829104c1a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref-user-err.js",
+        "scenario": "default",
+        "contentsSha256": "b0ab7f63bd3252bf4b15c7d8d23045ff93fec8d92de47e19ff34c8c10f268998",
+        "compiledSha256": "d82b605cfe086da9a5127aa98531df731b052e82712ff960bdcebe6093d6b386",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref-user-err.js",
+        "scenario": "strict mode",
+        "contentsSha256": "5ca028014c41d3a4fda7cd3a82d8e711a79d1eb89ad278854623f1168a00cb99",
+        "compiledSha256": "b995de1baa17a63dd2d15ea7190f48dae3f48c05167980313c99456c82614af5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref.js",
+        "scenario": "default",
+        "contentsSha256": "e0090ef11f5f2a1470d9f0aa0531f8749c014287fe1ee17be3cdeb1065a18097",
+        "compiledSha256": "0b2883adc02dd6c240a26560c7258cf60172c86ffe5a9c5baa719bd4fab562f6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-prop-ref.js",
+        "scenario": "strict mode",
+        "contentsSha256": "61a705f0b546ac3d590ad2b611e9c4ecd9fb6c3057fde54935f1d28255cf485e",
+        "compiledSha256": "5a4dbc8e4fb6235207c3dbd5623b0b763cd633ed3413416067dd0dee9ca8b0f5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-unresolvable-no-strict.js",
+        "scenario": "default",
+        "contentsSha256": "ee595ea52bb4b699ad0d5f8ca6547e698b5673ff4827f86bbe1f6f6453517494",
+        "compiledSha256": "5ff14b83524159a514308bc2182afc92b17ece053ef3563e7b4187ebd885b18e",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-put-unresolvable-strict.js",
+        "scenario": "strict mode",
+        "contentsSha256": "ff92948df53344794109bed9233887d763b6da107b85a57c6cb7e245ee9ef5b1",
+        "compiledSha256": "84f799bee70715703e99c4bed8ade1c0442723815ea4379b16c20714669b1ede",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "7e5574c456692f85e2e2bed31cd7faa9b2f1d2a3c3ee2fcb58d4041d245fe428",
+        "compiledSha256": "51ce0ad0c6655ac0fd3770569bf67dcf2e312e2c900ab37475f3c2b750c18e2f",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "431063a1a79dde1e1ff9cf7e4c9fe4d82a7f966fb833a239b5590b8202d9a1e1",
+        "compiledSha256": "e2a5054e74a257dbeefd4c70b331e4c99bee4429b0af27b7edcc57c5ad0fe816",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d8836378b8050f85fb001ce378767120bf30f657b6a3c1a9e22624bd9509f33b",
+        "compiledSha256": "c53a5843ec07d70afa5cf0fac85eeb9ae7fdf150dabce43b1598e8e0c51c147a",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/array-rest-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "76d5433a0f6bec35d6e81d7b2147d7091ad40b7f025c6cf5cdfc7d33fc5b7cf4",
+        "compiledSha256": "d8a1ec658d0c2abb8f281ecc85899c3463c2c423b4111967df5a1fa6223207a8",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-invalid.js",
+        "scenario": "default",
+        "contentsSha256": "5f0a9da0b74a7b254f3a5157ee64e17842d775cd4dcb037b9bbe237909087a7a",
+        "compiledSha256": "f96865091a4195bf9a06dcbcf5173811df0436aca4d739eb77efc68514c4f1d4",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "17eab01232fa371e3c6e29133d79ab59bf0e3766b1733d00b9ed74635cf38d42",
+        "compiledSha256": "9d7dc39c93f67a3dce758154a30d47bc8ec3ffc7f1fbec42c540105e9fc8b01c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-null.js",
+        "scenario": "default",
+        "contentsSha256": "7a7a96b35398d986fe36391fc428fd6a97a46d009632f34f7eddd4f3d4f14f11",
+        "compiledSha256": "ef857ac0bcbeab68f7a076acdf567f4cd0d04fdfa58a7a1845109192ff4e7fdf",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-null.js",
+        "scenario": "strict mode",
+        "contentsSha256": "3d8279557856ff4b12c805d4cf4768657473ea3ba6557a614fe4bd71b1dd71ef",
+        "compiledSha256": "755c5513277270344211d897fedeb6768522ef9cb0c9a6ac4898cc5275562ab1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-undefined-own.js",
+        "scenario": "default",
+        "contentsSha256": "76641779ac3fd0ec2dce5d86ca3614afa94a0172c4e48079c9d5e30371a4a541",
+        "compiledSha256": "cd8f60dfcc259baf7379aed079c018e5bfc3067050c0510fb18029f8447fa7e5",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-undefined-own.js",
+        "scenario": "strict mode",
+        "contentsSha256": "d17ba5fc831ad095931440d298c709d524ef172e9bd3e2bef4e661a5cfd01ae5",
+        "compiledSha256": "8390bfcfb5b5c18afa54d3f432b2cce9382db97c75253f3316a8ff9c656ea698",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-undefined.js",
+        "scenario": "default",
+        "contentsSha256": "b73cb5ade6d4ec88b3a9915b1266b6d8c4565bd9110d2590c7730f9f0c0a64cc",
+        "compiledSha256": "fd65650860865021780d4505658df101eccda8885565f48a80148f5f1957c56d",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-undefined.js",
+        "scenario": "strict mode",
+        "contentsSha256": "f71928da861b912b7ed29fd2f9b05374fd15c09596d78bfd1905911459004b5a",
+        "compiledSha256": "455da55fe882284696c8e04c310836e6de7457d8767c28804881af1deb125b10",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-yield-expr.js",
+        "scenario": "default",
+        "contentsSha256": "9c0b5a3830aeeea90bca57b80a11369f492b52b97ce1ad336441b7280c100232",
+        "compiledSha256": "0dd0e5b8a65c93bcbbec82c16ebb49601af4b04cea5d637c40b7964b42101bea",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-yield-expr.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a42010f47251809bbb0a30c62c80b69f4b6dc791b382ebd648a18a7714878622",
+        "compiledSha256": "afa4718bfd0020b2ae54623ae5d8bd4c27cc01e023851aa6e2132d76618e11a6",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-yield-ident-invalid.js",
+        "scenario": "strict mode",
+        "contentsSha256": "ec8ea740825329a7449b65eb46a6209f2ab5e615743c66dce6ac29e7afd0ae01",
+        "compiledSha256": "8e05fd710236bdfd1897b0bf2c31c9a8f09446f8b02fec6f4ce88a3cc2e51b21",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array-yield-ident-valid.js",
+        "scenario": "default",
+        "contentsSha256": "a75db83cfc1f8ac6f7ed0cadd223985d833eb0cdd3a35e146abcecc1670f2b4c",
+        "compiledSha256": "f96e537251032905c3213c7dd7e2b516d919067759da71363be1ebdb92b0ab07",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array.js",
+        "scenario": "default",
+        "contentsSha256": "e84afee3dfac5ff820108db011a8260881bae3785bbbb6736173d62789b31da6",
+        "compiledSha256": "c0dbb2f58c6e47fa1be141f68e91dbdadfa4eb090b0bc11979d9a5c39bfec00c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-prop-nested-array.js",
+        "scenario": "strict mode",
+        "contentsSha256": "41aaed1c9413a4ab5d998eb34b64e58af470735bdd5851eefc5e02af9281f482",
+        "compiledSha256": "c223c1bc0d208c29fdb421e4f706d21f6e7179a490d663ebc59db9b22a83d9a1",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-rest-non-string-computed-property-array-1.js",
+        "scenario": "default",
+        "contentsSha256": "9ff5b3eeb17b61c9f709516a51fec23eec3e0746521b8daa690164bf2e0a7455",
+        "compiledSha256": "dd1692dfb933b9b96bc6e49a1c5faedbb147b08e74d23030ea4a7027d8d01942",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-rest-non-string-computed-property-array-1.js",
+        "scenario": "strict mode",
+        "contentsSha256": "a7d3b75db18ec0b2f9e0abc997bf54a8b4540d09f67b0313d523bb0b3e30f320",
+        "compiledSha256": "9e58ddc3839ef4b0d57aa72f5f360cf29d83c7069a3ab4764c337ff5dd92efa9",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-rest-non-string-computed-property-array-1e0.js",
+        "scenario": "default",
+        "contentsSha256": "3ede82b82d0c69013e36d994ce10c2ab3083411407b314dfd4f9aebb4709d4da",
+        "compiledSha256": "2c1df625c8f3efe1a9d63b1ba03be37cd9bf51a65b3baad1c29303f314a1e81c",
+        "pass": true
+      },
+      {
+        "file": ".test262/test/language/expressions/assignment/dstr/obj-rest-non-string-computed-property-array-1e0.js",
+        "scenario": "strict mode",
+        "contentsSha256": "df8511c587f4e283e5f4b9394904f44456ff3d56f64b3780be2f25580d7e2937",
+        "compiledSha256": "f727a5d2751f7d32373a51dd370081d09b6376ac19c7425a8e9f3e9127f6f9af",
+        "pass": true
+      }
+    ],
+    "selection": [
+      ".test262/test/language/statements/variable/*ary*.js",
+      ".test262/test/language/expressions/assignment/dstr/*array*.js"
+    ]
+  },
+  "react": {
+    "reports": [
+      {
+        "file": "react-false.json.gz",
+        "sha256": "587ed9e825b037108d7c8369f8bc7df4df545aecc5a622631003a4127c15dd3f",
+        "iteratorRecordCount": 0,
+        "prefixCount": 1,
+        "timerCount": 1,
+        "observations": [],
+        "frontier": {
+          "distinctReferences": 21813,
+          "guestObjects": 2199,
+          "nativeArrays": 1872,
+          "nativeFunctions": 2819,
+          "registered": 2798,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "BigDecimal": 1,
+            "ConcreteRuntimeError": 1,
+            "add": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "divide": 1,
+            "equal": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "greaterThan": 1,
+            "greaterThanOrEqual": 1,
+            "isArray": 1,
+            "lessThan": 1,
+            "lessThanOrEqual": 1,
+            "multiply": 1,
+            "next": 1,
+            "notEqual": 1,
+            "registerNativeClosure": 1,
+            "remainder": 1,
+            "subtract": 1
+          }
+        }
+      },
+      {
+        "file": "react-true.json.gz",
+        "sha256": "587ed9e825b037108d7c8369f8bc7df4df545aecc5a622631003a4127c15dd3f",
+        "iteratorRecordCount": 0,
+        "prefixCount": 1,
+        "timerCount": 1,
+        "observations": [],
+        "frontier": {
+          "distinctReferences": 21813,
+          "guestObjects": 2199,
+          "nativeArrays": 1872,
+          "nativeFunctions": 2819,
+          "registered": 2798,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "BigDecimal": 1,
+            "ConcreteRuntimeError": 1,
+            "add": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "divide": 1,
+            "equal": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "greaterThan": 1,
+            "greaterThanOrEqual": 1,
+            "isArray": 1,
+            "lessThan": 1,
+            "lessThanOrEqual": 1,
+            "multiply": 1,
+            "next": 1,
+            "notEqual": 1,
+            "registerNativeClosure": 1,
+            "remainder": 1,
+            "subtract": 1
+          }
+        }
+      }
+    ],
+    "driver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { IteratorRecord, StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nconst getShape = (value: unknown): unknown => {\n  if (value === null || (typeof value !== \"object\" && typeof value !== \"function\")) return value;\n  const prototype = Object.getPrototypeOf(value);\n  const constructor = prototype && Object.getOwnPropertyDescriptor(prototype, \"constructor\")?.value;\n  return {\n    kind: typeof value,\n    constructor: typeof constructor === \"function\" ? Object.getOwnPropertyDescriptor(constructor, \"name\")?.value : null,\n    nodeType: Object.getOwnPropertyDescriptor(value, \"type\")?.value,\n    keys: Reflect.ownKeys(value).map(String).slice(0, 30),\n  };\n};\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  let referenceRecordCount: number | undefined;\n  let nativeListCount: number | undefined;\n  let iteratorRecordCount: number | undefined;\n  const isIteratorRecord = (value: object): value is IteratorRecord => {\n    const fields = Object.getOwnPropertyDescriptors(value);\n    return Object.getPrototypeOf(value) === Object.prototype && Reflect.ownKeys(value).length === 3 && fields.Iterator?.value instanceof api.ObjectValue && fields.NextMethod?.value instanceof api.Value && typeof fields.Done?.value === 'boolean';\n  };\n  let descriptorCount: number | undefined;\n  let descriptorInitializerCount: number | undefined;\n  const rejectedLists: unknown[] = [];\n  let frontier: unknown;\n  const recordShapes = new Map<string, number>();\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (isIteratorRecord(value)) references.push(value.Iterator, value.NextMethod);\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: roots => {\n          for (const value of seen) {\n            if (typeof value === \"function\" || Array.isArray(value) || value instanceof api.Value || value instanceof api.EnvironmentRecord || value instanceof api.ExecutionContext || value instanceof api.CallSite || value instanceof api.ReferenceRecord) continue;\n            const prototype = Object.getPrototypeOf(value);\n            const constructor = prototype && Object.getOwnPropertyDescriptor(prototype, \"constructor\")?.value;\n            const name = typeof constructor === \"function\" ? Object.getOwnPropertyDescriptor(constructor, \"name\")?.value : \"null\";\n            const shape = `${name}: ${Reflect.ownKeys(value).map(String).sort().join(\",\")}`;\n            recordShapes.set(shape, (recordShapes.get(shape) ?? 0) + 1);\n          }\n          const functions = [...seen].filter(value => typeof value === \"function\");\n          const registered = functions.filter(value => api.getNativeCaptures(value) !== undefined);\n          const unregistered = functions.filter(value => api.getNativeCaptures(value) === undefined);\n          const names = [...new Set(unregistered.map(value => value.name))].sort();\n          frontier = {\n            distinctReferences: seen.size,\n            guestObjects: [...seen].filter(value => value instanceof api.ObjectValue).length,\n            nativeArrays: [...seen].filter(value => Array.isArray(value)).length,\n            nativeFunctions: functions.length,\n            registered: registered.length,\n            functionsWithStepsBinding: registered.filter(value => api.getNativeCaptures(value)?.bindings.some(binding => binding.name === \"steps\")).length,\n            unregistered: Object.fromEntries(names.map(name => [name, unregistered.filter(value => value.name === name).length])),\n          };\n          const nativeLists: unknown[][] = [];\n          for (const value of seen) {\n            if (!Array.isArray(value) || roots.controlOwnedObjects.includes(value)) continue;\n            try {\n              const selected = api.createStateCheckpoint({ nativeLists: [value] });\n              selected.release();\n              nativeLists.push(value);\n            } catch (error) {\n              const incoming: unknown[] = [];\n              for (const parent of seen) {\n                if (typeof parent === \"function\") {\n                  for (const binding of api.getNativeCaptures(parent)?.bindings ?? []) {\n                    if (binding.get() === value) incoming.push({ parent: getShape(parent), binding: binding.name });\n                  }\n                }\n                for (const key of Reflect.ownKeys(parent)) {\n                  if (Object.getOwnPropertyDescriptor(parent, key)?.value === value) incoming.push({ parent: getShape(parent), property: String(key) });\n                }\n              }\n              rejectedLists.push({\n                error: String(error),\n                extensible: Object.isExtensible(value), frozen: Object.isFrozen(value), sealed: Object.isSealed(value),\n                currentArrayPrototype: Object.getPrototypeOf(value) === Array.prototype,\n                fields: Reflect.ownKeys(value).map(key => {\n                  const field = Object.getOwnPropertyDescriptor(value, key);\n                  return {key: String(key), writable: field?.writable, enumerable: field?.enumerable, configurable: field?.configurable, value: getShape(field?.value)};\n                }),\n                incoming,\n              });\n            }\n          }\n          const state = api.createStateCheckpoint({\n            descriptors: [...seen].filter(value => value instanceof api.Descriptor && !(value instanceof api.DescriptorInitializer)),\n            descriptorInitializers: [...seen].filter(value => value instanceof api.DescriptorInitializer),\n            nativeLists,\n            iteratorRecords: [...seen].filter(isIteratorRecord),\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n            referenceRecords: [...seen].filter(value => value instanceof api.ReferenceRecord),\n          });\n          storage = state;\n          descriptorCount = state.descriptorCount;\n          descriptorInitializerCount = state.descriptorInitializerCount;\n          expect(descriptorCount).toBeGreaterThan(0);\n          iteratorRecordCount = state.iteratorRecordCount;\n          referenceRecordCount = state.referenceRecordCount;\n          nativeListCount = state.nativeListCount;\n          expect(nativeListCount).toBeGreaterThan(0);\n          expect(referenceRecordCount).toBeGreaterThan(0);\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-iterator-record-react-${isReversed}.json`, JSON.stringify({ iteratorRecordCount, descriptorInitializerCount, descriptorCount, recordShapes: Object.fromEntries(recordShapes), prefixCount, reachedTimer, timerCount, referenceRecordCount, nativeListCount, rejectedLists, frontier, observations, limitation: \"Explicit iterator record selection restores Done and validates Iterator/NextMethod identity. This trusted diagnostic discovers records by shape; it is not an admission policy or allocation brand. Other native/guest storage and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+    "referenceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+    "inspectedSource": "packages/react-reconciler/src/ReactChildFiber.js:reconcileChildrenIterator",
+    "limitation": "React's guest next/done protocol is distinct from native IteratorRecord.Done. Current paused fixture selects no such native records. Both orders still reject first timer with no branch observations. Diagnostic shape discovery is trusted and is not a general owner."
+  },
+  "retainedFailures": [
+    "Initial four-case predecessor leak; empty rest array and missing next calls.",
+    "TS2345 required a whole-object iterator type predicate. TS2540 required existing debugger_scopePreview, not direct writes to its readonly flag. No oracle narrowing.",
+    "Final exact-source predecessor fails all28; six observed fork mismatches, two abrupt-first fork cases fail the absent count assertion."
+  ],
+  "limits": [
+    "Explicit canonical plain records only, no allocation brand or automatic admission.",
+    "Snapshot restores Done in place. Iterator/NextMethod identities and descriptors are validated, not rewritten. Direct guest references must belong to the Agent.",
+    "Readonly references may contain unowned mutable storage. Iterator properties, counters, closures, generators, async adapters, AST and full execution ownership remain separate.",
+    "Saved/current direct references are explicitly rooted until release. No blanket live-record GC or transitive record walker.",
+    "Trusted metadata/getters/proxies are not a sandbox. Host-effect guard remains enabled.",
+    "No general React branch owner, event/effect transitions, repeated families or integrated demo delivered. Existing supplied host-tree report component remains separate."
+  ]
+}

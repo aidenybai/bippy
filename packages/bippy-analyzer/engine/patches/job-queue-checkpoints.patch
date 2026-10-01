@@ -1,0 +1,144 @@
+diff --git a/src/host-defined/job-queue.mts b/src/host-defined/job-queue.mts
+index 7c26364..12ed106 100644
+--- a/src/host-defined/job-queue.mts
++++ b/src/host-defined/job-queue.mts
+@@ -64,7 +64,86 @@ export interface JobQueue extends Markable {
+   get length(): number;
+ }
+ 
++export interface JobQueueCheckpoint {
++  readonly scope: 'selected-job-queue-membership-v1';
++  readonly jobCount: number;
++  restore: () => void;
++  release: () => void;
++}
++
++interface JobQueueState {
++  collections: Set<Job>[];
++  jobs: Job[][];
++}
++
++const queueCheckpoints = new WeakMap<JobQueue, JobQueueState[]>();
++
++const markJob = (job: Job, marker: GCMarker): void => {
++  marker(job.capturedValues);
++  marker(job.job);
++  marker(job.callerRealm);
++  marker(job.callerScriptOrModule);
++};
++
++const markSavedJobs = (queue: JobQueue, marker: GCMarker): void => {
++  for (const state of queueCheckpoints.get(queue) ?? []) {
++    for (const jobs of state.jobs) {
++      for (const job of jobs) markJob(job, marker);
++    }
++  }
++};
++
++const captureJobQueue = (queue: JobQueue, collections: Set<Job>[]): JobQueueCheckpoint => {
++  const owner = surroundingAgent;
++  const validate = (): void => {
++    if (!owner || surroundingAgent !== owner) throw new TypeError('Job queue checkpoint belongs to another Agent');
++    if (owner.jobQueue !== queue) throw new TypeError('Job queue checkpoint requires the Agent queue');
++    if (owner.debugger_isPreviewing) throw new TypeError('Job queue checkpoints do not support debugger preview');
++    const prototype = Object.getPrototypeOf(queue);
++    if (prototype !== BasicJobQueue.prototype && prototype !== ByTypeJobQueue.prototype) {
++      throw new TypeError('Job queue checkpoints require a canonical queue');
++    }
++  };
++  validate();
++  const state: JobQueueState = { collections, jobs: collections.map((collection) => {
++    const jobs: Job[] = [];
++    Set.prototype.forEach.call(collection, (job: Job) => jobs.push(job));
++    return jobs;
++  }) };
++  const stack = queueCheckpoints.get(queue) ?? [];
++  stack.push(state);
++  queueCheckpoints.set(queue, stack);
++  let isReleased = false;
++  const assertActive = (): void => {
++    if (isReleased) throw new Error('Job queue checkpoint is released');
++    if (surroundingAgent !== owner) throw new TypeError('Job queue checkpoint belongs to another Agent');
++    if (stack.at(-1) !== state) throw new Error('Job queue checkpoints require last-in-first-out access');
++  };
++  return {
++    scope: 'selected-job-queue-membership-v1',
++    jobCount: state.jobs[0]!.length,
++    restore: () => {
++      assertActive();
++      validate();
++      state.collections.forEach((collection, index) => {
++        Set.prototype.clear.call(collection);
++        for (const job of state.jobs[index]!) Set.prototype.add.call(collection, job);
++      });
++    },
++    release: () => {
++      assertActive();
++      stack.pop();
++      if (!stack.length) queueCheckpoints.delete(queue);
++      state.collections.length = 0;
++      state.jobs.length = 0;
++      isReleased = true;
++    },
++  };
++};
++
+ export class BasicJobQueue extends Set<Job> implements JobQueue, Markable {
++  captureQueue = (): JobQueueCheckpoint => captureJobQueue(this, [this]);
++
+   enqueueFinalizationRegistryCleanupJob(job: Job): void {
+     this.add(job);
+     callCallback(this.onNewJob, job);
+@@ -98,12 +177,8 @@ export class BasicJobQueue extends Set<Job> implements JobQueue, Markable {
+   }
+ 
+   mark(marker: GCMarker): void {
+-    for (const job of this) {
+-      marker(job.capturedValues);
+-      marker(job.job);
+-      marker(job.callerRealm);
+-      marker(job.callerScriptOrModule);
+-    }
++    markSavedJobs(this, marker);
++    for (const job of this) markJob(job, marker);
+   }
+ }
+ 
+@@ -118,6 +193,10 @@ export class ByTypeJobQueue implements JobQueue, Markable {
+ 
+   #genericJobs = new Set<Job>();
+ 
++  captureQueue = (): JobQueueCheckpoint => captureJobQueue(this, [
++    this.#all, this.#finalizationRegistryCleanupJobs, this.#promiseJobs, this.#timeoutJobs, this.#genericJobs,
++  ]);
++
+   enqueueFinalizationRegistryCleanupJob(job: Job): void {
+     this.#finalizationRegistryCleanupJobs.add(job);
+     this.#all.add(job);
+@@ -187,11 +266,7 @@ export class ByTypeJobQueue implements JobQueue, Markable {
+   }
+ 
+   mark(marker: GCMarker): void {
+-    for (const job of this.#all) {
+-      marker(job.capturedValues);
+-      marker(job.job);
+-      marker(job.callerRealm);
+-      marker(job.callerScriptOrModule);
+-    }
++    markSavedJobs(this, marker);
++    for (const job of this.#all) markJob(job, marker);
+   }
+ }
+diff --git a/src/index.mts b/src/index.mts
+index 1a81cb3..d510bb6 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -15,7 +15,7 @@ export {
+   type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
+   type DataGraphCheckpoint, type DataGraphCheckpointOptions,
+ } from './host-defined/object-checkpoint.mts';
+-export { runSingleJobInQueue, type JobQueue, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
++export { runSingleJobInQueue, type JobQueue, type JobQueueCheckpoint, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
+ export {
+   type EventLoopQueueCheckpoint, type EventLoop, type EventLoopRunType, type NodeJSJobType, AbstractEventLoop, MicroTaskEventLoop, WebLikeEventLoop, NodeJSLikeEventLoop,
+ } from './host-defined/event-loop.mts';

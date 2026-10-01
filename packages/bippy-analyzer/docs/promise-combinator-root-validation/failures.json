@@ -1,0 +1,578 @@
+[
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/capability-resolve-throws-no-close.js",
+    "attrs": {
+      "esid": "sec-promise.allsettled",
+      "description": "Iterator is not closed when the \"resolve\" capability returns an abrupt completion.\n",
+      "info": "...\n3. Let promiseCapability be ? NewPromiseCapability(C).\n...\n6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n8. Return Completion(result).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n...\n6. Repeat\n  ...\n  d. If next is false, then\n    ...\n    iii. If remainingElementsCount.[[Value]] is 0, then\n      1. Let valuesArray be CreateArrayFromList(values).\n      2. Perform ? Call(resultCapability.[[Resolve]], undefined, « valuesArray »).\n\nIfAbruptRejectPromise\n\n1. IfAbruptRejectPromise(value, capability).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/allSettled/capability-resolve-throws-no-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "57bcaf4f16dfa9fb3941564b6e2dc83e603942046e257ad442c9fb1ed963c107",
+    "compiledSha256": "cef4eb39cdbc5f4f1b42fa597f338cf2ee548b83c572eb7be6becebbe187362e"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/capability-resolve-throws-no-close.js",
+    "attrs": {
+      "esid": "sec-promise.allsettled",
+      "description": "Iterator is not closed when the \"resolve\" capability returns an abrupt completion.\n (Strict Mode)",
+      "info": "...\n3. Let promiseCapability be ? NewPromiseCapability(C).\n...\n6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n8. Return Completion(result).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n...\n6. Repeat\n  ...\n  d. If next is false, then\n    ...\n    iii. If remainingElementsCount.[[Value]] is 0, then\n      1. Let valuesArray be CreateArrayFromList(values).\n      2. Perform ? Call(resultCapability.[[Resolve]], undefined, « valuesArray »).\n\nIfAbruptRejectPromise\n\n1. IfAbruptRejectPromise(value, capability).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/allSettled/capability-resolve-throws-no-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "3b228948399a3041b6d6a99df4734fb9aca12910abe9c595606137ce49870e3c",
+    "compiledSha256": "2811a72e2fa9c69b9fbc20a4a009a269b84695eddfefff1745b3b843c2b374bb"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-resolve-error-close.js",
+    "attrs": {
+      "description": "Explicit iterator closing in response to error\n",
+      "esid": "sec-promise.allsettled",
+      "info": "6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n6. Repeat\n  ...\n  i. Let nextPromise be ? Invoke(constructor, \"resolve\", « nextValue »).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/allSettled/invoke-resolve-error-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Error"
+    },
+    "contentsSha256": "46e31824cd6429bd8e2e33871008cd3921e0615b8214a7756cd0c753b33b9dd8",
+    "compiledSha256": "6054b0d998232de7b5f312881638f8e0417c890f8d82d96b94c220a4623b876d"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-resolve-error-close.js",
+    "attrs": {
+      "description": "Explicit iterator closing in response to error\n (Strict Mode)",
+      "esid": "sec-promise.allsettled",
+      "info": "6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n6. Repeat\n  ...\n  i. Let nextPromise be ? Invoke(constructor, \"resolve\", « nextValue »).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/allSettled/invoke-resolve-error-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Error",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Error' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Error"
+    },
+    "contentsSha256": "ffc564d78a2243c81df8db33f093434d2928e22b426b043a6c606995d251c714",
+    "compiledSha256": "e298f564c48b1e3010806ffeee2b111a208f6fed3cfcf9f693be197061df43af"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-error-close.js",
+    "attrs": {
+      "description": "Error thrown when invoking the instance's `then` method (closing iterator)\n",
+      "esid": "sec-promise.allsettled",
+      "info": "6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\nz. Perform ? Invoke(nextPromise, \"then\", « resolveElement, rejectElement »).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/allSettled/invoke-then-error-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "d37c89216341297c988be31511905755edbf27695d87231ff8d279176b9cd20e",
+    "compiledSha256": "8a964a8c72d48c2b130168c0f962239ac73a5245721fc1111064d4c5520c2bd1"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-error-close.js",
+    "attrs": {
+      "description": "Error thrown when invoking the instance's `then` method (closing iterator)\n (Strict Mode)",
+      "esid": "sec-promise.allsettled",
+      "info": "6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\nz. Perform ? Invoke(nextPromise, \"then\", « resolveElement, rejectElement »).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/allSettled/invoke-then-error-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "1bc77919372a8ce91e00d3eb03b675f05c3fc7274f23b88a1c6ae6859ecc6965",
+    "compiledSha256": "b7300495507843f338100e9280090dacabd0bd76618bb848e2d2968716616a54"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-get-error-close.js",
+    "attrs": {
+      "description": "Error thrown when accesing the instance's `then` method (closing iterator)\n",
+      "esid": "sec-promise.allsettled",
+      "info": "6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\nz. Perform ? Invoke(nextPromise, \"then\", « resolveElement, rejectElement »).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/allSettled/invoke-then-get-error-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "cd0067729728da58389af8969059064970867099db3324e77c0b2ca2a497ce90",
+    "compiledSha256": "3947a0a50663c60a265c305ef7b6bec58b5f2ec0856949bd9653b08ef57e85f4"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/invoke-then-get-error-close.js",
+    "attrs": {
+      "description": "Error thrown when accesing the instance's `then` method (closing iterator)\n (Strict Mode)",
+      "esid": "sec-promise.allsettled",
+      "info": "6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\nz. Perform ? Invoke(nextPromise, \"then\", « resolveElement, rejectElement »).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/allSettled/invoke-then-get-error-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "bb503b95f708bc3bbf6157bdf9c31eefef5886d7f5641f9edf166954cc39b8aa",
+    "compiledSha256": "8089b70715f4480c632df0742c32f1378aff073cf41fabe57400b8ae4fb6660c"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-next-val-err-no-close.js",
+    "attrs": {
+      "esid": "sec-promise.allsettled",
+      "description": "Error when accessing an iterator result's `value` property (not closing iterator)\n",
+      "info": "Promise.allSettled ( iterable )\n\n6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n...\n6. Repeat\n  ...\n  e. Let nextValue be IteratorValue(next).\n  f. If nextValue is an abrupt completion, set iteratorRecord.[[Done]] to true.\n  g. ReturnIfAbrupt(nextValue).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/allSettled/iter-next-val-err-no-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "f989b1aa9ef49485311617920a4c179847e95919072be649e9376d69992c0dc2",
+    "compiledSha256": "3dd63202b26e947a912eddc074edbe7b632eadda02e12bc5e92ef388ac3c2bb9"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-next-val-err-no-close.js",
+    "attrs": {
+      "esid": "sec-promise.allsettled",
+      "description": "Error when accessing an iterator result's `value` property (not closing iterator)\n (Strict Mode)",
+      "info": "Promise.allSettled ( iterable )\n\n6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n...\n6. Repeat\n  ...\n  e. Let nextValue be IteratorValue(next).\n  f. If nextValue is an abrupt completion, set iteratorRecord.[[Done]] to true.\n  g. ReturnIfAbrupt(nextValue).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/allSettled/iter-next-val-err-no-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "40f1a94122a9c910dcee5e105c26d22bba5200dbef6aa4611f1cbdb49f71fc07",
+    "compiledSha256": "fc1565f8f1e525a6ca54947ee8ab3587d6098a416ad45a4c0efd99a144a25780"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-step-err-no-close.js",
+    "attrs": {
+      "esid": "sec-promise.allsettled",
+      "description": "Error when advancing the provided iterable (not closing iterator)\n",
+      "info": "Promise.allSettled ( iterable )\n\n6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n6. Repeat\n  a. Let next be IteratorStep(iteratorRecord).\n  b. If next is an abrupt completion, set iteratorRecord.[[done]] to true.\n  c. ReturnIfAbrupt(next).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/allSettled/iter-step-err-no-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "67037e3cc386ee49d484c55ed38acdddcf3569d9909f6d877126a16e74495eae",
+    "compiledSha256": "0e75d05880f55322f4ee52f81517ab4fb17ad72afabcdae85f4d5285714d9827"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/allSettled/iter-step-err-no-close.js",
+    "attrs": {
+      "esid": "sec-promise.allsettled",
+      "description": "Error when advancing the provided iterable (not closing iterator)\n (Strict Mode)",
+      "info": "Promise.allSettled ( iterable )\n\n6. Let result be PerformPromiseAllSettled(iteratorRecord, C, promiseCapability).\n7. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n\nRuntime Semantics: PerformPromiseAllSettled\n\n6. Repeat\n  a. Let next be IteratorStep(iteratorRecord).\n  b. If next is an abrupt completion, set iteratorRecord.[[done]] to true.\n  c. ReturnIfAbrupt(next).\n",
+      "features": ["Promise.allSettled", "Symbol.iterator"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Leo Balter. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/allSettled/iter-step-err-no-close.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: Test262Error { message: '' }",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: Test262Error { message: '' }' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: Test262Error { message: '' }"
+    },
+    "contentsSha256": "d932d272af39cf781d1d5f46dcf6cb48d977d46245c494c25d27ddf39b15cbfa",
+    "compiledSha256": "5b70e4f614f63da854c7f4222c5aa51632158d40be7ef491bfb703fbdae89b07"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/ctx-ctor.js",
+    "attrs": {
+      "description": "Promise.any invoked on a constructor value\n",
+      "esid": "sec-promise.any",
+      "info": "2. Let promiseCapability be ? NewPromiseCapability(C).\n...\n5. Let result be PerformPromiseAny(iteratorRecord, C, promiseCapability).\n...\n7. Return Completion(result).\n",
+      "features": ["Promise.any", "class"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Sergey Rubanov. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/any/ctx-ctor.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: AggregateError: No promises passed to Promise.any were fulfilled"
+    },
+    "contentsSha256": "3dabc805491b23d71d1685c15e0ed5d76ceaa408626dfff867ff8f9166aaff50",
+    "compiledSha256": "b8a77523d948b494dd1209ae1b393563372e900e02aed76ec2bd127ef2466541"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/ctx-ctor.js",
+    "attrs": {
+      "description": "Promise.any invoked on a constructor value\n (Strict Mode)",
+      "esid": "sec-promise.any",
+      "info": "2. Let promiseCapability be ? NewPromiseCapability(C).\n...\n5. Let result be PerformPromiseAny(iteratorRecord, C, promiseCapability).\n...\n7. Return Completion(result).\n",
+      "features": ["Promise.any", "class"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Sergey Rubanov. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/any/ctx-ctor.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: AggregateError: No promises passed to Promise.any were fulfilled"
+    },
+    "contentsSha256": "e1f012576aeb585f08f0c96f0884b76a49ab970abf9af27415f54e8eea616e89",
+    "compiledSha256": "0b6d7b8c038d84da0e7ef57dc9ec1c73c287578ab63ce426a3e96416f5d0f71a"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/returns-promise.js",
+    "attrs": {
+      "esid": "sec-promise.any",
+      "description": "Promise.any returns a Promise",
+      "info": "Promise.any ( iterable )\n\n2. Let promiseCapability be ? NewPromiseCapability(C).\n3. Let iteratorRecord be GetIterator(iterable).\n4. IfAbruptRejectPromise(iteratorRecord, promiseCapability).\n5. Let result be PerformPromiseAny(iteratorRecord, C, promiseCapability).\n6. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n7. Return Completion(result).\n",
+      "features": ["Promise.any"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Sergey Rubanov. All rights reserved.",
+    "scenario": "default",
+    "insertionIndex": 5667,
+    "relative": "built-ins/Promise/any/returns-promise.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: AggregateError: No promises passed to Promise.any were fulfilled"
+    },
+    "contentsSha256": "1f43a44ccf05e654f0e91fc12635806eefa8c071bbd71b10031a2918477ed851",
+    "compiledSha256": "fa1758fb0efdb1a47f874b33ef48b500b06d1314c5739776d959ccc65da3f3d2"
+  },
+  {
+    "file": ".test262/test/built-ins/Promise/any/returns-promise.js",
+    "attrs": {
+      "esid": "sec-promise.any",
+      "description": "Promise.any returns a Promise (Strict Mode)",
+      "info": "Promise.any ( iterable )\n\n2. Let promiseCapability be ? NewPromiseCapability(C).\n3. Let iteratorRecord be GetIterator(iterable).\n4. IfAbruptRejectPromise(iteratorRecord, promiseCapability).\n5. Let result be PerformPromiseAny(iteratorRecord, C, promiseCapability).\n6. If result is an abrupt completion, then\n  a. If iteratorRecord.[[Done]] is false, set result to IteratorClose(iteratorRecord, result).\n  b. IfAbruptRejectPromise(result, promiseCapability).\n7. Return Completion(result).\n",
+      "features": ["Promise.any"],
+      "flags": {},
+      "includes": ["assert.js", "sta.js"]
+    },
+    "copyright": "// Copyright (C) 2019 Sergey Rubanov. All rights reserved.",
+    "scenario": "strict mode",
+    "insertionIndex": 5681,
+    "relative": "built-ins/Promise/any/returns-promise.js",
+    "rawResult": {
+      "stderr": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+      "stdout": "",
+      "error": {
+        "name": "Unhandled",
+        "message": "promise rejection: AggregateError: No promises passed to Promise.any were fulfilled",
+        "stack": [
+          {
+            "source": "{ name: 'Unhandled', message: 'promise rejection: AggregateError: No promises passed to Promise.any were fulfilled' }",
+            "fileName": "Unhandled",
+            "lineNumber": 1
+          }
+        ]
+      }
+    },
+    "result": {
+      "pass": false,
+      "message": "Expected no error, got Unhandled: promise rejection: AggregateError: No promises passed to Promise.any were fulfilled"
+    },
+    "contentsSha256": "83e6c4648ed32e44e15efbe2fb909f44b8f2ec35f210c5f9c23847d440c8f4fe",
+    "compiledSha256": "6c1984b04232a0f86594ba0ff7a9f01d9804e1970723b6cfa0c19e13d155464e"
+  }
+]

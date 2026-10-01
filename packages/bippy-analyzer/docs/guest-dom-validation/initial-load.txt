@@ -1,0 +1,59 @@
+
+> bippy-analyzer@ test /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer
+> pnpm build:engine && vp test --run tests/concrete-react-dom.test.ts tests/concrete-react.test.ts
+
+
+> bippy-analyzer@ build:engine /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer
+> tsx engine/scripts/build.ts
+
+Engine build is current
+
+ RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer
+
+ ❯ tests/concrete-react-dom.test.ts (2 tests | 2 failed) 6286ms
+   × executes React DOM and a guest-owned DOM library: production 2827ms
+   × executes React DOM and a guest-owned DOM library: development 2654ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/concrete-react-dom.test.ts > executes React DOM and a guest-owned DOM library: production
+ConcreteGuestError: Guest JavaScript threw
+ ❯ ConcreteRuntime.unwrap src/concrete/runtime.ts:185:13
+    183|   private unwrap = <Result>(completion: PlainCompletion<Result>): Resu…
+    184|     if (completion instanceof this.engine.api.ThrowCompletion)
+    185|       throw new ConcreteGuestError(completion.Value);
+       |             ^
+    186|     return completion instanceof this.engine.api.NormalCompletion ? co…
+    187|   };
+ ❯ src/concrete/runtime.ts:206:31
+ ❯ ConcreteRuntime.withAgent src/concrete/runtime.ts:196:14
+ ❯ ConcreteRuntime.evaluate src/concrete/runtime.ts:206:10
+ ❯ tests/concrete-react-dom.test.ts:15:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tests/concrete-react-dom.test.ts > executes React DOM and a guest-owned DOM library: development
+ConcreteGuestError: Guest JavaScript threw
+ ❯ ConcreteRuntime.unwrap src/concrete/runtime.ts:185:13
+    183|   private unwrap = <Result>(completion: PlainCompletion<Result>): Resu…
+    184|     if (completion instanceof this.engine.api.ThrowCompletion)
+    185|       throw new ConcreteGuestError(completion.Value);
+       |             ^
+    186|     return completion instanceof this.engine.api.NormalCompletion ? co…
+    187|   };
+ ❯ src/concrete/runtime.ts:206:31
+ ❯ ConcreteRuntime.withAgent src/concrete/runtime.ts:196:14
+ ❯ ConcreteRuntime.evaluate src/concrete/runtime.ts:206:10
+ ❯ tests/concrete-react-dom.test.ts:15:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  2 failed | 10 passed (12)
+   Start at  21:04:19
+   Duration  7.63s (transform 1.23s, setup 0ms, import 225ms, tests 8.97s, environment 0ms)
+
+/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  bippy-analyzer@ test: `pnpm build:engine && vp test --run tests/concrete-react-dom.test.ts tests/concrete-react.test.ts`
+Exit status 1

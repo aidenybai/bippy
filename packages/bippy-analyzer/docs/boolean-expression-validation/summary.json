@@ -1,0 +1,96 @@
+{
+  "scope": "engine262-abstract-boolean-expressions-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "f3861e0b0670a15ed4eb356309a8e92b70d8b268e94046a9d2ff903c70654390",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "operators": ["conditional", "logical-and", "logical-or", "logical-not"],
+  "units": {
+    "passed": 1132,
+    "total": 1132,
+    "files": 26,
+    "addedExpressionCases": 106,
+    "addedCheckpointCases": 2
+  },
+  "specialization": {
+    "expressions": 24,
+    "assignments": 4,
+    "observationsPerReference": 96,
+    "references": ["native V8", "published engine262"],
+    "fields": ["completion", "type", "value", "trace"],
+    "note": "A single-pass driver preserves opaque inputs; returned Boolean inputs are specialized with the witness assignment for comparison."
+  },
+  "checkpointFixture": {
+    "programs": ["statements", "expressions"],
+    "ordersPerProgram": 2,
+    "outcomesPerRun": 4,
+    "forksPerRun": 3,
+    "repeatedDecisionsPerRun": 2,
+    "prefixAndConditionCallsPerRun": 1,
+    "numberWitnesses": 9,
+    "observationsPerReference": 144,
+    "owner": "Selected shared ordinary object, global declarative bindings, and context stack. Not general transitive ownership."
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "selections": [
+    {
+      "name": "source",
+      "total": 148,
+      "passed": 144,
+      "exitCode": 1
+    },
+    {
+      "name": "published",
+      "total": 148,
+      "passed": 144,
+      "exitCode": 1
+    }
+  ],
+  "test262Selection": [
+    ".test262/test/language/expressions/conditional/*.js",
+    ".test262/test/language/expressions/logical-and/*.js",
+    ".test262/test/language/expressions/logical-or/*.js",
+    ".test262/test/language/expressions/logical-not/*.js"
+  ],
+  "identicalInputCompiledHashesAndVerdicts": true,
+  "remainingFailures": [
+    "conditional/tco-cond.js strict",
+    "conditional/tco-pos.js strict",
+    "logical-and/tco-right.js strict",
+    "logical-or/tco-right.js strict"
+  ],
+  "failureDifference": "Source timeouts; published engine-file error normalization. Raw outcomes retained, not equal diagnostics.",
+  "workers": 2,
+  "test262TimeoutMilliseconds": 10000,
+  "unitTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "8ca810a5 passes 1132 units but fails the unchanged smoke at 72/74; see ci-failure.json",
+  "rejectedChecks": [
+    "Initial pre-patch suite interrupted by a 45-second outer command timeout; no completed comparison. Process inspection found no test survivor.",
+    "Follow-up baseline name filter matched no tests (104 skipped); not validation.",
+    "Initial engine patch duplicated the existing BooleanValue import; build rejected and corrected.",
+    "Typecheck exposed isAbstract's unsound type predicate: a concrete Boolean branch narrowed to never. Corrected to boolean return with explicit class checking in the resolver.",
+    "Four comparisons attempted to call the original opaque Boolean operand. Engine diagnostic formatting reads its payload and rejects; preserved as two explicit rejection cases, not a fabricated guest message.",
+    "Root check caught patch-list indentation; formatted and reran the full root check and relocated build."
+  ],
+  "boundaries": [
+    "No general state owner or package explorer",
+    "No numeric predicates or Boolean algebra solver",
+    "Unknown logical assignments, loops, conversions, boxing, and same-type equality reject",
+    "Opaque non-callable diagnostics still reject",
+    "Existing suspended-control GC gap remains",
+    "No guarded React tree, transition families, or symbolic demo"
+  ],
+  "files": {
+    "engine/patches/boolean-expressions.patch": "cb557213b49cb86e44c41edcf6d34ddcd2aba6ac7b40cb2caa601630f9851240",
+    "engine/scripts/build.ts": "265b0c92c952dbc8b646b5548c61daf46c2e33e764648c28179365a15e759ee8",
+    "tests/boolean-expressions.test.ts": "c9d95b4194a962dc99978ae4b74e4c5a8fd85d2b1b5b32f2ccc8fd6382b22d8c",
+    "tests/boolean-decision.test.ts": "6b5b844404b1b3a79a1760c2e78010193d824355303faaa25a9e7a97dba098da",
+    "tests/guarded-control.test.ts": "3ae9a755867501c25283a9592c1afd3c662d26afa3ecb01d7d5b6aa22303b807"
+  }
+}

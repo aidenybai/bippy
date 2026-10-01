@@ -1,0 +1,17 @@
+{
+  "scope": "suspended-guest-generator-array-accumulator-gc",
+  "fixed": false,
+  "revision": "e83442bc192c824ba10ec1c77c1dac52653c8621",
+  "engineSha256": "2e2c6b1a145c6b32e47432c493852ae35bb770f6a45be9636ef2e61cb5b1f3ce",
+  "node": "v26.4.0",
+  "observation": {
+    "source": "var reference;function create(){const target={value:7};reference=new WeakRef(target);return target;}function* run(){return [create(),yield 'pause'];}var iterator=run();iterator.next();",
+    "engine": [false, 7],
+    "native": [true, 7]
+  },
+  "engineCollection": "Clear AgentRecord.KeptAlive, call api.gc(), then observe and resume the generator.",
+  "nativeCollection": "Independent Node --expose-gc subprocess; cross a setImmediate boundary, call globalThis.gc(), then observe and resume.",
+  "observationExpression": "JSON.stringify([reference.deref()!==undefined,iterator.next().value[0].value])",
+  "publishedEngineChecked": false,
+  "boundary": "The engine clears a target still held by a suspended array accumulator. ExecutionContext.mark omits CodeEvaluationState, and the marker lacks complete control/container/native-capture traversal. No whole-state owner or complete GC traversal is established."
+}

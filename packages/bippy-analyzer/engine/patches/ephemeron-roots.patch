@@ -1,0 +1,24 @@
+diff --git a/src/api.mts b/src/api.mts
+index 5cb0457..62d5d52 100644
+--- a/src/api.mts
++++ b/src/api.mts
+@@ -123,10 +123,16 @@ export function gc() {
+   markCb(surroundingAgent);
+ 
+   while (ephemeronQueue.length > 0) {
+-    const item = ephemeronQueue.shift()!;
+-    if (marked.has(item.Key)) {
+-      markCb(item.Value);
++    const previousMarkedCount = marked.size;
++    const entries = ephemeronQueue.splice(0);
++    for (const entry of entries) {
++      if (marked.has(entry.Key)) {
++        markCb(entry.Value);
++      } else {
++        ephemeronQueue.push(entry);
++      }
+     }
++    if (marked.size === previousMarkedCount) break;
+   }
+ 
+   weakrefs.forEach((ref) => {

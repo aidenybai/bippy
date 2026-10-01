@@ -1,0 +1,45 @@
+{
+  "note": "Sequential local samples; not Linux passing evidence. Rejected prepared, constant, and empty variants are not retained.",
+  "before": {
+    "node": "v26.4.0",
+    "engineSha256": "e5595cae5cf80ae9d9ca79dd7bf9f9f77748da83aa36f4e27cc71ed0941c6ebf",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [4874.575584, 4897.516041, 4810.784207999999],
+    "median": 4874.575584
+  },
+  "loops": {
+    "node": "v26.4.0",
+    "engineSha256": "53b88f226646e86bcf62ff860612ae98d881f8eccda20c034b49f2c5e51f6f81",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [4340.405124999999, 4345.120250000001, 4197.644959000001],
+    "median": 4340.405124999999
+  },
+  "driver": {
+    "node": "v26.4.0",
+    "engineSha256": "963fd3c6767af14cffb462430fef2e7ffba2e8224453f6c32d84690a0782ce85",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3908.487792, 3963.988292, 3887.764833],
+    "median": 3908.487792
+  },
+  "prepared": {
+    "node": "v26.4.0",
+    "engineSha256": "67e2ce5ba1dbd6b7eb40355bbe2706607d9a54bced65a7050b0daaf20adce08c",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3956.92625, 3931.987916, 4038.5571249999994],
+    "median": 3956.92625
+  },
+  "constant": {
+    "node": "v26.4.0",
+    "engineSha256": "4129364006612c03131a6839b812a5e17afc04e398a12978de5806d20fef185a",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3868.35725, 3883.834042, 3891.114375],
+    "median": 3883.834042
+  },
+  "empty": {
+    "node": "v26.4.0",
+    "engineSha256": "95c05ab7043dadb0421ce4d584f6213aa74fdbb1e5ae81f87ba7f82873929b87",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3962.535791, 3991.305125, 4048.0514999999996],
+    "median": 3991.305125
+  }
+}

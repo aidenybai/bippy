@@ -1,0 +1,13 @@
+diff --git a/src/index.mts b/src/index.mts
+index d510bb6..ab6eaf1 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -2,7 +2,7 @@ export {
+   captureControl, measureSynchronousExecution,
+   type ControlCheckpoint, type ContinuationStateOwner, type ContinuationStateRoots,
+ } from './host-defined/control/execution-machine.mts';
+-export { getNativeCaptures, type CapturedBinding, type CaptureManifest } from './host-defined/control/native-captures.mts';
++export { getNativeCaptures, registerNativeClosure, type CapturedBinding, type CaptureManifest } from './host-defined/control/native-captures.mts';
+ 
+ export * from './abstract-ops/all.mts';
+ export * from './execution-context/all.mts';

@@ -1,0 +1,86 @@
+{
+  "scope": "engine262-selected-global-bindings-v1",
+  "symbolicReactComplete": false,
+  "generalStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactSource": "packages/react-reconciler/src/ReactFiberWorkLoop.js",
+  "reactFixtureVersion": "19.3.0",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "653ba15d733596c6625d1415bf233b397f9fec0eac6c40ca76e84890799ed56d",
+  "implementation": [
+    "Select existing global backing object and declarative binding storage",
+    "Reuse existing property and binding snapshots, identities and GC hooks",
+    "Validate canonical global component records and same-Agent ownership",
+    "Preflight unchanged global metadata identities before writes"
+  ],
+  "counts": "objectCount includes implicit backing objects; environmentCount includes global wrappers plus distinct declarative/function records; bindingCount excludes object properties",
+  "regressions": {
+    "initialCases": 19,
+    "initialFailures": 19,
+    "initialPatchedFailures": 2,
+    "initialPatchedFailureReason": "Node contextified global changed existing value on writable-flag update; corrected independent oracle uses DONT_CONTEXTIFY",
+    "finalGlobalCases": 22,
+    "finalBaselineFailures": 22,
+    "finalBaselineTimeouts": 0,
+    "identicalFinalTestSourceHashes": true,
+    "nativeGlobalBranches": 4,
+    "nativeGlobalBaselines": 4,
+    "nativeAgentBranches": 4,
+    "nativeReactSequencesPreserved": 10
+  },
+  "units": {
+    "passed": 1526,
+    "total": 1526,
+    "files": 47
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "a106f4e2bf2a9e4421d30e4e4900c2b81068a10ed4ad10b2b1304beb7e0dc0ee",
+      "compressedSha256": "9e2a7119062b433ecf68d9506b8e0269be88fadeaae55f5e88afdc93e65c823c"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "937fa142ae0e87ba57cc9385326a86bb789af310a99ddefe6d953af330d83c5c",
+      "compressedSha256": "14921fd9368756724b93902c424201dc0ab9dabc048274d78882c9cbd57d857c"
+    }
+  ],
+  "conformance": {
+    "passed": 671,
+    "total": 671,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "selection": [
+      ".test262/test/language/global-code/**/*.js",
+      ".test262/test/language/statements/variable/**/*.js",
+      ".test262/test/language/statements/let/**/*.js"
+    ]
+  },
+  "boundaries": [
+    "No traversal of closure environments, intrinsics, modules, global values or host captures",
+    "Distinct global receiver is retained, not property-snapshotted unless selected",
+    "Object-record backing proxy, with state, pending disposal and noncanonical shapes reject",
+    "Actual React only captures/releases selected storage and rejects broader ownership",
+    "No shared-prefix React fork, guarded output, event transitions, repeated families or symbolic demo",
+    "Native metadata is trusted, not a hostile-host sandbox"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "CI 36533331532 passes 1526 units but fails both numeric substr smoke variants at the unchanged ten-second timeout (72/74). Engine hash matches. See ci-failure.json and compressed profiles. E2E and publish pass.",
+  "files": {
+    "engine/patches/global-checkpoints.patch": "167d54afc3d846bc540e6d1b008d03c76c60a614ed24f5071d790cb2fcca448e",
+    "engine/scripts/build.ts": "f444719b64b1bae6b85ac7d9b17765ea50e74e51af8cd5e47925eb55531d8e8a",
+    "tests/global-checkpoint.test.ts": "0cd5f6a821892d408f3dde5a86eef0aa32f0c3ebf831386fcac6dcc00d9be37d",
+    "tests/numeric-react.test.ts": "211ce63b2ac160cc1c2cbc6598a9a7f71b8603cb3e43735d5f13beb4b0ada917",
+    "tests/fixtures/numeric-react.tsx": "62893df5eee21a8fd5d0e79b2dab40f31f919aee04ce6cb7eb640b9d38a2d98c",
+    "docs/global-checkpoints.md": "7e8fd330f4127fe5f6b14dcb36381b0d3576c124360bd756e7ae4abcf50c3097",
+    "docs/engine-state-inventory.md": "b84b88e4f8df8fa6a223a22d61b584a014f9bc23790ca65566581addb1797c02"
+  }
+}

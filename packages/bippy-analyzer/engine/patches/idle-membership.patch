@@ -1,0 +1,95 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index e6ddb5e..b15fba6 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -67,11 +67,52 @@ export interface EvaluationCheckpoint extends ControlCheckpoint {
+   release: () => void;
+ }
+ 
++interface IdleCallbackState {
++  descriptor: PropertyDescriptor;
++  callbacks: Set<() => void>;
++  members: (() => void)[];
++  extensible: boolean;
++}
++
+ interface EvaluationCheckpointFrame {
+   paused?: PausedEvaluator;
+   roots: readonly unknown[];
++  idle?: IdleCallbackState;
+ }
+ 
++const getIdleCallbackState = (agent: Agent): IdleCallbackState => {
++  const descriptor = Object.getOwnPropertyDescriptor(agent, 'onNoEvaluator');
++  const callbacks: unknown = descriptor?.value;
++  if (!descriptor || !('value' in descriptor) || !(callbacks instanceof Set)
++    || Object.getPrototypeOf(callbacks) !== Set.prototype || Reflect.ownKeys(callbacks).length !== 0) {
++    throw new TypeError('Evaluation checkpoints require a canonical idle callback Set');
++  }
++  const members: (() => void)[] = [];
++  Set.prototype.forEach.call(callbacks, (callback: () => void) => {
++    if (typeof callback !== 'function') throw new TypeError('Evaluation checkpoints require function-valued idle notifications');
++    members.push(callback);
++  });
++  return { descriptor, callbacks, members, extensible: Object.isExtensible(callbacks) };
++};
++
++const validateIdleCallbacks = (agent: Agent, state: IdleCallbackState, membership: boolean): void => {
++  const descriptor = Object.getOwnPropertyDescriptor(agent, 'onNoEvaluator');
++  if (!descriptor || !('value' in descriptor) || descriptor.value !== state.callbacks
++    || descriptor.writable !== state.descriptor.writable || descriptor.configurable !== state.descriptor.configurable
++    || descriptor.enumerable !== state.descriptor.enumerable
++    || Object.getPrototypeOf(state.callbacks) !== Set.prototype || Reflect.ownKeys(state.callbacks).length !== 0
++    || Object.isExtensible(state.callbacks) !== state.extensible) {
++    throw new TypeError('Evaluation checkpoint idle callback metadata changed');
++  }
++  if (membership) {
++    let index = 0;
++    Set.prototype.forEach.call(state.callbacks, (callback: () => void) => {
++      if (callback !== state.members[index++]) throw new TypeError('Idle callbacks changed during checkpoint capture');
++    });
++    if (index !== state.members.length) throw new TypeError('Idle callbacks changed during checkpoint capture');
++  }
++};
++
+ /** https://tc39.es/ecma262/#sec-agents */
+ export class Agent {
+   // An agent comprises a set of ECMAScript execution contexts, an execution context stack, a running execution context, an Agent Record, and an executing thread. Except for the executing thread, the constituents of an agent belong exclusively to that agent.
+@@ -217,11 +258,15 @@ export class Agent {
+         beginCapture: () => beginCapture?.call(owner),
+         references: (value) => references?.call(owner, value) ?? [],
+         capture: (roots) => {
++          validateIdleCallbacks(this, frame.idle!, true);
+           frame.roots = roots.values;
+           return captureState.call(owner, roots);
+         },
+-      }, () => [paused.evaluator, paused.onFinish, ...this.onNoEvaluator, ...scopedRoots],
+-      (values) => captureRoots.push(values)));
++      }, () => {
++        frame.idle = getIdleCallbackState(this);
++        return [paused.evaluator, paused.onFinish, ...frame.idle.members, ...scopedRoots];
++      }, (values) => captureRoots.push(values)));
++      validateIdleCallbacks(this, frame.idle!, true);
+       this.#evaluationCheckpoints.push(frame);
+     } finally {
+       this.#isCheckpointing = false;
+@@ -241,7 +286,11 @@ export class Agent {
+         if (saved.failure) throw saved.failure.error;
+         current.#isCheckpointing = true;
+         try {
++          validateIdleCallbacks(current, frame.idle!, false);
+           continuation!.restore();
++          validateIdleCallbacks(current, frame.idle!, false);
++          Set.prototype.clear.call(frame.idle!.callbacks);
++          for (const callback of frame.idle!.members) Set.prototype.add.call(frame.idle!.callbacks, callback);
+           saved.decision = decision;
+           saved.controlled = controlled;
+           current.#pausedEvaluator = saved;
+@@ -258,6 +307,7 @@ export class Agent {
+         current.#evaluationCheckpoints.pop();
+         frame.roots = [];
+         frame.paused = undefined;
++        frame.idle = undefined;
+         continuation = undefined;
+         agent = undefined;
+       },

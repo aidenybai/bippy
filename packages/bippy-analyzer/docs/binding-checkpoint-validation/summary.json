@@ -1,0 +1,56 @@
+{
+  "scope": "selected-objects-and-bindings-v1",
+  "symbolicReactComplete": false,
+  "node": "v26.4.0",
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "test262Revision": "045bf6f9966ce3291b8fbc1e0403cd97b9201b00",
+  "beforeCommit": "2e2e3b78270384091d9307aa4b758379141db0bc",
+  "beforeEngineSha256": "7b638705724afba015103efa11308ad4e036b5b7129115564c6d89263425004f",
+  "engineSha256": "6d0119e78de339d6a4033e92a705035c67842ddfa05459223ac24646abe4a68a",
+  "patchSha256": "a345e1d63a5d4c4f35c2cda4d7b170a2016aa6358bcebc632a354e8c1c510d83",
+  "testSha256": "7cd37ce165f3171e179df8773337ed1c426c14be3019dbf55e103410d4eedc1c",
+  "focusedTests": 16,
+  "totalUnitTests": 821,
+  "unitTestFiles": 17,
+  "smoke": {
+    "total": 74,
+    "passed": 74,
+    "failed": 0
+  },
+  "historical": {
+    "total": 306,
+    "passed": 301,
+    "failed": 5,
+    "exitCode": 1
+  },
+  "weakReferences": {
+    "total": 152,
+    "passed": 152,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "workers": 2,
+  "timeoutMilliseconds": 10000,
+  "parameterSelection": [
+    ".test262/test/language/arguments-object/**/*.js",
+    ".test262/test/language/expressions/function/*.js"
+  ],
+  "beforeReceipt": "../object-checkpoint-validation/after.json",
+  "before": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "after": {
+    "total": 559,
+    "passed": 557,
+    "failed": 2,
+    "exitCode": 1
+  },
+  "identicalInputsCompiledHashesAndVerdicts": true,
+  "receiptHashes": {
+    "after": "6541fd6334381128372b48db30c6ab8f9d9237e86443ac8f029dc41434d5395e",
+    "validation-logs": "8d1a7ebbe92c7392d468925877e595780c2e3c78e0492b489a0f386ea62235d0"
+  }
+}

@@ -1,0 +1,295 @@
+diff --git a/src/abstract-ops/arguments-operations.mts b/src/abstract-ops/arguments-operations.mts
+index 371b425..568d02e 100644
+--- a/src/abstract-ops/arguments-operations.mts
++++ b/src/abstract-ops/arguments-operations.mts
+@@ -35,6 +35,7 @@ import {
+   type DataDescriptorInit,
+   type PropertyKeyValue,
+   type Realm,
++  type GCMarker,
+   PropertyKeyMap,
+ } from '#self';
+ 
+@@ -51,7 +52,33 @@ export function isArgumentExoticObject(value: Value): value is MappedArgumentsOb
+   return 'ParameterMap' in value;
+ }
+ 
+-const ArgumentExoticObject = {
++export class ArgumentsParameterMapData {
++  constructor(
++    readonly environment: EnvironmentRecord,
++    readonly realm: Realm,
++    readonly pendingMappings: PropertyKeyMap<string>,
++    readonly getOwnProperty: ObjectValue['GetOwnProperty'],
++    readonly ownPropertyKeys: ObjectValue['OwnPropertyKeys'],
++  ) {
++    Object.freeze(this);
++  }
++
++  mark(marker: GCMarker) {
++    if (this.pendingMappings.size === 0) return;
++    marker(this.environment);
++    marker(this.realm);
++    marker(this.pendingMappings);
++  }
++}
++
++export const getArgumentsParameterMapData = (object: ObjectValue): ArgumentsParameterMapData | undefined => {
++  if (object.internalSlotsList.length !== 3
++    || !['Prototype', 'Extensible', 'ArgumentsParameterMapData'].every((name) => object.internalSlotsList.includes(name))) return undefined;
++  const data = Object.getOwnPropertyDescriptor(object, 'ArgumentsParameterMapData')?.value;
++  return data instanceof ArgumentsParameterMapData ? data : undefined;
++};
++
++export const ArgumentExoticObject = {
+   * GetOwnProperty(P): PlainEvaluator<FullyPopulatedDescriptor | undefined> {
+     const args = this;
+     const desc = OrdinaryGetOwnProperty(args, P);
+@@ -171,6 +198,7 @@ function MakeArgGetter(name: string, env: EnvironmentRecord, realm: Realm) {
+   const getterClosure = () => env.GetBindingValue(name, false);
+   // 2. Let getter be ! CreateBuiltinFunction(getterClosure, 0, "", « »).
+   const getter = X(CreateBuiltinFunction(getterClosure, 0, Value(''), ['Name', 'Env'], realm));
++  Object.assign(getter, { Name: name, Env: env });
+   // 3. NOTE: getter is never directly accessible to ECMAScript code.
+   // 4. Return getter.
+   return getter;
+@@ -183,6 +211,7 @@ function MakeArgSetter(name: string, env: EnvironmentRecord, realm: Realm) {
+   const setterClosure = ([value = Value.undefined]: Arguments) => env.SetMutableBinding(name, value, false);
+   // 2. Let setter be ! CreateBuiltinFunction(setterClosure, 1, "", « »).
+   const setter = X(CreateBuiltinFunction(setterClosure, 1, Value(''), ['Name', 'Env'], realm));
++  Object.assign(setter, { Name: name, Env: env });
+   // 3. NOTE: setter is never directly accessible to ECMAScript code.
+   // 4. Return setter.
+   return setter;
+@@ -200,7 +229,7 @@ export function CreateMappedArgumentsObject(func: ECMAScriptFunctionObject, form
+   obj.Set = ArgumentExoticObject.Set;
+   obj.Delete = ArgumentExoticObject.Delete;
+   obj.Prototype = surroundingAgent.intrinsic('%Object.prototype%');
+-  const map = OrdinaryObjectCreate(Value.null);
++  const map = OrdinaryObjectCreate(Value.null, ['ArgumentsParameterMapData']);
+   obj.ParameterMap = map;
+   const parameterNames = BoundNames(formals);
+   const numberOfParameters = parameterNames.length;
+@@ -271,6 +300,10 @@ export function CreateMappedArgumentsObject(func: ECMAScriptFunctionObject, form
+     map.GetOwnProperty = methods.GetOwnProperty;
+     map.OwnPropertyKeys = methods.OwnPropertyKeys;
+   }
++  Object.defineProperty(map, 'ArgumentsParameterMapData', {
++    value: new ArgumentsParameterMapData(env, realm, pendingMappings, map.GetOwnProperty, map.OwnPropertyKeys),
++    configurable: true,
++  });
+   X(DefinePropertyOrThrow(obj, wellKnownSymbols.iterator, Descriptor({
+     Value: surroundingAgent.intrinsic('%Array.prototype.values%'),
+     Writable: true,
+diff --git a/src/abstract-ops/objects.mts b/src/abstract-ops/objects.mts
+index 1826b33..e129303 100644
+--- a/src/abstract-ops/objects.mts
++++ b/src/abstract-ops/objects.mts
+@@ -5,6 +5,7 @@ import {
+   Value,
+   type PropertyKeyValue,
+   type CanBeNativeSteps,
++  type ObjectInternalMethods,
+ } from '../value.mts';
+ import {
+   Q, X,
+@@ -36,19 +37,19 @@ export interface OrdinaryObject extends ObjectValue {
+   Extensible: boolean;
+ }
+ 
+-export const hasOrdinaryObjectMethods = (value: Value, defineOwnProperty: ObjectValue['DefineOwnProperty']): value is OrdinaryObject => {
++export const hasOrdinaryObjectMethods = (value: Value, defineOwnProperty: ObjectValue['DefineOwnProperty'], methods: Partial<ObjectInternalMethods<OrdinaryObject>> = ObjectValue.prototype): value is OrdinaryObject => {
+   return value instanceof ObjectValue
+     && value.GetPrototypeOf === ObjectValue.prototype.GetPrototypeOf
+     && value.SetPrototypeOf === ObjectValue.prototype.SetPrototypeOf
+     && value.IsExtensible === ObjectValue.prototype.IsExtensible
+     && value.PreventExtensions === ObjectValue.prototype.PreventExtensions
+-    && value.GetOwnProperty === ObjectValue.prototype.GetOwnProperty
++    && value.GetOwnProperty === (methods.GetOwnProperty ?? ObjectValue.prototype.GetOwnProperty)
+     && value.DefineOwnProperty === defineOwnProperty
+     && value.HasProperty === ObjectValue.prototype.HasProperty
+-    && value.Get === ObjectValue.prototype.Get
+-    && value.Set === ObjectValue.prototype.Set
+-    && value.Delete === ObjectValue.prototype.Delete
+-    && value.OwnPropertyKeys === ObjectValue.prototype.OwnPropertyKeys
++    && value.Get === (methods.Get ?? ObjectValue.prototype.Get)
++    && value.Set === (methods.Set ?? ObjectValue.prototype.Set)
++    && value.Delete === (methods.Delete ?? ObjectValue.prototype.Delete)
++    && value.OwnPropertyKeys === (methods.OwnPropertyKeys ?? ObjectValue.prototype.OwnPropertyKeys)
+     && 'Prototype' in value
+     && 'Extensible' in value;
+ };
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index eb66c7f..69c467d 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -1,5 +1,5 @@
+ import {
+-  isOrdinaryObject, hasOrdinaryObjectMethods, ArrayExoticObjectInternalMethods,
++  hasOrdinaryObjectMethods, ArrayExoticObjectInternalMethods,
+   surroundingAgent, ObjectValue, Value,
+   DeclarativeEnvironmentRecord, FunctionEnvironmentRecord, GlobalEnvironmentRecord, ObjectEnvironmentRecord,
+   type Agent, type GCMarker, type OrdinaryObject,
+@@ -8,6 +8,8 @@ import {
+   isMapObject, isSetObject, type MapObject, type SetObject,
+   hasECMAScriptFunctionMethods, getECMAScriptFunctionInternalSlots,
+   hasBuiltinFunctionMethods, builtinFunctionInternalSlots,
++  ArgumentExoticObject, getArgumentsParameterMapData,
++  type ArgumentsParameterMapData,
+ } from '#self';
+ import { hasBoundFunctionMethods, boundFunctionInternalSlots } from '../intrinsics/FunctionPrototype.mts';
+ 
+@@ -84,6 +86,38 @@ interface SetState {
+   values: SetObject['SetData'];
+ }
+ 
++interface ArgumentsState {
++  parameterMap: ObjectValue | undefined;
++}
++
++interface ArgumentsMapState {
++  data: ArgumentsParameterMapData;
++  pendingMappings: [PropertyKeyValue, string][];
++  getOwnProperty: ObjectValue['GetOwnProperty'];
++  ownPropertyKeys: ObjectValue['OwnPropertyKeys'];
++}
++
++const getArgumentsState = (object: ObjectValue): ArgumentsState | undefined => {
++  if (object.internalSlotsList.length !== 3
++    || !['Prototype', 'Extensible', 'ParameterMap'].every((name) => object.internalSlotsList.includes(name))) return undefined;
++  const descriptor = Object.getOwnPropertyDescriptor(object, 'ParameterMap');
++  if (!descriptor || !('value' in descriptor)) return undefined;
++  if (descriptor.value !== undefined && !(descriptor.value instanceof ObjectValue)) return undefined;
++  return { parameterMap: descriptor.value };
++};
++
++const getArgumentsMapState = (object: ObjectValue): ArgumentsMapState | undefined => {
++  const data = getArgumentsParameterMapData(object);
++  if (!data) return undefined;
++  const pendingMappings: [PropertyKeyValue, string][] = [];
++  data.pendingMappings.forEach((name, key) => pendingMappings.push([key, name]));
++  return { data, pendingMappings, getOwnProperty: object.GetOwnProperty, ownPropertyKeys: object.OwnPropertyKeys };
++};
++
++const getArgumentsMapMethods = (data: ArgumentsParameterMapData) => data.pendingMappings.size === 0
++  ? ObjectValue.prototype
++  : { GetOwnProperty: data.getOwnProperty, OwnPropertyKeys: data.ownPropertyKeys };
++
+ interface OrdinaryObjectState {
+   object: OrdinaryObject;
+   defineOwnProperty: ObjectValue['DefineOwnProperty'];
+@@ -95,6 +129,8 @@ interface OrdinaryObjectState {
+   map?: MapState;
+   set?: SetState;
+   functionState?: FunctionState;
++  argumentsState?: ArgumentsState;
++  argumentsMap?: ArgumentsMapState;
+ }
+ 
+ interface BindingState {
+@@ -172,6 +208,9 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+     for (const state of frame.states) {
+       mark(state.object);
+       mark(state.prototype);
++      mark(state.argumentsState?.parameterMap);
++      mark(state.argumentsMap?.data.environment);
++      mark(state.argumentsMap?.data.realm);
+       for (const constructor of state.constructors) mark(constructor);
+       for (const slot of state.functionState?.slots ?? []) mark(slot.descriptor?.value);
+       for (const value of state.functionState?.boundArguments ?? []) mark(value);
+@@ -262,13 +301,21 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     }
+     const map = allowContainers && isMapObject(object) ? object : undefined;
+     const set = allowContainers && isSetObject(object) ? object : undefined;
+-    const dataSlot = map ? 'MapData' : set ? 'SetData' : undefined;
++    const argumentsState = allowContainers && !graph ? getArgumentsState(object) : undefined;
++    const argumentsMap = allowContainers && !graph ? getArgumentsMapState(object) : undefined;
++    const argumentsData = argumentsMap?.data;
++    const dataSlot = map ? 'MapData' : set ? 'SetData' : argumentsState ? 'ParameterMap'
++      : argumentsData ? 'ArgumentsParameterMapData' : undefined;
++    const methods = argumentsState?.parameterMap ? ArgumentExoticObject
++      : argumentsData ? getArgumentsMapMethods(argumentsData) : ObjectValue.prototype;
++    const defineOwnProperty = argumentsState?.parameterMap ? ArgumentExoticObject.DefineOwnProperty
++      : allowContainers && !dataSlot && object.DefineOwnProperty === ArrayExoticObjectInternalMethods.DefineOwnProperty
++        ? ArrayExoticObjectInternalMethods.DefineOwnProperty : ObjectValue.prototype.DefineOwnProperty;
+     const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
+     if (graph && functionSlots) throw new TypeError('Data graph cannot own function state');
+     if (!Array.isArray(object.ConstructedBy)) throw new TypeError('Checkpoint constructor data must be an array');
+     if ((map && set)
+-      || (!isOrdinaryObject(object)
+-        && !(allowContainers && !dataSlot && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
++      || !hasOrdinaryObjectMethods(object, defineOwnProperty, methods)
+       || object.internalSlotsList.length !== (functionSlots?.length ?? (dataSlot ? 3 : 2))
+       || (functionSlots && !functionSlots.every((name) => object.internalSlotsList.includes(name)))
+       || (dataSlot && !object.internalSlotsList.includes(dataSlot))
+@@ -277,9 +324,22 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       || object.PrivateElements.length !== 0
+       || ((!allowContainers || graph) && object.ConstructedBy.length !== 0)) {
+       throw new TypeError(allowContainers
+-        ? 'Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state'
++        ? 'Checkpoint requires ordinary objects, arrays, maps, sets, arguments, or supported functions without additional internal state'
+         : 'Checkpoint requires ordinary objects without additional internal state');
+     }
++    if (argumentsState?.parameterMap) {
++      if (!getArgumentsParameterMapData(argumentsState.parameterMap)) {
++        throw new TypeError('Checkpoint requires an engine arguments parameter map');
++      }
++      pending.add(argumentsState.parameterMap);
++    }
++    if (argumentsData) {
++      if (!(argumentsData.environment instanceof DeclarativeEnvironmentRecord)
++        || argumentsData.realm.GlobalObject.ownerAgent !== owner) {
++        throw new TypeError('Checkpoint requires a same-Agent arguments environment and realm');
++      }
++      selectedEnvironments.add(argumentsData.environment);
++    }
+     if (graph) {
+       const entries = 1 + object.properties.size + (map?.MapData.length ?? set?.SetData.length ?? 0);
+       if (entries > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
+@@ -316,6 +376,8 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       constructedBy: object.ConstructedBy,
+       constructors: [...object.ConstructedBy],
+       functionState: functionSlots ? getFunctionState(object, functionSlots) : undefined,
++      argumentsState,
++      argumentsMap,
+       map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
+       set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+@@ -367,7 +429,14 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+         if (state.object.ConstructedBy !== state.constructedBy) {
+           throw new TypeError('Checkpoint constructor data list changed');
+         }
+-        if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty)) {
++        const argumentsState = state.argumentsState ? getArgumentsState(state.object) : undefined;
++        if ((state.argumentsState && (!argumentsState || argumentsState.parameterMap !== state.argumentsState.parameterMap))
++          || (state.argumentsMap && getArgumentsParameterMapData(state.object) !== state.argumentsMap.data)) {
++          throw new TypeError('Checkpoint arguments metadata changed');
++        }
++        const methods = state.argumentsState?.parameterMap ? ArgumentExoticObject
++          : state.argumentsMap ? getArgumentsMapMethods(state.argumentsMap.data) : ObjectValue.prototype;
++        if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty, methods)) {
+           throw new TypeError('Checkpoint object internal methods changed');
+         }
+         if (state.functionState && !hasUnchangedFunctionState(state.object, state.functionState, agent)) {
+@@ -397,7 +466,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           cursor = prototype;
+         }
+       }
+-      for (const { object, prototype, extensible, properties, constructedBy, constructors, map, set } of states) {
++      for (const { object, prototype, extensible, properties, constructedBy, constructors, map, set, argumentsMap } of states) {
+         object.properties.clear();
+         for (const [key, descriptor] of properties) object.properties.set(key, descriptor);
+         object.Prototype = prototype;
+@@ -413,6 +482,12 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+             map.data.push(entry);
+           }
+         }
++        if (argumentsMap) {
++          argumentsMap.data.pendingMappings.clear();
++          for (const [key, name] of argumentsMap.pendingMappings) argumentsMap.data.pendingMappings.set(key, name);
++          object.GetOwnProperty = argumentsMap.getOwnProperty;
++          object.OwnPropertyKeys = argumentsMap.ownPropertyKeys;
++        }
+         if (set) {
+           set.data.length = 0;
+           for (const value of set.values) set.data.push(value);

@@ -1,0 +1,24 @@
+diff --git a/src/abstract-ops/date-objects.mts b/src/abstract-ops/date-objects.mts
+index 56e6834..ba6a8b7 100644
+--- a/src/abstract-ops/date-objects.mts
++++ b/src/abstract-ops/date-objects.mts
+@@ -315,6 +315,7 @@ export function ParseDateTimeUTCOffset(offsetString: string): PlainCompletion<bi
+ 
+ /** https://tc39.es/ecma262/#sec-hostsystemutcepochnanoseconds */
+ export function HostSystemUTCEpochNanoseconds(global: ObjectValue): EpochNanoseconds {
++  surroundingAgent.assertCanPerformHostEffect();
+   let host = surroundingAgent.hostDefinedOptions.hostHooks?.HostSystemUTCEpochNanoseconds?.(global);
+   if (host === undefined) {
+     host = BigInt(Date.now()) * NanosecondsPerMillisecond as EpochNanoseconds;
+diff --git a/src/intrinsics/Math.mts b/src/intrinsics/Math.mts
+index cf63465..a4c234f 100644
+--- a/src/intrinsics/Math.mts
++++ b/src/intrinsics/Math.mts
+@@ -345,6 +345,7 @@ const floatView = new Float64Array(1);
+ const big64View = new BigUint64Array(floatView.buffer);
+ /** https://tc39.es/ecma262/#sec-math.random */
+ function Math_random() {
++  surroundingAgent.assertCanPerformHostEffect();
+   const realm = surroundingAgent.currentRealmRecord;
+   if (realm.randomState === undefined) {
+     const seed = realm.HostDefined.randomSeed

@@ -1,0 +1,124 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 9f67a47..38576b0 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -122,6 +122,26 @@ export interface StateCheckpoint {
+   release(): void;
+ }
+ 
++export interface DataGraphCheckpointOptions {
++  roots: readonly ObjectValue[];
++  maxObjects?: number;
++  maxEntries?: number;
++}
++
++export interface DataGraphCheckpoint {
++  readonly scope: 'closed-data-graph-v1';
++  readonly objectCount: number;
++  readonly entryCount: number;
++  restore: () => void;
++  release: () => void;
++}
++
++interface DataGraphBudget {
++  maxObjects: number;
++  maxEntries: number;
++  entries: number;
++}
++
+ const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
+ 
+ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+@@ -164,11 +184,19 @@ const assertEnvironment = (environment: DeclarativeEnvironmentRecord, owner: Age
+   }
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowContainers: boolean): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowContainers: boolean, graph?: DataGraphBudget): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
+-  for (const object of new Set(objects)) {
++  const pending = new Set(objects);
++  const addReference = (value: unknown): void => {
++    if (!graph || value === undefined) return;
++    if (!(value instanceof Value)) throw new TypeError('Data graph contains a non-guest reference');
++    if (value instanceof ObjectValue) pending.add(value);
++  };
++  for (const object of pending) {
++    if (graph && states.length >= graph.maxObjects) throw new RangeError('Data graph object budget exceeded');
++    if (!(object instanceof ObjectValue)) throw new TypeError('Checkpoint objects must be guest objects');
+     if (object.ownerAgent !== owner) {
+       throw new TypeError('Checkpoint objects must belong to the current agent');
+     }
+@@ -176,6 +204,7 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     const set = allowContainers && isSetObject(object) ? object : undefined;
+     const dataSlot = map ? 'MapData' : set ? 'SetData' : undefined;
+     const functionSlots = allowContainers ? getFunctionSlotNames(object, owner) : undefined;
++    if (graph && functionSlots) throw new TypeError('Data graph cannot own function state');
+     if ((map && set)
+       || (!isOrdinaryObject(object)
+         && !(allowContainers && !dataSlot && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
+@@ -190,6 +219,23 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+         ? 'Checkpoint requires ordinary objects, arrays, maps, sets, or supported functions without additional internal state'
+         : 'Checkpoint requires ordinary objects without additional internal state');
+     }
++    if (graph) {
++      const entries = 1 + object.properties.size + (map?.MapData.length ?? set?.SetData.length ?? 0);
++      if (entries > graph.maxEntries - graph.entries) throw new RangeError('Data graph entry budget exceeded');
++      graph.entries += entries;
++      addReference(object.Prototype);
++      for (const [key, descriptor] of object.properties) {
++        addReference(key);
++        addReference(descriptor.Value);
++        addReference(descriptor.Get);
++        addReference(descriptor.Set);
++      }
++      for (const entry of map?.MapData ?? []) {
++        addReference(entry.Key);
++        addReference(entry.Value);
++      }
++      for (const value of set?.SetData ?? []) addReference(value);
++    }
+     states.push({
+       object,
+       defineOwnProperty: object.DefineOwnProperty,
+@@ -309,6 +355,23 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+   };
+ };
+ 
++export const createDataGraphCheckpoint = ({ roots, maxObjects = 10000, maxEntries = 100000 }: DataGraphCheckpointOptions): DataGraphCheckpoint => {
++  if (![maxObjects, maxEntries].every((limit) => Number.isSafeInteger(limit) && limit > 0)) {
++    throw new RangeError('Data graph budgets must be positive safe integers');
++  }
++  if (!Array.isArray(roots)) throw new TypeError('Data graph roots must be an array');
++  const rootCount = roots.length;
++  if (rootCount > maxEntries) throw new RangeError('Data graph entry budget exceeded');
++  const copiedRoots: ObjectValue[] = [];
++  for (let index = 0; index < rootCount; index++) copiedRoots.push(roots[index]);
++  const graph: DataGraphBudget = { maxObjects, maxEntries, entries: rootCount };
++  const checkpoint = createCheckpoint({ objects: copiedRoots }, true, graph);
++  return {
++    scope: 'closed-data-graph-v1', objectCount: checkpoint.objectCount, entryCount: graph.entries,
++    restore: checkpoint.restore, release: checkpoint.release,
++  };
++};
++
+ export const createStateCheckpoint = (options: StateCheckpointOptions = {}): StateCheckpoint =>
+   createCheckpoint(options, true);
+ 
+diff --git a/src/index.mts b/src/index.mts
+index 315dbda..f071aaf 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -11,8 +11,9 @@ export * from './runtime-semantics/all.mts';
+ export * from './value.mts';
+ export * from './host-defined/engine.mts';
+ export {
+-  createOrdinaryObjectCheckpoint, createStateCheckpoint,
++  createOrdinaryObjectCheckpoint, createStateCheckpoint, createDataGraphCheckpoint,
+   type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
++  type DataGraphCheckpoint, type DataGraphCheckpointOptions,
+ } from './host-defined/object-checkpoint.mts';
+ export { runSingleJobInQueue, type JobQueue, BasicJobQueue, ByTypeJobQueue } from './host-defined/job-queue.mts';
+ export {

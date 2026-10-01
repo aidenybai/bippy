@@ -1,0 +1,75 @@
+{
+  "scope": "engine262-owner-storage-capture-v1",
+  "symbolicReactComplete": false,
+  "generalStateOwner": false,
+  "upstreamRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactInspectedRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "node": "v26.4.0",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "engineSha256": "dd42a5734a8bcde1055fd819f207a1b8f6e478f04ee611d3bc23fbac34036c33",
+  "implementation": [
+    "Reuse PropertyKeyMap.forEach for property snapshots and graph traversal during owner capture",
+    "Do not resume lowered property iterators or relax the control checkpoint lock"
+  ],
+  "regressions": {
+    "initialFailures": 4,
+    "finalFocusedCases": 4,
+    "newStorageCases": 2,
+    "strengthenedReactCases": 2,
+    "nativeReactSequences": 10,
+    "reactSnapshotPolicy": "Capture and release queue/update properties, explicitly reject full ownership, then resume exact same decision"
+  },
+  "units": {
+    "passed": 1436,
+    "total": 1436,
+    "files": 44
+  },
+  "smoke": {
+    "passed": 74,
+    "total": 74
+  },
+  "reports": [
+    {
+      "filename": "source.json.gz",
+      "uncompressedSha256": "e01a23810866e854300ee66dc2852deada43abadd2468db6b47abd89e3ea10a2",
+      "compressedSha256": "f0314804259e827e13eee149cafb2186bb5cb2ff7f1d8fa194159528877eaa56"
+    },
+    {
+      "filename": "published.json.gz",
+      "uncompressedSha256": "8956655dde2846d427118f403a20fb160cfa2afd12df2b05ba7f303f865ea422",
+      "compressedSha256": "8d06490dfb4841c41df3a05253073738ca1617e96a86c0e7468b03c8b555661e"
+    }
+  ],
+  "conformance": {
+    "passed": 736,
+    "total": 736,
+    "identicalInputCompiledHashesAndVerdicts": true,
+    "selection": [
+      ".test262/test/built-ins/Object/create/**/*.js",
+      ".test262/test/built-ins/Reflect/ownKeys/**/*.js",
+      ".test262/test/built-ins/Map/prototype/set/**/*.js",
+      ".test262/test/built-ins/Set/prototype/add/**/*.js"
+    ]
+  },
+  "boundaries": [
+    "Actual fiber has one ConstructedBy entry and remains unsupported by selected checkpoints",
+    "Direct roots and inspected environment bindings are not a full transitive heap inventory",
+    "Closed graph capture rejects broader update references",
+    "No React rollback, shared-prefix React fork, guarded report, transitions or symbolic demo"
+  ],
+  "test262TimeoutMilliseconds": 10000,
+  "workers": 2,
+  "unitDefaultTimeoutMilliseconds": 5000,
+  "linuxConfirmation": "CI 36524314762/analyzer 109263850898 reproduces the engine hash and passes 1436 units, but passes 72/74 smoke variants; both numeric substr variants time out at the unchanged gate. E2E 36524314887 and publish 36524314773 pass. See ci-failure.json and diagnostic profiles.",
+  "files": {
+    "engine/patches/owner-storage-capture.patch": "35f9a27f05093637e4f071a4307499d6f6ba1173b76330a1e4c3528e3c1628b3",
+    "engine/scripts/build.ts": "57f409960e8a432512cc459a55c127f00ad66c0802bdd711aa418c357c7b0e14",
+    "tests/owner-storage-capture.test.ts": "a2e00cccca7420bb38e7d0966d3ad4c8d71dde7cf128f739b82a379a13539533",
+    "tests/numeric-react.test.ts": "b1be742e22823150a1dd18d2fd16ad41a35ff49244141ac4c160a65652714e26",
+    "tests/helpers/react-checkpoint-records.ts": "94863d60e43354219d96cae72a48e2618bd8cc5ef228ea0f2e4c9afba36af64b",
+    "tests/fixtures/numeric-react.tsx": "62893df5eee21a8fd5d0e79b2dab40f31f919aee04ce6cb7eb640b9d38a2d98c",
+    "docs/engine-state-inventory.md": "12ba7b17e8e7e552ee56ee6114680fdb0792e5dc36a57c58ccef60b9e22a3a53"
+  }
+}

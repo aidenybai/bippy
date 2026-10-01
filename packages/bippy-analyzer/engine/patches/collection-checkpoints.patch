@@ -1,0 +1,132 @@
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index 1ae690e..5158f1d 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -5,14 +5,33 @@ import {
+   type Agent, type GCMarker, type OrdinaryObject,
+   type FullyPopulatedDescriptor, type PropertyKeyValue,
+   type DeclarativeEnvironmentBinding,
++  isMapObject, isSetObject, type MapObject, type SetObject,
+ } from '#self';
+ 
++interface MapEntryState {
++  entry: MapObject['MapData'][number];
++  key: Value | undefined;
++  value: Value | undefined;
++}
++
++interface MapState {
++  data: MapObject['MapData'];
++  entries: MapEntryState[];
++}
++
++interface SetState {
++  data: SetObject['SetData'];
++  values: SetObject['SetData'];
++}
++
+ interface OrdinaryObjectState {
+   object: OrdinaryObject;
+   defineOwnProperty: ObjectValue['DefineOwnProperty'];
+   prototype: OrdinaryObject['Prototype'];
+   extensible: boolean;
+   properties: [PropertyKeyValue, FullyPopulatedDescriptor][];
++  map?: MapState;
++  set?: SetState;
+ }
+ 
+ interface BindingState {
+@@ -61,6 +80,11 @@ export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+     for (const state of frame.states) {
+       mark(state.object);
+       mark(state.prototype);
++      for (const entry of state.map?.entries ?? []) {
++        mark(entry.key);
++        mark(entry.value);
++      }
++      for (const value of state.set?.values ?? []) mark(value);
+       for (const [key, descriptor] of state.properties) {
+         mark(key);
+         mark(descriptor);
+@@ -89,7 +113,7 @@ const assertEnvironment = (environment: DeclarativeEnvironmentRecord, owner: Age
+   }
+ };
+ 
+-const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowArrays: boolean): StateCheckpoint => {
++const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions, allowContainers: boolean): StateCheckpoint => {
+   let owner: Agent | undefined = surroundingAgent;
+   if (!owner) throw new Error('Object checkpoint requires a current agent');
+   const states: OrdinaryObjectState[] = [];
+@@ -97,15 +121,20 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+     if (object.ownerAgent !== owner) {
+       throw new TypeError('Checkpoint objects must belong to the current agent');
+     }
+-    if ((!isOrdinaryObject(object)
+-      && !(allowArrays && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
+-      || object.internalSlotsList.length !== 2
++    const map = allowContainers && isMapObject(object) ? object : undefined;
++    const set = allowContainers && isSetObject(object) ? object : undefined;
++    const dataSlot = map ? 'MapData' : set ? 'SetData' : undefined;
++    if ((map && set)
++      || (!isOrdinaryObject(object)
++        && !(allowContainers && !dataSlot && hasOrdinaryObjectMethods(object, ArrayExoticObjectInternalMethods.DefineOwnProperty)))
++      || object.internalSlotsList.length !== (dataSlot ? 3 : 2)
++      || (dataSlot && !object.internalSlotsList.includes(dataSlot))
+       || !object.internalSlotsList.includes('Prototype')
+       || !object.internalSlotsList.includes('Extensible')
+       || object.PrivateElements.length !== 0
+       || object.ConstructedBy.length !== 0) {
+-      throw new TypeError(allowArrays
+-        ? 'Checkpoint requires ordinary objects or arrays without additional internal state'
++      throw new TypeError(allowContainers
++        ? 'Checkpoint requires ordinary objects, arrays, maps, or sets without additional internal state'
+         : 'Checkpoint requires ordinary objects without additional internal state');
+     }
+     states.push({
+@@ -114,6 +143,8 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+       prototype: object.Prototype,
+       extensible: object.Extensible,
+       properties: [...object.properties],
++      map: map ? { data: map.MapData, entries: map.MapData.map((entry) => ({ entry, key: entry.Key, value: entry.Value })) } : undefined,
++      set: set ? { data: set.SetData, values: [...set.SetData] } : undefined,
+     });
+   }
+   const environmentStates: EnvironmentState[] = [];
+@@ -156,6 +187,10 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+         if (!hasOrdinaryObjectMethods(state.object, state.defineOwnProperty)) {
+           throw new TypeError('Checkpoint object internal methods changed');
+         }
++        if ((state.map && (!isMapObject(state.object) || state.object.MapData !== state.map.data))
++          || (state.set && (!isSetObject(state.object) || state.object.SetData !== state.set.data))) {
++          throw new TypeError('Checkpoint collection data list changed');
++        }
+         if (agent.debugger_tryTouchDuringPreview(state.object) !== undefined) {
+           throw new Error('Object checkpoint cannot restore an existing object during preview');
+         }
+@@ -176,13 +211,25 @@ const createCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOp
+           cursor = prototype;
+         }
+       }
+-      for (const { object, prototype, extensible, properties } of states) {
++      for (const { object, prototype, extensible, properties, map, set } of states) {
+         object.properties.clear();
+         for (const [key, descriptor] of properties) object.properties.set(key, descriptor);
+         object.Prototype = prototype;
+         object.Extensible = extensible;
+         object.PrivateElements.length = 0;
+         object.ConstructedBy.length = 0;
++        if (map) {
++          map.data.length = 0;
++          for (const { entry, key, value } of map.entries) {
++            entry.Key = key;
++            entry.Value = value;
++            map.data.push(entry);
++          }
++        }
++        if (set) {
++          set.data.length = 0;
++          for (const value of set.values) set.data.push(value);
++        }
+       }
+       for (const { environment, bindings } of environmentStates) {
+         environment.bindings.clear();

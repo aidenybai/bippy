@@ -1,0 +1,85 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index 4c13f11..849daed 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -3,7 +3,6 @@ import { shouldStepOnNode } from '../host-defined/debugger-util.mts';
+ import { markStateCheckpoints } from '../host-defined/object-checkpoint.mts';
+ import { hasPendingModuleLoads, markPendingModuleLoads } from '../host-defined/engine.mts';
+ import { isArray } from '../utils/language.mts';
+-import { callCallback } from '../utils/callback.mts';
+ import {
+   ObjectValue, SymbolValue, type Intrinsics, Value, ThrowCompletion, type ValueEvaluator, NormalCompletion, EnsureCompletion, skipDebugger, type ValueCompletion, type ScriptRecord, SourceTextModuleRecord, Realm, X, Construct,
+   ExecutionContextStack,
+@@ -147,6 +146,9 @@ export class Agent {
+     m(this.hostDefinedOptions.hostDefinedState);
+     this.AgentRecord.KeptAlive.forEach(m);
+     m(this.#pausedEvaluator?.evaluator);
++    m(this.#pausedEvaluator?.onFinish);
++    this.onNoEvaluator.forEach(m);
++    m(this.#activeEvaluationRoots);
+     m(this.#pausedEvaluator?.failure?.error);
+     for (const frame of this.#evaluationCheckpoints) {
+       m(frame.roots);
+@@ -166,6 +168,16 @@ export class Agent {
+   #isCheckpointing = false;
+   #isNotifying = false;
+   readonly #evaluationCheckpoints: EvaluationCheckpointFrame[] = [];
++  readonly #activeEvaluationRoots: (readonly unknown[])[] = [];
++
++  #withEvaluationRoots = (roots: readonly unknown[], callback: () => void): void => {
++    this.#activeEvaluationRoots.push(roots);
++    try {
++      callback();
++    } finally {
++      this.#activeEvaluationRoots.pop();
++    }
++  };
+ 
+   assertCanPerformHostEffect = (): void => {
+     if (this.#isCheckpointing || this.#evaluationCheckpoints.length) {
+@@ -261,7 +273,10 @@ export class Agent {
+     }
+     if (this.#pausedEvaluator) {
+       // cannot run a pausable evaluator when another evaluator is paused.
+-      onFinished(EnsureCompletion(skipDebugger(evaluator)));
++      this.#withEvaluationRoots([evaluator, onFinished], () => {
++        const completion = EnsureCompletion(skipDebugger(evaluator));
++        this.#withEvaluationRoots([completion], () => onFinished(completion));
++      });
+       return;
+     }
+     this.#pausedEvaluator = {
+@@ -347,16 +362,23 @@ export class Agent {
+         }
+ 
+         if (state.done) {
+-          this.#pausedEvaluator = undefined;
+-          this.#isResuming = false;
+-          const wasNotifying = this.#isNotifying;
+-          this.#isNotifying = true;
+-          try {
+-            onFinish(EnsureCompletion(state.value));
+-            callCallback(this.onNoEvaluator);
+-          } finally {
+-            this.#isNotifying = wasNotifying;
+-          }
++          this.#withEvaluationRoots([onFinish], () => {
++            this.#pausedEvaluator = undefined;
++            this.#isResuming = false;
++            const wasNotifying = this.#isNotifying;
++            this.#isNotifying = true;
++            try {
++              const completion = EnsureCompletion(state.value);
++              this.#withEvaluationRoots([completion], () => {
++                onFinish(completion);
++                for (const callback of this.onNoEvaluator) {
++                  this.#withEvaluationRoots([callback], callback);
++                }
++              });
++            } finally {
++              this.#isNotifying = wasNotifying;
++            }
++          });
+           return state;
+         }
+       }

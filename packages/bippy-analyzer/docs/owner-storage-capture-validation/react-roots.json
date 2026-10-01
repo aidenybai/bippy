@@ -1,0 +1,165 @@
+{
+  "driver": "import {writeFileSync,readFileSync} from 'node:fs';\nimport {createHash} from 'node:crypto';\nimport {it} from 'vite-plus/test';\nconst reports:unknown[]=[];\nconst log=(value:unknown)=>{reports.push(value);writeFileSync('/tmp/bippy-react-checkpoint-roots.json',JSON.stringify(reports,null,2));};\nimport {createConcreteRuntime,createNumericDomain} from '../src/index.js';\nimport {getSymbolicEngine} from '../src/symbolic/load-engine.js';\nimport {buildScriptFixture} from './helpers/build-script-fixture.js';\nconst main=async()=>{\n const chunk=await buildScriptFixture(new URL('./fixtures/numeric-react.tsx',import.meta.url),'production',false);\n const runtime=await createConcreteRuntime();const domain=await createNumericDomain({maxPredicates:1});const {api}=await getSymbolicEngine();const previous=api.surroundingAgent;\n Object.assign(runtime.agent.hostDefinedOptions,domain.agentOptions);\n try{\n  api.setSurroundingAgent(runtime.agent);api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject,'amount',domain.createInput('amount')));api.setSurroundingAgent(previous);\n  runtime.evaluate(chunk.code);runtime.evaluate('fixture.mount(amount)');runtime.drainJobs();\n  api.setSurroundingAgent(runtime.agent);\n  const script=api.EnsureCompletion(runtime.realm.compileScript('fixture.increment()'));if(script.Type!=='normal')throw Error('compile');\n  runtime.agent.evaluate(api.ScriptEvaluation(script.Value),()=>{},false);\n  const step=runtime.agent.resumeEvaluate({pauseOnAbstractBoolean:true,noBreakpoint:true});if(step.done||!step.value)throw Error('decision');\n  log({engineSha256:createHash('sha256').update(readFileSync(new URL('../engine/dist/engine.mjs',import.meta.url))).digest('hex'),bundleSha256:createHash('sha256').update(chunk.code).digest('hex')});\n  const sentinel=new Error('Ownership inspection stops capture');let seen=false;\n  try {runtime.agent.captureEvaluation({capture:roots=>{\n   seen=true;const counts=new Map<string,number>();\n   for(const value of roots.values){const name=value!==null && (typeof value==='object'||typeof value==='function')?Object.getPrototypeOf(value)?.constructor?.name??'null-prototype':typeof value;counts.set(name,(counts.get(name)??0)+1);}\n   const uniqueCounts=new Map<string,number>();for(const value of new Set(roots.values)){const name=value!==null && (typeof value==='object'||typeof value==='function')?Object.getPrototypeOf(value)?.constructor?.name??'null-prototype':typeof value;uniqueCounts.set(name,(uniqueCounts.get(name)??0)+1);}\n   const environments=new Set(roots.values.filter(value=>value instanceof api.EnvironmentRecord));\n   for(const context of runtime.agent.executionContextStack){if(context.LexicalEnvironment)environments.add(context.LexicalEnvironment);}\n   const objects=new Set(roots.values.filter(value=>value instanceof api.ObjectValue));\n   for(const environment of environments){if(environment.OuterEnv)environments.add(environment.OuterEnv);if(environment instanceof api.DeclarativeEnvironmentRecord){for(const binding of environment.bindings.values()){const value=Object.getOwnPropertyDescriptor(binding,'value')?.value;if(value instanceof api.ObjectValue)objects.add(value);}}}\n   const shapes=[...objects].map(object=>{const keys:string[]=[];object.properties.forEach((_descriptor,key)=>keys.push(key instanceof api.JSStringValue?key.stringValue():'symbol'));return {slots:object.internalSlotsList,keys,constructedBy:object.ConstructedBy.length,privateElements:object.PrivateElements.length};});\n   log({rootCount:roots.values.length,uniqueRootCount:new Set(roots.values).size,controlObjects:roots.controlOwnedObjects.length,ambient:roots.ambientNames,counts:[...counts],uniqueCounts:[...uniqueCounts],environments:environments.size,objects:objects.size,reactShapes:shapes.filter(shape=>shape.keys.includes('hasEagerState')||shape.keys.includes('lastRenderedState')||shape.keys.includes('alternate'))});throw sentinel;\n  }});}catch(error){log({ownerReached:seen,sentinel:error===sentinel,error:error instanceof Error?error.message:String(error)});}\n  log({sameDecision:runtime.agent.resumeEvaluate().value===step.value});\n }finally{api.setSurroundingAgent(previous);runtime.dispose();}\n};it('inspects actual React suspension ownership',main);\n",
+  "driverSha256": "25bce30e23ab28bdd82437bc33210e3ecfde9519d856496f693e6943154c12ba",
+  "execution": "Temporary tests/react-checkpoint-audit.test.ts under the existing Vitest harness; diagnostic only, not an acceptance test",
+  "audit": [
+    {
+      "engineSha256": "dd42a5734a8bcde1055fd819f207a1b8f6e478f04ee611d3bc23fbac34036c33",
+      "bundleSha256": "d570d64efb603b8d4c98bdc1211d8671b0b625f4ebfb272221c4dd714476e8bc"
+    },
+    {
+      "rootCount": 7775,
+      "uniqueRootCount": 839,
+      "controlObjects": 188,
+      "ambient": [
+        "undefined",
+        "Object",
+        "TypeError",
+        "Infinity",
+        "RangeError",
+        "Error",
+        "Symbol",
+        "Array",
+        "Number",
+        "globalThis",
+        "String",
+        "Math",
+        "JSON",
+        "Set",
+        "console",
+        "NaN",
+        "BigInt",
+        "Boolean"
+      ],
+      "counts": [
+        ["NormalCompletion", 19],
+        ["Object", 198],
+        ["object", 87],
+        ["Function", 6661],
+        ["GlobalEnvironmentRecord", 1],
+        ["ScriptRecord", 1],
+        ["ExecutionContext", 8],
+        ["symbol", 3],
+        ["Agent", 169],
+        ["undefined", 339],
+        ["string", 25],
+        ["Array", 82],
+        ["number", 8],
+        ["ObjectValue", 77],
+        ["ReferenceRecord", 18],
+        ["boolean", 19],
+        ["UndefinedValue", 10],
+        ["ManagedRealm", 1],
+        ["ExecutionMachine", 2],
+        ["NumberValue", 3],
+        ["DeclarativeEnvironmentRecord", 7],
+        ["FunctionEnvironmentRecord", 2],
+        ["NullValue", 3],
+        ["BooleanValue", 16],
+        ["null-prototype", 14],
+        ["RegExp", 2]
+      ],
+      "uniqueCounts": [
+        ["NormalCompletion", 15],
+        ["Object", 47],
+        ["object", 1],
+        ["Function", 680],
+        ["GlobalEnvironmentRecord", 1],
+        ["ScriptRecord", 1],
+        ["ExecutionContext", 8],
+        ["symbol", 2],
+        ["Agent", 1],
+        ["undefined", 1],
+        ["string", 10],
+        ["Array", 23],
+        ["number", 4],
+        ["ObjectValue", 13],
+        ["ReferenceRecord", 6],
+        ["boolean", 2],
+        ["UndefinedValue", 1],
+        ["ManagedRealm", 1],
+        ["ExecutionMachine", 2],
+        ["NumberValue", 2],
+        ["DeclarativeEnvironmentRecord", 6],
+        ["FunctionEnvironmentRecord", 2],
+        ["NullValue", 1],
+        ["BooleanValue", 3],
+        ["null-prototype", 4],
+        ["RegExp", 2]
+      ],
+      "environments": 22,
+      "objects": 433,
+      "reactShapes": [
+        {
+          "slots": ["Prototype", "Extensible"],
+          "keys": [
+            "tag",
+            "key",
+            "elementType",
+            "type",
+            "stateNode",
+            "return",
+            "child",
+            "sibling",
+            "index",
+            "ref",
+            "refCleanup",
+            "pendingProps",
+            "memoizedProps",
+            "updateQueue",
+            "memoizedState",
+            "dependencies",
+            "mode",
+            "flags",
+            "subtreeFlags",
+            "deletions",
+            "lanes",
+            "childLanes",
+            "alternate"
+          ],
+          "constructedBy": 1,
+          "privateElements": 0
+        },
+        {
+          "slots": ["Prototype", "Extensible"],
+          "keys": ["pending", "lanes", "dispatch", "lastRenderedReducer", "lastRenderedState"],
+          "constructedBy": 0,
+          "privateElements": 0
+        },
+        {
+          "slots": ["Prototype", "Extensible"],
+          "keys": [
+            "lane",
+            "revertLane",
+            "gesture",
+            "action",
+            "hasEagerState",
+            "eagerState",
+            "next"
+          ],
+          "constructedBy": 0,
+          "privateElements": 0
+        }
+      ]
+    },
+    {
+      "ownerReached": true,
+      "sentinel": true,
+      "error": "Ownership inspection stops capture"
+    },
+    {
+      "sameDecision": true
+    }
+  ],
+  "iterationFailure": [
+    {
+      "ownerReached": true,
+      "sentinel": false,
+      "error": "Cannot resume during a control checkpoint"
+    },
+    {
+      "sameDecision": true
+    }
+  ],
+  "standaloneProbeFailure": "Fixture helper imports Vitest and cannot run through the ad-hoc CommonJS tsx driver; recorded in tool output, not a file log"
+}

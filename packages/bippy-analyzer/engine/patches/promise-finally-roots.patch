@@ -1,0 +1,40 @@
+diff --git a/src/intrinsics/PromisePrototype.mts b/src/intrinsics/PromisePrototype.mts
+index 13d1f24..fbfc4d0 100644
+--- a/src/intrinsics/PromisePrototype.mts
++++ b/src/intrinsics/PromisePrototype.mts
+@@ -65,14 +65,15 @@ function* PromiseProto_finally([onFinally = Value.undefined]: Arguments, { thisV
+       //   1. Return value.
+       const returnValue = () => value;
+       // iv. Let valueThunk be ! CreateBuiltinFunction(returnValue, 0, "", « »).
+-      const valueThunk = X(CreateBuiltinFunction(returnValue, 0, Value(''), []));
++      const valueThunk = X(CreateBuiltinFunction(returnValue, 0, Value(''), ['HostCapturedValues']));
++      valueThunk.HostCapturedValues = [value];
+       // v. Return ? Invoke(promise, "then", « valueThunk »).
+       return Q(yield* Invoke(promiseInner, 'then', [valueThunk]));
+     };
+     // b. Let thenFinally be ! CreateBuiltinFunction(thenFinallyClosure, 1, "", « »).
+     thenFinally = X(CreateBuiltinFunction(thenFinallyClosure, 1, Value(''), ['HostCapturedValues']));
+     // NON-SPEC
+-    thenFinally.HostCapturedValues = [onFinally];
++    thenFinally.HostCapturedValues = [onFinally, constructor];
+     // c. Let catchFinallyClosure be a new Abstract Closure with parameters (reason) that captures onFinally and C and performs the following steps when called:
+     const catchFinallyClosure = function* catchFinallyClosure([reason = Value.undefined]: Arguments): ValueEvaluator {
+       // i. Let result be ? Call(onFinally, undefined).
+@@ -83,14 +84,15 @@ function* PromiseProto_finally([onFinally = Value.undefined]: Arguments, { thisV
+       //   1. Return Throw(reason).
+       const throwReason = () => Throw(reason);
+       // iv. Let thrower be ! CreateBuiltinFunction(throwReason, 0, "", « »).
+-      const thrower = X(CreateBuiltinFunction(throwReason, 0, Value(''), []));
++      const thrower = X(CreateBuiltinFunction(throwReason, 0, Value(''), ['HostCapturedValues']));
++      thrower.HostCapturedValues = [reason];
+       // v. Return ? Invoke(promise, "then", « thrower »).
+       return Q(yield* Invoke(promiseInner, 'then', [thrower]));
+     };
+     // d. Let catchFinally be ! CreateBuiltinFunction(catchFinallyClosure, 1, "", « »).
+     catchFinally = X(CreateBuiltinFunction(catchFinallyClosure, 1, Value(''), ['HostCapturedValues']));
+     // NON-SPEC
+-    catchFinally.HostCapturedValues = [onFinally];
++    catchFinally.HostCapturedValues = [onFinally, constructor];
+   }
+   // 7. Return ? Invoke(promise, "then", « thenFinally, catchFinally »).
+   return Q(yield* Invoke(promise, 'then', [thenFinally, catchFinally]));

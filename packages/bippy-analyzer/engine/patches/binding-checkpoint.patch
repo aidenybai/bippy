@@ -1,0 +1,150 @@
+diff --git a/src/execution-context/Agent.mts b/src/execution-context/Agent.mts
+index a949812..2044bec 100644
+--- a/src/execution-context/Agent.mts
++++ b/src/execution-context/Agent.mts
+@@ -3 +3 @@ import { shouldStepOnNode } from '../host-defined/debugger-util.mts';
+-import { markObjectCheckpoints } from '../host-defined/object-checkpoint.mts';
++import { markStateCheckpoints } from '../host-defined/object-checkpoint.mts';
+@@ -129 +129 @@ export class Agent {
+-    markObjectCheckpoints(this, m);
++    markStateCheckpoints(this, m);
+diff --git a/src/execution-context/Environment.mts b/src/execution-context/Environment.mts
+index dcb2b76..1c3ecea 100644
+--- a/src/execution-context/Environment.mts
++++ b/src/execution-context/Environment.mts
+@@ -27,0 +28 @@ import {
++  surroundingAgent,
+@@ -34,0 +36,2 @@ export abstract class EnvironmentRecord {
++  readonly ownerAgent: typeof surroundingAgent = surroundingAgent;
++
+diff --git a/src/host-defined/object-checkpoint.mts b/src/host-defined/object-checkpoint.mts
+index cab7102..3dcb95e 100644
+--- a/src/host-defined/object-checkpoint.mts
++++ b/src/host-defined/object-checkpoint.mts
+@@ -2,0 +3 @@ import {
++  DeclarativeEnvironmentRecord, FunctionEnvironmentRecord,
+@@ -4,0 +6 @@ import {
++  type DeclarativeEnvironmentBinding,
+@@ -14 +16,14 @@ interface OrdinaryObjectState {
+-interface ObjectCheckpointFrame {
++interface BindingState {
++  name: string;
++  binding: DeclarativeEnvironmentBinding;
++  initialized: boolean;
++  hasValue: boolean;
++  value: Value | undefined;
++}
++
++interface EnvironmentState {
++  environment: DeclarativeEnvironmentRecord;
++  bindings: BindingState[];
++}
++
++interface StateCheckpointFrame {
+@@ -15,0 +31 @@ interface ObjectCheckpointFrame {
++  environments: EnvironmentState[];
+@@ -25 +41,4 @@ export interface OrdinaryObjectCheckpoint {
+-const checkpoints = new WeakMap<Agent, ObjectCheckpointFrame[]>();
++export interface StateCheckpointOptions {
++  objects?: readonly ObjectValue[];
++  environments?: readonly DeclarativeEnvironmentRecord[];
++}
+@@ -27 +46,12 @@ const checkpoints = new WeakMap<Agent, ObjectCheckpointFrame[]>();
+-export const markObjectCheckpoints = (agent: Agent, mark: GCMarker): void => {
++export interface StateCheckpoint {
++  readonly scope: 'selected-objects-and-bindings-v1';
++  readonly objectCount: number;
++  readonly environmentCount: number;
++  readonly bindingCount: number;
++  restore(): void;
++  release(): void;
++}
++
++const checkpoints = new WeakMap<Agent, StateCheckpointFrame[]>();
++
++export const markStateCheckpoints = (agent: Agent, mark: GCMarker): void => {
+@@ -36,0 +67,4 @@ export const markObjectCheckpoints = (agent: Agent, mark: GCMarker): void => {
++    for (const state of frame.environments) {
++      mark(state.environment);
++      for (const binding of state.bindings) mark(binding.value);
++    }
+@@ -40 +74,17 @@ export const markObjectCheckpoints = (agent: Agent, mark: GCMarker): void => {
+-export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]): OrdinaryObjectCheckpoint => {
++const assertEnvironment = (environment: DeclarativeEnvironmentRecord, owner: Agent): void => {
++  if (environment.ownerAgent !== owner) {
++    throw new TypeError('Checkpoint environments must belong to the current agent');
++  }
++  const prototype = Object.getPrototypeOf(environment);
++  if (prototype !== DeclarativeEnvironmentRecord.prototype && prototype !== FunctionEnvironmentRecord.prototype) {
++    throw new TypeError('Checkpoint requires a declarative or function environment');
++  }
++  if (environment.DisposableResourceStack.length !== 0) {
++    throw new TypeError('Checkpoint cannot capture or restore environments with pending disposal');
++  }
++  if (environment instanceof FunctionEnvironmentRecord && environment.ThisBindingStatus === 'uninitialized') {
++    throw new TypeError('Checkpoint cannot capture or restore uninitialized this bindings');
++  }
++};
++
++export const createStateCheckpoint = ({ objects = [], environments = [] }: StateCheckpointOptions = {}): StateCheckpoint => {
+@@ -63 +113,16 @@ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]):
+-  const frame = { states };
++  const environmentStates: EnvironmentState[] = [];
++  for (const environment of new Set(environments)) {
++    assertEnvironment(environment, owner);
++    const bindings: BindingState[] = [];
++    for (const [name, binding] of environment.bindings) {
++      if (binding.indirect || 'initializationSteps' in binding) {
++        throw new TypeError('Checkpoint cannot capture indirect or deferred bindings');
++      }
++      bindings.push({
++        name, binding, initialized: binding.initialized,
++        hasValue: Object.hasOwn(binding, 'value'), value: binding.value,
++      });
++    }
++    environmentStates.push({ environment, bindings });
++  }
++  const frame = { states, environments: environmentStates };
+@@ -74,2 +139,4 @@ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]):
+-    scope: 'selected-ordinary-objects-v1',
+-    size: states.length,
++    scope: 'selected-objects-and-bindings-v1',
++    objectCount: states.length,
++    environmentCount: environmentStates.length,
++    bindingCount: environmentStates.reduce((count, state) => count + state.bindings.length, 0),
+@@ -77,0 +145,4 @@ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]):
++      if (environmentStates.length !== 0 && agent.debugger_isPreviewing) {
++        throw new Error('Checkpoint cannot restore bindings during preview');
++      }
++      for (const state of environmentStates) assertEnvironment(state.environment, agent);
+@@ -106,0 +178,9 @@ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]):
++      for (const { environment, bindings } of environmentStates) {
++        environment.bindings.clear();
++        for (const { name, binding, initialized, hasValue, value } of bindings) {
++          binding.initialized = initialized;
++          if (hasValue) binding.value = value;
++          else delete binding.value;
++          environment.bindings.set(name, binding);
++        }
++      }
+@@ -112,0 +193 @@ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]):
++      environmentStates.length = 0;
+@@ -116,0 +198,8 @@ export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]):
++
++export const createOrdinaryObjectCheckpoint = (objects: readonly ObjectValue[]): OrdinaryObjectCheckpoint => {
++  const checkpoint = createStateCheckpoint({ objects });
++  return {
++    scope: 'selected-ordinary-objects-v1', size: checkpoint.objectCount,
++    restore: checkpoint.restore, release: checkpoint.release,
++  };
++};
+diff --git a/src/index.mts b/src/index.mts
+index fbb9102..ed43332 100644
+--- a/src/index.mts
++++ b/src/index.mts
+@@ -7 +7,4 @@ export * from './host-defined/engine.mts';
+-export { createOrdinaryObjectCheckpoint, type OrdinaryObjectCheckpoint } from './host-defined/object-checkpoint.mts';
++export {
++  createOrdinaryObjectCheckpoint, createStateCheckpoint,
++  type OrdinaryObjectCheckpoint, type StateCheckpoint, type StateCheckpointOptions,
++} from './host-defined/object-checkpoint.mts';

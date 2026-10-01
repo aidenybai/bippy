@@ -1,0 +1,60 @@
+{
+  "runtime": "Bun ad-hoc probe, separate from pnpm project gates",
+  "bun": "1.3.11",
+  "script": "import { createHash } from 'node:crypto';\nimport { readFile } from 'node:fs/promises';\nimport * as api from '/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs';\nconst previous = api.surroundingAgent;\nconst observations = [];\nfor (const expression of [\"eval('counter++')\", \"Function('return 7')()\", \"JSON.parse('7')\"]) {\n  const agent = new api.Agent({startEventLoop:false});\n  api.setSurroundingAgent(agent);\n  const realm = new api.ManagedRealm();\n  realm.pushTopContext();\n  api.X(api.CreateDataPropertyOrThrow(realm.GlobalObject,'enabled',api.BooleanValue.createAbstract()));\n  const script = api.EnsureCompletion(realm.compileScript(`var counter=0,caught=false; if(enabled){try{${expression}}catch(error){caught=true}}`));\n  if(script.Type!=='normal')throw Error('Compile failed');\n  agent.evaluate(api.ScriptEvaluation(script.Value),()=>{},false);\n  const pause=agent.resumeEvaluate({pauseOnAbstractBoolean:true});\n  if(pause.done || !pause.value)throw Error('Expected pause');\n  const saved=agent.captureEvaluation({capture:()=>({restore:()=>{}})});\n  const before=agent.parsedSources.size;\n  let compileHooks=0,parsedHooks=0,errorMessage;\n  agent.hostDefinedOptions.hostHooks={HostEnsureCanCompileStrings:()=>{compileHooks++;return api.NormalCompletion(undefined);}};\n  agent.hostDefinedOptions.onScriptParsed=()=>{parsedHooks++;};\n  try{\n    agent.resumeEvaluate({abstractBooleanDecision:{resume:'abstract-boolean',decision:pause.value,value:true}});\n  }catch(error){errorMessage=error instanceof Error?error.message:String(error);}\n  observations.push({expression,compileHooks,parsedHooks,registryDelta:agent.parsedSources.size-before,guestCaught:realm.GlobalObject.properties.get('caught')?.Value===api.Value.true,errorMessage});\n  saved.release();\n  agent.executionContextStack.length=0;\n}\napi.setSurroundingAgent(previous);\nconsole.log(JSON.stringify({engine:createHash('sha256').update(await readFile('/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer/engine/dist/engine.mjs')).digest('hex'),observations},null,2));\n",
+  "before": {
+    "engine": "bce554a9376c260b0991ec583d7ac7e77655fc5e190d158a97eb608490d63e28",
+    "observations": [
+      {
+        "expression": "eval('counter++')",
+        "compileHooks": 1,
+        "parsedHooks": 1,
+        "registryDelta": 1,
+        "guestCaught": false
+      },
+      {
+        "expression": "Function('return 7')()",
+        "compileHooks": 1,
+        "parsedHooks": 1,
+        "registryDelta": 1,
+        "guestCaught": false
+      },
+      {
+        "expression": "JSON.parse('7')",
+        "compileHooks": 0,
+        "parsedHooks": 1,
+        "registryDelta": 1,
+        "guestCaught": false
+      }
+    ]
+  },
+  "after": {
+    "engine": "7ada069b25d5336ab1fe159157a27978a12098ebf6e3ce99b88feeaf18be66c9",
+    "observations": [
+      {
+        "expression": "eval('counter++')",
+        "compileHooks": 0,
+        "parsedHooks": 0,
+        "registryDelta": 0,
+        "guestCaught": false,
+        "errorMessage": "Host effects are unsupported during evaluation checkpoints"
+      },
+      {
+        "expression": "Function('return 7')()",
+        "compileHooks": 0,
+        "parsedHooks": 0,
+        "registryDelta": 0,
+        "guestCaught": false,
+        "errorMessage": "Host effects are unsupported during evaluation checkpoints"
+      },
+      {
+        "expression": "JSON.parse('7')",
+        "compileHooks": 0,
+        "parsedHooks": 0,
+        "registryDelta": 0,
+        "guestCaught": false,
+        "errorMessage": "Host effects are unsupported during evaluation checkpoints"
+      }
+    ]
+  }
+}

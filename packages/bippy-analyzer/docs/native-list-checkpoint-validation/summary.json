@@ -1,0 +1,802 @@
+{
+  "scope": "selected-native-list-storage-v1",
+  "predecessor": "dbdeb64bcb4a39f1eac1d7e5bee3e4fa65480bfb",
+  "engineSha256": "a79952e24c45bdc91d029efdef015a1fe4c48da260e98b3febbec1ec4492b2ab",
+  "sourceRevision": "a600354c2954300d62d108bf9ed3459a8e4a289b",
+  "reactSourceRevision": "d083ec1da1e5252abd3ddfdde6dfbc09701a2c51",
+  "reactFixtureVersion": "19.3.0",
+  "sourceResearch": [
+    "ArgumentListEvaluation.mts mutates precedingArgs/restSub native arrays with push. A restored control-frame reference does not restore the arrays' indexed storage.",
+    "captureControl already snapshots frame-local bindings and exposes controlOwnedObjects; owner selection excludes those objects.",
+    "ReactFiberThenable.trackUsedThenable pushes to trackedThenables, a guest array. It is not the native-array ownership proof."
+  ],
+  "inputs": [
+    {
+      "file": "engine/patches/native-list-checkpoints.patch",
+      "sha256": "f72e683a02af77a6a4fd7579a35052eed89a01bb3b9bb09ff8ec9acada603327"
+    },
+    {
+      "file": "engine/scripts/build.ts",
+      "sha256": "ef80dd26bb36659d33c2864f3e9b57bcd266089b3cdcfdb70e8c54196a201497"
+    },
+    {
+      "file": "tests/native-list-checkpoint.test.ts",
+      "sha256": "0f3383f2e1b5675f582cd9fe5464cdb96b08f74a87bdcf342dd8cd3b0a24d33b"
+    },
+    {
+      "file": "tests/helpers/abstract-fixture.ts",
+      "sha256": "a2673d4018dbba3e1b21d0515c446b12ac38ad46052e946098fb9cf241c0bd17"
+    },
+    {
+      "file": "engine/dist/engine.mjs",
+      "sha256": "a79952e24c45bdc91d029efdef015a1fe4c48da260e98b3febbec1ec4492b2ab"
+    }
+  ],
+  "reports": [
+    {
+      "file": "source.json.gz",
+      "sha256": "a7bc62dc97eb802c89a09f4f698f31b1fb3bde0e1abb289d2b477f7114793c61",
+      "uncompressedSha256": "edf618856a7752092e8e6b8ce703cf7707a087419246e0c08a4bc1bb08636aa4"
+    },
+    {
+      "file": "published.json.gz",
+      "sha256": "6b0dd1f290fdf5e80b137341ed36b9acd91e7329b3200aa278a86189b944de18",
+      "uncompressedSha256": "404e62eb731367b6966856c5c9ea5b7318cd9f0a61a55d47d3bdf840ed453edc"
+    }
+  ],
+  "failures": [
+    {
+      "engine": "source",
+      "cases": [
+        {
+          "file": ".test262/test/language/expressions/call/tco-call-args.js",
+          "attrs": {
+            "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+            "esid": "sec-static-semantics-hascallintailposition",
+            "flags": {
+              "onlyStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+          "scenario": "strict mode",
+          "insertionIndex": 6115,
+          "relative": "language/expressions/call/tco-call-args.js",
+          "rawResult": {
+            "stderr": "",
+            "stdout": "",
+            "error": null,
+            "timeout": true
+          },
+          "result": {
+            "pass": false,
+            "message": "Test timed out"
+          },
+          "contentsSha256": "2980f3f1f32b136a42681e35456d645c385f74ef8f66597d262d9d0850abf7cc",
+          "compiledSha256": "35d5307c4c9898acba2d3533de90ddee509aa768c5c5e3bda8f9bdf513d9de07"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-member-args.js",
+          "attrs": {
+            "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+            "esid": "sec-static-semantics-hascallintailposition",
+            "flags": {
+              "onlyStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+          "scenario": "strict mode",
+          "insertionIndex": 6115,
+          "relative": "language/expressions/call/tco-member-args.js",
+          "rawResult": {
+            "stderr": "",
+            "stdout": "",
+            "error": null,
+            "timeout": true
+          },
+          "result": {
+            "pass": false,
+            "message": "Test timed out"
+          },
+          "contentsSha256": "ca0b30cd89819731f2b29123b26f5a5a14498527ce8697ab419465d0afe3a66f",
+          "compiledSha256": "be201bd45ef2881c2e82121d56f04018ce9f2586a7eeef41c58c53930f137478"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-function-dynamic.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in function environment, local \"eval\" binding dynamically added.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-function-dynamic.js",
+          "rawResult": {
+            "stderr": "",
+            "stdout": "",
+            "error": null,
+            "timeout": true
+          },
+          "result": {
+            "pass": false,
+            "message": "Test timed out"
+          },
+          "contentsSha256": "3bdeb8d5cfc5e452be7e014cfdb1df70212d3fa5970273ffebdedcfa579e63c7",
+          "compiledSha256": "49e13b78c8e2fe291b2a9e2ffa98bd0f5b45e6b393823c77062c6c87214e537c"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-function.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in function environment.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-function.js",
+          "rawResult": {
+            "stderr": "",
+            "stdout": "",
+            "error": null,
+            "timeout": true
+          },
+          "result": {
+            "pass": false,
+            "message": "Test timed out"
+          },
+          "contentsSha256": "116662838a2d747c941fda20c5a1d1843994d097789484e1cb75d9f56abb5ef5",
+          "compiledSha256": "aa16154ffd0bd84dc27185681bbbfea1b0292185026788b15a6f3397e2003cb1"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-global.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in global environment.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-global.js",
+          "rawResult": {
+            "stderr": "",
+            "stdout": "",
+            "error": null,
+            "timeout": true
+          },
+          "result": {
+            "pass": false,
+            "message": "Test timed out"
+          },
+          "contentsSha256": "501581c4a62fb7ad19e40f42395fa3fc0764241c88a417da4d0e307bd992a33c",
+          "compiledSha256": "f33e978447b6980da907da4eb985a0571e6fb769b5c74bb3e79fd55d5c17675d"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-with.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in object environment.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-with.js",
+          "rawResult": {
+            "stderr": "",
+            "stdout": "",
+            "error": null,
+            "timeout": true
+          },
+          "result": {
+            "pass": false,
+            "message": "Test timed out"
+          },
+          "contentsSha256": "d49a2b9d435ac274812f51c9533b5e19aca71fa9115a1ab7c8308f074c6e683a",
+          "compiledSha256": "1d6858f1c9c27a37f796979732920845686ec0f215b7448d6b057b799e8b1ace"
+        }
+      ]
+    },
+    {
+      "engine": "published",
+      "cases": [
+        {
+          "file": ".test262/test/language/expressions/call/tco-call-args.js",
+          "attrs": {
+            "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+            "esid": "sec-static-semantics-hascallintailposition",
+            "flags": {
+              "onlyStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+          "scenario": "strict mode",
+          "insertionIndex": 6115,
+          "relative": "language/expressions/call/tco-call-args.js",
+          "rawResult": {
+            "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48478' }",
+            "stdout": "",
+            "error": {
+              "name": "file",
+              "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48478",
+              "stack": [
+                {
+                  "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48478' }",
+                  "fileName": "file",
+                  "lineNumber": 1
+                }
+              ]
+            }
+          },
+          "result": {
+            "pass": false,
+            "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48478"
+          },
+          "contentsSha256": "2980f3f1f32b136a42681e35456d645c385f74ef8f66597d262d9d0850abf7cc",
+          "compiledSha256": "35d5307c4c9898acba2d3533de90ddee509aa768c5c5e3bda8f9bdf513d9de07"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-member-args.js",
+          "attrs": {
+            "description": "Expression is a candidate for tail-call optimization. (Strict Mode)",
+            "esid": "sec-static-semantics-hascallintailposition",
+            "flags": {
+              "onlyStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2016 the V8 project authors. All rights reserved.",
+          "scenario": "strict mode",
+          "insertionIndex": 6115,
+          "relative": "language/expressions/call/tco-member-args.js",
+          "rawResult": {
+            "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31765' }",
+            "stdout": "",
+            "error": {
+              "name": "file",
+              "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31765",
+              "stack": [
+                {
+                  "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31765' }",
+                  "fileName": "file",
+                  "lineNumber": 1
+                }
+              ]
+            }
+          },
+          "result": {
+            "pass": false,
+            "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31765"
+          },
+          "contentsSha256": "ca0b30cd89819731f2b29123b26f5a5a14498527ce8697ab419465d0afe3a66f",
+          "compiledSha256": "be201bd45ef2881c2e82121d56f04018ce9f2586a7eeef41c58c53930f137478"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-function-dynamic.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in function environment, local \"eval\" binding dynamically added.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-function-dynamic.js",
+          "rawResult": {
+            "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+            "stdout": "",
+            "error": {
+              "name": "file",
+              "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719",
+              "stack": [
+                {
+                  "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+                  "fileName": "file",
+                  "lineNumber": 1
+                }
+              ]
+            }
+          },
+          "result": {
+            "pass": false,
+            "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719"
+          },
+          "contentsSha256": "3bdeb8d5cfc5e452be7e014cfdb1df70212d3fa5970273ffebdedcfa579e63c7",
+          "compiledSha256": "49e13b78c8e2fe291b2a9e2ffa98bd0f5b45e6b393823c77062c6c87214e537c"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-function.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in function environment.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-function.js",
+          "rawResult": {
+            "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+            "stdout": "",
+            "error": {
+              "name": "file",
+              "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477",
+              "stack": [
+                {
+                  "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477' }",
+                  "fileName": "file",
+                  "lineNumber": 1
+                }
+              ]
+            }
+          },
+          "result": {
+            "pass": false,
+            "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:48477"
+          },
+          "contentsSha256": "116662838a2d747c941fda20c5a1d1843994d097789484e1cb75d9f56abb5ef5",
+          "compiledSha256": "aa16154ffd0bd84dc27185681bbbfea1b0292185026788b15a6f3397e2003cb1"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-global.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in global environment.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-global.js",
+          "rawResult": {
+            "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799' }",
+            "stdout": "",
+            "error": {
+              "name": "file",
+              "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799",
+              "stack": [
+                {
+                  "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799' }",
+                  "fileName": "file",
+                  "lineNumber": 1
+                }
+              ]
+            }
+          },
+          "result": {
+            "pass": false,
+            "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:28799"
+          },
+          "contentsSha256": "501581c4a62fb7ad19e40f42395fa3fc0764241c88a417da4d0e307bd992a33c",
+          "compiledSha256": "f33e978447b6980da907da4eb985a0571e6fb769b5c74bb3e79fd55d5c17675d"
+        },
+        {
+          "file": ".test262/test/language/expressions/call/tco-non-eval-with.js",
+          "attrs": {
+            "esid": "sec-function-calls-runtime-semantics-evaluation",
+            "description": "Tail-call with identifier named \"eval\" in object environment.\n",
+            "info": "12.3.4.1 Runtime Semantics: Evaluation\n  ...\n  6. If Type(ref) is Reference and IsPropertyReference(ref) is false and\n     GetReferencedName(ref) is \"eval\", then\n    a. If SameValue(func, %eval%) is true, then\n      ...\n  ...\n  9. Return ? EvaluateCall(func, ref, arguments, tailCall).\n\n12.3.4.2 Runtime Semantics: EvaluateCall( func, ref, arguments, tailPosition )\n  ...\n  7. If tailPosition is true, perform PrepareForTailCall().\n  8. Let result be Call(func, thisValue, argList).\n  ...\n",
+            "flags": {
+              "noStrict": true
+            },
+            "features": ["tail-call-optimization"],
+            "includes": ["tcoHelper.js", "assert.js", "sta.js"]
+          },
+          "copyright": "// Copyright (C) 2017 André Bargull. All rights reserved.",
+          "scenario": "default",
+          "insertionIndex": 6101,
+          "relative": "language/expressions/call/tco-non-eval-with.js",
+          "rawResult": {
+            "stderr": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+            "stdout": "",
+            "error": {
+              "name": "file",
+              "message": "///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719",
+              "stack": [
+                {
+                  "source": "{ name: 'file', message: '///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719' }",
+                  "fileName": "file",
+                  "lineNumber": 1
+                }
+              ]
+            }
+          },
+          "result": {
+            "pass": false,
+            "message": "Expected no error, got file: ///Users/aidenybai/Developer/bippy-engine262-symbolic/node_modules/@engine262/engine262/lib/engine262.mjs:31719"
+          },
+          "contentsSha256": "d49a2b9d435ac274812f51c9533b5e19aca71fa9115a1ab7c8308f074c6e683a",
+          "compiledSha256": "1d6858f1c9c27a37f796979732920845686ec0f215b7448d6b057b799e8b1ace"
+        }
+      ]
+    }
+  ],
+  "reactReports": [
+    {
+      "isReversed": false,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21435,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership."
+      }
+    },
+    {
+      "isReversed": true,
+      "report": {
+        "prefixCount": 1,
+        "reachedTimer": true,
+        "timerCount": 1,
+        "referenceRecordCount": 20,
+        "nativeListCount": 1842,
+        "rejectedLists": [
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length"],
+            "error": "TypeError: Checkpoint requires canonical native lists"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "5", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "3", "4", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "2", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          },
+          {
+            "keys": ["0", "1", "length", "location"],
+            "error": "TypeError: Checkpoint requires canonical native list entries"
+          }
+        ],
+        "frontier": {
+          "distinctReferences": 21435,
+          "guestObjects": 2199,
+          "nativeArrays": 1858,
+          "nativeFunctions": 2476,
+          "registered": 2418,
+          "functionsWithStepsBinding": 3,
+          "unregistered": {
+            "AbruptCompletion": 1,
+            "ArgumentsParameterMapData": 1,
+            "AssertError": 1,
+            "BigIntValue": 1,
+            "BooleanValue": 1,
+            "CharSet": 1,
+            "Completion": 1,
+            "ConcreteCharSet": 1,
+            "ConcreteRuntimeError": 1,
+            "ConcreteStringSet": 1,
+            "CyclicModuleRecord": 1,
+            "DataBlock": 1,
+            "DateParser": 1,
+            "Decimal": 1,
+            "DeclarativeEnvironmentRecord": 1,
+            "Descriptor": 1,
+            "DynamicParsedCodeRecord": 1,
+            "EnvironmentRecord": 1,
+            "ExecutionContext": 1,
+            "FunctionEnvironmentRecord": 1,
+            "GlobalEnvironmentRecord": 1,
+            "GraphLoadingState": 1,
+            "JSONValidator": 1,
+            "JSStringValue": 1,
+            "ManagedRealm": 1,
+            "MatchState": 1,
+            "NormalCompletion": 1,
+            "NullValue": 1,
+            "NumberValue": 1,
+            "ObjectEnvironmentRecord": 1,
+            "ObjectValue": 1,
+            "OutOfRange": 1,
+            "Parser": 1,
+            "PrivateEnvironmentRecord": 1,
+            "PrivateName": 1,
+            "PromiseCapabilityRecord": 1,
+            "PromiseReactionRecord": 1,
+            "PropertyKeyMap": 1,
+            "Realm": 1,
+            "ReferenceRecord": 1,
+            "RegExpParser": 1,
+            "ResolvedBindingRecord": 1,
+            "ReturnCompletion": 1,
+            "ScriptRecord": 1,
+            "SourceTextModuleRecord": 1,
+            "SymbolValue": 1,
+            "ThrowCompletion": 1,
+            "TimSort": 1,
+            "UndefinedValue": 1,
+            "Value": 1,
+            "VirtualCharSet": 1,
+            "apply": 1,
+            "atob": 1,
+            "btoa": 1,
+            "executionMachine": 1,
+            "getControlIterator": 1,
+            "isArray": 1,
+            "next": 1
+          }
+        },
+        "observations": [],
+        "limitation": "Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership."
+      }
+    }
+  ],
+  "reactDriver": "import { beforeAll, expect, it } from \"vite-plus/test\";\nimport { writeFileSync } from \"node:fs\";\nimport type { StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { createConcreteRuntime } from \"../src/concrete/runtime.js\";\nimport { getSymbolicEngine } from \"../src/symbolic/load-engine.js\";\nimport { buildScriptFixture } from \"./helpers/build-script-fixture.js\";\nimport { createNativeRuntime } from \"./helpers/native-runtime.js\";\n\nlet source: string;\nbeforeAll(async () => {\n  source = (await buildScriptFixture(new URL(\"./fixtures/symbolic-react-tree.tsx\", import.meta.url), \"production\")).code;\n});\n\nconst diagnosePartialFork = async (isReversed: boolean) => {\n  const runtime = await createConcreteRuntime();\n  const { api } = await getSymbolicEngine();\n  const observations: unknown[] = [];\n  let prefixCount = 0;\n  let timerCount: number | undefined;\n  let referenceRecordCount: number | undefined;\n  let nativeListCount: number | undefined;\n  const rejectedLists: { keys: string[]; error: string }[] = [];\n  let frontier: unknown;\n  try {\n    runtime.evaluate(source);\n    runtime.evaluate(\"fixture.mount()\");\n    runtime.drainJobs();\n    const previous = api.surroundingAgent;\n    api.setSurroundingAgent(runtime.agent);\n    try {\n      const enabledInput = api.BooleanValue.createAbstract();\n      const detailsInput = api.BooleanValue.createAbstract();\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"enabled\", enabledInput));\n      api.X(api.CreateDataPropertyOrThrow(runtime.realm.GlobalObject, \"details\", detailsInput));\n      const onNodeEvaluation = runtime.agent.hostDefinedOptions.onNodeEvaluation;\n      runtime.agent.hostDefinedOptions.onNodeEvaluation = (node, realm) => {\n        onNodeEvaluation?.(node, realm);\n        if (node.type === \"UnaryExpression\" && node.sourceText === \"void 1\") prefixCount++;\n      };\n      runtime.evaluate(\"var reachedTimer = false\");\n      const compiled = api.EnsureCompletion(runtime.realm.compileScript(`\n        void 1;\n        fixture.update(enabled, details);\n        reachedTimer = true;\n        setTimeout(() => console.log(\"partial-owner-branch\"), 0);\n        fixture.observe();\n      `));\n      if (compiled.Type !== \"normal\") throw Error(\"Expected script\");\n      runtime.agent.evaluate(api.ScriptEvaluation(compiled.Value), () => {}, false);\n      const pause = runtime.agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n      if (pause.done || !pause.value) throw Error(\"Expected decision\");\n      const seen = new Set<object>();\n      const contexts = [...runtime.agent.executionContextStack];\n      let storage: StateCheckpoint | undefined;\n      let releaseHost = () => {};\n      const checkpoint = runtime.agent.captureEvaluation({\n        references: value => {\n          if (seen.size >= 50000) throw Error(\"Diagnostic reference budget exceeded\");\n          seen.add(value);\n          const references: unknown[] = [];\n          if (value instanceof api.ObjectValue) {\n            const entries = api.isMapObject(value) ? value.MapData : api.isWeakMapObject(value) ? value.WeakMapData : undefined;\n            for (const entry of entries ?? []) references.push(entry.Key, entry.Value);\n          }\n          if (value instanceof api.CallSite) references.push(value.context);\n          if (Array.isArray(value)) references.push(...value);\n          else if (typeof Reflect.get(value, \"mark\") === \"function\") Reflect.apply(Reflect.get(value, \"mark\"), value, [(reference: unknown) => references.push(reference)]);\n          return references;\n        },\n        capture: roots => {\n          const functions = [...seen].filter(value => typeof value === \"function\");\n          const registered = functions.filter(value => api.getNativeCaptures(value) !== undefined);\n          const unregistered = functions.filter(value => api.getNativeCaptures(value) === undefined);\n          const names = [...new Set(unregistered.map(value => value.name))].sort();\n          frontier = {\n            distinctReferences: seen.size,\n            guestObjects: [...seen].filter(value => value instanceof api.ObjectValue).length,\n            nativeArrays: [...seen].filter(value => Array.isArray(value)).length,\n            nativeFunctions: functions.length,\n            registered: registered.length,\n            functionsWithStepsBinding: registered.filter(value => api.getNativeCaptures(value)?.bindings.some(binding => binding.name === \"steps\")).length,\n            unregistered: Object.fromEntries(names.map(name => [name, unregistered.filter(value => value.name === name).length])),\n          };\n          const nativeLists: unknown[][] = [];\n          for (const value of seen) {\n            if (!Array.isArray(value) || roots.controlOwnedObjects.includes(value)) continue;\n            try {\n              const selected = api.createStateCheckpoint({ nativeLists: [value] });\n              selected.release();\n              nativeLists.push(value);\n            } catch (error) {\n              rejectedLists.push({ keys: Reflect.ownKeys(value).map(String), error: String(error) });\n            }\n          }\n          const state = api.createStateCheckpoint({\n            nativeLists,\n            objects: [...seen].filter(value => value instanceof api.ObjectValue),\n            environments: [...seen].filter(value => value instanceof api.DeclarativeEnvironmentRecord || value instanceof api.GlobalEnvironmentRecord),\n            contexts: [...seen].filter(value => value instanceof api.ExecutionContext),\n            callSites: [...seen].filter(value => value instanceof api.CallSite),\n            referenceRecords: [...seen].filter(value => value instanceof api.ReferenceRecord),\n          });\n          storage = state;\n          referenceRecordCount = state.referenceRecordCount;\n          nativeListCount = state.nativeListCount;\n          expect(nativeListCount).toBeGreaterThan(0);\n          expect(referenceRecordCount).toBeGreaterThan(0);\n          const host = runtime.captureHostState();\n          timerCount = host.timerCount;\n          releaseHost = host.release;\n          return { restore: () => {\n            host.restore();\n            state.restore();\n            runtime.agent.executionContextStack.splice(0, runtime.agent.executionContextStack.length, ...contexts);\n          } };\n        },\n      });\n      try {\n        const assignments = [false, true].flatMap(enabled => [false, true].map(details => ({ enabled, details })));\n        for (const assignment of isReversed ? assignments.reverse() : assignments) {\n          checkpoint.restore();\n          runtime.agent.AgentRecord.KeptAlive.clear();\n          api.gc();\n          let decision = pause.value;\n          let result;\n          let decisions = 0;\n          while (true) {\n            if (++decisions > 16) throw Error(\"Decision budget exceeded\");\n            const choice = decision.value === enabledInput ? assignment.enabled : decision.value === detailsInput ? assignment.details : undefined;\n            if (choice === undefined) throw Error(\"Lost input identity\");\n            result = runtime.agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision, value: choice }, noBreakpoint: true });\n            if (result.done) break;\n            if (!result.value) throw Error(\"Unexpected pause\");\n            decision = result.value;\n            runtime.agent.AgentRecord.KeptAlive.clear();\n            api.gc();\n          }\n          const completion = api.EnsureCompletion(result.value);\n          if (completion.Type !== \"normal\" || !(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected tree observation\");\n          const actual = completion.Value.stringValue();\n          const native = createNativeRuntime();\n          native.evaluate(source);\n          native.evaluate(\"fixture.mount()\");\n          native.drainJobs();\n          native.evaluate(`fixture.update(${assignment.enabled}, ${assignment.details})`);\n          const expected = native.evaluate(\"fixture.observe()\");\n          observations.push({ ...assignment, actual, expected, decisions });\n          expect(actual).toBe(expected);\n        }\n      } finally {\n        checkpoint.release();\n        storage?.release();\n        releaseHost();\n      }\n    } finally { api.setSurroundingAgent(previous); }\n    expect(prefixCount).toBe(1);\n    runtime.drainJobs();\n    const leakedTimers = runtime.consoleEntries.filter(entry => entry.arguments[0] instanceof api.JSStringValue && entry.arguments[0].stringValue() === \"partial-owner-branch\").length;\n    observations.push({ leakedTimers, expectedForOneBranch: 1 });\n    expect(leakedTimers).toBe(4);\n  } finally {\n    const reachedTimer = runtime.realm.GlobalObject.properties.get(\"reachedTimer\")?.Value === api.Value.true;\n    expect(prefixCount).toBe(1);\n    expect(reachedTimer).toBe(true);\n    expect(observations).toEqual([]);\n    writeFileSync(`/tmp/bippy-react-native-list-rejection-${isReversed}.json`, JSON.stringify({ prefixCount, reachedTimer, timerCount, referenceRecordCount, nativeListCount, rejectedLists, frontier, observations, limitation: \"Selected canonical native lists now restore their own indexed entries and length. Other layouts, element contents, native records and callbacks remain unowned. The diagnostic still rejects its first branch timer; selection counts are not execution ownership.\" }, null, 2));\n    runtime.dispose();\n  }\n};\n\nit.each([false, true])(\"rejects partial-owner React timer scheduling, reversed=%s\", async isReversed => {\n  await expect(diagnosePartialFork(isReversed)).rejects.toThrow(\"Host effects are unsupported during evaluation checkpoints\");\n});\n",
+  "focused": {
+    "finalCases": 28,
+    "precedingFailed": 28,
+    "currentPassed": 28,
+    "unchangedFinalTestSources": true,
+    "nativeBranchComparisons": 16,
+    "sourceForms": ["call", "spread", "construct", "tag"],
+    "branchOrders": 2,
+    "prefixCountPerCase": 1,
+    "forcedGc": true
+  },
+  "originalCounterexample": {
+    "driver": "import { runInNewContext } from \"node:vm\";\nimport { expect, it } from \"vite-plus/test\";\nimport type { ReferenceRecord, StateCheckpoint } from \"../engine/dist/declaration/index.mjs\";\nimport { withAbstractFixture } from \"./helpers/abstract-fixture.js\";\n\nconst source = `\n  var result = {}, prefix = 0;\n  var record = (...values) => { result.args = values; };\n  prefix++;\n  record(\"prefix\", enabled ? \"left\" : \"right\");\n  JSON.stringify([result, prefix]);\n`;\nit.each([false, true])(\"requires native argument-list restoration, reversed=%s\", async isReversed => {\n  await withAbstractFixture(({ api, agent, realm, compile, createBoolean }) => {\n    createBoolean(\"enabled\");\n    let prefixes = 0;\n    agent.hostDefinedOptions.onNodeEvaluation = node => {\n      if (node.type === \"UpdateExpression\" && node.sourceText === \"prefix++\") prefixes++;\n    };\n    const observations: string[] = [];\n    agent.evaluate(compile(source), completion => {\n      if (!(completion.Value instanceof api.JSStringValue)) throw Error(\"Expected string\");\n      observations.push(completion.Value.stringValue());\n    }, false);\n    const pause = agent.resumeEvaluate({ pauseOnAbstractBoolean: true, noBreakpoint: true });\n    if (pause.done || !pause.value) throw Error(\"Expected decision\");\n    const result = realm.GlobalObject.properties.get(\"result\")?.Value;\n    if (!(result instanceof api.ObjectValue)) throw Error(\"Expected result object\");\n    const references = new Set<ReferenceRecord>();\n    const contexts = [...agent.executionContextStack];\n    let storage: StateCheckpoint | undefined;\n    const checkpoint = agent.captureEvaluation({\n      references: value => { if (value instanceof api.ReferenceRecord) references.add(value); return []; },\n      capture: () => {\n        const state = api.createStateCheckpoint({ objects: [realm.GlobalObject, result], environments: [realm.GlobalEnv], referenceRecords: [...references] });\n        storage = state;\n        return { restore: () => { state.restore(); agent.executionContextStack.splice(0, agent.executionContextStack.length, ...contexts); } };\n      },\n    });\n    try {\n      for (const choice of isReversed ? [true, false] : [false, true]) {\n        checkpoint.restore();\n        agent.AgentRecord.KeptAlive.clear();\n        api.gc();\n        expect(agent.resumeEvaluate({ abstractBooleanDecision: { resume: \"abstract-boolean\", decision: pause.value, value: choice } }).done).toBe(true);\n        expect(prefixes).toBe(1);\n        expect(observations.at(-1)).toBe(runInNewContext(source, { enabled: choice }));\n      }\n    } finally { checkpoint.release(); storage?.release(); }\n  });\n});\n",
+    "log": "\u001b[1m\u001b[2mnote:\u001b[0m\u001b[0m You are running \u001b[94m`vp test`\u001b[39m as a Vite+ built-in command. If you meant to run the test npm script, use \u001b[94m`vpr test`\u001b[39m instead.\n\n RUN  v4.1.11 /Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer\n\n ❯ tests/native-list-leak.test.ts (2 tests | 2 failed) 468ms\n   × requires native argument-list restoration, reversed=false 435ms\n   × requires native argument-list restoration, reversed=true 32ms\n\n⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯\n\n FAIL  tests/native-list-leak.test.ts > requires native argument-list restoration, reversed=false\nAssertionError: expected '[{\"args\":[\"prefix\",\"right\",\"left\"]},1]' to be '[{\"args\":[\"prefix\",\"left\"]},1]' // Object.is equality\n\nExpected: \"[{\"args\":[\"prefix\",\"left\"]},1]\"\nReceived: \"[{\"args\":[\"prefix\",\"right\",\"left\"]},1]\"\n\n ❯ tests/native-list-leak.test.ts:47:37\n     45|         expect(agent.resumeEvaluate({ abstractBooleanDecision: { resum…\n     46|         expect(prefixes).toBe(1);\n     47|         expect(observations.at(-1)).toBe(runInNewContext(source, { ena…\n       |                                     ^\n     48|       }\n     49|     } finally { checkpoint.release(); storage?.release(); }\n ❯ withAbstractFixture tests/helpers/abstract-fixture.ts:48:7\n ❯ tests/native-list-leak.test.ts:14:3\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯\n\n FAIL  tests/native-list-leak.test.ts > requires native argument-list restoration, reversed=true\nAssertionError: expected '[{\"args\":[\"prefix\",\"left\",\"right\"]},1]' to be '[{\"args\":[\"prefix\",\"right\"]},1]' // Object.is equality\n\nExpected: \"[{\"args\":[\"prefix\",\"right\"]},1]\"\nReceived: \"[{\"args\":[\"prefix\",\"left\",\"right\"]},1]\"\n\n ❯ tests/native-list-leak.test.ts:47:37\n     45|         expect(agent.resumeEvaluate({ abstractBooleanDecision: { resum…\n     46|         expect(prefixes).toBe(1);\n     47|         expect(observations.at(-1)).toBe(runInNewContext(source, { ena…\n       |                                     ^\n     48|       }\n     49|     } finally { checkpoint.release(); storage?.release(); }\n ❯ withAbstractFixture tests/helpers/abstract-fixture.ts:48:7\n ❯ tests/native-list-leak.test.ts:14:3\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯\n\n\n Test Files  1 failed (1)\n      Tests  2 failed (2)\n   Start at  19:11:07\n   Duration  640ms (transform 71ms, setup 0ms, import 95ms, tests 468ms, environment 0ms)\n\nundefined\n/Users/aidenybai/Developer/bippy-engine262-symbolic/packages/bippy-analyzer:\n ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command failed with exit code 1: vp test --run tests/native-list-leak.test.ts\n",
+    "hashes": "7c3cc54eb5cad59d100fd85df2fe476b618768ce7289bd1a3a43be5a2dc1fdb3  /tmp/bippy-native-list-leak.test.ts\n79a71ff5ccce3a79b35d4f2f82dd3c2e4eb9ff59e2e6dcc983fceb0aa68f3d1e  packages/bippy-analyzer/engine/dist/engine.mjs\n",
+    "cause": "Second branch retains the previous branch argument in precedingArgs, even with selected ReferenceRecords, restored guest state, one prefix and forced GC."
+  },
+  "corrections": [
+    "Initial getOwnPropertyDescriptors(array) inferred the mapped length property as number, including via Reflect.get. Engine build failed TS2339/TS2551. Final code uses getOwnPropertyDescriptor on original native arrays. Initial failure retained; predecessor/current final test sources match."
+  ],
+  "reuse": "61insertions/2removed only in existing object-checkpoint.mts. Original native arrays and descriptor APIs; existing state checkpoint, Agent/LIFO stack, validation-before-write phase, marking and release. No generic heap copier or argument-evaluation rewrite.",
+  "gates": {
+    "units": "1831/1831 across63files",
+    "types": "pass",
+    "smoke": "74/74 unchanged two-worker ten-second gate",
+    "conformance": "New source/published call/new/template-literal397/403; input+compiled hashes and pass/fail sets match, exits1. Six source tail-call timeouts differ from published file-location errors. Not complete conformance.",
+    "relocatedBuilds": "Two matching clean builds",
+    "offlineInstall": "pass",
+    "rootCheck": "Zero errors,two existing warnings,587files",
+    "cleanup": "Main worktree unchanged; temporary diagnostic removed; no build lock",
+    "linux": "not run yet",
+    "adHocReceiptRunner": "Bun"
+  },
+  "commands": [
+    "pnpm --filter bippy-analyzer test --run tests/native-list-checkpoint.test.ts",
+    "pnpm --filter bippy-analyzer test --run",
+    "pnpm --filter bippy-analyzer typecheck",
+    "pnpm --filter bippy-analyzer test:engine-build",
+    "pnpm --filter bippy-analyzer test:source-test262 --reporter=json '.test262/test/language/expressions/call/*.js' '.test262/test/language/expressions/new/*.js' '.test262/test/language/expressions/template-literal/*.js'",
+    "pnpm --filter bippy-analyzer test:test262 --threads=2 --reporter=json <samepatterns>",
+    "pnpm --filter bippy-analyzer test:source-test262 '.test262/test/built-ins/Object/is/*.js' '.test262/test/language/module-code/top-level-await/syntax/await-expr-dyn-import.js' '.test262/test/annexB/built-ins/String/prototype/substr/*.js'",
+    "pnpm install --frozen-lockfile --offline --ignore-scripts",
+    "pnpm run check"
+  ],
+  "limitations": [
+    "Explicit shallow native-array storage only. Canonical extensible arrays, writable length and writable/enumerable/configurable indexed data properties. Holes preserved. Extra names/symbols/accessors/changed attributes/sealed/frozen arrays reject.",
+    "Direct guest object/environment elements require the current Agent, but arrays lack allocation provenance and arbitrary element contents remain unowned. No hostile-host/native-Proxy sandbox.",
+    "Existing collector roots saved elements and live arrays; plain native records remain opaque. Unselected nested arrays, objects and callback counters retain branch mutations. No list-size/work budget, and live GC traversal can visit holes.",
+    "ActualReact still rejects firstuserTimer afteroneprefix/order.1842accepted/16rejectedarrays are not execution ownership. Other native records/callbacks/modules/effects and general tree/transitions/repeats/demo remain incomplete."
+  ]
+}

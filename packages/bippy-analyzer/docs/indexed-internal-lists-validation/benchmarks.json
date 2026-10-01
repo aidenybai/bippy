@@ -1,0 +1,30 @@
+{
+  "driver": {
+    "node": "v26.4.0",
+    "engineSha256": "963fd3c6767af14cffb462430fef2e7ffba2e8224453f6c32d84690a0782ce85",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3908.487792, 3963.988292, 3887.764833],
+    "median": 3908.487792
+  },
+  "indexed": {
+    "node": "v26.4.0",
+    "engineSha256": "1fbacc01e0ac1fedfc4a5d3f47e2a12edc40faee8cbf947d2e40abb5dec0ab59",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3870.225417, 3714.176625, 3788.1177909999997],
+    "median": 3788.1177909999997
+  },
+  "indexed2": {
+    "node": "v26.4.0",
+    "engineSha256": "d0eba416803f0d343b0eff7c897c5bee2502b5cbe2c8283623d61a1577e5ce9f",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [3495.721625, 3388.1709170000004, 3505.9908339999993],
+    "median": 3495.721625
+  },
+  "native-functions": {
+    "node": "v26.4.0",
+    "engineSha256": "029573b92e3c9a6d1f2e2a3ae9c1ec9a4854dc626730b6fdffec7c13024ec8ae",
+    "sourceSha256": "c10662bb40d9fc9ad0264cc67023f936466e3f403896c4afaef46b99cf24c126",
+    "samples": [4045.867375, 3924.370666, 4143.071125000001],
+    "median": 4045.867375
+  }
+}
