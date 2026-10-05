@@ -1,5 +1,13 @@
 # Third-party notices
 
+## Maintained engine and runtime integration
+
+`src/engine/` and `experiments/engine262/` import the maintained [engine source fork](engine/readme.md), based on engine262 revision `f78bd24736daba0b2a69ea0bb4b7cffd3dedd54a`, by engine262 Contributors. Its [MIT license](licenses/engine262-mit.txt) is retained verbatim here and in the vendor tree. The fork retains upstream source and macro-transform code, generated Unicode data, and a bundled Test262 harness. Its provenance, local changes, and the Test262 BSD/patent notice are recorded in the engine directory.
+
+The exact npm dependency `@engine262/engine262@0.0.1-f78bd24736daba0b2a69ea0bb4b7cffd3dedd54a` remains a regression reference with a [package patch](../../patches/@engine262__engine262@0.0.1-f78bd24736daba0b2a69ea0bb4b7cffd3dedd54a.patch) for selected non-Unicode legacy regex grammar. The maintained fork includes that source patch and builds its own bundle and declarations.
+
+The browser probe reuses installed MIT-licensed React and Happy DOM packages natively through an object boundary. A separate reconciler probe bundles installed React and `react-reconciler` into the engine realm, with a project-authored host renderer. Neither probe recreates React's hooks or class lifecycle implementation. The production `StaticRenderer` engine path additionally bundles the project's installed React and React DOM, plus the existing snapshot recorder, into the engine realm. Shared runtime and browser adapters now live in `src/engine/`; experiments reuse them. No new React implementation was copied into the adapters. Execution remains concrete-only, and the old symbolic backend is still the default. See [the integration contract](src/engine/readme.md) and [the experiment report](experiments/engine262/readme.md).
+
 ## React Compiler
 
 `src/compiler/enter-ssa.ts` and `src/compiler/eliminate-phis.ts` adapt React Compiler's sealed-block SSA construction and redundant-phi rewriting, by Meta Platforms, Inc. and affiliates, under the MIT license.

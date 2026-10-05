@@ -414,10 +414,34 @@ export class StaticRenderer {
     return this.finish(run, unknownValue(`${filePath}: ${message}`));
   }
 
+  private async renderInEngine(
+    filePath: string,
+    component?: RenderComponentOptions,
+    unsupported?: string,
+  ): Promise<StaticRenderResult> {
+    const { renderEngineApplication } = await import("../engine/render-application.js");
+    return renderEngineApplication({
+      graph: this.graph,
+      options: this.options,
+      filePath: this.resolvePath(filePath),
+      exportName: component ? (component.exportName ?? "default") : undefined,
+      props: component?.props,
+      documentShell: this.documentShell,
+      unsupported:
+        unsupported ??
+        (component?.prepareInterpreter || component?.isolated
+          ? "Interpreter preparation and isolated unknown providers require the guarded-state port"
+          : this.reactPackages || this.viteEnvironment
+            ? "Framework React substitutions and Vite environment declarations are not ported"
+            : undefined),
+    });
+  }
+
   renderComponent(
     filePath: string,
     options: RenderComponentOptions = {},
   ): Promise<StaticRenderResult> {
+    if (this.options.execution === "engine") return this.renderInEngine(filePath, options);
     const absolutePath = this.resolvePath(filePath);
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
@@ -444,6 +468,7 @@ export class StaticRenderer {
   }
 
   renderEntry(filePath: string): Promise<StaticRenderResult> {
+    if (this.options.execution === "engine") return this.renderInEngine(filePath);
     const absolutePath = this.resolvePath(filePath);
     const module = this.graph.getModule(absolutePath);
     if (!module) return this.missingModuleResult(absolutePath, `could not parse ${absolutePath}`);
@@ -463,6 +488,8 @@ export class StaticRenderer {
    * is used. Null (with a diagnostic) when no root render happens.
    */
   evaluateEntryElement(interpreter: Interpreter, module: ModuleRecord): StaticValue | null {
+    if (this.options.execution === "engine")
+      throw new ParserError("Engine execution cannot enter the legacy interpreter");
     const rootCalls = findRootRenderCalls(module);
     if (rootCalls.length === 0) {
       interpreter.initializeModule(module);
@@ -526,6 +553,12 @@ export class StaticRenderer {
     produce: (interpreter: Interpreter) => StaticValue,
     options: RenderWithOptions = {},
   ): Promise<StaticRenderResult> {
+    if (this.options.execution === "engine")
+      return this.renderInEngine(
+        "__render_with__.js",
+        undefined,
+        "Interpreter-produced roots require the guarded-state port",
+      );
     const shell = options.document ? await this.renderDocumentShell(options.document) : null;
     const run = this.startRun(false, shell?.markup ?? this.documentShell);
     if (shell) run.interpreter.diagnostics.push(...shell.diagnostics);

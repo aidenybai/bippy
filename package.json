@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vp run bippy#dev",
-    "build": "vp run bippy#build",
+    "build": "vp run bippy#build && pnpm --filter bippy-analyzer build:engine",
     "test": "vp test",
     "test:conformance": "pnpm --filter conformance test:all",
     "test:e2e": "vp run @bippy/e2e#test",
@@ -32,7 +32,8 @@
       "react-dom": "^19.3.0"
     },
     "patchedDependencies": {
-      "react-devtools-core@8.0.0": "patches/react-devtools-core@8.0.0.patch"
+      "react-devtools-core@8.0.0": "patches/react-devtools-core@8.0.0.patch",
+      "@engine262/engine262@0.0.1-f78bd24736daba0b2a69ea0bb4b7cffd3dedd54a": "patches/@engine262__engine262@0.0.1-f78bd24736daba0b2a69ea0bb4b7cffd3dedd54a.patch"
     }
   }
 }

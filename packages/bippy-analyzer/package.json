@@ -6,12 +6,26 @@
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "imports": {
+    "#engine": {
+      "types": "./engine/dist/types/vendor/engine262/src/index.d.mts",
+      "default": "./engine/dist/engine.mjs"
+    },
+    "#self": {
+      "types": "./engine/dist/types/vendor/engine262/src/index.d.mts",
+      "default": "./engine/dist/engine.mjs"
+    }
+  },
   "exports": {
     ".": "./src/index.ts",
     "./harness": "./src/harness/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "build:engine": "tsx engine/scripts/build.ts && pnpm run build:engine:types",
+    "build:engine:types": "tsc -p engine/tsconfig.engine.json",
+    "typecheck:engine": "tsc -p engine/tsconfig.engine.json --noEmit && tsc -p engine/tsconfig.json --noEmit",
+    "test:engine:test262": "tsx engine/scripts/test262.ts",
+    "typecheck": "pnpm run build:engine:types && pnpm run typecheck:engine && tsc --noEmit",
     "test": "vp test --project bippy-analyzer",
     "test:coverage": "vp test --project bippy-analyzer --coverage --reporter=default --reporter=json --outputFile.json=coverage/test-results.json",
     "test:coverage:strict": "pnpm run test:coverage --coverage.thresholds.100 --coverage.thresholds.perFile",
@@ -20,6 +34,10 @@
     "generate:realms": "tsx scripts/generate-host-realms.ts",
     "check:realms": "tsx scripts/generate-host-realms.ts --check",
     "render": "tsx scripts/render.ts",
+    "experiment:engine262": "tsx experiments/engine262/run.ts",
+    "corpus:engine": "tsx src/corpus/engine-port.ts",
+    "corpus:engine262": "tsx experiments/engine262/corpus.ts",
+    "render:engine262": "tsx experiments/engine262/render.ts",
     "corpus": "tsx scripts/corpus.ts",
     "opencode": "tsx scripts/opencode.ts"
   },
@@ -43,10 +61,20 @@
   },
   "devDependencies": {
     "@babel/core": "7.29.7",
+    "@babel/plugin-proposal-decorators": "7.29.7",
+    "@babel/plugin-transform-block-scoping": "7.29.7",
+    "@babel/plugin-transform-destructuring": "7.29.7",
+    "@babel/plugin-transform-explicit-resource-management": "7.29.7",
+    "@babel/plugin-transform-for-of": "7.29.7",
+    "@babel/plugin-transform-parameters": "7.29.7",
+    "@babel/plugin-transform-regenerator": "7.29.8",
+    "@babel/plugin-transform-typescript": "7.29.7",
     "@babel/runtime": "^7.29.7",
+    "@babel/types": "7.29.8",
     "@emotion/core": "10.3.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
+    "@engine262/engine262": "0.0.1-f78bd24736daba0b2a69ea0bb4b7cffd3dedd54a",
     "@linaria/core": "6.3.0",
     "@linaria/react": "6.3.0",
     "@lingui/core": "5.6.0",
@@ -73,19 +101,23 @@
     "@types/numeral": "2.0.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@types/react-reconciler": "0.33.0",
     "@types/semver": "^7.8.0",
+    "@unicode/unicode-17.0.0": "1.6.16",
     "@vitest/coverage-v8": "4.1.11",
     "array.prototype.foreach": "1.0.7",
     "babel-plugin-macros": "3.1.0",
     "clsx": "2.1.1",
     "date-fns": "4.4.0",
     "deepmerge": "4.3.1",
+    "devtools-protocol": "0.0.1608973",
     "fake-indexeddb": "6.2.4",
     "fast-check": "4.10.2",
     "happy-dom": "^20.11.6",
     "hasown": "2.0.4",
     "hoist-non-react-statics": "3.3.2",
     "i18next": "^26.4.2",
+    "jsbd": "0.0.11",
     "kea": "3.1.7",
     "kea-loaders": "3.1.1",
     "lodash-es": "4.17.21",
@@ -101,6 +133,7 @@
     "react-hook-form": "7.62.0",
     "react-i18next": "^17.0.14",
     "react-native": "0.81.5",
+    "react-reconciler": "0.34.0",
     "react-redux": "9.3.0",
     "react-router": "8.3.0",
     "react-router-dom-v5": "npm:react-router-dom@5.3.4",
@@ -114,6 +147,7 @@
     "typescript": "^5.9.3",
     "use-sync-external-store": "1.6.0",
     "vite-plugin-svgr": "5.2.0",
-    "vite-plus": "latest"
+    "vite-plus": "latest",
+    "yaml": "2.9.0"
   }
 }

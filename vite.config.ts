@@ -19,6 +19,7 @@ export default defineConfig({
   fmt: {
     ignorePatterns: [
       "**/routeTree.gen.ts",
+      "packages/bippy-analyzer/engine/vendor/**",
       "packages/bippy/src/react-internals/generated/**",
       "packages/bippy-analyzer/corpus/results.json",
       "packages/bippy-analyzer/src/host/realms/*.json",
@@ -43,6 +44,7 @@ export default defineConfig({
     ignorePatterns: [
       "node_modules",
       "dist",
+      "packages/bippy-analyzer/engine/vendor/**",
       "coverage",
       "pnpm-lock.yaml",
       "packages/bippy-analyzer/tests/components/compiled-*.js",

@@ -20,7 +20,17 @@ export interface StaticRenderStats {
   modulesLoaded: number;
 }
 
+export interface EngineRenderEvidence {
+  bundleHash?: string;
+  status: "complete" | "failed" | "incomplete" | "unsupported";
+  engineOwnedFunctions: number;
+  nodes: number;
+  calls: number;
+  jobs: number;
+}
+
 export interface StaticRenderResult {
+  engine?: EngineRenderEvidence;
   /** The fiber tree React committed for the materialized element, as bippy observed it. */
   snapshot: RuntimeSnapshot;
   /** Every tree committed while effects, state updates and timers settled, in commit order. */
@@ -32,6 +42,7 @@ export interface StaticRenderResult {
 
 export interface StaticRendererOptions {
   rootDirectory: string;
+  execution?: "interpreter" | "engine";
   /** The bundler's served root (Vite `root`), relative to `rootDirectory`; `rootDirectory` itself by default. */
   servedDirectory?: string;
   /** Directory served as-is at the URL root (Vite `publicDir`), relative to `rootDirectory`; `public/` under the served root by default. */

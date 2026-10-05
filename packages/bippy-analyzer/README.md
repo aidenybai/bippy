@@ -2,7 +2,7 @@
 
 React program analysis.
 
-The analyzer currently reconstructs React fiber trees from source ASTs. It reads a project with
+By default, the analyzer reconstructs React fiber trees from source ASTs. It reads a project with
 `oxc-parser`, links its modules with `oxc-resolver`, and abstractly evaluates component bodies
 without executing the application. The evaluated element values are then materialized into real
 React elements whose component types are thin proxies back into the interpreter, rendered with
@@ -34,6 +34,17 @@ ignored `.corpus/` directory, renders each statically, optionally starts its dev
 the live tree with Playwright, and merges results into `corpus/results.json`. `--static-only`
 replays the capture saved by the last live run (`.corpus/.out/<id>.capture.json`) when one exists,
 so evaluator changes are re-verified against the same runtime tree without a dev server.
+
+## Maintained engine execution
+
+`new StaticRenderer({ rootDirectory, execution: "engine" })` and `render --engine` run application code, React, React DOM, and fiber recording inside the maintained engine rather than materializing interpreter-backed component proxies. Components and entry modules return the existing snapshot format, plus explicit execution status and metrics. The engine path never falls back to the old interpreter.
+
+```sh
+pnpm --filter bippy-analyzer render --engine <projectRoot> <entryFile> [exportName]
+pnpm --filter bippy-analyzer corpus:engine
+```
+
+This is an integration path, **not a completed symbolic port or the default backend**. Unknown inputs and unported framework contracts produce unsupported results, not guessed values or concrete assignment replay. See the [engine integration contract](src/engine/readme.md) for supported behavior, limits, and the full 585-fixture corpus report.
 
 ## Compatibility and coverage
 

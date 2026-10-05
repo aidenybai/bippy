@@ -17,7 +17,7 @@
       "bippy": ["../bippy/src/index.ts"]
     }
   },
-  "include": ["src", "tests", "scripts", "vite.config.ts"],
+  "include": ["src", "tests", "scripts", "experiments", "vite.config.ts"],
   "exclude": [
     "**/node_modules/**",
     "**/dist/**",
