@@ -1,0 +1,8 @@
+{
+  "name": "fixture-vite-asset-queries",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "vite": "7.3.6"
+  }
+}

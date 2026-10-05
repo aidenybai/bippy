@@ -1,0 +1,5 @@
+{
+  "expectedStatus": "partial",
+  "minCoverage": 0.4,
+  "notes": "Two sibling boundaries with opaque content inside an outer one turn suspendable in separate commits; React 19 must not retry the pending boundaries against each other forever."
+}

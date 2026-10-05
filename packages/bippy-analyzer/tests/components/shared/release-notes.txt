@@ -1,0 +1,4 @@
+# Release notes
+
+- Faster startup
+- Keyboard shortcuts for "quick add"

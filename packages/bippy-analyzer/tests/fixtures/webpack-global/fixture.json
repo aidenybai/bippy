@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "An app bundled by webpack, whose `node.global` polyfill makes the bare `global` identifier the page's window (`__webpack_require__.g`), as CommonJS dependencies feature-detecting `typeof global == 'object' && global` rely on."
+}

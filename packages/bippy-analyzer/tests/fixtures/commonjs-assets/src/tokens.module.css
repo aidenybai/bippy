@@ -1,0 +1,7 @@
+:export {
+  brand: Mathberet;
+}
+
+.frame {
+  display: flex;
+}

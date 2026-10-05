@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "react-hook-form 7.71+ nests a `HookFormControlContext.Provider` inside `FormProvider`; the installed package is a pared-down copy of `FormProvider`/`useFormContext`/`useForm` from 7.71.0 so the version-gated provider is exercised at runtime while the static side follows the library model."
+}

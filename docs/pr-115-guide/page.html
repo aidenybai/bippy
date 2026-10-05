@@ -1,0 +1,1960 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Inside Bippy’s React interpreter: modeled values, scopes, guarded execution, heap joins, completions, hook frames, effects, promises, and materialization."
+    />
+    <title>How the React interpreter works · Bippy</title>
+    <style data-guide-style></style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the explanation</a>
+    <header class="topbar">
+      <a class="brand" href="#start">bippy <span> / Analyzer / The execution engine</span></a>
+      <div class="top-actions">
+        <button id="expand-details" type="button" aria-pressed="false">Expand details</button
+        ><button id="print-guide" type="button">Print / PDF</button>
+      </div>
+    </header>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Inside the interpreter</div>
+        <nav aria-label="Guide sections">
+          <a href="#start">The basic idea</a><a href="#execution">One complete execution</a>
+          <span class="nav-group">Executing JavaScript</span>
+          <a href="#machine">Syntax, scopes, and modules</a
+          ><a href="#values">The value representation</a
+          ><a href="#operations">How operations propagate values</a
+          ><a href="#calls">Calls and captured environments</a
+          ><a href="#guards">Conditions and input identity</a
+          ><a href="#mutation">Fork, restore, and join</a
+          ><a href="#completion">Return, throw, and continuation</a>
+          <span class="nav-group">Executing React</span>
+          <a href="#elements">JSX, proxies, and fibers</a><a href="#hooks">Inside a hook frame</a
+          ><a href="#effects">Effects and their causes</a
+          ><a href="#async">Promises and suspended work</a>
+          <span class="nav-group">Collections and the outside world</span>
+          <a href="#collections">Arrays, loops, and repeats</a
+          ><a href="#environment">Context, stores, and dependencies</a
+          ><a href="#trees">What a conditional tree contains</a><a href="#glossary">Vocabulary</a>
+        </nav>
+        <div class="sidebar-footer">
+          Implementation at <code>c9cfc18f</code
+          ><a href="https://github.com/aidenybai/bippy/pull/115">Source pull request ↗</a>
+        </div>
+      </aside>
+      <main id="main">
+        <div class="mobile-nav">
+          <label for="section-select" hidden>Jump to a section</label
+          ><select id="section-select">
+            <option value="start">The basic idea</option>
+            <option value="execution">One complete execution</option>
+            <option value="machine">Syntax, scopes, and modules</option>
+            <option value="values">The value representation</option>
+            <option value="operations">How operations propagate values</option>
+            <option value="calls">Calls and captured environments</option>
+            <option value="guards">Conditions and input identity</option>
+            <option value="mutation">Fork, restore, and join</option>
+            <option value="completion">Return, throw, and continuation</option>
+            <option value="elements">JSX, proxies, and fibers</option>
+            <option value="hooks">Inside a hook frame</option>
+            <option value="effects">Effects and their causes</option>
+            <option value="async">Promises and suspended work</option>
+            <option value="collections">Arrays, loops, and repeats</option>
+            <option value="environment">Context, stores, and dependencies</option>
+            <option value="trees">What a conditional tree contains</option>
+            <option value="glossary">Vocabulary</option>
+          </select>
+        </div>
+
+        <section id="start" aria-labelledby="title">
+          <div class="eyebrow">The execution engine</div>
+          <h1 id="title">How the React interpreter actually works</h1>
+          <p class="intro">
+            The central trick is to execute a program without always reducing an expression to one
+            JavaScript value. A variable can hold “2 when this condition is true, 3 otherwise.”
+            Objects, function calls, state updates, and returned elements carry that uncertainty
+            forward.
+          </p>
+          <p>
+            This requires an interpreter, not a search for JSX. The engine reads syntax nodes,
+            resolves names, calls functions, changes modeled objects, and schedules callbacks. For
+            React, it gives real React a proxy component whose body calls the interpreter. React
+            constructs fibers; the interpreter decides what elements the application body can
+            return.
+          </p>
+          <p>
+            There are three things to keep separate throughout:
+            <strong>the value an operation produces</strong>, <strong>the state it changes</strong>,
+            and <strong>the condition under which it happened</strong>. Most of the complicated
+            machinery exists because losing any one of those changes what the program means.
+          </p>
+          <p class="note">
+            The examples below explain the implementation at the linked revision. Interactive traces
+            are teaching models, not a browser-hosted copy of the analyzer. The main explanation is
+            visible; expandable notes cover narrower implementation caveats.
+          </p>
+          <noscript
+            ><div class="callout">
+              <p>
+                JavaScript is disabled. The complete explanation and code examples remain readable.
+                The step-through controls require JavaScript.
+              </p>
+            </div></noscript
+          >
+        </section>
+
+        <section id="execution" aria-labelledby="execution-heading">
+          <h2 id="execution-heading">Start with a component that changes over time</h2>
+          <p>
+            Suppose <code>canEdit</code> is an unknown Boolean. The component below uses it three
+            times: to mutate a local object, to decide whether to register a timer, and to select an
+            element. All three reads must refer to the same input.
+          </p>
+          <pre><code class="language-tsx">interface AccessPanelProps { canEdit: boolean }
+
+const AccessPanel = ({ canEdit }: AccessPanelProps) =&gt; {
+  const [isReady, setReady] = useState(false);
+  const view = { mode: "read" };
+  if (canEdit) view.mode = "edit";
+
+  useEffect(() =&gt; {
+    if (canEdit) setTimeout(() =&gt; setReady(true), 0);
+  }, [canEdit]);
+
+  return (
+    &lt;main&gt;
+      {canEdit ? &lt;button&gt;{view.mode}&lt;/button&gt; : &lt;p&gt;{view.mode}&lt;/p&gt;}
+      {isReady ? &lt;strong /&gt; : &lt;span /&gt;}
+    &lt;/main&gt;
+  );
+};</code></pre>
+          <div class="lab" data-trace="execution">
+            <div class="lab-header">Follow the execution<span>Source → state → elements</span></div>
+            <div class="lab-body">
+              <div class="controls">
+                <span class="step-count" data-step-count>Step 1 of 7</span
+                ><button type="button" data-reset>Reset</button
+                ><button type="button" data-back disabled>Previous</button
+                ><button type="button" data-next>Next step</button>
+              </div>
+              <div class="grid">
+                <div>
+                  <div class="field-label">Interpreter state</div>
+                  <pre class="trace-output" data-state>
+canEdit → unknown Boolean
+hook frame → not initialized
+view → not allocated
+tasks → empty</pre>
+                </div>
+                <div>
+                  <div class="field-label">Elements / tree</div>
+                  <pre class="trace-output" data-output>
+AccessPanel element
+props: { canEdit: unknown }
+
+Its body has not run.</pre>
+                </div>
+              </div>
+              <div class="trace-explanation" data-explanation aria-live="polite">
+                <h4>1. An element is a description</h4>
+                <p>
+                  Creating an element records its type and props. The materializer gives React a
+                  proxy for AccessPanel. React invokes the proxy, which asks the interpreter to
+                  evaluate AccessPanel’s body.
+                </p>
+              </div>
+            </div>
+            <div class="lab-note">
+              Assume an ordinary mount without Strict Mode replay and a short timer inside the
+              settling window. The tree view abbreviates host structure.
+            </div>
+          </div>
+          <h3>What exists after the first render?</h3>
+          <p>
+            A persistent hook cell contains false. A new local object contains a conditional field:
+            <code>view.mode</code> is <code>"edit"</code> under <code>canEdit</code> and
+            <code>"read"</code> otherwise. The effect callback has been recorded but has not yet
+            registered a timer. The returned main element contains a conditional first child and a
+            known span as its second child.
+          </p>
+          <p>
+            The application does not actually display a button and paragraph together. The analyzer
+            can put both beneath internal branch markers in its intermediate React tree. Those
+            markers preserve which child belongs to which condition. Later, the tree reader
+            interprets them as alternatives rather than simultaneous UI.
+          </p>
+          <h3>What changes after the effect?</h3>
+          <p>
+            The proxy’s passive effect invokes the modeled callback. Its <code>if</code> is
+            interpreted, so only the edit path registers a timer. The registration retains that
+            guard. When the timer fires, <code>setReady(true)</code> is a conditional write to the
+            persistent state cell, not an unconditional write to every possible execution.
+          </p>
+          <p>
+            The setter asks React to render the proxy again. The interpreter enters the component
+            again with fresh local bindings but the same hook frame. It allocates a new
+            <code>view</code> object; it does not reset the state cell to false. The later commit is
+            caused by the edit-only update.
+          </p>
+          <pre><code class="language-text">Read-only execution:  p + span
+Editable execution:   button + span → button + strong
+
+Not an execution:     p + strong</code></pre>
+          <p>
+            Why is the last combination absent? Not because the engine recognizes a special
+            “read-only page” pattern. It is because the same input condition survives the mutation,
+            timer registration, setter call, and resulting commit. A plain set of possible values,
+            without their conditions, would allow the engine to combine
+            <code>isReady = true</code> with the wrong path.
+          </p>
+          <p class="source">
+            <a href="source:src/materialize/materializer.ts">Proxy execution</a
+            ><a href="source:src/evaluate/hooks.ts">Hook cells</a
+            ><a href="source:src/materialize/commit-causes.ts">Callback causes</a>
+          </p>
+        </section>
+
+        <section id="machine" aria-labelledby="machine-heading">
+          <h2 id="machine-heading">The machine underneath the React layer</h2>
+          <p>
+            Think of the analyzer as an implementation of selected JavaScript semantics whose values
+            are richer than the JavaScript engine’s own values. The real JavaScript engine executes
+            the analyzer. The analyzer executes the application’s syntax tree.
+          </p>
+          <h3>Parsing gives it instructions to interpret</h3>
+          <p>
+            The source graph parses code into an abstract syntax tree. A node for
+            <code>count * 2</code> says “binary expression, multiplication, identifier on the left,
+            literal on the right.” It does not contain the result of multiplication. The interpreter
+            has to compute that result.
+          </p>
+          <pre><code class="language-text">const doubled = count * 2;
+
+Variable declaration
+├─ binding: doubled
+└─ initializer: binary expression (*)
+   ├─ identifier: count
+   └─ literal: 2
+
+read count → construct primitive 2 → apply * → bind doubled</code></pre>
+          <p>
+            <code>evaluateExpressionValue</code> dispatches on the node’s kind. A literal constructs
+            a primitive. An identifier performs lookup. An object expression allocates an object. A
+            function expression captures an environment without running its body. A call expression
+            resolves and invokes a modeled callable. JSX constructs a modeled element.
+          </p>
+          <p>
+            The wrapper <code>evaluateExpression</code> then applies the active guard to the result
+            where the representation supports it. Evaluation also consumes steps. If the engine
+            cannot keep interpreting an operation, it can return an unknown value with a reason
+            rather than fabricate a concrete answer.
+          </p>
+          <h3>A context is the information needed to interpret one node</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Context member</th>
+                  <th>Why evaluation needs it</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Module</td>
+                  <td>
+                    Resolve module bindings, imports, source locations, and module-specific
+                    behavior.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Scope</td>
+                  <td>
+                    Find the binding named by an identifier, including names captured by a closure.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Receiver and super binding</td>
+                  <td>
+                    Interpret <code>this</code>, methods, and supported superclass operations.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Call stack</td>
+                  <td>
+                    Track function activations and detect excessive or non-progressing recursion.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Hook frame</td>
+                  <td>
+                    Route application hook calls to the currently evaluated component instance.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Environment and owner</td>
+                  <td>
+                    Retain client/server context and which component render created an element.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Suspension state</td>
+                  <td>
+                    Associate an awaited continuation with its async call and completion handlers.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            This is not one immutable state object passed through every instruction. The interpreter
+            also owns mutable module tables, journals, guards, and task queues. A returned value and
+            changes to those stores are separate outputs of evaluation.
+          </p>
+          <h3>Scopes are linked maps, not copies of all visible variables</h3>
+          <p>
+            A scope has a map of bindings and a parent scope. Lookup walks outward until it finds
+            the name. A function call creates a child of the function’s captured scope. A nested
+            block can add another scope. Assigning an existing lexical binding needs its owning
+            scope, not a new map entry that accidentally shadows it.
+          </p>
+          <pre><code class="language-text">module scope
+  getLabel → function value
+  prefix   → "item:"
+       ↑ parent
+call scope
+  item     → object A
+       ↑ parent
+block scope
+  label    → a derived value</code></pre>
+          <p>
+            The scope map contains modeled values. A binding to an object contains a reference to
+            that modeled object, not a recursive copy of it. This is why two bindings can alias one
+            object and why snapshotting scopes alone cannot undo a property write.
+          </p>
+          <h3>Module resolution and module execution are different jobs</h3>
+          <p>
+            The reusable graph knows where an import points and what declarations a file contains.
+            The interpreter’s execution state records evaluated bindings. Looking up an export can
+            evaluate a declaration and cache its modeled value. Reusing that value matters:
+            importing a shared object twice must not allocate two unrelated objects.
+          </p>
+          <p>
+            A module binding currently being evaluated is marked <code>IN_PROGRESS</code>, so
+            recursive binding evaluation is distinguishable from an unevaluated binding or a
+            concrete undefined value. Mutating a module binding updates the execution table.
+            Conditional writes to that table participate in journaling just like writes to shared
+            objects.
+          </p>
+          <p>
+            Parsed modules can survive across separate analysis runs. Evaluated module mutations
+            cannot silently survive into a fresh run. Otherwise a module counter, cache, or previous
+            timer would change the meaning of the new execution.
+          </p>
+          <p>
+            TypeScript annotations are not runtime inputs. The interpreter unwraps constructs such
+            as <code>satisfies</code> and type assertions and evaluates their underlying
+            expressions. Declaring <code>role: string</code> does not supply either a concrete role
+            or an unknown role; the caller or environment supplies the modeled value.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/interpreter.ts#L2501">Expression dispatch</a
+            ><a href="source:src/evaluate/context.ts">Evaluation context</a
+            ><a href="source:src/evaluate/scope.ts">Scope lookup</a
+            ><a href="source:src/graph/module-graph.ts">Source graph</a>
+          </p>
+        </section>
+
+        <section id="values" aria-labelledby="values-heading">
+          <h2 id="values-heading">What a value looks like inside the interpreter</h2>
+          <p>
+            The analyzer does not put a magical unknown Boolean into a normal JavaScript variable
+            and let V8 handle it. It uses tagged records. The tag tells the evaluator what
+            operations are meaningful and what information is available.
+          </p>
+          <pre><code class="language-typescript">interface StaticPrimitiveValue {
+  kind: "primitive";
+  value: StaticPrimitive;
+}
+
+interface StaticBranchValue {
+  kind: "branch";
+  alternatives: StaticValue[];
+  preferredIndex: number;
+  reason: string;
+  location: SourceLocation | null;
+  predicate: string | null;
+}</code></pre>
+          <p>
+            These are source shapes, with referenced types left unexpanded. A primitive wraps a
+            concrete value. A branch contains possible values and the identity of the choice between
+            them. The branch is itself a value: it can be stored in an object, passed to a function,
+            or returned from a hook.
+          </p>
+          <h3>Concrete, finite, and unknown are different amounts of information</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Representation</th>
+                  <th>Information retained</th>
+                  <th>Consequence</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Primitive 2</td>
+                  <td>One numeric value.</td>
+                  <td>Multiplying by 2 produces 4.</td>
+                </tr>
+                <tr>
+                  <td>A branch of 2 and 3</td>
+                  <td>Two values and the choice relating them.</td>
+                  <td>Multiplication can produce a branch of 4 and 6.</td>
+                </tr>
+                <tr>
+                  <td>Unknown number</td>
+                  <td>A primitive category, possibly with range or origin information.</td>
+                  <td>The engine can know it is numeric without knowing its magnitude.</td>
+                </tr>
+                <tr>
+                  <td>Unknown value</td>
+                  <td>
+                    A reason and source location, but less information about the value itself.
+                  </td>
+                  <td>Operations may need to retain broader uncertainty.</td>
+                </tr>
+                <tr>
+                  <td>Known object with unknown field</td>
+                  <td>Object identity and its known property structure.</td>
+                  <td>Other fields can still be read concretely.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Unknown is not undefined. Undefined is a particular primitive with well-defined nullish
+            and truthiness behavior. Replacing uncertainty with undefined would choose outcomes the
+            source did not choose.
+          </p>
+          <h3>A branch is normalized when it is constructed</h3>
+          <p>
+            <code>branchValue</code> does more than wrap an array. It first checks whether all
+            alternatives are interchangeable. If they are, it returns one value. Otherwise it
+            flattens nested branches, deduplicates interchangeable alternatives, adjusts the
+            preferred index, and composes the predicate when flattening changes the alternative
+            positions.
+          </p>
+          <pre><code class="language-text">flag ? 4 : 4                 → one primitive 4
+flag ? 4 : 6                 → a two-alternative value
+outer ? (inner ? A : B) : C   → flattened alternatives
+                                with composed conditions</code></pre>
+          <p>
+            The composed conditions are essential. Flattening the last expression to
+            <code>[A, B, C]</code> alone loses that A requires outer and inner, B requires outer and
+            not inner, and C requires not outer. Changing the representation must not silently
+            change which inputs select each result.
+          </p>
+          <p>
+            The preferred alternative is an evaluation preference, not a statement that the input is
+            known. And equal-looking objects are not automatically interchangeable: two separately
+            allocated objects can be distinguished by identity even when their properties are the
+            same.
+          </p>
+          <h3>Unknown primitives can have useful shape</h3>
+          <p>
+            An unknown string may retain a prefix, a minimum length, or a fixed length. An unknown
+            number may retain a range. A string with a known nonempty prefix is truthy even if its
+            suffix is unknown; a range that excludes zero can also decide truthiness. Not knowing
+            the complete value does not require forgetting every property of it.
+          </p>
+          <p>
+            String composition can preserve that two strings were constructed from the same
+            uncertain source with the same prefix and suffix. That matters for using generated
+            strings as property keys: a later read must be able to refer to the same unknown key
+            that an earlier write used.
+          </p>
+          <p>
+            Other tags cover lists, functions, elements, React APIs, native functions, external
+            bindings, contexts, and repeats. The purpose is not merely classification. Each tag
+            selects a different operational path when code tries to call, read, mutate, iterate, or
+            render the value.
+          </p>
+          <p class="source">
+            <a href="source:src/types.ts#L548">Value interfaces</a
+            ><a href="source:src/evaluate/values.ts#L1566">Branch construction</a
+            ><a href="source:src/evaluate/primitive-shapes.ts">Primitive shapes</a>
+          </p>
+        </section>
+
+        <section id="operations" aria-labelledby="operations-heading">
+          <h2 id="operations-heading">How an operation carries uncertainty forward</h2>
+          <p>
+            For a concrete operand, a modeled operation can compute a concrete answer. For a finite
+            branch, it can apply the operation to the alternatives and rebuild the result around the
+            original decision.
+          </p>
+          <pre><code class="language-typescript">const count = flag ? 2 : 3;
+const doubled = count * 2;</code></pre>
+          <div class="lab">
+            <div class="lab-header">
+              The same expression with different information<span>Value propagation</span>
+            </div>
+            <div class="lab-body">
+              <div class="segmented" role="group" aria-label="Flag value">
+                <button data-value="unknown" type="button" aria-pressed="true">Unknown flag</button
+                ><button data-value="true" type="button" aria-pressed="false">True</button
+                ><button data-value="false" type="button" aria-pressed="false">False</button>
+              </div>
+              <div class="grid">
+                <div class="result">
+                  <div class="result-label">count</div>
+                  <pre id="value-count">
+2 when flag
+3 when !flag</pre>
+                </div>
+                <div class="result">
+                  <div class="result-label">doubled</div>
+                  <pre id="value-result">
+4 when flag
+6 when !flag</pre>
+                </div>
+              </div>
+              <p id="value-explanation" aria-live="polite" style="margin-top: 16px">
+                Multiplication changes each numeric alternative but retains the condition selecting
+                it.
+              </p>
+            </div>
+          </div>
+          <h3>Mapping a value is not forking an execution</h3>
+          <p>
+            <code>mapValue</code> calls a transform once for a non-branch value or once per
+            alternative for a branch. <code>joinMappedAlternatives</code> reconstructs the result
+            using the source branch’s reason, predicate, and preference, retaining branch origin
+            where needed.
+          </p>
+          <p>
+            That is enough for a value transformation without relevant shared writes. It is not
+            enough for a callback that mutates an object. Mapping evaluates alternatives in
+            sequence; by itself it does not restore a heap between them. The interpreter needs a
+            journaled fork when alternative evaluation changes shared state.
+          </p>
+          <pre><code class="language-text">Value mapping:
+  alternative → transformed alternative
+  preserve the selecting decision
+
+Execution forking:
+  save entry state
+  execute a path → value + mutations + completion
+  restore entry state before its sibling
+  join the resulting values and stores</code></pre>
+          <h3>Two branched operands need correlated pairing</h3>
+          <p>
+            If <code>left</code> and <code>right</code> are both conditional, evaluating an operator
+            over every possible pair can introduce impossible combinations. Consider two values
+            derived from one flag:
+          </p>
+          <pre><code class="language-typescript">const left = flag ? 1 : 2;
+const right = flag ? 10 : 20;
+const sum = left + right;</code></pre>
+          <p>
+            Native JavaScript permits the pairs 1 with 10 and 2 with 20, giving 11 or 22. The
+            binary-distribution helper has a paired path when both branch records share a non-null
+            predicate and aligned alternative counts. In that case it applies the operator to
+            corresponding slots instead of building a cross-product. Otherwise it distributes a
+            small product through nested branch values.
+          </p>
+          <p>
+            That mechanism is not a guarantee that every source-level relationship reaches the
+            operator intact. With the flag supplied as an unknown declared Boolean in this example,
+            the pinned engine’s resulting model includes 11, 12, 21, and 22. The two extra sums
+            expose a lost pairing. The important implementation dependency is that the input’s
+            relationship must survive into the branch metadata the operator actually reads; having a
+            paired-operation helper alone does not establish that.
+          </p>
+          <h3>Short-circuiting is about whether the right side executes</h3>
+          <p>
+            <code>&amp;&amp;</code>, <code>||</code>, and <code>??</code> do not simply compute both
+            operands and select an answer. Evaluating the right operand can throw, mutate, or
+            register work. The right operand must not run on a path that skips it.
+          </p>
+          <pre><code class="language-typescript">let calls = 0;
+const getFallback = () =&gt; {
+  calls += 1;
+  return "fallback";
+};
+const value = input ?? getFallback();</code></pre>
+          <p>
+            For input 0, the result is 0 and calls stays 0. For null or undefined, the result is the
+            fallback and calls becomes 1. For an uncertain input, both the returned value and the
+            mutation need the appropriate condition. Nullishness is not truthiness: false, 0, and an
+            empty string all skip this fallback.
+          </p>
+          <p>
+            The distinction between mapping and forking is concrete here. In the pinned
+            implementation, <code>&amp;&amp;</code> and <code>||</code> use tested, journaled paths.
+            <code>??</code> maps alternatives and caches a right-side evaluation. With
+            <code>input = flag ? null : 0</code>, that can produce <code>0:1</code> for the result
+            and call count instead of <code>0:0</code>. The value selection survives while the
+            conditionality of the write is lost.
+          </p>
+          <h3>A property read can itself execute code</h3>
+          <p>
+            Reading a plain known field returns its modeled value. Reading a getter invokes a
+            modeled callable with the receiver. A computed property first needs a modeled key.
+            Reading through an uncertain receiver may require evaluating alternatives. Thus
+            <code>object.value</code> is not always an inert lookup.
+          </p>
+          <p>
+            Optional chaining needs another distinction: “the receiver was nullish, so skip the
+            remaining chain” is different from “a property read produced undefined.” The engine uses
+            a short-circuit marker through the chain and converts it to undefined at the enclosing
+            chain boundary. That keeps the decision to skip separate from the ordinary value
+            undefined.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/values.ts#L1756">Mapping and distribution</a
+            ><a href="source:src/evaluate/operators.ts">Operators</a
+            ><a href="source:src/evaluate/interpreter.ts#L2897">Short-circuit evaluation</a
+            ><a href="source:src/evaluate/interpreter.ts#L3979">Accessor reads</a>
+          </p>
+        </section>
+
+        <section id="calls" aria-labelledby="calls-heading">
+          <h2 id="calls-heading">A function is source code plus an environment</h2>
+          <p>
+            Evaluating a function expression does not run its body. It creates a modeled function
+            value containing its syntax node, module, captured scope, receiver-related information,
+            and properties. The captured scope is what makes it a closure.
+          </p>
+          <h3>A call creates a new activation, not a new universe</h3>
+          <p>
+            <code>evaluateFunctionBody</code> creates a scope whose parent is
+            <code>functionValue.scope</code>. It binds parameters to the argument values and sets up
+            the call context. For a non-arrow function it also supplies an arguments list. The call
+            shares the relevant interpreter state, hook frame, and evaluation budget rather than
+            starting the whole analysis again.
+          </p>
+          <pre><code class="language-typescript">const getAccess = (role: string) =&gt; ({
+  canEdit: role === "admin",
+});
+
+const access = getAccess(role);
+const showButton = access.canEdit;</code></pre>
+          <p>
+            The argument is the original modeled role value. Parameter binding does not invent an
+            unrelated unknown called role. The helper evaluates its equality test, allocates an
+            object, and returns it. Reading <code>access.canEdit</code> retrieves the derived
+            result. Its relation to the original input can survive the call and the returned
+            container.
+          </p>
+          <h3>Capturing a binding is not freezing its answer</h3>
+          <pre><code class="language-typescript">const state = { label: "before" };
+const readLabel = () =&gt; state.label;
+state.label = "after";
+const result = readLabel();</code></pre>
+          <div class="lab">
+            <div class="lab-header">
+              Read through a captured object reference<span>Closure semantics</span>
+            </div>
+            <div class="lab-body">
+              <div class="controls">
+                <label
+                  ><input id="closure-mutation" type="checkbox" checked /> Apply the object write
+                  before calling readLabel</label
+                >
+              </div>
+              <div class="grid">
+                <div class="result">
+                  <div class="result-label">Captured environment</div>
+                  <pre>
+state → object A
+readLabel → body + that scope</pre>
+                </div>
+                <div class="result">
+                  <div class="result-label">Returned value</div>
+                  <pre id="closure-result">after</pre>
+                </div>
+              </div>
+              <p id="closure-explanation" aria-live="polite" style="margin-top: 16px">
+                The function reads object A when called. Its captured reference still reaches A
+                after A’s contents change.
+              </p>
+            </div>
+          </div>
+          <p>
+            If the closure captures a primitive binding that is later reassigned, it needs the
+            binding’s later value. If a later React render creates an entirely new scope with a new
+            count binding, an older callback still refers to its original scope. These are different
+            situations. “Closures have stale values” is not a general rule; environment identity is
+            the rule.
+          </p>
+          <h3>The same function body can produce different function identities</h3>
+          <pre><code class="language-typescript">const makeReader = (label: string) =&gt; () =&gt; label;
+const readFirst = makeReader("first");
+const readSecond = makeReader("second");</code></pre>
+          <p>
+            The inner arrow has one syntax node, but the two evaluations capture different call
+            scopes. Treating a function as only its AST node would make both readers share the wrong
+            label. This also matters for React: component functions returned by separate factory
+            calls must not automatically become one component type just because they share source
+            text.
+          </p>
+          <h3>Calling is a dispatch, too</h3>
+          <p>
+            The callee may be an interpreted function, a native-function model, a built-in method, a
+            React API, or an uncertain choice of callables. The engine dispatches accordingly. An
+            interpreted function enters its body; a modeled setter updates hook storage; an array
+            method evaluates callbacks according to its model.
+          </p>
+          <p>
+            An uncertain callable can require <code>callAlternatives</code>. Each alternative call
+            gets its own journaled path and guard because different callees can produce different
+            mutations. An ordinary property method call also carries the receiver, while a detached
+            call has different receiver semantics. Bound arguments and a bound receiver are applied
+            before entering the body.
+          </p>
+          <p>
+            Recursion is handled operationally. The interpreter tracks calls, arguments, receivers,
+            mutations, and fork depth to detect non-progressing recursion, and it has a call-depth
+            limit. It can produce unknown rather than recurse forever. It is not solving an
+            arbitrary recursive equation to completion.
+          </p>
+          <p class="source">
+            <a href="source:src/types.ts#L690">Function representation</a
+            ><a href="source:src/evaluate/interpreter.ts#L5048">Function entry</a
+            ><a href="source:src/evaluate/interpreter.ts#L5132">Call scope and body</a
+            ><a href="source:src/evaluate/interpreter.ts#L3113">Alternative calls</a>
+          </p>
+        </section>
+
+        <section id="guards" aria-labelledby="guards-heading">
+          <h2 id="guards-heading">Conditions have identity and structure</h2>
+          <p>
+            An unknown input is useful only if repeated uses can refer to the same uncertainty.
+            Otherwise every read becomes a fresh choice and the engine manufactures combinations
+            that the program cannot produce.
+          </p>
+          <pre><code class="language-tsx">&lt;nav&gt;
+  {role === "admin" &amp;&amp; &lt;button /&gt;}
+  {role === "admin" &amp;&amp; &lt;a /&gt;}
+&lt;/nav&gt;</code></pre>
+          <div class="lab">
+            <div class="lab-header">Two occurrences, one input<span>Guard correlation</span></div>
+            <div class="lab-body">
+              <div class="segmented" role="group" aria-label="Role input">
+                <button type="button" data-role="unknown" aria-pressed="true">Unknown role</button
+                ><button type="button" data-role="admin" aria-pressed="false">Admin</button
+                ><button type="button" data-role="other" aria-pressed="false">Not admin</button>
+              </div>
+              <div class="grid">
+                <div class="result">
+                  <div class="result-label">Conditions</div>
+                  <pre id="guard-conditions">
+button present: eq(role, "admin")
+a present:      eq(role, "admin")</pre>
+                </div>
+                <div class="result">
+                  <div class="result-label">Compatible structures</div>
+                  <pre id="guard-output">
+button + a
+neither
+
+Never just one of them.</pre>
+                </div>
+              </div>
+              <p id="guard-explanation" aria-live="polite" style="margin-top: 16px">
+                The two tests derive from the same role input. Selecting only one child would
+                require a condition and its negation to hold together.
+              </p>
+            </div>
+          </div>
+          <h3>Derivation tracking connects values back to inputs</h3>
+          <p>
+            The predicate machinery records relationships such as property access, aliases,
+            equality, comparisons, negation, and refinements. A test can then become a structured
+            condition like <code>eq(input1, "admin")</code> rather than a free-floating Boolean with
+            no origin.
+          </p>
+          <p>
+            The name “role” alone is not the identity. Two separate function calls can both have a
+            parameter named role while receiving different inputs. Conversely, role can be renamed
+            to permission, passed through a helper, and read from an object while still deriving
+            from the same input.
+          </p>
+          <h3>Narrowing is a temporary assumption while evaluating a path</h3>
+          <p>
+            When a supported test restricts an identifier or property,
+            <code>evaluateTestedPaths</code> can evaluate each side with an appropriately narrowed
+            value. The true side of a null check should not continue treating the checked binding as
+            definitely null. The sibling path gets its own restriction, and the outer state is
+            restored and joined afterward.
+          </p>
+          <p>
+            Narrowing does not globally assert that the input has the selected value. It says
+            “inside this path, interpret operations under this assumption.” A branch that the
+            narrowing makes impossible can be skipped entirely.
+          </p>
+          <h3>Nested conditions combine; alternatives do not become independent</h3>
+          <pre><code class="language-typescript">if (isSignedIn) {
+  if (canEdit) showEditor();
+}</code></pre>
+          <p>
+            The inner call requires both conditions. Its guard is the parent guard AND the inner
+            guard. If either input rules it out, the call does not belong to that execution. Several
+            independently sufficient reasons for an update can instead be combined with OR.
+          </p>
+          <p>
+            The solver checks the constraints that the representation supplies: truthiness,
+            supported equality, membership, numeric comparisons, and type constraints. It is not an
+            oracle for arbitrary JavaScript. If an earlier operation lost the derivation, the solver
+            cannot reconstruct that missing relation just because two expressions look similar in
+            the source.
+          </p>
+          <p>
+            Keep three identities distinct: an input identifies uncertainty in a value; a predicate
+            describes a relationship over inputs; a branch occurrence identifies a particular choice
+            in a tree or computation. Different occurrences can depend on the same predicate.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/predicates.ts">Derivation tracking</a
+            ><a href="source:src/evaluate/interpreter.ts#L2981">Narrowing and tested paths</a
+            ><a href="source:src/symbolic/guards.ts">Guard representation</a
+            ><a href="source:src/symbolic/guard-solver.ts">Constraint solving</a>
+          </p>
+        </section>
+
+        <section id="mutation" aria-labelledby="mutation-heading">
+          <h2 id="mutation-heading">Fork the execution, restore the store, join the writes</h2>
+          <p>
+            A branch with side effects cannot be modeled by simply running the true side and then
+            the false side. The false side would observe a history that belongs to the true side. It
+            has to start from the same entry state.
+          </p>
+          <div class="lab" data-trace="mutation">
+            <div class="lab-header">
+              One object, two references, two paths<span>Heap journal</span>
+            </div>
+            <div class="lab-body">
+              <pre><code class="language-typescript"><span data-code-line="0">const state = { count: 0 };</span><span data-code-line="0">const alias = state;</span><span data-code-line="1">if (flag) alias.count = 1;</span><span data-code-line="3">else state.count = 2;</span><span data-code-line="4">return state.count;</span></code></pre>
+              <div class="controls">
+                <span class="step-count" data-step-count>Step 1 of 5</span
+                ><button type="button" data-reset>Reset</button
+                ><button type="button" data-back disabled>Previous</button
+                ><button type="button" data-next>Next step</button>
+              </div>
+              <div class="grid">
+                <div>
+                  <div class="field-label">Live store</div>
+                  <pre class="trace-output" data-state>
+state → object A
+alias → object A
+A.count = 0</pre>
+                </div>
+                <div>
+                  <div class="field-label">Journal</div>
+                  <pre class="trace-output" data-output>
+Entry allocation recorded.
+No path has written A yet.</pre>
+                </div>
+              </div>
+              <div class="trace-explanation" data-explanation aria-live="polite">
+                <h4>1. Record the fork’s starting point</h4>
+                <p>
+                  Both names reference A. The journal records A’s original contents when the first
+                  write touches it. Copying the scope’s two references would not copy or restore A.
+                </p>
+              </div>
+            </div>
+          </div>
+          <h3>The journal is keyed by the mutated thing</h3>
+          <p>
+            <code>HeapJournal</code> keeps maps for object contents, list state, custom journaled
+            state, module bindings, and pending hook updates. An object map is keyed by the modeled
+            object itself. That matters because a write through alias must be recognized as a write
+            to the same object reached through state.
+          </p>
+          <p>
+            Before a preexisting object is first changed, the journal saves its original entries. At
+            <code>endPath</code>, it records the contents that path left and puts the original
+            entries back. The same pattern applies to arrays and their named properties, mutable API
+            models with capture/restore operations, and the other tracked stores.
+          </p>
+          <pre><code class="language-text">Entry             True path          False path         Joined
+A.count = 0       A.count = 1         A.count = 2        A.count = branch(1, 2)
+                  save result        save result       condition: flag
+                  restore 0          restore 0</code></pre>
+          <h3>The joined object is still the same object</h3>
+          <p>
+            The engine cannot replace just one alias with a fresh merged object. A closure,
+            collection, or another binding may still reach the original. The join changes the
+            contents of the modeled object while preserving its identity relationships. Afterward
+            <code>state === alias</code> can remain true while <code>state.count</code> is
+            conditional.
+          </p>
+          <p>
+            Lexical bindings are snapshotted and joined separately. A reassignment such as
+            <code>state = anotherObject</code> changes which value the name points to; a property
+            assignment such as <code>state.count = 1</code> changes the object reached through the
+            name. Both are mutations, but restoring one does not restore the other.
+          </p>
+          <h3>The path that did nothing still contributes a state</h3>
+          <p>
+            For <code>if (flag) state.count = 1</code>, the false path contributes the original
+            count. It does not contribute “no value.” For a conditional reducer dispatch, the
+            untouched path contributes an empty action sequence. For a timer cancelled on one path,
+            the other path contributes a still-live registration.
+          </p>
+          <p>
+            Pending hook updates are especially revealing. The journal captures pending next state,
+            reducer actions, deferred updates, and whether the setter escaped. A conditional setter
+            cannot leave an unconditional pending value behind merely because the setter itself
+            returned undefined on both paths.
+          </p>
+          <h3>Objects allocated inside a path have a different lifetime</h3>
+          <p>
+            The journal remembers the allocation ordinal at fork entry. An object allocated
+            afterward did not exist in the sibling’s starting state. It generally does not need the
+            same restoration as a preexisting shared object. A new object can remain a path-specific
+            returned alternative; its identity must not be confused with a preexisting object whose
+            fields were changed.
+          </p>
+          <h3>Joining values and joining effects are separate operations</h3>
+          <p>
+            Two paths can both return 0 and leave different counts. Their return value collapses to
+            one primitive; their heap cannot. Conversely, two different returned numbers can leave
+            the same heap. The engine must join each kind of state according to what actually
+            differed, not infer the store from the shape of the return value.
+          </p>
+          <p>
+            The entire design depends on writes going through the appropriate mutation hook. An
+            internal iterator cursor stored outside the journal can still leak from one explored
+            path into the next. Restoring ordinary objects is not automatically enough to restore
+            every mutable API model.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/interpreter.ts#L3079">forkValues</a
+            ><a href="source:src/evaluate/heap-journal.ts">Journal records and joins</a
+            ><a href="source:src/evaluate/scope-journal.ts">Scope snapshots</a>
+          </p>
+        </section>
+
+        <section id="completion" aria-labelledby="completion-heading">
+          <h2 id="completion-heading">A value is not enough to describe control flow</h2>
+          <p>
+            An expression produces a value. A statement list also needs to say whether execution can
+            continue. Returning 7 and producing 7 while falling through are not the same result:
+            only the second permits the next statement to run.
+          </p>
+          <pre><code class="language-typescript">const box = { value: 0 };
+const choose = () =&gt; {
+  if (flag) {
+    box.value = 1;
+    return "early";
+  }
+  box.value = 2;
+  return "late";
+};
+const label = choose();</code></pre>
+          <p>
+            The outcomes are <code>early:1</code> and <code>late:2</code>. If the engine first
+            joined box.value and then ran the rest of the function unconditionally, the later write
+            would overwrite the early-return path too. Keeping a branch in the returned label would
+            not repair the heap.
+          </p>
+          <h3>StatementOutcome carries completion information</h3>
+          <pre><code class="language-typescript">interface StatementOutcome {
+  returned: StaticValue | null;
+  mayComplete: boolean;
+  completion?: StaticValue;
+  jump: LoopJump | "uncertain" | null;
+  isSuspended: boolean;
+}</code></pre>
+          <p>
+            <code>returned</code> gathers modeled return outcomes. <code>mayComplete</code> says
+            whether any path falls through. The optional completion value can describe that
+            condition more precisely. A jump represents loop control. Suspension says that the
+            remainder awaits another event rather than having completed normally.
+          </p>
+          <p>
+            The final function result is derived from this outcome. If the body can fall through
+            without returning, undefined is an alternative under the fall-through condition. The
+            engine cannot silently drop that path just because another path returned a useful value.
+          </p>
+          <h3>forkPaths passes the rest of the computation as a continuation</h3>
+          <p>
+            A continuation here is the code that should run next, packaged as an interpreter
+            callback. It is not necessarily an application promise callback. The statement evaluator
+            passes a <code>proceed</code> continuation so a branch can decide which states are
+            allowed to reach the rest of the statement list.
+          </p>
+          <pre><code class="language-text">if (flag) return "early";
+box.value = 2;
+return "late";
+
+true path:   preserve its return and heap; do not call the rest
+false path:  continue with box.value = 2, then return
+join:        combine the finished executions, not their prefixes</code></pre>
+          <p>
+            <code>forkPaths</code> separates completing paths from jumping or returning paths. When
+            only some paths continue, <code>journal.continueFrom</code> joins the stores of those
+            completing paths into the live store for the continuation. The exited paths remain
+            separate. After the rest runs, its end state is joined with the exited end states.
+          </p>
+          <p>
+            The continuation runs under the OR of the conditions of paths that can reach it,
+            combined with the parent guard. Returning closures require additional scope handling
+            because they may retain bindings from a path that already exited. A function return ends
+            execution of that path, not the lifetime of every object or environment it created.
+          </p>
+          <h3>Throws carry a payload and an abrupt outcome</h3>
+          <p>
+            A modeled throw must retain what was thrown, including undefined, null, or an object
+            reference. It must not be confused with an ordinary unknown result. The interpreter’s
+            throw representation carries the payload so catch binding can recover it and preserve
+            its identity.
+          </p>
+          <p>
+            A try statement separates paths that pass through from paths that throw into the
+            handler. The catch block gets a child scope with the caught value bound to its
+            parameter. Mutations made before the throw are not automatically rolled back: a catch
+            can observe them. Journaling separates alternative executions; it is not a transaction
+            that reverses JavaScript exceptions.
+          </p>
+          <h3>Finally runs on exits, and can replace the exit</h3>
+          <pre><code class="language-typescript">const choose = () =&gt; {
+  try {
+    return "from try";
+  } finally {
+    return "from finally";
+  }
+};</code></pre>
+          <p>
+            A normal finalizer preserves the pending return or throw while adding its effects. An
+            abruptly completing finalizer supplies the new exit instead.
+            <code>evaluateTry</code> therefore has separate handling for continuing execution and
+            already-exiting outcomes; merely appending the finalizer after the try block would miss
+            returns and throws.
+          </p>
+          <p>
+            Break and continue are different exits again: they leave a loop body in different ways,
+            not necessarily the enclosing function. Await suspension needs to retain the relevant
+            completion handlers so eventual fulfillment or rejection can continue through the right
+            catch and finally behavior. These mechanisms are implemented for supported forms; they
+            are not a claim of complete support for every JavaScript control-flow form.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/completion.ts">Statement outcomes</a
+            ><a href="source:src/evaluate/interpreter.ts#L5960">forkPaths and continuations</a
+            ><a href="source:src/evaluate/interpreter.ts#L5682">Try, catch, and finally</a>
+          </p>
+        </section>
+
+        <section id="elements" aria-labelledby="elements-heading">
+          <h2 id="elements-heading">How JSX becomes something React can render</h2>
+          <p>
+            An interpreted element is not a fiber. It is a description of a type, key, modeled
+            props, source location, environment, and owner. React produces fibers later, when the
+            materialized description is reconciled.
+          </p>
+          <h3>Evaluating JSX does not call the component body</h3>
+          <pre><code class="language-tsx">const child = &lt;Toolbar role={role} /&gt;;</code></pre>
+          <p>
+            The interpreter evaluates the attributes, resolves the element type, and evaluates child
+            expressions. It then constructs a modeled element, or calls a configured JSX factory
+            when appropriate. For a component element, this records the component and props. It does
+            not eagerly substitute the Toolbar function’s returned JSX.
+          </p>
+          <p>
+            JSX text is normalized and entities are decoded. Expression children are interpreted. A
+            spread child can expand a known modeled list; an unsupported spread retains uncertainty.
+            Lowercase host tags and component references lead to different materialization paths.
+          </p>
+          <pre><code class="language-text">Modeled element
+  type: interpreted Toolbar function
+  props: modeled object containing role
+  owner: the render that created this element
+          ↓ materialize
+Real React element
+  type: cached Toolbar proxy component
+  props: input carrying modeled values and context
+          ↓ React invokes that proxy
+Interpreter evaluates Toolbar’s body
+          ↓ materialize its returned value
+Real React children, including uncertainty markers</code></pre>
+          <h3>The proxy is the bridge between two execution systems</h3>
+          <p>
+            React cannot interpret a <code>StaticBranchValue</code> as an ordinary React child. The
+            materializer translates modeled values into real React nodes. For an application
+            function, it creates or reuses a real function component that calls the interpreter when
+            React renders it.
+          </p>
+          <p>
+            That proxy has a persistent instance and hook frame. Its returned React nodes come from
+            materializing the modeled result. React then handles reconciliation, fiber ancestry,
+            mounting, and the proxy’s real effect phases. The original application body still runs
+            through the interpreter, so it can carry uncertain values.
+          </p>
+          <p>
+            This is why the engine is neither “just execute the app” nor “implement another
+            reconciler.” It substitutes interpreted component bodies into a real reconciliation
+            process.
+          </p>
+          <h3>An unknown child and an absent child mean different things</h3>
+          <p>
+            Known false, null, and undefined children contribute no visible child. A concrete
+            element is materialized. A finite branch becomes a choice with alternatives. A repeated
+            value can become repeat markers. An unresolved child needs a marker for unresolved
+            structure; it cannot simply disappear because the interpreter does not know it.
+          </p>
+          <h3>A branch marker holds multiple alternatives in one intermediate tree</h3>
+          <p>
+            <code>branchNode</code> creates internal branch and alternative components. Real React
+            can mount these markers and the proxies beneath them. The analyzer’s tree reader later
+            recognizes the marker shapes and reconstructs a conditional pattern.
+          </p>
+          <pre><code class="language-text">Intermediate carrier                  Meaning
+
+$Branch(flag)                         choose under flag:
+├─ $Alternative(true)                   button
+│  └─ button                          choose under !flag:
+└─ $Alternative(false)                  p
+   └─ p</code></pre>
+          <p>
+            Mounting alternatives in one carrier makes shared effects delicate. If a component
+            increments a module variable during render, rendering one alternative can change the
+            value seen by another unless that state is isolated. “React constructed the tree” does
+            not itself isolate hypothetical worlds.
+          </p>
+          <h3>Identity controls which instance persists</h3>
+          <p>
+            The materializer caches proxy types by modeled component identity. A proxy created anew
+            for every encounter would appear to React as a different component type and reset its
+            instance. Collapsing distinct captured component closures to one proxy would make the
+            opposite mistake.
+          </p>
+          <p>
+            Keys and tree position still matter because real React uses them during reconciliation.
+            Internal marker ancestry matters too: removing or moving a marker can change the
+            position under which a proxy mounts. A representation change can therefore change hook
+            lifetime even when the visible host elements look the same.
+          </p>
+          <p>
+            The element owner is also distinct from its eventual parent. An element can be created
+            in one component and passed as children through another. The recorded owner helps retain
+            where creation happened rather than inferring it only from eventual fiber ancestry.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/interpreter.ts#L6326">JSX evaluation</a
+            ><a href="source:src/types.ts#L586">Element representation</a
+            ><a href="source:src/materialize/materializer.ts#L843">Branch materialization</a
+            ><a href="source:src/materialize/materializer.ts#L1830">Function proxy</a>
+          </p>
+        </section>
+
+        <section id="hooks" aria-labelledby="hooks-heading">
+          <h2 id="hooks-heading">Inside a hook frame</h2>
+          <p>
+            Application hooks do not store uncertain values in React’s ordinary state hooks. They
+            use analyzer-owned storage associated with one mounted proxy instance. The proxy uses
+            real React hooks to retain that storage and request another render.
+          </p>
+          <h3>Two layers of hooks, with different jobs</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Layer</th>
+                  <th>Storage / operation</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Real proxy hook</td>
+                  <td><code>useRef</code> holds the proxy instance.</td>
+                  <td>Preserve the analyzer’s frame across React renders.</td>
+                </tr>
+                <tr>
+                  <td>Real proxy hook</td>
+                  <td>A small <code>useState</code> counter.</td>
+                  <td>Tell React the proxy needs another render.</td>
+                </tr>
+                <tr>
+                  <td>Modeled application hook</td>
+                  <td>A <code>StateCell</code> in the frame.</td>
+                  <td>Hold current and pending application state, including branches.</td>
+                </tr>
+                <tr>
+                  <td>Real proxy effects</td>
+                  <td>Layout and passive callbacks.</td>
+                  <td>Invoke modeled application effects in the corresponding phases.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>Call order finds the cell</h3>
+          <p>
+            <code>beginHookPass</code> resets the frame’s cursors and current-pass effect list, not
+            the persistent cells. A state hook advances the state cursor. If that index already has
+            a cell, the cell is reused; otherwise the initializer creates it. Memo-like hooks use a
+            separate array and cursor in this implementation.
+          </p>
+          <pre><code class="language-text">Mounted proxy instance
+└─ HookFrame
+   ├─ cells[0]       current, next, setter, reducer actions, deferred values
+   ├─ cells[1]       another state-like hook’s storage
+   ├─ memoCells      memo values, callbacks, refs and dependencies
+   ├─ effects       records from this evaluated pass
+   └─ previousEffects  records from the committed pass</code></pre>
+          <p>
+            A component’s render-local variables are different storage. They are bindings in a
+            function activation. A subsequent evaluation creates new bindings that read the
+            persistent cells. An old effect callback can keep its old activation alive.
+          </p>
+          <h3>A StateCell separates current, pending, and deferred values</h3>
+          <pre><code class="language-typescript">interface StateCell {
+  name: string;
+  initial: StaticValue;
+  current: StaticValue;
+  next: StaticValue | null;
+  pendingReducerActions: StaticValue | null;
+  setter: StaticNativeFunctionValue | null;
+  deferred: StaticValue[];
+  isEscaped: boolean;
+}</code></pre>
+          <p>
+            <code>current</code> is what the hook reads. <code>next</code> is a pending computed
+            state; null here means no pending update, not the application state null. Deferred
+            values represent updates whose timing is not pinned to the current synchronous
+            execution. An escaped setter means code outside the followed execution may update the
+            cell.
+          </p>
+          <p>
+            The setter is created once for the cell. It captures the frame and cell it updates, not
+            merely the latest local variable name. This permits an older callback to use the same
+            setter after later renders.
+          </p>
+          <div class="lab" data-trace="updates">
+            <div class="lab-header">
+              Captured count versus pending count<span>State updates</span>
+            </div>
+            <div class="lab-body">
+              <div class="segmented" role="group" aria-label="Update form">
+                <button type="button" data-update="replace" aria-pressed="true">
+                  setCount(count + 1), twice</button
+                ><button type="button" data-update="updater" aria-pressed="false">
+                  setCount(value =&gt; value + 1), twice
+                </button>
+              </div>
+              <div class="controls">
+                <span class="step-count" data-step-count>Step 1 of 4</span
+                ><button type="button" data-reset>Reset</button
+                ><button type="button" data-back disabled>Previous</button
+                ><button type="button" data-next>Next step</button>
+              </div>
+              <div class="grid">
+                <div>
+                  <div class="field-label">Persistent cell</div>
+                  <pre class="trace-output" data-state>
+current = 0
+next = none</pre>
+                </div>
+                <div>
+                  <div class="field-label">Callback environment</div>
+                  <pre class="trace-output" data-output>
+captured count = 0
+setCount → the persistent cell</pre>
+                </div>
+              </div>
+              <div class="trace-explanation" data-explanation aria-live="polite">
+                <h4>1. The callback was created by a render</h4>
+                <p>
+                  Its count binding is 0. Calling the setter changes pending hook state, not this
+                  captured binding.
+                </p>
+              </div>
+            </div>
+          </div>
+          <h3>The modeled state setter computes pending state eagerly</h3>
+          <p>
+            For <code>useState</code>, a functional updater is interpreted against
+            <code>cell.next ?? cell.current</code>. Its result becomes the pending value. This is
+            the implementation’s simplified update mechanism, not React’s full lane-based update
+            queue.
+          </p>
+          <p>
+            Two replacement calls from a callback whose count is 0 both supply 1. Two updater
+            functions can compute 1 and then 2 because the second receives the first pending result.
+            The callback’s captured count remains 0 in either case. Unchanged updates can be dropped
+            using decided identity or modeled value equivalence.
+          </p>
+          <p>
+            A normal update outside render requests another proxy render.
+            <code>commitHookPass</code> applies pending state before the next evaluation, then
+            <code>beginHookPass</code> resets cursors. Render-phase updates can trigger additional
+            interpreted passes within the proxy’s render handling. Repeatedly changing state
+            eventually causes the affected cells to become unknown rather than permitting infinite
+            settling.
+          </p>
+          <h3>A reducer stores actions rather than only a computed next state</h3>
+          <p>
+            Modeled <code>useReducer</code> appends actions to an ordered modeled list. The hook
+            pass calls the reducer with accumulated state and each action. Conditional dispatch
+            produces conditional action sequences. No dispatch is an empty sequence; it must not be
+            replaced by a mystery action.
+          </p>
+          <p>
+            This differs from <code>useState</code>’s eager updater calculation. Both may eventually
+            yield a next state, but the time at which application code is called and the
+            intermediate storage differ.
+          </p>
+          <h3>Refs and memoized values preserve different things</h3>
+          <p>
+            <code>useRef</code> retains a modeled object in memo storage. A write to current changes
+            that object but does not request a render on its own. Closures that share the ref can
+            see the changed field because the object identity survives, even when their primitive
+            state bindings are older.
+          </p>
+          <p>
+            <code>useMemo</code> reuses the stored modeled result when dependencies compare equal,
+            otherwise it invokes the factory. <code>useCallback</code> retains the callback value
+            rather than invoking it. A callback can therefore remain the same function value, with
+            the same captured scope, even though the component body has been evaluated again.
+          </p>
+          <p>
+            If a setter escapes to unknown code, the engine cannot assume the initial state is
+            permanent. It can retain initial state or an unknown updated state. Known deferred
+            updates may contribute more specific alternatives. These possibilities describe
+            uncertainty in the state cell; they are not an automatically generated sequence of
+            clicks.
+          </p>
+          <details>
+            <summary>Where this intentionally differs from the full React scheduler</summary>
+            <div class="detail-body">
+              <p>
+                The real reconciler schedules the proxy, but the analyzer’s application state model
+                does not reproduce every concurrent lane or transition state. At this revision,
+                modeled <code>useTransition</code> returns false for pending and invokes its
+                callback immediately; <code>useDeferredValue</code> returns the input. Strict
+                Mode-related duplicate factory invocation is modeled in selected hook paths. None of
+                that turns the hook frame into a copy of all React internals.
+              </p>
+            </div>
+          </details>
+          <p class="source">
+            <a href="source:src/evaluate/hooks.ts">Hook storage and pass lifecycle</a
+            ><a href="source:src/evaluate/react-hooks.ts">Hook API dispatch</a
+            ><a href="source:src/materialize/materializer.ts#L1904">Proxy rerendering</a>
+          </p>
+        </section>
+
+        <section id="effects" aria-labelledby="effects-heading">
+          <h2 id="effects-heading">An effect has a callback, a lifetime, and a cause</h2>
+          <p>
+            Rendering an application effect records work. It does not execute that effect inline.
+            The record contains whether it is a layout effect, the modeled callback, its
+            dependencies, and a cleanup slot.
+          </p>
+          <h3>Rendering, committing, and running an effect are separate events</h3>
+          <pre><code class="language-text">Evaluate component body
+  → record effect callback + dependencies
+  → return modeled elements
+
+React commits the proxy tree
+  → proxy layout effect runs modeled layout effects
+  → proxy passive effect runs modeled passive effects
+  → those callbacks may queue state updates or tasks</code></pre>
+          <p>
+            A new render can create a new callback function without that callback necessarily
+            executing. The engine compares the current effect record with the previous committed
+            record. For known dependency lists, it checks length and uses its hook-value
+            identity/equivalence comparison for corresponding members.
+          </p>
+          <p>
+            If dependencies are unchanged, the effect keeps its previous cleanup. If they changed,
+            old cleanups in that phase run before new callbacks in that phase. The value returned by
+            a callback becomes the stored cleanup when it is callable. On unmount, the cleanup is
+            associated with the effect that ran, not an arbitrary newer closure.
+          </p>
+          <h3>Registration must preserve the condition that created a callback</h3>
+          <pre><code class="language-typescript">useEffect(() =&gt; {
+  if (enabled) {
+    const handle = setTimeout(() =&gt; setReady(true), 0);
+    return () =&gt; clearTimeout(handle);
+  }
+}, [enabled]);</code></pre>
+          <p>
+            The timer exists only under enabled. The cleanup for that path refers to that timer’s
+            handle. If an unrelated state update commits before the timer runs, the timer must not
+            inherit the unrelated commit’s cause. Its registration has already established why the
+            callback exists.
+          </p>
+          <p>
+            <code>CommitCauses</code> maintains an active cause while work runs, collects pending
+            causes when updates are scheduled, and associates the resulting commit with those
+            causes. Binding a task captures the current cause. Running a continuation combines its
+            captured condition with the applicable execution condition instead of consulting only
+            whichever commit happened most recently.
+          </p>
+          <h3>A cause must constrain writes, not only callback eligibility</h3>
+          <p>
+            Suppose a callback is possible under enabled but enabled is still unknown. “This
+            callback might run” is not permission to apply its setter unconditionally. The disabled
+            path must keep its old state.
+          </p>
+          <p>
+            The materializer’s <code>runGuardedMutation</code> routes such work through the
+            interpreter’s conditional mutation machinery. Conceptually it joins a path that runs the
+            callback with the path that does not, while retaining the guard. Shared-store writes,
+            reducer actions, and pending state all need this treatment.
+          </p>
+          <pre><code class="language-text">Callback registration condition: enabled
+Callback body:                   setReady(true)
+
+Correct joined state:
+  enabled  → ready may become true
+  !enabled → ready stays false
+
+Insufficient:
+  ready is false or true, unrelated to enabled</code></pre>
+          <p>
+            Nested requirements combine with AND. Several sufficient update causes can combine with
+            OR. The initial mount does not need a preceding setter, so its cause is unconditional.
+            Later commits can be conditional even when the intermediate reconciler has constructed
+            one physical tree for multiple possibilities.
+          </p>
+          <h3>Why cleanup ordering matters to state, not just resource hygiene</h3>
+          <p>
+            A cleanup can cancel a task, unsubscribe a listener, or mutate shared state before a new
+            effect registers its replacement. Reversing that order can cancel the wrong registration
+            or let an obsolete callback update a cell. An analyzer concerned only with the final JSX
+            would miss these causal changes entirely.
+          </p>
+          <p>
+            The proxy also coordinates modeled microtask draining with layout and passive phases.
+            Passive effects can occur after queued microtasks in a later task, while synchronous
+            commit paths require different handling. The implementation distinguishes those cases
+            rather than treating every effect as “run immediately after the function returns.”
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/hooks.ts#L319">Dependency comparison and cleanup</a
+            ><a href="source:src/materialize/commit-causes.ts">Cause capture</a
+            ><a href="source:src/materialize/materializer.ts#L2005">Guarded mutation</a
+            ><a href="source:src/materialize/materializer.ts#L1888">Passive-phase coordination</a>
+          </p>
+        </section>
+
+        <section id="async" aria-labelledby="async-heading">
+          <h2 id="async-heading">Promises are state machines; awaits suspend computations</h2>
+          <p>
+            A modeled promise is not just an unknown eventual value. It has identity, mutable
+            settlement state, and registered reactions. A promise can already be fulfilled while its
+            then callback is still waiting in the microtask queue.
+          </p>
+          <h3>Settlement and reaction execution happen separately</h3>
+          <p>
+            <code>ModeledPromise</code> associates a modeled object value with internal promise
+            state and a reaction list. The implementation represents pending, settled, following,
+            and escaped states. A settled outcome can be a fulfillment value or a thrown outcome
+            representing rejection.
+          </p>
+          <p>
+            Resolving a promise establishes its outcome; reactions are scheduled work that receives
+            that outcome. Following another modeled promise retains the dependency on its
+            settlement. An additional resolve must not overwrite an already determined result.
+            Conditional settlement has to remain conditional after branch joins, so promise state
+            implements capture, restore, and join.
+          </p>
+          <pre><code class="language-typescript">const trace: string[] = [];
+Promise.resolve().then(() =&gt; {
+  trace.push("promise");
+  queueMicrotask(() =&gt; trace.push("nested"));
+});
+queueMicrotask(() =&gt; trace.push("microtask"));
+setTimeout(() =&gt; trace.push("timer"), 0);
+trace.push("sync");</code></pre>
+          <div class="lab" data-trace="tasks">
+            <div class="lab-header">
+              Read the queues, not just the callback bodies<span>Task order</span>
+            </div>
+            <div class="lab-body">
+              <div class="controls">
+                <span class="step-count" data-step-count>Step 1 of 5</span
+                ><button type="button" data-reset>Reset</button
+                ><button type="button" data-back disabled>Previous</button
+                ><button type="button" data-next>Run next callback</button>
+              </div>
+              <div class="grid">
+                <div>
+                  <div class="field-label">Queues</div>
+                  <pre class="trace-output" data-state>
+microtasks: promise reaction, explicit microtask
+timers: timer callback</pre>
+                </div>
+                <div>
+                  <div class="field-label">Trace</div>
+                  <pre class="trace-output" data-output>sync</pre>
+                </div>
+              </div>
+              <div class="trace-explanation" data-explanation aria-live="polite">
+                <h4>1. The synchronous body finishes</h4>
+                <p>
+                  Calling then registered a reaction. It did not invoke that callback inline. The
+                  synchronous push happens before the queued work.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p>
+            The nested microtask goes behind the explicit microtask already in the queue. The timer
+            runs after those modeled microtasks drain. Knowing all four callback bodies is
+            insufficient; a different queue order changes the shared trace.
+          </p>
+          <h3>Await needs a continuation and a result promise</h3>
+          <pre><code class="language-typescript">const load = async () =&gt; {
+  trace.push("started");
+  const value = await pending;
+  trace.push(value);
+  return "done";
+};</code></pre>
+          <p>
+            In a supported async block, the first push happens synchronously. At a pending modeled
+            await, the engine records a suspended statement outcome. The rest of the computation
+            needs its lexical environment and completion context; it cannot resume as a new
+            unrelated function invocation.
+          </p>
+          <p>
+            <code>suspendOnPromise</code> subscribes a resumption to the awaited promise and ensures
+            the async call has a result promise. When the awaited outcome arrives, the resumption
+            evaluates the supported remainder. Its eventual return or throw settles the result
+            promise of the async call. A return from the resumed body is therefore not just a value
+            placed directly into the caller’s earlier stack frame.
+          </p>
+          <pre><code class="language-text">caller receives async result promise
+                ↑ settled by final return / throw
+suspended body ─┤
+  environment  │
+  remaining code
+  catch/finally context
+                ↑ resumed by reaction
+awaited promise settles → modeled microtask</code></pre>
+          <h3>Known pending and externally settled are different</h3>
+          <p>
+            A promise can be pending while the interpreter knows the queued code that will settle
+            it. The engine can advance that work and resume the body. A promise that depends on code
+            outside the analyzed execution has uncertain timing and possibly an uncertain value.
+          </p>
+          <p>
+            When settlement escapes, the model can resume under uncertain fulfillment or rejection
+            outcomes and mark the result as escaped. State updates after that point may be recorded
+            as deferred possibilities rather than assumed to have happened before the current
+            commit. This avoids turning “could finish later” into “already finished now.”
+          </p>
+          <p>
+            A framework-awaited component call also differs from an ordinary application callback.
+            The framework path can ask the interpreter to obtain the awaited result as part of
+            producing the tree. That is a policy of that call boundary, not a universal rule that
+            every async application operation settles before rendering.
+          </p>
+          <h3>A timer handle identifies one piece of work</h3>
+          <p>
+            Registering a timer creates a task record with its callback, delay information,
+            identity, and condition. Clearing a handle affects that registration, not every timer
+            with a similar body. Conditional cancellation must not cancel the timer on paths where
+            cancellation never happened.
+          </p>
+          <p>
+            The renderer settles work by alternating eligible modeled tasks with React flushes. It
+            does not wait through arbitrary wall-clock time or enumerate every browser scheduling
+            interleaving. Long or dynamic delays can stay deferred. Timing uncertainty can therefore
+            change how a state update is represented even when its new value is known.
+          </p>
+          <details>
+            <summary>Async and generator forms are not uniformly implemented</summary>
+            <div class="detail-body">
+              <p>
+                Continuation handling is stronger for some statement forms than for arbitrary nested
+                await expressions. Concise async-arrow bodies and non-leading awaits have semantic
+                gaps at this revision. Generators use a different model: the body is evaluated
+                eagerly to collect yields, then an iterator replays them. That differs from native
+                JavaScript’s suspension between generator next calls. Do not infer one construct’s
+                execution rules from the fact that another construct also uses the word “suspend.”
+              </p>
+            </div>
+          </details>
+          <p class="source">
+            <a href="source:src/evaluate/promises.ts">Promise state and resumption</a
+            ><a href="source:src/evaluate/timers.ts">Task queues</a
+            ><a href="source:src/evaluate/interpreter.ts#L5048">Async call handling</a
+            ><a href="source:src/evaluate/generators.ts">Iterator representation</a>
+          </p>
+        </section>
+
+        <section id="collections" aria-labelledby="collections-heading">
+          <h2 id="collections-heading">Arrays are values; iteration is execution</h2>
+          <p>
+            A modeled list has item values, identity, and possibly named properties. A list can be
+            known even if some of its items are uncertain. Calling map on it is not the same as
+            scanning the callback for an element name.
+          </p>
+          <pre><code class="language-tsx">const rows = items.map((item) =&gt; (
+  &lt;Row key={item.id} label={item.label} /&gt;
+));</code></pre>
+          <p>
+            For a known finite list, the model supplies callback arguments for its items and
+            interprets the callback. Property reads, helper calls, returned elements, throws, and
+            shared mutations inside that callback all matter. Three known records can therefore
+            produce three specific modeled elements, not just a generic “Row exists” fact.
+          </p>
+          <h3>Filtering changes presence, not only item content</h3>
+          <p>
+            If an item’s inclusion condition is uncertain, the collection result needs to represent
+            that the item may be absent. Replacing the item with an unknown value is not equivalent:
+            an absent item changes length and child positions, while an unknown present item still
+            occupies an occurrence.
+          </p>
+          <p>
+            A callback that might not run also has conditional effects. If a filter or uncertain
+            iteration causes only some paths to call a callback, writes made by that callback have
+            to join with the untouched state. The interpreter’s <code>runMaybe</code> mechanism
+            explicitly models code that may execute or may not execute from the same entry state.
+          </p>
+          <h3>Known loops can unroll; an unknown tail cannot be guessed away</h3>
+          <p>
+            A loop over a known iterable can execute its modeled items, subject to the overall step
+            budget. A conditional loop can unroll while its test remains decidable. The
+            implementation bounds concrete unrolling of conditional loops, then summarizes uncertain
+            remaining work rather than pretending it has established termination.
+          </p>
+          <p>
+            Loop-carried bindings are values changed by one iteration and read by another. If their
+            later values cannot be retained finitely, widening gives up some precision. The code
+            after the loop must then receive that uncertainty. Running a few iterations and keeping
+            their last concrete value would misdescribe a tail that can still change it.
+          </p>
+          <p>
+            Break and continue feed into completion handling. A return inside a callback or loop has
+            to be associated with the appropriate function or loop continuation. A mutation made
+            before the jump still belongs to that execution.
+          </p>
+          <h3>Repeat is a structural summary, not a concrete array</h3>
+          <pre><code class="language-text">Known list:          row(A), row(B), row(C)
+Conditional member: row(A), enabled ? row(B) : nothing
+Repeated pattern:   row(item) × some permitted number of occurrences</code></pre>
+          <p>
+            A repeat retains an item pattern and cardinality information. It lets the tree represent
+            repeated structure without choosing a final concrete length. A bounded list of expanded
+            trees is only one possible view of that representation; the repeat is not secretly a
+            fixed-size array.
+          </p>
+          <p>
+            Inputs inside the repeated pattern need the right scope. An unknown status belonging to
+            each row should not force all rows to have the same status. An outer permission flag
+            read by every row should remain shared. The pattern representation distinguishes
+            iteration-local inputs from shared inputs.
+          </p>
+          <h3>Mutation inside an iterator is still mutation</h3>
+          <p>
+            A Set or Map iterator has a cursor. Advancing it changes what the next call returns even
+            if the underlying collection does not change. A combined analysis must restore that
+            cursor when exploring siblings just as it restores an object field.
+          </p>
+          <p>
+            At this revision, collection iterators reuse a generator representation with mutable
+            cursor state outside the ordinary heap journal. That is a concrete example of why
+            modeling the collection’s entries is not enough: the execution protocol around those
+            entries has state too.
+          </p>
+          <p class="source">
+            <a href="source:src/evaluate/array-methods.ts">Array callback evaluation</a
+            ><a href="source:src/evaluate/loops.ts">Loop execution</a
+            ><a href="source:src/evaluate/interpreter.ts#L5788">Conditional execution</a
+            ><a href="source:src/harness/static-pattern.ts">Repeat inputs and cardinality</a>
+          </p>
+        </section>
+
+        <section id="environment" aria-labelledby="environment-heading">
+          <h2 id="environment-heading">Values also arrive from outside the function</h2>
+          <p>
+            Props are not the only source of input. Components read providers, external stores,
+            browser APIs, package exports, caches, and module state. The engine needs an operational
+            meaning for those reads or an explicit uncertainty where that meaning is unavailable.
+          </p>
+          <h3>Context uses real ancestry with modeled contents</h3>
+          <p>
+            The materializer associates a modeled context definition with a real React context. A
+            provider carries a modeled value through that real context. When the application’s
+            modeled useContext runs, it reads the provider value at the proxy’s position rather than
+            using one global value for every occurrence of the component.
+          </p>
+          <pre><code class="language-tsx">&lt;ThemeContext.Provider value={firstTheme}&gt;
+  &lt;Toolbar /&gt;
+&lt;/ThemeContext.Provider&gt;
+&lt;ThemeContext.Provider value={secondTheme}&gt;
+  &lt;Toolbar /&gt;
+&lt;/ThemeContext.Provider&gt;</code></pre>
+          <p>
+            The Toolbar source is identical in both places. Its surrounding provider input is not.
+            The proxy records context reads, and retaining a previous rendered result depends in
+            part on those reads still resolving to the same modeled values.
+          </p>
+          <h3>An external store is read and subscribed, not just initialized once</h3>
+          <p>
+            The useSyncExternalStore model calls getSnapshot during render. A modeled passive effect
+            subscribes to changes and rechecks the snapshot. A store change between rendering and
+            subscription must not leave the component permanently stuck on the earlier snapshot.
+          </p>
+          <p>
+            The listener reads again and queues a state update when followed execution changes the
+            store. If the listener is held by code outside the analyzed execution, the store may
+            change without an observed call; escape handling broadens what the snapshot can be. That
+            distinction separates known store transitions from “the outside world may update this.”
+          </p>
+          <h3>A dependency call can take one of several paths</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Path</th>
+                  <th>What executes</th>
+                  <th>What the analyzer retains</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Interpreted source</td>
+                  <td>The dependency’s supported source body.</td>
+                  <td>Modeled values and effects through ordinary interpreter machinery.</td>
+                </tr>
+                <tr>
+                  <td>Registered library model</td>
+                  <td>A hand-written implementation of selected API behavior.</td>
+                  <td>
+                    Whatever that model explicitly describes: callbacks, state, elements, or
+                    uncertainty.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Supported native operation</td>
+                  <td>Native JavaScript for an allowed operation or callable.</td>
+                  <td>
+                    The boundary converts or lifts values while accounting for supported identity
+                    and callback behavior.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Opaque / unknown</td>
+                  <td>The missing body is not followed.</td>
+                  <td>A representation of unresolved behavior rather than invented internals.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Library models are not just labels attached to package names. A query hook can supply
+            modeled data and state; a store model can retain listeners; a styling library model can
+            produce wrapper elements. Those choices affect what application code reads and what
+            React sees.
+          </p>
+          <p>
+            Selected native callables can be lifted by parsing their function source and recovering
+            referenced bindings through V8 closure inspection. That bridge is useful when a callback
+            or symbolic argument needs interpretation rather than one ordinary native call. It is
+            constrained by both what can be recovered and what the interpreter understands.
+          </p>
+          <h3>Observed data specializes the execution</h3>
+          <p>
+            If the renderer receives a cache containing three records, a query model can return
+            those records rather than an entirely unknown collection. That changes the question to
+            “what does this program do with this cache?” It does not prove that all possible server
+            responses have three records.
+          </p>
+          <p>
+            The same principle applies to concrete props, page location, globals, and store
+            snapshots. Conversely, an unsupported browser operation may introduce uncertainty even
+            if every prop was concrete. Unknowns originate at operation boundaries, not only at the
+            top-level function signature.
+          </p>
+          <p>
+            Some build configuration, plugins, React infrastructure, and selected dependency
+            operations execute natively. “Static” here describes the analysis of application
+            behavior; it does not mean that opening an untrusted project is a sandboxed operation.
+          </p>
+          <p class="source">
+            <a href="source:src/materialize/materializer.ts#L1160">Context providers</a
+            ><a href="source:src/evaluate/react-hooks.ts#L171">External-store model</a
+            ><a href="source:src/libraries/index.ts">Library registry</a
+            ><a href="source:src/evaluate/native-closures.ts">Native callable lifting</a>
+          </p>
+        </section>
+
+        <section id="trees" aria-labelledby="trees-heading">
+          <h2 id="trees-heading">The result is a conditional tree, not a bag of screenshots</h2>
+          <p>
+            After React constructs the intermediate fibers, the tree reader translates them into
+            patterns. Ordinary fibers become structural nodes. Internal branch markers become
+            choices. Repeat markers become repeated patterns. Unresolved regions remain explicitly
+            unresolved.
+          </p>
+          <h3>A concrete fiber pattern has a deliberately small shape</h3>
+          <pre><code class="language-typescript">interface PatternFiber {
+  kind: "fiber";
+  tag: SnapshotWorkTag;
+  name: string | null;
+  key: string | null;
+  children: PatternNode[];
+}</code></pre>
+          <p>
+            The work tag identifies a category such as a function component or host component. Name
+            and key retain structural identity information. Children recursively hold more patterns.
+            This representation does not carry every original prop, event handler, computed style,
+            or DOM property.
+          </p>
+          <h3>A branch has alternatives and guards; a commit has a guard too</h3>
+          <p>
+            A branch pattern retains its decision identity, reason, source location, inputs, and a
+            guard for each alternative. A repeat retains its cardinality, count bounds, item
+            pattern, and iteration-local inputs. A symbolic commit pairs a whole tree with the
+            condition under which that commit applies.
+          </p>
+          <pre><code class="language-text">Initial commit, allowed unconditionally
+  main
+    branch on canEdit
+      true  → button
+      false → p
+    span
+
+Later commit, allowed under canEdit
+  main
+    button
+    strong</code></pre>
+          <p>
+            The commit guard is not interchangeable with the first child’s branch guard. The first
+            says when this entire later state belongs to the execution. The second chooses a subtree
+            within a state. Losing the commit guard would admit the later ready tree under a path
+            that never scheduled its update.
+          </p>
+          <p>
+            Related decisions share input constraints. Independent decisions can be represented
+            separately rather than immediately expanding every combination. The useful object is
+            that constrained structure, not merely a long list of concrete trees.
+          </p>
+          <h3>Evaluation can know something that the tree does not retain</h3>
+          <pre><code class="language-tsx">&lt;output&gt;{result}&lt;/output&gt;
+&lt;output&gt;result: {result}&lt;/output&gt;</code></pre>
+          <p>
+            These child forms can take different React paths. For a scalar host string or number,
+            React can set text content directly without a separate HostText fiber. In the first
+            form, a concrete host pattern may therefore have no text child at all. Mixed text
+            children can instead produce text fibers retained by the pattern.
+          </p>
+          <p>
+            Likewise, two different className values can result in the same structural fiber
+            pattern. Computing a value during interpretation and preserving it in the final
+            projection are separate decisions. The tree tells you component and element structure
+            with conditions; it is not a complete state dump of the browser page.
+          </p>
+          <h3>An unresolved region is a kind of node, not an empty subtree</h3>
+          <p>
+            An opaque component records that its body was not available to the analysis. Passed
+            children may still be represented as content that belongs somewhere inside it. A
+            wildcard represents unresolved structure more broadly. Neither means that the real
+            component renders nothing.
+          </p>
+          <p>
+            The same distinction holds throughout the interpreter: absence, a known empty value, a
+            finite choice, and missing information are different meanings. The tree is useful only
+            if the earlier stages keep those meanings separate all the way from expressions and
+            mutations to the final patterns.
+          </p>
+          <p class="source">
+            <a href="source:src/harness/static-pattern.ts">Pattern nodes and marker reading</a
+            ><a href="source:src/harness/symbolic-tree.ts">Guarded commits</a
+            ><a href="source:src/materialize/materializer.ts">Host-child materialization</a>
+          </p>
+        </section>
+
+        <section id="glossary" aria-labelledby="glossary-heading">
+          <h2 id="glossary-heading">The nouns, without the hand-waving</h2>
+          <dl class="glossary">
+            <dt>Modeled value</dt>
+            <dd>
+              A tagged interpreter record representing a concrete, conditional, or unknown value.
+            </dd>
+            <dt>Binding</dt>
+            <dd>The association between a name in a particular scope and a modeled value.</dd>
+            <dt>Scope</dt>
+            <dd>A binding map with a parent, used for lexical lookup.</dd>
+            <dt>Closure</dt>
+            <dd>
+              A function’s syntax and captured environment, not a frozen copy of all future answers.
+            </dd>
+            <dt>Heap</dt>
+            <dd>Shared mutable modeled objects reached through references.</dd>
+            <dt>Predicate</dt>
+            <dd>A represented relationship over inputs, such as equality with a literal.</dd>
+            <dt>Guard</dt>
+            <dd>A condition restricting when a value, effect, path, or tree applies.</dd>
+            <dt>Fork</dt>
+            <dd>Evaluate alternatives from a common entry state.</dd>
+            <dt>Journal</dt>
+            <dd>
+              Records original and per-path mutable state so writes can be restored and joined.
+            </dd>
+            <dt>Join</dt>
+            <dd>
+              Combine the outcomes of paths while retaining their conditions and identity
+              relationships.
+            </dd>
+            <dt>Completion</dt>
+            <dd>Whether evaluation continues, returns, throws, jumps, or suspends.</dd>
+            <dt>Continuation</dt>
+            <dd>
+              The remaining computation packaged so it runs only for outcomes allowed to reach it.
+            </dd>
+            <dt>Hook frame</dt>
+            <dd>Persistent analyzer-owned hook storage for one mounted proxy instance.</dd>
+            <dt>Proxy component</dt>
+            <dd>A real React component whose render interprets an application component body.</dd>
+            <dt>Materialization</dt>
+            <dd>Translate modeled render values into real React nodes and internal markers.</dd>
+            <dt>Fiber</dt>
+            <dd>
+              React’s internal record for a reconciled component, host element, or other node.
+            </dd>
+            <dt>Commit cause</dt>
+            <dd>The conditions carried from scheduled work to the update it can produce.</dd>
+            <dt>Deferred update</dt>
+            <dd>
+              A modeled update whose timing is uncertain relative to the current execution or
+              commit.
+            </dd>
+            <dt>Escape</dt>
+            <dd>
+              A value or callback reaches code whose behavior the interpreter is not following.
+            </dd>
+            <dt>Repeat</dt>
+            <dd>
+              A structural item pattern with uncertain or bounded cardinality, not a concrete
+              fixed-length list.
+            </dd>
+          </dl>
+        </section>
+        <footer>
+          <p>
+            Source links are pinned to <code>{{REVISION}}</code>. The diagrams use simplified
+            notation; linked interfaces and methods show the concrete representation. Standalone
+            HTML with no external runtime assets.
+          </p>
+        </footer>
+      </main>
+    </div>
+    <script>
+      void "{{INTERACTIONS}}";
+    </script>
+  </body>
+</html>

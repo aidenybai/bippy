@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "A devtools bridge collects ready hooks from window messages, so the set is mutated by code the analysis did not run and every hook is an unknown callee. The editor escapes with every method it holds, but a method reached through the escaping object runs on a receiver its consumer chooses, so `this.mode = ...` inside it must not widen the editor the component reads."
+}

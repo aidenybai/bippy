@@ -1,0 +1,5 @@
+{
+  "name": "fixture-external-opaque",
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "fixture-redux-toolkit-observed",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@reduxjs/toolkit": "2.12.0",
+    "react-redux": "9.3.0"
+  }
+}

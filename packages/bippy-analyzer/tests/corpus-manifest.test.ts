@@ -1,0 +1,167 @@
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { describe, expect, it } from "vite-plus/test";
+import { readCorpusManifest } from "../src/corpus/manifest.js";
+import { readSavedCapture } from "../src/corpus/run-entry.js";
+import { formatCorpusTable, readCorpusResults } from "../src/corpus/summary.js";
+import { SchemaError, StaleCaptureError } from "../src/errors.js";
+
+const MANIFEST_PATH = path.resolve(import.meta.dirname, "../corpus/manifest.json");
+
+const writeManifest = (entries: unknown[]): string => {
+  const manifestPath = path.join(mkdtempSync(path.join(tmpdir(), "bippy-manifest-")), "m.json");
+  writeFileSync(manifestPath, JSON.stringify({ entries }));
+  return manifestPath;
+};
+
+describe("corpus manifest", () => {
+  it("reads the checked-in manifest", () => {
+    const parsed = readCorpusManifest(MANIFEST_PATH);
+    expect(parsed).toEqual(JSON.parse(readFileSync(MANIFEST_PATH, "utf8")));
+    const { entries } = parsed;
+    expect(entries.length).toBeGreaterThan(0);
+    expect(entries.every((entry) => entry.static.rootDirectory.length > 0)).toBe(true);
+  });
+
+  it("pairs retained results with every pinned React application", () => {
+    const manifest = readCorpusManifest(MANIFEST_PATH);
+    const saved = readCorpusResults(path.resolve(import.meta.dirname, "../corpus/results.json"));
+    const expected = manifest.entries.map(({ id, revision }) => ({ id, revision }));
+    const actual = saved.results.map(({ id, revision }) => ({ id, revision }));
+    expect(actual).toHaveLength(expected.length);
+    expect(actual).toEqual(expect.arrayContaining(expected));
+    expect(new Set(actual.map(({ id }) => id)).size).toBe(expected.length);
+    expect(actual.some(({ id }) => id === "giscus")).toBe(false);
+  });
+
+  it("preserves the served directory supplied by the manifest", () => {
+    const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
+    const target = { ...entry.static, servedDirectory: "src" };
+    const parsed = readCorpusManifest(writeManifest([{ ...entry, static: target }]));
+    expect(parsed.entries[0].static).toEqual(target);
+  });
+
+  it.each(["entry", "static", "compare"])("rejects unsupported %s options", (level) => {
+    const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
+    const options = level === "static" ? entry.static : entry.compare;
+    const candidate =
+      level === "entry"
+        ? { ...entry, unknownOption: true }
+        : { ...entry, [level]: { ...options, unknownOption: true } };
+    expect(() => readCorpusManifest(writeManifest([candidate]))).toThrow(/unknownOption/);
+  });
+
+  it("rejects unsupported manifest options", () => {
+    const manifestPath = writeManifest([]);
+    writeFileSync(manifestPath, JSON.stringify({ entries: [], unknownOption: true }));
+    expect(() => readCorpusManifest(manifestPath)).toThrow(/unknownOption/);
+  });
+
+  it("names the offending field of a malformed entry", () => {
+    const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
+    expect(() => readCorpusManifest(writeManifest([{ ...entry, framework: "gatsby" }]))).toThrow(
+      SchemaError,
+    );
+    expect(() => readCorpusManifest(writeManifest([{ ...entry, framework: "gatsby" }]))).toThrow(
+      /entries\[0\]\.framework/,
+    );
+    expect(() =>
+      readCorpusManifest(
+        writeManifest([{ ...entry, static: { ...entry?.static, globals: ["ENV"] } }]),
+      ),
+    ).toThrow(/entries\[0\]\.static\.globals/);
+  });
+});
+
+describe("saved replay evidence", () => {
+  it.each(["not-replayed", "passed", "incomplete", "contradicted"])(
+    "preserves an outside match reported as %s",
+    (verification) => {
+      const example = readCorpusResults(path.resolve(import.meta.dirname, "../corpus/results.json"))
+        .results[0];
+      const resultsPath = path.join(
+        mkdtempSync(path.join(tmpdir(), "bippy-outside-replay-")),
+        "results.json",
+      );
+      const matchedOutsideEnumeration = { conditions: [], verification };
+      const stateReplay = {
+        states: 1,
+        assignments: 2,
+        replayed: 1,
+        maxReplayed: 1,
+        mismatched: [],
+        matchedOutsideEnumeration,
+      };
+      writeFileSync(resultsPath, JSON.stringify({ results: [{ ...example, stateReplay }] }));
+      const parsed = readCorpusResults(resultsPath);
+      expect(parsed.results[0].stateReplay?.matchedOutsideEnumeration).toEqual(
+        matchedOutsideEnumeration,
+      );
+      expect(formatCorpusTable(parsed.results)).toContain(`outside match ${verification}`);
+    },
+  );
+  it("preserves incomplete evidence and distinguishes older summaries", () => {
+    const example = readCorpusResults(
+      path.resolve(import.meta.dirname, "../corpus/results.json"),
+    ).results.find((result) => result.report !== null);
+    if (!example) throw new Error("missing historical comparison result");
+    const resultsPath = path.join(
+      mkdtempSync(path.join(tmpdir(), "bippy-results-")),
+      "results.json",
+    );
+    const replay = { states: 1, assignments: 1, replayed: 1, maxReplayed: 16, mismatched: [] };
+    writeFileSync(resultsPath, JSON.stringify({ results: [{ ...example, stateReplay: replay }] }));
+    const legacy = readCorpusResults(resultsPath).results[0].stateReplay;
+    expect(legacy?.incomplete).toBeUndefined();
+    expect(legacy?.verification).toBeUndefined();
+    expect(formatCorpusTable(readCorpusResults(resultsPath).results)).toContain("unrecorded");
+    const incomplete = [
+      { stateIndices: [0], conditions: [], unresolvedClaimCommits: [1], isReplayConcrete: false },
+    ];
+    writeFileSync(
+      resultsPath,
+      JSON.stringify({
+        results: [
+          { ...example, stateReplay: { ...replay, incomplete, verification: "sample-incomplete" } },
+        ],
+      }),
+    );
+    const saved = readCorpusResults(resultsPath);
+    expect(saved.results[0].stateReplay?.incomplete).toEqual(incomplete);
+    expect(saved.results[0].stateReplay?.verification).toBe("sample-incomplete");
+    expect(formatCorpusTable(saved.results)).toContain("1 incomplete");
+    expect(formatCorpusTable(saved.results)).toContain("sample-incomplete");
+  });
+});
+
+describe("saved captures", () => {
+  const [entry] = readCorpusManifest(MANIFEST_PATH).entries;
+  if (entry === undefined) throw new Error("the checked-in manifest has no entries");
+  const writeCapture = (capture: unknown): string => {
+    const outputDirectory = mkdtempSync(path.join(tmpdir(), "bippy-capture-"));
+    writeFileSync(path.join(outputDirectory, `${entry.id}.capture.json`), JSON.stringify(capture));
+    return outputDirectory;
+  };
+
+  it("has nothing to replay without a capture", () => {
+    expect(readSavedCapture(mkdtempSync(path.join(tmpdir(), "bippy-capture-")), entry)).toBeNull();
+  });
+
+  it("rejects a capture that does not match its schema", () => {
+    expect(() => readSavedCapture(writeCapture({ revision: entry.revision }), entry)).toThrow(
+      SchemaError,
+    );
+  });
+
+  it("refuses to replay a capture from another revision", () => {
+    const stale = writeCapture({
+      revision: "0000000000000000000000000000000000000000",
+      snapshot: { roots: [] },
+      commits: 1,
+      pageErrors: [],
+      title: "",
+    });
+    expect(() => readSavedCapture(stale, entry)).toThrow(StaleCaptureError);
+  });
+});

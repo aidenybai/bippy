@@ -1,0 +1,38 @@
+{
+  "references": [{ "path": "./lib-src/node" }, { "path": "./lib-src/inspector" }, { "path": "./src" }],
+  "compilerOptions": {
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "useUnknownInCatchVariables": true,
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "verbatimModuleSyntax": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+
+    "declaration": true,
+    // to make declaration map useful, we need to publish src
+    // but it might help when debugging
+    "declarationMap": true,
+    "stripInternal": true,
+    "sourceMap": true,
+
+    "allowJs": true,
+    // "checkJs": true,
+
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ESNext"],
+
+    "incremental": true,
+    "skipLibCheck": true,
+    "paths": {
+      "#self": ["./src/index.mts"]
+    }
+  },
+  "files": []
+}

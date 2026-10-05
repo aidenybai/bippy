@@ -1,0 +1,27 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "externalPackages": ["kea", "kea-loaders"],
+  "notes": "The kea (Redux) store captured at runtime is replayed into the static render: reducer values read as the page settled on them, selectors are recomputed from those values, and a keyed logic bound through BindLogic resolves per instance.",
+  "observations": {
+    "globals": {},
+    "queries": [],
+    "stores": [
+      {
+        "kea": {},
+        "scenes": {
+          "user": {
+            "count": 2,
+            "isBannerVisible": true,
+            "user": { "name": "Ada", "role": "admin" },
+            "userLoading": false
+          },
+          "item": {
+            "a": { "label": "item a" },
+            "b": { "label": "item b" }
+          }
+        }
+      }
+    ]
+  }
+}

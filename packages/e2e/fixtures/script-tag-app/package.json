@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare-vendor": "node scripts/prepare-vendor.mjs",
+    "prepare-vendor": "tsx scripts/prepare-vendor.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
+    "tsx": "^4.21.0",
     "vite": "^7.3.4"
   }
 }

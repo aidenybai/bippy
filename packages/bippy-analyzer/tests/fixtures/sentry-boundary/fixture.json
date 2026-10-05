@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "@sentry/react is modeled; its ErrorBoundary is a class the bundler lowered to `var ErrorBoundary = class _ErrorBoundary`, so the runtime fiber is a ClassComponent named _ErrorBoundary."
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./vendor/engine262/tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "./dist/types",
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "incremental": false,
+    "types": ["node"],
+    "paths": { "#self": ["./vendor/engine262/src/index.mts"] }
+  },
+  "include": ["vendor/engine262/src/**/*.mts"],
+  "exclude": []
+}

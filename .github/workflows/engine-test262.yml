@@ -1,0 +1,55 @@
+name: Engine Test262
+
+on:
+  workflow_dispatch:
+    inputs:
+      selection:
+        type: choice
+        options: [regression, generators, async, modules, all]
+        default: regression
+        description: Test selection (known failures remain failures)
+      shard:
+        type: string
+        default: "1/1"
+        description: One-based INDEX/TOTAL (use shards for all)
+
+permissions:
+  contents: read
+
+jobs:
+  test262:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter bippy-analyzer build:engine
+      - uses: actions/checkout@v4
+        with:
+          repository: tc39/test262
+          ref: 045bf6f9966ce3291b8fbc1e0403cd97b9201b00
+          path: .test262
+          persist-credentials: false
+      - name: Run selected Test262 shard
+        env:
+          SHARD: ${{ inputs.shard }}
+        shell: bash
+        run: |
+          pnpm --filter bippy-analyzer --silent test:engine:test262 \
+            "$GITHUB_WORKSPACE/.test262" \
+            ${{ inputs.selection == 'all' && '--all' || inputs.selection == 'generators' && '--scope language/expressions/generators --scope language/statements/generators' || inputs.selection == 'async' && '--scope language/expressions/async-function --scope language/statements/async-function --scope language/expressions/async-generator --scope language/statements/async-generator' || inputs.selection == 'modules' && '--scope language/module-code --scope language/expressions/dynamic-import' || '' }} \
+            --shard "$SHARD" \
+            > "$RUNNER_TEMP/test262-report.json" 2> "$RUNNER_TEMP/test262-progress.jsonl"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-test262
+          path: |
+            ${{ runner.temp }}/test262-report.json
+            ${{ runner.temp }}/test262-progress.jsonl
+          if-no-files-found: warn

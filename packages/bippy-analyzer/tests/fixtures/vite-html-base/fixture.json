@@ -1,0 +1,7 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 1,
+  "notes": "The fixture's vite.config.ts rewrites index.html through transformIndexHtml hooks (pre-ordered object hook returning html + tags, one read from `context.server.config` as @vitejs/plugin-react does, plain function hook, one reading a config file relative to `process.cwd()` as cosmiconfig-based plugins do); the static side serves the same transformed shell, so document.baseURI, document.title and head queries read what the dev server's page has."
+}

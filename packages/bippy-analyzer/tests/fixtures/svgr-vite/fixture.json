@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "vite-plugin-svgr turns only `*.svg?react` imports into svgr components (plugin-jsx alone, no caller name); the plain `.svg` import stays Vite's asset URL."
+}

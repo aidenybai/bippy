@@ -1,0 +1,8 @@
+{
+  "name": "fixture-emotion-classic",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@emotion/core": "10.3.1"
+  }
+}

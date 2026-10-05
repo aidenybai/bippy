@@ -1,0 +1,6 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "notes": "Focus, selection, gesture, fullscreen, scroll and custom-event listeners only fire for a user or a script; nothing here moves focus, so the handlers' state stays at its initial value, including the `createRef` class component's."
+}

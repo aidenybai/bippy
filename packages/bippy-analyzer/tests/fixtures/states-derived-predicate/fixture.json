@@ -1,0 +1,8 @@
+{
+  "entry": "src/main.tsx",
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "expectedStates": 2,
+  "expectOmitted": false,
+  "notes": "One opaque flag is tested through derived values (a string picked by the flag, an equality on that string, its negation). Every test decides the same predicate, so the state space has the two states of the flag instead of one per test site."
+}

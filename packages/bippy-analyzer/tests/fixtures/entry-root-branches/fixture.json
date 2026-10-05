@@ -1,0 +1,7 @@
+{
+  "expectedStatus": "exact",
+  "minCoverage": 1,
+  "minStrictCoverage": 1,
+  "expectedStates": 2,
+  "notes": "Entry that mounts one of two trees depending on a host global the source does not decide (`window.__legacyBrowser`), each through an imported function: the root element is a branch with one alternative per path, and the runtime tree is the non-preferred one."
+}

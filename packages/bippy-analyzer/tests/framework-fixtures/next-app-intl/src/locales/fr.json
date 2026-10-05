@@ -1,0 +1,16 @@
+{
+  "RootLayout": {
+    "home_link": "Accueil",
+    "about_link": "À propos"
+  },
+  "Index": {
+    "meta_title": "Bienvenue",
+    "greeting": "Bonjour, {name} !",
+    "visitors": "{count, plural, =0 {Aucun visiteur} one {Un visiteur} other {# visiteurs}}",
+    "elapsed": "Chargé en {ms} ms",
+    "rich": "Lisez d'abord le <docs>guide</docs>"
+  },
+  "About": {
+    "title": "À propos"
+  }
+}
