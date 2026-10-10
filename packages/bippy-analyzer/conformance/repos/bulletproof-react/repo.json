@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/alan2207/bulletproof-react",
+  "revision": "9506629ed003a561c6627735480cce4994244bb4",
+  "workingDirectory": "apps/react-vite",
+  "tsconfig": "tsconfig.json",
+  "install": "cd apps/react-vite && npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts && cp -n .env.example .env"
+}
