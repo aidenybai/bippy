@@ -1,0 +1,31 @@
+{
+  "name": "bippy-analyzer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Static state analysis for React apps, plus coverage to check it",
+  "type": "module",
+  "scripts": {
+    "symbolic-tree": "tsx src/symbolic-tree/cli.ts",
+    "coverage": "tsx src/branch-coverage/cli.ts",
+    "test": "vp test --project bippy-analyzer",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@typescript-eslint/types": "^8.59.3",
+    "cli-table3": "^0.6.5",
+    "commander": "^15.0.0",
+    "monocart-coverage-reports": "^2.12.12",
+    "oxc-parser": "^0.135.0",
+    "picocolors": "^1.1.1",
+    "typescript": "7.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@tanstack/react-query": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "tsx": "^4.21.0"
+  }
+}

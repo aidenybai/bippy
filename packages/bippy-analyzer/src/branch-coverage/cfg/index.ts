@@ -1,0 +1,14 @@
+export { analyzeControlFlow } from "./control-flow-graph.js";
+export { analyzeSsa } from "./ssa.js";
+export { ssaValueResolver } from "./path/ssa-value-atom.js";
+export { lowerGuard } from "./path/path-condition.js";
+export type { ResolveValueAtom } from "./path/path-condition.js";
+export { isPathFeasible } from "./path/feasibility.js";
+export type { EsTreeNode } from "./ast/es-tree-node.js";
+export { isNodeOfType } from "./ast/is-node-of-type.js";
+export { isConstantFalsyTest, isConstantTruthyTest } from "./constant-condition.js";
+export { computePostDominatorTreeWithVirtualExits } from "./analysis/dominators.js";
+export type { DominatorTree } from "./analysis/dominators.js";
+export { enumerateFunctions } from "./analysis/enumerate-functions.js";
+export type { BasicBlock, CfgEdge, FunctionCfg } from "./ir/basic-block.js";
+export type { Terminal } from "./ir/terminal.js";

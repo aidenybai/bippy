@@ -1,0 +1,477 @@
+{
+  "lines": {
+    "pct": 75,
+    "covered": 12,
+    "total": 16
+  },
+  "branches": {
+    "pct": 66.67,
+    "covered": 8,
+    "total": 12
+  },
+  "functions": {
+    "pct": 50,
+    "covered": 1,
+    "total": 2
+  },
+  "files": [
+    {
+      "file": "app.ts",
+      "lines": {
+        "pct": 75,
+        "covered": 12,
+        "total": 16
+      },
+      "branches": {
+        "pct": 66.67,
+        "covered": 8,
+        "total": 12
+      },
+      "functions": {
+        "pct": 50,
+        "covered": 1,
+        "total": 2
+      },
+      "uncoveredLines": "4-5,12,14"
+    }
+  ],
+  "depth": {
+    "branchEdges": {
+      "pct": 58.33,
+      "covered": 7,
+      "total": 12
+    },
+    "maxDepth": 2,
+    "depthReached": 2,
+    "deepBlocks": {
+      "pct": 71.43,
+      "covered": 5,
+      "total": 7
+    },
+    "weightedCoverage": {
+      "pct": 60,
+      "covered": 12,
+      "total": 20
+    },
+    "branchGaps": [
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 3,
+        "file": "app.ts",
+        "condition": "count > 100",
+        "arm": "true",
+        "depth": 1
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 8,
+        "file": "app.ts",
+        "condition": "items.length >= 10",
+        "arm": "true",
+        "depth": 1
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 9,
+        "file": "app.ts",
+        "condition": "count > 0 && user.active",
+        "arm": "false",
+        "depth": 1
+      }
+    ],
+    "edgeCases": [
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 3,
+        "file": "app.ts",
+        "condition": "count > 100",
+        "kind": "boundary",
+        "hint": "vary `count` around the boundary 100 (>)",
+        "depth": 1
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 8,
+        "file": "app.ts",
+        "condition": "items.length >= 10",
+        "kind": "boundary",
+        "hint": "vary `items.length` around the boundary 10 (>=)",
+        "depth": 1
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 9,
+        "file": "app.ts",
+        "condition": "count > 0",
+        "kind": "boundary",
+        "hint": "vary `count` around the boundary 0 (>)",
+        "depth": 1
+      }
+    ],
+    "mutations": [
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 3,
+        "file": "app.ts",
+        "depth": 1,
+        "condition": "count > 100",
+        "kind": "relational",
+        "original": ">",
+        "mutated": ">=",
+        "bothArmsCovered": false
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 8,
+        "file": "app.ts",
+        "depth": 1,
+        "condition": "items.length >= 10",
+        "kind": "relational",
+        "original": ">=",
+        "mutated": ">",
+        "bothArmsCovered": false
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 9,
+        "file": "app.ts",
+        "depth": 1,
+        "condition": "count > 0",
+        "kind": "logical",
+        "original": "&&",
+        "mutated": "||",
+        "bothArmsCovered": true
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 9,
+        "file": "app.ts",
+        "depth": 1,
+        "condition": "count > 0",
+        "kind": "relational",
+        "original": ">",
+        "mutated": ">=",
+        "bothArmsCovered": true
+      },
+      {
+        "script": "/tmp/sig/app.mjs",
+        "line": 2,
+        "file": "app.ts",
+        "depth": 0,
+        "condition": "user.role === \"admin\"",
+        "kind": "equality",
+        "original": "===",
+        "mutated": "!==",
+        "bothArmsCovered": true
+      }
+    ],
+    "scripts": [
+      {
+        "script": "/tmp/sig/app.mjs",
+        "branchEdges": {
+          "pct": 58.33,
+          "covered": 7,
+          "total": 12
+        },
+        "maxDepth": 2,
+        "depthReached": 2,
+        "deepBlocks": {
+          "pct": 71.43,
+          "covered": 5,
+          "total": 7
+        },
+        "weightedCoverage": {
+          "pct": 60,
+          "covered": 12,
+          "total": 20
+        },
+        "deepestGap": {
+          "line": 4,
+          "depth": 2,
+          "file": "app.ts"
+        },
+        "branchGaps": [
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 3,
+            "file": "app.ts",
+            "condition": "count > 100",
+            "arm": "true",
+            "depth": 1
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 8,
+            "file": "app.ts",
+            "condition": "items.length >= 10",
+            "arm": "true",
+            "depth": 1
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "condition": "count > 0 && user.active",
+            "arm": "false",
+            "depth": 1
+          }
+        ],
+        "edgeCases": [
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 3,
+            "file": "app.ts",
+            "condition": "count > 100",
+            "kind": "boundary",
+            "hint": "vary `count` around the boundary 100 (>)",
+            "depth": 1
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 8,
+            "file": "app.ts",
+            "condition": "items.length >= 10",
+            "kind": "boundary",
+            "hint": "vary `items.length` around the boundary 10 (>=)",
+            "depth": 1
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "condition": "count > 0",
+            "kind": "boundary",
+            "hint": "vary `count` around the boundary 0 (>)",
+            "depth": 1
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "condition": "count > 0 && user.active",
+            "kind": "boundary",
+            "hint": "vary `count` around the boundary 0 (>)",
+            "depth": 1
+          }
+        ],
+        "mutations": [
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 2,
+            "file": "app.ts",
+            "depth": 0,
+            "condition": "user.role === \"admin\"",
+            "kind": "equality",
+            "original": "===",
+            "mutated": "!==",
+            "bothArmsCovered": true
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 3,
+            "file": "app.ts",
+            "depth": 1,
+            "condition": "count > 100",
+            "kind": "relational",
+            "original": ">",
+            "mutated": ">=",
+            "bothArmsCovered": false
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 8,
+            "file": "app.ts",
+            "depth": 1,
+            "condition": "items.length >= 10",
+            "kind": "relational",
+            "original": ">=",
+            "mutated": ">",
+            "bothArmsCovered": false
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "depth": 1,
+            "condition": "count > 0",
+            "kind": "logical",
+            "original": "&&",
+            "mutated": "||",
+            "bothArmsCovered": true
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "depth": 1,
+            "condition": "count > 0",
+            "kind": "relational",
+            "original": ">",
+            "mutated": ">=",
+            "bothArmsCovered": true
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "depth": 1,
+            "condition": "count > 0 && user.active",
+            "kind": "logical",
+            "original": "&&",
+            "mutated": "||",
+            "bothArmsCovered": false
+          },
+          {
+            "script": "/tmp/sig/app.mjs",
+            "line": 9,
+            "file": "app.ts",
+            "depth": 1,
+            "condition": "count > 0 && user.active",
+            "kind": "relational",
+            "original": ">",
+            "mutated": ">=",
+            "bothArmsCovered": false
+          }
+        ]
+      }
+    ]
+  },
+  "weighted": {
+    "pct": 60,
+    "covered": 12,
+    "total": 20
+  },
+  "worklist": [
+    {
+      "id": "deep-gap:app.ts:4",
+      "kind": "deep-gap",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 4,
+      "depth": 2,
+      "priority": 23,
+      "action": "add a spec that reaches this depth-2 block"
+    },
+    {
+      "id": "mutation:app.ts:9:&&>||",
+      "kind": "mutation",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 9,
+      "depth": 1,
+      "priority": 15,
+      "action": "add an assertion that fails when `&&` becomes `||`",
+      "condition": "count > 0"
+    },
+    {
+      "id": "mutation:app.ts:9:>>>=",
+      "kind": "mutation",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 9,
+      "depth": 1,
+      "priority": 15,
+      "action": "add an assertion that fails when `>` becomes `>=`",
+      "condition": "count > 0"
+    },
+    {
+      "id": "branch:app.ts:3:true",
+      "kind": "branch",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 3,
+      "depth": 1,
+      "priority": 14,
+      "action": "drive `count > 100` to true",
+      "condition": "count > 100"
+    },
+    {
+      "id": "branch:app.ts:8:true",
+      "kind": "branch",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 8,
+      "depth": 1,
+      "priority": 14,
+      "action": "drive `items.length >= 10` to true",
+      "condition": "items.length >= 10"
+    },
+    {
+      "id": "branch:app.ts:9:false",
+      "kind": "branch",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 9,
+      "depth": 1,
+      "priority": 14,
+      "action": "drive `count > 0 && user.active` to false",
+      "condition": "count > 0 && user.active"
+    },
+    {
+      "id": "edge:app.ts:3:vary `count` around the boundary 100 (>)",
+      "kind": "edge",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 3,
+      "depth": 1,
+      "priority": 12,
+      "action": "vary `count` around the boundary 100 (>)",
+      "condition": "count > 100"
+    },
+    {
+      "id": "edge:app.ts:8:vary `items.length` around the boundary 10 (>=)",
+      "kind": "edge",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 8,
+      "depth": 1,
+      "priority": 12,
+      "action": "vary `items.length` around the boundary 10 (>=)",
+      "condition": "items.length >= 10"
+    },
+    {
+      "id": "edge:app.ts:9:vary `count` around the boundary 0 (>)",
+      "kind": "edge",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 9,
+      "depth": 1,
+      "priority": 12,
+      "action": "vary `count` around the boundary 0 (>)",
+      "condition": "count > 0"
+    },
+    {
+      "id": "mutation:app.ts:3:>>>=",
+      "kind": "mutation",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 3,
+      "depth": 1,
+      "priority": 11,
+      "action": "cover both arms, then assert against `>` → `>=`",
+      "condition": "count > 100"
+    },
+    {
+      "id": "mutation:app.ts:8:>=>>",
+      "kind": "mutation",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 8,
+      "depth": 1,
+      "priority": 11,
+      "action": "cover both arms, then assert against `>=` → `>`",
+      "condition": "items.length >= 10"
+    },
+    {
+      "id": "mutation:app.ts:2:===>!==",
+      "kind": "mutation",
+      "script": "/tmp/sig/app.mjs",
+      "file": "app.ts",
+      "line": 2,
+      "depth": 0,
+      "priority": 5,
+      "action": "add an assertion that fails when `===` becomes `!==`",
+      "condition": "user.role === \"admin\""
+    }
+  ]
+}
