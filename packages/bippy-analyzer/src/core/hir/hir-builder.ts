@@ -34,7 +34,7 @@
  *
  *   const scopes = new ScopeManager(sourceFile);
  *   const contextIdentifiers = findContextIdentifiers(componentNode, scopes);
- *   const env = new Environment(scopes, "Component", validateEnvironmentConfig({}),
+ *   const env = new Environment(scopes, "Component", "lint", validateEnvironmentConfig({}),
  *     contextIdentifiers, componentNode);
  *   const builder = new HIRBuilder(env);
  *   // for an Identifier node `node` in the function body:
@@ -61,6 +61,7 @@ import {
   type BasicBlock,
   type BlockId,
   type BlockKind,
+  Effect,
   GeneratedSource,
   GotoVariant,
   type HIR,
@@ -217,6 +218,7 @@ export class HIRBuilder {
           handler: exceptionHandler,
           id: makeInstructionId(0),
           loc: instruction.loc,
+          effects: null,
         },
         continuationBlock,
       );
@@ -357,6 +359,11 @@ export class HIRBuilder {
           id: identifierId,
           declarationId: makeDeclarationId(identifierId),
           name: makeIdentifierName(name),
+          mutableRange: {
+            start: makeInstructionId(0),
+            end: makeInstructionId(0),
+          },
+          scope: null,
           type: makeType(),
           loc: getSourceLocation(node),
         };
@@ -833,6 +840,8 @@ export const removeUnnecessaryTryCatch = (func: HIR): void => {
 export const createTemporaryPlace = (env: Environment, loc: SourceLocation): Place => ({
   kind: "Identifier",
   identifier: makeTemporaryIdentifier(env.nextIdentifierId, loc),
+  reactive: false,
+  effect: Effect.Unknown,
   loc: GeneratedSource,
 });
 
@@ -843,6 +852,8 @@ export const createTemporaryPlace = (env: Environment, loc: SourceLocation): Pla
  */
 export const clonePlaceToTemporary = (env: Environment, place: Place): Place => {
   const temp = createTemporaryPlace(env, place.loc);
+  temp.effect = place.effect;
   temp.identifier.type = place.identifier.type;
+  temp.reactive = place.reactive;
   return temp;
 };

@@ -7,6 +7,7 @@
 // Ported from babel-plugin-react-compiler/src/HIR/HIR.ts at b618bbb.
 
 import type { Node, TypeNode } from "typescript/unstable/ast";
+import type { AliasingEffect } from "../compiler-inference/aliasing-effects.js";
 import { CompilerDiagnostic, CompilerError, ErrorCategory } from "../compiler-error.js";
 import { assertExhaustive } from "../utils/utils.js";
 import { isReservedWord } from "../utils/keyword.js";
@@ -104,6 +105,7 @@ export interface HIRFunction {
   generator: boolean;
   async: boolean;
   directives: Array<string>;
+  aliasingEffects: Array<AliasingEffect> | null;
 }
 
 /*
@@ -242,6 +244,7 @@ export interface ReturnTerminal {
   value: Place;
   id: InstructionId;
   fallthrough?: never;
+  effects: Array<AliasingEffect> | null;
 }
 
 export interface GotoTerminal {
@@ -402,6 +405,7 @@ export interface MaybeThrowTerminal {
   id: InstructionId;
   loc: SourceLocation;
   fallthrough?: never;
+  effects: Array<AliasingEffect> | null;
 }
 
 /*
@@ -420,12 +424,14 @@ export interface Instruction {
   lvalue: Place;
   value: InstructionValue;
   loc: SourceLocation;
+  effects: Array<AliasingEffect> | null;
 }
 
 export interface TInstruction<T extends InstructionValue> {
   id: InstructionId;
   lvalue: Place;
   value: T;
+  effects: Array<AliasingEffect> | null;
   loc: SourceLocation;
 }
 
@@ -924,6 +930,8 @@ export interface Destructure {
 export interface Place {
   kind: "Identifier";
   identifier: Identifier;
+  effect: Effect;
+  reactive: boolean;
   loc: SourceLocation;
 }
 
@@ -973,6 +981,17 @@ export interface BuiltinTag {
   loc: SourceLocation;
 }
 
+/*
+ * Range in which an identifier is mutable. Start and End refer to Instruction.id.
+ *
+ * Start is inclusive, End is exclusive (ie, end is the "first" instruction for which
+ * the value is not mutable).
+ */
+export interface MutableRange {
+  start: InstructionId;
+  end: InstructionId;
+}
+
 export type VariableBinding =
   // let, const, etc declared within the current component/hook
   | { kind: "Identifier"; identifier: Identifier; bindingKind: BindingKind }
@@ -1016,6 +1035,13 @@ export interface Identifier {
 
   // null for temporaries. name is primarily used for debugging.
   name: IdentifierName | null;
+  // The range for which this variable is mutable
+  mutableRange: MutableRange;
+  /*
+   * The ID of the reactive scope which will compute this value. Multiple
+   * variables may have the same scope id.
+   */
+  scope: ReactiveScope | null;
   type: Type;
   loc: SourceLocation;
 }
@@ -1046,6 +1072,8 @@ export const makeTemporaryIdentifier = (
   id: identifierId,
   name: null,
   declarationId: makeDeclarationId(identifierId),
+  mutableRange: { start: makeInstructionId(0), end: makeInstructionId(0) },
+  scope: null,
   type: makeType(),
   loc,
 });
@@ -1055,6 +1083,7 @@ export const forkTemporaryIdentifier = (
   source: Identifier,
 ): Identifier => ({
   ...source,
+  mutableRange: { start: makeInstructionId(0), end: makeInstructionId(0) },
   id: identifierId,
 });
 
@@ -1232,6 +1261,60 @@ export enum Effect {
   Store = "store",
 }
 
+export interface ReactiveScope {
+  id: ScopeId;
+  range: MutableRange;
+
+  /**
+   * The inputs to this reactive scope
+   */
+  dependencies: ReactiveScopeDependencies;
+
+  /**
+   * The set of values produced by this scope. This may be empty
+   * for scopes that produce reassignments only.
+   */
+  declarations: Map<IdentifierId, ReactiveScopeDeclaration>;
+
+  /**
+   * A mutable range may sometimes include a reassignment of some variable.
+   * This is the set of identifiers which are reassigned by this scope.
+   */
+  reassignments: Set<Identifier>;
+
+  /**
+   * Reactive scopes may contain a return statement, which needs to be replayed
+   * whenever the inputs to the scope have not changed since the previous execution.
+   * If the reactive scope has an early return, this variable stores the temporary
+   * identifier to which the return value will be assigned. See PropagateEarlyReturns
+   * for more about how early returns in reactive scopes are compiled and represented.
+   *
+   * This value is null for scopes that do not contain early returns.
+   */
+  earlyReturnValue: {
+    value: Identifier;
+    loc: SourceLocation;
+    label: BlockId;
+  } | null;
+
+  /*
+   * Some passes may merge scopes together. The merged set contains the
+   * ids of scopes that were merged into this one, for passes that need
+   * to track which scopes are still present (in some form) vs scopes that
+   * no longer exist due to being pruned.
+   */
+  merged: Set<ScopeId>;
+
+  loc: SourceLocation;
+}
+
+export type ReactiveScopeDependencies = Set<ReactiveScopeDependency>;
+
+export interface ReactiveScopeDeclaration {
+  identifier: Identifier;
+  scope: ReactiveScope; // the scope in which the variable was originally declared
+}
+
 const opaquePropertyLiteral = Symbol();
 export type PropertyLiteral = (string | number) & {
   [opaquePropertyLiteral]: "PropertyLiteral";
@@ -1244,6 +1327,23 @@ export interface DependencyPathEntry {
   loc: SourceLocation;
 }
 export type DependencyPath = Array<DependencyPathEntry>;
+export interface ReactiveScopeDependency {
+  identifier: Identifier;
+  /**
+   * Reflects whether the base identifier is reactive. Note that some reactive
+   * objects may have non-reactive properties, but we do not currently track
+   * this.
+   *
+   * ```js
+   * // Technically, result[0] is reactive and result[1] is not.
+   * // Currently, both dependencies would be marked as reactive.
+   * const result = useState();
+   * ```
+   */
+  reactive: boolean;
+  path: DependencyPath;
+  loc: SourceLocation;
+}
 
 /*
  * Simulated opaque type for BlockIds to prevent using normal numbers as block ids
@@ -1258,6 +1358,21 @@ export const makeBlockId = (value: number): BlockId => {
     loc: GeneratedSource,
   });
   return value as BlockId;
+};
+
+/*
+ * Simulated opaque type for ScopeIds to prevent using normal numbers as scope ids
+ * accidentally.
+ */
+const opaqueScopeId = Symbol();
+export type ScopeId = number & { [opaqueScopeId]: "ScopeId" };
+
+export const makeScopeId = (value: number): ScopeId => {
+  CompilerError.invariant(value >= 0 && Number.isInteger(value), {
+    reason: "Expected block id to be a non-negative integer",
+    loc: GeneratedSource,
+  });
+  return value as ScopeId;
 };
 
 /*

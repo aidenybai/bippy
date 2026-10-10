@@ -47,6 +47,7 @@ import {
   type BranchTerminal,
   type BuiltinTag,
   type Case,
+  Effect,
   GeneratedSource,
   GotoVariant,
   type HIRFunction,
@@ -428,6 +429,8 @@ const lowerFunctionNode = (
     context.push({
       kind: "Identifier",
       identifier: builder.resolveBinding(ref),
+      effect: Effect.Unknown,
+      reactive: false,
       loc,
     });
   }
@@ -446,6 +449,8 @@ const lowerFunctionNode = (
       const place: Place = {
         kind: "Identifier",
         identifier: builder.makeTemporary(paramLoc),
+        effect: Effect.Unknown,
+        reactive: false,
         loc: paramLoc,
       };
       params.push({
@@ -472,6 +477,8 @@ const lowerFunctionNode = (
       const place: Place = {
         kind: "Identifier",
         identifier: binding.identifier,
+        effect: Effect.Unknown,
+        reactive: false,
         loc: paramLoc,
       };
       params.push(place);
@@ -479,6 +486,8 @@ const lowerFunctionNode = (
       const place: Place = {
         kind: "Identifier",
         identifier: builder.makeTemporary(paramLoc),
+        effect: Effect.Unknown,
+        reactive: false,
         loc: paramLoc,
       };
       promoteTemporary(place.identifier);
@@ -519,6 +528,7 @@ const lowerFunctionNode = (
       loc: GeneratedSource,
       value: lowerExpressionToTemporary(builder, body),
       id: makeInstructionId(0),
+      effects: null,
     };
     builder.terminateWithContinuation(terminal, fallthrough);
   } else {
@@ -558,6 +568,7 @@ const lowerFunctionNode = (
         loc: GeneratedSource,
       }),
       id: makeInstructionId(0),
+      effects: null,
     },
     null,
   );
@@ -577,6 +588,7 @@ const lowerFunctionNode = (
     async: func.modifiers?.some((modifier) => modifier.kind === SyntaxKind.AsyncKeyword) === true,
     loc: getSourceLocation(func),
     env,
+    aliasingEffects: null,
     directives,
   };
 };
@@ -627,6 +639,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
       loc: stmtLoc,
       value,
       id: makeInstructionId(0),
+      effects: null,
     };
     builder.terminate(terminal, "block");
     return;
@@ -798,6 +811,8 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
         const place: Place = {
           identifier: identifier.identifier,
           kind: "Identifier",
+          effect: Effect.Unknown,
+          reactive: false,
           loc: getSourceLocation(id),
         };
         lowerValueToTemporary(builder, {
@@ -1228,6 +1243,8 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           const place: Place = {
             identifier: binding.identifier,
             kind: "Identifier",
+            effect: Effect.Unknown,
+            reactive: false,
             loc: getSourceLocation(id),
           };
           if (builder.isContextIdentifier(id)) {
@@ -1572,6 +1589,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
         kind: "Debugger",
         loc: stmtLoc,
       },
+      effects: null,
       loc: stmtLoc,
     });
     return;
@@ -1612,6 +1630,8 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
       const place: Place = {
         kind: "Identifier",
         identifier: builder.makeTemporary(handlerBindingLoc),
+        effect: Effect.Unknown,
+        reactive: false,
         loc: handlerBindingLoc,
       };
       promoteTemporary(place.identifier);
@@ -2118,6 +2138,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           place: leftValue,
           loc: exprLoc,
         },
+        effects: null,
         loc: exprLoc,
       });
       builder.terminateWithContinuation(
@@ -3082,6 +3103,7 @@ const lowerOptionalCallExpression = (
           args,
           loc,
         },
+        effects: null,
         loc,
       });
     } else {
@@ -3095,6 +3117,7 @@ const lowerOptionalCallExpression = (
           args,
           loc,
         },
+        effects: null,
         loc,
       });
     }
@@ -3622,6 +3645,7 @@ export const lowerValueToTemporary = (builder: HIRBuilder, value: InstructionVal
     id: makeInstructionId(0),
     lvalue: { ...place },
     value: value,
+    effects: null,
     loc: value.loc,
   });
   return place;
@@ -3635,6 +3659,8 @@ const lowerIdentifier = (builder: HIRBuilder, exprNode: IdentifierNode): Place =
       const place: Place = {
         kind: "Identifier",
         identifier: binding.identifier,
+        effect: Effect.Unknown,
+        reactive: false,
         loc: exprLoc,
       };
       return place;
@@ -3677,6 +3703,8 @@ const buildTemporaryPlace = (builder: HIRBuilder, loc: SourceLocation): Place =>
   const place: Place = {
     kind: "Identifier",
     identifier: builder.makeTemporary(loc),
+    effect: Effect.Unknown,
+    reactive: false,
     loc,
   };
   return place;
@@ -3737,6 +3765,8 @@ const lowerIdentifierForAssignment = (
   const place: Place = {
     kind: "Identifier",
     identifier: binding.identifier,
+    effect: Effect.Unknown,
+    reactive: false,
     loc,
   };
   return place;

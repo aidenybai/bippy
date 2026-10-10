@@ -9,6 +9,7 @@
 import { CompilerError } from "../compiler-error.js";
 import {
   type BlockId,
+  Effect,
   GeneratedSource,
   type HIRFunction,
   type Instruction,
@@ -78,6 +79,8 @@ export const mergeConsecutiveBlocks = (func: HIRFunction): void => {
       const lvalue: Place = {
         kind: "Identifier",
         identifier: phi.place.identifier,
+        effect: Effect.ConditionallyMutate,
+        reactive: false,
         loc: GeneratedSource,
       };
       const instr: Instruction = {
@@ -88,6 +91,7 @@ export const mergeConsecutiveBlocks = (func: HIRFunction): void => {
           place: { ...operand },
           loc: GeneratedSource,
         },
+        effects: [{ kind: "Alias", from: { ...operand }, into: { ...lvalue } }],
         loc: GeneratedSource,
       };
       predecessor.instructions.push(instr);

@@ -15,6 +15,7 @@ import {
   type HIRFunction,
   type Identifier,
   type IdentifierId,
+  makeInstructionId,
   makeType,
   type Phi,
   type Place,
@@ -82,6 +83,11 @@ class SSABuilder {
       id: this.nextSsaId,
       declarationId: oldId.declarationId,
       name: oldId.name,
+      mutableRange: {
+        start: makeInstructionId(0),
+        end: makeInstructionId(0),
+      },
+      scope: null, // reset along w the mutable range
       type: makeType(),
       loc: oldId.loc,
     };
