@@ -27,7 +27,7 @@ const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => 
 });
 const component = (tag: string): SymbolicValue => ({
   kind: "JsxExpression",
-  tag: { kind: "Component", name: tag },
+  tag: { kind: "Component", name: tag, declaration: `/app/${tag}.tsx#${tag}` },
   props: [],
   children: [],
   loc: GeneratedSource,
@@ -99,7 +99,7 @@ describe("matchesExpected", () => {
   });
 
   it("matches project components by runtime name and other components by position", () => {
-    const knownComponents = new Map([["TableElement", "Table"]]);
+    const knownComponents = new Map([["/app/TableElement.tsx#TableElement", "Table"]]);
     const render = element("div", [component("TableElement"), component("LabelPrimitive.Root")]);
     const rendered = [
       shapeElement("div", [

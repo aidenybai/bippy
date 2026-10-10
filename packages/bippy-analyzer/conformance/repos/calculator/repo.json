@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ahfarmer/calculator",
+  "revision": "37b56077e78b82bf2088ec993d55becb47538de9",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

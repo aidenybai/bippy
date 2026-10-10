@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/nextjs/saas-starter",
+  "revision": "6e33e58b1e553a41fe22e6b941a7229a002de361",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

@@ -115,8 +115,10 @@ const createHarnessPlugin = (appDirectory: string, providers: ProviderSpec[]): P
   return {
     name: "bippy-verify-harness",
     enforce: "pre",
-    resolveId: (source) => {
+    resolveId: (source, importer) => {
       if (source === ENTRY_PATH || source === entryId) return entryId;
+      if (importer === entryId && source.startsWith("./"))
+        return join(import.meta.dirname, source.replace(/\.js$/, ".ts"));
       if (source === PROVIDERS_PATH || source === providersId) return providersId;
       return null;
     },

@@ -1,5 +1,6 @@
 import type {
   AbstractValue,
+  BindingKind,
   Binding,
   ComponentAnalysis,
   Decision,
@@ -17,8 +18,9 @@ import {
   normalizeText,
   toExpected,
 } from "./match.js";
+import { scoreWarnings } from "./mutation.js";
 import type { Probe } from "./server.js";
-import type { Capture } from "./types.js";
+import type { Shape } from "./types.js";
 
 type ComponentStatus = "verified" | "not-exported" | "mount-failed";
 
@@ -34,7 +36,7 @@ interface WrongEdge {
   action: string;
   fromStates: number[];
   toStates: number[];
-  reason: "unpredicted-target" | "unmodeled-handler";
+  reason: "unpredicted-target" | "unmodeled-handler" | "unpredicted-effect";
 }
 
 interface WrongValue {
@@ -61,6 +63,10 @@ export interface ComponentVerdict {
   deadClaims: number;
   refutedDeadClaims: string[];
   wrongValues: WrongValue[];
+  warnings: number;
+  witnessedWarnings: number;
+  refutedWarnings: string[];
+  unwarnedMutations: string[];
 }
 
 export interface VerificationSummary {
@@ -72,6 +78,9 @@ export interface VerificationSummary {
   witnessedStates: number;
   branchSides: number;
   witnessedBranchSides: number;
+  warnings: number;
+  witnessedWarnings: number;
+  unwarnedMutations: number;
   mountErrors: Record<string, number>;
   durationMs: number;
 }
@@ -82,6 +91,8 @@ interface TriggerLabel {
   event: string;
 }
 
+const FIRST_COMMIT = "first commit";
+const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call"]);
 const MAX_RECORDED_FAILURES = 10;
 const MAX_RENDERED_LENGTH = 300;
 const MOUNT_ERROR_LENGTH = 80;
@@ -221,6 +232,10 @@ export const scoreComponent = (
     deadClaims: report.deadBranches.length,
     refutedDeadClaims: [],
     wrongValues: [],
+    warnings: analysis.warnings.length,
+    witnessedWarnings: 0,
+    refutedWarnings: [],
+    unwarnedMutations: [],
   };
   if (!analysis.exportName) return verdict;
 
@@ -242,8 +257,8 @@ export const scoreComponent = (
   const witnessedStates = new Set<number>();
   const matchCache = new Map<string, number[]>();
 
-  const getMatches = (capture: Capture): number[] => {
-    const shapes = normalizeShapes(capture.shapes);
+  const getMatches = (capturedShapes: Shape[]): number[] => {
+    const shapes = normalizeShapes(capturedShapes);
     const key = JSON.stringify(shapes);
     const cached = matchCache.get(key);
     if (cached) return cached;
@@ -254,6 +269,14 @@ export const scoreComponent = (
     return matches;
   };
 
+  const effectIds = new Set(
+    analysis.transitions
+      .filter((transition) => transition.trigger.kind === "Effect")
+      .map((transition) => transition.id),
+  );
+  const hasExternalData = analysis.bindings.some((binding) =>
+    EXTERNAL_DATA_BINDING_KINDS.has(binding.kind),
+  );
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));
   const witnessedSides = new Set<string>();
@@ -267,7 +290,7 @@ export const scoreComponent = (
       continue;
     }
 
-    const afterMatches = getMatches(after);
+    const afterMatches = getMatches(after.shapes);
     if (afterMatches.length === 0) {
       const shapes = normalizeShapes(after.shapes);
       recordFailure(verdict.wrongStates, {
@@ -278,6 +301,41 @@ export const scoreComponent = (
       });
     } else {
       for (const match of afterMatches) witnessedStates.add(match);
+    }
+
+    if (!action && after.firstCommitShapes) {
+      const firstMatches = getMatches(after.firstCommitShapes);
+      if (firstMatches.length === 0) {
+        const shapes = normalizeShapes(after.firstCommitShapes);
+        recordFailure(verdict.wrongStates, {
+          props: observation.props,
+          path: [FIRST_COMMIT],
+          rendered: formatShapes(shapes).slice(0, MAX_RENDERED_LENGTH),
+          closestState: findClosest(expectedStates, shapes),
+        });
+      } else {
+        for (const match of firstMatches) witnessedStates.add(match);
+        const isChangedByEffects =
+          afterMatches.length > 0 && !firstMatches.some((match) => afterMatches.includes(match));
+        const isExplained =
+          hasExternalData ||
+          firstMatches.some((from) =>
+            report.states[from]?.edges.some(
+              (edge) =>
+                effectIds.has(edge.transitionId) &&
+                edge.targets.some((target) => afterMatches.includes(target)),
+            ),
+          );
+        if (isChangedByEffects && !isExplained) {
+          recordFailure(verdict.wrongEdges, {
+            path: [],
+            action: FIRST_COMMIT,
+            fromStates: firstMatches,
+            toStates: afterMatches,
+            reason: "unpredicted-effect",
+          });
+        }
+      }
     }
 
     if (stateBindings) {
@@ -302,7 +360,7 @@ export const scoreComponent = (
     }
 
     if (!action || !before || before.error) continue;
-    const beforeMatches = getMatches(before);
+    const beforeMatches = getMatches(before.shapes);
     if (beforeMatches.length === 0 || afterMatches.length === 0) continue;
     const eventName = action.kind === "click" ? "onClick" : "onChange";
     const candidates = analysis.transitions.filter((transition) => {
@@ -327,13 +385,15 @@ export const scoreComponent = (
       if (!isUnchanged) recordWrongEdge("unmodeled-handler");
       continue;
     }
+    const isOnlyCallingProps = candidates.every((candidate) => candidate.updates.length === 0);
     const isPredicted =
-      isUnchanged ||
+      (isUnchanged && isOnlyCallingProps) ||
       beforeMatches.some((from) =>
         report.states[from]?.edges.some(
           (edge) =>
             candidates.some((candidate) => candidate.id === edge.transitionId) &&
-            edge.targets.some((target) => afterMatches.includes(target)),
+            (edge.targets.some((target) => afterMatches.includes(target)) ||
+              (isUnchanged && edge.isAsync)),
         ),
       );
     if (isPredicted) verdict.witnessedEdges++;
@@ -354,14 +414,15 @@ export const scoreComponent = (
         ? deadBranch.description
         : `${deadBranch.description} (line ${loc.line})`;
     });
-  return verdict;
+  return { ...verdict, ...scoreWarnings(analysis, observations, stateBindings) };
 };
 
 export const countWrongClaims = (verdict: ComponentVerdict): number =>
   verdict.wrongStates.length +
   verdict.wrongEdges.length +
   verdict.wrongValues.length +
-  verdict.refutedDeadClaims.length;
+  verdict.refutedDeadClaims.length +
+  verdict.refutedWarnings.length;
 
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
   items.reduce((total, item) => total + getValue(item), 0);
@@ -386,6 +447,9 @@ export const summarizeVerdicts = (
     witnessedStates: sum(verified, (verdict) => verdict.witnessedStates.length),
     branchSides: sum(verified, (verdict) => verdict.branchSides),
     witnessedBranchSides: sum(verified, (verdict) => verdict.witnessedBranchSides),
+    warnings: sum(verified, (verdict) => verdict.warnings),
+    witnessedWarnings: sum(verified, (verdict) => verdict.witnessedWarnings),
+    unwarnedMutations: sum(verified, (verdict) => verdict.unwarnedMutations.length),
     mountErrors,
     durationMs,
   };
