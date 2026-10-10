@@ -54,12 +54,13 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 
 /**
- * How a region of the control-flow graph ended: by returning, by falling through to the
- * block the caller is waiting for, or by splitting on a decision into two outcomes.
+ * How a region of the control-flow graph ended: by returning, by falling through from
+ * `from` to `to`, one of the joins the walk stops at, or by splitting on a decision into
+ * two outcomes.
  */
 type Outcome =
   | { kind: "Return"; value: SymbolicValue }
-  | { kind: "Fallthrough"; from: BlockId | null }
+  | { kind: "Fallthrough"; from: BlockId | null; to: BlockId }
   | SplitOutcome;
 
 interface SplitOutcome {
@@ -205,15 +206,17 @@ const createConditional = (
   decision: split.decision,
 });
 
-const isFallthroughOnly = (outcome: Outcome): boolean =>
+const isFallthroughOnly = (outcome: Outcome, join: BlockId): boolean =>
   outcome.kind === "Split"
-    ? isFallthroughOnly(outcome.consequent) && isFallthroughOnly(outcome.alternate)
-    : outcome.kind === "Fallthrough";
+    ? isFallthroughOnly(outcome.consequent, join) && isFallthroughOnly(outcome.alternate, join)
+    : outcome.kind === "Fallthrough" && outcome.to === join;
 
-const hasFallthrough = (outcome: Outcome): boolean =>
+const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
   outcome.kind === "Split"
-    ? hasFallthrough(outcome.consequent) || hasFallthrough(outcome.alternate)
-    : outcome.kind === "Fallthrough";
+    ? hasFallthrough(outcome.consequent, join) || hasFallthrough(outcome.alternate, join)
+    : outcome.kind === "Fallthrough" && outcome.to === join;
+
+const NO_STOPS: ReadonlySet<BlockId> = new Set();
 
 const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
   const test = getTestExpression(split.test, split.testKind);
@@ -911,26 +914,30 @@ export class SymbolicEvaluator {
 
   /**
    * Continues past a join. When every path reaches the join, phis merge into conditionals
-   * and the rest is walked once. When some paths returned, the rest is walked separately
-   * for each path that reaches the join, with that path's guards.
+   * and the rest is walked once. When some paths returned or left for an enclosing join,
+   * the rest is walked separately for each path that reaches this join, with its guards.
+   * A join an enclosing walk stops at is left for that walk to merge.
    */
   #continueAfter(
     outcome: Outcome,
     join: BlockId,
-    stopAt: BlockId | null,
+    stops: ReadonlySet<BlockId>,
     state: WalkState,
   ): Outcome {
+    if (stops.has(join)) return outcome;
     const block = this.#getBlock(join);
-    if (isFallthroughOnly(outcome)) {
+    if (isFallthroughOnly(outcome, join)) {
       for (const phi of block.phis) this.#write(phi.place, this.#resolvePhi(phi, outcome));
-      return this.#walk(join, stopAt, null, state, true);
+      return this.#walk(join, stops, null, state, true);
     }
     const resume = (current: Outcome, guards: SymbolicValue[]): Outcome => {
       switch (current.kind) {
         case "Return":
           return current;
         case "Fallthrough":
-          return this.#walk(join, stopAt, current.from, { ...state, guards }, false);
+          return current.to === join
+            ? this.#walk(join, stops, current.from, { ...state, guards }, false)
+            : current;
         case "Split":
           return {
             ...current,
@@ -941,7 +948,7 @@ export class SymbolicEvaluator {
           return assertExhaustive(current, "Unhandled outcome");
       }
     };
-    return hasFallthrough(outcome) ? resume(outcome, state.guards) : outcome;
+    return hasFallthrough(outcome, join) ? resume(outcome, state.guards) : outcome;
   }
 
   #getBlock(blockId: BlockId) {
@@ -953,7 +960,7 @@ export class SymbolicEvaluator {
   #split(
     terminal: BranchTerminal,
     from: BlockId,
-    stopAt: BlockId | null,
+    stops: ReadonlySet<BlockId>,
     state: WalkState,
   ): Outcome {
     const { test, consequent, alternate, fallthrough } = terminal;
@@ -969,8 +976,8 @@ export class SymbolicEvaluator {
     const walkArm = (block: BlockId, isConsequent: boolean): Outcome => {
       const guards = [...state.guards, isConsequent ? testGuard : negate(testGuard)];
       return block === fallthrough
-        ? { kind: "Fallthrough", from }
-        : this.#walk(block, fallthrough, from, { ...state, guards }, false);
+        ? { kind: "Fallthrough", from, to: fallthrough }
+        : this.#walk(block, new Set([...stops, fallthrough]), from, { ...state, guards }, false);
     };
     const consequentOutcome = walkArm(consequent, true);
     const alternateOutcome = walkArm(alternate, false);
@@ -989,23 +996,24 @@ export class SymbolicEvaluator {
             consequent: isSwapped ? alternateOutcome : consequentOutcome,
             alternate: isSwapped ? consequentOutcome : alternateOutcome,
           };
-    return this.#continueAfter(split, fallthrough, stopAt, state);
+    return this.#continueAfter(split, fallthrough, stops, state);
   }
 
   #walkSwitch(
     terminal: Extract<Terminal, { kind: "switch" }>,
     from: BlockId,
-    stopAt: BlockId | null,
+    stops: ReadonlySet<BlockId>,
     state: WalkState,
   ): Outcome {
+    const caseStops = new Set([...stops, terminal.fallthrough]);
     const discriminant = this.#read(terminal.test);
     const buildCases = (index: number): Outcome => {
       const switchCase = terminal.cases[index];
-      if (!switchCase) return { kind: "Fallthrough", from };
+      if (!switchCase) return { kind: "Fallthrough", from, to: terminal.fallthrough };
       const caseOutcome: Outcome =
         switchCase.block === terminal.fallthrough
-          ? { kind: "Fallthrough", from }
-          : this.#walk(switchCase.block, terminal.fallthrough, from, state, false);
+          ? { kind: "Fallthrough", from, to: terminal.fallthrough }
+          : this.#walk(switchCase.block, caseStops, from, state, false);
       if (switchCase.test === null) return caseOutcome;
       const test = foldBinary("===", discriminant, this.#read(switchCase.test));
       if (test.kind === "Primitive") return test.value ? caseOutcome : buildCases(index + 1);
@@ -1018,15 +1026,15 @@ export class SymbolicEvaluator {
         alternate: buildCases(index + 1),
       };
     };
-    return this.#continueAfter(buildCases(0), terminal.fallthrough, stopAt, state);
+    return this.#continueAfter(buildCases(0), terminal.fallthrough, stops, state);
   }
 
   /**
-   * Walks blocks from `blockId` until a return, or until control reaches `stopAt`.
+   * Walks blocks from `blockId` until a return, or until control reaches one of `stops`.
    */
   #walk(
     blockId: BlockId,
-    stopAt: BlockId | null,
+    stops: ReadonlySet<BlockId>,
     from: BlockId | null,
     state: WalkState,
     hasResolvedPhis: boolean,
@@ -1041,7 +1049,10 @@ export class SymbolicEvaluator {
       const block = this.#getBlock(currentId);
       if (!isPhiResolved) {
         for (const phi of block.phis)
-          this.#write(phi.place, this.#resolvePhi(phi, { kind: "Fallthrough", from: previousId }));
+          this.#write(
+            phi.place,
+            this.#resolvePhi(phi, { kind: "Fallthrough", from: previousId, to: currentId }),
+          );
       }
       for (const instruction of block.instructions) {
         this.#evaluateInstruction(instruction, currentState);
@@ -1058,14 +1069,15 @@ export class SymbolicEvaluator {
         case "unsupported":
           return { kind: "Return", value: createUnknown(terminal.kind, terminal.loc) };
         case "goto":
-          if (terminal.block === stopAt) return { kind: "Fallthrough", from: currentId };
+          if (stops.has(terminal.block))
+            return { kind: "Fallthrough", from: currentId, to: terminal.block };
           nextId = terminal.block;
           break;
         case "if":
         case "branch":
-          return this.#split(terminal, currentId, stopAt, currentState);
+          return this.#split(terminal, currentId, stops, currentState);
         case "switch":
-          return this.#walkSwitch(terminal, currentId, stopAt, currentState);
+          return this.#walkSwitch(terminal, currentId, stops, currentState);
         case "ternary":
         case "logical":
         case "optional":
@@ -1073,8 +1085,18 @@ export class SymbolicEvaluator {
             terminal.fallthrough,
             terminal.kind === "logical" ? terminal.operator : terminal.kind,
           );
-          nextId = terminal.test;
-          break;
+          return this.#continueAfter(
+            this.#walk(
+              terminal.test,
+              new Set([...stops, terminal.fallthrough]),
+              currentId,
+              currentState,
+              false,
+            ),
+            terminal.fallthrough,
+            stops,
+            currentState,
+          );
         case "label":
         case "sequence":
         case "try":
@@ -1131,7 +1153,7 @@ export class SymbolicEvaluator {
             : (args[index] ?? UNDEFINED_VALUE),
         );
       });
-      return this.#toValue(this.#walk(fn.body.entry, null, null, state, false), fn.loc);
+      return this.#toValue(this.#walk(fn.body.entry, NO_STOPS, null, state, false), fn.loc);
     } finally {
       this.#currentFunction = previousFunction;
     }

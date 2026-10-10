@@ -1,4 +1,5 @@
 import { GeneratedSource } from "../hir/hir.js";
+import { DisjointSet } from "../utils/disjoint-set.js";
 import type { Bound, Knowledge } from "./knowledge.js";
 import {
   CONSTANT_ATOM,
@@ -20,12 +21,14 @@ import type {
   Domain,
   Edge,
   State,
+  StateGroup,
   StateReport,
   SymbolicValue,
   Transition,
 } from "./types.js";
 import {
   forEachJsxElement,
+  forEachSymbolicValue,
   formatNegated,
   formatSymbolicValue,
   getBindingPlaceKey,
@@ -45,6 +48,7 @@ const REACHABILITY_ROUNDS = 3;
 interface Alternative {
   knowledge: Knowledge;
   render: SymbolicValue;
+  fragments: SymbolicValue[];
   assumptions: string[];
   decisions: ReadonlySet<string>;
 }
@@ -52,8 +56,15 @@ interface Alternative {
 interface PartialChildren {
   knowledge: Knowledge;
   children: SymbolicValue[];
+  fragments: SymbolicValue[];
   assumptions: string[];
   decisions: ReadonlySet<string>;
+}
+
+interface DecisionGroup {
+  decisionKeys: Set<string>;
+  bindingIds: Set<number>;
+  places: string[];
 }
 
 const NO_DECISIONS: ReadonlySet<string> = new Set();
@@ -271,6 +282,7 @@ const applyTransition = (
  */
 const createEnumerator = (
   outcomes: DecisionOutcomes,
+  group: DecisionGroup,
 ): ((value: SymbolicValue, knowledge: Knowledge) => Alternative[]) => {
   const cache = new WeakMap<SymbolicValue, WeakMap<Knowledge, Alternative[]>>();
   const enumerate = (value: SymbolicValue, knowledge: Knowledge): Alternative[] => {
@@ -288,10 +300,14 @@ const createEnumerator = (
   const enumerateUncached = (value: SymbolicValue, knowledge: Knowledge): Alternative[] => {
     switch (value.kind) {
       case "Conditional": {
+        const key = getDecisionKey(value);
+        if (!group.decisionKeys.has(key))
+          return [
+            { knowledge, render: value, fragments: [], assumptions: [], decisions: NO_DECISIONS },
+          ];
         const alternatives: Alternative[] = [];
         const test = getTest(value);
         const isDecided = evaluate(test, knowledge) !== null;
-        const key = getDecisionKey(value);
         for (const outcome of [true, false]) {
           const assumed = assume(test, outcome, knowledge);
           if (!assumed) continue;
@@ -303,6 +319,7 @@ const createEnumerator = (
           )) {
             alternatives.push({
               ...alternative,
+              fragments: [alternative.render],
               assumptions: isDecided
                 ? alternative.assumptions
                 : [label, ...alternative.assumptions],
@@ -315,7 +332,7 @@ const createEnumerator = (
       case "JsxExpression":
       case "JsxFragment": {
         let partials: PartialChildren[] = [
-          { knowledge, children: [], assumptions: [], decisions: NO_DECISIONS },
+          { knowledge, children: [], fragments: [], assumptions: [], decisions: NO_DECISIONS },
         ];
         for (const child of value.children) {
           const nextPartials: PartialChildren[] = [];
@@ -325,6 +342,7 @@ const createEnumerator = (
               nextPartials.push({
                 knowledge: childAlternative.knowledge,
                 children: [...partial.children, childAlternative.render],
+                fragments: [...partial.fragments, ...childAlternative.fragments],
                 assumptions: [...partial.assumptions, ...childAlternative.assumptions],
                 decisions: new Set([...partial.decisions, ...childAlternative.decisions]),
               });
@@ -335,6 +353,7 @@ const createEnumerator = (
         return partials.map((partial) => ({
           knowledge: partial.knowledge,
           render: { ...value, children: partial.children },
+          fragments: partial.fragments,
           assumptions: partial.assumptions,
           decisions: partial.decisions,
         }));
@@ -344,6 +363,7 @@ const createEnumerator = (
           {
             knowledge,
             render: resolveLiteral(value, knowledge),
+            fragments: [],
             assumptions: [],
             decisions: NO_DECISIONS,
           },
@@ -351,6 +371,77 @@ const createEnumerator = (
     }
   };
   return enumerate;
+};
+
+const isPlacePrefix = (prefix: string, placeKey: string): boolean =>
+  placeKey === prefix || placeKey.startsWith(`${prefix}.`);
+
+/**
+ * Splits the render tree's decisions into groups that vary independently. Decisions join a
+ * group when their tests read overlapping places, or when one sits in the other's arm.
+ */
+const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
+  const decisionSets = new DisjointSet<string>();
+  const decisionKeys: string[] = [];
+  const places = new Map<string, { name: string; bindingId: number; decisionKeys: string[] }>();
+  const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
+    switch (value.kind) {
+      case "Conditional": {
+        const key = getDecisionKey(value);
+        if (!decisionKeys.includes(key)) decisionKeys.push(key);
+        decisionSets.union(enclosingKey ? [key, enclosingKey] : [key]);
+        forEachSymbolicValue(getTest(value), (part) => {
+          if (part.kind !== "Binding") return;
+          const placeKey = getBindingPlaceKey(part);
+          const place = places.get(placeKey) ?? {
+            name: formatSymbolicValue(part),
+            bindingId: part.binding.id,
+            decisionKeys: [],
+          };
+          place.decisionKeys.push(key);
+          places.set(placeKey, place);
+        });
+        visit(value.consequent, key);
+        visit(value.alternate, key);
+        return;
+      }
+      case "JsxExpression":
+      case "JsxFragment":
+        for (const child of value.children) visit(child, enclosingKey);
+        return;
+      default:
+        return;
+    }
+  };
+  visit(render, null);
+  for (const [placeKey, place] of places)
+    for (const [otherKey, other] of places)
+      if (isPlacePrefix(placeKey, otherKey))
+        decisionSets.union([...place.decisionKeys, ...other.decisionKeys]);
+
+  const groups = new Map<string, DecisionGroup>();
+  for (const key of decisionKeys) {
+    const root = decisionSets.find(key) ?? key;
+    const group = groups.get(root) ?? {
+      decisionKeys: new Set(),
+      bindingIds: new Set(),
+      places: [],
+    };
+    group.decisionKeys.add(key);
+    groups.set(root, group);
+  }
+  for (const [placeKey, place] of places) {
+    const group = groups.get(decisionSets.find(place.decisionKeys[0] ?? "") ?? "");
+    if (!group) continue;
+    group.bindingIds.add(place.bindingId);
+    const isNested = [...places.keys()].some(
+      (otherKey) => otherKey !== placeKey && isPlacePrefix(otherKey, placeKey),
+    );
+    if (!isNested && !group.places.includes(place.name)) group.places.push(place.name);
+  }
+  return groups.size > 0
+    ? [...groups.values()]
+    : [{ decisionKeys: new Set(), bindingIds: new Set(), places: [] }];
 };
 
 const collectTransitionIds = (render: SymbolicValue, transitionIds: Set<string>): void =>
@@ -405,46 +496,68 @@ const collectDeadBranches = (render: SymbolicValue, outcomes: DecisionOutcomes):
 };
 
 /**
- * Lists the reachable states of a component: each consistent way through the decisions in
- * its render tree, with the transitions available in that state and where they lead.
+ * Lists the reachable states of a component, group by group: each consistent way through
+ * a group's decisions, with the transitions that change the group and where they lead.
  */
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const reachable = createInitialKnowledge(analysis);
   const outcomes: DecisionOutcomes = new Map();
-  const alternatives = createEnumerator(outcomes)(analysis.render, reachable);
-  const stateKeys = alternatives.map(getStateKey);
+  const decisionGroups = groupDecisions(analysis.render);
   const effectIds = new Set(
     analysis.transitions
       .filter((transition) => transition.trigger.kind === "Effect")
       .map((transition) => transition.id),
   );
 
-  const states = alternatives.map((alternative): State => {
-    const transitionIds = new Set(effectIds);
-    collectTransitionIds(alternative.render, transitionIds);
-    const edges: Edge[] = analysis.transitions
-      .filter((transition) => transitionIds.has(transition.id) && transition.updates.length > 0)
-      .map((transition) => {
-        const targetKeys = new Set(
-          applyTransition(transition, alternative.knowledge, reachable).flatMap((after) =>
-            createEnumerator(new Map())(analysis.render, after).map(getStateKey),
-          ),
-        );
-        return {
-          transitionId: transition.id,
-          targets: stateKeys.flatMap((stateKey, targetIndex) =>
-            targetKeys.has(stateKey) ? [targetIndex] : [],
-          ),
-          isAsync: transition.updates.some((update) => update.isAsync),
-        };
+  const states: State[] = [];
+  const groups: StateGroup[] = [];
+  let isTruncated = false;
+  decisionGroups.forEach((decisionGroup, groupIndex) => {
+    const alternatives = createEnumerator(outcomes, decisionGroup)(analysis.render, reachable);
+    isTruncated ||= alternatives.length >= MAX_ALTERNATIVES;
+    const firstIndex = states.length;
+    const stateKeys = alternatives.map(getStateKey);
+    const transitions = analysis.transitions.filter((transition) =>
+      transition.updates.some((update) => decisionGroup.bindingIds.has(update.binding.id)),
+    );
+    for (const alternative of alternatives) {
+      const transitionIds = new Set(effectIds);
+      collectTransitionIds(alternative.render, transitionIds);
+      const edges: Edge[] = transitions
+        .filter((transition) => transitionIds.has(transition.id))
+        .map((transition) => {
+          const targetKeys = new Set(
+            applyTransition(transition, alternative.knowledge, reachable).flatMap((after) =>
+              createEnumerator(new Map(), decisionGroup)(analysis.render, after).map(getStateKey),
+            ),
+          );
+          return {
+            transitionId: transition.id,
+            targets: stateKeys.flatMap((stateKey, targetIndex) =>
+              targetKeys.has(stateKey) ? [firstIndex + targetIndex] : [],
+            ),
+            isAsync: transition.updates.some((update) => update.isAsync),
+          };
+        });
+      states.push({
+        group: groupIndex,
+        assumptions: alternative.assumptions,
+        render: alternative.render,
+        fragments: alternative.fragments,
+        edges,
       });
-    return { assumptions: alternative.assumptions, render: alternative.render, edges };
+    }
+    groups.push({
+      places: decisionGroup.places,
+      states: alternatives.map((_, index) => firstIndex + index),
+    });
   });
 
   return {
     places: new Map(reachable.values),
     states,
+    groups,
     deadBranches: collectDeadBranches(analysis.render, outcomes),
-    isTruncated: alternatives.length >= MAX_ALTERNATIVES,
+    isTruncated,
   };
 };

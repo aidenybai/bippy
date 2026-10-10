@@ -228,10 +228,26 @@ export interface Edge {
   isAsync: boolean;
 }
 
+/**
+ * One state of a group. `render` decides only the group's own branches and leaves every
+ * other group's undecided. `fragments` are what the group's outermost branches render.
+ */
 export interface State {
+  group: number;
   assumptions: string[];
   render: SymbolicValue;
+  fragments: SymbolicValue[];
   edges: Edge[];
+}
+
+/**
+ * Branches that depend on each other: their tests read overlapping places, or one sits in
+ * the other's arm. Groups vary independently, so the component's screens are every
+ * combination of one state from each group.
+ */
+export interface StateGroup {
+  places: string[];
+  states: number[];
 }
 
 export interface DeadBranch {
@@ -247,6 +263,7 @@ export interface DeadBranch {
 export interface StateReport {
   places: Map<string, AbstractValue[]>;
   states: State[];
+  groups: StateGroup[];
   deadBranches: DeadBranch[];
   isTruncated: boolean;
 }

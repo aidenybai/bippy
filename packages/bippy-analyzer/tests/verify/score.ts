@@ -269,6 +269,19 @@ export const scoreComponent = (
     return matches;
   };
 
+  const groupIndices = report.groups.map((_, index) => index);
+  const inGroup = (matches: number[], group: number): number[] =>
+    matches.filter((match) => report.states[match]?.group === group);
+  const isEveryGroupMatched = (matches: number[]): boolean =>
+    groupIndices.every((group) => inGroup(matches, group).length > 0);
+  const isGroupUnchanged = (before: number[], after: number[], group: number): boolean =>
+    inGroup(before, group).some((match) => after.includes(match));
+  const getEdges = (from: number[], transitionIds: Set<string>) =>
+    from.flatMap(
+      (index) =>
+        report.states[index]?.edges.filter((edge) => transitionIds.has(edge.transitionId)) ?? [],
+    );
+
   const effectIds = new Set(
     analysis.transitions
       .filter((transition) => transition.trigger.kind === "Effect")
@@ -291,7 +304,7 @@ export const scoreComponent = (
     }
 
     const afterMatches = getMatches(after.shapes);
-    if (afterMatches.length === 0) {
+    if (!isEveryGroupMatched(afterMatches)) {
       const shapes = normalizeShapes(after.shapes);
       recordFailure(verdict.wrongStates, {
         props: observation.props,
@@ -305,7 +318,7 @@ export const scoreComponent = (
 
     if (!action && after.firstCommitShapes) {
       const firstMatches = getMatches(after.firstCommitShapes);
-      if (firstMatches.length === 0) {
+      if (!isEveryGroupMatched(firstMatches)) {
         const shapes = normalizeShapes(after.firstCommitShapes);
         recordFailure(verdict.wrongStates, {
           props: observation.props,
@@ -315,18 +328,15 @@ export const scoreComponent = (
         });
       } else {
         for (const match of firstMatches) witnessedStates.add(match);
-        const isChangedByEffects =
-          afterMatches.length > 0 && !firstMatches.some((match) => afterMatches.includes(match));
-        const isExplained =
-          hasExternalData ||
-          firstMatches.some((from) =>
-            report.states[from]?.edges.some(
-              (edge) =>
-                effectIds.has(edge.transitionId) &&
-                edge.targets.some((target) => afterMatches.includes(target)),
+        const isUnexplained = groupIndices.some(
+          (group) =>
+            inGroup(afterMatches, group).length > 0 &&
+            !isGroupUnchanged(firstMatches, afterMatches, group) &&
+            !getEdges(inGroup(firstMatches, group), effectIds).some((edge) =>
+              edge.targets.some((target) => afterMatches.includes(target)),
             ),
-          );
-        if (isChangedByEffects && !isExplained) {
+        );
+        if (!hasExternalData && isUnexplained) {
           recordFailure(verdict.wrongEdges, {
             path: [],
             action: FIRST_COMMIT,
@@ -361,7 +371,7 @@ export const scoreComponent = (
 
     if (!action || !before || before.error) continue;
     const beforeMatches = getMatches(before.shapes);
-    if (beforeMatches.length === 0 || afterMatches.length === 0) continue;
+    if (!isEveryGroupMatched(beforeMatches) || !isEveryGroupMatched(afterMatches)) continue;
     const eventName = action.kind === "click" ? "onClick" : "onChange";
     const candidates = analysis.transitions.filter((transition) => {
       const label = triggerLabels.get(transition.id);
@@ -372,7 +382,9 @@ export const scoreComponent = (
         (label.text === null || label.text === action.label)
       );
     });
-    const isUnchanged = beforeMatches.some((match) => afterMatches.includes(match));
+    const isUnchanged = groupIndices.every((group) =>
+      isGroupUnchanged(beforeMatches, afterMatches, group),
+    );
     const recordWrongEdge = (reason: WrongEdge["reason"]): void =>
       recordFailure(verdict.wrongEdges, {
         path,
@@ -385,17 +397,18 @@ export const scoreComponent = (
       if (!isUnchanged) recordWrongEdge("unmodeled-handler");
       continue;
     }
-    const isOnlyCallingProps = candidates.every((candidate) => candidate.updates.length === 0);
-    const isPredicted =
-      (isUnchanged && isOnlyCallingProps) ||
-      beforeMatches.some((from) =>
-        report.states[from]?.edges.some(
-          (edge) =>
-            candidates.some((candidate) => candidate.id === edge.transitionId) &&
-            (edge.targets.some((target) => afterMatches.includes(target)) ||
-              (isUnchanged && edge.isAsync)),
-        ),
-      );
+    const candidateIds = new Set(candidates.map((candidate) => candidate.id));
+    const isPredicted = groupIndices.every((group) => {
+      const isUnchangedInGroup = isGroupUnchanged(beforeMatches, afterMatches, group);
+      const edges = getEdges(inGroup(beforeMatches, group), candidateIds);
+      return edges.length === 0
+        ? isUnchangedInGroup
+        : edges.some(
+            (edge) =>
+              edge.targets.some((target) => afterMatches.includes(target)) ||
+              (isUnchangedInGroup && edge.isAsync),
+          );
+    });
     if (isPredicted) verdict.witnessedEdges++;
     else recordWrongEdge("unpredicted-target");
   }

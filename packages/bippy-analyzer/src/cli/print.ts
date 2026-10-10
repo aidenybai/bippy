@@ -9,6 +9,7 @@ import type {
   Domain,
   JsxExpressionValue,
   StateUpdate,
+  State,
   SymbolicValue,
   Transition,
 } from "../core/inference/types.js";
@@ -334,31 +335,52 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
   );
 };
 
+const buildState = (
+  state: State,
+  index: number,
+  isGrouped: boolean,
+  context: ComponentPrintContext,
+): TreeNode => {
+  const { colors } = context;
+  const label =
+    state.assumptions.length > 0 ? state.assumptions.join(colors.dim(" ∧ ")) : colors.dim("always");
+  const rendered = isGrouped
+    ? state.fragments
+        .map((fragment) => formatCompact(fragment, context))
+        .filter(Boolean)
+        .join(" ")
+    : formatCompact(state.render, context);
+  const details = [createTreeNode(truncate(rendered || colors.dim("∅")))];
+  for (const edge of state.edges) {
+    const targets = edge.targets
+      .filter((target) => target !== index)
+      .map((target) => `S${target + 1}`);
+    if (targets.length === 0) continue;
+    const trigger = context.triggers.get(edge.transitionId) ?? edge.transitionId;
+    details.push(
+      createTreeNode(
+        `${trigger} ${colors.dim("→")} ${targets.join(" | ")}${edge.isAsync ? colors.dim(" (async)") : ""}`,
+      ),
+    );
+  }
+  return createTreeNode(truncate(`${colors.bold(`S${index + 1}`)} ${label}`), details);
+};
+
 const buildStates = (component: AnalyzedComponent, context: ComponentPrintContext): TreeNode => {
   const { colors } = context;
   const { report } = component;
-  const children = report.states.map((state, index) => {
-    const label =
-      state.assumptions.length > 0
-        ? state.assumptions.join(colors.dim(" ∧ "))
-        : colors.dim("always");
-    const details = [
-      createTreeNode(truncate(formatCompact(state.render, context) || colors.dim("∅"))),
-    ];
-    for (const edge of state.edges) {
-      const targets = edge.targets
-        .filter((target) => target !== index)
-        .map((target) => `S${target + 1}`);
-      if (targets.length === 0) continue;
-      const trigger = context.triggers.get(edge.transitionId) ?? edge.transitionId;
-      details.push(
+  const isGrouped = report.groups.length > 1;
+  const children = isGrouped
+    ? report.groups.map((group) =>
         createTreeNode(
-          `${trigger} ${colors.dim("→")} ${targets.join(" | ")}${edge.isAsync ? colors.dim(" (async)") : ""}`,
+          truncate(group.places.join(colors.dim(", ")) || colors.dim("other")),
+          group.states.map((index) => {
+            const state = report.states[index];
+            return state ? buildState(state, index, true, context) : createTreeNode("");
+          }),
         ),
-      );
-    }
-    return createTreeNode(truncate(`${colors.bold(`S${index + 1}`)} ${label}`), details);
-  });
+      )
+    : report.states.map((state, index) => buildState(state, index, false, context));
   if (report.deadBranches.length > 0) {
     children.push(
       createTreeNode(
@@ -371,8 +393,14 @@ const buildStates = (component: AnalyzedComponent, context: ComponentPrintContex
       ),
     );
   }
+  const truncated = report.isTruncated ? "+, truncated" : "";
+  const combinations = report.groups.reduce((product, group) => product * group.states.length, 1);
   return createTreeNode(
-    colors.dim(`states (${report.states.length}${report.isTruncated ? "+, truncated" : ""})`),
+    colors.dim(
+      isGrouped
+        ? `states (${report.states.length}${truncated} in ${report.groups.length} groups, ${combinations} combinations)`
+        : `states (${report.states.length}${truncated})`,
+    ),
     children,
   );
 };

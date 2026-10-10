@@ -358,21 +358,20 @@ exports[`fixture analysis > TodoApp keeps its states, edges and dead branches 1`
 │     └─ ◆ isEditing
 │        ├─ ✓ <button onClick ⇒ isEditing = false> "Save"
 │        └─ ✗ <button onClick ⇒ isEditing = true> "Edit"
-└─ states (4)
-   ├─ S1 todos.length === 0 ∧ isEditing
-   │  ├─ <section> <input> <button> "Add" <p> "Nothing to do" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button…
-   │  ├─ "Add" → S3
-   │  └─ "Save" → S2
-   ├─ S2 todos.length === 0 ∧ !isEditing
-   │  ├─ <section> <input> <button> "Add" <p> "Nothing to do" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button…
-   │  ├─ "Add" → S4
-   │  └─ "Edit" → S1
-   ├─ S3 todos.length !== 0 ∧ isEditing
-   │  ├─ <section> <input> <button> "Add" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button> "Save"
-   │  └─ "Save" → S4
-   └─ S4 todos.length !== 0 ∧ !isEditing
-      ├─ <section> <input> <button> "Add" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button> "Edit"
-      └─ "Edit" → S3"
+└─ states (4 in 2 groups, 4 combinations)
+   ├─ todos.length
+   │  ├─ S1 todos.length === 0
+   │  │  ├─ <p> "Nothing to do"
+   │  │  └─ "Add" → S2
+   │  └─ S2 todos.length !== 0
+   │     └─ ∅
+   └─ isEditing
+      ├─ S3 isEditing
+      │  ├─ <button> "Save"
+      │  └─ "Save" → S4
+      └─ S4 !isEditing
+         ├─ <button> "Edit"
+         └─ "Edit" → S3"
 `;
 
 exports[`fixture analysis > Toggle keeps its states, edges and dead branches 1`] = `
