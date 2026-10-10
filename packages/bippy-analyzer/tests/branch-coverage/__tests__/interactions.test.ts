@@ -3,10 +3,10 @@ import {
   buildModelFromPrepared,
   createInteractionAnalyzer,
   dedupeInteractionTargets,
-} from "../../src/branch-coverage/interactions.js";
-import { prepareScript } from "../../src/branch-coverage/cfg-shared.js";
-import type { OffsetMapper, V8Function } from "../../src/branch-coverage/cfg-shared.js";
-import type { InteractionTarget } from "../../src/branch-coverage/report.js";
+} from "../interactions.js";
+import { prepareScript } from "../cfg-shared.js";
+import type { OffsetMapper, V8Function } from "../cfg-shared.js";
+import type { InteractionTarget } from "../report.js";
 
 const buildScriptInteractionModel = (
   script: string,

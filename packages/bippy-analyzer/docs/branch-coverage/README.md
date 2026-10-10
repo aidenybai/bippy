@@ -54,7 +54,7 @@ Every signal is on by default and feeds the worklist. Pushing each one up is wha
 
 ## Install
 
-The module lives in `bippy-analyzer/src/branch-coverage`. It was ported from `packages/playwright-coverage` in millionco/alchemist (commit `6489a8ec`). Run its CLI with `pnpm --filter bippy-analyzer coverage`.
+The module lives in `bippy-analyzer/tests/branch-coverage`. It was ported from `packages/playwright-coverage` in millionco/alchemist (commit `6489a8ec`). Run its CLI with `pnpm --filter bippy-analyzer coverage`.
 
 Optional peers: `@playwright/test` (>=1.40) for browser capture and Vitest for the Vitest setup helper. Playwright V8 precise coverage exists only on Chromium, so capture self-guards and no-ops on other browsers.
 
@@ -68,7 +68,7 @@ Compose `capturePlaywrightCoverage` into an auto fixture. It starts JS coverage,
 
 ```typescript
 import { test as base } from "@playwright/test";
-import { capturePlaywrightCoverage } from "bippy-analyzer/src/branch-coverage/index.ts";
+import { capturePlaywrightCoverage } from "bippy-analyzer/tests/branch-coverage/index.ts";
 
 const RAW_DIR = ".coverage-v8";
 const coverageEnabled = Boolean(process.env.COVERAGE);
@@ -95,7 +95,7 @@ Add a Vitest setup file that calls `setupVitestCoverage`. It starts Node V8 prec
 
 ```typescript
 // vitest.setup.ts
-import { setupVitestCoverage } from "bippy-analyzer/src/branch-coverage/vitest-fixture.ts";
+import { setupVitestCoverage } from "bippy-analyzer/tests/branch-coverage/vitest-fixture.ts";
 
 if (process.env.COVERAGE) {
   setupVitestCoverage(".coverage-v8");
@@ -120,7 +120,7 @@ Do not enable Vitest's built-in `@vitest/coverage-v8` for this path — this hel
 Wipe the raw directory once so the merged report reflects only this run:
 
 ```typescript
-import { cleanRawCoverage } from "bippy-analyzer/src/branch-coverage/index.ts";
+import { cleanRawCoverage } from "bippy-analyzer/tests/branch-coverage/index.ts";
 
 export default async function globalSetup() {
   cleanRawCoverage(".coverage-v8");
@@ -132,7 +132,7 @@ export default async function globalSetup() {
 Merge the dumps and generate the report. Pass one dir or several (Playwright + Vitest). The call returns a structured summary you can log or assert on, and writes HTML and lcov reports to `outputDir`:
 
 ```typescript
-import { generateCoverageReport } from "bippy-analyzer/src/branch-coverage/index.ts";
+import { generateCoverageReport } from "bippy-analyzer/tests/branch-coverage/index.ts";
 
 export default async function globalTeardown() {
   const summary = await generateCoverageReport({
@@ -314,7 +314,10 @@ The survivors are matched to the manifest and printed as **Proven assertion gaps
 Source-mutation tools rebuild the bundle per mutant, which is impractical for a browser suite. `instrumentForMutation` applies the same substrate at runtime instead: it wraps each tracked decision's test in a gate, so one instrumented build can run every mutant by toggling a global.
 
 ```ts
-import { instrumentForMutation, MUTATION_GATE } from "bippy-analyzer/src/branch-coverage/index.ts";
+import {
+  instrumentForMutation,
+  MUTATION_GATE,
+} from "bippy-analyzer/tests/branch-coverage/index.ts";
 
 const { code, mutants } = instrumentForMutation("app.ts", source);
 // `if (n > 0)` becomes `if (__mutCond(0, (n > 0)))`; prepend MUTATION_GATE to the bundle.
@@ -340,8 +343,8 @@ import {
   generateCoverageReport,
   formatCoverageTable,
   analyzeScriptDepth,
-} from "bippy-analyzer/src/branch-coverage/index.ts";
-import { setupVitestCoverage } from "bippy-analyzer/src/branch-coverage/vitest-fixture.ts";
+} from "bippy-analyzer/tests/branch-coverage/index.ts";
+import { setupVitestCoverage } from "bippy-analyzer/tests/branch-coverage/vitest-fixture.ts";
 ```
 
 `generateCoverageReport(options)` returns a `CoverageSummary` or `null` when nothing remappable was captured. The summary carries `lines`, `branches`, and `functions` as `{ pct, covered, total }` metrics, a `files` array, and the optional `depth`, `weighted`, and `interactions` blocks when those passes ran. See `src/report.ts` for the full types.

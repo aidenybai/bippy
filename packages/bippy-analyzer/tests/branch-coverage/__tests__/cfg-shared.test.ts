@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
-import { makeCountAt } from "../../src/branch-coverage/cfg-shared.js";
-import type { V8Function, V8Range } from "../../src/branch-coverage/cfg-shared.js";
-import { createLineIndex, lineColOf } from "../../src/branch-coverage/utils/line-index.js";
+import { makeCountAt } from "../cfg-shared.js";
+import type { V8Function, V8Range } from "../cfg-shared.js";
+import { createLineIndex, lineColOf } from "../utils/line-index.js";
 
 // Deterministic PRNG (mulberry32) so the fuzz cases are reproducible.
 const seeded = (seed: number): (() => number) => {

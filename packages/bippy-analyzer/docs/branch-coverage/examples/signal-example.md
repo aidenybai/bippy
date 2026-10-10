@@ -1,6 +1,6 @@
 # Example output signal
 
-Real output from the coverage module (`src/branch-coverage`), captured through the product
+Real output from the coverage module (`tests/branch-coverage`), captured through the product
 path: the source below was bundled with esbuild, run once under V8 coverage
 exercising only the paths the driver hits, then analyzed. Every signal is on by
 default (depth, interactions, infeasible-prune, edge cases, mutations).

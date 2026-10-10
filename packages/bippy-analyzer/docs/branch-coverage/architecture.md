@@ -24,7 +24,7 @@
 
 # Architecture
 
-This document explains how the coverage module (`src/branch-coverage`) turns a Playwright and/or Vitest run into four coverage signals: line/branch/function coverage, control-flow depth, interaction coverage, and synthesized edge cases. Read it to change the pipeline, debug a wrong number, or understand why the package vendors a control-flow-graph engine.
+This document explains how the coverage module (`tests/branch-coverage`) turns a Playwright and/or Vitest run into four coverage signals: line/branch/function coverage, control-flow depth, interaction coverage, and synthesized edge cases. Read it to change the pipeline, debug a wrong number, or understand why the package vendors a control-flow-graph engine.
 
 The pipeline has two halves. The capture half runs inside Playwright Chromium workers (`capturePlaywrightCoverage`) or Vitest/Node workers (`setupVitestCoverage` / `captureNodeCoverage`) and writes one raw V8 dump per test. The report half runs once after the suite: it merges dumps from one or more directories, source-maps served bundles back to `src` (or accepts already-original Node sources), and runs a control-flow-graph engine to measure how deep and how combinatorially the tests exercised each script. The mission is to hand an agent a faithful mold of the app's control flow, cast in tests, so the goal of every signal below is a ranked worklist of the next test to write.
 

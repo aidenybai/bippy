@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeScriptDepth, summarizeDepth } from "../../src/branch-coverage/depth.js";
-import type { OffsetMapper, V8Function } from "../../src/branch-coverage/cfg-shared.js";
+import { analyzeScriptDepth, summarizeDepth } from "../depth.js";
+import type { OffsetMapper, V8Function } from "../cfg-shared.js";
 
 // `deepDep()` sits two decisions deep; `shallowOwn()` one. Both are left
 // unreached so they compete to be the reported "deepest gap".

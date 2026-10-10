@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeScriptDepth, summarizeDepth } from "../../src/branch-coverage/depth.js";
-import type { V8Function } from "../../src/branch-coverage/cfg-shared.js";
+import { analyzeScriptDepth, summarizeDepth } from "../depth.js";
+import type { V8Function } from "../cfg-shared.js";
 
 const reached = (source: string): V8Function[] => [
   { ranges: [{ startOffset: 0, endOffset: source.length, count: 1 }] },

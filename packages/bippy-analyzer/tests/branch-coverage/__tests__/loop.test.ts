@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeScriptDepth, summarizeDepth } from "../../src/branch-coverage/depth.js";
-import { buildWorklist, diffWorklist } from "../../src/branch-coverage/worklist.js";
-import {
-  matchSurvivors,
-  parseStrykerSurvivors,
-} from "../../src/branch-coverage/mutation-survivors.js";
-import type { CoverageSummary } from "../../src/branch-coverage/report.js";
+import { analyzeScriptDepth, summarizeDepth } from "../depth.js";
+import { buildWorklist, diffWorklist } from "../worklist.js";
+import { matchSurvivors, parseStrykerSurvivors } from "../mutation-survivors.js";
+import type { CoverageSummary } from "../report.js";
 
 const SOURCE = `function f(a, count) {
   if (a > 0 && count === 1) { x(); } else { y(); }

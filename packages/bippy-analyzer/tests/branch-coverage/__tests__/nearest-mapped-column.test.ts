@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { nearestMappedColumn } from "../../src/branch-coverage/report.js";
+import { nearestMappedColumn } from "../report.js";
 
 describe("nearestMappedColumn", () => {
   const columns = [0, 10, 20];

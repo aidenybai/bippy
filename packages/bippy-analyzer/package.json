@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "symbolic-tree": "tsx src/symbolic-tree/cli.ts",
-    "coverage": "tsx src/branch-coverage/cli.ts",
+    "coverage": "tsx tests/branch-coverage/cli.ts",
     "test": "vp test --project bippy-analyzer",
     "typecheck": "tsc --noEmit"
   },

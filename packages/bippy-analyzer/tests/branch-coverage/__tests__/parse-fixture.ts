@@ -1,6 +1,6 @@
 import * as path from "node:path";
 import { parseSync } from "oxc-parser";
-import type { EsTreeNode } from "../../src/branch-coverage/cfg/ast/es-tree-node.js";
+import type { EsTreeNode } from "../cfg/ast/es-tree-node.js";
 
 interface ParseFixtureResult {
   program: EsTreeNode;

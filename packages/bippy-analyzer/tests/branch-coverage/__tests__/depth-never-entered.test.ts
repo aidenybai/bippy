@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeScriptDepth } from "../../src/branch-coverage/depth.js";
-import type { V8Function } from "../../src/branch-coverage/cfg-shared.js";
+import { analyzeScriptDepth } from "../depth.js";
+import type { V8Function } from "../cfg-shared.js";
 
 // `entered()` is called but its depth-2 `reachedDeep()` never runs. `neverRun()`
 // is never called at all, so its *deeper* depth-3 `unreachableDeep()` block is

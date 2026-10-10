@@ -5,7 +5,7 @@ Finds every state a React app can be in by reading its source, and checks that a
 The package has two parts:
 
 - **Symbolic tree** (`src/symbolic-tree`) reads a project with the TypeScript 7 checker. For each component it prints the data the component depends on, its render tree with each branch condition, and its states with the buttons that move between them. It never runs the code. See [docs/symbolic-tree.md](docs/symbolic-tree.md).
-- **Branch coverage** (`src/branch-coverage`) collects V8 coverage from Playwright and Vitest runs, maps it back to source, and ranks the branches no test has reached yet. It was ported from `packages/playwright-coverage` in millionco/alchemist. See [docs/branch-coverage/README.md](docs/branch-coverage/README.md).
+- **Branch coverage** (`tests/branch-coverage`) collects V8 coverage from Playwright and Vitest runs, maps it back to source, and ranks the branches no test has reached yet. It was ported from `packages/playwright-coverage` in millionco/alchemist. See [docs/branch-coverage/README.md](docs/branch-coverage/README.md).
 
 ## Run
 

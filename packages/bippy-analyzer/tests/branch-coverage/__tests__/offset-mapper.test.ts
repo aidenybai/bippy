@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createOffsetMapper } from "../../src/branch-coverage/report.js";
+import { createOffsetMapper } from "../report.js";
 
 const mapperFor = (source: string, sources: string[], mappings: string) => {
   const mapJson = JSON.stringify({ version: 3, sources, names: [], mappings });

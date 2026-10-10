@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeScriptDepth, summarizeDepth } from "../../src/branch-coverage/depth.js";
-import { buildMutationPlan } from "../../src/branch-coverage/mutation-plan.js";
-import type { CoverageSummary } from "../../src/branch-coverage/report.js";
-import type { V8Function } from "../../src/branch-coverage/cfg-shared.js";
+import { analyzeScriptDepth, summarizeDepth } from "../depth.js";
+import { buildMutationPlan } from "../mutation-plan.js";
+import type { CoverageSummary } from "../report.js";
+import type { V8Function } from "../cfg-shared.js";
 
 const summaryFor = (source: string, mapped: boolean): CoverageSummary => {
   const ranges: V8Function[] = [

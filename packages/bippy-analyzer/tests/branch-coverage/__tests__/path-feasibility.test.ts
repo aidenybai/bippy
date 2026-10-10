@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { isPathFeasible } from "../../src/branch-coverage/cfg/path/feasibility.js";
-import { constAtomOf, valueAtom } from "../../src/branch-coverage/cfg/path/literal-facts.js";
-import type { Atom, PathFact } from "../../src/branch-coverage/cfg/path/literal-facts.js";
-import { lowerGuard } from "../../src/branch-coverage/cfg/path/path-condition.js";
-import { MAX_PATH_CLAUSES } from "../../src/branch-coverage/cfg/constants.js";
-import type { EsTreeNode } from "../../src/branch-coverage/cfg/ast/es-tree-node.js";
+import { isPathFeasible } from "../cfg/path/feasibility.js";
+import { constAtomOf, valueAtom } from "../cfg/path/literal-facts.js";
+import type { Atom, PathFact } from "../cfg/path/literal-facts.js";
+import { lowerGuard } from "../cfg/path/path-condition.js";
+import { MAX_PATH_CLAUSES } from "../cfg/constants.js";
+import type { EsTreeNode } from "../cfg/ast/es-tree-node.js";
 import { analyzeSsaFixture } from "./run-ssa.js";
 
 // The bounded path-feasibility checker, its abstract domain, and the

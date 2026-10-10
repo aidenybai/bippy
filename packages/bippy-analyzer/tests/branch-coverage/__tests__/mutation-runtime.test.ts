@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import {
-  MUTATION_GATE,
-  instrumentForMutation,
-} from "../../src/branch-coverage/mutation-runtime.js";
+import { MUTATION_GATE, instrumentForMutation } from "../mutation-runtime.js";
 
 // Build the instrumented `classify` and run a "suite" under a given mutant by
 // toggling the global the gate reads. This mirrors what a Playwright fixture

@@ -1,5 +1,5 @@
-import type { EsTreeNode } from "../../src/branch-coverage/cfg/ast/es-tree-node.js";
-import { isAstNode } from "../../src/branch-coverage/cfg/ast/is-ast-node.js";
+import type { EsTreeNode } from "../cfg/ast/es-tree-node.js";
+import { isAstNode } from "../cfg/ast/is-ast-node.js";
 
 // Walks the AST setting each child's `.parent` to its owning parent node.
 // `oxc-parser` emits an unparented AST, but the CFG's `enclosingFunction`

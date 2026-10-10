@@ -1,13 +1,13 @@
 import { expect } from "vite-plus/test";
-import { analyzeSsa } from "../../src/branch-coverage/cfg/ssa.js";
-import type { FunctionSsa, SsaAnalysis } from "../../src/branch-coverage/cfg/ssa.js";
-import { computeDominatorTree } from "../../src/branch-coverage/cfg/analysis/dominators.js";
-import { isAstNode } from "../../src/branch-coverage/cfg/ast/is-ast-node.js";
-import { isFunctionLike } from "../../src/branch-coverage/cfg/ast/is-function-like.js";
-import { isNodeOfType } from "../../src/branch-coverage/cfg/ast/is-node-of-type.js";
-import type { BasicBlock } from "../../src/branch-coverage/cfg/ir/basic-block.js";
-import type { BindingId } from "../../src/branch-coverage/cfg/ir/place.js";
-import type { EsTreeNode } from "../../src/branch-coverage/cfg/ast/es-tree-node.js";
+import { analyzeSsa } from "../cfg/ssa.js";
+import type { FunctionSsa, SsaAnalysis } from "../cfg/ssa.js";
+import { computeDominatorTree } from "../cfg/analysis/dominators.js";
+import { isAstNode } from "../cfg/ast/is-ast-node.js";
+import { isFunctionLike } from "../cfg/ast/is-function-like.js";
+import { isNodeOfType } from "../cfg/ast/is-node-of-type.js";
+import type { BasicBlock } from "../cfg/ir/basic-block.js";
+import type { BindingId } from "../cfg/ir/place.js";
+import type { EsTreeNode } from "../cfg/ast/es-tree-node.js";
 import { attachParentReferences } from "./attach-parent-references.js";
 import { parseFixture } from "./parse-fixture.js";
 

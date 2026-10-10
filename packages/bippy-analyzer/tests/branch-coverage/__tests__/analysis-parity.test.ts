@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
-import { buildFunctionCfg } from "../../src/branch-coverage/cfg/build/build-function-cfg.js";
-import { computeCyclicBlocks } from "../../src/branch-coverage/cfg/analysis/loops.js";
-import { computeUnconditionalSet } from "../../src/branch-coverage/cfg/analysis/unconditional.js";
-import type { BasicBlock, FunctionCfg } from "../../src/branch-coverage/cfg/ir/basic-block.js";
-import type { EsTreeNode } from "../../src/branch-coverage/cfg/ast/es-tree-node.js";
-import { forEachChildNode } from "../../src/branch-coverage/cfg/ast/for-each-child-node.js";
-import { isFunctionLike } from "../../src/branch-coverage/cfg/ast/is-function-like.js";
-import { isNodeOfType } from "../../src/branch-coverage/cfg/ast/is-node-of-type.js";
+import { buildFunctionCfg } from "../cfg/build/build-function-cfg.js";
+import { computeCyclicBlocks } from "../cfg/analysis/loops.js";
+import { computeUnconditionalSet } from "../cfg/analysis/unconditional.js";
+import type { BasicBlock, FunctionCfg } from "../cfg/ir/basic-block.js";
+import type { EsTreeNode } from "../cfg/ast/es-tree-node.js";
+import { forEachChildNode } from "../cfg/ast/for-each-child-node.js";
+import { isFunctionLike } from "../cfg/ast/is-function-like.js";
+import { isNodeOfType } from "../cfg/ast/is-node-of-type.js";
 import { attachParentReferences } from "./attach-parent-references.js";
 import { parseFixture } from "./parse-fixture.js";
 

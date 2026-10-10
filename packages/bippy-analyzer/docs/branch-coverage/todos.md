@@ -1,6 +1,6 @@
 # TODOs
 
-Working log for the coverage module (`src/branch-coverage`). The mission: let an agent build a
+Working log for the coverage module (`tests/branch-coverage`). The mission: let an agent build a
 test suite that spans the whole project, a faithful cast of the app in tests. The
 tool turns a coverage run into a ranked worklist of the next test to write.
 

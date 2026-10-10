@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { sumMetrics, toMetric } from "../../src/branch-coverage/report.js";
+import { sumMetrics, toMetric } from "../report.js";
 
 describe("toMetric", () => {
   it("reports a normal ratio as a rounded percentage", () => {

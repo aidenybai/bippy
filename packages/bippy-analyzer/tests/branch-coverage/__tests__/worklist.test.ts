@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeScriptDepth, summarizeDepth } from "../../src/branch-coverage/depth.js";
-import { buildWorklist } from "../../src/branch-coverage/worklist.js";
-import type { CoverageSummary } from "../../src/branch-coverage/report.js";
-import type { V8Function } from "../../src/branch-coverage/cfg-shared.js";
+import { analyzeScriptDepth, summarizeDepth } from "../depth.js";
+import { buildWorklist } from "../worklist.js";
+import type { CoverageSummary } from "../report.js";
+import type { V8Function } from "../cfg-shared.js";
 
 // `escalate()` (depth 2) is never reached; the shallow guards are half-covered.
 const SOURCE = `function classify(user, count) {
