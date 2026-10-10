@@ -13,6 +13,7 @@ import {
   GeneratedSource,
   type HIRFunction,
   type Identifier,
+  type SourceLocation,
   type IdentifierId,
   type Instruction,
   InstructionKind,
@@ -62,11 +63,67 @@ const isPrimitiveBinaryOp = (op: BinaryOperator): boolean => {
 };
 
 export const inferTypes = (func: HIRFunction): void => {
+  unifyTypes(func, false);
+  resetTemporaryTypes(func);
+  unifyTypes(func, true);
+};
+
+/**
+ * Not in upstream, which runs a single round. TypeScript types named values in the first
+ * round; the second round re-derives every temporary from them, so `items.push` resolves to
+ * the compiler's own `push` signature once `items` is known to be an array.
+ */
+const unifyTypes = (func: HIRFunction, isFinalRound: boolean): void => {
   const unifier = new Unifier(func.env);
   for (const typeEquation of generate(func)) {
     unifier.unify(typeEquation.left, typeEquation.right);
   }
+  unifyTypeScriptTypes(func, unifier, isFinalRound);
   apply(func, unifier);
+};
+
+const resetTemporaryTypes = (func: HIRFunction): void => {
+  const reset = (identifier: Identifier): void => {
+    if (identifier.name === null) identifier.type = makeType();
+  };
+  for (const [, block] of func.body.blocks) {
+    for (const phi of block.phis) reset(phi.place.identifier);
+    for (const instr of block.instructions) {
+      for (const lvalue of eachInstructionLValue(instr)) reset(lvalue.identifier);
+      for (const operand of eachInstructionOperand(instr)) reset(operand.identifier);
+      if (instr.value.kind === "FunctionExpression" || instr.value.kind === "ObjectMethod") {
+        resetTemporaryTypes(instr.value.loweredFunc.func);
+      }
+    }
+  }
+  reset(func.returns.identifier);
+};
+
+/**
+ * Not in upstream: gives each value the compiler left untyped the type the TypeScript
+ * checker gives it. Named values use their declaration and are typed in every round;
+ * temporaries use their expression and are typed only in the final round.
+ */
+const unifyTypeScriptTypes = (func: HIRFunction, unifier: Unifier, isFinalRound: boolean): void => {
+  const unifyUntyped = (identifier: Identifier, loc: SourceLocation): void => {
+    const isNamed = identifier.name !== null && identifier.loc !== GeneratedSource;
+    if (!isNamed && !isFinalRound) return;
+    if (unifier.get(identifier.type).kind !== "Type") return;
+    const type = func.env.getTypeScriptType(isNamed ? identifier.loc : loc);
+    if (type) unifier.unify(identifier.type, type);
+  };
+  for (const param of func.params) {
+    const place = param.kind === "Identifier" ? param : param.place;
+    unifyUntyped(place.identifier, place.loc);
+  }
+  for (const [, block] of func.body.blocks) {
+    for (const instr of block.instructions) {
+      for (const lvalue of eachInstructionLValue(instr)) unifyUntyped(lvalue.identifier, instr.loc);
+      if (instr.value.kind === "FunctionExpression" || instr.value.kind === "ObjectMethod") {
+        unifyTypeScriptTypes(instr.value.loweredFunc.func, unifier, isFinalRound);
+      }
+    }
+  }
 };
 
 const apply = (func: HIRFunction, unifier: Unifier): void => {
@@ -246,7 +303,7 @@ const generateInstructionTypes = (
     }
 
     case "LoadGlobal": {
-      const globalType = env.getGlobalDeclaration(value.binding);
+      const globalType = env.getGlobalDeclaration(value.binding, value.loc);
       if (globalType) {
         equations.push(equation(left, globalType));
       }

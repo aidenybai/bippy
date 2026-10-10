@@ -1,6 +1,6 @@
 import type picocolors from "picocolors";
 
-export type View = "data" | "render" | "states" | "bailouts";
+export type View = "data" | "render" | "states" | "warnings" | "bailouts";
 
 type Colors = ReturnType<typeof picocolors.createColors>;
 

@@ -22,6 +22,7 @@ import {
   GeneratedSource,
   type IdentifierId,
   type NonLocalBinding,
+  type SourceLocation,
   type PolyType,
   type Type,
   ValueKind,
@@ -31,11 +32,15 @@ import {
   makeScopeId,
 } from "./hir.js";
 import {
+  BuiltInArrayId,
+  BuiltInMapId,
   BuiltInMixedReadonlyId,
+  BuiltInSetId,
   DefaultMutatingHook,
   DefaultNonmutatingHook,
   type FunctionSignature,
   type ShapeRegistry,
+  addFunction,
   addHook,
 } from "./object-shape.js";
 import type { FunctionNode, IdentifierNode, ScopeManager } from "./scope.js";
@@ -198,6 +203,24 @@ export const printFunctionType = (type: ReactFunctionType): string => {
   }
 };
 
+/**
+ * Types the compiler can't infer itself, read from the TypeScript checker. Not part of the
+ * upstream compiler, which has only a per-module `moduleTypeProvider`.
+ */
+export interface TypeProvider {
+  getReactExportName(loc: SourceLocation): string | null;
+  getType(loc: SourceLocation, shapes: ShapeRegistry): BuiltInType | null;
+  isMutatingMethod(collection: MutableCollection, method: string): boolean;
+}
+
+export type MutableCollection = "Array" | "Map" | "Set";
+
+const MUTABLE_COLLECTION_SHAPES = new Map<string, MutableCollection>([
+  [BuiltInArrayId, "Array"],
+  [BuiltInMapId, "Map"],
+  [BuiltInSetId, "Set"],
+]);
+
 export class Environment {
   #globals: GlobalRegistry;
   #shapes: ShapeRegistry;
@@ -218,6 +241,8 @@ export class Environment {
    * throwing, so the pipeline can continue and report all errors at once.
    */
   #errors: CompilerError = new CompilerError();
+  #typeProvider: TypeProvider | null;
+  #mutatingMethodType: BuiltInType | null = null;
 
   constructor(
     scopes: ScopeManager,
@@ -226,7 +251,9 @@ export class Environment {
     config: EnvironmentConfig,
     contextIdentifiers: Set<IdentifierNode>,
     parentFunction: FunctionNode, // the outermost function being compiled
+    typeProvider: TypeProvider | null = null,
   ) {
+    this.#typeProvider = typeProvider;
     this.scopes = scopes;
     this.fnType = fnType;
     this.outputMode = outputMode;
@@ -355,7 +382,26 @@ export class Environment {
     return this.#hoistedIdentifiers.has(node);
   }
 
-  getGlobalDeclaration(binding: NonLocalBinding): Global | null {
+  getGlobalDeclaration(binding: NonLocalBinding, loc: SourceLocation): Global | null {
+    const reactExportName = this.#typeProvider?.getReactExportName(loc) ?? null;
+    if (reactExportName !== null) {
+      return (
+        this.#globals.get(reactExportName) ??
+        (isHookName(reactExportName) ? this.#getCustomHookType() : null)
+      );
+    }
+    return this.#getUntypedGlobalDeclaration(binding) ?? this.getTypeScriptType(loc);
+  }
+
+  /**
+   * The type the TypeScript checker gives the expression at `loc`, for values the
+   * compiler's own inference leaves untyped.
+   */
+  getTypeScriptType(loc: SourceLocation): BuiltInType | null {
+    return this.#typeProvider?.getType(loc, this.#shapes) ?? null;
+  }
+
+  #getUntypedGlobalDeclaration(binding: NonLocalBinding): Global | null {
     switch (binding.kind) {
       case "ModuleLocal": {
         // don't resolve module locals
@@ -430,6 +476,23 @@ export class Environment {
     return null;
   }
 
+  /**
+   * Not in upstream: a collection method the compiler's shapes don't list, which TypeScript
+   * declares on `Array` but not `ReadonlyArray` (likewise `Map`, `Set`), mutates its receiver.
+   */
+  #getMutatingMethodType(shapeId: string, method: string): BuiltInType | null {
+    const collection = MUTABLE_COLLECTION_SHAPES.get(shapeId);
+    if (!collection || !this.#typeProvider?.isMutatingMethod(collection, method)) return null;
+    this.#mutatingMethodType ??= addFunction(this.#shapes, [], {
+      positionalParams: [],
+      restParam: Effect.Capture,
+      returnType: { kind: "Poly" },
+      calleeEffect: Effect.Store,
+      returnValueKind: ValueKind.Mutable,
+    });
+    return this.#mutatingMethodType;
+  }
+
   getPropertyType(receiver: Type, property: string | number): BuiltInType | PolyType | null {
     const shapeId =
       receiver.kind === "Object" || receiver.kind === "Function" ? receiver.shapeId : null;
@@ -446,6 +509,7 @@ export class Environment {
       if (typeof property === "string") {
         return (
           shape.properties.get(property) ??
+          this.#getMutatingMethodType(shapeId, property) ??
           shape.properties.get("*") ??
           (isHookName(property) ? this.#getCustomHookType() : null)
         );

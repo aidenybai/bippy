@@ -1,4 +1,4 @@
-import type { HookKind } from "./hook-kind.js";
+import type { HookKind } from "../hir/object-shape.js";
 import type { InstructionId, SourceLocation } from "../hir/hir.js";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
@@ -41,7 +41,15 @@ export type Sample =
   | { kind: "Array"; items: Sample[] }
   | { kind: "Object"; fields: Record<string, Sample> };
 
-export type BindingKind = "prop" | "state" | "reducer" | "context" | "hook" | "ref" | "item";
+export type BindingKind =
+  | "prop"
+  | "state"
+  | "reducer"
+  | "context"
+  | "hook"
+  | "ref"
+  | "item"
+  | "call";
 
 /**
  * A name the render output depends on: a prop, a piece of state, a hook result, or a list item.
@@ -143,6 +151,17 @@ export type DispatchValue = Extract<SymbolicValue, { kind: "Dispatch" }>;
 
 export type HookResultValue = Extract<SymbolicValue, { kind: "HookResult" }>;
 
+export type WarningKind = "lost-update" | "state-mutation" | "render-mutation" | "prop-mutation";
+
+/**
+ * A mutation the compiler's effects prove, which React won't render as written.
+ */
+export interface Warning {
+  kind: WarningKind;
+  message: string;
+  loc: SourceLocation;
+}
+
 export interface StateUpdate {
   binding: Binding;
   value: SymbolicValue;
@@ -193,6 +212,7 @@ export interface ComponentAnalysis {
   transitions: Transition[];
   renders: string[];
   bailouts: Bailout[];
+  warnings: Warning[];
 }
 
 export interface Edge {

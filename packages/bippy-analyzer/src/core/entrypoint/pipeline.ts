@@ -1,3 +1,5 @@
+import type { SourceFile } from "typescript/unstable/ast";
+import type { Checker } from "typescript/unstable/sync";
 import type { CompilerError } from "../compiler-error.js";
 import { analyseFunctions } from "../compiler-inference/analyse-functions.js";
 import { dropManualMemoization } from "../compiler-inference/drop-manual-memoization.js";
@@ -19,8 +21,15 @@ import { optimizePropsMethodCalls } from "../optimization/optimize-props-method-
 import { inferTypes } from "../type-inference/infer-types.js";
 import { eliminateRedundantPhi } from "../ssa/eliminate-redundant-phi.js";
 import { enterSSA } from "../ssa/enter-ssa.js";
+import { CompilerTypeProvider } from "../typescript/compiler-type-provider.js";
 import type { Result } from "../utils/result.js";
 import type { ReactFunction } from "./program.js";
+
+export interface PipelineContext {
+  sourceFile: SourceFile;
+  checker: Checker;
+  scopes: ScopeManager;
+}
 
 /**
  * Lowers one component or hook and runs the compiler's passes, up to and
@@ -29,8 +38,9 @@ import type { ReactFunction } from "./program.js";
  */
 export const runPipeline = (
   reactFunction: ReactFunction,
-  scopes: ScopeManager,
+  context: PipelineContext,
 ): Result<HIRFunction, CompilerError> => {
+  const { sourceFile, checker, scopes } = context;
   const environment = new Environment(
     scopes,
     reactFunction.fnType,
@@ -38,6 +48,7 @@ export const runPipeline = (
     validateEnvironmentConfig({}),
     findContextIdentifiers(reactFunction.node, scopes),
     reactFunction.node,
+    new CompilerTypeProvider(checker, sourceFile),
   );
   return lower(reactFunction.node, environment).map((hir) => {
     if (environment.enableDropManualMemoization) {

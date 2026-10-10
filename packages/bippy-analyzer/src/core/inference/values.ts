@@ -197,6 +197,46 @@ const formatWithPrecedence = (value: SymbolicValue, minimumPrecedence: number): 
   return getPrecedence(value) < minimumPrecedence ? `(${text})` : text;
 };
 
+/**
+ * Rebuilds a value bottom-up, letting `replace` swap any part of it.
+ */
+export const mapSymbolicValue = (
+  value: SymbolicValue,
+  replace: (value: SymbolicValue) => SymbolicValue,
+): SymbolicValue => {
+  const map = (child: SymbolicValue): SymbolicValue => mapSymbolicValue(child, replace);
+  switch (value.kind) {
+    case "BinaryExpression":
+      return replace({ ...value, left: map(value.left), right: map(value.right) });
+    case "UnaryExpression":
+      return replace({ ...value, value: map(value.value) });
+    case "Conditional":
+      return replace({
+        ...value,
+        test: map(value.test),
+        consequent: map(value.consequent),
+        alternate: map(value.alternate),
+      });
+    case "ObjectExpression":
+      return replace({
+        ...value,
+        properties: value.properties.map((property) => ({
+          ...property,
+          value: map(property.value),
+        })),
+        spreads: value.spreads.map(map),
+      });
+    case "ArrayExpression":
+      return replace({
+        ...value,
+        elements: value.elements.map(map),
+        spreads: value.spreads.map(map),
+      });
+    default:
+      return replace(value);
+  }
+};
+
 export const formatSymbolicValue = (value: SymbolicValue): string => {
   switch (value.kind) {
     case "Primitive":

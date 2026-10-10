@@ -1,3 +1,4 @@
+import type { AliasingEffect } from "../compiler-inference/aliasing-effects.js";
 import type {
   BlockId,
   HIRFunction,
@@ -10,9 +11,8 @@ import type {
   SpreadPattern,
   Terminal,
 } from "../hir/hir.js";
-import { GeneratedSource } from "../hir/hir.js";
-import { getHookKind } from "./hook-kind.js";
-import type { HookKind } from "./hook-kind.js";
+import { GeneratedSource, getHookKind } from "../hir/hir.js";
+import type { HookKind } from "../hir/object-shape.js";
 import { assertExhaustive } from "../utils/utils.js";
 import type { DomainResolver } from "./infer-domains.js";
 import type {
@@ -33,12 +33,15 @@ import type {
   StateUpdate,
   SymbolicValue,
   TestKind,
+  Warning,
+  WarningKind,
 } from "./types.js";
 import {
   formatPlace,
   getKnownTruthiness,
   getPlaceKey,
   getTestExpression,
+  mapSymbolicValue,
   negate,
 } from "./values.js";
 
@@ -88,6 +91,32 @@ interface CollectedEffects {
   delegates: string[];
 }
 
+interface Mutation {
+  binding: Binding;
+  loc: SourceLocation;
+}
+
+/**
+ * A function's effects are attached to the instruction that creates it but only happen when
+ * it's called, which the evaluator follows separately.
+ */
+const isFunctionCreation = (value: InstructionValue): boolean =>
+  value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
+
+const getMutatedPlace = (effect: AliasingEffect): Place | null => {
+  switch (effect.kind) {
+    case "Mutate":
+    case "MutateTransitive":
+      return effect.value;
+    case "MutateFrozen":
+      return effect.place;
+    default:
+      return null;
+  }
+};
+
+const STATE_BINDING_KINDS = new Set<BindingKind>(["state", "reducer"]);
+
 export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
 
 type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
@@ -135,6 +164,11 @@ const foldBinary = (operator: string, left: SymbolicValue, right: SymbolicValue)
     default:
       return { kind: "BinaryExpression", operator, left, right };
   }
+};
+
+const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolean | null => {
+  if (testKind === "truthy") return getKnownTruthiness(test);
+  return test.kind === "Primitive" ? test.value !== null && test.value !== undefined : null;
 };
 
 const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
@@ -197,10 +231,12 @@ export class SymbolicEvaluator {
   readonly #branchOperators = new Map<BlockId, BranchOperator>();
   readonly placeDomains = new Map<string, Domain>();
   readonly bailouts: Bailout[] = [];
+  readonly warnings: Warning[] = [];
   readonly effectCalls: EffectCall[] = [];
   readonly renderedComponents = new Set<string>();
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
+  #mutations = new Map<number, Mutation>();
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
   #inlineDepth = 0;
@@ -444,14 +480,68 @@ export class SymbolicEvaluator {
     }
   }
 
+  #warn(kind: WarningKind, message: string, loc: SourceLocation): void {
+    const isDuplicate = this.warnings.some(
+      (warning) => warning.kind === kind && warning.message === message,
+    );
+    if (!isDuplicate) this.warnings.push({ kind, message, loc });
+  }
+
+  /**
+   * Records state and props the compiler's effects prove an instruction mutates. In a
+   * handler, later reads of mutated state no longer match what was rendered.
+   */
+  #trackMutations(instruction: Instruction): void {
+    if (isFunctionCreation(instruction.value)) return;
+    for (const effect of instruction.effects ?? []) {
+      const place = getMutatedPlace(effect);
+      if (!place) continue;
+      const operand = this.#read(place);
+      if (operand.kind !== "Binding") continue;
+      const { binding } = operand;
+      if (binding.kind === "prop") {
+        this.#warn(
+          "prop-mutation",
+          `mutates prop ${formatPlace(binding, operand.path)}`,
+          place.loc,
+        );
+      } else if (STATE_BINDING_KINDS.has(binding.kind)) {
+        if (this.#mode === "effect" && !this.#mutations.has(binding.id))
+          this.#mutations.set(binding.id, { binding, loc: place.loc });
+        else this.#warn("render-mutation", `mutates ${binding.name} during render`, place.loc);
+      }
+    }
+  }
+
+  #forgetMutations(value: SymbolicValue): SymbolicValue {
+    return mapSymbolicValue(value, (part) =>
+      part.kind === "Binding" && this.#mutations.has(part.binding.id)
+        ? createUnknown("mutated", GeneratedSource)
+        : part,
+    );
+  }
+
   #recordUpdate(binding: Binding, value: SymbolicValue, state: WalkState): void {
     if (this.#mode !== "effect") return;
+    const mutation = this.#mutations.get(binding.id);
+    if (mutation) {
+      const isSameReference =
+        value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
+      this.#warn(
+        isSameReference ? "lost-update" : "state-mutation",
+        isSameReference
+          ? `sets ${binding.name} to the array or object it mutated, so React skips the update`
+          : `mutates ${binding.name} in place before setting it`,
+        mutation.loc,
+      );
+    }
+    const knownValue = this.#forgetMutations(value);
     this.#collected.updates.push({
       binding,
       value:
-        state.isAsync && value.kind !== "Primitive"
+        state.isAsync && knownValue.kind !== "Primitive"
           ? createUnknown("async", GeneratedSource)
-          : value,
+          : knownValue,
       guards: state.guards,
       isAsync: state.isAsync,
     });
@@ -501,7 +591,7 @@ export class SymbolicEvaluator {
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
-    const hookKind = getHookKind(this.#resolver.getCalleeName(calleePlace.loc), callee);
+    const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
     if (hookKind !== null)
       return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);
     switch (callee.kind) {
@@ -521,19 +611,29 @@ export class SymbolicEvaluator {
         break;
     }
     for (const argument of args) this.#visitCallbackArgument(argument, state);
+    if (this.#mode !== "render") return createUnknown("call", loc);
     const returnType = this.#resolver.getTypeText(loc);
-    if (
-      this.#mode === "render" &&
-      returnType !== null &&
-      RENDERABLE_RETURN_TYPE_PATTERN.test(returnType)
-    ) {
+    if (returnType !== null && RENDERABLE_RETURN_TYPE_PATTERN.test(returnType)) {
       this.bailouts.push({
         reason: "unknown-call",
         message: "call returns JSX the analysis can't see into",
         loc,
       });
+      return createUnknown("call", loc);
     }
-    return createUnknown("call", loc);
+    return this.#createCallResult(loc);
+  }
+
+  /**
+   * Gives a call the analysis can't see into a value of its return type. When the type has
+   * a finite set of values, like `boolean`, the result is a binding states can split on.
+   */
+  #createCallResult(loc: SourceLocation): SymbolicValue {
+    const calleeText = this.#resolver.getCalleeText(loc);
+    if (calleeText === null || this.#resolver.getDomain(loc).kind !== "Cases") {
+      return createUnknown("call", loc);
+    }
+    return createBindingValue(this.#createBinding(`${calleeText}()`, "call", loc));
   }
 
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
@@ -619,6 +719,7 @@ export class SymbolicEvaluator {
     const { value } = instruction;
     if (value.kind === "PropertyLoad")
       this.#propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
+    this.#trackMutations(instruction);
     this.#write(instruction.lvalue, this.#evaluateInstructionValue(value, state));
   }
 
@@ -852,9 +953,9 @@ export class SymbolicEvaluator {
     const consequentOutcome = walkArm(consequent, true);
     const alternateOutcome = walkArm(alternate, false);
     const isSwapped = operator === "&&";
-    const decided = getKnownTruthiness(testValue);
+    const decided = getKnownOutcome(testValue, testKind);
     const split: Outcome =
-      decided !== null && testKind === "truthy"
+      decided !== null
         ? decided !== isSwapped
           ? consequentOutcome
           : alternateOutcome
@@ -1026,14 +1127,37 @@ export class SymbolicEvaluator {
   }
 
   /**
+   * State a handler mutates but never sets still changes: React shows the new contents the
+   * next time anything re-renders. The state is forgotten so later states stay sound.
+   */
+  #recordUnsetMutations(): void {
+    for (const { binding, loc } of this.#mutations.values()) {
+      if (this.#collected.updates.some((update) => update.binding.id === binding.id)) continue;
+      this.#warn(
+        "state-mutation",
+        `mutates ${binding.name} without setting it, so the change shows only on the next render`,
+        loc,
+      );
+      this.#collected.updates.push({
+        binding,
+        value: createUnknown("mutated", GeneratedSource),
+        guards: [],
+        isAsync: false,
+      });
+    }
+  }
+
+  /**
    * Evaluates an event handler or effect callback and returns the state updates and prop
    * calls it makes.
    */
   collectEffects(callback: SymbolicValue, args: SymbolicValue[]): CollectedEffects {
     const previousMode = this.#mode;
     const previousCollected = this.#collected;
+    const previousMutations = this.#mutations;
     this.#mode = "effect";
     this.#collected = { updates: [], delegates: [] };
+    this.#mutations = new Map();
     try {
       if (callback.kind === "Function") {
         const fn = this.#getFunction(callback.functionId);
@@ -1047,10 +1171,12 @@ export class SymbolicEvaluator {
         );
       if (callback.kind === "Binding" && callback.binding.kind === "prop")
         this.#collected.delegates.push(callback.binding.name);
+      this.#recordUnsetMutations();
       return this.#collected;
     } finally {
       this.#mode = previousMode;
       this.#collected = previousCollected;
+      this.#mutations = previousMutations;
     }
   }
 }

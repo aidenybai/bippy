@@ -170,7 +170,7 @@ const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> 
 
 const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
   const hookBindings = analysis.bindings.filter(
-    (binding) => binding.kind !== "prop" && binding.kind !== "item",
+    (binding) => binding.kind !== "prop" && binding.kind !== "item" && binding.kind !== "call",
   );
   if (
     hookBindings.some((binding) => !binding.hookKind || !ORDERED_HOOK_KINDS.has(binding.hookKind))

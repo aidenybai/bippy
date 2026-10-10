@@ -364,6 +364,18 @@ const buildStates = (component: AnalyzedComponent, context: ComponentPrintContex
   );
 };
 
+const buildWarnings = (component: AnalyzedComponent, options: PrintOptions): TreeNode =>
+  createTreeNode(
+    options.colors.dim("warnings"),
+    component.analysis.warnings.map((warning) =>
+      createTreeNode(
+        truncate(
+          `${options.colors.red(warning.kind)} ${formatLine(warning.loc)} ${options.colors.dim(warning.message)}`,
+        ),
+      ),
+    ),
+  );
+
 const buildBailouts = (component: AnalyzedComponent, options: PrintOptions): TreeNode =>
   createTreeNode(
     options.colors.dim("bailouts"),
@@ -410,6 +422,8 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
     );
   }
   if (views.has("states")) sections.push(buildStates(component, context));
+  if (views.has("warnings") && analysis.warnings.length > 0)
+    sections.push(buildWarnings(component, context));
   if (views.has("bailouts") && analysis.bailouts.length > 0)
     sections.push(buildBailouts(component, context));
   const line = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.line}`;
