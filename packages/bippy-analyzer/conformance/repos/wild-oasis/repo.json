@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/AyoubAloui94/the-wild-oasis-business-app",
+  "revision": "864cd345b3bd0df94b6b38e1b9f212307effa417",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund && printf 'VITE_SUPABASE_URL=http://localhost:54321\\nVITE_SUPABASE_KEY=conformance\\n' > .env"
+}

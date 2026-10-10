@@ -1,0 +1,42 @@
+{
+  "name": "bippy-analyzer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Finds every state a React app can be in from its source, and verifies it against real renders",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "analyze": "tsx src/cli/analyze.ts",
+    "verify": "tsx tests/verify/cli.ts",
+    "conformance": "tsx conformance/runner/cli.ts",
+    "test": "vp test --project bippy-analyzer",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@vercel/sandbox": "^3.6.1",
+    "bippy": "workspace:*",
+    "commander": "^15.0.0",
+    "magic-string": "^0.30.21",
+    "picocolors": "^1.1.1",
+    "playwright": "^1.64.0",
+    "typescript": "7.0.2",
+    "vite": "^7.3.6",
+    "vite-tsconfig-paths": "^6.1.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@tanstack/react-query": "^5.0.0",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "babel-plugin-react-compiler": "0.0.0-experimental-a1856f3-20260507",
+    "diff": "^8.0.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsx": "^4.21.0"
+  }
+}
