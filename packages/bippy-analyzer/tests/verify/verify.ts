@@ -4,6 +4,7 @@ import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
 import type { AnalyzedComponent } from "../../src/core/inference/types.js";
 import { exploreComponent } from "./driver.js";
+import { collectMutationProbes } from "./mutation.js";
 import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { startHarness } from "./server.js";
@@ -60,11 +61,14 @@ export const verifyProject = async (
     : analyzed;
   const exported = components.filter(({ analysis }) => analysis.exportName);
   const knownComponents = new Map(
-    analyzed.map(({ analysis }) => [analysis.name, analysis.displayName ?? analysis.name]),
+    analyzed.map(({ analysis }) => [analysis.declaration, analysis.displayName ?? analysis.name]),
   );
   const harness = await startHarness(
     appDirectory,
-    exported.flatMap(({ analysis }) => collectProbes(analysis)),
+    exported.flatMap(({ analysis }) => [
+      ...collectProbes(analysis),
+      ...collectMutationProbes(analysis),
+    ]),
     [...new Set(exported.map(({ analysis }) => analysis.file))],
   );
   const browser = await chromium.launch();

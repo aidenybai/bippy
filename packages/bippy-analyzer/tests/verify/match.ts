@@ -34,7 +34,7 @@ export const toExpected = (
       const { tag } = value;
       if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
       if (tag.kind === "Component") {
-        const runtimeName = knownComponents.get(tag.name);
+        const runtimeName = tag.declaration ? knownComponents.get(tag.declaration) : undefined;
         return [
           {
             kind: "component",
@@ -55,8 +55,13 @@ export const toExpected = (
       return [{ kind: "repeat", item: recurse(value.item) }];
     case "Conditional":
       return [{ kind: "choice", options: [recurse(value.consequent), recurse(value.alternate)] }];
+    case "Primitive": {
+      if (isRenderingNothing(value)) return [];
+      const text = normalizeText(String(value.value));
+      return text ? [{ kind: "text", text }] : [];
+    }
     default:
-      return isRenderingNothing(value) ? [] : [{ kind: "hole" }];
+      return [{ kind: "hole" }];
   }
 };
 

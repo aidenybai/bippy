@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Jacobtorr/control-gastos-contextapi",
+  "revision": "04ab1a170634e4927f3793dcc07a19730c05d2da",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.app.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

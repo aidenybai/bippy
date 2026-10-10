@@ -5,17 +5,27 @@ export type Shape =
   | { kind: "component"; name: string }
   | { kind: "text"; text: string };
 
-export type ProbeMode = "truthy" | "nullish";
+export type ProbeMode = "truthy" | "nullish" | "mutation";
 
 export interface ProbeHit {
   id: string;
   outcome: boolean;
 }
 
+export interface MutationHit {
+  id: string;
+  owner: string | null;
+  isWritten: boolean;
+  isLost: boolean;
+}
+
 export interface Capture {
   shapes: Shape[];
   hookStates: unknown[];
   probes: ProbeHit[];
+  mutationHits: MutationHit[];
+  mutatedOwners: string[];
+  firstCommitShapes: Shape[] | null;
   error: string | null;
 }
 

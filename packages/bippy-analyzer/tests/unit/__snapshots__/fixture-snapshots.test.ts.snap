@@ -1,0 +1,428 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fixture analysis > App keeps its states, edges and dead branches 1`] = `
+"App src/counter.tsx:9
+├─ data
+│  ├─ isLoading prop false | true
+│  └─ count state number = 0  integer ≥ 0
+├─ render
+│  └─ ◆ isLoading
+│     ├─ ✓ <Loading>
+│     └─ ✗ <Button onClick ⇒ count = count + 1> {count}
+└─ states (2)
+   ├─ S1 isLoading
+   │  └─ <Loading>
+   └─ S2 !isLoading
+      └─ <Button> {count}"
+`;
+
+exports[`fixture analysis > Button keeps its states, edges and dead branches 1`] = `
+"Button src/counter.tsx:5
+├─ data
+│  ├─ onClick prop () => void
+│  └─ children prop undefined | null | string | number | bigint | false | true | Iterable<ReactNode> | Promise<AwaitedReactNode> | ReactElement<u…
+├─ render
+│  └─ <button onClick ⇒ calls onClick> {children}
+└─ states (1)
+   └─ S1 always
+      └─ <button> {children}"
+`;
+
+exports[`fixture analysis > ClickStats keeps its states, edges and dead branches 1`] = `
+"ClickStats src/mutation.tsx:41
+├─ data
+│  └─ stats state { clicks: number; } = { clicks: 0 }
+├─ render
+│  └─ <button onClick ⇒ stats = Unknown(mutated)>
+│     └─ ◆ stats.clicks > 0
+│        ├─ ✓ {"Clicked"}
+│        └─ ✗ {"Not clicked"}
+├─ states (2)
+│  ├─ S1 stats.clicks > 0
+│  │  ├─ <button> {"Clicked"}
+│  │  └─ <button> onClick → S2
+│  └─ S2 stats.clicks <= 0
+│     ├─ <button> {"Not clicked"}
+│     └─ <button> onClick → S1
+└─ warnings
+   └─ state-mutation L46 mutates stats without setting it, so the change shows only on the next render"
+`;
+
+exports[`fixture analysis > Composer keeps its states, edges and dead branches 1`] = `
+"Composer src/guards.tsx:3
+├─ data
+│  ├─ draft state string = ""
+│  └─ isSent state false | true = false
+├─ render
+│  └─ ◆ isSent
+│     ├─ ✓ <p> "Sent"
+│     └─ ✗ <div>
+│        ├─ <input onChange ⇒ draft = Unknown(member)>
+│        └─ <button onClick ⇒ if draft: isSent = true> "Send"
+└─ states (2)
+   ├─ S1 isSent
+   │  └─ <p> "Sent"
+   └─ S2 !isSent
+      ├─ <div> <input> <button> "Send"
+      └─ "Send" → S1"
+`;
+
+exports[`fixture analysis > Dashboard keeps its states, edges and dead branches 1`] = `
+"Dashboard src/dashboard.tsx:25
+├─ data
+│  ├─ status prop "error" | "idle" | "loading"
+│  ├─ user prop null | User
+│  ├─ count state number = 0  integer ≥ 0
+│  └─ items state Item[] = []
+├─ render
+│  ├─ ◆ status === "loading"
+│  │  ├─ ✓ <Spinner>
+│  │  └─ ✗ ◆ !user
+│  │     ├─ ✓ <SignIn>
+│  │     └─ ✗ <main>
+│  │        ├─ <h1> {user.name}
+│  │        ├─ ◆ items.length > 0
+│  │        │  ├─ ✓ <List>
+│  │        │  └─ ✗ <Empty>
+│  │        └─ <button onClick ⇒ count = count + 1> {count}
+│  └─ on mount ⇒ items = Unknown(async) (async)
+└─ states (4)
+   ├─ S1 status === "loading"
+   │  └─ <Spinner>
+   ├─ S2 status !== "loading" ∧ !user
+   │  └─ <SignIn>
+   ├─ S3 status !== "loading" ∧ user ∧ items.length > 0
+   │  ├─ <main> <h1> {user.name} <List> <button> {count}
+   │  └─ on mount → S4 (async)
+   └─ S4 status !== "loading" ∧ user ∧ items.length <= 0
+      ├─ <main> <h1> {user.name} <Empty> <button> {count}
+      └─ on mount → S3 (async)"
+`;
+
+exports[`fixture analysis > EditButton keeps its states, edges and dead branches 1`] = `
+"EditButton src/access.tsx:5
+├─ data
+│  ├─ role prop "admin" | "viewer"
+│  ├─ isEditing state false | true = false
+│  └─ hasPermission(role, "edit") call false | true
+├─ render
+│  └─ ◆ !hasPermission(role, "edit")
+│     ├─ ✓ <p> "Read only"
+│     └─ ✗ ◆ isEditing
+│        ├─ ✓ <button onClick ⇒ isEditing = false> "Save"
+│        └─ ✗ <button onClick ⇒ isEditing = true> "Edit"
+└─ states (3)
+   ├─ S1 !hasPermission(role, "edit")
+   │  └─ <p> "Read only"
+   ├─ S2 hasPermission(role, "edit") ∧ isEditing
+   │  ├─ <button> "Save"
+   │  └─ "Save" → S3
+   └─ S3 hasPermission(role, "edit") ∧ !isEditing
+      ├─ <button> "Edit"
+      └─ "Edit" → S2"
+`;
+
+exports[`fixture analysis > Empty keeps its states, edges and dead branches 1`] = `
+"Empty src/dashboard.tsx:16
+├─ data
+│  └─ none
+├─ render
+│  └─ <p> "No items"
+└─ states (1)
+   └─ S1 always
+      └─ <p> "No items""
+`;
+
+exports[`fixture analysis > FilterLabel keeps its states, edges and dead branches 1`] = `
+"FilterLabel src/literals.tsx:6
+├─ data
+│  └─ filter state "active" | "all" | "done" = "all"
+├─ render
+│  └─ <div>
+│     ├─ <p> {filter}
+│     ├─ <button onClick ⇒ filter = "active"> "Active"
+│     └─ <button onClick ⇒ filter = "done"> "Done"
+└─ states (1)
+   └─ S1 always
+      └─ <div> <p> {filter} <button> "Active" <button> "Done""
+`;
+
+exports[`fixture analysis > Inbox keeps its states, edges and dead branches 1`] = `
+"Inbox src/literals.tsx:17
+├─ data
+│  └─ none
+├─ render
+│  └─ <section>
+│     └─ <em> "Empty"
+└─ states (1)
+   └─ S1 always
+      └─ <section> <em> "Empty""
+`;
+
+exports[`fixture analysis > List keeps its states, edges and dead branches 1`] = `
+"List src/dashboard.tsx:17
+├─ data
+│  └─ items prop Item[]
+├─ render
+│  └─ <ul>
+│     └─ ↻ each of items
+│        └─ <li> {item.title}
+└─ states (1)
+   └─ S1 always
+      └─ <ul> ↻ items"
+`;
+
+exports[`fixture analysis > Loading keeps its states, edges and dead branches 1`] = `
+"Loading src/counter.tsx:3
+├─ data
+│  └─ none
+├─ render
+│  └─ <p> "Loading…"
+└─ states (1)
+   └─ S1 always
+      └─ <p> "Loading…""
+`;
+
+exports[`fixture analysis > Page keeps its states, edges and dead branches 1`] = `
+"Page src/plain.jsx:13
+├─ data
+│  └─ none
+├─ render
+│  └─ <Toggle>
+└─ states (1)
+   └─ S1 always
+      └─ <Toggle>"
+`;
+
+exports[`fixture analysis > ProfileCard keeps its states, edges and dead branches 1`] = `
+"ProfileCard src/query.tsx:10
+├─ data
+│  └─ query hook:Custom QueryObserverLoadingErrorResult<NoInfer<Profile>, Error> | QueryObserverLoadingResult<NoInfer<Profile>, Error> | QueryObs…
+│     ├─ .isPending false | true
+│     ├─ .isError false | true
+│     └─ .data.isAdmin false | true
+├─ render
+│  └─ ◆ query.isPending
+│     ├─ ✓ <p> "Loading"
+│     └─ ✗ ◆ query.isError
+│        ├─ ✓ <p>
+│        │  ├─ "Error: "
+│        │  └─ {query.error.message}
+│        └─ ✗ <div>
+│           ├─ {query.data.name}
+│           └─ ◆ query.data.isAdmin
+│              └─ ✓ <span> "Admin"
+└─ states (4)
+   ├─ S1 query.isPending
+   │  └─ <p> "Loading"
+   ├─ S2 !query.isPending ∧ query.isError
+   │  └─ <p> "Error: " {query.error.message}
+   ├─ S3 !query.isPending ∧ !query.isError ∧ query.data.isAdmin
+   │  └─ <div> {query.data.name} <span> "Admin"
+   └─ S4 !query.isPending ∧ !query.isError ∧ !query.data.isAdmin
+      └─ <div> {query.data.name}"
+`;
+
+exports[`fixture analysis > RoleBadge keeps its states, edges and dead branches 1`] = `
+"RoleBadge src/literals.tsx:30
+├─ data
+│  └─ role prop null | string
+├─ render
+│  └─ ◆ role === "admin"
+│     ├─ ✓ <strong> "Admin"
+│     └─ ✗ <span> "Member"
+└─ states (2)
+   ├─ S1 role === "admin"
+   │  └─ <strong> "Admin"
+   └─ S2 role !== "admin"
+      └─ <span> "Member""
+`;
+
+exports[`fixture analysis > SignIn keeps its states, edges and dead branches 1`] = `
+"SignIn src/dashboard.tsx:15
+├─ data
+│  └─ none
+├─ render
+│  └─ <a> "Sign in"
+└─ states (1)
+   └─ S1 always
+      └─ <a> "Sign in""
+`;
+
+exports[`fixture analysis > SortedList keeps its states, edges and dead branches 1`] = `
+"SortedList src/mutation.tsx:30
+├─ data
+│  └─ items prop string[]
+├─ render
+│  └─ <ul>
+│     └─ ↻ each of items
+│        └─ <li> {item}
+├─ states (1)
+│  └─ S1 always
+│     └─ <ul> ↻ items
+└─ warnings
+   └─ prop-mutation L31 mutates prop items"
+`;
+
+exports[`fixture analysis > Spinner keeps its states, edges and dead branches 1`] = `
+"Spinner src/dashboard.tsx:14
+├─ data
+│  └─ none
+├─ render
+│  └─ <div>
+└─ states (1)
+   └─ S1 always
+      └─ <div>"
+`;
+
+exports[`fixture analysis > StatusBanner keeps its states, edges and dead branches 1`] = `
+"StatusBanner src/literals.tsx:22
+├─ data
+│  └─ status state "error" | "ok" = "ok"  reachable "ok"
+├─ render
+│  └─ ◆ status === "error"
+│     ├─ ✓ <p> "Error"
+│     └─ ✗ <p> "Fine"
+└─ states (1)
+   ├─ S1 always
+   │  └─ <p> "Fine"
+   └─ dead branches
+      └─ never status === "error" L24"
+`;
+
+exports[`fixture analysis > TagList keeps its states, edges and dead branches 1`] = `
+"TagList src/mutation.tsx:3
+├─ data
+│  └─ tags state string[] = []
+├─ render
+│  └─ <div>
+│     ├─ <button onClick ⇒ tags = Unknown(mutated)> "Push"
+│     ├─ <button onClick ⇒ tags = [...Unknown(mutated)]> "Copy"
+│     └─ ◆ tags.length === 0
+│        ├─ ✓ <p> "No tags"
+│        └─ ✗ <ul>
+│           └─ ↻ each of tags
+│              └─ <li> {tag}
+├─ states (2)
+│  ├─ S1 tags.length === 0
+│  │  ├─ <div> <button> "Push" <button> "Copy" <p> "No tags"
+│  │  ├─ "Push" → S2
+│  │  └─ "Copy" → S2
+│  └─ S2 tags.length !== 0
+│     ├─ <div> <button> "Push" <button> "Copy" <ul> ↻ tags
+│     ├─ "Push" → S1
+│     └─ "Copy" → S1
+└─ warnings
+   ├─ lost-update L6 sets tags to the array or object it mutated, so React skips the update
+   └─ state-mutation L10 mutates tags in place before setting it"
+`;
+
+exports[`fixture analysis > TitleCard keeps its states, edges and dead branches 1`] = `
+"TitleCard src/literals.tsx:27
+├─ data
+│  └─ title prop null | string
+├─ render
+│  └─ ◆ title === ""
+│     ├─ ✓ <p> "Untitled"
+│     └─ ✗ <h1> {title}
+└─ states (2)
+   ├─ S1 title === ""
+   │  └─ <p> "Untitled"
+   └─ S2 title !== ""
+      └─ <h1> {title}"
+`;
+
+exports[`fixture analysis > TodoApp keeps its states, edges and dead branches 1`] = `
+"TodoApp src/todo.tsx:11
+├─ data
+│  ├─ todos state Todo[] = []
+│  ├─ draft state string = ""
+│  ├─ filter state "active" | "all" | "done" = "all"
+│  └─ isEditing state false | true = false
+├─ render
+│  └─ <section>
+│     ├─ <input onChange ⇒ draft = Unknown(member)>
+│     ├─ <button onClick ⇒ if Unknown(call): todos = [...todos, { id: Unknown(call), text: draft…> "Add"
+│     ├─ ◆ todos.length === 0
+│     │  └─ ✓ <p> "Nothing to do"
+│     ├─ <ul>
+│     │  └─ ↻ each of Unknown(call)
+│     │     └─ <li onClick ⇒ todos = todos.map(…)>
+│     │        └─ ◆ todo.isDone
+│     │           ├─ ✓ <s> {todo.text}
+│     │           └─ ✗ {todo.text}
+│     ├─ <footer>
+│     │  ├─ <button onClick ⇒ filter = "all"> "All"
+│     │  ├─ <button onClick ⇒ filter = "active"> "Active"
+│     │  └─ <button onClick ⇒ filter = "done"> "Done"
+│     └─ ◆ isEditing
+│        ├─ ✓ <button onClick ⇒ isEditing = false> "Save"
+│        └─ ✗ <button onClick ⇒ isEditing = true> "Edit"
+└─ states (4)
+   ├─ S1 todos.length === 0 ∧ isEditing
+   │  ├─ <section> <input> <button> "Add" <p> "Nothing to do" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button…
+   │  ├─ "Add" → S3
+   │  └─ "Save" → S2
+   ├─ S2 todos.length === 0 ∧ !isEditing
+   │  ├─ <section> <input> <button> "Add" <p> "Nothing to do" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button…
+   │  ├─ "Add" → S4
+   │  └─ "Edit" → S1
+   ├─ S3 todos.length !== 0 ∧ isEditing
+   │  ├─ <section> <input> <button> "Add" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button> "Save"
+   │  └─ "Save" → S4
+   └─ S4 todos.length !== 0 ∧ !isEditing
+      ├─ <section> <input> <button> "Add" <ul> ↻ Unknown(call) <footer> <button> "All" <button> "Active" <button> "Done" <button> "Edit"
+      └─ "Edit" → S3"
+`;
+
+exports[`fixture analysis > Toggle keeps its states, edges and dead branches 1`] = `
+"Toggle src/plain.jsx:3
+├─ data
+│  ├─ label prop "More"  (call sites)
+│  ├─ variant prop "compact"  (call sites)
+│  └─ isOpen state false | true = false
+├─ render
+│  └─ <div>
+│     ├─ <button onClick ⇒ isOpen = !isOpen> {label}
+│     └─ ◆ isOpen
+│        └─ ✓ <p> "Details"
+└─ states (2)
+   ├─ S1 isOpen
+   │  ├─ <div> <button> {"More"} <p> "Details"
+   │  └─ "label" → S2
+   └─ S2 !isOpen
+      ├─ <div> <button> {"More"}
+      └─ "label" → S1"
+`;
+
+exports[`fixture analysis > Wizard keeps its states, edges and dead branches 1`] = `
+"Wizard src/reducer.tsx:21
+├─ data
+│  └─ state reducer WizardState = { step: "details", hasError: false }
+│     ├─ .step "details" | "done" | "payment"
+│     └─ .hasError false | true reachable false
+├─ render
+│  └─ ◆ state.step === "done"
+│     ├─ ✓ <p> "Thanks!"
+│     └─ ✗ <form>
+│        ├─ ◆ state.hasError
+│        │  └─ ✓ <p> "Something went wrong"
+│        ├─ ◆ state.step === "details"
+│        │  ├─ ✓ <input>
+│        │  └─ ✗ <input>
+│        ├─ ◆ state.step === "payment"
+│        │  └─ ✓ <button onClick ⇒ state.step = "details"> "Back"
+│        └─ <button onClick ⇒ state.step = state.step === "details" ? "payment" : "done", state.has…> "Next"
+└─ states (3)
+   ├─ S1 state.step === "done"
+   │  └─ <p> "Thanks!"
+   ├─ S2 state.step !== "done" ∧ state.step === "details"
+   │  ├─ <form> <input> <button> "Next"
+   │  └─ "Next" → S3
+   ├─ S3 state.step !== "done" ∧ state.step !== "details"
+   │  ├─ <form> <input> <button> "Back" <button> "Next"
+   │  ├─ "Back" → S2
+   │  └─ "Next" → S1
+   └─ dead branches
+      └─ never state.hasError L26"
+`;

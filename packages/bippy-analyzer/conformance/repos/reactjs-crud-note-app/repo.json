@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/wpcodevo/reactjs-crud-note-app",
+  "revision": "97c60d57a142eb829aa9692e26dbd8133854ab0b",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@8.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

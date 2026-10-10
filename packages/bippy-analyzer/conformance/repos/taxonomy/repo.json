@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/shadcn-ui/taxonomy",
+  "revision": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@8.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

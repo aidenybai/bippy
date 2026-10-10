@@ -35,7 +35,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
   const lines = [
     `${picocolors.bold(verdict.name)}  ${wrongCount > 0 ? picocolors.red(`${wrongCount} wrong`) : picocolors.green("0 wrong")}  ` +
       picocolors.dim(
-        `states ${verdict.witnessedStates.length}/${verdict.predictedStates} witnessed · edges ${verdict.witnessedEdges} · branch sides ${verdict.witnessedBranchSides}/${verdict.branchSides} · ${verdict.observations} observations`,
+        `states ${verdict.witnessedStates.length}/${verdict.predictedStates} witnessed · edges ${verdict.witnessedEdges} · branch sides ${verdict.witnessedBranchSides}/${verdict.branchSides} · ${verdict.warnings > 0 ? `warnings ${verdict.witnessedWarnings}/${verdict.warnings} witnessed · ` : ""}${verdict.observations} observations`,
       ),
   ];
   for (const wrongState of verdict.wrongStates) {
@@ -63,6 +63,10 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
   }
   for (const refuted of verdict.refutedDeadClaims)
     lines.push(picocolors.red(`  ✗ dead branch was reached: ${refuted}`));
+  for (const refuted of verdict.refutedWarnings)
+    lines.push(picocolors.red(`  ✗ mutation warning refuted: ${refuted}`));
+  for (const unwarned of verdict.unwarnedMutations)
+    lines.push(picocolors.dim(`  · unwarned mutation: ${unwarned}`));
   if (verdict.renderErrors > 0)
     lines.push(picocolors.yellow(`  ${verdict.renderErrors} observations threw while rendering`));
   return lines.join("\n");
@@ -91,7 +95,7 @@ new Command()
     const summary = summarizeVerdicts(report.components, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount · ${summary.notExported} not exported · ${summary.wrong} wrong · states ${summary.witnessedStates}/${summary.predictedStates} witnessed · ${summary.durationMs} ms`,
+        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount · ${summary.notExported} not exported · ${summary.wrong} wrong · states ${summary.witnessedStates}/${summary.predictedStates} witnessed · warnings ${summary.witnessedWarnings}/${summary.warnings} witnessed · ${summary.unwarnedMutations} unwarned mutations · ${summary.durationMs} ms`,
       ),
     );
   })
