@@ -5,7 +5,7 @@ import MagicString from "magic-string";
 import { createServer } from "vite";
 import type { Plugin, ViteDevServer } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import type { ProbeMode } from "./types.ts";
+import type { ProbeMode } from "./types.js";
 
 export interface Probe {
   id: string;

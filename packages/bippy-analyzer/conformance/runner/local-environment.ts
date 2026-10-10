@@ -1,10 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { collect } from "./collect.ts";
-import type { CollectSummary } from "./collect.ts";
-import { CONFORMANCE_DIRECTORY } from "./repos.ts";
-import type { RepoConfig } from "./repos.ts";
+import { collect } from "./collect.js";
+import type { CollectSummary } from "./collect.js";
+import { CONFORMANCE_DIRECTORY } from "./repos.js";
+import type { RepoConfig } from "./repos.js";
 
 const CACHE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "..", ".conformance");
 

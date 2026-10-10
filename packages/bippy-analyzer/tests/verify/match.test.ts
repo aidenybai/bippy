@@ -1,30 +1,44 @@
 import { describe, expect, it } from "vite-plus/test";
-import type { RenderNode } from "../../src/symbolic-tree/model.ts";
-import { matchesExpected, normalizeShapes, toExpected } from "./match.ts";
-import type { Shape } from "./types.ts";
+import { GeneratedSource, makeInstructionId } from "../../src/core/hir/hir.js";
+import type { Binding, SymbolicValue } from "../../src/core/inference/types.js";
+import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
+import type { Shape } from "./types.js";
 
-const SPAN = { start: 0, end: 0, line: 1, column: 1, endLine: 1, endColumn: 1 };
 const NO_KNOWN_COMPONENTS = new Map<string, string>();
 
-const element = (tag: string, children: RenderNode[] = []): RenderNode => ({
-  kind: "element",
-  tag,
-  isComponent: false,
-  attributes: [],
+const createBinding = (name: string): Binding => ({
+  id: 0,
+  name,
+  kind: "state",
+  hookKind: "useState",
+  propName: null,
+  loc: GeneratedSource,
+  domain: { kind: "Unknown", reason: "unknown" },
+  samples: [],
+  initial: null,
+});
+
+const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => ({
+  kind: "JsxExpression",
+  tag: { kind: "BuiltinTag", name: tag },
+  props: [],
   children,
+  loc: GeneratedSource,
 });
-const component = (tag: string): RenderNode => ({
-  kind: "element",
-  tag,
-  isComponent: true,
-  attributes: [],
+const component = (tag: string): SymbolicValue => ({
+  kind: "JsxExpression",
+  tag: { kind: "Component", name: tag },
+  props: [],
   children: [],
+  loc: GeneratedSource,
 });
-const text = (value: string): RenderNode => ({ kind: "text", text: value });
-const value = (): RenderNode => ({
-  kind: "value",
-  expression: { kind: "slot", slot: "count", path: [] },
+const text = (value: string): SymbolicValue => ({ kind: "JSXText", value });
+const binding = (name: string): SymbolicValue => ({
+  kind: "Binding",
+  binding: createBinding(name),
+  path: [],
 });
+const value = (): SymbolicValue => binding("count");
 
 const shapeElement = (tag: string, children: Shape[] = []): Shape => ({
   kind: "element",
@@ -34,7 +48,7 @@ const shapeElement = (tag: string, children: Shape[] = []): Shape => ({
 const shapeText = (value: string): Shape => ({ kind: "text", text: value });
 
 const matches = (
-  render: RenderNode,
+  render: SymbolicValue,
   shapes: Shape[],
   knownComponents = NO_KNOWN_COMPONENTS,
 ): boolean => matchesExpected(toExpected(render, knownComponents), normalizeShapes(shapes));
@@ -52,9 +66,10 @@ describe("matchesExpected", () => {
   it("matches a list against any number of items", () => {
     const render = element("ul", [
       {
-        kind: "list",
-        source: { kind: "slot", slot: "items", path: [] },
+        kind: "ArrayMap",
+        array: binding("items"),
         item: element("li", [value()]),
+        loc: GeneratedSource,
       },
     ]);
     expect(matches(render, [shapeElement("ul")])).toBe(true);
@@ -70,13 +85,13 @@ describe("matchesExpected", () => {
   });
 
   it("matches either side of an unresolved branch", () => {
-    const render: RenderNode = {
-      kind: "branch",
-      condition: { kind: "slot", slot: "isDone", path: [] },
-      whenTrue: element("s"),
-      whenFalse: element("span"),
-      span: SPAN,
-      probe: "truthy",
+    const render: SymbolicValue = {
+      kind: "Conditional",
+      test: binding("isDone"),
+      testKind: "truthy",
+      consequent: element("s"),
+      alternate: element("span"),
+      decision: { terminalId: makeInstructionId(0), probe: "truthy", loc: GeneratedSource },
     };
     expect(matches(render, [shapeElement("s")])).toBe(true);
     expect(matches(render, [shapeElement("span")])).toBe(true);

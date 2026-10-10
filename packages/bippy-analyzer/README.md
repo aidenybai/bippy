@@ -4,7 +4,7 @@ Finds every state a React app can be in by reading its source, then checks that 
 
 The package has three parts:
 
-- **Analyzer** (`src/symbolic-tree`) reads a project with the TypeScript 7 checker. It never runs the code. For each component it prints:
+- **Analyzer** (`src`) reads a project with the TypeScript 7 checker. It never runs the code. For each component it prints:
   - the data the component depends on
   - its render tree with each branch condition
   - its states, and the buttons that move between them
@@ -17,7 +17,7 @@ The package has three parts:
 ## Run
 
 ```sh
-pnpm --filter bippy-analyzer symbolic-tree fixtures/symbolic-tree/tsconfig.json -c Wizard
+pnpm --filter bippy-analyzer analyze fixtures/symbolic-tree/tsconfig.json -c Wizard
 pnpm --filter bippy-analyzer verify fixtures/symbolic-tree/tsconfig.json
 pnpm --filter bippy-analyzer conformance run --env vercel -n 8
 ```

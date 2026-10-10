@@ -1,10 +1,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { analyzeProject, toJson } from "../../src/symbolic-tree/analyze.ts";
-import type { AnalyzedComponent } from "../../src/symbolic-tree/print.ts";
-import type { ComponentVerdict } from "../../tests/verify/score.ts";
-import { verifyProject } from "../../tests/verify/verify.ts";
+import {
+  analyzeProject,
+  serializeProjectAnalysis,
+} from "../../src/core/entrypoint/analyze-project.js";
+import type { AnalyzedComponent } from "../../src/core/inference/types.js";
+import type { ComponentVerdict } from "../../tests/verify/score.js";
+import { verifyProject } from "../../tests/verify/verify.js";
 
 export interface VerificationSummary {
   verified: number;
@@ -26,9 +29,9 @@ export interface CollectSummary {
   transitions: number;
   deadBranches: number;
   truncatedComponents: number;
-  slots: number;
-  untypedSlots: number;
-  unresolvedTypeSlots: number;
+  bindings: number;
+  untypedBindings: number;
+  unresolvedTypeBindings: number;
   bailouts: Record<string, number>;
   durationMs: number;
   verification: VerificationSummary | null;
@@ -81,22 +84,22 @@ const summarize = (
   verification: VerificationSummary | null,
 ): CollectSummary => {
   const bailouts: Record<string, number> = {};
-  for (const { model } of components) {
-    for (const bailout of model.bailouts)
+  for (const { analysis } of components) {
+    for (const bailout of analysis.bailouts)
       bailouts[bailout.reason] = (bailouts[bailout.reason] ?? 0) + 1;
   }
-  const slots = components.flatMap(({ model }) => model.slots);
+  const bindings = components.flatMap(({ analysis }) => analysis.bindings);
   return {
     files: fileCount,
     components: components.length,
     states: sum(components, ({ report }) => report.states.length),
-    transitions: sum(components, ({ model }) => model.transitions.length),
+    transitions: sum(components, ({ analysis }) => analysis.transitions.length),
     deadBranches: sum(components, ({ report }) => report.deadBranches.length),
     truncatedComponents: components.filter(({ report }) => report.isTruncated).length,
-    slots: slots.length,
-    untypedSlots: slots.filter((slot) => slot.domain.kind === "unknown").length,
-    unresolvedTypeSlots: slots.filter(
-      (slot) => slot.domain.kind === "unknown" && slot.domain.reason === "unresolved-type",
+    bindings: bindings.length,
+    untypedBindings: bindings.filter((binding) => binding.domain.kind === "Unknown").length,
+    unresolvedTypeBindings: bindings.filter(
+      (binding) => binding.domain.kind === "Unknown" && binding.domain.reason === "unresolved",
     ).length,
     bailouts,
     durationMs,
@@ -111,10 +114,11 @@ export const collect = async (
 ): Promise<CollectSummary> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
-  const { components, fileCount } = analyzeProject(configPath, undefined);
+  const projectAnalysis = analyzeProject(configPath);
+  const { components, fileCount } = projectAnalysis;
   const analysisDuration = Math.round(performance.now() - startTime);
   mkdirSync(outputDirectory, { recursive: true });
-  writeFileSync(join(outputDirectory, "model.json"), toJson(components));
+  writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));
   let verification: VerificationSummary | null = null;
   if (options.shouldVerify) {
     const report = await verifyProject(configPath, { analyzed: components });

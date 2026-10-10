@@ -4,12 +4,15 @@
   "private": true,
   "description": "Finds every state a React app can be in from its source, and verifies it against real renders",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
-    "symbolic-tree": "tsx src/symbolic-tree/cli.ts",
+    "analyze": "tsx src/cli/analyze.ts",
+    "verify": "tsx tests/verify/cli.ts",
     "conformance": "tsx conformance/runner/cli.ts",
     "test": "vp test --project bippy-analyzer",
-    "typecheck": "tsc --noEmit",
-    "verify": "tsx tests/verify/cli.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "^0.3.31",

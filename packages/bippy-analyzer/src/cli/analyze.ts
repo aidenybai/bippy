@@ -1,35 +1,22 @@
-#!/usr/bin/env node
 import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import picocolors from "picocolors";
-import { analyzeProject, toJson } from "./analyze.ts";
-import { formatComponent, formatHierarchy } from "./print.ts";
-import type { View } from "./print.ts";
-
-interface CliOptions {
-  component?: string[];
-  file?: string;
-  view: View[];
-  hierarchy: boolean;
-  depth: number;
-  attributes: boolean;
-  json: boolean;
-  color: boolean;
-}
-
-const ALL_VIEWS: View[] = ["data", "render", "states", "bailouts"];
-const DEFAULT_VIEWS: View[] = ALL_VIEWS;
+import { analyzeProject, serializeProjectAnalysis } from "../core/entrypoint/analyze-project.js";
+import { ALL_VIEWS, DEFAULT_RENDER_DEPTH } from "./constants.js";
+import { formatComponent, formatHierarchy } from "./print.js";
+import type { AnalyzeCliOptions, View } from "./types.js";
 
 const isView = (value: string): value is View => ALL_VIEWS.some((view) => view === value);
 
 const parseViews = (value: string): View[] => {
   if (value === "all") return ALL_VIEWS;
   const views = value.split(",").map((view) => view.trim());
-  const invalid = views.filter((view) => !isView(view));
-  if (invalid.length > 0)
+  const invalidViews = views.filter((view) => !isView(view));
+  if (invalidViews.length > 0) {
     throw new InvalidArgumentError(
-      `Unknown view: ${invalid.join(", ")}. Use ${ALL_VIEWS.join(", ")} or all.`,
+      `Unknown view: ${invalidViews.join(", ")}. Use ${ALL_VIEWS.join(", ")} or all.`,
     );
+  }
   return views.filter(isView);
 };
 
@@ -40,17 +27,27 @@ const parseDepth = (value: string): number => {
   return depth;
 };
 
-const run = (tsconfig: string, options: CliOptions): void => {
+const countBailouts = (reasons: string[]): string[] => {
+  const counts = new Map<string, number>();
+  for (const reason of reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  return [...counts]
+    .sort((left, right) => right[1] - left[1])
+    .map(([reason, count]) => `${reason} ${count}`);
+};
+
+const run = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
-  const rootDirectory = dirname(configPath);
-  const { components: allComponents, fileCount } = analyzeProject(configPath, options.file);
+  const projectAnalysis = analyzeProject(configPath, options.file ?? null);
+  const { fileCount } = projectAnalysis;
   const components = options.component
-    ? allComponents.filter(({ model }) => options.component?.includes(model.name))
-    : allComponents;
+    ? projectAnalysis.components.filter(({ analysis }) =>
+        options.component?.includes(analysis.name),
+      )
+    : projectAnalysis.components;
 
   if (options.json) {
-    console.log(toJson(components));
+    console.log(serializeProjectAnalysis({ components, fileCount }));
     return;
   }
 
@@ -58,11 +55,9 @@ const run = (tsconfig: string, options: CliOptions): void => {
   const printOptions = {
     views: new Set(options.view),
     colors,
-    rootDirectory,
+    rootDirectory: dirname(configPath),
     maxDepth: options.depth,
     isShowingAttributes: options.attributes,
-    effects: new Map<string, string>(),
-    triggers: new Map<string, string>(),
   };
 
   if (options.hierarchy) console.log(`${formatHierarchy(components, printOptions)}\n`);
@@ -72,26 +67,21 @@ const run = (tsconfig: string, options: CliOptions): void => {
   }
 
   const stateCount = components.reduce((total, { report }) => total + report.states.length, 0);
-  const bailoutCounts = new Map<string, number>();
-  for (const { model } of components) {
-    for (const bailout of model.bailouts)
-      bailoutCounts.set(bailout.reason, (bailoutCounts.get(bailout.reason) ?? 0) + 1);
-  }
   const elapsed = Math.round(performance.now() - startTime);
   console.log(
     colors.dim(
       `${components.length} components · ${stateCount} states · ${fileCount} files · ${elapsed} ms`,
     ),
   );
-  const bailouts = [...bailoutCounts]
-    .sort((left, right) => right[1] - left[1])
-    .map(([reason, count]) => `${reason} ${count}`);
+  const bailouts = countBailouts(
+    components.flatMap(({ analysis }) => analysis.bailouts.map((bailout) => bailout.reason)),
+  );
   if (bailouts.length > 0) console.log(colors.dim(`bailouts: ${bailouts.join(", ")}`));
 };
 
 new Command()
-  .name("symbolic-tree")
-  .description("Map every state a React app can be in, from source, without running it.")
+  .name("analyze")
+  .description("List every state each React component can be in, from source, without running it.")
   .argument("[tsconfig]", "path to the project's tsconfig.json", "tsconfig.json")
   .option("-c, --component <names...>", "only show these components")
   .option("-f, --file <filter>", "only analyze files whose path contains this text")
@@ -99,12 +89,12 @@ new Command()
     "-v, --view <views>",
     `sections to show: ${ALL_VIEWS.join(", ")} (default: all)`,
     parseViews,
-    DEFAULT_VIEWS,
+    ALL_VIEWS,
   )
   .option("-H, --hierarchy", "show the component tree (parent → child)", false)
-  .option("-d, --depth <n>", "maximum render tree depth", parseDepth, 12)
+  .option("-d, --depth <n>", "maximum render tree depth", parseDepth, DEFAULT_RENDER_DEPTH)
   .option("-a, --attributes", "show every JSX attribute, not only event handlers", false)
-  .option("--json", "print the models as JSON", false)
+  .option("--json", "print the analyses as JSON", false)
   .option("--no-color", "disable colors")
   .action(run)
   .parse();

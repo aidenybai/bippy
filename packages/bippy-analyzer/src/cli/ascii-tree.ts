@@ -1,7 +1,4 @@
-export interface TreeNode {
-  label: string;
-  children: TreeNode[];
-}
+import type { TreeNode } from "./types.js";
 
 export const createTreeNode = (label: string, children: TreeNode[] = []): TreeNode => ({
   label,

@@ -2,11 +2,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import picocolors from "picocolors";
-import type { CollectSummary } from "./collect.ts";
-import { runLocal } from "./local-environment.ts";
-import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos.ts";
-import type { RepoConfig } from "./repos.ts";
-import { runVercel } from "./vercel-environment.ts";
+import type { CollectSummary } from "./collect.js";
+import { runLocal } from "./local-environment.js";
+import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos.js";
+import type { RepoConfig } from "./repos.js";
+import { runVercel } from "./vercel-environment.js";
 
 type Environment = "local" | "vercel";
 
@@ -73,7 +73,7 @@ const mapWithConcurrency = async <Item, Result>(
 const UNRESOLVED_TYPE_LIMIT = 0.2;
 
 const isSetupSuspect = (summary: CollectSummary): boolean =>
-  summary.slots > 0 && summary.unresolvedTypeSlots / summary.slots > UNRESOLVED_TYPE_LIMIT;
+  summary.bindings > 0 && summary.unresolvedTypeBindings / summary.bindings > UNRESOLVED_TYPE_LIMIT;
 
 const formatTable = (results: RepoResult[]): string => {
   const header = [
@@ -101,7 +101,7 @@ const formatTable = (results: RepoResult[]): string => {
       String(summary.states),
       String(summary.transitions),
       String(summary.deadBranches),
-      String(summary.untypedSlots),
+      String(summary.untypedBindings),
       String(bailoutCount),
       summary.verification ? String(summary.verification.verified) : "-",
       summary.verification ? String(summary.verification.couldNotMount) : "-",
@@ -124,7 +124,7 @@ const formatTable = (results: RepoResult[]): string => {
     if (summary && isSetupSuspect(summary)) {
       failures.push(
         picocolors.yellow(
-          `${id}: ${summary.unresolvedTypeSlots} of ${summary.slots} slots have unresolved types. Check that the install ran in the right directory.`,
+          `${id}: ${summary.unresolvedTypeBindings} of ${summary.bindings} bindings have unresolved types. Check that the install ran in the right directory.`,
         ),
       );
     }
