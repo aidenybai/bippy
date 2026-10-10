@@ -8,11 +8,13 @@
     "symbolic-tree": "tsx src/symbolic-tree/cli.ts",
     "coverage": "tsx tests/branch-coverage/cli.ts",
     "test": "vp test --project bippy-analyzer",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "conformance": "tsx conformance/runner/cli.ts"
   },
   "dependencies": {
     "@jridgewell/trace-mapping": "^0.3.31",
     "@typescript-eslint/types": "^8.59.3",
+    "@vercel/sandbox": "^3.6.1",
     "cli-table3": "^0.6.5",
     "commander": "^15.0.0",
     "monocart-coverage-reports": "^2.12.12",
