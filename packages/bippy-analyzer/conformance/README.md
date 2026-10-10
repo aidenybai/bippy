@@ -40,6 +40,31 @@ Create `repos/<id>/repo.json`:
 
 If the repo needs changes before it installs or type-checks, add them as `repos/<id>/custom.patch`. `setup.sh` applies the patch after checkout.
 
+## Verify setup and specs
+
+Many components only render inside their app: behind a logged-in user, with an API to load from, or under the app's providers. A repo can describe that in `repos/<id>/verify/`:
+
+- `setup.tsx` runs in the page before any component loads. It can start the app's mock API, seed data and log in. Its default export, if any, wraps every mounted component, inside the providers the harness adds itself. Imports resolve as they would from the app, so `@/` paths work. Named functions under `scenarios` seed data for a spec.
+- `harness.json` sets `env` variables, readable as `import.meta.env.X` and `process.env.X`, and `alias` modules, such as a stub for `next/font/google`.
+- `*.spec.ts` are hand-written Playwright tests. They reach states the automatic exploration can't, like a list with comments in it:
+
+```ts
+import { test } from "../../../../tests/verify/spec.js";
+
+test.use({ repo: "bulletproof-react" });
+
+test("pages through comments", async ({ mountComponent }) => {
+  const comments = await mountComponent("CommentsList", {
+    props: { discussionId: "first" },
+    scenario: ["discussion", "first", 12],
+  });
+  comments.expectState("!commentsQuery.isLoading ∧ … ∧ commentsQuery.hasNextPage ∧ …");
+  await comments.click("Load More Comments");
+});
+```
+
+`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any wrong claim. Run the specs with `pnpm --filter bippy-analyzer conformance:specs`, after a `conformance run` has set the repos up.
+
 ## Environments
 
 Both environments run the same `setup.sh`: a shallow fetch of the pinned commit, the optional patch, then the install command.

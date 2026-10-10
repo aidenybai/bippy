@@ -27,10 +27,10 @@ pnpm --filter bippy-analyzer conformance run --env vercel -n 8
 For each exported component:
 
 1. **Instrument.** A Vite dev server serves the app's own code. Every branch condition the analyzer modeled is wrapped in a probe that records which side ran. Every place a mutation warning points at, like `tags` in `tags.push(…)`, is wrapped in a probe that watches writes to that object.
-2. **Mount.** Playwright opens a page that loads bippy before React. The page mounts the component inside the providers the app has installed: React Query, React Router and react-hook-form.
+2. **Mount.** Playwright opens a page that loads bippy before React. The page mounts the component inside the providers the app has installed: React Query, React Router and react-hook-form. A repo can add its own setup, such as its mock API, a logged-in user or its app providers (see [conformance](conformance/README.md#verify-setup-and-specs)). Each step waits until no request is in flight, so screens show loaded data.
 3. **Choose props.** Props come from each prop's TypeScript type: every case of a union, `null`, an empty and a one-item array, and so on. Every string or number a prop is compared against in the render is added, so `role === "admin"` gets mounted with `"admin"`. The page tries every combination, or one prop at a time when there are too many.
 4. **Explore.** The page clicks every enabled element with a handler and types into every input, breadth-first, a few steps deep. After each step it reads the component's fiber tree, its hook values and the probes that fired. On mount it also keeps the tree from the first commit, before any effect has run.
-5. **Score.** Each capture is compared with the analyzer's predicted states:
+5. **Score.** Each capture is compared with the analyzer's predicted states. When a component's states come in independent groups, every group must have a state that matches the capture, and a click must move each group it changes to a predicted state and leave the others as they were.
 
 | Check       | Wrong when                                                                                                                                                                                                                    |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

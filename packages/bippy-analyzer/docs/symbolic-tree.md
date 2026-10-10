@@ -64,18 +64,20 @@ Each ported file names the compiler source it came from.
    - other hooks, typed from their return type
    - `.map` items
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
-6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??` and `switch` all produce one.
+6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??`, `?.` and `switch` all produce one. A `?:`, `&&`, `||`, `??` or `?.` merges where it ends, so a `?.` in a `className` doesn't split the rest of the render. Member reads past a `?.`, and reads of a value that may be `undefined`, are assumed not to throw.
 7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types.
 8. Collects transitions from event handlers and effects:
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
+   - calling into a custom hook's result or a context value, like `query.fetchNextPage()`, may change it to anything, later
    - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render
 9. Lists the states:
-   - It splits only on decisions in the render output, and narrows each value as it goes.
+   - It groups the render's decisions first. Two decisions share a group when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Groups vary independently, so each is listed on its own and the screens are every combination of one state per group.
+   - Within a group it splits only on decisions in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
    - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`.
    - State values are limited to the initial value plus every value a transition can set.
-10. For each state and transition, finds which states can come next. It also reports branches that can never render.
+10. For each state and each transition that changes its group, finds which states of the group can come next. A transition that doesn't touch a group leaves it as it is. It also reports branches that can never render.
 11. Reports warnings from the compiler's mutation effects:
 
 | Warning           | When                                                                               |
@@ -136,12 +138,11 @@ The error alert can never show, because nothing dispatches `fail`.
 
 | Repo                           | Files | Components | States | Time   | Bailouts       |
 | ------------------------------ | ----- | ---------- | ------ | ------ | -------------- |
-| fixtures                       | 9     | 17         | 34     | 100 ms | none           |
-| bulletproof-react (react-vite) | 127   | 107        | 186    | 980 ms | unknown-call 2 |
+| fixtures                       | 12    | 26         | 51     | 140 ms | none           |
+| bulletproof-react (react-vite) | 127   | 107        | 160    | 1.1 s  | unknown-call 1 |
 
 ## Known gaps
 
-- **Too many states in large components.** Independent sibling branches multiply, up to a cap of 256. States should be stored as independent parts, one per group of branches that share values.
 - **Hook result fields are independent.** `query.isPending` and `query.isError` are split separately, even though React Query's union ties them together. The fix is to split on the union type's tag field.
 - **Calls are opaque unless their return type is finite.** `.filter` results are still `Unknown(call)`, so the analysis doesn't know the result is empty when the source is.
 - **Only definite mutations are tracked.** Passing state to a function that may mutate it doesn't forget it.
