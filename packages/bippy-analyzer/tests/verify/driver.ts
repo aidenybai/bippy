@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
-import type { ComponentModel, Sample } from "../../src/symbolic-tree/model.ts";
-import { normalizeShapes } from "./match.ts";
-import type { Action, Capture, MountRequest } from "./types.ts";
+import type { ComponentAnalysis, Sample } from "../../src/core/inference/types.js";
+import { normalizeShapes } from "./match.js";
+import type { Action, Capture, MountRequest } from "./types.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -23,14 +23,17 @@ export const DEFAULT_LIMITS: ExploreLimits = {
   maxActionsPerCombination: 120,
 };
 
-const getPropCombinations = (model: ComponentModel, limit: number): Record<string, Sample>[] => {
-  const props = model.slots.flatMap((slot) =>
-    slot.source === "prop" && slot.propName && slot.samples?.length
-      ? [{ name: slot.propName, samples: slot.samples }]
+const getPropCombinations = (
+  analysis: ComponentAnalysis,
+  limit: number,
+): Record<string, Sample>[] => {
+  const props = analysis.bindings.flatMap((binding) =>
+    binding.kind === "prop" && binding.propName && binding.samples.length > 0
+      ? [{ name: binding.propName, samples: binding.samples }]
       : [],
   );
   const base = Object.fromEntries(
-    props.map(({ name, samples }) => [name, samples[0] ?? { kind: "undefined" }]),
+    props.map(({ name, samples }) => [name, samples[0] ?? { kind: "Undefined" }]),
   );
   const fullCount = props.reduce((total, { samples }) => total * samples.length, 1);
   if (fullCount <= limit) {
@@ -53,15 +56,15 @@ const getCaptureKey = (capture: Capture): string =>
 
 export const exploreComponent = async (
   page: Page,
-  model: ComponentModel,
+  analysis: ComponentAnalysis,
   moduleUrl: string,
   limits: ExploreLimits,
 ): Promise<Observation[]> => {
-  if (!model.exportName) return [];
-  const exportName = model.exportName;
+  const { exportName } = analysis;
+  if (!exportName) return [];
   const observations: Observation[] = [];
 
-  for (const props of getPropCombinations(model, limits.maxPropCombinations)) {
+  for (const props of getPropCombinations(analysis, limits.maxPropCombinations)) {
     const request: MountRequest = { moduleUrl, exportName, props };
     const mount = (): Promise<Capture> =>
       page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);

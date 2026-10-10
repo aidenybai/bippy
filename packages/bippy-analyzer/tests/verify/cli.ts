@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import picocolors from "picocolors";
-import type { Sample } from "../../src/symbolic-tree/model.ts";
-import type { ComponentVerdict } from "./score.ts";
-import { verifyProject } from "./verify.ts";
+import type { Sample } from "../../src/core/inference/types.js";
+import type { ComponentVerdict } from "./score.js";
+import { verifyProject } from "./verify.js";
 
 interface CliOptions {
   component?: string[];
@@ -10,15 +10,15 @@ interface CliOptions {
 }
 
 const formatSample = (sample: Sample): string => {
-  if (sample.kind === "value") return JSON.stringify(sample.value);
-  if (sample.kind === "array") return `[${sample.items.map(formatSample).join(", ")}]`;
-  if (sample.kind === "object") return "{…}";
-  return sample.kind === "function" ? "fn" : "undefined";
+  if (sample.kind === "Value") return JSON.stringify(sample.value);
+  if (sample.kind === "Array") return `[${sample.items.map(formatSample).join(", ")}]`;
+  if (sample.kind === "Object") return "{…}";
+  return sample.kind === "Function" ? "fn" : "undefined";
 };
 
 const formatProps = (props: Record<string, Sample>): string =>
   Object.entries(props)
-    .filter(([, sample]) => sample.kind !== "undefined")
+    .filter(([, sample]) => sample.kind !== "Undefined")
     .map(([name, sample]) => `${name}=${formatSample(sample)}`)
     .join(" ")
     .slice(0, 160) || "none";
@@ -59,7 +59,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
   for (const wrongValue of verdict.wrongValues) {
     lines.push(
       colors.red(
-        `  ✗ ${wrongValue.atom} = ${wrongValue.value}, predicted ${wrongValue.predicted.join(" | ")}`,
+        `  ✗ ${wrongValue.place} = ${wrongValue.value}, predicted ${wrongValue.predicted.join(" | ")}`,
       ),
     );
   }

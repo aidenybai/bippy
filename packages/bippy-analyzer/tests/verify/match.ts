@@ -1,5 +1,5 @@
-import type { RenderNode } from "../../src/symbolic-tree/model.ts";
-import type { Shape } from "./types.ts";
+import type { SymbolicValue } from "../../src/core/inference/types.js";
+import type { Shape } from "./types.js";
 
 export type ExpectedShape =
   | { kind: "element"; tag: string; children: ExpectedShape[] }
@@ -21,39 +21,42 @@ const normalizeName = (name: string): string => {
   return unwrapped === name ? (name.split(".").pop() ?? name) : normalizeName(unwrapped);
 };
 
+const isRenderingNothing = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive" && typeof value.value !== "string" && typeof value.value !== "number";
+
 export const toExpected = (
-  node: RenderNode,
+  value: SymbolicValue,
   knownComponents: Map<string, string>,
 ): ExpectedShape[] => {
-  const recurse = (child: RenderNode): ExpectedShape[] => toExpected(child, knownComponents);
-  switch (node.kind) {
-    case "element":
-      if (node.tag === "" || TRANSPARENT_TAG_PATTERN.test(node.tag))
-        return node.children.flatMap(recurse);
-      if (node.isComponent) {
-        const runtimeName = knownComponents.get(node.tag);
+  const recurse = (child: SymbolicValue): ExpectedShape[] => toExpected(child, knownComponents);
+  switch (value.kind) {
+    case "JsxExpression": {
+      const { tag } = value;
+      if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
+      if (tag.kind === "Component") {
+        const runtimeName = knownComponents.get(tag.name);
         return [
           {
             kind: "component",
-            name: normalizeName(runtimeName ?? node.tag),
+            name: normalizeName(runtimeName ?? tag.name),
             isKnown: runtimeName !== undefined,
           },
         ];
       }
-      return [{ kind: "element", tag: node.tag, children: node.children.flatMap(recurse) }];
-    case "text": {
-      const text = normalizeText(node.text);
+      return [{ kind: "element", tag: tag.name, children: value.children.flatMap(recurse) }];
+    }
+    case "JsxFragment":
+      return value.children.flatMap(recurse);
+    case "JSXText": {
+      const text = normalizeText(value.value);
       return text ? [{ kind: "text", text }] : [];
     }
-    case "value":
-    case "unknown":
-      return [{ kind: "hole" }];
-    case "list":
-      return [{ kind: "repeat", item: recurse(node.item) }];
-    case "branch":
-      return [{ kind: "choice", options: [recurse(node.whenTrue), recurse(node.whenFalse)] }];
-    case "empty":
-      return [];
+    case "ArrayMap":
+      return [{ kind: "repeat", item: recurse(value.item) }];
+    case "Conditional":
+      return [{ kind: "choice", options: [recurse(value.consequent), recurse(value.alternate)] }];
+    default:
+      return isRenderingNothing(value) ? [] : [{ kind: "hole" }];
   }
 };
 

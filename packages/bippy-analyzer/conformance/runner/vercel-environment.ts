@@ -3,9 +3,9 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { join, relative } from "node:path";
 import { Writable } from "node:stream";
 import { Sandbox } from "@vercel/sandbox";
-import type { CollectSummary } from "./collect.ts";
-import { CONFORMANCE_DIRECTORY } from "./repos.ts";
-import type { RepoConfig } from "./repos.ts";
+import type { CollectSummary } from "./collect.js";
+import { CONFORMANCE_DIRECTORY } from "./repos.js";
+import type { RepoConfig } from "./repos.js";
 
 interface SnapshotRecord {
   key: string;
@@ -27,7 +27,7 @@ const ANALYZER_DIRECTORY = `${SANDBOX_ROOT}/analyzer`;
 const OUTPUT_DIRECTORY = `${SANDBOX_ROOT}/out`;
 const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
-const ANALYZER_SOURCE_DIRECTORIES = ["src/symbolic-tree", "conformance/runner", "tests/verify"];
+const ANALYZER_SOURCE_DIRECTORIES = ["src", "conformance/runner", "tests/verify"];
 const BIPPY_SOURCE_DIRECTORY = join(PACKAGE_DIRECTORY, "../bippy/src");
 const ANALYZER_DEPENDENCIES = [
   "typescript",
@@ -238,7 +238,7 @@ export const runVercel = async (
     );
     mkdirSync(outputDirectory, { recursive: true });
     for (const fileName of [
-      "model.json",
+      "analysis.json",
       "summary.json",
       ...(shouldVerify ? ["verify.json"] : []),
     ]) {

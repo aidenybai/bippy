@@ -1,13 +1,13 @@
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
-import { analyzeProject } from "../../src/symbolic-tree/analyze.ts";
-import type { AnalyzedComponent } from "../../src/symbolic-tree/print.ts";
-import { DEFAULT_LIMITS, exploreComponent } from "./driver.ts";
-import type { ExploreLimits } from "./driver.ts";
-import { collectProbes, scoreComponent } from "./score.ts";
-import type { ComponentVerdict } from "./score.ts";
-import { startHarness } from "./server.ts";
+import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
+import type { AnalyzedComponent } from "../../src/core/inference/types.js";
+import { DEFAULT_LIMITS, exploreComponent } from "./driver.js";
+import type { ExploreLimits } from "./driver.js";
+import { collectProbes, scoreComponent } from "./score.js";
+import type { ComponentVerdict } from "./score.js";
+import { startHarness } from "./server.js";
 
 const MAX_PAGE_RESETS = 3;
 
@@ -46,7 +46,7 @@ export interface VerifyReport {
 }
 
 const isSelected = (component: AnalyzedComponent, componentNames: string[] | undefined): boolean =>
-  !componentNames || componentNames.includes(component.model.name);
+  !componentNames || componentNames.includes(component.analysis.name);
 
 export const verifyProject = async (
   tsconfigPath: string,
@@ -55,37 +55,42 @@ export const verifyProject = async (
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
   const appDirectory = dirname(configPath);
-  const analyzed = options.analyzed ?? analyzeProject(configPath, undefined).components;
+  const analyzed = options.analyzed ?? analyzeProject(configPath).components;
   const components = analyzed.filter((component) => isSelected(component, options.componentNames));
-  const exported = components.filter(({ model }) => model.exportName);
+  const exported = components.filter(({ analysis }) => analysis.exportName);
   const knownComponents = new Map(
-    analyzed.map(({ model }) => [model.name, model.displayName ?? model.name]),
+    analyzed.map(({ analysis }) => [analysis.name, analysis.displayName ?? analysis.name]),
   );
   const harness = await startHarness(
     appDirectory,
-    exported.flatMap(({ model }) => collectProbes(model)),
-    [...new Set(exported.map(({ model }) => model.file))],
+    exported.flatMap(({ analysis }) => collectProbes(analysis)),
+    [...new Set(exported.map(({ analysis }) => analysis.file))],
   );
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
   try {
     let page = await openPage(browser, harness.url);
     for (const component of components) {
-      options.onStart?.(component.model.name);
+      options.onStart?.(component.analysis.name);
       let verdict: ComponentVerdict;
       try {
-        const observations = component.model.exportName
+        const observations = component.analysis.exportName
           ? await exploreComponent(
               page,
-              component.model,
-              harness.getModuleUrl(component.model.file),
+              component.analysis,
+              harness.getModuleUrl(component.analysis.file),
               options.limits ?? DEFAULT_LIMITS,
             )
           : [];
-        verdict = scoreComponent(component.model, component.report, observations, knownComponents);
+        verdict = scoreComponent(
+          component.analysis,
+          component.report,
+          observations,
+          knownComponents,
+        );
       } catch (error) {
         verdict = {
-          ...scoreComponent(component.model, component.report, [], knownComponents),
+          ...scoreComponent(component.analysis, component.report, [], knownComponents),
           status: "mount-failed",
           error: error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error),
         };

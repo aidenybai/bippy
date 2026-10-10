@@ -1,4 +1,4 @@
-import type { Sample } from "../../src/symbolic-tree/model.ts";
+import type { Sample } from "../../src/core/inference/types.js";
 
 export type Shape =
   | { kind: "element"; tag: string; children: Shape[] }

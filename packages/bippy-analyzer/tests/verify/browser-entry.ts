@@ -4,8 +4,8 @@ import { Component, createElement } from "react";
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import type { Sample } from "../../src/symbolic-tree/model.ts";
-import type { Action, Capture, MountRequest, ProbeHit, Shape } from "./types.ts";
+import type { Sample } from "../../src/core/inference/types.js";
+import type { Action, Capture, MountRequest, ProbeHit, Shape } from "./types.js";
 
 interface BoundaryProps {
   children: ReactNode;
@@ -65,15 +65,15 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
 
 const hydrate = (sample: Sample): unknown => {
   switch (sample.kind) {
-    case "value":
+    case "Value":
       return sample.value;
-    case "undefined":
+    case "Undefined":
       return undefined;
-    case "function":
+    case "Function":
       return () => undefined;
-    case "array":
+    case "Array":
       return sample.items.map(hydrate);
-    case "object":
+    case "Object":
       return Object.fromEntries(
         Object.entries(sample.fields).map(([name, field]) => [name, hydrate(field)]),
       );

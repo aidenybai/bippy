@@ -13,9 +13,9 @@ pnpm --filter bippy-analyzer conformance run --env vercel -n 8      # Vercel San
 Results go to `conformance/results/<run>/`:
 
 - `results.json`: every repo's summary, or the error if it failed.
-- `<repo>/model.json`: the analyzer output, the same as `symbolic-tree --json`.
+- `<repo>/analysis.json`: the analyzer output, the same as `analyze --json`.
 - `<repo>/verify.json`: the verdict for every component: witnessed states, wrong claims, and why a component couldn't mount.
-- `<repo>/summary.json`: counts of components, states, transitions, dead branches, untyped slots and bailouts, plus the verification totals.
+- `<repo>/summary.json`: counts of components, states, transitions, dead branches, untyped bindings and bailouts, plus the verification totals.
 
 Verification runs by default. Pass `--no-verify` to collect only the analyzer output.
 
@@ -51,4 +51,4 @@ The Vercel environment reads `VERCEL_TOKEN`, `VERCEL_TEAM_ID` and `VERCEL_PROJEC
 
 ## Checking a setup
 
-If more than 20% of slots have unresolved types, the run prints a warning. It usually means dependencies weren't installed where the `tsconfig` looks for them.
+If more than 20% of bindings have unresolved types, the run prints a warning. It usually means dependencies weren't installed where the `tsconfig` looks for them.
