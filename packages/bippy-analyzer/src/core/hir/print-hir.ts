@@ -18,9 +18,7 @@ import {
   type Identifier,
   type IdentifierName,
   type Instruction,
-  InstructionKind,
   type InstructionValue,
-  type LValue,
   type ManualMemoDependency,
   type MutableRange,
   type ObjectMethod,
@@ -88,43 +86,6 @@ export const printHIR = (ir: HIR, options: Options | null = null): string => {
     }
   }
   return output.map((line) => indent + line).join("\n");
-};
-
-export const printMixedHIR = (value: Instruction | InstructionValue | Terminal): string => {
-  if (!("kind" in value)) {
-    return printInstruction(value);
-  }
-  switch (value.kind) {
-    case "try":
-    case "maybe-throw":
-    case "sequence":
-    case "label":
-    case "optional":
-    case "branch":
-    case "if":
-    case "logical":
-    case "ternary":
-    case "return":
-    case "switch":
-    case "throw":
-    case "while":
-    case "for":
-    case "unreachable":
-    case "unsupported":
-    case "goto":
-    case "do-while":
-    case "for-in":
-    case "for-of": {
-      const terminal = printTerminal(value);
-      if (Array.isArray(terminal)) {
-        return terminal.join("; ");
-      }
-      return terminal;
-    }
-    default: {
-      return printInstructionValue(value);
-    }
-  }
 };
 
 export const printInstruction = (instr: Instruction): string => {
@@ -510,40 +471,6 @@ export const printInstructionValue = (instrValue: InstructionValue): string => {
   }
 };
 
-export const printLValue = (lval: LValue): string => {
-  const lvalue = `${printPlace(lval.place)}`;
-
-  switch (lval.kind) {
-    case InstructionKind.Let: {
-      return `Let ${lvalue}`;
-    }
-    case InstructionKind.Const: {
-      return `Const ${lvalue}$`;
-    }
-    case InstructionKind.Reassign: {
-      return `Reassign ${lvalue}`;
-    }
-    case InstructionKind.Catch: {
-      return `Catch ${lvalue}`;
-    }
-    case InstructionKind.HoistedConst: {
-      return `HoistedConst ${lvalue}$`;
-    }
-    case InstructionKind.HoistedLet: {
-      return `HoistedLet ${lvalue}$`;
-    }
-    case InstructionKind.Function: {
-      return `Function ${lvalue}$`;
-    }
-    case InstructionKind.HoistedFunction: {
-      return `HoistedFunction ${lvalue}$`;
-    }
-    default: {
-      return assertExhaustive(lval.kind, `Unexpected lvalue kind \`${lval.kind}\``);
-    }
-  }
-};
-
 export const printPattern = (pattern: Pattern | Place | SpreadPattern): string => {
   switch (pattern.kind) {
     case "ArrayPattern": {
@@ -659,13 +586,6 @@ export const printSourceLocation = (loc: SourceLocation): string => {
     return "generated";
   }
   return `${loc.line}:${loc.column}:${loc.start}:${loc.end}`;
-};
-
-export const printSourceLocationLine = (loc: SourceLocation): string => {
-  if (typeof loc === "symbol") {
-    return "generated";
-  }
-  return `${loc.line}`;
 };
 
 const getFunctionName = (

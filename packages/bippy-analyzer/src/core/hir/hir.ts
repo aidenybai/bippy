@@ -9,7 +9,6 @@
 import type { Node, TypeNode } from "typescript/unstable/ast";
 import type { AliasingEffect } from "../compiler-inference/aliasing-effects.js";
 import { CompilerDiagnostic, CompilerError, ErrorCategory } from "../compiler-error.js";
-import { assertExhaustive } from "../utils/utils.js";
 import { isReservedWord } from "../utils/keyword.js";
 import { Err, Ok, type Result } from "../utils/result.js";
 import type { Environment, ReactFunctionType } from "./environment.js";
@@ -161,7 +160,6 @@ export interface BasicBlock {
   preds: Set<BlockId>;
   phis: Set<Phi>;
 }
-export type TBasicBlock<T extends Terminal> = BasicBlock & { terminal: T };
 
 /*
  * Terminal nodes generally represent statements that affect control flow, such as
@@ -188,8 +186,6 @@ export type Terminal =
   | SequenceTerminal
   | MaybeThrowTerminal
   | TryTerminal;
-
-export type TerminalWithFallthrough = Terminal & { fallthrough: BlockId };
 
 /*
  * Terminal nodes allowed for a value block
@@ -528,25 +524,6 @@ export enum InstructionKind {
   HoistedFunction = "HoistedFunction",
   Function = "Function",
 }
-
-export const convertHoistedLValueKind = (kind: InstructionKind): InstructionKind | null => {
-  switch (kind) {
-    case InstructionKind.HoistedLet:
-      return InstructionKind.Let;
-    case InstructionKind.HoistedConst:
-      return InstructionKind.Const;
-    case InstructionKind.HoistedFunction:
-      return InstructionKind.Function;
-    case InstructionKind.Let:
-    case InstructionKind.Const:
-    case InstructionKind.Function:
-    case InstructionKind.Reassign:
-    case InstructionKind.Catch:
-      return null;
-    default:
-      return assertExhaustive(kind, "Unexpected lvalue kind");
-  }
-};
 
 export interface Phi {
   kind: "Phi";
@@ -1078,15 +1055,6 @@ export const makeTemporaryIdentifier = (
   loc,
 });
 
-export const forkTemporaryIdentifier = (
-  identifierId: IdentifierId,
-  source: Identifier,
-): Identifier => ({
-  ...source,
-  mutableRange: { start: makeInstructionId(0), end: makeInstructionId(0) },
-  id: identifierId,
-});
-
 export const validateIdentifierName = (
   name: string,
 ): Result<ValidatedIdentifier, CompilerError> => {
@@ -1137,29 +1105,6 @@ export const promoteTemporary = (identifier: Identifier): void => {
     value: `#t${identifier.declarationId}`,
   };
 };
-
-export const isPromotedTemporary = (name: string): boolean => name.startsWith("#t");
-
-/**
- * Given an unnamed identifier, promote it to a named identifier, distinguishing
- * it as a value that needs to be capitalized since it appears in JSX element tag position
- *
- * Note: this uses the identifier's DeclarationId to ensure that all
- * instances of the same declaration will have the same name.
- */
-export const promoteTemporaryJsxTag = (identifier: Identifier): void => {
-  CompilerError.invariant(identifier.name === null, {
-    reason: `Expected a temporary (unnamed) identifier`,
-    description: `Identifier already has a name, \`${identifier.name?.value}\``,
-    loc: GeneratedSource,
-  });
-  identifier.name = {
-    kind: "promoted",
-    value: `#T${identifier.declarationId}`,
-  };
-};
-
-export const isPromotedJsxTemporary = (name: string): boolean => name.startsWith("#T");
 
 /**
  * The reason for the kind of a value.
@@ -1420,16 +1365,8 @@ export const makeInstructionId = (value: number): InstructionId => {
   return value as InstructionId;
 };
 
-export const isObjectMethodType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "ObjectMethod";
-
-export const isObjectType = (identifier: Identifier): boolean => identifier.type.kind === "Object";
-
 export const isPrimitiveType = (identifier: Identifier): boolean =>
   identifier.type.kind === "Primitive";
-
-export const isPlainObjectType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInObject";
 
 export const isArrayType = (identifier: Identifier): boolean =>
   identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInArray";
@@ -1458,14 +1395,6 @@ export const isJsxType = (type: Type): boolean =>
 export const isRefOrRefValue = (identifier: Identifier): boolean =>
   isUseRefType(identifier) || isRefValueType(identifier);
 
-/*
- * Returns true if the type is a Ref or a custom user type that acts like a ref when it
- * shouldn't. For now the only other case of this is Reanimated's shared values.
- */
-export const isRefOrRefLikeMutableType = (type: Type): boolean =>
-  type.kind === "Object" &&
-  (type.shapeId === "BuiltInUseRefId" || type.shapeId === "ReanimatedSharedValueId");
-
 export const isSetStateType = (identifier: Identifier): boolean =>
   identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInSetState";
 
@@ -1489,9 +1418,6 @@ export const isUseReducerType = (identifier: Identifier): boolean =>
 
 export const isDispatcherType = (identifier: Identifier): boolean =>
   identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInDispatch";
-
-export const isEffectEventFunctionType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInEffectEventFunction";
 
 export const isStableType = (identifier: Identifier): boolean =>
   isSetStateType(identifier) ||
@@ -1536,19 +1462,6 @@ export const evaluatesToStableTypeOrContainer = (
   }
   return false;
 };
-
-export const isUseEffectHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseEffectHook";
-export const isUseLayoutEffectHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseLayoutEffectHook";
-export const isUseInsertionEffectHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" &&
-  identifier.type.shapeId === "BuiltInUseInsertionEffectHook";
-export const isUseEffectEventType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseEffectEvent";
-
-export const isUseContextHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseContextHook";
 
 export const getHookKind = (env: Environment, identifier: Identifier): HookKind | null =>
   getHookKindForType(env, identifier.type);

@@ -197,20 +197,6 @@ export type CompilerOutputMode =
   // Lint mode, the output is unused but validations should run
   | "lint";
 
-export const printFunctionType = (type: ReactFunctionType): string => {
-  switch (type) {
-    case "Component": {
-      return "component";
-    }
-    case "Hook": {
-      return "hook";
-    }
-    default: {
-      return "function";
-    }
-  }
-};
-
 /**
  * Types the compiler can't infer itself, read from the TypeScript checker. Not part of the
  * upstream compiler, which has only a per-module `moduleTypeProvider`.

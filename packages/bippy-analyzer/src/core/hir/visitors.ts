@@ -10,7 +10,6 @@ import { assertExhaustive } from "../utils/utils.js";
 import {
   type BlockId,
   type Instruction,
-  InstructionKind,
   type InstructionValue,
   makeInstructionId,
   type Pattern,
@@ -23,36 +22,6 @@ export const eachInstructionLValue = (instr: Instruction): Array<Place> => {
   const result: Array<Place> = [];
   result.push(instr.lvalue);
   result.push(...eachInstructionValueLValue(instr.value));
-  return result;
-};
-
-export const eachInstructionLValueWithKind = (
-  instr: Instruction,
-): Array<[Place, InstructionKind]> => {
-  const result: Array<[Place, InstructionKind]> = [];
-  switch (instr.value.kind) {
-    case "DeclareContext":
-    case "StoreContext":
-    case "DeclareLocal":
-    case "StoreLocal": {
-      result.push([instr.value.lvalue.place, instr.value.lvalue.kind]);
-      break;
-    }
-    case "Destructure": {
-      const kind = instr.value.lvalue.kind;
-      for (const place of eachPatternOperand(instr.value.lvalue.pattern)) {
-        result.push([place, kind]);
-      }
-      break;
-    }
-    case "PostfixUpdateLocal":
-    case "PostfixUpdateContext":
-    case "PrefixUpdateContext":
-    case "PrefixUpdateLocal": {
-      result.push([instr.value.lvalue, InstructionKind.Reassign]);
-      break;
-    }
-  }
   return result;
 };
 

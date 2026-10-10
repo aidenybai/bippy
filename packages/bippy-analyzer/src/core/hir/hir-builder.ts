@@ -123,23 +123,6 @@ const newBlock = (id: BlockId, kind: BlockKind): WipBlock => ({ id, kind, instru
 
 export type Bindings = Map<string, { node: IdentifierNode; identifier: Identifier }>;
 
-/*
- * Determines how instructions should be constructed in order to preserve
- * exception semantics
- */
-export type ExceptionsMode =
-  /*
-   * Mode used for code not covered by explicit exception handling, any
-   * errors are assumed to be thrown out of the function
-   */
-  | { kind: "ThrowExceptions" }
-  /*
-   * Mode used for code that *is* covered by explicit exception handling
-   * (ie try/catch), which requires modeling the possibility of control
-   * flow to the exception handler.
-   */
-  | { kind: "CatchExceptions"; handler: BlockId };
-
 const getImportSource = (node: Node): string => {
   let current: Node | undefined = node;
   while (current !== undefined && !t.isImportDeclaration(current)) {
@@ -844,16 +827,3 @@ export const createTemporaryPlace = (env: Environment, loc: SourceLocation): Pla
   effect: Effect.Unknown,
   loc: GeneratedSource,
 });
-
-/**
- * Clones an existing Place, returning a new temporary Place that shares the
- * same metadata properties as the original place (effect, reactive flag, type)
- * but has a new, temporary Identifier.
- */
-export const clonePlaceToTemporary = (env: Environment, place: Place): Place => {
-  const temp = createTemporaryPlace(env, place.loc);
-  temp.effect = place.effect;
-  temp.identifier.type = place.identifier.type;
-  temp.reactive = place.reactive;
-  return temp;
-};
