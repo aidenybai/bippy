@@ -11,6 +11,7 @@
     "analyze": "tsx src/cli/analyze.ts",
     "verify": "tsx tests/verify/cli.ts",
     "conformance": "tsx conformance/runner/cli.ts",
+    "sync:compiler-fixtures": "tsx tests/compiler-diff/sync-fixtures.ts",
     "test": "vp test --project bippy-analyzer",
     "typecheck": "tsc --noEmit"
   },

@@ -89,16 +89,16 @@ To see the HIR for a component, run `pnpm tsx src/cli/hir.ts <tsconfig> -c <name
 
 ## Port fidelity
 
-`tests/compiler-diff` compares our HIR with the real compiler's after `inferReactivePlaces`, using the npm build closest to the ported commit, with the TypeScript layer turned off. Run `pnpm tsx tests/compiler-diff/cli.ts <tsconfig>`.
+`tests/compiler-diff` compares our HIR with the real compiler's after `inferReactivePlaces`, using the newest npm build, with the TypeScript layer turned off. Run `pnpm tsx tests/compiler-diff/cli.ts <tsconfig>`.
 
 | Corpus                         | Functions matching |
 | ------------------------------ | ------------------ |
 | fixtures                       | 16 of 17           |
 | bulletproof-react              | 122 of 122         |
 | 2048-in-react                  | 8 of 10            |
-| The compiler's own test inputs | 942 of 956         |
+| The compiler's own test inputs | 941 of 954         |
 
-Every remaining difference is a change the npm build predates, a TypeScript file named `.js`, or a deliberate difference listed in `tests/compiler-diff/port-regressions.test.ts`.
+The compiler's test inputs are vendored from the ported commit in `tests/compiler-diff/fixtures`, and `pnpm sync:compiler-fixtures` refreshes them. `upstream-fixtures.test.ts` lists every function where the two compilers disagree, with the reason. Most disagreements exist because the npm build predates the ported commit: against a build of that commit, all 955 functions both compilers compile match. The rest are deliberate differences or upstream bugs.
 
 ## Example
 

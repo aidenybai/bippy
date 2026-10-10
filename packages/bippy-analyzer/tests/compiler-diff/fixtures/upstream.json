@@ -1,0 +1,5 @@
+{
+  "repository": "https://github.com/facebook/react.git",
+  "revision": "b618bbb4422693bbb8d387180687b3f510300f42",
+  "path": "compiler/packages/babel-plugin-react-compiler/src/__tests__/fixtures/compiler"
+}
