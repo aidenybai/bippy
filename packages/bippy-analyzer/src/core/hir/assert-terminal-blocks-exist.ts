@@ -8,7 +8,7 @@
 
 import { CompilerError } from "../compiler-error.js";
 import { GeneratedSource, type HIRFunction } from "./hir.js";
-import { mapTerminalSuccessors } from "./visitors.js";
+import { eachTerminalSuccessor, mapTerminalSuccessors } from "./visitors.js";
 
 export const assertTerminalSuccessorsExist = (fn: HIRFunction): void => {
   for (const [, block] of fn.body.blocks) {
@@ -20,5 +20,23 @@ export const assertTerminalSuccessorsExist = (fn: HIRFunction): void => {
       });
       return successor;
     });
+  }
+};
+
+export const assertTerminalPredsExist = (fn: HIRFunction): void => {
+  for (const [, block] of fn.body.blocks) {
+    for (const pred of block.preds) {
+      const predBlock = fn.body.blocks.get(pred);
+      CompilerError.invariant(predBlock !== undefined, {
+        reason: "Expected predecessor block to exist",
+        description: `Block ${block.id} references non-existent ${pred}`,
+        loc: GeneratedSource,
+      });
+      CompilerError.invariant(eachTerminalSuccessor(predBlock.terminal).includes(block.id), {
+        reason: "Terminal successor does not reference correct predecessor",
+        description: `Block bb${block.id} has bb${predBlock.id} as a predecessor, but bb${predBlock.id}'s successors do not include bb${block.id}`,
+        loc: GeneratedSource,
+      });
+    }
   }
 };

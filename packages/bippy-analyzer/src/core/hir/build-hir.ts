@@ -30,7 +30,13 @@ import type {
 } from "typescript/unstable/ast";
 import { NodeFlags, SyntaxKind, formatSyntaxKind } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
-import { CompilerError, CompilerErrorDetail, ErrorCategory } from "../compiler-error.js";
+import {
+  CompilerDiagnostic,
+  CompilerError,
+  CompilerErrorDetail,
+  CompilerSuggestionOperation,
+  ErrorCategory,
+} from "../compiler-error.js";
 import { Err, Ok, type Result } from "../utils/result.js";
 import type { Environment } from "./environment.js";
 import {
@@ -59,14 +65,17 @@ import {
   type SourceLocation,
   type SpreadPattern,
   type ThrowTerminal,
+  type Type,
   type UnaryOperator,
   getSourceLocation,
   makeInstructionId,
   makePropertyLiteral,
+  makeType,
   promoteTemporary,
   validateIdentifierName,
 } from "./hir.js";
 import { type Bindings, HIRBuilder, createTemporaryPlace } from "./hir-builder.js";
+import { BuiltInArrayId } from "./object-shape.js";
 import {
   type IdentifierNode,
   type Scope,
@@ -191,6 +200,8 @@ const JSX_ENTITIES: ReadonlyMap<string, string> = new Map([
 
 const getNodeType = (node: Node): string => formatSyntaxKind(node.kind);
 
+const getNodeRange = (node: Node): [number, number] => [node.getStart(), node.getEnd()];
+
 const skipParentheses = (node: Node): Node =>
   t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
@@ -206,6 +217,9 @@ const isOptionalMemberExpression = (node: Node): node is MemberExpressionNode =>
 
 const isOptionalCallExpression = (node: Node): node is CallExpression =>
   t.isCallExpression(node) && isOptionalChain(node);
+
+const isAssignmentExpression = (node: Node): boolean =>
+  t.isBinaryExpression(node) && t.isAssignmentOperator(node.operatorToken.kind);
 
 const isJsxTagName = (node: IdentifierNode): boolean => {
   let current: Node = node;
@@ -443,11 +457,14 @@ const lowerFunctionNode = (
       const binding = builder.resolveIdentifier(param.name);
       if (binding.kind !== "Identifier") {
         builder.recordError(
-          new CompilerErrorDetail({
+          CompilerDiagnostic.create({
             category: ErrorCategory.Invariant,
             reason: "Could not find binding",
             description: `[BuildHIR] Could not find binding for param \`${param.name.text}\``,
+          }).withDetails({
+            kind: "error",
             loc: paramLoc,
+            message: "Could not find binding",
           }),
         );
         continue;
@@ -476,11 +493,14 @@ const lowerFunctionNode = (
       );
     } else {
       builder.recordError(
-        new CompilerErrorDetail({
+        CompilerDiagnostic.create({
           category: ErrorCategory.Todo,
           reason: `Handle ${getNodeType(param.name)} parameters`,
           description: `[BuildHIR] Add support for ${getNodeType(param.name)} parameters`,
+        }).withDetails({
+          kind: "error",
           loc: paramLoc,
+          message: "Unsupported parameter type",
         }),
       );
     }
@@ -503,11 +523,14 @@ const lowerFunctionNode = (
     builder.terminateWithContinuation(terminal, fallthrough);
   } else {
     builder.recordError(
-      new CompilerErrorDetail({
+      CompilerDiagnostic.create({
         category: ErrorCategory.Syntax,
         reason: `Unexpected function body kind`,
         description: `Expected function body to be an expression or a block statement, got \`undefined\``,
+      }).withDetails({
+        kind: "error",
         loc: getSourceLocation(func),
+        message: "Expected a block statement or expression",
       }),
     );
   }
@@ -543,11 +566,15 @@ const lowerFunctionNode = (
 
   return {
     id: validatedId,
+    nameHint: null,
     params,
     fnType: bindings === null ? env.fnType : "Other",
+    returnTypeAnnotation: null, // TODO: extract the actual return type node if present
     returns: createTemporaryPlace(env, getSourceLocation(func)),
     body: hirBody,
     context,
+    generator: func.asteriskToken !== undefined,
+    async: func.modifiers?.some((modifier) => modifier.kind === SyntaxKind.AsyncKeyword) === true,
     loc: getSourceLocation(func),
     env,
     directives,
@@ -571,6 +598,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           reason: "(BuildHIR::lowerStatement) Support ThrowStatement inside of try/catch",
           category: ErrorCategory.Todo,
           loc: stmtLoc,
+          suggestions: null,
         }),
       );
     }
@@ -744,6 +772,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
               category: ErrorCategory.Todo,
               reason: "Unsupported declaration type for hoisting",
               description: `variable "${binding.identifier.text}" declared with ${getNodeType(binding.declaration)}`,
+              suggestions: null,
               loc: getSourceLocation(id.parent),
             }),
           );
@@ -754,6 +783,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
               category: ErrorCategory.Todo,
               reason: "Handle non-const declarations for hoisting",
               description: `variable "${binding.identifier.text}" declared with ${binding.kind}`,
+              suggestions: null,
               loc: getSourceLocation(id.parent),
             }),
           );
@@ -844,6 +874,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
             reason: "(BuildHIR::lowerStatement) Handle non-variable initialization in ForStatement",
             category: ErrorCategory.Todo,
             loc: stmtLoc,
+            suggestions: null,
           }),
         );
         // Lower the init expression as best-effort and continue
@@ -918,6 +949,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           reason: `(BuildHIR::lowerStatement) Handle empty test in ForStatement`,
           category: ErrorCategory.Todo,
           loc: stmtLoc,
+          suggestions: null,
         }),
       );
       // Treat `for(;;)` as `while(true)` to keep the builder state consistent
@@ -1075,6 +1107,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
               reason: `Expected at most one \`default\` branch in a switch statement, this code should have failed to parse`,
               category: ErrorCategory.Syntax,
               loc: getSourceLocation(switchCase),
+              suggestions: null,
             }),
           );
           break;
@@ -1155,6 +1188,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           reason: `(BuildHIR::lowerStatement) Handle ${nodeKind} kinds in VariableDeclaration`,
           category: ErrorCategory.Todo,
           loc: stmtLoc,
+          suggestions: null,
         }),
       );
       /*
@@ -1187,6 +1221,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
               reason: `(BuildHIR::lowerAssignment) Could not find binding for declaration.`,
               category: ErrorCategory.Invariant,
               loc: getSourceLocation(id),
+              suggestions: null,
             }),
           );
         } else {
@@ -1197,11 +1232,20 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           };
           if (builder.isContextIdentifier(id)) {
             if (kind === InstructionKind.Const) {
+              const declRangeStart = declarationList.getStart();
               builder.recordError(
                 new CompilerErrorDetail({
                   reason: `Expect \`const\` declaration not to be reassigned`,
                   category: ErrorCategory.Syntax,
                   loc: getSourceLocation(id),
+                  suggestions: [
+                    {
+                      description: "Change to a `let` declaration",
+                      op: CompilerSuggestionOperation.Replace,
+                      range: [declRangeStart, declRangeStart + 5], // "const".length
+                      text: "let",
+                    },
+                  ],
                 }),
               );
             }
@@ -1232,6 +1276,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
             description: `Got a \`${getNodeType(id)}\``,
             category: ErrorCategory.Syntax,
             loc: stmtLoc,
+            suggestions: null,
           }),
         );
       }
@@ -1321,6 +1366,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           reason: `(BuildHIR::lowerStatement) Handle for-await loops`,
           category: ErrorCategory.Todo,
           loc: stmtLoc,
+          suggestions: null,
         }),
       );
       return;
@@ -1543,6 +1589,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           reason: `(BuildHIR::lowerStatement) Handle TryStatement without a catch clause`,
           category: ErrorCategory.Todo,
           loc: stmtLoc,
+          suggestions: null,
         }),
       );
       return;
@@ -1553,6 +1600,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause`,
           category: ErrorCategory.Todo,
           loc: stmtLoc,
+          suggestions: null,
         }),
       );
     }
@@ -1640,6 +1688,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
         description: `'with' syntax is considered deprecated and removed from JavaScript standards, consider alternatives`,
         category: ErrorCategory.UnsupportedSyntax,
         loc: stmtLoc,
+        suggestions: null,
       }),
     );
     lowerValueToTemporary(builder, {
@@ -1661,6 +1710,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
         description: `Move class declarations outside of components/hooks`,
         category: ErrorCategory.UnsupportedSyntax,
         loc: stmtLoc,
+        suggestions: null,
       }),
     );
     lowerValueToTemporary(builder, {
@@ -1690,6 +1740,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           "JavaScript `import` and `export` statements may only appear at the top level of a module",
         category: ErrorCategory.Syntax,
         loc: stmtLoc,
+        suggestions: null,
       }),
     );
     lowerValueToTemporary(builder, {
@@ -1705,6 +1756,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
         reason: "TypeScript `namespace` statements may only appear at the top level of a module",
         category: ErrorCategory.Syntax,
         loc: stmtLoc,
+        suggestions: null,
       }),
     );
     lowerValueToTemporary(builder, {
@@ -1727,6 +1779,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
       reason: `Unsupported statement kind '${getNodeType(stmtNode)}'`,
       category: ErrorCategory.Todo,
       loc: stmtLoc,
+      suggestions: null,
     }),
   );
 };
@@ -1783,6 +1836,7 @@ const lowerObjectPropertyKey = (
       reason: `(BuildHIR::lowerExpression) Expected Identifier, got ${getNodeType(key)} key in ObjectExpression`,
       category: ErrorCategory.Todo,
       loc: getSourceLocation(key),
+      suggestions: null,
     }),
   );
   return null;
@@ -1875,6 +1929,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             reason: `(BuildHIR::lowerExpression) Handle ${t.isGetAccessorDeclaration(propertyPath) ? "get" : "set"} functions in ObjectExpression`,
             category: ErrorCategory.Todo,
             loc: getSourceLocation(propertyPath),
+            suggestions: null,
           }),
         );
         continue;
@@ -1884,6 +1939,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             reason: `(BuildHIR::lowerExpression) Handle ${getNodeType(propertyPath)} properties in ObjectExpression`,
             category: ErrorCategory.Todo,
             loc: getSourceLocation(propertyPath),
+            suggestions: null,
           }),
         );
         continue;
@@ -1970,6 +2026,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
               reason: `Expected sequence expression to have at least one expression`,
               category: ErrorCategory.Syntax,
               loc: exprLoc,
+              suggestions: null,
             }),
           );
         } else {
@@ -2104,6 +2161,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             description: `Expected an LVal, got: ${getNodeType(left)}`,
             category: ErrorCategory.Todo,
             loc: getSourceLocation(left),
+            suggestions: null,
           }),
         );
         return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2116,6 +2174,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             reason: `(BuildHIR::lowerExpression) Handle ${operator} operators in AssignmentExpression`,
             category: ErrorCategory.Todo,
             loc: exprLoc,
+            suggestions: null,
           }),
         );
         return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2208,6 +2267,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           reason: `(BuildHIR::lowerExpression) Expected Identifier or MemberExpression, got ${getNodeType(left)} lval in AssignmentExpression`,
           category: ErrorCategory.Todo,
           loc: exprLoc,
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2219,6 +2279,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           reason: `(BuildHIR::lowerExpression) Expected Expression, got ${getNodeType(leftPath)} lval in BinaryExpression`,
           category: ErrorCategory.Todo,
           loc: getSourceLocation(leftPath),
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2232,6 +2293,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           reason: `(BuildHIR::lowerExpression) Handle ${exprNode.operatorToken.getText()} operators in BinaryExpression`,
           category: ErrorCategory.Todo,
           loc: getSourceLocation(leftPath),
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2325,6 +2387,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
   }
   if (t.isJsxElement(exprNode) || t.isJsxSelfClosingElement(exprNode)) {
     const opening = t.isJsxElement(exprNode) ? exprNode.openingElement : exprNode;
+    const openingLoc = getSourceLocation(opening);
     const tag = lowerJsxElementName(builder, opening.tagName);
     const props: Array<JsxAttribute> = [];
     for (const attribute of opening.attributes.properties) {
@@ -2339,6 +2402,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             reason: `(BuildHIR::lowerExpression) Handle ${getNodeType(attribute)} attributes in JSXElement`,
             category: ErrorCategory.Todo,
             loc: getSourceLocation(attribute),
+            suggestions: null,
           }),
         );
         continue;
@@ -2353,6 +2417,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
               reason: `(BuildHIR::lowerExpression) Unexpected colon in attribute name \`${propName}\``,
               category: ErrorCategory.Todo,
               loc: getSourceLocation(namePath),
+              suggestions: null,
             }),
           );
         }
@@ -2383,6 +2448,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
               reason: `(BuildHIR::lowerExpression) Handle ${getNodeType(valueExpr)} attribute values in JSXElement`,
               category: ErrorCategory.Todo,
               loc: getSourceLocation(valueExpr),
+              suggestions: null,
             }),
           );
           continue;
@@ -2394,6 +2460,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
               reason: `(BuildHIR::lowerExpression) Handle JSXEmptyExpression expressions in JSXExpressionContainer within JSXElement`,
               category: ErrorCategory.Todo,
               loc: getSourceLocation(valueExpr),
+              suggestions: null,
             }),
           );
           continue;
@@ -2403,9 +2470,77 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
       props.push({ kind: "JsxAttribute", name: propName, place: value });
     }
 
+    const isFbt = tag.kind === "BuiltinTag" && (tag.name === "fbt" || tag.name === "fbs");
+    if (isFbt) {
+      const tagName = tag.name;
+      const openingIdentifier = opening.tagName;
+      const tagIdentifier = t.isIdentifier(openingIdentifier)
+        ? builder.resolveIdentifier(openingIdentifier)
+        : null;
+      if (tagIdentifier !== null) {
+        // This is already checked in builder.resolveIdentifier
+        CompilerError.invariant(tagIdentifier.kind !== "Identifier", {
+          reason: `<${tagName}> tags should be module-level imports`,
+          loc: getSourceLocation(openingIdentifier),
+        });
+      }
+      // see `error.todo-multiple-fbt-plural` fixture for explanation
+      const fbtLocations = {
+        enum: new Array<SourceLocation>(),
+        plural: new Array<SourceLocation>(),
+        pronoun: new Array<SourceLocation>(),
+      };
+      const visitFbt = (node: Node): void => {
+        if (t.isJsxClosingElement(node)) {
+          return;
+        }
+        if (t.isJsxNamespacedName(node) && node.namespace.text === tagName) {
+          switch (node.name.text) {
+            case "enum":
+              fbtLocations.enum.push(getSourceLocation(node));
+              break;
+            case "plural":
+              fbtLocations.plural.push(getSourceLocation(node));
+              break;
+            case "pronoun":
+              fbtLocations.pronoun.push(getSourceLocation(node));
+              break;
+          }
+        }
+        node.forEachChild(visitFbt);
+      };
+      exprNode.forEachChild(visitFbt);
+      for (const [name, locations] of Object.entries(fbtLocations)) {
+        if (locations.length > 1) {
+          builder.recordError(
+            new CompilerDiagnostic({
+              category: ErrorCategory.Todo,
+              reason: "Support duplicate fbt tags",
+              description: `Support \`<${tagName}>\` tags with multiple \`<${tagName}:${name}>\` values`,
+              details: locations.map((loc) => ({
+                kind: "error" as const,
+                message: `Multiple \`<${tagName}:${name}>\` tags found`,
+                loc,
+              })),
+            }),
+          );
+        }
+      }
+    }
+
+    /**
+     * Increment fbt counter before traversing into children, as whitespace
+     * in jsx text is handled differently for fbt subtrees.
+     */
+    if (isFbt) {
+      builder.fbtDepth++;
+    }
     const children: Array<Place> = (t.isJsxElement(exprNode) ? exprNode.children : [])
       .map((child) => lowerJsxElement(builder, child))
       .filter(notNull);
+    if (isFbt) {
+      builder.fbtDepth--;
+    }
 
     return {
       kind: "JsxExpression",
@@ -2413,6 +2548,10 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
       props,
       children: children.length === 0 ? null : children,
       loc: exprLoc,
+      openingLoc: openingLoc,
+      closingLoc: t.isJsxElement(exprNode)
+        ? getSourceLocation(exprNode.closingElement)
+        : GeneratedSource,
     };
   }
   if (t.isJsxFragment(exprNode)) {
@@ -2435,6 +2574,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           reason: "(BuildHIR::lowerExpression) Handle tagged template with interpolations",
           category: ErrorCategory.Todo,
           loc: exprLoc,
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2447,6 +2587,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             "(BuildHIR::lowerExpression) Handle tagged template where cooked value is different from raw value",
           category: ErrorCategory.Todo,
           loc: exprLoc,
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2502,6 +2643,13 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
         reason: `Only object properties can be deleted`,
         category: ErrorCategory.Syntax,
         loc: exprLoc,
+        suggestions: [
+          {
+            description: "Remove this line",
+            range: getNodeRange(exprNode),
+            op: CompilerSuggestionOperation.Remove,
+          },
+        ],
       }),
     );
     return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2539,6 +2687,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
       value: lowerExpressionToTemporary(builder, exprNode.expression),
       typeAnnotation,
       typeAnnotationKind: "satisfies",
+      type: lowerType(typeAnnotation),
       loc: exprLoc,
     };
   }
@@ -2549,6 +2698,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
       value: lowerExpressionToTemporary(builder, exprNode.expression),
       typeAnnotation,
       typeAnnotationKind: "as",
+      type: lowerType(typeAnnotation),
       loc: exprLoc,
     };
   }
@@ -2608,6 +2758,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           reason: `(BuildHIR::lowerExpression) Handle UpdateExpression with ${getNodeType(argument)} argument`,
           category: ErrorCategory.Todo,
           loc: exprLoc,
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2629,6 +2780,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
             reason: `(BuildHIR::lowerExpression) Found an invalid UpdateExpression without a previously reported error`,
             category: ErrorCategory.Invariant,
             loc: exprLoc,
+            suggestions: null,
           }),
         );
       }
@@ -2639,6 +2791,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
           reason: `(BuildHIR::lowerExpression) Support UpdateExpression where argument is a global`,
           category: ErrorCategory.Todo,
           loc: exprLoc,
+          suggestions: null,
         }),
       );
       return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2691,6 +2844,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
         reason: `(BuildHIR::lowerExpression) Handle MetaProperty expressions other than import.meta`,
         category: ErrorCategory.Todo,
         loc: exprLoc,
+        suggestions: null,
       }),
     );
     return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2700,6 +2854,7 @@ const lowerExpression = (builder: HIRBuilder, exprNode: Node): InstructionValue 
       reason: `(BuildHIR::lowerExpression) Handle ${getNodeType(exprNode)} expressions`,
       category: ErrorCategory.Todo,
       loc: exprLoc,
+      suggestions: null,
     }),
   );
   return { kind: "UnsupportedNode", node: exprNode, loc: exprLoc };
@@ -2988,6 +3143,7 @@ const lowerReorderableExpression = (builder: HIRBuilder, expr: Expression): Plac
         reason: `(BuildHIR::node.lowerReorderableExpression) Expression type \`${getNodeType(expr)}\` cannot be safely reordered`,
         category: ErrorCategory.Todo,
         loc: getSourceLocation(expr),
+        suggestions: null,
       }),
     );
   }
@@ -3095,7 +3251,12 @@ const isReorderableExpression = (
     if (t.isBlock(body)) {
       return body.statements.length === 0;
     }
-    return isReorderableExpression(builder, body, false);
+    // For TypeScript
+    return isReorderableExpression(
+      builder,
+      body,
+      /* disallow local identifiers in the body */ false,
+    );
   }
   if (t.isCallExpression(expr) && !isOptionalChain(expr)) {
     const callee = expr.expression;
@@ -3165,6 +3326,7 @@ const lowerMemberExpression = (
           reason: `(BuildHIR::lowerMemberExpression) Handle ${getNodeType(propertyNode)} property`,
           category: ErrorCategory.Todo,
           loc: getSourceLocation(propertyNode),
+          suggestions: null,
         }),
       );
       return {
@@ -3226,6 +3388,7 @@ const lowerJsxElementName = (
           description: `Got \`${namespace}\` : \`${name}\``,
           category: ErrorCategory.Syntax,
           loc: exprLoc,
+          suggestions: null,
         }),
       );
     }
@@ -3241,6 +3404,7 @@ const lowerJsxElementName = (
       reason: `(BuildHIR::lowerJsxElementName) Handle ${getNodeType(exprNode)} tags`,
       category: ErrorCategory.Todo,
       loc: exprLoc,
+      suggestions: null,
     }),
   );
   return lowerValueToTemporary(builder, {
@@ -3304,7 +3468,20 @@ const lowerJsxElement = (builder: HIRBuilder, exprNode: JsxChild): Place | null 
     return lowerExpressionToTemporary(builder, expression);
   }
   if (t.isJsxText(exprNode)) {
-    const text = trimJsxText(decodeJsxEntities(exprNode.text));
+    let text: string | null;
+    const value = decodeJsxEntities(exprNode.text);
+    if (builder.fbtDepth > 0) {
+      /*
+       * FBT whitespace normalization differs from standard JSX.
+       * https://github.com/facebook/fbt/blob/0b4e0d13c30bffd0daa2a75715d606e3587b4e40/packages/babel-plugin-fbt/src/FbtUtil.js#L76-L87
+       * Since the fbt transform runs after, let's just preserve all
+       * whitespace in FBT subtrees as is.
+       */
+      text = value;
+    } else {
+      text = trimJsxText(value);
+    }
+
     if (text === null) {
       return null;
     }
@@ -3320,6 +3497,7 @@ const lowerJsxElement = (builder: HIRBuilder, exprNode: JsxChild): Place | null 
       reason: `(BuildHIR::lowerJsxElement) Unhandled JsxElement, got: ${t.isJsxExpression(exprNode) ? "JSXSpreadChild" : getNodeType(exprNode)}`,
       category: ErrorCategory.Todo,
       loc: exprLoc,
+      suggestions: null,
     }),
   );
   const place = lowerValueToTemporary(builder, {
@@ -3399,6 +3577,7 @@ const lowerFunctionToValue = (
   return {
     kind: "FunctionExpression",
     name: loweredFunc.func.id,
+    nameHint: null,
     type: getFunctionType(expr),
     loc: exprLoc,
     loweredFunc,
@@ -3410,6 +3589,14 @@ const lowerFunction = (builder: HIRBuilder, expr: LowerableFunction): LoweredFun
   const componentScope: Scope = scopes.getScope(builder.environment.parentFunction);
   const capturedContext = gatherCapturedContext(expr, componentScope, scopes);
 
+  /*
+   * TODO(gsn): In the future, we could only pass in the context identifiers
+   * that are actually used by this function and it's nested functions, rather
+   * than all context identifiers.
+   *
+   * This isn't a problem in practice because use Babel's scope analysis to
+   * identify the correct references.
+   */
   const loweredFunc = lowerFunctionNode(
     expr,
     builder.environment,
@@ -3426,7 +3613,7 @@ const lowerExpressionToTemporary = (builder: HIRBuilder, exprPath: Node): Place 
   return lowerValueToTemporary(builder, value);
 };
 
-const lowerValueToTemporary = (builder: HIRBuilder, value: InstructionValue): Place => {
+export const lowerValueToTemporary = (builder: HIRBuilder, value: InstructionValue): Place => {
   if (value.kind === "LoadLocal" && value.place.identifier.name === null) {
     return value.place;
   }
@@ -3461,6 +3648,7 @@ const lowerIdentifier = (builder: HIRBuilder, exprNode: IdentifierNode): Place =
               "Eval is an anti-pattern in JavaScript, and the code executed cannot be evaluated by React Compiler",
             category: ErrorCategory.UnsupportedSyntax,
             loc: exprLoc,
+            suggestions: null,
           }),
         );
       } else if (binding.kind === "Global" && binding.name === "arguments") {
@@ -3471,6 +3659,7 @@ const lowerIdentifier = (builder: HIRBuilder, exprNode: IdentifierNode): Place =
               "React Compiler does not support compiling functions that reference the implicit arguments object",
             category: ErrorCategory.UnsupportedSyntax,
             loc: exprLoc,
+            suggestions: null,
           }),
         );
       }
@@ -3526,6 +3715,7 @@ const lowerIdentifierForAssignment = (
         reason: `(BuildHIR::lowerAssignment) Could not find binding for declaration.`,
         category: ErrorCategory.Invariant,
         loc: getSourceLocation(path),
+        suggestions: null,
       }),
     );
     return null;
@@ -3589,6 +3779,7 @@ const lowerAssignment = (
             reason: `Expected \`const\` declaration not to be reassigned`,
             category: ErrorCategory.Syntax,
             loc: lvalueLoc,
+            suggestions: null,
           }),
         );
       }
@@ -3604,6 +3795,7 @@ const lowerAssignment = (
             reason: `Unexpected context variable kind`,
             category: ErrorCategory.Syntax,
             loc: lvalueLoc,
+            suggestions: null,
           }),
         );
         temporary = lowerValueToTemporary(builder, {
@@ -3667,6 +3859,7 @@ const lowerAssignment = (
             reason: `(BuildHIR::lowerAssignment) Handle ${getNodeType(property)} properties in MemberExpression`,
             category: ErrorCategory.Todo,
             loc: getSourceLocation(property),
+            suggestions: null,
           }),
         );
         return { kind: "UnsupportedNode", node: lvalueNode, loc };
@@ -3844,6 +4037,7 @@ const lowerAssignment = (
               reason: `(BuildHIR::lowerAssignment) Handle ${getNodeType(argument)} rest element in ObjectPattern`,
               category: ErrorCategory.Todo,
               loc: getSourceLocation(argument),
+              suggestions: null,
             }),
           );
           continue;
@@ -3883,6 +4077,7 @@ const lowerAssignment = (
               reason: `(BuildHIR::lowerAssignment) Handle ${getNodeType(property.node)} properties in ObjectPattern`,
               category: ErrorCategory.Todo,
               loc: propertyLoc,
+              suggestions: null,
             }),
           );
           continue;
@@ -3893,6 +4088,7 @@ const lowerAssignment = (
               reason: `(BuildHIR::lowerAssignment) Handle computed properties in ObjectPattern`,
               category: ErrorCategory.Todo,
               loc: propertyLoc,
+              suggestions: null,
             }),
           );
           continue;
@@ -4060,6 +4256,7 @@ const lowerAssignment = (
       reason: `(BuildHIR::lowerAssignment) Handle ${getNodeType(lvalueNode)} assignments`,
       category: ErrorCategory.Todo,
       loc: lvalueLoc,
+      suggestions: null,
     }),
   );
   return { kind: "UnsupportedNode", node: lvalueNode, loc };
@@ -4135,7 +4332,17 @@ const gatherCapturedContext = (
     if (t.isTypeNode(node) || t.isTypeAliasDeclaration(node) || t.isInterfaceDeclaration(node)) {
       return;
     }
-    if (t.isJsxElement(node)) {
+    if (t.isBinaryExpression(node) && isAssignmentExpression(node)) {
+      /*
+       * Babel has a bug where it doesn't visit the LHS of an
+       * AssignmentExpression if it's an Identifier. Work around it by explicitly
+       * visiting it.
+       */
+      const left = skipParentheses(node.left);
+      if (t.isIdentifier(left)) {
+        handleMaybeDependency(left);
+      }
+    } else if (t.isJsxElement(node)) {
       handleMaybeDependency(node.openingElement);
     } else if (t.isJsxSelfClosingElement(node)) {
       handleMaybeDependency(node);
@@ -4150,3 +4357,32 @@ const gatherCapturedContext = (
 };
 
 const notNull = <T>(value: T | null): value is T => value !== null;
+
+export const lowerType = (node: TypeNode): Type => {
+  if (t.isTypeReferenceNode(node)) {
+    const typeName = node.typeName;
+    if (t.isIdentifier(typeName) && typeName.text === "Array") {
+      return { kind: "Object", shapeId: BuiltInArrayId };
+    }
+    return makeType();
+  }
+  if (t.isArrayTypeNode(node)) {
+    return { kind: "Object", shapeId: BuiltInArrayId };
+  }
+  if (t.isLiteralTypeNode(node) && t.isNullLiteral(node.literal)) {
+    return { kind: "Primitive" };
+  }
+  switch (node.kind) {
+    case SyntaxKind.BooleanKeyword:
+    case SyntaxKind.NumberKeyword:
+    case SyntaxKind.StringKeyword:
+    case SyntaxKind.SymbolKeyword:
+    case SyntaxKind.UndefinedKeyword:
+    case SyntaxKind.VoidKeyword: {
+      return { kind: "Primitive" };
+    }
+    default: {
+      return makeType();
+    }
+  }
+};
