@@ -2,7 +2,7 @@ import type { SourceFile } from "typescript/unstable/ast";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Signature, Type as TypeScriptType } from "typescript/unstable/sync";
 import type { MutableCollection, TypeProvider } from "../hir/environment.js";
-import { Effect, ValueKind } from "../hir/hir.js";
+import { Effect, ValueKind, makeType } from "../hir/hir.js";
 import type { BuiltInType, SourceLocation } from "../hir/hir.js";
 import {
   BuiltInArrayId,
@@ -26,18 +26,27 @@ const PRIMITIVE_FLAGS =
   TypeFlags.Undefined |
   TypeFlags.Void;
 const NULLISH_FLAGS = TypeFlags.Null | TypeFlags.Undefined | TypeFlags.Void;
-const READONLY_COLLECTION_NAMES = new Set(["ReadonlyArray", "ReadonlyMap", "ReadonlySet"]);
-const COLLECTION_SHAPE_IDS = new Map([
-  ["Map", BuiltInMapId],
-  ["Set", BuiltInSetId],
+const LIB_DECLARATION_PATTERN = /[\\/]lib\.[\w.]*\.d\.ts$/;
+
+interface Collection {
+  shapeId: string;
+  mutatingMethod: string;
+}
+
+const ARRAY_COLLECTION: Collection = { shapeId: BuiltInArrayId, mutatingMethod: "push" };
+const LIB_COLLECTIONS = new Map<string, Collection>([
+  ["Map", { shapeId: BuiltInMapId, mutatingMethod: "set" }],
+  ["ReadonlyMap", { shapeId: BuiltInMapId, mutatingMethod: "set" }],
+  ["Set", { shapeId: BuiltInSetId, mutatingMethod: "add" }],
+  ["ReadonlySet", { shapeId: BuiltInSetId, mutatingMethod: "add" }],
 ]);
 
 const isPrimitiveType = (type: TypeScriptType): boolean =>
   Boolean(type.flags & PRIMITIVE_FLAGS) ||
   (type.isUnionType() && type.getTypes().every(isPrimitiveType));
 
-const isReadonlyCollection = (type: TypeScriptType): boolean =>
-  READONLY_COLLECTION_NAMES.has(type.getSymbol()?.name ?? "");
+const getShapeId = (type: BuiltInType | null): string | null =>
+  type?.kind === "Object" ? type.shapeId : null;
 
 /**
  * Types the compiler's HIR from the TypeScript checker. The compiler only knows React's
@@ -95,12 +104,8 @@ export class CompilerTypeProvider implements TypeProvider {
         ? this.#convert(onlyMember, shapes, depth)
         : null;
     }
-    if (isReadonlyCollection(type)) return { kind: "Object", shapeId: BuiltInMixedReadonlyId };
-    if (this.#checker.isArrayType(type) || this.#checker.isTupleType(type)) {
-      return { kind: "Object", shapeId: BuiltInArrayId };
-    }
-    const collectionShapeId = COLLECTION_SHAPE_IDS.get(type.getSymbol()?.name ?? "");
-    if (collectionShapeId) return { kind: "Object", shapeId: collectionShapeId };
+    const collectionType = this.#getCollectionType(type);
+    if (collectionType) return collectionType;
     const [signature, ...overloads] = this.#checker.getSignaturesOfType(type, SignatureKind.Call);
     if (signature && overloads.length === 0 && depth < MAX_CONVERSION_DEPTH) {
       return this.#convertSignature(signature, shapes, depth);
@@ -108,6 +113,11 @@ export class CompilerTypeProvider implements TypeProvider {
     return null;
   }
 
+  /**
+   * A signature only says which arguments are read and what kind of value comes back. It
+   * can't say an argument may alias the return value, so functions returning anything but a
+   * primitive keep the compiler's conservative handling of unknown calls.
+   */
   #convertSignature(signature: Signature, shapes: ShapeRegistry, depth: number): BuiltInType {
     const parameterEffects = signature
       .getParameters()
@@ -116,6 +126,14 @@ export class CompilerTypeProvider implements TypeProvider {
     const returnTypeScriptType = this.#checker.getReturnTypeOfSignature(signature);
     const returnType =
       (returnTypeScriptType && this.#convert(returnTypeScriptType, shapes, depth + 1)) ?? null;
+    if (returnType?.kind !== "Primitive") {
+      return {
+        kind: "Function",
+        shapeId: null,
+        return: returnType ?? makeType(),
+        isConstructor: false,
+      };
+    }
     return addFunction(shapes, [], {
       positionalParams: parameterEffects,
       restParam,
@@ -125,10 +143,43 @@ export class CompilerTypeProvider implements TypeProvider {
     });
   }
 
+  /**
+   * Arrays, tuples, and `Map` and `Set` from the standard library.
+   */
+  #getCollectionType(type: TypeScriptType): BuiltInType | null {
+    const symbol = type.getSymbol();
+    const isLibCollection = symbol?.declarations.some((declaration) =>
+      LIB_DECLARATION_PATTERN.test(declaration.path),
+    );
+    const collection =
+      this.#checker.isArrayType(type) || this.#checker.isTupleType(type)
+        ? ARRAY_COLLECTION
+        : isLibCollection
+          ? LIB_COLLECTIONS.get(symbol?.name ?? "")
+          : undefined;
+    if (!collection) return null;
+    return {
+      kind: "Object",
+      shapeId: this.#isDeeplyReadonly(type, collection)
+        ? BuiltInMixedReadonlyId
+        : collection.shapeId,
+    };
+  }
+
+  /**
+   * TypeScript's `readonly` is shallow: `readonly Item[]` still lets each item be mutated.
+   * Only a readonly collection of primitives can't be mutated at all.
+   */
+  #isDeeplyReadonly(type: TypeScriptType, collection: Collection): boolean {
+    if (this.#checker.getPropertyOfType(type, collection.mutatingMethod)) return false;
+    return type.isTypeReference() && this.#checker.getTypeArguments(type).every(isPrimitiveType);
+  }
+
   #getParameterEffect(type: TypeScriptType | undefined): Effect {
-    return type && (isPrimitiveType(type) || isReadonlyCollection(type))
-      ? Effect.Read
-      : Effect.ConditionallyMutate;
+    if (!type) return Effect.ConditionallyMutate;
+    const isReadonly =
+      isPrimitiveType(type) || getShapeId(this.#getCollectionType(type)) === BuiltInMixedReadonlyId;
+    return isReadonly ? Effect.Read : Effect.ConditionallyMutate;
   }
 
   #getValueKind(type: BuiltInType | null): ValueKind {

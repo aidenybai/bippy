@@ -88,7 +88,13 @@ export interface JsxSpreadProp {
   value: SymbolicValue;
 }
 
-export type JsxTag = { kind: "BuiltinTag"; name: string } | { kind: "Component"; name: string };
+/**
+ * A JSX tag. A component tag records where its component is declared, as
+ * `<file>#<name>`, when the checker can resolve it.
+ */
+export type JsxTag =
+  | { kind: "BuiltinTag"; name: string }
+  | { kind: "Component"; name: string; declaration: string | null };
 
 interface SymbolicObjectProperty {
   key: string;
@@ -184,7 +190,7 @@ export interface Transition {
   loc: SourceLocation;
 }
 
-type BailoutReason =
+export type BailoutReason =
   | "compiler-error"
   | "loop"
   | "unknown-call"
@@ -205,6 +211,7 @@ export interface ComponentAnalysis {
   exportName: string | null;
   displayName: string | null;
   file: string;
+  declaration: string;
   loc: SourceLocation;
   bindings: Binding[];
   placeDomains: Map<string, Domain>;

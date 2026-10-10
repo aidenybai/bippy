@@ -82,6 +82,7 @@ import {
   type Scope,
   type ScopeManager,
   isFunctionNode,
+  isDestructuringTarget,
   isReferencedIdentifier,
 } from "./scope.js";
 
@@ -222,24 +223,7 @@ const isOptionalCallExpression = (node: Node): node is CallExpression =>
 const isAssignmentExpression = (node: Node): boolean =>
   t.isBinaryExpression(node) && t.isAssignmentOperator(node.operatorToken.kind);
 
-const isJsxTagName = (node: IdentifierNode): boolean => {
-  let current: Node = node;
-  while (t.isPropertyAccessExpression(current.parent) && current.parent.expression === current) {
-    current = current.parent;
-  }
-  const parent = current.parent;
-  return (
-    (t.isJsxOpeningElement(parent) ||
-      t.isJsxSelfClosingElement(parent) ||
-      t.isJsxClosingElement(parent)) &&
-    parent.tagName === current
-  );
-};
-
-const isJsxName = (node: IdentifierNode): boolean =>
-  isJsxTagName(node) || t.isJsxAttribute(node.parent) || t.isJsxNamespacedName(node.parent);
-
-const getDirectives = (block: Block): Array<string> => {
+export const getDirectives = (block: Block): Array<string> => {
   const directives: Array<string> = [];
   for (const statement of block.statements) {
     if (!t.isExpressionStatement(statement) || !t.isStringLiteral(statement.expression)) {
@@ -725,7 +709,7 @@ const lowerStatement = (builder: HIRBuilder, stmtNode: Node, label: string | nul
           fnDepth--;
           return;
         }
-        if (t.isIdentifier(node) && !isJsxTagName(node) && isReferencedIdentifier(node)) {
+        if (t.isIdentifier(node) && isReferencedIdentifier(node)) {
           const binding = scopes.resolveIdentifier(node);
           /**
            * We can only hoist an identifier decl if
@@ -4362,7 +4346,12 @@ const gatherCapturedContext = (
     if (t.isTypeNode(node) || t.isTypeAliasDeclaration(node) || t.isInterfaceDeclaration(node)) {
       return;
     }
-    if (t.isBinaryExpression(node) && isAssignmentExpression(node)) {
+    // A destructuring default, `[a = 1] = b`, is an `AssignmentPattern` to Babel.
+    if (
+      t.isBinaryExpression(node) &&
+      isAssignmentExpression(node) &&
+      !isDestructuringTarget(node)
+    ) {
       /*
        * Babel has a bug where it doesn't visit the LHS of an
        * AssignmentExpression if it's an Identifier. Work around it by explicitly
@@ -4376,7 +4365,7 @@ const gatherCapturedContext = (
       handleMaybeDependency(node.openingElement);
     } else if (t.isJsxSelfClosingElement(node)) {
       handleMaybeDependency(node);
-    } else if (t.isIdentifier(node) && !isJsxName(node)) {
+    } else if (t.isIdentifier(node) && isReferencedIdentifier(node)) {
       handleMaybeDependency(node);
     }
     node.forEachChild(visit);

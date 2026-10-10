@@ -1,11 +1,19 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import { findNodeAtLocation } from "../typescript/nodes.js";
+import { findNodeAtLocation, getDeclarationKey, isReactElementType } from "../typescript/nodes.js";
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../hir/hir.js";
 import { GeneratedSource } from "../hir/hir.js";
-import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue, Sample } from "./types.js";
+import type {
+  AbstractValue,
+  Domain,
+  PrimitiveTypeName,
+  PrimitiveValue,
+  Sample,
+  SymbolicValue,
+} from "./types.js";
+import { forEachSymbolicValue } from "./values.js";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
@@ -129,6 +137,28 @@ export const getSampleOfValue = (value: PrimitiveValue): Sample =>
  * Looks up domains and samples for HIR locations through the type checker, caching by
  * location so each node is asked about once.
  */
+const COMPARISON_OPERATORS = new Set(["===", "!==", "==", "!="]);
+
+/**
+ * Adds each string or number a prop is compared against in the render as a sample, so a
+ * branch like `role === "admin"` runs when the component is mounted.
+ */
+export const addComparedSamples = (render: SymbolicValue): void => {
+  forEachSymbolicValue(render, (value) => {
+    if (value.kind !== "BinaryExpression" || !COMPARISON_OPERATORS.has(value.operator)) return;
+    const [place, literal] =
+      value.left.kind === "Binding" ? [value.left, value.right] : [value.right, value.left];
+    if (place.kind !== "Binding" || literal.kind !== "Primitive") return;
+    const { binding } = place;
+    if (binding.kind !== "prop" || place.path.length > 0) return;
+    if (typeof literal.value !== "string" && typeof literal.value !== "number") return;
+    const hasSample = binding.samples.some(
+      (sample) => sample.kind === "Value" && sample.value === literal.value,
+    );
+    if (!hasSample) binding.samples.push({ kind: "Value", value: literal.value });
+  });
+};
+
 export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
@@ -184,8 +214,13 @@ export class DomainResolver {
     return node !== null && t.isExpression(node);
   }
 
-  getTypeText(loc: SourceLocation): string | null {
+  getDeclarationKey(loc: SourceLocation): string | null {
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    return node ? getDeclarationKey(this.#checker, node) : null;
+  }
+
+  isReactElement(loc: SourceLocation): boolean {
     const type = this.#getType(loc);
-    return type ? this.#checker.typeToString(type) : null;
+    return type !== undefined && isReactElementType(type);
   }
 }

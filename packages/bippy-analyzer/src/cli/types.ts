@@ -20,6 +20,7 @@ export interface PrintOptions {
 export interface ComponentPrintContext extends PrintOptions {
   effects: Map<string, string>;
   triggers: Map<string, string>;
+  renderNodeBudget: { remaining: number };
 }
 
 export interface AnalyzeCliOptions {

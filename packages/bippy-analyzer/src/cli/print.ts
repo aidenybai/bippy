@@ -22,7 +22,7 @@ import {
   isRenderingNothingWhenFalse,
 } from "../core/inference/values.js";
 import { createTreeNode, renderAsciiTree } from "./ascii-tree.js";
-import { MAX_LABEL_WIDTH } from "./constants.js";
+import { MAX_LABEL_WIDTH, MAX_RENDER_NODES } from "./constants.js";
 import type { ComponentPrintContext, PrintOptions, TreeNode } from "./types.js";
 
 const MAX_EFFECT_WIDTH = 70;
@@ -132,32 +132,43 @@ const getConditionLabel = (value: ConditionalValue): string =>
     ? `${formatSymbolicValue(value.test)} != null`
     : formatSymbolicValue(value.test);
 
+/**
+ * Prints a render on one line, stopping once the line is too wide to show. Render values
+ * share subtrees, so printing all of a large one could take exponential time.
+ */
 const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): string => {
-  if (isRenderingNothing(value)) return "";
-  const leaf = formatLeaf(value, context);
-  if (leaf !== null) return leaf;
-  switch (value.kind) {
-    case "JsxExpression": {
-      const children = value.children
-        .map((child) => formatCompact(child, context))
-        .filter(Boolean)
-        .join(" ");
-      return children
-        ? `${formatTag(value, context, true)} ${children}`
-        : formatTag(value, context, true);
+  const parts: string[] = [];
+  let length = 0;
+  const write = (part: string): void => {
+    if (!part) return;
+    parts.push(part);
+    length += part.length + 1;
+  };
+  let isCut = false;
+  const visit = (current: SymbolicValue): void => {
+    if (length > MAX_LABEL_WIDTH) {
+      isCut = true;
+      return;
     }
-    case "JsxFragment":
-      return value.children
-        .map((child) => formatCompact(child, context))
-        .filter(Boolean)
-        .join(" ");
-    case "ArrayMap":
-      return `↻ ${formatSymbolicValue(value.array)}`;
-    case "Conditional":
-      return `◆ ${getConditionLabel(value)}`;
-    default:
-      return "";
-  }
+    if (isRenderingNothing(current)) return;
+    const leaf = formatLeaf(current, context);
+    if (leaf !== null) return write(leaf);
+    switch (current.kind) {
+      case "JsxExpression":
+        write(formatTag(current, context, true));
+        return current.children.forEach(visit);
+      case "JsxFragment":
+        return current.children.forEach(visit);
+      case "ArrayMap":
+        return write(`↻ ${formatSymbolicValue(current.array)}`);
+      case "Conditional":
+        return write(`◆ ${getConditionLabel(current)}`);
+      default:
+        return;
+    }
+  };
+  visit(value);
+  return `${parts.join(" ")}${isCut ? "…" : ""}`;
 };
 
 const buildRenderNode = (
@@ -169,7 +180,9 @@ const buildRenderNode = (
   const { colors } = context;
   const leaf = formatLeaf(value, context);
   if (leaf !== null) return createTreeNode(`${prefix}${leaf}`);
-  if (depth >= context.maxDepth) return createTreeNode(`${prefix}${colors.dim("…")}`);
+  if (depth >= context.maxDepth || context.renderNodeBudget.remaining <= 0)
+    return createTreeNode(`${prefix}${colors.dim("…")}`);
+  context.renderNodeBudget.remaining--;
   switch (value.kind) {
     case "JsxExpression": {
       const [onlyChild] = value.children;
@@ -398,6 +411,7 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   }
   const context: ComponentPrintContext = {
     ...options,
+    renderNodeBudget: { remaining: MAX_RENDER_NODES },
     triggers,
     effects: new Map(
       analysis.transitions.map((transition) => [transition.id, formatTransitionEffect(transition)]),

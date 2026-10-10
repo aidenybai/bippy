@@ -13,7 +13,14 @@ import {
   ErrorCategory,
 } from "../compiler-error.js";
 import { assertExhaustive } from "../utils/utils.js";
-import { DEFAULT_GLOBALS, DEFAULT_SHAPES, type Global, type GlobalRegistry } from "./globals.js";
+import { defaultModuleTypeProvider } from "./default-module-type-provider.js";
+import {
+  DEFAULT_GLOBALS,
+  DEFAULT_SHAPES,
+  type Global,
+  type GlobalRegistry,
+  installTypeConfig,
+} from "./globals.js";
 import {
   type BlockId,
   type BuiltInType,
@@ -27,6 +34,7 @@ import {
   type Type,
   ValueKind,
   type ScopeId,
+  getHookKindForType,
   makeBlockId,
   makeIdentifierId,
   makeScopeId,
@@ -224,6 +232,7 @@ const MUTABLE_COLLECTION_SHAPES = new Map<string, MutableCollection>([
 export class Environment {
   #globals: GlobalRegistry;
   #shapes: ShapeRegistry;
+  #moduleTypes: Map<string, Global | null> = new Map();
   #nextIdentifer: number = 0;
   #nextBlock: number = 0;
   #nextScope: number = 0;
@@ -390,7 +399,21 @@ export class Environment {
         (isHookName(reactExportName) ? this.#getCustomHookType() : null)
       );
     }
-    return this.#getUntypedGlobalDeclaration(binding) ?? this.getTypeScriptType(loc);
+    return this.#getUntypedGlobalDeclaration(binding, loc) ?? this.getTypeScriptType(loc);
+  }
+
+  /**
+   * Upstream reads `config.moduleTypeProvider` first. We accept no user config, so only
+   * the default provider's known-incompatible libraries apply.
+   */
+  #resolveModuleType(moduleName: string, loc: SourceLocation): Global | null {
+    const cachedType = this.#moduleTypes.get(moduleName);
+    if (cachedType !== undefined) return cachedType;
+    const moduleConfig = defaultModuleTypeProvider(moduleName);
+    const moduleType =
+      moduleConfig === null ? null : installTypeConfig(this.#shapes, moduleConfig, moduleName, loc);
+    this.#moduleTypes.set(moduleName, moduleType);
+    return moduleType;
   }
 
   /**
@@ -401,7 +424,7 @@ export class Environment {
     return this.#typeProvider?.getType(loc, this.#shapes) ?? null;
   }
 
-  #getUntypedGlobalDeclaration(binding: NonLocalBinding): Global | null {
+  #getUntypedGlobalDeclaration(binding: NonLocalBinding, loc: SourceLocation): Global | null {
     switch (binding.kind) {
       case "ModuleLocal": {
         // don't resolve module locals
@@ -429,6 +452,28 @@ export class Environment {
               : null)
           );
         }
+        const moduleType = this.#resolveModuleType(binding.module, loc);
+        if (moduleType !== null) {
+          const importedType = this.getPropertyType(moduleType, binding.imported);
+          if (importedType !== null) {
+            /*
+             * Check that hook-like export names are hook types, and non-hook names are non-hook types.
+             * The user-assigned alias isn't decidable by the type provider, so we ignore that for the check.
+             * Thus we allow `import {fooNonHook as useFoo} from ...` because the name and type both say
+             * that it's not a hook.
+             */
+            const expectHook = isHookName(binding.imported);
+            const isHook = getHookKindForType(this, importedType) !== null;
+            if (expectHook !== isHook) {
+              CompilerError.throwInvalidConfig({
+                reason: `Invalid type configuration for module`,
+                description: `Expected type for \`import {${binding.imported}} from '${binding.module}'\` ${expectHook ? "to be a hook" : "not to be a hook"} based on the exported name`,
+                loc,
+              });
+            }
+            return importedType;
+          }
+        }
         /**
          * For modules we don't own, we look at whether the original name or import alias
          * are hook-like. Both of the following are likely hooks so we would return a hook
@@ -449,6 +494,29 @@ export class Environment {
             this.#globals.get(binding.name) ??
             (isHookName(binding.name) ? this.#getCustomHookType() : null)
           );
+        }
+        const moduleType = this.#resolveModuleType(binding.module, loc);
+        if (moduleType !== null) {
+          const importedType =
+            binding.kind === "ImportDefault"
+              ? this.getPropertyType(moduleType, "default")
+              : moduleType;
+          if (importedType !== null) {
+            /*
+             * Check that the hook-like modules are defined as types, and non hook-like modules are not typed as hooks.
+             * So `import Foo from 'useFoo'` is expected to be a hook based on the module name
+             */
+            const expectHook = isHookName(binding.module);
+            const isHook = getHookKindForType(this, importedType) !== null;
+            if (expectHook !== isHook) {
+              CompilerError.throwInvalidConfig({
+                reason: `Invalid type configuration for module`,
+                description: `Expected type for \`import ... from '${binding.module}'\` ${expectHook ? "to be a hook" : "not to be a hook"} based on the module name`,
+                loc,
+              });
+            }
+            return importedType;
+          }
         }
         return isHookName(binding.name) ? this.#getCustomHookType() : null;
       }

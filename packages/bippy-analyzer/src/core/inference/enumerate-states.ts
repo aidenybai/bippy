@@ -38,17 +38,28 @@ import {
 const MAX_ALTERNATIVES = 256;
 const REACHABILITY_ROUNDS = 3;
 
+/**
+ * One way a render can come out. `decisions` holds every decision outcome taken to reach
+ * it, which identifies the state however concrete its values become after a transition.
+ */
 interface Alternative {
   knowledge: Knowledge;
   render: SymbolicValue;
   assumptions: string[];
+  decisions: ReadonlySet<string>;
 }
 
 interface PartialChildren {
   knowledge: Knowledge;
   children: SymbolicValue[];
   assumptions: string[];
+  decisions: ReadonlySet<string>;
 }
+
+const NO_DECISIONS: ReadonlySet<string> = new Set();
+
+const getStateKey = (alternative: Alternative): string =>
+  [...alternative.decisions].sort().join("|");
 
 type DecisionOutcomes = Map<string, Set<boolean>>;
 
@@ -253,61 +264,93 @@ const applyTransition = (
     : [applied];
 };
 
-const enumerate = (
-  value: SymbolicValue,
-  knowledge: Knowledge,
+/**
+ * Lists every way a render value can come out under what's known. Results are cached per
+ * value and knowledge, so a subtree rendered in several places under the same knowledge is
+ * listed once and its results stay shared.
+ */
+const createEnumerator = (
   outcomes: DecisionOutcomes,
-): Alternative[] => {
-  switch (value.kind) {
-    case "Conditional": {
-      const alternatives: Alternative[] = [];
-      const test = getTest(value);
-      const isDecided = evaluate(test, knowledge) !== null;
-      const key = getDecisionKey(value);
-      for (const outcome of [true, false]) {
-        const assumed = assume(test, outcome, knowledge);
-        if (!assumed) continue;
-        outcomes.set(key, new Set([...(outcomes.get(key) ?? []), outcome]));
-        const label = outcome ? formatSymbolicValue(test) : formatNegated(test);
-        for (const alternative of enumerate(
-          outcome ? value.consequent : value.alternate,
-          assumed,
-          outcomes,
-        )) {
-          alternatives.push({
-            ...alternative,
-            assumptions: isDecided ? alternative.assumptions : [label, ...alternative.assumptions],
-          });
-        }
-      }
-      return alternatives;
+): ((value: SymbolicValue, knowledge: Knowledge) => Alternative[]) => {
+  const cache = new WeakMap<SymbolicValue, WeakMap<Knowledge, Alternative[]>>();
+  const enumerate = (value: SymbolicValue, knowledge: Knowledge): Alternative[] => {
+    let cacheByKnowledge = cache.get(value);
+    if (!cacheByKnowledge) {
+      cacheByKnowledge = new WeakMap();
+      cache.set(value, cacheByKnowledge);
     }
-    case "JsxExpression":
-    case "JsxFragment": {
-      let partials: PartialChildren[] = [{ knowledge, children: [], assumptions: [] }];
-      for (const child of value.children) {
-        const nextPartials: PartialChildren[] = [];
-        for (const partial of partials) {
-          for (const childAlternative of enumerate(child, partial.knowledge, outcomes)) {
-            if (nextPartials.length >= MAX_ALTERNATIVES) break;
-            nextPartials.push({
-              knowledge: childAlternative.knowledge,
-              children: [...partial.children, childAlternative.render],
-              assumptions: [...partial.assumptions, ...childAlternative.assumptions],
+    const cached = cacheByKnowledge.get(knowledge);
+    if (cached) return cached;
+    const alternatives = enumerateUncached(value, knowledge);
+    cacheByKnowledge.set(knowledge, alternatives);
+    return alternatives;
+  };
+  const enumerateUncached = (value: SymbolicValue, knowledge: Knowledge): Alternative[] => {
+    switch (value.kind) {
+      case "Conditional": {
+        const alternatives: Alternative[] = [];
+        const test = getTest(value);
+        const isDecided = evaluate(test, knowledge) !== null;
+        const key = getDecisionKey(value);
+        for (const outcome of [true, false]) {
+          const assumed = assume(test, outcome, knowledge);
+          if (!assumed) continue;
+          outcomes.set(key, new Set([...(outcomes.get(key) ?? []), outcome]));
+          const label = outcome ? formatSymbolicValue(test) : formatNegated(test);
+          for (const alternative of enumerate(
+            outcome ? value.consequent : value.alternate,
+            assumed,
+          )) {
+            alternatives.push({
+              ...alternative,
+              assumptions: isDecided
+                ? alternative.assumptions
+                : [label, ...alternative.assumptions],
+              decisions: new Set([...alternative.decisions, `${key}:${outcome}`]),
             });
           }
         }
-        partials = nextPartials;
+        return alternatives;
       }
-      return partials.map((partial) => ({
-        knowledge: partial.knowledge,
-        render: { ...value, children: partial.children },
-        assumptions: partial.assumptions,
-      }));
+      case "JsxExpression":
+      case "JsxFragment": {
+        let partials: PartialChildren[] = [
+          { knowledge, children: [], assumptions: [], decisions: NO_DECISIONS },
+        ];
+        for (const child of value.children) {
+          const nextPartials: PartialChildren[] = [];
+          for (const partial of partials) {
+            for (const childAlternative of enumerate(child, partial.knowledge)) {
+              if (nextPartials.length >= MAX_ALTERNATIVES) break;
+              nextPartials.push({
+                knowledge: childAlternative.knowledge,
+                children: [...partial.children, childAlternative.render],
+                assumptions: [...partial.assumptions, ...childAlternative.assumptions],
+                decisions: new Set([...partial.decisions, ...childAlternative.decisions]),
+              });
+            }
+          }
+          partials = nextPartials;
+        }
+        return partials.map((partial) => ({
+          knowledge: partial.knowledge,
+          render: { ...value, children: partial.children },
+          assumptions: partial.assumptions,
+          decisions: partial.decisions,
+        }));
+      }
+      default:
+        return [
+          {
+            knowledge,
+            render: resolveLiteral(value, knowledge),
+            assumptions: [],
+            decisions: NO_DECISIONS,
+          },
+        ];
     }
-    default:
-      return [{ knowledge, render: resolveLiteral(value, knowledge), assumptions: [] }];
-  }
+  };
+  return enumerate;
 };
 
 const collectTransitionIds = (render: SymbolicValue, transitionIds: Set<string>): void =>
@@ -361,21 +404,6 @@ const collectDeadBranches = (render: SymbolicValue, outcomes: DecisionOutcomes):
   return deadBranches;
 };
 
-const getRenderSignature = (value: SymbolicValue): string => {
-  switch (value.kind) {
-    case "JsxExpression":
-      return `<${value.tag.name}>${value.children.map(getRenderSignature).join("")}</>`;
-    case "JsxFragment":
-      return `<>${value.children.map(getRenderSignature).join("")}</>`;
-    case "Conditional":
-      return `{${formatSymbolicValue(value.test)}?${getRenderSignature(value.consequent)}:${getRenderSignature(value.alternate)}}`;
-    case "ArrayMap":
-      return `[${getRenderSignature(value.item)}]`;
-    default:
-      return formatSymbolicValue(value);
-  }
-};
-
 /**
  * Lists the reachable states of a component: each consistent way through the decisions in
  * its render tree, with the transitions available in that state and where they lead.
@@ -383,8 +411,8 @@ const getRenderSignature = (value: SymbolicValue): string => {
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const reachable = createInitialKnowledge(analysis);
   const outcomes: DecisionOutcomes = new Map();
-  const alternatives = enumerate(analysis.render, reachable, outcomes);
-  const signatures = alternatives.map((alternative) => getRenderSignature(alternative.render));
+  const alternatives = createEnumerator(outcomes)(analysis.render, reachable);
+  const stateKeys = alternatives.map(getStateKey);
   const effectIds = new Set(
     analysis.transitions
       .filter((transition) => transition.trigger.kind === "Effect")
@@ -397,17 +425,15 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     const edges: Edge[] = analysis.transitions
       .filter((transition) => transitionIds.has(transition.id) && transition.updates.length > 0)
       .map((transition) => {
-        const targetSignatures = new Set(
+        const targetKeys = new Set(
           applyTransition(transition, alternative.knowledge, reachable).flatMap((after) =>
-            enumerate(analysis.render, after, new Map()).map((target) =>
-              getRenderSignature(target.render),
-            ),
+            createEnumerator(new Map())(analysis.render, after).map(getStateKey),
           ),
         );
         return {
           transitionId: transition.id,
-          targets: signatures.flatMap((signature, targetIndex) =>
-            targetSignatures.has(signature) ? [targetIndex] : [],
+          targets: stateKeys.flatMap((stateKey, targetIndex) =>
+            targetKeys.has(stateKey) ? [targetIndex] : [],
           ),
           isAsync: transition.updates.some((update) => update.isAsync),
         };

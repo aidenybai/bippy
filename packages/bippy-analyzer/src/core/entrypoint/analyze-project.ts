@@ -117,11 +117,44 @@ export const analyzeProject = (
     return { components, fileCount: fileNames.length };
   });
 
-const serializeValue = (_key: string, value: unknown): unknown => {
-  if (value instanceof Map) return Object.fromEntries(value);
-  if (typeof value === "symbol") return "generated";
-  return value;
+const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
+
+const countReferences = (root: unknown): WeakMap<object, number> => {
+  const counts = new WeakMap<object, number>();
+  const visit = (value: unknown): void => {
+    if (!isObject(value)) return;
+    const count = counts.get(value) ?? 0;
+    counts.set(value, count + 1);
+    if (count > 0) return;
+    const children = value instanceof Map ? value.values() : Object.values(value);
+    for (const child of children) visit(child);
+  };
+  visit(root);
+  return counts;
 };
 
-export const serializeProjectAnalysis = (analysis: ProjectAnalysis): string =>
-  JSON.stringify(analysis.components, serializeValue, 2);
+/**
+ * Serializes the analysis as JSON. Render values share subtrees, which plain JSON would
+ * repeat in full, so an object referenced more than once is written once with an `$id`
+ * and then as `{ "$ref": id }`.
+ */
+export const serializeProjectAnalysis = (analysis: ProjectAnalysis): string => {
+  const counts = countReferences(analysis.components);
+  const ids = new WeakMap<object, number>();
+  let nextId = 0;
+  return JSON.stringify(
+    analysis.components,
+    (_key, value: unknown) => {
+      if (typeof value === "symbol") return "generated";
+      if (!isObject(value) || (counts.get(value) ?? 0) < 2) {
+        return value instanceof Map ? Object.fromEntries(value) : value;
+      }
+      const id = ids.get(value);
+      if (id !== undefined) return { $ref: id };
+      ids.set(value, nextId);
+      const plain = value instanceof Map ? Object.fromEntries(value) : value;
+      return Array.isArray(plain) ? { $id: nextId++, items: plain } : { $id: nextId++, ...plain };
+    },
+    2,
+  );
+};

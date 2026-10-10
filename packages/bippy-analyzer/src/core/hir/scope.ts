@@ -171,7 +171,7 @@ export class ScopeManager {
       }
     } else if (t.isFunctionDeclaration(node) && node.name && node.body) {
       this.#addBinding("hoisted", node.name, node, outerScope);
-    } else if ((t.isClassDeclaration(node) || t.isEnumDeclaration(node)) && node.name) {
+    } else if (t.isClassDeclaration(node) && node.name) {
       this.#addBinding("let", node.name, node, outerScope);
     } else if ((t.isFunctionExpression(node) || t.isClassExpression(node)) && node.name) {
       this.#addBinding("local", node.name, node, innerScope);
@@ -196,7 +196,71 @@ export class ScopeManager {
   }
 }
 
+/**
+ * Whether a JSX tag name, or the base of a member tag name, which Babel parses as a
+ * `JSXIdentifier` rather than an `Identifier`.
+ */
+const isJsxTagName = (node: Identifier): boolean => {
+  let current: Node = node;
+  while (t.isPropertyAccessExpression(current.parent) && current.parent.expression === current) {
+    current = current.parent;
+  }
+  const parent = current.parent;
+  return (
+    (t.isJsxOpeningElement(parent) ||
+      t.isJsxSelfClosingElement(parent) ||
+      t.isJsxClosingElement(parent)) &&
+    parent.tagName === current
+  );
+};
+
+/**
+ * Whether a node is a target of a destructuring assignment. TypeScript reuses object and
+ * array literals, and `=` for defaults, where Babel parses an `ObjectPattern`,
+ * `ArrayPattern`, or `AssignmentPattern`.
+ */
+export const isDestructuringTarget = (node: Node): boolean => {
+  const parent = node.parent;
+  if (t.isParenthesizedExpression(parent)) {
+    return isDestructuringTarget(parent);
+  }
+  if (t.isBinaryExpression(parent) && parent.operatorToken.kind === SyntaxKind.EqualsToken) {
+    return (
+      parent.left === node &&
+      (t.isObjectLiteralExpression(node) ||
+        t.isArrayLiteralExpression(node) ||
+        isDestructuringTarget(parent))
+    );
+  }
+  if (t.isForOfStatement(parent) || t.isForInStatement(parent)) {
+    return (
+      parent.initializer === node &&
+      (t.isObjectLiteralExpression(node) || t.isArrayLiteralExpression(node))
+    );
+  }
+  if (t.isArrayLiteralExpression(parent) || t.isSpreadElement(parent)) {
+    return isDestructuringTarget(parent);
+  }
+  if (t.isSpreadAssignment(parent)) {
+    return isDestructuringTarget(parent.parent);
+  }
+  if (t.isPropertyAssignment(parent)) {
+    return parent.initializer === node && isDestructuringTarget(parent.parent);
+  }
+  if (t.isShorthandPropertyAssignment(parent)) {
+    return parent.name === node && isDestructuringTarget(parent.parent);
+  }
+  return false;
+};
+
+/**
+ * Babel's `path.isReferencedIdentifier()` for an `Identifier`, except that the target of an
+ * assignment expression counts as a reference, as every caller treats it.
+ */
 export const isReferencedIdentifier = (node: Identifier): boolean => {
+  if (isJsxTagName(node) || isDestructuringTarget(node)) {
+    return false;
+  }
   const parent = node.parent;
   if (t.isPropertyAccessExpression(parent)) {
     return parent.expression === node;
