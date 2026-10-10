@@ -20,7 +20,9 @@ interface RepoFile {
 }
 
 export const CONFORMANCE_DIRECTORY = join(import.meta.dirname, "..");
-export const REPOS_DIRECTORY = join(CONFORMANCE_DIRECTORY, "repos");
+export const PACKAGE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "..");
+export const CACHE_DIRECTORY = join(PACKAGE_DIRECTORY, ".conformance");
+const REPOS_DIRECTORY = join(CONFORMANCE_DIRECTORY, "repos");
 
 export const loadRepos = (ids: string[]): RepoConfig[] => {
   const allIds = readdirSync(REPOS_DIRECTORY).filter((id) =>
@@ -36,3 +38,9 @@ export const loadRepos = (ids: string[]): RepoConfig[] => {
     return { id, ...repoFile, patchFile: existsSync(patchFile) ? patchFile : undefined };
   });
 };
+
+export const getSetupInputs = (repo: RepoConfig): string[] => [
+  repo.revision,
+  repo.install,
+  repo.patchFile ? readFileSync(repo.patchFile, "utf8") : "",
+];

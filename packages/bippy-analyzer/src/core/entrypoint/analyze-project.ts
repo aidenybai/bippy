@@ -1,86 +1,81 @@
 import { dirname, sep } from "node:path";
 import { API } from "typescript/unstable/sync";
+import type { Project } from "typescript/unstable/sync";
 import { ScopeManager } from "../hir/scope.js";
 import { enumerateStates } from "../inference/enumerate-states.js";
 import { getSampleOfValue } from "../inference/infer-domains.js";
 import type {
-  AbstractValue,
   ComponentAnalysis,
+  JsxExpressionValue,
   JsxProp,
-  JsxSpreadProp,
+  PrimitiveSymbolicValue,
   ProjectAnalysis,
   SymbolicValue,
 } from "../inference/types.js";
-import { getPlaceKey } from "../inference/values.js";
+import { forEachJsxElement, getPlaceKey } from "../inference/values.js";
 import { analyzeComponent } from "./analyze-component.js";
 import { collectDisplayNames, collectExportNames, findReactFunctions } from "./program.js";
 
 const SOURCE_FILE_PATTERN = /\.[jt]sx?$/;
 
-interface ComponentUsage {
-  tag: string;
-  props: Array<JsxProp | JsxSpreadProp>;
-}
-
-const isProjectSourceFile = (fileName: string): boolean =>
+/**
+ * Whether a file belongs to the project itself, not to its dependencies or declarations.
+ */
+export const isProjectSourceFile = (fileName: string): boolean =>
   !fileName.includes(`${sep}node_modules${sep}`) &&
   !fileName.endsWith(".d.ts") &&
   SOURCE_FILE_PATTERN.test(fileName);
 
-const collectUsages = (value: SymbolicValue, usages: ComponentUsage[]): void => {
-  switch (value.kind) {
-    case "JsxExpression":
-      if (value.tag.kind === "Component") usages.push({ tag: value.tag.name, props: value.props });
-      for (const child of value.children) collectUsages(child, usages);
-      return;
-    case "JsxFragment":
-      for (const child of value.children) collectUsages(child, usages);
-      return;
-    case "Conditional":
-      collectUsages(value.consequent, usages);
-      collectUsages(value.alternate, usages);
-      return;
-    case "ArrayMap":
-      collectUsages(value.item, usages);
-      return;
-    default:
-      return;
+/**
+ * Opens the TypeScript project for a tsconfig, runs `callback` on it, and closes it.
+ */
+export const withProject = <Result>(
+  configPath: string,
+  callback: (project: Project) => Result,
+): Result => {
+  const api = new API({ cwd: dirname(configPath) });
+  try {
+    const project = api.updateSnapshot({ openProjects: [configPath] }).getProjects()[0];
+    if (!project) throw new Error(`No TypeScript project found for ${configPath}`);
+    return callback(project);
+  } finally {
+    api.close();
   }
 };
+
+const isPrimitive = (value: SymbolicValue | undefined): value is PrimitiveSymbolicValue =>
+  value?.kind === "Primitive";
 
 /**
  * Gives untyped props, as in plain JavaScript, the literal values their call sites pass.
  * A prop is narrowed only when every call site in the project passes a literal for it.
  */
 const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
-  const usages: ComponentUsage[] = [];
-  for (const analysis of analyses) collectUsages(analysis.render, usages);
+  const usages: JsxExpressionValue[] = [];
+  for (const analysis of analyses)
+    forEachJsxElement(analysis.render, (element) => {
+      if (element.tag.kind === "Component") usages.push(element);
+    });
   for (const analysis of analyses) {
-    const componentUsages = usages.filter((usage) => usage.tag === analysis.name);
+    const componentUsages = usages.filter((usage) => usage.tag.name === analysis.name);
     if (componentUsages.length === 0) continue;
     for (const binding of analysis.bindings) {
       if (binding.kind !== "prop" || binding.domain.kind !== "Unknown") continue;
-      const literals = componentUsages.map((usage) => {
-        const prop = usage.props.find(
-          (candidate): candidate is JsxProp =>
-            candidate.kind === "JsxAttribute" && candidate.name === binding.propName,
-        );
-        return prop?.value.kind === "Primitive" ? prop.value : null;
-      });
-      if (literals.some((literal) => literal === null)) continue;
-      const cases = [
-        ...new Map(
-          literals
-            .flatMap((literal): AbstractValue[] =>
-              literal ? [{ kind: "Literal", value: literal.value }] : [],
-            )
-            .map((value) => [JSON.stringify(value), value]),
-        ).values(),
-      ];
-      binding.domain = { kind: "Cases", cases, origin: "call-sites" };
-      binding.samples = cases.flatMap((value) =>
-        value.kind === "Literal" ? [getSampleOfValue(value.value)] : [],
+      const passedValues = componentUsages.map(
+        (usage) =>
+          usage.props.find(
+            (candidate): candidate is JsxProp =>
+              candidate.kind === "JsxAttribute" && candidate.name === binding.propName,
+          )?.value,
       );
+      if (!passedValues.every(isPrimitive)) continue;
+      const literals = [...new Set(passedValues.map((passedValue) => passedValue.value))];
+      binding.domain = {
+        kind: "Cases",
+        cases: literals.map((value) => ({ kind: "Literal", value })),
+        origin: "call-sites",
+      };
+      binding.samples = literals.map(getSampleOfValue);
       analysis.placeDomains.set(getPlaceKey(binding, []), binding.domain);
       analysis.bailouts = analysis.bailouts.filter(
         (bailout) => !(bailout.reason === "untyped-prop" && bailout.message === binding.name),
@@ -96,11 +91,8 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
 export const analyzeProject = (
   configPath: string,
   fileFilter: string | null = null,
-): ProjectAnalysis => {
-  const api = new API({ cwd: dirname(configPath) });
-  try {
-    const project = api.updateSnapshot({ openProjects: [configPath] }).getProjects()[0];
-    if (!project) throw new Error(`No TypeScript project found for ${configPath}`);
+): ProjectAnalysis =>
+  withProject(configPath, (project) => {
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
     const analyses: ComponentAnalysis[] = [];
     for (const fileName of fileNames) {
@@ -123,14 +115,10 @@ export const analyzeProject = (
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
       .map((analysis) => ({ analysis, report: enumerateStates(analysis) }));
     return { components, fileCount: fileNames.length };
-  } finally {
-    api.close();
-  }
-};
+  });
 
 const serializeValue = (_key: string, value: unknown): unknown => {
   if (value instanceof Map) return Object.fromEntries(value);
-  if (value instanceof Set) return [...value];
   if (typeof value === "symbol") return "generated";
   return value;
 };

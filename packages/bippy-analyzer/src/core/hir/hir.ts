@@ -7,14 +7,11 @@
 // Ported from babel-plugin-react-compiler/src/HIR/HIR.ts at b618bbb.
 
 import type { Node, TypeNode } from "typescript/unstable/ast";
-import { CompilerDiagnostic, CompilerError, ErrorCategory } from "../compiler-error.js";
-import { assertExhaustive } from "../utils/utils.js";
+import { CompilerError, CompilerErrorDetail, ErrorCategory } from "../compiler-error.js";
 import { isReservedWord } from "../utils/keyword.js";
 import { Err, Ok, type Result } from "../utils/result.js";
 import type { Environment, ReactFunctionType } from "./environment.js";
-import type { HookKind } from "./object-shape.js";
 import type { BindingKind } from "./scope.js";
-import { type Type, makeType } from "./types.js";
 
 /*
  * *******************************************************************************************
@@ -24,8 +21,6 @@ import { type Type, makeType } from "./types.js";
  * *******************************************************************************************
  */
 
-// AST -> (lowering) -> HIR -> (analysis) -> Reactive Scopes -> (codegen) -> AST
-
 /*
  * A location in a source file, intended to be used for providing diagnostic information and
  * transforming code while preserving source information (ie to emit source maps).
@@ -33,7 +28,7 @@ import { type Type, makeType } from "./types.js";
  * `GeneratedSource` indicates that there is no single source location from which the code derives.
  */
 export const GeneratedSource = Symbol();
-export interface SourceRange {
+interface SourceRange {
   filename: string;
   start: number;
   end: number;
@@ -87,22 +82,18 @@ export type BinaryOperator =
   | ">="
   | "<=";
 export type UnaryOperator = "-" | "+" | "!" | "~" | "typeof" | "void";
-export type UpdateOperator = "++" | "--";
+type UpdateOperator = "++" | "--";
 
 // A function lowered to HIR form, ie where its body is lowered to an HIR control-flow graph
 export interface HIRFunction {
   loc: SourceLocation;
   id: ValidIdentifierName | null;
-  nameHint: string | null;
   fnType: ReactFunctionType;
   env: Environment;
   params: Array<Place | SpreadPattern>;
-  returnTypeAnnotation: TypeNode | null;
   returns: Place;
   context: Array<Place>;
   body: HIR;
-  generator: boolean;
-  async: boolean;
   directives: Array<string>;
 }
 
@@ -133,24 +124,6 @@ export interface HIR {
  */
 export type BlockKind = "block" | "value" | "loop" | "sequence" | "catch";
 
-/**
- * Returns true for "block" and "catch" block kinds which correspond to statements
- * in the source, including BlockStatement, CatchStatement.
- *
- * Inverse of isExpressionBlockKind()
- */
-export const isStatementBlockKind = (kind: BlockKind): boolean =>
-  kind === "block" || kind === "catch";
-
-/**
- * Returns true for "value", "loop", and "sequence" block kinds which correspond to
- * expressions in the source, such as ConditionalExpression, LogicalExpression, loop
- * initializer/test/updaters, etc
- *
- * Inverse of isStatementBlockKind()
- */
-export const isExpressionBlockKind = (kind: BlockKind): boolean => !isStatementBlockKind(kind);
-
 export interface BasicBlock {
   kind: BlockKind;
   id: BlockId;
@@ -159,12 +132,6 @@ export interface BasicBlock {
   preds: Set<BlockId>;
   phis: Set<Phi>;
 }
-export type TBasicBlock<T extends Terminal> = BasicBlock & { terminal: T };
-
-/*
- * Terminal nodes generally represent statements that affect control flow, such as
- * for-of, if-else, return, etc.
- */
 export type Terminal =
   | UnsupportedTerminal
   | UnreachableTerminal
@@ -187,13 +154,7 @@ export type Terminal =
   | MaybeThrowTerminal
   | TryTerminal;
 
-export type TerminalWithFallthrough = Terminal & { fallthrough: BlockId };
-
-/*
- * Terminal nodes allowed for a value block
- * A terminal that couldn't be lowered correctly.
- */
-export interface UnsupportedTerminal {
+interface UnsupportedTerminal {
   kind: "unsupported";
   id: InstructionId;
   loc: SourceLocation;
@@ -205,7 +166,7 @@ export interface UnsupportedTerminal {
  * Unreachable blocks are emitted when all control flow paths of a if/switch/try block diverge
  * before reaching the fallthrough.
  */
-export interface UnreachableTerminal {
+interface UnreachableTerminal {
   kind: "unreachable";
   id: InstructionId;
   loc: SourceLocation;
@@ -224,7 +185,7 @@ export interface Case {
   block: BlockId;
 }
 
-export type ReturnVariant = "Void" | "Implicit" | "Explicit";
+type ReturnVariant = "Void" | "Implicit" | "Explicit";
 export interface ReturnTerminal {
   kind: "return";
   /**
@@ -244,7 +205,7 @@ export interface ReturnTerminal {
   fallthrough?: never;
 }
 
-export interface GotoTerminal {
+interface GotoTerminal {
   kind: "goto";
   block: BlockId;
   variant: GotoVariant;
@@ -279,7 +240,7 @@ export interface BranchTerminal {
   fallthrough: BlockId;
 }
 
-export interface SwitchTerminal {
+interface SwitchTerminal {
   kind: "switch";
   test: Place;
   cases: Array<Case>;
@@ -288,7 +249,7 @@ export interface SwitchTerminal {
   loc: SourceLocation;
 }
 
-export interface DoWhileTerminal {
+interface DoWhileTerminal {
   kind: "do-while";
   loop: BlockId;
   test: BlockId;
@@ -297,7 +258,7 @@ export interface DoWhileTerminal {
   loc: SourceLocation;
 }
 
-export interface WhileTerminal {
+interface WhileTerminal {
   kind: "while";
   loc: SourceLocation;
   test: BlockId;
@@ -306,7 +267,7 @@ export interface WhileTerminal {
   id: InstructionId;
 }
 
-export interface ForTerminal {
+interface ForTerminal {
   kind: "for";
   loc: SourceLocation;
   init: BlockId;
@@ -317,7 +278,7 @@ export interface ForTerminal {
   id: InstructionId;
 }
 
-export interface ForOfTerminal {
+interface ForOfTerminal {
   kind: "for-of";
   loc: SourceLocation;
   init: BlockId;
@@ -327,7 +288,7 @@ export interface ForOfTerminal {
   id: InstructionId;
 }
 
-export interface ForInTerminal {
+interface ForInTerminal {
   kind: "for-in";
   loc: SourceLocation;
   init: BlockId;
@@ -336,7 +297,7 @@ export interface ForInTerminal {
   id: InstructionId;
 }
 
-export interface LogicalTerminal {
+interface LogicalTerminal {
   kind: "logical";
   operator: LogicalOperator;
   test: BlockId;
@@ -345,7 +306,7 @@ export interface LogicalTerminal {
   loc: SourceLocation;
 }
 
-export interface TernaryTerminal {
+interface TernaryTerminal {
   kind: "ternary";
   test: BlockId;
   fallthrough: BlockId;
@@ -353,7 +314,7 @@ export interface TernaryTerminal {
   loc: SourceLocation;
 }
 
-export interface LabelTerminal {
+interface LabelTerminal {
   kind: "label";
   block: BlockId;
   fallthrough: BlockId;
@@ -361,7 +322,7 @@ export interface LabelTerminal {
   loc: SourceLocation;
 }
 
-export interface OptionalTerminal {
+interface OptionalTerminal {
   kind: "optional";
   /*
    * Specifies whether this node was optional. If false, it means that the original
@@ -376,7 +337,7 @@ export interface OptionalTerminal {
   loc: SourceLocation;
 }
 
-export interface SequenceTerminal {
+interface SequenceTerminal {
   kind: "sequence";
   block: BlockId;
   fallthrough: BlockId;
@@ -384,7 +345,7 @@ export interface SequenceTerminal {
   loc: SourceLocation;
 }
 
-export interface TryTerminal {
+interface TryTerminal {
   kind: "try";
   block: BlockId;
   handlerBinding: Place | null;
@@ -395,7 +356,7 @@ export interface TryTerminal {
   loc: SourceLocation;
 }
 
-export interface MaybeThrowTerminal {
+interface MaybeThrowTerminal {
   kind: "maybe-throw";
   continuation: BlockId;
   handler: BlockId | null;
@@ -422,19 +383,12 @@ export interface Instruction {
   loc: SourceLocation;
 }
 
-export interface TInstruction<T extends InstructionValue> {
-  id: InstructionId;
-  lvalue: Place;
-  value: T;
-  loc: SourceLocation;
-}
-
-export interface LValue {
+interface LValue {
   place: Place;
   kind: InstructionKind;
 }
 
-export interface LValuePattern {
+interface LValuePattern {
   pattern: Pattern;
   kind: InstructionKind;
 }
@@ -523,75 +477,10 @@ export enum InstructionKind {
   Function = "Function",
 }
 
-export const convertHoistedLValueKind = (kind: InstructionKind): InstructionKind | null => {
-  switch (kind) {
-    case InstructionKind.HoistedLet:
-      return InstructionKind.Let;
-    case InstructionKind.HoistedConst:
-      return InstructionKind.Const;
-    case InstructionKind.HoistedFunction:
-      return InstructionKind.Function;
-    case InstructionKind.Let:
-    case InstructionKind.Const:
-    case InstructionKind.Function:
-    case InstructionKind.Reassign:
-    case InstructionKind.Catch:
-      return null;
-    default:
-      return assertExhaustive(kind, "Unexpected lvalue kind");
-  }
-};
-
 export interface Phi {
   kind: "Phi";
   place: Place;
   operands: Map<BlockId, Place>;
-}
-
-/**
- * Valid ManualMemoDependencies are always of the form
- * `sourceDeclaredVariable.a.b?.c`, since this is documented
- * and enforced by the `react-hooks/exhaustive-deps` rule.
- *
- * `root` must either reference a ValidatedIdentifier or a global
- * variable.
- */
-export interface ManualMemoDependency {
-  root:
-    | {
-        kind: "NamedLocal";
-        value: Place;
-        constant: boolean;
-      }
-    | { kind: "Global"; identifierName: string };
-  path: DependencyPath;
-  loc: SourceLocation;
-}
-
-export interface StartMemoize {
-  kind: "StartMemoize";
-  // Start/FinishMemoize markers should have matching ids
-  manualMemoId: number;
-  /**
-   * deps-list from source code, or null if one was not provided
-   * (e.g. useMemo without a second arg)
-   */
-  deps: Array<ManualMemoDependency> | null;
-  /**
-   * The source location of the dependencies argument. Used for
-   * emitting diagnostics with a suggested replacement
-   */
-  depsLoc: SourceLocation | null;
-  hasInvalidDeps?: true;
-  loc: SourceLocation;
-}
-export interface FinishMemoize {
-  kind: "FinishMemoize";
-  // Start/FinishMemoize markers should have matching ids
-  manualMemoId: number;
-  decl: Place;
-  pruned?: true;
-  loc: SourceLocation;
 }
 
 /*
@@ -721,7 +610,6 @@ export type InstructionValue =
   | {
       kind: "TypeCastExpression";
       value: Place;
-      type: Type;
       typeAnnotation: TypeNode;
       typeAnnotationKind: "as" | "satisfies";
       loc: SourceLocation;
@@ -865,17 +753,6 @@ export type InstructionValue =
   // `debugger` statement
   | { kind: "Debugger"; loc: SourceLocation }
   /*
-   * Represents semantic information from useMemo/useCallback that the developer
-   * has indicated a particular value should be memoized. This value is ignored
-   * unless the TODO flag is enabled.
-   *
-   * NOTE: the Memoize instruction is intended for side-effects only, and is pruned
-   * during codegen. It can't be pruned during DCE because we need to preserve the
-   * instruction so it can be visible in InferReferenceEffects.
-   */
-  | StartMemoize
-  | FinishMemoize
-  /*
    * Catch-all for statements such as type imports, nested class declarations, etc
    * which are not directly represented, but included for completeness and to allow
    * passing through in codegen.
@@ -892,8 +769,6 @@ export interface JsxExpression {
   props: Array<JsxAttribute>;
   children: Array<Place> | null; // null === no children
   loc: SourceLocation;
-  openingLoc: SourceLocation;
-  closingLoc: SourceLocation;
 }
 
 export type JsxAttribute =
@@ -903,7 +778,6 @@ export type JsxAttribute =
 export interface FunctionExpression {
   kind: "FunctionExpression";
   name: ValidIdentifierName | null;
-  nameHint: string | null;
   loweredFunc: LoweredFunction;
   type: "ArrowFunctionExpression" | "FunctionExpression" | "FunctionDeclaration";
   loc: SourceLocation;
@@ -980,14 +854,14 @@ export type VariableBinding =
   | NonLocalBinding;
 
 // `import {bar as baz} from 'foo'`: name=baz, module=foo, imported=bar
-export interface NonLocalImportSpecifier {
+interface NonLocalImportSpecifier {
   kind: "ImportSpecifier";
   name: string;
   module: string;
   imported: string;
 }
 
-export type NonLocalBinding =
+type NonLocalBinding =
   // `import Foo from 'foo'`: name=Foo, module=foo
   | { kind: "ImportDefault"; name: string; module: string }
   // `import * as Foo from 'foo'`: name=Foo, module=foo
@@ -1016,16 +890,15 @@ export interface Identifier {
 
   // null for temporaries. name is primarily used for debugging.
   name: IdentifierName | null;
-  type: Type;
   loc: SourceLocation;
 }
 
 export type IdentifierName = ValidatedIdentifier | PromotedIdentifier;
-export interface ValidatedIdentifier {
+interface ValidatedIdentifier {
   kind: "named";
   value: ValidIdentifierName;
 }
-export interface PromotedIdentifier {
+interface PromotedIdentifier {
   kind: "promoted";
   value: string;
 }
@@ -1035,7 +908,7 @@ export interface PromotedIdentifier {
  * through the below helpers.
  */
 const opaqueValidIdentifierName = Symbol();
-export type ValidIdentifierName = string & {
+type ValidIdentifierName = string & {
   [opaqueValidIdentifierName]: "ValidIdentifierName";
 };
 
@@ -1046,16 +919,7 @@ export const makeTemporaryIdentifier = (
   id: identifierId,
   name: null,
   declarationId: makeDeclarationId(identifierId),
-  type: makeType(),
   loc,
-});
-
-export const forkTemporaryIdentifier = (
-  identifierId: IdentifierId,
-  source: Identifier,
-): Identifier => ({
-  ...source,
-  id: identifierId,
 });
 
 export const validateIdentifierName = (
@@ -1063,16 +927,12 @@ export const validateIdentifierName = (
 ): Result<ValidatedIdentifier, CompilerError> => {
   if (isReservedWord(name)) {
     const error = new CompilerError();
-    error.pushDiagnostic(
-      CompilerDiagnostic.create({
+    error.details.push(
+      new CompilerErrorDetail({
         category: ErrorCategory.Syntax,
         reason: "Expected a non-reserved identifier name",
         description: `\`${name}\` is a reserved word in JavaScript and cannot be used as an identifier name`,
-        suggestions: null,
-      }).withDetails({
-        kind: "error",
         loc: GeneratedSource,
-        message: "reserved word",
       }),
     );
     return Err(error);
@@ -1109,142 +969,12 @@ export const promoteTemporary = (identifier: Identifier): void => {
   };
 };
 
-export const isPromotedTemporary = (name: string): boolean => name.startsWith("#t");
-
-/**
- * Given an unnamed identifier, promote it to a named identifier, distinguishing
- * it as a value that needs to be capitalized since it appears in JSX element tag position
- *
- * Note: this uses the identifier's DeclarationId to ensure that all
- * instances of the same declaration will have the same name.
- */
-export const promoteTemporaryJsxTag = (identifier: Identifier): void => {
-  CompilerError.invariant(identifier.name === null, {
-    reason: `Expected a temporary (unnamed) identifier`,
-    description: `Identifier already has a name, \`${identifier.name?.value}\``,
-    loc: GeneratedSource,
-  });
-  identifier.name = {
-    kind: "promoted",
-    value: `#T${identifier.declarationId}`,
-  };
-};
-
-export const isPromotedJsxTemporary = (name: string): boolean => name.startsWith("#T");
-
-/**
- * The reason for the kind of a value.
- */
-export enum ValueReason {
-  /**
-   * Defined outside the React function.
-   */
-  Global = "global",
-
-  /**
-   * Used in a JSX expression.
-   */
-  JsxCaptured = "jsx-captured",
-
-  /**
-   * Argument to a hook
-   */
-  HookCaptured = "hook-captured",
-
-  /**
-   * Return value of a hook
-   */
-  HookReturn = "hook-return",
-
-  /**
-   * Passed to an effect
-   */
-  Effect = "effect",
-
-  /**
-   * Return value of a function with known frozen return value, e.g. `useState`.
-   */
-  KnownReturnSignature = "known-return-signature",
-
-  /**
-   * A value returned from `useContext`
-   */
-  Context = "context",
-
-  /**
-   * A value returned from `useState`
-   */
-  State = "state",
-
-  /**
-   * A value returned from `useReducer`
-   */
-  ReducerState = "reducer-state",
-
-  /**
-   * Props of a component or arguments of a hook.
-   */
-  ReactiveFunctionArgument = "reactive-function-argument",
-
-  Other = "other",
-}
-
-/*
- * Distinguish between different kinds of values relevant to inference purposes:
- * see the main docblock for the module for details.
- */
-export enum ValueKind {
-  MaybeFrozen = "maybefrozen",
-  Frozen = "frozen",
-  Primitive = "primitive",
-  Global = "global",
-  Mutable = "mutable",
-  Context = "context",
-}
-
-// The effect with which a value is modified.
-export enum Effect {
-  // Default value: not allowed after lifetime inference
-  Unknown = "<unknown>",
-  // This reference freezes the value (corresponds to a place where codegen should emit a freeze instruction)
-  Freeze = "freeze",
-  // This reference reads the value
-  Read = "read",
-  // This reference reads and stores the value
-  Capture = "capture",
-  ConditionallyMutateIterator = "mutate-iterator?",
-  /*
-   * This reference *may* write to (mutate) the value. This covers two similar cases:
-   * - The compiler is being conservative and assuming that a value *may* be mutated
-   * - The effect is polymorphic: mutable values may be mutated, non-mutable values
-   *   will not be mutated.
-   * In both cases, we conservatively assume that mutable values will be mutated.
-   * But we do not error if the value is known to be immutable.
-   */
-  ConditionallyMutate = "mutate?",
-
-  /*
-   * This reference *does* write to (mutate) the value. It is an error (invalid input)
-   * if an immutable value flows into a location with this effect.
-   */
-  Mutate = "mutate",
-  // This reference may alias to (mutate) the value
-  Store = "store",
-}
-
 const opaquePropertyLiteral = Symbol();
 export type PropertyLiteral = (string | number) & {
   [opaquePropertyLiteral]: "PropertyLiteral";
 };
 export const makePropertyLiteral = (value: string | number): PropertyLiteral =>
   value as PropertyLiteral;
-export interface DependencyPathEntry {
-  property: PropertyLiteral;
-  optional: boolean;
-  loc: SourceLocation;
-}
-export type DependencyPath = Array<DependencyPathEntry>;
-
 /*
  * Simulated opaque type for BlockIds to prevent using normal numbers as block ids
  * accidentally.
@@ -1280,7 +1010,7 @@ export const makeIdentifierId = (value: number): IdentifierId => {
  * accidentally.
  */
 const opageDeclarationId = Symbol();
-export type DeclarationId = number & { [opageDeclarationId]: "DeclarationId" };
+type DeclarationId = number & { [opageDeclarationId]: "DeclarationId" };
 
 export const makeDeclarationId = (value: number): DeclarationId => {
   CompilerError.invariant(value >= 0 && Number.isInteger(value), {
@@ -1304,149 +1034,3 @@ export const makeInstructionId = (value: number): InstructionId => {
   });
   return value as InstructionId;
 };
-
-export const isObjectMethodType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "ObjectMethod";
-
-export const isObjectType = (identifier: Identifier): boolean => identifier.type.kind === "Object";
-
-export const isPrimitiveType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Primitive";
-
-export const isPlainObjectType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInObject";
-
-export const isArrayType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInArray";
-
-export const isMapType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInMap";
-
-export const isSetType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInSet";
-
-export const isPropsType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInProps";
-
-export const isRefValueType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInRefValue";
-
-export const isUseRefType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInUseRefId";
-
-export const isUseStateType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInUseState";
-
-export const isJsxType = (type: Type): boolean =>
-  type.kind === "Object" && type.shapeId === "BuiltInJsx";
-
-export const isRefOrRefValue = (identifier: Identifier): boolean =>
-  isUseRefType(identifier) || isRefValueType(identifier);
-
-/*
- * Returns true if the type is a Ref or a custom user type that acts like a ref when it
- * shouldn't. For now the only other case of this is Reanimated's shared values.
- */
-export const isRefOrRefLikeMutableType = (type: Type): boolean =>
-  type.kind === "Object" &&
-  (type.shapeId === "BuiltInUseRefId" || type.shapeId === "ReanimatedSharedValueId");
-
-export const isSetStateType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInSetState";
-
-export const isUseActionStateType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInUseActionState";
-
-export const isStartTransitionType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInStartTransition";
-
-export const isUseOptimisticType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Object" && identifier.type.shapeId === "BuiltInUseOptimistic";
-
-export const isSetOptimisticType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInSetOptimistic";
-
-export const isSetActionStateType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInSetActionState";
-
-export const isUseReducerType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseReducer";
-
-export const isDispatcherType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInDispatch";
-
-export const isEffectEventFunctionType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInEffectEventFunction";
-
-export const isStableType = (identifier: Identifier): boolean =>
-  isSetStateType(identifier) ||
-  isSetActionStateType(identifier) ||
-  isDispatcherType(identifier) ||
-  isUseRefType(identifier) ||
-  isStartTransitionType(identifier) ||
-  isSetOptimisticType(identifier);
-
-export const isStableTypeContainer = (identifier: Identifier): boolean => {
-  const type = identifier.type;
-  if (type.kind !== "Object") {
-    return false;
-  }
-  return (
-    isUseStateType(identifier) || // setState
-    isUseActionStateType(identifier) || // setActionState
-    isUseReducerType(identifier) || // dispatcher
-    isUseOptimisticType(identifier) || // setOptimistic
-    type.shapeId === "BuiltInUseTransition" // startTransition
-  );
-};
-
-export const evaluatesToStableTypeOrContainer = (
-  env: Environment,
-  instruction: Instruction,
-): boolean => {
-  const value = instruction.value;
-  if (value.kind === "CallExpression" || value.kind === "MethodCall") {
-    const callee = value.kind === "CallExpression" ? value.callee : value.property;
-
-    const calleeHookKind = getHookKind(env, callee.identifier);
-    switch (calleeHookKind) {
-      case "useState":
-      case "useReducer":
-      case "useActionState":
-      case "useRef":
-      case "useTransition":
-      case "useOptimistic":
-        return true;
-    }
-  }
-  return false;
-};
-
-export const isUseEffectHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseEffectHook";
-export const isUseLayoutEffectHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseLayoutEffectHook";
-export const isUseInsertionEffectHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" &&
-  identifier.type.shapeId === "BuiltInUseInsertionEffectHook";
-export const isUseEffectEventType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseEffectEvent";
-
-export const isUseContextHookType = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseContextHook";
-
-export const getHookKind = (env: Environment, identifier: Identifier): HookKind | null =>
-  getHookKindForType(env, identifier.type);
-
-export const isUseOperator = (identifier: Identifier): boolean =>
-  identifier.type.kind === "Function" && identifier.type.shapeId === "BuiltInUseOperator";
-
-export const getHookKindForType = (env: Environment, type: Type): HookKind | null => {
-  if (type.kind === "Function") {
-    const signature = env.getFunctionSignature(type);
-    return signature?.hookKind ?? null;
-  }
-  return null;
-};
-
-export * from "./types.js";

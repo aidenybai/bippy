@@ -3,8 +3,11 @@ import type {
   AbstractValue,
   Binding,
   BindingValue,
+  ConditionalValue,
+  JsxExpressionValue,
   PrimitiveValue,
   SymbolicValue,
+  TestKind,
   Truthiness,
 } from "./types.js";
 
@@ -52,7 +55,7 @@ export const getBindingPlaceKey = (value: BindingValue): string =>
 export const formatPlace = (binding: Binding, path: readonly string[]): string =>
   [binding.name, ...path].join(".");
 
-export const formatPrimitive = (value: PrimitiveValue): string =>
+const formatPrimitive = (value: PrimitiveValue): string =>
   typeof value === "string" ? JSON.stringify(value) : String(value);
 
 export const formatAbstractValue = (value: AbstractValue): string =>
@@ -106,6 +109,82 @@ export const negate = (value: SymbolicValue): SymbolicValue =>
   value.kind === "UnaryExpression" && value.operator === "!"
     ? value.value
     : { kind: "UnaryExpression", operator: "!", value };
+
+/**
+ * The test a decision checks, as an expression: the value itself, or `value != null` for a
+ * nullish test.
+ */
+export const getTestExpression = (test: SymbolicValue, testKind: TestKind): SymbolicValue =>
+  testKind === "nullish"
+    ? {
+        kind: "BinaryExpression",
+        operator: "!=",
+        left: test,
+        right: { kind: "Primitive", value: null },
+      }
+    : test;
+
+/**
+ * Whether a value is truthy no matter what the bindings hold: primitives by their value,
+ * JSX, functions, objects and arrays always. `null` when it depends.
+ */
+export const getKnownTruthiness = (value: SymbolicValue): boolean | null => {
+  switch (value.kind) {
+    case "Primitive":
+      return Boolean(value.value);
+    case "JsxExpression":
+    case "JsxFragment":
+    case "Function":
+    case "ObjectExpression":
+    case "ArrayExpression":
+      return true;
+    default:
+      return null;
+  }
+};
+
+/**
+ * Whether React renders nothing for this value: `null`, `undefined`, or a boolean.
+ */
+export const isRenderingNothing = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive" &&
+  (value.value === null || value.value === undefined || typeof value.value === "boolean");
+
+/**
+ * Whether the alternate of a conditional renders nothing, as in `cond && <A />`, where it is
+ * either an empty value or the test itself.
+ */
+export const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
+  isRenderingNothing(conditional.alternate) ||
+  formatSymbolicValue(conditional.alternate) === formatSymbolicValue(conditional.test);
+
+/**
+ * Calls `visit` on every JSX element in a render tree, parents before children and
+ * consequents before alternates.
+ */
+export const forEachJsxElement = (
+  value: SymbolicValue,
+  visit: (element: JsxExpressionValue) => void,
+): void => {
+  switch (value.kind) {
+    case "JsxExpression":
+      visit(value);
+      for (const child of value.children) forEachJsxElement(child, visit);
+      return;
+    case "JsxFragment":
+      for (const child of value.children) forEachJsxElement(child, visit);
+      return;
+    case "Conditional":
+      forEachJsxElement(value.consequent, visit);
+      forEachJsxElement(value.alternate, visit);
+      return;
+    case "ArrayMap":
+      forEachJsxElement(value.item, visit);
+      return;
+    default:
+      return;
+  }
+};
 
 const getPrecedence = (value: SymbolicValue): number => {
   if (value.kind === "BinaryExpression") return BINARY_PRECEDENCE.get(value.operator) ?? 0;

@@ -1,7 +1,7 @@
-import { assertExhaustive } from "../utils/utils.js";
+import { GeneratedSource } from "../hir/hir.js";
 import type { Bound, Knowledge } from "./knowledge.js";
 import {
-  CONSTANT_BOUND_ATOM,
+  CONSTANT_ATOM,
   assume,
   cloneKnowledge,
   createKnowledge,
@@ -24,7 +24,16 @@ import type {
   SymbolicValue,
   Transition,
 } from "./types.js";
-import { formatNegated, formatSymbolicValue, getPlaceKey, getTruthiness } from "./values.js";
+import {
+  forEachJsxElement,
+  formatNegated,
+  formatSymbolicValue,
+  getBindingPlaceKey,
+  getPlaceKey,
+  getTestExpression,
+  getTruthiness,
+  isRenderingNothingWhenFalse,
+} from "./values.js";
 
 const MAX_ALTERNATIVES = 256;
 const REACHABILITY_ROUNDS = 3;
@@ -35,26 +44,25 @@ interface Alternative {
   assumptions: string[];
 }
 
+interface PartialChildren {
+  knowledge: Knowledge;
+  children: SymbolicValue[];
+  assumptions: string[];
+}
+
 type DecisionOutcomes = Map<string, Set<boolean>>;
 
 type FieldCases = AbstractValue[] | "unchanged" | null;
 
 const getDecisionKey = (conditional: ConditionalValue): string => {
   const { decision } = conditional;
-  return typeof decision.loc === "symbol"
+  return decision.loc === GeneratedSource
     ? `generated:${decision.terminalId}`
     : `${decision.loc.start}:${decision.loc.end}:${decision.terminalId}`;
 };
 
 const getTest = (conditional: ConditionalValue): SymbolicValue =>
-  conditional.testKind === "nullish"
-    ? {
-        kind: "BinaryExpression",
-        operator: "!=",
-        left: conditional.test,
-        right: { kind: "Primitive", value: null },
-      }
-    : conditional.test;
+  getTestExpression(conditional.test, conditional.testKind);
 
 const getLiteralCases = (
   value: SymbolicValue,
@@ -105,7 +113,7 @@ const getToggleCases = (
     value.value.kind !== "Binding"
   )
     return null;
-  if (getPlaceKey(value.value.binding, value.value.path) !== placeKey) return null;
+  if (getBindingPlaceKey(value.value) !== placeKey) return null;
   return current.map((candidate): AbstractValue => ({
     kind: "Literal",
     value: getTruthiness(candidate) === "falsy",
@@ -170,15 +178,16 @@ const createInitialKnowledge = (analysis: ComponentAnalysis): Knowledge => {
   return createKnowledge(values);
 };
 
+/**
+ * Whether an update keeps the array's length: `items.map(...)` or `[...items]`.
+ */
 const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => {
   if (value.kind === "ArrayMap") return isSameBinding(value.array, binding);
-  const [spread] = value.kind === "ArrayExpression" ? value.spreads : [];
   return (
     value.kind === "ArrayExpression" &&
     value.elements.length === 0 &&
     value.spreads.length === 1 &&
-    spread !== undefined &&
-    isSameBinding(spread, binding)
+    isSameBinding(value.spreads[0], binding)
   );
 };
 
@@ -186,7 +195,7 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   if (value.kind !== "ArrayExpression") return [];
   const lengthAtom = getLengthAtom(binding.id);
   const minimum: Bound = {
-    left: CONSTANT_BOUND_ATOM,
+    left: CONSTANT_ATOM,
     right: lengthAtom,
     constant: -value.elements.length,
     isStrict: false,
@@ -196,7 +205,7 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
     minimum,
     {
       left: lengthAtom,
-      right: CONSTANT_BOUND_ATOM,
+      right: CONSTANT_ATOM,
       constant: value.elements.length,
       isStrict: false,
     },
@@ -275,99 +284,81 @@ const enumerate = (
     }
     case "JsxExpression":
     case "JsxFragment": {
-      let partials: Alternative[] = [
-        { knowledge, render: { ...value, children: [] }, assumptions: [] },
-      ];
+      let partials: PartialChildren[] = [{ knowledge, children: [], assumptions: [] }];
       for (const child of value.children) {
-        const nextPartials: Alternative[] = [];
+        const nextPartials: PartialChildren[] = [];
         for (const partial of partials) {
           for (const childAlternative of enumerate(child, partial.knowledge, outcomes)) {
             if (nextPartials.length >= MAX_ALTERNATIVES) break;
-            const children =
-              partial.render.kind === "JsxExpression" || partial.render.kind === "JsxFragment"
-                ? partial.render.children
-                : [];
             nextPartials.push({
               knowledge: childAlternative.knowledge,
-              render: { ...value, children: [...children, childAlternative.render] },
+              children: [...partial.children, childAlternative.render],
               assumptions: [...partial.assumptions, ...childAlternative.assumptions],
             });
           }
         }
         partials = nextPartials;
       }
-      return partials;
+      return partials.map((partial) => ({
+        knowledge: partial.knowledge,
+        render: { ...value, children: partial.children },
+        assumptions: partial.assumptions,
+      }));
     }
     default:
       return [{ knowledge, render: resolveLiteral(value, knowledge), assumptions: [] }];
   }
 };
 
-const collectTransitionIds = (value: SymbolicValue, transitionIds: Set<string>): void => {
-  switch (value.kind) {
-    case "JsxExpression":
-      for (const prop of value.props)
-        if (prop.kind === "JsxAttribute" && prop.transitionId) transitionIds.add(prop.transitionId);
-      for (const child of value.children) collectTransitionIds(child, transitionIds);
-      return;
-    case "JsxFragment":
-      for (const child of value.children) collectTransitionIds(child, transitionIds);
-      return;
-    case "Conditional":
-      collectTransitionIds(value.consequent, transitionIds);
-      collectTransitionIds(value.alternate, transitionIds);
-      return;
-    case "ArrayMap":
-      collectTransitionIds(value.item, transitionIds);
-      return;
-    default:
-      return;
-  }
-};
+const collectTransitionIds = (render: SymbolicValue, transitionIds: Set<string>): void =>
+  forEachJsxElement(render, (element) => {
+    for (const prop of element.props)
+      if (prop.kind === "JsxAttribute" && prop.transitionId) transitionIds.add(prop.transitionId);
+  });
 
-const isRenderingNothing = (value: SymbolicValue, test: SymbolicValue): boolean =>
-  (value.kind === "Primitive" &&
-    (value.value === null || value.value === undefined || value.value === false)) ||
-  formatSymbolicValue(value) === formatSymbolicValue(test);
-
-const collectDeadBranches = (
-  value: SymbolicValue,
-  outcomes: DecisionOutcomes,
-  deadBranches: DeadBranch[],
-  seen: Set<string>,
-): void => {
-  switch (value.kind) {
-    case "Conditional": {
-      const key = getDecisionKey(value);
-      const reached = outcomes.get(key);
-      const test = getTest(value);
-      if (reached && !seen.has(key)) {
-        seen.add(key);
-        if (!reached.has(true))
-          deadBranches.push({
-            decision: value.decision,
-            side: true,
-            description: `never ${formatSymbolicValue(test)}`,
-          });
-        if (!reached.has(false) && !isRenderingNothing(value.alternate, value.test)) {
-          deadBranches.push({
-            decision: value.decision,
-            side: false,
-            description: `never ${formatNegated(test)}`,
-          });
+/**
+ * Lists the decision outcomes no state reaches. Only the arms some state reaches are
+ * searched, and an unreached alternate that renders nothing is not worth reporting.
+ */
+const collectDeadBranches = (render: SymbolicValue, outcomes: DecisionOutcomes): DeadBranch[] => {
+  const deadBranches: DeadBranch[] = [];
+  const seen = new Set<string>();
+  const visit = (value: SymbolicValue): void => {
+    switch (value.kind) {
+      case "Conditional": {
+        const key = getDecisionKey(value);
+        const reached = outcomes.get(key);
+        const test = getTest(value);
+        if (reached && !seen.has(key)) {
+          seen.add(key);
+          if (!reached.has(true))
+            deadBranches.push({
+              decision: value.decision,
+              side: true,
+              description: `never ${formatSymbolicValue(test)}`,
+            });
+          if (!reached.has(false) && !isRenderingNothingWhenFalse(value)) {
+            deadBranches.push({
+              decision: value.decision,
+              side: false,
+              description: `never ${formatNegated(test)}`,
+            });
+          }
         }
+        if (reached?.has(true)) visit(value.consequent);
+        if (reached?.has(false)) visit(value.alternate);
+        return;
       }
-      if (reached?.has(true)) collectDeadBranches(value.consequent, outcomes, deadBranches, seen);
-      if (reached?.has(false)) collectDeadBranches(value.alternate, outcomes, deadBranches, seen);
-      return;
+      case "JsxExpression":
+      case "JsxFragment":
+        value.children.forEach(visit);
+        return;
+      default:
+        return;
     }
-    case "JsxExpression":
-    case "JsxFragment":
-      for (const child of value.children) collectDeadBranches(child, outcomes, deadBranches, seen);
-      return;
-    default:
-      return;
-  }
+  };
+  visit(render);
+  return deadBranches;
 };
 
 const getRenderSignature = (value: SymbolicValue): string => {
@@ -380,23 +371,8 @@ const getRenderSignature = (value: SymbolicValue): string => {
       return `{${formatSymbolicValue(value.test)}?${getRenderSignature(value.consequent)}:${getRenderSignature(value.alternate)}}`;
     case "ArrayMap":
       return `[${getRenderSignature(value.item)}]`;
-    case "Primitive":
-    case "Binding":
-    case "BinaryExpression":
-    case "UnaryExpression":
-    case "ObjectExpression":
-    case "ArrayExpression":
-    case "JSXText":
-    case "Function":
-    case "Setter":
-    case "Dispatch":
-    case "Props":
-    case "HookResult":
-    case "Global":
-    case "Unknown":
-      return formatSymbolicValue(value);
     default:
-      return assertExhaustive(value, "Unhandled symbolic value");
+      return formatSymbolicValue(value);
   }
 };
 
@@ -439,8 +415,10 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     return { assumptions: alternative.assumptions, render: alternative.render, edges };
   });
 
-  const deadBranches: DeadBranch[] = [];
-  collectDeadBranches(analysis.render, outcomes, deadBranches, new Set());
-  const places = new Map([...reachable.values].map(([placeKey, values]) => [placeKey, values]));
-  return { places, states, deadBranches, isTruncated: alternatives.length >= MAX_ALTERNATIVES };
+  return {
+    places: new Map(reachable.values),
+    states,
+    deadBranches: collectDeadBranches(analysis.render, outcomes),
+    isTruncated: alternatives.length >= MAX_ALTERNATIVES,
+  };
 };

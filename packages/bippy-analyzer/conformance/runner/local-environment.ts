@@ -3,17 +3,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { collect } from "./collect.js";
 import type { CollectSummary } from "./collect.js";
-import { CONFORMANCE_DIRECTORY } from "./repos.js";
+import { CACHE_DIRECTORY, CONFORMANCE_DIRECTORY, getSetupInputs } from "./repos.js";
 import type { RepoConfig } from "./repos.js";
 
-const CACHE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "..", ".conformance");
+const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
+const SETUP_ERROR_TAIL_LENGTH = 4000;
 
-const getSetupKey = (repo: RepoConfig): string =>
-  JSON.stringify([
-    repo.revision,
-    repo.install,
-    repo.patchFile ? readFileSync(repo.patchFile, "utf8") : "",
-  ]);
+const getSetupKey = (repo: RepoConfig): string => JSON.stringify(getSetupInputs(repo));
 
 const prepare = (repo: RepoConfig, log: (line: string) => void): string => {
   const appDirectory = join(CACHE_DIRECTORY, repo.id);
@@ -32,10 +28,12 @@ const prepare = (repo: RepoConfig, log: (line: string) => void): string => {
       PATCH_FILE: repo.patchFile ?? "",
     },
     encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
+    maxBuffer: SETUP_OUTPUT_BUFFER_BYTES,
   });
   if (result.status !== 0)
-    throw new Error(`setup failed for ${repo.id}:\n${result.stderr.slice(-4000)}`);
+    throw new Error(
+      `setup failed for ${repo.id}:\n${result.stderr.slice(-SETUP_ERROR_TAIL_LENGTH)}`,
+    );
   writeFileSync(markerFile, getSetupKey(repo));
   return appDirectory;
 };
@@ -47,7 +45,9 @@ export const runLocal = async (
   log: (line: string) => void,
 ): Promise<CollectSummary> => {
   const appDirectory = prepare(repo, log);
-  return collect(join(appDirectory, repo.workingDirectory, repo.tsconfig), outputDirectory, {
+  return collect(
+    join(appDirectory, repo.workingDirectory, repo.tsconfig),
+    outputDirectory,
     shouldVerify,
-  });
+  );
 };

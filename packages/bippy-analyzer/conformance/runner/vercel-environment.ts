@@ -4,7 +4,12 @@ import { join, relative } from "node:path";
 import { Writable } from "node:stream";
 import { Sandbox } from "@vercel/sandbox";
 import type { CollectSummary } from "./collect.js";
-import { CONFORMANCE_DIRECTORY } from "./repos.js";
+import {
+  CACHE_DIRECTORY,
+  CONFORMANCE_DIRECTORY,
+  PACKAGE_DIRECTORY,
+  getSetupInputs,
+} from "./repos.js";
 import type { RepoConfig } from "./repos.js";
 
 interface SnapshotRecord {
@@ -18,8 +23,6 @@ interface Credentials {
   projectId: string;
 }
 
-const PACKAGE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "..");
-const CACHE_DIRECTORY = join(PACKAGE_DIRECTORY, ".conformance");
 const SNAPSHOTS_FILE = join(CACHE_DIRECTORY, "vercel-snapshots.json");
 const SANDBOX_ROOT = "/vercel/sandbox";
 const APP_DIRECTORY = `${SANDBOX_ROOT}/app`;
@@ -27,6 +30,8 @@ const ANALYZER_DIRECTORY = `${SANDBOX_ROOT}/analyzer`;
 const OUTPUT_DIRECTORY = `${SANDBOX_ROOT}/out`;
 const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
+const SANDBOX_RESOURCES = { vcpus: 4 };
+const OUTPUT_TAIL_LENGTH = 8000;
 const ANALYZER_SOURCE_DIRECTORIES = ["src", "conformance/runner", "tests/verify"];
 const BIPPY_SOURCE_DIRECTORY = join(PACKAGE_DIRECTORY, "../bippy/src");
 const ANALYZER_DEPENDENCIES = [
@@ -80,9 +85,7 @@ const getSetupKey = (repo: RepoConfig): string =>
   createHash("sha256")
     .update(
       JSON.stringify([
-        repo.revision,
-        repo.install,
-        repo.patchFile ? readFileSync(repo.patchFile, "utf8") : "",
+        ...getSetupInputs(repo),
         readFileSync(join(CONFORMANCE_DIRECTORY, "setup.sh"), "utf8"),
         getAnalyzerPackageJson(),
       ]),
@@ -99,7 +102,7 @@ const createLineCollector = (): { stream: Writable; getTail: () => string } => {
   let buffer = "";
   const stream = new Writable({
     write: (chunk: Buffer, _encoding, callback) => {
-      buffer = (buffer + chunk.toString("utf8")).slice(-8000);
+      buffer = (buffer + chunk.toString("utf8")).slice(-OUTPUT_TAIL_LENGTH);
       callback();
     },
   });
@@ -137,7 +140,7 @@ const prepareSnapshot = async (
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)} in a new sandbox`);
   const sandbox = await Sandbox.create({
     ...credentials,
-    resources: { vcpus: 4 },
+    resources: SANDBOX_RESOURCES,
     timeout: SETUP_TIMEOUT_MS,
   });
   try {
@@ -204,7 +207,7 @@ export const runVercel = async (
   const sandbox = await Sandbox.create({
     ...credentials,
     source: { type: "snapshot", snapshotId },
-    resources: { vcpus: 4 },
+    resources: SANDBOX_RESOURCES,
     timeout: RUN_TIMEOUT_MS,
   });
   try {

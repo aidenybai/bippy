@@ -25,6 +25,8 @@ interface RepoResult {
 }
 
 const ENVIRONMENTS: Environment[] = ["local", "vercel"];
+const UNRESOLVED_TYPE_LIMIT = 0.2;
+const ERROR_PREVIEW_LINES = 6;
 
 const parseEnvironment = (value: string): Environment => {
   const environment = ENVIRONMENTS.find((candidate) => candidate === value);
@@ -69,8 +71,6 @@ const mapWithConcurrency = async <Item, Result>(
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
   return results;
 };
-
-const UNRESOLVED_TYPE_LIMIT = 0.2;
 
 const isSetupSuspect = (summary: CollectSummary): boolean =>
   summary.bindings > 0 && summary.unresolvedTypeBindings / summary.bindings > UNRESOLVED_TYPE_LIMIT;
@@ -118,7 +118,9 @@ const formatTable = (results: RepoResult[]): string => {
   const formatRow = (row: string[]): string =>
     row.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join("  ");
   const failures = results.flatMap(({ id, error }) =>
-    error ? [picocolors.red(`${id}: ${error.split("\n").slice(0, 6).join("\n  ")}`)] : [],
+    error
+      ? [picocolors.red(`${id}: ${error.split("\n").slice(0, ERROR_PREVIEW_LINES).join("\n  ")}`)]
+      : [],
   );
   for (const { id, summary } of results) {
     if (summary && isSetupSuspect(summary)) {

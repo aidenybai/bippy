@@ -13,6 +13,7 @@ import { CompilerError } from "../compiler-error.js";
 import { getOrInsertDefault } from "../utils/utils.js";
 import { getSourceLocation } from "./hir.js";
 import {
+  type Binding,
   type FunctionNode,
   type IdentifierNode,
   type ScopeManager,
@@ -96,10 +97,8 @@ export const findContextIdentifiers = (
   func.forEachChild(visit);
 
   const result = new Set<IdentifierNode>();
-  for (const [identifier, info] of state.identifiers.entries()) {
-    if (info.reassignedByInnerFn) {
-      result.add(identifier);
-    } else if (info.reassigned && info.referencedByInnerFn) {
+  for (const [identifier, info] of state.identifiers) {
+    if (info.reassignedByInnerFn || (info.reassigned && info.referencedByInnerFn)) {
       result.add(identifier);
     }
   }
@@ -121,18 +120,19 @@ const handleIdentifier = (
   const identifier = getOrInsertDefault(state.identifiers, binding.identifier, {
     ...DEFAULT_IDENTIFIER_INFO,
   });
-
-  if (currentFn !== null) {
-    const bindingAboveLambdaScope = state.scopes.getBinding(
-      state.scopes.getScope(currentFn).parent,
-      node.text,
-    );
-
-    if (binding === bindingAboveLambdaScope) {
-      identifier.referencedByInnerFn = true;
-    }
+  if (isBindingAboveLambdaScope(currentFn, state, binding, node)) {
+    identifier.referencedByInnerFn = true;
   }
 };
+
+const isBindingAboveLambdaScope = (
+  currentFn: FunctionNode | null,
+  state: FindContextIdentifierState,
+  binding: Binding,
+  node: IdentifierNode,
+): boolean =>
+  currentFn !== null &&
+  binding === state.scopes.getBinding(state.scopes.getScope(currentFn).parent, node.text);
 
 const handleAssignment = (
   currentFn: FunctionNode | null,
@@ -153,16 +153,8 @@ const handleAssignment = (
       ...DEFAULT_IDENTIFIER_INFO,
     });
     identifierState.reassigned = true;
-
-    if (currentFn !== null) {
-      const bindingAboveLambdaScope = state.scopes.getBinding(
-        state.scopes.getScope(currentFn).parent,
-        node.text,
-      );
-
-      if (binding === bindingAboveLambdaScope) {
-        identifierState.reassignedByInnerFn = true;
-      }
+    if (isBindingAboveLambdaScope(currentFn, state, binding, node)) {
+      identifierState.reassignedByInnerFn = true;
     }
     return;
   }
@@ -182,7 +174,7 @@ const handleAssignment = (
         handleAssignment(currentFn, state, property.name);
       } else {
         CompilerError.invariant(t.isSpreadAssignment(property), {
-          reason: `[FindContextIdentifiers] Invalid assumptions for babel types.`,
+          reason: `[FindContextIdentifiers] Expected a spread assignment.`,
           loc: getSourceLocation(property),
         });
         handleAssignment(currentFn, state, property.expression);
@@ -206,6 +198,5 @@ const handleAssignment = (
     reason: `[FindContextIdentifiers] Cannot handle Object destructuring assignment target ${formatSyntaxKind(node.kind)}`,
     description: null,
     loc: getSourceLocation(node),
-    suggestions: null,
   });
 };

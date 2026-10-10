@@ -10,23 +10,37 @@ import type {
   SpreadPattern,
   Terminal,
 } from "../hir/hir.js";
-import { GeneratedSource, getHookKind } from "../hir/hir.js";
-import type { HookKind } from "../hir/object-shape.js";
+import { GeneratedSource } from "../hir/hir.js";
+import { getHookKind } from "./hook-kind.js";
+import type { HookKind } from "./hook-kind.js";
 import { assertExhaustive } from "../utils/utils.js";
 import type { DomainResolver } from "./infer-domains.js";
 import type {
   Bailout,
   Binding,
   BindingKind,
+  BindingValue,
+  ConditionalValue,
   Decision,
+  DispatchValue,
   Domain,
+  FunctionValue,
+  HookResultValue,
   JsxProp,
   JsxSpreadProp,
   JsxTag,
+  SetterValue,
   StateUpdate,
   SymbolicValue,
+  TestKind,
 } from "./types.js";
-import { getPlaceKey, negate } from "./values.js";
+import {
+  formatPlace,
+  getKnownTruthiness,
+  getPlaceKey,
+  getTestExpression,
+  negate,
+} from "./values.js";
 
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_INLINE_DEPTH = 4;
@@ -42,14 +56,16 @@ const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 type Outcome =
   | { kind: "Return"; value: SymbolicValue }
   | { kind: "Fallthrough"; from: BlockId | null }
-  | {
-      kind: "Split";
-      test: SymbolicValue;
-      testKind: "truthy" | "nullish";
-      decision: Decision;
-      consequent: Outcome;
-      alternate: Outcome;
-    };
+  | SplitOutcome;
+
+interface SplitOutcome {
+  kind: "Split";
+  test: SymbolicValue;
+  testKind: TestKind;
+  decision: Decision;
+  consequent: Outcome;
+  alternate: Outcome;
+}
 
 type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional";
 
@@ -60,21 +76,37 @@ interface WalkState {
   isAsync: boolean;
 }
 
-export interface EffectCall {
+interface EffectCall {
   hookKind: HookKind;
   callback: SymbolicValue;
   dependencies: SourceLocation | null;
   loc: SourceLocation;
 }
 
-export interface CollectedEffects {
+interface CollectedEffects {
   updates: StateUpdate[];
   delegates: string[];
 }
 
-export interface ModuleFunctionLoader {
-  (name: string): HIRFunction | null;
-}
+export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
+
+type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
+
+const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
+
+const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
+
+const createUnknown = (reason: string, loc: SourceLocation): SymbolicValue => ({
+  kind: "Unknown",
+  reason,
+  loc,
+});
+
+const createBindingValue = (binding: Binding): BindingValue => ({
+  kind: "Binding",
+  binding,
+  path: [],
+});
 
 const getIdentifierName = (place: Place): string | null => place.identifier.name?.value ?? null;
 
@@ -112,18 +144,38 @@ const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
   return { kind: "UnaryExpression", operator, value };
 };
 
-const isDecidedTruthy = (value: SymbolicValue): boolean | null => {
-  if (value.kind === "Primitive") return Boolean(value.value);
-  if (
-    value.kind === "JsxExpression" ||
-    value.kind === "JsxFragment" ||
-    value.kind === "Function" ||
-    value.kind === "ObjectExpression" ||
-    value.kind === "ArrayExpression"
-  ) {
-    return true;
-  }
-  return null;
+const getComponentName = (tag: SymbolicValue): string => {
+  if (tag.kind === "Global") return tag.name;
+  if (tag.kind === "Binding") return tag.binding.name;
+  return "Unknown";
+};
+
+const createConditional = (
+  split: SplitOutcome,
+  consequent: SymbolicValue,
+  alternate: SymbolicValue,
+): ConditionalValue => ({
+  kind: "Conditional",
+  test: split.test,
+  testKind: split.testKind,
+  consequent,
+  alternate,
+  decision: split.decision,
+});
+
+const isFallthroughOnly = (outcome: Outcome): boolean =>
+  outcome.kind === "Split"
+    ? isFallthroughOnly(outcome.consequent) && isFallthroughOnly(outcome.alternate)
+    : outcome.kind === "Fallthrough";
+
+const hasFallthrough = (outcome: Outcome): boolean =>
+  outcome.kind === "Split"
+    ? hasFallthrough(outcome.consequent) || hasFallthrough(outcome.alternate)
+    : outcome.kind === "Fallthrough";
+
+const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
+  const test = getTestExpression(split.test, split.testKind);
+  return isConsequent ? test : negate(test);
 };
 
 /**
@@ -138,7 +190,7 @@ export class SymbolicEvaluator {
   readonly #resolver: DomainResolver;
   readonly #loadModuleFunction: ModuleFunctionLoader;
   readonly #values = new Map<IdentifierId, SymbolicValue>();
-  readonly #definitions = new Map<IdentifierId, InstructionValue>();
+  readonly #propertyNames = new Map<IdentifierId, string>();
   readonly #functions: HIRFunction[] = [];
   readonly #bindings = new Map<string, Binding>();
   readonly #propBindings = new Map<string, Binding>();
@@ -149,6 +201,7 @@ export class SymbolicEvaluator {
   readonly renderedComponents = new Set<string>();
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
+  #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
   #inlineDepth = 0;
 
@@ -161,17 +214,18 @@ export class SymbolicEvaluator {
     return [...this.#bindings.values()];
   }
 
-  getFunction(functionId: number): HIRFunction | null {
+  #getFunction(functionId: number): HIRFunction | null {
     return this.#functions[functionId] ?? null;
   }
 
-  #registerFunction(fn: HIRFunction): SymbolicValue {
+  #registerFunction(fn: HIRFunction): FunctionValue {
     this.#functions.push(fn);
     return { kind: "Function", functionId: this.#functions.length - 1, loc: fn.loc };
   }
 
-  #unknown(reason: string, loc: SourceLocation): SymbolicValue {
-    return { kind: "Unknown", reason, loc };
+  #getCurrentFunction(): HIRFunction {
+    if (!this.#currentFunction) throw new Error("No function is being evaluated");
+    return this.#currentFunction;
   }
 
   #createBinding(
@@ -199,15 +253,14 @@ export class SymbolicEvaluator {
     return binding;
   }
 
-  #readBinding(binding: Binding, path: string[], loc: SourceLocation): SymbolicValue {
+  #readField(binding: Binding, path: string[], loc: SourceLocation): BindingValue {
     const key = getPlaceKey(binding, path);
-    if (path.length > 0 && !this.placeDomains.has(key))
-      this.placeDomains.set(key, this.#resolver.getDomain(loc));
+    if (!this.placeDomains.has(key)) this.placeDomains.set(key, this.#resolver.getDomain(loc));
     return { kind: "Binding", binding, path };
   }
 
   #read(place: Place): SymbolicValue {
-    return this.#values.get(place.identifier.id) ?? this.#unknown("free-variable", place.loc);
+    return this.#values.get(place.identifier.id) ?? createUnknown("free-variable", place.loc);
   }
 
   #write(place: Place, value: SymbolicValue): void {
@@ -222,37 +275,19 @@ export class SymbolicEvaluator {
     return binding;
   }
 
-  #getPropertyName(place: Place): string | null {
-    const definition = this.#definitions.get(place.identifier.id);
-    return definition?.kind === "PropertyLoad" ? String(definition.property) : null;
-  }
-
-  #bindHookResult(
-    place: Place,
-    hook: Extract<SymbolicValue, { kind: "HookResult" }>,
-  ): SymbolicValue {
-    const name = getIdentifierName(place) ?? hook.name;
-    const loc = getDeclarationLocation(place);
-    switch (hook.hookKind) {
-      case "useRef":
-        return {
-          kind: "Binding",
-          binding: this.#createBinding(name, "ref", loc, { hookKind: hook.hookKind }),
-          path: [],
-        };
-      case "useContext":
-        return {
-          kind: "Binding",
-          binding: this.#createBinding(name, "context", loc, { hookKind: hook.hookKind }),
-          path: [],
-        };
-      default:
-        return {
-          kind: "Binding",
-          binding: this.#createBinding(name, "hook", loc, { hookKind: hook.hookKind }),
-          path: [],
-        };
-    }
+  #bindHookResult(place: Place, hook: HookResultValue): BindingValue {
+    const kind: BindingKind =
+      hook.hookKind === "useRef" ? "ref" : hook.hookKind === "useContext" ? "context" : "hook";
+    return createBindingValue(
+      this.#createBinding(
+        getIdentifierName(place) ?? hook.name,
+        kind,
+        getDeclarationLocation(place),
+        {
+          hookKind: hook.hookKind,
+        },
+      ),
+    );
   }
 
   #destructure(
@@ -271,24 +306,18 @@ export class SymbolicEvaluator {
         valuePlace.loc,
         { hookKind: value.hookKind, initial },
       );
-      return [
-        { kind: "Binding", binding, path: [] },
-        { kind: "Setter", binding },
-      ];
+      return [createBindingValue(binding), { kind: "Setter", binding }];
     }
     if (value.hookKind === "useReducer" && valuePlace) {
       const binding = this.#createBinding(
         getIdentifierName(valuePlace) ?? "state",
         "reducer",
         valuePlace.loc,
-        {
-          hookKind: value.hookKind,
-          initial: secondArgument ?? null,
-        },
+        { hookKind: value.hookKind, initial: secondArgument ?? null },
       );
       return [
-        { kind: "Binding", binding, path: [] },
-        { kind: "Dispatch", binding, reducer: firstArgument ?? this.#unknown("reducer", loc) },
+        createBindingValue(binding),
+        { kind: "Dispatch", binding, reducer: firstArgument ?? createUnknown("reducer", loc) },
       ];
     }
     return items.map((place) => (place ? this.#bindHookResult(place, value) : null));
@@ -303,13 +332,13 @@ export class SymbolicEvaluator {
       pattern.items.forEach((item, index) => {
         if (item.kind === "Hole") return;
         const place = getPlaceOrSpread(item);
-        this.#write(place, destructured[index] ?? this.#unknown("destructure", place.loc));
+        this.#write(place, destructured[index] ?? createUnknown("destructure", place.loc));
       });
       return;
     }
     for (const property of pattern.properties) {
       if (property.kind === "Spread") {
-        this.#write(property.place, this.#unknown("rest", property.place.loc));
+        this.#write(property.place, createUnknown("rest", property.place.loc));
         continue;
       }
       const key =
@@ -318,21 +347,21 @@ export class SymbolicEvaluator {
           : null;
       const localName = getIdentifierName(property.place) ?? key ?? "value";
       if (key === null) {
-        this.#write(property.place, this.#unknown("computed-key", property.place.loc));
+        this.#write(property.place, createUnknown("computed-key", property.place.loc));
       } else if (value.kind === "Props") {
-        this.#write(property.place, {
-          kind: "Binding",
-          binding: this.#getPropBinding(key, localName, property.place.loc),
-          path: [],
-        });
+        this.#write(
+          property.place,
+          createBindingValue(this.#getPropBinding(key, localName, property.place.loc)),
+        );
       } else if (value.kind === "HookResult") {
-        this.#write(property.place, {
-          kind: "Binding",
-          binding: this.#createBinding(localName, "hook", property.place.loc, {
-            hookKind: value.hookKind,
-          }),
-          path: [],
-        });
+        this.#write(
+          property.place,
+          createBindingValue(
+            this.#createBinding(localName, "hook", property.place.loc, {
+              hookKind: value.hookKind,
+            }),
+          ),
+        );
       } else {
         this.#write(property.place, this.#evaluatePropertyLoad(value, key, property.place.loc));
       }
@@ -346,24 +375,20 @@ export class SymbolicEvaluator {
   ): SymbolicValue {
     switch (object.kind) {
       case "Binding":
-        return this.#readBinding(object.binding, [...object.path, property], loc);
+        return this.#readField(object.binding, [...object.path, property], loc);
       case "Props":
-        return {
-          kind: "Binding",
-          binding: this.#getPropBinding(property, property, loc),
-          path: [],
-        };
+        return createBindingValue(this.#getPropBinding(property, property, loc));
       case "ObjectExpression":
         return (
           object.properties.findLast((candidate) => candidate.key === property)?.value ??
           (object.spreads.length > 0
-            ? this.#unknown("spread", loc)
+            ? createUnknown("spread", loc)
             : { kind: "Primitive", value: undefined })
         );
       case "ArrayExpression":
         return property === "length" && object.spreads.length === 0
           ? { kind: "Primitive", value: object.elements.length }
-          : this.#unknown("member", loc);
+          : createUnknown("member", loc);
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
       case "Conditional":
@@ -373,7 +398,7 @@ export class SymbolicEvaluator {
           alternate: this.#evaluatePropertyLoad(object.alternate, property, loc),
         };
       default:
-        return this.#unknown("member", loc);
+        return createUnknown("member", loc);
     }
   }
 
@@ -398,30 +423,22 @@ export class SymbolicEvaluator {
     const jsxTag: JsxTag =
       tag.kind === "Primitive" && typeof tag.value === "string"
         ? { kind: "BuiltinTag", name: tag.value }
-        : {
-            kind: "Component",
-            name:
-              tag.kind === "Global"
-                ? tag.name
-                : tag.kind === "Binding"
-                  ? tag.binding.name
-                  : "Unknown",
-          };
+        : { kind: "Component", name: getComponentName(tag) };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
     return { kind: "JsxExpression", tag: jsxTag, props, children, loc };
   }
 
   #callFunction(
-    callee: Extract<SymbolicValue, { kind: "Function" }>,
+    callee: FunctionValue,
     args: SymbolicValue[],
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
-    const fn = this.getFunction(callee.functionId);
-    if (!fn || this.#inlineDepth >= MAX_INLINE_DEPTH) return this.#unknown("call", loc);
+    const fn = this.#getFunction(callee.functionId);
+    if (!fn || this.#inlineDepth >= MAX_INLINE_DEPTH) return createUnknown("call", loc);
     this.#inlineDepth++;
     try {
-      return this.evaluateFunction(fn, args, state);
+      return this.#evaluateFunction(fn, args, state);
     } finally {
       this.#inlineDepth--;
     }
@@ -433,34 +450,28 @@ export class SymbolicEvaluator {
       binding,
       value:
         state.isAsync && value.kind !== "Primitive"
-          ? this.#unknown("async", GeneratedSource)
+          ? createUnknown("async", GeneratedSource)
           : value,
       guards: state.guards,
       isAsync: state.isAsync,
     });
   }
 
-  #applySetter(
-    setter: Extract<SymbolicValue, { kind: "Setter" }>,
-    argument: SymbolicValue | undefined,
-    state: WalkState,
-  ): void {
-    if (!argument)
-      return this.#recordUpdate(setter.binding, { kind: "Primitive", value: undefined }, state);
-    if (argument.kind === "Function") {
-      const updated = this.#callFunction(
-        argument,
-        [{ kind: "Binding", binding: setter.binding, path: [] }],
-        setter.binding.loc,
-        state,
-      );
-      return this.#recordUpdate(setter.binding, updated, state);
-    }
-    this.#recordUpdate(setter.binding, argument, state);
+  #applySetter(setter: SetterValue, argument: SymbolicValue | undefined, state: WalkState): void {
+    const next =
+      argument?.kind === "Function"
+        ? this.#callFunction(
+            argument,
+            [createBindingValue(setter.binding)],
+            setter.binding.loc,
+            state,
+          )
+        : (argument ?? UNDEFINED_VALUE);
+    this.#recordUpdate(setter.binding, next, state);
   }
 
   #applyDispatch(
-    dispatch: Extract<SymbolicValue, { kind: "Dispatch" }>,
+    dispatch: DispatchValue,
     action: SymbolicValue | undefined,
     loc: SourceLocation,
     state: WalkState,
@@ -474,14 +485,11 @@ export class SymbolicEvaluator {
       reducer.kind === "Function"
         ? this.#callFunction(
             reducer,
-            [
-              { kind: "Binding", binding: dispatch.binding, path: [] },
-              action ?? { kind: "Primitive", value: undefined },
-            ],
+            [createBindingValue(dispatch.binding), action ?? UNDEFINED_VALUE],
             loc,
             state,
           )
-        : this.#unknown("dispatch", loc);
+        : createUnknown("dispatch", loc);
     this.#recordUpdate(dispatch.binding, next, state);
   }
 
@@ -493,9 +501,7 @@ export class SymbolicEvaluator {
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
-    const hookKind = this.#currentFunction
-      ? getHookKind(this.#currentFunction.env, calleePlace.identifier)
-      : null;
+    const hookKind = getHookKind(this.#resolver.getCalleeName(calleePlace.loc), callee);
     if (hookKind !== null)
       return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);
     switch (callee.kind) {
@@ -503,17 +509,13 @@ export class SymbolicEvaluator {
         return this.#callFunction(callee, args, loc, state);
       case "Setter":
         this.#applySetter(callee, args[0], state);
-        return { kind: "Primitive", value: undefined };
+        return UNDEFINED_VALUE;
       case "Dispatch":
         this.#applyDispatch(callee, args[0], loc, state);
-        return { kind: "Primitive", value: undefined };
+        return UNDEFINED_VALUE;
       case "Binding":
         if (callee.binding.kind === "prop" && this.#mode === "effect")
-          this.#collected.delegates.push(
-            callee.path.length > 0
-              ? `${callee.binding.name}.${callee.path.join(".")}`
-              : callee.binding.name,
-          );
+          this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
         break;
       default:
         break;
@@ -531,7 +533,7 @@ export class SymbolicEvaluator {
         loc,
       });
     }
-    return this.#unknown("call", loc);
+    return createUnknown("call", loc);
   }
 
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
@@ -540,13 +542,13 @@ export class SymbolicEvaluator {
     if (argument.kind === "Setter")
       this.#recordUpdate(
         argument.binding,
-        this.#unknown("callback-argument", GeneratedSource),
+        createUnknown("callback-argument", GeneratedSource),
         asyncState,
       );
     if (argument.kind === "Function")
       this.#callFunction(
         argument,
-        [this.#unknown("callback-argument", argument.loc)],
+        [createUnknown("callback-argument", argument.loc)],
         argument.loc,
         asyncState,
       );
@@ -565,7 +567,7 @@ export class SymbolicEvaluator {
       const [, dependencies] = argumentPlaces;
       if (callback)
         this.effectCalls.push({ hookKind, callback, dependencies: dependencies?.loc ?? null, loc });
-      return { kind: "Primitive", value: undefined };
+      return UNDEFINED_VALUE;
     }
     if (hookKind === "useMemo" && args[0]?.kind === "Function")
       return this.#callFunction(args[0], [], loc, state);
@@ -579,25 +581,18 @@ export class SymbolicEvaluator {
     state: WalkState,
   ): SymbolicValue {
     const receiver = this.#read(instruction.receiver);
-    const propertyName = this.#getPropertyName(instruction.property);
+    const propertyName = this.#propertyNames.get(instruction.property.identifier.id) ?? null;
     const argumentPlaces = instruction.args.map(getPlaceOrSpread);
     const args = argumentPlaces.map((place) => this.#read(place));
     const [callback] = args;
     if (propertyName === "map" && callback?.kind === "Function") {
-      const fn = this.getFunction(callback.functionId);
-      const parameter = fn?.params[0];
+      const parameter = this.#getFunction(callback.functionId)?.params[0];
       const itemPlace = parameter ? getPlaceOrSpread(parameter) : null;
       const item: SymbolicValue = itemPlace
-        ? {
-            kind: "Binding",
-            binding: this.#createBinding(
-              getIdentifierName(itemPlace) ?? "item",
-              "item",
-              itemPlace.loc,
-            ),
-            path: [],
-          }
-        : this.#unknown("item", instruction.loc);
+        ? createBindingValue(
+            this.#createBinding(getIdentifierName(itemPlace) ?? "item", "item", itemPlace.loc),
+          )
+        : createUnknown("item", instruction.loc);
       return {
         kind: "ArrayMap",
         array: receiver,
@@ -608,11 +603,10 @@ export class SymbolicEvaluator {
     if (propertyName !== null && PROMISE_METHODS.has(propertyName)) {
       for (const argument of args)
         this.#visitCallbackArgument(argument, { ...state, isAsync: true });
-      return this.#unknown("async", instruction.loc);
+      return createUnknown("async", instruction.loc);
     }
-    const callee = this.#read(instruction.property);
     return this.#evaluateCall(
-      callee,
+      this.#read(instruction.property),
       instruction.property,
       args,
       argumentPlaces,
@@ -623,7 +617,8 @@ export class SymbolicEvaluator {
 
   #evaluateInstruction(instruction: Instruction, state: WalkState): void {
     const { value } = instruction;
-    this.#definitions.set(instruction.lvalue.identifier.id, value);
+    if (value.kind === "PropertyLoad")
+      this.#propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
     this.#write(instruction.lvalue, this.#evaluateInstructionValue(value, state));
   }
 
@@ -648,8 +643,8 @@ export class SymbolicEvaluator {
       }
       case "DeclareLocal":
       case "DeclareContext":
-        this.#write(value.lvalue.place, { kind: "Primitive", value: undefined });
-        return { kind: "Primitive", value: undefined };
+        this.#write(value.lvalue.place, UNDEFINED_VALUE);
+        return UNDEFINED_VALUE;
       case "Destructure":
         this.#evaluateDestructure(value);
         return this.#read(value.value);
@@ -671,7 +666,7 @@ export class SymbolicEvaluator {
           property.value !== null &&
           property.value !== undefined
           ? this.#evaluatePropertyLoad(this.#read(value.object), String(property.value), value.loc)
-          : this.#unknown("computed-member", value.loc);
+          : createUnknown("computed-member", value.loc);
       }
       case "BinaryExpression":
         return foldBinary(value.operator, this.#read(value.left), this.#read(value.right));
@@ -699,7 +694,7 @@ export class SymbolicEvaluator {
             element.kind === "Identifier"
               ? [this.#read(element)]
               : element.kind === "Hole"
-                ? [{ kind: "Primitive", value: undefined }]
+                ? [UNDEFINED_VALUE]
                 : [],
           ),
           spreads: value.elements.flatMap((element) =>
@@ -743,7 +738,7 @@ export class SymbolicEvaluator {
       case "JsxFragment":
         return { kind: "JsxFragment", children: value.children.map((child) => this.#read(child)) };
       case "Await":
-        return this.#unknown("async", value.loc);
+        return createUnknown("async", value.loc);
       case "NewExpression":
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
@@ -762,11 +757,9 @@ export class SymbolicEvaluator {
       case "PrefixUpdateContext":
       case "StoreGlobal":
       case "UnsupportedNode":
-        return this.#unknown(value.kind, value.loc);
-      case "StartMemoize":
-      case "FinishMemoize":
+        return createUnknown(value.kind, value.loc);
       case "Debugger":
-        return { kind: "Primitive", value: undefined };
+        return UNDEFINED_VALUE;
       default:
         return assertExhaustive(value, "Unhandled instruction value");
     }
@@ -776,36 +769,19 @@ export class SymbolicEvaluator {
     switch (outcome.kind) {
       case "Fallthrough": {
         const operand = outcome.from === null ? undefined : phi.operands.get(outcome.from);
-        return operand ? this.#read(operand) : this.#unknown("loop", phi.place.loc);
+        return operand ? this.#read(operand) : createUnknown("loop", phi.place.loc);
       }
       case "Split":
-        return {
-          kind: "Conditional",
-          test: outcome.test,
-          testKind: outcome.testKind,
-          consequent: this.#resolvePhi(phi, outcome.consequent),
-          alternate: this.#resolvePhi(phi, outcome.alternate),
-          decision: outcome.decision,
-        };
+        return createConditional(
+          outcome,
+          this.#resolvePhi(phi, outcome.consequent),
+          this.#resolvePhi(phi, outcome.alternate),
+        );
       case "Return":
-        return this.#unknown("unreachable", phi.place.loc);
+        return createUnknown("unreachable", phi.place.loc);
       default:
         return assertExhaustive(outcome, "Unhandled outcome");
     }
-  }
-
-  #isFallthroughOnly(outcome: Outcome): boolean {
-    if (outcome.kind === "Split")
-      return (
-        this.#isFallthroughOnly(outcome.consequent) && this.#isFallthroughOnly(outcome.alternate)
-      );
-    return outcome.kind === "Fallthrough";
-  }
-
-  #hasFallthrough(outcome: Outcome): boolean {
-    if (outcome.kind === "Split")
-      return this.#hasFallthrough(outcome.consequent) || this.#hasFallthrough(outcome.alternate);
-    return outcome.kind === "Fallthrough";
   }
 
   /**
@@ -820,7 +796,7 @@ export class SymbolicEvaluator {
     state: WalkState,
   ): Outcome {
     const block = this.#getBlock(join);
-    if (this.#isFallthroughOnly(outcome)) {
+    if (isFallthroughOnly(outcome)) {
       for (const phi of block.phis) this.#write(phi.place, this.#resolvePhi(phi, outcome));
       return this.#walk(join, stopAt, null, state, true);
     }
@@ -833,64 +809,38 @@ export class SymbolicEvaluator {
         case "Split":
           return {
             ...current,
-            consequent: resume(current.consequent, [...guards, this.#guardFor(current, true)]),
-            alternate: resume(current.alternate, [...guards, this.#guardFor(current, false)]),
+            consequent: resume(current.consequent, [...guards, getGuard(current, true)]),
+            alternate: resume(current.alternate, [...guards, getGuard(current, false)]),
           };
         default:
           return assertExhaustive(current, "Unhandled outcome");
       }
     };
-    return this.#hasFallthrough(outcome) ? resume(outcome, state.guards) : outcome;
-  }
-
-  #guardFor(split: Extract<Outcome, { kind: "Split" }>, isConsequent: boolean): SymbolicValue {
-    const test: SymbolicValue =
-      split.testKind === "nullish"
-        ? {
-            kind: "BinaryExpression",
-            operator: "!=",
-            left: split.test,
-            right: { kind: "Primitive", value: null },
-          }
-        : split.test;
-    return isConsequent ? test : negate(test);
+    return hasFallthrough(outcome) ? resume(outcome, state.guards) : outcome;
   }
 
   #getBlock(blockId: BlockId) {
-    const block = this.#currentFunction?.body.blocks.get(blockId);
+    const block = this.#getCurrentFunction().body.blocks.get(blockId);
     if (!block) throw new Error(`Block bb${blockId} is missing`);
     return block;
   }
 
-  #currentFunction: HIRFunction | null = null;
-
   #split(
-    test: Place,
-    consequent: BlockId,
-    alternate: BlockId,
-    fallthrough: BlockId,
-    terminal: Terminal,
+    terminal: BranchTerminal,
     from: BlockId,
     stopAt: BlockId | null,
     state: WalkState,
   ): Outcome {
+    const { test, consequent, alternate, fallthrough } = terminal;
     const operator = this.#branchOperators.get(fallthrough) ?? "ternary";
     const testValue = this.#read(test);
-    const testKind = operator === "??" || operator === "optional" ? "nullish" : "truthy";
+    const testKind: TestKind = operator === "??" || operator === "optional" ? "nullish" : "truthy";
     const decision: Decision = {
       terminalId: terminal.id,
       probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
       loc: test.loc,
     };
-    const testGuard: SymbolicValue =
-      testKind === "nullish"
-        ? {
-            kind: "BinaryExpression",
-            operator: "!=",
-            left: testValue,
-            right: { kind: "Primitive", value: null },
-          }
-        : testValue;
+    const testGuard = getTestExpression(testValue, testKind);
     const walkArm = (block: BlockId, isConsequent: boolean): Outcome => {
       const guards = [...state.guards, isConsequent ? testGuard : negate(testGuard)];
       return block === fallthrough
@@ -900,7 +850,7 @@ export class SymbolicEvaluator {
     const consequentOutcome = walkArm(consequent, true);
     const alternateOutcome = walkArm(alternate, false);
     const isSwapped = operator === "&&";
-    const decided = isDecidedTruthy(testValue);
+    const decided = getKnownTruthiness(testValue);
     const split: Outcome =
       decided !== null && testKind === "truthy"
         ? decided !== isSwapped
@@ -962,7 +912,7 @@ export class SymbolicEvaluator {
     let currentState = state;
     while (true) {
       if (++this.#blockVisits > MAX_BLOCK_VISITS)
-        return { kind: "Return", value: this.#unknown("too-complex", GeneratedSource) };
+        return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
       const block = this.#getBlock(currentId);
       if (!isPhiResolved) {
         for (const phi of block.phis)
@@ -973,42 +923,22 @@ export class SymbolicEvaluator {
         if (instruction.value.kind === "Await") currentState = { ...currentState, isAsync: true };
       }
       const { terminal } = block;
+      let nextId: BlockId;
+      let nextFrom: BlockId | null = currentId;
       switch (terminal.kind) {
         case "return":
           return { kind: "Return", value: this.#read(terminal.value) };
         case "throw":
         case "unreachable":
-          return { kind: "Return", value: this.#unknown(terminal.kind, terminal.loc) };
         case "unsupported":
-          return { kind: "Return", value: this.#unknown("unsupported", terminal.loc) };
+          return { kind: "Return", value: createUnknown(terminal.kind, terminal.loc) };
         case "goto":
           if (terminal.block === stopAt) return { kind: "Fallthrough", from: currentId };
-          previousId = currentId;
-          currentId = terminal.block;
-          isPhiResolved = false;
-          continue;
+          nextId = terminal.block;
+          break;
         case "if":
-          return this.#split(
-            terminal.test,
-            terminal.consequent,
-            terminal.alternate,
-            terminal.fallthrough,
-            terminal,
-            currentId,
-            stopAt,
-            currentState,
-          );
         case "branch":
-          return this.#split(
-            terminal.test,
-            terminal.consequent,
-            terminal.alternate,
-            terminal.fallthrough,
-            terminal,
-            currentId,
-            stopAt,
-            currentState,
-          );
+          return this.#split(terminal, currentId, stopAt, currentState);
         case "switch":
           return this.#walkSwitch(terminal, currentId, stopAt, currentState);
         case "ternary":
@@ -1018,22 +948,16 @@ export class SymbolicEvaluator {
             terminal.fallthrough,
             terminal.kind === "logical" ? terminal.operator : terminal.kind,
           );
-          previousId = currentId;
-          currentId = terminal.test;
-          isPhiResolved = false;
-          continue;
+          nextId = terminal.test;
+          break;
         case "label":
         case "sequence":
         case "try":
-          previousId = currentId;
-          currentId = terminal.block;
-          isPhiResolved = false;
-          continue;
+          nextId = terminal.block;
+          break;
         case "maybe-throw":
-          previousId = currentId;
-          currentId = terminal.continuation;
-          isPhiResolved = false;
-          continue;
+          nextId = terminal.continuation;
+          break;
         case "for":
         case "for-of":
         case "for-in":
@@ -1044,13 +968,15 @@ export class SymbolicEvaluator {
             message: "values assigned in a loop are not modeled",
             loc: terminal.loc,
           });
-          previousId = null;
-          currentId = terminal.fallthrough;
-          isPhiResolved = false;
-          continue;
+          nextId = terminal.fallthrough;
+          nextFrom = null;
+          break;
         default:
           return assertExhaustive(terminal, "Unhandled terminal");
       }
+      previousId = nextFrom;
+      currentId = nextId;
+      isPhiResolved = false;
     }
   }
 
@@ -1059,26 +985,19 @@ export class SymbolicEvaluator {
       case "Return":
         return outcome.value;
       case "Fallthrough":
-        return this.#unknown("fallthrough", loc);
+        return createUnknown("fallthrough", loc);
       case "Split":
-        return {
-          kind: "Conditional",
-          test: outcome.test,
-          testKind: outcome.testKind,
-          consequent: this.#toValue(outcome.consequent, loc),
-          alternate: this.#toValue(outcome.alternate, loc),
-          decision: outcome.decision,
-        };
+        return createConditional(
+          outcome,
+          this.#toValue(outcome.consequent, loc),
+          this.#toValue(outcome.alternate, loc),
+        );
       default:
         return assertExhaustive(outcome, "Unhandled outcome");
     }
   }
 
-  evaluateFunction(
-    fn: HIRFunction,
-    args: SymbolicValue[],
-    state: WalkState = { guards: [], isAsync: false },
-  ): SymbolicValue {
+  #evaluateFunction(fn: HIRFunction, args: SymbolicValue[], state: WalkState): SymbolicValue {
     const previousFunction = this.#currentFunction;
     this.#currentFunction = fn;
     try {
@@ -1087,8 +1006,8 @@ export class SymbolicEvaluator {
         this.#write(
           place,
           parameter.kind === "Spread"
-            ? this.#unknown("rest", place.loc)
-            : (args[index] ?? { kind: "Primitive", value: undefined }),
+            ? createUnknown("rest", place.loc)
+            : (args[index] ?? UNDEFINED_VALUE),
         );
       });
       return this.#toValue(this.#walk(fn.body.entry, null, null, state, false), fn.loc);
@@ -1101,8 +1020,7 @@ export class SymbolicEvaluator {
    * Evaluates a component in render mode: its first parameter is the props object.
    */
   evaluateComponent(fn: HIRFunction): SymbolicValue {
-    this.#mode = "render";
-    return this.evaluateFunction(fn, [{ kind: "Props" }]);
+    return this.#evaluateFunction(fn, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
   /**
@@ -1116,14 +1034,15 @@ export class SymbolicEvaluator {
     this.#collected = { updates: [], delegates: [] };
     try {
       if (callback.kind === "Function") {
-        const fn = this.getFunction(callback.functionId);
-        if (fn) this.evaluateFunction(fn, args);
+        const fn = this.#getFunction(callback.functionId);
+        if (fn) this.#evaluateFunction(fn, args, ROOT_WALK_STATE);
       }
       if (callback.kind === "Setter")
-        this.#recordUpdate(callback.binding, this.#unknown("event", GeneratedSource), {
-          guards: [],
-          isAsync: false,
-        });
+        this.#recordUpdate(
+          callback.binding,
+          createUnknown("event", GeneratedSource),
+          ROOT_WALK_STATE,
+        );
       if (callback.kind === "Binding" && callback.binding.kind === "prop")
         this.#collected.delegates.push(callback.binding.name);
       return this.#collected;

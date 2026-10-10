@@ -139,24 +139,18 @@ const applyConstantPropagation = (fn: HIRFunction, constants: Constants): boolea
     }
 
     const terminal = block.terminal;
-    switch (terminal.kind) {
-      case "if": {
-        const testValue = read(constants, terminal.test);
-        if (testValue !== null && testValue.kind === "Primitive") {
-          hasChanges = true;
-          const targetBlockId = testValue.value ? terminal.consequent : terminal.alternate;
-          block.terminal = {
-            kind: "goto",
-            variant: GotoVariant.Break,
-            block: targetBlockId,
-            id: terminal.id,
-            loc: terminal.loc,
-          };
-        }
-        break;
-      }
-      default: {
-        // no-op
+    if (terminal.kind === "if") {
+      const testValue = read(constants, terminal.test);
+      if (testValue !== null && testValue.kind === "Primitive") {
+        hasChanges = true;
+        const targetBlockId = testValue.value ? terminal.consequent : terminal.alternate;
+        block.terminal = {
+          kind: "goto",
+          variant: GotoVariant.Break,
+          block: targetBlockId,
+          id: terminal.id,
+          loc: terminal.loc,
+        };
       }
     }
   }
@@ -590,33 +584,14 @@ const evaluateInstruction = (constants: Constants, instr: Instruction): Constant
       constantPropagationImpl(value.loweredFunc.func, constants);
       return null;
     }
-    case "StartMemoize": {
-      if (value.deps !== null) {
-        for (const dep of value.deps) {
-          if (dep.root.kind === "NamedLocal") {
-            const placeValue = read(constants, dep.root.value);
-            if (placeValue !== null && placeValue.kind === "Primitive") {
-              dep.root.constant = true;
-            }
-          }
-        }
-      }
-      return null;
-    }
     default: {
-      // TODO: handle more cases
       return null;
     }
   }
 };
 
-/*
- * Recursively read the value of a place: if it is a constant place, attempt to read
- * from that place until reaching a primitive or finding a value that is unset.
- */
-const read = (constants: Constants, place: Place): Constant | null => {
-  return constants.get(place.identifier.id) ?? null;
-};
+const read = (constants: Constants, place: Place): Constant | null =>
+  constants.get(place.identifier.id) ?? null;
 
 type Constant = Primitive | LoadGlobal;
 type Constants = Map<IdentifierId, Constant>;

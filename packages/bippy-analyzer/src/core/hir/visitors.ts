@@ -10,7 +10,6 @@ import { assertExhaustive } from "../utils/utils.js";
 import {
   type BlockId,
   type Instruction,
-  InstructionKind,
   type InstructionValue,
   makeInstructionId,
   type Pattern,
@@ -26,37 +25,7 @@ export const eachInstructionLValue = (instr: Instruction): Array<Place> => {
   return result;
 };
 
-export const eachInstructionLValueWithKind = (
-  instr: Instruction,
-): Array<[Place, InstructionKind]> => {
-  const result: Array<[Place, InstructionKind]> = [];
-  switch (instr.value.kind) {
-    case "DeclareContext":
-    case "StoreContext":
-    case "DeclareLocal":
-    case "StoreLocal": {
-      result.push([instr.value.lvalue.place, instr.value.lvalue.kind]);
-      break;
-    }
-    case "Destructure": {
-      const kind = instr.value.lvalue.kind;
-      for (const place of eachPatternOperand(instr.value.lvalue.pattern)) {
-        result.push([place, kind]);
-      }
-      break;
-    }
-    case "PostfixUpdateLocal":
-    case "PostfixUpdateContext":
-    case "PrefixUpdateContext":
-    case "PrefixUpdateLocal": {
-      result.push([instr.value.lvalue, InstructionKind.Reassign]);
-      break;
-    }
-  }
-  return result;
-};
-
-export const eachInstructionValueLValue = (value: InstructionValue): Array<Place> => {
+const eachInstructionValueLValue = (value: InstructionValue): Array<Place> => {
   const result: Array<Place> = [];
   switch (value.kind) {
     case "DeclareContext":
@@ -253,20 +222,6 @@ export const eachInstructionValueOperand = (instrValue: InstructionValue): Array
       result.push(instrValue.value);
       break;
     }
-    case "StartMemoize": {
-      if (instrValue.deps !== null) {
-        for (const dep of instrValue.deps) {
-          if (dep.root.kind === "NamedLocal") {
-            result.push(dep.root.value);
-          }
-        }
-      }
-      break;
-    }
-    case "FinishMemoize": {
-      result.push(instrValue.decl);
-      break;
-    }
     case "Debugger":
     case "RegExpLiteral":
     case "MetaProperty":
@@ -283,7 +238,7 @@ export const eachInstructionValueOperand = (instrValue: InstructionValue): Array
   return result;
 };
 
-export const eachCallArgument = (args: Array<Place | SpreadPattern>): Array<Place> => {
+const eachCallArgument = (args: Array<Place | SpreadPattern>): Array<Place> => {
   const result: Array<Place> = [];
   for (const arg of args) {
     if (arg.kind === "Identifier") {
@@ -293,31 +248,6 @@ export const eachCallArgument = (args: Array<Place | SpreadPattern>): Array<Plac
     }
   }
   return result;
-};
-
-export const doesPatternContainSpreadElement = (pattern: Pattern): boolean => {
-  switch (pattern.kind) {
-    case "ArrayPattern": {
-      for (const item of pattern.items) {
-        if (item.kind === "Spread") {
-          return true;
-        }
-      }
-      break;
-    }
-    case "ObjectPattern": {
-      for (const property of pattern.properties) {
-        if (property.kind === "Spread") {
-          return true;
-        }
-      }
-      break;
-    }
-    default: {
-      assertExhaustive(pattern, `Unexpected pattern kind`);
-    }
-  }
-  return false;
 };
 
 export const eachPatternOperand = (pattern: Pattern): Array<Place> => {
@@ -343,42 +273,6 @@ export const eachPatternOperand = (pattern: Pattern): Array<Place> => {
           result.push(property.place);
         } else if (property.kind === "Spread") {
           result.push(property.place);
-        } else {
-          assertExhaustive(property, `Unexpected item kind`);
-        }
-      }
-      break;
-    }
-    default: {
-      assertExhaustive(pattern, `Unexpected pattern kind`);
-    }
-  }
-  return result;
-};
-
-export const eachPatternItem = (pattern: Pattern): Array<Place | SpreadPattern> => {
-  const result: Array<Place | SpreadPattern> = [];
-  switch (pattern.kind) {
-    case "ArrayPattern": {
-      for (const item of pattern.items) {
-        if (item.kind === "Identifier") {
-          result.push(item);
-        } else if (item.kind === "Spread") {
-          result.push(item);
-        } else if (item.kind === "Hole") {
-          continue;
-        } else {
-          assertExhaustive(item, `Unexpected item kind`);
-        }
-      }
-      break;
-    }
-    case "ObjectPattern": {
-      for (const property of pattern.properties) {
-        if (property.kind === "ObjectProperty") {
-          result.push(property.place);
-        } else if (property.kind === "Spread") {
-          result.push(property);
         } else {
           assertExhaustive(property, `Unexpected item kind`);
         }
@@ -423,7 +317,7 @@ export const mapInstructionOperands = (
   mapInstructionValueOperands(instr.value, callback);
 };
 
-export const mapInstructionValueOperands = (
+const mapInstructionValueOperands = (
   instrValue: InstructionValue,
   callback: (place: Place) => Place,
 ): void => {
@@ -598,20 +492,6 @@ export const mapInstructionValueOperands = (
       instrValue.value = callback(instrValue.value);
       break;
     }
-    case "StartMemoize": {
-      if (instrValue.deps !== null) {
-        for (const dep of instrValue.deps) {
-          if (dep.root.kind === "NamedLocal") {
-            dep.root.value = callback(dep.root.value);
-          }
-        }
-      }
-      break;
-    }
-    case "FinishMemoize": {
-      instrValue.decl = callback(instrValue.decl);
-      break;
-    }
     case "Debugger":
     case "RegExpLiteral":
     case "MetaProperty":
@@ -627,7 +507,7 @@ export const mapInstructionValueOperands = (
   }
 };
 
-export const mapCallArguments = (
+const mapCallArguments = (
   args: Array<Place | SpreadPattern>,
   callback: (place: Place) => Place,
 ): Array<Place | SpreadPattern> => {
@@ -641,7 +521,7 @@ export const mapCallArguments = (
   });
 };
 
-export const mapPatternOperands = (pattern: Pattern, callback: (place: Place) => Place): void => {
+const mapPatternOperands = (pattern: Pattern, callback: (place: Place) => Place): void => {
   switch (pattern.kind) {
     case "ArrayPattern": {
       pattern.items = pattern.items.map((item) => {
@@ -1072,8 +952,6 @@ export const mapTerminalOperands = (
     case "try": {
       if (terminal.handlerBinding !== null) {
         terminal.handlerBinding = callback(terminal.handlerBinding);
-      } else {
-        terminal.handlerBinding = null;
       }
       break;
     }
@@ -1091,7 +969,6 @@ export const mapTerminalOperands = (
     case "goto":
     case "unreachable":
     case "unsupported": {
-      // no-op
       break;
     }
     default: {
@@ -1146,7 +1023,6 @@ export const eachTerminalOperand = (terminal: Terminal): Array<Place> => {
     case "goto":
     case "unreachable":
     case "unsupported": {
-      // no-op
       break;
     }
     default: {

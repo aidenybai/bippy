@@ -1,4 +1,10 @@
-import { getDisplayName, instrument, isCompositeFiber, isHostFiber } from "bippy";
+import {
+  getDisplayName,
+  getReactWorkTagsForFiber,
+  instrument,
+  isCompositeFiber,
+  isHostFiber,
+} from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
 import { Component, createElement } from "react";
 import type { ReactNode } from "react";
@@ -12,7 +18,7 @@ interface BoundaryProps {
 }
 
 interface BoundaryState {
-  error: string | null;
+  hasError: boolean;
 }
 
 interface MountedAction extends Action {
@@ -20,7 +26,6 @@ interface MountedAction extends Action {
   value: string;
 }
 
-const HOST_TEXT_TAG = 6;
 const ANONYMOUS_NAME = "Anonymous";
 const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 const SETTLE_MS = 40;
@@ -33,7 +38,6 @@ let latestRoot: FiberRoot | null = null;
 let mountedType: unknown = null;
 let mountedRoot: Root | null = null;
 let renderError: string | null = null;
-let mountedActions = new Map<string, MountedAction>();
 
 globalThis.__bippyProbe = (id, mode, value) => {
   probeHits.push({
@@ -50,17 +54,15 @@ instrument({
 });
 
 class Boundary extends Component<BoundaryProps, BoundaryState> {
-  state: BoundaryState = { error: null };
+  state: BoundaryState = { hasError: false };
 
-  static getDerivedStateFromError = (error: unknown): BoundaryState => ({
-    error: error instanceof Error ? error.message : String(error),
-  });
+  static getDerivedStateFromError = (): BoundaryState => ({ hasError: true });
 
   componentDidCatch = (error: unknown): void => {
     renderError = error instanceof Error ? error.message : String(error);
   };
 
-  render = (): ReactNode => (this.state.error ? null : this.props.children);
+  render = (): ReactNode => (this.state.hasError ? null : this.props.children);
 }
 
 const hydrate = (sample: Sample): unknown => {
@@ -121,7 +123,8 @@ const findMountedFiber = (): Fiber | null =>
   );
 
 const toShapes = (fiber: Fiber): Shape[] => {
-  if (fiber.tag === HOST_TEXT_TAG) return [{ kind: "text", text: String(fiber.memoizedProps) }];
+  if (fiber.tag === getReactWorkTagsForFiber(fiber).HostText)
+    return [{ kind: "text", text: String(fiber.memoizedProps) }];
   if (isHostFiber(fiber)) {
     const children = getChildren(fiber).flatMap(toShapes);
     const textContent: unknown = fiber.memoizedProps?.children;
@@ -160,15 +163,16 @@ const takeProbeHits = (): ProbeHit[] => {
 
 const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
+const createEmptyCapture = (error: string): Capture => ({
+  shapes: [],
+  hookStates: [],
+  probes: takeProbeHits(),
+  error,
+});
+
 const capture = (): Capture => {
   const fiber = findMountedFiber();
-  if (!fiber)
-    return {
-      shapes: [],
-      hookStates: [],
-      probes: takeProbeHits(),
-      error: renderError ?? "component did not render",
-    };
+  if (!fiber) return createEmptyCapture(renderError ?? "component did not render");
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
     hookStates: readHookStates(fiber),
@@ -222,7 +226,6 @@ const collectActions = (): MountedAction[] => {
     for (const child of getChildren(current)) visit(child);
   };
   if (fiber) for (const child of getChildren(fiber)) visit(child);
-  mountedActions = new Map(actions.map((action) => [action.key, action]));
   return actions;
 };
 
@@ -241,13 +244,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   renderError = null;
   const moduleExports: Record<string, unknown> = await import(/* @vite-ignore */ request.moduleUrl);
   mountedType = moduleExports[request.exportName];
-  if (!mountedType)
-    return {
-      shapes: [],
-      hookStates: [],
-      probes: [],
-      error: `export ${request.exportName} not found`,
-    };
+  if (!mountedType) return createEmptyCapture(`export ${request.exportName} not found`);
   const props = Object.fromEntries(
     Object.entries(request.props).map(([name, sample]) => [name, hydrate(sample)]),
   );
@@ -272,9 +269,9 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   return capture();
 };
 
-const perform = async (key: string): Promise<Capture> => {
-  const action = mountedActions.get(key);
-  if (!action) return { ...capture(), error: `action ${key} not found` };
+const perform = async (key: string): Promise<Capture | null> => {
+  const action = collectActions().find((candidate) => candidate.key === key);
+  if (!action) return null;
   if (action.kind === "click") action.element.click();
   else setInputValue(action.element, action.value);
   await settle();

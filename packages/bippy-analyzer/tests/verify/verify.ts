@@ -3,13 +3,13 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
 import type { AnalyzedComponent } from "../../src/core/inference/types.js";
-import { DEFAULT_LIMITS, exploreComponent } from "./driver.js";
-import type { ExploreLimits } from "./driver.js";
+import { exploreComponent } from "./driver.js";
 import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { startHarness } from "./server.js";
 
-const MAX_PAGE_RESETS = 3;
+const MAX_PAGE_ATTEMPTS = 3;
+const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 
 const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
@@ -22,31 +22,29 @@ const openPage = async (browser: Browser, url: string): Promise<Page> => {
     });
     try {
       await page.goto(url, { waitUntil: "domcontentloaded" });
-      await page.waitForFunction(() => Boolean(window.__verify), undefined, { timeout: 60_000 });
+      await page.waitForFunction(() => Boolean(window.__verify), undefined, {
+        timeout: HARNESS_LOAD_TIMEOUT_MS,
+      });
       isHarnessLoaded = true;
       return page;
     } catch (error) {
       await page.close().catch(() => undefined);
-      if (attempt >= MAX_PAGE_RESETS) throw error;
+      if (attempt >= MAX_PAGE_ATTEMPTS) throw error;
     }
   }
 };
 
-export interface VerifyOptions {
+interface VerifyOptions {
   analyzed?: AnalyzedComponent[];
   componentNames?: string[];
-  limits?: ExploreLimits;
   onComponent?: (verdict: ComponentVerdict) => void;
   onStart?: (componentName: string) => void;
 }
 
-export interface VerifyReport {
+interface VerifyReport {
   components: ComponentVerdict[];
   durationMs: number;
 }
-
-const isSelected = (component: AnalyzedComponent, componentNames: string[] | undefined): boolean =>
-  !componentNames || componentNames.includes(component.analysis.name);
 
 export const verifyProject = async (
   tsconfigPath: string,
@@ -56,7 +54,10 @@ export const verifyProject = async (
   const configPath = resolve(tsconfigPath);
   const appDirectory = dirname(configPath);
   const analyzed = options.analyzed ?? analyzeProject(configPath).components;
-  const components = analyzed.filter((component) => isSelected(component, options.componentNames));
+  const { componentNames } = options;
+  const components = componentNames
+    ? analyzed.filter(({ analysis }) => componentNames.includes(analysis.name))
+    : analyzed;
   const exported = components.filter(({ analysis }) => analysis.exportName);
   const knownComponents = new Map(
     analyzed.map(({ analysis }) => [analysis.name, analysis.displayName ?? analysis.name]),
@@ -79,7 +80,6 @@ export const verifyProject = async (
               page,
               component.analysis,
               harness.getModuleUrl(component.analysis.file),
-              options.limits ?? DEFAULT_LIMITS,
             )
           : [];
         verdict = scoreComponent(

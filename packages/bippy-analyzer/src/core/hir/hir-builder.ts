@@ -34,8 +34,7 @@
  *
  *   const scopes = new ScopeManager(sourceFile);
  *   const contextIdentifiers = findContextIdentifiers(componentNode, scopes);
- *   const env = new Environment(scopes, "Component", validateEnvironmentConfig({}),
- *     contextIdentifiers, componentNode, sourceFile, checker);
+ *   const env = new Environment(scopes, "Component", contextIdentifiers, componentNode);
  *   const builder = new HIRBuilder(env);
  *   // for an Identifier node `node` in the function body:
  *   const binding = builder.resolveIdentifier(node);       // VariableBinding
@@ -50,12 +49,7 @@
 
 import type { Node } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
-import {
-  CompilerError,
-  type CompilerDiagnostic,
-  CompilerErrorDetail,
-  ErrorCategory,
-} from "../compiler-error.js";
+import { CompilerError, CompilerErrorDetail, ErrorCategory } from "../compiler-error.js";
 import type { Environment } from "./environment.js";
 import {
   type BasicBlock,
@@ -72,12 +66,10 @@ import {
   type Terminal,
   type VariableBinding,
   getSourceLocation,
-  makeBlockId,
   makeDeclarationId,
   makeIdentifierName,
   makeInstructionId,
   makeTemporaryIdentifier,
-  makeType,
 } from "./hir.js";
 import type { IdentifierNode } from "./scope.js";
 import { eachTerminalSuccessor, terminalFallthrough } from "./visitors.js";
@@ -91,7 +83,7 @@ import { eachTerminalSuccessor, terminalFallthrough } from "./visitors.js";
  */
 
 // A work-in-progress block that does not yet have a terminator
-export interface WipBlock {
+interface WipBlock {
   id: BlockId;
   instructions: Array<Instruction>;
   kind: BlockKind;
@@ -122,23 +114,6 @@ const newBlock = (id: BlockId, kind: BlockKind): WipBlock => ({ id, kind, instru
 
 export type Bindings = Map<string, { node: IdentifierNode; identifier: Identifier }>;
 
-/*
- * Determines how instructions should be constructed in order to preserve
- * exception semantics
- */
-export type ExceptionsMode =
-  /*
-   * Mode used for code not covered by explicit exception handling, any
-   * errors are assumed to be thrown out of the function
-   */
-  | { kind: "ThrowExceptions" }
-  /*
-   * Mode used for code that *is* covered by explicit exception handling
-   * (ie try/catch), which requires modeling the possibility of control
-   * flow to the exception handler.
-   */
-  | { kind: "CatchExceptions"; handler: BlockId };
-
 const getImportSource = (node: Node): string => {
   let current: Node | undefined = node;
   while (current !== undefined && !t.isImportDeclaration(current)) {
@@ -159,11 +134,6 @@ export class HIRBuilder {
   #bindings: Bindings;
   #env: Environment;
   #exceptionHandlerStack: Array<BlockId> = [];
-  /**
-   * Traversal context: counts the number of `fbt` tag parents
-   * of the current babel node.
-   */
-  fbtDepth: number = 0;
 
   get nextIdentifierId(): IdentifierId {
     return this.#env.nextIdentifierId;
@@ -192,11 +162,11 @@ export class HIRBuilder {
     this.#env = env;
     this.#bindings = options?.bindings ?? new Map();
     this.#context = options?.context ?? new Map();
-    this.#entry = makeBlockId(env.nextBlockId);
+    this.#entry = env.nextBlockId;
     this.#current = newBlock(this.#entry, options?.entryBlockKind ?? "block");
   }
 
-  recordError(error: CompilerDiagnostic | CompilerErrorDetail): void {
+  recordError(error: CompilerErrorDetail): void {
     this.#env.recordError(error);
   }
 
@@ -334,18 +304,6 @@ export class HIRBuilder {
   }
 
   resolveBinding(node: IdentifierNode): Identifier {
-    if (node.text === "fbt") {
-      this.recordError(
-        new CompilerErrorDetail({
-          category: ErrorCategory.Todo,
-          reason: "Support local variables named `fbt`",
-          description:
-            "Local variables named `fbt` may conflict with the fbt plugin and are not yet supported",
-          loc: getSourceLocation(node),
-          suggestions: null,
-        }),
-      );
-    }
     const originalName = node.text;
     let name = originalName;
     let index = 0;
@@ -357,7 +315,6 @@ export class HIRBuilder {
           id: identifierId,
           declarationId: makeDeclarationId(identifierId),
           name: makeIdentifierName(name),
-          type: makeType(),
           loc: getSourceLocation(node),
         };
         this.#bindings.set(name, { node, identifier });
@@ -387,7 +344,6 @@ export class HIRBuilder {
             reason: `Support functions with unreachable code that may contain hoisted declarations`,
             loc: block.instructions[0]?.loc ?? block.terminal.loc,
             description: null,
-            suggestions: null,
             category: ErrorCategory.Todo,
           }),
         );
@@ -445,7 +401,7 @@ export class HIRBuilder {
    * call `complete()` to save it without setting it as the current block.
    */
   reserve(kind: BlockKind): WipBlock {
-    return newBlock(makeBlockId(this.#env.nextBlockId), kind);
+    return newBlock(this.#env.nextBlockId, kind);
   }
 
   // Save a previously reserved block as completed
@@ -835,14 +791,3 @@ export const createTemporaryPlace = (env: Environment, loc: SourceLocation): Pla
   identifier: makeTemporaryIdentifier(env.nextIdentifierId, loc),
   loc: GeneratedSource,
 });
-
-/**
- * Clones an existing Place, returning a new temporary Place that shares the
- * same metadata properties as the original place (effect, reactive flag, type)
- * but has a new, temporary Identifier.
- */
-export const clonePlaceToTemporary = (env: Environment, place: Place): Place => {
-  const temp = createTemporaryPlace(env, place.loc);
-  temp.identifier.type = place.identifier.type;
-  return temp;
-};
