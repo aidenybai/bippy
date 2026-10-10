@@ -318,6 +318,15 @@ export const assume = (
   if (evaluated !== null) return evaluated === outcome ? knowledge : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return assume(value.value, !outcome, knowledge);
+  if (
+    value.kind === "Conditional" &&
+    outcome &&
+    value.alternate.kind === "Primitive" &&
+    !value.alternate.value
+  ) {
+    const held = assume(getTestExpression(value.test, value.testKind), true, knowledge);
+    return held && assume(value.consequent, true, held);
+  }
   if (value.kind === "Binding") {
     const restricted = restrictPlace(
       value,

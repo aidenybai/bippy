@@ -28,6 +28,24 @@ exports[`fixture analysis > Button keeps its states, edges and dead branches 1`]
       └─ <button> {children}"
 `;
 
+exports[`fixture analysis > Card keeps its states, edges and dead branches 1`] = `
+"Card src/chains.tsx:13
+├─ data
+│  ├─ theme prop undefined | Theme
+│  │  ├─ .classNames undefined | { card?: string | undefined; }
+│  │  └─ .classNames.card undefined | string
+│  └─ note prop undefined | string
+├─ render
+│  └─ <div>
+│     └─ ◆ note
+│        └─ ✓ <p> {note}
+└─ states (2)
+   ├─ S1 note
+   │  └─ <div> <p> {note}
+   └─ S2 !note
+      └─ <div>"
+`;
+
 exports[`fixture analysis > ClickStats keeps its states, edges and dead branches 1`] = `
 "ClickStats src/mutation.tsx:41
 ├─ data
@@ -133,6 +151,26 @@ exports[`fixture analysis > Empty keeps its states, edges and dead branches 1`] 
       └─ <p> "No items""
 `;
 
+exports[`fixture analysis > Feed keeps its states, edges and dead branches 1`] = `
+"Feed src/chains.tsx:17
+├─ data
+│  ├─ pages prop undefined | Page[]
+│  │  └─ .flatMap undefined | <U, This = undefined>(callback: (this: This, value: Page, index: number, array: Page[]) => U | readonly U[], thisArg?:…
+│  └─ pages?.flatMap(function) call undefined | string[]
+│     └─ .length undefined | number
+├─ render
+│  └─ ◆ !pages?.flatMap(function)?.length
+│     ├─ ✓ <p> "Nothing yet"
+│     └─ ✗ <p>
+│        ├─ {pages?.flatMap(function).length}
+│        └─ " items"
+└─ states (2)
+   ├─ S1 !pages?.flatMap(function)?.length
+   │  └─ <p> "Nothing yet"
+   └─ S2 pages?.flatMap(function)?.length
+      └─ <p> {pages?.flatMap(function).length} " items""
+`;
+
 exports[`fixture analysis > FilterLabel keeps its states, edges and dead branches 1`] = `
 "FilterLabel src/literals.tsx:6
 ├─ data
@@ -192,6 +230,37 @@ exports[`fixture analysis > Page keeps its states, edges and dead branches 1`] =
 └─ states (1)
    └─ S1 always
       └─ <Toggle>"
+`;
+
+exports[`fixture analysis > Panels keeps its states, edges and dead branches 1`] = `
+"Panels src/chains.tsx:23
+├─ data
+│  ├─ isOpen state false | true = false
+│  └─ isDark state false | true = false
+├─ render
+│  └─ <div>
+│     ├─ <button onClick ⇒ isOpen = !isOpen> "Details"
+│     ├─ ◆ isOpen
+│     │  └─ ✓ <p> "More details"
+│     ├─ <button onClick ⇒ isDark = !isDark> "Theme"
+│     └─ ◆ isDark
+│        ├─ ✓ <span> "Dark"
+│        └─ ✗ <span> "Light"
+└─ states (4 in 2 groups, 4 combinations)
+   ├─ isOpen
+   │  ├─ S1 isOpen
+   │  │  ├─ <p> "More details"
+   │  │  └─ "Details" → S2
+   │  └─ S2 !isOpen
+   │     ├─ ∅
+   │     └─ "Details" → S1
+   └─ isDark
+      ├─ S3 isDark
+      │  ├─ <span> "Dark"
+      │  └─ "Theme" → S4
+      └─ S4 !isDark
+         ├─ <span> "Light"
+         └─ "Theme" → S3"
 `;
 
 exports[`fixture analysis > ProfileCard keeps its states, edges and dead branches 1`] = `

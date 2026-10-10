@@ -188,7 +188,7 @@ export const forEachJsxElement = (
 
 const getPrecedence = (value: SymbolicValue): number => {
   if (value.kind === "BinaryExpression") return BINARY_PRECEDENCE.get(value.operator) ?? 0;
-  if (value.kind === "Conditional") return 0;
+  if (value.kind === "Conditional") return formatOptionalChain(value) ? ATOMIC_PRECEDENCE : 0;
   return ATOMIC_PRECEDENCE;
 };
 
@@ -279,6 +279,25 @@ export const mapSymbolicValue = (
   }
 };
 
+/**
+ * Prints `x != null ? x.y : undefined`, how `x?.y` lowers, as the optional chain.
+ */
+const formatOptionalChain = (value: ConditionalValue): string | null => {
+  if (
+    value.testKind !== "nullish" ||
+    value.alternate.kind !== "Primitive" ||
+    value.alternate.value !== undefined
+  )
+    return null;
+  const test = formatWithPrecedence(value.test, ATOMIC_PRECEDENCE);
+  const plainTest = test.replaceAll("?.", ".");
+  const consequent = formatSymbolicValue(value.consequent).replaceAll("?.", ".");
+  const rest = consequent.slice(plainTest.length);
+  return consequent.startsWith(plainTest) && /^[.[(]/.test(rest)
+    ? `${test}?${rest.startsWith(".") ? "" : "."}${rest}`
+    : null;
+};
+
 export const formatSymbolicValue = (value: SymbolicValue): string => {
   switch (value.kind) {
     case "Primitive":
@@ -292,6 +311,8 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return `${formatWithPrecedence(value.left, precedence)} ${value.operator} ${formatWithPrecedence(value.right, precedence + 1)}`;
     }
     case "Conditional": {
+      const optionalChain = formatOptionalChain(value);
+      if (optionalChain) return optionalChain;
       const test =
         value.testKind === "nullish"
           ? `${formatWithPrecedence(value.test, 5)} != null`

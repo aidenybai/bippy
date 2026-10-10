@@ -36,6 +36,7 @@ import {
   getTestExpression,
   getTruthiness,
   isRenderingNothingWhenFalse,
+  mapSymbolicValue,
 } from "./values.js";
 
 const MAX_ALTERNATIVES = 256;
@@ -99,6 +100,17 @@ const getLiteralCases = (
   const alternate = getLiteralCases(value.alternate, knowledge);
   return consequent && alternate ? [...consequent, ...alternate] : null;
 };
+
+/**
+ * Replaces the branches `knowledge` decides with the arm taken, so a test reads as what is
+ * still open: `x?.y` once `x != null` is known reads `x.y`.
+ */
+const simplify = (value: SymbolicValue, knowledge: Knowledge): SymbolicValue =>
+  mapSymbolicValue(value, (part) => {
+    if (part.kind !== "Conditional") return part;
+    const decided = evaluate(getTest(part), knowledge);
+    return decided === null ? part : decided ? part.consequent : part.alternate;
+  });
 
 const isSameBinding = (value: SymbolicValue, binding: Binding): boolean =>
   value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
@@ -312,7 +324,8 @@ const createEnumerator = (
           const assumed = assume(test, outcome, knowledge);
           if (!assumed) continue;
           outcomes.set(key, new Set([...(outcomes.get(key) ?? []), outcome]));
-          const label = outcome ? formatSymbolicValue(test) : formatNegated(test);
+          const simplified = simplify(test, knowledge);
+          const label = outcome ? formatSymbolicValue(simplified) : formatNegated(simplified);
           for (const alternative of enumerate(
             outcome ? value.consequent : value.alternate,
             assumed,

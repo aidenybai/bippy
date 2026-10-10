@@ -72,7 +72,11 @@ interface SplitOutcome {
   alternate: Outcome;
 }
 
-type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional";
+/**
+ * `chain` is the non-optional part of an optional chain, like `.c()` in `a?.b.c()`. Its
+ * branch only asks whether the chain before it short-circuited.
+ */
+type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "chain";
 
 type EvaluationMode = "render" | "effect";
 
@@ -217,6 +221,25 @@ const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
     : outcome.kind === "Fallthrough" && outcome.to === join;
 
 const NO_STOPS: ReadonlySet<BlockId> = new Set();
+
+const isExternalSource = (binding: Binding): boolean =>
+  (binding.kind === "hook" && binding.hookKind !== "useRef") || binding.kind === "context";
+
+const isNullishPrimitive = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive" && (value.value === null || value.value === undefined);
+
+/**
+ * The test under which an optional chain's value short-circuits to `undefined`, or null
+ * when it never does. Member accesses past the `?.` are assumed not to throw.
+ */
+const getShortCircuit = (
+  value: SymbolicValue,
+): { test: SymbolicValue; testKind: TestKind } | null =>
+  value.kind === "Conditional" &&
+  value.alternate.kind === "Primitive" &&
+  value.alternate.value === undefined
+    ? { test: value.test, testKind: value.testKind }
+    : null;
 
 const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
   const test = getTestExpression(split.test, split.testKind);
@@ -439,6 +462,12 @@ export class SymbolicEvaluator {
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
       case "Conditional":
+        // Reading a property of null or undefined throws, so a render that gets past the read
+        // took the other arm.
+        if (isNullishPrimitive(object.alternate))
+          return this.#evaluatePropertyLoad(object.consequent, property, loc);
+        if (isNullishPrimitive(object.consequent))
+          return this.#evaluatePropertyLoad(object.alternate, property, loc);
         return {
           ...object,
           consequent: this.#evaluatePropertyLoad(object.consequent, property, loc),
@@ -628,8 +657,10 @@ export class SymbolicEvaluator {
         this.#applyDispatch(callee, args[0], loc, state);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (callee.binding.kind === "prop" && this.#mode === "effect")
+        if (this.#mode !== "effect") break;
+        if (callee.binding.kind === "prop")
           this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
+        if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
         break;
       default:
         break;
@@ -965,8 +996,12 @@ export class SymbolicEvaluator {
   ): Outcome {
     const { test, consequent, alternate, fallthrough } = terminal;
     const operator = this.#branchOperators.get(fallthrough) ?? "ternary";
-    const testValue = this.#read(test);
-    const testKind: TestKind = operator === "??" || operator === "optional" ? "nullish" : "truthy";
+    const chainValue = this.#read(test);
+    const shortCircuit = operator === "chain" ? getShortCircuit(chainValue) : null;
+    const testValue = shortCircuit?.test ?? chainValue;
+    const testKind: TestKind =
+      shortCircuit?.testKind ??
+      (operator === "??" || operator === "optional" || operator === "chain" ? "nullish" : "truthy");
     const decision: Decision = {
       terminalId: terminal.id,
       probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
@@ -982,7 +1017,8 @@ export class SymbolicEvaluator {
     const consequentOutcome = walkArm(consequent, true);
     const alternateOutcome = walkArm(alternate, false);
     const isSwapped = operator === "&&";
-    const decided = getKnownOutcome(testValue, testKind);
+    const decided =
+      operator === "chain" && !shortCircuit ? true : getKnownOutcome(testValue, testKind);
     const split: Outcome =
       decided !== null
         ? decided !== isSwapped
@@ -1083,7 +1119,11 @@ export class SymbolicEvaluator {
         case "optional":
           this.#branchOperators.set(
             terminal.fallthrough,
-            terminal.kind === "logical" ? terminal.operator : terminal.kind,
+            terminal.kind === "logical"
+              ? terminal.operator
+              : terminal.kind === "optional" && !terminal.optional
+                ? "chain"
+                : terminal.kind,
           );
           return this.#continueAfter(
             this.#walk(
@@ -1164,6 +1204,22 @@ export class SymbolicEvaluator {
    */
   evaluateComponent(fn: HIRFunction): SymbolicValue {
     return this.#evaluateFunction(fn, [{ kind: "Props" }], ROOT_WALK_STATE);
+  }
+
+  /**
+   * A handler that calls into a custom hook's result or a context value, like
+   * `query.refetch()` or `auth.logout()`, can change what that source returns. When and to
+   * what is unknown, so the source changes to anything, asynchronously.
+   */
+  #recordExternalUpdate(callee: BindingValue, state: WalkState): void {
+    this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
+    if (this.#collected.updates.some((update) => update.binding.id === callee.binding.id)) return;
+    this.#collected.updates.push({
+      binding: callee.binding,
+      value: createUnknown("external", GeneratedSource),
+      guards: state.guards,
+      isAsync: true,
+    });
   }
 
   /**
