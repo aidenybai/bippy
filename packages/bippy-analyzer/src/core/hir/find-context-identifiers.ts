@@ -37,20 +37,6 @@ interface FindContextIdentifierState {
   identifiers: Map<IdentifierNode, IdentifierInfo>;
 }
 
-const isJsxTagName = (node: IdentifierNode): boolean => {
-  let current: Node = node;
-  while (t.isPropertyAccessExpression(current.parent) && current.parent.expression === current) {
-    current = current.parent;
-  }
-  const parent = current.parent;
-  return (
-    (t.isJsxOpeningElement(parent) ||
-      t.isJsxSelfClosingElement(parent) ||
-      t.isJsxClosingElement(parent)) &&
-    parent.tagName === current
-  );
-};
-
 const isUpdateExpression = (node: Node): node is PrefixUnaryExpression | PostfixUnaryExpression =>
   (t.isPrefixUnaryExpression(node) &&
     (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken)) ||
@@ -88,7 +74,7 @@ export const findContextIdentifiers = (
       ) {
         handleAssignment(currentFn, state, argument);
       }
-    } else if (t.isIdentifier(node) && !isJsxTagName(node) && isReferencedIdentifier(node)) {
+    } else if (t.isIdentifier(node) && isReferencedIdentifier(node)) {
       handleIdentifier(currentFn, state, node);
     }
     node.forEachChild(visit);

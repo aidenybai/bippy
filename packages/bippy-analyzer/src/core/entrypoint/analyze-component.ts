@@ -1,8 +1,9 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Checker } from "typescript/unstable/sync";
+import { getSourceLocation } from "../hir/hir.js";
 import type { HIRFunction } from "../hir/hir.js";
 import type { ScopeManager } from "../hir/scope.js";
-import { DomainResolver } from "../inference/infer-domains.js";
+import { DomainResolver, addComparedSamples } from "../inference/infer-domains.js";
 import { inferTransitions } from "../inference/infer-transitions.js";
 import { SymbolicEvaluator } from "../inference/symbolic-evaluator.js";
 import type { ModuleFunctionLoader } from "../inference/symbolic-evaluator.js";
@@ -45,17 +46,12 @@ export const analyzeComponent = (
     exportName: exportNames.get(reactFunction.name) ?? null,
     displayName: displayNames.get(reactFunction.name) ?? null,
     file: sourceFile.fileName,
+    declaration: `${sourceFile.path}#${reactFunction.name}`,
   };
   const result = runPipeline(reactFunction, context);
   if (result.isErr()) {
     const error = result.unwrapErr();
-    const loc = {
-      filename: sourceFile.fileName,
-      start: reactFunction.node.getStart(sourceFile),
-      end: reactFunction.node.getEnd(),
-      line: 0,
-      column: 0,
-    };
+    const loc = getSourceLocation(reactFunction.node);
     return {
       ...base,
       loc,
@@ -80,6 +76,7 @@ export const analyzeComponent = (
     createModuleFunctionLoader(context),
   );
   const render = evaluator.evaluateComponent(hir);
+  addComparedSamples(render);
   const transitions = inferTransitions(render, evaluator, sourceFile);
   const { bindings } = evaluator;
   return {

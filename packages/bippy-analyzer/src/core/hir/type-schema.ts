@@ -6,13 +6,57 @@
  */
 // Ported from babel-plugin-react-compiler/src/HIR/TypeSchema.ts at b618bbb.
 
-import type { ValueKind, ValueReason } from "./hir.js";
+import type { Effect, ValueKind, ValueReason } from "./hir.js";
 
 /*
- * Only the aliasing signature config types are ported: the builtin shapes in
- * ObjectShape.ts and Globals.ts declare their signatures in this form. The zod
- * schemas validate user-provided module type configs, which we do not accept.
+ * Only the config types are ported. The zod schemas validate user-provided module
+ * type configs, which we do not accept: the builtin shapes and the default module
+ * type provider declare theirs in this form.
  */
+
+export interface ObjectTypeConfig {
+  kind: "object";
+  properties: Record<string, TypeConfig> | null;
+}
+
+export interface FunctionTypeConfig {
+  kind: "function";
+  positionalParams: Array<Effect>;
+  restParam: Effect | null;
+  calleeEffect: Effect;
+  returnType: TypeConfig;
+  returnValueKind: ValueKind;
+  noAlias?: boolean | null | undefined;
+  mutableOnlyIfOperandsAreMutable?: boolean | null | undefined;
+  impure?: boolean | null | undefined;
+  canonicalName?: string | null | undefined;
+  aliasing?: AliasingSignatureConfig | null | undefined;
+  knownIncompatible?: string | null | undefined;
+}
+
+export interface HookTypeConfig {
+  kind: "hook";
+  positionalParams?: Array<Effect> | null | undefined;
+  restParam?: Effect | null | undefined;
+  returnType: TypeConfig;
+  returnValueKind?: ValueKind | null | undefined;
+  noAlias?: boolean | null | undefined;
+  aliasing?: AliasingSignatureConfig | null | undefined;
+  knownIncompatible?: string | null | undefined;
+}
+
+export type BuiltInTypeConfig = "Any" | "Ref" | "Array" | "Primitive" | "MixedReadonly";
+
+export interface TypeReferenceConfig {
+  kind: "type";
+  name: BuiltInTypeConfig;
+}
+
+export type TypeConfig =
+  | ObjectTypeConfig
+  | FunctionTypeConfig
+  | HookTypeConfig
+  | TypeReferenceConfig;
 
 export interface FreezeEffectConfig {
   kind: "Freeze";

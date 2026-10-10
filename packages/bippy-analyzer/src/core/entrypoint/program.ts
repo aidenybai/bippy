@@ -6,7 +6,7 @@
  */
 // Ported from babel-plugin-react-compiler/src/Entrypoint/Program.ts at b618bbb.
 
-import { SyntaxKind } from "typescript/unstable/ast";
+import { NodeFlags, SyntaxKind } from "typescript/unstable/ast";
 import type {
   ArrowFunction,
   Expression,
@@ -17,6 +17,7 @@ import type {
   SourceFile,
 } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
+import { getDirectives } from "../hir/build-hir.js";
 import type { ReactFunctionType } from "../hir/environment.js";
 
 type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
@@ -27,6 +28,9 @@ export interface ReactFunction {
   fnType: ReactFunctionType;
 }
 
+const ANONYMOUS_NAME = "<anonymous>";
+const OPT_IN_DIRECTIVES = new Set(["use forget", "use memo"]);
+const REACT_COMPILER_RUNTIME_MODULE = "react/compiler-runtime";
 const COMPONENT_NAME_PATTERN = /^[A-Z]/;
 const HOOK_NAME_PATTERN = /^use[A-Z0-9]/;
 const PASCAL_CASE_NAMESPACE_PATTERN = /^[A-Z].*/;
@@ -36,6 +40,13 @@ const isComponentFunction = (node: Node): node is ComponentFunction =>
 
 const skipParentheses = (node: Node): Node =>
   t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
+
+/*
+ * The outermost parenthesized expression around a node. Babel drops parentheses, so the
+ * parent it sees is this node's parent.
+ */
+const getOuterExpression = (node: Node): Node =>
+  t.isParenthesizedExpression(node.parent) ? getOuterExpression(node.parent) : node;
 
 const isHookName = (name: string): boolean => HOOK_NAME_PATTERN.test(name);
 
@@ -69,10 +80,11 @@ const isReactAPI = (node: Node, functionName: string): boolean =>
     node.name.text === functionName);
 
 const isCallbackOf = (node: Node, functionName: string): boolean => {
-  const parent = node.parent;
+  const outer = getOuterExpression(node);
+  const parent = outer.parent;
   return (
     t.isCallExpression(parent) &&
-    parent.arguments.some((argument) => argument === node) &&
+    parent.arguments.some((argument) => argument === outer) &&
     isReactAPI(parent.expression, functionName)
   );
 };
@@ -140,9 +152,23 @@ const isValidComponentParams = (parameters: readonly ParameterDeclaration[]): bo
   return false;
 };
 
-const forEachOwnDescendant = (node: ComponentFunction, visit: (descendant: Node) => void): void => {
+/*
+ * Babel's `ObjectMethod`: a method or accessor of an object literal. Class members are
+ * `ClassMethod`s, which upstream's traversals do not skip.
+ */
+const isObjectMethod = (node: Node): boolean =>
+  (t.isMethodDeclaration(node) ||
+    t.isGetAccessorDeclaration(node) ||
+    t.isSetAccessorDeclaration(node)) &&
+  t.isObjectLiteralExpression(node.parent);
+
+const forEachOwnDescendant = (
+  node: ComponentFunction,
+  visit: (descendant: Node) => void,
+  isSkipped: (descendant: Node) => boolean = isComponentFunction,
+): void => {
   const walk = (child: Node): void => {
-    if (isComponentFunction(child) || t.isMethodDeclaration(child)) {
+    if (isSkipped(child)) {
       return;
     }
     visit(child);
@@ -162,7 +188,12 @@ const callsHooksOrCreatesJsx = (node: ComponentFunction): boolean => {
     ) {
       createsJsx = true;
     }
-    if (t.isCallExpression(descendant) && isHook(descendant.expression)) {
+    // Babel parses `useHook?.()` and calls within an optional chain as `OptionalCallExpression`.
+    if (
+      t.isCallExpression(descendant) &&
+      (descendant.flags & NodeFlags.OptionalChain) === 0 &&
+      isHook(descendant.expression)
+    ) {
       invokesHooks = true;
     }
   });
@@ -189,11 +220,15 @@ const returnsNonNode = (node: ComponentFunction): boolean => {
   if (t.isArrowFunction(node) && !t.isBlock(node.body)) {
     isReturningNonNode = isNonNode(node.body);
   }
-  forEachOwnDescendant(node, (descendant) => {
-    if (t.isReturnStatement(descendant)) {
-      isReturningNonNode = isNonNode(descendant.expression);
-    }
-  });
+  forEachOwnDescendant(
+    node,
+    (descendant) => {
+      if (t.isReturnStatement(descendant)) {
+        isReturningNonNode = isNonNode(descendant.expression);
+      }
+    },
+    (descendant) => isComponentFunction(descendant) || isObjectMethod(descendant),
+  );
   return isReturningNonNode;
 };
 
@@ -203,30 +238,37 @@ const returnsNonNode = (node: ComponentFunction): boolean => {
  * `IsAnonymousFunctionDefinition()` in the ECMAScript spec you'll find places
  * where JS gives anonymous function expressions names. We roughly detect the
  * same AST nodes with some exceptions to better fit our use case.
+ *
+ * Upstream's checks for `useHook = () => {}`, `{useHook: () => {}}`, and
+ * `const {useHook = () => {}} = {}` compare `parent.get('operator')` and
+ * `parent.get('computed')`, which are always truthy `NodePath`s, so upstream never names
+ * those functions and does not compile them. We follow the intent and compile them: see
+ * `tests/compiler-diff/discovery.test.ts`.
  */
 const getFunctionName = (node: ComponentFunction): Node | null => {
   if (t.isFunctionDeclaration(node)) {
     return node.name ?? null;
   }
-  const parent = node.parent;
-  if (t.isVariableDeclaration(parent) && parent.initializer === node) {
+  const outer = getOuterExpression(node);
+  const parent = outer.parent;
+  if (t.isVariableDeclaration(parent) && parent.initializer === outer) {
     return parent.name;
   }
   if (
     t.isBinaryExpression(parent) &&
-    parent.right === node &&
+    parent.right === outer &&
     parent.operatorToken.kind === SyntaxKind.EqualsToken
   ) {
     return parent.left;
   }
   if (
     t.isPropertyAssignment(parent) &&
-    parent.initializer === node &&
+    parent.initializer === outer &&
     t.isIdentifier(parent.name)
   ) {
     return parent.name;
   }
-  if (t.isBindingElement(parent) && parent.initializer === node) {
+  if (t.isBindingElement(parent) && parent.initializer === outer) {
     const bindingName = parent.name;
     return bindingName && t.isIdentifier(bindingName) ? bindingName : null;
   }
@@ -264,10 +306,45 @@ const getComponentOrHookLike = (node: ComponentFunction): ReactFunctionType | nu
   return null;
 };
 
+/*
+ * Upstream compiles any function with an opt-in directive, as a component or hook when it
+ * looks like one.
+ */
+const getReactFunctionType = (node: ComponentFunction): ReactFunctionType | null => {
+  if (
+    node.body !== undefined &&
+    t.isBlock(node.body) &&
+    getDirectives(node.body).some((directive) => OPT_IN_DIRECTIVES.has(directive))
+  ) {
+    return getComponentOrHookLike(node) ?? "Other";
+  }
+  return getComponentOrHookLike(node);
+};
+
+/*
+ * Whether the file imports the memo cache function `c` from the compiler runtime, as
+ * already compiled code does. Upstream skips such files.
+ */
+const hasMemoCacheFunctionImport = (sourceFile: SourceFile): boolean =>
+  sourceFile.statements.some(
+    (statement) =>
+      t.isImportDeclaration(statement) &&
+      t.isStringLiteral(statement.moduleSpecifier) &&
+      statement.moduleSpecifier.text === REACT_COMPILER_RUNTIME_MODULE &&
+      statement.importClause?.namedBindings !== undefined &&
+      t.isNamedImports(statement.importClause.namedBindings) &&
+      statement.importClause.namedBindings.elements.some(
+        (element) => (element.propertyName ?? element.name).text === "c",
+      ),
+  );
+
 const getDeclaredName = (node: ComponentFunction): string | null => {
   const functionName = getFunctionName(node);
   if (functionName && t.isIdentifier(functionName)) {
     return functionName.text;
+  }
+  if (functionName && t.isPropertyAccessExpression(functionName)) {
+    return functionName.getText();
   }
   let ancestor: Node = node.parent;
   while (
@@ -287,19 +364,21 @@ const getDeclaredName = (node: ComponentFunction): string | null => {
 };
 
 /**
- * Finds every top-level component and hook in a file, the way the compiler's `infer`
- * compilation mode does. Functions nested inside other functions are left to their parent.
+ * Finds every component and hook in a file, the way the compiler's `infer` compilation
+ * mode does. Functions nested inside a component or hook are left to it, and functions
+ * inside classes are skipped since they can reference `this`.
  */
 export const findReactFunctions = (sourceFile: SourceFile): ReactFunction[] => {
+  if (hasMemoCacheFunctionImport(sourceFile)) return [];
   const reactFunctions: ReactFunction[] = [];
   const visit = (node: Node): void => {
+    if (t.isClassDeclaration(node) || t.isClassExpression(node)) return;
     if (isComponentFunction(node)) {
-      const fnType = getComponentOrHookLike(node);
-      const name = getDeclaredName(node);
-      if (fnType !== null && name !== null) {
-        reactFunctions.push({ name, node, fnType });
+      const fnType = getReactFunctionType(node);
+      if (fnType !== null) {
+        reactFunctions.push({ name: getDeclaredName(node) ?? ANONYMOUS_NAME, node, fnType });
+        return;
       }
-      return;
     }
     node.forEachChild(visit);
   };

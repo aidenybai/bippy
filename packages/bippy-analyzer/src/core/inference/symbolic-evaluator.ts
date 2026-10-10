@@ -17,6 +17,7 @@ import { assertExhaustive } from "../utils/utils.js";
 import type { DomainResolver } from "./infer-domains.js";
 import type {
   Bailout,
+  BailoutReason,
   Binding,
   BindingKind,
   BindingValue,
@@ -38,6 +39,7 @@ import type {
 } from "./types.js";
 import {
   formatPlace,
+  formatSymbolicValue,
   getKnownTruthiness,
   getPlaceKey,
   getTestExpression,
@@ -47,7 +49,6 @@ import {
 
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_INLINE_DEPTH = 4;
-const RENDERABLE_RETURN_TYPE_PATTERN = /Element|ReactNode|ReactPortal|JSX/;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
@@ -95,6 +96,13 @@ interface Mutation {
   binding: Binding;
   loc: SourceLocation;
 }
+
+const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
+  left === right ||
+  (left !== GeneratedSource &&
+    right !== GeneratedSource &&
+    left.start === right.start &&
+    left.end === right.end);
 
 /**
  * A function's effects are attached to the instruction that creates it but only happen when
@@ -445,6 +453,7 @@ export class SymbolicEvaluator {
 
   #buildJsx(
     tag: SymbolicValue,
+    declaration: string | null,
     props: Array<JsxProp | JsxSpreadProp>,
     children: SymbolicValue[],
     loc: SourceLocation,
@@ -452,14 +461,14 @@ export class SymbolicEvaluator {
     if (tag.kind === "Conditional") {
       return {
         ...tag,
-        consequent: this.#buildJsx(tag.consequent, props, children, loc),
-        alternate: this.#buildJsx(tag.alternate, props, children, loc),
+        consequent: this.#buildJsx(tag.consequent, declaration, props, children, loc),
+        alternate: this.#buildJsx(tag.alternate, declaration, props, children, loc),
       };
     }
     const jsxTag: JsxTag =
       tag.kind === "Primitive" && typeof tag.value === "string"
         ? { kind: "BuiltinTag", name: tag.value }
-        : { kind: "Component", name: getComponentName(tag) };
+        : { kind: "Component", name: getComponentName(tag), declaration };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
     return { kind: "JsxExpression", tag: jsxTag, props, children, loc };
   }
@@ -478,6 +487,16 @@ export class SymbolicEvaluator {
     } finally {
       this.#inlineDepth--;
     }
+  }
+
+  /**
+   * Records a bailout once per reason and location, however often the evaluator revisits it.
+   */
+  #bailOut(reason: BailoutReason, message: string, loc: SourceLocation): void {
+    const isDuplicate = this.bailouts.some(
+      (bailout) => bailout.reason === reason && isSameLocation(bailout.loc, loc),
+    );
+    if (!isDuplicate) this.bailouts.push({ reason, message, loc });
   }
 
   #warn(kind: WarningKind, message: string, loc: SourceLocation): void {
@@ -506,9 +525,11 @@ export class SymbolicEvaluator {
           place.loc,
         );
       } else if (STATE_BINDING_KINDS.has(binding.kind)) {
-        if (this.#mode === "effect" && !this.#mutations.has(binding.id))
+        if (this.#mode === "render") {
+          this.#warn("render-mutation", `mutates ${binding.name} during render`, place.loc);
+        } else if (!this.#mutations.has(binding.id)) {
           this.#mutations.set(binding.id, { binding, loc: place.loc });
-        else this.#warn("render-mutation", `mutates ${binding.name} during render`, place.loc);
+        }
       }
     }
   }
@@ -612,28 +633,26 @@ export class SymbolicEvaluator {
     }
     for (const argument of args) this.#visitCallbackArgument(argument, state);
     if (this.#mode !== "render") return createUnknown("call", loc);
-    const returnType = this.#resolver.getTypeText(loc);
-    if (returnType !== null && RENDERABLE_RETURN_TYPE_PATTERN.test(returnType)) {
-      this.bailouts.push({
-        reason: "unknown-call",
-        message: "call returns JSX the analysis can't see into",
-        loc,
-      });
+    if (this.#resolver.isReactElement(loc)) {
+      this.#bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
     }
-    return this.#createCallResult(loc);
+    return this.#createCallResult(args, loc);
   }
 
   /**
    * Gives a call the analysis can't see into a value of its return type. When the type has
    * a finite set of values, like `boolean`, the result is a binding states can split on.
+   * The same call with different arguments, like a helper called twice, is a different
+   * binding.
    */
-  #createCallResult(loc: SourceLocation): SymbolicValue {
+  #createCallResult(args: SymbolicValue[], loc: SourceLocation): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(loc);
     if (calleeText === null || this.#resolver.getDomain(loc).kind !== "Cases") {
       return createUnknown("call", loc);
     }
-    return createBindingValue(this.#createBinding(`${calleeText}()`, "call", loc));
+    const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
+    return createBindingValue(this.#createBinding(name, "call", loc));
   }
 
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
@@ -750,6 +769,8 @@ export class SymbolicEvaluator {
         this.#evaluateDestructure(value);
         return this.#read(value.value);
       case "LoadGlobal":
+        if (value.binding.kind === "Global" && value.binding.name === "undefined")
+          return UNDEFINED_VALUE;
         return {
           kind: "Global",
           name: value.binding.name,
@@ -831,6 +852,7 @@ export class SymbolicEvaluator {
         );
         return this.#buildJsx(
           this.#getJsxTag(value.tag),
+          value.tag.kind === "BuiltinTag" ? null : this.#resolver.getDeclarationKey(value.tag.loc),
           props,
           (value.children ?? []).map((child) => this.#read(child)),
           value.loc,
@@ -1066,11 +1088,7 @@ export class SymbolicEvaluator {
         case "for-in":
         case "while":
         case "do-while":
-          this.bailouts.push({
-            reason: "loop",
-            message: "values assigned in a loop are not modeled",
-            loc: terminal.loc,
-          });
+          this.#bailOut("loop", "values assigned in a loop are not modeled", terminal.loc);
           nextId = terminal.fallthrough;
           nextFrom = null;
           break;
