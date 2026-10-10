@@ -9,6 +9,7 @@ export interface RepoConfig {
   tsconfig: string;
   install: string;
   patchFile: string | undefined;
+  setupDirectory: string | undefined;
 }
 
 interface RepoFile {
@@ -22,7 +23,7 @@ interface RepoFile {
 export const CONFORMANCE_DIRECTORY = join(import.meta.dirname, "..");
 export const PACKAGE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "..");
 export const CACHE_DIRECTORY = join(PACKAGE_DIRECTORY, ".conformance");
-const REPOS_DIRECTORY = join(CONFORMANCE_DIRECTORY, "repos");
+export const REPOS_DIRECTORY = join(CONFORMANCE_DIRECTORY, "repos");
 
 export const loadRepos = (ids: string[]): RepoConfig[] => {
   const allIds = readdirSync(REPOS_DIRECTORY).filter((id) =>
@@ -35,7 +36,13 @@ export const loadRepos = (ids: string[]): RepoConfig[] => {
       readFileSync(join(REPOS_DIRECTORY, id, "repo.json"), "utf8"),
     );
     const patchFile = join(REPOS_DIRECTORY, id, "custom.patch");
-    return { id, ...repoFile, patchFile: existsSync(patchFile) ? patchFile : undefined };
+    const setupDirectory = join(REPOS_DIRECTORY, id, "verify");
+    return {
+      id,
+      ...repoFile,
+      patchFile: existsSync(patchFile) ? patchFile : undefined,
+      setupDirectory: existsSync(setupDirectory) ? setupDirectory : undefined,
+    };
   });
 };
 

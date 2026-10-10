@@ -15,15 +15,28 @@ const MAX_PROP_COMBINATIONS = 12;
 const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 
-const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
-  const props = analysis.bindings.flatMap((binding) =>
+const getPropSamples = (analysis: ComponentAnalysis) =>
+  analysis.bindings.flatMap((binding) =>
     binding.kind === "prop" && binding.propName && binding.samples.length > 0
       ? [{ name: binding.propName, samples: binding.samples }]
       : [],
   );
-  const base = Object.fromEntries(
-    props.map(({ name, samples }) => [name, samples[0] ?? { kind: "Undefined" }]),
+
+/**
+ * The first sample of every prop the analysis knows, the props a component mounts with when
+ * nothing else is chosen.
+ */
+export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
+  Object.fromEntries(
+    getPropSamples(analysis).map(({ name, samples }) => [
+      name,
+      samples[0] ?? { kind: "Undefined" },
+    ]),
   );
+
+const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
+  const props = getPropSamples(analysis);
+  const base = getDefaultProps(analysis);
   const fullCount = props.reduce((total, { samples }) => total * samples.length, 1);
   if (fullCount <= MAX_PROP_COMBINATIONS) {
     return props.reduce<Record<string, Sample>[]>(
@@ -53,7 +66,7 @@ export const exploreComponent = async (
   const observations: Observation[] = [];
 
   for (const props of getPropCombinations(analysis)) {
-    const request: MountRequest = { moduleUrl, exportName, props };
+    const request: MountRequest = { moduleUrl, exportName, props, scenario: null };
     const mount = (): Promise<Capture> =>
       page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);
     const perform = (actionKey: string): Promise<Capture | null> =>

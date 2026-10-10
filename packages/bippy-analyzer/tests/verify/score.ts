@@ -105,10 +105,17 @@ const ORDERED_HOOK_KINDS = new Set<string>([
   "useContext",
 ]);
 
-const getProbeId = (file: string, start: number): string => `${file}:${start}`;
+/**
+ * A component given an event handler passes it to some element it renders, so its clicks
+ * land on a host element of any tag.
+ */
+const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
+
+const getProbeId = (file: string, loc: { start: number; end: number }): string =>
+  `${file}:${loc.start}:${loc.end}`;
 
 const getDecisionProbeId = (file: string, decision: Decision): string | null =>
-  typeof decision.loc === "symbol" ? null : getProbeId(file, decision.loc.start);
+  typeof decision.loc === "symbol" ? null : getProbeId(file, decision.loc);
 
 const visitRender = (value: SymbolicValue, visitor: (value: SymbolicValue) => void): void => {
   visitor(value);
@@ -135,7 +142,7 @@ export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
     if (value.kind !== "Conditional") return;
     const { decision } = value;
     if (decision.probe === "none" || typeof decision.loc === "symbol") return;
-    const id = getProbeId(analysis.file, decision.loc.start);
+    const id = getProbeId(analysis.file, decision.loc);
     probes.set(id, {
       id,
       file: analysis.file,
@@ -157,7 +164,8 @@ const getStaticText = (value: SymbolicValue): string | null => {
       return parts.every((part) => part !== null) ? normalizeText(parts.join(" ")) : null;
     }
     case "Primitive":
-      return typeof value.value === "string" || typeof value.value === "number" ? null : "";
+      if (typeof value.value === "string") return normalizeText(value.value);
+      return typeof value.value === "number" ? null : "";
     default:
       return null;
   }
@@ -377,7 +385,7 @@ export const scoreComponent = (
       const label = triggerLabels.get(transition.id);
       return (
         label !== undefined &&
-        label.tag === action.tag &&
+        (label.tag === action.tag || isComponentTag(label.tag)) &&
         label.event === eventName &&
         (label.text === null || label.text === action.label)
       );

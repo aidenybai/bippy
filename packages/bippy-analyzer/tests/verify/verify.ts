@@ -7,12 +7,12 @@ import { exploreComponent } from "./driver.js";
 import { collectMutationProbes } from "./mutation.js";
 import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
-import { startHarness } from "./server.js";
+import { readHarnessSetup, startHarness } from "./server.js";
 
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 
-const openPage = async (browser: Browser, url: string): Promise<Page> => {
+export const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
     const page = await browser.newPage();
     let isHarnessLoaded = false;
@@ -40,6 +40,7 @@ interface VerifyOptions {
   componentNames?: string[];
   onComponent?: (verdict: ComponentVerdict) => void;
   onStart?: (componentName: string) => void;
+  setupDirectory?: string | null;
 }
 
 interface VerifyReport {
@@ -70,6 +71,7 @@ export const verifyProject = async (
       ...collectMutationProbes(analysis),
     ]),
     [...new Set(exported.map(({ analysis }) => analysis.file))],
+    readHarnessSetup(options.setupDirectory ?? null),
   );
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];

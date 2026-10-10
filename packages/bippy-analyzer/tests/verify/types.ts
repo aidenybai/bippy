@@ -36,16 +36,23 @@ export interface Action {
   kind: "click" | "change";
 }
 
+export interface Scenario {
+  name: string;
+  args: unknown[];
+}
+
 export interface MountRequest {
   moduleUrl: string;
   exportName: string;
   props: Record<string, Sample>;
+  scenario: Scenario | null;
 }
 
 interface VerifyApi {
   mount: (request: MountRequest) => Promise<Capture>;
   actions: () => Action[];
   perform: (key: string) => Promise<Capture | null>;
+  observe: () => Promise<Capture>;
 }
 
 declare global {

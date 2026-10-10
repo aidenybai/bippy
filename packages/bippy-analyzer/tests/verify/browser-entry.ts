@@ -44,7 +44,9 @@ interface TrackedState {
 
 const ANONYMOUS_NAME = "Anonymous";
 const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
+const SETUP_PATH = "/__bippy_verify_setup.tsx";
 const SETTLE_MS = 40;
+const MAX_SETTLE_MS = 3000;
 const MAX_PLAIN_DEPTH = 4;
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
 const CHANGE_VALUES = ["text", ""];
@@ -340,7 +342,35 @@ const takeProbeHits = (): ProbeHit[] => {
   return hits;
 };
 
-const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+let pendingRequests = 0;
+const trackRequest = <Result>(request: Promise<Result>): Promise<Result> => {
+  pendingRequests++;
+  return request.finally(() => pendingRequests--);
+};
+const originalFetch = window.fetch;
+window.fetch = (...args) => trackRequest(originalFetch(...args));
+const originalSend = XMLHttpRequest.prototype.send;
+XMLHttpRequest.prototype.send = function send(...args) {
+  pendingRequests++;
+  this.addEventListener("loadend", () => pendingRequests--, { once: true });
+  originalSend.apply(this, args);
+};
+
+const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+
+/**
+ * Waits for the page to go quiet: no requests in flight and, once mounting, the component
+ * rendered. Data loads through mocked APIs, so a screen right after an action often still
+ * shows its loading state.
+ */
+const settle = async (): Promise<void> => {
+  const deadline = performance.now() + MAX_SETTLE_MS;
+  do await wait();
+  while (
+    (pendingRequests > 0 || (mountedType !== null && !findMountedFiber() && !renderError)) &&
+    performance.now() < deadline
+  );
+};
 
 const createEmptyCapture = (error: string): Capture => ({
   shapes: [],
@@ -424,6 +454,7 @@ const setInputValue = (element: HTMLElement, value: string): void => {
 
 const mount = async (request: MountRequest): Promise<Capture> => {
   mountedRoot?.unmount();
+  mountedType = null;
   await settle();
   probeHits = [];
   renderError = null;
@@ -433,14 +464,21 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   trackedStates = [];
   stateOwners = new WeakMap();
   propWrites = new Set();
+  const { default: Providers }: { default: (props: { children: ReactNode }) => ReactNode } =
+    await import(/* @vite-ignore */ PROVIDERS_PATH);
+  if (request.scenario) {
+    const { scenarios }: { scenarios?: Record<string, (...args: unknown[]) => unknown> } =
+      await import(/* @vite-ignore */ SETUP_PATH);
+    const scenario = scenarios?.[request.scenario.name];
+    if (!scenario) return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
+    await scenario(...request.scenario.args);
+  }
   const moduleExports: Record<string, unknown> = await import(/* @vite-ignore */ request.moduleUrl);
   mountedType = moduleExports[request.exportName];
   if (!mountedType) return createEmptyCapture(`export ${request.exportName} not found`);
   const props = Object.fromEntries(
     Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
   );
-  const { default: Providers }: { default: (props: { children: ReactNode }) => ReactNode } =
-    await import(/* @vite-ignore */ PROVIDERS_PATH);
   const container = document.createElement("div");
   document.body.replaceChildren(container);
   mountedRoot = createRoot(container);
@@ -482,4 +520,8 @@ window.__verify = {
   mount,
   actions: () => collectActions().map(({ key, tag, label, kind }) => ({ key, tag, label, kind })),
   perform,
+  observe: async () => {
+    await settle();
+    return capture();
+  },
 };

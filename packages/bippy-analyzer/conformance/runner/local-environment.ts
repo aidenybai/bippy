@@ -49,5 +49,6 @@ export const runLocal = async (
     join(appDirectory, repo.workingDirectory, repo.tsconfig),
     outputDirectory,
     shouldVerify,
+    repo.setupDirectory ?? null,
   );
 };

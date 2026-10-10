@@ -8,6 +8,7 @@ import { verifyProject } from "./verify.js";
 interface CliOptions {
   component?: string[];
   json: boolean;
+  setup?: string;
 }
 
 const formatSample = (sample: Sample): string => {
@@ -80,9 +81,11 @@ new Command()
   .argument("<tsconfig>", "path to the project's tsconfig.json")
   .option("-c, --component <names...>", "only verify these components")
   .option("--json", "print the verdicts as JSON", false)
+  .option("-s, --setup <directory>", "a verify directory with setup.tsx and harness.json")
   .action(async (tsconfig: string, options: CliOptions) => {
     const report = await verifyProject(tsconfig, {
       componentNames: options.component,
+      setupDirectory: options.setup ?? null,
       onComponent: options.json ? undefined : (verdict) => console.log(formatVerdict(verdict)),
       onStart: process.env.VERIFY_DEBUG
         ? (componentName) => console.error(picocolors.dim(`→ ${componentName}`))

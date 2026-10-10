@@ -59,6 +59,7 @@ export const collect = async (
   tsconfigPath: string,
   outputDirectory: string,
   shouldVerify: boolean,
+  setupDirectory: string | null,
 ): Promise<CollectSummary> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
@@ -69,7 +70,7 @@ export const collect = async (
   writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));
   let verification: VerificationSummary | null = null;
   if (shouldVerify) {
-    const report = await verifyProject(configPath, { analyzed: components });
+    const report = await verifyProject(configPath, { analyzed: components, setupDirectory });
     writeFileSync(join(outputDirectory, "verify.json"), `${JSON.stringify(report, null, 2)}\n`);
     verification = summarizeVerdicts(report.components, report.durationMs);
   }
@@ -81,8 +82,16 @@ export const collect = async (
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [tsconfigPath, outputDirectory] = process.argv.slice(2);
   if (!tsconfigPath || !outputDirectory)
-    throw new Error("Usage: collect.ts <tsconfig> <outputDirectory> [--verify]");
+    throw new Error("Usage: collect.ts <tsconfig> <outputDirectory> [--verify] [--setup <dir>]");
+  const setupIndex = process.argv.indexOf("--setup");
   console.log(
-    JSON.stringify(await collect(tsconfigPath, outputDirectory, process.argv.includes("--verify"))),
+    JSON.stringify(
+      await collect(
+        tsconfigPath,
+        outputDirectory,
+        process.argv.includes("--verify"),
+        setupIndex === -1 ? null : (process.argv[setupIndex + 1] ?? null),
+      ),
+    ),
   );
 }
