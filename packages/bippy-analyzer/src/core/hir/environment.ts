@@ -12,6 +12,7 @@ import {
   type CompilerErrorDetail,
   ErrorCategory,
 } from "../compiler-error.js";
+import { assertExhaustive } from "../utils/utils.js";
 import { DEFAULT_GLOBALS, DEFAULT_SHAPES, type Global, type GlobalRegistry } from "./globals.js";
 import {
   type BlockId,
@@ -24,8 +25,10 @@ import {
   type PolyType,
   type Type,
   ValueKind,
+  type ScopeId,
   makeBlockId,
   makeIdentifierId,
+  makeScopeId,
 } from "./hir.js";
 import {
   BuiltInMixedReadonlyId,
@@ -106,11 +109,80 @@ export interface EnvironmentConfig {
    * - they are called somewhere
    */
   enableTreatSetIdentifiersAsStateSetters: boolean;
+
+  /**
+   * Enable using information from existing useMemo/useCallback to understand when a value is done
+   * being mutated. With this mode enabled, Forget will still discard the actual useMemo/useCallback
+   * calls and may memoize slightly differently. However, it will assume that the values produced
+   * are not subsequently modified, guaranteeing that the value will be memoized.
+   *
+   * By preserving guarantees about when values are memoized, this option preserves any existing
+   * behavior that depends on referential equality in the original program. Notably, this preserves
+   * existing effect behavior (how often effects fire) for effects that rely on referential equality.
+   *
+   * When disabled, Forget will not only prune useMemo and useCallback calls but also completely ignore
+   * them, not using any information from them to guide compilation. Therefore, disabling this flag
+   * will produce output that mimics the result from removing all memoization.
+   *
+   * Our recommendation is to first try running your application with this flag enabled, then attempt
+   * to disable this flag and see what changes or breaks. This will mostly likely be effects that
+   * depend on referential equality, which can be refactored (TODO guide for this).
+   *
+   * NOTE: this mode treats freeze as a transitive operation for function expressions. This means
+   * that if a useEffect or useCallback references a function value, that function value will be
+   * considered frozen, and in turn all of its referenced variables will be considered frozen as well.
+   */
+  enablePreserveExistingMemoizationGuarantees: boolean;
+
+  /**
+   * Validates that all useMemo/useCallback values are also memoized by Forget. This mode can be
+   * used with or without @enablePreserveExistingMemoizationGuarantees.
+   *
+   * With enablePreserveExistingMemoizationGuarantees, this validation enables automatically and
+   * verifies that Forget was able to preserve manual memoization semantics under that mode's
+   * additional assumptions about the input.
+   *
+   * With enablePreserveExistingMemoizationGuarantees off, this validation ignores manual memoization
+   * when determining program behavior, and only uses information from useMemo/useCallback to check
+   * that the memoization was preserved. This can be useful for determining where referential equalities
+   * may change under Forget.
+   */
+  validatePreserveExistingMemoizationGuarantees: boolean;
+
+  // 🌲
+  enableForest: boolean;
+
+  /*
+   * Validates that setState is not unconditionally called during render, as it can lead to
+   * infinite loops.
+   */
+  validateNoSetStateInRender: boolean;
+
+  /**
+   * Validate against impure functions called during render
+   */
+  validateNoImpureFunctionsInRender: boolean;
+
+  /**
+   * When enabled, the compiler assumes that any values are not subsequently
+   * modified after they are captured by a function passed to React. For example,
+   * if a value `x` is referenced inside a function expression passed to `useEffect`,
+   * then this flag will assume that `x` is not subusequently modified.
+   */
+  enableTransitivelyFreezeFunctionExpressions: boolean;
 }
 
 export type PartialEnvironmentConfig = Partial<EnvironmentConfig>;
 
 export type ReactFunctionType = "Component" | "Hook" | "Other";
+
+export type CompilerOutputMode =
+  // Build optimized for SSR, with client features removed
+  | "ssr"
+  // Build optimized for the client, with auto memoization
+  | "client"
+  // Lint mode, the output is unused but validations should run
+  | "lint";
 
 export const printFunctionType = (type: ReactFunctionType): string => {
   switch (type) {
@@ -131,9 +203,11 @@ export class Environment {
   #shapes: ShapeRegistry;
   #nextIdentifer: number = 0;
   #nextBlock: number = 0;
+  #nextScope: number = 0;
   scopes: ScopeManager;
   config: EnvironmentConfig;
   fnType: ReactFunctionType;
+  outputMode: CompilerOutputMode;
 
   #contextIdentifiers: Set<IdentifierNode>;
   #hoistedIdentifiers: Set<IdentifierNode>;
@@ -148,12 +222,14 @@ export class Environment {
   constructor(
     scopes: ScopeManager,
     fnType: ReactFunctionType,
+    outputMode: CompilerOutputMode,
     config: EnvironmentConfig,
     contextIdentifiers: Set<IdentifierNode>,
     parentFunction: FunctionNode, // the outermost function being compiled
   ) {
     this.scopes = scopes;
     this.fnType = fnType;
+    this.outputMode = outputMode;
     this.config = config;
     this.#shapes = new Map(DEFAULT_SHAPES);
     this.#globals = new Map(DEFAULT_GLOBALS);
@@ -190,6 +266,39 @@ export class Environment {
 
   get nextBlockId(): BlockId {
     return makeBlockId(this.#nextBlock++);
+  }
+
+  get enableDropManualMemoization(): boolean {
+    switch (this.outputMode) {
+      case "lint": {
+        // linting drops to be more compatible with compiler analysis
+        return true;
+      }
+      case "client":
+      case "ssr": {
+        return true;
+      }
+      default: {
+        return assertExhaustive(this.outputMode, `Unexpected output mode '${this.outputMode}'`);
+      }
+    }
+  }
+
+  get enableValidations(): boolean {
+    switch (this.outputMode) {
+      case "client":
+      case "lint":
+      case "ssr": {
+        return true;
+      }
+      default: {
+        return assertExhaustive(this.outputMode, `Unexpected output mode '${this.outputMode}'`);
+      }
+    }
+  }
+
+  get nextScopeId(): ScopeId {
+    return makeScopeId(this.#nextScope++);
   }
 
   /**
@@ -385,4 +494,13 @@ export const validateEnvironmentConfig = (
   enableTreatRefLikeIdentifiersAsRefs: partialConfig.enableTreatRefLikeIdentifiersAsRefs ?? true,
   enableTreatSetIdentifiersAsStateSetters:
     partialConfig.enableTreatSetIdentifiersAsStateSetters ?? false,
+  enablePreserveExistingMemoizationGuarantees:
+    partialConfig.enablePreserveExistingMemoizationGuarantees ?? true,
+  validatePreserveExistingMemoizationGuarantees:
+    partialConfig.validatePreserveExistingMemoizationGuarantees ?? true,
+  enableForest: partialConfig.enableForest ?? false,
+  validateNoSetStateInRender: partialConfig.validateNoSetStateInRender ?? true,
+  validateNoImpureFunctionsInRender: partialConfig.validateNoImpureFunctionsInRender ?? false,
+  enableTransitivelyFreezeFunctionExpressions:
+    partialConfig.enableTransitivelyFreezeFunctionExpressions ?? true,
 });

@@ -7,6 +7,7 @@
 // Ported from babel-plugin-react-compiler/src/HIR/PrintHIR.ts at b618bbb.
 
 import { SyntaxKind } from "typescript/unstable/ast";
+import type { AliasingEffect, AliasingSignature } from "../compiler-inference/aliasing-effects.js";
 import { CompilerError } from "../compiler-error.js";
 import { assertExhaustive } from "../utils/utils.js";
 import {
@@ -21,11 +22,13 @@ import {
   type InstructionValue,
   type LValue,
   type ManualMemoDependency,
+  type MutableRange,
   type ObjectMethod,
   type ObjectPropertyKey,
   type Pattern,
   type Phi,
   type Place,
+  type ReactiveScope,
   type SourceLocation,
   type SpreadPattern,
   type Terminal,
@@ -124,12 +127,19 @@ export const printMixedHIR = (value: Instruction | InstructionValue | Terminal):
   }
 };
 
-export const printInstruction = (instr: Instruction): string =>
-  `[${instr.id}] ${printPlace(instr.lvalue)} = ${printInstructionValue(instr.value)}`;
+export const printInstruction = (instr: Instruction): string => {
+  const id = `[${instr.id}]`;
+  const value =
+    instr.effects !== null
+      ? `${printInstructionValue(instr.value)}\n    ${instr.effects.map(printAliasingEffect).join("\n    ")}`
+      : printInstructionValue(instr.value);
+  return `${id} ${printPlace(instr.lvalue)} = ${value}`;
+};
 
 export const printPhi = (phi: Phi): string => {
   const items = [];
   items.push(printPlace(phi.place));
+  items.push(printMutableRange(phi.place.identifier));
   items.push(printType(phi.place.identifier.type));
   items.push(": phi(");
   const phis = [];
@@ -169,7 +179,10 @@ export const printTerminal = (terminal: Terminal): Array<string> | string => {
       return `[${terminal.id}] Throw ${printPlace(terminal.value)}`;
     }
     case "return": {
-      return `[${terminal.id}] Return ${terminal.returnVariant} ${printPlace(terminal.value)}`;
+      const value = `[${terminal.id}] Return ${terminal.returnVariant} ${printPlace(terminal.value)}`;
+      return terminal.effects !== null
+        ? `${value}\n    ${terminal.effects.map(printAliasingEffect).join("\n    ")}`
+        : value;
     }
     case "goto": {
       return `[${terminal.id}] Goto${
@@ -226,7 +239,10 @@ export const printTerminal = (terminal: Terminal): Array<string> | string => {
     }
     case "maybe-throw": {
       const handlerStr = terminal.handler !== null ? `bb${terminal.handler}` : "(none)";
-      return `[${terminal.id}] MaybeThrow continuation=bb${terminal.continuation} handler=${handlerStr}`;
+      const value = `[${terminal.id}] MaybeThrow continuation=bb${terminal.continuation} handler=${handlerStr}`;
+      return terminal.effects !== null
+        ? `${value}\n    ${terminal.effects.map(printAliasingEffect).join("\n    ")}`
+        : value;
     }
     case "try": {
       return `[${terminal.id}] Try block=bb${terminal.block} handler=bb${terminal.handler}${
@@ -400,7 +416,9 @@ export const printInstructionValue = (instrValue: InstructionValue): string => {
         .map((line) => `      ${line}`)
         .join("\n");
       const context = instrValue.loweredFunc.func.context.map((dep) => printPlace(dep)).join(",");
-      return `${kind} ${name} @context[${context}]\n${fn}`;
+      const aliasingEffects =
+        instrValue.loweredFunc.func.aliasingEffects?.map(printAliasingEffect)?.join(", ") ?? "";
+      return `${kind} ${name} @context[${context}] @aliasingEffects=[${aliasingEffects}]\n${fn}`;
     }
     case "TaggedTemplateExpression": {
       return `${printPlace(instrValue.tag)}\`${instrValue.value.raw}\``;
@@ -575,10 +593,28 @@ export const printPattern = (pattern: Pattern | Place | SpreadPattern): string =
   }
 };
 
-export const printPlace = (place: Place): string =>
-  `${printIdentifier(place.identifier)}${printType(place.identifier.type)}`;
+const isMutable = (range: MutableRange): boolean => range.end > range.start + 1;
 
-export const printIdentifier = (id: Identifier): string => `${printName(id.name)}$${id.id}`;
+const printMutableRange = (identifier: Identifier): string => {
+  // prefer the scope range if it exists
+  const range = identifier.scope?.range ?? identifier.mutableRange;
+  return isMutable(range) ? `[${range.start}:${range.end}]` : "";
+};
+
+export const printPlace = (place: Place): string =>
+  [
+    place.effect,
+    " ",
+    printIdentifier(place.identifier),
+    printMutableRange(place.identifier),
+    printType(place.identifier.type),
+    place.reactive ? "{reactive}" : null,
+  ]
+    .filter((item) => item !== null)
+    .join("");
+
+export const printIdentifier = (id: Identifier): string =>
+  `${printName(id.name)}$${id.id}${printScope(id.scope)}`;
 
 const printName = (name: IdentifierName | null): string => {
   if (name === null) {
@@ -586,6 +622,9 @@ const printName = (name: IdentifierName | null): string => {
   }
   return name.value;
 };
+
+const printScope = (scope: ReactiveScope | null): string =>
+  `${scope !== null ? `_@${scope.id}` : ""}`;
 
 export const printManualMemoDependency = (val: ManualMemoDependency, nameOnly: boolean): string => {
   const getRootStr = (): string => {
@@ -639,4 +678,105 @@ const getFunctionName = (
     case "ObjectMethod":
       return defaultValue;
   }
+};
+
+export const printAliasingEffect = (effect: AliasingEffect): string => {
+  switch (effect.kind) {
+    case "Assign": {
+      return `Assign ${printPlaceForAliasEffect(effect.into)} = ${printPlaceForAliasEffect(effect.from)}`;
+    }
+    case "Alias": {
+      return `Alias ${printPlaceForAliasEffect(effect.into)} <- ${printPlaceForAliasEffect(effect.from)}`;
+    }
+    case "MaybeAlias": {
+      return `MaybeAlias ${printPlaceForAliasEffect(effect.into)} <- ${printPlaceForAliasEffect(effect.from)}`;
+    }
+    case "Capture": {
+      return `Capture ${printPlaceForAliasEffect(effect.into)} <- ${printPlaceForAliasEffect(effect.from)}`;
+    }
+    case "ImmutableCapture": {
+      return `ImmutableCapture ${printPlaceForAliasEffect(effect.into)} <- ${printPlaceForAliasEffect(effect.from)}`;
+    }
+    case "Create": {
+      return `Create ${printPlaceForAliasEffect(effect.into)} = ${effect.value}`;
+    }
+    case "CreateFrom": {
+      return `Create ${printPlaceForAliasEffect(effect.into)} = kindOf(${printPlaceForAliasEffect(effect.from)})`;
+    }
+    case "CreateFunction": {
+      return `Function ${printPlaceForAliasEffect(effect.into)} = Function captures=[${effect.captures.map(printPlaceForAliasEffect).join(", ")}]`;
+    }
+    case "Apply": {
+      const receiverCallee =
+        effect.receiver.identifier.id === effect.function.identifier.id
+          ? printPlaceForAliasEffect(effect.receiver)
+          : `${printPlaceForAliasEffect(effect.receiver)}.${printPlaceForAliasEffect(effect.function)}`;
+      const args = effect.args
+        .map((arg) => {
+          if (arg.kind === "Identifier") {
+            return printPlaceForAliasEffect(arg);
+          } else if (arg.kind === "Hole") {
+            return " ";
+          }
+          return `...${printPlaceForAliasEffect(arg.place)}`;
+        })
+        .join(", ");
+      const signature =
+        effect.signature !== null
+          ? effect.signature.aliasing
+            ? printAliasingSignature(effect.signature.aliasing)
+            : JSON.stringify(effect.signature, null, 2)
+          : "";
+      return `Apply ${printPlaceForAliasEffect(effect.into)} = ${receiverCallee}(${args})${signature !== "" ? "\n     " : ""}${signature}`;
+    }
+    case "Freeze": {
+      return `Freeze ${printPlaceForAliasEffect(effect.value)} ${effect.reason}`;
+    }
+    case "Mutate":
+    case "MutateConditionally":
+    case "MutateTransitive":
+    case "MutateTransitiveConditionally": {
+      return `${effect.kind} ${printPlaceForAliasEffect(effect.value)}${effect.kind === "Mutate" && effect.reason?.kind === "AssignCurrentProperty" ? " (assign `.current`)" : ""}`;
+    }
+    case "MutateFrozen": {
+      return `MutateFrozen ${printPlaceForAliasEffect(effect.place)} reason=${JSON.stringify(effect.error.reason)}`;
+    }
+    case "MutateGlobal": {
+      return `MutateGlobal ${printPlaceForAliasEffect(effect.place)} reason=${JSON.stringify(effect.error.reason)}`;
+    }
+    case "Impure": {
+      return `Impure ${printPlaceForAliasEffect(effect.place)} reason=${JSON.stringify(effect.error.reason)}`;
+    }
+    case "Render": {
+      return `Render ${printPlaceForAliasEffect(effect.place)}`;
+    }
+    default: {
+      return assertExhaustive(effect, "Unexpected kind");
+    }
+  }
+};
+
+const printPlaceForAliasEffect = (place: Place): string => printIdentifier(place.identifier);
+
+export const printAliasingSignature = (signature: AliasingSignature): string => {
+  const tokens: Array<string> = ["function "];
+  if (signature.temporaries.length !== 0) {
+    tokens.push("<");
+    tokens.push(signature.temporaries.map((temp) => `$${temp.identifier.id}`).join(", "));
+    tokens.push(">");
+  }
+  tokens.push("(");
+  tokens.push("this=$" + String(signature.receiver));
+  for (const param of signature.params) {
+    tokens.push(", $" + String(param));
+  }
+  if (signature.rest !== null) {
+    tokens.push(`, ...$${String(signature.rest)}`);
+  }
+  tokens.push("): ");
+  tokens.push("$" + String(signature.returns) + ":");
+  for (const effect of signature.effects) {
+    tokens.push("\n  " + printAliasingEffect(effect));
+  }
+  return tokens.join("");
 };
