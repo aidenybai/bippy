@@ -103,9 +103,15 @@ importers:
         specifier: ^6.1.1
         version: 6.1.1(typescript@7.0.2)(vite@7.3.6(@types/node@24.19.2)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
     devDependencies:
+      '@babel/core':
+        specifier: ^7.29.7
+        version: 7.29.7
       '@tanstack/react-query':
         specifier: ^5.0.0
         version: 5.101.4(react@19.3.0)
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.2
@@ -115,6 +121,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.3.0(@types/react@19.3.0)
+      babel-plugin-react-compiler:
+        specifier: 0.0.0-experimental-a1856f3-20260507
+        version: 0.0.0-experimental-a1856f3-20260507
+      diff:
+        specifier: ^8.0.4
+        version: 8.0.4
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -6908,6 +6920,9 @@ packages:
     resolution: {integrity: sha512-M762rNHfSF1EV3SLtnCJXFoQbbIIz0OyRwnCmV0KPC7qosSfCO0QLTSuJX3ayAebubhE6oYBAYPrBA5ljowaZg==}
     peerDependencies:
       '@babel/core': ^7.4.0 || ^8.0.0-0 <8.0.0
+
+  babel-plugin-react-compiler@0.0.0-experimental-a1856f3-20260507:
+    resolution: {integrity: sha512-NH/o9ojGrQ5xQhkLry8KulKssfWuM68myEGVUpIJhExt1/WVWBOTBPSPGiSRoJtfB9yP8Kj4UXZpLXKFCXineg==}
 
   babel-plugin-react-compiler@1.0.0:
     resolution: {integrity: sha512-Ixm8tFfoKKIPYdCCKYTsqv+Fd4IJ0DQqMyEimo+pxUOMUR9cVPlwTrFt9Avu+3cb6Zp3mAzl+t1MrG2fxxKsxw==}
@@ -19537,6 +19552,10 @@ snapshots:
       '@babel/helper-define-polyfill-provider': 0.6.8(@babel/core@7.29.7)
     transitivePeerDependencies:
       - supports-color
+
+  babel-plugin-react-compiler@0.0.0-experimental-a1856f3-20260507:
+    dependencies:
+      '@babel/types': 7.29.8
 
   babel-plugin-react-compiler@1.0.0:
     dependencies:
