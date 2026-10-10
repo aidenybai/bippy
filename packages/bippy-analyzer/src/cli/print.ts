@@ -243,7 +243,7 @@ const formatTransitionEffect = (transition: Transition): string =>
 const getTextContent = (value: SymbolicValue): string => {
   switch (value.kind) {
     case "JSXText":
-      return value.value.trim();
+      return value.value.trim() && JSON.stringify(value.value.trim());
     case "JsxExpression":
     case "JsxFragment":
       return value.children.map(getTextContent).filter(Boolean).join(" ");
@@ -251,7 +251,9 @@ const getTextContent = (value: SymbolicValue): string => {
     case "ArrayMap":
       return "";
     default:
-      return isRenderingNothing(value) ? "" : formatSymbolicValue(value);
+      if (value.kind === "Primitive" && typeof value.value === "string")
+        return JSON.stringify(value.value);
+      return isRenderingNothing(value) ? "" : `{${formatSymbolicValue(value)}}`;
   }
 };
 
@@ -263,9 +265,7 @@ const collectTriggers = (render: SymbolicValue, triggers: Map<string, string>): 
       const text = getTextContent(element);
       triggers.set(
         prop.transitionId,
-        text
-          ? JSON.stringify(truncate(text, MAX_TRIGGER_TEXT_WIDTH))
-          : `<${element.tag.name}> ${prop.name}`,
+        text ? truncate(text, MAX_TRIGGER_TEXT_WIDTH) : `<${element.tag.name}> ${prop.name}`,
       );
     }
   });

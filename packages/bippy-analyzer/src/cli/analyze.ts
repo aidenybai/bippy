@@ -1,5 +1,5 @@
 import { dirname, resolve } from "node:path";
-import { Command, InvalidArgumentError } from "commander";
+import { Command, InvalidArgumentError, Option } from "commander";
 import picocolors from "picocolors";
 import { analyzeProject, serializeProjectAnalysis } from "../core/entrypoint/analyze-project.js";
 import { ALL_VIEWS, DEFAULT_RENDER_DEPTH } from "./constants.js";
@@ -83,11 +83,10 @@ new Command()
   .argument("[tsconfig]", "path to the project's tsconfig.json", "tsconfig.json")
   .option("-c, --component <names...>", "only show these components")
   .option("-f, --file <filter>", "only analyze files whose path contains this text")
-  .option(
-    "-v, --view <views>",
-    `sections to show: ${ALL_VIEWS.join(", ")} (default: all)`,
-    parseViews,
-    ALL_VIEWS,
+  .addOption(
+    new Option("-v, --view <views>", `sections to show: ${ALL_VIEWS.join(", ")}`)
+      .argParser(parseViews)
+      .default(ALL_VIEWS, "all"),
   )
   .option("-H, --hierarchy", "show the component tree (parent → child)", false)
   .option("-d, --depth <n>", "maximum render tree depth", parseDepth, DEFAULT_RENDER_DEPTH)

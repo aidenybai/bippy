@@ -389,10 +389,10 @@ exports[`fixture analysis > Toggle keeps its states, edges and dead branches 1`]
 └─ states (2)
    ├─ S1 isOpen
    │  ├─ <div> <button> {"More"} <p> "Details"
-   │  └─ "label" → S2
+   │  └─ {label} → S2
    └─ S2 !isOpen
       ├─ <div> <button> {"More"}
-      └─ "label" → S1"
+      └─ {label} → S1"
 `;
 
 exports[`fixture analysis > Wizard keeps its states, edges and dead branches 1`] = `
