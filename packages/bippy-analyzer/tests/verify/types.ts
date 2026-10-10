@@ -32,10 +32,10 @@ export interface MountRequest {
   props: Record<string, Sample>;
 }
 
-export interface VerifyApi {
+interface VerifyApi {
   mount: (request: MountRequest) => Promise<Capture>;
   actions: () => Action[];
-  perform: (key: string) => Promise<Capture>;
+  perform: (key: string) => Promise<Capture | null>;
 }
 
 declare global {

@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import picocolors from "picocolors";
 import type { Sample } from "../../src/core/inference/types.js";
+import { countWrongClaims, summarizeVerdicts } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { verifyProject } from "./verify.js";
 
@@ -23,50 +24,47 @@ const formatProps = (props: Record<string, Sample>): string =>
     .join(" ")
     .slice(0, 160) || "none";
 
+const formatStates = (states: number[]): string => states.map((state) => `S${state + 1}`).join("|");
+
 const formatVerdict = (verdict: ComponentVerdict): string => {
-  const { colors } = { colors: picocolors };
   if (verdict.status === "not-exported")
-    return colors.dim(`${verdict.name}  not exported, skipped`);
+    return picocolors.dim(`${verdict.name}  not exported, skipped`);
   if (verdict.status === "mount-failed")
-    return `${verdict.name}  ${colors.yellow("couldn't mount")} ${colors.dim(verdict.error ?? "")}`;
-  const wrongCount =
-    verdict.wrongStates.length +
-    verdict.wrongEdges.length +
-    verdict.wrongValues.length +
-    verdict.refutedDeadClaims.length;
+    return `${verdict.name}  ${picocolors.yellow("couldn't mount")} ${picocolors.dim(verdict.error ?? "")}`;
+  const wrongCount = countWrongClaims(verdict);
   const lines = [
-    `${colors.bold(verdict.name)}  ${wrongCount > 0 ? colors.red(`${wrongCount} wrong`) : colors.green("0 wrong")}  ` +
-      colors.dim(
+    `${picocolors.bold(verdict.name)}  ${wrongCount > 0 ? picocolors.red(`${wrongCount} wrong`) : picocolors.green("0 wrong")}  ` +
+      picocolors.dim(
         `states ${verdict.witnessedStates.length}/${verdict.predictedStates} witnessed · edges ${verdict.witnessedEdges} · branch sides ${verdict.witnessedBranchSides}/${verdict.branchSides} · ${verdict.observations} observations`,
       ),
   ];
   for (const wrongState of verdict.wrongStates) {
     lines.push(
-      colors.red(
+      picocolors.red(
         `  ✗ unpredicted state after [${wrongState.path.join(" → ") || "mount"}] props ${formatProps(wrongState.props)}`,
       ),
     );
-    lines.push(colors.dim(`    rendered ${wrongState.rendered}`));
-    lines.push(colors.dim(`    closest S${wrongState.closestState + 1}`));
+    lines.push(picocolors.dim(`    rendered ${wrongState.rendered}`));
+    lines.push(picocolors.dim(`    closest ${formatStates([wrongState.closestState])}`));
   }
   for (const wrongEdge of verdict.wrongEdges) {
     lines.push(
-      colors.red(
-        `  ✗ ${wrongEdge.reason}: ${wrongEdge.action} went S${wrongEdge.fromStates.map((state) => state + 1).join("|S")} → S${wrongEdge.toStates.map((state) => state + 1).join("|S")}`,
+      picocolors.red(
+        `  ✗ ${wrongEdge.reason}: ${wrongEdge.action} went ${formatStates(wrongEdge.fromStates)} → ${formatStates(wrongEdge.toStates)}`,
       ),
     );
   }
   for (const wrongValue of verdict.wrongValues) {
     lines.push(
-      colors.red(
+      picocolors.red(
         `  ✗ ${wrongValue.place} = ${wrongValue.value}, predicted ${wrongValue.predicted.join(" | ")}`,
       ),
     );
   }
   for (const refuted of verdict.refutedDeadClaims)
-    lines.push(colors.red(`  ✗ dead branch was reached: ${refuted}`));
+    lines.push(picocolors.red(`  ✗ dead branch was reached: ${refuted}`));
   if (verdict.renderErrors > 0)
-    lines.push(colors.yellow(`  ${verdict.renderErrors} observations threw while rendering`));
+    lines.push(picocolors.yellow(`  ${verdict.renderErrors} observations threw while rendering`));
   return lines.join("\n");
 };
 
@@ -80,38 +78,20 @@ new Command()
   .option("--json", "print the verdicts as JSON", false)
   .action(async (tsconfig: string, options: CliOptions) => {
     const report = await verifyProject(tsconfig, {
-      ...(options.component ? { componentNames: options.component } : {}),
-      ...(options.json
-        ? {}
-        : { onComponent: (verdict: ComponentVerdict) => console.log(formatVerdict(verdict)) }),
-      ...(process.env.VERIFY_DEBUG
-        ? {
-            onStart: (componentName: string) => console.error(picocolors.dim(`→ ${componentName}`)),
-          }
-        : {}),
+      componentNames: options.component,
+      onComponent: options.json ? undefined : (verdict) => console.log(formatVerdict(verdict)),
+      onStart: process.env.VERIFY_DEBUG
+        ? (componentName) => console.error(picocolors.dim(`→ ${componentName}`))
+        : undefined,
     });
     if (options.json) {
       console.log(JSON.stringify(report, null, 2));
       return;
     }
-    const verified = report.components.filter((verdict) => verdict.status === "verified");
-    const wrong = verified.reduce(
-      (total, verdict) =>
-        total +
-        verdict.wrongStates.length +
-        verdict.wrongEdges.length +
-        verdict.wrongValues.length +
-        verdict.refutedDeadClaims.length,
-      0,
-    );
-    const predicted = verified.reduce((total, verdict) => total + verdict.predictedStates, 0);
-    const witnessed = verified.reduce(
-      (total, verdict) => total + verdict.witnessedStates.length,
-      0,
-    );
+    const summary = summarizeVerdicts(report.components, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${verified.length} verified · ${report.components.filter((verdict) => verdict.status === "mount-failed").length} couldn't mount · ${report.components.filter((verdict) => verdict.status === "not-exported").length} not exported · ${wrong} wrong · states ${witnessed}/${predicted} witnessed · ${report.durationMs} ms`,
+        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount · ${summary.notExported} not exported · ${summary.wrong} wrong · states ${summary.witnessedStates}/${summary.predictedStates} witnessed · ${summary.durationMs} ms`,
       ),
     );
   })

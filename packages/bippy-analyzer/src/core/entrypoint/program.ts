@@ -19,7 +19,7 @@ import type {
 import * as t from "typescript/unstable/ast/is";
 import type { ReactFunctionType } from "../hir/environment.js";
 
-export type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
+type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
 
 export interface ReactFunction {
   name: string;
@@ -237,7 +237,7 @@ const getFunctionName = (node: ComponentFunction): Node | null => {
  * Adapted from the ESLint rule at
  * https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/RulesOfHooks.js#L90-L103
  */
-export const getComponentOrHookLike = (node: ComponentFunction): ReactFunctionType | null => {
+const getComponentOrHookLike = (node: ComponentFunction): ReactFunctionType | null => {
   const functionName = getFunctionName(node);
   // Check if the name is component or hook like:
   if (functionName !== null && isComponentName(functionName)) {

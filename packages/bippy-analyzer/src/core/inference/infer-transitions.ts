@@ -3,6 +3,7 @@ import { GeneratedSource } from "../hir/hir.js";
 import type { SourceLocation } from "../hir/hir.js";
 import type { SymbolicEvaluator } from "./symbolic-evaluator.js";
 import type { SymbolicValue, Transition, TransitionTrigger } from "./types.js";
+import { forEachJsxElement } from "./values.js";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
@@ -58,44 +59,6 @@ export const inferTransitions = (
     return id;
   };
 
-  const visit = (value: SymbolicValue): void => {
-    switch (value.kind) {
-      case "JsxExpression":
-        for (const prop of value.props) {
-          if (prop.kind !== "JsxAttribute" || !EVENT_HANDLER_PATTERN.test(prop.name)) continue;
-          const key = getHandlerKey(prop.value);
-          if (key === null) continue;
-          if (!transitionIds.has(key)) {
-            const trigger: TransitionTrigger = {
-              kind: "Event",
-              tag: value.tag.name,
-              event: prop.name,
-            };
-            const event: SymbolicValue = { kind: "Unknown", reason: "event", loc: GeneratedSource };
-            transitionIds.set(
-              key,
-              addTransition(trigger, prop.value, [event], getHandlerLocation(prop.value)),
-            );
-          }
-          prop.transitionId = transitionIds.get(key) ?? null;
-        }
-        value.children.forEach(visit);
-        return;
-      case "JsxFragment":
-        value.children.forEach(visit);
-        return;
-      case "Conditional":
-        visit(value.consequent);
-        visit(value.alternate);
-        return;
-      case "ArrayMap":
-        visit(value.item);
-        return;
-      default:
-        return;
-    }
-  };
-
   for (const effectCall of evaluator.effectCalls) {
     const trigger: TransitionTrigger = {
       kind: "Effect",
@@ -104,6 +67,25 @@ export const inferTransitions = (
     };
     addTransition(trigger, effectCall.callback, [], effectCall.loc);
   }
-  visit(render);
+  forEachJsxElement(render, (element) => {
+    for (const prop of element.props) {
+      if (prop.kind !== "JsxAttribute" || !EVENT_HANDLER_PATTERN.test(prop.name)) continue;
+      const key = getHandlerKey(prop.value);
+      if (key === null) continue;
+      if (!transitionIds.has(key)) {
+        const trigger: TransitionTrigger = {
+          kind: "Event",
+          tag: element.tag.name,
+          event: prop.name,
+        };
+        const event: SymbolicValue = { kind: "Unknown", reason: "event", loc: GeneratedSource };
+        transitionIds.set(
+          key,
+          addTransition(trigger, prop.value, [event], getHandlerLocation(prop.value)),
+        );
+      }
+      prop.transitionId = transitionIds.get(key) ?? null;
+    }
+  });
   return transitions;
 };

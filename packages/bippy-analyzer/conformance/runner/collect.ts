@@ -6,21 +6,9 @@ import {
   serializeProjectAnalysis,
 } from "../../src/core/entrypoint/analyze-project.js";
 import type { AnalyzedComponent } from "../../src/core/inference/types.js";
-import type { ComponentVerdict } from "../../tests/verify/score.js";
+import { sum, summarizeVerdicts } from "../../tests/verify/score.js";
+import type { VerificationSummary } from "../../tests/verify/score.js";
 import { verifyProject } from "../../tests/verify/verify.js";
-
-export interface VerificationSummary {
-  verified: number;
-  couldNotMount: number;
-  notExported: number;
-  wrong: number;
-  predictedStates: number;
-  witnessedStates: number;
-  branchSides: number;
-  witnessedBranchSides: number;
-  mountErrors: Record<string, number>;
-  durationMs: number;
-}
 
 export interface CollectSummary {
   files: number;
@@ -36,46 +24,6 @@ export interface CollectSummary {
   durationMs: number;
   verification: VerificationSummary | null;
 }
-
-export interface CollectOptions {
-  shouldVerify: boolean;
-}
-
-const MOUNT_ERROR_LENGTH = 80;
-
-const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
-  items.reduce((total, item) => total + getValue(item), 0);
-
-const countWrong = (verdict: ComponentVerdict): number =>
-  verdict.wrongStates.length +
-  verdict.wrongEdges.length +
-  verdict.wrongValues.length +
-  verdict.refutedDeadClaims.length;
-
-const summarizeVerification = (
-  verdicts: ComponentVerdict[],
-  durationMs: number,
-): VerificationSummary => {
-  const verified = verdicts.filter((verdict) => verdict.status === "verified");
-  const mountErrors: Record<string, number> = {};
-  for (const verdict of verdicts) {
-    if (verdict.status !== "mount-failed") continue;
-    const message = (verdict.error ?? "unknown").replace(/\d+/g, "N").slice(0, MOUNT_ERROR_LENGTH);
-    mountErrors[message] = (mountErrors[message] ?? 0) + 1;
-  }
-  return {
-    verified: verified.length,
-    couldNotMount: verdicts.filter((verdict) => verdict.status === "mount-failed").length,
-    notExported: verdicts.filter((verdict) => verdict.status === "not-exported").length,
-    wrong: sum(verified, countWrong),
-    predictedStates: sum(verified, (verdict) => verdict.predictedStates),
-    witnessedStates: sum(verified, (verdict) => verdict.witnessedStates.length),
-    branchSides: sum(verified, (verdict) => verdict.branchSides),
-    witnessedBranchSides: sum(verified, (verdict) => verdict.witnessedBranchSides),
-    mountErrors,
-    durationMs,
-  };
-};
 
 const summarize = (
   components: AnalyzedComponent[],
@@ -110,7 +58,7 @@ const summarize = (
 export const collect = async (
   tsconfigPath: string,
   outputDirectory: string,
-  options: CollectOptions,
+  shouldVerify: boolean,
 ): Promise<CollectSummary> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
@@ -120,10 +68,10 @@ export const collect = async (
   mkdirSync(outputDirectory, { recursive: true });
   writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));
   let verification: VerificationSummary | null = null;
-  if (options.shouldVerify) {
+  if (shouldVerify) {
     const report = await verifyProject(configPath, { analyzed: components });
     writeFileSync(join(outputDirectory, "verify.json"), `${JSON.stringify(report, null, 2)}\n`);
-    verification = summarizeVerification(report.components, report.durationMs);
+    verification = summarizeVerdicts(report.components, report.durationMs);
   }
   const summary = summarize(components, fileCount, analysisDuration, verification);
   writeFileSync(join(outputDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);
@@ -135,10 +83,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!tsconfigPath || !outputDirectory)
     throw new Error("Usage: collect.ts <tsconfig> <outputDirectory> [--verify]");
   console.log(
-    JSON.stringify(
-      await collect(tsconfigPath, outputDirectory, {
-        shouldVerify: process.argv.includes("--verify"),
-      }),
-    ),
+    JSON.stringify(await collect(tsconfigPath, outputDirectory, process.argv.includes("--verify"))),
   );
 }

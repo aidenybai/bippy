@@ -4,16 +4,19 @@ import {
   formatAbstractValue,
   formatSymbolicValue,
   getBindingPlaceKey,
+  getKnownTruthiness,
   getNegatedOperator,
+  getTestExpression,
   getTruthiness,
   isEqualToLiteral,
 } from "./values.js";
 
-const CONSTANT_ATOM = "#";
+export const CONSTANT_ATOM = "#";
+const LENGTH_SUFFIX = ".length";
 const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
-const ORDER_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
-const BOOLEAN_OPERATORS = new Set(["===", "!==", "==", "!=", "<", "<=", ">", ">="]);
+const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
+const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
 /**
  * A difference constraint `left - right <= constant` (or `<` when strict) between two
@@ -37,7 +40,6 @@ interface Distance {
 }
 
 interface Fact {
-  test: SymbolicValue;
   outcome: boolean;
   bindingIds: Set<number>;
 }
@@ -64,10 +66,9 @@ export const cloneKnowledge = (knowledge: Knowledge): Knowledge => ({
   bounds: [...knowledge.bounds],
 });
 
-export const collectBindingIds = (
-  value: SymbolicValue,
-  bindingIds = new Set<number>(),
-): Set<number> => {
+export const getLengthAtom = (bindingId: number): string => `${bindingId}${LENGTH_SUFFIX}`;
+
+const collectBindingIds = (value: SymbolicValue, bindingIds = new Set<number>()): Set<number> => {
   switch (value.kind) {
     case "Binding":
       bindingIds.add(value.binding.id);
@@ -115,10 +116,10 @@ const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   return null;
 };
 
-export const getBounds = (value: SymbolicValue, outcome: boolean): Bound[] | null => {
+const getBounds = (value: SymbolicValue, outcome: boolean): Bound[] | null => {
   if (value.kind !== "BinaryExpression") return null;
   const operator = outcome ? value.operator : getNegatedOperator(value.operator);
-  if (!operator || !ORDER_OPERATORS.has(operator)) return null;
+  if (!operator || !BOUND_OPERATORS.has(operator)) return null;
   const left = getLinearTerm(value.left);
   const right = getLinearTerm(value.right);
   if (!left || !right || (left.atom === CONSTANT_ATOM && right.atom === CONSTANT_ATOM)) return null;
@@ -158,10 +159,10 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
  * constraints are inconsistent exactly when some atom has a negative cycle to itself.
  * Every `.length` is also known to be at least zero.
  */
-export const areBoundsConsistent = (bounds: Bound[]): boolean => {
+const areBoundsConsistent = (bounds: Bound[]): boolean => {
   const lengthBounds = bounds
     .flatMap((bound) => [bound.left, bound.right])
-    .filter((atom) => atom.endsWith(".length"))
+    .filter((atom) => atom.endsWith(LENGTH_SUFFIX))
     .map((atom): Bound => ({ left: CONSTANT_ATOM, right: atom, constant: 0, isStrict: false }));
   const allBounds = [...bounds, ...lengthBounds];
   const atoms = [
@@ -174,32 +175,29 @@ export const areBoundsConsistent = (bounds: Bound[]): boolean => {
       isStrict: false,
     })),
   );
+  const getIndex = (atom: string): number => atomIndices.get(atom) ?? 0;
   for (const bound of allBounds) {
-    const row = distances[atomIndices.get(bound.right) ?? 0];
-    const column = atomIndices.get(bound.left) ?? 0;
-    const current = row?.[column];
+    const row = distances[getIndex(bound.right)];
+    const column = getIndex(bound.left);
     const candidate = { weight: bound.constant, isStrict: bound.isStrict };
-    if (row && current && isShorter(candidate, current)) row[column] = candidate;
+    if (isShorter(candidate, row[column])) row[column] = candidate;
   }
   for (let middle = 0; middle < atoms.length; middle++) {
     for (let from = 0; from < atoms.length; from++) {
       for (let to = 0; to < atoms.length; to++) {
-        const first = distances[from]?.[middle];
-        const second = distances[middle]?.[to];
-        const row = distances[from];
-        const current = row?.[to];
-        if (!first || !second || !row || !current) continue;
+        const first = distances[from][middle];
+        const second = distances[middle][to];
         const candidate = {
           weight: first.weight + second.weight,
           isStrict: first.isStrict || second.isStrict,
         };
-        if (isShorter(candidate, current)) row[to] = candidate;
+        if (isShorter(candidate, distances[from][to])) distances[from][to] = candidate;
       }
     }
   }
   return distances.every((row, index) => {
     const self = row[index];
-    return !self || !(self.weight < 0 || (self.weight === 0 && self.isStrict));
+    return !(self.weight < 0 || (self.weight === 0 && self.isStrict));
   });
 };
 
@@ -269,8 +267,6 @@ export const evaluate = (value: SymbolicValue, knowledge: Knowledge): boolean | 
   const fact = knowledge.facts.get(formatSymbolicValue(value));
   if (fact) return fact.outcome;
   switch (value.kind) {
-    case "Primitive":
-      return Boolean(value.value);
     case "Binding": {
       const values = getPlaceValues(value, knowledge);
       return values ? evaluateTruthiness(values) : null;
@@ -286,28 +282,12 @@ export const evaluate = (value: SymbolicValue, knowledge: Knowledge): boolean | 
       return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, knowledge) : null;
     }
     case "Conditional": {
-      const test = evaluate(
-        value.testKind === "nullish"
-          ? {
-              kind: "BinaryExpression",
-              operator: "!=",
-              left: value.test,
-              right: { kind: "Primitive", value: null },
-            }
-          : value.test,
-        knowledge,
-      );
+      const test = evaluate(getTestExpression(value.test, value.testKind), knowledge);
       if (test === null) return null;
       return evaluate(test ? value.consequent : value.alternate, knowledge);
     }
-    case "JsxExpression":
-    case "JsxFragment":
-    case "Function":
-    case "ObjectExpression":
-    case "ArrayExpression":
-      return true;
     default:
-      return null;
+      return getKnownTruthiness(value);
   }
 };
 
@@ -338,7 +318,7 @@ export const assume = (
   if (evaluated !== null) return evaluated === outcome ? knowledge : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return assume(value.value, !outcome, knowledge);
-  if (value.kind === "Binding" && getPlaceValues(value, knowledge)) {
+  if (value.kind === "Binding") {
     const restricted = restrictPlace(
       value,
       knowledge,
@@ -349,11 +329,7 @@ export const assume = (
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator)) {
     const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
     const [placeSide, literalSide] = splitEquality(value);
-    if (
-      literalSide.kind === "Primitive" &&
-      placeSide.kind === "Binding" &&
-      getPlaceValues(placeSide, knowledge)
-    ) {
+    if (literalSide.kind === "Primitive" && placeSide.kind === "Binding") {
       const wantsMatch = outcome !== isNegated;
       const restricted = restrictPlace(placeSide, knowledge, (candidate) =>
         isEqualToLiteral(candidate, literalSide.value, value.operator)
@@ -364,11 +340,7 @@ export const assume = (
     }
   }
   const next = cloneKnowledge(knowledge);
-  next.facts.set(formatSymbolicValue(value), {
-    test: value,
-    outcome,
-    bindingIds: collectBindingIds(value),
-  });
+  next.facts.set(formatSymbolicValue(value), { outcome, bindingIds: collectBindingIds(value) });
   const bounds = getBounds(value, outcome);
   if (bounds) {
     next.bounds.push(...bounds);
@@ -377,15 +349,19 @@ export const assume = (
   return next;
 };
 
+/**
+ * Drops every fact and bound about a binding after an update changes it. An update that
+ * keeps the array length, like `items.map(...)`, keeps what is known about `.length`.
+ */
 export const forgetBinding = (
   knowledge: Knowledge,
   bindingId: number,
   keepsLength: boolean,
 ): void => {
-  const lengthAtom = `${bindingId}.length`;
+  const lengthAtom = getLengthAtom(bindingId);
   for (const [key, fact] of knowledge.facts) {
     if (!fact.bindingIds.has(bindingId)) continue;
-    if (keepsLength && key.includes(".length")) continue;
+    if (keepsLength && key.includes(LENGTH_SUFFIX)) continue;
     knowledge.facts.delete(key);
   }
   knowledge.bounds = knowledge.bounds.filter((bound) => {
@@ -397,10 +373,6 @@ export const forgetBinding = (
     );
   });
 };
-
-export const getLengthAtom = (bindingId: number): string => `${bindingId}.length`;
-
-export const CONSTANT_BOUND_ATOM = CONSTANT_ATOM;
 
 export const dedupeValues = (values: AbstractValue[]): AbstractValue[] => [
   ...new Map(values.map((value) => [formatAbstractValue(value), value])).values(),

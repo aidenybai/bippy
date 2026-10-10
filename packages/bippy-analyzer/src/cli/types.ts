@@ -2,7 +2,7 @@ import type picocolors from "picocolors";
 
 export type View = "data" | "render" | "states" | "bailouts";
 
-export type Colors = ReturnType<typeof picocolors.createColors>;
+type Colors = ReturnType<typeof picocolors.createColors>;
 
 export interface TreeNode {
   label: string;

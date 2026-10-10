@@ -17,28 +17,18 @@ import {
   type Identifier,
   type IdentifierName,
   type Instruction,
-  InstructionKind,
   type InstructionValue,
-  type LValue,
-  type ManualMemoDependency,
   type ObjectMethod,
   type ObjectPropertyKey,
   type Pattern,
   type Phi,
   type Place,
-  type SourceLocation,
   type SpreadPattern,
   type Terminal,
-  type Type,
 } from "./hir.js";
-
-export interface Options {
-  indent: number;
-}
 
 export const printFunction = (fn: HIRFunction): string => {
   const name = fn.id !== null ? fn.id : "<<anonymous>>";
-  const nameHint = fn.nameHint !== null ? ` ${fn.nameHint}` : "";
   const params =
     fn.params.length !== 0
       ? "(" +
@@ -52,15 +42,14 @@ export const printFunction = (fn: HIRFunction): string => {
           .join(", ") +
         ")"
       : "()";
-  const definition = `${name}${nameHint}${params}: ${printPlace(fn.returns)}`;
+  const definition = `${name}${params}: ${printPlace(fn.returns)}`;
   return [definition, ...fn.directives, printHIR(fn.body)].join("\n");
 };
 
-export const printHIR = (ir: HIR, options: Options | null = null): string => {
+const printHIR = (ir: HIR): string => {
   const output: Array<string> = [];
-  const indent = " ".repeat(options?.indent ?? 0);
-  const push = (text: string, indent: string = "  "): void => {
-    output.push(`${indent}${text}`);
+  const push = (text: string): void => {
+    output.push(`  ${text}`);
   };
   for (const [blockId, block] of ir.blocks) {
     output.push(`bb${blockId} (${block.kind}):`);
@@ -84,53 +73,15 @@ export const printHIR = (ir: HIR, options: Options | null = null): string => {
       push(terminal);
     }
   }
-  return output.map((line) => indent + line).join("\n");
+  return output.join("\n");
 };
 
-export const printMixedHIR = (value: Instruction | InstructionValue | Terminal): string => {
-  if (!("kind" in value)) {
-    return printInstruction(value);
-  }
-  switch (value.kind) {
-    case "try":
-    case "maybe-throw":
-    case "sequence":
-    case "label":
-    case "optional":
-    case "branch":
-    case "if":
-    case "logical":
-    case "ternary":
-    case "return":
-    case "switch":
-    case "throw":
-    case "while":
-    case "for":
-    case "unreachable":
-    case "unsupported":
-    case "goto":
-    case "do-while":
-    case "for-in":
-    case "for-of": {
-      const terminal = printTerminal(value);
-      if (Array.isArray(terminal)) {
-        return terminal.join("; ");
-      }
-      return terminal;
-    }
-    default: {
-      return printInstructionValue(value);
-    }
-  }
-};
-
-export const printInstruction = (instr: Instruction): string =>
+const printInstruction = (instr: Instruction): string =>
   `[${instr.id}] ${printPlace(instr.lvalue)} = ${printInstructionValue(instr.value)}`;
 
-export const printPhi = (phi: Phi): string => {
+const printPhi = (phi: Phi): string => {
   const items = [];
   items.push(printPlace(phi.place));
-  items.push(printType(phi.place.identifier.type));
   items.push(": phi(");
   const phis = [];
   for (const [blockId, place] of phi.operands) {
@@ -142,7 +93,7 @@ export const printPhi = (phi: Phi): string => {
   return items.join("");
 };
 
-export const printTerminal = (terminal: Terminal): Array<string> | string => {
+const printTerminal = (terminal: Terminal): Array<string> | string => {
   switch (terminal.kind) {
     case "if": {
       return `[${terminal.id}] If (${printPlace(terminal.test)}) then:bb${
@@ -258,7 +209,7 @@ const printObjectPropertyKey = (key: ObjectPropertyKey): string => {
   }
 };
 
-export const printInstructionValue = (instrValue: InstructionValue): string => {
+const printInstructionValue = (instrValue: InstructionValue): string => {
   switch (instrValue.kind) {
     case "ArrayExpression": {
       return `Array [${instrValue.elements
@@ -316,7 +267,7 @@ export const printInstructionValue = (instrValue: InstructionValue): string => {
       return JSON.stringify(instrValue.value);
     }
     case "TypeCastExpression": {
-      return `TypeCast ${printPlace(instrValue.value)}: ${printType(instrValue.type)}`;
+      return `TypeCast ${printPlace(instrValue.value)}`;
     }
     case "JsxExpression": {
       const propItems = [];
@@ -478,55 +429,13 @@ export const printInstructionValue = (instrValue: InstructionValue): string => {
         instrValue.operation
       } ${printPlace(instrValue.value)}`;
     }
-    case "StartMemoize": {
-      return `StartMemoize deps=${
-        instrValue.deps?.map((dep) => printManualMemoDependency(dep, false)) ?? "(none)"
-      }`;
-    }
-    case "FinishMemoize": {
-      return `FinishMemoize decl=${printPlace(instrValue.decl)}${instrValue.pruned ? " pruned" : ""}`;
-    }
     default: {
       return assertExhaustive(instrValue, `Unexpected instruction kind`);
     }
   }
 };
 
-export const printLValue = (lval: LValue): string => {
-  const lvalue = `${printPlace(lval.place)}`;
-
-  switch (lval.kind) {
-    case InstructionKind.Let: {
-      return `Let ${lvalue}`;
-    }
-    case InstructionKind.Const: {
-      return `Const ${lvalue}$`;
-    }
-    case InstructionKind.Reassign: {
-      return `Reassign ${lvalue}`;
-    }
-    case InstructionKind.Catch: {
-      return `Catch ${lvalue}`;
-    }
-    case InstructionKind.HoistedConst: {
-      return `HoistedConst ${lvalue}$`;
-    }
-    case InstructionKind.HoistedLet: {
-      return `HoistedLet ${lvalue}$`;
-    }
-    case InstructionKind.Function: {
-      return `Function ${lvalue}$`;
-    }
-    case InstructionKind.HoistedFunction: {
-      return `HoistedFunction ${lvalue}$`;
-    }
-    default: {
-      return assertExhaustive(lval.kind, `Unexpected lvalue kind \`${lval.kind}\``);
-    }
-  }
-};
-
-export const printPattern = (pattern: Pattern | Place | SpreadPattern): string => {
+const printPattern = (pattern: Pattern | Place | SpreadPattern): string => {
   switch (pattern.kind) {
     case "ArrayPattern": {
       return (
@@ -575,58 +484,15 @@ export const printPattern = (pattern: Pattern | Place | SpreadPattern): string =
   }
 };
 
-export const printPlace = (place: Place): string =>
-  `${printIdentifier(place.identifier)}${printType(place.identifier.type)}`;
+const printPlace = (place: Place): string => printIdentifier(place.identifier);
 
-export const printIdentifier = (id: Identifier): string => `${printName(id.name)}$${id.id}`;
+const printIdentifier = (id: Identifier): string => `${printName(id.name)}$${id.id}`;
 
 const printName = (name: IdentifierName | null): string => {
   if (name === null) {
     return "";
   }
   return name.value;
-};
-
-export const printManualMemoDependency = (val: ManualMemoDependency, nameOnly: boolean): string => {
-  const getRootStr = (): string => {
-    if (val.root.kind === "Global") {
-      return val.root.identifierName;
-    }
-    const name = val.root.value.identifier.name;
-    CompilerError.invariant(name?.kind === "named", {
-      reason: "DepsValidation: expected named local variable in depslist",
-      loc: val.root.value.loc,
-    });
-    return nameOnly ? name.value : printIdentifier(val.root.value.identifier);
-  };
-  return `${getRootStr()}${val.path
-    .map((entry) => `${entry.optional ? "?." : "."}${entry.property}`)
-    .join("")}`;
-};
-export const printType = (type: Type): string => {
-  if (type.kind === "Type") return "";
-  // TODO(mofeiZ): add debugName for generated ids
-  if (type.kind === "Object" && type.shapeId !== null) {
-    return `:T${type.kind}<${type.shapeId}>`;
-  } else if (type.kind === "Function" && type.shapeId !== null) {
-    const returnType = printType(type.return);
-    return `:T${type.kind}<${type.shapeId}>()${returnType !== "" ? `:  ${returnType}` : ""}`;
-  }
-  return `:T${type.kind}`;
-};
-
-export const printSourceLocation = (loc: SourceLocation): string => {
-  if (typeof loc === "symbol") {
-    return "generated";
-  }
-  return `${loc.line}:${loc.column}:${loc.start}:${loc.end}`;
-};
-
-export const printSourceLocationLine = (loc: SourceLocation): string => {
-  if (typeof loc === "symbol") {
-    return "generated";
-  }
-  return `${loc.line}`;
 };
 
 const getFunctionName = (

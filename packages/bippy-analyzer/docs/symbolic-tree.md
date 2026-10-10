@@ -37,36 +37,36 @@ Render tree symbols:
 
 The pipeline is a port of the React Compiler's front end, followed by our own passes. The code lives in `src/core`:
 
-| Folder           | Contents                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| `hir`            | The compiler's HIR: blocks, instructions, terminals and places, lowered from the TS 7 AST |
-| `ssa`            | `enterSSA` and `eliminateRedundantPhi`                                                    |
-| `optimization`   | Constant propagation and dead code elimination                                            |
-| `type-inference` | `inferTypes`, with the compiler's hook table                                              |
-| `entrypoint`     | Finding components, running the passes, and analyzing a project                           |
-| `inference`      | Our passes: symbolic evaluation, transitions, value domains and state enumeration         |
+| Folder         | Contents                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `hir`          | The compiler's HIR: blocks, instructions, terminals and places, lowered from the TS 7 AST |
+| `ssa`          | `enterSSA` and `eliminateRedundantPhi`                                                    |
+| `optimization` | Constant propagation and dead code elimination                                            |
+| `entrypoint`   | Finding components, running the passes, and analyzing a project                           |
+| `inference`    | Our passes: symbolic evaluation, transitions, value domains and state enumeration         |
 
 Each ported file names the compiler source it came from.
 
 1. Loads the project with `typescript/unstable/sync` (TypeScript 7).
 2. Finds components using the React Compiler's rules: a capitalized function that returns JSX or calls a hook, or one wrapped in `memo` or `forwardRef`.
-3. Lowers each component to HIR and runs the compiler passes on it. A function the compiler can't lower becomes a `compiler-error` bailout.
-4. Evaluates the HIR symbolically. Each value becomes an expression over bindings:
+3. Lowers each component to HIR and runs the compiler passes on it. A function the compiler can't lower becomes a `compiler-error` bailout. The compiler's own type inference isn't ported, because the TypeScript checker knows more.
+4. Finds hook calls with the checker, which follows aliases and re-exports to React's declarations. Without React types it reads the import, and any other `use*` call is a custom hook.
+5. Evaluates the HIR symbolically. Each value becomes an expression over bindings:
    - props, typed from the parameter
    - `useState`, `useReducer` and `useContext`
    - other hooks, typed from their return type
    - `.map` items
-5. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??` and `switch` all produce one.
-6. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types.
-7. Collects transitions from event handlers and effects:
+6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??` and `switch` all produce one.
+7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types.
+8. Collects transitions from event handlers and effects:
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
-8. Lists the states:
+9. Lists the states:
    - It splits only on decisions in the render output, and narrows each value as it goes.
    - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`.
    - State values are limited to the initial value plus every value a transition can set.
-9. For each state and transition, finds which states can come next. It also reports branches that can never render.
+10. For each state and transition, finds which states can come next. It also reports branches that can never render.
 
 To see the HIR for a component, run `pnpm tsx src/cli/hir.ts <tsconfig> -c <name>`.
 

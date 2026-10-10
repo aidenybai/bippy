@@ -1,4 +1,4 @@
-import type { HookKind } from "../hir/object-shape.js";
+import type { HookKind } from "./hook-kind.js";
 import type { InstructionId, SourceLocation } from "../hir/hir.js";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
@@ -15,7 +15,13 @@ export type AbstractValue =
 
 export type Truthiness = "truthy" | "falsy" | "either";
 
-export type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved";
+/**
+ * How a decision reads its test: `truthy` branches on the value itself, `nullish` on
+ * whether it is `!= null`.
+ */
+export type TestKind = "truthy" | "nullish";
+
+type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved";
 
 /**
  * Every value a binding or one of its fields can hold, read from its TypeScript type.
@@ -58,7 +64,7 @@ export interface Binding {
  */
 export interface Decision {
   terminalId: InstructionId;
-  probe: "truthy" | "nullish" | "none";
+  probe: TestKind | "none";
   loc: SourceLocation;
 }
 
@@ -76,7 +82,7 @@ export interface JsxSpreadProp {
 
 export type JsxTag = { kind: "BuiltinTag"; name: string } | { kind: "Component"; name: string };
 
-export interface SymbolicObjectProperty {
+interface SymbolicObjectProperty {
   key: string;
   value: SymbolicValue;
 }
@@ -94,7 +100,7 @@ export type SymbolicValue =
   | {
       kind: "Conditional";
       test: SymbolicValue;
-      testKind: "truthy" | "nullish";
+      testKind: TestKind;
       consequent: SymbolicValue;
       alternate: SymbolicValue;
       decision: Decision;
@@ -127,6 +133,16 @@ export type BinaryExpressionValue = Extract<SymbolicValue, { kind: "BinaryExpres
 
 export type BindingValue = Extract<SymbolicValue, { kind: "Binding" }>;
 
+export type PrimitiveSymbolicValue = Extract<SymbolicValue, { kind: "Primitive" }>;
+
+export type FunctionValue = Extract<SymbolicValue, { kind: "Function" }>;
+
+export type SetterValue = Extract<SymbolicValue, { kind: "Setter" }>;
+
+export type DispatchValue = Extract<SymbolicValue, { kind: "Dispatch" }>;
+
+export type HookResultValue = Extract<SymbolicValue, { kind: "HookResult" }>;
+
 export interface StateUpdate {
   binding: Binding;
   value: SymbolicValue;
@@ -149,7 +165,7 @@ export interface Transition {
   loc: SourceLocation;
 }
 
-export type BailoutReason =
+type BailoutReason =
   | "compiler-error"
   | "loop"
   | "unknown-call"

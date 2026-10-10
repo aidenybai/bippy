@@ -5,12 +5,13 @@ import type { ScopeManager } from "../hir/scope.js";
 import { DomainResolver } from "../inference/infer-domains.js";
 import { inferTransitions } from "../inference/infer-transitions.js";
 import { SymbolicEvaluator } from "../inference/symbolic-evaluator.js";
+import type { ModuleFunctionLoader } from "../inference/symbolic-evaluator.js";
 import type { Bailout, ComponentAnalysis } from "../inference/types.js";
 import { runPipeline } from "./pipeline.js";
 import { findModuleFunction } from "./program.js";
 import type { ReactFunction } from "./program.js";
 
-export interface FileContext {
+interface FileContext {
   sourceFile: SourceFile;
   checker: Checker;
   scopes: ScopeManager;
@@ -18,14 +19,12 @@ export interface FileContext {
   displayNames: Map<string, string>;
 }
 
-const createModuleFunctionLoader = (
-  context: FileContext,
-): ((name: string) => HIRFunction | null) => {
+const createModuleFunctionLoader = (context: FileContext): ModuleFunctionLoader => {
   const loaded = new Map<string, HIRFunction | null>();
   return (name) => {
     if (!loaded.has(name)) {
       const node = findModuleFunction(context.sourceFile, name);
-      const result = node ? runPipeline({ name, node, fnType: "Other" }, context) : null;
+      const result = node ? runPipeline({ name, node, fnType: "Other" }, context.scopes) : null;
       loaded.set(name, result?.isOk() ? result.unwrap() : null);
     }
     return loaded.get(name) ?? null;
@@ -47,7 +46,7 @@ export const analyzeComponent = (
     displayName: displayNames.get(reactFunction.name) ?? null,
     file: sourceFile.fileName,
   };
-  const result = runPipeline(reactFunction, context);
+  const result = runPipeline(reactFunction, context.scopes);
   if (result.isErr()) {
     const error = result.unwrapErr();
     const loc = {
@@ -81,7 +80,7 @@ export const analyzeComponent = (
   );
   const render = evaluator.evaluateComponent(hir);
   const transitions = inferTransitions(render, evaluator, sourceFile);
-  const bindings = evaluator.bindings;
+  const { bindings } = evaluator;
   return {
     ...base,
     loc: hir.loc,

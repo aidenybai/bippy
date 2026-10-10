@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { join, relative } from "node:path";
 import MagicString from "magic-string";
 import { createServer } from "vite";
-import type { Plugin, ViteDevServer } from "vite";
+import type { Plugin } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import type { ProbeMode } from "./types.js";
 
@@ -15,7 +15,7 @@ export interface Probe {
   mode: ProbeMode;
 }
 
-export interface Harness {
+interface Harness {
   url: string;
   getModuleUrl: (file: string) => string;
   close: () => Promise<void>;
@@ -24,7 +24,7 @@ export interface Harness {
 interface ProviderSpec {
   packageName: string;
   imports: string;
-  wrap: string;
+  wrap: (children: string) => string;
 }
 
 const HARNESS_PATH = "/__bippy_verify";
@@ -34,22 +34,23 @@ const PROVIDER_SPECS: ProviderSpec[] = [
   {
     packageName: "@tanstack/react-query",
     imports: 'import { QueryClient, QueryClientProvider } from "@tanstack/react-query";',
-    wrap: "createElement(QueryClientProvider, { client: useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))[0] }, children)",
+    wrap: (children) =>
+      `createElement(QueryClientProvider, { client: useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))[0] }, ${children})`,
   },
   {
     packageName: "react-router",
     imports: 'import { MemoryRouter } from "react-router";',
-    wrap: "createElement(MemoryRouter, null, children)",
+    wrap: (children) => `createElement(MemoryRouter, null, ${children})`,
   },
   {
     packageName: "react-router-dom",
     imports: 'import { MemoryRouter } from "react-router-dom";',
-    wrap: "createElement(MemoryRouter, null, children)",
+    wrap: (children) => `createElement(MemoryRouter, null, ${children})`,
   },
   {
     packageName: "react-hook-form",
     imports: 'import { FormProvider, useForm } from "react-hook-form";',
-    wrap: "createElement(FormProvider, useForm(), children)",
+    wrap: (children) => `createElement(FormProvider, useForm(), ${children})`,
   },
 ];
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
@@ -97,7 +98,7 @@ const getInstalledProviders = (appDirectory: string): ProviderSpec[] => {
 
 const createProvidersSource = (providers: ProviderSpec[]): string => {
   const wrapped = providers.reduceRight(
-    (children, provider) => provider.wrap.replaceAll("children", children),
+    (children, provider) => provider.wrap(children),
     "children",
   );
   return [
@@ -142,7 +143,7 @@ export const startHarness = async (
   componentFiles: string[],
 ): Promise<Harness> => {
   const providers = getInstalledProviders(appDirectory);
-  const server: ViteDevServer = await createServer({
+  const server = await createServer({
     configFile: false,
     root: appDirectory,
     logLevel: "error",

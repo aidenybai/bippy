@@ -38,13 +38,11 @@ const countBailouts = (reasons: string[]): string[] => {
 const run = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
-  const projectAnalysis = analyzeProject(configPath, options.file ?? null);
-  const { fileCount } = projectAnalysis;
-  const components = options.component
-    ? projectAnalysis.components.filter(({ analysis }) =>
-        options.component?.includes(analysis.name),
-      )
-    : projectAnalysis.components;
+  const { components: allComponents, fileCount } = analyzeProject(configPath, options.file ?? null);
+  const componentNames = options.component;
+  const components = componentNames
+    ? allComponents.filter(({ analysis }) => componentNames.includes(analysis.name))
+    : allComponents;
 
   if (options.json) {
     console.log(serializeProjectAnalysis({ components, fileCount }));

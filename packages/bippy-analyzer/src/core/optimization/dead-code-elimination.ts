@@ -342,15 +342,6 @@ const pruneableValue = (value: InstructionValue, state: State): boolean => {
     case "StoreContext": {
       return false;
     }
-    case "StartMemoize":
-    case "FinishMemoize": {
-      /**
-       * This instruction is used by the @enablePreserveExistingMemoizationGuarantees feature
-       * to preserve information about memoization semantics in the original code. We can't
-       * DCE without losing the memoization guarantees.
-       */
-      return false;
-    }
     case "RegExpLiteral":
     case "MetaProperty":
     case "LoadGlobal":
@@ -378,11 +369,11 @@ const pruneableValue = (value: InstructionValue, state: State): boolean => {
   }
 };
 
-export const hasBackEdge = (fn: HIRFunction): boolean => {
+const hasBackEdge = (fn: HIRFunction): boolean => {
   return findBlocksWithBackEdges(fn).size > 0;
 };
 
-export const findBlocksWithBackEdges = (fn: HIRFunction): Set<BlockId> => {
+const findBlocksWithBackEdges = (fn: HIRFunction): Set<BlockId> => {
   const visited = new Set<BlockId>();
   const blocks = new Set<BlockId>();
   for (const [blockId, block] of fn.body.blocks) {

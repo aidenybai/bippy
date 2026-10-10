@@ -1,7 +1,7 @@
 import type { SymbolicValue } from "../../src/core/inference/types.js";
 import type { Shape } from "./types.js";
 
-export type ExpectedShape =
+type ExpectedShape =
   | { kind: "element"; tag: string; children: ExpectedShape[] }
   | { kind: "component"; name: string; isKnown: boolean }
   | { kind: "text"; text: string }
@@ -14,7 +14,7 @@ const WRAPPER_NAME_PATTERN = /^(?:Memo|ForwardRef|Lazy)\((.*)\)$/;
 const MAX_MATCH_STEPS = 200_000;
 const GENERIC_COMPONENT_NAMES = new Set(["Anonymous", "ForwardRef", "Memo", "Lazy"]);
 
-const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
+export const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
 
 const normalizeName = (name: string): string => {
   const unwrapped = WRAPPER_NAME_PATTERN.exec(name)?.[1] ?? name;

@@ -1,7 +1,11 @@
 import { relative } from "node:path";
+import { GeneratedSource } from "../core/hir/hir.js";
+import type { SourceLocation } from "../core/hir/hir.js";
 import type {
+  AbstractValue,
   AnalyzedComponent,
   Binding,
+  ConditionalValue,
   Domain,
   JsxExpressionValue,
   StateUpdate,
@@ -9,10 +13,13 @@ import type {
   Transition,
 } from "../core/inference/types.js";
 import {
+  forEachJsxElement,
   formatAbstractValue,
   formatPlace,
   formatSymbolicValue,
   getPlaceKey,
+  isRenderingNothing,
+  isRenderingNothingWhenFalse,
 } from "../core/inference/values.js";
 import { createTreeNode, renderAsciiTree } from "./ascii-tree.js";
 import { MAX_LABEL_WIDTH } from "./constants.js";
@@ -26,13 +33,14 @@ const INTEGER_PATTERN = /^-?\d+$/;
 const truncate = (text: string, width = MAX_LABEL_WIDTH): string =>
   text.length > width ? `${text.slice(0, width - 1)}…` : text;
 
+const formatLine = (loc: SourceLocation): string => (loc === GeneratedSource ? "" : `L${loc.line}`);
+
+const formatCases = (cases: AbstractValue[]): string => cases.map(formatAbstractValue).join(" | ");
+
 const formatDomain = (domain: Domain): string => {
   switch (domain.kind) {
     case "Cases":
-      return (
-        domain.cases.map(formatAbstractValue).join(" | ") +
-        (domain.origin === "call-sites" ? "  (call sites)" : "")
-      );
+      return formatCases(domain.cases) + (domain.origin === "call-sites" ? "  (call sites)" : "");
     case "Opaque":
       return domain.typeText;
     case "Unknown":
@@ -70,13 +78,6 @@ const getNumericInvariant = (binding: Binding, updates: StateUpdate[]): string |
     ? `integer ≥ ${initialValue}`
     : null;
 };
-
-const isRenderingNothing = (value: SymbolicValue): boolean =>
-  value.kind === "Primitive" &&
-  (value.value === null ||
-    value.value === undefined ||
-    value.value === false ||
-    value.value === true);
 
 const formatAttributes = (
   node: JsxExpressionValue,
@@ -126,7 +127,7 @@ const formatLeaf = (value: SymbolicValue, options: PrintOptions): string | null 
   }
 };
 
-const getConditionLabel = (value: Extract<SymbolicValue, { kind: "Conditional" }>): string =>
+const getConditionLabel = (value: ConditionalValue): string =>
   value.testKind === "nullish"
     ? `${formatSymbolicValue(value.test)} != null`
     : formatSymbolicValue(value.test);
@@ -194,12 +195,8 @@ const buildRenderNode = (
       ]);
     case "Conditional": {
       const arms = [buildRenderNode(value.consequent, context, depth + 1, colors.dim("✓ "))];
-      if (
-        !isRenderingNothing(value.alternate) &&
-        formatSymbolicValue(value.alternate) !== formatSymbolicValue(value.test)
-      ) {
+      if (!isRenderingNothingWhenFalse(value))
         arms.push(buildRenderNode(value.alternate, context, depth + 1, colors.dim("✗ ")));
-      }
       return createTreeNode(truncate(`${prefix}◆ ${getConditionLabel(value)}`), arms);
     }
     default:
@@ -245,36 +242,20 @@ const getTextContent = (value: SymbolicValue): string => {
   }
 };
 
-const collectTriggers = (value: SymbolicValue, triggers: Map<string, string>): void => {
-  switch (value.kind) {
-    case "JsxExpression":
-      for (const prop of value.props) {
-        if (prop.kind !== "JsxAttribute" || !prop.transitionId || triggers.has(prop.transitionId))
-          continue;
-        const text = getTextContent(value);
-        triggers.set(
-          prop.transitionId,
-          text
-            ? JSON.stringify(truncate(text, MAX_TRIGGER_TEXT_WIDTH))
-            : `<${value.tag.name}> ${prop.name}`,
-        );
-      }
-      for (const child of value.children) collectTriggers(child, triggers);
-      return;
-    case "JsxFragment":
-      for (const child of value.children) collectTriggers(child, triggers);
-      return;
-    case "Conditional":
-      collectTriggers(value.consequent, triggers);
-      collectTriggers(value.alternate, triggers);
-      return;
-    case "ArrayMap":
-      collectTriggers(value.item, triggers);
-      return;
-    default:
-      return;
-  }
-};
+const collectTriggers = (render: SymbolicValue, triggers: Map<string, string>): void =>
+  forEachJsxElement(render, (element) => {
+    for (const prop of element.props) {
+      if (prop.kind !== "JsxAttribute" || !prop.transitionId || triggers.has(prop.transitionId))
+        continue;
+      const text = getTextContent(element);
+      triggers.set(
+        prop.transitionId,
+        text
+          ? JSON.stringify(truncate(text, MAX_TRIGGER_TEXT_WIDTH))
+          : `<${element.tag.name}> ${prop.name}`,
+      );
+    }
+  });
 
 const getEffectLabel = (transition: Transition): string => {
   const { trigger } = transition;
@@ -303,7 +284,7 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
         binding.domain.kind === "Cases" &&
         reachable.length < binding.domain.cases.length
       ) {
-        details.push(colors.dim(`reachable ${reachable.map(formatAbstractValue).join(" | ")}`));
+        details.push(colors.dim(`reachable ${formatCases(reachable)}`));
       }
       const invariant = getNumericInvariant(
         binding,
@@ -316,9 +297,7 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
         .map(([placeKey, values]) => {
           const domain = analysis.placeDomains.get(placeKey);
           const isNarrowed = domain?.kind === "Cases" && values.length < domain.cases.length;
-          const narrowed = isNarrowed
-            ? ` ${colors.dim(`reachable ${values.map(formatAbstractValue).join(" | ")}`)}`
-            : "";
+          const narrowed = isNarrowed ? ` ${colors.dim(`reachable ${formatCases(values)}`)}` : "";
           return createTreeNode(
             truncate(
               `.${placeKey.slice(prefix.length)} ${domain ? formatDomain(domain) : ""}${narrowed}`,
@@ -372,9 +351,8 @@ const buildStates = (component: AnalyzedComponent, context: ComponentPrintContex
       createTreeNode(
         colors.red("dead branches"),
         report.deadBranches.map((deadBranch) => {
-          const { loc } = deadBranch.decision;
           return createTreeNode(
-            `${colors.red(deadBranch.description)} ${colors.dim(typeof loc === "symbol" ? "" : `L${loc.line}`)}`,
+            `${colors.red(deadBranch.description)} ${colors.dim(formatLine(deadBranch.decision.loc))}`,
           );
         }),
       ),
@@ -392,7 +370,7 @@ const buildBailouts = (component: AnalyzedComponent, options: PrintOptions): Tre
     component.analysis.bailouts.map((bailout) =>
       createTreeNode(
         truncate(
-          `${options.colors.red(bailout.reason)} ${typeof bailout.loc === "symbol" ? "" : `L${bailout.loc.line}`} ${options.colors.dim(bailout.message)}`,
+          `${options.colors.red(bailout.reason)} ${formatLine(bailout.loc)} ${options.colors.dim(bailout.message)}`,
         ),
       ),
     ),
@@ -434,7 +412,7 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   if (views.has("states")) sections.push(buildStates(component, context));
   if (views.has("bailouts") && analysis.bailouts.length > 0)
     sections.push(buildBailouts(component, context));
-  const line = typeof analysis.loc === "symbol" ? "" : `:${analysis.loc.line}`;
+  const line = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.line}`;
   const location = `${relative(context.rootDirectory, analysis.file)}${line}`;
   return renderAsciiTree(
     createTreeNode(`${colors.bold(analysis.name)} ${colors.dim(location)}`, sections),
