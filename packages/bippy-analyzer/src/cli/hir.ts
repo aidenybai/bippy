@@ -25,7 +25,7 @@ const run = (tsconfig: string, options: HirCliOptions): void =>
       const scopes = new ScopeManager(sourceFile);
       for (const reactFunction of findReactFunctions(sourceFile)) {
         if (options.component && !options.component.includes(reactFunction.name)) continue;
-        const result = runPipeline(reactFunction, scopes);
+        const result = runPipeline(reactFunction, { sourceFile, checker: project.checker, scopes });
         console.log(`// ${reactFunction.fnType} ${reactFunction.name}`);
         console.log(result.isOk() ? printFunction(result.unwrap()) : result.unwrapErr().toString());
         console.log();

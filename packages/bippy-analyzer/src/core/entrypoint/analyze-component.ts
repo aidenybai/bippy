@@ -24,7 +24,7 @@ const createModuleFunctionLoader = (context: FileContext): ModuleFunctionLoader 
   return (name) => {
     if (!loaded.has(name)) {
       const node = findModuleFunction(context.sourceFile, name);
-      const result = node ? runPipeline({ name, node, fnType: "Other" }, context.scopes) : null;
+      const result = node ? runPipeline({ name, node, fnType: "Other" }, context) : null;
       loaded.set(name, result?.isOk() ? result.unwrap() : null);
     }
     return loaded.get(name) ?? null;
@@ -46,7 +46,7 @@ export const analyzeComponent = (
     displayName: displayNames.get(reactFunction.name) ?? null,
     file: sourceFile.fileName,
   };
-  const result = runPipeline(reactFunction, context.scopes);
+  const result = runPipeline(reactFunction, context);
   if (result.isErr()) {
     const error = result.unwrapErr();
     const loc = {
@@ -71,6 +71,7 @@ export const analyzeComponent = (
           loc,
         },
       ],
+      warnings: [],
     };
   }
   const hir = result.unwrap();
@@ -97,5 +98,6 @@ export const analyzeComponent = (
           : [],
       ),
     ],
+    warnings: evaluator.warnings,
   };
 };

@@ -1,6 +1,7 @@
-import type { Node, SourceFile } from "typescript/unstable/ast";
+import type { SourceFile } from "typescript/unstable/ast";
+import { findNodeAtLocation } from "../typescript/nodes.js";
 import * as t from "typescript/unstable/ast/is";
-import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
+import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../hir/hir.js";
 import { GeneratedSource } from "../hir/hir.js";
@@ -9,27 +10,8 @@ import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue, Sample }
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
-const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react[\\/]/;
 const RENDERABLE_TYPE_PATTERN = /ReactNode|ReactElement|JSX\.Element|ReactChild|ReactPortal/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
-
-/**
- * Finds the TypeScript node a HIR location was lowered from: the innermost node whose
- * range is exactly `[start, end)`.
- */
-const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null => {
-  if (loc === GeneratedSource) return null;
-  let match: Node | null = null;
-  const visit = (node: Node): void => {
-    const start = node.getStart(sourceFile);
-    const end = node.getEnd();
-    if (start > loc.start || end < loc.end) return;
-    if (start === loc.start && end === loc.end) match = node;
-    node.forEachChild(visit);
-  };
-  sourceFile.forEachChild(visit);
-  return match;
-};
 
 const getPrimitiveTypeName = (type: Type): PrimitiveTypeName | null => {
   if (type.flags & TypeFlags.StringLike) return "string";
@@ -147,11 +129,6 @@ export const getSampleOfValue = (value: PrimitiveValue): Sample =>
  * Looks up domains and samples for HIR locations through the type checker, caching by
  * location so each node is asked about once.
  */
-export interface CalleeName {
-  name: string;
-  reactExportName: string | null;
-}
-
 export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
@@ -190,35 +167,21 @@ export class DomainResolver {
   }
 
   /**
+   * Gives the callee's source text for a call, like `checkAccess` for
+   * `checkAccess({ allowedRoles })`.
+   */
+  getCalleeText(loc: SourceLocation): string | null {
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    return node && t.isCallExpression(node) ? node.expression.getText(this.#sourceFile) : null;
+  }
+
+  /**
    * Whether the source at this location is an expression a probe can wrap. Tests the
    * compiler generates, like the `=== undefined` check of a destructuring default, are not.
    */
   isExpression(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node !== null && t.isExpression(node);
-  }
-
-  /**
-   * Gives the name a callee is called by and, when the checker resolves it to a React
-   * export, the name React exports it under.
-   */
-  getCalleeName(loc: SourceLocation): CalleeName | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
-    const nameNode = node && t.isPropertyAccessExpression(node) ? node.name : node;
-    if (!nameNode || !t.isIdentifier(nameNode)) return null;
-    return { name: nameNode.text, reactExportName: this.#getReactExportName(nameNode) };
-  }
-
-  #getReactExportName(node: Node): string | null {
-    const symbol = this.#checker.getSymbolAtLocation(node);
-    if (!symbol) return null;
-    const target =
-      symbol.flags & SymbolFlags.Alias ? this.#checker.getAliasedSymbol(symbol) : symbol;
-    return target.declarations.some((declaration) =>
-      REACT_DECLARATION_PATTERN.test(declaration.path),
-    )
-      ? target.name
-      : null;
   }
 
   getTypeText(loc: SourceLocation): string | null {
