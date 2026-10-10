@@ -759,6 +759,8 @@ export class SymbolicEvaluator {
       case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
       case "Debugger":
+      case "StartMemoize":
+      case "FinishMemoize":
         return UNDEFINED_VALUE;
       default:
         return assertExhaustive(value, "Unhandled instruction value");

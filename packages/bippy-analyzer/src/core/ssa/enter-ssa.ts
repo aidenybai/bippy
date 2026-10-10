@@ -15,6 +15,7 @@ import {
   type HIRFunction,
   type Identifier,
   type IdentifierId,
+  makeType,
   type Phi,
   type Place,
 } from "../hir/hir.js";
@@ -81,6 +82,7 @@ class SSABuilder {
       id: this.nextSsaId,
       declarationId: oldId.declarationId,
       name: oldId.name,
+      type: makeType(),
       loc: oldId.loc,
     };
   }
@@ -112,6 +114,7 @@ class SSABuilder {
         reason: `[hoisting] EnterSSA: Expected identifier to be defined before being used`,
         description: `Identifier ${printIdentifierId(oldId)} is undefined`,
         loc: oldPlace.loc,
+        suggestions: null,
       });
     }
 
@@ -147,7 +150,14 @@ class SSABuilder {
     }
 
     if (block.preds.size === 0) {
-      // We're at the entry block and haven't found our defintion yet: assume it's a global.
+      /*
+       * We're at the entry block and haven't found our defintion yet.
+       * console.log(
+       *   `Unable to find "${printPlace(
+       *     oldPlace
+       *   )}" in bb${blockId}, assuming it's a global`
+       * );
+       */
       this.#unknown.add(oldPlace.identifier);
       return oldPlace.identifier;
     }
@@ -215,6 +225,27 @@ class SSABuilder {
       defs: new Map(),
       incompletePhis: [],
     });
+  }
+
+  print(): void {
+    const text: Array<string> = [];
+    for (const [block, state] of this.#states) {
+      text.push(`bb${block.id}:`);
+      for (const [oldId, newId] of state.defs) {
+        text.push(`  \$${printIdentifierId(oldId)}: \$${printIdentifierId(newId)}`);
+      }
+
+      for (const incompletePhi of state.incompletePhis) {
+        text.push(
+          `  iphi \$${printIdentifierId(
+            incompletePhi.newPlace.identifier,
+          )} = \$${printIdentifierId(incompletePhi.oldPlace.identifier)}`,
+        );
+      }
+    }
+
+    text.push(`current block: bb${this.#current?.id}`);
+    console.log(text.join("\n"));
   }
 }
 
