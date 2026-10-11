@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/usememos/memos",
+  "revision": "d77516028364efc90f5df5faf671965cb07ad5ea",
+  "workingDirectory": "web",
+  "tsconfig": "tsconfig.json",
+  "install": "cd web && npx --yes pnpm@11.0.1 install --frozen-lockfile --ignore-scripts"
+}
