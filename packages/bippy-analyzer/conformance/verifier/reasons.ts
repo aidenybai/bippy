@@ -7,6 +7,7 @@ export type MountFailure =
   | "missing-data"
   | "navigation"
   | "did-not-render"
+  | "too-large"
   | "other";
 
 interface MountFailurePattern {
@@ -46,6 +47,7 @@ const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   },
   { failure: "navigation", pattern: /Execution context was destroyed/ },
   { failure: "did-not-render", pattern: /did not render/ },
+  { failure: "too-large", pattern: /rendered more than \d+ fibers/ },
 ];
 
 export const classifyMountError = (message: string): MountFailure =>

@@ -57,6 +57,7 @@ interface TrackedState {
 const ANONYMOUS_NAME = "Anonymous";
 const WRAPPER_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
+const MAX_CAPTURED_FIBERS = 10_000;
 const MAX_SETTLE_MS = 3000;
 const MAX_PLAIN_DEPTH = 4;
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
@@ -176,7 +177,7 @@ instrument({
     const fiber = findMountedFiber();
     if (fiber && fiber !== lastCommittedFiber && didFiberRender(fiber)) renderCount++;
     lastCommittedFiber = fiber;
-    if (fiber && firstCommitShapes === null)
+    if (fiber && firstCommitShapes === null && !isTooLarge(fiber))
       firstCommitShapes = getChildren(fiber).flatMap(toShapes);
     if (fiber) trackStates(fiber);
   },
@@ -242,11 +243,33 @@ const getChildren = (fiber: Fiber): Fiber[] => {
   return children;
 };
 
-const findMountedFiber = (): Fiber | null =>
-  traverseFiber(
+/**
+ * The fiber that renders the mounted component's output. `memo(forwardRef(...))` mounts as
+ * a memo fiber around a forward ref fiber, and the inner one holds its hooks and children.
+ */
+const findMountedFiber = (): Fiber | null => {
+  let fiber = traverseFiber(
     latestRoot?.current ?? null,
-    (fiber) => fiber.elementType === mountedType || fiber.type === mountedType,
+    (candidate) => candidate.elementType === mountedType || candidate.type === mountedType,
   );
+  while (fiber?.child && fiber.child.elementType === Reflect.get(Object(fiber.type), "type"))
+    fiber = fiber.child;
+  return fiber;
+};
+
+/**
+ * Whether a render has more fibers than a comparison can handle, like a subtree repeated
+ * at every level, which doubles with each.
+ */
+const isTooLarge = (fiber: Fiber): boolean => {
+  let count = 0;
+  const pending = [...getChildren(fiber)];
+  for (let current = pending.pop(); current; current = pending.pop()) {
+    if (++count > MAX_CAPTURED_FIBERS) return true;
+    pending.push(...getChildren(current));
+  }
+  return false;
+};
 
 const toShapes = (fiber: Fiber): Shape[] => {
   if (fiber.tag === getReactWorkTagsForFiber(fiber).HostText)
@@ -403,6 +426,8 @@ const createEmptyCapture = (error: string): Capture => ({
 const capture = (): Capture => {
   const fiber = findMountedFiber();
   if (!fiber) return createEmptyCapture(renderError ?? caughtError ?? "component did not render");
+  if (isTooLarge(fiber))
+    return createEmptyCapture(`component rendered more than ${MAX_CAPTURED_FIBERS} fibers`);
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
     hookStates: readHookStates(fiber),
