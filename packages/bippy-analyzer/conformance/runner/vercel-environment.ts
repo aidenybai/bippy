@@ -58,6 +58,7 @@ const ANALYZER_DEPENDENCIES = [
   "pretty-format",
   "zod",
   "zod-validation-error",
+  "diff",
 ];
 
 const getCredentials = (): Credentials => {
