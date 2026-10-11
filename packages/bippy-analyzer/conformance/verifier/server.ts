@@ -47,6 +47,23 @@ const ENTRY_PATH = "/__bippy_verify_entry.ts";
 
 const SETUP_FILE = "setup.tsx";
 const HARNESS_CONFIG_FILE = "harness.json";
+/**
+ * Mounts inside a data router where the package has one, since hooks like `useNavigation`
+ * throw outside it, and inside a `MemoryRouter` before React Router 6.4.
+ */
+const createRouterSpec = (packageName: string): ProviderSpec => ({
+  packageName,
+  imports: [
+    `import * as ReactRouter from ${JSON.stringify(packageName)};`,
+    "const DataRouter = ({ children }) => {",
+    '  const [router] = useState(() => ReactRouter.createMemoryRouter([{ path: "*", element: children }]));',
+    "  return createElement(ReactRouter.RouterProvider, { router });",
+    "};",
+  ].join("\n"),
+  wrap: (children) =>
+    `createElement(ReactRouter.createMemoryRouter ? DataRouter : ReactRouter.MemoryRouter, null, ${children})`,
+});
+
 const PROVIDER_SPECS: ProviderSpec[] = [
   {
     packageName: "@tanstack/react-query",
@@ -54,16 +71,8 @@ const PROVIDER_SPECS: ProviderSpec[] = [
     wrap: (children) =>
       `createElement(QueryClientProvider, { client: useState(() => new QueryClient({ defaultOptions: { queries: { retry: false } } }))[0] }, ${children})`,
   },
-  {
-    packageName: "react-router",
-    imports: 'import { MemoryRouter } from "react-router";',
-    wrap: (children) => `createElement(MemoryRouter, null, ${children})`,
-  },
-  {
-    packageName: "react-router-dom",
-    imports: 'import { MemoryRouter } from "react-router-dom";',
-    wrap: (children) => `createElement(MemoryRouter, null, ${children})`,
-  },
+  createRouterSpec("react-router"),
+  createRouterSpec("react-router-dom"),
   {
     packageName: "react-hook-form",
     imports: 'import { FormProvider, useForm } from "react-hook-form";',
