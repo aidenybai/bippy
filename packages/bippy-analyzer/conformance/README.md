@@ -42,7 +42,7 @@ If the repo needs changes before it installs or type-checks, add them as `repos/
 
 ## Verify setup and specs
 
-Many components only render inside their app: behind a logged-in user, with an API to load from, or under the app's providers. A repo can describe that in `repos/<id>/verify/`:
+The harness mounts most components on its own (see [How verification works](../README.md#how-verification-works)). When a repo needs more, like its mock API or a logged-in user, describe it in `repos/<id>/verify/`:
 
 - `setup.tsx` runs in the page before any component loads. It can start the app's mock API, seed data and log in. Its default export, if any, wraps every mounted component, inside the providers the harness adds itself. Imports resolve as they would from the app, so `@/` paths work. Named functions under `scenarios` seed data for a spec.
 - `harness.json` sets `env` variables, readable as `import.meta.env.X` and `process.env.X`, and `alias` modules, such as a stub for `next/font/google`.

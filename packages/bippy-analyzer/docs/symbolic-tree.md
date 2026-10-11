@@ -130,16 +130,10 @@ Wizard src/reducer.tsx:21
 
 The error alert can never show, because nothing dispatches `fail`.
 
-## Corpus results
-
-| Repo                           | Files | Components | States | Time   | Bailouts       |
-| ------------------------------ | ----- | ---------- | ------ | ------ | -------------- |
-| fixtures                       | 12    | 26         | 51     | 140 ms | none           |
-| bulletproof-react (react-vite) | 127   | 107        | 160    | 1.1 s  | unknown-call 1 |
-
 ## Known gaps
 
-- **Hook result fields are independent.** `query.isPending` and `query.isError` are split separately, even though React Query's union ties them together. The fix is to split on the union type's tag field.
+- **Hook result fields are independent.** `query.isPending` and `query.isError` share a state group but each takes every value, even though React Query's union ties them together. The fix is to split on the union type's tag field.
+- **Context and stores aren't linked to their source.** A context value or store is typed from its declaration, not from the provider or store that sets it, so its values and the actions that change it are unknown.
 - **Calls are opaque unless their return type is finite.** `.filter` results are still `Unknown(call)`, so the analysis doesn't know the result is empty when the source is.
 - **Only definite mutations are tracked.** Passing state to a function that may mutate it doesn't forget it.
 - **Loops bail out.** A `for` or `while` in render makes the values it changes `Unknown`.
