@@ -11,7 +11,7 @@ interface UpstreamManifest {
   path: string;
 }
 
-const FIXTURES_DIRECTORY = fileURLToPath(new URL("fixtures", import.meta.url));
+const FIXTURES_DIRECTORY = fileURLToPath(new URL("../fixtures/react-compiler", import.meta.url));
 const COMPILER_DIRECTORY = join(FIXTURES_DIRECTORY, "compiler");
 const SOURCE_PATTERN = /\.(?:js|jsx|ts|tsx)$/;
 

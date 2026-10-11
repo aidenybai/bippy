@@ -32,7 +32,12 @@ const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
 const SANDBOX_RESOURCES = { vcpus: 4 };
 const OUTPUT_TAIL_LENGTH = 8000;
-const ANALYZER_SOURCE_DIRECTORIES = ["src", "conformance/runner", "conformance/repos"];
+const ANALYZER_SOURCE_DIRECTORIES = [
+  "src",
+  "conformance/runner",
+  "conformance/repos",
+  "conformance/verifier",
+];
 const BIPPY_SOURCE_DIRECTORY = join(PACKAGE_DIRECTORY, "../bippy/src");
 const ANALYZER_DEPENDENCIES = [
   "typescript",

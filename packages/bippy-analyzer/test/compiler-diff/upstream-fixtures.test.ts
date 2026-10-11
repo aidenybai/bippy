@@ -9,7 +9,7 @@ interface KnownDifferences {
   functions: string[];
 }
 
-const FIXTURES_DIRECTORY = fileURLToPath(new URL("fixtures", import.meta.url));
+const FIXTURES_DIRECTORY = fileURLToPath(new URL("../fixtures/react-compiler", import.meta.url));
 
 /**
  * Every fixture function where the two compilers disagree, as `status name file:end`. Against

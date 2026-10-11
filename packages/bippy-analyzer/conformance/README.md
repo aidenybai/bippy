@@ -49,7 +49,7 @@ The harness mounts most components on its own (see [How verification works](../R
 - `*.spec.ts` are hand-written Playwright tests. They reach states the automatic exploration can't, like a list with comments in it:
 
 ```ts
-import { test } from "../../../../src/verify/spec.js";
+import { test } from "../../../verifier/spec.js";
 
 test.use({ repo: "bulletproof-react" });
 

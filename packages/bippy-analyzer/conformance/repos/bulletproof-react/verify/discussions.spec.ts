@@ -1,4 +1,4 @@
-import { test } from "../../../../src/verify/spec.js";
+import { test } from "../../../verifier/spec.js";
 
 test.use({ repo: "bulletproof-react" });
 

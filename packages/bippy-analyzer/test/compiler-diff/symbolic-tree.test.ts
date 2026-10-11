@@ -12,7 +12,7 @@ interface KnownDifference {
 }
 
 const CONFIG_PATH = fileURLToPath(
-  new URL("../../fixtures/symbolic-tree/tsconfig.json", import.meta.url),
+  new URL("../fixtures/symbolic-tree/tsconfig.json", import.meta.url),
 );
 
 /**

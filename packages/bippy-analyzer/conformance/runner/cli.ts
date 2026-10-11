@@ -7,7 +7,7 @@ import { runLocal } from "./local-environment.js";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos.js";
 import type { RepoConfig } from "./repos.js";
 import { runVercel } from "./vercel-environment.js";
-import { formatMountFailures, sum } from "../../src/verify/score.js";
+import { formatMountFailures, sum } from "../verifier/score.js";
 
 type Environment = "local" | "vercel";
 

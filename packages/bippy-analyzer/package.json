@@ -9,10 +9,10 @@
   },
   "scripts": {
     "analyze": "tsx src/cli/analyze.ts",
-    "verify": "tsx src/verify/cli.ts",
+    "verify": "tsx conformance/verifier/cli.ts",
     "conformance": "tsx conformance/runner/cli.ts",
     "conformance:specs": "playwright test -c conformance/playwright.config.ts",
-    "sync:compiler-fixtures": "tsx tests/compiler-diff/sync-fixtures.ts",
+    "sync:compiler-fixtures": "tsx test/compiler-diff/sync-fixtures.ts",
     "test": "vp test --project bippy-analyzer",
     "typecheck": "tsc --noEmit"
   },

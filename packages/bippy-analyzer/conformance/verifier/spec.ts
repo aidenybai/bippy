@@ -1,9 +1,9 @@
 import { join } from "node:path";
 import { test as base, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { CACHE_DIRECTORY, loadRepos } from "../../conformance/runner/repos.js";
-import { analyzeProject } from "../analysis/analyze-project.js";
-import type { AnalyzedComponent, Sample, State } from "../analysis/types.js";
+import { CACHE_DIRECTORY, loadRepos } from "../runner/repos.js";
+import { analyzeProject } from "../../src/analysis/analyze-project.js";
+import type { AnalyzedComponent, Sample, State } from "../../src/analysis/types.js";
 import {
   getDefaultProps,
   listActionsInPage,

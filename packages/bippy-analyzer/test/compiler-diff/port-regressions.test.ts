@@ -9,7 +9,7 @@ interface IntentionalDifference {
 }
 
 const CONFIG_PATH = fileURLToPath(
-  new URL("../unit/fixtures/compiler-port/tsconfig.json", import.meta.url),
+  new URL("../fixtures/compiler-port/tsconfig.json", import.meta.url),
 );
 
 /**

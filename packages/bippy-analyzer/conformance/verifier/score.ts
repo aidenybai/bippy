@@ -1,4 +1,4 @@
-import { ANY_EVENT } from "../analysis/infer-transitions.js";
+import { ANY_EVENT } from "../../src/analysis/infer-transitions.js";
 import type {
   AbstractValue,
   BindingKind,
@@ -7,7 +7,7 @@ import type {
   Sample,
   StateReport,
   SymbolicValue,
-} from "../analysis/types.js";
+} from "../../src/analysis/types.js";
 import {
   forEachJsxElement,
   forEachRenderNode,
@@ -16,8 +16,8 @@ import {
   formatPlace,
   isStateBinding,
   parsePlaceKey,
-} from "../analysis/values.js";
-import { GeneratedSource } from "../compiler/hir/hir.js";
+} from "../../src/analysis/values.js";
+import { GeneratedSource } from "../../src/compiler/hir/hir.js";
 import type { Observation } from "./driver.js";
 import {
   explainMismatch,

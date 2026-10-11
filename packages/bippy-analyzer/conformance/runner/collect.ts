@@ -3,9 +3,9 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeProject, serializeProjectAnalysis } from "../../src/analysis/analyze-project.js";
 import type { AnalyzedComponent } from "../../src/analysis/types.js";
-import { sum, summarizeVerdicts } from "../../src/verify/score.js";
-import type { VerificationSummary } from "../../src/verify/score.js";
-import { verifyProject } from "../../src/verify/verify.js";
+import { sum, summarizeVerdicts } from "../verifier/score.js";
+import type { VerificationSummary } from "../verifier/score.js";
+import { verifyProject } from "../verifier/verify.js";
 
 export interface CollectSummary {
   files: number;

@@ -8,7 +8,7 @@ import { eachInstructionLValue } from "../../src/compiler/hir/visitors.js";
 import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/analysis/types.js";
 
 export const getFixtureConfig = (fixture: string): string =>
-  resolve(import.meta.dirname, "fixtures", fixture, "tsconfig.json");
+  resolve(import.meta.dirname, "../fixtures", fixture, "tsconfig.json");
 
 export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedComponent => {
   const component = project.components.find((candidate) => candidate.analysis.name === name);

@@ -1,5 +1,5 @@
 import type { Page } from "playwright";
-import type { ComponentAnalysis, Sample } from "../analysis/types.js";
+import type { ComponentAnalysis, Sample } from "../../src/analysis/types.js";
 import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
 import type { Action, Capture, MountRequest, Wrapper } from "./types.js";

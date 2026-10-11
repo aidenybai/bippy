@@ -1,6 +1,6 @@
 import { diffArrays } from "diff";
-import type { SymbolicValue } from "../analysis/types.js";
-import { isRenderingNothing } from "../analysis/values.js";
+import type { SymbolicValue } from "../../src/analysis/types.js";
+import { isRenderingNothing } from "../../src/analysis/values.js";
 import type { Shape } from "./types.js";
 
 type ExpectedShape =

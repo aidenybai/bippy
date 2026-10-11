@@ -5,9 +5,9 @@ Reads a React project with the TypeScript 7 checker and prints, for each compone
 ## Run
 
 ```sh
-pnpm analyze fixtures/symbolic-tree/tsconfig.json              # every component
-pnpm analyze fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
-pnpm analyze fixtures/symbolic-tree/tsconfig.json -H           # component tree
+pnpm analyze test/fixtures/symbolic-tree/tsconfig.json              # every component
+pnpm analyze test/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
+pnpm analyze test/fixtures/symbolic-tree/tsconfig.json -H           # component tree
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
 ```
 
@@ -42,7 +42,6 @@ The pipeline is a port of the React Compiler's front end, followed by our own pa
 | `src/compiler`   | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference, passes |
 | `src/typescript` | How the TS 7 checker feeds the compiler: types, React exports and mutating methods             |
 | `src/analysis`   | Our passes: symbolic evaluation, value domains, transitions and state enumeration              |
-| `src/verify`     | The browser verifier: harness, exploration, scoring and the spec fixtures                      |
 | `src/cli`        | `analyze` and the HIR printer                                                                  |
 
 Each ported file names the compiler source it came from.
@@ -87,7 +86,7 @@ To see the HIR for a component, run `pnpm tsx src/cli/hir.ts <tsconfig> -c <name
 
 ## Port fidelity
 
-`tests/compiler-diff` compares our HIR with the real compiler's after `inferReactivePlaces`, using the newest npm build, with the TypeScript layer turned off. Run `pnpm tsx tests/compiler-diff/cli.ts <tsconfig>`.
+`test/compiler-diff` compares our HIR with the real compiler's after `inferReactivePlaces`, using the newest npm build, with the TypeScript layer turned off. Run `pnpm tsx test/compiler-diff/cli.ts <tsconfig>`.
 
 | Corpus                         | Functions matching |
 | ------------------------------ | ------------------ |
@@ -96,11 +95,11 @@ To see the HIR for a component, run `pnpm tsx src/cli/hir.ts <tsconfig> -c <name
 | 2048-in-react                  | 8 of 10            |
 | The compiler's own test inputs | 941 of 954         |
 
-The compiler's test inputs are vendored from the ported commit in `tests/compiler-diff/fixtures`, and `pnpm sync:compiler-fixtures` refreshes them. `upstream-fixtures.test.ts` lists every function where the two compilers disagree, with the reason. Most disagreements exist because the npm build predates the ported commit: against a build of that commit, all 955 functions both compilers compile match. The rest are deliberate differences or upstream bugs.
+The compiler's test inputs are vendored from the ported commit in `test/fixtures/react-compiler`, and `pnpm sync:compiler-fixtures` refreshes them. `upstream-fixtures.test.ts` lists every function where the two compilers disagree, with the reason. Most disagreements exist because the npm build predates the ported commit: against a build of that commit, all 955 functions both compilers compile match. The rest are deliberate differences or upstream bugs.
 
 ## Example
 
-`fixtures/symbolic-tree/src/reducer.tsx`:
+`test/fixtures/symbolic-tree/src/reducer.tsx`:
 
 ```text
 Wizard src/reducer.tsx:21
