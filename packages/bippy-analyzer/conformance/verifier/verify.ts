@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
@@ -47,6 +48,7 @@ export const startProjectHarness = async (
 
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
+const MAX_PAGES = 4;
 
 export const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
@@ -105,41 +107,52 @@ export const verifyProject = async (
   const { knownComponents } = harness;
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
-  try {
+  let nextIndex = 0;
+  const runPage = async (): Promise<void> => {
     let page = await openPage(browser, harness.url);
-    for (const component of components) {
-      options.onStart?.(component.analysis.name);
-      let verdict: ComponentVerdict;
-      try {
-        const observations = component.analysis.exportName
-          ? await exploreComponent(
-              page,
-              component.analysis,
-              harness.getModuleUrl(component.analysis.file),
-              harness.exportIndex,
-            )
-          : [];
-        verdict = scoreComponent(
-          component.analysis,
-          component.report,
-          observations,
-          knownComponents,
-        );
-      } catch (error) {
-        const message =
-          error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
-        verdict = {
-          ...scoreComponent(component.analysis, component.report, [], knownComponents),
-          status: "mount-failed",
-          error: message,
-          mountFailure: classifyMountError(message),
-        };
-        await page.close().catch(() => undefined);
-        page = await openPage(browser, harness.url);
+    try {
+      for (let index = nextIndex++; index < components.length; index = nextIndex++) {
+        const component = components[index];
+        if (!component) continue;
+        options.onStart?.(component.analysis.name);
+        let verdict: ComponentVerdict;
+        try {
+          const observations = component.analysis.exportName
+            ? await exploreComponent(
+                page,
+                component.analysis,
+                harness.getModuleUrl(component.analysis.file),
+                harness.exportIndex,
+              )
+            : [];
+          verdict = scoreComponent(
+            component.analysis,
+            component.report,
+            observations,
+            knownComponents,
+          );
+        } catch (error) {
+          const message =
+            error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
+          verdict = {
+            ...scoreComponent(component.analysis, component.report, [], knownComponents),
+            status: "mount-failed",
+            error: message,
+            mountFailure: classifyMountError(message),
+          };
+          await page.close().catch(() => undefined);
+          page = await openPage(browser, harness.url);
+        }
+        verdicts[index] = verdict;
+        options.onComponent?.(verdict);
       }
-      verdicts.push(verdict);
-      options.onComponent?.(verdict);
+    } finally {
+      await page.close().catch(() => undefined);
     }
+  };
+  try {
+    const pageCount = Math.min(MAX_PAGES, availableParallelism(), components.length);
+    await Promise.all(Array.from({ length: pageCount }, runPage));
   } finally {
     await browser.close();
     await harness.close();
