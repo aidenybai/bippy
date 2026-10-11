@@ -662,6 +662,11 @@ const preventNavigation = (event: Event): void => {
 
 document.addEventListener("click", preventNavigation, true);
 document.addEventListener("submit", preventNavigation, true);
+// Scripts navigate too, like next-auth setting `location.href` when sign-in fails, and
+// leaving the page would unload the harness.
+navigation.addEventListener("navigate", (event) => {
+  if (event.cancelable && !event.hashChange) event.preventDefault();
+});
 
 window.__verify = {
   mount,
