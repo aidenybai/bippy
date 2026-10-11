@@ -2,8 +2,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import MagicString from "magic-string";
-import { createServer, loadEnv } from "vite";
-import type { Plugin } from "vite";
+import { createServer, loadEnv, parseAst } from "vite";
+import type { Plugin, Rollup } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
 import type { ProbeMode } from "./types.js";
@@ -104,6 +104,58 @@ const EXPORT_DECLARATION_PATTERN =
 const EXPORT_LIST_PATTERN = /export\s*\{([^}]*)\}/g;
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../bippy/src/index.ts");
+
+const SERVER_DIRECTIVE = "use server";
+
+const getExportNames = (program: Rollup.ProgramNode): string[] =>
+  program.body.flatMap((statement) => {
+    if (statement.type === "ExportDefaultDeclaration") return ["default"];
+    if (statement.type !== "ExportNamedDeclaration") return [];
+    const { declaration, specifiers } = statement;
+    const declared =
+      declaration?.type === "VariableDeclaration"
+        ? declaration.declarations.flatMap((declarator) =>
+            declarator.id.type === "Identifier" ? [declarator.id.name] : [],
+          )
+        : declaration && "id" in declaration && declaration.id
+          ? [declaration.id.name]
+          : [];
+    return [
+      ...declared,
+      ...specifiers.map((specifier) =>
+        specifier.exported.type === "Identifier"
+          ? specifier.exported.name
+          : String(specifier.exported.value),
+      ),
+    ];
+  });
+
+/**
+ * A `"use server"` module runs on the server, and a client bundle only gets functions that
+ * call it, so its exports become async functions that do nothing instead of database code
+ * a browser can't load.
+ */
+const createServerActionPlugin = (): Plugin => ({
+  name: "bippy-verify-server-actions",
+  transform: (code) => {
+    if (!code.includes(SERVER_DIRECTIVE)) return null;
+    const program = parseAst(code);
+    const [firstStatement] = program.body;
+    if (
+      firstStatement?.type !== "ExpressionStatement" ||
+      !("directive" in firstStatement) ||
+      firstStatement.directive !== SERVER_DIRECTIVE
+    )
+      return null;
+    return getExportNames(program)
+      .map((name) =>
+        name === "default"
+          ? "export default async () => undefined;"
+          : `export const ${name} = async () => undefined;`,
+      )
+      .join("\n");
+  },
+});
 
 const createProbePlugin = (probes: Probe[]): Plugin => {
   const probesByFile = Map.groupBy(probes, (probe) => probe.file);
@@ -384,6 +436,7 @@ export const startHarness = async (
     plugins: [
       createHarnessPlugin(appDirectory, providers, setup, appImporter, references),
       createProbePlugin(probes),
+      createServerActionPlugin(),
       tsconfigPaths({ root: appDirectory }),
     ],
     resolve: {
