@@ -15,7 +15,7 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../src/core/types.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
-import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
+import { PROVIDERS_PATH, SETUP_PATH, TRUNCATED_VALUE, WRAPPER_PATH } from "./types.js";
 import type {
   Action,
   ActionTarget,
@@ -65,6 +65,7 @@ const SETTLE_MS = 40;
 const MAX_CAPTURED_FIBERS = 10_000;
 const MAX_SETTLE_MS = 3000;
 const MAX_PLAIN_DEPTH = 4;
+const MAX_PLAIN_NODES = 2000;
 const DEPTH_MARKER_PREFIX = "BippyVerifyDepth";
 const DEPTH_MARKER_PATTERN = new RegExp(`\\bat ${DEPTH_MARKER_PREFIX}(\\d+)\\b`);
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
@@ -227,22 +228,31 @@ const hydrate = (sample: Sample): unknown => {
   }
 };
 
-const toPlain = (value: unknown, depth = 0): unknown => {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  )
-    return value;
-  if (value === undefined) return undefined;
-  if (typeof value === "function") return "[function]";
-  if (depth >= MAX_PLAIN_DEPTH || typeof value !== "object") return "[value]";
-  if (value instanceof Node) return "[node]";
-  if (Array.isArray(value)) return value.map((item) => toPlain(item, depth + 1));
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [key, toPlain(item, depth + 1)]),
-  );
+/**
+ * A hook's state as plain data to send to the verifier, cut off past a depth and a number of
+ * objects, since a component's state can hold a whole table of rows.
+ */
+const toPlain = (value: unknown): unknown => {
+  let nodeCount = 0;
+  const visit = (current: unknown, depth: number): unknown => {
+    if (
+      current === null ||
+      typeof current === "string" ||
+      typeof current === "number" ||
+      typeof current === "boolean"
+    )
+      return current;
+    if (current === undefined) return undefined;
+    if (typeof current === "function") return "[function]";
+    if (depth >= MAX_PLAIN_DEPTH || typeof current !== "object") return "[value]";
+    if (current instanceof Node) return "[node]";
+    if (++nodeCount > MAX_PLAIN_NODES) return TRUNCATED_VALUE;
+    if (Array.isArray(current)) return current.map((item) => visit(item, depth + 1));
+    return Object.fromEntries(
+      Object.entries(current).map(([key, item]) => [key, visit(item, depth + 1)]),
+    );
+  };
+  return visit(value, 0);
 };
 
 const getChildren = (fiber: Fiber): Fiber[] => {

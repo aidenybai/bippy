@@ -15,6 +15,7 @@ import { parsePlaceKey } from "../../src/core/utils/place-key.js";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR.js";
 import type { Observation } from "./driver.js";
+import { TRUNCATED_VALUE } from "./types.js";
 import type { Action, ActionTarget, Shape } from "./types.js";
 import {
   explainMismatch,
@@ -215,11 +216,10 @@ const isPredictedValue = (value: unknown, predicted: AbstractValue[]): boolean =
   predicted.some((candidate) => candidate.kind === "Literal" && Object.is(candidate.value, value));
 
 const readPath = (value: unknown, path: string[]): unknown =>
-  path.reduce<unknown>(
-    (current, segment) =>
-      current && typeof current === "object" ? Reflect.get(current, segment) : undefined,
-    value,
-  );
+  path.reduce<unknown>((current, segment) => {
+    if (current === TRUNCATED_VALUE) return current;
+    return current && typeof current === "object" ? Reflect.get(current, segment) : undefined;
+  }, value);
 
 const formatRuntimeValue = (value: unknown): string =>
   value === undefined ? "undefined" : JSON.stringify(value);
@@ -403,7 +403,7 @@ export const scoreComponent = (
           if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
             continue;
           const value = readPath(after.hookStates[hookIndex], placePath);
-          if (isPredictedValue(value, predicted)) continue;
+          if (value === TRUNCATED_VALUE || isPredictedValue(value, predicted)) continue;
           recordFailure(verdict.valueCounterexamples, {
             path,
             place: formatPlace(binding, placePath),

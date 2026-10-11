@@ -3,6 +3,7 @@ import type { Sample } from "../../src/core/types.js";
 export const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 export const SETUP_PATH = "/__bippy_verify_setup.tsx";
 export const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
+export const TRUNCATED_VALUE = "[truncated]";
 
 export type Shape =
   | { kind: "element"; tag: string; children: Shape[] }
