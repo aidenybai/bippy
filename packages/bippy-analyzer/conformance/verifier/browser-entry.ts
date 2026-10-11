@@ -10,7 +10,7 @@ import {
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
 import { Component, createElement } from "react";
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ErrorInfo, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../src/core/types.js";
@@ -48,6 +48,11 @@ interface PendingMutationHit {
   renderCount: number;
 }
 
+interface RecordedError {
+  message: string;
+  depth: number | null;
+}
+
 interface TrackedState {
   owner: string;
   target: object;
@@ -60,6 +65,8 @@ const SETTLE_MS = 40;
 const MAX_CAPTURED_FIBERS = 10_000;
 const MAX_SETTLE_MS = 3000;
 const MAX_PLAIN_DEPTH = 4;
+const DEPTH_MARKER_PREFIX = "BippyVerifyDepth";
+const DEPTH_MARKER_PATTERN = new RegExp(`\\bat ${DEPTH_MARKER_PREFIX}(\\d+)\\b`);
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
 const CHANGE_VALUES = ["text", ""];
 const MUTATING_COLLECTION_METHODS = new Set(["set", "add", "delete", "clear"]);
@@ -79,8 +86,8 @@ let probeHits: ProbeHit[] = [];
 let latestRoot: FiberRoot | null = null;
 let mountedType: unknown = null;
 let mountedRoot: Root | null = null;
-let renderError: string | null = null;
-let caughtError: string | null = null;
+let renderError: RecordedError | null = null;
+let caughtError: RecordedError | null = null;
 let renderCount = 0;
 let lastCommittedFiber: Fiber | null = null;
 let firstCommitShapes: Shape[] | null = null;
@@ -88,6 +95,7 @@ let pendingMutationHits: PendingMutationHit[] = [];
 let trackedStates: TrackedState[] = [];
 let stateOwners = new WeakMap<object, string>();
 let propWrites = new Set<string>();
+const depthMarkers = new Map<number, ComponentType<{ children?: ReactNode }>>();
 const propOwners = new WeakMap<object, string>();
 const writeCounts = new WeakMap<object, number>();
 const writeTrackers = new WeakMap<object, object>();
@@ -188,8 +196,8 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
 
   static getDerivedStateFromError = (): BoundaryState => ({ hasError: true });
 
-  componentDidCatch = (error: unknown): void => {
-    renderError = getErrorMessage(error);
+  componentDidCatch = (error: unknown, errorInfo: ErrorInfo): void => {
+    renderError = recordError(error, errorInfo);
   };
 
   render = (): ReactNode => (this.state.hasError ? null : this.props.children);
@@ -384,12 +392,16 @@ XMLHttpRequest.prototype.send = function send(...args) {
 const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
 /**
- * Waits for the page to go quiet: no requests in flight and, once mounting, the component
- * rendered. Data loads through mocked APIs, so a screen right after an action often still
- * shows its loading state.
+ * An error and how many wrappers enclose the component that threw it, read from the depth
+ * markers on React's component stack: none when it threw above them all.
  */
-const getErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
+const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
+  const componentStack = errorInfo?.componentStack;
+  return {
+    message: error instanceof Error ? error.message : String(error),
+    depth: componentStack ? Number(DEPTH_MARKER_PATTERN.exec(componentStack)?.[1] ?? 0) : null,
+  };
+};
 
 /**
  * An error boundary of the app's own, like one its setup wraps every component in, catches
@@ -397,12 +409,17 @@ const getErrorMessage = (error: unknown): string =>
  * `onCaughtError` from React 19 and as a global error event before, so a component that
  * rendered nothing can say why.
  */
-const recordCaughtError = (error: unknown): void => {
-  caughtError ??= getErrorMessage(error);
+const recordCaughtError = (error: unknown, errorInfo?: ErrorInfo): void => {
+  caughtError ??= recordError(error, errorInfo);
 };
 
 window.addEventListener("error", (event) => recordCaughtError(event.error));
 
+/**
+ * Waits for the page to go quiet: no requests in flight and, once mounting, the component
+ * rendered. Data loads through mocked APIs, so a screen right after an action often still
+ * shows its loading state.
+ */
 const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
   do await wait();
@@ -413,7 +430,7 @@ const settle = async (): Promise<void> => {
   );
 };
 
-const createEmptyCapture = (error: string): Capture => ({
+const createEmptyCapture = (error: string, errorDepth: number | null = null): Capture => ({
   shapes: [],
   hookStates: [],
   probes: takeProbeHits(),
@@ -421,11 +438,15 @@ const createEmptyCapture = (error: string): Capture => ({
   mutatedOwners: [],
   firstCommitShapes: null,
   error,
+  errorDepth,
 });
 
 const capture = (): Capture => {
   const fiber = findMountedFiber();
-  if (!fiber) return createEmptyCapture(renderError ?? caughtError ?? "component did not render");
+  if (!fiber) {
+    const error = renderError ?? caughtError;
+    return createEmptyCapture(error?.message ?? "component did not render", error?.depth);
+  }
   if (isTooLarge(fiber))
     return createEmptyCapture(`component rendered more than ${MAX_CAPTURED_FIBERS} fibers`);
   return {
@@ -434,7 +455,8 @@ const capture = (): Capture => {
     probes: takeProbeHits(),
     ...takeMutations(fiber),
     firstCommitShapes: null,
-    error: renderError,
+    error: renderError?.message ?? null,
+    errorDepth: renderError?.depth ?? null,
   };
 };
 
@@ -556,6 +578,19 @@ const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
   return null;
 };
 
+/**
+ * A component that only renders its children, named for how many wrappers enclose it, so
+ * that React's component stack for an error says which wrapper it came from.
+ */
+const getDepthMarker = (depth: number): ComponentType<{ children?: ReactNode }> => {
+  const cached = depthMarkers.get(depth);
+  if (cached) return cached;
+  const marker = ({ children }: { children?: ReactNode }): ReactNode => children;
+  Object.defineProperty(marker, "name", { value: `${DEPTH_MARKER_PREFIX}${depth}` });
+  depthMarkers.set(depth, marker);
+  return marker;
+};
+
 const mount = async (request: MountRequest): Promise<Capture> => {
   mountedRoot?.unmount();
   mountedType = null;
@@ -590,13 +625,14 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   // HACK: the component and wrapper types come from dynamic imports, so React's element
   // typing can't see them.
   let element = createElement(mountedType as Parameters<typeof createElement>[0], props);
-  for (const wrapper of [...request.wrappers].reverse()) {
-    const wrapperType = await loadWrapper(wrapper);
+  const wrapperTypes = await Promise.all(request.wrappers.map(loadWrapper));
+  for (let depth = wrapperTypes.length; depth > 0; depth--) {
+    const wrapperType = wrapperTypes[depth - 1];
     if (wrapperType)
       element = createElement(
         wrapperType as ComponentType<typeof WRAPPER_PROPS>,
         WRAPPER_PROPS,
-        element,
+        createElement(getDepthMarker(depth), null, element),
       );
   }
   mountedRoot.render(createElement(Boundary, null, createElement(Providers, null, element)));

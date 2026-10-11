@@ -31,6 +31,7 @@ export interface Capture {
   mutatedOwners: string[];
   firstCommitShapes: Shape[] | null;
   error: string | null;
+  errorDepth: number | null;
 }
 
 export interface ActionTarget {

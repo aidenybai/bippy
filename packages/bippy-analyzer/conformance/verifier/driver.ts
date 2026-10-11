@@ -2,6 +2,7 @@ import type { Page } from "playwright";
 import type { ComponentAnalysis, Sample } from "../../src/core/types.js";
 import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
+import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, Wrapper } from "./types.js";
 import { findCompoundRoot, findWrapper, getErrorSubject } from "./wrappers.js";
 
@@ -16,9 +17,10 @@ export interface Observation {
 const MAX_PROP_COMBINATIONS = 12;
 const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
-const MAX_WRAPPERS = 4;
+const MAX_WRAPPERS = 8;
 const ASYNC_COMPONENT_ERROR = "async server component, which renders only on a server";
 const PAGE_TIMEOUT_MS = 30_000;
+const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
 
 /**
  * Gives up on a page that stops answering, like one whose component rendered `<html>` and
@@ -45,47 +47,46 @@ export const listActionsInPage = (page: Page): Promise<Action[]> =>
   withTimeout(page.evaluate(() => window.__verify.actions()));
 
 /**
- * Where a newly found parent goes among the wrappers, outermost first: around the wrapper the
- * error is about, inside them all when it is about the component itself, and otherwise
- * outside them all, since then a wrapper threw under a name of its package's own, like
- * `MenubarMenu` for a `Menu` wrapper.
+ * Where a newly found parent goes among the wrappers, outermost first, when React didn't say
+ * which of them threw: around the wrapper the error is about, inside them all when it is
+ * about the component itself, and otherwise outside them all, since then a wrapper threw
+ * under a name of its package's own, like `MenubarMenu` for a `Menu` wrapper.
  */
-const getWrapperIndex = (
-  subject: string | null,
-  subjectIndex: number,
-  exportName: string,
-  wrappers: Wrapper[],
-): number => {
+const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper[]): number => {
+  const subject = getErrorSubject(error);
+  const subjectIndex = wrappers.findIndex((existing) => existing.name === subject);
   if (subjectIndex !== -1) return subjectIndex;
-  return subject === exportName || wrappers.length === 0 ? wrappers.length : 0;
+  return subject === componentName || wrappers.length === 0 ? wrappers.length : 0;
 };
 
 /**
  * Mounts a component, and while it throws for want of a parent, finds that parent and
- * mounts it again inside. Returns the parents it needed, outermost first.
+ * mounts it again inside. Returns the parents it needed, outermost first. An error that
+ * names no parent, like cmdk's parts reading a store their `Command` root provides, still
+ * gets the compound root the component's file exports.
  */
 export const resolveWrappers = async (
   page: Page,
   request: MountRequest,
-  componentFile: string,
+  analysis: ComponentAnalysis,
   exportIndex: Map<string, string[]>,
 ): Promise<Wrapper[]> => {
   const wrappers: Wrapper[] = [];
   while (wrappers.length < MAX_WRAPPERS) {
     const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
-    if (classifyMountError(capture.error) !== "provider") break;
+    const failure = classifyMountError(capture.error);
+    if (!PARENT_FAILURES.has(failure)) break;
     const isWrapped = (candidate: Wrapper | null): boolean =>
       candidate === null || wrappers.some((existing) => existing.name === candidate.name);
-    const errorWrapper = findWrapper(capture.error, componentFile, exportIndex);
+    const errorWrapper =
+      failure === "provider" ? findWrapper(capture.error, analysis.file, exportIndex) : null;
     const wrapper = isWrapped(errorWrapper)
-      ? findCompoundRoot(request.exportName, componentFile, exportIndex)
+      ? findCompoundRoot(analysis.name, analysis.file, exportIndex)
       : errorWrapper;
     if (!wrapper || isWrapped(wrapper)) break;
-    const subject = getErrorSubject(capture.error);
-    const subjectIndex = wrappers.findIndex((existing) => existing.name === subject);
     wrappers.splice(
-      getWrapperIndex(subject, subjectIndex, request.exportName, wrappers),
+      capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers),
       0,
       wrapper,
     );
@@ -154,7 +155,7 @@ export const exploreComponent = async (
       scenario: null,
       wrappers: [],
     },
-    analysis.file,
+    analysis,
     exportIndex,
   );
 

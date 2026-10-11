@@ -123,7 +123,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
       request.wrappers = await resolveWrappers(
         page,
         { ...request, scenario: null },
-        analysis.file,
+        analysis,
         project.exportIndex,
       );
       const session: Session = { component, observations: [] };
