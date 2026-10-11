@@ -122,6 +122,7 @@ const NEXT_STUBS = new Map([
 const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
+const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
@@ -470,6 +471,7 @@ const createHarnessPlugin = (
       return null;
     },
     load: (id) => {
+      if (STYLESHEET_PATTERN.test(id)) return "";
       if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
       if (id === entryId) return readFileSync(ENTRY_SOURCE, "utf8");
       if (id === providersId) return providersSource;
@@ -532,6 +534,9 @@ export const startHarness = async (
       ],
       dedupe: ["react", "react-dom"],
     },
+    // Fibers don't depend on styles, so stylesheets load empty, and with no PostCSS
+    // config to find, an app's Tailwind or Sass setup can't fail its imports.
+    css: { postcss: {} },
     esbuild: { jsx: "automatic", jsxDev: true },
     define: {
       "process.env": JSON.stringify(processEnv),
