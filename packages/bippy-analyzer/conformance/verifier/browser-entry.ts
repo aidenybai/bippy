@@ -456,6 +456,7 @@ const collectActions = (): MountedAction[] => {
         candidates.push({ kind: "click", value: "" });
       if (
         INPUT_TAGS.has(tag) &&
+        props.type !== "file" &&
         (typeof props.onChange === "function" || typeof props.onInput === "function")
       ) {
         for (const value of CHANGE_VALUES) candidates.push({ kind: "change", value });
