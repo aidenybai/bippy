@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import MagicString from "magic-string";
 import { createServer, loadEnv } from "vite";
 import type { Plugin } from "vite";
@@ -36,8 +36,13 @@ export interface Harness {
   close: () => Promise<void>;
 }
 
+/**
+ * A provider the harness mounts every component in when its package is installed. `modules`
+ * are what it imports, pre-bundled before any component mounts, and default to the package.
+ */
 interface ProviderSpec {
   packageName: string;
+  modules?: string[];
   imports: string;
   wrap: (children: string) => string;
 }
@@ -81,11 +86,14 @@ const PROVIDER_SPECS: ProviderSpec[] = [
 ];
 const NEXT_FONT_ID = "\0bippy-verify-next-font";
 const NEXT_FONT_MODULES = new Set(["next/font/google", "next/font/local"]);
+const NEXT_NAVIGATION_STUB = join(import.meta.dirname, "stubs/next-navigation.ts");
+const NEXT_ROUTER_STUB = join(import.meta.dirname, "stubs/next-router.ts");
 const NEXT_STUBS = new Map([
-  ["next/navigation", join(import.meta.dirname, "stubs/next-navigation.ts")],
+  ["next/navigation", NEXT_NAVIGATION_STUB],
   ["next/document", join(import.meta.dirname, "stubs/next-document.ts")],
-  ["next/router", join(import.meta.dirname, "stubs/next-router.ts")],
+  ["next/router", NEXT_ROUTER_STUB],
 ]);
+const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
@@ -121,14 +129,18 @@ const createProbePlugin = (probes: Probe[]): Plugin => {
   };
 };
 
-const isInstalled = (appDirectory: string, packageName: string): boolean => {
+const resolvePackageDirectory = (appDirectory: string, packageName: string): string | null => {
   try {
-    createRequire(join(appDirectory, "package.json")).resolve(`${packageName}/package.json`);
-    return true;
+    return dirname(
+      createRequire(join(appDirectory, "package.json")).resolve(`${packageName}/package.json`),
+    );
   } catch {
-    return false;
+    return null;
   }
 };
+
+const isInstalled = (appDirectory: string, packageName: string): boolean =>
+  resolvePackageDirectory(appDirectory, packageName) !== null;
 
 const listSourceFiles = (directory: string): string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -189,11 +201,58 @@ const createNextFontSource = (fontNames: Set<string>): string =>
     ...[...fontNames].map((name) => `export const ${name} = font;`),
   ].join("\n");
 
+/**
+ * The module that defines one of Next's router contexts, named with `.shared-runtime` since
+ * Next 13.5.
+ */
+const resolveNextContextModule = (nextDirectory: string, name: string): string | null => {
+  const fileName = [`${name}.shared-runtime`, name].find((candidate) =>
+    existsSync(join(nextDirectory, "dist/shared/lib", `${candidate}.js`)),
+  );
+  return fileName ? `next/dist/shared/lib/${fileName}` : null;
+};
+
+/**
+ * Provides Next's own router contexts with the stub routers, so `next/navigation` and
+ * `next/router` work when a package imports them, like `@clerk/nextjs` does, where the stubs
+ * for the app's own imports don't reach.
+ */
+const createNextContextSpec = (appDirectory: string): ProviderSpec | null => {
+  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+  if (!nextDirectory) return null;
+  const [appRouterModule, hooksModule, routerModule] = NEXT_CONTEXT_MODULES.map((name) =>
+    resolveNextContextModule(nextDirectory, name),
+  );
+  if (!appRouterModule || !hooksModule || !routerModule) return null;
+  return {
+    packageName: "next",
+    modules: [appRouterModule, hooksModule, routerModule],
+    imports: [
+      `import * as AppRouterContexts from ${JSON.stringify(appRouterModule)};`,
+      `import * as HookContexts from ${JSON.stringify(hooksModule)};`,
+      `import * as RouterContexts from ${JSON.stringify(routerModule)};`,
+      `import { appRouter } from ${JSON.stringify(NEXT_NAVIGATION_STUB)};`,
+      `import pagesRouter from ${JSON.stringify(NEXT_ROUTER_STUB)};`,
+      "const provide = (context, value, children) => context ? createElement(context.Provider, { value }, children) : children;",
+    ].join("\n"),
+    wrap: (children) =>
+      [
+        "provide(AppRouterContexts.AppRouterContext, appRouter,",
+        'provide(HookContexts.PathnameContext, "/",',
+        "provide(HookContexts.SearchParamsContext, new URLSearchParams(),",
+        "provide(HookContexts.PathParamsContext ?? HookContexts.ParamsContext, {},",
+        `provide(RouterContexts.RouterContext, pagesRouter, ${children})))))`,
+      ].join(" "),
+  };
+};
+
 const getInstalledProviders = (appDirectory: string): ProviderSpec[] => {
   const installed = PROVIDER_SPECS.filter((spec) => isInstalled(appDirectory, spec.packageName));
-  return installed.some((spec) => spec.packageName === "react-router")
-    ? installed.filter((spec) => spec.packageName !== "react-router-dom")
-    : installed;
+  const nextContextSpec = createNextContextSpec(appDirectory);
+  const providers = nextContextSpec ? [nextContextSpec, ...installed] : installed;
+  return providers.some((spec) => spec.packageName === "react-router")
+    ? providers.filter((spec) => spec.packageName !== "react-router-dom")
+    : providers;
 };
 
 export const readHarnessSetup = (directory: string | null): HarnessSetup => {
@@ -355,14 +414,18 @@ export const startHarness = async (
         "react-dom/client",
         "react/jsx-dev-runtime",
         "react/jsx-runtime",
-        ...providers.map((provider) => provider.packageName),
+        ...providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
       ],
     },
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
   });
   await server.listen();
   await Promise.all(
-    componentFiles.map((file) => server.warmupRequest(`/${relative(appDirectory, file)}`)),
+    [
+      ENTRY_PATH,
+      PROVIDERS_PATH,
+      ...componentFiles.map((file) => `/${relative(appDirectory, file)}`),
+    ].map((url) => server.warmupRequest(url)),
   );
   await server.waitForRequestsIdle();
   const address = server.httpServer?.address();

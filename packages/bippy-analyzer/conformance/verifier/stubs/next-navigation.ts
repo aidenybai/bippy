@@ -11,6 +11,7 @@ const router = {
   prefetch: () => undefined,
 };
 
+export const appRouter = router;
 export const useRouter = () => router;
 export const usePathname = () => "/";
 export const useSearchParams = () => new URLSearchParams();
