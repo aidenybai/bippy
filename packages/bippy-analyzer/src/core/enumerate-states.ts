@@ -377,7 +377,11 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
   const branchKeys: string[] = [];
   const decisionsByAtom = new Map<string, string[]>();
   const places = new Map<string, { name: string; branchKey: string }>();
+  const visited = new WeakMap<SymbolicValue, Set<string | null>>();
   const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
+    const enclosingKeys = visited.get(value) ?? new Set();
+    if (enclosingKeys.has(enclosingKey)) return;
+    visited.set(value, enclosingKeys.add(enclosingKey));
     switch (value.kind) {
       case "Conditional": {
         const key = getBranchKey(value);
@@ -454,7 +458,10 @@ const collectUnreachableBranches = (
 ): UnreachableBranch[] => {
   const unreachableBranches: UnreachableBranch[] = [];
   const seen = new Set<string>();
+  const visited = new WeakSet<SymbolicValue>();
   const visit = (value: SymbolicValue): void => {
+    if (visited.has(value)) return;
+    visited.add(value);
     switch (value.kind) {
       case "Conditional": {
         const key = getBranchKey(value);
