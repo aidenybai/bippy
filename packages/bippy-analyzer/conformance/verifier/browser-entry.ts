@@ -518,7 +518,14 @@ const setInputValue = (element: HTMLElement, value: string): void => {
 };
 
 const isComponentType = (value: unknown): boolean =>
-  typeof value === "function" || (typeof value === "object" && value !== null);
+  typeof value === "function" ||
+  (typeof value === "object" && value !== null && "$$typeof" in value);
+
+/**
+ * A component, or the `Root` of a namespace of parts, like Base UI's `Menu`.
+ */
+const getComponentType = (value: unknown): unknown =>
+  isComponentType(value) ? value : Reflect.get(Object(value), "Root");
 
 /**
  * Loads the first candidate module that exports the wrapper. A package may export it under
@@ -543,7 +550,8 @@ const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
       moduleExports[candidate.exportName] ??
       (shortName ? moduleExports[shortName] : undefined) ??
       (candidate.isRootAllowed ? moduleExports.Root : undefined);
-    if (isComponentType(value)) return value;
+    const componentType = getComponentType(value);
+    if (isComponentType(componentType)) return componentType;
   }
   return null;
 };

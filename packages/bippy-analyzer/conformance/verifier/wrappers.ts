@@ -4,7 +4,7 @@ import type { Wrapper, WrapperCandidate } from "./types.js";
 const BARE_IMPORT_PATTERN = /from\s+["']([^."'][^"']*)["']/g;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
 const PROVIDER_NAME_PATTERNS = [
-  /(?:within|inside|outside of|outside|from)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*)/,
+  /(?:within|inside|outside of|outside|from|descendant of)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*)/,
   /([A-Z]\w*Provider) was not found/,
 ];
 
