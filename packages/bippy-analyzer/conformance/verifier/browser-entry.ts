@@ -613,7 +613,12 @@ const mount = async (request: MountRequest): Promise<Capture> => {
     if (!scenario) return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
     await scenario(...request.scenario.args);
   }
-  const moduleExports: Record<string, unknown> = await import(/* @vite-ignore */ request.moduleUrl);
+  // HACK: Vite adds `?import` to a root-relative URL imported at runtime, which would load
+  // the component's file a second time beside its static importers, like a wrapper from
+  // the same file, each with its own contexts. A full URL is left alone.
+  const moduleExports: Record<string, unknown> = await import(
+    /* @vite-ignore */ new URL(request.moduleUrl, location.origin).href
+  );
   mountedType = moduleExports[request.exportName];
   if (!mountedType) return createEmptyCapture(`export ${request.exportName} not found`);
   const props = Object.fromEntries(

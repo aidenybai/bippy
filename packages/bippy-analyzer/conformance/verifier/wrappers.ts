@@ -15,11 +15,17 @@ const PROVIDER_NAME_PATTERNS = [
 export const getErrorSubject = (error: string): string | null =>
   SUBJECT_PATTERN.exec(error)?.[1] ?? null;
 
+const getSharedPrefixLength = (left: string, right: string): number => {
+  let length = 0;
+  while (length < left.length && left[length] === right[length]) length++;
+  return length;
+};
+
 /**
  * The parent a component says it needs when it throws without one, like `Menu` in
  * "`MenuItem` must be used within `Menu`", and where it might come from: a project export
- * of that name, or the packages the component imports, whose `Root` stands in when the
- * name is internal to the package.
+ * of that name, nearest first, or the packages the component imports, whose `Root` stands
+ * in when the name is internal to the package.
  */
 export const findWrapper = (
   error: string,
@@ -28,7 +34,11 @@ export const findWrapper = (
 ): Wrapper | null => {
   const name = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1]).find(Boolean);
   if (!name) return null;
-  const projectCandidates = (exportIndex.get(name) ?? []).map((file): WrapperCandidate => ({
+  const projectFiles = [...(exportIndex.get(name) ?? [])].sort(
+    (left, right) =>
+      getSharedPrefixLength(right, componentFile) - getSharedPrefixLength(left, componentFile),
+  );
+  const projectCandidates = projectFiles.map((file): WrapperCandidate => ({
     specifier: file,
     importer: componentFile,
     exportName: name,
