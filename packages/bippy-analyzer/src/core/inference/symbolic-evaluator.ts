@@ -224,6 +224,9 @@ const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
 
 const NO_STOPS: ReadonlySet<BlockId> = new Set();
 
+const getHookBindingKind = (hookKind: HookKind): BindingKind =>
+  hookKind === "useRef" ? "ref" : hookKind === "useContext" ? "context" : "hook";
+
 const isExternalSource = (binding: Binding): boolean =>
   (binding.kind === "hook" && binding.hookKind !== "useRef") || binding.kind === "context";
 
@@ -349,16 +352,12 @@ export class SymbolicEvaluator {
   }
 
   #bindHookResult(place: Place, hook: HookResultValue): BindingValue {
-    const kind: BindingKind =
-      hook.hookKind === "useRef" ? "ref" : hook.hookKind === "useContext" ? "context" : "hook";
     return createBindingValue(
       this.#createBinding(
         getIdentifierName(place) ?? hook.name,
-        kind,
+        getHookBindingKind(hook.hookKind),
         getDeclarationLocation(place),
-        {
-          hookKind: hook.hookKind,
-        },
+        { hookKind: hook.hookKind },
       ),
     );
   }
@@ -427,14 +426,15 @@ export class SymbolicEvaluator {
           createBindingValue(this.#getPropBinding(key, localName, property.place.loc)),
         );
       } else if (value.kind === "HookResult") {
-        this.#write(
-          property.place,
-          createBindingValue(
-            this.#createBinding(localName, "hook", property.place.loc, {
-              hookKind: value.hookKind,
-            }),
-          ),
+        // One hook call is one binding, so fields destructured from it, like `isFirstStep` and
+        // `previousStep` from `useWizard()`, stay paths of the same value.
+        const binding = this.#createBinding(
+          `${value.name}()`,
+          getHookBindingKind(value.hookKind),
+          instruction.loc,
+          { hookKind: value.hookKind },
         );
+        this.#write(property.place, this.#readField(binding, [key], property.place.loc));
       } else {
         this.#write(property.place, this.#evaluatePropertyLoad(value, key, property.place.loc));
       }
@@ -890,7 +890,11 @@ export class SymbolicEvaluator {
                 value: this.#read(attribute.place),
                 transitionId: null,
               }
-            : { kind: "JsxSpreadAttribute", value: this.#read(attribute.argument) },
+            : {
+                kind: "JsxSpreadAttribute",
+                value: this.#read(attribute.argument),
+                transitionId: null,
+              },
         );
         return this.#buildJsx(
           this.#getJsxTag(value.tag),
@@ -1275,6 +1279,12 @@ export class SymbolicEvaluator {
         );
       if (callback.kind === "Binding" && callback.binding.kind === "prop")
         this.#collected.delegates.push(callback.binding.name);
+      if (callback.kind === "Binding" && isExternalSource(callback.binding))
+        this.#recordExternalUpdate(callback, ROOT_WALK_STATE);
+      if (callback.kind === "Unknown")
+        for (const binding of this.#bindings.values())
+          if (isExternalSource(binding))
+            this.#recordExternalUpdate(createBindingValue(binding), ROOT_WALK_STATE);
       this.#recordUnsetMutations();
       return this.#collected;
     } finally {

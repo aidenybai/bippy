@@ -469,8 +469,7 @@ const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
 
 const collectTransitionIds = (render: SymbolicValue, transitionIds: Set<string>): void =>
   forEachJsxElement(render, (element) => {
-    for (const prop of element.props)
-      if (prop.kind === "JsxAttribute" && prop.transitionId) transitionIds.add(prop.transitionId);
+    for (const prop of element.props) if (prop.transitionId) transitionIds.add(prop.transitionId);
   });
 
 /**
@@ -572,6 +571,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     }
     groups.push({
       places: decisionGroup.places,
+      bindingIds: [...decisionGroup.bindingIds],
       states: alternatives.map((_, index) => firstIndex + index),
     });
   });

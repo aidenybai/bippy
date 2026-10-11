@@ -20,6 +20,7 @@ import {
   toExpected,
 } from "./match.js";
 import { scoreWarnings } from "./mutation.js";
+import { ANY_EVENT } from "../../src/core/inference/infer-transitions.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Probe } from "./server.js";
@@ -181,11 +182,11 @@ const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> 
   visitRender(render, (value) => {
     if (value.kind !== "JsxExpression") return;
     for (const prop of value.props) {
-      if (prop.kind !== "JsxAttribute" || !prop.transitionId) continue;
+      if (!prop.transitionId) continue;
       labels.set(prop.transitionId, {
         tag: value.tag.name,
-        text: getStaticText(value),
-        event: prop.name,
+        text: getStaticText(value) || null,
+        event: prop.kind === "JsxAttribute" ? prop.name : ANY_EVENT,
       });
     }
   });
@@ -303,6 +304,14 @@ export const scoreComponent = (
     groupIndices.every((group) => inGroup(matches, group).length > 0);
   const isGroupUnchanged = (before: number[], after: number[], group: number): boolean =>
     inGroup(before, group).some((match) => after.includes(match));
+  const externalBindingIds = new Set(
+    analysis.bindings
+      .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
+      .map((binding) => binding.id),
+  );
+  const isExternalGroup = (group: number): boolean =>
+    report.groups[group]?.bindingIds.some((bindingId) => externalBindingIds.has(bindingId)) ??
+    false;
   const getEdges = (from: number[], transitionIds: Set<string>) =>
     from.flatMap(
       (index) =>
@@ -406,13 +415,10 @@ export const scoreComponent = (
       return (
         label !== undefined &&
         (label.tag === action.tag || isComponentTag(label.tag)) &&
-        label.event === eventName &&
+        (label.event === eventName || label.event === ANY_EVENT) &&
         (label.text === null || label.text === action.label)
       );
     });
-    const isUnchanged = groupIndices.every((group) =>
-      isGroupUnchanged(beforeMatches, afterMatches, group),
-    );
     const candidateIds = new Set(candidates.map((candidate) => candidate.id));
     const recordWrongEdge = (reason: WrongEdge["reason"]): void =>
       recordFailure(verdict.wrongEdges, {
@@ -425,13 +431,19 @@ export const scoreComponent = (
         ],
         reason,
       });
+    // A child's handler can change any hook or context value the component reads.
+    const isFreeToChange = (group: number): boolean => action.isInChild && isExternalGroup(group);
     if (candidates.length === 0) {
-      if (!isUnchanged) recordWrongEdge("unmodeled-handler");
+      const isExplained = groupIndices.every(
+        (group) => isGroupUnchanged(beforeMatches, afterMatches, group) || isFreeToChange(group),
+      );
+      if (!isExplained) recordWrongEdge("unmodeled-handler");
       continue;
     }
     const isPredicted = groupIndices.every((group) => {
       const isUnchangedInGroup = isGroupUnchanged(beforeMatches, afterMatches, group);
       const edges = getEdges(inGroup(beforeMatches, group), candidateIds);
+      if (isFreeToChange(group)) return true;
       return edges.length === 0
         ? isUnchangedInGroup
         : edges.some(

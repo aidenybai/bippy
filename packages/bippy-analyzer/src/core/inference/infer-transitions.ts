@@ -7,6 +7,9 @@ import { forEachJsxElement } from "./values.js";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
+/** The event of a handler that spread props may install: any of them. */
+export const ANY_EVENT = "*";
+
 const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
     case "Function":
@@ -14,8 +17,10 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
     case "Setter":
       return `setter:${value.binding.id}`;
     case "Binding":
-      return value.binding.kind === "prop"
-        ? `prop:${value.binding.id}:${value.path.join(".")}`
+      return value.binding.kind === "prop" ||
+        value.binding.kind === "hook" ||
+        value.binding.kind === "context"
+        ? `binding:${value.binding.id}:${value.path.join(".")}`
         : null;
     default:
       return null;
@@ -69,7 +74,17 @@ export const inferTransitions = (
   }
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
-      if (prop.kind !== "JsxAttribute" || !EVENT_HANDLER_PATTERN.test(prop.name)) continue;
+      if (prop.kind === "JsxSpreadAttribute") {
+        if (prop.value.kind !== "Unknown") continue;
+        prop.transitionId = addTransition(
+          { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
+          prop.value,
+          [],
+          prop.value.loc,
+        );
+        continue;
+      }
+      if (!EVENT_HANDLER_PATTERN.test(prop.name)) continue;
       const key = getHandlerKey(prop.value);
       if (key === null) continue;
       if (!transitionIds.has(key)) {

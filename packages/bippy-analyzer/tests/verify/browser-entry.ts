@@ -418,6 +418,22 @@ const getLabel = (element: HTMLElement): string =>
     .replace(/\s+/g, " ")
     .slice(0, 40);
 
+const isMountedType = (type: unknown): boolean =>
+  type !== null &&
+  (type === mountedType ||
+    type === Reflect.get(Object(mountedType), "type") ||
+    type === Reflect.get(Object(mountedType), "render"));
+
+/**
+ * Whether a child component, not the mounted one, created an element: React records the
+ * component that rendered each element as its owner in development builds.
+ */
+const isRenderedByChild = (fiber: Fiber): boolean => {
+  const owner: unknown = Reflect.get(fiber, "_debugOwner");
+  const ownerType: unknown = owner && typeof owner === "object" ? Reflect.get(owner, "type") : null;
+  return ownerType !== null && ownerType !== undefined && !isMountedType(ownerType);
+};
+
 const collectActions = (): MountedAction[] => {
   const fiber = findMountedFiber();
   const actions: MountedAction[] = [];
@@ -445,6 +461,7 @@ const collectActions = (): MountedAction[] => {
           key: count === 0 ? baseKey : `${baseKey}#${count}`,
           tag,
           label,
+          isInChild: isRenderedByChild(current),
           element: current.stateNode,
         });
       }
@@ -561,7 +578,14 @@ document.addEventListener("submit", preventNavigation, true);
 
 window.__verify = {
   mount,
-  actions: () => collectActions().map(({ key, tag, label, kind }) => ({ key, tag, label, kind })),
+  actions: () =>
+    collectActions().map(({ key, tag, label, kind, isInChild }) => ({
+      key,
+      tag,
+      label,
+      kind,
+      isInChild,
+    })),
   perform,
   observe: async () => {
     await settle();

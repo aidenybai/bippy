@@ -29,11 +29,16 @@ export interface Capture {
   error: string | null;
 }
 
+/**
+ * An element the page can act on. `isInChild` marks one a child component rendered, whose
+ * handler the mounted component's analysis can't see.
+ */
 export interface Action {
   key: string;
   tag: string;
   label: string;
   kind: "click" | "change";
+  isInChild: boolean;
 }
 
 export interface Scenario {

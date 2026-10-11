@@ -85,9 +85,14 @@ export interface JsxProp {
   transitionId: string | null;
 }
 
+/**
+ * Props spread onto an element. When what they hold isn't known, like `{...register("name")}`,
+ * they may install any handler, which `transitionId` stands for.
+ */
 export interface JsxSpreadProp {
   kind: "JsxSpreadAttribute";
   value: SymbolicValue;
+  transitionId: string | null;
 }
 
 /**
@@ -250,6 +255,7 @@ export interface State {
  */
 export interface StateGroup {
   places: string[];
+  bindingIds: number[];
   states: number[];
 }
 

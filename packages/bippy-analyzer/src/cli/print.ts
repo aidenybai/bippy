@@ -261,12 +261,13 @@ const getTextContent = (value: SymbolicValue): string => {
 const collectTriggers = (render: SymbolicValue, triggers: Map<string, string>): void =>
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
-      if (prop.kind !== "JsxAttribute" || !prop.transitionId || triggers.has(prop.transitionId))
-        continue;
+      if (!prop.transitionId || triggers.has(prop.transitionId)) continue;
       const text = getTextContent(element);
       triggers.set(
         prop.transitionId,
-        text ? truncate(text, MAX_TRIGGER_TEXT_WIDTH) : `<${element.tag.name}> ${prop.name}`,
+        text
+          ? truncate(text, MAX_TRIGGER_TEXT_WIDTH)
+          : `<${element.tag.name}> ${prop.kind === "JsxAttribute" ? prop.name : "{...}"}`,
       );
     }
   });
