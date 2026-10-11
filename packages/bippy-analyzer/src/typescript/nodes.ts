@@ -51,16 +51,24 @@ export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation):
     : (getNodeIndex(sourceFile).get(getRangeKey(loc.start, loc.end)) ?? null);
 
 /**
- * Identifies the declaration a reference resolves to, through imports and re-exports, as
- * `<file>#<name>`. Two components with the same name in different files stay distinct.
+ * The symbol a reference, or the name of `a.b`, resolves to through import aliases.
  */
-export const getDeclarationKey = (checker: Checker, node: Node): string | null => {
+const resolveSymbol = (checker: Checker, node: Node) => {
   const nameNode = t.isPropertyAccessExpression(node) ? node.name : node;
   if (!t.isIdentifier(nameNode)) return null;
   const symbol = checker.getSymbolAtLocation(nameNode);
   if (!symbol) return null;
-  const target = symbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const [declaration] = target.declarations;
+  return symbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+};
+
+/**
+ * Identifies the declaration a reference resolves to, through imports and re-exports, as
+ * `<file>#<name>`. Two components with the same name in different files stay distinct.
+ */
+export const getDeclarationKey = (checker: Checker, node: Node): string | null => {
+  const target = resolveSymbol(checker, node);
+  const [declaration] = target?.declarations ?? [];
+  if (!target) return null;
   return declaration ? `${declaration.path}#${target.name}` : null;
 };
 
@@ -70,12 +78,10 @@ export const getDeclarationKey = (checker: Checker, node: Node): string | null =
  * re-export from a local barrel all resolve to `useState`.
  */
 export const getReactExportName = (checker: Checker, node: Node): string | null => {
-  const nameNode = t.isPropertyAccessExpression(node) ? node.name : node;
-  if (!t.isIdentifier(nameNode)) return null;
-  const symbol = checker.getSymbolAtLocation(nameNode);
-  if (!symbol) return null;
-  const target = symbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  return target.declarations.some((declaration) => REACT_DECLARATION_PATTERN.test(declaration.path))
+  const target = resolveSymbol(checker, node);
+  return target?.declarations.some((declaration) =>
+    REACT_DECLARATION_PATTERN.test(declaration.path),
+  )
     ? target.name
     : null;
 };

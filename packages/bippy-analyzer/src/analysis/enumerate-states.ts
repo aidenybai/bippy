@@ -5,7 +5,6 @@ import {
   CONSTANT_ATOM,
   assume,
   cloneKnowledge,
-  createKnowledge,
   dedupeValues,
   evaluate,
   forgetBinding,
@@ -59,12 +58,8 @@ interface Alternative {
   decisions: ReadonlySet<string>;
 }
 
-interface PartialChildren {
-  knowledge: Knowledge;
+interface PartialChildren extends Omit<Alternative, "render"> {
   children: SymbolicValue[];
-  fragments: SymbolicValue[];
-  assumptions: string[];
-  decisions: ReadonlySet<string>;
 }
 
 interface DecisionGroup {
@@ -74,6 +69,14 @@ interface DecisionGroup {
 }
 
 const NO_DECISIONS: ReadonlySet<string> = new Set();
+
+const createLeaf = (knowledge: Knowledge, render: SymbolicValue): Alternative => ({
+  knowledge,
+  render,
+  fragments: [],
+  assumptions: [],
+  decisions: NO_DECISIONS,
+});
 
 const getStateKey = (alternative: Alternative): string =>
   [...alternative.decisions].sort().join("|");
@@ -199,7 +202,7 @@ const createInitialKnowledge = (analysis: ComponentAnalysis): Knowledge => {
           : null;
     if (cases) values.set(placeKey, cases);
   }
-  return createKnowledge(values);
+  return { values, facts: new Map(), bounds: [] };
 };
 
 /**
@@ -303,10 +306,7 @@ const createEnumerator = (
     switch (value.kind) {
       case "Conditional": {
         const key = getDecisionKey(value);
-        if (!group.decisionKeys.has(key))
-          return [
-            { knowledge, render: value, fragments: [], assumptions: [], decisions: NO_DECISIONS },
-          ];
+        if (!group.decisionKeys.has(key)) return [createLeaf(knowledge, value)];
         const alternatives: Alternative[] = [];
         const test = getTestExpression(value);
         const isDecided = evaluate(test, knowledge) !== null;
@@ -362,15 +362,7 @@ const createEnumerator = (
         }));
       }
       default:
-        return [
-          {
-            knowledge,
-            render: resolveLiteral(value, knowledge),
-            fragments: [],
-            assumptions: [],
-            decisions: NO_DECISIONS,
-          },
-        ];
+        return [createLeaf(knowledge, resolveLiteral(value, knowledge))];
     }
   };
   return enumerate;

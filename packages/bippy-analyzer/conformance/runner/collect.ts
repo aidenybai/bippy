@@ -28,11 +28,14 @@ const summarize = (
   durationMs: number,
   verification: VerificationSummary | null,
 ): CollectSummary => {
-  const bailouts: Record<string, number> = {};
-  for (const { analysis } of components) {
-    for (const bailout of analysis.bailouts)
-      bailouts[bailout.reason] = (bailouts[bailout.reason] ?? 0) + 1;
-  }
+  const bailouts = Object.fromEntries(
+    Object.entries(
+      Object.groupBy(
+        components.flatMap(({ analysis }) => analysis.bailouts),
+        (bailout) => bailout.reason,
+      ),
+    ).map(([reason, list]) => [reason, list?.length ?? 0]),
+  );
   const bindings = components.flatMap(({ analysis }) => analysis.bindings);
   return {
     files: fileCount,

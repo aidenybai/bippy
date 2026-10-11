@@ -150,13 +150,11 @@ export const serializeProjectAnalysis = (analysis: ProjectAnalysis): string => {
     analysis.components,
     (_key, value: unknown) => {
       if (typeof value === "symbol") return "generated";
-      if (!isObject(value) || (counts.get(value) ?? 0) < 2) {
-        return value instanceof Map ? Object.fromEntries(value) : value;
-      }
+      const plain = value instanceof Map ? Object.fromEntries(value) : value;
+      if (!isObject(value) || (counts.get(value) ?? 0) < 2) return plain;
       const id = ids.get(value);
       if (id !== undefined) return { $ref: id };
       ids.set(value, nextId);
-      const plain = value instanceof Map ? Object.fromEntries(value) : value;
       return Array.isArray(plain) ? { $id: nextId++, items: plain } : { $id: nextId++, ...plain };
     },
     2,

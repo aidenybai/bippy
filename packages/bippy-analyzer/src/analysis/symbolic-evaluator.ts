@@ -658,10 +658,7 @@ export class SymbolicEvaluator {
         this.#applyDispatch(callee, args[0], loc, state);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (this.#mode !== "effect") break;
-        if (callee.binding.kind === "prop")
-          this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
-        if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
+        if (this.#mode === "effect") this.#callBinding(callee, state);
         break;
       default:
         break;
@@ -1217,6 +1214,16 @@ export class SymbolicEvaluator {
   }
 
   /**
+   * Calls a function held in a binding: a prop the parent handles, or a hook or context
+   * function that may change that source.
+   */
+  #callBinding(callee: BindingValue, state: WalkState): void {
+    if (callee.binding.kind === "prop")
+      this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
+    if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
+  }
+
+  /**
    * A handler that calls into a custom hook's result or a context value, like
    * `query.refetch()` or `auth.logout()`, can change what that source returns. When and to
    * what is unknown, so the source changes to anything, asynchronously.
@@ -1275,10 +1282,7 @@ export class SymbolicEvaluator {
           createUnknown("event", GeneratedSource),
           ROOT_WALK_STATE,
         );
-      if (callback.kind === "Binding" && callback.binding.kind === "prop")
-        this.#collected.delegates.push(callback.binding.name);
-      if (callback.kind === "Binding" && isExternalSource(callback.binding))
-        this.#recordExternalUpdate(callback, ROOT_WALK_STATE);
+      if (callback.kind === "Binding") this.#callBinding(callback, ROOT_WALK_STATE);
       if (callback.kind === "Unknown")
         for (const binding of this.#bindings.values())
           if (isExternalSource(binding))

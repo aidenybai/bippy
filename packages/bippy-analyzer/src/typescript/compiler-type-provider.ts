@@ -45,9 +45,6 @@ const isPrimitiveType = (type: TypeScriptType): boolean =>
   Boolean(type.flags & PRIMITIVE_FLAGS) ||
   (type.isUnionType() && type.getTypes().every(isPrimitiveType));
 
-const getShapeId = (type: BuiltInType | null): string | null =>
-  type?.kind === "Object" ? type.shapeId : null;
-
 /**
  * Types the compiler's HIR from the TypeScript checker. The compiler only knows React's
  * APIs and a few globals; the checker knows every import, prop and call result. Values the
@@ -137,8 +134,8 @@ export class CompilerTypeProvider implements TypeProvider {
     return addFunction(shapes, [], {
       positionalParams: parameterEffects,
       restParam,
-      returnType: returnType ?? { kind: "Poly" },
-      returnValueKind: this.#getValueKind(returnType),
+      returnType,
+      returnValueKind: ValueKind.Primitive,
       calleeEffect: Effect.Read,
     });
   }
@@ -177,14 +174,10 @@ export class CompilerTypeProvider implements TypeProvider {
 
   #getParameterEffect(type: TypeScriptType | undefined): Effect {
     if (!type) return Effect.ConditionallyMutate;
+    const collection = this.#getCollectionType(type);
     const isReadonly =
-      isPrimitiveType(type) || getShapeId(this.#getCollectionType(type)) === BuiltInMixedReadonlyId;
+      isPrimitiveType(type) ||
+      (collection?.kind === "Object" && collection.shapeId === BuiltInMixedReadonlyId);
     return isReadonly ? Effect.Read : Effect.ConditionallyMutate;
-  }
-
-  #getValueKind(type: BuiltInType | null): ValueKind {
-    if (type?.kind === "Primitive") return ValueKind.Primitive;
-    if (type?.kind === "Object" && type.shapeId === BuiltInMixedReadonlyId) return ValueKind.Frozen;
-    return ValueKind.Mutable;
   }
 }

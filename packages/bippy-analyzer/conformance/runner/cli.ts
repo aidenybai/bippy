@@ -7,7 +7,7 @@ import { runLocal } from "./local-environment.js";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos.js";
 import type { RepoConfig } from "./repos.js";
 import { runVercel } from "./vercel-environment.js";
-import { formatMountFailures } from "../../src/verify/score.js";
+import { formatMountFailures, sum } from "../../src/verify/score.js";
 
 type Environment = "local" | "vercel";
 
@@ -94,7 +94,7 @@ const formatTable = (results: RepoResult[]): string => {
   ];
   const rows = results.map(({ id, summary }) => {
     if (!summary) return [id, "failed"];
-    const bailoutCount = Object.values(summary.bailouts).reduce((total, count) => total + count, 0);
+    const bailoutCount = sum(Object.values(summary.bailouts), (count) => count);
     return [
       id,
       String(summary.files),

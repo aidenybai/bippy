@@ -14,6 +14,7 @@ import type {
   SymbolicValue,
 } from "./types.js";
 import { forEachSymbolicValue } from "./values.js";
+import { EQUALITY_OPERATORS } from "./knowledge.js";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
@@ -134,18 +135,12 @@ export const getSampleOfValue = (value: PrimitiveValue): Sample =>
   value === undefined ? { kind: "Undefined" } : { kind: "Value", value };
 
 /**
- * Looks up domains and samples for HIR locations through the type checker, caching by
- * location so each node is asked about once.
- */
-const COMPARISON_OPERATORS = new Set(["===", "!==", "==", "!="]);
-
-/**
  * Adds each string or number a prop is compared against in the render as a sample, so a
  * branch like `role === "admin"` runs when the component is mounted.
  */
 export const addComparedSamples = (render: SymbolicValue): void => {
   forEachSymbolicValue(render, (value) => {
-    if (value.kind !== "BinaryExpression" || !COMPARISON_OPERATORS.has(value.operator)) return;
+    if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return;
     const [place, literal] =
       value.left.kind === "Binding" ? [value.left, value.right] : [value.right, value.left];
     if (place.kind !== "Binding" || literal.kind !== "Primitive") return;
@@ -159,6 +154,10 @@ export const addComparedSamples = (render: SymbolicValue): void => {
   });
 };
 
+/**
+ * Looks up domains and samples for HIR locations through the type checker, caching by
+ * location so each node is asked about once.
+ */
 export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;

@@ -87,7 +87,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
         appDirectory,
         components,
         components,
-        repo.setupDirectory ?? null,
+        repo.setupDirectory,
       );
       await use({ ...harness, components });
       await harness.close();

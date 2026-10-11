@@ -7,6 +7,7 @@ import {
   getKnownTruthiness,
   getNegatedOperator,
   getTestExpression,
+  forEachSymbolicValue,
   getTruthiness,
   isPlacePrefix,
   isEqualToLiteral,
@@ -14,7 +15,7 @@ import {
 
 export const CONSTANT_ATOM = "#";
 const LENGTH_SUFFIX = ".length";
-const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
+export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
@@ -55,12 +56,6 @@ export interface Knowledge {
   bounds: Bound[];
 }
 
-export const createKnowledge = (values: Map<string, AbstractValue[]>): Knowledge => ({
-  values,
-  facts: new Map(),
-  bounds: [],
-});
-
 export const cloneKnowledge = (knowledge: Knowledge): Knowledge => ({
   values: new Map(knowledge.values),
   facts: new Map(knowledge.facts),
@@ -69,26 +64,11 @@ export const cloneKnowledge = (knowledge: Knowledge): Knowledge => ({
 
 export const getLengthAtom = (bindingId: number): string => `${bindingId}${LENGTH_SUFFIX}`;
 
-const collectBindingIds = (value: SymbolicValue, bindingIds = new Set<number>()): Set<number> => {
-  switch (value.kind) {
-    case "Binding":
-      bindingIds.add(value.binding.id);
-      break;
-    case "BinaryExpression":
-      collectBindingIds(value.left, bindingIds);
-      collectBindingIds(value.right, bindingIds);
-      break;
-    case "UnaryExpression":
-      collectBindingIds(value.value, bindingIds);
-      break;
-    case "Conditional":
-      collectBindingIds(value.test, bindingIds);
-      collectBindingIds(value.consequent, bindingIds);
-      collectBindingIds(value.alternate, bindingIds);
-      break;
-    default:
-      break;
-  }
+const collectBindingIds = (value: SymbolicValue): Set<number> => {
+  const bindingIds = new Set<number>();
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Binding") bindingIds.add(part.binding.id);
+  });
   return bindingIds;
 };
 

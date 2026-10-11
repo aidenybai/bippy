@@ -44,6 +44,7 @@ const ANALYZER_DEPENDENCIES = [
   "vite-tsconfig-paths",
   "magic-string",
   "playwright",
+  "diff",
 ];
 
 const getCredentials = (): Credentials => {

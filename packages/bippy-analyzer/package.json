@@ -17,7 +17,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@jridgewell/trace-mapping": "^0.3.31",
     "@vercel/sandbox": "^3.6.1",
     "bippy": "workspace:*",
     "commander": "^15.0.0",
