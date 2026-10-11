@@ -79,6 +79,7 @@ let latestRoot: FiberRoot | null = null;
 let mountedType: unknown = null;
 let mountedRoot: Root | null = null;
 let renderError: string | null = null;
+let caughtError: string | null = null;
 let renderCount = 0;
 let lastCommittedFiber: Fiber | null = null;
 let firstCommitShapes: Shape[] | null = null;
@@ -187,7 +188,7 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
   static getDerivedStateFromError = (): BoundaryState => ({ hasError: true });
 
   componentDidCatch = (error: unknown): void => {
-    renderError = error instanceof Error ? error.message : String(error);
+    renderError = getErrorMessage(error);
   };
 
   render = (): ReactNode => (this.state.hasError ? null : this.props.children);
@@ -364,11 +365,27 @@ const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, S
  * rendered. Data loads through mocked APIs, so a screen right after an action often still
  * shows its loading state.
  */
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+/**
+ * An error boundary of the app's own, like one its setup wraps every component in, catches
+ * a render error before the harness's boundary does. React still reports it, through
+ * `onCaughtError` from React 19 and as a global error event before, so a component that
+ * rendered nothing can say why.
+ */
+const recordCaughtError = (error: unknown): void => {
+  caughtError ??= getErrorMessage(error);
+};
+
+window.addEventListener("error", (event) => recordCaughtError(event.error));
+
 const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
   do await wait();
   while (
-    (pendingRequests > 0 || (mountedType !== null && !findMountedFiber() && !renderError)) &&
+    (pendingRequests > 0 ||
+      (mountedType !== null && !findMountedFiber() && !renderError && !caughtError)) &&
     performance.now() < deadline
   );
 };
@@ -385,7 +402,7 @@ const createEmptyCapture = (error: string): Capture => ({
 
 const capture = (): Capture => {
   const fiber = findMountedFiber();
-  if (!fiber) return createEmptyCapture(renderError ?? "component did not render");
+  if (!fiber) return createEmptyCapture(renderError ?? caughtError ?? "component did not render");
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
     hookStates: readHookStates(fiber),
@@ -511,6 +528,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   await settle();
   probeHits = [];
   renderError = null;
+  caughtError = null;
   lastCommittedFiber = null;
   firstCommitShapes = null;
   pendingMutationHits = [];
@@ -534,7 +552,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   );
   const container = document.createElement("div");
   document.body.replaceChildren(container);
-  mountedRoot = createRoot(container);
+  mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
   // HACK: the component and wrapper types come from dynamic imports, so React's element
   // typing can't see them.
   let element = createElement(mountedType as Parameters<typeof createElement>[0], props);
