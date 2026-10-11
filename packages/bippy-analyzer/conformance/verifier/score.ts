@@ -348,6 +348,7 @@ export const scoreComponent = (
 
     const afterMatches = getMatches(after.shapes);
     if (!isEveryRegionMatched(afterMatches)) {
+      if (report.isTruncated) continue;
       recordFailure(
         verdict.stateCounterexamples,
         describeMismatch(observation.props, path, normalizeShapes(after.shapes)),
@@ -359,14 +360,15 @@ export const scoreComponent = (
     if (!action && after.firstCommitShapes) {
       const firstMatches = getMatches(after.firstCommitShapes);
       if (!isEveryRegionMatched(firstMatches)) {
-        recordFailure(
-          verdict.stateCounterexamples,
-          describeMismatch(
-            observation.props,
-            [FIRST_COMMIT],
-            normalizeShapes(after.firstCommitShapes),
-          ),
-        );
+        if (!report.isTruncated)
+          recordFailure(
+            verdict.stateCounterexamples,
+            describeMismatch(
+              observation.props,
+              [FIRST_COMMIT],
+              normalizeShapes(after.firstCommitShapes),
+            ),
+          );
       } else {
         for (const match of firstMatches) coveredStates.add(match);
         const isUnexplained = regionIndices.some(
@@ -422,7 +424,9 @@ export const scoreComponent = (
     });
     const candidates = triggers.map(({ handler }) => handler);
     const candidateIds = new Set(candidates.map((candidate) => candidate.id));
-    const isMaybeTriggered = triggers.every(({ trigger }) => trigger === "maybe");
+    const maybeTriggeredIds = new Set(
+      triggers.flatMap(({ handler, trigger }) => (trigger === "maybe" ? [handler.id] : [])),
+    );
     const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void =>
       recordFailure(verdict.transitionCounterexamples, {
         path,
@@ -456,11 +460,12 @@ export const scoreComponent = (
         : transitions.some(
             (transition) =>
               transition.targets.some((target) => afterMatches.includes(target)) ||
-              (isUnchangedInRegion && (transition.isAsync || isMaybeTriggered)),
+              (isUnchangedInRegion &&
+                (transition.isAsync || maybeTriggeredIds.has(transition.handlerId))),
           );
     });
     if (isPredicted) verdict.coveredTransitions++;
-    else recordWrongEdge("unpredicted-target");
+    else if (!report.isTruncated) recordWrongEdge("unpredicted-target");
   }
 
   verdict.coveredStates = [...coveredStates].sort((left, right) => left - right);
