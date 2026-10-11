@@ -279,6 +279,8 @@ export class Interpreter {
   readonly warnings: Warning[] = [];
   readonly effectCalls: EffectCall[] = [];
   readonly renderedComponents = new Set<string>();
+  /** The guards each branch's value was computed under, as formatted keys. */
+  readonly branchGuards = new WeakMap<ConditionalValue, string[]>();
   /**
    * A sample of the whole props object, once the component passes it on whole, like
    * `templateCtx(props)`, and so reads props that no binding names.
@@ -995,17 +997,29 @@ export class Interpreter {
     }
   }
 
-  #resolvePhi(phi: Phi, outcome: Outcome): SymbolicValue {
+  #createConditional(
+    split: SplitOutcome,
+    guards: SymbolicValue[],
+    toArm: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
+  ): ConditionalValue {
+    const conditional = createConditional(
+      split,
+      toArm(split.consequent, [...guards, getGuard(split, true)]),
+      toArm(split.alternate, [...guards, getGuard(split, false)]),
+    );
+    this.branchGuards.set(conditional, guards.map(formatSymbolicValue));
+    return conditional;
+  }
+
+  #resolvePhi(phi: Phi, outcome: Outcome, guards: SymbolicValue[]): SymbolicValue {
     switch (outcome.kind) {
       case "Fallthrough": {
         const operand = outcome.from === null ? undefined : phi.operands.get(outcome.from);
         return operand ? this.#read(operand) : createUnknown("loop", phi.place.loc);
       }
       case "Split":
-        return createConditional(
-          outcome,
-          this.#resolvePhi(phi, outcome.consequent),
-          this.#resolvePhi(phi, outcome.alternate),
+        return this.#createConditional(outcome, guards, (arm, armGuards) =>
+          this.#resolvePhi(phi, arm, armGuards),
         );
       case "Return":
         return createUnknown("unreachable", phi.place.loc);
@@ -1029,7 +1043,8 @@ export class Interpreter {
     if (stops.has(join)) return outcome;
     const block = this.#getBlock(join);
     if (isFallthroughOnly(outcome, join)) {
-      for (const phi of block.phis) this.#write(phi.place, this.#resolvePhi(phi, outcome));
+      for (const phi of block.phis)
+        this.#write(phi.place, this.#resolvePhi(phi, outcome, state.guards));
       return this.#walk(join, stops, null, state, true);
     }
     const resume = (current: Outcome, guards: SymbolicValue[]): Outcome => {
@@ -1158,7 +1173,11 @@ export class Interpreter {
         for (const phi of block.phis)
           this.#write(
             phi.place,
-            this.#resolvePhi(phi, { kind: "Fallthrough", from: previousId, to: currentId }),
+            this.#resolvePhi(
+              phi,
+              { kind: "Fallthrough", from: previousId, to: currentId },
+              currentState.guards,
+            ),
           );
       }
       for (const instruction of block.instructions) {
@@ -1236,17 +1255,15 @@ export class Interpreter {
     }
   }
 
-  #toValue(outcome: Outcome, loc: SourceLocation): SymbolicValue {
+  #toValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {
     switch (outcome.kind) {
       case "Return":
         return outcome.value;
       case "Fallthrough":
         return createUnknown("fallthrough", loc);
       case "Split":
-        return createConditional(
-          outcome,
-          this.#toValue(outcome.consequent, loc),
-          this.#toValue(outcome.alternate, loc),
+        return this.#createConditional(outcome, guards, (arm, armGuards) =>
+          this.#toValue(arm, loc, armGuards),
         );
       default:
         return assertExhaustive(outcome, "Unhandled outcome");
@@ -1266,7 +1283,11 @@ export class Interpreter {
             : (args[index] ?? UNDEFINED_VALUE),
         );
       });
-      return this.#toValue(this.#walk(fn.body.entry, NO_STOPS, null, state, false), fn.loc);
+      return this.#toValue(
+        this.#walk(fn.body.entry, NO_STOPS, null, state, false),
+        fn.loc,
+        state.guards,
+      );
     } finally {
       this.#currentFunction = previousFunction;
     }

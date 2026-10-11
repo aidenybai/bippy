@@ -39,7 +39,7 @@ import {
   isPlacePrefix,
   parsePlaceKey,
 } from "./utils/place-key.js";
-import { getTestExpression, getTruthiness } from "./utils/truthiness.js";
+import { getTestExpression, getTruthiness, negate } from "./utils/truthiness.js";
 import {
   isExternalSource,
   isRenderingNothingWhenFalse,
@@ -519,53 +519,67 @@ const collectTestedBranchKeys = (render: SymbolicValue): Set<string> => {
 
 /**
  * Lists the branch outcomes no state reaches. Only the arms some state reaches are
- * searched, and an unreached alternate that renders nothing is not worth reporting.
+ * searched, and an unreached alternate that renders nothing is not worth reporting. A
+ * branch rendered under a condition it wasn't computed under, like a ternary kept in a
+ * variable that renders only behind `&&`, still runs without that condition, so the
+ * states that render it say nothing about the side it takes.
  */
 const collectUnreachableBranches = (
   render: SymbolicValue,
   outcomes: DecisionOutcomes,
+  branchGuards: WeakMap<ConditionalValue, string[]>,
 ): UnreachableBranch[] => {
-  const unreachableBranches: UnreachableBranch[] = [];
+  const unreachableBranches: Array<UnreachableBranch & { key: string }> = [];
   const seen = collectTestedBranchKeys(render);
-  const visited = new WeakSet<SymbolicValue>();
-  const visit = (value: SymbolicValue): void => {
-    if (visited.has(value)) return;
-    visited.add(value);
+  const narrowedKeys = new Set<string>();
+  const pathConditions = new WeakMap<SymbolicValue, Set<string>>();
+  const visit = (value: SymbolicValue, conditions: string[]): void => {
+    const known = pathConditions.get(value);
+    if (known && conditions.every((condition) => known.has(condition))) return;
+    const merged = new Set([...(known ?? []), ...conditions]);
+    pathConditions.set(value, merged);
     switch (value.kind) {
       case "Conditional": {
         const key = getBranchKey(value);
+        const guards = branchGuards.get(value) ?? [];
+        if ([...merged].some((condition) => !guards.includes(condition))) narrowedKeys.add(key);
         const reached = outcomes.get(key);
         const test = getTestExpression(value);
         if (reached && !seen.has(key)) {
           seen.add(key);
           if (!reached.has(true))
             unreachableBranches.push({
+              key,
               branch: value.branch,
               side: true,
               description: `never ${formatSymbolicValue(test)}`,
             });
           if (!reached.has(false) && !isRenderingNothingWhenFalse(value)) {
             unreachableBranches.push({
+              key,
               branch: value.branch,
               side: false,
               description: `never ${formatNegated(test)}`,
             });
           }
         }
-        if (reached?.has(true)) visit(value.consequent);
-        if (reached?.has(false)) visit(value.alternate);
+        if (reached?.has(true)) visit(value.consequent, [...merged, formatSymbolicValue(test)]);
+        if (reached?.has(false))
+          visit(value.alternate, [...merged, formatSymbolicValue(negate(test))]);
         return;
       }
       case "JsxExpression":
       case "JsxFragment":
-        value.children.forEach(visit);
+        for (const child of value.children) visit(child, [...merged]);
         return;
       default:
         return;
     }
   };
-  visit(render);
-  return unreachableBranches;
+  visit(render, []);
+  return unreachableBranches.flatMap(({ key, ...unreachableBranch }) =>
+    narrowedKeys.has(key) ? [] : [unreachableBranch],
+  );
 };
 
 /**
@@ -633,7 +647,11 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     places: new Map(reachable.values),
     states,
     regions,
-    unreachableBranches: collectUnreachableBranches(analysis.render, outcomes),
+    unreachableBranches: collectUnreachableBranches(
+      analysis.render,
+      outcomes,
+      analysis.branchGuards,
+    ),
     isTruncated,
   };
 };

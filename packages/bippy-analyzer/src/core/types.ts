@@ -238,6 +238,8 @@ export interface ComponentAnalysis {
   propsSample: Sample | null;
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
+  /** The guards each branch's value was computed under, as formatted keys. */
+  branchGuards: WeakMap<ConditionalValue, string[]>;
   handlers: Handler[];
   renders: string[];
   bailouts: Bailout[];
