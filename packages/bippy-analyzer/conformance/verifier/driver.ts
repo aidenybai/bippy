@@ -17,6 +17,7 @@ const MAX_PROP_COMBINATIONS = 12;
 const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 4;
+const ASYNC_COMPONENT_ERROR = "async server component, which renders only on a server";
 
 export const mountInPage = (page: Page, request: MountRequest): Promise<Capture> =>
   page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);
@@ -125,6 +126,7 @@ export const exploreComponent = async (
 ): Promise<Observation[]> => {
   const { exportName } = analysis;
   if (!exportName) return [];
+  if (analysis.isAsync) throw new Error(ASYNC_COMPONENT_ERROR);
   const observations: Observation[] = [];
   const propCombinations = getPropCombinations(analysis);
   const wrappers = await resolveWrappers(

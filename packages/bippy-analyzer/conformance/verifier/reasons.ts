@@ -23,7 +23,8 @@ interface MountFailurePattern {
 const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   {
     failure: "server-component",
-    pattern: /found: \[object Promise\]|async\/await is not yet supported in Client Components/,
+    pattern:
+      /found: \[object Promise\]|async\/await is not yet supported in Client Components|async server component/,
   },
   { failure: "env", pattern: /environment variable/i },
   {

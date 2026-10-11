@@ -38,6 +38,7 @@ export const analyzeComponent = (
     return {
       ...base,
       loc,
+      isAsync: false,
       bindings: [],
       placeDomains: new Map(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
@@ -64,6 +65,7 @@ export const analyzeComponent = (
   return {
     ...base,
     loc: hir.loc,
+    isAsync: hir.async,
     bindings,
     placeDomains: interpreter.placeDomains,
     render,

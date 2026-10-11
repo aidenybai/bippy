@@ -230,6 +230,8 @@ export interface ComponentAnalysis {
   file: string;
   declaration: string;
   loc: SourceLocation;
+  /** An `async` component, which renders only on a server. */
+  isAsync: boolean;
   bindings: Binding[];
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
