@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { GeneratedSource, makeInstructionId } from "../../src/react-compiler/hir/hir.js";
+import { GeneratedSource, makeInstructionId } from "../../src/react-compiler/HIR/HIR.js";
 import type { Binding, SymbolicValue } from "../../src/core/types.js";
 import { matchesExpected, normalizeShapes, toExpected } from "../../conformance/verifier/match.js";
 import type { Shape } from "../../conformance/verifier/types.js";

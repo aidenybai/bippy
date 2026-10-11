@@ -3,8 +3,8 @@ import { isCallExpression } from "typescript/unstable/ast/is";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import { analyzeProject } from "../../src/core/analyze-project.js";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
-import type { HIRFunction } from "../../src/react-compiler/hir/hir.js";
-import { BuiltInUseStateId } from "../../src/react-compiler/hir/object-shape.js";
+import type { HIRFunction } from "../../src/react-compiler/HIR/HIR.js";
+import { BuiltInUseStateId } from "../../src/react-compiler/HIR/ObjectShape.js";
 import type { ProjectAnalysis } from "../../src/core/types.js";
 import { getReactExportName } from "../../src/core/utils/typescript.js";
 import {

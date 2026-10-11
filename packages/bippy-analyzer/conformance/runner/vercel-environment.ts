@@ -49,7 +49,15 @@ const ANALYZER_DEPENDENCIES = [
   "vite-tsconfig-paths",
   "magic-string",
   "playwright",
-  "diff",
+  "@babel/core",
+  "@babel/traverse",
+  "@babel/types",
+  "@babel/parser",
+  "@babel/code-frame",
+  "invariant",
+  "pretty-format",
+  "zod",
+  "zod-validation-error",
 ];
 
 const getCredentials = (): Credentials => {

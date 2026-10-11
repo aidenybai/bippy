@@ -1,6 +1,6 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import { GeneratedSource } from "../react-compiler/hir/hir.js";
-import type { SourceLocation } from "../react-compiler/hir/hir.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
 import type { Interpreter } from "./interpret.js";
 import type { SymbolicValue, Handler, HandlerTrigger } from "./types.js";
 import { forEachJsxElement } from "./utils/traverse.js";
@@ -36,7 +36,7 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
 const getSourceText = (sourceFile: SourceFile, loc: SourceLocation | null): string | null =>
   loc === null || loc === GeneratedSource
     ? null
-    : sourceFile.text.slice(loc.start, loc.end).replace(/\s+/g, " ").trim();
+    : sourceFile.text.slice(loc.start.index, loc.end.index).replace(/\s+/g, " ").trim();
 
 /**
  * Finds every event handler in the render tree and every effect, and records what each one

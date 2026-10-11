@@ -1,5 +1,5 @@
-import { GeneratedSource } from "../react-compiler/hir/hir.js";
-import { DisjointSet } from "../react-compiler/utils/disjoint-set.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
+import DisjointSet from "../react-compiler/Utils/DisjointSet.js";
 import type { Bound, Constraints } from "./constraints.js";
 import {
   CONSTANT_ATOM,
@@ -87,7 +87,7 @@ const getBranchKey = (conditional: ConditionalValue): string => {
   const { branch } = conditional;
   return branch.loc === GeneratedSource
     ? `generated:${branch.terminalId}`
-    : `${branch.loc.start}:${branch.loc.end}:${branch.terminalId}`;
+    : `${branch.loc.start.index}:${branch.loc.end.index}:${branch.terminalId}`;
 };
 
 const getLiteralCases = (

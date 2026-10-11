@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import type { Binding, ComponentAnalysis, Warning } from "../../src/core/types.js";
 import { formatLine } from "../../src/core/format.js";
-import { GeneratedSource } from "../../src/react-compiler/hir/hir.js";
-import type { SourceLocation } from "../../src/react-compiler/hir/hir.js";
+import { GeneratedSource } from "../../src/react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../../src/react-compiler/HIR/HIR.js";
 import type { Observation } from "./driver.js";
 import type { Probe } from "./server.js";
 
@@ -31,14 +31,14 @@ export const createMutationProbe = (
   loc: SourceLocation,
 ): Probe | null => {
   if (loc === GeneratedSource) return null;
-  const text = sourceText.slice(loc.start, loc.end);
-  if (!PLACE_PATTERN.test(text) || !MEMBER_ACCESS_PATTERN.test(sourceText.slice(loc.end)))
+  const text = sourceText.slice(loc.start.index, loc.end.index);
+  if (!PLACE_PATTERN.test(text) || !MEMBER_ACCESS_PATTERN.test(sourceText.slice(loc.end.index)))
     return null;
   return {
-    id: `mutation:${file}:${loc.start}`,
+    id: `mutation:${file}:${loc.start.index}`,
     file,
-    start: loc.start,
-    end: loc.end,
+    start: loc.start.index,
+    end: loc.end.index,
     mode: "mutation",
   };
 };

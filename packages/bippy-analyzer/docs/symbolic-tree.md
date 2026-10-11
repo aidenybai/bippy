@@ -35,31 +35,29 @@ Render tree symbols:
 
 ## What it does
 
-The pipeline is a port of the React Compiler's front end, followed by our own passes. Read `src/core` in this order:
+The pipeline runs the React Compiler's own front end, then our passes. Read `src/core` in this order:
 
-| File                        | Stage                                                                                  |
-| --------------------------- | -------------------------------------------------------------------------------------- |
-| `analyze-project.ts`        | Opens the TS project, finds components, runs each one, then lists states               |
-| `analyze-component.ts`      | Runs one component through the compiler passes and ours                                |
-| `../react-compiler/`        | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference |
-| `type-provider.ts`          | Types the compiler's HIR from the TS checker                                           |
-| `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept                     |
-| `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with        |
-| `collect-handlers.ts`       | What each event handler and effect updates                                             |
-| `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions            |
-| `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds                  |
-| `format.ts`, `serialize.ts` | Printing and JSON output                                                               |
-| `types.ts`                  | The data passed between stages                                                         |
-| `utils/`                    | Small helpers: places, predicates, truthiness, traversal, TS nodes, projects           |
+| File                        | Stage                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| `analyze-project.ts`        | Opens the TS project, compiles each file, runs each component, then lists states |
+| `compile.ts`                | Runs the React Compiler on a file and keeps each function's HIR                  |
+| `analyze-component.ts`      | Runs our passes on one component's HIR                                           |
+| `type-provider.ts`          | Types the compiler's HIR from the TS checker                                     |
+| `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept               |
+| `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with  |
+| `collect-handlers.ts`       | What each event handler and effect updates                                       |
+| `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions      |
+| `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds            |
+| `format.ts`, `serialize.ts` | Printing and JSON output                                                         |
+| `types.ts`                  | The data passed between stages                                                   |
+| `utils/`                    | Small helpers: places, predicates, truthiness, traversal, TS nodes, projects     |
 
 The browser verifier lives in `conformance/verifier`, next to the repos it runs on.
 
-Each ported file names the compiler source it came from.
-
 1. Loads the project with `typescript/unstable/sync` (TypeScript 7).
-2. Finds components using the React Compiler's rules: a capitalized function that returns JSX or calls a hook, or one wrapped in `memo` or `forwardRef`.
-3. Lowers each component to HIR and runs the compiler's passes, through `inferReactivePlaces`. A function the compiler can't lower becomes a `compiler-error` bailout.
-4. Types the HIR with the compiler's `inferTypes`, backed by the checker:
+2. Parses each file with Babel and runs the React Compiler on it in `infer` mode, so it finds components by the compiler's own rules: a capitalized function that returns JSX or calls a hook, or one wrapped in `memo` or `forwardRef`.
+3. Keeps each component's HIR right after `inferReactivePlaces` and stops the compiler there. A function the compiler can't lower becomes a `compiler-error` bailout.
+4. Types the HIR with the compiler's `inferTypes`, backed by the checker through our patch:
    - React hooks and APIs resolve through the checker, which follows aliases and re-exports to React's declarations.
    - Values the compiler leaves untyped take their TypeScript type: primitives, arrays, `Map`, `Set`, readonly collections and function signatures. A second round lets methods like `items.push` resolve to the compiler's own signatures once `items` is known to be an array.
    - A collection method the compiler doesn't list mutates its receiver when `lib.d.ts` declares it on `Array` but not `ReadonlyArray`, and likewise for `Map` and `Set`.
@@ -92,20 +90,12 @@ Each ported file names the compiler source it came from.
 | `render-mutation` | State is mutated during render.                                                    |
 | `prop-mutation`   | A prop is mutated, like `items.sort()` on an array prop.                           |
 
-To see the HIR for a component, run `pnpm tsx src/cli/hir.ts <tsconfig> -c <name>`.
+## The React Compiler source
 
-## Port fidelity
+`src/react-compiler` is `babel-plugin-react-compiler`'s source, generated by `pnpm build` and not committed. The build fetches the facebook/react revision that `patches/react-compiler.patch` names and applies the patch, much as react-doctor builds oxc. The patch is the only code of ours in there: it adds a `typeProvider` option that types values from the TypeScript checker, in `Environment.ts` and `InferTypes.ts`.
 
-`test/compiler-diff` compares our HIR with the real compiler's after `inferReactivePlaces`, using the newest npm build, with the TypeScript layer turned off. Run `pnpm tsx test/compiler-diff/cli.ts <tsconfig>`.
-
-| Corpus                         | Functions matching |
-| ------------------------------ | ------------------ |
-| fixtures                       | 16 of 17           |
-| bulletproof-react              | 122 of 122         |
-| 2048-in-react                  | 8 of 10            |
-| The compiler's own test inputs | 941 of 954         |
-
-The compiler's test inputs are vendored from the ported commit in `test/fixtures/react-compiler`, and `pnpm sync:compiler-fixtures` refreshes them. `upstream-fixtures.test.ts` lists every function where the two compilers disagree, with the reason. Most disagreements exist because the npm build predates the ported commit: against a build of that commit, all 955 functions both compilers compile match. The rest are deliberate differences or upstream bugs.
+- To change the compiler, edit `src/react-compiler` and run `pnpm build --save` to write the patch.
+- To move to a newer compiler, run `pnpm build --upgrade <revision>`. It reapplies the patch with a three-way merge and leaves conflict markers where a hunk no longer fits.
 
 ## Example
 

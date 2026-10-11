@@ -1,4 +1,4 @@
-import { ScopeManager } from "../react-compiler/hir/scope.js";
+import { compileFile } from "./compile.js";
 import { CompilerTypeProvider } from "./type-provider.js";
 import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
@@ -13,7 +13,6 @@ import type {
 import { forEachJsxElement } from "./utils/traverse.js";
 import { getPlaceKey } from "./utils/place-key.js";
 import { analyzeComponent } from "./analyze-component.js";
-import { findReactFunctions } from "../react-compiler/program.js";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript.js";
 import { isProjectSourceFile, withProject } from "./utils/with-project.js";
 
@@ -75,12 +74,13 @@ export const analyzeProject = (
       const context = {
         sourceFile,
         checker: project.checker,
-        scopes: new ScopeManager(sourceFile),
-        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+        compiled: compileFile(fileName, sourceFile.text, {
+          typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+        }),
         exportNames: collectExportNames(sourceFile),
         displayNames: collectDisplayNames(sourceFile),
       };
-      for (const reactFunction of findReactFunctions(sourceFile)) {
+      for (const reactFunction of context.compiled.functions) {
         if (reactFunction.fnType === "Component")
           analyses.push(analyzeComponent(reactFunction, context));
       }

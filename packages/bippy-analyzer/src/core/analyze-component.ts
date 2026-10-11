@@ -1,45 +1,25 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Checker } from "typescript/unstable/sync";
-import { getSourceLocation } from "../react-compiler/hir/hir.js";
-import type { HIRFunction } from "../react-compiler/hir/hir.js";
-import type { TypeProvider } from "../react-compiler/hir/environment.js";
-import type { ScopeManager } from "../react-compiler/hir/scope.js";
+import type { CompiledFile, CompiledFunction } from "./compile.js";
 import { DomainResolver, addComparedSamples } from "./infer-domains.js";
 import { collectHandlers } from "./collect-handlers.js";
 import { Interpreter } from "./interpret.js";
-import type { ModuleFunctionLoader } from "./interpret.js";
 import type { Bailout, ComponentAnalysis } from "./types.js";
-import { findModuleFunction } from "./utils/typescript.js";
-import { runPipeline } from "../react-compiler/pipeline.js";
-import type { ReactFunction } from "../react-compiler/program.js";
 
 interface FileContext {
   sourceFile: SourceFile;
   checker: Checker;
-  scopes: ScopeManager;
-  typeProvider: TypeProvider;
+  compiled: CompiledFile;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
-
-const createModuleFunctionLoader = (context: FileContext): ModuleFunctionLoader => {
-  const loaded = new Map<string, HIRFunction | null>();
-  return (name) => {
-    if (!loaded.has(name)) {
-      const node = findModuleFunction(context.sourceFile, name);
-      const result = node ? runPipeline({ name, node, fnType: "Other" }, context) : null;
-      loaded.set(name, result?.isOk() ? result.unwrap() : null);
-    }
-    return loaded.get(name) ?? null;
-  };
-};
 
 /**
  * Lowers one component and runs our analysis passes on its HIR: the symbolic render tree,
  * its bindings and their domains, and its handlers.
  */
 export const analyzeComponent = (
-  reactFunction: ReactFunction,
+  reactFunction: CompiledFunction,
   context: FileContext,
 ): ComponentAnalysis => {
   const { sourceFile, checker, exportNames, displayNames } = context;
@@ -52,10 +32,9 @@ export const analyzeComponent = (
     file: sourceFile.fileName,
     declaration: `${sourceFile.path}#${reactFunction.name}`,
   };
-  const result = runPipeline(reactFunction, context);
-  if (result.isErr()) {
-    const error = result.unwrapErr();
-    const loc = getSourceLocation(reactFunction.node);
+  const hir = reactFunction.hir;
+  if (hir === null) {
+    const loc = reactFunction.loc;
     return {
       ...base,
       loc,
@@ -67,17 +46,16 @@ export const analyzeComponent = (
       bailouts: [
         {
           reason: "compiler-error",
-          message: error.details.map((detail) => detail.reason).join("; "),
+          message: reactFunction.errors.join("; "),
           loc,
         },
       ],
       warnings: [],
     };
   }
-  const hir = result.unwrap();
   const interpreter = new Interpreter(
     new DomainResolver(checker, sourceFile),
-    createModuleFunctionLoader(context),
+    context.compiled.compileModuleFunction,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);

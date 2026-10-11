@@ -3,7 +3,7 @@ import type {
   HIRFunction,
   Instruction,
   InstructionValue,
-} from "../../src/react-compiler/hir/hir.js";
+} from "../../src/react-compiler/HIR/HIR.js";
 import { getInstructions, lowerProject } from "./helpers.js";
 
 type MethodCall = Extract<InstructionValue, { kind: "MethodCall" }>;

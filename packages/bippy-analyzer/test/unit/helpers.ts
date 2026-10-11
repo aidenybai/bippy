@@ -1,11 +1,9 @@
 import { resolve } from "node:path";
 import { CompilerTypeProvider } from "../../src/core/type-provider.js";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
-import { runPipeline } from "../../src/react-compiler/pipeline.js";
-import { findReactFunctions } from "../../src/react-compiler/program.js";
-import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/hir/hir.js";
-import { ScopeManager } from "../../src/react-compiler/hir/scope.js";
-import { eachInstructionLValue } from "../../src/react-compiler/hir/visitors.js";
+import { compileFile } from "../../src/core/compile.js";
+import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR.js";
+import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors.js";
 import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/core/types.js";
 
 export const getFixtureConfig = (fixture: string): string =>
@@ -36,11 +34,11 @@ export const lowerProject = (fixture: string): Map<string, HIRFunction> =>
     for (const fileName of project.program.getSourceFileNames().filter(isProjectSourceFile)) {
       const sourceFile = project.program.getSourceFile(fileName);
       if (!sourceFile) continue;
-      const scopes = new ScopeManager(sourceFile);
-      const typeProvider = new CompilerTypeProvider(project.checker, sourceFile);
-      for (const reactFunction of findReactFunctions(sourceFile)) {
-        const result = runPipeline(reactFunction, { scopes, typeProvider });
-        if (result.isOk()) functions.set(reactFunction.name, result.unwrap());
+      const compiled = compileFile(fileName, sourceFile.text, {
+        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+      });
+      for (const compiledFunction of compiled.functions) {
+        if (compiledFunction.hir) functions.set(compiledFunction.name, compiledFunction.hir);
       }
     }
     return functions;
@@ -64,7 +62,7 @@ export const getInstructions = (fn: HIRFunction): Instruction[] =>
 export const getNamedTypes = (fn: HIRFunction): Map<string, Type> =>
   new Map(
     getInstructions(fn).flatMap((instruction) =>
-      eachInstructionLValue(instruction).flatMap((place) =>
+      [...eachInstructionLValue(instruction)].flatMap((place) =>
         place.identifier.name ? [[place.identifier.name.value, place.identifier.type]] : [],
       ),
     ),

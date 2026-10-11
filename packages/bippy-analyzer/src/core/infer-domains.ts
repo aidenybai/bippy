@@ -3,8 +3,8 @@ import { findNodeAtLocation, getDeclarationKey, isReactElementType } from "./uti
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
-import type { SourceLocation } from "../react-compiler/hir/hir.js";
-import { GeneratedSource } from "../react-compiler/hir/hir.js";
+import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
 import type {
   AbstractValue,
   Domain,
@@ -170,7 +170,7 @@ export class DomainResolver {
 
   #getType(loc: SourceLocation): Type | undefined {
     if (loc === GeneratedSource) return undefined;
-    const key = `${loc.start}:${loc.end}`;
+    const key = `${loc.start.index}:${loc.end.index}`;
     if (!this.#types.has(key)) {
       const node = findNodeAtLocation(this.#sourceFile, loc);
       this.#types.set(key, node ? this.#checker.getTypeAtLocation(node) : undefined);

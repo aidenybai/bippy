@@ -63,7 +63,7 @@ test("pages through comments", async ({ mountComponent }) => {
 });
 ```
 
-`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter bippy-analyzer conformance:specs`, after a `conformance run` has set the repos up.
+`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter bippy-analyzer conformance specs`, after a `conformance run` has set the repos up.
 
 ## Environments
 

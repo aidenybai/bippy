@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import type picocolors from "picocolors";
-import { GeneratedSource } from "../react-compiler/hir/hir.js";
-import type { SourceLocation } from "../react-compiler/hir/hir.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
 import type {
   AbstractValue,
   AnalyzedComponent,
@@ -497,7 +497,7 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
         context,
       ),
     );
-  const line = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.line}`;
+  const line = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
   const location = `${relative(context.rootDirectory, analysis.file)}${line}`;
   return renderAsciiTree(
     createTreeNode(`${colors.bold(analysis.name)} ${colors.dim(location)}`, sections),

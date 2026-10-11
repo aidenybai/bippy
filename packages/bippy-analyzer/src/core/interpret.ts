@@ -1,4 +1,4 @@
-import type { AliasingEffect } from "../react-compiler/inference/aliasing-effects.js";
+import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects.js";
 import type {
   BlockId,
   HIRFunction,
@@ -10,10 +10,10 @@ import type {
   SourceLocation,
   SpreadPattern,
   Terminal,
-} from "../react-compiler/hir/hir.js";
-import { GeneratedSource, getHookKind } from "../react-compiler/hir/hir.js";
-import type { HookKind } from "../react-compiler/hir/object-shape.js";
-import { assertExhaustive } from "../react-compiler/utils/utils.js";
+} from "../react-compiler/HIR/HIR.js";
+import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR.js";
+import type { HookKind } from "../react-compiler/HIR/ObjectShape.js";
+import { assertExhaustive } from "../react-compiler/Utils/utils.js";
 import type { DomainResolver } from "./infer-domains.js";
 import type {
   Bailout,
@@ -102,8 +102,8 @@ const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
   left === right ||
   (left !== GeneratedSource &&
     right !== GeneratedSource &&
-    left.start === right.start &&
-    left.end === right.end);
+    left.start.index === right.start.index &&
+    left.end.index === right.end.index);
 
 /**
  * A function's effects are attached to the instruction that creates it but only happen when
@@ -298,7 +298,7 @@ export class Interpreter {
     loc: SourceLocation,
     options: Partial<Pick<Binding, "hookKind" | "propName" | "initial" | "inputs">> = {},
   ): Binding {
-    const key = `${kind}:${name}:${loc === GeneratedSource ? "generated" : loc.start}`;
+    const key = `${kind}:${name}:${loc === GeneratedSource ? "generated" : loc.start.index}`;
     const existing = this.#bindings.get(key);
     if (existing) return existing;
     const binding: Binding = {
@@ -1137,6 +1137,8 @@ export class Interpreter {
         case "label":
         case "sequence":
         case "try":
+        case "scope":
+        case "pruned-scope":
           nextId = terminal.block;
           break;
         case "maybe-throw":

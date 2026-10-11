@@ -3,10 +3,8 @@ import type { Node, SourceFile } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
 import type { Checker, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
-import { isComponentFunction, skipParentheses } from "../../react-compiler/program.js";
-import type { ComponentFunction } from "../../react-compiler/program.js";
-import { GeneratedSource } from "../../react-compiler/hir/hir.js";
-import type { SourceLocation } from "../../react-compiler/hir/hir.js";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../../react-compiler/HIR/HIR.js";
 
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react[\\/]/;
 const REACT_ELEMENT_TYPE_NAMES = new Set(["ReactElement", "ReactPortal", "ReactNode", "Element"]);
@@ -24,6 +22,9 @@ export const isReactElementType = (type: Type): boolean =>
       symbol.declarations.some((declaration) => REACT_DECLARATION_PATTERN.test(declaration.path))
     );
   });
+
+const skipParentheses = (node: Node): Node =>
+  t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
 const nodeIndexes = new WeakMap<SourceFile, Map<string, Node>>();
 
@@ -51,7 +52,7 @@ const getNodeIndex = (sourceFile: SourceFile): Map<string, Node> => {
 export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
   loc === GeneratedSource
     ? null
-    : (getNodeIndex(sourceFile).get(getRangeKey(loc.start, loc.end)) ?? null);
+    : (getNodeIndex(sourceFile).get(getRangeKey(loc.start.index, loc.end.index)) ?? null);
 
 /**
  * The symbol a reference, or the name of `a.b`, resolves to through import aliases.
@@ -156,29 +157,4 @@ export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string 
     }
   }
   return displayNames;
-};
-
-/**
- * Finds the function a module-level name is bound to, such as a reducer declared next to
- * the component that uses it.
- */
-export const findModuleFunction = (
-  sourceFile: SourceFile,
-  name: string,
-): ComponentFunction | null => {
-  for (const statement of sourceFile.statements) {
-    if (t.isFunctionDeclaration(statement) && statement.name?.text === name) return statement;
-    if (!t.isVariableStatement(statement)) continue;
-    for (const declaration of statement.declarationList.declarations) {
-      if (
-        !t.isIdentifier(declaration.name) ||
-        declaration.name.text !== name ||
-        !declaration.initializer
-      )
-        continue;
-      const initializer = skipParentheses(declaration.initializer);
-      return isComponentFunction(initializer) ? initializer : null;
-    }
-  }
-  return null;
 };

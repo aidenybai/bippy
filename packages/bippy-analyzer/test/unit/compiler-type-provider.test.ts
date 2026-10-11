@@ -1,15 +1,15 @@
 import { SymbolFlags } from "typescript/unstable/sync";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
-import type { MutableCollection } from "../../src/react-compiler/hir/environment.js";
-import { Effect, ValueKind } from "../../src/react-compiler/hir/hir.js";
-import type { HIRFunction, Type } from "../../src/react-compiler/hir/hir.js";
+import type { MutableCollection } from "../../src/react-compiler/HIR/Environment.js";
+import { Effect, ValueKind } from "../../src/react-compiler/HIR/HIR.js";
+import type { HIRFunction, Type } from "../../src/react-compiler/HIR/HIR.js";
 import {
   BuiltInArrayId,
   BuiltInMapId,
   BuiltInMixedReadonlyId,
   BuiltInSetId,
-} from "../../src/react-compiler/hir/object-shape.js";
+} from "../../src/react-compiler/HIR/ObjectShape.js";
 import { CompilerTypeProvider } from "../../src/core/type-provider.js";
 import { getFixtureConfig, getNamedTypes, lowerProject } from "./helpers.js";
 

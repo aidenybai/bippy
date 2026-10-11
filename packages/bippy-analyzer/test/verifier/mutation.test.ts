@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vite-plus/test";
-import { GeneratedSource } from "../../src/react-compiler/hir/hir.js";
+import { GeneratedSource } from "../../src/react-compiler/HIR/HIR.js";
 import { createMutationProbe } from "../../conformance/verifier/mutation.js";
 
 const FILE = "/app/list.tsx";
 
 const getLocation = (sourceText: string, place: string) => {
   const start = sourceText.indexOf(place);
-  return { filename: FILE, start, end: start + place.length, line: 1, column: start };
+  return {
+    filename: FILE,
+    identifierName: undefined,
+    start: { line: 1, column: start, index: start },
+    end: { line: 1, column: start + place.length, index: start + place.length },
+  };
 };
 
 describe("createMutationProbe", () => {

@@ -1,6 +1,6 @@
-import { GeneratedSource } from "../react-compiler/hir/hir.js";
-import type { SourceLocation } from "../react-compiler/hir/hir.js";
-import { assertExhaustive } from "../react-compiler/utils/utils.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
+import { assertExhaustive } from "../react-compiler/Utils/utils.js";
 import type {
   AbstractValue,
   Binding,
@@ -32,7 +32,7 @@ const BINARY_PRECEDENCE = new Map<string, number>([
 const ATOMIC_PRECEDENCE = 10;
 
 export const formatLine = (loc: SourceLocation): string =>
-  loc === GeneratedSource ? "" : `L${loc.line}`;
+  loc === GeneratedSource ? "" : `L${loc.start.line}`;
 
 export const formatPlace = (binding: Binding, path: readonly string[]): string =>
   [binding.name, ...path].join(".");

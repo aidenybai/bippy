@@ -1,5 +1,5 @@
-import type { HookKind } from "../react-compiler/hir/object-shape.js";
-import type { InstructionId, SourceLocation } from "../react-compiler/hir/hir.js";
+import type { HookKind } from "../react-compiler/HIR/ObjectShape.js";
+import type { InstructionId, SourceLocation } from "../react-compiler/HIR/HIR.js";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
 

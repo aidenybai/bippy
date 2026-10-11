@@ -12,7 +12,8 @@ import { forEachJsxElement, forEachRenderNode } from "../../src/core/utils/trave
 import { formatAbstractValue, formatLine, formatPlace } from "../../src/core/format.js";
 import { isStateBinding } from "../../src/core/utils/checks.js";
 import { parsePlaceKey } from "../../src/core/utils/place-key.js";
-import { GeneratedSource } from "../../src/react-compiler/hir/hir.js";
+import type { types } from "@babel/core";
+import { GeneratedSource } from "../../src/react-compiler/HIR/HIR.js";
 import type { Observation } from "./driver.js";
 import {
   explainMismatch,
@@ -120,8 +121,8 @@ const ORDERED_HOOK_KINDS = new Set<string>([
  */
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
-const getProbeId = (file: string, loc: { start: number; end: number }): string =>
-  `${file}:${loc.start}:${loc.end}`;
+const getProbeId = (file: string, loc: types.SourceLocation): string =>
+  `${file}:${loc.start.index}:${loc.end.index}`;
 
 export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   const probes = new Map<string, Probe>();
@@ -133,8 +134,8 @@ export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
     probes.set(id, {
       id,
       file: analysis.file,
-      start: branch.loc.start,
-      end: branch.loc.end,
+      start: branch.loc.start.index,
+      end: branch.loc.end.index,
       mode: branch.probe,
     });
   });
