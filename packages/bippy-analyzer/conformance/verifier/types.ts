@@ -33,16 +33,21 @@ export interface Capture {
   error: string | null;
 }
 
-/**
- * An element the page can act on. `isInChild` marks one a child component rendered, whose
- * handler the mounted component's analysis can't see.
- */
-export interface Action {
-  key: string;
+export interface ActionTarget {
   tag: string;
   label: string;
+}
+
+/**
+ * An element the page can act on. `isInChild` marks one a child component rendered, whose
+ * handler the mounted component's analysis can't see. `clickAncestors` are the elements
+ * around it with a click handler, which a click bubbles up to.
+ */
+export interface Action extends ActionTarget {
+  key: string;
   kind: "click" | "change";
   isInChild: boolean;
+  clickAncestors: ActionTarget[];
 }
 
 export interface Scenario {

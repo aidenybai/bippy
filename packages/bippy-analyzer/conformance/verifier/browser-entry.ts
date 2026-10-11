@@ -18,6 +18,7 @@ import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
 import type {
   Action,
+  ActionTarget,
   Capture,
   MountRequest,
   MutationHit,
@@ -427,7 +428,8 @@ const collectActions = (): MountedAction[] => {
   const fiber = findMountedFiber();
   const actions: MountedAction[] = [];
   const keyCounts = new Map<string, number>();
-  const visit = (current: Fiber): void => {
+  const visit = (current: Fiber, clickAncestors: ActionTarget[]): void => {
+    let childClickAncestors = clickAncestors;
     if (isHostFiber(current) && current.stateNode instanceof HTMLElement) {
       const props: Record<string, unknown> = current.memoizedProps ?? {};
       const tag = String(current.type);
@@ -451,13 +453,16 @@ const collectActions = (): MountedAction[] => {
           tag,
           label,
           isInChild: isRenderedByChild(current),
+          clickAncestors,
           element: current.stateNode,
         });
       }
+      if (typeof props.onClick === "function")
+        childClickAncestors = [...clickAncestors, { tag, label }];
     }
-    for (const child of getChildren(current)) visit(child);
+    for (const child of getChildren(current)) visit(child, childClickAncestors);
   };
-  if (fiber) for (const child of getChildren(fiber)) visit(child);
+  if (fiber) for (const child of getChildren(fiber)) visit(child, []);
   return actions;
 };
 

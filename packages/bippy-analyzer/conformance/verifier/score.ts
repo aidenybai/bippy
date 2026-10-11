@@ -15,6 +15,7 @@ import { parsePlaceKey } from "../../src/core/utils/place-key.js";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR.js";
 import type { Observation } from "./driver.js";
+import type { Action, ActionTarget, Shape } from "./types.js";
 import {
   explainMismatch,
   findClosest,
@@ -28,7 +29,6 @@ import { scoreWarnings } from "./mutation.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Probe } from "./server.js";
-import type { Shape } from "./types.js";
 
 type ComponentStatus = "verified" | "not-exported" | "mount-failed";
 
@@ -96,6 +96,8 @@ export interface VerificationSummary {
   durationMs: number;
 }
 
+type Trigger = "sure" | "maybe";
+
 interface TriggerLabel {
   tag: string;
   text: string | null;
@@ -116,10 +118,30 @@ const ORDERED_HOOK_KINDS = new Set<string>([
 ]);
 
 /**
- * A component given an event handler passes it to some element it renders, so its clicks
- * land on a host element of any tag.
+ * A component given a handler, like `<Modal onClose>`, may call it from any element it
+ * renders, so a click on any of its elements, under any event name, can trigger it.
  */
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
+
+const isLabelTarget = (label: TriggerLabel, target: ActionTarget): boolean =>
+  label.tag === target.tag && (label.text === null || label.text === target.label);
+
+/**
+ * Whether an action runs a handler: surely, when it acts on the handler's own element, or
+ * maybe, when the handler belongs to a component or to an element the click bubbles up to,
+ * where the component or a `stopPropagation` decides.
+ */
+const getTrigger = (label: TriggerLabel, action: Action): Trigger | null => {
+  if (isComponentTag(label.tag))
+    return label.text === null || label.text.includes(action.label) ? "maybe" : null;
+  const eventName = action.kind === "click" ? "onClick" : "onChange";
+  if (label.event !== eventName && label.event !== ANY_EVENT) return null;
+  if (isLabelTarget(label, action)) return "sure";
+  return action.kind === "click" &&
+    action.clickAncestors.some((target) => isLabelTarget(label, target))
+    ? "maybe"
+    : null;
+};
 
 const getProbeId = (file: string, loc: types.SourceLocation): string =>
   `${file}:${loc.start.index}:${loc.end.index}`;
@@ -393,17 +415,14 @@ export const scoreComponent = (
     if (!action || !before || before.error) continue;
     const beforeMatches = getMatches(before.shapes);
     if (!isEveryRegionMatched(beforeMatches) || !isEveryRegionMatched(afterMatches)) continue;
-    const eventName = action.kind === "click" ? "onClick" : "onChange";
-    const candidates = analysis.handlers.filter((handler) => {
+    const triggers = analysis.handlers.flatMap((handler) => {
       const label = triggerLabels.get(handler.id);
-      return (
-        label !== undefined &&
-        (label.tag === action.tag || isComponentTag(label.tag)) &&
-        (label.event === eventName || label.event === ANY_EVENT) &&
-        (label.text === null || label.text === action.label)
-      );
+      const trigger = label ? getTrigger(label, action) : null;
+      return trigger ? [{ handler, trigger }] : [];
     });
+    const candidates = triggers.map(({ handler }) => handler);
     const candidateIds = new Set(candidates.map((candidate) => candidate.id));
+    const isMaybeTriggered = triggers.every(({ trigger }) => trigger === "maybe");
     const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void =>
       recordFailure(verdict.transitionCounterexamples, {
         path,
@@ -437,7 +456,7 @@ export const scoreComponent = (
         : transitions.some(
             (transition) =>
               transition.targets.some((target) => afterMatches.includes(target)) ||
-              (isUnchangedInRegion && transition.isAsync),
+              (isUnchangedInRegion && (transition.isAsync || isMaybeTriggered)),
           );
     });
     if (isPredicted) verdict.coveredTransitions++;
