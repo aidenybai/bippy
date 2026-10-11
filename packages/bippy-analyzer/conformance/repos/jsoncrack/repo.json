@@ -3,5 +3,5 @@
   "revision": "a46d0d0adb098e12e577a083e87ead7f61f90098",
   "workingDirectory": "apps/www",
   "tsconfig": "tsconfig.json",
-  "install": "npx --yes pnpm@10.20.0 install --frozen-lockfile --ignore-scripts --filter www..."
+  "install": "npx --yes pnpm@10.20.0 install --frozen-lockfile --ignore-scripts --filter www... && npx --yes pnpm@10.20.0 --filter jsoncrack-react build"
 }
