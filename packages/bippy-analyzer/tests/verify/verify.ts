@@ -7,6 +7,7 @@ import { exploreComponent } from "./driver.js";
 import { collectMutationProbes } from "./mutation.js";
 import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
+import { classifyMountError } from "./reasons.js";
 import { readHarnessSetup, startHarness } from "./server.js";
 
 const MAX_PAGE_ATTEMPTS = 3;
@@ -95,10 +96,13 @@ export const verifyProject = async (
           knownComponents,
         );
       } catch (error) {
+        const message =
+          error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
         verdict = {
           ...scoreComponent(component.analysis, component.report, [], knownComponents),
           status: "mount-failed",
-          error: error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error),
+          error: message,
+          mountFailure: classifyMountError(message),
         };
         await page.close().catch(() => undefined);
         page = await openPage(browser, harness.url);

@@ -7,6 +7,7 @@ import { runLocal } from "./local-environment.js";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos.js";
 import type { RepoConfig } from "./repos.js";
 import { runVercel } from "./vercel-environment.js";
+import { formatMountFailures } from "../../tests/verify/score.js";
 
 type Environment = "local" | "vercel";
 
@@ -123,6 +124,12 @@ const formatTable = (results: RepoResult[]): string => {
       : [],
   );
   for (const { id, summary } of results) {
+    if (summary?.verification && summary.verification.couldNotMount > 0)
+      failures.push(
+        picocolors.dim(
+          `${id}: couldn't mount ${formatMountFailures(summary.verification.mountFailures)}`,
+        ),
+      );
     if (summary && isSetupSuspect(summary)) {
       failures.push(
         picocolors.yellow(

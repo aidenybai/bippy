@@ -68,7 +68,8 @@ const toSample = (value: unknown): Sample => {
 
 const formatWrongClaims = (verdict: ComponentVerdict): string[] => [
   ...verdict.wrongStates.map(
-    (wrong) => `unpredicted state after [${wrong.path.join(" → ")}]: ${wrong.rendered}`,
+    (wrong) =>
+      `unpredicted state after [${wrong.path.join(" → ")}]: ${wrong.reason} (closest S${wrong.closestState + 1})`,
   ),
   ...verdict.wrongEdges.map(
     (wrong) =>

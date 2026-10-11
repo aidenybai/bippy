@@ -1,3 +1,4 @@
+import { diffArrays } from "diff";
 import type { SymbolicValue } from "../../src/core/inference/types.js";
 import type { Shape } from "./types.js";
 
@@ -177,3 +178,61 @@ export const formatShapes = (shapes: Shape[]): string =>
         : `<${shape.tag}>`;
     })
     .join(" ");
+
+const HOLE_TOKEN = "…";
+const MAX_EXPLAINED_TOKENS = 4;
+
+const getActualTokens = (shapes: Shape[]): string[] =>
+  shapes.flatMap((shape) => {
+    if (shape.kind === "element") return [`<${shape.tag}>`, ...getActualTokens(shape.children)];
+    if (shape.kind === "component") return [`<${shape.name}>`];
+    return [JSON.stringify(shape.text)];
+  });
+
+const getExpectedTokens = (shapes: ExpectedShape[], actualTokens: Set<string>): string[] =>
+  shapes.flatMap((shape): string[] => {
+    switch (shape.kind) {
+      case "element":
+        return [`<${shape.tag}>`, ...getExpectedTokens(shape.children, actualTokens)];
+      case "component":
+        return [`<${shape.name}>`];
+      case "text":
+        return [JSON.stringify(shape.text)];
+      case "hole":
+        return [HOLE_TOKEN];
+      case "repeat":
+        return getExpectedTokens(shape.item, actualTokens);
+      case "choice": {
+        const options = shape.options.map((option) => getExpectedTokens(option, actualTokens));
+        const getOverlap = (tokens: string[]): number =>
+          tokens.filter((token) => actualTokens.has(token)).length;
+        return options.reduce(
+          (best, option) => (getOverlap(option) > getOverlap(best) ? option : best),
+          options[0] ?? [],
+        );
+      }
+      default:
+        return [];
+    }
+  });
+
+/**
+ * Says where a render departs from the closest predicted state: the first elements or text
+ * the state predicts that the render lacks, and what it shows instead.
+ */
+export const explainMismatch = (expected: ExpectedShape[], actual: Shape[]): string => {
+  const actualTokens = getActualTokens(actual);
+  const changes = diffArrays(getExpectedTokens(expected, new Set(actualTokens)), actualTokens, {
+    comparator: (left, right) => left === right || left === HOLE_TOKEN,
+  });
+  const missing =
+    changes
+      .find((change) => change.removed && change.value.some((token) => token !== HOLE_TOKEN))
+      ?.value.filter((token) => token !== HOLE_TOKEN) ?? [];
+  const extra = changes.find((change) => change.added)?.value ?? [];
+  const parts = [
+    missing.length > 0 && `expected ${missing.slice(0, MAX_EXPLAINED_TOKENS).join(" ")}`,
+    extra.length > 0 && `found ${extra.slice(0, MAX_EXPLAINED_TOKENS).join(" ")}`,
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(", ") : "same elements, arranged differently";
+};

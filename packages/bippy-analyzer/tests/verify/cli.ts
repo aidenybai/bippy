@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import picocolors from "picocolors";
 import type { Sample } from "../../src/core/inference/types.js";
-import { countWrongClaims, summarizeVerdicts } from "./score.js";
+import { countWrongClaims, formatMountFailures, summarizeVerdicts } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { verifyProject } from "./verify.js";
 
@@ -31,7 +31,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
   if (verdict.status === "not-exported")
     return picocolors.dim(`${verdict.name}  not exported, skipped`);
   if (verdict.status === "mount-failed")
-    return `${verdict.name}  ${picocolors.yellow("couldn't mount")} ${picocolors.dim(verdict.error ?? "")}`;
+    return `${verdict.name}  ${picocolors.yellow(`couldn't mount (${verdict.mountFailure ?? "other"})`)} ${picocolors.dim(verdict.error ?? "")}`;
   const wrongCount = countWrongClaims(verdict);
   const lines = [
     `${picocolors.bold(verdict.name)}  ${wrongCount > 0 ? picocolors.red(`${wrongCount} wrong`) : picocolors.green("0 wrong")}  ` +
@@ -46,12 +46,16 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
       ),
     );
     lines.push(picocolors.dim(`    rendered ${wrongState.rendered}`));
-    lines.push(picocolors.dim(`    closest ${formatStates([wrongState.closestState])}`));
+    lines.push(
+      picocolors.dim(
+        `    closest ${formatStates([wrongState.closestState])}: ${wrongState.reason}`,
+      ),
+    );
   }
   for (const wrongEdge of verdict.wrongEdges) {
     lines.push(
       picocolors.red(
-        `  ✗ ${wrongEdge.reason}: ${wrongEdge.action} went ${formatStates(wrongEdge.fromStates)} → ${formatStates(wrongEdge.toStates)}`,
+        `  ✗ ${wrongEdge.reason}: ${wrongEdge.action} went ${formatStates(wrongEdge.fromStates)} → ${formatStates(wrongEdge.toStates)}, predicted ${formatStates(wrongEdge.predictedStates) || "no change"}`,
       ),
     );
   }
@@ -98,7 +102,7 @@ new Command()
     const summary = summarizeVerdicts(report.components, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount · ${summary.notExported} not exported · ${summary.wrong} wrong · states ${summary.witnessedStates}/${summary.predictedStates} witnessed · warnings ${summary.witnessedWarnings}/${summary.warnings} witnessed · ${summary.unwarnedMutations} unwarned mutations · ${summary.durationMs} ms`,
+        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount${summary.couldNotMount > 0 ? ` (${formatMountFailures(summary.mountFailures)})` : ""} · ${summary.notExported} not exported · ${summary.wrong} wrong · states ${summary.witnessedStates}/${summary.predictedStates} witnessed · warnings ${summary.witnessedWarnings}/${summary.warnings} witnessed · ${summary.unwarnedMutations} unwarned mutations · ${summary.durationMs} ms`,
       ),
     );
   })

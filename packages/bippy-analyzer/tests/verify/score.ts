@@ -11,6 +11,7 @@ import type {
 import { formatAbstractValue, formatPlace } from "../../src/core/inference/values.js";
 import type { Observation } from "./driver.js";
 import {
+  explainMismatch,
   findClosest,
   formatShapes,
   matchesExpected,
@@ -19,6 +20,8 @@ import {
   toExpected,
 } from "./match.js";
 import { scoreWarnings } from "./mutation.js";
+import { classifyMountError } from "./reasons.js";
+import type { MountFailure } from "./reasons.js";
 import type { Probe } from "./server.js";
 import type { Shape } from "./types.js";
 
@@ -29,6 +32,7 @@ interface WrongState {
   path: string[];
   rendered: string;
   closestState: number;
+  reason: string;
 }
 
 interface WrongEdge {
@@ -36,6 +40,7 @@ interface WrongEdge {
   action: string;
   fromStates: number[];
   toStates: number[];
+  predictedStates: number[];
   reason: "unpredicted-target" | "unmodeled-handler" | "unpredicted-effect";
 }
 
@@ -51,6 +56,7 @@ export interface ComponentVerdict {
   file: string;
   status: ComponentStatus;
   error: string | null;
+  mountFailure: MountFailure | null;
   observations: number;
   renderErrors: number;
   predictedStates: number;
@@ -81,7 +87,7 @@ export interface VerificationSummary {
   warnings: number;
   witnessedWarnings: number;
   unwarnedMutations: number;
-  mountErrors: Record<string, number>;
+  mountFailures: Partial<Record<MountFailure, number>>;
   durationMs: number;
 }
 
@@ -95,7 +101,6 @@ const FIRST_COMMIT = "first commit";
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call"]);
 const MAX_RECORDED_FAILURES = 10;
 const MAX_RENDERED_LENGTH = 300;
-const MOUNT_ERROR_LENGTH = 80;
 const ORDERED_HOOK_KINDS = new Set<string>([
   "useState",
   "useReducer",
@@ -228,6 +233,7 @@ export const scoreComponent = (
     file: analysis.file,
     status: analysis.exportName ? "verified" : "not-exported",
     error: null,
+    mountFailure: null,
     observations: observations.length,
     renderErrors: 0,
     predictedStates: report.states.length,
@@ -252,10 +258,12 @@ export const scoreComponent = (
       (observation) => observation.after.error && observation.after.shapes.length === 0,
     )
   ) {
+    const error = observations[0]?.after.error ?? "nothing was mounted";
     return {
       ...verdict,
       status: "mount-failed",
-      error: observations[0]?.after.error ?? "nothing was mounted",
+      error,
+      mountFailure: classifyMountError(error),
     };
   }
 
@@ -264,6 +272,17 @@ export const scoreComponent = (
   const stateBindings = getStateBindings(analysis);
   const witnessedStates = new Set<number>();
   const matchCache = new Map<string, number[]>();
+
+  const describeMismatch = (props: Record<string, Sample>, path: string[], shapes: Shape[]) => {
+    const closestState = findClosest(expectedStates, shapes);
+    return {
+      props,
+      path,
+      rendered: formatShapes(shapes).slice(0, MAX_RENDERED_LENGTH),
+      closestState,
+      reason: explainMismatch(expectedStates[closestState] ?? [], shapes),
+    };
+  };
 
   const getMatches = (capturedShapes: Shape[]): number[] => {
     const shapes = normalizeShapes(capturedShapes);
@@ -313,13 +332,10 @@ export const scoreComponent = (
 
     const afterMatches = getMatches(after.shapes);
     if (!isEveryGroupMatched(afterMatches)) {
-      const shapes = normalizeShapes(after.shapes);
-      recordFailure(verdict.wrongStates, {
-        props: observation.props,
-        path,
-        rendered: formatShapes(shapes).slice(0, MAX_RENDERED_LENGTH),
-        closestState: findClosest(expectedStates, shapes),
-      });
+      recordFailure(
+        verdict.wrongStates,
+        describeMismatch(observation.props, path, normalizeShapes(after.shapes)),
+      );
     } else {
       for (const match of afterMatches) witnessedStates.add(match);
     }
@@ -327,13 +343,14 @@ export const scoreComponent = (
     if (!action && after.firstCommitShapes) {
       const firstMatches = getMatches(after.firstCommitShapes);
       if (!isEveryGroupMatched(firstMatches)) {
-        const shapes = normalizeShapes(after.firstCommitShapes);
-        recordFailure(verdict.wrongStates, {
-          props: observation.props,
-          path: [FIRST_COMMIT],
-          rendered: formatShapes(shapes).slice(0, MAX_RENDERED_LENGTH),
-          closestState: findClosest(expectedStates, shapes),
-        });
+        recordFailure(
+          verdict.wrongStates,
+          describeMismatch(
+            observation.props,
+            [FIRST_COMMIT],
+            normalizeShapes(after.firstCommitShapes),
+          ),
+        );
       } else {
         for (const match of firstMatches) witnessedStates.add(match);
         const isUnexplained = groupIndices.some(
@@ -350,6 +367,9 @@ export const scoreComponent = (
             action: FIRST_COMMIT,
             fromStates: firstMatches,
             toStates: afterMatches,
+            predictedStates: [
+              ...new Set(getEdges(firstMatches, effectIds).flatMap((edge) => edge.targets)),
+            ],
             reason: "unpredicted-effect",
           });
         }
@@ -393,19 +413,22 @@ export const scoreComponent = (
     const isUnchanged = groupIndices.every((group) =>
       isGroupUnchanged(beforeMatches, afterMatches, group),
     );
+    const candidateIds = new Set(candidates.map((candidate) => candidate.id));
     const recordWrongEdge = (reason: WrongEdge["reason"]): void =>
       recordFailure(verdict.wrongEdges, {
         path,
         action: action.key,
         fromStates: beforeMatches,
         toStates: afterMatches,
+        predictedStates: [
+          ...new Set(getEdges(beforeMatches, candidateIds).flatMap((edge) => edge.targets)),
+        ],
         reason,
       });
     if (candidates.length === 0) {
       if (!isUnchanged) recordWrongEdge("unmodeled-handler");
       continue;
     }
-    const candidateIds = new Set(candidates.map((candidate) => candidate.id));
     const isPredicted = groupIndices.every((group) => {
       const isUnchangedInGroup = isGroupUnchanged(beforeMatches, afterMatches, group);
       const edges = getEdges(inGroup(beforeMatches, group), candidateIds);
@@ -448,16 +471,22 @@ export const countWrongClaims = (verdict: ComponentVerdict): number =>
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
   items.reduce((total, item) => total + getValue(item), 0);
 
+export const formatMountFailures = (mountFailures: VerificationSummary["mountFailures"]): string =>
+  Object.entries(mountFailures)
+    .sort(([, left], [, right]) => (right ?? 0) - (left ?? 0))
+    .map(([failure, count]) => `${failure} ${count}`)
+    .join(", ");
+
 export const summarizeVerdicts = (
   verdicts: ComponentVerdict[],
   durationMs: number,
 ): VerificationSummary => {
   const verified = verdicts.filter((verdict) => verdict.status === "verified");
   const mountFailed = verdicts.filter((verdict) => verdict.status === "mount-failed");
-  const mountErrors: Record<string, number> = {};
+  const mountFailures: Partial<Record<MountFailure, number>> = {};
   for (const verdict of mountFailed) {
-    const message = (verdict.error ?? "unknown").replace(/\d+/g, "N").slice(0, MOUNT_ERROR_LENGTH);
-    mountErrors[message] = (mountErrors[message] ?? 0) + 1;
+    const failure = verdict.mountFailure ?? "other";
+    mountFailures[failure] = (mountFailures[failure] ?? 0) + 1;
   }
   return {
     verified: verified.length,
@@ -471,7 +500,7 @@ export const summarizeVerdicts = (
     warnings: sum(verified, (verdict) => verdict.warnings),
     witnessedWarnings: sum(verified, (verdict) => verdict.witnessedWarnings),
     unwarnedMutations: sum(verified, (verdict) => verdict.unwarnedMutations.length),
-    mountErrors,
+    mountFailures,
     durationMs,
   };
 };
