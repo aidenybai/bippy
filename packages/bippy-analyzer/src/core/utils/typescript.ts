@@ -1,7 +1,10 @@
+import { SyntaxKind } from "typescript/unstable/ast";
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
 import type { Checker, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
+import { isComponentFunction, skipParentheses } from "../../compiler/program.js";
+import type { ComponentFunction } from "../../compiler/program.js";
 import { GeneratedSource } from "../../compiler/hir/hir.js";
 import type { SourceLocation } from "../../compiler/hir/hir.js";
 
@@ -84,4 +87,98 @@ export const getReactExportName = (checker: Checker, node: Node): string | null 
   )
     ? target.name
     : null;
+};
+
+const hasModifier = (node: Node, kind: SyntaxKind): boolean =>
+  "modifiers" in node &&
+  Array.isArray(node.modifiers) &&
+  node.modifiers.some((modifier: Node) => modifier.kind === kind);
+
+/**
+ * Maps each exported local name in a file to the name it is exported as.
+ */
+export const collectExportNames = (sourceFile: SourceFile): Map<string, string> => {
+  const exportNames = new Map<string, string>();
+  for (const statement of sourceFile.statements) {
+    const isExported = hasModifier(statement, SyntaxKind.ExportKeyword);
+    if (t.isFunctionDeclaration(statement) && isExported) {
+      const name = statement.name?.text ?? "default";
+      exportNames.set(name, hasModifier(statement, SyntaxKind.DefaultKeyword) ? "default" : name);
+    }
+    if (t.isVariableStatement(statement) && isExported) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (t.isIdentifier(declaration.name))
+          exportNames.set(declaration.name.text, declaration.name.text);
+      }
+    }
+    if (t.isExportAssignment(statement)) {
+      const expression = skipParentheses(statement.expression);
+      exportNames.set(t.isIdentifier(expression) ? expression.text : "default", "default");
+    }
+    if (
+      t.isExportDeclaration(statement) &&
+      !statement.moduleSpecifier &&
+      statement.exportClause &&
+      t.isNamedExports(statement.exportClause)
+    ) {
+      for (const element of statement.exportClause.elements) {
+        exportNames.set(
+          element.propertyName?.getText(sourceFile) ?? element.name.getText(sourceFile),
+          element.name.getText(sourceFile),
+        );
+      }
+    }
+  }
+  return exportNames;
+};
+
+/**
+ * The `displayName` each component is given. A name assigned from anything but a string
+ * literal, like `Sheet.displayName = Dialog.displayName`, is known only at runtime: null.
+ */
+export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string | null> => {
+  const displayNames = new Map<string, string | null>();
+  for (const statement of sourceFile.statements) {
+    if (!t.isExpressionStatement(statement)) continue;
+    const expression = skipParentheses(statement.expression);
+    if (
+      !t.isBinaryExpression(expression) ||
+      expression.operatorToken.kind !== SyntaxKind.EqualsToken
+    )
+      continue;
+    const { left, right } = expression;
+    if (
+      t.isPropertyAccessExpression(left) &&
+      left.name.text === "displayName" &&
+      t.isIdentifier(left.expression)
+    ) {
+      displayNames.set(left.expression.text, t.isStringLiteral(right) ? right.text : null);
+    }
+  }
+  return displayNames;
+};
+
+/**
+ * Finds the function a module-level name is bound to, such as a reducer declared next to
+ * the component that uses it.
+ */
+export const findModuleFunction = (
+  sourceFile: SourceFile,
+  name: string,
+): ComponentFunction | null => {
+  for (const statement of sourceFile.statements) {
+    if (t.isFunctionDeclaration(statement) && statement.name?.text === name) return statement;
+    if (!t.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (
+        !t.isIdentifier(declaration.name) ||
+        declaration.name.text !== name ||
+        !declaration.initializer
+      )
+        continue;
+      const initializer = skipParentheses(declaration.initializer);
+      return isComponentFunction(initializer) ? initializer : null;
+    }
+  }
+  return null;
 };

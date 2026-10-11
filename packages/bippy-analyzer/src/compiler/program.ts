@@ -20,7 +20,7 @@ import * as t from "typescript/unstable/ast/is";
 import { getDirectives } from "./hir/build-hir.js";
 import type { ReactFunctionType } from "./hir/environment.js";
 
-type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
+export type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
 
 export interface ReactFunction {
   name: string;
@@ -35,10 +35,10 @@ const COMPONENT_NAME_PATTERN = /^[A-Z]/;
 const HOOK_NAME_PATTERN = /^use[A-Z0-9]/;
 const PASCAL_CASE_NAMESPACE_PATTERN = /^[A-Z].*/;
 
-const isComponentFunction = (node: Node): node is ComponentFunction =>
+export const isComponentFunction = (node: Node): node is ComponentFunction =>
   t.isFunctionDeclaration(node) || t.isFunctionExpression(node) || t.isArrowFunction(node);
 
-const skipParentheses = (node: Node): Node =>
+export const skipParentheses = (node: Node): Node =>
   t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
 /*
@@ -384,101 +384,4 @@ export const findReactFunctions = (sourceFile: SourceFile): ReactFunction[] => {
   };
   sourceFile.forEachChild(visit);
   return reactFunctions;
-};
-
-const hasModifier = (node: Node, kind: SyntaxKind): boolean =>
-  "modifiers" in node &&
-  Array.isArray(node.modifiers) &&
-  node.modifiers.some((modifier: Node) => modifier.kind === kind);
-
-/**
- * Maps each exported local name in a file to the name it is exported as.
- */
-export const collectExportNames = (sourceFile: SourceFile): Map<string, string> => {
-  const exportNames = new Map<string, string>();
-  for (const statement of sourceFile.statements) {
-    const isExported = hasModifier(statement, SyntaxKind.ExportKeyword);
-    if (t.isFunctionDeclaration(statement) && isExported) {
-      const name = statement.name?.text ?? "default";
-      exportNames.set(name, hasModifier(statement, SyntaxKind.DefaultKeyword) ? "default" : name);
-    }
-    if (t.isVariableStatement(statement) && isExported) {
-      for (const declaration of statement.declarationList.declarations) {
-        if (t.isIdentifier(declaration.name))
-          exportNames.set(declaration.name.text, declaration.name.text);
-      }
-    }
-    if (t.isExportAssignment(statement)) {
-      const expression = skipParentheses(statement.expression);
-      exportNames.set(t.isIdentifier(expression) ? expression.text : "default", "default");
-    }
-    if (
-      t.isExportDeclaration(statement) &&
-      !statement.moduleSpecifier &&
-      statement.exportClause &&
-      t.isNamedExports(statement.exportClause)
-    ) {
-      for (const element of statement.exportClause.elements) {
-        exportNames.set(
-          element.propertyName?.getText(sourceFile) ?? element.name.getText(sourceFile),
-          element.name.getText(sourceFile),
-        );
-      }
-    }
-  }
-  return exportNames;
-};
-
-/**
- * Maps each component in a file to the name it sets with `Component.displayName = "..."`.
- */
-/**
- * The `displayName` each component is given. A name assigned from anything but a string
- * literal, like `Sheet.displayName = Dialog.displayName`, is known only at runtime: null.
- */
-export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string | null> => {
-  const displayNames = new Map<string, string | null>();
-  for (const statement of sourceFile.statements) {
-    if (!t.isExpressionStatement(statement)) continue;
-    const expression = skipParentheses(statement.expression);
-    if (
-      !t.isBinaryExpression(expression) ||
-      expression.operatorToken.kind !== SyntaxKind.EqualsToken
-    )
-      continue;
-    const { left, right } = expression;
-    if (
-      t.isPropertyAccessExpression(left) &&
-      left.name.text === "displayName" &&
-      t.isIdentifier(left.expression)
-    ) {
-      displayNames.set(left.expression.text, t.isStringLiteral(right) ? right.text : null);
-    }
-  }
-  return displayNames;
-};
-
-/**
- * Finds the function a module-level name is bound to, such as a reducer declared next to
- * the component that uses it.
- */
-export const findModuleFunction = (
-  sourceFile: SourceFile,
-  name: string,
-): ComponentFunction | null => {
-  for (const statement of sourceFile.statements) {
-    if (t.isFunctionDeclaration(statement) && statement.name?.text === name) return statement;
-    if (!t.isVariableStatement(statement)) continue;
-    for (const declaration of statement.declarationList.declarations) {
-      if (
-        !t.isIdentifier(declaration.name) ||
-        declaration.name.text !== name ||
-        !declaration.initializer
-      )
-        continue;
-      const initializer = skipParentheses(declaration.initializer);
-      return isComponentFunction(initializer) ? initializer : null;
-    }
-  }
-  return null;
 };

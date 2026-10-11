@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
+import { CompilerTypeProvider } from "../core/type-provider.js";
 import { isProjectSourceFile, withProject } from "../core/utils/with-project.js";
 import { findReactFunctions } from "../compiler/program.js";
 import { runPipeline } from "../compiler/pipeline.js";
@@ -23,9 +24,10 @@ const run = (tsconfig: string, options: HirCliOptions): void =>
       const sourceFile = project.program.getSourceFile(fileName);
       if (!sourceFile) continue;
       const scopes = new ScopeManager(sourceFile);
+      const typeProvider = new CompilerTypeProvider(project.checker, sourceFile);
       for (const reactFunction of findReactFunctions(sourceFile)) {
         if (options.component && !options.component.includes(reactFunction.name)) continue;
-        const result = runPipeline(reactFunction, { sourceFile, checker: project.checker, scopes });
+        const result = runPipeline(reactFunction, { scopes, typeProvider });
         console.log(`// ${reactFunction.fnType} ${reactFunction.name}`);
         console.log(result.isOk() ? printFunction(result.unwrap()) : result.unwrapErr().toString());
         console.log();

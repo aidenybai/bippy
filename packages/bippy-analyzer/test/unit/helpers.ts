@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { CompilerTypeProvider } from "../../src/core/type-provider.js";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
 import { runPipeline } from "../../src/compiler/pipeline.js";
 import { findReactFunctions } from "../../src/compiler/program.js";
@@ -36,12 +37,9 @@ export const lowerProject = (fixture: string): Map<string, HIRFunction> =>
       const sourceFile = project.program.getSourceFile(fileName);
       if (!sourceFile) continue;
       const scopes = new ScopeManager(sourceFile);
+      const typeProvider = new CompilerTypeProvider(project.checker, sourceFile);
       for (const reactFunction of findReactFunctions(sourceFile)) {
-        const result = runPipeline(reactFunction, {
-          sourceFile,
-          checker: project.checker,
-          scopes,
-        });
+        const result = runPipeline(reactFunction, { scopes, typeProvider });
         if (result.isOk()) functions.set(reactFunction.name, result.unwrap());
       }
     }

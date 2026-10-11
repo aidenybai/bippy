@@ -1,5 +1,11 @@
-import type { SourceFile } from "typescript/unstable/ast";
-import type { Checker } from "typescript/unstable/sync";
+/**
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+// Ported from babel-plugin-react-compiler/src/Entrypoint/Pipeline.ts at b618bbb.
+
 import { CompilerError } from "./compiler-error.js";
 import { analyseFunctions } from "./inference/analyse-functions.js";
 import { dropManualMemoization } from "./inference/drop-manual-memoization.js";
@@ -11,6 +17,7 @@ import { assertConsistentIdentifiers } from "./hir/assert-consistent-identifiers
 import { assertTerminalSuccessorsExist } from "./hir/assert-terminal-blocks-exist.js";
 import { lower } from "./hir/build-hir.js";
 import { Environment, validateEnvironmentConfig } from "./hir/environment.js";
+import type { TypeProvider } from "./hir/environment.js";
 import { findContextIdentifiers } from "./hir/find-context-identifiers.js";
 import type { HIRFunction } from "./hir/hir.js";
 import { mergeConsecutiveBlocks } from "./hir/merge-consecutive-blocks.js";
@@ -22,15 +29,13 @@ import { pruneMaybeThrows } from "./optimization/prune-maybe-throws.js";
 import { inferTypes } from "./type-inference/infer-types.js";
 import { eliminateRedundantPhi } from "./ssa/eliminate-redundant-phi.js";
 import { enterSSA } from "./ssa/enter-ssa.js";
-import { CompilerTypeProvider } from "../core/type-provider.js";
 import { Err } from "./utils/result.js";
 import type { Result } from "./utils/result.js";
 import type { ReactFunction } from "./program.js";
 
 export interface PipelineContext {
-  sourceFile: SourceFile;
-  checker: Checker;
   scopes: ScopeManager;
+  typeProvider: TypeProvider | null;
 }
 
 /**
@@ -58,7 +63,7 @@ const compile = (
   reactFunction: ReactFunction,
   context: PipelineContext,
 ): Result<HIRFunction, CompilerError> => {
-  const { sourceFile, checker, scopes } = context;
+  const { scopes, typeProvider } = context;
   const environment = new Environment(
     scopes,
     reactFunction.fnType,
@@ -66,7 +71,7 @@ const compile = (
     validateEnvironmentConfig({}),
     findContextIdentifiers(reactFunction.node, scopes),
     reactFunction.node,
-    new CompilerTypeProvider(checker, sourceFile),
+    typeProvider,
   );
   return lower(reactFunction.node, environment).map((hir) => {
     pruneMaybeThrows(hir);

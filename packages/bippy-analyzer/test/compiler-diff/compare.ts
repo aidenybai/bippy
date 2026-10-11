@@ -3,9 +3,10 @@ import { diffArrays, createTwoFilesPatch } from "diff";
 import type { Node } from "typescript/unstable/ast";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
 import { findReactFunctions } from "../../src/compiler/program.js";
+import { runPipeline } from "../../src/compiler/pipeline.js";
+import { CompilerTypeProvider } from "../../src/core/type-provider.js";
 import { printFunction } from "../../src/compiler/hir/print-hir.js";
 import { ScopeManager } from "../../src/compiler/hir/scope.js";
-import { runPortPipeline } from "./port.js";
 import { compileWithUpstream, getFunctionKey } from "./upstream.js";
 
 /**
@@ -185,9 +186,10 @@ export const compareProject = (configPath: string, options: CompareOptions): Fun
       if (!sourceFile) continue;
       const upstreamFunctions = compileWithUpstream(fileName, sourceFile.text);
       const context = {
-        sourceFile,
-        checker: project.checker,
         scopes: new ScopeManager(sourceFile),
+        typeProvider: options.isTypeProviderEnabled
+          ? new CompilerTypeProvider(project.checker, sourceFile)
+          : null,
       };
       const portKeys = new Set<string>();
       for (const reactFunction of findReactFunctions(sourceFile)) {
@@ -196,7 +198,7 @@ export const compareProject = (configPath: string, options: CompareOptions): Fun
         const upstreamFunction = upstreamFunctions.get(key);
         const portResult = (() => {
           try {
-            const result = runPortPipeline(reactFunction, context, options.isTypeProviderEnabled);
+            const result = runPipeline(reactFunction, context);
             return result.isOk()
               ? { hir: normalizeHir(printFunction(result.unwrap())), error: null }
               : { hir: null, error: getErrorMessage(result.unwrapErr()) };

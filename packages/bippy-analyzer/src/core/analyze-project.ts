@@ -1,4 +1,5 @@
 import { ScopeManager } from "../compiler/hir/scope.js";
+import { CompilerTypeProvider } from "./type-provider.js";
 import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
 import type {
@@ -12,11 +13,8 @@ import type {
 import { forEachJsxElement } from "./utils/traverse.js";
 import { getPlaceKey } from "./utils/place-key.js";
 import { analyzeComponent } from "./analyze-component.js";
-import {
-  collectDisplayNames,
-  collectExportNames,
-  findReactFunctions,
-} from "../compiler/program.js";
+import { findReactFunctions } from "../compiler/program.js";
+import { collectDisplayNames, collectExportNames } from "./utils/typescript.js";
 import { isProjectSourceFile, withProject } from "./utils/with-project.js";
 
 const isPrimitive = (value: SymbolicValue | undefined): value is PrimitiveSymbolicValue =>
@@ -78,6 +76,7 @@ export const analyzeProject = (
         sourceFile,
         checker: project.checker,
         scopes: new ScopeManager(sourceFile),
+        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
         exportNames: collectExportNames(sourceFile),
         displayNames: collectDisplayNames(sourceFile),
       };

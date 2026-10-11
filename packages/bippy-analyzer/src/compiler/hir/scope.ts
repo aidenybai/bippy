@@ -1,3 +1,5 @@
+// Stands in for the Babel scope API that babel-plugin-react-compiler's lowering reads.
+
 import type {
   ArrowFunction,
   BindingName,
