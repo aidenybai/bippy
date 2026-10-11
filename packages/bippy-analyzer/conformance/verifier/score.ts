@@ -486,6 +486,7 @@ const formatSample = (sample: Sample): string => {
   if (sample.kind === "Value") return JSON.stringify(sample.value);
   if (sample.kind === "Array") return `[${sample.items.map(formatSample).join(", ")}]`;
   if (sample.kind === "Object") return "{…}";
+  if (sample.kind === "Element") return "<span>";
   return sample.kind === "Function" ? "fn" : "undefined";
 };
 

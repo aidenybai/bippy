@@ -19,7 +19,8 @@ import { EQUALITY_OPERATORS } from "./constraints.js";
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
-const RENDERABLE_TYPE_PATTERN = /ReactNode|ReactElement|JSX\.Element|ReactChild|ReactPortal/;
+const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
+const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)\b/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
 
 const getPrimitiveTypeName = (type: Type): PrimitiveTypeName | null => {
@@ -81,7 +82,9 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
  */
 const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample[] => {
   if (!type || type.isErrorType() || type.flags & TypeFlags.AnyOrUnknown) return [TEXT_SAMPLE];
-  if (RENDERABLE_TYPE_PATTERN.test(checker.typeToString(type))) return [TEXT_SAMPLE];
+  const typeText = checker.typeToString(type);
+  if (ELEMENT_TYPE_PATTERN.test(typeText)) return [{ kind: "Element" }];
+  if (NODE_TYPE_PATTERN.test(typeText)) return [TEXT_SAMPLE];
   if (type.isUnionType()) {
     return dedupeSamples(
       type.getTypes().flatMap((member) => getSamples(checker, member, depth)),

@@ -219,6 +219,8 @@ const hydrate = (sample: Sample): unknown => {
       return undefined;
     case "Function":
       return () => undefined;
+    case "Element":
+      return createElement("span", null, "text");
     case "Array":
       return sample.items.map(hydrate);
     case "Object":

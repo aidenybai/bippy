@@ -38,6 +38,7 @@ export type Sample =
   | { kind: "Value"; value: string | number | boolean | null }
   | { kind: "Undefined" }
   | { kind: "Function" }
+  | { kind: "Element" }
   | { kind: "Array"; items: Sample[] }
   | { kind: "Object"; fields: Record<string, Sample> };
 
