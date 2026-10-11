@@ -7,8 +7,8 @@ Finds every state a React app can be in by reading its source, then checks that 
 - **Conformance** (`conformance/`) runs both on pinned open-source repos. See [conformance/README.md](conformance/README.md).
 
 ```sh
-pnpm --filter bippy-analyzer analyze test/fixtures/symbolic-tree/tsconfig.json -c Wizard
-pnpm --filter bippy-analyzer conformance verify test/fixtures/symbolic-tree/tsconfig.json
+pnpm --filter bippy-analyzer analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard
+pnpm --filter bippy-analyzer conformance verify tests/fixtures/symbolic-tree/tsconfig.json
 pnpm --filter bippy-analyzer conformance run --env vercel -n 8
 ```
 

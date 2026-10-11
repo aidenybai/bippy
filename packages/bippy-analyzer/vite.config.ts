@@ -3,6 +3,6 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   test: {
     name: "bippy-analyzer",
-    include: ["test/**/*.test.ts"],
+    include: ["tests/**/*.test.ts"],
   },
 });

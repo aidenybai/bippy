@@ -5,9 +5,9 @@ Reads a React project with the TypeScript 7 checker and prints, for each compone
 ## Run
 
 ```sh
-pnpm analyze test/fixtures/symbolic-tree/tsconfig.json              # every component
-pnpm analyze test/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
-pnpm analyze test/fixtures/symbolic-tree/tsconfig.json -H           # component tree
+pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json              # every component
+pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
+pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -H           # component tree
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
 ```
 
@@ -99,7 +99,7 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
 
 ## Example
 
-`test/fixtures/symbolic-tree/src/reducer.tsx`:
+`tests/fixtures/symbolic-tree/src/reducer.tsx`:
 
 ```text
 Wizard src/reducer.tsx:21
