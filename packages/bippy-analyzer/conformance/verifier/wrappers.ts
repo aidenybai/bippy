@@ -49,3 +49,38 @@ export const findWrapper = (
   const candidates = [...projectCandidates, ...packageCandidates];
   return candidates.length > 0 ? { name, candidates } : null;
 };
+
+/**
+ * The root of the compound component a component belongs to: the longest name its own file
+ * exports that starts its name, like `AlertDialog` for `AlertDialogContent`. It stands in when
+ * an error names a parent the component already has, as Radix's `AlertDialog` parts throw
+ * for want of a `Dialog`.
+ */
+export const findCompoundRoot = (
+  exportName: string,
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+): Wrapper | null => {
+  const [name] = [...exportIndex]
+    .filter(
+      ([candidate, files]) =>
+        candidate !== exportName &&
+        exportName.startsWith(candidate) &&
+        files.includes(componentFile),
+    )
+    .map(([candidate]) => candidate)
+    .sort((left, right) => right.length - left.length);
+  return name
+    ? {
+        name,
+        candidates: [
+          {
+            specifier: componentFile,
+            importer: componentFile,
+            exportName: name,
+            isRootAllowed: false,
+          },
+        ],
+      }
+    : null;
+};

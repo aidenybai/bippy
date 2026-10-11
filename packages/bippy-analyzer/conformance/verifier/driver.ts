@@ -3,7 +3,7 @@ import type { ComponentAnalysis, Sample } from "../../src/core/types.js";
 import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
 import type { Action, Capture, MountRequest, Wrapper } from "./types.js";
-import { findWrapper, getErrorSubject } from "./wrappers.js";
+import { findCompoundRoot, findWrapper, getErrorSubject } from "./wrappers.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -28,6 +28,22 @@ export const listActionsInPage = (page: Page): Promise<Action[]> =>
   page.evaluate(() => window.__verify.actions());
 
 /**
+ * Where a newly found parent goes among the wrappers, outermost first: around the wrapper the
+ * error is about, inside them all when it is about the component itself, and otherwise
+ * outside them all, since then a wrapper threw under a name of its package's own, like
+ * `MenubarMenu` for a `Menu` wrapper.
+ */
+const getWrapperIndex = (
+  subject: string | null,
+  subjectIndex: number,
+  exportName: string,
+  wrappers: Wrapper[],
+): number => {
+  if (subjectIndex !== -1) return subjectIndex;
+  return subject === exportName || wrappers.length === 0 ? wrappers.length : 0;
+};
+
+/**
  * Mounts a component, and while it throws for want of a parent, finds that parent and
  * mounts it again inside. Returns the parents it needed, outermost first.
  */
@@ -42,11 +58,20 @@ export const resolveWrappers = async (
     const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
     if (classifyMountError(capture.error) !== "provider") break;
-    const wrapper = findWrapper(capture.error, componentFile, exportIndex);
-    if (!wrapper || wrappers.some((existing) => existing.name === wrapper.name)) break;
+    const isWrapped = (candidate: Wrapper | null): boolean =>
+      candidate === null || wrappers.some((existing) => existing.name === candidate.name);
+    const errorWrapper = findWrapper(capture.error, componentFile, exportIndex);
+    const wrapper = isWrapped(errorWrapper)
+      ? findCompoundRoot(request.exportName, componentFile, exportIndex)
+      : errorWrapper;
+    if (!wrapper || isWrapped(wrapper)) break;
     const subject = getErrorSubject(capture.error);
     const subjectIndex = wrappers.findIndex((existing) => existing.name === subject);
-    wrappers.splice(subjectIndex === -1 ? wrappers.length : subjectIndex, 0, wrapper);
+    wrappers.splice(
+      getWrapperIndex(subject, subjectIndex, request.exportName, wrappers),
+      0,
+      wrapper,
+    );
   }
   return wrappers;
 };
