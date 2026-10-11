@@ -463,6 +463,57 @@ exports[`fixture analysis > Toggle keeps its states, edges and dead branches 1`]
       └─ {label} → S1"
 `;
 
+exports[`fixture analysis > Toolbar keeps its states, edges and dead branches 1`] = `
+"Toolbar src/groups.tsx:12
+├─ data
+│  ├─ role prop "admin" | "viewer"
+│  ├─ status hook:Custom Status
+│  │  ├─ .isSaving false | true
+│  │  └─ .error null | string
+│  ├─ isHelpOpen state false | true = false
+│  └─ hasPermission(role, "edit") call false | true
+├─ render
+│  └─ <div>
+│     ├─ ◆ role === "admin"
+│     │  └─ ✓ <span> "Admin"
+│     ├─ ◆ hasPermission(role, "edit")
+│     │  ├─ ✓ <button> "Edit"
+│     │  └─ ✗ <span> "Read only"
+│     ├─ ◆ status.isSaving
+│     │  └─ ✓ <span> "Saving"
+│     ├─ ◆ status.error
+│     │  └─ ✓ <p> {status.error}
+│     ├─ <button onClick ⇒ isHelpOpen = !isHelpOpen> "Help"
+│     └─ ◆ isHelpOpen
+│        └─ ✓ <p> "Press E to edit"
+└─ states (10 in 3 groups, 32 combinations)
+   ├─ role, hasPermission(role, "edit")
+   │  ├─ S1 role === "admin" ∧ hasPermission(role, "edit")
+   │  │  └─ <span> "Admin" <button> "Edit"
+   │  ├─ S2 role === "admin" ∧ !hasPermission(role, "edit")
+   │  │  └─ <span> "Admin" <span> "Read only"
+   │  ├─ S3 role !== "admin" ∧ hasPermission(role, "edit")
+   │  │  └─ <button> "Edit"
+   │  └─ S4 role !== "admin" ∧ !hasPermission(role, "edit")
+   │     └─ <span> "Read only"
+   ├─ status.isSaving, status.error
+   │  ├─ S5 status.isSaving ∧ status.error
+   │  │  └─ <span> "Saving" <p> {status.error}
+   │  ├─ S6 status.isSaving ∧ !status.error
+   │  │  └─ <span> "Saving"
+   │  ├─ S7 !status.isSaving ∧ status.error
+   │  │  └─ <p> {status.error}
+   │  └─ S8 !status.isSaving ∧ !status.error
+   │     └─ ∅
+   └─ isHelpOpen
+      ├─ S9 isHelpOpen
+      │  ├─ <p> "Press E to edit"
+      │  └─ "Help" → S10
+      └─ S10 !isHelpOpen
+         ├─ ∅
+         └─ "Help" → S9"
+`;
+
 exports[`fixture analysis > Wizard keeps its states, edges and dead branches 1`] = `
 "Wizard src/reducer.tsx:21
 ├─ data

@@ -16,6 +16,7 @@ const createBinding = (name: string): Binding => ({
   domain: { kind: "Unknown", reason: "unknown" },
   samples: [],
   initial: null,
+  inputs: [],
 });
 
 const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => ({

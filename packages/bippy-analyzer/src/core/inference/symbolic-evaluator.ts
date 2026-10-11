@@ -39,7 +39,9 @@ import type {
 } from "./types.js";
 import {
   formatPlace,
+  forEachSymbolicValue,
   formatSymbolicValue,
+  getBindingPlaceKey,
   getKnownTruthiness,
   getPlaceKey,
   getTestExpression,
@@ -302,7 +304,7 @@ export class SymbolicEvaluator {
     name: string,
     kind: BindingKind,
     loc: SourceLocation,
-    options: Partial<Pick<Binding, "hookKind" | "propName" | "initial">> = {},
+    options: Partial<Pick<Binding, "hookKind" | "propName" | "initial" | "inputs">> = {},
   ): Binding {
     const key = `${kind}:${name}:${loc === GeneratedSource ? "generated" : loc.start}`;
     const existing = this.#bindings.get(key);
@@ -317,6 +319,7 @@ export class SymbolicEvaluator {
       domain: this.#resolver.getDomain(loc),
       samples: kind === "prop" ? this.#resolver.getSamples(loc) : [],
       initial: options.initial ?? null,
+      inputs: options.inputs ?? [],
     };
     this.#bindings.set(key, binding);
     this.placeDomains.set(getPlaceKey(binding, []), binding.domain);
@@ -686,7 +689,12 @@ export class SymbolicEvaluator {
       return createUnknown("call", loc);
     }
     const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
-    return createBindingValue(this.#createBinding(name, "call", loc));
+    const inputs = new Set<string>();
+    for (const argument of args)
+      forEachSymbolicValue(argument, (part) => {
+        if (part.kind === "Binding") inputs.add(getBindingPlaceKey(part));
+      });
+    return createBindingValue(this.#createBinding(name, "call", loc, { inputs: [...inputs] }));
   }
 
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {

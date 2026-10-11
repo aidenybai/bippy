@@ -389,14 +389,22 @@ const createEnumerator = (
 const isPlacePrefix = (prefix: string, placeKey: string): boolean =>
   placeKey === prefix || placeKey.startsWith(`${prefix}.`);
 
+const isExternalSource = (binding: Binding): boolean =>
+  binding.kind === "hook" || binding.kind === "context";
+
 /**
  * Splits the render tree's decisions into groups that vary independently. Decisions join a
- * group when their tests read overlapping places, or when one sits in the other's arm.
+ * group when their tests read overlapping places, like `toast` and `toast.cancel`. Fields of
+ * a hook result or context value, like `query.isPending` and `query.data`, come from one
+ * source and change together, so any field joins the whole value. A call result joins the
+ * bindings its arguments read, so `hasPermission(role)` stays with `role`. A decision in
+ * another's arm joins it too.
  */
 const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
   const decisionSets = new DisjointSet<string>();
   const decisionKeys: string[] = [];
-  const places = new Map<string, { name: string; bindingId: number; decisionKeys: string[] }>();
+  const decisionsByAtom = new Map<string, string[]>();
+  const places = new Map<string, { name: string; decisionKey: string }>();
   const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
     switch (value.kind) {
       case "Conditional": {
@@ -405,14 +413,16 @@ const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
         decisionSets.union(enclosingKey ? [key, enclosingKey] : [key]);
         forEachSymbolicValue(getTest(value), (part) => {
           if (part.kind !== "Binding") return;
-          const placeKey = getBindingPlaceKey(part);
-          const place = places.get(placeKey) ?? {
+          const atoms = [
+            isExternalSource(part.binding) ? String(part.binding.id) : getBindingPlaceKey(part),
+            ...part.binding.inputs,
+          ];
+          for (const atom of atoms)
+            decisionsByAtom.set(atom, [...(decisionsByAtom.get(atom) ?? []), key]);
+          places.set(getBindingPlaceKey(part), {
             name: formatSymbolicValue(part),
-            bindingId: part.binding.id,
-            decisionKeys: [],
-          };
-          place.decisionKeys.push(key);
-          places.set(placeKey, place);
+            decisionKey: key,
+          });
         });
         visit(value.consequent, key);
         visit(value.alternate, key);
@@ -427,29 +437,29 @@ const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
     }
   };
   visit(render, null);
-  for (const [placeKey, place] of places)
-    for (const [otherKey, other] of places)
-      if (isPlacePrefix(placeKey, otherKey))
-        decisionSets.union([...place.decisionKeys, ...other.decisionKeys]);
+  for (const [atom, keys] of decisionsByAtom)
+    for (const [otherAtom, otherKeys] of decisionsByAtom)
+      if (isPlacePrefix(atom, otherAtom)) decisionSets.union([...keys, ...otherKeys]);
 
   const groups = new Map<string, DecisionGroup>();
-  for (const key of decisionKeys) {
+  const getGroup = (key: string): DecisionGroup => {
     const root = decisionSets.find(key) ?? key;
     const group = groups.get(root) ?? {
       decisionKeys: new Set(),
       bindingIds: new Set(),
       places: [],
     };
-    group.decisionKeys.add(key);
     groups.set(root, group);
-  }
+    return group;
+  };
+  for (const key of decisionKeys) getGroup(key).decisionKeys.add(key);
+  for (const [atom, keys] of decisionsByAtom)
+    for (const key of keys) getGroup(key).bindingIds.add(Number(atom.split(".")[0]));
   for (const [placeKey, place] of places) {
-    const group = groups.get(decisionSets.find(place.decisionKeys[0] ?? "") ?? "");
-    if (!group) continue;
-    group.bindingIds.add(place.bindingId);
     const isNested = [...places.keys()].some(
       (otherKey) => otherKey !== placeKey && isPlacePrefix(otherKey, placeKey),
     );
+    const group = getGroup(place.decisionKey);
     if (!isNested && !group.places.includes(place.name)) group.places.push(place.name);
   }
   return groups.size > 0

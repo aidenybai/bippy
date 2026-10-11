@@ -64,6 +64,8 @@ export interface Binding {
   domain: Domain;
   samples: Sample[];
   initial: SymbolicValue | null;
+  /** The places a call result's arguments read, which its value may depend on. */
+  inputs: string[];
 }
 
 /**
