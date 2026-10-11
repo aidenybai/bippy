@@ -49,14 +49,17 @@ export const listActionsInPage = (page: Page): Promise<Action[]> =>
 /**
  * Where a newly found parent goes among the wrappers, outermost first, when React didn't say
  * which of them threw: around the wrapper the error is about, inside them all when it is
- * about the component itself, and otherwise outside them all, since then a wrapper threw
- * under a name of its package's own, like `MenubarMenu` for a `Menu` wrapper.
+ * about the component itself, under its own name or the end of it, like Radix's
+ * `MenuSubTrigger` inside `DropdownMenuSubTrigger`, and otherwise outside them all, since
+ * then a wrapper threw under a name of its package's own, like `MenubarMenu` for a `Menu`
+ * wrapper.
  */
 const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper[]): number => {
   const subject = getErrorSubject(error);
   const subjectIndex = wrappers.findIndex((existing) => existing.name === subject);
   if (subjectIndex !== -1) return subjectIndex;
-  return subject === componentName || wrappers.length === 0 ? wrappers.length : 0;
+  const isComponent = subject !== null && componentName.endsWith(subject);
+  return isComponent || wrappers.length === 0 ? wrappers.length : 0;
 };
 
 /**
