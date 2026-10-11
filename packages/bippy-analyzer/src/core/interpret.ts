@@ -53,6 +53,8 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
 const DYNAMIC_TAG_NAME = "Dynamic";
+/** A state initialized from a value the program only asserts the type of, which can be anything. */
+const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
   cases: [
@@ -381,11 +383,16 @@ export class Interpreter {
     const [firstArgument, secondArgument] = value.args;
     if (STATE_HOOKS.has(value.hookKind) && valuePlace) {
       const initial = firstArgument && firstArgument.kind !== "Function" ? firstArgument : null;
+      const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
       const binding = this.#createBinding(
         getIdentifierName(valuePlace) ?? "state",
         "state",
         valuePlace.loc,
-        { hookKind: value.hookKind, initial },
+        {
+          hookKind: value.hookKind,
+          initial,
+          ...(isAsserted && { domain: ASSERTED_DOMAIN }),
+        },
       );
       return [createBindingValue(binding), { kind: "Setter", binding }];
     }
@@ -879,8 +886,13 @@ export class Interpreter {
         return foldBinary(value.operator, this.#read(value.left), this.#read(value.right));
       case "UnaryExpression":
         return foldUnary(value.operator, this.#read(value.value));
-      case "TypeCastExpression":
-        return this.#read(value.value);
+      case "TypeCastExpression": {
+        const operand = this.#read(value.value);
+        return operand.kind === "Unknown" &&
+          this.#resolver.getDomain(value.value.loc).kind === "Unknown"
+          ? createUnknown("cast", value.value.loc)
+          : operand;
+      }
       case "ObjectExpression":
         return {
           kind: "ObjectExpression",

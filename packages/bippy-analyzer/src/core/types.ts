@@ -21,7 +21,7 @@ export type Truthiness = "truthy" | "falsy" | "either";
  */
 export type TestKind = "truthy" | "nullish";
 
-type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved";
+type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved" | "cast";
 
 /**
  * Every value a binding or one of its fields can hold, read from its TypeScript type.
