@@ -1,7 +1,8 @@
 import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError, Option } from "commander";
 import picocolors from "picocolors";
-import { analyzeProject, serializeProjectAnalysis } from "../analysis/analyze-project.js";
+import { analyzeProject } from "../core/analyze-project.js";
+import { serializeProjectAnalysis } from "../core/serialize.js";
 import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent, formatHierarchy } from "./print.js";
 import type { View } from "./print.js";
 

@@ -1,8 +1,8 @@
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
-import { analyzeProject } from "../../src/analysis/analyze-project.js";
-import type { AnalyzedComponent } from "../../src/analysis/types.js";
+import { analyzeProject } from "../../src/core/analyze-project.js";
+import type { AnalyzedComponent } from "../../src/core/types.js";
 import { exploreComponent } from "./driver.js";
 import { collectMutationProbes } from "./mutation.js";
 import { collectProbes, scoreComponent } from "./score.js";

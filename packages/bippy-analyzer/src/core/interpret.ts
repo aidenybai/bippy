@@ -37,21 +37,11 @@ import type {
   Warning,
   WarningKind,
 } from "./types.js";
-import {
-  formatPlace,
-  forEachSymbolicValue,
-  formatSymbolicValue,
-  getBindingPlaceKey,
-  isExternalSource,
-  isNullish,
-  isStateBinding,
-  isWholeBinding,
-  getKnownTruthiness,
-  getPlaceKey,
-  getTestExpression,
-  mapSymbolicValue,
-  negate,
-} from "./values.js";
+import { formatPlace, formatSymbolicValue } from "./format.js";
+import { forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
+import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key.js";
+import { isExternalSource, isNullish, isStateBinding, isWholeBinding } from "./utils/checks.js";
+import { getKnownTruthiness, getTestExpression, negate } from "./utils/truthiness.js";
 
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_INLINE_DEPTH = 4;

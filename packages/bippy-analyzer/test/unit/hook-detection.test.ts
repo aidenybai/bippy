@@ -1,15 +1,12 @@
 import type { Node } from "typescript/unstable/ast";
 import { isCallExpression } from "typescript/unstable/ast/is";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import {
-  analyzeProject,
-  isProjectSourceFile,
-  withProject,
-} from "../../src/analysis/analyze-project.js";
+import { analyzeProject } from "../../src/core/analyze-project.js";
+import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
 import type { HIRFunction } from "../../src/compiler/hir/hir.js";
 import { BuiltInUseStateId } from "../../src/compiler/hir/object-shape.js";
-import type { ProjectAnalysis } from "../../src/analysis/types.js";
-import { getReactExportName } from "../../src/typescript/nodes.js";
+import type { ProjectAnalysis } from "../../src/core/types.js";
+import { getReactExportName } from "../../src/core/utils/typescript.js";
 import {
   getBinding,
   getComponent,

@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
-import { isProjectSourceFile, withProject } from "../analysis/analyze-project.js";
+import { isProjectSourceFile, withProject } from "../core/utils/with-project.js";
 import { findReactFunctions } from "../compiler/program.js";
 import { runPipeline } from "../compiler/pipeline.js";
 import { ScopeManager } from "../compiler/hir/scope.js";

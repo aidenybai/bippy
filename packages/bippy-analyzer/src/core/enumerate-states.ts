@@ -1,6 +1,6 @@
 import { GeneratedSource } from "../compiler/hir/hir.js";
 import { DisjointSet } from "../compiler/utils/disjoint-set.js";
-import type { Bound, Knowledge } from "./knowledge.js";
+import type { Bound, Knowledge } from "./constraints.js";
 import {
   CONSTANT_ATOM,
   assume,
@@ -10,7 +10,7 @@ import {
   forgetBinding,
   getLengthAtom,
   resolveLiteral,
-} from "./knowledge.js";
+} from "./constraints.js";
 import type {
   AbstractValue,
   Binding,
@@ -25,23 +25,21 @@ import type {
   SymbolicValue,
   Transition,
 } from "./types.js";
+import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
+import { formatNegated, formatSymbolicValue } from "./format.js";
 import {
-  forEachJsxElement,
-  forEachSymbolicValue,
-  formatNegated,
-  formatSymbolicValue,
   getBindingPlaceKey,
   getPlaceKey,
-  getTestExpression,
-  getTruthiness,
-  isExternalSource,
   isPlacePrefix,
+  parsePlaceKey,
+} from "./utils/place-key.js";
+import { getTestExpression, getTruthiness } from "./utils/truthiness.js";
+import {
+  isExternalSource,
   isRenderingNothingWhenFalse,
   isStateBinding,
   isWholeBinding,
-  mapSymbolicValue,
-  parsePlaceKey,
-} from "./values.js";
+} from "./utils/checks.js";
 
 const MAX_ALTERNATIVES = 256;
 const REACHABILITY_ROUNDS = 3;

@@ -1,5 +1,5 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import { findNodeAtLocation, getDeclarationKey, isReactElementType } from "../typescript/nodes.js";
+import { findNodeAtLocation, getDeclarationKey, isReactElementType } from "./utils/typescript.js";
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
@@ -13,8 +13,8 @@ import type {
   Sample,
   SymbolicValue,
 } from "./types.js";
-import { forEachSymbolicValue } from "./values.js";
-import { EQUALITY_OPERATORS } from "./knowledge.js";
+import { forEachSymbolicValue } from "./utils/traverse.js";
+import { EQUALITY_OPERATORS } from "./constraints.js";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;

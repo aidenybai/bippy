@@ -1,6 +1,7 @@
-export { analyzeProject, serializeProjectAnalysis } from "./analysis/analyze-project.js";
-export { enumerateStates } from "./analysis/enumerate-states.js";
-export { formatSymbolicValue } from "./analysis/values.js";
+export { analyzeProject } from "./core/analyze-project.js";
+export { serializeProjectAnalysis } from "./core/serialize.js";
+export { enumerateStates } from "./core/enumerate-states.js";
+export { formatSymbolicValue } from "./core/format.js";
 export type {
   AbstractValue,
   AnalyzedComponent,
@@ -19,4 +20,4 @@ export type {
   SymbolicValue,
   Transition,
   TransitionTrigger,
-} from "./analysis/types.js";
+} from "./core/types.js";

@@ -1,9 +1,9 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import { GeneratedSource } from "../compiler/hir/hir.js";
 import type { SourceLocation } from "../compiler/hir/hir.js";
-import type { SymbolicEvaluator } from "./symbolic-evaluator.js";
+import type { SymbolicEvaluator } from "./interpret.js";
 import type { SymbolicValue, Transition, TransitionTrigger } from "./types.js";
-import { forEachJsxElement } from "./values.js";
+import { forEachJsxElement } from "./utils/traverse.js";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 

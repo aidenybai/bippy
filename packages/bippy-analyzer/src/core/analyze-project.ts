@@ -1,6 +1,3 @@
-import { dirname, sep } from "node:path";
-import { API } from "typescript/unstable/sync";
-import type { Project } from "typescript/unstable/sync";
 import { ScopeManager } from "../compiler/hir/scope.js";
 import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
@@ -12,40 +9,15 @@ import type {
   ProjectAnalysis,
   SymbolicValue,
 } from "./types.js";
-import { forEachJsxElement, getPlaceKey } from "./values.js";
+import { forEachJsxElement } from "./utils/traverse.js";
+import { getPlaceKey } from "./utils/place-key.js";
 import { analyzeComponent } from "./analyze-component.js";
 import {
   collectDisplayNames,
   collectExportNames,
   findReactFunctions,
 } from "../compiler/program.js";
-
-const SOURCE_FILE_PATTERN = /\.[jt]sx?$/;
-
-/**
- * Whether a file belongs to the project itself, not to its dependencies or declarations.
- */
-export const isProjectSourceFile = (fileName: string): boolean =>
-  !fileName.includes(`${sep}node_modules${sep}`) &&
-  !fileName.endsWith(".d.ts") &&
-  SOURCE_FILE_PATTERN.test(fileName);
-
-/**
- * Opens the TypeScript project for a tsconfig, runs `callback` on it, and closes it.
- */
-export const withProject = <Result>(
-  configPath: string,
-  callback: (project: Project) => Result,
-): Result => {
-  const api = new API({ cwd: dirname(configPath) });
-  try {
-    const project = api.updateSnapshot({ openProjects: [configPath] }).getProjects()[0];
-    if (!project) throw new Error(`No TypeScript project found for ${configPath}`);
-    return callback(project);
-  } finally {
-    api.close();
-  }
-};
+import { isProjectSourceFile, withProject } from "./utils/with-project.js";
 
 const isPrimitive = (value: SymbolicValue | undefined): value is PrimitiveSymbolicValue =>
   value?.kind === "Primitive";
@@ -120,43 +92,3 @@ export const analyzeProject = (
       .map((analysis) => ({ analysis, report: enumerateStates(analysis) }));
     return { components, fileCount: fileNames.length };
   });
-
-const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
-
-const countReferences = (root: unknown): WeakMap<object, number> => {
-  const counts = new WeakMap<object, number>();
-  const visit = (value: unknown): void => {
-    if (!isObject(value)) return;
-    const count = counts.get(value) ?? 0;
-    counts.set(value, count + 1);
-    if (count > 0) return;
-    const children = value instanceof Map ? value.values() : Object.values(value);
-    for (const child of children) visit(child);
-  };
-  visit(root);
-  return counts;
-};
-
-/**
- * Serializes the analysis as JSON. Render values share subtrees, which plain JSON would
- * repeat in full, so an object referenced more than once is written once with an `$id`
- * and then as `{ "$ref": id }`.
- */
-export const serializeProjectAnalysis = (analysis: ProjectAnalysis): string => {
-  const counts = countReferences(analysis.components);
-  const ids = new WeakMap<object, number>();
-  let nextId = 0;
-  return JSON.stringify(
-    analysis.components,
-    (_key, value: unknown) => {
-      if (typeof value === "symbol") return "generated";
-      const plain = value instanceof Map ? Object.fromEntries(value) : value;
-      if (!isObject(value) || (counts.get(value) ?? 0) < 2) return plain;
-      const id = ids.get(value);
-      if (id !== undefined) return { $ref: id };
-      ids.set(value, nextId);
-      return Array.isArray(plain) ? { $id: nextId++, items: plain } : { $id: nextId++, ...plain };
-    },
-    2,
-  );
-};

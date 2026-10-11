@@ -13,7 +13,7 @@ import { Component, createElement } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import type { Sample } from "../../src/analysis/types.js";
+import type { Sample } from "../../src/core/types.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
 import type {

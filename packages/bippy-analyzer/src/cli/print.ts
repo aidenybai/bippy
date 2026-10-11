@@ -13,18 +13,17 @@ import type {
   State,
   SymbolicValue,
   Transition,
-} from "../analysis/types.js";
+} from "../core/types.js";
+import { forEachJsxElement } from "../core/utils/traverse.js";
 import {
-  forEachJsxElement,
   formatAbstractValue,
-  formatPlace,
   formatLine,
+  formatPlace,
   formatSymbolicValue,
-  getTestExpression,
-  getPlaceKey,
-  isRenderingNothing,
-  isRenderingNothingWhenFalse,
-} from "../analysis/values.js";
+} from "../core/format.js";
+import { getTestExpression } from "../core/utils/truthiness.js";
+import { getPlaceKey } from "../core/utils/place-key.js";
+import { isRenderingNothing, isRenderingNothingWhenFalse } from "../core/utils/checks.js";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
 

@@ -12,7 +12,7 @@ import {
   addFunction,
 } from "../compiler/hir/object-shape.js";
 import type { ShapeRegistry } from "../compiler/hir/object-shape.js";
-import { findNodeAtLocation, getReactExportName } from "./nodes.js";
+import { findNodeAtLocation, getReactExportName } from "./utils/typescript.js";
 
 const MAX_CONVERSION_DEPTH = 3;
 const PRIMITIVE_FLAGS =

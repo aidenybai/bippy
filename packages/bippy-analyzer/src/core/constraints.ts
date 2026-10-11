@@ -1,17 +1,14 @@
 import type { AbstractValue, BinaryExpressionValue, BindingValue, SymbolicValue } from "./types.js";
+import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks.js";
+import { formatAbstractValue, formatSymbolicValue } from "./format.js";
+import { getBindingPlaceKey, isPlacePrefix } from "./utils/place-key.js";
 import {
-  canTypeEqualLiteral,
-  formatAbstractValue,
-  formatSymbolicValue,
-  getBindingPlaceKey,
   getKnownTruthiness,
   getNegatedOperator,
   getTestExpression,
-  forEachSymbolicValue,
   getTruthiness,
-  isPlacePrefix,
-  isEqualToLiteral,
-} from "./values.js";
+} from "./utils/truthiness.js";
+import { forEachSymbolicValue } from "./utils/traverse.js";
 
 export const CONSTANT_ATOM = "#";
 const LENGTH_SUFFIX = ".length";

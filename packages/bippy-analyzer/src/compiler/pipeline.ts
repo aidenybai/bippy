@@ -22,7 +22,7 @@ import { pruneMaybeThrows } from "./optimization/prune-maybe-throws.js";
 import { inferTypes } from "./type-inference/infer-types.js";
 import { eliminateRedundantPhi } from "./ssa/eliminate-redundant-phi.js";
 import { enterSSA } from "./ssa/enter-ssa.js";
-import { CompilerTypeProvider } from "../typescript/compiler-type-provider.js";
+import { CompilerTypeProvider } from "../core/type-provider.js";
 import { Err } from "./utils/result.js";
 import type { Result } from "./utils/result.js";
 import type { ReactFunction } from "./program.js";

@@ -1,8 +1,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { analyzeProject, serializeProjectAnalysis } from "../../src/analysis/analyze-project.js";
-import type { AnalyzedComponent } from "../../src/analysis/types.js";
+import { analyzeProject } from "../../src/core/analyze-project.js";
+import { serializeProjectAnalysis } from "../../src/core/serialize.js";
+import type { AnalyzedComponent } from "../../src/core/types.js";
 import { sum, summarizeVerdicts } from "../verifier/score.js";
 import type { VerificationSummary } from "../verifier/score.js";
 import { verifyProject } from "../verifier/verify.js";

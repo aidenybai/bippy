@@ -2,8 +2,8 @@ import type { Node, SourceFile } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
 import type { Checker, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
-import { GeneratedSource } from "../compiler/hir/hir.js";
-import type { SourceLocation } from "../compiler/hir/hir.js";
+import { GeneratedSource } from "../../compiler/hir/hir.js";
+import type { SourceLocation } from "../../compiler/hir/hir.js";
 
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react[\\/]/;
 const REACT_ELEMENT_TYPE_NAMES = new Set(["ReactElement", "ReactPortal", "ReactNode", "Element"]);

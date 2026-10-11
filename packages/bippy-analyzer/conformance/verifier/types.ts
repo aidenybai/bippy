@@ -1,4 +1,4 @@
-import type { Sample } from "../../src/analysis/types.js";
+import type { Sample } from "../../src/core/types.js";
 
 export const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 export const SETUP_PATH = "/__bippy_verify_setup.tsx";
