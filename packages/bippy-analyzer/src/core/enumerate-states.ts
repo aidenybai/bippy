@@ -24,6 +24,7 @@ import type {
   StateReport,
   SymbolicValue,
   Handler,
+  StateUpdate,
 } from "./types.js";
 import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
 import { formatNegated, formatSymbolicValue } from "./format.js";
@@ -238,12 +239,12 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
 };
 
 const applyUpdates = (
-  handler: Handler,
+  updates: StateUpdate[],
   constraints: Constraints,
   reachable: Constraints,
 ): Constraints => {
   const next = cloneConstraints(constraints);
-  for (const update of handler.updates) {
+  for (const update of updates) {
     for (const placeKey of reachable.values.keys()) {
       const { bindingId, path } = parsePlaceKey(placeKey);
       if (bindingId !== update.binding.id) continue;
@@ -263,19 +264,39 @@ const applyUpdates = (
   return next;
 };
 
+const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(formatSymbolicValue);
+
+const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
+  prefix.every((guardKey, index) => guardKeys[index] === guardKey);
+
 /**
- * The constraints after a handler runs. A guarded update may not happen, so a guarded
- * handler also keeps the constraints it started from.
+ * The constraints after a handler runs, one for each path through it. A path is the guards
+ * its last update ran under, and it takes the updates made on the way there, so updates on
+ * different paths, like `return setOpen(true)` in one branch and `setOpen(false)` in
+ * another, stay apart. A guarded update may not happen, so a guarded handler also keeps the
+ * constraints it started from.
  */
 const applyTransition = (
   handler: Handler,
   constraints: Constraints,
   reachable: Constraints,
 ): Constraints[] => {
-  const applied = applyUpdates(handler, constraints, reachable);
+  const pathGuardKeys = new Map(
+    handler.updates.map((update) => {
+      const guardKeys = getGuardKeys(update);
+      return [guardKeys.join("\0"), guardKeys];
+    }),
+  );
+  const applied = [...pathGuardKeys.values()].map((guardKeys) =>
+    applyUpdates(
+      handler.updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
+      constraints,
+      reachable,
+    ),
+  );
   return handler.updates.some((update) => update.guards.length > 0)
-    ? [constraints, applied]
-    : [applied];
+    ? [constraints, ...applied]
+    : applied;
 };
 
 /**
