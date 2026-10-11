@@ -88,6 +88,12 @@ const PROVIDER_SPECS: ProviderSpec[] = [
   createRouterSpec("react-router"),
   createRouterSpec("react-router-dom"),
   {
+    packageName: "nuqs",
+    modules: ["nuqs", "nuqs/adapters/testing"],
+    imports: 'import { NuqsTestingAdapter } from "nuqs/adapters/testing";',
+    wrap: (children) => `createElement(NuqsTestingAdapter, { hasMemory: true }, ${children})`,
+  },
+  {
     packageName: "react-hook-form",
     imports: 'import { FormProvider, useForm } from "react-hook-form";',
     wrap: (children) => `createElement(FormProvider, useForm(), ${children})`,

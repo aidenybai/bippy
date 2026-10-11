@@ -61,9 +61,10 @@ const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper
 
 /**
  * Mounts a component, and while it throws for want of a parent, finds that parent and
- * mounts it again inside. Returns the parents it needed, outermost first. An error that
- * names no parent, like cmdk's parts reading a store their `Command` root provides, still
- * gets the compound root the component's file exports.
+ * mounts it again inside, trying the parent's next candidate while the error stays the
+ * same. Returns the parents it needed, outermost first. An error that names no parent, like
+ * cmdk's parts reading a store their `Command` root provides, still gets the compound root
+ * the component's file exports.
  */
 export const resolveWrappers = async (
   page: Page,
@@ -72,9 +73,15 @@ export const resolveWrappers = async (
   exportIndex: Map<string, string[]>,
 ): Promise<Wrapper[]> => {
   const wrappers: Wrapper[] = [];
+  let added: { index: number; error: string } | null = null;
   while (wrappers.length < MAX_WRAPPERS) {
     const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
+    const retried = added?.error === capture.error ? wrappers[added.index] : undefined;
+    if (added && retried && retried.candidates.length > 1) {
+      wrappers[added.index] = { ...retried, candidates: retried.candidates.slice(1) };
+      continue;
+    }
     const failure = classifyMountError(capture.error);
     if (!PARENT_FAILURES.has(failure)) break;
     const isWrapped = (candidate: Wrapper | null): boolean =>
@@ -85,11 +92,9 @@ export const resolveWrappers = async (
       ? findCompoundRoot(analysis.name, analysis.file, exportIndex)
       : errorWrapper;
     if (!wrapper || isWrapped(wrapper)) break;
-    wrappers.splice(
-      capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers),
-      0,
-      wrapper,
-    );
+    const index = capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers);
+    wrappers.splice(index, 0, wrapper);
+    added = { index, error: capture.error };
   }
   return wrappers;
 };
