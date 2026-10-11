@@ -20,7 +20,10 @@ interface MountFailurePattern {
  * or environment variable is the harness's job to supply.
  */
 const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
-  { failure: "server-component", pattern: /found: \[object Promise\]/ },
+  {
+    failure: "server-component",
+    pattern: /found: \[object Promise\]|async\/await is not yet supported in Client Components/,
+  },
   { failure: "env", pattern: /environment variable/i },
   {
     failure: "node-global",
@@ -34,7 +37,7 @@ const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   {
     failure: "provider",
     pattern:
-      /must be used (?:within|inside)|used outside|can only be used within|context (?:from `?\w+`? )?was not found|No \w+ context found|of '(?:React\.)?useContext\(|expected app router to be mounted|inside another <Router>/i,
+      /must be used (?:within|inside)|used outside|can only be used within|context (?:from `?\w+`? )?was not found|No \w+ context found|of '(?:React\.)?useContext\(|Provider was not found|outside of a `?<\w+>|expected app router to be mounted|inside another <Router>/i,
   },
   {
     failure: "missing-data",

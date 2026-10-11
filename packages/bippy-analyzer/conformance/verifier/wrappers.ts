@@ -3,8 +3,10 @@ import type { Wrapper, WrapperCandidate } from "./types.js";
 
 const BARE_IMPORT_PATTERN = /from\s+["']([^."'][^"']*)["']/g;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
-const PROVIDER_NAME_PATTERN =
-  /(?:within|inside|outside of|outside|from)\s+(?:an?\s+|the\s+)?[<`]?([A-Z]\w*)/;
+const PROVIDER_NAME_PATTERNS = [
+  /(?:within|inside|outside of|outside|from)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*)/,
+  /([A-Z]\w*Provider) was not found/,
+];
 
 /**
  * The component an error is about, like `Tooltip` in "`Tooltip` must be used within
@@ -24,7 +26,7 @@ export const findWrapper = (
   componentFile: string,
   exportIndex: Map<string, string[]>,
 ): Wrapper | null => {
-  const name = PROVIDER_NAME_PATTERN.exec(error)?.[1];
+  const name = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1]).find(Boolean);
   if (!name) return null;
   const projectCandidates = (exportIndex.get(name) ?? []).map((file): WrapperCandidate => ({
     specifier: file,
