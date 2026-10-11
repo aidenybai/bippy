@@ -127,7 +127,8 @@ const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample
       },
     ];
   }
-  if (type.flags & TypeFlags.Object) return [getObjectSample(checker, type, depth)];
+  if (type.flags & (TypeFlags.Object | TypeFlags.Intersection))
+    return [getObjectSample(checker, type, depth)];
   return [TEXT_SAMPLE];
 };
 
