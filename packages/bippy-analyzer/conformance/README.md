@@ -49,7 +49,7 @@ Many components only render inside their app: behind a logged-in user, with an A
 - `*.spec.ts` are hand-written Playwright tests. They reach states the automatic exploration can't, like a list with comments in it:
 
 ```ts
-import { test } from "../../../../tests/verify/spec.js";
+import { test } from "../../../../src/verify/spec.js";
 
 test.use({ repo: "bulletproof-react" });
 

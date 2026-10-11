@@ -2,8 +2,8 @@ import { join } from "node:path";
 import { test as base, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../../conformance/runner/repos.js";
-import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
-import type { AnalyzedComponent, Sample } from "../../src/core/inference/types.js";
+import { analyzeProject } from "../analysis/analyze-project.js";
+import type { AnalyzedComponent, Sample } from "../analysis/types.js";
 import { getDefaultProps, resolveWrappers } from "./driver.js";
 import type { Observation } from "./driver.js";
 import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
@@ -149,7 +149,12 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
           : null,
         wrappers: [],
       };
-      request.wrappers = await resolveWrappers(page, request, analysis.file, project.exportIndex);
+      request.wrappers = await resolveWrappers(
+        page,
+        { ...request, scenario: null },
+        analysis.file,
+        project.exportIndex,
+      );
       const session: Session = { component, observations: [] };
       sessions.push(session);
       let current: Capture = await page.evaluate(

@@ -12,7 +12,7 @@ import { Component, createElement } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
-import type { Sample } from "../../src/core/inference/types.js";
+import type { Sample } from "../analysis/types.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
 import type {
   Action,

@@ -1,10 +1,10 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
-import { isProjectSourceFile, withProject } from "../core/entrypoint/analyze-project.js";
-import { findReactFunctions } from "../core/entrypoint/program.js";
-import { runPipeline } from "../core/entrypoint/pipeline.js";
-import { ScopeManager } from "../core/hir/scope.js";
-import { printFunction } from "../core/hir/print-hir.js";
+import { isProjectSourceFile, withProject } from "../analysis/analyze-project.js";
+import { findReactFunctions } from "../compiler/program.js";
+import { runPipeline } from "../compiler/pipeline.js";
+import { ScopeManager } from "../compiler/hir/scope.js";
+import { printFunction } from "../compiler/hir/print-hir.js";
 
 interface HirCliOptions {
   component?: string[];

@@ -1,14 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  analyzeProject,
-  serializeProjectAnalysis,
-} from "../../src/core/entrypoint/analyze-project.js";
-import type { AnalyzedComponent } from "../../src/core/inference/types.js";
-import { sum, summarizeVerdicts } from "../../tests/verify/score.js";
-import type { VerificationSummary } from "../../tests/verify/score.js";
-import { verifyProject } from "../../tests/verify/verify.js";
+import { analyzeProject, serializeProjectAnalysis } from "../../src/analysis/analyze-project.js";
+import type { AnalyzedComponent } from "../../src/analysis/types.js";
+import { sum, summarizeVerdicts } from "../../src/verify/score.js";
+import type { VerificationSummary } from "../../src/verify/score.js";
+import { verifyProject } from "../../src/verify/verify.js";
 
 export interface CollectSummary {
   files: number;

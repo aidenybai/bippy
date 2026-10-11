@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import picocolors from "picocolors";
-import type { Sample } from "../../src/core/inference/types.js";
+import type { Sample } from "../analysis/types.js";
 import { countWrongClaims, formatMountFailures, summarizeVerdicts } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { verifyProject } from "./verify.js";

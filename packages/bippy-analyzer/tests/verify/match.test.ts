@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { GeneratedSource, makeInstructionId } from "../../src/core/hir/hir.js";
-import type { Binding, SymbolicValue } from "../../src/core/inference/types.js";
-import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
-import type { Shape } from "./types.js";
+import { GeneratedSource, makeInstructionId } from "../../src/compiler/hir/hir.js";
+import type { Binding, SymbolicValue } from "../../src/analysis/types.js";
+import { matchesExpected, normalizeShapes, toExpected } from "../../src/verify/match.js";
+import type { Shape } from "../../src/verify/types.js";
 
 const NO_KNOWN_COMPONENTS = new Map<string, string>();
 

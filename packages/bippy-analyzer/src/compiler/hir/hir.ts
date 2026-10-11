@@ -7,7 +7,7 @@
 // Ported from babel-plugin-react-compiler/src/HIR/HIR.ts at b618bbb.
 
 import type { Node, TypeNode } from "typescript/unstable/ast";
-import type { AliasingEffect } from "../compiler-inference/aliasing-effects.js";
+import type { AliasingEffect } from "../inference/aliasing-effects.js";
 import { CompilerDiagnostic, CompilerError, ErrorCategory } from "../compiler-error.js";
 import { isReservedWord } from "../utils/keyword.js";
 import { Err, Ok, type Result } from "../utils/result.js";

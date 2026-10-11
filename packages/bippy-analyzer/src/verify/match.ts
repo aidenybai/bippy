@@ -1,5 +1,5 @@
 import { diffArrays } from "diff";
-import type { SymbolicValue } from "../../src/core/inference/types.js";
+import type { SymbolicValue } from "../analysis/types.js";
 import type { Shape } from "./types.js";
 
 type ExpectedShape =

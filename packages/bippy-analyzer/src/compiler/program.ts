@@ -17,8 +17,8 @@ import type {
   SourceFile,
 } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
-import { getDirectives } from "../hir/build-hir.js";
-import type { ReactFunctionType } from "../hir/environment.js";
+import { getDirectives } from "./hir/build-hir.js";
+import type { ReactFunctionType } from "./hir/environment.js";
 
 type ComponentFunction = FunctionDeclaration | FunctionExpression | ArrowFunction;
 

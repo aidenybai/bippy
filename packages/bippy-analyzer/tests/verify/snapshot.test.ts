@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { forEachPlainObject, snapshotValue } from "./snapshot.js";
+import { forEachPlainObject, snapshotValue } from "../../src/verify/snapshot.js";
 
 describe("snapshotValue", () => {
   it("changes when an array is mutated in place", () => {

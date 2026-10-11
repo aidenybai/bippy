@@ -3,7 +3,7 @@ import picocolors from "picocolors";
 import { describe, expect, it } from "vite-plus/test";
 import { ALL_VIEWS, DEFAULT_RENDER_DEPTH } from "../../src/cli/constants.js";
 import { formatComponent } from "../../src/cli/print.js";
-import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
+import { analyzeProject } from "../../src/analysis/analyze-project.js";
 
 const FIXTURE_CONFIG = resolve(import.meta.dirname, "../../fixtures/symbolic-tree/tsconfig.json");
 

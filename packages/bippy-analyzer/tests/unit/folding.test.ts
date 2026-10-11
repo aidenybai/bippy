@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
-import type { ProjectAnalysis, SymbolicValue } from "../../src/core/inference/types.js";
-import { isRenderingNothing } from "../../src/core/inference/values.js";
+import { analyzeProject } from "../../src/analysis/analyze-project.js";
+import type { ProjectAnalysis, SymbolicValue } from "../../src/analysis/types.js";
+import { isRenderingNothing } from "../../src/analysis/values.js";
 import { getComponent, getFixtureConfig } from "./helpers.js";
 
 let project: ProjectAnalysis;

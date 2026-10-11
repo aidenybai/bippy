@@ -5,11 +5,11 @@ import {
   analyzeProject,
   isProjectSourceFile,
   withProject,
-} from "../../src/core/entrypoint/analyze-project.js";
-import type { HIRFunction } from "../../src/core/hir/hir.js";
-import { BuiltInUseStateId } from "../../src/core/hir/object-shape.js";
-import type { ProjectAnalysis } from "../../src/core/inference/types.js";
-import { getReactExportName } from "../../src/core/typescript/nodes.js";
+} from "../../src/analysis/analyze-project.js";
+import type { HIRFunction } from "../../src/compiler/hir/hir.js";
+import { BuiltInUseStateId } from "../../src/compiler/hir/object-shape.js";
+import type { ProjectAnalysis } from "../../src/analysis/types.js";
+import { getReactExportName } from "../../src/typescript/nodes.js";
 import {
   getBinding,
   getComponent,

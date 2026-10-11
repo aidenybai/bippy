@@ -1,7 +1,7 @@
 import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError, Option } from "commander";
 import picocolors from "picocolors";
-import { analyzeProject, serializeProjectAnalysis } from "../core/entrypoint/analyze-project.js";
+import { analyzeProject, serializeProjectAnalysis } from "../analysis/analyze-project.js";
 import { ALL_VIEWS, DEFAULT_RENDER_DEPTH } from "./constants.js";
 import { formatComponent, formatHierarchy } from "./print.js";
 import type { AnalyzeCliOptions, View } from "./types.js";

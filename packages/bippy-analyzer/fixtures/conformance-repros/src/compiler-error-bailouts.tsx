@@ -1,9 +1,7 @@
 import { useState } from "react";
 
 /**
- * `compiler-error` bailouts inherited from the React Compiler's BuildHIR Todos
- * (src/core/hir/build-hir.ts). The whole component is lost even though the
- * unsupported syntax is inside an event handler, not the render path.
+ * Syntax the compiler can't lower bails out the whole component, even inside a handler.
  */
 
 // taxonomy components/editor.tsx:36-40: dynamic `import()` inside a handler/effect.

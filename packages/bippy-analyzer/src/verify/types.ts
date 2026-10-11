@@ -1,4 +1,4 @@
-import type { Sample } from "../../src/core/inference/types.js";
+import type { Sample } from "../analysis/types.js";
 
 export type Shape =
   | { kind: "element"; tag: string; children: Shape[] }

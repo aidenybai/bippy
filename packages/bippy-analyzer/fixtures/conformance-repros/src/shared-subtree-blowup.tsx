@@ -1,14 +1,6 @@
 /**
- * Crash: `RangeError: Invalid string length` from serializeProjectAnalysis
- * (src/core/entrypoint/analyze-project.ts:127), which aborts `analyze --json`
- * and the conformance run for the whole repo (sonner).
- *
- * The symbolic render tree is a DAG: a JSX value referenced twice is one shared
- * object. JSON.stringify expands every reference, so the output doubles per
- * level. sonner's Toast (src/index.tsx:64) has the same shape through repeated
- * icon/close-button subtrees under nested conditionals: its `analysis.render`
- * alone serializes to ~437 MB and `report.states` (4375+, truncated) overflows
- * V8's maximum string length.
+ * Render values share subtrees, so serializing or printing them must not expand each
+ * reference, or sonner's Toast grows to gigabytes.
  */
 export function SharedSubtreeBlowup({ flag }: { flag: boolean }) {
   const l0 = flag ? <b>on</b> : <i>off</i>;

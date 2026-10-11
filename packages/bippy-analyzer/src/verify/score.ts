@@ -7,8 +7,8 @@ import type {
   Sample,
   StateReport,
   SymbolicValue,
-} from "../../src/core/inference/types.js";
-import { formatAbstractValue, formatPlace } from "../../src/core/inference/values.js";
+} from "../analysis/types.js";
+import { formatAbstractValue, formatPlace } from "../analysis/values.js";
 import type { Observation } from "./driver.js";
 import {
   explainMismatch,
@@ -20,7 +20,7 @@ import {
   toExpected,
 } from "./match.js";
 import { scoreWarnings } from "./mutation.js";
-import { ANY_EVENT } from "../../src/core/inference/infer-transitions.js";
+import { ANY_EVENT } from "../analysis/infer-transitions.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Probe } from "./server.js";

@@ -1,5 +1,5 @@
-import { GeneratedSource } from "../hir/hir.js";
-import { DisjointSet } from "../utils/disjoint-set.js";
+import { GeneratedSource } from "../compiler/hir/hir.js";
+import { DisjointSet } from "../compiler/utils/disjoint-set.js";
 import type { Bound, Knowledge } from "./knowledge.js";
 import {
   CONSTANT_ATOM,

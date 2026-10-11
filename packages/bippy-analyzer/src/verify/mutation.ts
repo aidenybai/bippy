@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import type { SourceLocation } from "../../src/core/hir/hir.js";
-import type { Binding, ComponentAnalysis, Warning } from "../../src/core/inference/types.js";
+import type { SourceLocation } from "../compiler/hir/hir.js";
+import type { Binding, ComponentAnalysis, Warning } from "../analysis/types.js";
 import type { Observation } from "./driver.js";
 import type { Probe } from "./server.js";
 

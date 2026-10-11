@@ -1,6 +1,6 @@
-export { analyzeProject, serializeProjectAnalysis } from "./core/entrypoint/analyze-project.js";
-export { enumerateStates } from "./core/inference/enumerate-states.js";
-export { formatSymbolicValue } from "./core/inference/values.js";
+export { analyzeProject, serializeProjectAnalysis } from "./analysis/analyze-project.js";
+export { enumerateStates } from "./analysis/enumerate-states.js";
+export { formatSymbolicValue } from "./analysis/values.js";
 export type {
   AbstractValue,
   AnalyzedComponent,
@@ -19,4 +19,4 @@ export type {
   SymbolicValue,
   Transition,
   TransitionTrigger,
-} from "./core/inference/types.js";
+} from "./analysis/types.js";

@@ -11,7 +11,7 @@ The package has three parts:
 
   See [docs/symbolic-tree.md](docs/symbolic-tree.md).
 
-- **Verifier** (`tests/verify`) checks the analyzer's claims in a real browser. See [How verification works](#how-verification-works).
+- **Verifier** (`src/verify`) checks the analyzer's claims in a real browser. See [How verification works](#how-verification-works).
 - **Conformance** (`conformance/`) runs the analyzer and verifier on pinned open-source repos, locally or in Vercel Sandbox, and collects the results. See [conformance/README.md](conformance/README.md).
 
 ## Run

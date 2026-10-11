@@ -7,7 +7,7 @@
 // Ported from babel-plugin-react-compiler/src/HIR/PrintHIR.ts at b618bbb.
 
 import { SyntaxKind } from "typescript/unstable/ast";
-import type { AliasingEffect, AliasingSignature } from "../compiler-inference/aliasing-effects.js";
+import type { AliasingEffect, AliasingSignature } from "../inference/aliasing-effects.js";
 import { CompilerError } from "../compiler-error.js";
 import { assertExhaustive } from "../utils/utils.js";
 import {

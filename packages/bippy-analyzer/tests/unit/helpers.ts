@@ -1,15 +1,11 @@
 import { resolve } from "node:path";
-import { isProjectSourceFile, withProject } from "../../src/core/entrypoint/analyze-project.js";
-import { runPipeline } from "../../src/core/entrypoint/pipeline.js";
-import { findReactFunctions } from "../../src/core/entrypoint/program.js";
-import type { HIRFunction, Instruction, Type } from "../../src/core/hir/hir.js";
-import { ScopeManager } from "../../src/core/hir/scope.js";
-import { eachInstructionLValue } from "../../src/core/hir/visitors.js";
-import type {
-  AnalyzedComponent,
-  Binding,
-  ProjectAnalysis,
-} from "../../src/core/inference/types.js";
+import { isProjectSourceFile, withProject } from "../../src/analysis/analyze-project.js";
+import { runPipeline } from "../../src/compiler/pipeline.js";
+import { findReactFunctions } from "../../src/compiler/program.js";
+import type { HIRFunction, Instruction, Type } from "../../src/compiler/hir/hir.js";
+import { ScopeManager } from "../../src/compiler/hir/scope.js";
+import { eachInstructionLValue } from "../../src/compiler/hir/visitors.js";
+import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/analysis/types.js";
 
 export const getFixtureConfig = (fixture: string): string =>
   resolve(import.meta.dirname, "fixtures", fixture, "tsconfig.json");

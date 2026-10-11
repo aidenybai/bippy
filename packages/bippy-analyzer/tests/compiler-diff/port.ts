@@ -1,30 +1,30 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Checker } from "typescript/unstable/sync";
-import type { CompilerError } from "../../src/core/compiler-error.js";
-import { analyseFunctions } from "../../src/core/compiler-inference/analyse-functions.js";
-import { dropManualMemoization } from "../../src/core/compiler-inference/drop-manual-memoization.js";
-import { inferMutationAliasingEffects } from "../../src/core/compiler-inference/infer-mutation-aliasing-effects.js";
-import { inferMutationAliasingRanges } from "../../src/core/compiler-inference/infer-mutation-aliasing-ranges.js";
-import { inferReactivePlaces } from "../../src/core/compiler-inference/infer-reactive-places.js";
-import { inlineImmediatelyInvokedFunctionExpressions } from "../../src/core/compiler-inference/inline-immediately-invoked-function-expressions.js";
-import { runPipeline } from "../../src/core/entrypoint/pipeline.js";
-import type { ReactFunction } from "../../src/core/entrypoint/program.js";
-import { assertConsistentIdentifiers } from "../../src/core/hir/assert-consistent-identifiers.js";
-import { assertTerminalSuccessorsExist } from "../../src/core/hir/assert-terminal-blocks-exist.js";
-import { lower } from "../../src/core/hir/build-hir.js";
-import { Environment, validateEnvironmentConfig } from "../../src/core/hir/environment.js";
-import { findContextIdentifiers } from "../../src/core/hir/find-context-identifiers.js";
-import type { HIRFunction } from "../../src/core/hir/hir.js";
-import { mergeConsecutiveBlocks } from "../../src/core/hir/merge-consecutive-blocks.js";
-import type { ScopeManager } from "../../src/core/hir/scope.js";
-import { constantPropagation } from "../../src/core/optimization/constant-propagation.js";
-import { deadCodeElimination } from "../../src/core/optimization/dead-code-elimination.js";
-import { optimizePropsMethodCalls } from "../../src/core/optimization/optimize-props-method-calls.js";
-import { pruneMaybeThrows } from "../../src/core/optimization/prune-maybe-throws.js";
-import { eliminateRedundantPhi } from "../../src/core/ssa/eliminate-redundant-phi.js";
-import { enterSSA } from "../../src/core/ssa/enter-ssa.js";
-import { inferTypes } from "../../src/core/type-inference/infer-types.js";
-import type { Result } from "../../src/core/utils/result.js";
+import type { CompilerError } from "../../src/compiler/compiler-error.js";
+import { analyseFunctions } from "../../src/compiler/inference/analyse-functions.js";
+import { dropManualMemoization } from "../../src/compiler/inference/drop-manual-memoization.js";
+import { inferMutationAliasingEffects } from "../../src/compiler/inference/infer-mutation-aliasing-effects.js";
+import { inferMutationAliasingRanges } from "../../src/compiler/inference/infer-mutation-aliasing-ranges.js";
+import { inferReactivePlaces } from "../../src/compiler/inference/infer-reactive-places.js";
+import { inlineImmediatelyInvokedFunctionExpressions } from "../../src/compiler/inference/inline-immediately-invoked-function-expressions.js";
+import { runPipeline } from "../../src/compiler/pipeline.js";
+import type { ReactFunction } from "../../src/compiler/program.js";
+import { assertConsistentIdentifiers } from "../../src/compiler/hir/assert-consistent-identifiers.js";
+import { assertTerminalSuccessorsExist } from "../../src/compiler/hir/assert-terminal-blocks-exist.js";
+import { lower } from "../../src/compiler/hir/build-hir.js";
+import { Environment, validateEnvironmentConfig } from "../../src/compiler/hir/environment.js";
+import { findContextIdentifiers } from "../../src/compiler/hir/find-context-identifiers.js";
+import type { HIRFunction } from "../../src/compiler/hir/hir.js";
+import { mergeConsecutiveBlocks } from "../../src/compiler/hir/merge-consecutive-blocks.js";
+import type { ScopeManager } from "../../src/compiler/hir/scope.js";
+import { constantPropagation } from "../../src/compiler/optimization/constant-propagation.js";
+import { deadCodeElimination } from "../../src/compiler/optimization/dead-code-elimination.js";
+import { optimizePropsMethodCalls } from "../../src/compiler/optimization/optimize-props-method-calls.js";
+import { pruneMaybeThrows } from "../../src/compiler/optimization/prune-maybe-throws.js";
+import { eliminateRedundantPhi } from "../../src/compiler/ssa/eliminate-redundant-phi.js";
+import { enterSSA } from "../../src/compiler/ssa/enter-ssa.js";
+import { inferTypes } from "../../src/compiler/type-inference/infer-types.js";
+import type { Result } from "../../src/compiler/utils/result.js";
 
 export interface PortContext {
   sourceFile: SourceFile;
@@ -34,7 +34,7 @@ export interface PortContext {
 
 /**
  * `runPipeline` without the TypeScript type provider, the one place our pipeline departs
- * from upstream on purpose. Keep the passes in sync with `src/core/entrypoint/pipeline.ts`.
+ * from upstream on purpose. Keep the passes in sync with `src/compiler/pipeline.ts`.
  */
 const runUntypedPipeline = (
   reactFunction: ReactFunction,

@@ -1,9 +1,9 @@
 import { dirname, sep } from "node:path";
 import { API } from "typescript/unstable/sync";
 import type { Project } from "typescript/unstable/sync";
-import { ScopeManager } from "../hir/scope.js";
-import { enumerateStates } from "../inference/enumerate-states.js";
-import { getSampleOfValue } from "../inference/infer-domains.js";
+import { ScopeManager } from "../compiler/hir/scope.js";
+import { enumerateStates } from "./enumerate-states.js";
+import { getSampleOfValue } from "./infer-domains.js";
 import type {
   ComponentAnalysis,
   JsxExpressionValue,
@@ -11,10 +11,14 @@ import type {
   PrimitiveSymbolicValue,
   ProjectAnalysis,
   SymbolicValue,
-} from "../inference/types.js";
-import { forEachJsxElement, getPlaceKey } from "../inference/values.js";
+} from "./types.js";
+import { forEachJsxElement, getPlaceKey } from "./values.js";
 import { analyzeComponent } from "./analyze-component.js";
-import { collectDisplayNames, collectExportNames, findReactFunctions } from "./program.js";
+import {
+  collectDisplayNames,
+  collectExportNames,
+  findReactFunctions,
+} from "../compiler/program.js";
 
 const SOURCE_FILE_PATTERN = /\.[jt]sx?$/;
 

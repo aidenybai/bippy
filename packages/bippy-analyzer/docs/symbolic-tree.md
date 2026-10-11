@@ -35,19 +35,15 @@ Render tree symbols:
 
 ## What it does
 
-The pipeline is a port of the React Compiler's front end, followed by our own passes. The code lives in `src/core`:
+The pipeline is a port of the React Compiler's front end, followed by our own passes:
 
-| Folder               | Contents                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------- |
-| `hir`                | The compiler's HIR: blocks, instructions, terminals and places, lowered from the TS 7 AST |
-| `ssa`                | `enterSSA`, `eliminateRedundantPhi` and instruction-kind rewriting                        |
-| `optimization`       | Constant propagation, dead code elimination and props method calls                        |
-| `type-inference`     | The compiler's `inferTypes`, with TypeScript filling what it can't infer                  |
-| `compiler-inference` | The compiler's mutation, aliasing and reactivity inference, and manual memo dropping      |
-| `reactive-scopes`    | Reactive scope variables, which aliasing inference needs                                  |
-| `typescript`         | How the TS 7 checker feeds the compiler: types, React exports and mutating methods        |
-| `entrypoint`         | Finding components, running the passes, and analyzing a project                           |
-| `inference`          | Our passes: symbolic evaluation, transitions, value domains and state enumeration         |
+| Folder           | Contents                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `src/compiler`   | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference, passes |
+| `src/typescript` | How the TS 7 checker feeds the compiler: types, React exports and mutating methods             |
+| `src/analysis`   | Our passes: symbolic evaluation, value domains, transitions and state enumeration              |
+| `src/verify`     | The browser verifier: harness, exploration, scoring and the spec fixtures                      |
+| `src/cli`        | `analyze` and the HIR printer                                                                  |
 
 Each ported file names the compiler source it came from.
 

@@ -1,4 +1,4 @@
-import { assertExhaustive } from "../utils/utils.js";
+import { assertExhaustive } from "../compiler/utils/utils.js";
 import type {
   AbstractValue,
   Binding,

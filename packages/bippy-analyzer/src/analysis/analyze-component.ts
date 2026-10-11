@@ -1,16 +1,16 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Checker } from "typescript/unstable/sync";
-import { getSourceLocation } from "../hir/hir.js";
-import type { HIRFunction } from "../hir/hir.js";
-import type { ScopeManager } from "../hir/scope.js";
-import { DomainResolver, addComparedSamples } from "../inference/infer-domains.js";
-import { inferTransitions } from "../inference/infer-transitions.js";
-import { SymbolicEvaluator } from "../inference/symbolic-evaluator.js";
-import type { ModuleFunctionLoader } from "../inference/symbolic-evaluator.js";
-import type { Bailout, ComponentAnalysis } from "../inference/types.js";
-import { runPipeline } from "./pipeline.js";
-import { findModuleFunction } from "./program.js";
-import type { ReactFunction } from "./program.js";
+import { getSourceLocation } from "../compiler/hir/hir.js";
+import type { HIRFunction } from "../compiler/hir/hir.js";
+import type { ScopeManager } from "../compiler/hir/scope.js";
+import { DomainResolver, addComparedSamples } from "./infer-domains.js";
+import { inferTransitions } from "./infer-transitions.js";
+import { SymbolicEvaluator } from "./symbolic-evaluator.js";
+import type { ModuleFunctionLoader } from "./symbolic-evaluator.js";
+import type { Bailout, ComponentAnalysis } from "./types.js";
+import { runPipeline } from "../compiler/pipeline.js";
+import { findModuleFunction } from "../compiler/program.js";
+import type { ReactFunction } from "../compiler/program.js";
 
 interface FileContext {
   sourceFile: SourceFile;

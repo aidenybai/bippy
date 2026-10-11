@@ -1,6 +1,6 @@
 import { relative } from "node:path";
-import { GeneratedSource } from "../core/hir/hir.js";
-import type { SourceLocation } from "../core/hir/hir.js";
+import { GeneratedSource } from "../compiler/hir/hir.js";
+import type { SourceLocation } from "../compiler/hir/hir.js";
 import type {
   AbstractValue,
   AnalyzedComponent,
@@ -12,7 +12,7 @@ import type {
   State,
   SymbolicValue,
   Transition,
-} from "../core/inference/types.js";
+} from "../analysis/types.js";
 import {
   forEachJsxElement,
   formatAbstractValue,
@@ -21,7 +21,7 @@ import {
   getPlaceKey,
   isRenderingNothing,
   isRenderingNothingWhenFalse,
-} from "../core/inference/values.js";
+} from "../analysis/values.js";
 import { createTreeNode, renderAsciiTree } from "./ascii-tree.js";
 import { MAX_LABEL_WIDTH, MAX_RENDER_NODES } from "./constants.js";
 import type { ComponentPrintContext, PrintOptions, TreeNode } from "./types.js";

@@ -1,16 +1,16 @@
 import { SymbolFlags } from "typescript/unstable/sync";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { isProjectSourceFile, withProject } from "../../src/core/entrypoint/analyze-project.js";
-import type { MutableCollection } from "../../src/core/hir/environment.js";
-import { Effect, ValueKind } from "../../src/core/hir/hir.js";
-import type { HIRFunction, Type } from "../../src/core/hir/hir.js";
+import { isProjectSourceFile, withProject } from "../../src/analysis/analyze-project.js";
+import type { MutableCollection } from "../../src/compiler/hir/environment.js";
+import { Effect, ValueKind } from "../../src/compiler/hir/hir.js";
+import type { HIRFunction, Type } from "../../src/compiler/hir/hir.js";
 import {
   BuiltInArrayId,
   BuiltInMapId,
   BuiltInMixedReadonlyId,
   BuiltInSetId,
-} from "../../src/core/hir/object-shape.js";
-import { CompilerTypeProvider } from "../../src/core/typescript/compiler-type-provider.js";
+} from "../../src/compiler/hir/object-shape.js";
+import { CompilerTypeProvider } from "../../src/typescript/compiler-type-provider.js";
 import { getFixtureConfig, getNamedTypes, lowerProject } from "./helpers.js";
 
 const COLLECTIONS: MutableCollection[] = ["Array", "Map", "Set"];
