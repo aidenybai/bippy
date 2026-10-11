@@ -88,6 +88,16 @@ const PROVIDER_SPECS: ProviderSpec[] = [
   createRouterSpec("react-router"),
   createRouterSpec("react-router-dom"),
   {
+    packageName: "next-auth",
+    modules: ["next-auth/react"],
+    imports: [
+      'import { SessionProvider } from "next-auth/react";',
+      'const SESSION = { user: { name: "Ada Lovelace", email: "ada@example.com" }, expires: "2100-01-01T00:00:00.000Z" };',
+    ].join("\n"),
+    wrap: (children) =>
+      `createElement(SessionProvider, { session: SESSION, refetchOnWindowFocus: false }, ${children})`,
+  },
+  {
     packageName: "nuqs",
     modules: ["nuqs", "nuqs/adapters/testing"],
     imports: 'import { NuqsTestingAdapter } from "nuqs/adapters/testing";',
@@ -107,6 +117,7 @@ const NEXT_STUBS = new Map([
   ["next/navigation", NEXT_NAVIGATION_STUB],
   ["next/document", join(import.meta.dirname, "stubs/next-document.ts")],
   ["next/router", NEXT_ROUTER_STUB],
+  ["server-only", join(import.meta.dirname, "stubs/server-only.ts")],
 ]);
 const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
