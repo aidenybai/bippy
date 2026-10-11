@@ -40,7 +40,7 @@ const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   {
     failure: "provider",
     pattern:
-      /must be (?:either )?(?:used|placed|rendered) (?:within|inside)|descendant of|used outside|can only be used within|context (?:from `?\w+`? )?was not found|No \w+ context found|of '(?:React\.)?useContext\(|Provider was not found|outside of a `?<\w+>|expected app router to be mounted|inside another <Router>|<[A-Z][\w.]*> is missing|must be placed in <|must be wrapped in a <\w+/i,
+      /must be (?:either )?(?:used|placed|rendered) (?:within|inside)|descendant of|used outside|can only be used within|context (?:from `?\w+`? )?was not found|No \w+ context found|of '(?:React\.)?useContext\(|Provider was not found|outside of a `?<\w+>|expected app router to be mounted|inside another <Router>|<[A-Z][\w.]*> is missing|outside of an? [A-Z]|must be placed in <|must be wrapped in a <\w+/i,
   },
   {
     failure: "missing-data",
