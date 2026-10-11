@@ -454,7 +454,8 @@ const createHarnessPlugin = (
         });
       if (importer === setupId && !source.startsWith("."))
         return this.resolve(source, appImporter, { skipSelf: true });
-      if (importer === setupId && setup.file) return resolve(setup.file, "..", source);
+      if (importer === setupId && setup.file)
+        return this.resolve(source, setup.file, { skipSelf: true });
       return null;
     },
     load: (id) => {
