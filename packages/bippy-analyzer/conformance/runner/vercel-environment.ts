@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { Writable } from "node:stream";
 import { Sandbox } from "@vercel/sandbox";
+import type { Command, CommandFinished } from "@vercel/sandbox";
 import type { CollectSummary } from "./collect.js";
 import {
   CACHE_DIRECTORY,
@@ -32,6 +32,7 @@ const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 45 * 60 * 1000;
 const SANDBOX_RESOURCES = { vcpus: 4 };
 const OUTPUT_TAIL_LENGTH = 8000;
+const MAX_WAIT_ATTEMPTS = 5;
 const ANALYZER_SOURCE_DIRECTORIES = [
   "src",
   "conformance/runner",
@@ -113,15 +114,17 @@ const listFiles = (directory: string): string[] =>
     return statSync(path).isDirectory() ? listFiles(path) : [path];
   });
 
-const createLineCollector = (): { stream: Writable; getTail: () => string } => {
-  let buffer = "";
-  const stream = new Writable({
-    write: (chunk: Buffer, _encoding, callback) => {
-      buffer = (buffer + chunk.toString("utf8")).slice(-OUTPUT_TAIL_LENGTH);
-      callback();
-    },
-  });
-  return { stream, getTail: () => buffer };
+/**
+ * Waiting on a command is one long request, which the network can drop while a big repo
+ * verifies for half an hour. The command keeps running in the sandbox, so it waits again.
+ */
+const waitForCommand = async (command: Command, attempt = 1): Promise<CommandFinished> => {
+  try {
+    return await command.wait();
+  } catch (error) {
+    if (attempt >= MAX_WAIT_ATTEMPTS) throw error;
+    return waitForCommand(command, attempt + 1);
+  }
 };
 
 const runStep = async (
@@ -131,16 +134,14 @@ const runStep = async (
   args: string[],
   options: { cwd?: string; env?: Record<string, string>; sudo?: boolean } = {},
 ): Promise<void> => {
-  const output = createLineCollector();
-  const result = await sandbox.runCommand({
-    cmd,
-    args,
-    ...options,
-    stdout: output.stream,
-    stderr: output.stream,
-  });
-  if (result.exitCode !== 0)
-    throw new Error(`${label} failed with exit code ${result.exitCode}:\n${output.getTail()}`);
+  const command = await sandbox.runCommand({ cmd, args, ...options, detached: true });
+  const result = await waitForCommand(command);
+  if (result.exitCode !== 0) {
+    const output = await result.output("both");
+    throw new Error(
+      `${label} failed with exit code ${result.exitCode}:\n${output.slice(-OUTPUT_TAIL_LENGTH)}`,
+    );
+  }
 };
 
 const prepareSnapshot = async (
