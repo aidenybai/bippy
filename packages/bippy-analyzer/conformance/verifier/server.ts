@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import MagicString from "magic-string";
 import { createServer, loadEnv, parseAst } from "vite";
-import type { Plugin, Rollup } from "vite";
+import type { DepOptimizationConfig, Plugin, Rollup } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
 import type { ProbeMode } from "./types.js";
@@ -29,10 +29,19 @@ interface HarnessSetup {
 
 type HarnessConfig = Partial<Pick<HarnessSetup, "env" | "alias">>;
 
+type OptimizerPlugin = NonNullable<
+  NonNullable<DepOptimizationConfig["esbuildOptions"]>["plugins"]
+>[number];
+
+/**
+ * A running harness. `getDependencyHash` changes whenever Vite pre-bundles dependencies again,
+ * after which a page that already loaded them holds a stale copy of React.
+ */
 export interface Harness {
   url: string;
   exportIndex: Map<string, string[]>;
   getModuleUrl: (file: string) => string;
+  getDependencyHash: () => string;
   close: () => Promise<void>;
 }
 
@@ -106,6 +115,41 @@ const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../bippy/src/index.ts");
 
 const SERVER_DIRECTIVE = "use server";
+const MISSING_MODULE_NAMESPACE = "bippy-missing-module";
+const RELATIVE_SPECIFIER_PATTERN = /^\.{0,2}\//;
+
+const isRequirable = (specifier: string, importer: string): boolean => {
+  try {
+    createRequire(importer).resolve(specifier);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Dependencies pre-bundle in one batch, and one `require` of a module that isn't installed,
+ * like Next's server requiring `critters` or an ungenerated `.prisma/client`, fails the whole
+ * batch and so every component. Such a `require` throws in Node too, so it becomes an empty
+ * module instead.
+ */
+const createMissingRequirePlugin = (): OptimizerPlugin => ({
+  name: MISSING_MODULE_NAMESPACE,
+  setup: (build) => {
+    build.onResolve({ filter: /.*/ }, ({ path, importer, kind }) =>
+      kind === "require-call" &&
+      importer &&
+      !RELATIVE_SPECIFIER_PATTERN.test(path) &&
+      !isRequirable(path, importer)
+        ? { path, namespace: MISSING_MODULE_NAMESPACE }
+        : undefined,
+    );
+    build.onLoad({ filter: /.*/, namespace: MISSING_MODULE_NAMESPACE }, () => ({
+      contents: "module.exports = {};",
+      loader: "js",
+    }));
+  },
+});
 
 const getExportNames = (program: Rollup.ProgramNode): string[] =>
   program.body.flatMap((statement) => {
@@ -181,7 +225,27 @@ const createProbePlugin = (probes: Probe[]): Plugin => {
   };
 };
 
+interface PackageManifest {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+}
+
+/**
+ * Whether the app declares a package. Resolving it isn't enough: Node looks in every
+ * enclosing `node_modules`, where a monorepo installs packages its other apps use.
+ */
+const isDeclared = (appDirectory: string, packageName: string): boolean => {
+  const manifestPath = join(appDirectory, "package.json");
+  if (!existsSync(manifestPath)) return true;
+  const manifest: PackageManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  return [manifest.dependencies, manifest.devDependencies, manifest.peerDependencies].some(
+    (dependencies) => dependencies !== undefined && packageName in dependencies,
+  );
+};
+
 const resolvePackageDirectory = (appDirectory: string, packageName: string): string | null => {
+  if (!isDeclared(appDirectory, packageName)) return null;
   try {
     return dirname(
       createRequire(join(appDirectory, "package.json")).resolve(`${packageName}/package.json`),
@@ -469,6 +533,10 @@ export const startHarness = async (
         "react/jsx-runtime",
         ...providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
       ],
+      esbuildOptions: {
+        plugins: [createMissingRequirePlugin()],
+        loader: { ".node": "empty" },
+      },
     },
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
   });
@@ -487,6 +555,7 @@ export const startHarness = async (
     url: `http://localhost:${address.port}${HARNESS_PATH}`,
     exportIndex: references.exports,
     getModuleUrl: (file) => `/${relative(appDirectory, file)}`,
+    getDependencyHash: () => server.environments.client.depsOptimizer?.metadata.browserHash ?? "",
     close: () => server.close(),
   };
 };

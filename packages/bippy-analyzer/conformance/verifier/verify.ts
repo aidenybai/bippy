@@ -107,44 +107,65 @@ export const verifyProject = async (
   const { knownComponents } = harness;
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
+  const verifyComponent = async (
+    page: Page,
+    component: AnalyzedComponent,
+  ): Promise<{ verdict: ComponentVerdict; isPageBroken: boolean }> => {
+    try {
+      const observations = component.analysis.exportName
+        ? await exploreComponent(
+            page,
+            component.analysis,
+            harness.getModuleUrl(component.analysis.file),
+            harness.exportIndex,
+          )
+        : [];
+      return {
+        verdict: scoreComponent(
+          component.analysis,
+          component.report,
+          observations,
+          knownComponents,
+        ),
+        isPageBroken: false,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
+      return {
+        verdict: {
+          ...scoreComponent(component.analysis, component.report, [], knownComponents),
+          status: "mount-failed",
+          error: message,
+          mountFailure: classifyMountError(message),
+        },
+        isPageBroken: true,
+      };
+    }
+  };
   let nextIndex = 0;
   const runPage = async (): Promise<void> => {
     let page = await openPage(browser, harness.url);
+    let pageDependencyHash = harness.getDependencyHash();
+    const reopenPage = async (): Promise<void> => {
+      await page.close().catch(() => undefined);
+      page = await openPage(browser, harness.url);
+      pageDependencyHash = harness.getDependencyHash();
+    };
+    const isPageStale = (): boolean => harness.getDependencyHash() !== pageDependencyHash;
     try {
       for (let index = nextIndex++; index < components.length; index = nextIndex++) {
         const component = components[index];
         if (!component) continue;
         options.onStart?.(component.analysis.name);
-        let verdict: ComponentVerdict;
-        try {
-          const observations = component.analysis.exportName
-            ? await exploreComponent(
-                page,
-                component.analysis,
-                harness.getModuleUrl(component.analysis.file),
-                harness.exportIndex,
-              )
-            : [];
-          verdict = scoreComponent(
-            component.analysis,
-            component.report,
-            observations,
-            knownComponents,
-          );
-        } catch (error) {
-          const message =
-            error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
-          verdict = {
-            ...scoreComponent(component.analysis, component.report, [], knownComponents),
-            status: "mount-failed",
-            error: message,
-            mountFailure: classifyMountError(message),
-          };
-          await page.close().catch(() => undefined);
-          page = await openPage(browser, harness.url);
+        if (isPageStale()) await reopenPage();
+        let result = await verifyComponent(page, component);
+        if (isPageStale()) {
+          await reopenPage();
+          result = await verifyComponent(page, component);
         }
-        verdicts[index] = verdict;
-        options.onComponent?.(verdict);
+        if (result.isPageBroken) await reopenPage();
+        verdicts[index] = result.verdict;
+        options.onComponent?.(result.verdict);
       }
     } finally {
       await page.close().catch(() => undefined);
