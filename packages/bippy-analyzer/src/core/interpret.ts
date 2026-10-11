@@ -51,6 +51,7 @@ const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionSt
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
+const DYNAMIC_TAG_NAME = "Dynamic";
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
   cases: [
@@ -199,11 +200,8 @@ const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
 const isSuspenseTag = (tag: SymbolicValue): boolean =>
   tag.kind === "Global" && tag.module === "react" && SUSPENSE_TAG_PATTERN.test(tag.name);
 
-const getComponentName = (tag: SymbolicValue): string => {
-  if (tag.kind === "Global") return tag.name;
-  if (tag.kind === "Binding") return tag.binding.name;
-  return "Unknown";
-};
+const getComponentName = (tag: Extract<SymbolicValue, { kind: "Global" | "Binding" }>): string =>
+  tag.kind === "Global" ? tag.name : tag.binding.name;
 
 const createConditional = (
   split: SplitOutcome,
@@ -506,7 +504,9 @@ export class Interpreter {
     const jsxTag: JsxTag =
       tag.kind === "Primitive" && typeof tag.value === "string"
         ? { kind: "BuiltinTag", name: tag.value }
-        : { kind: "Component", name: getComponentName(tag), declaration };
+        : tag.kind === "Global" || tag.kind === "Binding"
+          ? { kind: "Component", name: getComponentName(tag), declaration }
+          : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
     return { kind: "JsxExpression", tag: jsxTag, props, children, loc };
   }
@@ -699,22 +699,32 @@ export class Interpreter {
   }
 
   /**
+   * The places a value reads, through the places a callback captures, like `query` in
+   * `locales.filter((locale) => matches(locale, query))`.
+   */
+  #collectInputs(value: SymbolicValue, inputs: Set<string>): void {
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind === "Binding") inputs.add(getBindingPlaceKey(part));
+      if (part.kind !== "Function") return;
+      for (const place of this.#getFunction(part.functionId)?.context ?? [])
+        this.#collectInputs(this.#read(place), inputs);
+    });
+  }
+
+  /**
    * Gives a call the analysis can't see into a value of its return type. When the type has
-   * a finite set of values, like `boolean`, the result is a binding states can split on.
-   * The same call with different arguments, like a helper called twice, is a different
-   * binding.
+   * a finite set of values, like `boolean`, or the arguments read the component's data, the
+   * result is a binding that changes with them and that states can split on. The same call
+   * with different arguments, like a helper called twice, is a different binding.
    */
   #createCallResult(args: SymbolicValue[], loc: SourceLocation): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(loc);
-    if (calleeText === null || this.#resolver.getDomain(loc).kind !== "Cases") {
-      return createUnknown("call", loc);
-    }
-    const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
+    if (calleeText === null) return createUnknown("call", loc);
     const inputs = new Set<string>();
-    for (const argument of args)
-      forEachSymbolicValue(argument, (part) => {
-        if (part.kind === "Binding") inputs.add(getBindingPlaceKey(part));
-      });
+    for (const argument of args) this.#collectInputs(argument, inputs);
+    if (inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
+      return createUnknown("call", loc);
+    const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
     return createBindingValue(this.#createBinding(name, "call", loc, { inputs: [...inputs] }));
   }
 

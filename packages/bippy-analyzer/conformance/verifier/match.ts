@@ -11,10 +11,15 @@ type ExpectedShape =
   | { kind: "repeat"; item: ExpectedShape[] }
   | { kind: "choice"; options: ExpectedShape[][] };
 
-const TRANSPARENT_TAG_PATTERN = /(^|\.)(Fragment|Provider|Consumer|Suspense|StrictMode|Profiler)$/;
+const TRANSPARENT_TAG_PATTERN = /(^|\.)(Fragment|Suspense|StrictMode|Profiler)$/;
+const CONTEXT_TAG_PATTERN = /(^|\.)(Provider|Consumer)$/;
 const WRAPPER_NAME_PATTERN = /^(?:Memo|ForwardRef|Lazy)\((.*)\)$/;
 const MAX_MATCH_STEPS = 200_000;
 const GENERIC_COMPONENT_NAMES = new Set(["Anonymous", "ForwardRef", "Memo", "Lazy"]);
+// HACK: esbuild renames a function that shadows its variable, like `Editor` in
+// `const Editor = forwardRef(function Editor() {})`, to `Editor2`, and Vite turns off
+// `keepNames` in development.
+const RENAMED_SUFFIX_PATTERN = /\d+$/;
 
 export const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
 
@@ -31,7 +36,20 @@ export const toExpected = (
   switch (value.kind) {
     case "JsxExpression": {
       const { tag } = value;
+      if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
       if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
+      // A context's `Provider` renders only its children, but a library's, like Base UI's
+      // `Tooltip.Provider`, is a component of its own.
+      if (CONTEXT_TAG_PATTERN.test(tag.name))
+        return [
+          {
+            kind: "choice",
+            options: [
+              value.children.flatMap(recurse),
+              [{ kind: "component", name: normalizeName(tag.name), isKnown: false }],
+            ],
+          },
+        ];
       if (tag.kind === "Component") {
         const runtimeName = tag.declaration ? knownComponents.get(tag.declaration) : undefined;
         return [
@@ -83,7 +101,10 @@ const matchOne = (expected: ExpectedShape, actual: Shape, budget: MatchBudget): 
   if (expected.kind === "component") {
     if (actual.kind !== "component") return false;
     return (
-      !expected.isKnown || actual.name === expected.name || GENERIC_COMPONENT_NAMES.has(actual.name)
+      !expected.isKnown ||
+      actual.name === expected.name ||
+      actual.name.replace(RENAMED_SUFFIX_PATTERN, "") === expected.name ||
+      GENERIC_COMPONENT_NAMES.has(actual.name)
     );
   }
   if (expected.kind === "element") {

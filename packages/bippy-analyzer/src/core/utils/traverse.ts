@@ -2,28 +2,34 @@ import type { JsxExpressionValue, SymbolicValue } from "../types.js";
 
 /**
  * Calls `visit` on every node of a render tree, parents before children and consequents
- * before alternates.
+ * before alternates. A subtree rendered in several places is visited once.
  */
 export const forEachRenderNode = (
   value: SymbolicValue,
   visit: (node: SymbolicValue) => void,
 ): void => {
-  visit(value);
-  switch (value.kind) {
-    case "JsxExpression":
-    case "JsxFragment":
-      for (const child of value.children) forEachRenderNode(child, visit);
-      return;
-    case "Conditional":
-      forEachRenderNode(value.consequent, visit);
-      forEachRenderNode(value.alternate, visit);
-      return;
-    case "ArrayMap":
-      forEachRenderNode(value.item, visit);
-      return;
-    default:
-      return;
-  }
+  const visited = new WeakSet<SymbolicValue>();
+  const walk = (node: SymbolicValue): void => {
+    if (visited.has(node)) return;
+    visited.add(node);
+    visit(node);
+    switch (node.kind) {
+      case "JsxExpression":
+      case "JsxFragment":
+        node.children.forEach(walk);
+        return;
+      case "Conditional":
+        walk(node.consequent);
+        walk(node.alternate);
+        return;
+      case "ArrayMap":
+        walk(node.item);
+        return;
+      default:
+        return;
+    }
+  };
+  walk(value);
 };
 
 export const forEachJsxElement = (

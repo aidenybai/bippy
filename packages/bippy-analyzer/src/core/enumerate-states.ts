@@ -26,7 +26,12 @@ import type {
   Handler,
   StateUpdate,
 } from "./types.js";
-import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
+import {
+  forEachJsxElement,
+  forEachRenderNode,
+  forEachSymbolicValue,
+  mapSymbolicValue,
+} from "./utils/traverse.js";
 import { formatNegated, formatSymbolicValue } from "./format.js";
 import {
   getBindingPlaceKey,
@@ -238,10 +243,32 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   ];
 };
 
+/**
+ * The call results each binding feeds, directly or through other results, like
+ * `locales.filter(...)` for the `query` its callback reads.
+ */
+const getDependents = (bindings: Binding[]): Map<number, number[]> => {
+  const dependents = new Map<number, number[]>();
+  for (const binding of bindings)
+    for (const input of binding.inputs) {
+      const { bindingId } = parsePlaceKey(input);
+      dependents.set(bindingId, [...(dependents.get(bindingId) ?? []), binding.id]);
+    }
+  const collect = (bindingId: number, collected: Set<number>): Set<number> => {
+    for (const dependentId of dependents.get(bindingId) ?? [])
+      if (!collected.has(dependentId)) collect(dependentId, collected.add(dependentId));
+    return collected;
+  };
+  return new Map(
+    [...dependents.keys()].map((bindingId) => [bindingId, [...collect(bindingId, new Set())]]),
+  );
+};
+
 const applyUpdates = (
   updates: StateUpdate[],
   constraints: Constraints,
   reachable: Constraints,
+  dependents: Map<number, number[]>,
 ): Constraints => {
   const next = cloneConstraints(constraints);
   for (const update of updates) {
@@ -260,6 +287,10 @@ const applyUpdates = (
     }
     forgetBinding(next, update.binding.id, isLengthPreserving(update.value, update.binding));
     next.bounds.push(...getLengthBounds(update.value, update.binding));
+    const dependentIds = new Set(dependents.get(update.binding.id));
+    for (const [placeKey, values] of reachable.values)
+      if (dependentIds.has(parsePlaceKey(placeKey).bindingId)) next.values.set(placeKey, values);
+    for (const dependentId of dependentIds) forgetBinding(next, dependentId, false);
   }
   return next;
 };
@@ -280,6 +311,7 @@ const applyTransition = (
   handler: Handler,
   constraints: Constraints,
   reachable: Constraints,
+  dependents: Map<number, number[]>,
 ): Constraints[] => {
   const pathGuardKeys = new Map(
     handler.updates.map((update) => {
@@ -292,6 +324,7 @@ const applyTransition = (
       handler.updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
       constraints,
       reachable,
+      dependents,
     ),
   );
   return handler.updates.some((update) => update.guards.length > 0)
@@ -470,6 +503,21 @@ const collectHandlerIds = (render: SymbolicValue, handlerIds: Set<string>): void
   });
 
 /**
+ * The branches inside other branches' tests, like the `?.` of `if (!getOption(value)?.icon)`.
+ * States don't decide them, so either side may run.
+ */
+const collectTestedBranchKeys = (render: SymbolicValue): Set<string> => {
+  const keys = new Set<string>();
+  forEachRenderNode(render, (value) => {
+    if (value.kind !== "Conditional") return;
+    forEachSymbolicValue(getTestExpression(value), (part) => {
+      if (part.kind === "Conditional") keys.add(getBranchKey(part));
+    });
+  });
+  return keys;
+};
+
+/**
  * Lists the branch outcomes no state reaches. Only the arms some state reaches are
  * searched, and an unreached alternate that renders nothing is not worth reporting.
  */
@@ -478,7 +526,7 @@ const collectUnreachableBranches = (
   outcomes: DecisionOutcomes,
 ): UnreachableBranch[] => {
   const unreachableBranches: UnreachableBranch[] = [];
-  const seen = new Set<string>();
+  const seen = collectTestedBranchKeys(render);
   const visited = new WeakSet<SymbolicValue>();
   const visit = (value: SymbolicValue): void => {
     if (visited.has(value)) return;
@@ -526,6 +574,7 @@ const collectUnreachableBranches = (
  */
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const reachable = createInitialKnowledge(analysis);
+  const dependents = getDependents(analysis.bindings);
   const outcomes: DecisionOutcomes = new Map();
   const regionBranches = findRegions(analysis.render);
   const effectIds = new Set(
@@ -552,8 +601,9 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
         .filter((handler) => handlerIds.has(handler.id))
         .map((handler) => {
           const targetKeys = new Set(
-            applyTransition(handler, alternative.constraints, reachable).flatMap((after) =>
-              createEnumerator(new Map(), regionBranch)(analysis.render, after).map(getStateKey),
+            applyTransition(handler, alternative.constraints, reachable, dependents).flatMap(
+              (after) =>
+                createEnumerator(new Map(), regionBranch)(analysis.render, after).map(getStateKey),
             ),
           );
           return {

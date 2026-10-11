@@ -98,11 +98,13 @@ export interface JsxSpreadProp {
 
 /**
  * A JSX tag. A component tag records where its component is declared, as
- * `<file>#<name>`, when the checker can resolve it.
+ * `<file>#<name>`, when the checker can resolve it. A dynamic tag is one the analysis can't
+ * name, like `` `h${level}` ``.
  */
 export type JsxTag =
   | { kind: "BuiltinTag"; name: string }
-  | { kind: "Component"; name: string; declaration: string | null };
+  | { kind: "Component"; name: string; declaration: string | null }
+  | { kind: "DynamicTag"; name: string };
 
 interface SymbolicObjectProperty {
   key: string;

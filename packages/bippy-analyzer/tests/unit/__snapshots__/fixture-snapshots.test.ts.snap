@@ -34,7 +34,8 @@ exports[`fixture analysis > Card keeps its states, transitions and unreachable b
 │  ├─ theme prop undefined | Theme
 │  │  ├─ .classNames undefined | { card?: string | undefined; }
 │  │  └─ .classNames.card undefined | string
-│  └─ note prop undefined | string
+│  ├─ note prop undefined | string
+│  └─ cn("card", theme?.classNames.card) call string
 ├─ render
 │  └─ <div>
 │     └─ ◆ note
@@ -407,7 +408,8 @@ exports[`fixture analysis > TodoApp keeps its states, transitions and unreachabl
 │  ├─ todos state Todo[] = []
 │  ├─ draft state string = ""
 │  ├─ filter state "active" | "all" | "done" = "all"
-│  └─ isEditing state false | true = false
+│  ├─ isEditing state false | true = false
+│  └─ todos.filter(function) call Todo[]
 ├─ render
 │  └─ <section>
 │     ├─ <input onChange ⇒ draft = Unknown(member)>
@@ -415,7 +417,7 @@ exports[`fixture analysis > TodoApp keeps its states, transitions and unreachabl
 │     ├─ ◆ todos.length === 0
 │     │  └─ ✓ <p> "Nothing to do"
 │     ├─ <ul>
-│     │  └─ ↻ each of Unknown(call)
+│     │  └─ ↻ each of todos.filter(function)
 │     │     └─ <li onClick ⇒ todos = todos.map(…)>
 │     │        └─ ◆ todo.isDone
 │     │           ├─ ✓ <s> {todo.text}
