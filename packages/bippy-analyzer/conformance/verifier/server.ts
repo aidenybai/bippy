@@ -130,8 +130,9 @@ const isRequirable = (specifier: string, importer: string): boolean => {
 /**
  * Dependencies pre-bundle in one batch, and one `require` of a module that isn't installed,
  * like Next's server requiring `critters` or an ungenerated `.prisma/client`, fails the whole
- * batch and so every component. Such a `require` throws in Node too, so it becomes an empty
- * module instead.
+ * batch and so every component. It becomes a module that throws as Node would, so only code
+ * that runs it fails, and a `try` around it, like Next's for `@opentelemetry/api`, still
+ * falls back.
  */
 const createMissingRequirePlugin = (): OptimizerPlugin => ({
   name: MISSING_MODULE_NAMESPACE,
@@ -144,8 +145,8 @@ const createMissingRequirePlugin = (): OptimizerPlugin => ({
         ? { path, namespace: MISSING_MODULE_NAMESPACE }
         : undefined,
     );
-    build.onLoad({ filter: /.*/, namespace: MISSING_MODULE_NAMESPACE }, () => ({
-      contents: "module.exports = {};",
+    build.onLoad({ filter: /.*/, namespace: MISSING_MODULE_NAMESPACE }, ({ path }) => ({
+      contents: `throw new Error(${JSON.stringify(`Cannot find module '${path}'`)});`,
       loader: "js",
     }));
   },
