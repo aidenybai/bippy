@@ -220,6 +220,78 @@ const createServerActionPlugin = (): Plugin => ({
   },
 });
 
+interface RequireCall {
+  start: number;
+  end: number;
+  specifier: string;
+}
+
+const getRequireCall = (node: object): RequireCall | null => {
+  const callee: unknown = Reflect.get(node, "callee");
+  const args: unknown = Reflect.get(node, "arguments");
+  if (Reflect.get(node, "type") !== "CallExpression" || !Array.isArray(args)) return null;
+  const [specifierNode]: unknown[] = args;
+  const specifier: unknown =
+    args.length === 1 && typeof specifierNode === "object" && specifierNode !== null
+      ? Reflect.get(specifierNode, "value")
+      : null;
+  const start: unknown = Reflect.get(node, "start");
+  const end: unknown = Reflect.get(node, "end");
+  const isRequire =
+    typeof callee === "object" && callee !== null && Reflect.get(callee, "name") === "require";
+  return isRequire &&
+    typeof specifier === "string" &&
+    typeof start === "number" &&
+    typeof end === "number"
+    ? { start, end, specifier }
+    : null;
+};
+
+const findRequireCalls = (program: Rollup.ProgramNode): RequireCall[] => {
+  const calls: RequireCall[] = [];
+  const visit = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    if (typeof node !== "object" || node === null) return;
+    const call = getRequireCall(node);
+    if (call) calls.push(call);
+    else Object.values(node).forEach(visit);
+  };
+  visit(program);
+  return calls;
+};
+
+/**
+ * Turns `require("highlight.js")` in an app's own modules into an import. Next's bundler
+ * lets ES modules call `require`, while a browser has no `require` at all.
+ */
+const createRequirePlugin = (): Plugin => ({
+  name: "bippy-verify-require",
+  transform: (code, id) => {
+    if (id.includes("/node_modules/") || !code.includes("require(")) return null;
+    if (!SOURCE_FILE_PATTERN.test(id.split("?")[0] ?? id)) return null;
+    const calls = findRequireCalls(parseAst(code));
+    if (calls.length === 0) return null;
+    const specifiers = [...new Set(calls.map((call) => call.specifier))];
+    const source = new MagicString(code);
+    for (const call of calls) {
+      const name = `__bippyRequire${specifiers.indexOf(call.specifier)}`;
+      source.overwrite(call.start, call.end, `(${name}.default ?? ${name})`);
+    }
+    source.prepend(
+      specifiers
+        .map(
+          (specifier, index) =>
+            `import * as __bippyRequire${index} from ${JSON.stringify(specifier)};\n`,
+        )
+        .join(""),
+    );
+    return { code: source.toString(), map: source.generateMap({ hires: true }) };
+  },
+});
+
 const createProbePlugin = (probes: Probe[]): Plugin => {
   const probesByFile = Map.groupBy(probes, (probe) => probe.file);
   return {
@@ -522,6 +594,7 @@ export const startHarness = async (
       createHarnessPlugin(appDirectory, providers, setup, appImporter, references),
       createProbePlugin(probes),
       createServerActionPlugin(),
+      createRequirePlugin(),
       tsconfigPaths({ root: appDirectory }),
     ],
     resolve: {
