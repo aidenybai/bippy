@@ -35,14 +35,24 @@ Render tree symbols:
 
 ## What it does
 
-The pipeline is a port of the React Compiler's front end, followed by our own passes:
+The pipeline is a port of the React Compiler's front end, followed by our own passes. Read `src/core` in this order:
 
-| Folder           | Contents                                                                                       |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| `src/compiler`   | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference, passes |
-| `src/typescript` | How the TS 7 checker feeds the compiler: types, React exports and mutating methods             |
-| `src/analysis`   | Our passes: symbolic evaluation, value domains, transitions and state enumeration              |
-| `src/cli`        | `analyze` and the HIR printer                                                                  |
+| File                        | Stage                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------- |
+| `analyze-project.ts`        | Opens the TS project, finds components, runs each one, then lists states               |
+| `analyze-component.ts`      | Runs one component through the compiler passes and ours                                |
+| `../compiler/`              | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference |
+| `type-provider.ts`          | Types the compiler's HIR from the TS checker                                           |
+| `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept                     |
+| `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with        |
+| `collect-handlers.ts`       | What each event handler and effect updates                                             |
+| `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions            |
+| `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds                  |
+| `format.ts`, `serialize.ts` | Printing and JSON output                                                               |
+| `types.ts`                  | The data passed between stages                                                         |
+| `utils/`                    | Small helpers: places, predicates, truthiness, traversal, TS nodes, projects           |
+
+The browser verifier lives in `conformance/verifier`, next to the repos it runs on.
 
 Each ported file names the compiler source it came from.
 
@@ -61,18 +71,18 @@ Each ported file names the compiler source it came from.
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
 6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??`, `?.` and `switch` all produce one. A `?:`, `&&`, `||`, `??` or `?.` merges where it ends, so a `?.` in a `className` doesn't split the rest of the render. Member reads past a `?.`, and reads of a value that may be `undefined`, are assumed not to throw.
 7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types.
-8. Collects transitions from event handlers and effects:
+8. Collects handlers from event handlers and effects:
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
    - calling into a custom hook's result or a context value, like `query.fetchNextPage()`, may change it to anything, later
    - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render
 9. Lists the states:
-   - It groups the render's decisions first. Two decisions share a group when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Groups vary independently, so each is listed on its own and the screens are every combination of one state per group.
-   - Within a group it splits only on decisions in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
+   - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
+   - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
    - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`.
-   - State values are limited to the initial value plus every value a transition can set.
-10. For each state and each transition that changes its group, finds which states of the group can come next. A transition that doesn't touch a group leaves it as it is. It also reports branches that can never render.
+   - State values are limited to the initial value plus every value a handler can set.
+10. For each state and each handler that changes its region, finds which states of the region can come next. A handler that doesn't touch a region leaves it as it is. It also reports branches that can never render.
 11. Reports warnings from the compiler's mutation effects:
 
 | Warning           | When                                                                               |
@@ -123,7 +133,7 @@ Wizard src/reducer.tsx:21
    ├─ S3 state.step !== "done" ∧ state.step !== "details"
    │  ├─ "Back" → S2
    │  └─ "Next" → S1
-   └─ dead branches
+   └─ unreachable branches
       └─ never state.hasError L26
 ```
 
@@ -131,7 +141,7 @@ The error alert can never show, because nothing dispatches `fail`.
 
 ## Known gaps
 
-- **Hook result fields are independent.** `query.isPending` and `query.isError` share a state group but each takes every value, even though React Query's union ties them together. The fix is to split on the union type's tag field.
+- **Hook result fields are independent.** `query.isPending` and `query.isError` share a state region but each takes every value, even though React Query's union ties them together. The fix is to split on the union type's tag field.
 - **Context and stores aren't linked to their source.** A context value or store is typed from its declaration, not from the provider or store that sets it, so its values and the actions that change it are unknown.
 - **Calls are opaque unless their return type is finite.** `.filter` results are still `Unknown(call)`, so the analysis doesn't know the result is empty when the source is.
 - **Only definite mutations are tracked.** Passing state to a function that may mutate it doesn't forget it.

@@ -31,7 +31,7 @@ import type { Shape } from "./types.js";
 
 type ComponentStatus = "verified" | "not-exported" | "mount-failed";
 
-interface WrongState {
+interface StateCounterexample {
   props: Record<string, Sample>;
   path: string[];
   rendered: string;
@@ -39,7 +39,7 @@ interface WrongState {
   reason: string;
 }
 
-interface WrongEdge {
+interface TransitionCounterexample {
   path: string[];
   action: string;
   fromStates: number[];
@@ -48,7 +48,7 @@ interface WrongEdge {
   reason: "unpredicted-target" | "unmodeled-handler" | "unpredicted-effect";
 }
 
-interface WrongValue {
+interface ValueCounterexample {
   path: string[];
   place: string;
   value: string;
@@ -64,17 +64,17 @@ export interface ComponentVerdict {
   observations: number;
   renderErrors: number;
   predictedStates: number;
-  witnessedStates: number[];
-  wrongStates: WrongState[];
-  witnessedEdges: number;
-  wrongEdges: WrongEdge[];
+  coveredStates: number[];
+  stateCounterexamples: StateCounterexample[];
+  coveredTransitions: number;
+  transitionCounterexamples: TransitionCounterexample[];
   branchSides: number;
-  witnessedBranchSides: number;
-  deadClaims: number;
-  refutedDeadClaims: string[];
-  wrongValues: WrongValue[];
+  coveredBranchSides: number;
+  unreachableClaims: number;
+  reachedUnreachableBranches: string[];
+  valueCounterexamples: ValueCounterexample[];
   warnings: number;
-  witnessedWarnings: number;
+  coveredWarnings: number;
   refutedWarnings: string[];
   unwarnedMutations: string[];
 }
@@ -83,13 +83,13 @@ export interface VerificationSummary {
   verified: number;
   couldNotMount: number;
   notExported: number;
-  wrong: number;
+  counterexamples: number;
   predictedStates: number;
-  witnessedStates: number;
+  coveredStates: number;
   branchSides: number;
-  witnessedBranchSides: number;
+  coveredBranchSides: number;
   warnings: number;
-  witnessedWarnings: number;
+  coveredWarnings: number;
   unwarnedMutations: number;
   mountFailures: Partial<Record<MountFailure, number>>;
   durationMs: number;
@@ -127,15 +127,15 @@ export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   const probes = new Map<string, Probe>();
   forEachRenderNode(analysis.render, (value) => {
     if (value.kind !== "Conditional") return;
-    const { decision } = value;
-    if (decision.probe === "none" || decision.loc === GeneratedSource) return;
-    const id = getProbeId(analysis.file, decision.loc);
+    const { branch } = value;
+    if (branch.probe === "none" || branch.loc === GeneratedSource) return;
+    const id = getProbeId(analysis.file, branch.loc);
     probes.set(id, {
       id,
       file: analysis.file,
-      start: decision.loc.start,
-      end: decision.loc.end,
-      mode: decision.probe,
+      start: branch.loc.start,
+      end: branch.loc.end,
+      mode: branch.probe,
     });
   });
   return [...probes.values()];
@@ -162,8 +162,8 @@ const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> 
   const labels = new Map<string, TriggerLabel>();
   forEachJsxElement(render, (value) => {
     for (const prop of value.props) {
-      if (!prop.transitionId) continue;
-      labels.set(prop.transitionId, {
+      if (!prop.handlerId) continue;
+      labels.set(prop.handlerId, {
         tag: value.tag.name,
         text: getStaticText(value) || null,
         event: prop.kind === "JsxAttribute" ? prop.name : ANY_EVENT,
@@ -216,17 +216,17 @@ export const scoreComponent = (
     observations: observations.length,
     renderErrors: 0,
     predictedStates: report.states.length,
-    witnessedStates: [],
-    wrongStates: [],
-    witnessedEdges: 0,
-    wrongEdges: [],
+    coveredStates: [],
+    stateCounterexamples: [],
+    coveredTransitions: 0,
+    transitionCounterexamples: [],
     branchSides: 0,
-    witnessedBranchSides: 0,
-    deadClaims: report.deadBranches.length,
-    refutedDeadClaims: [],
-    wrongValues: [],
+    coveredBranchSides: 0,
+    unreachableClaims: report.unreachableBranches.length,
+    reachedUnreachableBranches: [],
+    valueCounterexamples: [],
     warnings: analysis.warnings.length,
-    witnessedWarnings: 0,
+    coveredWarnings: 0,
     refutedWarnings: [],
     unwarnedMutations: [],
   };
@@ -249,7 +249,7 @@ export const scoreComponent = (
   const expectedStates = report.states.map((state) => toExpected(state.render, knownComponents));
   const triggerLabels = collectTriggerLabels(analysis.render);
   const stateBindings = getStateBindings(analysis);
-  const witnessedStates = new Set<number>();
+  const coveredStates = new Set<number>();
   const matchCache = new Map<string, number[]>();
 
   const describeMismatch = (props: Record<string, Sample>, path: string[], shapes: Shape[]) => {
@@ -275,63 +275,65 @@ export const scoreComponent = (
     return matches;
   };
 
-  const groupIndices = report.groups.map((_, index) => index);
-  const inGroup = (matches: number[], group: number): number[] =>
-    matches.filter((match) => report.states[match]?.group === group);
-  const isEveryGroupMatched = (matches: number[]): boolean =>
-    groupIndices.every((group) => inGroup(matches, group).length > 0);
-  const isGroupUnchanged = (before: number[], after: number[], group: number): boolean =>
-    inGroup(before, group).some((match) => after.includes(match));
+  const regionIndices = report.regions.map((_, index) => index);
+  const inRegion = (matches: number[], region: number): number[] =>
+    matches.filter((match) => report.states[match]?.region === region);
+  const isEveryRegionMatched = (matches: number[]): boolean =>
+    regionIndices.every((region) => inRegion(matches, region).length > 0);
+  const isRegionUnchanged = (before: number[], after: number[], region: number): boolean =>
+    inRegion(before, region).some((match) => after.includes(match));
   const externalBindingIds = new Set(
     analysis.bindings
       .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
       .map((binding) => binding.id),
   );
-  const isExternalGroup = (group: number): boolean =>
-    report.groups[group]?.bindingIds.some((bindingId) => externalBindingIds.has(bindingId)) ??
+  const isExternalRegion = (region: number): boolean =>
+    report.regions[region]?.bindingIds.some((bindingId) => externalBindingIds.has(bindingId)) ??
     false;
-  const getEdges = (from: number[], transitionIds: Set<string>) =>
+  const getTransitions = (from: number[], handlerIds: Set<string>) =>
     from.flatMap(
       (index) =>
-        report.states[index]?.edges.filter((edge) => transitionIds.has(edge.transitionId)) ?? [],
+        report.states[index]?.transitions.filter((transition) =>
+          handlerIds.has(transition.handlerId),
+        ) ?? [],
     );
 
   const effectIds = new Set(
-    analysis.transitions
-      .filter((transition) => transition.trigger.kind === "Effect")
-      .map((transition) => transition.id),
+    analysis.handlers
+      .filter((handler) => handler.trigger.kind === "Effect")
+      .map((handler) => handler.id),
   );
   const hasExternalData = analysis.bindings.some((binding) =>
     EXTERNAL_DATA_BINDING_KINDS.has(binding.kind),
   );
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));
-  const witnessedSides = new Set<string>();
+  const coveredSides = new Set<string>();
 
   for (const observation of observations) {
     const { after, before, action, path } = observation;
     for (const hit of after.probes)
-      if (probeIds.has(hit.id)) witnessedSides.add(`${hit.id}:${hit.outcome}`);
+      if (probeIds.has(hit.id)) coveredSides.add(`${hit.id}:${hit.outcome}`);
     if (after.error) {
       verdict.renderErrors++;
       continue;
     }
 
     const afterMatches = getMatches(after.shapes);
-    if (!isEveryGroupMatched(afterMatches)) {
+    if (!isEveryRegionMatched(afterMatches)) {
       recordFailure(
-        verdict.wrongStates,
+        verdict.stateCounterexamples,
         describeMismatch(observation.props, path, normalizeShapes(after.shapes)),
       );
     } else {
-      for (const match of afterMatches) witnessedStates.add(match);
+      for (const match of afterMatches) coveredStates.add(match);
     }
 
     if (!action && after.firstCommitShapes) {
       const firstMatches = getMatches(after.firstCommitShapes);
-      if (!isEveryGroupMatched(firstMatches)) {
+      if (!isEveryRegionMatched(firstMatches)) {
         recordFailure(
-          verdict.wrongStates,
+          verdict.stateCounterexamples,
           describeMismatch(
             observation.props,
             [FIRST_COMMIT],
@@ -339,23 +341,25 @@ export const scoreComponent = (
           ),
         );
       } else {
-        for (const match of firstMatches) witnessedStates.add(match);
-        const isUnexplained = groupIndices.some(
-          (group) =>
-            inGroup(afterMatches, group).length > 0 &&
-            !isGroupUnchanged(firstMatches, afterMatches, group) &&
-            !getEdges(inGroup(firstMatches, group), effectIds).some((edge) =>
-              edge.targets.some((target) => afterMatches.includes(target)),
+        for (const match of firstMatches) coveredStates.add(match);
+        const isUnexplained = regionIndices.some(
+          (region) =>
+            inRegion(afterMatches, region).length > 0 &&
+            !isRegionUnchanged(firstMatches, afterMatches, region) &&
+            !getTransitions(inRegion(firstMatches, region), effectIds).some((transition) =>
+              transition.targets.some((target) => afterMatches.includes(target)),
             ),
         );
         if (!hasExternalData && isUnexplained) {
-          recordFailure(verdict.wrongEdges, {
+          recordFailure(verdict.transitionCounterexamples, {
             path: [],
             action: FIRST_COMMIT,
             fromStates: firstMatches,
             toStates: afterMatches,
             predictedStates: [
-              ...new Set(getEdges(firstMatches, effectIds).flatMap((edge) => edge.targets)),
+              ...new Set(
+                getTransitions(firstMatches, effectIds).flatMap((transition) => transition.targets),
+              ),
             ],
             reason: "unpredicted-effect",
           });
@@ -371,7 +375,7 @@ export const scoreComponent = (
             continue;
           const value = readPath(after.hookStates[hookIndex], placePath);
           if (isPredictedValue(value, predicted)) continue;
-          recordFailure(verdict.wrongValues, {
+          recordFailure(verdict.valueCounterexamples, {
             path,
             place: formatPlace(binding, placePath),
             value: formatRuntimeValue(value),
@@ -383,10 +387,10 @@ export const scoreComponent = (
 
     if (!action || !before || before.error) continue;
     const beforeMatches = getMatches(before.shapes);
-    if (!isEveryGroupMatched(beforeMatches) || !isEveryGroupMatched(afterMatches)) continue;
+    if (!isEveryRegionMatched(beforeMatches) || !isEveryRegionMatched(afterMatches)) continue;
     const eventName = action.kind === "click" ? "onClick" : "onChange";
-    const candidates = analysis.transitions.filter((transition) => {
-      const label = triggerLabels.get(transition.id);
+    const candidates = analysis.handlers.filter((handler) => {
+      const label = triggerLabels.get(handler.id);
       return (
         label !== undefined &&
         (label.tag === action.tag || isComponentTag(label.tag)) &&
@@ -395,53 +399,57 @@ export const scoreComponent = (
       );
     });
     const candidateIds = new Set(candidates.map((candidate) => candidate.id));
-    const recordWrongEdge = (reason: WrongEdge["reason"]): void =>
-      recordFailure(verdict.wrongEdges, {
+    const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void =>
+      recordFailure(verdict.transitionCounterexamples, {
         path,
         action: action.key,
         fromStates: beforeMatches,
         toStates: afterMatches,
         predictedStates: [
-          ...new Set(getEdges(beforeMatches, candidateIds).flatMap((edge) => edge.targets)),
+          ...new Set(
+            getTransitions(beforeMatches, candidateIds).flatMap((transition) => transition.targets),
+          ),
         ],
         reason,
       });
     // A child's handler can change any hook or context value the component reads.
-    const isFreeToChange = (group: number): boolean => action.isInChild && isExternalGroup(group);
+    const isFreeToChange = (region: number): boolean =>
+      action.isInChild && isExternalRegion(region);
     if (candidates.length === 0) {
-      const isExplained = groupIndices.every(
-        (group) => isGroupUnchanged(beforeMatches, afterMatches, group) || isFreeToChange(group),
+      const isExplained = regionIndices.every(
+        (region) =>
+          isRegionUnchanged(beforeMatches, afterMatches, region) || isFreeToChange(region),
       );
       if (!isExplained) recordWrongEdge("unmodeled-handler");
       continue;
     }
-    const isPredicted = groupIndices.every((group) => {
-      const isUnchangedInGroup = isGroupUnchanged(beforeMatches, afterMatches, group);
-      const edges = getEdges(inGroup(beforeMatches, group), candidateIds);
-      if (isFreeToChange(group)) return true;
-      return edges.length === 0
-        ? isUnchangedInGroup
-        : edges.some(
-            (edge) =>
-              edge.targets.some((target) => afterMatches.includes(target)) ||
-              (isUnchangedInGroup && edge.isAsync),
+    const isPredicted = regionIndices.every((region) => {
+      const isUnchangedInRegion = isRegionUnchanged(beforeMatches, afterMatches, region);
+      const transitions = getTransitions(inRegion(beforeMatches, region), candidateIds);
+      if (isFreeToChange(region)) return true;
+      return transitions.length === 0
+        ? isUnchangedInRegion
+        : transitions.some(
+            (transition) =>
+              transition.targets.some((target) => afterMatches.includes(target)) ||
+              (isUnchangedInRegion && transition.isAsync),
           );
     });
-    if (isPredicted) verdict.witnessedEdges++;
+    if (isPredicted) verdict.coveredTransitions++;
     else recordWrongEdge("unpredicted-target");
   }
 
-  verdict.witnessedStates = [...witnessedStates].sort((left, right) => left - right);
+  verdict.coveredStates = [...coveredStates].sort((left, right) => left - right);
   verdict.branchSides = probes.length * 2;
-  verdict.witnessedBranchSides = witnessedSides.size;
-  verdict.refutedDeadClaims = report.deadBranches
-    .filter(({ decision, side }) => {
-      const { loc } = decision;
+  verdict.coveredBranchSides = coveredSides.size;
+  verdict.reachedUnreachableBranches = report.unreachableBranches
+    .filter(({ branch, side }) => {
+      const { loc } = branch;
       return (
-        loc !== GeneratedSource && witnessedSides.has(`${getProbeId(analysis.file, loc)}:${side}`)
+        loc !== GeneratedSource && coveredSides.has(`${getProbeId(analysis.file, loc)}:${side}`)
       );
     })
-    .map(({ decision, description }) => `${description} ${formatLine(decision.loc)}`.trim());
+    .map(({ branch, description }) => `${description} ${formatLine(branch.loc)}`.trim());
   return { ...verdict, ...scoreWarnings(analysis, observations, stateBindings) };
 };
 
@@ -462,27 +470,28 @@ const formatProps = (props: Record<string, Sample>): string =>
 export const formatStates = (states: number[]): string =>
   states.map((state) => `S${state + 1}`).join("|");
 
-export const formatWrongClaims = (verdict: ComponentVerdict): string[] => [
-  ...verdict.wrongStates.map(
-    (wrong) =>
-      `unpredicted state after [${wrong.path.join(" → ") || "mount"}] with ${formatProps(wrong.props)}: ${wrong.reason} (closest ${formatStates([wrong.closestState])})`,
+export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
+  ...verdict.stateCounterexamples.map(
+    (counterexample) =>
+      `unpredicted state after [${counterexample.path.join(" → ") || "mount"}] with ${formatProps(counterexample.props)}: ${counterexample.reason} (closest ${formatStates([counterexample.closestState])})`,
   ),
-  ...verdict.wrongEdges.map(
-    (wrong) =>
-      `${wrong.reason}: ${wrong.action} went ${formatStates(wrong.fromStates)} → ${formatStates(wrong.toStates)}, predicted ${formatStates(wrong.predictedStates) || "no change"}`,
+  ...verdict.transitionCounterexamples.map(
+    (counterexample) =>
+      `${counterexample.reason}: ${counterexample.action} went ${formatStates(counterexample.fromStates)} → ${formatStates(counterexample.toStates)}, predicted ${formatStates(counterexample.predictedStates) || "no change"}`,
   ),
-  ...verdict.wrongValues.map(
-    (wrong) => `${wrong.place} = ${wrong.value}, predicted ${wrong.predicted.join(" | ")}`,
+  ...verdict.valueCounterexamples.map(
+    (counterexample) =>
+      `${counterexample.place} = ${counterexample.value}, predicted ${counterexample.predicted.join(" | ")}`,
   ),
-  ...verdict.refutedDeadClaims.map((claim) => `dead branch was reached: ${claim}`),
+  ...verdict.reachedUnreachableBranches.map((claim) => `unreachable branch was reached: ${claim}`),
   ...verdict.refutedWarnings.map((warning) => `mutation warning refuted: ${warning}`),
 ];
 
-export const countWrongClaims = (verdict: ComponentVerdict): number =>
-  verdict.wrongStates.length +
-  verdict.wrongEdges.length +
-  verdict.wrongValues.length +
-  verdict.refutedDeadClaims.length +
+export const countCounterexamples = (verdict: ComponentVerdict): number =>
+  verdict.stateCounterexamples.length +
+  verdict.transitionCounterexamples.length +
+  verdict.valueCounterexamples.length +
+  verdict.reachedUnreachableBranches.length +
   verdict.refutedWarnings.length;
 
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
@@ -509,13 +518,13 @@ export const summarizeVerdicts = (
     verified: verified.length,
     couldNotMount: mountFailed.length,
     notExported: verdicts.filter((verdict) => verdict.status === "not-exported").length,
-    wrong: sum(verified, countWrongClaims),
+    counterexamples: sum(verified, countCounterexamples),
     predictedStates: sum(verified, (verdict) => verdict.predictedStates),
-    witnessedStates: sum(verified, (verdict) => verdict.witnessedStates.length),
+    coveredStates: sum(verified, (verdict) => verdict.coveredStates.length),
     branchSides: sum(verified, (verdict) => verdict.branchSides),
-    witnessedBranchSides: sum(verified, (verdict) => verdict.witnessedBranchSides),
+    coveredBranchSides: sum(verified, (verdict) => verdict.coveredBranchSides),
     warnings: sum(verified, (verdict) => verdict.warnings),
-    witnessedWarnings: sum(verified, (verdict) => verdict.witnessedWarnings),
+    coveredWarnings: sum(verified, (verdict) => verdict.coveredWarnings),
     unwarnedMutations: sum(verified, (verdict) => verdict.unwarnedMutations.length),
     mountFailures,
     durationMs,

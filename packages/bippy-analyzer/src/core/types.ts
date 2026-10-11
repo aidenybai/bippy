@@ -16,7 +16,7 @@ export type AbstractValue =
 export type Truthiness = "truthy" | "falsy" | "either";
 
 /**
- * How a decision reads its test: `truthy` branches on the value itself, `nullish` on
+ * How a branch reads its test: `truthy` branches on the value itself, `nullish` on
  * whether it is `!= null`.
  */
 export type TestKind = "truthy" | "nullish";
@@ -69,10 +69,10 @@ export interface Binding {
 }
 
 /**
- * Where a decision came from: the terminal that branches, how its test is checked at
+ * Where a branch came from: the terminal that branches, how its test is checked at
  * runtime, and the location of the test expression.
  */
-export interface Decision {
+export interface Branch {
   terminalId: InstructionId;
   probe: TestKind | "none";
   loc: SourceLocation;
@@ -82,17 +82,17 @@ export interface JsxProp {
   kind: "JsxAttribute";
   name: string;
   value: SymbolicValue;
-  transitionId: string | null;
+  handlerId: string | null;
 }
 
 /**
  * Props spread onto an element. When what they hold isn't known, like `{...register("name")}`,
- * they may install any handler, which `transitionId` stands for.
+ * they may install any handler, which `handlerId` stands for.
  */
 export interface JsxSpreadProp {
   kind: "JsxSpreadAttribute";
   value: SymbolicValue;
-  transitionId: string | null;
+  handlerId: string | null;
 }
 
 /**
@@ -124,7 +124,7 @@ export type SymbolicValue =
       testKind: TestKind;
       consequent: SymbolicValue;
       alternate: SymbolicValue;
-      decision: Decision;
+      branch: Branch;
     }
   | { kind: "ObjectExpression"; properties: SymbolicObjectProperty[]; spreads: SymbolicValue[] }
   | { kind: "ArrayExpression"; elements: SymbolicValue[]; spreads: SymbolicValue[] }
@@ -182,16 +182,16 @@ export interface StateUpdate {
   isAsync: boolean;
 }
 
-export type TransitionTrigger =
+export type HandlerTrigger =
   | { kind: "Event"; tag: string; event: string }
   | { kind: "Effect"; hookKind: HookKind; dependencies: string | null };
 
 /**
  * What one event handler or effect does: the bindings it updates and the props it calls.
  */
-export interface Transition {
+export interface Handler {
   id: string;
-  trigger: TransitionTrigger;
+  trigger: HandlerTrigger;
   updates: StateUpdate[];
   delegates: string[];
   loc: SourceLocation;
@@ -224,56 +224,56 @@ export interface ComponentAnalysis {
   bindings: Binding[];
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
-  transitions: Transition[];
+  handlers: Handler[];
   renders: string[];
   bailouts: Bailout[];
   warnings: Warning[];
 }
 
-export interface Edge {
-  transitionId: string;
+export interface Transition {
+  handlerId: string;
   targets: number[];
   isAsync: boolean;
 }
 
 /**
- * One state of a group. `render` decides only the group's own branches and leaves every
- * other group's undecided. `fragments` are what the group's outermost branches render.
+ * One state of a region. `render` decides only the region's own branches and leaves every
+ * other region's undecided. `fragments` are what the region's outermost branches render.
  */
 export interface State {
-  group: number;
-  assumptions: string[];
+  region: number;
+  conditions: string[];
   render: SymbolicValue;
   fragments: SymbolicValue[];
-  edges: Edge[];
+  transitions: Transition[];
 }
 
 /**
  * Branches that depend on each other: their tests read overlapping places, or one sits in
  * the other's arm. Groups vary independently, so the component's screens are every
- * combination of one state from each group.
+ * combination of one state from each region.
  */
-export interface StateGroup {
+export interface Region {
   places: string[];
   bindingIds: number[];
   states: number[];
 }
 
-export interface DeadBranch {
-  decision: Decision;
+export interface UnreachableBranch {
+  branch: Branch;
   side: boolean;
   description: string;
 }
 
 /**
  * The reachable states of one component. `places` holds every value each place can take
- * before any decision narrows it.
+ * before any branch narrows it.
  */
 export interface StateReport {
   places: Map<string, AbstractValue[]>;
   states: State[];
-  groups: StateGroup[];
-  deadBranches: DeadBranch[];
+  regions: Region[];
+  unreachableBranches: UnreachableBranch[];
   isTruncated: boolean;
 }
 

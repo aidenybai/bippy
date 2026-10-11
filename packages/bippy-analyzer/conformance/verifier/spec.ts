@@ -13,7 +13,7 @@ import {
 } from "./driver.js";
 import type { Observation } from "./driver.js";
 import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
-import { formatWrongClaims, scoreComponent } from "./score.js";
+import { formatCounterexamples, scoreComponent } from "./score.js";
 import type { Capture, MountRequest } from "./types.js";
 import { openPage, startProjectHarness } from "./verify.js";
 import type { ProjectHarness } from "./verify.js";
@@ -48,7 +48,7 @@ interface VerifyWorkerFixtures {
   project: VerifyProject;
 }
 
-const getStateLabel = (state: State): string => state.assumptions.join(" ∧ ") || "always";
+const getStateLabel = (state: State): string => state.conditions.join(" ∧ ") || "always";
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
@@ -73,7 +73,7 @@ const toSample = (value: unknown): Sample => {
  * Playwright fixtures for hand-written scenarios. A spec names its repo with
  * `test.use({ repo })`, mounts components in the harness, drives them, and asserts the
  * states it expects. Everything a test observes is scored against the analyzer's claims
- * when it ends, so a scenario fails on any wrong claim it runs into.
+ * when it ends, so a scenario fails on any counterexample it runs into.
  */
 export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
   repo: ["", { scope: "worker", option: true }],
@@ -178,7 +178,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
         session.observations,
         project.knownComponents,
       );
-      expect(formatWrongClaims(verdict), `${verdict.name} made wrong claims`).toEqual([]);
+      expect(formatCounterexamples(verdict), `${verdict.name} has counterexamples`).toEqual([]);
     }
   },
 });

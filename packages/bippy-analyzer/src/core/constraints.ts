@@ -38,7 +38,7 @@ interface Distance {
   isStrict: boolean;
 }
 
-interface Fact {
+interface Assumption {
   outcome: boolean;
   bindingIds: Set<number>;
 }
@@ -47,16 +47,16 @@ interface Fact {
  * What is known along one path through the render tree: the values each place can still
  * hold, the outcomes of tests that couldn't be reduced to a place, and numeric bounds.
  */
-export interface Knowledge {
+export interface Constraints {
   values: Map<string, AbstractValue[]>;
-  facts: Map<string, Fact>;
+  assumptions: Map<string, Assumption>;
   bounds: Bound[];
 }
 
-export const cloneKnowledge = (knowledge: Knowledge): Knowledge => ({
-  values: new Map(knowledge.values),
-  facts: new Map(knowledge.facts),
-  bounds: [...knowledge.bounds],
+export const cloneConstraints = (constraints: Constraints): Constraints => ({
+  values: new Map(constraints.values),
+  assumptions: new Map(constraints.assumptions),
+  bounds: [...constraints.bounds],
 });
 
 export const getLengthAtom = (bindingId: number): string => `${bindingId}${LENGTH_SUFFIX}`;
@@ -179,32 +179,32 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
   });
 };
 
-const evaluateBounds = (value: SymbolicValue, knowledge: Knowledge): boolean | null => {
-  if (knowledge.bounds.length === 0) return null;
+const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean | null => {
+  if (constraints.bounds.length === 0) return null;
   const whenTrue = getBounds(value, true);
   const whenFalse = getBounds(value, false);
-  if (whenTrue && !areBoundsConsistent([...knowledge.bounds, ...whenTrue])) return false;
-  if (whenFalse && !areBoundsConsistent([...knowledge.bounds, ...whenFalse])) return true;
+  if (whenTrue && !areBoundsConsistent([...constraints.bounds, ...whenTrue])) return false;
+  if (whenFalse && !areBoundsConsistent([...constraints.bounds, ...whenFalse])) return true;
   return null;
 };
 
-const getPlaceValues = (value: SymbolicValue, knowledge: Knowledge): AbstractValue[] | null =>
-  value.kind === "Binding" ? (knowledge.values.get(getBindingPlaceKey(value)) ?? null) : null;
+const getPlaceValues = (value: SymbolicValue, constraints: Constraints): AbstractValue[] | null =>
+  value.kind === "Binding" ? (constraints.values.get(getBindingPlaceKey(value)) ?? null) : null;
 
 const isBooleanExpression = (value: SymbolicValue): boolean =>
   (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
   (value.kind === "UnaryExpression" && value.operator === "!");
 
 /**
- * Gives the literal a value must be when the knowledge decides it: a place narrowed to one
+ * Gives the literal a value must be when the constraints decide it: a place narrowed to one
  * literal, or a comparison whose outcome is known.
  */
-export const resolveLiteral = (value: SymbolicValue, knowledge: Knowledge): SymbolicValue => {
+export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
   if (isBooleanExpression(value)) {
-    const outcome = evaluate(value, knowledge);
+    const outcome = evaluate(value, constraints);
     return outcome === null ? value : { kind: "Primitive", value: outcome };
   }
-  const values = getPlaceValues(value, knowledge);
+  const values = getPlaceValues(value, constraints);
   const [onlyValue] = values ?? [];
   return values?.length === 1 && onlyValue?.kind === "Literal"
     ? { kind: "Primitive", value: onlyValue.value }
@@ -214,11 +214,14 @@ export const resolveLiteral = (value: SymbolicValue, knowledge: Knowledge): Symb
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
-const evaluateEquality = (value: BinaryExpressionValue, knowledge: Knowledge): boolean | null => {
+const evaluateEquality = (
+  value: BinaryExpressionValue,
+  constraints: Constraints,
+): boolean | null => {
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive") return null;
-  const values = getPlaceValues(placeSide, knowledge);
+  const values = getPlaceValues(placeSide, constraints);
   if (!values) return null;
   const matchCount = values.filter((candidate) =>
     isEqualToLiteral(candidate, literalSide.value, value.operator),
@@ -238,31 +241,31 @@ const evaluateTruthiness = (values: AbstractValue[]): boolean | null => {
 };
 
 /**
- * Decides `value` as a test under `knowledge`: `true`, `false`, or `null` when both are
+ * Decides `value` as a test under `constraints`: `true`, `false`, or `null` when both are
  * still possible.
  */
-export const evaluate = (value: SymbolicValue, knowledge: Knowledge): boolean | null => {
-  const fact = knowledge.facts.get(formatSymbolicValue(value));
-  if (fact) return fact.outcome;
+export const evaluate = (value: SymbolicValue, constraints: Constraints): boolean | null => {
+  const assumption = constraints.assumptions.get(formatSymbolicValue(value));
+  if (assumption) return assumption.outcome;
   switch (value.kind) {
     case "Binding": {
-      const values = getPlaceValues(value, knowledge);
+      const values = getPlaceValues(value, constraints);
       return values ? evaluateTruthiness(values) : null;
     }
     case "UnaryExpression": {
       if (value.operator !== "!") return null;
-      const operand = evaluate(value.value, knowledge);
+      const operand = evaluate(value.value, constraints);
       return operand === null ? null : !operand;
     }
     case "BinaryExpression": {
-      const bounded = evaluateBounds(value, knowledge);
+      const bounded = evaluateBounds(value, constraints);
       if (bounded !== null) return bounded;
-      return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, knowledge) : null;
+      return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, constraints) : null;
     }
     case "Conditional": {
-      const test = evaluate(getTestExpression(value), knowledge);
+      const test = evaluate(getTestExpression(value), constraints);
       if (test === null) return null;
-      return evaluate(test ? value.consequent : value.alternate, knowledge);
+      return evaluate(test ? value.consequent : value.alternate, constraints);
     }
     default:
       return getKnownTruthiness(value);
@@ -271,44 +274,44 @@ export const evaluate = (value: SymbolicValue, knowledge: Knowledge): boolean | 
 
 const restrictPlace = (
   place: BindingValue,
-  knowledge: Knowledge,
+  constraints: Constraints,
   keep: (value: AbstractValue) => boolean,
-): Knowledge | null => {
-  const values = getPlaceValues(place, knowledge);
+): Constraints | null => {
+  const values = getPlaceValues(place, constraints);
   if (!values) return null;
   const restricted = values.filter(keep);
   if (restricted.length === 0) return null;
-  const next = cloneKnowledge(knowledge);
+  const next = cloneConstraints(constraints);
   next.values.set(getBindingPlaceKey(place), restricted);
   return next;
 };
 
 /**
- * Narrows `knowledge` by assuming `value` tests as `outcome`. Returns `null` when that
+ * Narrows `constraints` by assuming `value` tests as `outcome`. Returns `null` when that
  * contradicts what is already known.
  */
 export const assume = (
   value: SymbolicValue,
   outcome: boolean,
-  knowledge: Knowledge,
-): Knowledge | null => {
-  const evaluated = evaluate(value, knowledge);
-  if (evaluated !== null) return evaluated === outcome ? knowledge : null;
+  constraints: Constraints,
+): Constraints | null => {
+  const evaluated = evaluate(value, constraints);
+  if (evaluated !== null) return evaluated === outcome ? constraints : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
-    return assume(value.value, !outcome, knowledge);
+    return assume(value.value, !outcome, constraints);
   if (
     value.kind === "Conditional" &&
     outcome &&
     value.alternate.kind === "Primitive" &&
     !value.alternate.value
   ) {
-    const held = assume(getTestExpression(value), true, knowledge);
+    const held = assume(getTestExpression(value), true, constraints);
     return held && assume(value.consequent, true, held);
   }
   if (value.kind === "Binding") {
     const restricted = restrictPlace(
       value,
-      knowledge,
+      constraints,
       (candidate) => getTruthiness(candidate) !== (outcome ? "falsy" : "truthy"),
     );
     if (restricted) return restricted;
@@ -318,7 +321,7 @@ export const assume = (
     const [placeSide, literalSide] = splitEquality(value);
     if (literalSide.kind === "Primitive" && placeSide.kind === "Binding") {
       const wantsMatch = outcome !== isNegated;
-      const restricted = restrictPlace(placeSide, knowledge, (candidate) =>
+      const restricted = restrictPlace(placeSide, constraints, (candidate) =>
         isEqualToLiteral(candidate, literalSide.value, value.operator)
           ? wantsMatch
           : !wantsMatch || canTypeEqualLiteral(candidate, literalSide.value),
@@ -326,8 +329,11 @@ export const assume = (
       if (restricted) return restricted;
     }
   }
-  const next = cloneKnowledge(knowledge);
-  next.facts.set(formatSymbolicValue(value), { outcome, bindingIds: collectBindingIds(value) });
+  const next = cloneConstraints(constraints);
+  next.assumptions.set(formatSymbolicValue(value), {
+    outcome,
+    bindingIds: collectBindingIds(value),
+  });
   const bounds = getBounds(value, outcome);
   if (bounds) {
     next.bounds.push(...bounds);
@@ -337,21 +343,21 @@ export const assume = (
 };
 
 /**
- * Drops every fact and bound about a binding after an update changes it. An update that
+ * Drops every assumption and bound about a binding after an update changes it. An update that
  * keeps the array length, like `items.map(...)`, keeps what is known about `.length`.
  */
 export const forgetBinding = (
-  knowledge: Knowledge,
+  constraints: Constraints,
   bindingId: number,
   keepsLength: boolean,
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
-  for (const [key, fact] of knowledge.facts) {
-    if (!fact.bindingIds.has(bindingId)) continue;
+  for (const [key, assumption] of constraints.assumptions) {
+    if (!assumption.bindingIds.has(bindingId)) continue;
     if (keepsLength && key.includes(LENGTH_SUFFIX)) continue;
-    knowledge.facts.delete(key);
+    constraints.assumptions.delete(key);
   }
-  knowledge.bounds = knowledge.bounds.filter((bound) => {
+  constraints.bounds = constraints.bounds.filter((bound) => {
     const mentionsBinding = [bound.left, bound.right].some((atom) =>
       isPlacePrefix(String(bindingId), atom),
     );

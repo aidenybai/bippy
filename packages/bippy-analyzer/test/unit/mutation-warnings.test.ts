@@ -14,8 +14,8 @@ describe("mutation warnings", () => {
   const getWarnings = (name: string) => getComponent(project, name).analysis.warnings;
 
   const getUpdateValues = (name: string): string[] =>
-    getComponent(project, name).analysis.transitions.flatMap((transition) =>
-      transition.updates.map((update) => formatSymbolicValue(update.value)),
+    getComponent(project, name).analysis.handlers.flatMap((handler) =>
+      handler.updates.map((update) => formatSymbolicValue(update.value)),
     );
 
   it.each(["LostUpdate", "SortInHandler", "SetAdd"])(
@@ -77,9 +77,7 @@ describe("mutation warnings", () => {
   });
 
   it("still delegates a prop function called with a primitive", () => {
-    expect(getComponent(project, "Dismiss").analysis.transitions[0]?.delegates).toEqual([
-      "onDismiss",
-    ]);
+    expect(getComponent(project, "Dismiss").analysis.handlers[0]?.delegates).toEqual(["onDismiss"]);
   });
 
   it("reports two pushes in one handler once, as state mutation", () => {
@@ -98,7 +96,7 @@ describe("mutation warnings", () => {
 describe("mutation forgetting", () => {
   it("forgets state mutated before a copy", () => {
     const copyAfterPush = getComponent(project, "CopyAfterPush");
-    const [update] = copyAfterPush.analysis.transitions.flatMap((transition) => transition.updates);
+    const [update] = copyAfterPush.analysis.handlers.flatMap((handler) => handler.updates);
     expect(update?.value).toMatchObject({
       kind: "ArrayExpression",
       elements: [],
@@ -108,10 +106,10 @@ describe("mutation forgetting", () => {
 
   it("makes the non-empty state reachable from the empty one", () => {
     const { states } = getComponent(project, "CopyAfterPush").report;
-    expect(states.map((state) => state.assumptions)).toEqual([
+    expect(states.map((state) => state.conditions)).toEqual([
       ["items.length === 0"],
       ["items.length !== 0"],
     ]);
-    expect(states[0]?.edges.flatMap((edge) => edge.targets)).toContain(1);
+    expect(states[0]?.transitions.flatMap((transition) => transition.targets)).toContain(1);
   });
 });

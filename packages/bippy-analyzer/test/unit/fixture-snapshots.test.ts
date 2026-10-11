@@ -17,7 +17,7 @@ describe("fixture analysis", () => {
   };
 
   it.each(components.map((component) => [component.analysis.name, component] as const))(
-    "%s keeps its states, edges and dead branches",
+    "%s keeps its states, transitions and unreachable branches",
     (_name, component) => {
       expect(formatComponent(component, options)).toMatchSnapshot();
     },

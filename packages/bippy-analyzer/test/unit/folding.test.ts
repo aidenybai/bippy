@@ -40,7 +40,7 @@ describe("nullish folding", () => {
   it("still splits a null check on an unknown binding", () => {
     const nullCheck = getComponent(project, "UnknownNullCheck");
     expect(nullCheck.analysis.render).toMatchObject({ kind: "Conditional", testKind: "truthy" });
-    expect(nullCheck.report.states.map((state) => state.assumptions)).toEqual([
+    expect(nullCheck.report.states.map((state) => state.conditions)).toEqual([
       ["value != null"],
       ["value == null"],
     ]);

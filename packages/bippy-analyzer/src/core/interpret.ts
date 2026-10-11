@@ -22,7 +22,7 @@ import type {
   BindingKind,
   BindingValue,
   ConditionalValue,
-  Decision,
+  Branch,
   DispatchValue,
   Domain,
   FunctionValue,
@@ -51,7 +51,7 @@ const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 
 /**
  * How a region of the control-flow graph ended: by returning, by falling through from
- * `from` to `to`, one of the joins the walk stops at, or by splitting on a decision into
+ * `from` to `to`, one of the joins the walk stops at, or by splitting on a branch into
  * two outcomes.
  */
 type Outcome =
@@ -63,7 +63,7 @@ interface SplitOutcome {
   kind: "Split";
   test: SymbolicValue;
   testKind: TestKind;
-  decision: Decision;
+  branch: Branch;
   consequent: Outcome;
   alternate: Outcome;
 }
@@ -107,7 +107,7 @@ const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
 
 /**
  * A function's effects are attached to the instruction that creates it but only happen when
- * it's called, which the evaluator follows separately.
+ * it's called, which the interpreter follows separately.
  */
 const isFunctionCreation = (value: InstructionValue): boolean =>
   value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
@@ -201,7 +201,7 @@ const createConditional = (
   testKind: split.testKind,
   consequent,
   alternate,
-  decision: split.decision,
+  branch: split.branch,
 });
 
 const isFallthroughOnly = (outcome: Outcome, join: BlockId): boolean =>
@@ -242,13 +242,13 @@ const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => 
 
 /**
  * Runs HIR symbolically. Values are expressions over bindings instead of runtime values.
- * Where control flow joins, phis become `Conditional` values keyed by the decision that
- * split them, so a component's return value is its render tree with every decision kept.
+ * Where control flow joins, phis become `Conditional` values keyed by the branch that
+ * split them, so a component's return value is its render tree with every branch kept.
  *
  * The same walk serves event handlers and effects: in `effect` mode it also collects state
  * updates and prop calls, each with the guards that lead to it.
  */
-export class SymbolicEvaluator {
+export class Interpreter {
   readonly #resolver: DomainResolver;
   readonly #loadModuleFunction: ModuleFunctionLoader;
   readonly #values = new Map<IdentifierId, SymbolicValue>();
@@ -514,7 +514,7 @@ export class SymbolicEvaluator {
   }
 
   /**
-   * Records a bailout once per reason and location, however often the evaluator revisits it.
+   * Records a bailout once per reason and location, however often the interpreter revisits it.
    */
   #bailOut(reason: BailoutReason, message: string, loc: SourceLocation): void {
     const isDuplicate = this.bailouts.some(
@@ -873,12 +873,12 @@ export class SymbolicEvaluator {
                 kind: "JsxAttribute",
                 name: attribute.name,
                 value: this.#read(attribute.place),
-                transitionId: null,
+                handlerId: null,
               }
             : {
                 kind: "JsxSpreadAttribute",
                 value: this.#read(attribute.argument),
-                transitionId: null,
+                handlerId: null,
               },
         );
         return this.#buildJsx(
@@ -999,7 +999,7 @@ export class SymbolicEvaluator {
     const testKind: TestKind =
       shortCircuit?.testKind ??
       (operator === "??" || operator === "optional" || operator === "chain" ? "nullish" : "truthy");
-    const decision: Decision = {
+    const branch: Branch = {
       terminalId: terminal.id,
       probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
       loc: test.loc,
@@ -1025,7 +1025,7 @@ export class SymbolicEvaluator {
             kind: "Split",
             test: testValue,
             testKind,
-            decision,
+            branch,
             consequent: isSwapped ? alternateOutcome : consequentOutcome,
             alternate: isSwapped ? consequentOutcome : alternateOutcome,
           };
@@ -1054,7 +1054,7 @@ export class SymbolicEvaluator {
         kind: "Split",
         test,
         testKind: "truthy",
-        decision: { terminalId: terminal.id, probe: "none", loc: switchCase.test.loc },
+        branch: { terminalId: terminal.id, probe: "none", loc: switchCase.test.loc },
         consequent: caseOutcome,
         alternate: buildCases(index + 1),
       };

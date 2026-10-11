@@ -25,7 +25,7 @@ describe("typed call results", () => {
       ],
       origin: "type",
     });
-    expect(gate.report.states.map((state) => state.assumptions)).toEqual([
+    expect(gate.report.states.map((state) => state.conditions)).toEqual([
       ['!hasPermission(role, "edit")'],
       ['hasPermission(role, "edit")'],
     ]);
@@ -60,9 +60,9 @@ describe("typed call results", () => {
   it("doesn't bind calls made in handlers", () => {
     const handlerCall = getComponent(project, "HandlerCall");
     expect(handlerCall.analysis.bindings.map((binding) => binding.kind)).toEqual(["prop", "state"]);
-    expect(
-      handlerCall.analysis.transitions[0]?.updates[0]?.guards.map(formatSymbolicValue),
-    ).toEqual(["Unknown(call)"]);
+    expect(handlerCall.analysis.handlers[0]?.updates[0]?.guards.map(formatSymbolicValue)).toEqual([
+      "Unknown(call)",
+    ]);
   });
 
   it("keeps calls with different arguments independent", () => {

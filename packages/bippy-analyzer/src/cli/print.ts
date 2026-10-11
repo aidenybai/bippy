@@ -12,7 +12,7 @@ import type {
   StateUpdate,
   State,
   SymbolicValue,
-  Transition,
+  Handler,
 } from "../core/types.js";
 import { forEachJsxElement } from "../core/utils/traverse.js";
 import {
@@ -128,8 +128,8 @@ const formatAttributes = (
   const { colors } = context;
   const attributes = node.props.flatMap((prop) => {
     const name = prop.kind === "JsxAttribute" ? prop.name : "{...}";
-    if (prop.transitionId)
-      return [colors.dim(`${name} ⇒ ${context.effects.get(prop.transitionId) ?? "?"}`)];
+    if (prop.handlerId)
+      return [colors.dim(`${name} ⇒ ${context.effects.get(prop.handlerId) ?? "?"}`)];
     if (!context.isShowingAttributes) return [];
     const value = truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH);
     return [colors.dim(prop.kind === "JsxAttribute" ? `${name}=${value}` : `...${value}`)];
@@ -262,11 +262,11 @@ const formatUpdate = (update: StateUpdate): string => {
   return `${guard}${assignments.join(", ")}${update.isAsync ? " (async)" : ""}`;
 };
 
-const formatTransitionEffect = (transition: Transition): string =>
+const formatTransitionEffect = (handler: Handler): string =>
   truncate(
     [
-      ...transition.updates.map(formatUpdate),
-      ...transition.delegates.map((delegate) => `calls ${delegate}`),
+      ...handler.updates.map(formatUpdate),
+      ...handler.delegates.map((delegate) => `calls ${delegate}`),
     ].join("; "),
     MAX_EFFECT_WIDTH,
   );
@@ -291,10 +291,10 @@ const getTextContent = (value: SymbolicValue): string => {
 const collectTriggers = (render: SymbolicValue, triggers: Map<string, string>): void =>
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
-      if (!prop.transitionId || triggers.has(prop.transitionId)) continue;
+      if (!prop.handlerId || triggers.has(prop.handlerId)) continue;
       const text = getTextContent(element);
       triggers.set(
-        prop.transitionId,
+        prop.handlerId,
         text
           ? truncate(text, MAX_TRIGGER_TEXT_WIDTH)
           : `<${element.tag.name}> ${prop.kind === "JsxAttribute" ? prop.name : "{...}"}`,
@@ -302,8 +302,8 @@ const collectTriggers = (render: SymbolicValue, triggers: Map<string, string>): 
     }
   });
 
-const getEffectLabel = (transition: Transition): string => {
-  const { trigger } = transition;
+const getEffectLabel = (handler: Handler): string => {
+  const { trigger } = handler;
   if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
   return trigger.dependencies === "[]"
     ? "on mount"
@@ -313,7 +313,7 @@ const getEffectLabel = (transition: Transition): string => {
 const buildBindings = (component: AnalyzedComponent, options: PrintOptions): TreeNode => {
   const { analysis, report } = component;
   const { colors } = options;
-  const updates = analysis.transitions.flatMap((transition) => transition.updates);
+  const updates = analysis.handlers.flatMap((handler) => handler.updates);
   const children = analysis.bindings
     .filter((binding) => binding.kind !== "item")
     .map((binding) => {
@@ -369,28 +369,28 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
 const buildState = (
   state: State,
   index: number,
-  isGrouped: boolean,
+  hasRegions: boolean,
   context: ComponentPrintContext,
 ): TreeNode => {
   const { colors } = context;
   const label =
-    state.assumptions.length > 0 ? state.assumptions.join(colors.dim(" ∧ ")) : colors.dim("always");
-  const rendered = isGrouped
+    state.conditions.length > 0 ? state.conditions.join(colors.dim(" ∧ ")) : colors.dim("always");
+  const rendered = hasRegions
     ? state.fragments
         .map((fragment) => formatCompact(fragment, context))
         .filter(Boolean)
         .join(" ")
     : formatCompact(state.render, context);
   const details = [createTreeNode(truncate(rendered || colors.dim("∅")))];
-  for (const edge of state.edges) {
-    const targets = edge.targets
+  for (const transition of state.transitions) {
+    const targets = transition.targets
       .filter((target) => target !== index)
       .map((target) => `S${target + 1}`);
     if (targets.length === 0) continue;
-    const trigger = context.triggers.get(edge.transitionId) ?? edge.transitionId;
+    const trigger = context.triggers.get(transition.handlerId) ?? transition.handlerId;
     details.push(
       createTreeNode(
-        `${trigger} ${colors.dim("→")} ${targets.join(" | ")}${edge.isAsync ? colors.dim(" (async)") : ""}`,
+        `${trigger} ${colors.dim("→")} ${targets.join(" | ")}${transition.isAsync ? colors.dim(" (async)") : ""}`,
       ),
     );
   }
@@ -400,36 +400,39 @@ const buildState = (
 const buildStates = (component: AnalyzedComponent, context: ComponentPrintContext): TreeNode => {
   const { colors } = context;
   const { report } = component;
-  const isGrouped = report.groups.length > 1;
-  const children = isGrouped
-    ? report.groups.map((group) =>
+  const hasRegions = report.regions.length > 1;
+  const children = hasRegions
+    ? report.regions.map((region) =>
         createTreeNode(
-          truncate(group.places.join(colors.dim(", ")) || colors.dim("other")),
-          group.states.map((index) => {
+          truncate(region.places.join(colors.dim(", ")) || colors.dim("other")),
+          region.states.map((index) => {
             const state = report.states[index];
             return state ? buildState(state, index, true, context) : createTreeNode("");
           }),
         ),
       )
     : report.states.map((state, index) => buildState(state, index, false, context));
-  if (report.deadBranches.length > 0) {
+  if (report.unreachableBranches.length > 0) {
     children.push(
       createTreeNode(
-        colors.red("dead branches"),
-        report.deadBranches.map((deadBranch) => {
+        colors.red("unreachable branches"),
+        report.unreachableBranches.map((unreachableBranch) => {
           return createTreeNode(
-            `${colors.red(deadBranch.description)} ${colors.dim(formatLine(deadBranch.decision.loc))}`,
+            `${colors.red(unreachableBranch.description)} ${colors.dim(formatLine(unreachableBranch.branch.loc))}`,
           );
         }),
       ),
     );
   }
   const truncated = report.isTruncated ? "+, truncated" : "";
-  const combinations = report.groups.reduce((product, group) => product * group.states.length, 1);
+  const combinations = report.regions.reduce(
+    (product, region) => product * region.states.length,
+    1,
+  );
   return createTreeNode(
     colors.dim(
-      isGrouped
-        ? `states (${report.states.length}${truncated} in ${report.groups.length} groups, ${combinations} combinations)`
+      hasRegions
+        ? `states (${report.states.length}${truncated} in ${report.regions.length} regions, ${combinations} combinations)`
         : `states (${report.states.length}${truncated})`,
     ),
     children,
@@ -454,27 +457,26 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   const { analysis } = component;
   const triggers = new Map<string, string>();
   collectTriggers(analysis.render, triggers);
-  for (const transition of analysis.transitions) {
-    if (transition.trigger.kind === "Effect")
-      triggers.set(transition.id, getEffectLabel(transition));
+  for (const handler of analysis.handlers) {
+    if (handler.trigger.kind === "Effect") triggers.set(handler.id, getEffectLabel(handler));
   }
   const context: ComponentPrintContext = {
     ...options,
     renderNodeBudget: { remaining: MAX_RENDER_NODES },
     triggers,
     effects: new Map(
-      analysis.transitions.map((transition) => [transition.id, formatTransitionEffect(transition)]),
+      analysis.handlers.map((handler) => [handler.id, formatTransitionEffect(handler)]),
     ),
   };
   const { colors, views } = context;
   const sections: TreeNode[] = [];
   if (views.has("data")) sections.push(buildBindings(component, context));
   if (views.has("render")) {
-    const effects = analysis.transitions
-      .filter((transition) => transition.trigger.kind === "Effect")
-      .map((transition) =>
+    const effects = analysis.handlers
+      .filter((handler) => handler.trigger.kind === "Effect")
+      .map((handler) =>
         createTreeNode(
-          colors.dim(`${triggers.get(transition.id)} ⇒ ${context.effects.get(transition.id)}`),
+          colors.dim(`${triggers.get(handler.id)} ⇒ ${context.effects.get(handler.id)}`),
         ),
       );
     sections.push(
@@ -512,9 +514,9 @@ export const formatHierarchy = (components: AnalyzedComponent[], options: PrintO
   const build = (component: AnalyzedComponent, ancestors: Set<string>): TreeNode => {
     const { analysis, report } = component;
     const stateCount = report.states.length;
-    const transitionCount = analysis.transitions.length;
+    const transitionCount = analysis.handlers.length;
     const stats = colors.dim(
-      `${stateCount} state${stateCount === 1 ? "" : "s"}${transitionCount > 0 ? `, ${transitionCount} transition${transitionCount === 1 ? "" : "s"}` : ""}`,
+      `${stateCount} state${stateCount === 1 ? "" : "s"}${transitionCount > 0 ? `, ${transitionCount} handler${transitionCount === 1 ? "" : "s"}` : ""}`,
     );
     const label = `${analysis.name} ${stats}`;
     if (ancestors.has(analysis.name)) return createTreeNode(`${label} ${colors.dim("(cycle)")}`);

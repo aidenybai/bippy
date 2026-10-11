@@ -82,14 +82,14 @@ const formatTable = (results: RepoResult[]): string => {
     "files",
     "components",
     "states",
-    "transitions",
-    "dead",
+    "handlers",
+    "unreachable",
     "untyped",
     "bailouts",
     "verified",
     "unmountable",
-    "wrong",
-    "witnessed",
+    "counterexamples",
+    "covered",
     "time",
   ];
   const rows = results.map(({ id, summary }) => {
@@ -100,15 +100,15 @@ const formatTable = (results: RepoResult[]): string => {
       String(summary.files),
       String(summary.components),
       String(summary.states),
-      String(summary.transitions),
-      String(summary.deadBranches),
+      String(summary.handlers),
+      String(summary.unreachableBranches),
       String(summary.untypedBindings),
       String(bailoutCount),
       summary.verification ? String(summary.verification.verified) : "-",
       summary.verification ? String(summary.verification.couldNotMount) : "-",
-      summary.verification ? String(summary.verification.wrong) : "-",
+      summary.verification ? String(summary.verification.counterexamples) : "-",
       summary.verification
-        ? `${summary.verification.witnessedStates}/${summary.verification.predictedStates}`
+        ? `${summary.verification.coveredStates}/${summary.verification.predictedStates}`
         : "-",
       `${summary.durationMs + (summary.verification?.durationMs ?? 0)} ms`,
     ];

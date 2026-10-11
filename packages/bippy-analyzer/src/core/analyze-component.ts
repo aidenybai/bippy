@@ -4,8 +4,8 @@ import { getSourceLocation } from "../compiler/hir/hir.js";
 import type { HIRFunction } from "../compiler/hir/hir.js";
 import type { ScopeManager } from "../compiler/hir/scope.js";
 import { DomainResolver, addComparedSamples } from "./infer-domains.js";
-import { inferTransitions } from "./collect-handlers.js";
-import { SymbolicEvaluator } from "./interpret.js";
+import { collectHandlers } from "./collect-handlers.js";
+import { Interpreter } from "./interpret.js";
 import type { ModuleFunctionLoader } from "./interpret.js";
 import type { Bailout, ComponentAnalysis } from "./types.js";
 import { runPipeline } from "../compiler/pipeline.js";
@@ -34,7 +34,7 @@ const createModuleFunctionLoader = (context: FileContext): ModuleFunctionLoader 
 
 /**
  * Lowers one component and runs our analysis passes on its HIR: the symbolic render tree,
- * its bindings and their domains, and its transitions.
+ * its bindings and their domains, and its handlers.
  */
 export const analyzeComponent = (
   reactFunction: ReactFunction,
@@ -60,7 +60,7 @@ export const analyzeComponent = (
       bindings: [],
       placeDomains: new Map(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
-      transitions: [],
+      handlers: [],
       renders: [],
       bailouts: [
         {
@@ -73,30 +73,30 @@ export const analyzeComponent = (
     };
   }
   const hir = result.unwrap();
-  const evaluator = new SymbolicEvaluator(
+  const interpreter = new Interpreter(
     new DomainResolver(checker, sourceFile),
     createModuleFunctionLoader(context),
   );
-  const render = evaluator.evaluateComponent(hir);
+  const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
-  const transitions = inferTransitions(render, evaluator, sourceFile);
-  const { bindings } = evaluator;
+  const handlers = collectHandlers(render, interpreter, sourceFile);
+  const { bindings } = interpreter;
   return {
     ...base,
     loc: hir.loc,
     bindings,
-    placeDomains: evaluator.placeDomains,
+    placeDomains: interpreter.placeDomains,
     render,
-    transitions,
-    renders: [...evaluator.renderedComponents],
+    handlers,
+    renders: [...interpreter.renderedComponents],
     bailouts: [
-      ...evaluator.bailouts,
+      ...interpreter.bailouts,
       ...bindings.flatMap((binding): Bailout[] =>
         binding.domain.kind === "Unknown"
           ? [{ reason: `untyped-${binding.kind}`, message: binding.name, loc: binding.loc }]
           : [],
       ),
     ],
-    warnings: evaluator.warnings,
+    warnings: interpreter.warnings,
   };
 };

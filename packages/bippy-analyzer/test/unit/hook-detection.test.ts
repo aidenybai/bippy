@@ -102,7 +102,7 @@ describe("hook detection through the checker", () => {
     const isOpen = getBinding(component, "isOpen");
     expect(isOpen.kind).toBe("state");
     expect(isOpen.hookKind).toBe("useState");
-    expect(component.analysis.transitions).toHaveLength(1);
+    expect(component.analysis.handlers).toHaveLength(1);
     expect(component.report.states).toHaveLength(2);
   });
 

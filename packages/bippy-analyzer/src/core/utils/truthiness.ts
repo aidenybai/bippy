@@ -26,7 +26,7 @@ export const negate = (value: SymbolicValue): SymbolicValue =>
     : { kind: "UnaryExpression", operator: "!", value };
 
 /**
- * The test a decision checks, as an expression: the value itself, or `value != null` for a
+ * The test a branch checks, as an expression: the value itself, or `value != null` for a
  * nullish test.
  */
 export const getTestExpression = ({

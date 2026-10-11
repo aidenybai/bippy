@@ -12,8 +12,8 @@ export interface CollectSummary {
   files: number;
   components: number;
   states: number;
-  transitions: number;
-  deadBranches: number;
+  handlers: number;
+  unreachableBranches: number;
   truncatedComponents: number;
   bindings: number;
   untypedBindings: number;
@@ -42,8 +42,8 @@ const summarize = (
     files: fileCount,
     components: components.length,
     states: sum(components, ({ report }) => report.states.length),
-    transitions: sum(components, ({ analysis }) => analysis.transitions.length),
-    deadBranches: sum(components, ({ report }) => report.deadBranches.length),
+    handlers: sum(components, ({ analysis }) => analysis.handlers.length),
+    unreachableBranches: sum(components, ({ report }) => report.unreachableBranches.length),
     truncatedComponents: components.filter(({ report }) => report.isTruncated).length,
     bindings: bindings.length,
     untypedBindings: bindings.filter((binding) => binding.domain.kind === "Unknown").length,

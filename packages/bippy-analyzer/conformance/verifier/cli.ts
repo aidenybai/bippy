@@ -1,9 +1,9 @@
 import { Command } from "commander";
 import picocolors from "picocolors";
 import {
-  countWrongClaims,
+  countCounterexamples,
   formatMountFailures,
-  formatWrongClaims,
+  formatCounterexamples,
   summarizeVerdicts,
 } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
@@ -20,14 +20,18 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
     return picocolors.dim(`${verdict.name}  not exported, skipped`);
   if (verdict.status === "mount-failed")
     return `${verdict.name}  ${picocolors.yellow(`couldn't mount (${verdict.mountFailure ?? "other"})`)} ${picocolors.dim(verdict.error ?? "")}`;
-  const wrongCount = countWrongClaims(verdict);
+  const counterexampleCount = countCounterexamples(verdict);
   const lines = [
-    `${picocolors.bold(verdict.name)}  ${wrongCount > 0 ? picocolors.red(`${wrongCount} wrong`) : picocolors.green("0 wrong")}  ` +
+    `${picocolors.bold(verdict.name)}  ${
+      counterexampleCount > 0
+        ? picocolors.red(`${counterexampleCount} counterexamples`)
+        : picocolors.green("0 counterexamples")
+    }  ` +
       picocolors.dim(
-        `states ${verdict.witnessedStates.length}/${verdict.predictedStates} witnessed · edges ${verdict.witnessedEdges} · branch sides ${verdict.witnessedBranchSides}/${verdict.branchSides} · ${verdict.warnings > 0 ? `warnings ${verdict.witnessedWarnings}/${verdict.warnings} witnessed · ` : ""}${verdict.observations} observations`,
+        `states ${verdict.coveredStates.length}/${verdict.predictedStates} covered · transitions ${verdict.coveredTransitions} · branch sides ${verdict.coveredBranchSides}/${verdict.branchSides} · ${verdict.warnings > 0 ? `warnings ${verdict.coveredWarnings}/${verdict.warnings} covered · ` : ""}${verdict.observations} observations`,
       ),
   ];
-  for (const claim of formatWrongClaims(verdict)) lines.push(picocolors.red(`  ✗ ${claim}`));
+  for (const claim of formatCounterexamples(verdict)) lines.push(picocolors.red(`  ✗ ${claim}`));
   for (const unwarned of verdict.unwarnedMutations)
     lines.push(picocolors.dim(`  · unwarned mutation: ${unwarned}`));
   if (verdict.renderErrors > 0)
@@ -60,7 +64,7 @@ new Command()
     const summary = summarizeVerdicts(report.components, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount${summary.couldNotMount > 0 ? ` (${formatMountFailures(summary.mountFailures)})` : ""} · ${summary.notExported} not exported · ${summary.wrong} wrong · states ${summary.witnessedStates}/${summary.predictedStates} witnessed · warnings ${summary.witnessedWarnings}/${summary.warnings} witnessed · ${summary.unwarnedMutations} unwarned mutations · ${summary.durationMs} ms`,
+        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount${summary.couldNotMount > 0 ? ` (${formatMountFailures(summary.mountFailures)})` : ""} · ${summary.notExported} not exported · ${summary.counterexamples} counterexamples · states ${summary.coveredStates}/${summary.predictedStates} covered · warnings ${summary.coveredWarnings}/${summary.warnings} covered · ${summary.unwarnedMutations} unwarned mutations · ${summary.durationMs} ms`,
       ),
     );
   })

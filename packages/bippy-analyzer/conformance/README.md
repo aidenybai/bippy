@@ -14,8 +14,8 @@ Results go to `conformance/results/<run>/`:
 
 - `results.json`: every repo's summary, or the error if it failed.
 - `<repo>/analysis.json`: the analyzer output, the same as `analyze --json`.
-- `<repo>/verify.json`: the verdict for every component: witnessed states, wrong claims, and why a component couldn't mount.
-- `<repo>/summary.json`: counts of components, states, transitions, dead branches, untyped bindings and bailouts, plus the verification totals.
+- `<repo>/verify.json`: the verdict for every component: covered states, counterexamples, and why a component couldn't mount.
+- `<repo>/summary.json`: counts of components, states, handlers, unreachable branches, untyped bindings and bailouts, plus the verification totals.
 
 Verification runs by default. Pass `--no-verify` to collect only the analyzer output.
 
@@ -63,7 +63,7 @@ test("pages through comments", async ({ mountComponent }) => {
 });
 ```
 
-`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any wrong claim. Run the specs with `pnpm --filter bippy-analyzer conformance:specs`, after a `conformance run` has set the repos up.
+`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter bippy-analyzer conformance:specs`, after a `conformance run` has set the repos up.
 
 ## Environments
 

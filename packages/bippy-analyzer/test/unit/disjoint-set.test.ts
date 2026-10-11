@@ -18,7 +18,7 @@ const makeIdentifiers = (...names: string[]): TestIdentifier[] =>
   names.map((name, id) => ({ id, name }));
 
 describe("DisjointSet", () => {
-  it(".find - finds the correct group which the item is associated with", () => {
+  it(".find - finds the correct region which the item is associated with", () => {
     const identifiers = new DisjointSet<TestIdentifier>();
     const [x, y, z] = makeIdentifiers("x", "y", "z");
 
@@ -30,7 +30,7 @@ describe("DisjointSet", () => {
     expect(identifiers.find(z)).toBe(null);
   });
 
-  it(".forEach - groups items into non-overlapping sets", () => {
+  it(".forEach - regions items into non-overlapping sets", () => {
     const identifiers = new DisjointSet<TestIdentifier>();
     const [a, b, c, x, y, z] = makeIdentifiers("a", "b", "c", "x", "y", "z");
 
@@ -44,7 +44,9 @@ describe("DisjointSet", () => {
     identifiers.union([x, z]);
 
     const sets = new Map<TestIdentifier, string[]>();
-    identifiers.forEach((item, group) => sets.set(group, [...(sets.get(group) ?? []), item.name]));
+    identifiers.forEach((item, region) =>
+      sets.set(region, [...(sets.get(region) ?? []), item.name]),
+    );
     expect([...sets.values()]).toEqual([
       ["a", "b", "c"],
       ["x", "y", "z"],
@@ -61,6 +63,6 @@ describe("DisjointSet", () => {
     identifiers.union([z, y]);
     identifiers.union([x, z]);
 
-    identifiers.forEach((_, group) => expect(group).toBe(z));
+    identifiers.forEach((_, region) => expect(region).toBe(z));
   });
 });

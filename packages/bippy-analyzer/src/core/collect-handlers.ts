@@ -1,8 +1,8 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import { GeneratedSource } from "../compiler/hir/hir.js";
 import type { SourceLocation } from "../compiler/hir/hir.js";
-import type { SymbolicEvaluator } from "./interpret.js";
-import type { SymbolicValue, Transition, TransitionTrigger } from "./types.js";
+import type { Interpreter } from "./interpret.js";
+import type { SymbolicValue, Handler, HandlerTrigger } from "./types.js";
 import { forEachJsxElement } from "./utils/traverse.js";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -40,32 +40,32 @@ const getSourceText = (sourceFile: SourceFile, loc: SourceLocation | null): stri
 
 /**
  * Finds every event handler in the render tree and every effect, and records what each one
- * does to state. Handlers reached from several places in the tree are one transition, and
- * each JSX attribute that holds one is linked to it by `transitionId`.
+ * does to state. Handlers reached from several places in the tree are one handler, and
+ * each JSX attribute that holds one is linked to it by `handlerId`.
  */
-export const inferTransitions = (
+export const collectHandlers = (
   render: SymbolicValue,
-  evaluator: SymbolicEvaluator,
+  interpreter: Interpreter,
   sourceFile: SourceFile,
-): Transition[] => {
-  const transitions: Transition[] = [];
-  const transitionIds = new Map<string, string | null>();
+): Handler[] => {
+  const handlers: Handler[] = [];
+  const handlerIds = new Map<string, string | null>();
 
   const addTransition = (
-    trigger: TransitionTrigger,
+    trigger: HandlerTrigger,
     handler: SymbolicValue,
     args: SymbolicValue[],
     loc: SourceLocation,
   ): string | null => {
-    const { updates, delegates } = evaluator.collectEffects(handler, args);
+    const { updates, delegates } = interpreter.collectEffects(handler, args);
     if (updates.length === 0 && delegates.length === 0) return null;
-    const id = `t${transitions.length + 1}`;
-    transitions.push({ id, trigger, updates, delegates, loc });
+    const id = `t${handlers.length + 1}`;
+    handlers.push({ id, trigger, updates, delegates, loc });
     return id;
   };
 
-  for (const effectCall of evaluator.effectCalls) {
-    const trigger: TransitionTrigger = {
+  for (const effectCall of interpreter.effectCalls) {
+    const trigger: HandlerTrigger = {
       kind: "Effect",
       hookKind: effectCall.hookKind,
       dependencies: getSourceText(sourceFile, effectCall.dependencies),
@@ -76,7 +76,7 @@ export const inferTransitions = (
     for (const prop of element.props) {
       if (prop.kind === "JsxSpreadAttribute") {
         if (prop.value.kind !== "Unknown") continue;
-        prop.transitionId = addTransition(
+        prop.handlerId = addTransition(
           { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
           prop.value,
           [],
@@ -87,20 +87,20 @@ export const inferTransitions = (
       if (!EVENT_HANDLER_PATTERN.test(prop.name)) continue;
       const key = getHandlerKey(prop.value);
       if (key === null) continue;
-      if (!transitionIds.has(key)) {
-        const trigger: TransitionTrigger = {
+      if (!handlerIds.has(key)) {
+        const trigger: HandlerTrigger = {
           kind: "Event",
           tag: element.tag.name,
           event: prop.name,
         };
         const event: SymbolicValue = { kind: "Unknown", reason: "event", loc: GeneratedSource };
-        transitionIds.set(
+        handlerIds.set(
           key,
           addTransition(trigger, prop.value, [event], getHandlerLocation(prop.value)),
         );
       }
-      prop.transitionId = transitionIds.get(key) ?? null;
+      prop.handlerId = handlerIds.get(key) ?? null;
     }
   });
-  return transitions;
+  return handlers;
 };

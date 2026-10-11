@@ -7,7 +7,7 @@ import type { Observation } from "./driver.js";
 import type { Probe } from "./server.js";
 
 interface WarningScore {
-  witnessedWarnings: number;
+  coveredWarnings: number;
   refutedWarnings: string[];
   unwarnedMutations: string[];
 }
@@ -98,10 +98,10 @@ const formatOwner = (owner: string, stateBindings: Binding[] | null): string => 
 };
 
 /**
- * Checks each mutation warning against what the page saw. A warning is witnessed when its
+ * Checks each mutation warning against what the page saw. A warning is covered when its
  * probed object was written (and, for a lost update, React didn't re-render), refuted when
  * the probed code ran on the right owner but never mutated it. Runtime mutations of state
- * or props that no warning covers are listed as unwarned, which isn't a wrong claim since
+ * or props that no warning covers are listed as unwarned, which isn't a counterexample since
  * the analyzer only reports mutations it can prove.
  */
 export const scoreWarnings = (
@@ -110,7 +110,7 @@ export const scoreWarnings = (
   stateBindings: Binding[] | null,
 ): WarningScore => {
   const probedWarnings = getProbedWarnings(analysis, stateBindings);
-  const score: WarningScore = { witnessedWarnings: 0, refutedWarnings: [], unwarnedMutations: [] };
+  const score: WarningScore = { coveredWarnings: 0, refutedWarnings: [], unwarnedMutations: [] };
   for (const probed of probedWarnings) {
     if (!probed.probe) continue;
     const probeId = probed.probe.id;
@@ -123,7 +123,7 @@ export const scoreWarnings = (
     const isWitnessed = hits.some((hit) =>
       probed.warning.kind === "lost-update" ? hit.isLost : hit.isWritten,
     );
-    if (isWitnessed) score.witnessedWarnings++;
+    if (isWitnessed) score.coveredWarnings++;
     else score.refutedWarnings.push(formatWarning(probed.warning));
   }
   const unwarned = new Map<string, string>();

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`fixture analysis > App keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > App keeps its states, transitions and unreachable branches 1`] = `
 "App src/counter.tsx:9
 ├─ data
 │  ├─ isLoading prop false | true
@@ -16,7 +16,7 @@ exports[`fixture analysis > App keeps its states, edges and dead branches 1`] = 
       └─ <Button> {count}"
 `;
 
-exports[`fixture analysis > Button keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Button keeps its states, transitions and unreachable branches 1`] = `
 "Button src/counter.tsx:5
 ├─ data
 │  ├─ onClick prop () => void
@@ -28,7 +28,7 @@ exports[`fixture analysis > Button keeps its states, edges and dead branches 1`]
       └─ <button> {children}"
 `;
 
-exports[`fixture analysis > Card keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Card keeps its states, transitions and unreachable branches 1`] = `
 "Card src/chains.tsx:13
 ├─ data
 │  ├─ theme prop undefined | Theme
@@ -46,7 +46,7 @@ exports[`fixture analysis > Card keeps its states, edges and dead branches 1`] =
       └─ <div>"
 `;
 
-exports[`fixture analysis > ClickStats keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > ClickStats keeps its states, transitions and unreachable branches 1`] = `
 "ClickStats src/mutation.tsx:41
 ├─ data
 │  └─ stats state { clicks: number; } = { clicks: 0 }
@@ -66,7 +66,7 @@ exports[`fixture analysis > ClickStats keeps its states, edges and dead branches
    └─ state-mutation L46 mutates stats without setting it, so the change shows only on the next render"
 `;
 
-exports[`fixture analysis > Composer keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Composer keeps its states, transitions and unreachable branches 1`] = `
 "Composer src/guards.tsx:3
 ├─ data
 │  ├─ draft state string = ""
@@ -85,7 +85,7 @@ exports[`fixture analysis > Composer keeps its states, edges and dead branches 1
       └─ "Send" → S1"
 `;
 
-exports[`fixture analysis > Dashboard keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
 "Dashboard src/dashboard.tsx:25
 ├─ data
 │  ├─ status prop "error" | "idle" | "loading"
@@ -117,7 +117,7 @@ exports[`fixture analysis > Dashboard keeps its states, edges and dead branches 
       └─ on mount → S3 (async)"
 `;
 
-exports[`fixture analysis > EditButton keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
 "EditButton src/access.tsx:5
 ├─ data
 │  ├─ role prop "admin" | "viewer"
@@ -140,7 +140,7 @@ exports[`fixture analysis > EditButton keeps its states, edges and dead branches
       └─ "Edit" → S2"
 `;
 
-exports[`fixture analysis > Empty keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Empty keeps its states, transitions and unreachable branches 1`] = `
 "Empty src/dashboard.tsx:16
 ├─ data
 │  └─ none
@@ -151,7 +151,7 @@ exports[`fixture analysis > Empty keeps its states, edges and dead branches 1`] 
       └─ <p> "No items""
 `;
 
-exports[`fixture analysis > Feed keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Feed keeps its states, transitions and unreachable branches 1`] = `
 "Feed src/chains.tsx:17
 ├─ data
 │  ├─ pages prop undefined | Page[]
@@ -171,7 +171,7 @@ exports[`fixture analysis > Feed keeps its states, edges and dead branches 1`] =
       └─ <p> {pages?.flatMap(function).length} " items""
 `;
 
-exports[`fixture analysis > FilterLabel keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > FilterLabel keeps its states, transitions and unreachable branches 1`] = `
 "FilterLabel src/literals.tsx:6
 ├─ data
 │  └─ filter state "active" | "all" | "done" = "all"
@@ -185,7 +185,7 @@ exports[`fixture analysis > FilterLabel keeps its states, edges and dead branche
       └─ <div> <p> {filter} <button> "Active" <button> "Done""
 `;
 
-exports[`fixture analysis > Inbox keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Inbox keeps its states, transitions and unreachable branches 1`] = `
 "Inbox src/literals.tsx:17
 ├─ data
 │  └─ none
@@ -197,7 +197,7 @@ exports[`fixture analysis > Inbox keeps its states, edges and dead branches 1`] 
       └─ <section> <em> "Empty""
 `;
 
-exports[`fixture analysis > List keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > List keeps its states, transitions and unreachable branches 1`] = `
 "List src/dashboard.tsx:17
 ├─ data
 │  └─ items prop Item[]
@@ -210,7 +210,7 @@ exports[`fixture analysis > List keeps its states, edges and dead branches 1`] =
       └─ <ul> ↻ items"
 `;
 
-exports[`fixture analysis > Loading keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Loading keeps its states, transitions and unreachable branches 1`] = `
 "Loading src/counter.tsx:3
 ├─ data
 │  └─ none
@@ -221,7 +221,7 @@ exports[`fixture analysis > Loading keeps its states, edges and dead branches 1`
       └─ <p> "Loading…""
 `;
 
-exports[`fixture analysis > Page keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Page keeps its states, transitions and unreachable branches 1`] = `
 "Page src/plain.jsx:13
 ├─ data
 │  └─ none
@@ -232,7 +232,7 @@ exports[`fixture analysis > Page keeps its states, edges and dead branches 1`] =
       └─ <Toggle>"
 `;
 
-exports[`fixture analysis > Panels keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Panels keeps its states, transitions and unreachable branches 1`] = `
 "Panels src/chains.tsx:23
 ├─ data
 │  ├─ isOpen state false | true = false
@@ -246,7 +246,7 @@ exports[`fixture analysis > Panels keeps its states, edges and dead branches 1`]
 │     └─ ◆ isDark
 │        ├─ ✓ <span> "Dark"
 │        └─ ✗ <span> "Light"
-└─ states (4 in 2 groups, 4 combinations)
+└─ states (4 in 2 regions, 4 combinations)
    ├─ isOpen
    │  ├─ S1 isOpen
    │  │  ├─ <p> "More details"
@@ -263,7 +263,7 @@ exports[`fixture analysis > Panels keeps its states, edges and dead branches 1`]
          └─ "Theme" → S3"
 `;
 
-exports[`fixture analysis > ProfileCard keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > ProfileCard keeps its states, transitions and unreachable branches 1`] = `
 "ProfileCard src/query.tsx:10
 ├─ data
 │  └─ query hook:Custom QueryObserverLoadingErrorResult<NoInfer<Profile>, Error> | QueryObserverLoadingResult<NoInfer<Profile>, Error> | QueryObs…
@@ -292,7 +292,7 @@ exports[`fixture analysis > ProfileCard keeps its states, edges and dead branche
       └─ <div> {query.data.name}"
 `;
 
-exports[`fixture analysis > RoleBadge keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > RoleBadge keeps its states, transitions and unreachable branches 1`] = `
 "RoleBadge src/literals.tsx:30
 ├─ data
 │  └─ role prop null | string
@@ -307,7 +307,7 @@ exports[`fixture analysis > RoleBadge keeps its states, edges and dead branches 
       └─ <span> "Member""
 `;
 
-exports[`fixture analysis > SignIn keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
 "SignIn src/dashboard.tsx:15
 ├─ data
 │  └─ none
@@ -318,7 +318,7 @@ exports[`fixture analysis > SignIn keeps its states, edges and dead branches 1`]
       └─ <a> "Sign in""
 `;
 
-exports[`fixture analysis > SortedList keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > SortedList keeps its states, transitions and unreachable branches 1`] = `
 "SortedList src/mutation.tsx:30
 ├─ data
 │  └─ items prop string[]
@@ -333,7 +333,7 @@ exports[`fixture analysis > SortedList keeps its states, edges and dead branches
    └─ prop-mutation L31 mutates prop items"
 `;
 
-exports[`fixture analysis > Spinner keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Spinner keeps its states, transitions and unreachable branches 1`] = `
 "Spinner src/dashboard.tsx:14
 ├─ data
 │  └─ none
@@ -344,7 +344,7 @@ exports[`fixture analysis > Spinner keeps its states, edges and dead branches 1`
       └─ <div>"
 `;
 
-exports[`fixture analysis > StatusBanner keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > StatusBanner keeps its states, transitions and unreachable branches 1`] = `
 "StatusBanner src/literals.tsx:22
 ├─ data
 │  └─ status state "error" | "ok" = "ok"  reachable "ok"
@@ -355,11 +355,11 @@ exports[`fixture analysis > StatusBanner keeps its states, edges and dead branch
 └─ states (1)
    ├─ S1 always
    │  └─ <p> "Fine"
-   └─ dead branches
+   └─ unreachable branches
       └─ never status === "error" L24"
 `;
 
-exports[`fixture analysis > TagList keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
 "TagList src/mutation.tsx:3
 ├─ data
 │  └─ tags state string[] = []
@@ -386,7 +386,7 @@ exports[`fixture analysis > TagList keeps its states, edges and dead branches 1`
    └─ state-mutation L10 mutates tags in place before setting it"
 `;
 
-exports[`fixture analysis > TitleCard keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > TitleCard keeps its states, transitions and unreachable branches 1`] = `
 "TitleCard src/literals.tsx:27
 ├─ data
 │  └─ title prop null | string
@@ -401,7 +401,7 @@ exports[`fixture analysis > TitleCard keeps its states, edges and dead branches 
       └─ <h1> {title}"
 `;
 
-exports[`fixture analysis > TodoApp keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > TodoApp keeps its states, transitions and unreachable branches 1`] = `
 "TodoApp src/todo.tsx:11
 ├─ data
 │  ├─ todos state Todo[] = []
@@ -427,7 +427,7 @@ exports[`fixture analysis > TodoApp keeps its states, edges and dead branches 1`
 │     └─ ◆ isEditing
 │        ├─ ✓ <button onClick ⇒ isEditing = false> "Save"
 │        └─ ✗ <button onClick ⇒ isEditing = true> "Edit"
-└─ states (4 in 2 groups, 4 combinations)
+└─ states (4 in 2 regions, 4 combinations)
    ├─ todos.length
    │  ├─ S1 todos.length === 0
    │  │  ├─ <p> "Nothing to do"
@@ -443,7 +443,7 @@ exports[`fixture analysis > TodoApp keeps its states, edges and dead branches 1`
          └─ "Edit" → S3"
 `;
 
-exports[`fixture analysis > Toggle keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Toggle keeps its states, transitions and unreachable branches 1`] = `
 "Toggle src/plain.jsx:3
 ├─ data
 │  ├─ label prop "More"  (call sites)
@@ -463,7 +463,7 @@ exports[`fixture analysis > Toggle keeps its states, edges and dead branches 1`]
       └─ {label} → S1"
 `;
 
-exports[`fixture analysis > Toolbar keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Toolbar keeps its states, transitions and unreachable branches 1`] = `
 "Toolbar src/groups.tsx:12
 ├─ data
 │  ├─ role prop "admin" | "viewer"
@@ -486,7 +486,7 @@ exports[`fixture analysis > Toolbar keeps its states, edges and dead branches 1`
 │     ├─ <button onClick ⇒ isHelpOpen = !isHelpOpen> "Help"
 │     └─ ◆ isHelpOpen
 │        └─ ✓ <p> "Press E to edit"
-└─ states (10 in 3 groups, 32 combinations)
+└─ states (10 in 3 regions, 32 combinations)
    ├─ role, hasPermission(role, "edit")
    │  ├─ S1 role === "admin" ∧ hasPermission(role, "edit")
    │  │  └─ <span> "Admin" <button> "Edit"
@@ -514,7 +514,7 @@ exports[`fixture analysis > Toolbar keeps its states, edges and dead branches 1`
          └─ "Help" → S9"
 `;
 
-exports[`fixture analysis > Wizard keeps its states, edges and dead branches 1`] = `
+exports[`fixture analysis > Wizard keeps its states, transitions and unreachable branches 1`] = `
 "Wizard src/reducer.tsx:21
 ├─ data
 │  └─ state reducer WizardState = { step: "details", hasError: false }
@@ -542,6 +542,6 @@ exports[`fixture analysis > Wizard keeps its states, edges and dead branches 1`]
    │  ├─ <form> <input> <button> "Back" <button> "Next"
    │  ├─ "Back" → S2
    │  └─ "Next" → S1
-   └─ dead branches
+   └─ unreachable branches
       └─ never state.hasError L26"
 `;
