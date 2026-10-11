@@ -5,6 +5,7 @@ import MagicString from "magic-string";
 import { createServer, loadEnv } from "vite";
 import type { Plugin } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
 import type { ProbeMode } from "./types.js";
 
 export interface Probe {
@@ -20,19 +21,17 @@ export interface Probe {
  * `setup.tsx` runs before any component loads and may export default providers to wrap
  * every component in, and `harness.json` adds environment variables and module aliases.
  */
-export interface HarnessSetup {
+interface HarnessSetup {
   file: string | null;
   env: Record<string, string>;
   alias: Record<string, string>;
 }
 
-interface HarnessConfig {
-  env?: Record<string, string>;
-  alias?: Record<string, string>;
-}
+type HarnessConfig = Partial<Pick<HarnessSetup, "env" | "alias">>;
 
-interface Harness {
+export interface Harness {
   url: string;
+  exportIndex: Map<string, string[]>;
   getModuleUrl: (file: string) => string;
   close: () => Promise<void>;
 }
@@ -45,9 +44,7 @@ interface ProviderSpec {
 
 const HARNESS_PATH = "/__bippy_verify";
 const ENTRY_PATH = "/__bippy_verify_entry.ts";
-const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
-const SETUP_PATH = "/__bippy_verify_setup.tsx";
-const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
+
 const SETUP_FILE = "setup.tsx";
 const HARNESS_CONFIG_FILE = "harness.json";
 const PROVIDER_SPECS: ProviderSpec[] = [
@@ -81,6 +78,9 @@ const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
+const EXPORT_DECLARATION_PATTERN =
+  /export\s+(?:default\s+)?(?:async\s+)?(?:const|let|var|function|class)\s+([A-Z]\w*)/g;
+const EXPORT_LIST_PATTERN = /export\s*\{([^}]*)\}/g;
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../bippy/src/index.ts");
 
@@ -117,7 +117,7 @@ const isInstalled = (appDirectory: string, packageName: string): boolean => {
   }
 };
 
-export const listSourceFiles = (directory: string): string[] =>
+const listSourceFiles = (directory: string): string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (entry.name.startsWith(".") || entry.name === "node_modules") return [];
     const path = join(directory, entry.name);
@@ -129,21 +129,35 @@ interface SourceReferences {
   processEnv: Set<string>;
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
+  exports: Map<string, string[]>;
 }
 
 /**
- * The environment variables and `next/font` names an app's source refers to, so the harness
- * can supply them: apps often validate their environment, or call a font loader, at import
- * time, and fail to load before any component renders.
+ * What the harness needs to know about an app's source: the environment variables and
+ * `next/font` names it reads at import time, which the harness supplies so modules load, and
+ * where each capitalized name is exported, to find a provider a component asks for.
  */
 const collectSourceReferences = (appDirectory: string): SourceReferences => {
   const references: SourceReferences = {
     processEnv: new Set(),
     importMetaEnv: new Set(),
     nextFonts: new Set(),
+    exports: new Map(),
+  };
+  const addExport = (name: string, file: string): void => {
+    references.exports.set(name, [...(references.exports.get(name) ?? []), file]);
   };
   for (const file of listSourceFiles(appDirectory)) {
     const text = readFileSync(file, "utf8");
+    for (const [, name = ""] of text.matchAll(EXPORT_DECLARATION_PATTERN)) addExport(name, file);
+    for (const [, names = ""] of text.matchAll(EXPORT_LIST_PATTERN))
+      for (const specifier of names.split(",")) {
+        const exported = specifier
+          .split(/\s+as\s+/)
+          .pop()
+          ?.trim();
+        if (exported && /^[A-Z]/.test(exported)) addExport(exported, file);
+      }
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);
     for (const [, names = ""] of text.matchAll(NEXT_FONT_IMPORT_PATTERN))
@@ -338,6 +352,7 @@ export const startHarness = async (
   if (!address || typeof address === "string") throw new Error("Harness server has no port");
   return {
     url: `http://localhost:${address.port}${HARNESS_PATH}`,
+    exportIndex: references.exports,
     getModuleUrl: (file) => `/${relative(appDirectory, file)}`,
     close: () => server.close(),
   };

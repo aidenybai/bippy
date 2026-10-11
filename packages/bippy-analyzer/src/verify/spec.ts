@@ -3,24 +3,23 @@ import { test as base, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../../conformance/runner/repos.js";
 import { analyzeProject } from "../analysis/analyze-project.js";
-import type { AnalyzedComponent, Sample } from "../analysis/types.js";
-import { getDefaultProps, resolveWrappers } from "./driver.js";
+import type { AnalyzedComponent, Sample, State } from "../analysis/types.js";
+import {
+  getDefaultProps,
+  listActionsInPage,
+  mountInPage,
+  performInPage,
+  resolveWrappers,
+} from "./driver.js";
 import type { Observation } from "./driver.js";
 import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
-import { collectMutationProbes } from "./mutation.js";
-import { collectProbes, countWrongClaims, scoreComponent } from "./score.js";
-import type { ComponentVerdict } from "./score.js";
-import { readHarnessSetup, startHarness } from "./server.js";
+import { formatWrongClaims, scoreComponent } from "./score.js";
 import type { Capture, MountRequest } from "./types.js";
-import { openPage } from "./verify.js";
-import { buildExportIndex } from "./wrappers.js";
+import { openPage, startProjectHarness } from "./verify.js";
+import type { ProjectHarness } from "./verify.js";
 
-interface VerifyProject {
-  url: string;
-  exportIndex: Map<string, string[]>;
+interface VerifyProject extends ProjectHarness {
   components: AnalyzedComponent[];
-  knownComponents: Map<string, string>;
-  getModuleUrl: (file: string) => string;
 }
 
 interface MountOptions {
@@ -49,6 +48,8 @@ interface VerifyWorkerFixtures {
   project: VerifyProject;
 }
 
+const getStateLabel = (state: State): string => state.assumptions.join(" ∧ ") || "always";
+
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
   if (typeof value === "function") return { kind: "Function" };
@@ -68,22 +69,6 @@ const toSample = (value: unknown): Sample => {
   throw new Error(`Can't pass ${typeof value} as a prop`);
 };
 
-const formatWrongClaims = (verdict: ComponentVerdict): string[] => [
-  ...verdict.wrongStates.map(
-    (wrong) =>
-      `unpredicted state after [${wrong.path.join(" → ")}]: ${wrong.reason} (closest S${wrong.closestState + 1})`,
-  ),
-  ...verdict.wrongEdges.map(
-    (wrong) =>
-      `${wrong.reason}: ${wrong.action} went ${wrong.fromStates.map((state) => `S${state + 1}`).join("|")} → ${wrong.toStates.map((state) => `S${state + 1}`).join("|")}`,
-  ),
-  ...verdict.wrongValues.map(
-    (wrong) => `${wrong.place} = ${wrong.value}, predicted ${wrong.predicted.join(" | ")}`,
-  ),
-  ...verdict.refutedDeadClaims.map((claim) => `dead branch was reached: ${claim}`),
-  ...verdict.refutedWarnings.map((warning) => `mutation warning refuted: ${warning}`),
-];
-
 /**
  * Playwright fixtures for hand-written scenarios. A spec names its repo with
  * `test.use({ repo })`, mounts components in the harness, drives them, and asserts the
@@ -98,27 +83,13 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
       if (!repo) throw new Error(`Unknown repo ${repoId}`);
       const appDirectory = join(CACHE_DIRECTORY, repo.id, repo.workingDirectory);
       const { components } = analyzeProject(join(appDirectory, repo.tsconfig));
-      const exported = components.filter(({ analysis }) => analysis.exportName);
-      const harness = await startHarness(
+      const harness = await startProjectHarness(
         appDirectory,
-        exported.flatMap(({ analysis }) => [
-          ...collectProbes(analysis),
-          ...collectMutationProbes(analysis),
-        ]),
-        [...new Set(exported.map(({ analysis }) => analysis.file))],
-        readHarnessSetup(repo.setupDirectory ?? null),
-      );
-      await use({
-        url: harness.url,
-        exportIndex: buildExportIndex(appDirectory),
         components,
-        knownComponents: new Map(
-          components.flatMap(({ analysis }) =>
-            analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
-          ),
-        ),
-        getModuleUrl: harness.getModuleUrl,
-      });
+        components,
+        repo.setupDirectory ?? null,
+      );
+      await use({ ...harness, components });
       await harness.close();
     },
     { scope: "worker" },
@@ -157,10 +128,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
       );
       const session: Session = { component, observations: [] };
       sessions.push(session);
-      let current: Capture = await page.evaluate(
-        (mountRequest) => window.__verify.mount(mountRequest),
-        request,
-      );
+      let current: Capture = await mountInPage(page, request);
       expect(current.error, `${componentName} failed to render`).toBeNull();
       session.observations.push({ props, path: [], action: null, before: null, after: current });
       let path: string[] = [];
@@ -168,7 +136,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
       return {
         page,
         click: async (label) => {
-          const actions = await page.evaluate(() => window.__verify.actions());
+          const actions = await listActionsInPage(page);
           const action = actions.find(
             (candidate) => candidate.kind === "click" && candidate.label === label,
           );
@@ -176,7 +144,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
             throw new Error(
               `Nothing clickable labelled "${label}" in ${componentName}: ${actions.map((candidate) => candidate.label).join(", ")}`,
             );
-          const after = await page.evaluate((key) => window.__verify.perform(key), action.key);
+          const after = await performInPage(page, action.key);
           if (!after) throw new Error(`Clicking "${label}" failed`);
           path = [...path, action.key];
           session.observations.push({ props, path, action, before: current, after });
@@ -187,12 +155,10 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
           session.observations.push({ props, path, action: null, before: null, after: current });
         },
         expectState: (label) => {
-          const states = report.states.filter(
-            (state) => (state.assumptions.join(" ∧ ") || "always") === label,
-          );
+          const states = report.states.filter((state) => getStateLabel(state) === label);
           expect(
             states.length,
-            `${componentName} has no state labelled "${label}". Its states are:\n${report.states.map((state) => state.assumptions.join(" ∧ ") || "always").join("\n")}`,
+            `${componentName} has no state labelled "${label}". Its states are:\n${report.states.map(getStateLabel).join("\n")}`,
           ).toBeGreaterThan(0);
           const shapes = normalizeShapes(current.shapes);
           expect(
@@ -213,7 +179,6 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
         project.knownComponents,
       );
       expect(formatWrongClaims(verdict), `${verdict.name} made wrong claims`).toEqual([]);
-      expect(countWrongClaims(verdict)).toBe(0);
     }
   },
 });

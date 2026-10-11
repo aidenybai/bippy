@@ -79,8 +79,13 @@ const getProbedWarnings = (
   });
 };
 
-export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] =>
-  getProbedWarnings(analysis, null).flatMap((probed) => (probed.probe ? [probed.probe] : []));
+export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] => {
+  if (analysis.warnings.length === 0) return [];
+  const sourceText = readFileSync(analysis.file, "utf8");
+  return analysis.warnings.flatMap(
+    (warning) => createMutationProbe(analysis.file, sourceText, warning.loc) ?? [],
+  );
+};
 
 const formatWarning = (warning: Warning): string =>
   `${[warning.kind, formatLine(warning.loc)].filter(Boolean).join(" ")}: ${warning.message}`;

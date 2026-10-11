@@ -6,6 +6,7 @@ import {
   instrument,
   isCompositeFiber,
   isHostFiber,
+  traverseFiber,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
 import { Component, createElement } from "react";
@@ -14,6 +15,7 @@ import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../analysis/types.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
+import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
 import type {
   Action,
   Capture,
@@ -52,9 +54,6 @@ interface TrackedState {
 }
 
 const ANONYMOUS_NAME = "Anonymous";
-const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
-const SETUP_PATH = "/__bippy_verify_setup.tsx";
-const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
 const WRAPPER_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
 const MAX_SETTLE_MS = 3000;
@@ -241,18 +240,8 @@ const getChildren = (fiber: Fiber): Fiber[] => {
   return children;
 };
 
-const findFiber = (fiber: Fiber | null, predicate: (candidate: Fiber) => boolean): Fiber | null => {
-  if (!fiber) return null;
-  if (predicate(fiber)) return fiber;
-  for (const child of getChildren(fiber)) {
-    const found = findFiber(child, predicate);
-    if (found) return found;
-  }
-  return null;
-};
-
 const findMountedFiber = (): Fiber | null =>
-  findFiber(
+  traverseFiber(
     latestRoot?.current ?? null,
     (fiber) => fiber.elementType === mountedType || fiber.type === mountedType,
   );
@@ -578,14 +567,7 @@ document.addEventListener("submit", preventNavigation, true);
 
 window.__verify = {
   mount,
-  actions: () =>
-    collectActions().map(({ key, tag, label, kind, isInChild }) => ({
-      key,
-      tag,
-      label,
-      kind,
-      isInChild,
-    })),
+  actions: () => collectActions().map(({ element: _element, value: _value, ...action }) => action),
   perform,
   observe: async () => {
     await settle();

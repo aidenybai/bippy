@@ -450,6 +450,39 @@ export const scoreComponent = (
   return { ...verdict, ...scoreWarnings(analysis, observations, stateBindings) };
 };
 
+const formatSample = (sample: Sample): string => {
+  if (sample.kind === "Value") return JSON.stringify(sample.value);
+  if (sample.kind === "Array") return `[${sample.items.map(formatSample).join(", ")}]`;
+  if (sample.kind === "Object") return "{…}";
+  return sample.kind === "Function" ? "fn" : "undefined";
+};
+
+const formatProps = (props: Record<string, Sample>): string =>
+  Object.entries(props)
+    .filter(([, sample]) => sample.kind !== "Undefined")
+    .map(([name, sample]) => `${name}=${formatSample(sample)}`)
+    .join(" ")
+    .slice(0, 160) || "no props";
+
+export const formatStates = (states: number[]): string =>
+  states.map((state) => `S${state + 1}`).join("|");
+
+export const formatWrongClaims = (verdict: ComponentVerdict): string[] => [
+  ...verdict.wrongStates.map(
+    (wrong) =>
+      `unpredicted state after [${wrong.path.join(" → ") || "mount"}] with ${formatProps(wrong.props)}: ${wrong.reason} (closest ${formatStates([wrong.closestState])})`,
+  ),
+  ...verdict.wrongEdges.map(
+    (wrong) =>
+      `${wrong.reason}: ${wrong.action} went ${formatStates(wrong.fromStates)} → ${formatStates(wrong.toStates)}, predicted ${formatStates(wrong.predictedStates) || "no change"}`,
+  ),
+  ...verdict.wrongValues.map(
+    (wrong) => `${wrong.place} = ${wrong.value}, predicted ${wrong.predicted.join(" | ")}`,
+  ),
+  ...verdict.refutedDeadClaims.map((claim) => `dead branch was reached: ${claim}`),
+  ...verdict.refutedWarnings.map((warning) => `mutation warning refuted: ${warning}`),
+];
+
 export const countWrongClaims = (verdict: ComponentVerdict): number =>
   verdict.wrongStates.length +
   verdict.wrongEdges.length +

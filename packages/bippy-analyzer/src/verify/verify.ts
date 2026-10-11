@@ -9,7 +9,41 @@ import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { classifyMountError } from "./reasons.js";
 import { readHarnessSetup, startHarness } from "./server.js";
-import { buildExportIndex } from "./wrappers.js";
+import type { Harness } from "./server.js";
+
+export interface ProjectHarness extends Harness {
+  knownComponents: Map<string, string>;
+}
+
+/**
+ * Starts the harness for a project: probes on the components it will mount, and the
+ * runtime name of every component so a render can be matched by declaration.
+ */
+export const startProjectHarness = async (
+  appDirectory: string,
+  analyzed: AnalyzedComponent[],
+  mounted: AnalyzedComponent[],
+  setupDirectory: string | null,
+): Promise<ProjectHarness> => {
+  const exported = mounted.filter(({ analysis }) => analysis.exportName);
+  const harness = await startHarness(
+    appDirectory,
+    exported.flatMap(({ analysis }) => [
+      ...collectProbes(analysis),
+      ...collectMutationProbes(analysis),
+    ]),
+    [...new Set(exported.map(({ analysis }) => analysis.file))],
+    readHarnessSetup(setupDirectory),
+  );
+  return {
+    ...harness,
+    knownComponents: new Map(
+      analyzed.flatMap(({ analysis }) =>
+        analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
+      ),
+    ),
+  };
+};
 
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
@@ -62,22 +96,13 @@ export const verifyProject = async (
   const components = componentNames
     ? analyzed.filter(({ analysis }) => componentNames.includes(analysis.name))
     : analyzed;
-  const exported = components.filter(({ analysis }) => analysis.exportName);
-  const knownComponents = new Map(
-    analyzed.flatMap(({ analysis }) =>
-      analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
-    ),
-  );
-  const exportIndex = buildExportIndex(appDirectory);
-  const harness = await startHarness(
+  const harness = await startProjectHarness(
     appDirectory,
-    exported.flatMap(({ analysis }) => [
-      ...collectProbes(analysis),
-      ...collectMutationProbes(analysis),
-    ]),
-    [...new Set(exported.map(({ analysis }) => analysis.file))],
-    readHarnessSetup(options.setupDirectory ?? null),
+    analyzed,
+    components,
+    options.setupDirectory ?? null,
   );
+  const { knownComponents } = harness;
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
   try {
@@ -91,7 +116,7 @@ export const verifyProject = async (
               page,
               component.analysis,
               harness.getModuleUrl(component.analysis.file),
-              exportIndex,
+              harness.exportIndex,
             )
           : [];
         verdict = scoreComponent(

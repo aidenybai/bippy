@@ -1,7 +1,11 @@
 import { Command } from "commander";
 import picocolors from "picocolors";
-import type { Sample } from "../analysis/types.js";
-import { countWrongClaims, formatMountFailures, summarizeVerdicts } from "./score.js";
+import {
+  countWrongClaims,
+  formatMountFailures,
+  formatWrongClaims,
+  summarizeVerdicts,
+} from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { verifyProject } from "./verify.js";
 
@@ -10,22 +14,6 @@ interface CliOptions {
   json: boolean;
   setup?: string;
 }
-
-const formatSample = (sample: Sample): string => {
-  if (sample.kind === "Value") return JSON.stringify(sample.value);
-  if (sample.kind === "Array") return `[${sample.items.map(formatSample).join(", ")}]`;
-  if (sample.kind === "Object") return "{…}";
-  return sample.kind === "Function" ? "fn" : "undefined";
-};
-
-const formatProps = (props: Record<string, Sample>): string =>
-  Object.entries(props)
-    .filter(([, sample]) => sample.kind !== "Undefined")
-    .map(([name, sample]) => `${name}=${formatSample(sample)}`)
-    .join(" ")
-    .slice(0, 160) || "none";
-
-const formatStates = (states: number[]): string => states.map((state) => `S${state + 1}`).join("|");
 
 const formatVerdict = (verdict: ComponentVerdict): string => {
   if (verdict.status === "not-exported")
@@ -39,37 +27,7 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
         `states ${verdict.witnessedStates.length}/${verdict.predictedStates} witnessed · edges ${verdict.witnessedEdges} · branch sides ${verdict.witnessedBranchSides}/${verdict.branchSides} · ${verdict.warnings > 0 ? `warnings ${verdict.witnessedWarnings}/${verdict.warnings} witnessed · ` : ""}${verdict.observations} observations`,
       ),
   ];
-  for (const wrongState of verdict.wrongStates) {
-    lines.push(
-      picocolors.red(
-        `  ✗ unpredicted state after [${wrongState.path.join(" → ") || "mount"}] props ${formatProps(wrongState.props)}`,
-      ),
-    );
-    lines.push(picocolors.dim(`    rendered ${wrongState.rendered}`));
-    lines.push(
-      picocolors.dim(
-        `    closest ${formatStates([wrongState.closestState])}: ${wrongState.reason}`,
-      ),
-    );
-  }
-  for (const wrongEdge of verdict.wrongEdges) {
-    lines.push(
-      picocolors.red(
-        `  ✗ ${wrongEdge.reason}: ${wrongEdge.action} went ${formatStates(wrongEdge.fromStates)} → ${formatStates(wrongEdge.toStates)}, predicted ${formatStates(wrongEdge.predictedStates) || "no change"}`,
-      ),
-    );
-  }
-  for (const wrongValue of verdict.wrongValues) {
-    lines.push(
-      picocolors.red(
-        `  ✗ ${wrongValue.place} = ${wrongValue.value}, predicted ${wrongValue.predicted.join(" | ")}`,
-      ),
-    );
-  }
-  for (const refuted of verdict.refutedDeadClaims)
-    lines.push(picocolors.red(`  ✗ dead branch was reached: ${refuted}`));
-  for (const refuted of verdict.refutedWarnings)
-    lines.push(picocolors.red(`  ✗ mutation warning refuted: ${refuted}`));
+  for (const claim of formatWrongClaims(verdict)) lines.push(picocolors.red(`  ✗ ${claim}`));
   for (const unwarned of verdict.unwarnedMutations)
     lines.push(picocolors.dim(`  · unwarned mutation: ${unwarned}`));
   if (verdict.renderErrors > 0)

@@ -18,6 +18,15 @@ const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 4;
 
+export const mountInPage = (page: Page, request: MountRequest): Promise<Capture> =>
+  page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);
+
+export const performInPage = (page: Page, actionKey: string): Promise<Capture | null> =>
+  page.evaluate((key) => window.__verify.perform(key), actionKey);
+
+export const listActionsInPage = (page: Page): Promise<Action[]> =>
+  page.evaluate(() => window.__verify.actions());
+
 /**
  * Mounts a component, and while it throws for want of a parent, finds that parent and
  * mounts it again inside. Returns the parents it needed, outermost first.
@@ -30,10 +39,7 @@ export const resolveWrappers = async (
 ): Promise<Wrapper[]> => {
   const wrappers: Wrapper[] = [];
   while (wrappers.length < MAX_WRAPPERS) {
-    const capture: Capture = await page.evaluate(
-      (mountRequest) => window.__verify.mount(mountRequest),
-      { ...request, wrappers },
-    );
+    const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
     if (classifyMountError(capture.error) !== "provider") break;
     const wrapper = findWrapper(capture.error, componentFile, exportIndex);
@@ -111,20 +117,16 @@ export const exploreComponent = async (
 
   for (const props of propCombinations) {
     const request: MountRequest = { moduleUrl, exportName, props, scenario: null, wrappers };
-    const mount = (): Promise<Capture> =>
-      page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);
-    const perform = (actionKey: string): Promise<Capture | null> =>
-      page.evaluate((key) => window.__verify.perform(key), actionKey);
     const replay = async (path: string[]): Promise<Capture | null> => {
-      let capture: Capture | null = await mount();
+      let capture: Capture | null = await mountInPage(page, request);
       for (const actionKey of path) {
-        capture = await perform(actionKey);
+        capture = await performInPage(page, actionKey);
         if (!capture) return null;
       }
       return capture;
     };
 
-    const initial = await mount();
+    const initial = await mountInPage(page, request);
     observations.push({ props, path: [], action: null, before: null, after: initial });
     if (initial.error && initial.shapes.length === 0) continue;
 
@@ -136,12 +138,12 @@ export const exploreComponent = async (
       if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
       if (currentPath.length >= MAX_ACTION_DEPTH) continue;
       if (!(await replay(currentPath))) continue;
-      const actions: Action[] = await page.evaluate(() => window.__verify.actions());
+      const actions = await listActionsInPage(page);
       for (const action of actions) {
         if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
         const before = await replay(currentPath);
         if (!before) continue;
-        const after = await perform(action.key);
+        const after = await performInPage(page, action.key);
         if (!after) continue;
         actionCount++;
         const path = [...currentPath, action.key];
