@@ -72,7 +72,11 @@ const PROVIDER_SPECS: ProviderSpec[] = [
 ];
 const NEXT_FONT_ID = "\0bippy-verify-next-font";
 const NEXT_FONT_MODULES = new Set(["next/font/google", "next/font/local"]);
-const NEXT_NAVIGATION_STUB = join(import.meta.dirname, "stubs/next-navigation.ts");
+const NEXT_STUBS = new Map([
+  ["next/navigation", join(import.meta.dirname, "stubs/next-navigation.ts")],
+  ["next/document", join(import.meta.dirname, "stubs/next-document.ts")],
+  ["next/router", join(import.meta.dirname, "stubs/next-router.ts")],
+]);
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
@@ -245,7 +249,7 @@ const createHarnessPlugin = (
     enforce: "pre",
     async resolveId(source, importer) {
       if (isNextApp && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
-      if (isNextApp && source === "next/navigation") return NEXT_NAVIGATION_STUB;
+      if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
       if (source === ENTRY_PATH || source === entryId) return entryId;
       if (importer === entryId && source.startsWith("./"))
         return join(import.meta.dirname, source.replace(/\.js$/, ".ts"));
@@ -348,6 +352,10 @@ export const startHarness = async (
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
   });
   await server.listen();
+  await Promise.all(
+    componentFiles.map((file) => server.warmupRequest(`/${relative(appDirectory, file)}`)),
+  );
+  await server.waitForRequestsIdle();
   const address = server.httpServer?.address();
   if (!address || typeof address === "string") throw new Error("Harness server has no port");
   return {
