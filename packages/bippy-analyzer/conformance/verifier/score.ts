@@ -12,7 +12,7 @@ import { forEachJsxElement, forEachRenderNode } from "../../src/core/utils/trave
 import { formatAbstractValue, formatLine, formatPlace } from "../../src/core/format.js";
 import { isStateBinding } from "../../src/core/utils/checks.js";
 import { parsePlaceKey } from "../../src/core/utils/place-key.js";
-import { GeneratedSource } from "../../src/compiler/hir/hir.js";
+import { GeneratedSource } from "../../src/react-compiler/hir/hir.js";
 import type { Observation } from "./driver.js";
 import {
   explainMismatch,

@@ -41,7 +41,7 @@ The pipeline is a port of the React Compiler's front end, followed by our own pa
 | --------------------------- | -------------------------------------------------------------------------------------- |
 | `analyze-project.ts`        | Opens the TS project, finds components, runs each one, then lists states               |
 | `analyze-component.ts`      | Runs one component through the compiler passes and ours                                |
-| `../compiler/`              | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference |
+| `../react-compiler/`        | The React Compiler port, laid out like upstream: HIR, SSA, type and mutation inference |
 | `type-provider.ts`          | Types the compiler's HIR from the TS checker                                           |
 | `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept                     |
 | `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with        |

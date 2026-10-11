@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import type picocolors from "picocolors";
-import { GeneratedSource } from "../compiler/hir/hir.js";
-import type { SourceLocation } from "../compiler/hir/hir.js";
+import { GeneratedSource } from "../react-compiler/hir/hir.js";
+import type { SourceLocation } from "../react-compiler/hir/hir.js";
 import type {
   AbstractValue,
   AnalyzedComponent,

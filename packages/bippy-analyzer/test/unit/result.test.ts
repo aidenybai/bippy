@@ -7,8 +7,8 @@
 // Ported from babel-plugin-react-compiler/src/__tests__/Result-test.ts at b618bbb.
 
 import { describe, expect, it } from "vite-plus/test";
-import { Err, Ok } from "../../src/compiler/utils/result.js";
-import type { Result } from "../../src/compiler/utils/result.js";
+import { Err, Ok } from "../../src/react-compiler/utils/result.js";
+import type { Result } from "../../src/react-compiler/utils/result.js";
 
 const addMax10 = (a: number, b: number): Result<number, string> => {
   const sum = a + b;

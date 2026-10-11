@@ -1,4 +1,4 @@
-import type { AliasingEffect } from "../compiler/inference/aliasing-effects.js";
+import type { AliasingEffect } from "../react-compiler/inference/aliasing-effects.js";
 import type {
   BlockId,
   HIRFunction,
@@ -10,10 +10,10 @@ import type {
   SourceLocation,
   SpreadPattern,
   Terminal,
-} from "../compiler/hir/hir.js";
-import { GeneratedSource, getHookKind } from "../compiler/hir/hir.js";
-import type { HookKind } from "../compiler/hir/object-shape.js";
-import { assertExhaustive } from "../compiler/utils/utils.js";
+} from "../react-compiler/hir/hir.js";
+import { GeneratedSource, getHookKind } from "../react-compiler/hir/hir.js";
+import type { HookKind } from "../react-compiler/hir/object-shape.js";
+import { assertExhaustive } from "../react-compiler/utils/utils.js";
 import type { DomainResolver } from "./infer-domains.js";
 import type {
   Bailout,

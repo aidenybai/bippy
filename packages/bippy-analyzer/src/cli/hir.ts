@@ -2,10 +2,10 @@ import { resolve } from "node:path";
 import { Command } from "commander";
 import { CompilerTypeProvider } from "../core/type-provider.js";
 import { isProjectSourceFile, withProject } from "../core/utils/with-project.js";
-import { findReactFunctions } from "../compiler/program.js";
-import { runPipeline } from "../compiler/pipeline.js";
-import { ScopeManager } from "../compiler/hir/scope.js";
-import { printFunction } from "../compiler/hir/print-hir.js";
+import { findReactFunctions } from "../react-compiler/program.js";
+import { runPipeline } from "../react-compiler/pipeline.js";
+import { ScopeManager } from "../react-compiler/hir/scope.js";
+import { printFunction } from "../react-compiler/hir/print-hir.js";
 
 interface HirCliOptions {
   component?: string[];

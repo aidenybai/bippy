@@ -1,5 +1,5 @@
-import { GeneratedSource } from "../compiler/hir/hir.js";
-import { DisjointSet } from "../compiler/utils/disjoint-set.js";
+import { GeneratedSource } from "../react-compiler/hir/hir.js";
+import { DisjointSet } from "../react-compiler/utils/disjoint-set.js";
 import type { Bound, Constraints } from "./constraints.js";
 import {
   CONSTANT_ATOM,

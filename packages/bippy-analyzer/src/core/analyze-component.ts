@@ -1,17 +1,17 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import type { Checker } from "typescript/unstable/sync";
-import { getSourceLocation } from "../compiler/hir/hir.js";
-import type { HIRFunction } from "../compiler/hir/hir.js";
-import type { TypeProvider } from "../compiler/hir/environment.js";
-import type { ScopeManager } from "../compiler/hir/scope.js";
+import { getSourceLocation } from "../react-compiler/hir/hir.js";
+import type { HIRFunction } from "../react-compiler/hir/hir.js";
+import type { TypeProvider } from "../react-compiler/hir/environment.js";
+import type { ScopeManager } from "../react-compiler/hir/scope.js";
 import { DomainResolver, addComparedSamples } from "./infer-domains.js";
 import { collectHandlers } from "./collect-handlers.js";
 import { Interpreter } from "./interpret.js";
 import type { ModuleFunctionLoader } from "./interpret.js";
 import type { Bailout, ComponentAnalysis } from "./types.js";
 import { findModuleFunction } from "./utils/typescript.js";
-import { runPipeline } from "../compiler/pipeline.js";
-import type { ReactFunction } from "../compiler/program.js";
+import { runPipeline } from "../react-compiler/pipeline.js";
+import type { ReactFunction } from "../react-compiler/program.js";
 
 interface FileContext {
   sourceFile: SourceFile;

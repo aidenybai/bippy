@@ -1,11 +1,11 @@
 import { resolve } from "node:path";
 import { CompilerTypeProvider } from "../../src/core/type-provider.js";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
-import { runPipeline } from "../../src/compiler/pipeline.js";
-import { findReactFunctions } from "../../src/compiler/program.js";
-import type { HIRFunction, Instruction, Type } from "../../src/compiler/hir/hir.js";
-import { ScopeManager } from "../../src/compiler/hir/scope.js";
-import { eachInstructionLValue } from "../../src/compiler/hir/visitors.js";
+import { runPipeline } from "../../src/react-compiler/pipeline.js";
+import { findReactFunctions } from "../../src/react-compiler/program.js";
+import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/hir/hir.js";
+import { ScopeManager } from "../../src/react-compiler/hir/scope.js";
+import { eachInstructionLValue } from "../../src/react-compiler/hir/visitors.js";
 import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/core/types.js";
 
 export const getFixtureConfig = (fixture: string): string =>

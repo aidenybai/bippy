@@ -1,6 +1,6 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import { GeneratedSource } from "../compiler/hir/hir.js";
-import type { SourceLocation } from "../compiler/hir/hir.js";
+import { GeneratedSource } from "../react-compiler/hir/hir.js";
+import type { SourceLocation } from "../react-compiler/hir/hir.js";
 import type { Interpreter } from "./interpret.js";
 import type { SymbolicValue, Handler, HandlerTrigger } from "./types.js";
 import { forEachJsxElement } from "./utils/traverse.js";

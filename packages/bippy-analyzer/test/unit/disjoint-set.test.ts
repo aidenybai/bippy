@@ -7,7 +7,7 @@
 // Ported from babel-plugin-react-compiler/src/__tests__/DisjointSet-test.ts at b618bbb.
 
 import { describe, expect, it } from "vite-plus/test";
-import { DisjointSet } from "../../src/compiler/utils/disjoint-set.js";
+import { DisjointSet } from "../../src/react-compiler/utils/disjoint-set.js";
 
 interface TestIdentifier {
   id: number;

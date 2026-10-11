@@ -1,17 +1,17 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Signature, Type as TypeScriptType } from "typescript/unstable/sync";
-import type { MutableCollection, TypeProvider } from "../compiler/hir/environment.js";
-import { Effect, ValueKind, makeType } from "../compiler/hir/hir.js";
-import type { BuiltInType, SourceLocation } from "../compiler/hir/hir.js";
+import type { MutableCollection, TypeProvider } from "../react-compiler/hir/environment.js";
+import { Effect, ValueKind, makeType } from "../react-compiler/hir/hir.js";
+import type { BuiltInType, SourceLocation } from "../react-compiler/hir/hir.js";
 import {
   BuiltInArrayId,
   BuiltInMapId,
   BuiltInMixedReadonlyId,
   BuiltInSetId,
   addFunction,
-} from "../compiler/hir/object-shape.js";
-import type { ShapeRegistry } from "../compiler/hir/object-shape.js";
+} from "../react-compiler/hir/object-shape.js";
+import type { ShapeRegistry } from "../react-compiler/hir/object-shape.js";
 import { findNodeAtLocation, getReactExportName } from "./utils/typescript.js";
 
 const MAX_CONVERSION_DEPTH = 3;

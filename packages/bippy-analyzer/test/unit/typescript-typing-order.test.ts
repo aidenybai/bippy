@@ -1,5 +1,9 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import type { HIRFunction, Instruction, InstructionValue } from "../../src/compiler/hir/hir.js";
+import type {
+  HIRFunction,
+  Instruction,
+  InstructionValue,
+} from "../../src/react-compiler/hir/hir.js";
 import { getInstructions, lowerProject } from "./helpers.js";
 
 type MethodCall = Extract<InstructionValue, { kind: "MethodCall" }>;

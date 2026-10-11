@@ -3,8 +3,8 @@ import { findNodeAtLocation, getDeclarationKey, isReactElementType } from "./uti
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
-import type { SourceLocation } from "../compiler/hir/hir.js";
-import { GeneratedSource } from "../compiler/hir/hir.js";
+import type { SourceLocation } from "../react-compiler/hir/hir.js";
+import { GeneratedSource } from "../react-compiler/hir/hir.js";
 import type {
   AbstractValue,
   Domain,

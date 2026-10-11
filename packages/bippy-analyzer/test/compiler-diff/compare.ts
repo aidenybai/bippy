@@ -2,11 +2,11 @@ import { resolve } from "node:path";
 import { diffArrays, createTwoFilesPatch } from "diff";
 import type { Node } from "typescript/unstable/ast";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project.js";
-import { findReactFunctions } from "../../src/compiler/program.js";
-import { runPipeline } from "../../src/compiler/pipeline.js";
+import { findReactFunctions } from "../../src/react-compiler/program.js";
+import { runPipeline } from "../../src/react-compiler/pipeline.js";
 import { CompilerTypeProvider } from "../../src/core/type-provider.js";
-import { printFunction } from "../../src/compiler/hir/print-hir.js";
-import { ScopeManager } from "../../src/compiler/hir/scope.js";
+import { printFunction } from "../../src/react-compiler/hir/print-hir.js";
+import { ScopeManager } from "../../src/react-compiler/hir/scope.js";
 import { compileWithUpstream, getFunctionKey } from "./upstream.js";
 
 /**

@@ -1,6 +1,6 @@
-import { GeneratedSource } from "../compiler/hir/hir.js";
-import type { SourceLocation } from "../compiler/hir/hir.js";
-import { assertExhaustive } from "../compiler/utils/utils.js";
+import { GeneratedSource } from "../react-compiler/hir/hir.js";
+import type { SourceLocation } from "../react-compiler/hir/hir.js";
+import { assertExhaustive } from "../react-compiler/utils/utils.js";
 import type {
   AbstractValue,
   Binding,

@@ -1,4 +1,4 @@
-import { ScopeManager } from "../compiler/hir/scope.js";
+import { ScopeManager } from "../react-compiler/hir/scope.js";
 import { CompilerTypeProvider } from "./type-provider.js";
 import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
@@ -13,7 +13,7 @@ import type {
 import { forEachJsxElement } from "./utils/traverse.js";
 import { getPlaceKey } from "./utils/place-key.js";
 import { analyzeComponent } from "./analyze-component.js";
-import { findReactFunctions } from "../compiler/program.js";
+import { findReactFunctions } from "../react-compiler/program.js";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript.js";
 import { isProjectSourceFile, withProject } from "./utils/with-project.js";
 

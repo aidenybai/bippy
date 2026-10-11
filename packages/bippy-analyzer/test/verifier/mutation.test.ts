@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { GeneratedSource } from "../../src/compiler/hir/hir.js";
+import { GeneratedSource } from "../../src/react-compiler/hir/hir.js";
 import { createMutationProbe } from "../../conformance/verifier/mutation.js";
 
 const FILE = "/app/list.tsx";

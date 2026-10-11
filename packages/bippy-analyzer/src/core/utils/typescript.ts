@@ -3,10 +3,10 @@ import type { Node, SourceFile } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
 import type { Checker, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
-import { isComponentFunction, skipParentheses } from "../../compiler/program.js";
-import type { ComponentFunction } from "../../compiler/program.js";
-import { GeneratedSource } from "../../compiler/hir/hir.js";
-import type { SourceLocation } from "../../compiler/hir/hir.js";
+import { isComponentFunction, skipParentheses } from "../../react-compiler/program.js";
+import type { ComponentFunction } from "../../react-compiler/program.js";
+import { GeneratedSource } from "../../react-compiler/hir/hir.js";
+import type { SourceLocation } from "../../react-compiler/hir/hir.js";
 
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react[\\/]/;
 const REACT_ELEMENT_TYPE_NAMES = new Set(["ReactElement", "ReactPortal", "ReactNode", "Element"]);
