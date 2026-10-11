@@ -32,6 +32,7 @@ import type {
   JsxProp,
   JsxSpreadProp,
   JsxTag,
+  Sample,
   SetterValue,
   StateUpdate,
   SymbolicValue,
@@ -161,6 +162,8 @@ const getIdentifierName = (place: Place): string | null => place.identifier.name
 const getDeclarationLocation = (place: Place): SourceLocation =>
   place.identifier.loc === GeneratedSource ? place.loc : place.identifier.loc;
 
+const isPropsValue = (value: SymbolicValue): boolean => value.kind === "Props";
+
 const getPlaceOrSpread = (argument: Place | SpreadPattern): Place =>
   argument.kind === "Spread" ? argument.place : argument;
 
@@ -274,6 +277,11 @@ export class Interpreter {
   readonly warnings: Warning[] = [];
   readonly effectCalls: EffectCall[] = [];
   readonly renderedComponents = new Set<string>();
+  /**
+   * A sample of the whole props object, once the component passes it on whole, like
+   * `templateCtx(props)`, and so reads props that no binding names.
+   */
+  propsSample: Sample | null = null;
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
   #mutations = new Map<number, Mutation>();
@@ -671,6 +679,9 @@ export class Interpreter {
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
+    const propsPlace = argumentPlaces[args.findIndex(isPropsValue)];
+    if (this.propsSample === null && propsPlace)
+      this.propsSample = this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
     if (hookKind !== null)
       return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);

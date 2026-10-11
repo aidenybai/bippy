@@ -110,16 +110,25 @@ const getPropSamples = (analysis: ComponentAnalysis) =>
   );
 
 /**
+ * Props a component reads only through the whole props object, which mount from a sample
+ * of its props type beneath the props the analysis knows.
+ */
+const getWholeProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
+  analysis.propsSample?.kind === "Object" ? analysis.propsSample.fields : {};
+
+/**
  * The first sample of every prop the analysis knows, the props a component mounts with when
  * nothing else is chosen.
  */
-export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
-  Object.fromEntries(
+export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> => ({
+  ...getWholeProps(analysis),
+  ...Object.fromEntries(
     getPropSamples(analysis).map(({ name, samples }) => [
       name,
       samples[0] ?? { kind: "Undefined" },
     ]),
-  );
+  ),
+});
 
 const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
   const props = getPropSamples(analysis);
@@ -131,7 +140,7 @@ const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample
         combinations.flatMap((combination) =>
           samples.map((sample) => ({ ...combination, [name]: sample })),
         ),
-      [{}],
+      [getWholeProps(analysis)],
     );
   }
   const variations = props.flatMap(({ name, samples }) =>

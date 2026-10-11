@@ -233,6 +233,8 @@ export interface ComponentAnalysis {
   /** An `async` component, which renders only on a server. */
   isAsync: boolean;
   bindings: Binding[];
+  /** A sample of the whole props object, when the component passes it on whole. */
+  propsSample: Sample | null;
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
   handlers: Handler[];
