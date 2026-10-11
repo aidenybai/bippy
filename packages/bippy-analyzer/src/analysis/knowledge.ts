@@ -8,6 +8,7 @@ import {
   getNegatedOperator,
   getTestExpression,
   getTruthiness,
+  isPlacePrefix,
   isEqualToLiteral,
 } from "./values.js";
 
@@ -282,7 +283,7 @@ export const evaluate = (value: SymbolicValue, knowledge: Knowledge): boolean | 
       return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, knowledge) : null;
     }
     case "Conditional": {
-      const test = evaluate(getTestExpression(value.test, value.testKind), knowledge);
+      const test = evaluate(getTestExpression(value), knowledge);
       if (test === null) return null;
       return evaluate(test ? value.consequent : value.alternate, knowledge);
     }
@@ -324,7 +325,7 @@ export const assume = (
     value.alternate.kind === "Primitive" &&
     !value.alternate.value
   ) {
-    const held = assume(getTestExpression(value.test, value.testKind), true, knowledge);
+    const held = assume(getTestExpression(value), true, knowledge);
     return held && assume(value.consequent, true, held);
   }
   if (value.kind === "Binding") {
@@ -374,8 +375,8 @@ export const forgetBinding = (
     knowledge.facts.delete(key);
   }
   knowledge.bounds = knowledge.bounds.filter((bound) => {
-    const mentionsBinding = [bound.left, bound.right].some(
-      (atom) => atom === String(bindingId) || atom.startsWith(`${bindingId}.`),
+    const mentionsBinding = [bound.left, bound.right].some((atom) =>
+      isPlacePrefix(String(bindingId), atom),
     );
     return (
       !mentionsBinding || (keepsLength && (bound.left === lengthAtom || bound.right === lengthAtom))

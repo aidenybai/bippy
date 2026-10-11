@@ -2,14 +2,24 @@ import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError, Option } from "commander";
 import picocolors from "picocolors";
 import { analyzeProject, serializeProjectAnalysis } from "../analysis/analyze-project.js";
-import { ALL_VIEWS, DEFAULT_RENDER_DEPTH } from "./constants.js";
-import { formatComponent, formatHierarchy } from "./print.js";
-import type { AnalyzeCliOptions, View } from "./types.js";
+import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent, formatHierarchy } from "./print.js";
+import type { View } from "./print.js";
+
+interface AnalyzeCliOptions {
+  component?: string[];
+  file?: string;
+  view: View[];
+  hierarchy: boolean;
+  depth: number;
+  attributes: boolean;
+  json: boolean;
+  color: boolean;
+}
 
 const isView = (value: string): value is View => ALL_VIEWS.some((view) => view === value);
 
 const parseViews = (value: string): View[] => {
-  if (value === "all") return ALL_VIEWS;
+  if (value === "all") return [...ALL_VIEWS];
   const views = value.split(",").map((view) => view.trim());
   const invalidViews = views.filter((view) => !isView(view));
   if (invalidViews.length > 0) {

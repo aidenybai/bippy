@@ -1,14 +1,23 @@
+import { ANY_EVENT } from "../analysis/infer-transitions.js";
 import type {
   AbstractValue,
   BindingKind,
   Binding,
   ComponentAnalysis,
-  Decision,
   Sample,
   StateReport,
   SymbolicValue,
 } from "../analysis/types.js";
-import { formatAbstractValue, formatPlace } from "../analysis/values.js";
+import {
+  forEachJsxElement,
+  forEachRenderNode,
+  formatAbstractValue,
+  formatLine,
+  formatPlace,
+  isStateBinding,
+  parsePlaceKey,
+} from "../analysis/values.js";
+import { GeneratedSource } from "../compiler/hir/hir.js";
 import type { Observation } from "./driver.js";
 import {
   explainMismatch,
@@ -20,7 +29,6 @@ import {
   toExpected,
 } from "./match.js";
 import { scoreWarnings } from "./mutation.js";
-import { ANY_EVENT } from "../analysis/infer-transitions.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Probe } from "./server.js";
@@ -120,34 +128,12 @@ const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.inclu
 const getProbeId = (file: string, loc: { start: number; end: number }): string =>
   `${file}:${loc.start}:${loc.end}`;
 
-const getDecisionProbeId = (file: string, decision: Decision): string | null =>
-  typeof decision.loc === "symbol" ? null : getProbeId(file, decision.loc);
-
-const visitRender = (value: SymbolicValue, visitor: (value: SymbolicValue) => void): void => {
-  visitor(value);
-  switch (value.kind) {
-    case "JsxExpression":
-    case "JsxFragment":
-      for (const child of value.children) visitRender(child, visitor);
-      return;
-    case "Conditional":
-      visitRender(value.consequent, visitor);
-      visitRender(value.alternate, visitor);
-      return;
-    case "ArrayMap":
-      visitRender(value.item, visitor);
-      return;
-    default:
-      return;
-  }
-};
-
 export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   const probes = new Map<string, Probe>();
-  visitRender(analysis.render, (value) => {
+  forEachRenderNode(analysis.render, (value) => {
     if (value.kind !== "Conditional") return;
     const { decision } = value;
-    if (decision.probe === "none" || typeof decision.loc === "symbol") return;
+    if (decision.probe === "none" || decision.loc === GeneratedSource) return;
     const id = getProbeId(analysis.file, decision.loc);
     probes.set(id, {
       id,
@@ -179,8 +165,7 @@ const getStaticText = (value: SymbolicValue): string | null => {
 
 const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> => {
   const labels = new Map<string, TriggerLabel>();
-  visitRender(render, (value) => {
-    if (value.kind !== "JsxExpression") return;
+  forEachJsxElement(render, (value) => {
     for (const prop of value.props) {
       if (!prop.transitionId) continue;
       labels.set(prop.transitionId, {
@@ -201,9 +186,7 @@ const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
     hookBindings.some((binding) => !binding.hookKind || !ORDERED_HOOK_KINDS.has(binding.hookKind))
   )
     return null;
-  return analysis.bindings.filter(
-    (binding) => binding.kind === "state" || binding.kind === "reducer",
-  );
+  return analysis.bindings.filter(isStateBinding);
 };
 
 const isPredictedValue = (value: unknown, predicted: AbstractValue[]): boolean =>
@@ -388,11 +371,8 @@ export const scoreComponent = (
     if (stateBindings) {
       stateBindings.forEach((binding, hookIndex) => {
         for (const [placeKey, predicted] of report.places) {
-          const [bindingId, ...placePath] = placeKey.split(".");
-          if (
-            bindingId !== String(binding.id) ||
-            !predicted.every((value) => value.kind === "Literal")
-          )
+          const { bindingId, path: placePath } = parsePlaceKey(placeKey);
+          if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
             continue;
           const value = readPath(after.hookStates[hookIndex], placePath);
           if (isPredictedValue(value, predicted)) continue;
@@ -460,16 +440,13 @@ export const scoreComponent = (
   verdict.branchSides = probes.length * 2;
   verdict.witnessedBranchSides = witnessedSides.size;
   verdict.refutedDeadClaims = report.deadBranches
-    .filter((deadBranch) => {
-      const probeId = getDecisionProbeId(analysis.file, deadBranch.decision);
-      return probeId !== null && witnessedSides.has(`${probeId}:${deadBranch.side}`);
+    .filter(({ decision, side }) => {
+      const { loc } = decision;
+      return (
+        loc !== GeneratedSource && witnessedSides.has(`${getProbeId(analysis.file, loc)}:${side}`)
+      );
     })
-    .map((deadBranch) => {
-      const { loc } = deadBranch.decision;
-      return typeof loc === "symbol"
-        ? deadBranch.description
-        : `${deadBranch.description} (line ${loc.line})`;
-    });
+    .map(({ decision, description }) => `${description} ${formatLine(decision.loc)}`.trim());
   return { ...verdict, ...scoreWarnings(analysis, observations, stateBindings) };
 };
 

@@ -35,8 +35,13 @@ import {
   getPlaceKey,
   getTestExpression,
   getTruthiness,
+  isExternalSource,
+  isPlacePrefix,
   isRenderingNothingWhenFalse,
+  isStateBinding,
+  isWholeBinding,
   mapSymbolicValue,
+  parsePlaceKey,
 } from "./values.js";
 
 const MAX_ALTERNATIVES = 256;
@@ -84,16 +89,13 @@ const getDecisionKey = (conditional: ConditionalValue): string => {
     : `${decision.loc.start}:${decision.loc.end}:${decision.terminalId}`;
 };
 
-const getTest = (conditional: ConditionalValue): SymbolicValue =>
-  getTestExpression(conditional.test, conditional.testKind);
-
 const getLiteralCases = (
   value: SymbolicValue,
   knowledge: Knowledge | null,
 ): AbstractValue[] | null => {
   if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
   if (value.kind !== "Conditional") return null;
-  const decided = knowledge ? evaluate(getTest(value), knowledge) : null;
+  const decided = knowledge ? evaluate(getTestExpression(value), knowledge) : null;
   if (decided !== null)
     return getLiteralCases(decided ? value.consequent : value.alternate, knowledge);
   const consequent = getLiteralCases(value.consequent, knowledge);
@@ -108,12 +110,9 @@ const getLiteralCases = (
 const simplify = (value: SymbolicValue, knowledge: Knowledge): SymbolicValue =>
   mapSymbolicValue(value, (part) => {
     if (part.kind !== "Conditional") return part;
-    const decided = evaluate(getTest(part), knowledge);
+    const decided = evaluate(getTestExpression(part), knowledge);
     return decided === null ? part : decided ? part.consequent : part.alternate;
   });
-
-const isSameBinding = (value: SymbolicValue, binding: Binding): boolean =>
-  value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
 
 /**
  * The values an update assigns to `path` within `binding`, or `"unchanged"` when it keeps
@@ -127,12 +126,12 @@ const getFieldCases = (
 ): FieldCases => {
   if (!value) return null;
   if (path.length === 0) return getLiteralCases(value, knowledge);
-  if (isSameBinding(value, binding)) return "unchanged";
+  if (isWholeBinding(value, binding)) return "unchanged";
   if (value.kind !== "ObjectExpression") return null;
   const [field, ...restPath] = path;
   const assigned = value.properties.findLast((property) => property.key === field);
   if (assigned) return getFieldCases(assigned.value, restPath, binding, knowledge);
-  return value.spreads.some((spread) => isSameBinding(spread, binding)) ? "unchanged" : null;
+  return value.spreads.some((spread) => isWholeBinding(spread, binding)) ? "unchanged" : null;
 };
 
 const getToggleCases = (
@@ -154,16 +153,6 @@ const getToggleCases = (
   }));
 };
 
-const getPlacePath = (placeKey: string, binding: Binding): string[] | null => {
-  const [bindingId, ...path] = placeKey.split(".");
-  return bindingId === String(binding.id) ? path : null;
-};
-
-const getUpdatesOf = (analysis: ComponentAnalysis, binding: Binding) =>
-  analysis.transitions
-    .flatMap((transition) => transition.updates)
-    .filter((update) => update.binding.id === binding.id);
-
 /**
  * Every value a place of a state binding can reach: its initial value plus whatever the
  * transitions assign, repeated until nothing new appears. Falls back to the type's cases
@@ -180,7 +169,9 @@ const getReachableCases = (
   if (!Array.isArray(initialCases)) return typeCases;
   let reachable = dedupeValues(initialCases);
   const placeKey = getPlaceKey(binding, path);
-  const updates = getUpdatesOf(analysis, binding);
+  const updates = analysis.transitions
+    .flatMap((transition) => transition.updates)
+    .filter((update) => update.binding.id === binding.id);
   for (let round = 0; round < REACHABILITY_ROUNDS; round++) {
     for (const update of updates) {
       const cases =
@@ -196,13 +187,12 @@ const getReachableCases = (
 
 const createInitialKnowledge = (analysis: ComponentAnalysis): Knowledge => {
   const values = new Map<string, AbstractValue[]>();
-  const bindingsById = new Map(analysis.bindings.map((binding) => [String(binding.id), binding]));
+  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [placeKey, domain] of analysis.placeDomains) {
-    const [bindingId = "", ...path] = placeKey.split(".");
+    const { bindingId, path } = parsePlaceKey(placeKey);
     const binding = bindingsById.get(bindingId);
-    const isStateLike = binding?.kind === "state" || binding?.kind === "reducer";
     const cases =
-      binding && isStateLike
+      binding && isStateBinding(binding)
         ? getReachableCases(analysis, binding, path, domain)
         : domain.kind === "Cases"
           ? domain.cases
@@ -216,12 +206,12 @@ const createInitialKnowledge = (analysis: ComponentAnalysis): Knowledge => {
  * Whether an update keeps the array's length: `items.map(...)` or `[...items]`.
  */
 const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => {
-  if (value.kind === "ArrayMap") return isSameBinding(value.array, binding);
+  if (value.kind === "ArrayMap") return isWholeBinding(value.array, binding);
   return (
     value.kind === "ArrayExpression" &&
     value.elements.length === 0 &&
     value.spreads.length === 1 &&
-    isSameBinding(value.spreads[0], binding)
+    isWholeBinding(value.spreads[0], binding)
   );
 };
 
@@ -254,8 +244,8 @@ const applyUpdates = (
   const next = cloneKnowledge(knowledge);
   for (const update of transition.updates) {
     for (const placeKey of reachable.values.keys()) {
-      const path = getPlacePath(placeKey, update.binding);
-      if (!path) continue;
+      const { bindingId, path } = parsePlaceKey(placeKey);
+      if (bindingId !== update.binding.id) continue;
       const current = knowledge.values.get(placeKey);
       const cases =
         getFieldCases(update.value, path, update.binding, knowledge) ??
@@ -318,7 +308,7 @@ const createEnumerator = (
             { knowledge, render: value, fragments: [], assumptions: [], decisions: NO_DECISIONS },
           ];
         const alternatives: Alternative[] = [];
-        const test = getTest(value);
+        const test = getTestExpression(value);
         const isDecided = evaluate(test, knowledge) !== null;
         for (const outcome of [true, false]) {
           const assumed = assume(test, outcome, knowledge);
@@ -386,12 +376,6 @@ const createEnumerator = (
   return enumerate;
 };
 
-const isPlacePrefix = (prefix: string, placeKey: string): boolean =>
-  placeKey === prefix || placeKey.startsWith(`${prefix}.`);
-
-const isExternalSource = (binding: Binding): boolean =>
-  binding.kind === "hook" || binding.kind === "context";
-
 /**
  * Splits the render tree's decisions into groups that vary independently. Decisions join a
  * group when their tests read overlapping places, like `toast` and `toast.cancel`. Fields of
@@ -411,7 +395,7 @@ const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
         const key = getDecisionKey(value);
         if (!decisionKeys.includes(key)) decisionKeys.push(key);
         decisionSets.union(enclosingKey ? [key, enclosingKey] : [key]);
-        forEachSymbolicValue(getTest(value), (part) => {
+        forEachSymbolicValue(getTestExpression(value), (part) => {
           if (part.kind !== "Binding") return;
           const atoms = [
             isExternalSource(part.binding) ? String(part.binding.id) : getBindingPlaceKey(part),
@@ -454,7 +438,7 @@ const groupDecisions = (render: SymbolicValue): DecisionGroup[] => {
   };
   for (const key of decisionKeys) getGroup(key).decisionKeys.add(key);
   for (const [atom, keys] of decisionsByAtom)
-    for (const key of keys) getGroup(key).bindingIds.add(Number(atom.split(".")[0]));
+    for (const key of keys) getGroup(key).bindingIds.add(parsePlaceKey(atom).bindingId);
   for (const [placeKey, place] of places) {
     const isNested = [...places.keys()].some(
       (otherKey) => otherKey !== placeKey && isPlacePrefix(otherKey, placeKey),
@@ -484,7 +468,7 @@ const collectDeadBranches = (render: SymbolicValue, outcomes: DecisionOutcomes):
       case "Conditional": {
         const key = getDecisionKey(value);
         const reached = outcomes.get(key);
-        const test = getTest(value);
+        const test = getTestExpression(value);
         if (reached && !seen.has(key)) {
           seen.add(key);
           if (!reached.has(true))

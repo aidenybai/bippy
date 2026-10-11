@@ -1,4 +1,5 @@
 import { relative } from "node:path";
+import type picocolors from "picocolors";
 import { GeneratedSource } from "../compiler/hir/hir.js";
 import type { SourceLocation } from "../compiler/hir/hir.js";
 import type {
@@ -17,24 +18,63 @@ import {
   forEachJsxElement,
   formatAbstractValue,
   formatPlace,
+  formatLine,
   formatSymbolicValue,
+  getTestExpression,
   getPlaceKey,
   isRenderingNothing,
   isRenderingNothingWhenFalse,
 } from "../analysis/values.js";
-import { createTreeNode, renderAsciiTree } from "./ascii-tree.js";
-import { MAX_LABEL_WIDTH, MAX_RENDER_NODES } from "./constants.js";
-import type { ComponentPrintContext, PrintOptions, TreeNode } from "./types.js";
+export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
+export const DEFAULT_RENDER_DEPTH = 12;
 
+export type View = (typeof ALL_VIEWS)[number];
+
+interface TreeNode {
+  label: string;
+  children: TreeNode[];
+}
+
+export interface PrintOptions {
+  views: Set<View>;
+  colors: ReturnType<typeof picocolors.createColors>;
+  rootDirectory: string;
+  maxDepth: number;
+  isShowingAttributes: boolean;
+}
+
+interface ComponentPrintContext extends PrintOptions {
+  effects: Map<string, string>;
+  triggers: Map<string, string>;
+  renderNodeBudget: { remaining: number };
+}
+
+const MAX_LABEL_WIDTH = 140;
+const MAX_RENDER_NODES = 400;
 const MAX_EFFECT_WIDTH = 70;
 const MAX_ATTRIBUTE_WIDTH = 30;
 const MAX_TRIGGER_TEXT_WIDTH = 24;
-const INTEGER_PATTERN = /^-?\d+$/;
+
+const createTreeNode = (label: string, children: TreeNode[] = []): TreeNode => ({
+  label,
+  children,
+});
+
+const renderAsciiTree = (root: TreeNode): string[] => {
+  const lines = [root.label];
+  const walk = (children: TreeNode[], prefix: string): void => {
+    children.forEach((child, index) => {
+      const isLast = index === children.length - 1;
+      lines.push(`${prefix}${isLast ? "└─ " : "├─ "}${child.label}`);
+      walk(child.children, `${prefix}${isLast ? "   " : "│  "}`);
+    });
+  };
+  walk(root.children, "");
+  return lines;
+};
 
 const truncate = (text: string, width = MAX_LABEL_WIDTH): string =>
   text.length > width ? `${text.slice(0, width - 1)}…` : text;
-
-const formatLine = (loc: SourceLocation): string => (loc === GeneratedSource ? "" : `L${loc.line}`);
 
 const formatCases = (cases: AbstractValue[]): string => cases.map(formatAbstractValue).join(" | ");
 
@@ -63,7 +103,7 @@ const getNumericInvariant = (binding: Binding, updates: StateUpdate[]): string |
   if (
     initial?.kind !== "Primitive" ||
     typeof initial.value !== "number" ||
-    !INTEGER_PATTERN.test(String(initial.value)) ||
+    !Number.isInteger(initial.value) ||
     updates.length === 0
   )
     return null;
@@ -88,19 +128,12 @@ const formatAttributes = (
   if (isCompact) return "";
   const { colors } = context;
   const attributes = node.props.flatMap((prop) => {
-    if (prop.kind === "JsxSpreadAttribute")
-      return context.isShowingAttributes
-        ? [colors.dim(`...${truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH)}`)]
-        : [];
+    const name = prop.kind === "JsxAttribute" ? prop.name : "{...}";
     if (prop.transitionId)
-      return [colors.dim(`${prop.name} ⇒ ${context.effects.get(prop.transitionId) ?? "?"}`)];
-    return context.isShowingAttributes
-      ? [
-          colors.dim(
-            `${prop.name}=${truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH)}`,
-          ),
-        ]
-      : [];
+      return [colors.dim(`${name} ⇒ ${context.effects.get(prop.transitionId) ?? "?"}`)];
+    if (!context.isShowingAttributes) return [];
+    const value = truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH);
+    return [colors.dim(prop.kind === "JsxAttribute" ? `${name}=${value}` : `...${value}`)];
   });
   return attributes.length > 0 ? ` ${attributes.join(" ")}` : "";
 };
@@ -129,9 +162,7 @@ const formatLeaf = (value: SymbolicValue, options: PrintOptions): string | null 
 };
 
 const getConditionLabel = (value: ConditionalValue): string =>
-  value.testKind === "nullish"
-    ? `${formatSymbolicValue(value.test)} != null`
-    : formatSymbolicValue(value.test);
+  formatSymbolicValue(getTestExpression(value));
 
 /**
  * Prints a render on one line, stopping once the line is too wide to show. Render values
@@ -406,26 +437,16 @@ const buildStates = (component: AnalyzedComponent, context: ComponentPrintContex
   );
 };
 
-const buildWarnings = (component: AnalyzedComponent, options: PrintOptions): TreeNode =>
+const buildNotes = (
+  title: string,
+  notes: Array<{ kind: string; loc: SourceLocation; message: string }>,
+  { colors }: PrintOptions,
+): TreeNode =>
   createTreeNode(
-    options.colors.dim("warnings"),
-    component.analysis.warnings.map((warning) =>
+    colors.dim(title),
+    notes.map((note) =>
       createTreeNode(
-        truncate(
-          `${options.colors.red(warning.kind)} ${formatLine(warning.loc)} ${options.colors.dim(warning.message)}`,
-        ),
-      ),
-    ),
-  );
-
-const buildBailouts = (component: AnalyzedComponent, options: PrintOptions): TreeNode =>
-  createTreeNode(
-    options.colors.dim("bailouts"),
-    component.analysis.bailouts.map((bailout) =>
-      createTreeNode(
-        truncate(
-          `${options.colors.red(bailout.reason)} ${formatLine(bailout.loc)} ${options.colors.dim(bailout.message)}`,
-        ),
+        truncate(`${colors.red(note.kind)} ${formatLine(note.loc)} ${colors.dim(note.message)}`),
       ),
     ),
   );
@@ -454,7 +475,7 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
       .filter((transition) => transition.trigger.kind === "Effect")
       .map((transition) =>
         createTreeNode(
-          colors.dim(`${getEffectLabel(transition)} ⇒ ${formatTransitionEffect(transition)}`),
+          colors.dim(`${triggers.get(transition.id)} ⇒ ${context.effects.get(transition.id)}`),
         ),
       );
     sections.push(
@@ -466,9 +487,15 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   }
   if (views.has("states")) sections.push(buildStates(component, context));
   if (views.has("warnings") && analysis.warnings.length > 0)
-    sections.push(buildWarnings(component, context));
+    sections.push(buildNotes("warnings", analysis.warnings, context));
   if (views.has("bailouts") && analysis.bailouts.length > 0)
-    sections.push(buildBailouts(component, context));
+    sections.push(
+      buildNotes(
+        "bailouts",
+        analysis.bailouts.map((bailout) => ({ ...bailout, kind: bailout.reason })),
+        context,
+      ),
+    );
   const line = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.line}`;
   const location = `${relative(context.rootDirectory, analysis.file)}${line}`;
   return renderAsciiTree(

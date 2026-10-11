@@ -42,6 +42,10 @@ import {
   forEachSymbolicValue,
   formatSymbolicValue,
   getBindingPlaceKey,
+  isExternalSource,
+  isNullish,
+  isStateBinding,
+  isWholeBinding,
   getKnownTruthiness,
   getPlaceKey,
   getTestExpression,
@@ -129,8 +133,6 @@ const getMutatedPlace = (effect: AliasingEffect): Place | null => {
       return null;
   }
 };
-
-const STATE_BINDING_KINDS = new Set<BindingKind>(["state", "reducer"]);
 
 export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
 
@@ -227,11 +229,8 @@ const NO_STOPS: ReadonlySet<BlockId> = new Set();
 const getHookBindingKind = (hookKind: HookKind): BindingKind =>
   hookKind === "useRef" ? "ref" : hookKind === "useContext" ? "context" : "hook";
 
-const isExternalSource = (binding: Binding): boolean =>
-  (binding.kind === "hook" && binding.hookKind !== "useRef") || binding.kind === "context";
-
-const isNullishPrimitive = (value: SymbolicValue): boolean =>
-  value.kind === "Primitive" && (value.value === null || value.value === undefined);
+const isNullishValue = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive" && isNullish(value.value);
 
 /**
  * The test under which an optional chain's value short-circuits to `undefined`, or null
@@ -247,7 +246,7 @@ const getShortCircuit = (
     : null;
 
 const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
-  const test = getTestExpression(split.test, split.testKind);
+  const test = getTestExpression(split);
   return isConsequent ? test : negate(test);
 };
 
@@ -467,9 +466,9 @@ export class SymbolicEvaluator {
       case "Conditional":
         // Reading a property of null or undefined throws, so a render that gets past the read
         // took the other arm.
-        if (isNullishPrimitive(object.alternate))
+        if (isNullishValue(object.alternate))
           return this.#evaluatePropertyLoad(object.consequent, property, loc);
-        if (isNullishPrimitive(object.consequent))
+        if (isNullishValue(object.consequent))
           return this.#evaluatePropertyLoad(object.alternate, property, loc);
         return {
           ...object,
@@ -559,7 +558,7 @@ export class SymbolicEvaluator {
           `mutates prop ${formatPlace(binding, operand.path)}`,
           place.loc,
         );
-      } else if (STATE_BINDING_KINDS.has(binding.kind)) {
+      } else if (isStateBinding(binding)) {
         if (this.#mode === "render") {
           this.#warn("render-mutation", `mutates ${binding.name} during render`, place.loc);
         } else if (!this.#mutations.has(binding.id)) {
@@ -581,8 +580,7 @@ export class SymbolicEvaluator {
     if (this.#mode !== "effect") return;
     const mutation = this.#mutations.get(binding.id);
     if (mutation) {
-      const isSameReference =
-        value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
+      const isSameReference = isWholeBinding(value, binding);
       this.#warn(
         isSameReference ? "lost-update" : "state-mutation",
         isSameReference
@@ -1019,7 +1017,7 @@ export class SymbolicEvaluator {
       probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
       loc: test.loc,
     };
-    const testGuard = getTestExpression(testValue, testKind);
+    const testGuard = getTestExpression({ test: testValue, testKind });
     const walkArm = (block: BlockId, isConsequent: boolean): Outcome => {
       const guards = [...state.guards, isConsequent ? testGuard : negate(testGuard)];
       return block === fallthrough

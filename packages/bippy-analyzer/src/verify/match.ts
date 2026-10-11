@@ -1,5 +1,6 @@
 import { diffArrays } from "diff";
 import type { SymbolicValue } from "../analysis/types.js";
+import { isRenderingNothing } from "../analysis/values.js";
 import type { Shape } from "./types.js";
 
 type ExpectedShape =
@@ -21,9 +22,6 @@ const normalizeName = (name: string): string => {
   const unwrapped = WRAPPER_NAME_PATTERN.exec(name)?.[1] ?? name;
   return unwrapped === name ? (name.split(".").pop() ?? name) : normalizeName(unwrapped);
 };
-
-const isRenderingNothing = (value: SymbolicValue): boolean =>
-  value.kind === "Primitive" && typeof value.value !== "string" && typeof value.value !== "number";
 
 export const toExpected = (
   value: SymbolicValue,

@@ -1,3 +1,5 @@
+import { GeneratedSource } from "../compiler/hir/hir.js";
+import type { SourceLocation } from "../compiler/hir/hir.js";
 import { assertExhaustive } from "../compiler/utils/utils.js";
 import type {
   AbstractValue,
@@ -52,6 +54,29 @@ export const getPlaceKey = (binding: Binding, path: readonly string[]): string =
 export const getBindingPlaceKey = (value: BindingValue): string =>
   getPlaceKey(value.binding, value.path);
 
+export const parsePlaceKey = (placeKey: string): { bindingId: number; path: string[] } => {
+  const [bindingId = "", ...path] = placeKey.split(".");
+  return { bindingId: Number(bindingId), path };
+};
+
+export const isPlacePrefix = (prefix: string, placeKey: string): boolean =>
+  placeKey === prefix || placeKey.startsWith(`${prefix}.`);
+
+export const isWholeBinding = (value: SymbolicValue, binding: Binding): boolean =>
+  value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
+
+export const isStateBinding = (binding: Binding): boolean =>
+  binding.kind === "state" || binding.kind === "reducer";
+
+/**
+ * A custom hook's result or a context value: data the component reads but doesn't own.
+ */
+export const isExternalSource = (binding: Binding): boolean =>
+  binding.kind === "hook" || binding.kind === "context";
+
+export const formatLine = (loc: SourceLocation): string =>
+  loc === GeneratedSource ? "" : `L${loc.line}`;
+
 export const formatPlace = (binding: Binding, path: readonly string[]): string =>
   [binding.name, ...path].join(".");
 
@@ -67,7 +92,7 @@ export const getTruthiness = (value: AbstractValue): Truthiness => {
   return value.primitive === null ? "truthy" : "either";
 };
 
-const isNullish = (value: PrimitiveValue): boolean => value === null || value === undefined;
+export const isNullish = (value: PrimitiveValue): boolean => value === null || value === undefined;
 
 /**
  * Whether `value` satisfies `value <operator> literal` for `===`/`==` (negations are
@@ -114,7 +139,13 @@ export const negate = (value: SymbolicValue): SymbolicValue =>
  * The test a decision checks, as an expression: the value itself, or `value != null` for a
  * nullish test.
  */
-export const getTestExpression = (test: SymbolicValue, testKind: TestKind): SymbolicValue =>
+export const getTestExpression = ({
+  test,
+  testKind,
+}: {
+  test: SymbolicValue;
+  testKind: TestKind;
+}): SymbolicValue =>
   testKind === "nullish"
     ? {
         kind: "BinaryExpression",
@@ -159,32 +190,38 @@ export const isRenderingNothingWhenFalse = (conditional: ConditionalValue): bool
   formatSymbolicValue(conditional.alternate) === formatSymbolicValue(conditional.test);
 
 /**
- * Calls `visit` on every JSX element in a render tree, parents before children and
- * consequents before alternates.
+ * Calls `visit` on every node of a render tree, parents before children and consequents
+ * before alternates.
  */
-export const forEachJsxElement = (
+export const forEachRenderNode = (
   value: SymbolicValue,
-  visit: (element: JsxExpressionValue) => void,
+  visit: (node: SymbolicValue) => void,
 ): void => {
+  visit(value);
   switch (value.kind) {
     case "JsxExpression":
-      visit(value);
-      for (const child of value.children) forEachJsxElement(child, visit);
-      return;
     case "JsxFragment":
-      for (const child of value.children) forEachJsxElement(child, visit);
+      for (const child of value.children) forEachRenderNode(child, visit);
       return;
     case "Conditional":
-      forEachJsxElement(value.consequent, visit);
-      forEachJsxElement(value.alternate, visit);
+      forEachRenderNode(value.consequent, visit);
+      forEachRenderNode(value.alternate, visit);
       return;
     case "ArrayMap":
-      forEachJsxElement(value.item, visit);
+      forEachRenderNode(value.item, visit);
       return;
     default:
       return;
   }
 };
+
+export const forEachJsxElement = (
+  value: SymbolicValue,
+  visit: (element: JsxExpressionValue) => void,
+): void =>
+  forEachRenderNode(value, (node) => {
+    if (node.kind === "JsxExpression") visit(node);
+  });
 
 const getPrecedence = (value: SymbolicValue): number => {
   if (value.kind === "BinaryExpression") return BINARY_PRECEDENCE.get(value.operator) ?? 0;

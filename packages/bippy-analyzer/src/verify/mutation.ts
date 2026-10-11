@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
-import type { SourceLocation } from "../compiler/hir/hir.js";
 import type { Binding, ComponentAnalysis, Warning } from "../analysis/types.js";
+import { formatLine } from "../analysis/values.js";
+import { GeneratedSource } from "../compiler/hir/hir.js";
+import type { SourceLocation } from "../compiler/hir/hir.js";
 import type { Observation } from "./driver.js";
 import type { Probe } from "./server.js";
 
@@ -28,7 +30,7 @@ export const createMutationProbe = (
   sourceText: string,
   loc: SourceLocation,
 ): Probe | null => {
-  if (typeof loc === "symbol") return null;
+  if (loc === GeneratedSource) return null;
   const text = sourceText.slice(loc.start, loc.end);
   if (!PLACE_PATTERN.test(text) || !MEMBER_ACCESS_PATTERN.test(sourceText.slice(loc.end)))
     return null;
@@ -81,9 +83,7 @@ export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] =>
   getProbedWarnings(analysis, null).flatMap((probed) => (probed.probe ? [probed.probe] : []));
 
 const formatWarning = (warning: Warning): string =>
-  typeof warning.loc === "symbol"
-    ? `${warning.kind}: ${warning.message}`
-    : `${warning.kind} L${warning.loc.line}: ${warning.message}`;
+  `${[warning.kind, formatLine(warning.loc)].filter(Boolean).join(" ")}: ${warning.message}`;
 
 const formatOwner = (owner: string, stateBindings: Binding[] | null): string => {
   const [kind, name] = owner.split(":");
