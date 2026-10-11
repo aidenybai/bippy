@@ -209,7 +209,8 @@ export interface Bailout {
 export interface ComponentAnalysis {
   name: string;
   exportName: string | null;
-  displayName: string | null;
+  /** The name React shows for it, or null when a `displayName` is set at runtime. */
+  runtimeName: string | null;
   file: string;
   declaration: string;
   loc: SourceLocation;

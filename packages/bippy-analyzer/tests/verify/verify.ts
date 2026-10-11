@@ -9,6 +9,7 @@ import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
 import { classifyMountError } from "./reasons.js";
 import { readHarnessSetup, startHarness } from "./server.js";
+import { buildExportIndex } from "./wrappers.js";
 
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
@@ -63,8 +64,11 @@ export const verifyProject = async (
     : analyzed;
   const exported = components.filter(({ analysis }) => analysis.exportName);
   const knownComponents = new Map(
-    analyzed.map(({ analysis }) => [analysis.declaration, analysis.displayName ?? analysis.name]),
+    analyzed.flatMap(({ analysis }) =>
+      analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
+    ),
   );
+  const exportIndex = buildExportIndex(appDirectory);
   const harness = await startHarness(
     appDirectory,
     exported.flatMap(({ analysis }) => [
@@ -87,6 +91,7 @@ export const verifyProject = async (
               page,
               component.analysis,
               harness.getModuleUrl(component.analysis.file),
+              exportIndex,
             )
           : [];
         verdict = scoreComponent(

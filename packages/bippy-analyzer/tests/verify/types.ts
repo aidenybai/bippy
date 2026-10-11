@@ -41,11 +41,28 @@ export interface Scenario {
   args: unknown[];
 }
 
+export interface WrapperCandidate {
+  specifier: string;
+  importer: string;
+  exportName: string;
+  isRootAllowed: boolean;
+}
+
+/**
+ * A parent a component needs to render, like Radix's `Dialog` around a `DialogTitle`, with
+ * the modules it may come from, tried in order.
+ */
+export interface Wrapper {
+  name: string;
+  candidates: WrapperCandidate[];
+}
+
 export interface MountRequest {
   moduleUrl: string;
   exportName: string;
   props: Record<string, Sample>;
   scenario: Scenario | null;
+  wrappers: Wrapper[];
 }
 
 interface VerifyApi {

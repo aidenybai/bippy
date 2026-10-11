@@ -17,7 +17,7 @@ interface FileContext {
   checker: Checker;
   scopes: ScopeManager;
   exportNames: Map<string, string>;
-  displayNames: Map<string, string>;
+  displayNames: Map<string, string | null>;
 }
 
 const createModuleFunctionLoader = (context: FileContext): ModuleFunctionLoader => {
@@ -44,7 +44,9 @@ export const analyzeComponent = (
   const base = {
     name: reactFunction.name,
     exportName: exportNames.get(reactFunction.name) ?? null,
-    displayName: displayNames.get(reactFunction.name) ?? null,
+    runtimeName: displayNames.has(reactFunction.name)
+      ? (displayNames.get(reactFunction.name) ?? null)
+      : reactFunction.name,
     file: sourceFile.fileName,
     declaration: `${sourceFile.path}#${reactFunction.name}`,
   };

@@ -1,7 +1,9 @@
 import type { Page } from "playwright";
 import type { ComponentAnalysis, Sample } from "../../src/core/inference/types.js";
 import { normalizeShapes } from "./match.js";
-import type { Action, Capture, MountRequest } from "./types.js";
+import { classifyMountError } from "./reasons.js";
+import type { Action, Capture, MountRequest, Wrapper } from "./types.js";
+import { findWrapper, getErrorSubject } from "./wrappers.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -14,6 +16,34 @@ export interface Observation {
 const MAX_PROP_COMBINATIONS = 12;
 const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
+const MAX_WRAPPERS = 4;
+
+/**
+ * Mounts a component, and while it throws for want of a parent, finds that parent and
+ * mounts it again inside. Returns the parents it needed, outermost first.
+ */
+export const resolveWrappers = async (
+  page: Page,
+  request: MountRequest,
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+): Promise<Wrapper[]> => {
+  const wrappers: Wrapper[] = [];
+  while (wrappers.length < MAX_WRAPPERS) {
+    const capture: Capture = await page.evaluate(
+      (mountRequest) => window.__verify.mount(mountRequest),
+      { ...request, wrappers },
+    );
+    if (!capture.error || capture.shapes.length > 0) break;
+    if (classifyMountError(capture.error) !== "provider") break;
+    const wrapper = findWrapper(capture.error, componentFile, exportIndex);
+    if (!wrapper || wrappers.some((existing) => existing.name === wrapper.name)) break;
+    const subject = getErrorSubject(capture.error);
+    const subjectIndex = wrappers.findIndex((existing) => existing.name === subject);
+    wrappers.splice(subjectIndex === -1 ? wrappers.length : subjectIndex, 0, wrapper);
+  }
+  return wrappers;
+};
 
 const getPropSamples = (analysis: ComponentAnalysis) =>
   analysis.bindings.flatMap((binding) =>
@@ -60,13 +90,27 @@ export const exploreComponent = async (
   page: Page,
   analysis: ComponentAnalysis,
   moduleUrl: string,
+  exportIndex: Map<string, string[]>,
 ): Promise<Observation[]> => {
   const { exportName } = analysis;
   if (!exportName) return [];
   const observations: Observation[] = [];
+  const propCombinations = getPropCombinations(analysis);
+  const wrappers = await resolveWrappers(
+    page,
+    {
+      moduleUrl,
+      exportName,
+      props: propCombinations[0] ?? {},
+      scenario: null,
+      wrappers: [],
+    },
+    analysis.file,
+    exportIndex,
+  );
 
-  for (const props of getPropCombinations(analysis)) {
-    const request: MountRequest = { moduleUrl, exportName, props, scenario: null };
+  for (const props of propCombinations) {
+    const request: MountRequest = { moduleUrl, exportName, props, scenario: null, wrappers };
     const mount = (): Promise<Capture> =>
       page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);
     const perform = (actionKey: string): Promise<Capture | null> =>

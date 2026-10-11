@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../../conformance/runner/repos.js";
 import { analyzeProject } from "../../src/core/entrypoint/analyze-project.js";
 import type { AnalyzedComponent, Sample } from "../../src/core/inference/types.js";
-import { getDefaultProps } from "./driver.js";
+import { getDefaultProps, resolveWrappers } from "./driver.js";
 import type { Observation } from "./driver.js";
 import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
 import { collectMutationProbes } from "./mutation.js";
@@ -13,9 +13,11 @@ import type { ComponentVerdict } from "./score.js";
 import { readHarnessSetup, startHarness } from "./server.js";
 import type { Capture, MountRequest } from "./types.js";
 import { openPage } from "./verify.js";
+import { buildExportIndex } from "./wrappers.js";
 
 interface VerifyProject {
   url: string;
+  exportIndex: Map<string, string[]>;
   components: AnalyzedComponent[];
   knownComponents: Map<string, string>;
   getModuleUrl: (file: string) => string;
@@ -108,12 +110,12 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
       );
       await use({
         url: harness.url,
+        exportIndex: buildExportIndex(appDirectory),
         components,
         knownComponents: new Map(
-          components.map(({ analysis }) => [
-            analysis.declaration,
-            analysis.displayName ?? analysis.name,
-          ]),
+          components.flatMap(({ analysis }) =>
+            analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
+          ),
         ),
         getModuleUrl: harness.getModuleUrl,
       });
@@ -145,7 +147,9 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
         scenario: options.scenario
           ? { name: options.scenario[0], args: options.scenario.slice(1) }
           : null,
+        wrappers: [],
       };
+      request.wrappers = await resolveWrappers(page, request, analysis.file, project.exportIndex);
       const session: Session = { component, observations: [] };
       sessions.push(session);
       let current: Capture = await page.evaluate(

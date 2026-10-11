@@ -432,8 +432,12 @@ export const collectExportNames = (sourceFile: SourceFile): Map<string, string> 
 /**
  * Maps each component in a file to the name it sets with `Component.displayName = "..."`.
  */
-export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string> => {
-  const displayNames = new Map<string, string>();
+/**
+ * The `displayName` each component is given. A name assigned from anything but a string
+ * literal, like `Sheet.displayName = Dialog.displayName`, is known only at runtime: null.
+ */
+export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string | null> => {
+  const displayNames = new Map<string, string | null>();
   for (const statement of sourceFile.statements) {
     if (!t.isExpressionStatement(statement)) continue;
     const expression = skipParentheses(statement.expression);
@@ -446,10 +450,9 @@ export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string>
     if (
       t.isPropertyAccessExpression(left) &&
       left.name.text === "displayName" &&
-      t.isIdentifier(left.expression) &&
-      t.isStringLiteral(right)
+      t.isIdentifier(left.expression)
     ) {
-      displayNames.set(left.expression.text, right.text);
+      displayNames.set(left.expression.text, t.isStringLiteral(right) ? right.text : null);
     }
   }
   return displayNames;

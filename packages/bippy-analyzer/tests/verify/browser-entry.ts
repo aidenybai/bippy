@@ -1,3 +1,4 @@
+import "./stubs/node-globals.js";
 import {
   didFiberRender,
   getDisplayName,
@@ -8,12 +9,20 @@ import {
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
 import { Component, createElement } from "react";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../src/core/inference/types.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
-import type { Action, Capture, MountRequest, MutationHit, ProbeHit, Shape } from "./types.js";
+import type {
+  Action,
+  Capture,
+  MountRequest,
+  MutationHit,
+  ProbeHit,
+  Shape,
+  Wrapper,
+} from "./types.js";
 
 interface BoundaryProps {
   children: ReactNode;
@@ -45,6 +54,8 @@ interface TrackedState {
 const ANONYMOUS_NAME = "Anonymous";
 const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 const SETUP_PATH = "/__bippy_verify_setup.tsx";
+const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
+const WRAPPER_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
 const MAX_SETTLE_MS = 3000;
 const MAX_PLAIN_DEPTH = 4;
@@ -452,6 +463,37 @@ const setInputValue = (element: HTMLElement, value: string): void => {
   element.dispatchEvent(new Event("change", { bubbles: true }));
 };
 
+const isComponentType = (value: unknown): boolean =>
+  typeof value === "function" || (typeof value === "object" && value !== null);
+
+/**
+ * Loads the first candidate module that exports the wrapper. A package may export it under
+ * a shorter name than its errors use, like `Content` for Radix's internal `MenuContent`, or
+ * only as its `Root`.
+ */
+const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
+  for (const candidate of wrapper.candidates) {
+    const query = new URLSearchParams({
+      specifier: candidate.specifier,
+      importer: candidate.importer,
+    });
+    const moduleExports: Record<string, unknown> = await import(
+      /* @vite-ignore */ `${WRAPPER_PATH}?${query}`
+    ).catch(() => ({}));
+    const shortName = candidate.isRootAllowed
+      ? Object.keys(moduleExports)
+          .filter((name) => /^[A-Z]/.test(name) && candidate.exportName.endsWith(name))
+          .sort((left, right) => right.length - left.length)[0]
+      : undefined;
+    const value =
+      moduleExports[candidate.exportName] ??
+      (shortName ? moduleExports[shortName] : undefined) ??
+      (candidate.isRootAllowed ? moduleExports.Root : undefined);
+    if (isComponentType(value)) return value;
+  }
+  return null;
+};
+
 const mount = async (request: MountRequest): Promise<Capture> => {
   mountedRoot?.unmount();
   mountedType = null;
@@ -482,18 +524,19 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   const container = document.createElement("div");
   document.body.replaceChildren(container);
   mountedRoot = createRoot(container);
-  // HACK: the component type comes from a dynamic import, so React's element typing can't see it.
-  mountedRoot.render(
-    createElement(
-      Boundary,
-      null,
-      createElement(
-        Providers,
-        null,
-        createElement(mountedType as Parameters<typeof createElement>[0], props),
-      ),
-    ),
-  );
+  // HACK: the component and wrapper types come from dynamic imports, so React's element
+  // typing can't see them.
+  let element = createElement(mountedType as Parameters<typeof createElement>[0], props);
+  for (const wrapper of [...request.wrappers].reverse()) {
+    const wrapperType = await loadWrapper(wrapper);
+    if (wrapperType)
+      element = createElement(
+        wrapperType as ComponentType<typeof WRAPPER_PROPS>,
+        WRAPPER_PROPS,
+        element,
+      );
+  }
+  mountedRoot.render(createElement(Boundary, null, createElement(Providers, null, element)));
   await settle();
   return { ...capture(), firstCommitShapes };
 };
