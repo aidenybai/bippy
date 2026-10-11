@@ -29,6 +29,10 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
+      - uses: actions/cache@v4
+        with:
+          path: packages/bippy-analyzer/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ${{ matrix.task }}
       - if: matrix.task == 'build'

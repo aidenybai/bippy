@@ -10,3 +10,8 @@ export const Greeting = () => {
   const role = user();
   return role === "guest" ? <p>Sign in</p> : <p>Welcome</p>;
 };
+
+export const AdminBadge = () => {
+  const { isAdmin } = useUser();
+  return isAdmin ? <p>Admin</p> : null;
+};

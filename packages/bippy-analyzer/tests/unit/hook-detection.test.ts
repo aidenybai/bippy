@@ -76,7 +76,7 @@ describe("getReactExportName", () => {
   });
 
   it("gives nothing for functions declared outside React", () => {
-    expect(exportNames.get("useUser")).toEqual([null]);
+    expect(exportNames.get("useUser")).toEqual([null, null]);
     expect(exportNames.get("user")).toEqual([null]);
   });
 
@@ -116,6 +116,11 @@ describe("hook detection through the checker", () => {
     const current = getBinding(getComponent(project, "Profile"), "current");
     expect(current.kind).toBe("hook");
     expect(current.hookKind).toBe("Custom");
+  });
+
+  it("types a destructured custom hook call by the call's return type", () => {
+    const user = getBinding(getComponent(project, "AdminBadge"), "useUser()");
+    expect(user.domain).toEqual({ kind: "Opaque", typeText: "User" });
   });
 
   it("treats a non-hook function named user as a plain call", () => {

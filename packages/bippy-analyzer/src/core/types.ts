@@ -142,7 +142,13 @@ export type SymbolicValue =
   | { kind: "Setter"; binding: Binding }
   | { kind: "Dispatch"; binding: Binding; reducer: SymbolicValue }
   | { kind: "Props" }
-  | { kind: "HookResult"; hookKind: HookKind; name: string; args: SymbolicValue[] }
+  | {
+      kind: "HookResult";
+      hookKind: HookKind;
+      name: string;
+      args: SymbolicValue[];
+      loc: SourceLocation;
+    }
   | { kind: "Global"; name: string; module: string | null }
   | { kind: "Unknown"; reason: string; loc: SourceLocation };
 

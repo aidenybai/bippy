@@ -420,7 +420,7 @@ export class Interpreter {
         const binding = this.#createBinding(
           `${value.name}()`,
           getHookBindingKind(value.hookKind),
-          instruction.loc,
+          value.loc,
           { hookKind: value.hookKind },
         );
         this.#write(property.place, this.#readField(binding, [key], property.place.loc));
@@ -719,7 +719,7 @@ export class Interpreter {
       return this.#callFunction(args[0], [], loc, state);
     if (hookKind === "useCallback" && args[0]) return args[0];
     const name = callee.kind === "Global" ? callee.name : hookKind;
-    return { kind: "HookResult", hookKind, name, args };
+    return { kind: "HookResult", hookKind, name, args, loc };
   }
 
   #evaluateMethodCall(
