@@ -550,9 +550,9 @@ const getComponentType = (value: unknown): unknown =>
   isComponentType(value) ? value : Reflect.get(Object(value), "Root");
 
 /**
- * Loads the first candidate module that exports the wrapper. A package may export it under
- * a shorter name than its errors use, like `Content` for Radix's internal `MenuContent`, or
- * only as its `Root`.
+ * Loads the first candidate module, or namespace of parts in it, that exports the wrapper.
+ * A package may export it under a shorter name than its errors use, like `Content` for
+ * Radix's internal `MenuContent`, or only as its `Root`.
  */
 const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
   for (const candidate of wrapper.candidates) {
@@ -560,9 +560,12 @@ const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
       specifier: candidate.specifier,
       importer: candidate.importer,
     });
-    const moduleExports: Record<string, unknown> = await import(
+    const imported: Record<string, unknown> = await import(
       /* @vite-ignore */ `${WRAPPER_PATH}?${query}`
     ).catch(() => ({}));
+    const moduleExports: Record<string, unknown> = candidate.namespace
+      ? Object(imported[candidate.namespace])
+      : imported;
     const shortName = candidate.isRootAllowed
       ? Object.keys(moduleExports)
           .filter((name) => /^[A-Z]/.test(name) && candidate.exportName.endsWith(name))

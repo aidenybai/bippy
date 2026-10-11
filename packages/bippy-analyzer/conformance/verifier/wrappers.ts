@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import type { Wrapper, WrapperCandidate } from "./types.js";
 
-const BARE_IMPORT_PATTERN = /from\s+["']([^."'][^"']*)["']/g;
+const PACKAGE_IMPORT_PATTERN = /import\s+([^;]*?)\s*from\s+["']([^."'][^"']*)["']/g;
+const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
+const NAMESPACE_NAME_PATTERN = /^(?:type\s+)?([A-Z]\w*)/;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
 const PROVIDER_NAME_PATTERNS = [
   /(?:within|inside|outside of|outside|from|descendant of)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*)/,
@@ -21,11 +23,35 @@ const getSharedPrefixLength = (left: string, right: string): number => {
   return length;
 };
 
+interface PackageImport {
+  specifier: string;
+  namespace: string | null;
+}
+
+/**
+ * The packages a file imports, and the namespaces of parts it imports from them by name,
+ * like `DropdownMenu` in `import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"`.
+ */
+const getPackageImports = (file: string): PackageImport[] => {
+  const packageImports = new Map<string, PackageImport>();
+  for (const [, clause = "", specifier = ""] of readFileSync(file, "utf8").matchAll(
+    PACKAGE_IMPORT_PATTERN,
+  )) {
+    packageImports.set(specifier, { specifier, namespace: null });
+    for (const namedImport of NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []) {
+      const namespace = NAMESPACE_NAME_PATTERN.exec(namedImport.trim())?.[1];
+      if (namespace) packageImports.set(`${specifier}#${namespace}`, { specifier, namespace });
+    }
+  }
+  return [...packageImports.values()];
+};
+
 /**
  * The parent a component says it needs when it throws without one, like `Menu` in
  * "`MenuItem` must be used within `Menu`", and where it might come from: a project export
- * of that name, nearest first, or the packages the component imports, whose `Root` stands
- * in when the name is internal to the package.
+ * of that name, nearest first, or the packages the component imports and the namespaces
+ * of parts it imports from them, whose `Root` stands in when the name is internal to the
+ * package.
  */
 export const findWrapper = (
   error: string,
@@ -40,22 +66,20 @@ export const findWrapper = (
   );
   const projectCandidates = projectFiles.map((file): WrapperCandidate => ({
     specifier: file,
+    namespace: null,
     importer: componentFile,
     exportName: name,
     isRootAllowed: false,
   }));
-  const packageCandidates = [
-    ...new Set(
-      [...readFileSync(componentFile, "utf8").matchAll(BARE_IMPORT_PATTERN)].map(
-        ([, specifier = ""]) => specifier,
-      ),
-    ),
-  ].map((specifier): WrapperCandidate => ({
-    specifier,
-    importer: componentFile,
-    exportName: name,
-    isRootAllowed: true,
-  }));
+  const packageCandidates = getPackageImports(componentFile).map(
+    ({ specifier, namespace }): WrapperCandidate => ({
+      specifier,
+      namespace,
+      importer: componentFile,
+      exportName: name,
+      isRootAllowed: true,
+    }),
+  );
   const candidates = [...projectCandidates, ...packageCandidates];
   return candidates.length > 0 ? { name, candidates } : null;
 };
@@ -86,6 +110,7 @@ export const findCompoundRoot = (
         candidates: [
           {
             specifier: componentFile,
+            namespace: null,
             importer: componentFile,
             exportName: name,
             isRootAllowed: false,

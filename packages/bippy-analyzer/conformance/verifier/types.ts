@@ -58,6 +58,7 @@ export interface Scenario {
 
 export interface WrapperCandidate {
   specifier: string;
+  namespace: string | null;
   importer: string;
   exportName: string;
   isRootAllowed: boolean;
