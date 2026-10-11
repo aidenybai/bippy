@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ixartz/Next-js-Boilerplate",
+  "revision": "b83157a8018f55b926a3c25a4b7a7e14b0dfbc35",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}
