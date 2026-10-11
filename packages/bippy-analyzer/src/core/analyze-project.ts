@@ -8,6 +8,7 @@ import type {
   JsxProp,
   PrimitiveSymbolicValue,
   ProjectAnalysis,
+  Sample,
   SymbolicValue,
 } from "./types.js";
 import { forEachJsxElement } from "./utils/traverse.js";
@@ -20,8 +21,35 @@ const isPrimitive = (value: SymbolicValue | undefined): value is PrimitiveSymbol
   value?.kind === "Primitive";
 
 /**
+ * A literal a call site passes, as a sample, like the options array of a `<Select>`. Null
+ * when any part of it is computed.
+ */
+const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
+  if (value?.kind === "Primitive") return getSampleOfValue(value.value);
+  if (value?.kind === "ArrayExpression" && value.spreads.length === 0) {
+    const items = value.elements.flatMap((element): Sample[] => {
+      const sample = getLiteralSample(element);
+      return sample ? [sample] : [];
+    });
+    return items.length === value.elements.length ? { kind: "Array", items } : null;
+  }
+  if (value?.kind === "ObjectExpression" && value.spreads.length === 0) {
+    const fields = value.properties.flatMap(({ key, value: field }): Array<[string, Sample]> => {
+      const sample = getLiteralSample(field);
+      return sample ? [[key, sample]] : [];
+    });
+    return fields.length === value.properties.length
+      ? { kind: "Object", fields: Object.fromEntries(fields) }
+      : null;
+  }
+  return null;
+};
+
+/**
  * Gives untyped props, as in plain JavaScript, the literal values their call sites pass.
- * A prop is narrowed only when every call site in the project passes a literal for it.
+ * A prop is narrowed only when every call site in the project passes a primitive literal
+ * for it. Otherwise the literals some call sites pass, like arrays of options, are only
+ * samples to mount it with.
  */
 const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
   const usages: JsxExpressionValue[] = [];
@@ -41,7 +69,16 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
               candidate.kind === "JsxAttribute" && candidate.name === binding.propName,
           )?.value,
       );
-      if (!passedValues.every(isPrimitive)) continue;
+      if (!passedValues.every(isPrimitive)) {
+        const literalSamples = new Map(
+          passedValues.flatMap((passedValue): Array<[string, Sample]> => {
+            const sample = getLiteralSample(passedValue);
+            return sample ? [[JSON.stringify(sample), sample]] : [];
+          }),
+        );
+        binding.samples = [...literalSamples.values(), ...binding.samples];
+        continue;
+      }
       const literals = [...new Set(passedValues.map((passedValue) => passedValue.value))];
       binding.domain = {
         kind: "Cases",
