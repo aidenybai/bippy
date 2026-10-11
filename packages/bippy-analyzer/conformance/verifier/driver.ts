@@ -18,15 +18,31 @@ const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 4;
 const ASYNC_COMPONENT_ERROR = "async server component, which renders only on a server";
+const PAGE_TIMEOUT_MS = 30_000;
+
+/**
+ * Gives up on a page that stops answering, like one whose component rendered `<html>` and
+ * so replaced the harness document.
+ */
+const withTimeout = <Result>(promise: Promise<Result>): Promise<Result> =>
+  Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`page stopped responding after ${PAGE_TIMEOUT_MS} ms`)),
+        PAGE_TIMEOUT_MS,
+      ).unref(),
+    ),
+  ]);
 
 export const mountInPage = (page: Page, request: MountRequest): Promise<Capture> =>
-  page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request);
+  withTimeout(page.evaluate((mountRequest) => window.__verify.mount(mountRequest), request));
 
 export const performInPage = (page: Page, actionKey: string): Promise<Capture | null> =>
-  page.evaluate((key) => window.__verify.perform(key), actionKey);
+  withTimeout(page.evaluate((key) => window.__verify.perform(key), actionKey));
 
 export const listActionsInPage = (page: Page): Promise<Action[]> =>
-  page.evaluate(() => window.__verify.actions());
+  withTimeout(page.evaluate(() => window.__verify.actions()));
 
 /**
  * Where a newly found parent goes among the wrappers, outermost first: around the wrapper the
