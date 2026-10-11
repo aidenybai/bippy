@@ -4,6 +4,7 @@ import type {
   HIRFunction,
   IdentifierId,
   Instruction,
+  InstructionId,
   InstructionValue,
   Phi,
   Place,
@@ -27,6 +28,7 @@ import type {
   Domain,
   FunctionValue,
   HookResultValue,
+  JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
   JsxTag,
@@ -48,6 +50,15 @@ const MAX_INLINE_DEPTH = 4;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
+const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
+const SUSPENDED_DOMAIN: Domain = {
+  kind: "Cases",
+  cases: [
+    { kind: "Literal", value: true },
+    { kind: "Literal", value: false },
+  ],
+  origin: "type",
+};
 
 /**
  * How a region of the control-flow graph ended: by returning, by falling through from
@@ -185,6 +196,9 @@ const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
   return { kind: "UnaryExpression", operator, value };
 };
 
+const isSuspenseTag = (tag: SymbolicValue): boolean =>
+  tag.kind === "Global" && tag.module === "react" && SUSPENSE_TAG_PATTERN.test(tag.name);
+
 const getComponentName = (tag: SymbolicValue): string => {
   if (tag.kind === "Global") return tag.name;
   if (tag.kind === "Binding") return tag.binding.name;
@@ -296,7 +310,7 @@ export class Interpreter {
     name: string,
     kind: BindingKind,
     loc: SourceLocation,
-    options: Partial<Pick<Binding, "hookKind" | "propName" | "initial" | "inputs">> = {},
+    options: Partial<Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "domain">> = {},
   ): Binding {
     const key = `${kind}:${name}:${loc === GeneratedSource ? "generated" : loc.start.index}`;
     const existing = this.#bindings.get(key);
@@ -308,7 +322,7 @@ export class Interpreter {
       hookKind: options.hookKind ?? null,
       propName: options.propName ?? null,
       loc,
-      domain: this.#resolver.getDomain(loc),
+      domain: options.domain ?? this.#resolver.getDomain(loc),
       samples: kind === "prop" ? this.#resolver.getSamples(loc) : [],
       initial: options.initial ?? null,
       inputs: options.inputs ?? [],
@@ -495,6 +509,28 @@ export class Interpreter {
         : { kind: "Component", name: getComponentName(tag), declaration };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
     return { kind: "JsxExpression", tag: jsxTag, props, children, loc };
+  }
+
+  /**
+   * A `Suspense` boundary renders its fallback while anything inside it suspends, which the
+   * render can't decide, so it branches on whether it is suspended.
+   */
+  #buildSuspense(element: JsxExpressionValue, terminalId: InstructionId): SymbolicValue {
+    const fallback = element.props.find(
+      (prop) => prop.kind === "JsxAttribute" && prop.name === "fallback",
+    );
+    if (!fallback) return element;
+    const suspended = this.#createBinding("suspended", "suspense", element.loc, {
+      domain: SUSPENDED_DOMAIN,
+    });
+    return {
+      kind: "Conditional",
+      test: createBindingValue(suspended),
+      testKind: "truthy",
+      consequent: { ...element, children: [fallback.value] },
+      alternate: element,
+      branch: { terminalId, probe: "none", loc: element.loc },
+    };
   }
 
   #callFunction(
@@ -766,10 +802,11 @@ export class Interpreter {
     if (value.kind === "PropertyLoad")
       this.#propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
     this.#trackMutations(instruction);
-    this.#write(instruction.lvalue, this.#evaluateInstructionValue(value, state));
+    this.#write(instruction.lvalue, this.#evaluateInstructionValue(instruction, state));
   }
 
-  #evaluateInstructionValue(value: InstructionValue, state: WalkState): SymbolicValue {
+  #evaluateInstructionValue(instruction: Instruction, state: WalkState): SymbolicValue {
+    const { value } = instruction;
     switch (value.kind) {
       case "Primitive":
         return { kind: "Primitive", value: value.value };
@@ -881,13 +918,17 @@ export class Interpreter {
                 handlerId: null,
               },
         );
-        return this.#buildJsx(
-          this.#getJsxTag(value.tag),
+        const tag = this.#getJsxTag(value.tag);
+        const element = this.#buildJsx(
+          tag,
           value.tag.kind === "BuiltinTag" ? null : this.#resolver.getDeclarationKey(value.tag.loc),
           props,
           (value.children ?? []).map((child) => this.#read(child)),
           value.loc,
         );
+        return isSuspenseTag(tag) && element.kind === "JsxExpression"
+          ? this.#buildSuspense(element, instruction.id)
+          : element;
       }
       case "JsxFragment":
         return { kind: "JsxFragment", children: value.children.map((child) => this.#read(child)) };

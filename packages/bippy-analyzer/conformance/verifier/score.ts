@@ -103,7 +103,7 @@ interface TriggerLabel {
 }
 
 const FIRST_COMMIT = "first commit";
-const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call"]);
+const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
 const MAX_RECORDED_FAILURES = 10;
 const MAX_RENDERED_LENGTH = 300;
 const ORDERED_HOOK_KINDS = new Set<string>([
@@ -176,7 +176,11 @@ const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> 
 
 const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
   const hookBindings = analysis.bindings.filter(
-    (binding) => binding.kind !== "prop" && binding.kind !== "item" && binding.kind !== "call",
+    (binding) =>
+      binding.kind !== "prop" &&
+      binding.kind !== "item" &&
+      binding.kind !== "call" &&
+      binding.kind !== "suspense",
   );
   if (
     hookBindings.some((binding) => !binding.hookKind || !ORDERED_HOOK_KINDS.has(binding.hookKind))

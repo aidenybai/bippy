@@ -49,7 +49,8 @@ export type BindingKind =
   | "hook"
   | "ref"
   | "item"
-  | "call";
+  | "call"
+  | "suspense";
 
 /**
  * A name the render output depends on: a prop, a piece of state, a hook result, or a list item.
