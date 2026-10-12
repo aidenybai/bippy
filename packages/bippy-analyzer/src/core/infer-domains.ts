@@ -351,7 +351,7 @@ export class DomainResolver {
 
   getDomain(loc: SourceLocation): Domain {
     const type = this.#getType(loc);
-    return this.#isIndexedRead(loc) || this.#isOptionalRead(loc)
+    return this.#isIndexedRead(loc) || this.#isOptionalRead(loc) || this.#isDefaultedBinding(loc)
       ? getDomainWithUndefined(this.#checker, type)
       : getDomainOfType(this.#checker, type);
   }
@@ -379,6 +379,19 @@ export class DomainResolver {
     const objectType = this.#checker.getTypeAtLocation(objectNode);
     const property = objectType && this.#checker.getPropertyOfType(objectType, nameNode.text);
     return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
+  }
+
+  /**
+   * Whether the value at this location is destructured with a default, like `min = 0`,
+   * whose type leaves out the `undefined` the default replaces.
+   */
+  #isDefaultedBinding(loc: SourceLocation): boolean {
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    if (!node) return false;
+    const element = t.isBindingElement(node) ? node : node.parent;
+    return (
+      element !== undefined && t.isBindingElement(element) && element.initializer !== undefined
+    );
   }
 
   /**

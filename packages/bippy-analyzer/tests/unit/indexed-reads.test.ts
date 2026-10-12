@@ -10,4 +10,9 @@ describe("reads through an index signature", () => {
     expect(label.report.unreachableBranches).toEqual([]);
     expect(label.report.states).toHaveLength(2);
   });
+
+  it("lets a prop destructured with a default be undefined, which its type leaves out", () => {
+    const label = getComponent(project, "RangeLabel");
+    expect(label.report.unreachableBranches).toEqual([]);
+  });
 });
