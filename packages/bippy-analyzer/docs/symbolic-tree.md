@@ -64,6 +64,8 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
 5. Evaluates the HIR symbolically. Each value becomes an expression over bindings:
    - props, typed from the parameter
    - `useState`, `useReducer` and `useContext`
+   - the project's own custom hooks, run inline as part of the component, across files, so their state is the component's state and the functions they return are known
+   - zustand stores: every selector of one store reads a field of one value
    - other hooks, typed from their return type
    - `.map` items
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
@@ -73,7 +75,9 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
-   - calling into a custom hook's result or a context value, like `query.fetchNextPage()`, may change it to anything, later
+   - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it; it may not happen, since a consumer can render without its provider
+   - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state
+   - calling into any other hook's result or context value, like `query.fetchNextPage()`, may change it to anything, later
    - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
