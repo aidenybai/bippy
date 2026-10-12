@@ -26,6 +26,8 @@ const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
 const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)(?:<.*>)?$/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
+const SET_TYPE_PATTERN = /^(?:Readonly)?Set</;
+const MAP_TYPE_PATTERN = /^(?:Readonly)?Map</;
 const CONTEXT_TYPE_PATTERN = /^(?:React\.)?Context</;
 /** React's own escape hatch, which throws beside `children`, a prop sampled everywhere. */
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
@@ -260,6 +262,17 @@ const getSamples = (
           { kind: "Array", items: [elementSample] },
         ]
       : [{ kind: "Array", items: [] }];
+  }
+  if (SET_TYPE_PATTERN.test(typeText) && type.isTypeReference()) {
+    const [itemType] = checker.getTypeArguments(type);
+    const [item] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, itemType, depth + 1) : [];
+    return [{ kind: "Set", items: item ? [item] : [] }];
+  }
+  if (MAP_TYPE_PATTERN.test(typeText) && type.isTypeReference()) {
+    const [keyType, valueType] = checker.getTypeArguments(type);
+    const [key] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, keyType, depth + 1) : [];
+    const [value] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
+    return [{ kind: "Map", entries: key && value ? [[key, value]] : [] }];
   }
   if (PROMISE_TYPE_PATTERN.test(typeText) && type.isTypeReference()) {
     const [valueType] = checker.getTypeArguments(type);

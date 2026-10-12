@@ -38,3 +38,7 @@ export const Toolbar = ({ actions }: { actions: React.ReactNode[] }) => (
     ))}
   </div>
 );
+
+export const NamespaceFilter = ({ namespaces }: { namespaces: Set<string> }) => (
+  <p>{[...namespaces.values()].join(", ")}</p>
+);

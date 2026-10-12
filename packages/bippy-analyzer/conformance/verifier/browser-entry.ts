@@ -270,6 +270,10 @@ const hydrate = (sample: Sample): unknown => {
       return createElement("span", null, "text");
     case "Date":
       return new Date(sample.value);
+    case "Set":
+      return new Set(sample.items.map(hydrate));
+    case "Map":
+      return new Map(sample.entries.map(([key, value]) => [hydrate(key), hydrate(value)]));
     case "Promise":
       return Promise.resolve(hydrate(sample.value));
     case "Array":

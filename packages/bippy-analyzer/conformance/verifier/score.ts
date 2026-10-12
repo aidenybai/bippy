@@ -494,6 +494,8 @@ const formatSample = (sample: Sample): string => {
   if (sample.kind === "Element") return "<span>";
   if (sample.kind === "Promise") return `Promise(${formatSample(sample.value)})`;
   if (sample.kind === "Date") return `Date(${sample.value})`;
+  if (sample.kind === "Set") return `Set(${sample.items.map(formatSample).join(", ")})`;
+  if (sample.kind === "Map") return "Map(…)";
   return sample.kind === "Function" ? "fn" : "undefined";
 };
 

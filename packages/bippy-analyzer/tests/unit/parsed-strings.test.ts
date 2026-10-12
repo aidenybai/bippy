@@ -56,4 +56,10 @@ describe("samples of parsed strings", () => {
       { kind: "Array", items: [{ kind: "Value", value: "text" }] },
     ]);
   });
+
+  it("mounts a Set with a Set", () => {
+    expect(getBinding(getComponent(project, "NamespaceFilter"), "namespaces").samples).toEqual([
+      { kind: "Set", items: [{ kind: "Value", value: "text" }] },
+    ]);
+  });
 });

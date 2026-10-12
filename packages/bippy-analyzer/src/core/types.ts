@@ -40,6 +40,8 @@ export type Sample =
   | { kind: "Function"; returns: Sample | null }
   | { kind: "Element" }
   | { kind: "Date"; value: string }
+  | { kind: "Set"; items: Sample[] }
+  | { kind: "Map"; entries: Array<[Sample, Sample]> }
   | { kind: "Promise"; value: Sample }
   | { kind: "Array"; items: Sample[] }
   | { kind: "Object"; fields: Record<string, Sample>; isOpen: boolean };
