@@ -44,3 +44,18 @@ export const DeletableList = ({ ids }: { ids: string[] }) => {
     </div>
   );
 };
+
+const Dialog = ({ desc }: { desc: React.ReactNode }) => <section>{desc}</section>;
+
+export const ConfirmDelete = () => {
+  const [value, setValue] = useState("");
+  return (
+    <Dialog
+      desc={
+        <label>
+          <input value={value} onChange={(event) => setValue(event.target.value)} />
+        </label>
+      }
+    />
+  );
+};

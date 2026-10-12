@@ -32,13 +32,24 @@ export const forEachRenderNode = (
   walk(value);
 };
 
+/**
+ * Calls `visit` on every JSX element of a render tree, including those passed in props,
+ * like a dialog's `desc={<form>…</form>}`, which the component it's passed to renders.
+ */
 export const forEachJsxElement = (
   value: SymbolicValue,
   visit: (element: JsxExpressionValue) => void,
-): void =>
-  forEachRenderNode(value, (node) => {
-    if (node.kind === "JsxExpression") visit(node);
-  });
+): void => {
+  const visited = new WeakSet<SymbolicValue>();
+  const walk = (root: SymbolicValue): void =>
+    forEachRenderNode(root, (node) => {
+      if (node.kind !== "JsxExpression" || visited.has(node)) return;
+      visited.add(node);
+      visit(node);
+      for (const prop of node.props) if (prop.kind === "JsxAttribute") walk(prop.value);
+    });
+  walk(value);
+};
 
 const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
   switch (value.kind) {

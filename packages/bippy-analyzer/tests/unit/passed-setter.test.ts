@@ -27,4 +27,10 @@ describe("setters passed to a child", () => {
     expect(handler?.trigger).toEqual({ kind: "Event", tag: "List", event: "renderAction" });
     expect(handler?.updates.map((update) => update.binding.name)).toEqual(["deletingId"]);
   });
+
+  it("runs the handlers in JSX passed in a prop other than children", () => {
+    const [handler] = getComponent(project, "ConfirmDelete").analysis.handlers;
+    expect(handler?.trigger).toEqual({ kind: "Event", tag: "input", event: "onChange" });
+    expect(handler?.updates.map((update) => update.binding.name)).toEqual(["value"]);
+  });
 });
