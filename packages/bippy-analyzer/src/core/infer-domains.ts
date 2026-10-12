@@ -26,6 +26,8 @@ const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
 const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
+/** React's own escape hatch, which throws beside `children`, a prop sampled everywhere. */
+const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 /** A DOM node, which no plain value can stand in for, like a portal's container. */
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
@@ -144,7 +146,9 @@ const dedupeSamples = (samples: Sample[]): Sample[] => [
  */
 const getObjectSample = (checker: Checker, type: Type, depth: number): Sample => {
   if (depth >= MAX_SAMPLE_DEPTH) return { kind: "Object", fields: {}, isOpen: true };
-  const properties = checker.getPropertiesOfType(type);
+  const properties = checker
+    .getPropertiesOfType(type)
+    .filter((property) => !UNSAMPLED_FIELDS.has(property.name));
   const fields: Record<string, Sample> = {};
   for (const property of properties.slice(0, MAX_SAMPLE_FIELDS)) {
     const definedSample = getSamples(
