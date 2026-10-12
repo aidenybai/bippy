@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../src/core/analyze-project.js";
 import type { AnalyzedComponent } from "../../src/core/types.js";
+import type { ProjectIndex } from "./types.js";
 import { exploreComponent } from "./driver.js";
 import { collectMutationProbes } from "./mutation.js";
 import { collectProbes, scoreComponent } from "./score.js";
@@ -14,11 +15,13 @@ import type { Harness } from "./server.js";
 
 export interface ProjectHarness extends Harness {
   knownComponents: Map<string, string>;
+  projectIndex: ProjectIndex;
 }
 
 /**
- * Starts the harness for a project: probes on the components it will mount, and the
- * runtime name of every component so a render can be matched by declaration.
+ * Starts the harness for a project: probes on the components it will mount, the runtime
+ * name of every component so a render can be matched by declaration, and an index of the
+ * project's exports to find parents in.
  */
 export const startProjectHarness = async (
   appDirectory: string,
@@ -38,6 +41,14 @@ export const startProjectHarness = async (
   );
   return {
     ...harness,
+    projectIndex: {
+      exports: harness.exportIndex,
+      components: new Map(
+        analyzed.flatMap(({ analysis }) =>
+          analysis.exportName ? [[`${analysis.file}#${analysis.exportName}`, analysis]] : [],
+        ),
+      ),
+    },
     knownComponents: new Map(
       analyzed.flatMap(({ analysis }) =>
         analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
@@ -124,7 +135,7 @@ export const verifyProject = async (
             page,
             component.analysis,
             harness.getModuleUrl(component.analysis.file),
-            harness.exportIndex,
+            harness.projectIndex,
           )
         : [];
       return {

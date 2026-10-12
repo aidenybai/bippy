@@ -1,4 +1,4 @@
-import type { Sample } from "../../src/core/types.js";
+import type { ComponentAnalysis, Sample } from "../../src/core/types.js";
 
 export const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 export const SETUP_PATH = "/__bippy_verify_setup.tsx";
@@ -60,6 +60,7 @@ export interface Scenario {
 export interface WrapperCandidate {
   specifier: string;
   namespace: string | null;
+  props: Record<string, Sample>;
   importer: string;
   exportName: string;
   isRootAllowed: boolean;
@@ -72,6 +73,16 @@ export interface WrapperCandidate {
 export interface Wrapper {
   name: string;
   candidates: WrapperCandidate[];
+}
+
+/**
+ * Where a component's parents are looked up: every export of the project by name, and
+ * the analysis of each exported component by `file#exportName`, whose props a project
+ * parent mounts with.
+ */
+export interface ProjectIndex {
+  exports: Map<string, string[]>;
+  components: Map<string, ComponentAnalysis>;
 }
 
 export interface MountRequest {

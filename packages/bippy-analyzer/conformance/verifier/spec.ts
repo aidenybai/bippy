@@ -124,7 +124,7 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
         page,
         { ...request, scenario: null },
         analysis,
-        project.exportIndex,
+        project.projectIndex,
       );
       const session: Session = { component, observations: [] };
       sessions.push(session);

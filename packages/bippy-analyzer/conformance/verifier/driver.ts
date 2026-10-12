@@ -3,7 +3,7 @@ import type { ComponentAnalysis, Sample } from "../../src/core/types.js";
 import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
-import type { Action, Capture, MountRequest, Wrapper } from "./types.js";
+import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types.js";
 import { findCompoundRoot, findSiblingParts, findWrapper, getErrorSubject } from "./wrappers.js";
 
 export interface Observation {
@@ -73,8 +73,9 @@ export const resolveWrappers = async (
   page: Page,
   request: MountRequest,
   analysis: ComponentAnalysis,
-  exportIndex: Map<string, string[]>,
+  project: ProjectIndex,
 ): Promise<Wrapper[]> => {
+  const { exports: exportIndex } = project;
   const wrappers: Wrapper[] = [];
   let added: { index: number; error: string } | null = null;
   while (wrappers.length < MAX_WRAPPERS) {
@@ -98,8 +99,9 @@ export const resolveWrappers = async (
       ? findSiblingParts(analysis.name, analysis.file, exportIndex)
       : compoundRoot;
     if (!wrapper || isWrapped(wrapper)) break;
+    const sampledWrapper = withSampledProps(wrapper, project);
     const index = capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers);
-    wrappers.splice(index, 0, wrapper);
+    wrappers.splice(index, 0, sampledWrapper);
     added = { index, error: capture.error };
   }
   return wrappers;
@@ -133,6 +135,18 @@ export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sam
   ),
 });
 
+/**
+ * Gives each candidate from the project the props its own analysis would mount it with, as
+ * a parent like a sortable list needs its items to render its parts at all.
+ */
+const withSampledProps = (wrapper: Wrapper, project: ProjectIndex): Wrapper => ({
+  ...wrapper,
+  candidates: wrapper.candidates.map((candidate) => {
+    const analysis = project.components.get(`${candidate.specifier}#${candidate.exportName}`);
+    return analysis ? { ...candidate, props: getDefaultProps(analysis) } : candidate;
+  }),
+});
+
 const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
   const props = getPropSamples(analysis);
   const base = getDefaultProps(analysis);
@@ -159,7 +173,7 @@ export const exploreComponent = async (
   page: Page,
   analysis: ComponentAnalysis,
   moduleUrl: string,
-  exportIndex: Map<string, string[]>,
+  project: ProjectIndex,
 ): Promise<Observation[]> => {
   const { exportName } = analysis;
   if (!exportName) return [];
@@ -176,7 +190,7 @@ export const exploreComponent = async (
       wrappers: [],
     },
     analysis,
-    exportIndex,
+    project,
   );
 
   for (const props of propCombinations) {

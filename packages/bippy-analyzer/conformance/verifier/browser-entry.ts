@@ -48,6 +48,11 @@ interface PendingMutationHit {
   renderCount: number;
 }
 
+interface LoadedWrapper {
+  type: unknown;
+  props: Record<string, unknown>;
+}
+
 interface RecordedError {
   message: string;
   depth: number | null;
@@ -567,7 +572,7 @@ const getComponentType = (value: unknown): unknown =>
  * Radix's internal `MenuContent`, a module under a longer one, like `DropdownMenu` for
  * `Menu`, or only as its `Root`.
  */
-const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
+const loadWrapper = async (wrapper: Wrapper): Promise<LoadedWrapper | null> => {
   for (const candidate of wrapper.candidates) {
     const query = new URLSearchParams({
       specifier: candidate.specifier,
@@ -593,7 +598,13 @@ const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
       (shortName ? moduleExports[shortName] : undefined) ??
       (candidate.isRootAllowed ? moduleExports.Root : undefined);
     const componentType = getComponentType(value);
-    if (isComponentType(componentType)) return componentType;
+    if (isComponentType(componentType))
+      return {
+        type: componentType,
+        props: Object.fromEntries(
+          Object.entries(candidate.props).map(([name, sample]) => [name, hydrate(sample)]),
+        ),
+      };
   }
   return null;
 };
@@ -650,13 +661,13 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   // HACK: the component and wrapper types come from dynamic imports, so React's element
   // typing can't see them.
   let element = createElement(mountedType as Parameters<typeof createElement>[0], props);
-  const wrapperTypes = await Promise.all(request.wrappers.map(loadWrapper));
-  for (let depth = wrapperTypes.length; depth > 0; depth--) {
-    const wrapperType = wrapperTypes[depth - 1];
-    if (wrapperType)
+  const loadedWrappers = await Promise.all(request.wrappers.map(loadWrapper));
+  for (let depth = loadedWrappers.length; depth > 0; depth--) {
+    const wrapper = loadedWrappers[depth - 1];
+    if (wrapper)
       element = createElement(
-        wrapperType as ComponentType<typeof WRAPPER_PROPS>,
-        WRAPPER_PROPS,
+        wrapper.type as ComponentType<Record<string, unknown>>,
+        { ...wrapper.props, ...WRAPPER_PROPS },
         createElement(getDepthMarker(depth), null, element),
       );
   }

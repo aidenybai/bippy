@@ -69,6 +69,7 @@ export const findWrapper = (
   const projectCandidates = projectFiles.map((file): WrapperCandidate => ({
     specifier: file,
     namespace: null,
+    props: {},
     importer: componentFile,
     exportName: name,
     isRootAllowed: false,
@@ -77,6 +78,7 @@ export const findWrapper = (
     ({ specifier, namespace }): WrapperCandidate => ({
       specifier,
       namespace,
+      props: {},
       importer: componentFile,
       exportName: name,
       isRootAllowed: true,
@@ -116,6 +118,7 @@ const createFileWrapper = (
   candidates: exportNames.map((exportName) => ({
     specifier: componentFile,
     namespace: null,
+    props: {},
     importer: componentFile,
     exportName,
     isRootAllowed: false,
