@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -79,6 +79,23 @@ export const Reactions = () => {
     <div>
       <Emoji emoji="❤️" />
       {current ? <p>{current}</p> : null}
+    </div>
+  );
+};
+
+export const Seeker = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [time, setTime] = useState(0);
+  const handleSeek = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const video = videoRef.current;
+    if (!video) return;
+    setTime(Number(event.target.value));
+  };
+  return (
+    <div>
+      <video ref={videoRef} />
+      <input onChange={handleSeek} />
+      {time > 0 ? <p>Seeked</p> : <p>Start</p>}
     </div>
   );
 };

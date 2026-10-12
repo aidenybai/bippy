@@ -53,4 +53,9 @@ describe("callbacks passed to hooks", () => {
   it("runs the handlers of a component declared inside this one, which set this one's state", () => {
     expect(getComponent(project, "Reactions").report.unreachableBranches).toEqual([]);
   });
+
+  it("doesn't assume a ref is still unset when a handler reads it", () => {
+    const [handler] = getComponent(project, "Seeker").analysis.handlers;
+    expect(handler?.updates.map((update) => update.binding.name)).toEqual(["time"]);
+  });
 });
