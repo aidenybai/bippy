@@ -781,7 +781,8 @@ export class Interpreter {
         this.#applyDispatch(callee, args[0], loc, state);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (this.#mode === "effect") this.#callBinding(callee, args, state);
+        if (this.#mode === "effect" && !this.#resolver.isPureMethod(calleePlace.loc))
+          this.#callBinding(callee, args, state);
         break;
       default:
         break;

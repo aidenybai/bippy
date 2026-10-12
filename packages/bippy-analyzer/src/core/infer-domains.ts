@@ -28,6 +28,67 @@ const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
 const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)\b/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
+const PURE_ARRAY_METHODS = new Set([
+  "at",
+  "concat",
+  "entries",
+  "every",
+  "filter",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+  "flat",
+  "flatMap",
+  "forEach",
+  "includes",
+  "indexOf",
+  "join",
+  "keys",
+  "lastIndexOf",
+  "map",
+  "reduce",
+  "reduceRight",
+  "slice",
+  "some",
+  "toReversed",
+  "toSorted",
+  "toSpliced",
+  "values",
+  "with",
+]);
+const PURE_STRING_METHODS = new Set([
+  "at",
+  "charAt",
+  "charCodeAt",
+  "codePointAt",
+  "concat",
+  "endsWith",
+  "includes",
+  "indexOf",
+  "lastIndexOf",
+  "localeCompare",
+  "match",
+  "matchAll",
+  "normalize",
+  "padEnd",
+  "padStart",
+  "repeat",
+  "replace",
+  "replaceAll",
+  "search",
+  "slice",
+  "split",
+  "startsWith",
+  "substring",
+  "toLocaleLowerCase",
+  "toLocaleUpperCase",
+  "toLowerCase",
+  "toUpperCase",
+  "trim",
+  "trimEnd",
+  "trimStart",
+]);
 
 const getPrimitiveTypeName = (type: Type): PrimitiveTypeName | null => {
   if (type.flags & TypeFlags.StringLike) return "string";
@@ -255,6 +316,30 @@ export class DomainResolver {
   getContextKey(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node ? getContextKey(this.#checker, node) : null;
+  }
+
+  /**
+   * Whether the method a callee names changes nothing when called, like an array's `find`
+   * or a string's `replace`. A nullish receiver, as in `items?.find()`, never reaches it.
+   */
+  isPureMethod(calleeLoc: SourceLocation): boolean {
+    const node = findNodeAtLocation(this.#sourceFile, calleeLoc);
+    if (!node || !t.isPropertyAccessExpression(node)) return false;
+    const method = node.name.text;
+    const type = this.#checker.getTypeAtLocation(node.expression);
+    if (!type) return false;
+    const members = (type.isUnionType() ? type.getTypes() : [type]).filter(
+      (member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)),
+    );
+    return (
+      members.length > 0 &&
+      members.every((member) =>
+        member.flags & TypeFlags.StringLike
+          ? PURE_STRING_METHODS.has(method)
+          : (this.#checker.isArrayType(member) || member.isTupleType()) &&
+            PURE_ARRAY_METHODS.has(method),
+      )
+    );
   }
 
   isReactElement(loc: SourceLocation): boolean {
