@@ -69,3 +69,16 @@ export const Dictation = () => {
   };
   return transcript ? <p>{transcript}</p> : <button onClick={listen}>Listen</button>;
 };
+
+export const Reactions = () => {
+  const [current, setCurrent] = useState<string | null>(null);
+  const Emoji = ({ emoji }: { emoji: string }) => (
+    <button onClick={() => setCurrent(emoji)}>{emoji}</button>
+  );
+  return (
+    <div>
+      <Emoji emoji="❤️" />
+      {current ? <p>{current}</p> : null}
+    </div>
+  );
+};

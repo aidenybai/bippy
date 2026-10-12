@@ -616,14 +616,22 @@ export class Interpreter {
           : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
     // A component gets its children as a prop, so a function child, like the render function
-    // of `<Geographies>{({ geographies }) => …}</Geographies>`, is a render prop.
+    // of `<Geographies>{({ geographies }) => …}</Geographies>`, is a render prop, and so is a
+    // component declared inside this one, like `<Emoji />`, which React calls with its props.
     const functionChildren =
       jsxTag.kind === "BuiltinTag" ? [] : children.filter((child) => child.kind === "Function");
+    const renderFunctions = tag.kind === "Function" ? [tag] : [];
     const jsxProps: Array<JsxProp | JsxSpreadProp> = [
       ...props,
       ...functionChildren.map((value): JsxProp => ({
         kind: "JsxAttribute",
         name: "children",
+        value,
+        handlerId: null,
+      })),
+      ...renderFunctions.map((value): JsxProp => ({
+        kind: "JsxAttribute",
+        name: "render",
         value,
         handlerId: null,
       })),

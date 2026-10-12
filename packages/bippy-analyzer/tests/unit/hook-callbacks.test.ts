@@ -49,4 +49,8 @@ describe("callbacks passed to hooks", () => {
   it("runs a function a handler stores on an object, which whatever reads it may call", () => {
     expect(getComponent(project, "Dictation").report.unreachableBranches).toEqual([]);
   });
+
+  it("runs the handlers of a component declared inside this one, which set this one's state", () => {
+    expect(getComponent(project, "Reactions").report.unreachableBranches).toEqual([]);
+  });
 });
