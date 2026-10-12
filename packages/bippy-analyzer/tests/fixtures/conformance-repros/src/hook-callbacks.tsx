@@ -208,3 +208,14 @@ export const WorkspaceLoader = ({ load }: { load: () => Promise<void> }) => {
   };
   return loading ? <p>Loading</p> : <p>Ready</p>;
 };
+
+const useCallbackRefState = <T,>() => {
+  const [refValue, setRefValue] = useState<T | null>(null);
+  const refCallback = (value: T | null) => setRefValue(value);
+  return [refValue, refCallback] as const;
+};
+
+export const MenuContent = () => {
+  const [menuNode, setMenuNode] = useCallbackRefState<HTMLDivElement>();
+  return <div ref={setMenuNode}>{menuNode ? "Measured" : "Measuring"}</div>;
+};

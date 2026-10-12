@@ -101,4 +101,10 @@ describe("callbacks passed to hooks", () => {
   it("reads a function an effect calls when it runs, though it's declared below the effect", () => {
     expect(getComponent(project, "WorkspaceLoader").report.unreachableBranches).toEqual([]);
   });
+
+  it("destructures the list a project hook returns, like a value and its ref callback", () => {
+    const menu = getComponent(project, "MenuContent");
+    expect(menu.analysis.handlers.map((handler) => handler.trigger.kind)).toEqual(["Effect"]);
+    expect(menu.report.unreachableBranches).toEqual([]);
+  });
 });

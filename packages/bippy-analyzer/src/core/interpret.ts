@@ -527,6 +527,9 @@ export class Interpreter {
     value: SymbolicValue,
     loc: SourceLocation,
   ): Array<SymbolicValue | null> {
+    // A list whose items are known, like what a project hook returns as `[value, setValue]`.
+    if (value.kind === "ArrayExpression" && value.spreads.length === 0)
+      return items.map((_, index) => value.elements[index] ?? UNDEFINED_VALUE);
     if (value.kind !== "HookResult") return items.map(() => null);
     const [valuePlace] = items;
     const [firstArgument, secondArgument] = value.args;
