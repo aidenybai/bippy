@@ -118,6 +118,24 @@ const isMutatingMethod = (target: object, key: string | symbol): boolean =>
   typeof key === "string" &&
   (target instanceof Date ? key.startsWith("set") : MUTATING_COLLECTION_METHODS.has(key));
 
+/**
+ * Whether redefining a property keeps its value, as `Object.freeze` does, which React DOM's
+ * development build calls on every `style` object it renders.
+ */
+const isFreezing = (
+  target: object,
+  key: string | symbol,
+  descriptor: PropertyDescriptor,
+): boolean => {
+  const current = Reflect.getOwnPropertyDescriptor(target, key);
+  return (
+    current !== undefined &&
+    descriptor.get === undefined &&
+    descriptor.set === undefined &&
+    (!("value" in descriptor) || Object.is(descriptor.value, current.value))
+  );
+};
+
 const trackWrites = (target: object, isDeep: boolean): object => {
   const existing = writeTrackers.get(target);
   if (existing) return existing;
@@ -155,7 +173,7 @@ const trackWrites = (target: object, isDeep: boolean): object => {
       return Reflect.deleteProperty(innerTarget, key);
     },
     defineProperty: (innerTarget, key, descriptor) => {
-      recordWrite(innerTarget);
+      if (!isFreezing(innerTarget, key, descriptor)) recordWrite(innerTarget);
       return Reflect.defineProperty(innerTarget, key, descriptor);
     },
   });
