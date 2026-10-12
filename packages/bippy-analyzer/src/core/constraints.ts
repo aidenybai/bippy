@@ -287,6 +287,18 @@ const restrictPlace = (
 };
 
 /**
+ * Whether a value reads something the analysis can't see. Two unknowns print alike, so
+ * an assumption about one, kept by its text, would decide the other.
+ */
+const hasUnknownPart = (value: SymbolicValue): boolean => {
+  let hasUnknown = false;
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Unknown") hasUnknown = true;
+  });
+  return hasUnknown;
+};
+
+/**
  * Narrows `constraints` by assuming `value` tests as `outcome`. Returns `null` when that
  * contradicts what is already known.
  */
@@ -329,6 +341,7 @@ export const assume = (
       if (restricted) return restricted;
     }
   }
+  if (hasUnknownPart(value)) return constraints;
   const next = cloneConstraints(constraints);
   next.assumptions.set(formatSymbolicValue(value), {
     outcome,
