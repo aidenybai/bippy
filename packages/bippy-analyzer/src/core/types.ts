@@ -267,6 +267,8 @@ export interface ComponentAnalysis {
   propsSample: Sample | null;
   /** The values the component provides to contexts, by each context's declaration key. */
   providedContexts: ProvidedContext[];
+  /** A sample of the value each context the component reads holds, by declaration key. */
+  contextSamples: Map<string, Sample>;
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
   /** The guards each branch's value was computed under, as formatted keys. */

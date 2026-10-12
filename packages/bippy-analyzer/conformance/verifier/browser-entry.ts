@@ -627,10 +627,14 @@ const isComponentType = (value: unknown): boolean =>
   (typeof value === "object" && value !== null && "$$typeof" in value);
 
 /**
- * A component, or the `Root` of a namespace of parts, like Base UI's `Menu`.
+ * A component, the provider of a context, or the `Root` of a namespace of parts, like Base
+ * UI's `Menu`. React 18 renders a context itself as its consumer.
  */
-const getComponentType = (value: unknown): unknown =>
-  isComponentType(value) ? value : Reflect.get(Object(value), "Root");
+const getComponentType = (value: unknown): unknown => {
+  if (!isComponentType(value)) return Reflect.get(Object(value), "Root");
+  const provider = Reflect.get(Object(value), "Provider");
+  return "Consumer" in Object(value) && isComponentType(provider) ? provider : value;
+};
 
 /**
  * Loads the first candidate module, or namespace of parts in it, that exports the wrapper.

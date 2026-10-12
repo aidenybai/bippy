@@ -131,6 +131,23 @@ const collectContextModels = (analyses: ComponentAnalysis[]): ContextModels => {
 };
 
 /**
+ * Keys a component's context samples by the file name a context is declared in, as a test
+ * imports it, rather than the checker's path, which is lowercase where file names ignore case.
+ */
+const withContextFileNames = (
+  analysis: ComponentAnalysis,
+  fileNames: Map<string, string>,
+): ComponentAnalysis => ({
+  ...analysis,
+  contextSamples: new Map(
+    [...analysis.contextSamples].map(([contextKey, sample]) => {
+      const [path = "", name = ""] = contextKey.split("#");
+      return [`${fileNames.get(path) ?? path}#${name}`, sample];
+    }),
+  ),
+});
+
+/**
  * Analyzes every component in a TypeScript project: lowers each to HIR, runs the compiler
  * passes and ours, and lists its states.
  */
@@ -187,8 +204,12 @@ export const analyzeProject = (
         : analysis;
     });
     inferPropsFromCallSites(analyses);
+    const fileNamesByPath = new Map(
+      contexts.map(({ sourceFile }) => [sourceFile.path, sourceFile.fileName]),
+    );
     const components = analyses
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
+      .map((analysis) => withContextFileNames(analysis, fileNamesByPath))
       .map((analysis) => ({ analysis, report: enumerateStates(analysis) }));
     return { components, fileCount: fileNames.length };
   });

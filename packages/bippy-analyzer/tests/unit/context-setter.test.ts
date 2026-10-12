@@ -20,4 +20,19 @@ describe("context setters", () => {
     );
     expect(update?.isAsync).toBe(true);
   });
+
+  it("samples the value a consumer reads, keyed by the file the context is declared in", () => {
+    const contextKey = getFixtureConfig("conformance-repros").replace(
+      "tsconfig.json",
+      "src/hooks/picker-context.tsx#PickerContext",
+    );
+    expect(toggle.analysis.contextSamples.get(contextKey)).toEqual({
+      kind: "Object",
+      fields: {
+        isPickerOpen: { kind: "Value", value: false },
+        setIsPickerOpen: { kind: "Function", returns: { kind: "Undefined" } },
+      },
+      isOpen: false,
+    });
+  });
 });

@@ -57,6 +57,8 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
 const DYNAMIC_TAG_NAME = "Dynamic";
+const isDefinedSample = (sample: Sample): boolean =>
+  sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);
 /** A state initialized from a value the program only asserts the type of, which can be anything. */
 const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
 const SUSPENDED_DOMAIN: Domain = {
@@ -316,6 +318,11 @@ export class Interpreter {
    */
   propsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
+  /**
+   * A sample of the value each context the component reads holds, by the context's
+   * declaration key, which a test mounts the context's provider with.
+   */
+  readonly contextSamples = new Map<string, Sample>();
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
   #mutations = new Map<number, Mutation>();
@@ -435,8 +442,12 @@ export class Interpreter {
    */
   #linkContext(binding: Binding, hook: HookResultValue): void {
     const contextKey = this.#contextKeys.get(hook);
-    const setters = contextKey ? this.#contextModels.get(contextKey) : undefined;
+    if (!contextKey) return;
+    const setters = this.#contextModels.get(contextKey);
     if (setters) this.#contextSetters.set(binding.id, setters);
+    const resolver = this.#hookResolvers.get(hook) ?? this.#resolver;
+    const sample = resolver.getSamples(binding.loc).find(isDefinedSample);
+    if (sample && !this.contextSamples.has(contextKey)) this.contextSamples.set(contextKey, sample);
   }
 
   #destructure(

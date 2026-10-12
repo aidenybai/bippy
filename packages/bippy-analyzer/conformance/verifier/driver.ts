@@ -98,7 +98,7 @@ export const resolveWrappers = async (
       ? findSiblingParts(analysis.name, analysis.file, exportIndex)
       : compoundRoot;
     if (!wrapper || isWrapped(wrapper)) break;
-    const sampledWrapper = withSampledProps(wrapper, project);
+    const sampledWrapper = withSampledProps(wrapper, project, analysis);
     const index = capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers);
     wrappers.splice(index, 0, sampledWrapper);
     added = { index, error: capture.error };
@@ -136,13 +136,21 @@ export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sam
 
 /**
  * Gives each candidate from the project the props its own analysis would mount it with, as
- * a parent like a sortable list needs its items to render its parts at all.
+ * a parent like a sortable list needs its items to render its parts at all, and a context
+ * the value the component reads from it.
  */
-const withSampledProps = (wrapper: Wrapper, project: ProjectIndex): Wrapper => ({
+const withSampledProps = (
+  wrapper: Wrapper,
+  project: ProjectIndex,
+  analysis: ComponentAnalysis,
+): Wrapper => ({
   ...wrapper,
   candidates: wrapper.candidates.map((candidate) => {
-    const analysis = project.components.get(`${candidate.specifier}#${candidate.exportName}`);
-    return analysis ? { ...candidate, props: getDefaultProps(analysis) } : candidate;
+    const key = `${candidate.specifier}#${candidate.exportName}`;
+    const parentAnalysis = project.components.get(key);
+    const contextSample = analysis.contextSamples.get(key);
+    if (parentAnalysis) return { ...candidate, props: getDefaultProps(parentAnalysis) };
+    return contextSample ? { ...candidate, props: { value: contextSample } } : candidate;
   }),
 });
 

@@ -5,6 +5,8 @@ const PACKAGE_IMPORT_PATTERN = /import\s+([^;]*?)\s*from\s+["']([^."'][^"']*)["'
 const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
 const NAMESPACE_NAME_PATTERN = /^(?:type\s+)?([A-Z]\w*)/;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
+/** A context's provider is the context itself to mount, as `X.Provider` isn't an export. */
+const CONTEXT_PROVIDER_SUFFIX = /\.Provider$/;
 const PROVIDER_NAME_PATTERNS = [
   /(?:within|inside|outside of|outside|from|descendant of|placed in)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*(?:\.[A-Z]\w*)?)/,
   /([A-Z]\w*Provider) was not found/,
@@ -60,7 +62,9 @@ export const findWrapper = (
   componentFile: string,
   exportIndex: Map<string, string[]>,
 ): Wrapper | null => {
-  const name = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1]).find(Boolean);
+  const name = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1])
+    .find(Boolean)
+    ?.replace(CONTEXT_PROVIDER_SUFFIX, "");
   if (!name) return null;
   const projectFiles = [...(exportIndex.get(name) ?? [])].sort(
     (left, right) =>
