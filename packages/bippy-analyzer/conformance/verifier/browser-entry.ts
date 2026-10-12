@@ -412,8 +412,28 @@ const trackRequest = <Result>(request: Promise<Result>): Promise<Result> => {
   pendingRequests++;
   return request.finally(() => pendingRequests--);
 };
+/**
+ * The answer to a request for another origin, which the harness blocks: JSON with any
+ * field, so an app that fetches its data from an API renders around it. Its `error` and
+ * `errors` are absent, as in a successful response.
+ */
+const createStandInResponse = (): Response => {
+  const response = new Response("{}", { headers: { "content-type": "application/json" } });
+  Object.defineProperty(response, "json", {
+    value: async () => createOpenObject({ error: undefined, errors: undefined }),
+  });
+  return response;
+};
+
 const originalFetch = window.fetch;
-window.fetch = (...args) => trackRequest(originalFetch(...args));
+window.fetch = (input, init) => {
+  const url = new URL(input instanceof Request ? input.url : String(input), location.href);
+  return trackRequest(
+    url.origin === location.origin || !url.protocol.startsWith("http")
+      ? originalFetch(input, init)
+      : Promise.resolve(createStandInResponse()),
+  );
+};
 const originalSend = XMLHttpRequest.prototype.send;
 XMLHttpRequest.prototype.send = function send(...args) {
   pendingRequests++;
@@ -424,13 +444,24 @@ XMLHttpRequest.prototype.send = function send(...args) {
 const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
 /**
+ * What an error says, including a plain object thrown with a `message`, as a data client
+ * might throw for a failed request.
+ */
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  const message: unknown =
+    typeof error === "object" && error ? Reflect.get(error, "message") : null;
+  return typeof message === "string" ? message : String(error);
+};
+
+/**
  * An error and how many wrappers enclose the component that threw it, read from the depth
  * markers on React's component stack: none when it threw above them all.
  */
 const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
   const componentStack = errorInfo?.componentStack;
   return {
-    message: error instanceof Error ? error.message : String(error),
+    message: getErrorMessage(error),
     depth: componentStack ? Number(DEPTH_MARKER_PATTERN.exec(componentStack)?.[1] ?? 0) : null,
   };
 };
@@ -462,6 +493,8 @@ const settle = async (): Promise<void> => {
   );
 };
 
+const getRecordedError = (): RecordedError | null => renderError ?? caughtError;
+
 const createEmptyCapture = (error: string, errorDepth: number | null = null): Capture => ({
   shapes: [],
   hookStates: [],
@@ -476,7 +509,7 @@ const createEmptyCapture = (error: string, errorDepth: number | null = null): Ca
 const capture = (): Capture => {
   const fiber = findMountedFiber();
   if (!fiber) {
-    const error = renderError ?? caughtError;
+    const error = getRecordedError();
     return createEmptyCapture(error?.message ?? "component did not render", error?.depth);
   }
   if (isTooLarge(fiber))
@@ -629,17 +662,74 @@ const isAsyncFunction = (
 ): value is (props: Record<string, unknown>) => Promise<unknown> =>
   typeof value === "function" && value.constructor.name === "AsyncFunction";
 
+const ASYNC_CLIENT_COMPONENT_PATTERN = /async\/await is not yet supported in Client Components/;
+
+const isFunctionComponent = (
+  value: unknown,
+): value is (props: Record<string, unknown>) => unknown =>
+  typeof value === "function" && !Reflect.get(Object(value.prototype), "isReactComponent");
+
+/**
+ * A component of the same name as one a server rendered, which returns what it rendered,
+ * so the mounted tree still has a fiber for it.
+ */
+const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNode) => {
+  // HACK: what a server component rendered is whatever React accepts as children.
+  const resolved = (): ReactNode => output as ReactNode;
+  Object.defineProperty(resolved, "name", { value: Reflect.get(Object(type), "name") });
+  const displayName: unknown = Reflect.get(Object(type), "displayName");
+  if (displayName) Object.assign(resolved, { displayName });
+  return resolved;
+};
+
+/**
+ * Calls a component as a server would, or returns null for one that only renders on the
+ * client, which throws outside React for want of its hooks.
+ */
+const callServerComponent = async (
+  type: (props: Record<string, unknown>) => unknown,
+  props: Record<string, unknown>,
+): Promise<{ output: unknown } | null> => {
+  try {
+    return { output: await type(props) };
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Renders the server components in a tree as a server does before the browser gets it:
- * each async component is awaited, and what it returns is resolved in turn.
+ * each async component is awaited, and what it returns, and every element passed as a
+ * prop, like a Suspense `fallback`, is resolved in turn. Once a page turns out to render
+ * async components under synchronous ones, every component is called this way, except
+ * those that need a client.
  */
-const resolveServerTree = async (node: unknown): Promise<unknown> => {
-  if (Array.isArray(node)) return Promise.all(node.map(resolveServerTree));
-  if (node instanceof Promise) return resolveServerTree(await node);
+const resolveServerTree = async (node: unknown, isEveryComponent = false): Promise<unknown> => {
+  if (Array.isArray(node))
+    return Promise.all(node.map((item) => resolveServerTree(item, isEveryComponent)));
+  if (node instanceof Promise) return resolveServerTree(await node, isEveryComponent);
   if (!isValidElement<Record<string, unknown>>(node)) return node;
-  if (isAsyncFunction(node.type)) return resolveServerTree(await node.type(node.props));
-  if (node.props.children === undefined) return node;
-  return cloneElement(node, { children: await resolveServerTree(node.props.children) });
+  const rendered =
+    isAsyncFunction(node.type) || (isEveryComponent && isFunctionComponent(node.type))
+      ? await callServerComponent(node.type, node.props)
+      : null;
+  if (rendered)
+    return createElement(
+      createResolvedComponent(
+        node.type,
+        await resolveServerTree(rendered.output, isEveryComponent),
+      ),
+      { key: node.key },
+    );
+  const props = await Promise.all(
+    Object.entries(node.props).map(async ([name, value]) => [
+      name,
+      isValidElement(value) || Array.isArray(value)
+        ? await resolveServerTree(value, isEveryComponent)
+        : value,
+    ]),
+  );
+  return cloneElement(node, Object.fromEntries(props));
 };
 
 /**
@@ -683,37 +773,58 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   const moduleExports: Record<string, unknown> = await import(
     /* @vite-ignore */ new URL(request.moduleUrl, location.origin).href
   );
-  mountedType = moduleExports[request.exportName];
-  if (!mountedType) return createEmptyCapture(`export ${request.exportName} not found`);
+  const componentType = moduleExports[request.exportName];
+  if (!componentType) return createEmptyCapture(`export ${request.exportName} not found`);
   const props = Object.fromEntries(
     Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
   );
-  if (isAsyncFunction(mountedType)) {
-    try {
-      const output = await resolveServerTree(await mountedType(props));
-      mountedType = () => output;
-    } catch (error) {
-      return createEmptyCapture(recordError(error).message);
-    }
-  }
-  const container = document.createElement("div");
-  document.body.replaceChildren(container);
-  mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
-  // HACK: the component and wrapper types come from dynamic imports, so React's element
-  // typing can't see them.
-  let element = createElement(mountedType as Parameters<typeof createElement>[0], props);
   const loadedWrappers = await Promise.all(request.wrappers.map(loadWrapper));
-  for (let depth = loadedWrappers.length; depth > 0; depth--) {
-    const wrapper = loadedWrappers[depth - 1];
-    if (wrapper)
-      element = createElement(
-        wrapper.type as ComponentType<Record<string, unknown>>,
-        { ...wrapper.props, ...WRAPPER_PROPS },
-        createElement(getDepthMarker(depth), null, element),
-      );
+  const render = async (type: unknown): Promise<void> => {
+    mountedRoot?.unmount();
+    renderError = null;
+    caughtError = null;
+    lastCommittedFiber = null;
+    firstCommitShapes = null;
+    mountedType = type;
+    const container = document.createElement("div");
+    document.body.replaceChildren(container);
+    mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
+    // HACK: the component and wrapper types come from dynamic imports, so React's element
+    // typing can't see them.
+    let element = createElement(type as Parameters<typeof createElement>[0], props);
+    for (let depth = loadedWrappers.length; depth > 0; depth--) {
+      const wrapper = loadedWrappers[depth - 1];
+      if (wrapper)
+        element = createElement(
+          wrapper.type as ComponentType<Record<string, unknown>>,
+          { ...wrapper.props, ...WRAPPER_PROPS },
+          createElement(getDepthMarker(depth), null, element),
+        );
+    }
+    mountedRoot.render(createElement(Boundary, null, createElement(Providers, null, element)));
+    await settle();
+  };
+  try {
+    if (isAsyncFunction(componentType)) {
+      const output = await resolveServerTree(await componentType(props));
+      await render(() => output);
+    } else {
+      await render(componentType);
+      const error = getRecordedError();
+      const rendered =
+        error &&
+        ASYNC_CLIENT_COMPONENT_PATTERN.test(error.message) &&
+        isFunctionComponent(componentType)
+          ? await callServerComponent(componentType, props)
+          : null;
+      if (rendered) {
+        const output = await resolveServerTree(rendered.output, true);
+        await render(() => output);
+      }
+    }
+  } catch (error) {
+    return createEmptyCapture(recordError(error).message);
   }
-  mountedRoot.render(createElement(Boundary, null, createElement(Providers, null, element)));
-  await settle();
   return { ...capture(), firstCommitShapes };
 };
 

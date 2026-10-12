@@ -92,9 +92,13 @@ const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample
   if (ELEMENT_TYPE_PATTERN.test(typeText)) return [{ kind: "Element" }];
   if (NODE_TYPE_PATTERN.test(typeText)) return [TEXT_SAMPLE];
   if (type.isUnionType()) {
-    return dedupeSamples(
+    const samples = dedupeSamples(
       type.getTypes().flatMap((member) => getSamples(checker, member, depth)),
-    ).slice(0, MAX_SAMPLE_ALTERNATIVES);
+    );
+    return [
+      ...samples.filter((sample) => sample.kind !== "Undefined"),
+      ...samples.filter((sample) => sample.kind === "Undefined"),
+    ].slice(0, MAX_SAMPLE_ALTERNATIVES);
   }
   if (type.isStringLiteralType() || type.isNumberLiteralType())
     return [{ kind: "Value", value: type.value }];
