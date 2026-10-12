@@ -599,6 +599,20 @@ const createNextContextSpec = (appDirectory: string): ProviderSpec | null => {
   };
 };
 
+/**
+ * The image config Next gives client code, its defaults without optimizing, since the
+ * harness has no `/_next/image` route and doesn't read the app's `next.config` for the hosts
+ * it allows.
+ */
+const getNextImageOptions = (appDirectory: string): Record<string, unknown> => {
+  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+  const configFile = nextDirectory && join(nextDirectory, "dist/shared/lib/image-config.js");
+  if (!configFile || !existsSync(configFile)) return {};
+  const { imageConfigDefault }: { imageConfigDefault: object } =
+    createRequire(configFile)(configFile);
+  return { __NEXT_IMAGE_OPTS: { ...imageConfigDefault, unoptimized: true } };
+};
+
 const getInstalledProviders = (appDirectory: string): ProviderSpec[] => {
   const installed = PROVIDER_SPECS.filter((spec) => isInstalled(appDirectory, spec.packageName));
   const nextContextSpec = createNextContextSpec(appDirectory);
@@ -741,6 +755,7 @@ export const startHarness = async (
     ...loadedEnv,
     ...setup.env,
     NODE_ENV: "development",
+    ...getNextImageOptions(appDirectory),
   };
   const importMetaEnv = { ...getPlaceholders(references.importMetaEnv), ...setup.env };
   const server = await createServer({
