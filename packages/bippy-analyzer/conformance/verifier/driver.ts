@@ -88,14 +88,21 @@ export const resolveWrappers = async (
   while (wrappers.length < MAX_WRAPPERS) {
     const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
+    const failure = classifyMountError(capture.error);
+    // The parent just added threw an error no further parent fixes, like a part that renders
+    // an `<input>` with children, when React's component stack places it at or above it.
+    const isParentBroken =
+      added !== null &&
+      failure === "other" &&
+      capture.errorDepth !== null &&
+      capture.errorDepth <= added.index;
     const isRejected =
-      added?.error === capture.error || classifyMountError(capture.error) === "did-not-render";
+      added?.error === capture.error || failure === "did-not-render" || isParentBroken;
     const retried = added && isRejected ? wrappers[added.index] : undefined;
     if (added && retried && retried.candidates.length > 1) {
       wrappers[added.index] = { ...retried, candidates: retried.candidates.slice(1) };
       continue;
     }
-    const failure = classifyMountError(capture.error);
     if (!PARENT_FAILURES.has(failure)) break;
     // A parent named after the component itself, as when it throws for want of its own
     // provider part, can't be what it needs.
