@@ -172,13 +172,18 @@ const getReachableCases = (
   domain: Domain,
 ): AbstractValue[] | null => {
   const typeCases = domain.kind === "Cases" ? domain.cases : null;
+  const updates = analysis.handlers
+    .flatMap((handler) => handler.updates)
+    .filter((update) => update.binding.id === binding.id);
+  // `useState()` with no initial value or type argument is typed `undefined`, though a handler
+  // sets it, like to a value cast `as any`, so the type says nothing about it.
+  const isUntypedState =
+    typeCases?.every((value) => value.kind === "Literal" && value.value === undefined) ?? false;
+  if (isUntypedState && updates.length > 0) return null;
   const initialCases = getFieldCases(binding.initial, path, binding, null);
   if (!Array.isArray(initialCases)) return typeCases;
   let reachable = dedupeValues(initialCases);
   const placeKey = getPlaceKey(binding, path);
-  const updates = analysis.handlers
-    .flatMap((handler) => handler.updates)
-    .filter((update) => update.binding.id === binding.id);
   for (let round = 0; round < REACHABILITY_ROUNDS; round++) {
     for (const update of updates) {
       const cases =

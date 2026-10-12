@@ -66,4 +66,8 @@ describe("callbacks passed to hooks", () => {
     ]);
     expect(toolbar.report.states).toHaveLength(2);
   });
+
+  it("doesn't trust the `undefined` type of `useState()` that a handler sets", () => {
+    expect(getComponent(project, "Tooltip").report.unreachableBranches).toEqual([]);
+  });
 });

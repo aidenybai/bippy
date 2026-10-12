@@ -107,3 +107,15 @@ export const PortalToolbar = () => {
     document.body,
   );
 };
+
+export const Tooltip = ({ label }: { label: string }) => {
+  const [tooltip, setTooltip] = useState();
+  return (
+    <div
+      onMouseOver={() => setTooltip(`${label}!` as any)}
+      onMouseOut={() => setTooltip(undefined)}
+    >
+      {tooltip ? <p>{tooltip}</p> : null}
+    </div>
+  );
+};
