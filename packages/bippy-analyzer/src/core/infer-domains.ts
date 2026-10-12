@@ -136,6 +136,23 @@ const getDomainOfType = (checker: Checker, type: Type | undefined): Domain => {
   return { kind: "Opaque", typeText: checker.typeToString(type) };
 };
 
+/** A domain that may also be `undefined`, like a key an index signature may not have. */
+const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {
+  const domain = getDomainOfType(checker, type);
+  const undefinedCase: AbstractValue = { kind: "Literal", value: undefined };
+  if (domain.kind === "Cases")
+    return domain.cases.some((value) => value.kind === "Literal" && value.value === undefined)
+      ? domain
+      : { ...domain, cases: [...domain.cases, undefinedCase] };
+  if (domain.kind === "Opaque" && type)
+    return {
+      kind: "Cases",
+      cases: [getAbstractValue(checker, type), undefinedCase],
+      origin: "type",
+    };
+  return domain;
+};
+
 const getSampleKey = (sample: Sample): string => JSON.stringify(sample);
 
 const dedupeSamples = (samples: Sample[]): Sample[] => [
@@ -313,7 +330,29 @@ export class DomainResolver {
   }
 
   getDomain(loc: SourceLocation): Domain {
-    return getDomainOfType(this.#checker, this.#getType(loc));
+    const type = this.#getType(loc);
+    return this.#isIndexedRead(loc)
+      ? getDomainWithUndefined(this.#checker, type)
+      : getDomainOfType(this.#checker, type);
+  }
+
+  /**
+   * Whether the value at this location is read through an index signature, like
+   * `envKeyMap["azure"]` of a `Record<string, Key>` or `items[0]` of an array, whose type
+   * promises nothing about which keys exist.
+   */
+  #isIndexedRead(loc: SourceLocation): boolean {
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    if (!node || !(t.isElementAccessExpression(node) || t.isPropertyAccessExpression(node)))
+      return false;
+    const objectType = this.#checker.getTypeAtLocation(node.expression);
+    if (!objectType || this.#checker.getIndexInfosOfType(objectType).length === 0) return false;
+    const key = t.isPropertyAccessExpression(node)
+      ? node.name.text
+      : t.isStringLiteral(node.argumentExpression) || t.isNumericLiteral(node.argumentExpression)
+        ? node.argumentExpression.text
+        : null;
+    return key === null || !this.#checker.getPropertyOfType(objectType, key);
   }
 
   /** Samples of the type at a location, of a value named `name`, like a prop's. */
