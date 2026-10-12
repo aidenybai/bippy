@@ -179,6 +179,14 @@ const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-
 const SERVER_SDK_PATTERN =
   /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?)$/;
 const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
+/** An SVG imported as a component, as `vite-plugin-svgr` does for `logo.svg?react`. */
+const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
+const SVG_COMPONENT_SOURCE = [
+  'import { createElement } from "react";',
+  "export default function SvgComponent({ title, titleId, ...props }) {",
+  '  return createElement("svg", props);',
+  "}",
+].join("\n");
 const NUQS_SERVER_ID = "\0bippy-verify-nuqs-server";
 const NUQS_CACHE_STUB = join(import.meta.dirname, "stubs/nuqs-cache.ts");
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
@@ -760,6 +768,7 @@ const createHarnessPlugin = (
     },
     load: (id) => {
       if (STYLESHEET_PATTERN.test(id)) return "";
+      if (SVG_COMPONENT_PATTERN.test(id)) return SVG_COMPONENT_SOURCE;
       if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
       if (id.startsWith(SERVER_SDK_PREFIX))
         return createServerSdkSource(
