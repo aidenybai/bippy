@@ -3,7 +3,8 @@ type Untyped = any;
 
 export const BookingRow = ({ booking, stays }: { booking: Untyped; stays: Untyped }) => (
   <p>
-    {booking.guests.fullName} {booking.status} {new Date(booking.startDate).getDay()}{" "}
+    {booking.guests.fullName} {booking.status.replace("-", " ")}{" "}
+    {new Date(booking.startDate).getDay()}{" "}
     {stays.reduce((total: number, stay: Untyped) => total + stay.numNights, 0)}
   </p>
 );

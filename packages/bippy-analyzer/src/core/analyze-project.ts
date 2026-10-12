@@ -40,22 +40,38 @@ const ARRAY_MEMBERS = new Set([
   "some",
   "sort",
 ]);
+const STRING_MEMBERS = new Set([
+  "charAt",
+  "endsWith",
+  "padEnd",
+  "padStart",
+  "replace",
+  "replaceAll",
+  "split",
+  "startsWith",
+  "substring",
+  "toLowerCase",
+  "toUpperCase",
+  "trim",
+]);
 const INDEX_PATTERN = /^\d+$/;
 
 /**
  * A sample of an untyped value named `name`, shaped by the paths a component reads from it,
  * like `{ guests: { fullName: "text" } }` for `booking.guests.fullName`. A value read with an
  * array's member or an index, like `bookings.reduce` or `items[0]`, is an array, one read
- * through `props`, like `children.props.id`, is an element, and a string is one its name
- * suggests, like a date for `startDate`.
+ * through `props`, like `children.props.id`, is an element, and a string, read with no
+ * member or a string's own, like `status.replace`, is one its name suggests, like a date for
+ * `startDate`.
  */
 const getShapeSample = (name: string, paths: string[][]): Sample => {
   const fields = new Map<string, string[][]>();
   for (const [field, ...rest] of paths)
     if (field !== undefined) fields.set(field, [...(fields.get(field) ?? []), rest]);
-  if (fields.size === 0) return getStringSamples(name)[0] ?? { kind: "Undefined" };
-  if (fields.has("props")) return { kind: "Element" };
   const names = [...fields.keys()];
+  if (names.length === 0 || names.some((field) => STRING_MEMBERS.has(field)))
+    return getStringSamples(name)[0] ?? { kind: "Undefined" };
+  if (fields.has("props")) return { kind: "Element" };
   if (names.some((name) => ARRAY_MEMBERS.has(name) || INDEX_PATTERN.test(name))) {
     const itemPaths = names.flatMap((name) =>
       INDEX_PATTERN.test(name) ? (fields.get(name) ?? []) : [],
