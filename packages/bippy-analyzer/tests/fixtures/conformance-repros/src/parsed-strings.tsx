@@ -42,3 +42,7 @@ export const Toolbar = ({ actions }: { actions: React.ReactNode[] }) => (
 export const NamespaceFilter = ({ namespaces }: { namespaces: Set<string> }) => (
   <p>{[...namespaces.values()].join(", ")}</p>
 );
+
+type SvgCache = Map<string, string>;
+
+export const CachedIcon = ({ cache }: { cache: SvgCache }) => <p>{cache.get("icon")}</p>;

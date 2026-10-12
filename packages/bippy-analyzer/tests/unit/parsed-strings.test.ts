@@ -62,4 +62,18 @@ describe("samples of parsed strings", () => {
       { kind: "Set", items: [{ kind: "Value", value: "text" }] },
     ]);
   });
+
+  it("mounts a Map behind an alias with a Map", () => {
+    expect(getBinding(getComponent(project, "CachedIcon"), "cache").samples).toEqual([
+      {
+        kind: "Map",
+        entries: [
+          [
+            { kind: "Value", value: "text" },
+            { kind: "Value", value: "text" },
+          ],
+        ],
+      },
+    ]);
+  });
 });
