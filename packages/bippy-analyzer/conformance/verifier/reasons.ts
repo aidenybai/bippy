@@ -53,5 +53,16 @@ const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   { failure: "unresponsive", pattern: /page stopped responding/ },
 ];
 
+const PARENT_NAME_PATTERNS = [
+  /(?:within|inside|outside of|outside|from|descendant of|placed in)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*(?:\.[A-Z]\w*)?)/,
+  /([A-Z]\w*Provider) was not found/,
+  /<([A-Z]\w*(?:\.[A-Z]\w*)?)> is missing/,
+  /wrapped in a <([A-Z]\w*)/,
+];
+
+/** The parent a provider error names, like `Menu` in "`MenuItem` must be used within `Menu`". */
+export const getParentName = (message: string): string | null =>
+  PARENT_NAME_PATTERNS.map((pattern) => pattern.exec(message)?.[1]).find(Boolean) ?? null;
+
 export const classifyMountError = (message: string): MountFailure =>
   MOUNT_FAILURE_PATTERNS.find(({ pattern }) => pattern.test(message))?.failure ?? "other";

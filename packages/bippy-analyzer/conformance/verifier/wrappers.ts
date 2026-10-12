@@ -1,6 +1,7 @@
 import { sep } from "node:path";
 import type { ComponentAnalysis } from "../../src/core/types.js";
 import { getDefaultProps } from "./props.js";
+import { getParentName } from "./reasons.js";
 import type { ExportedName, ProjectIndex, Wrapper } from "./types.js";
 
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
@@ -8,12 +9,6 @@ const CONTEXT_PROVIDER_SUFFIX = /(?<=Context)\.Provider$/;
 const CONTEXT_SUFFIX = /Context$/;
 const NAMESPACE_NAME_PATTERN = /^[A-Z]\w*$/;
 const NULL_HOOK_PATTERN = /of '(use[A-Z]\w*)\(\.\.\.\)' as it is (?:null|undefined)/;
-const PARENT_NAME_PATTERNS = [
-  /(?:within|inside|outside of|outside|from|descendant of|placed in)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*(?:\.[A-Z]\w*)?)/,
-  /([A-Z]\w*Provider) was not found/,
-  /<([A-Z]\w*(?:\.[A-Z]\w*)?)> is missing/,
-  /wrapped in a <([A-Z]\w*)/,
-];
 
 export interface ParentQuery {
   name: string;
@@ -58,9 +53,7 @@ const createProjectWrapper = (
  * context's `XContext.Provider` mounts as the context, or its exported `XProvider`.
  */
 export const getNamedParent = (error: string, project: ProjectIndex): string | null => {
-  const named = PARENT_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1])
-    .find(Boolean)
-    ?.replace(CONTEXT_PROVIDER_SUFFIX, "");
+  const named = getParentName(error)?.replace(CONTEXT_PROVIDER_SUFFIX, "");
   if (!named) return null;
   const providerName = named.replace(CONTEXT_SUFFIX, "Provider");
   return !project.exports.has(named) && project.exports.has(providerName) ? providerName : named;
