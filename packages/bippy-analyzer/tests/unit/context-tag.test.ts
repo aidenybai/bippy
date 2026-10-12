@@ -30,4 +30,13 @@ describe("context tags", () => {
       },
     ]);
   });
+
+  it("treats a tag held in a prop as any element type", () => {
+    const { render } = getComponent(project, "ConfirmButton").analysis;
+    const tags = render.kind === "Conditional" ? [render.consequent, render.alternate] : [render];
+    expect(tags.map((tag) => tag.kind === "JsxExpression" && tag.tag.kind)).toEqual([
+      "DynamicTag",
+      "Component",
+    ]);
+  });
 });

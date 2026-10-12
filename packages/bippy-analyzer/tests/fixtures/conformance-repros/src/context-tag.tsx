@@ -15,3 +15,10 @@ export const UserName = () => {
   const user = useContext(UserContext);
   return <p>{user.profile.name}</p>;
 };
+
+const Button = ({ children }: { children: React.ReactNode }) => <button>{children}</button>;
+
+export const ConfirmButton = ({ buttonComponent }: { buttonComponent?: React.ElementType }) => {
+  const ButtonComponent = buttonComponent || Button;
+  return <ButtonComponent>Confirm</ButtonComponent>;
+};

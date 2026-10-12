@@ -627,10 +627,12 @@ export class Interpreter {
         alternate: this.#buildJsx(tag.alternate, declaration, isContext, props, children, loc),
       };
     }
+    // A tag held in a prop, state or hook result, like `buttonComponent` in
+    // `<ButtonComponent>` for `buttonComponent || Button`, may be any element type.
     const jsxTag: JsxTag =
       tag.kind === "Primitive" && typeof tag.value === "string"
         ? { kind: "BuiltinTag", name: tag.value }
-        : tag.kind === "Global" || tag.kind === "Binding"
+        : tag.kind === "Global"
           ? { kind: "Component", name: getComponentName(tag), declaration, isContext }
           : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
