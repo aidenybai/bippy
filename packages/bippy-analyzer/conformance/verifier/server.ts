@@ -104,6 +104,12 @@ const PROVIDER_SPECS: ProviderSpec[] = [
     wrap: (children) => `createElement(NuqsTestingAdapter, { hasMemory: true }, ${children})`,
   },
   {
+    packageName: "next-intl",
+    imports: 'import { NextIntlClientProvider } from "next-intl";',
+    wrap: (children) =>
+      `createElement(NextIntlClientProvider, { locale: "en", messages: {}, onError: () => {} }, ${children})`,
+  },
+  {
     packageName: "react-hook-form",
     imports: 'import { FormProvider, useForm } from "react-hook-form";',
     wrap: (children) => `createElement(FormProvider, useForm(), ${children})`,
