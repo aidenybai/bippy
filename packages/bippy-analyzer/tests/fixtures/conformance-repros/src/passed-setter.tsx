@@ -59,3 +59,11 @@ export const ConfirmDelete = () => {
     />
   );
 };
+
+const countNodes = (nodes: string[][], visit: (node: string[]) => number): number =>
+  nodes.reduce((total, node) => total + visit(node), 0);
+
+export const NodeCount = ({ nodes }: { nodes: string[][] }) => {
+  const visit = (node: string[]): number => 1 + countNodes([node.slice(1)], visit);
+  return <p>{countNodes(nodes, visit)}</p>;
+};

@@ -33,4 +33,8 @@ describe("setters passed to a child", () => {
     expect(handler?.trigger).toEqual({ kind: "Event", tag: "input", event: "onChange" });
     expect(handler?.updates.map((update) => update.binding.name)).toEqual(["value"]);
   });
+
+  it("follows a callback that captures itself once, like a recursive one", () => {
+    expect(getComponent(project, "NodeCount").analysis.bailouts).toEqual([]);
+  });
 });

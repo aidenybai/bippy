@@ -814,14 +814,16 @@ export class Interpreter {
 
   /**
    * The places a value reads, through the places a callback captures, like `query` in
-   * `locales.filter((locale) => matches(locale, query))`.
+   * `locales.filter((locale) => matches(locale, query))`. A callback that captures itself,
+   * like a recursive one, is followed once.
    */
-  #collectInputs(value: SymbolicValue, inputs: Set<string>): void {
+  #collectInputs(value: SymbolicValue, inputs: Set<string>, visited = new Set<number>()): void {
     forEachSymbolicValue(value, (part) => {
       if (part.kind === "Binding") inputs.add(getBindingPlaceKey(part));
-      if (part.kind !== "Function") return;
+      if (part.kind !== "Function" || visited.has(part.functionId)) return;
+      visited.add(part.functionId);
       for (const place of this.#getFunction(part.functionId)?.context ?? [])
-        this.#collectInputs(this.#read(place), inputs);
+        this.#collectInputs(this.#read(place), inputs, visited);
     });
   }
 
