@@ -27,4 +27,10 @@ describe("callbacks passed to hooks", () => {
     expect(signUp.report.unreachableBranches).toEqual([]);
     expect(signUp.report.states).toHaveLength(2);
   });
+
+  it("runs a callback a handler passes on in an options object, like `onSuccess`", () => {
+    const form = getComponent(project, "ApiKeyForm");
+    expect(form.report.unreachableBranches).toEqual([]);
+    expect(form.report.states).toHaveLength(2);
+  });
 });

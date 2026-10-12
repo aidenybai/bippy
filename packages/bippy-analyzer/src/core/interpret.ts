@@ -854,8 +854,16 @@ export class Interpreter {
     return createBindingValue(this.#createBinding(name, "call", loc, { inputs: [...inputs] }));
   }
 
+  /**
+   * Runs a callback a handler passes on, directly or in an options object, like the
+   * `onSuccess` of `mutateAsync(data, { onSuccess })`, as it may be called later.
+   */
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
     if (this.#mode !== "effect") return;
+    if (argument.kind === "ObjectExpression")
+      for (const property of argument.properties)
+        if (property.value.kind !== "ObjectExpression")
+          this.#visitCallbackArgument(property.value, state);
     const asyncState = { ...state, isAsync: true };
     if (argument.kind === "Setter")
       this.#recordUpdate(

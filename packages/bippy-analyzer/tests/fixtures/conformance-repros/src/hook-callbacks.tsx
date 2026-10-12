@@ -21,3 +21,16 @@ export const SignUp = () => {
     </form>
   );
 };
+
+declare const mutateAsync: (data: string, options: { onSuccess: (key: string) => void }) => void;
+
+export const ApiKeyForm = () => {
+  const [createdKey, setCreatedKey] = useState<string | null>(null);
+  return createdKey ? (
+    <p>{createdKey}</p>
+  ) : (
+    <button onClick={() => mutateAsync("key", { onSuccess: (key) => setCreatedKey(key) })}>
+      Create
+    </button>
+  );
+};
