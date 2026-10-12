@@ -128,6 +128,12 @@ const isLabelTarget = (label: TriggerLabel, target: ActionTarget): boolean =>
   label.tag === target.tag && (label.text === null || label.text === target.label);
 
 /**
+ * The events the harness dispatches itself. Any other, like `onFocus` or `onPlay`, may fire
+ * as a side effect of an action, as a click focuses its target and `video.play()` plays.
+ */
+const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
+
+/**
  * Whether an action runs a handler: surely, when it acts on the handler's own element, or
  * maybe, when the handler belongs to a component or to an element the click bubbles up to,
  * where the component or a `stopPropagation` decides.
@@ -135,6 +141,7 @@ const isLabelTarget = (label: TriggerLabel, target: ActionTarget): boolean =>
 const getTrigger = (label: TriggerLabel, action: Action): Trigger | null => {
   if (isComponentTag(label.tag))
     return label.text === null || label.text.includes(action.label) ? "maybe" : null;
+  if (!DISPATCHED_EVENTS.has(label.event) && label.event !== ANY_EVENT) return "maybe";
   const eventName = action.kind === "click" ? "onClick" : "onChange";
   if (label.event !== eventName && label.event !== ANY_EVENT) return null;
   if (isLabelTarget(label, action)) return "sure";
