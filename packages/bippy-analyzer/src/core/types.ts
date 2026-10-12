@@ -157,6 +157,8 @@ export type SymbolicValue =
       kind: "HookResult";
       hookKind: HookKind;
       name: string;
+      /** The module the hook is imported from, like `react-redux`. */
+      module: string | null;
       args: SymbolicValue[];
       loc: SourceLocation;
     }

@@ -320,6 +320,8 @@ export class Interpreter {
   readonly #storeBindings = new Map<string, Binding>();
   readonly #storeActions = new Map<number, StoreModel>();
   readonly #contextSetters = new Map<number, Map<string, string>>();
+  /** The module each hook binding's hook is imported from, by binding id. */
+  readonly #hookModules = new Map<number, string>();
   readonly #propertyNames = new Map<IdentifierId, string>();
   readonly #functions: HIRFunction[] = [];
   readonly #bindings = new Map<string, Binding>();
@@ -458,15 +460,17 @@ export class Interpreter {
       getDeclarationLocation(place),
       { hookKind: hook.hookKind },
     );
-    this.#linkContext(binding, hook);
+    this.#linkHook(binding, hook);
     return createBindingValue(binding);
   }
 
   /**
-   * Links a context binding to what its providers put in the context, so a handler that
-   * calls one of its setters, like `setOpen(true)`, sets the field it pairs with.
+   * Links a hook binding to the module its hook comes from, and a context binding to what its
+   * providers put in the context, so a handler that calls one of its setters, like
+   * `setOpen(true)`, sets the field it pairs with.
    */
-  #linkContext(binding: Binding, hook: HookResultValue): void {
+  #linkHook(binding: Binding, hook: HookResultValue): void {
+    if (hook.module !== null) this.#hookModules.set(binding.id, hook.module);
     const contextKey = this.#contextKeys.get(hook);
     if (!contextKey) return;
     const setters = this.#contextModels.get(contextKey);
@@ -559,7 +563,7 @@ export class Interpreter {
           value.loc,
           { hookKind: value.hookKind, resolver: this.#hookResolvers.get(value) },
         );
-        this.#linkContext(binding, value);
+        this.#linkHook(binding, value);
         this.#write(property.place, this.#readField(binding, [key], property.place.loc));
       } else {
         this.#write(property.place, this.#evaluatePropertyLoad(value, key, property.place.loc));
@@ -985,7 +989,15 @@ export class Interpreter {
       return this.#callFunction(args[0], [], loc, state);
     if (hookKind === "useCallback" && args[0]) return args[0];
     const name = callee.kind === "Global" ? callee.name : hookKind;
-    const hookResult: HookResultValue = { kind: "HookResult", hookKind, name, args, loc };
+    const hookModule = callee.kind === "Global" ? callee.module : null;
+    const hookResult: HookResultValue = {
+      kind: "HookResult",
+      hookKind,
+      name,
+      module: hookModule,
+      args,
+      loc,
+    };
     const [contextPlace] = argumentPlaces;
     const contextKey =
       hookKind === "useContext" && contextPlace
@@ -1698,18 +1710,27 @@ export class Interpreter {
 
   /**
    * A handler that calls into a custom hook's result or a context value, like
-   * `query.refetch()` or `auth.logout()`, can change what that source returns. When and to
-   * what is unknown, so the source changes to anything, asynchronously.
+   * `query.refetch()` or `auth.logout()`, can change what that source returns, and what
+   * every hook from the same module returns, like a Redux `dispatch` changes `useSelector`.
+   * When and to what is unknown, so they change to anything, asynchronously.
    */
   #recordExternalUpdate(callee: BindingValue, state: WalkState): void {
     this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
-    if (this.#collected.updates.some((update) => update.binding.id === callee.binding.id)) return;
-    this.#collected.updates.push({
-      binding: callee.binding,
-      value: createUnknown("external", GeneratedSource),
-      guards: state.guards,
-      isAsync: true,
-    });
+    const module = this.#hookModules.get(callee.binding.id);
+    const sources = [...this.#bindings.values()].filter(
+      (binding) =>
+        binding.id === callee.binding.id ||
+        (module !== undefined && this.#hookModules.get(binding.id) === module),
+    );
+    for (const binding of sources) {
+      if (this.#collected.updates.some((update) => update.binding.id === binding.id)) continue;
+      this.#collected.updates.push({
+        binding,
+        value: createUnknown("external", GeneratedSource),
+        guards: state.guards,
+        isAsync: true,
+      });
+    }
   }
 
   /**
