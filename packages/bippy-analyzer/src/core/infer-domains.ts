@@ -26,6 +26,9 @@ const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
 const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
+/** A DOM node, which no plain value can stand in for, like a portal's container. */
+const DOM_NODE_TYPE_PATTERN =
+  /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
 const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)\b/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
 const EMPTY_TEXT_SAMPLE: Sample = { kind: "Value", value: "" };
@@ -181,6 +184,7 @@ const getSamples = (
   const typeText = checker.typeToString(type);
   if (ELEMENT_TYPE_PATTERN.test(typeText)) return [{ kind: "Element" }];
   if (NODE_TYPE_PATTERN.test(typeText)) return [TEXT_SAMPLE];
+  if (DOM_NODE_TYPE_PATTERN.test(typeText)) return [{ kind: "Undefined" }];
   if (type.isUnionType()) {
     const samples = dedupeSamples(
       type.getTypes().flatMap((member) => getSamples(checker, member, depth, name)),
