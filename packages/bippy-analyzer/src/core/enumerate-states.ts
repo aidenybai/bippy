@@ -49,12 +49,17 @@ import {
 } from "./utils/checks.js";
 
 const MAX_ALTERNATIVES = 256;
-const REACHABILITY_ROUNDS = 3;
+const MAX_REACHABILITY_ROUNDS = 8;
 
 /**
  * One way a render can come out. `branches` holds every branch outcome taken to reach
  * it, which identifies the state however concrete its values become after a transition.
  */
+interface Enumerator {
+  enumerate: (value: SymbolicValue, constraints: Constraints) => Alternative[];
+  getIsTruncated: () => boolean;
+}
+
 interface Alternative {
   constraints: Constraints;
   render: SymbolicValue;
@@ -164,7 +169,7 @@ const getToggleCases = (
 /**
  * Every value a place of a state binding can reach: its initial value plus whatever the
  * handlers assign, repeated until nothing new appears. Falls back to the type's cases
- * when an update assigns something the analysis can't list.
+ * when an update assigns something the analysis can't list, or the values keep growing.
  */
 const getReachableCases = (
   analysis: ComponentAnalysis,
@@ -185,7 +190,8 @@ const getReachableCases = (
   if (!Array.isArray(initialCases)) return typeCases;
   let reachable = dedupeValues(initialCases);
   const placeKey = getPlaceKey(binding, path);
-  for (let round = 0; round < REACHABILITY_ROUNDS; round++) {
+  for (let round = 0; round < MAX_REACHABILITY_ROUNDS; round++) {
+    const previousCount = reachable.length;
     for (const update of updates) {
       const cases =
         getFieldCases(update.value, path, binding, null) ??
@@ -194,8 +200,9 @@ const getReachableCases = (
       if (!cases) return typeCases;
       reachable = dedupeValues([...reachable, ...cases]);
     }
+    if (reachable.length === previousCount) return reachable;
   }
-  return reachable;
+  return typeCases;
 };
 
 const createInitialKnowledge = (analysis: ComponentAnalysis): Constraints => {
@@ -343,10 +350,8 @@ const applyTransition = (
  * value and constraints, so a subtree rendered in several places under the same constraints is
  * listed once and its results stay shared.
  */
-const createEnumerator = (
-  outcomes: DecisionOutcomes,
-  region: RegionBranches,
-): ((value: SymbolicValue, constraints: Constraints) => Alternative[]) => {
+const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): Enumerator => {
+  let isTruncated = false;
   const cache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
   const enumerate = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
     let cacheByKnowledge = cache.get(value);
@@ -378,7 +383,10 @@ const createEnumerator = (
             outcome ? value.consequent : value.alternate,
             assumed,
           )) {
-            if (alternatives.length >= MAX_ALTERNATIVES) break;
+            if (alternatives.length >= MAX_ALTERNATIVES) {
+              isTruncated = true;
+              break;
+            }
             alternatives.push({
               ...alternative,
               fragments: [alternative.render],
@@ -399,9 +407,15 @@ const createEnumerator = (
           for (const partial of partials) {
             // Past the cap, enumerating the child under every other partial's knowledge would
             // only be thrown away, and multiplies with each level of nesting.
-            if (nextPartials.length >= MAX_ALTERNATIVES) break;
+            if (nextPartials.length >= MAX_ALTERNATIVES) {
+              isTruncated = true;
+              break;
+            }
             for (const childAlternative of enumerate(child, partial.constraints)) {
-              if (nextPartials.length >= MAX_ALTERNATIVES) break;
+              if (nextPartials.length >= MAX_ALTERNATIVES) {
+                isTruncated = true;
+                break;
+              }
               nextPartials.push({
                 constraints: childAlternative.constraints,
                 children: [...partial.children, childAlternative.render],
@@ -425,7 +439,7 @@ const createEnumerator = (
         return [createLeaf(constraints, resolveLiteral(value, constraints))];
     }
   };
-  return enumerate;
+  return { enumerate, getIsTruncated: () => isTruncated };
 };
 
 /**
@@ -609,8 +623,9 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const regions: Region[] = [];
   let isTruncated = false;
   regionBranches.forEach((regionBranch, regionIndex) => {
-    const alternatives = createEnumerator(outcomes, regionBranch)(analysis.render, reachable);
-    isTruncated ||= alternatives.length >= MAX_ALTERNATIVES;
+    const enumerator = createEnumerator(outcomes, regionBranch);
+    const targetEnumerator = createEnumerator(new Map(), regionBranch);
+    const alternatives = enumerator.enumerate(analysis.render, reachable);
     const firstIndex = states.length;
     const stateKeys = alternatives.map(getStateKey);
     const handlers = analysis.handlers.filter((handler) =>
@@ -624,8 +639,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
         .map((handler) => {
           const targetKeys = new Set(
             applyTransition(handler, alternative.constraints, reachable, dependents).flatMap(
-              (after) =>
-                createEnumerator(new Map(), regionBranch)(analysis.render, after).map(getStateKey),
+              (after) => targetEnumerator.enumerate(analysis.render, after).map(getStateKey),
             ),
           );
           return {
@@ -644,6 +658,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
         transitions,
       });
     }
+    isTruncated ||= enumerator.getIsTruncated() || targetEnumerator.getIsTruncated();
     regions.push({
       places: regionBranch.places,
       bindingIds: [...regionBranch.bindingIds],
