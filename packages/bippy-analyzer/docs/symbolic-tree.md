@@ -70,16 +70,27 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
    - `.map` items
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
 6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??`, `?.` and `switch` all produce one. A `?:`, `&&`, `||`, `??` or `?.` merges where it ends, so a `?.` in a `className` doesn't split the rest of the render. Member reads past a `?.`, and reads of a value that may be `undefined`, are assumed not to throw.
-7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types.
-8. Collects handlers from event handlers, effects, setters and functions passed to child components under any prop name, and functions passed to hooks it can't see into, like `useMutation({ onSuccess })`, which run as effects with unknown arguments:
+7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types. A type isn't trusted where it can't hold:
+   - a read through an index signature, like `envKeyMap["azure"]` of a `Record` or `items[0]`, may be `undefined`
+   - without `strictNullChecks`, an optional property and a call's result may be `undefined`, which their types leave out
+   - a `useState()` with no initial value is typed `undefined`, though a handler may set it to anything
+8. Collects handlers from event handlers and effects, and from code that may call the component's functions later:
+   - setters and functions passed to child components under any prop name, including render props, function children and components declared inside the component, along with the handlers in the JSX they return, and JSX passed in any prop
+   - functions passed to hooks and calls it can't see into, directly or in an options object, like `useMutation({ onSuccess })` or `form.handleSubmit(onSubmit)`, and functions stored on objects, like `recognition.onresult`, which run as effects with unknown arguments
+   - ref callbacks, which run when React attaches the element
+   - `createPortal(children, container)` renders its children in place
+
+   What each handler does:
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
-   - calls to local and module functions are followed
+   - calls to local and module functions are followed, and a call to a function a condition chooses, like `isDocument ? setDraggedDocument : setDraggedFolder`, may be either
+   - `catch` blocks run too, as what a handler tries may throw
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
    - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it; it may not happen, since a consumer can render without its provider
    - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state
    - calling into any other hook's result or context value, like `query.fetchNextPage()`, may change it to anything, later
    - a built-in array or string method that changes nothing, like `items.find()` or `query.trim()`, leaves the value it's called on as it is, as its type shows
    - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render
+
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
    - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
