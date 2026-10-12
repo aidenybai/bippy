@@ -377,6 +377,7 @@ const createEnumerator = (
             outcome ? value.consequent : value.alternate,
             assumed,
           )) {
+            if (alternatives.length >= MAX_ALTERNATIVES) break;
             alternatives.push({
               ...alternative,
               fragments: [alternative.render],
@@ -395,6 +396,9 @@ const createEnumerator = (
         for (const child of value.children) {
           const nextPartials: PartialChildren[] = [];
           for (const partial of partials) {
+            // Past the cap, enumerating the child under every other partial's knowledge would
+            // only be thrown away, and multiplies with each level of nesting.
+            if (nextPartials.length >= MAX_ALTERNATIVES) break;
             for (const childAlternative of enumerate(child, partial.constraints)) {
               if (nextPartials.length >= MAX_ALTERNATIVES) break;
               nextPartials.push({
@@ -652,11 +656,11 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     places: new Map(reachable.values),
     states,
     regions,
-    unreachableBranches: collectUnreachableBranches(
-      analysis.render,
-      outcomes,
-      analysis.branchGuards,
-    ),
+    // A truncated enumeration never tried every combination, so a side it didn't reach may
+    // still run.
+    unreachableBranches: isTruncated
+      ? []
+      : collectUnreachableBranches(analysis.render, outcomes, analysis.branchGuards),
     isTruncated,
   };
 };
