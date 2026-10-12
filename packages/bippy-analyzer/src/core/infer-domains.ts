@@ -6,7 +6,7 @@ import {
   isReactElementType,
 } from "./utils/typescript.js";
 import * as t from "typescript/unstable/ast/is";
-import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
+import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
 import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
@@ -340,6 +340,22 @@ export class DomainResolver {
             PURE_ARRAY_METHODS.has(method),
       )
     );
+  }
+
+  /**
+   * A sample of the fields the type at this location requires, like `name` and `render` of
+   * the props a `<Controller {...props} />` passes on. Null when it requires none.
+   */
+  getRequiredSample(loc: SourceLocation): Sample | null {
+    const type = this.#getType(loc);
+    if (!type) return null;
+    const fields: Record<string, Sample> = {};
+    for (const property of this.#checker.getPropertiesOfType(type)) {
+      if (property.flags & SymbolFlags.Optional) continue;
+      const [sample] = getSamples(this.#checker, this.#checker.getTypeOfSymbol(property), 1);
+      if (sample) fields[property.name] = sample;
+    }
+    return Object.keys(fields).length > 0 ? { kind: "Object", fields, isOpen: false } : null;
   }
 
   isReactElement(loc: SourceLocation): boolean {

@@ -503,6 +503,8 @@ export class Interpreter {
     }
     for (const property of pattern.properties) {
       if (property.kind === "Spread") {
+        if (value.kind === "Props" && this.propsSample === null)
+          this.propsSample = this.#resolver.getRequiredSample(property.place.loc);
         this.#write(property.place, createUnknown("rest", property.place.loc));
         continue;
       }
