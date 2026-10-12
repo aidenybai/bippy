@@ -37,6 +37,8 @@ Create `repos/<id>/repo.json`:
 - `install` runs from the repo root. If the app lives in a subfolder, `cd` into it first.
 - Use the repo's own lockfile and `--ignore-scripts`.
 - The sandbox image has `npm` but not `yarn`, so pin Yarn with `npx --yes yarn@1.22.22`.
+- npm doesn't run `bun`'s install script, so for a Bun lockfile, run the binary its platform package ships, as `repos/next-shadcn-dashboard-starter/repo.json` does.
+- Build the workspace packages the app imports, like `npx --yes pnpm@9.5.0 --filter novel build`.
 
 If the repo needs changes before it installs or type-checks, add them as `repos/<id>/custom.patch`. `setup.sh` applies the patch after checkout.
 
@@ -44,7 +46,7 @@ If the repo needs changes before it installs or type-checks, add them as `repos/
 
 The harness mounts most components on its own (see [How verification works](../README.md#how-verification-works)). When a repo needs more, like its mock API or a logged-in user, describe it in `repos/<id>/verify/`:
 
-- `setup.tsx` runs in the page before any component loads. It can start the app's mock API, seed data and log in. Its default export, if any, wraps every mounted component, inside the providers the harness adds itself. Imports resolve as they would from the app, so `@/` paths work. Named functions under `scenarios` seed data for a spec.
+- `setup.tsx` runs in the page before any component loads. It can start the app's mock API, seed data and log in. Its default export, if any, wraps every mounted component, inside the providers the harness adds itself. Imports resolve as they would from the app, so `@/` paths and root paths like `/src/constants/theme` work, and relative imports reach other files in `verify/`. Named functions under `scenarios` seed data for a spec.
 - `harness.json` sets `env` variables, readable as `import.meta.env.X` and `process.env.X`, and `alias` modules, such as a stub for `next/font/google`.
 - `*.spec.ts` are hand-written Playwright tests. They reach states the automatic exploration can't, like a list with comments in it:
 
