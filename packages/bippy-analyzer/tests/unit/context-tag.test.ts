@@ -13,4 +13,21 @@ describe("context tags", () => {
       isContext: true,
     });
   });
+
+  it("samples an untyped context by what the component reads from it", () => {
+    const { contextSamples } = getComponent(project, "UserName").analysis;
+    expect([...contextSamples.values()]).toEqual([
+      {
+        kind: "Object",
+        fields: {
+          profile: {
+            kind: "Object",
+            fields: { name: { kind: "Value", value: "text" } },
+            isOpen: false,
+          },
+        },
+        isOpen: false,
+      },
+    ]);
+  });
 });

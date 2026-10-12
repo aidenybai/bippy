@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 
 const FontContext = createContext<string>("inter");
@@ -6,4 +6,12 @@ const FontContext = createContext<string>("inter");
 export const FontProvider = ({ children }: { children: ReactNode }) => {
   const [font] = useState("inter");
   return <FontContext value={font}>{children}</FontContext>;
+};
+
+// oxlint-disable-next-line typescript/no-explicit-any -- an untyped context, as in plain JavaScript.
+export const UserContext = createContext<any>(null);
+
+export const UserName = () => {
+  const user = useContext(UserContext);
+  return <p>{user.profile.name}</p>;
 };

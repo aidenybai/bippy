@@ -79,7 +79,8 @@ const getShapeSample = (name: string, paths: string[][]): Sample => {
 
 /**
  * Gives an untyped prop, as in plain JavaScript, a sample shaped by what the component reads
- * from it, to mount with before the literals its call sites pass.
+ * from it, to mount with before the literals its call sites pass, and an untyped context a
+ * sample its provider mounts with.
  */
 const inferPropShapes = (analysis: ComponentAnalysis): void => {
   const paths = new Map<number, string[][]>();
@@ -94,6 +95,10 @@ const inferPropShapes = (analysis: ComponentAnalysis): void => {
       getShapeSample(binding.propName ?? binding.name, bindingPaths),
       ...binding.samples,
     ];
+  }
+  for (const [contextKey, bindingId] of analysis.untypedContexts) {
+    const bindingPaths = paths.get(bindingId);
+    if (bindingPaths) analysis.contextSamples.set(contextKey, getShapeSample("", bindingPaths));
   }
 };
 

@@ -325,6 +325,11 @@ export class Interpreter {
    * declaration key, which a test mounts the context's provider with.
    */
   readonly contextSamples = new Map<string, Sample>();
+  /**
+   * The binding each untyped context the component reads is read through, by declaration
+   * key, whose sample is shaped later by what the component reads from it.
+   */
+  readonly untypedContexts = new Map<string, number>();
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
   #mutations = new Map<number, Mutation>();
@@ -447,6 +452,10 @@ export class Interpreter {
     if (!contextKey) return;
     const setters = this.#contextModels.get(contextKey);
     if (setters) this.#contextSetters.set(binding.id, setters);
+    if (binding.domain.kind === "Unknown") {
+      if (!this.untypedContexts.has(contextKey)) this.untypedContexts.set(contextKey, binding.id);
+      return;
+    }
     const resolver = this.#hookResolvers.get(hook) ?? this.#resolver;
     const sample = resolver.getSamples(binding.loc).find(isDefinedSample);
     if (sample && !this.contextSamples.has(contextKey)) this.contextSamples.set(contextKey, sample);

@@ -271,6 +271,8 @@ export interface ComponentAnalysis {
   providedContexts: ProvidedContext[];
   /** A sample of the value each context the component reads holds, by declaration key. */
   contextSamples: Map<string, Sample>;
+  /** The binding an untyped context is read through, by declaration key. */
+  untypedContexts: Map<string, number>;
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
   /** The guards each branch's value was computed under, as formatted keys. */
