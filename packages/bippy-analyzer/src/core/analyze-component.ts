@@ -5,7 +5,7 @@ import type { DomainResolver } from "./infer-domains.js";
 import { collectHandlers } from "./collect-handlers.js";
 import { Interpreter } from "./interpret.js";
 import type { ProjectHookLoader } from "./interpret.js";
-import type { Bailout, ComponentAnalysis, ContextModels } from "./types.js";
+import type { Bailout, ComponentAnalysis, ContextModels, StoreModel } from "./types.js";
 
 interface FileContext {
   sourceFile: SourceFile;
@@ -13,6 +13,7 @@ interface FileContext {
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
   contextModels: ContextModels;
+  storeModels: Map<string, StoreModel>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
@@ -65,6 +66,7 @@ export const analyzeComponent = (
     context.compiled.compileModuleFunction,
     context.loadProjectHook,
     context.contextModels,
+    context.storeModels,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);

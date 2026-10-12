@@ -35,6 +35,8 @@ import type {
   JsxTag,
   ProvidedContext,
   Sample,
+  StoreAssignment,
+  StoreModel,
   SetterValue,
   StateUpdate,
   SymbolicValue,
@@ -292,6 +294,9 @@ export class Interpreter {
   readonly #contextModels: ContextModels;
   readonly #contextKeys = new WeakMap<HookResultValue, string>();
   readonly #hookResolvers = new WeakMap<HookResultValue, DomainResolver>();
+  readonly #storeModels: Map<string, StoreModel>;
+  readonly #storeBindings = new Map<string, Binding>();
+  readonly #storeActions = new Map<number, StoreModel>();
   readonly #contextSetters = new Map<number, Map<string, string>>();
   readonly #propertyNames = new Map<IdentifierId, string>();
   readonly #functions: HIRFunction[] = [];
@@ -323,11 +328,13 @@ export class Interpreter {
     loadModuleFunction: ModuleFunctionLoader,
     loadProjectHook: ProjectHookLoader,
     contextModels: ContextModels,
+    storeModels: Map<string, StoreModel>,
   ) {
     this.#resolver = resolver;
     this.#loadModuleFunction = loadModuleFunction;
     this.#loadProjectHook = loadProjectHook;
     this.#contextModels = contextModels;
+    this.#storeModels = storeModels;
   }
 
   get bindings(): Binding[] {
@@ -755,6 +762,13 @@ export class Interpreter {
       this.#functionResolvers.set(projectHook.fn, projectHook.resolver);
       return this.#callFunction(this.#registerFunction(projectHook.fn), args, loc, state);
     }
+    const storeKey =
+      hookKind === "Custom" && !projectHook
+        ? this.#resolver.getDeclarationKey(calleePlace.loc)
+        : null;
+    const storeModel = storeKey ? this.#storeModels.get(storeKey) : undefined;
+    if (storeKey && storeModel)
+      return this.#readStore(storeKey, storeModel, callee, args, loc, state);
     if (hookKind !== null)
       return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);
     switch (callee.kind) {
@@ -1357,6 +1371,58 @@ export class Interpreter {
   }
 
   /**
+   * Reads a zustand store, like `useConfig((state) => state.darkmodeEnabled)`. Every read
+   * of one store is a field of one binding, so an action called through any of them, like
+   * `toggleDarkMode(true)`, sets the fields the store's model says it does.
+   */
+  #readStore(
+    storeKey: string,
+    model: StoreModel,
+    callee: SymbolicValue,
+    args: SymbolicValue[],
+    loc: SourceLocation,
+    state: WalkState,
+  ): SymbolicValue {
+    const name = callee.kind === "Global" ? callee.name : "store";
+    const binding =
+      this.#storeBindings.get(storeKey) ??
+      this.#createBinding(`${name}()`, "hook", loc, {
+        hookKind: "Custom",
+        domain: { kind: "Opaque", typeText: name },
+      });
+    this.#storeBindings.set(storeKey, binding);
+    this.#storeActions.set(binding.id, model);
+    const [selector] = args;
+    return selector?.kind === "Function"
+      ? this.#callFunction(selector, [createBindingValue(binding)], loc, state)
+      : createBindingValue(binding);
+  }
+
+  /** The value a store action gives a field, from the arguments it was called with. */
+  #getStoreFieldValue(
+    binding: Binding,
+    { field, value }: StoreAssignment,
+    args: SymbolicValue[],
+  ): SymbolicValue {
+    switch (value.kind) {
+      case "Argument":
+        return args[value.index] ?? UNDEFINED_VALUE;
+      case "Literal":
+        return { kind: "Primitive", value: value.value };
+      case "Toggle":
+        return {
+          kind: "UnaryExpression",
+          operator: "!",
+          value: { kind: "Binding", binding, path: [field] },
+        };
+      case "Unknown":
+        return createUnknown("store", binding.loc);
+      default:
+        return assertExhaustive(value, "Unhandled store field value");
+    }
+  }
+
+  /**
    * The project's own hook a call reaches, which runs inline as part of the component, so
    * its state is the component's state and the functions it returns are known.
    */
@@ -1410,7 +1476,24 @@ export class Interpreter {
       callee.path.length === 1 && setterField
         ? this.#contextSetters.get(callee.binding.id)?.get(setterField)
         : undefined;
+    const assignments =
+      callee.path.length === 1 && setterField
+        ? this.#storeActions.get(callee.binding.id)?.get(setterField)
+        : undefined;
     if (field) this.#setContextField(callee.binding, field, args[0], state);
+    else if (assignments)
+      this.#recordUpdate(
+        callee.binding,
+        {
+          kind: "ObjectExpression",
+          properties: assignments.map((assignment) => ({
+            key: assignment.field,
+            value: this.#getStoreFieldValue(callee.binding, assignment, args),
+          })),
+          spreads: [createBindingValue(callee.binding)],
+        },
+        state,
+      );
     else if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
   }
 
@@ -1507,7 +1590,7 @@ export class Interpreter {
           createUnknown("event", GeneratedSource),
           ROOT_WALK_STATE,
         );
-      if (callback.kind === "Binding") this.#callBinding(callback, [], ROOT_WALK_STATE);
+      if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
       if (callback.kind === "Unknown")
         for (const binding of this.#bindings.values())
           if (isExternalSource(binding))

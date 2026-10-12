@@ -227,6 +227,20 @@ export interface Bailout {
 /**
  * Everything the analysis knows about one component.
  */
+export type StoreFieldValue =
+  | { kind: "Argument"; index: number }
+  | { kind: "Literal"; value: PrimitiveValue }
+  | { kind: "Toggle" }
+  | { kind: "Unknown" };
+
+export interface StoreAssignment {
+  field: string;
+  value: StoreFieldValue;
+}
+
+/** What each action of a store sets, by the action's name. */
+export type StoreModel = Map<string, StoreAssignment[]>;
+
 export interface ProvidedContext {
   contextKey: string;
   value: SymbolicValue;

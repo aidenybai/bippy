@@ -2,11 +2,13 @@ import { compileFile } from "./compile.js";
 import { CompilerTypeProvider } from "./type-provider.js";
 import { DomainResolver } from "./infer-domains.js";
 import type { ProjectHook } from "./interpret.js";
+import { collectStoreModels } from "./store-models.js";
 import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
 import type {
   ComponentAnalysis,
   ContextModels,
+  StoreModel,
   JsxExpressionValue,
   JsxProp,
   PrimitiveSymbolicValue,
@@ -140,6 +142,7 @@ export const analyzeProject = (
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
     const projectHooks = new Map<string, ProjectHook>();
     const contextModels: ContextModels = new Map();
+    const storeModels = new Map<string, StoreModel>();
     const loadProjectHook = (declarationKey: string): ProjectHook | null =>
       projectHooks.get(declarationKey) ?? null;
     const contexts = fileNames.flatMap((fileName) => {
@@ -149,6 +152,8 @@ export const analyzeProject = (
       const compiled = compileFile(fileName, sourceFile.text, {
         typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
       });
+      for (const [storeKey, model] of collectStoreModels(sourceFile))
+        storeModels.set(storeKey, model);
       for (const { fnType, hir, name } of compiled.functions)
         if (fnType === "Hook" && hir)
           projectHooks.set(`${sourceFile.path}#${name}`, { fn: hir, resolver });
@@ -159,6 +164,7 @@ export const analyzeProject = (
           compiled,
           loadProjectHook,
           contextModels,
+          storeModels,
           exportNames: collectExportNames(sourceFile),
           displayNames: collectDisplayNames(sourceFile),
         },
