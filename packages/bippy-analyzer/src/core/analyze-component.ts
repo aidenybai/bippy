@@ -50,7 +50,6 @@ export const analyzeComponent = (
       untypedContexts: new Map(),
       placeDomains: new Map(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
-      branchGuards: new WeakMap(),
       handlers: [],
       renders: [],
       bailouts: [
@@ -85,7 +84,6 @@ export const analyzeComponent = (
     untypedContexts: interpreter.untypedContexts,
     placeDomains: interpreter.placeDomains,
     render,
-    branchGuards: interpreter.branchGuards,
     handlers,
     renders: [...interpreter.renderedComponents],
     bailouts: [

@@ -136,6 +136,7 @@ export type SymbolicValue =
       consequent: SymbolicValue;
       alternate: SymbolicValue;
       branch: Branch;
+      guardKeys: string[];
     }
   | { kind: "ObjectExpression"; properties: SymbolicObjectProperty[]; spreads: SymbolicValue[] }
   | { kind: "ArrayExpression"; elements: SymbolicValue[]; spreads: SymbolicValue[] }
@@ -281,7 +282,6 @@ export interface ComponentAnalysis {
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
   /** The guards each branch's value was computed under, as formatted keys. */
-  branchGuards: WeakMap<ConditionalValue, string[]>;
   handlers: Handler[];
   renders: string[];
   bailouts: Bailout[];

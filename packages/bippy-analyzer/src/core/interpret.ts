@@ -267,6 +267,7 @@ const createConditional = (
   split: SplitOutcome,
   consequent: SymbolicValue,
   alternate: SymbolicValue,
+  guards: SymbolicValue[],
 ): ConditionalValue => ({
   kind: "Conditional",
   test: split.test,
@@ -274,6 +275,7 @@ const createConditional = (
   consequent,
   alternate,
   branch: split.branch,
+  guardKeys: guards.map(getValueKey),
 });
 
 const isFallthroughOnly = (outcome: Outcome, join: BlockId): boolean =>
@@ -345,7 +347,6 @@ export class Interpreter {
   readonly effectCalls: EffectCall[] = [];
   readonly renderedComponents = new Set<string>();
   /** The guards each branch's value was computed under, as formatted keys. */
-  readonly branchGuards = new WeakMap<ConditionalValue, string[]>();
   /**
    * A sample of the whole props object, once the component passes it on whole, like
    * `templateCtx(props)`, and so reads props that no binding names.
@@ -739,6 +740,7 @@ export class Interpreter {
       consequent: { ...element, children: [fallback.value] },
       alternate: element,
       branch: { terminalId, probe: "none", loc: element.loc, file: this.#resolver.fileName },
+      guardKeys: [],
     };
   }
 
@@ -1344,13 +1346,12 @@ export class Interpreter {
     guards: SymbolicValue[],
     toArm: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
   ): ConditionalValue {
-    const conditional = createConditional(
+    return createConditional(
       split,
       toArm(split.consequent, [...guards, getGuard(split, true)]),
       toArm(split.alternate, [...guards, getGuard(split, false)]),
+      guards,
     );
-    this.branchGuards.set(conditional, guards.map(getValueKey));
-    return conditional;
   }
 
   #resolvePhi(phi: Phi, outcome: Outcome, guards: SymbolicValue[]): SymbolicValue {

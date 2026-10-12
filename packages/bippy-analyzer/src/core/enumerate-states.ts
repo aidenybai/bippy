@@ -537,7 +537,6 @@ const collectTestedBranchKeys = (render: SymbolicValue): Set<string> => {
 const collectUnreachableBranches = (
   render: SymbolicValue,
   outcomes: DecisionOutcomes,
-  branchGuards: WeakMap<ConditionalValue, string[]>,
 ): UnreachableBranch[] => {
   const unreachableBranches: Array<UnreachableBranch & { key: string }> = [];
   const seen = collectTestedBranchKeys(render);
@@ -551,7 +550,7 @@ const collectUnreachableBranches = (
     switch (value.kind) {
       case "Conditional": {
         const key = getBranchKey(value);
-        const guards = branchGuards.get(value) ?? [];
+        const guards = value.guardKeys;
         if ([...merged].some((condition) => !guards.includes(condition))) narrowedKeys.add(key);
         const reached = outcomes.get(key);
         const test = getTestExpression(value);
@@ -658,9 +657,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     regions,
     // A truncated enumeration never tried every combination, so a side it didn't reach may
     // still run.
-    unreachableBranches: isTruncated
-      ? []
-      : collectUnreachableBranches(analysis.render, outcomes, analysis.branchGuards),
+    unreachableBranches: isTruncated ? [] : collectUnreachableBranches(analysis.render, outcomes),
     isTruncated,
   };
 };
