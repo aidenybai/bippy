@@ -168,6 +168,8 @@ const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-
 const SERVER_SDK_PATTERN =
   /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?)$/;
 const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
+const NUQS_SERVER_ID = "\0bippy-verify-nuqs-server";
+const NUQS_CACHE_STUB = join(import.meta.dirname, "stubs/nuqs-cache.ts");
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
 const PACKAGE_IMPORT_PATTERN = /import\s+(?!type\b)([^;]*?)\s*from\s*["']([^"'.][^"']*)["']/g;
 const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
@@ -671,6 +673,10 @@ const createHarnessPlugin = (
       if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
       if (SERVER_SDK_PATTERN.test(source)) return `${SERVER_SDK_PREFIX}${source}`;
       if (STUBS.has(source)) return STUBS.get(source);
+      if (source === "nuqs/server")
+        return importer === NUQS_SERVER_ID
+          ? this.resolve(source, appImporter, { skipSelf: true })
+          : NUQS_SERVER_ID;
       if (source === ENTRY_PATH || source === entryId) return entryId;
       if (importer === entryId && source.startsWith("./"))
         return join(import.meta.dirname, source.replace(/\.js$/, ".ts"));
@@ -695,6 +701,8 @@ const createHarnessPlugin = (
         return createServerSdkSource(
           references.serverSdkImports.get(id.slice(SERVER_SDK_PREFIX.length)) ?? new Set(),
         );
+      if (id === NUQS_SERVER_ID)
+        return `export * from "nuqs/server";\nexport { createSearchParamsCache } from ${JSON.stringify(NUQS_CACHE_STUB)};`;
       if (id === entryId) return readFileSync(ENTRY_SOURCE, "utf8");
       if (id === providersId) return providersSource;
       if (id === setupId) return setup.file ? readFileSync(setup.file, "utf8") : "";
