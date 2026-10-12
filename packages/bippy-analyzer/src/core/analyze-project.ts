@@ -159,7 +159,9 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
       if (element.tag.kind === "Component") usages.push(element);
     });
   for (const analysis of analyses) {
-    const componentUsages = usages.filter((usage) => usage.tag.name === analysis.name);
+    const componentUsages = usages.filter(
+      (usage) => usage.tag.kind === "Component" && usage.tag.declaration === analysis.declaration,
+    );
     if (componentUsages.length === 0) continue;
     for (const binding of analysis.bindings) {
       if (binding.kind !== "prop" || binding.domain.kind !== "Unknown") continue;
@@ -189,7 +191,7 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
       binding.samples = literals.map(getSampleOfValue);
       analysis.placeDomains.set(getPlaceKey(binding, []), binding.domain);
       analysis.bailouts = analysis.bailouts.filter(
-        (bailout) => !(bailout.reason === "untyped-prop" && bailout.message === binding.name),
+        (bailout) => !(bailout.reason === "untyped-prop" && bailout.loc === binding.loc),
       );
     }
   }
