@@ -315,7 +315,6 @@ const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => 
  */
 export class Interpreter {
   #resolver: DomainResolver;
-  readonly #loadModuleFunction: ModuleFunctionLoader;
   readonly #loadProjectHook: ProjectHookLoader;
   readonly #values = new WeakMap<object, Map<IdentifierId, SymbolicValue>>();
   readonly #functionResolvers = new WeakMap<HIRFunction, DomainResolver>();
@@ -376,7 +375,6 @@ export class Interpreter {
     storeModels: Map<string, StoreModel>,
   ) {
     this.#resolver = resolver;
-    this.#loadModuleFunction = loadModuleFunction;
     this.#moduleFunctionLoaders.set(resolver, loadModuleFunction);
     this.#loadProjectHook = loadProjectHook;
     this.#contextModels = contextModels;
@@ -557,7 +555,13 @@ export class Interpreter {
       );
       return [
         createBindingValue(binding),
-        { kind: "Dispatch", binding, reducer: firstArgument ?? createUnknown("reducer", loc) },
+        {
+          kind: "Dispatch",
+          binding,
+          reducer: firstArgument
+            ? this.#resolveModuleFunction(firstArgument)
+            : createUnknown("reducer", loc),
+        },
       ];
     }
     return items.map((place) => (place ? this.#bindHookResult(place, value) : null));
@@ -746,6 +750,12 @@ export class Interpreter {
   /**
    * Records a bailout once per reason and location, however often the interpreter revisits it.
    */
+  #resolveModuleFunction(value: SymbolicValue): SymbolicValue {
+    if (value.kind !== "Global") return value;
+    const moduleFunction = this.#moduleFunctionLoaders.get(this.#resolver)?.(value.name);
+    return moduleFunction ? this.#registerFunction(moduleFunction) : value;
+  }
+
   #bailOut(reason: BailoutReason, message: string, loc: SourceLocation): void {
     const isDuplicate = this.bailouts.some(
       (bailout) => bailout.reason === reason && isSameLocation(bailout.loc, loc),
@@ -840,11 +850,7 @@ export class Interpreter {
     loc: SourceLocation,
     state: WalkState,
   ): void {
-    let reducer = dispatch.reducer;
-    if (reducer.kind === "Global") {
-      const moduleFunction = this.#loadModuleFunction(reducer.name);
-      reducer = moduleFunction ? this.#registerFunction(moduleFunction) : reducer;
-    }
+    const reducer = dispatch.reducer;
     const next =
       reducer.kind === "Function"
         ? this.#callFunction(
@@ -1496,8 +1502,10 @@ export class Interpreter {
     let isPhiResolved = hasResolvedPhis;
     let currentState = state;
     while (true) {
-      if (++this.#blockVisits > MAX_BLOCK_VISITS)
+      if (++this.#blockVisits > MAX_BLOCK_VISITS) {
+        this.#bailOut("too-complex", "visits too many blocks", GeneratedSource);
         return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
+      }
       const block = this.#getBlock(currentId);
       if (!isPhiResolved) {
         for (const phi of block.phis)
@@ -1716,6 +1724,7 @@ export class Interpreter {
    * Evaluates a component in render mode: its first parameter is the props object.
    */
   evaluateComponent(fn: HIRFunction): SymbolicValue {
+    this.#blockVisits = 0;
     return this.#evaluateFunction(fn, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
@@ -1883,7 +1892,9 @@ export class Interpreter {
     const previousMode = this.#mode;
     const previousCollected = this.#collected;
     const previousMutations = this.#mutations;
+    const previousBlockVisits = this.#blockVisits;
     this.#mode = "effect";
+    this.#blockVisits = 0;
     this.#collected = { updates: [], delegates: [] };
     this.#mutations = new Map();
     try {
@@ -1904,6 +1915,7 @@ export class Interpreter {
       this.#mode = previousMode;
       this.#collected = previousCollected;
       this.#mutations = previousMutations;
+      this.#blockVisits = previousBlockVisits;
     }
   }
 }

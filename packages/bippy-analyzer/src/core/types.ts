@@ -222,6 +222,7 @@ export type BailoutReason =
   | "loop"
   | "unknown-call"
   | "conditional-hook"
+  | "too-complex"
   | `untyped-${BindingKind}`;
 
 export interface Bailout {
