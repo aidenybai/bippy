@@ -4,13 +4,8 @@ import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos.js";
 import { analyzeProject } from "../../src/core/analyze-project.js";
 import type { AnalyzedComponent, Sample, State } from "../../src/core/types.js";
-import {
-  getDefaultProps,
-  listActionsInPage,
-  mountInPage,
-  performInPage,
-  resolveWrappers,
-} from "./driver.js";
+import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver.js";
+import { getDefaultProps } from "./props.js";
 import type { Observation } from "./driver.js";
 import { matchesExpected, normalizeShapes, toExpected } from "./match.js";
 import { formatCounterexamples, scoreComponent } from "./score.js";

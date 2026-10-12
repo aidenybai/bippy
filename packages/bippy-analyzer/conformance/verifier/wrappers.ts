@@ -1,265 +1,177 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import type { Wrapper, WrapperCandidate } from "./types.js";
+import { sep } from "node:path";
+import type { ComponentAnalysis } from "../../src/core/types.js";
+import { getDefaultProps } from "./props.js";
+import type { ExportedName, ProjectIndex, Wrapper } from "./types.js";
 
-const PACKAGE_IMPORT_PATTERN = /import\s+([^;]*?)\s*from\s+["']([^."'][^"']*)["']/g;
-const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
-const RELATIVE_IMPORT_PATTERN = /import\s+(?!type\b)[^;]*?\s*from\s+["'](\.{1,2}\/[^"']*)["']/g;
-const SOURCE_FILE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
-const NAMESPACE_NAME_PATTERN = /^(?:type\s+)?([A-Z]\w*)/;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
-/**
- * A context's provider is the context itself to mount, as `XContext.Provider` isn't an
- * export. A library's `Toast.Provider` is a part of its own.
- */
 const CONTEXT_PROVIDER_SUFFIX = /(?<=Context)\.Provider$/;
 const CONTEXT_SUFFIX = /Context$/;
+const NAMESPACE_NAME_PATTERN = /^[A-Z]\w*$/;
 const NULL_HOOK_PATTERN = /of '(use[A-Z]\w*)\(\.\.\.\)' as it is (?:null|undefined)/;
-const PROVIDER_NAME_PATTERNS = [
+const PARENT_NAME_PATTERNS = [
   /(?:within|inside|outside of|outside|from|descendant of|placed in)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*(?:\.[A-Z]\w*)?)/,
   /([A-Z]\w*Provider) was not found/,
   /<([A-Z]\w*(?:\.[A-Z]\w*)?)> is missing/,
   /wrapped in a <([A-Z]\w*)/,
 ];
 
-/**
- * The component an error is about, like `Tooltip` in "`Tooltip` must be used within
- * `TooltipProvider`". When that is one of the wrappers, the new parent goes around it.
- */
+export interface ParentQuery {
+  name: string;
+  file: string;
+  error: string;
+  isNamingParent: boolean;
+  analysis: ComponentAnalysis;
+  project: ProjectIndex;
+}
+
+/** The component an error is about, like `Tooltip` in "`Tooltip` must be used within …". */
 export const getErrorSubject = (error: string): string | null =>
   SUBJECT_PATTERN.exec(error)?.[1] ?? null;
 
-const getSharedPrefixLength = (left: string, right: string): number => {
-  let length = 0;
-  while (length < left.length && left[length] === right[length]) length++;
-  return length;
+const getSharedSegmentCount = (left: string, right: string): number => {
+  const leftSegments = left.split(sep);
+  const rightSegments = right.split(sep);
+  let count = 0;
+  while (count < leftSegments.length && leftSegments[count] === rightSegments[count]) count++;
+  return count;
 };
 
-interface PackageImport {
-  specifier: string;
-  namespace: string | null;
-}
-
-/**
- * The packages a file imports, and the namespaces of parts it imports from them by name,
- * like `DropdownMenu` in `import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"`.
- */
-const getPackageImports = (file: string): PackageImport[] => {
-  const packageImports = new Map<string, PackageImport>();
-  for (const [, clause = "", specifier = ""] of readFileSync(file, "utf8").matchAll(
-    PACKAGE_IMPORT_PATTERN,
-  )) {
-    packageImports.set(specifier, { specifier, namespace: null });
-    for (const namedImport of NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []) {
-      const namespace = NAMESPACE_NAME_PATTERN.exec(namedImport.trim())?.[1];
-      if (namespace) packageImports.set(`${specifier}#${namespace}`, { specifier, namespace });
-    }
-  }
-  return [...packageImports.values()];
+const createProjectWrapper = (
+  name: string,
+  { file, exportName }: ExportedName,
+  query: ParentQuery,
+): Wrapper => {
+  const key = `${file}#${name}`;
+  const parentAnalysis = query.project.components.get(`${file}#${exportName}`);
+  const contextSample =
+    query.analysis.contextSamples.get(key) ?? query.project.contextSamples.get(key);
+  const props = parentAnalysis
+    ? getDefaultProps(parentAnalysis)
+    : contextSample
+      ? { value: contextSample }
+      : {};
+  return { name, candidate: { kind: "project", file, exportName, props } };
 };
 
-/** The project files a file imports by relative path, like `./DropdownMenuItem`. */
-const getRelativeImports = (file: string): string[] =>
-  [...readFileSync(file, "utf8").matchAll(RELATIVE_IMPORT_PATTERN)].flatMap(
-    ([, specifier = ""]) => {
-      const base = resolve(dirname(file), specifier);
-      const resolved = SOURCE_FILE_SUFFIXES.map((suffix) => `${base}${suffix}`).find(
-        (candidate) => existsSync(candidate) && statSync(candidate).isFile(),
-      );
-      return resolved ? [resolved] : [];
-    },
-  );
-
 /**
- * The parent a component says it needs when it throws without one, like `Menu` in
- * "`MenuItem` must be used within `Menu`", and where it might come from: a project export
- * of that name, nearest first, or the packages the component imports and the namespaces
- * of parts it imports from them, whose `Root` stands in when the name is internal to the
- * package. The parts may come through a file the component imports, like Excalidraw's
- * `DropdownMenuItem` wrapping Radix's, which throws for want of a `Menu`.
+ * The parent an error names, like `Menu` in "`MenuItem` must be used within `Menu`". A
+ * context's `XContext.Provider` mounts as the context, or its exported `XProvider`.
  */
-export const findWrapper = (
-  error: string,
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-): Wrapper | null => {
-  const namedParent = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1])
+export const getNamedParent = (error: string, project: ProjectIndex): string | null => {
+  const named = PARENT_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1])
     .find(Boolean)
     ?.replace(CONTEXT_PROVIDER_SUFFIX, "");
-  if (!namedParent) return null;
-  // A context an error names may not be exported, but its provider, like `UsersProvider`
-  // for `UsersContext`, usually is.
-  const providerName = namedParent.replace(CONTEXT_SUFFIX, "Provider");
-  const name =
-    !exportIndex.has(namedParent) && exportIndex.has(providerName) ? providerName : namedParent;
-  const projectFiles = [...(exportIndex.get(name) ?? [])].sort(
-    (left, right) =>
-      getSharedPrefixLength(right, componentFile) - getSharedPrefixLength(left, componentFile),
-  );
-  const projectCandidates = projectFiles.map((file): WrapperCandidate => ({
-    specifier: file,
-    namespace: null,
-    props: {},
-    importer: componentFile,
-    exportName: name,
-    isRootAllowed: false,
-  }));
-  const packageImports = new Map(
-    [componentFile, ...getRelativeImports(componentFile)]
-      .flatMap(getPackageImports)
-      .map((packageImport) => [
-        `${packageImport.specifier}#${packageImport.namespace}`,
-        packageImport,
-      ]),
-  );
-  const packageCandidates = [...packageImports.values()].map(
-    ({ specifier, namespace }): WrapperCandidate => ({
-      specifier,
-      namespace,
-      props: {},
-      importer: componentFile,
-      exportName: name,
-      isRootAllowed: true,
-    }),
-  );
-  const candidates = [...projectCandidates, ...packageCandidates];
-  return candidates.length > 0 ? { name, candidates } : null;
+  if (!named) return null;
+  const providerName = named.replace(CONTEXT_SUFFIX, "Provider");
+  return !project.exports.has(named) && project.exports.has(providerName) ? providerName : named;
 };
 
 /**
- * The root of the compound component a component belongs to: the longest name its own file
- * exports that starts its name, like `AlertDialog` for `AlertDialogContent`. It stands in when
- * an error names a parent the component already has, as Radix's `AlertDialog` parts throw
- * for want of a `Dialog`.
+ * Where a named parent may come from: project exports of that name, nearest first, then
+ * the packages the component's file and the files it imports use, and the namespaces of
+ * parts imported from them, like `DropdownMenu` from `radix-ui`.
  */
-const getCompoundRootNames = (
-  componentName: string,
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-): string[] =>
-  [...exportIndex]
+const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
+  const projectWrappers = [...(query.project.exports.get(name) ?? [])]
+    .sort(
+      (left, right) =>
+        getSharedSegmentCount(right.file, query.file) -
+        getSharedSegmentCount(left.file, query.file),
+    )
+    .map((exported) => createProjectWrapper(name, exported, query));
+  const importingFiles = [query.file, ...(query.project.imports.get(query.file)?.files ?? [])];
+  const packageWrappers = importingFiles
+    .flatMap((file) => query.project.imports.get(file)?.packages ?? [])
+    .flatMap(({ specifier, names }) =>
+      [null, ...names.filter((importedName) => NAMESPACE_NAME_PATTERN.test(importedName))].map(
+        (namespace): Wrapper => ({
+          name,
+          candidate: {
+            kind: "package",
+            specifier,
+            namespace,
+            exportName: name,
+            importer: query.file,
+            props: {},
+          },
+        }),
+      ),
+    );
+  return [...projectWrappers, ...packageWrappers];
+};
+
+/** Exports of the component's own file that start its name, longest first. */
+const getCompoundRootNames = (query: ParentQuery): string[] =>
+  [...query.project.exports]
     .filter(
-      ([candidate, files]) =>
-        candidate !== componentName &&
-        componentName.startsWith(candidate) &&
-        files.includes(componentFile),
+      ([candidate, exported]) =>
+        candidate !== query.name &&
+        query.name.startsWith(candidate) &&
+        exported.some(({ file }) => file === query.file),
     )
     .map(([candidate]) => candidate)
     .sort((left, right) => right.length - left.length);
 
-const getCompoundRootName = (
-  componentName: string,
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-): string | undefined => getCompoundRootNames(componentName, componentFile, exportIndex)[0];
-
-const createFileWrapper = (
-  name: string,
-  componentFile: string,
-  exportNames: string[],
-): Wrapper => ({
-  name,
-  candidates: exportNames.map((exportName) => ({
-    specifier: componentFile,
-    namespace: null,
-    props: {},
-    importer: componentFile,
-    exportName,
-    isRootAllowed: false,
-  })),
-});
+const findOwnExport = (name: string, query: ParentQuery): Wrapper[] =>
+  (query.project.exports.get(name) ?? [])
+    .filter(({ file }) => file === query.file)
+    .map((exported) => createProjectWrapper(name, exported, query));
 
 /**
- * The outermost root the component's own file exports, like `DropdownMenu` rather than
- * `DropdownMenuSub` for `DropdownMenuSubTrigger`, which renders the library root a part's
- * error names.
+ * The other parts of the component's compound component, like `TabsList` for `TabsTrigger`,
+ * one of which may render the parent it needs. A component may be the root itself, like a
+ * `MessageScroller` needing its `MessageScrollerProvider`.
  */
-export const findOuterCompoundRoot = (
-  componentName: string,
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-): Wrapper | null => {
-  const name = getCompoundRootNames(componentName, componentFile, exportIndex).at(-1);
-  return name ? createFileWrapper(name, componentFile, [name]) : null;
-};
-
-export const findCompoundRoot = (
-  componentName: string,
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-): Wrapper | null => {
-  const name = getCompoundRootName(componentName, componentFile, exportIndex);
-  return name ? createFileWrapper(name, componentFile, [name]) : null;
-};
-
-/**
- * The other parts of the compound component a component belongs to, like `TabsList` for
- * `TabsTrigger`, one of which may be the parent it needs inside the root: Radix's tab
- * triggers throw for want of the `RovingFocusGroup` only the list renders.
- */
-export const findSiblingParts = (
-  componentName: string,
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-): Wrapper | null => {
-  // A component may be the root itself, like `MessageScroller` needing its
-  // `MessageScrollerProvider` part.
-  const rootName = getCompoundRootName(componentName, componentFile, exportIndex) ?? componentName;
-  const siblings = [...exportIndex]
+const findSiblingParts = (query: ParentQuery): Wrapper[] => {
+  const rootName = getCompoundRootNames(query)[0] ?? query.name;
+  return [...query.project.exports.keys()]
     .filter(
-      ([candidate, files]) =>
-        candidate !== rootName &&
-        candidate !== componentName &&
-        candidate.startsWith(rootName) &&
-        files.includes(componentFile),
+      (candidate) =>
+        candidate !== rootName && candidate !== query.name && candidate.startsWith(rootName),
     )
-    .map(([candidate]) => candidate);
-  return siblings.length > 0
-    ? createFileWrapper(`${rootName} part`, componentFile, siblings)
+    .flatMap((candidate) => findOwnExport(candidate, query));
+};
+
+/**
+ * The contexts the component reads, first one an error says a hook found empty, named after
+ * the hook, like `UIAppStateContext` for `useUIAppState(...)`, which a child may read.
+ */
+const findContextProviders = (query: ParentQuery): Wrapper[] => {
+  const hookName = NULL_HOOK_PATTERN.exec(query.error)?.[1];
+  const hookContextName = hookName
+    ? `${hookName.slice("use".length).replace(CONTEXT_SUFFIX, "")}Context`
     : null;
-};
-
-/**
- * The contexts an error says a hook found empty, named after the hook, like
- * `UIAppStateContext` for "Cannot destructure property 'theme' of 'useUIAppState(...)' as
- * it is null", or `ChipsContext` for `useChipsContext(...)`, as a child the component renders may read a context the component doesn't.
- */
-export const getNamedContextKeys = (error: string, contextKeys: Iterable<string>): string[] => {
-  const hookName = NULL_HOOK_PATTERN.exec(error)?.[1];
-  if (!hookName) return [];
-  const contextName = `${hookName.slice("use".length).replace(CONTEXT_SUFFIX, "")}Context`;
-  return [...contextKeys].filter((contextKey) => contextKey.endsWith(`#${contextName}`));
-};
-
-/**
- * The provider of a context the component reads, for an error that names no parent, like
- * "Cannot destructure property 'board' of 'useBoard(...)' as it is null" from a hook that
- * reads a context with no provider above. The driver gives it a sample of the value.
- */
-export const findContextProvider = (
-  contextKeys: string[],
-  componentFile: string,
-  exportIndex: Map<string, string[]>,
-  isWrapped: (name: string) => boolean,
-): Wrapper | null => {
-  for (const contextKey of contextKeys) {
+  const hookContextKeys = [...query.project.contextSamples.keys()].filter(
+    (contextKey) => hookContextName !== null && contextKey.endsWith(`#${hookContextName}`),
+  );
+  return [...hookContextKeys, ...query.analysis.contextSamples.keys()].flatMap((contextKey) => {
     const separatorIndex = contextKey.lastIndexOf("#");
     const file = contextKey.slice(0, separatorIndex);
     const name = contextKey.slice(separatorIndex + 1);
-    if (isWrapped(name) || !exportIndex.get(name)?.includes(file)) continue;
-    return {
-      name,
-      candidates: [
-        {
-          specifier: file,
-          namespace: null,
-          props: {},
-          importer: componentFile,
-          exportName: name,
-          isRootAllowed: false,
-        },
-      ],
-    };
-  }
-  return null;
+    return (query.project.exports.get(name) ?? [])
+      .filter((exported) => exported.file === file)
+      .map((exported) => createProjectWrapper(name, exported, query));
+  });
+};
+
+/**
+ * Every parent that may fix an error, in the order to try them: the parent it names, then
+ * the component's compound roots, its sibling parts and the providers of contexts it reads.
+ * A parent named for a library part the component's own outermost root renders, like a vaul
+ * `DrawerTitle` asking for Radix's `Dialog`, is that root first.
+ */
+export const proposeParents = (query: ParentQuery): Wrapper[] => {
+  const namedParent = query.isNamingParent ? getNamedParent(query.error, query.project) : null;
+  const rootNames = getCompoundRootNames(query);
+  const outerRoots = rootNames.slice(-1).flatMap((rootName) => findOwnExport(rootName, query));
+  const innerRoots = rootNames.slice(0, -1).flatMap((rootName) => findOwnExport(rootName, query));
+  const namedParents = namedParent ? findNamedParents(namedParent, query) : [];
+  const isNamedInOwnFile = namedParents.some(
+    ({ candidate }) => candidate.kind === "project" && candidate.file === query.file,
+  );
+  const ordered =
+    namedParents.length > 0 && !isNamedInOwnFile
+      ? [...outerRoots, ...namedParents, ...innerRoots]
+      : [...namedParents, ...innerRoots, ...outerRoots];
+  return [...ordered, ...findSiblingParts(query), ...findContextProviders(query)];
 };

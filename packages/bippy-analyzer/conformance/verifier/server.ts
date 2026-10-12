@@ -6,7 +6,8 @@ import { createServer, loadEnv, parseAst } from "vite";
 import type { DepOptimizationConfig, Plugin, Rollup } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types.js";
-import type { ProbeMode } from "./types.js";
+import type { ProbeMode, SourceIndex } from "./types.js";
+import { addExports, getFileImports, parseImports } from "./source-index.js";
 
 export interface Probe {
   id: string;
@@ -39,7 +40,7 @@ type OptimizerPlugin = NonNullable<
  */
 export interface Harness {
   url: string;
-  exportIndex: Map<string, string[]>;
+  sourceIndex: SourceIndex;
   getModuleUrl: (file: string) => string;
   getDependencyHash: () => string;
   close: () => Promise<void>;
@@ -204,15 +205,10 @@ const MISSING_ASSET_PREFIX = "\0bippy-verify-missing-asset:";
 const NUQS_SERVER_ID = "\0bippy-verify-nuqs-server";
 const NUQS_CACHE_STUB = join(import.meta.dirname, "stubs/nuqs-cache.ts");
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
-const PACKAGE_IMPORT_PATTERN = /import\s+(?!type\b)([^;]*?)\s*from\s*["']([^"'.][^"']*)["']/g;
-const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
 /** A package or path alias, like `react` or `@/lib/utils`, rather than a relative path. */
 const PACKAGE_SPECIFIER_PATTERN = /^[^./\0]/;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
-const EXPORT_DECLARATION_PATTERN =
-  /export\s+(?:default\s+)?(?:async\s+)?(?:const|let|var|function|class)\s+([A-Z]\w*)/g;
-const EXPORT_LIST_PATTERN = /export\s*\{([^}]*)\}/g;
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../bippy/src/index.ts");
 
@@ -554,7 +550,7 @@ interface SourceReferences {
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
   packageImports: Map<string, Set<string>>;
-  exports: Map<string, string[]>;
+  sourceIndex: SourceIndex;
   reduxStore: ExportedValue | null;
 }
 
@@ -600,38 +596,24 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
     importMetaEnv: new Set(),
     nextFonts: new Set(),
     packageImports: new Map(),
-    exports: new Map(),
+    sourceIndex: { exports: new Map(), imports: new Map() },
     reduxStore: null,
-  };
-  const addExport = (name: string, file: string): void => {
-    references.exports.set(name, [...(references.exports.get(name) ?? []), file]);
   };
   for (const file of listSourceFiles(appDirectory)) {
     const text = readFileSync(file, "utf8");
     if (!references.reduxStore && !TEST_FILE_PATTERN.test(file))
       references.reduxStore = findReduxStore(file, text);
-    for (const [, name = ""] of text.matchAll(EXPORT_DECLARATION_PATTERN)) addExport(name, file);
-    for (const [, names = ""] of text.matchAll(EXPORT_LIST_PATTERN))
-      for (const specifier of names.split(",")) {
-        const exported = specifier
-          .split(/\s+as\s+/)
-          .pop()
-          ?.trim();
-        if (exported && /^[A-Z]/.test(exported)) addExport(exported, file);
-      }
+    addExports(references.sourceIndex.exports, file, text);
+    const imports = parseImports(text);
+    references.sourceIndex.imports.set(file, getFileImports(file, imports));
+    for (const { specifier, names } of imports) {
+      if (!PACKAGE_SPECIFIER_PATTERN.test(specifier)) continue;
+      const packageNames = references.packageImports.get(specifier) ?? new Set();
+      for (const name of names) packageNames.add(name);
+      references.packageImports.set(specifier, packageNames);
+    }
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);
-    for (const [, clause = "", specifier = ""] of text.matchAll(PACKAGE_IMPORT_PATTERN)) {
-      const names = references.packageImports.get(specifier) ?? new Set();
-      for (const namedImport of NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []) {
-        const name = namedImport
-          .replace(/^\s*type\s+/, "")
-          .split(/\s+as\s+/)[0]
-          ?.trim();
-        if (name) names.add(name);
-      }
-      references.packageImports.set(specifier, names);
-    }
     for (const [, names = ""] of text.matchAll(NEXT_FONT_IMPORT_PATTERN))
       for (const name of names.split(",")) {
         const localName = name.split(/\s+as\s+/)[0]?.trim();
@@ -975,7 +957,7 @@ export const startHarness = async (
   if (!address || typeof address === "string") throw new Error("Harness server has no port");
   return {
     url: `http://localhost:${address.port}${HARNESS_PATH}`,
-    exportIndex: references.exports,
+    sourceIndex: references.sourceIndex,
     getModuleUrl: (file) => `/${relative(appDirectory, file)}`,
     getDependencyHash: () => server.environments.client.depsOptimizer?.metadata.browserHash ?? "",
     close: () => server.close(),

@@ -4,15 +4,8 @@ import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types.js";
-import {
-  findCompoundRoot,
-  findOuterCompoundRoot,
-  findContextProvider,
-  findSiblingParts,
-  findWrapper,
-  getErrorSubject,
-  getNamedContextKeys,
-} from "./wrappers.js";
+import { getPropCombinations } from "./props.js";
+import { getErrorSubject, proposeParents } from "./wrappers.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -22,7 +15,6 @@ export interface Observation {
   after: Capture;
 }
 
-const MAX_PROP_COMBINATIONS = 12;
 const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 8;
@@ -54,32 +46,34 @@ export const performInPage = (page: Page, actionKey: string): Promise<Capture | 
 export const listActionsInPage = (page: Page): Promise<Action[]> =>
   withTimeout(page.evaluate(() => window.__verify.actions()));
 
+interface Layer {
+  proposals: Wrapper[];
+  cursor: number;
+  error: string;
+}
+
+const getLayerWrapper = (layer: Layer): Wrapper | undefined => layer.proposals[layer.cursor];
+
 /**
- * Where a newly found parent goes among the wrappers, outermost first, when React didn't say
- * which of them threw: around the wrapper the error is about, inside them all when it is
- * about the component itself, under its own name or the end of it, like Radix's
- * `MenuSubTrigger` inside `DropdownMenuSubTrigger`, and otherwise outside them all, since
- * then a wrapper threw under a name of its package's own, like `MenubarMenu` for a `Menu`
- * wrapper.
+ * Where a new parent goes among the layers, outermost first, when React's component stack
+ * doesn't say which one threw: around the wrapper the error is about, inside them all when
+ * it is about the component itself, and otherwise outside them all.
  */
-const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper[]): number => {
+const getInsertIndex = (error: string, componentName: string, layers: Layer[]): number => {
   const subject = getErrorSubject(error);
-  const subjectIndex = wrappers.findIndex((existing) => existing.name === subject);
+  const subjectIndex = layers.findIndex((layer) => getLayerWrapper(layer)?.name === subject);
   if (subjectIndex !== -1) return subjectIndex;
   const isComponent = subject !== null && componentName.endsWith(subject);
-  return isComponent || wrappers.length === 0 ? wrappers.length : 0;
+  return isComponent || layers.length === 0 ? layers.length : 0;
 };
 
 /**
- * Mounts a component, and while it throws for want of a parent, finds that parent and
- * mounts it again inside, trying the parent's next candidate while the error stays the
- * same or the parent doesn't render the component at all, like a part that renders nothing
- * until something is selected. Returns the parents it needed, outermost first. An error that
- * names no parent, like cmdk's parts reading a store their `Command` root provides, still
- * gets the compound root the component's file exports, then its other parts, one at a time,
- * and then the providers of the contexts it reads, starting with one named after a hook the
- * error says came up empty, like `UIAppStateContext` for `useUIAppState(...)`, which a child
- * it renders may read.
+ * Mounts a component, and while it throws for want of a parent, adds the parents that may
+ * fix the error as a layer and tries them in turn, outermost first. A parent that leaves the
+ * error as it was, doesn't render the component, or breaks itself gives way to the next. A
+ * parent that throws the same error itself is the right one and gets a layer of its own
+ * around it, and an earlier parent that throws for want of data once an outer one provides
+ * what it stood in for is dropped. Returns the parents it settled on.
  */
 export const resolveWrappers = async (
   page: Page,
@@ -87,161 +81,70 @@ export const resolveWrappers = async (
   analysis: ComponentAnalysis,
   project: ProjectIndex,
 ): Promise<Wrapper[]> => {
-  const { exports: exportIndex } = project;
-  const wrappers: Wrapper[] = [];
-  let added: { index: number; error: string } | null = null;
-  for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && wrappers.length < MAX_WRAPPERS; attempt++) {
-    const capture = await mountInPage(page, { ...request, wrappers });
+  const layers: Layer[] = [];
+  let newest: Layer | null = null;
+  const getWrappers = (): Wrapper[] => layers.flatMap((layer) => getLayerWrapper(layer) ?? []);
+  const proposeFor = (name: string, file: string, error: string, failure: MountFailure) => {
+    const usedNames = new Set([analysis.name, ...getWrappers().map((wrapper) => wrapper.name)]);
+    return proposeParents({
+      name,
+      file,
+      error,
+      isNamingParent: failure === "provider",
+      analysis,
+      project,
+    }).filter((wrapper) => !usedNames.has(wrapper.name));
+  };
+  for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && layers.length <= MAX_WRAPPERS; attempt++) {
+    const capture = await mountInPage(page, { ...request, wrappers: getWrappers() });
     if (!capture.error || capture.shapes.length > 0) break;
     const failure = classifyMountError(capture.error);
-    // A parent added earlier that now throws for want of data is no longer needed, as one
-    // added outside it provides what it stood in for, like a bare `Toast.Root` inside the
-    // app's `Toast`, which passes it the toast it reads.
-    if (
-      added !== null &&
-      capture.errorDepth !== null &&
-      capture.errorDepth < wrappers.length &&
-      capture.errorDepth !== added.index &&
-      (failure === "missing-data" || failure === "other")
-    ) {
-      wrappers.splice(capture.errorDepth, 1);
-      added = null;
-      continue;
-    }
-    // The parent just added threw an error no further parent fixes, like a part that renders
-    // an `<input>` with children, when React's component stack places it at or above it.
-    const isParentBroken =
-      added !== null &&
-      failure === "other" &&
-      capture.errorDepth !== null &&
-      capture.errorDepth <= added.index;
-    // The parent just added throws the same error itself, so it is the right parent and needs
-    // one of its own parts around it, like a `MessageScroller` its `MessageScrollerProvider`.
-    const parent = added && capture.errorDepth === added.index ? wrappers[added.index] : undefined;
-    const parentCandidate = added?.error === capture.error ? parent?.candidates[0] : undefined;
-    const parentParts = parentCandidate
-      ? findSiblingParts(parentCandidate.exportName, parentCandidate.specifier, exportIndex)
-      : null;
-    if (added && parentParts && !wrappers.some((existing) => existing.name === parentParts.name)) {
-      wrappers.splice(added.index, 0, withSampledProps(parentParts, project, analysis));
-      continue;
-    }
-    const isRejected =
-      added?.error === capture.error || failure === "did-not-render" || isParentBroken;
-    const retried = added && isRejected ? wrappers[added.index] : undefined;
-    if (added && retried && retried.candidates.length > 1) {
-      wrappers[added.index] = { ...retried, candidates: retried.candidates.slice(1) };
-      continue;
+    const thrower = capture.errorDepth === null ? undefined : layers[capture.errorDepth];
+    if (newest) {
+      const newestIndex = layers.indexOf(newest);
+      const newestWrapper = getLayerWrapper(newest);
+      if (
+        thrower === newest &&
+        capture.error === newest.error &&
+        newestWrapper?.candidate.kind === "project"
+      ) {
+        const proposals = proposeFor(
+          newestWrapper.candidate.exportName,
+          newestWrapper.candidate.file,
+          capture.error,
+          failure,
+        );
+        if (proposals.length > 0) {
+          newest = { proposals, cursor: 0, error: capture.error };
+          layers.splice(newestIndex, 0, newest);
+          continue;
+        }
+      }
+      if (thrower && thrower !== newest && (failure === "missing-data" || failure === "other")) {
+        layers.splice(layers.indexOf(thrower), 1);
+        newest = null;
+        continue;
+      }
+      const isBrokenByNewest =
+        failure === "other" && capture.errorDepth !== null && capture.errorDepth <= newestIndex;
+      if (capture.error === newest.error || failure === "did-not-render" || isBrokenByNewest) {
+        newest.cursor++;
+        if (getLayerWrapper(newest)) continue;
+        layers.splice(newestIndex, 1);
+        break;
+      }
     }
     if (!PARENT_FAILURES.has(failure)) break;
-    // A parent named after the component itself, as when it throws for want of its own
-    // provider part, can't be what it needs.
-    const isWrapped = (candidate: Wrapper | null): boolean =>
-      candidate === null ||
-      candidate.name === analysis.name ||
-      wrappers.some((existing) => existing.name === candidate.name);
-    const namedWrapper =
-      failure === "provider" ? findWrapper(capture.error, analysis.file, exportIndex) : null;
-    const ownRoot = findCompoundRoot(analysis.name, analysis.file, exportIndex);
-    const outerRoot = findOuterCompoundRoot(analysis.name, analysis.file, exportIndex);
-    // A parent named for a library part the component's own root renders, like a vaul
-    // `DrawerTitle` asking for Radix's `Dialog`, is its root, not another file's `Dialog`.
-    const errorWrapper =
-      namedWrapper &&
-      outerRoot &&
-      !isWrapped(outerRoot) &&
-      !namedWrapper.candidates.some((candidate) => candidate.specifier === analysis.file)
-        ? { ...namedWrapper, candidates: [...outerRoot.candidates, ...namedWrapper.candidates] }
-        : namedWrapper;
-    const compoundRoot = isWrapped(errorWrapper) ? ownRoot : errorWrapper;
-    const siblingParts = isWrapped(compoundRoot)
-      ? findSiblingParts(analysis.name, analysis.file, exportIndex)
-      : compoundRoot;
-    const wrapper = isWrapped(siblingParts)
-      ? findContextProvider(
-          [
-            ...getNamedContextKeys(capture.error, project.contextSamples.keys()),
-            ...analysis.contextSamples.keys(),
-          ],
-          analysis.file,
-          exportIndex,
-          (name) => wrappers.some((existing) => existing.name === name),
-        )
-      : siblingParts;
-    if (!wrapper || isWrapped(wrapper)) break;
-    const sampledWrapper = withSampledProps(wrapper, project, analysis);
-    const index = capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers);
-    wrappers.splice(index, 0, sampledWrapper);
-    added = { index, error: capture.error };
-  }
-  return wrappers;
-};
-
-const getPropSamples = (analysis: ComponentAnalysis) =>
-  analysis.bindings.flatMap((binding) =>
-    binding.kind === "prop" && binding.propName && binding.samples.length > 0
-      ? [{ name: binding.propName, samples: binding.samples }]
-      : [],
-  );
-
-/**
- * Props a component reads only through the whole props object, which mount from a sample
- * of its props type beneath the props the analysis knows.
- */
-const getWholeProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
-  analysis.propsSample?.kind === "Object" ? analysis.propsSample.fields : {};
-
-/**
- * The first sample of every prop the analysis knows, the props a component mounts with when
- * nothing else is chosen.
- */
-export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> => ({
-  ...getWholeProps(analysis),
-  ...Object.fromEntries(
-    getPropSamples(analysis).map(({ name, samples }) => [
-      name,
-      samples[0] ?? { kind: "Undefined" },
-    ]),
-  ),
-});
-
-/**
- * Gives each candidate from the project the props its own analysis would mount it with, as
- * a parent like a sortable list needs its items to render its parts at all, and a context
- * the value the component reads from it.
- */
-const withSampledProps = (
-  wrapper: Wrapper,
-  project: ProjectIndex,
-  analysis: ComponentAnalysis,
-): Wrapper => ({
-  ...wrapper,
-  candidates: wrapper.candidates.map((candidate) => {
-    const key = `${candidate.specifier}#${candidate.exportName}`;
-    const parentAnalysis = project.components.get(key);
-    const contextSample = analysis.contextSamples.get(key) ?? project.contextSamples.get(key);
-    if (parentAnalysis) return { ...candidate, props: getDefaultProps(parentAnalysis) };
-    return contextSample ? { ...candidate, props: { value: contextSample } } : candidate;
-  }),
-});
-
-const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
-  const props = getPropSamples(analysis);
-  const base = getDefaultProps(analysis);
-  const fullCount = props.reduce((total, { samples }) => total * samples.length, 1);
-  if (fullCount <= MAX_PROP_COMBINATIONS) {
-    return props.reduce<Record<string, Sample>[]>(
-      (combinations, { name, samples }) =>
-        combinations.flatMap((combination) =>
-          samples.map((sample) => ({ ...combination, [name]: sample })),
-        ),
-      [getWholeProps(analysis)],
+    const proposals = proposeFor(analysis.name, analysis.file, capture.error, failure);
+    if (proposals.length === 0) break;
+    newest = { proposals, cursor: 0, error: capture.error };
+    layers.splice(
+      capture.errorDepth ?? getInsertIndex(capture.error, analysis.name, layers),
+      0,
+      newest,
     );
   }
-  const variations = props.flatMap(({ name, samples }) =>
-    samples.slice(1).map((sample) => ({ ...base, [name]: sample })),
-  );
-  return [base, ...variations].slice(0, MAX_PROP_COMBINATIONS);
+  return getWrappers();
 };
 
 const getCaptureKey = (capture: Capture): string =>

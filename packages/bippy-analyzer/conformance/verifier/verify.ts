@@ -42,7 +42,7 @@ export const startProjectHarness = async (
   return {
     ...harness,
     projectIndex: {
-      exports: harness.exportIndex,
+      ...harness.sourceIndex,
       components: new Map(
         analyzed.flatMap(({ analysis }) =>
           analysis.exportName ? [[`${analysis.file}#${analysis.exportName}`, analysis]] : [],

@@ -57,31 +57,54 @@ export interface Scenario {
   args: unknown[];
 }
 
-export interface WrapperCandidate {
+export interface ProjectCandidate {
+  kind: "project";
+  file: string;
+  exportName: string;
+  props: Record<string, Sample>;
+}
+
+/**
+ * A part of a package, by the name an error gives it, which the package may export under a
+ * shorter name, like `Content` for Radix's `MenuContent`, or only as its `Root`.
+ */
+export interface PackageCandidate {
+  kind: "package";
   specifier: string;
   namespace: string | null;
-  props: Record<string, Sample>;
-  importer: string;
   exportName: string;
-  isRootAllowed: boolean;
+  importer: string;
+  props: Record<string, Sample>;
 }
 
-/**
- * A parent a component needs to render, like Radix's `Dialog` around a `DialogTitle`, with
- * the modules it may come from, tried in order.
- */
+export type WrapperCandidate = ProjectCandidate | PackageCandidate;
+
 export interface Wrapper {
   name: string;
-  candidates: WrapperCandidate[];
+  candidate: WrapperCandidate;
 }
 
-/**
- * Where a component's parents are looked up: every export of the project by name, the
- * analysis of each exported component by `file#exportName`, whose props a project parent
- * mounts with, and a sample of the value each context any component reads holds.
- */
-export interface ProjectIndex {
-  exports: Map<string, string[]>;
+export interface ExportedName {
+  file: string;
+  exportName: string;
+}
+
+export interface PackageImport {
+  specifier: string;
+  names: string[];
+}
+
+export interface FileImports {
+  packages: PackageImport[];
+  files: string[];
+}
+
+export interface SourceIndex {
+  exports: Map<string, ExportedName[]>;
+  imports: Map<string, FileImports>;
+}
+
+export interface ProjectIndex extends SourceIndex {
   components: Map<string, ComponentAnalysis>;
   contextSamples: Map<string, Sample>;
 }

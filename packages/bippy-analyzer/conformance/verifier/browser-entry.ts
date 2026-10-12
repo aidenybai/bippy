@@ -72,7 +72,7 @@ interface TrackedState {
 }
 
 const ANONYMOUS_NAME = "Anonymous";
-const WRAPPER_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
+const OPEN_PARENT_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
 const MAX_CAPTURED_FIBERS = 10_000;
 const MAX_SETTLE_MS = 3000;
@@ -658,46 +658,44 @@ const getComponentType = (value: unknown): unknown => {
 };
 
 /**
- * Loads the first candidate module, or namespace of parts in it, that exports the wrapper.
- * A package may export it under a shorter name than its errors use, like `Content` for
- * Radix's internal `MenuContent`, a module under a longer one, like `DropdownMenu` for
- * `Menu`, or only as its `Root`.
+ * Loads a wrapper's component. A package may export the part an error names under a
+ * shorter name, like `Content` for Radix's internal `MenuContent`, a longer one, like
+ * `DropdownMenu` for `Menu`, or only as its `Root`.
  */
-const loadWrapper = async (wrapper: Wrapper): Promise<LoadedWrapper | null> => {
-  for (const candidate of wrapper.candidates) {
-    const query = new URLSearchParams({
-      specifier: candidate.specifier,
-      importer: candidate.importer,
-    });
-    const imported: Record<string, unknown> = await import(
-      /* @vite-ignore */ `${WRAPPER_PATH}?${query}`
-    ).catch(() => ({}));
-    const moduleExports: Record<string, unknown> = candidate.namespace
-      ? Object(imported[candidate.namespace])
-      : imported;
-    const exportNames = Object.keys(moduleExports).filter((name) => /^[A-Z]/.test(name));
-    const shortName = candidate.isRootAllowed
-      ? (exportNames
-          .filter((name) => candidate.exportName.endsWith(name))
-          .sort((left, right) => right.length - left.length)[0] ??
-        exportNames
-          .filter((name) => name.endsWith(candidate.exportName))
-          .sort((left, right) => left.length - right.length)[0])
-      : undefined;
-    const value =
-      moduleExports[candidate.exportName] ??
-      (shortName ? moduleExports[shortName] : undefined) ??
-      (candidate.isRootAllowed ? moduleExports.Root : undefined);
-    const componentType = getComponentType(value);
-    if (isComponentType(componentType))
-      return {
-        type: componentType,
-        props: Object.fromEntries(
-          Object.entries(candidate.props).map(([name, sample]) => [name, hydrate(sample)]),
-        ),
-      };
-  }
-  return null;
+const loadWrapper = async ({ candidate }: Wrapper): Promise<LoadedWrapper | null> => {
+  const isPackage = candidate.kind === "package";
+  const query = new URLSearchParams(
+    isPackage
+      ? { specifier: candidate.specifier, importer: candidate.importer }
+      : { specifier: candidate.file, importer: candidate.file },
+  );
+  const imported: Record<string, unknown> | null = await import(
+    /* @vite-ignore */ `${WRAPPER_PATH}?${query}`
+  ).catch(() => null);
+  if (!imported) return null;
+  const moduleExports: Record<string, unknown> =
+    isPackage && candidate.namespace ? Object(imported[candidate.namespace]) : imported;
+  const exportNames = Object.keys(moduleExports).filter((name) => /^[A-Z]/.test(name));
+  const partName = isPackage
+    ? (exportNames
+        .filter((name) => candidate.exportName.endsWith(name))
+        .sort((left, right) => right.length - left.length)[0] ??
+      exportNames
+        .filter((name) => name.endsWith(candidate.exportName))
+        .sort((left, right) => left.length - right.length)[0])
+    : undefined;
+  const value =
+    moduleExports[candidate.exportName] ??
+    (partName ? moduleExports[partName] : undefined) ??
+    (isPackage ? moduleExports.Root : undefined);
+  const componentType = getComponentType(value);
+  if (!isComponentType(componentType)) return null;
+  return {
+    type: componentType,
+    props: Object.fromEntries(
+      Object.entries(candidate.props).map(([name, sample]) => [name, hydrate(sample)]),
+    ),
+  };
 };
 
 const isAsyncFunction = (
@@ -845,7 +843,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
       if (wrapper)
         element = createElement(
           wrapper.type as ComponentType<Record<string, unknown>>,
-          { ...wrapper.props, ...WRAPPER_PROPS },
+          { ...wrapper.props, ...OPEN_PARENT_PROPS },
           createElement(getDepthMarker(depth), null, element),
         );
     }
