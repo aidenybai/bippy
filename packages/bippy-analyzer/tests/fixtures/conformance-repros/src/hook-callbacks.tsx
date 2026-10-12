@@ -34,3 +34,11 @@ export const ApiKeyForm = () => {
     </button>
   );
 };
+
+export const Truncated = ({ text }: { text: string }) => {
+  const [isOverflown, setIsOverflown] = useState(false);
+  const refCallback = (node: HTMLDivElement | null) => {
+    if (node && node.scrollWidth > node.clientWidth) setIsOverflown(true);
+  };
+  return isOverflown ? <abbr title={text}>{text}</abbr> : <div ref={refCallback}>{text}</div>;
+};

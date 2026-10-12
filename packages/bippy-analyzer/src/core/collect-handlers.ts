@@ -18,6 +18,13 @@ export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
   (tag.kind !== "BuiltinTag" && (prop.value.kind === "Setter" || prop.value.kind === "Function"));
 
+/**
+ * A ref callback, like `ref={(node) => setWidth(node.offsetWidth)}`, which React calls when
+ * it attaches the element, as a layout effect runs.
+ */
+const isRefCallback = (prop: JsxProp): boolean =>
+  prop.name === "ref" && (prop.value.kind === "Function" || prop.value.kind === "Setter");
+
 const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
     case "Function":
@@ -80,6 +87,7 @@ export const collectHandlers = (
     };
     addTransition(trigger, effectCall.callback, effectCall.args, effectCall.loc);
   }
+  const refCallbackKeys = new Set<string>();
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
       if (prop.kind === "JsxSpreadAttribute") {
@@ -90,6 +98,19 @@ export const collectHandlers = (
           [],
           prop.value.loc,
         );
+        continue;
+      }
+      if (isRefCallback(prop)) {
+        const key = getHandlerKey(prop.value);
+        if (key !== null && !refCallbackKeys.has(key)) {
+          refCallbackKeys.add(key);
+          addTransition(
+            { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+            prop.value,
+            [{ kind: "Unknown", reason: "event", loc: GeneratedSource }],
+            getHandlerLocation(prop.value),
+          );
+        }
         continue;
       }
       if (!isHandlerProp(element.tag, prop)) continue;

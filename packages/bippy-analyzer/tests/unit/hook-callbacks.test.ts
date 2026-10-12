@@ -33,4 +33,12 @@ describe("callbacks passed to hooks", () => {
     expect(form.report.unreachableBranches).toEqual([]);
     expect(form.report.states).toHaveLength(2);
   });
+
+  it("runs a ref callback as a layout effect, since React calls it when it attaches the element", () => {
+    const truncated = getComponent(project, "Truncated");
+    expect(truncated.report.unreachableBranches).toEqual([]);
+    expect(truncated.analysis.handlers.map((handler) => handler.trigger)).toEqual([
+      { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+    ]);
+  });
 });
