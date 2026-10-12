@@ -4,7 +4,13 @@ import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types.js";
-import { findCompoundRoot, findSiblingParts, findWrapper, getErrorSubject } from "./wrappers.js";
+import {
+  findCompoundRoot,
+  findContextProvider,
+  findSiblingParts,
+  findWrapper,
+  getErrorSubject,
+} from "./wrappers.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -65,9 +71,10 @@ const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper
  * Mounts a component, and while it throws for want of a parent, finds that parent and
  * mounts it again inside, trying the parent's next candidate while the error stays the
  * same or the parent doesn't render the component at all, like a part that renders nothing
- * until something is selected. Returns the parents it needed, outermost first. An error that names no parent, like
- * cmdk's parts reading a store their `Command` root provides, still gets the compound root
- * the component's file exports, and then its other parts, one at a time.
+ * until something is selected. Returns the parents it needed, outermost first. An error that
+ * names no parent, like cmdk's parts reading a store their `Command` root provides, still
+ * gets the compound root the component's file exports, then its other parts, one at a time,
+ * and then the providers of the contexts it reads.
  */
 export const resolveWrappers = async (
   page: Page,
@@ -97,9 +104,17 @@ export const resolveWrappers = async (
     const compoundRoot = isWrapped(errorWrapper)
       ? findCompoundRoot(analysis.name, analysis.file, exportIndex)
       : errorWrapper;
-    const wrapper = isWrapped(compoundRoot)
+    const siblingParts = isWrapped(compoundRoot)
       ? findSiblingParts(analysis.name, analysis.file, exportIndex)
       : compoundRoot;
+    const wrapper = isWrapped(siblingParts)
+      ? findContextProvider(
+          [...analysis.contextSamples.keys()],
+          analysis.file,
+          exportIndex,
+          (name) => wrappers.some((existing) => existing.name === name),
+        )
+      : siblingParts;
     if (!wrapper || isWrapped(wrapper)) break;
     const sampledWrapper = withSampledProps(wrapper, project, analysis);
     const index = capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers);

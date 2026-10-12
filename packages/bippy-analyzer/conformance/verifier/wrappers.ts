@@ -163,3 +163,36 @@ export const findSiblingParts = (
     ? createFileWrapper(`${rootName} part`, componentFile, siblings)
     : null;
 };
+
+/**
+ * The provider of a context the component reads, for an error that names no parent, like
+ * "Cannot destructure property 'board' of 'useBoard(...)' as it is null" from a hook that
+ * reads a context with no provider above. The driver gives it a sample of the value.
+ */
+export const findContextProvider = (
+  contextKeys: string[],
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+  isWrapped: (name: string) => boolean,
+): Wrapper | null => {
+  for (const contextKey of contextKeys) {
+    const separatorIndex = contextKey.lastIndexOf("#");
+    const file = contextKey.slice(0, separatorIndex);
+    const name = contextKey.slice(separatorIndex + 1);
+    if (isWrapped(name) || !exportIndex.get(name)?.includes(file)) continue;
+    return {
+      name,
+      candidates: [
+        {
+          specifier: file,
+          namespace: null,
+          props: {},
+          importer: componentFile,
+          exportName: name,
+          isRootAllowed: false,
+        },
+      ],
+    };
+  }
+  return null;
+};
