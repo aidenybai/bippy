@@ -64,7 +64,8 @@ const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper
 /**
  * Mounts a component, and while it throws for want of a parent, finds that parent and
  * mounts it again inside, trying the parent's next candidate while the error stays the
- * same. Returns the parents it needed, outermost first. An error that names no parent, like
+ * same or the parent doesn't render the component at all, like a part that renders nothing
+ * until something is selected. Returns the parents it needed, outermost first. An error that names no parent, like
  * cmdk's parts reading a store their `Command` root provides, still gets the compound root
  * the component's file exports, and then its other parts, one at a time.
  */
@@ -80,7 +81,9 @@ export const resolveWrappers = async (
   while (wrappers.length < MAX_WRAPPERS) {
     const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
-    const retried = added?.error === capture.error ? wrappers[added.index] : undefined;
+    const isRejected =
+      added?.error === capture.error || classifyMountError(capture.error) === "did-not-render";
+    const retried = added && isRejected ? wrappers[added.index] : undefined;
     if (added && retried && retried.candidates.length > 1) {
       wrappers[added.index] = { ...retried, candidates: retried.candidates.slice(1) };
       continue;
