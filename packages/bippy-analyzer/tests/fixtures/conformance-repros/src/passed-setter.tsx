@@ -18,3 +18,29 @@ export const SearchPanel = () => {
     </div>
   );
 };
+
+interface ListProps {
+  ids: string[];
+  renderAction: (id: string) => React.ReactNode;
+}
+
+const List = ({ ids, renderAction }: ListProps) => (
+  <ul>
+    {ids.map((id) => (
+      <li key={id}>{renderAction(id)}</li>
+    ))}
+  </ul>
+);
+
+export const DeletableList = ({ ids }: { ids: string[] }) => {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  return (
+    <div>
+      <List
+        ids={ids}
+        renderAction={(id) => <button onClick={() => setDeletingId(id)}>Delete</button>}
+      />
+      {deletingId === null ? null : <p>Delete {deletingId}?</p>}
+    </div>
+  );
+};

@@ -45,7 +45,8 @@ import type {
   WarningKind,
 } from "./types.js";
 import { formatPlace, formatSymbolicValue } from "./format.js";
-import { forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
+import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
+import { isHandlerProp } from "./collect-handlers.js";
 import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key.js";
 import { isExternalSource, isNullish, isStateBinding, isWholeBinding } from "./utils/checks.js";
 import { getKnownTruthiness, getTestExpression, negate } from "./utils/truthiness.js";
@@ -1615,6 +1616,30 @@ export class Interpreter {
   }
 
   /**
+   * Runs the handlers in the JSX a handler returns, like the buttons a render prop gives a
+   * table to render, since the component renders them for its user to click.
+   */
+  #collectRenderedHandlers(value: SymbolicValue, visited: Set<number>): void {
+    const event = createUnknown("event", GeneratedSource);
+    forEachJsxElement(value, (element) => {
+      for (const prop of element.props) {
+        if (prop.kind !== "JsxAttribute" || !isHandlerProp(element.tag, prop)) continue;
+        const handler = prop.value;
+        if (handler.kind === "Setter") this.#recordUpdate(handler.binding, event, ROOT_WALK_STATE);
+        if (handler.kind === "Binding") this.#callBinding(handler, [event], ROOT_WALK_STATE);
+        if (handler.kind !== "Function" || visited.has(handler.functionId)) continue;
+        visited.add(handler.functionId);
+        const fn = this.#getFunction(handler.functionId);
+        if (fn)
+          this.#collectRenderedHandlers(
+            this.#evaluateFunction(fn, [event], ROOT_WALK_STATE),
+            visited,
+          );
+      }
+    });
+  }
+
+  /**
    * Evaluates an event handler or effect callback and returns the state updates and prop
    * calls it makes.
    */
@@ -1628,7 +1653,11 @@ export class Interpreter {
     try {
       if (callback.kind === "Function") {
         const fn = this.#getFunction(callback.functionId);
-        if (fn) this.#evaluateFunction(fn, args, ROOT_WALK_STATE);
+        if (fn)
+          this.#collectRenderedHandlers(
+            this.#evaluateFunction(fn, args, ROOT_WALK_STATE),
+            new Set([callback.functionId]),
+          );
       }
       if (callback.kind === "Setter")
         this.#recordUpdate(

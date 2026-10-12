@@ -14,7 +14,7 @@ export const ANY_EVENT = "*";
  * Whether a prop holds a handler: one named like an event, or a setter or function passed to
  * a component under any name, like `setSearchTerm`, which the component may call.
  */
-const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
+export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
   (tag.kind !== "BuiltinTag" && (prop.value.kind === "Setter" || prop.value.kind === "Function"));
 

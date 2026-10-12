@@ -20,4 +20,11 @@ describe("setters passed to a child", () => {
       ['searchTerm !== ""'],
     ]);
   });
+
+  it("runs the handlers in the JSX a render prop returns for the child to render", () => {
+    const list = getComponent(project, "DeletableList");
+    const [handler] = list.analysis.handlers;
+    expect(handler?.trigger).toEqual({ kind: "Event", tag: "List", event: "renderAction" });
+    expect(handler?.updates.map((update) => update.binding.name)).toEqual(["deletingId"]);
+  });
 });
