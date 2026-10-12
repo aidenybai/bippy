@@ -1,6 +1,6 @@
 import type { AbstractValue, BinaryExpressionValue, BindingValue, SymbolicValue } from "./types.js";
 import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks.js";
-import { formatAbstractValue, formatSymbolicValue } from "./format.js";
+import { formatAbstractValue, formatValueKey } from "./format.js";
 import { getBindingPlaceKey, isPlacePrefix } from "./utils/place-key.js";
 import {
   getKnownTruthiness,
@@ -245,7 +245,7 @@ const evaluateTruthiness = (values: AbstractValue[]): boolean | null => {
  * still possible.
  */
 export const evaluate = (value: SymbolicValue, constraints: Constraints): boolean | null => {
-  const assumption = constraints.assumptions.get(formatSymbolicValue(value));
+  const assumption = constraints.assumptions.get(formatValueKey(value));
   if (assumption) return assumption.outcome;
   switch (value.kind) {
     case "Binding": {
@@ -343,7 +343,7 @@ export const assume = (
   }
   if (hasUnknownPart(value)) return constraints;
   const next = cloneConstraints(constraints);
-  next.assumptions.set(formatSymbolicValue(value), {
+  next.assumptions.set(formatValueKey(value), {
     outcome,
     bindingIds: collectBindingIds(value),
   });

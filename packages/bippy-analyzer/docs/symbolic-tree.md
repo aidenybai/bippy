@@ -93,7 +93,7 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
 
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
-   - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
+   - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null. What it learns about a value is tied to the bindings it reads, not to how it prints, so two calls to one helper that print the same, like `parseDate(values[0])` and `parseDate(values[1])` when it can't tell the indexes apart, stay separate.
    - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`.
    - State values are limited to the initial value plus every value a handler can set. A state initialized from an untyped value cast to a type, like `useState(cell.getValue() as boolean)`, can hold anything, since the cast only asserts the type.
 10. For each state and each handler that changes its region, finds which states of the region can come next. A handler that doesn't touch a region leaves it as it is. It also reports branches that can never render. A branch whose value renders only under a test it wasn't computed under, like a ternary kept in a variable and shown behind `&&`, still runs without that test, so it is never reported.

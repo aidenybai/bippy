@@ -32,7 +32,7 @@ import {
   forEachSymbolicValue,
   mapSymbolicValue,
 } from "./utils/traverse.js";
-import { formatNegated, formatSymbolicValue } from "./format.js";
+import { formatNegated, formatSymbolicValue, formatValueKey } from "./format.js";
 import {
   getBindingPlaceKey,
   getPlaceKey,
@@ -572,9 +572,8 @@ const collectUnreachableBranches = (
             });
           }
         }
-        if (reached?.has(true)) visit(value.consequent, [...merged, formatSymbolicValue(test)]);
-        if (reached?.has(false))
-          visit(value.alternate, [...merged, formatSymbolicValue(negate(test))]);
+        if (reached?.has(true)) visit(value.consequent, [...merged, formatValueKey(test)]);
+        if (reached?.has(false)) visit(value.alternate, [...merged, formatValueKey(negate(test))]);
         return;
       }
       case "JsxExpression":
