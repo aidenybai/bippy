@@ -474,13 +474,49 @@ const listSourceFiles = (directory: string): string[] =>
     return SOURCE_FILE_PATTERN.test(entry.name) ? [path] : [];
   });
 
+interface ExportedValue {
+  file: string;
+  exportName: string;
+}
+
 interface SourceReferences {
   processEnv: Set<string>;
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
   serverSdkImports: Map<string, Set<string>>;
   exports: Map<string, string[]>;
+  reduxStore: ExportedValue | null;
 }
+
+const STORE_DECLARATION_PATTERN =
+  /\b(?:const|let)\s+(\w+)\s*=\s*(?:configureStore|createStore|legacy_createStore)\(/;
+const TEST_FILE_PATTERN = /\.(?:test|spec|stories)\.[jt]sx?$/;
+
+/** The Redux store a file creates and exports, like `export const store = configureStore(…)`. */
+const findReduxStore = (file: string, text: string): ExportedValue | null => {
+  const name = STORE_DECLARATION_PATTERN.exec(text)?.[1];
+  if (!name) return null;
+  if (new RegExp(`export\\s+default\\s+${name}\\b`).test(text))
+    return { file, exportName: "default" };
+  return new RegExp(`export\\s+(?:const|let)\\s+${name}\\b|export\\s*\\{[^}]*\\b${name}\\b`).test(
+    text,
+  )
+    ? { file, exportName: name }
+    : null;
+};
+
+/**
+ * Mounts every component in the app's own Redux store, as its root does, since a component
+ * reading it throws outside a `Provider`.
+ */
+const createReduxSpec = ({ file, exportName }: ExportedValue): ProviderSpec => ({
+  packageName: "react-redux",
+  imports: [
+    'import { Provider as ReduxProvider } from "react-redux";',
+    `import { ${exportName} as reduxStore } from ${JSON.stringify(file)};`,
+  ].join("\n"),
+  wrap: (children) => `createElement(ReduxProvider, { store: reduxStore }, ${children})`,
+});
 
 /**
  * What the harness needs to know about an app's source: the environment variables,
@@ -495,12 +531,15 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
     nextFonts: new Set(),
     serverSdkImports: new Map(),
     exports: new Map(),
+    reduxStore: null,
   };
   const addExport = (name: string, file: string): void => {
     references.exports.set(name, [...(references.exports.get(name) ?? []), file]);
   };
   for (const file of listSourceFiles(appDirectory)) {
     const text = readFileSync(file, "utf8");
+    if (!references.reduxStore && !TEST_FILE_PATTERN.test(file))
+      references.reduxStore = findReduxStore(file, text);
     for (const [, name = ""] of text.matchAll(EXPORT_DECLARATION_PATTERN)) addExport(name, file);
     for (const [, names = ""] of text.matchAll(EXPORT_LIST_PATTERN))
       for (const specifier of names.split(",")) {
@@ -753,9 +792,13 @@ export const startHarness = async (
   componentFiles: string[],
   setup: HarnessSetup,
 ): Promise<Harness> => {
-  const providers = getInstalledProviders(appDirectory);
+  const installedProviders = getInstalledProviders(appDirectory);
   const appImporter = componentFiles[0] ?? join(appDirectory, "index.ts");
   const references = collectSourceReferences(appDirectory);
+  const providers =
+    references.reduxStore && isInstalled(appDirectory, "react-redux")
+      ? [...installedProviders, createReduxSpec(references.reduxStore)]
+      : installedProviders;
   const loadedEnv = loadEnv("development", appDirectory, "");
   const getPlaceholders = (names: Set<string>): Record<string, string> =>
     Object.fromEntries(
