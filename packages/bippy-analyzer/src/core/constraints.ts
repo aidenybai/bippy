@@ -149,7 +149,11 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
       isStrict: false,
     })),
   );
-  const getIndex = (atom: string): number => atomIndices.get(atom) ?? 0;
+  const getIndex = (atom: string): number => {
+    const index = atomIndices.get(atom);
+    if (index === undefined) throw new Error(`Unindexed bound atom ${atom}`);
+    return index;
+  };
   for (const bound of allBounds) {
     const row = distances[getIndex(bound.right)];
     const column = getIndex(bound.left);

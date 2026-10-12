@@ -498,7 +498,7 @@ const collectUnreachableBranches = (
   outcomes: DecisionOutcomes,
 ): UnreachableBranch[] => {
   const unreachableBranches: Array<UnreachableBranch & { key: string }> = [];
-  const seen = collectTestedBranchKeys(render);
+  const reportedKeys = collectTestedBranchKeys(render);
   const narrowedKeys = new Set<string>();
   const pathConditions = new WeakMap<SymbolicValue, Set<string>>();
   const visit = (value: SymbolicValue, conditions: string[]): void => {
@@ -515,8 +515,8 @@ const collectUnreachableBranches = (
         if ([...merged].some((condition) => !guards.includes(condition))) narrowedKeys.add(key);
         const reached = outcomes.get(key);
         const test = getTestExpression(value);
-        if (reached && !seen.has(key)) {
-          seen.add(key);
+        if (reached && !reportedKeys.has(key)) {
+          reportedKeys.add(key);
           if (!reached.has(true))
             unreachableBranches.push({
               key,
