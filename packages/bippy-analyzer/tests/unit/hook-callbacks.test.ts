@@ -70,4 +70,8 @@ describe("callbacks passed to hooks", () => {
   it("doesn't trust the `undefined` type of `useState()` that a handler sets", () => {
     expect(getComponent(project, "Tooltip").report.unreachableBranches).toEqual([]);
   });
+
+  it("calls either function a condition chooses, like one of two setters", () => {
+    expect(getComponent(project, "DragPreview").report.unreachableBranches).toEqual([]);
+  });
 });

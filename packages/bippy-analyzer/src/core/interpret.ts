@@ -825,6 +825,28 @@ export class Interpreter {
     switch (callee.kind) {
       case "Function":
         return this.#callFunction(callee, args, loc, state);
+      // A callee chosen by a condition, like `isDocument ? setDraggedDocument : setDraggedFolder`,
+      // may be either.
+      case "Conditional":
+        return {
+          ...callee,
+          consequent: this.#evaluateCall(
+            callee.consequent,
+            calleePlace,
+            args,
+            argumentPlaces,
+            loc,
+            state,
+          ),
+          alternate: this.#evaluateCall(
+            callee.alternate,
+            calleePlace,
+            args,
+            argumentPlaces,
+            loc,
+            state,
+          ),
+        };
       case "Setter":
         this.#applySetter(callee, args[0], state);
         return UNDEFINED_VALUE;

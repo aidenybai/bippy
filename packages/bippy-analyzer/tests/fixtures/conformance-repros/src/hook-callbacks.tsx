@@ -119,3 +119,15 @@ export const Tooltip = ({ label }: { label: string }) => {
     </div>
   );
 };
+
+export const DragPreview = ({ isDocument }: { isDocument: boolean }) => {
+  const [draggedDocument, setDraggedDocument] = useState<string | null>(null);
+  const [draggedFolder, setDraggedFolder] = useState<string | null>(null);
+  const startDrag = (setDragged: (id: string) => void) => setDragged("item");
+  return (
+    <div onDragStart={() => startDrag(isDocument ? setDraggedDocument : setDraggedFolder)}>
+      {draggedDocument ? <p>Document</p> : null}
+      {draggedFolder ? <p>Folder</p> : null}
+    </div>
+  );
+};
