@@ -127,6 +127,32 @@ const STUBS = new Map([
   ["@t3-oss/env-core", T3_ENV_STUB],
   ["next-intl/server", join(import.meta.dirname, "stubs/next-intl-server.ts")],
 ]);
+/**
+ * The browser polyfills Next bundles for Node's modules in client code, which a package like
+ * `@apidevtools/json-schema-ref-parser` needs as it calls `path.join` when it loads.
+ */
+const NEXT_NODE_POLYFILLS: Record<string, string> = {
+  assert: "assert",
+  buffer: "buffer",
+  constants: "constants-browserify",
+  crypto: "crypto-browserify",
+  domain: "domain-browser",
+  events: "events",
+  http: "stream-http",
+  https: "https-browserify",
+  os: "os-browserify",
+  path: "path-browserify",
+  punycode: "punycode",
+  querystring: "querystring-es3",
+  stream: "stream-browserify",
+  string_decoder: "string_decoder",
+  sys: "util",
+  timers: "timers-browserify",
+  tty: "tty-browserify",
+  util: "util",
+  vm: "vm-browserify",
+  zlib: "browserify-zlib",
+};
 const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
@@ -506,6 +532,19 @@ const resolveNextContextModule = (nextDirectory: string, name: string): string |
   return fileName ? `next/dist/shared/lib/${fileName}` : null;
 };
 
+const getNextPolyfillAliases = (
+  appDirectory: string,
+): Array<{ find: RegExp; replacement: string }> => {
+  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+  if (!nextDirectory) return [];
+  return Object.entries(NEXT_NODE_POLYFILLS).flatMap(([name, polyfill]) => {
+    const directory = join(nextDirectory, "dist/compiled", polyfill);
+    return existsSync(directory)
+      ? [{ find: new RegExp(`^(?:node:)?${name}/?$`), replacement: `${directory}/` }]
+      : [];
+  });
+};
+
 /**
  * Provides Next's own router contexts with the stub routers, so `next/navigation` and
  * `next/router` work when a package imports them, like `@clerk/nextjs` does, where the stubs
@@ -695,6 +734,7 @@ export const startHarness = async (
     resolve: {
       alias: [
         { find: /^bippy$/, replacement: BIPPY_SOURCE },
+        ...getNextPolyfillAliases(appDirectory),
         ...Object.entries(setup.alias).map(([source, target]) => ({
           find: new RegExp(`^${RegExp.escape(source)}$`),
           replacement: target,
@@ -728,6 +768,8 @@ export const startHarness = async (
       esbuildOptions: {
         plugins: [createMissingRequirePlugin()],
         loader: { ".node": "empty" },
+        // Webpack, which Next bundles client code with, makes `__dirname` the root.
+        ...(isInstalled(appDirectory, "next") ? { define: { __dirname: '"/"' } } : {}),
       },
     },
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
