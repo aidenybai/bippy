@@ -10,4 +10,8 @@ describe("projects without strictNullChecks", () => {
     expect(button.report.unreachableBranches).toEqual([]);
     expect(button.report.states).toHaveLength(2);
   });
+
+  it("lets a call's result be undefined, which its return type leaves out", () => {
+    expect(getComponent(project, "ThemeLabel").report.unreachableBranches).toEqual([]);
+  });
 });

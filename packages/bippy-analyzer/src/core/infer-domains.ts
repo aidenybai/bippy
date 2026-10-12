@@ -340,13 +340,14 @@ export class DomainResolver {
 
   /**
    * Whether the value at this location is an optional property, like an `isOpen?: boolean`
-   * prop, in a project without `strictNullChecks`, whose types leave out the `undefined` an
-   * unset property is.
+   * prop, or a call's result, in a project without `strictNullChecks`, whose types leave out
+   * the `undefined` an unset property or a `ShareTheme | undefined` return is.
    */
   #isOptionalRead(loc: SourceLocation): boolean {
     if (this.#isStrictNullChecks) return false;
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return false;
+    if (t.isCallExpression(node)) return true;
     const element = t.isBindingElement(node)
       ? node
       : node.parent && t.isBindingElement(node.parent)
