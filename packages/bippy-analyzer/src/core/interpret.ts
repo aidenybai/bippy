@@ -44,7 +44,8 @@ import type {
   Warning,
   WarningKind,
 } from "./types.js";
-import { formatPlace, formatSymbolicValue, formatValueKey } from "./format.js";
+import { formatPlace, formatSymbolicValue } from "./format.js";
+import { getValueKey } from "./utils/value-key.js";
 import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
 import { isHandlerProp } from "./collect-handlers.js";
 import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key.js";
@@ -1348,7 +1349,7 @@ export class Interpreter {
       toArm(split.consequent, [...guards, getGuard(split, true)]),
       toArm(split.alternate, [...guards, getGuard(split, false)]),
     );
-    this.branchGuards.set(conditional, guards.map(formatValueKey));
+    this.branchGuards.set(conditional, guards.map(getValueKey));
     return conditional;
   }
 

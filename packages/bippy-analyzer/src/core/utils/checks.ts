@@ -6,7 +6,7 @@ import type {
   PrimitiveValue,
   SymbolicValue,
 } from "../types.js";
-import { formatSymbolicValue } from "../format.js";
+import { getValueKey } from "./value-key.js";
 
 export const isWholeBinding = (value: SymbolicValue, binding: Binding): boolean =>
   value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
@@ -71,4 +71,4 @@ export const isRenderingNothing = (value: SymbolicValue): boolean =>
  */
 export const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
   isRenderingNothing(conditional.alternate) ||
-  formatSymbolicValue(conditional.alternate) === formatSymbolicValue(conditional.test);
+  getValueKey(conditional.alternate) === getValueKey(conditional.test);

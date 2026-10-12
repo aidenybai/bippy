@@ -32,7 +32,8 @@ import {
   forEachSymbolicValue,
   mapSymbolicValue,
 } from "./utils/traverse.js";
-import { formatNegated, formatSymbolicValue, formatValueKey } from "./format.js";
+import { formatNegated, formatSymbolicValue } from "./format.js";
+import { getValueKey } from "./utils/value-key.js";
 import {
   getBindingPlaceKey,
   getPlaceKey,
@@ -300,7 +301,7 @@ const applyUpdates = (
   return next;
 };
 
-const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(formatSymbolicValue);
+const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getValueKey);
 
 const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
   prefix.every((guardKey, index) => guardKeys[index] === guardKey);
@@ -572,8 +573,8 @@ const collectUnreachableBranches = (
             });
           }
         }
-        if (reached?.has(true)) visit(value.consequent, [...merged, formatValueKey(test)]);
-        if (reached?.has(false)) visit(value.alternate, [...merged, formatValueKey(negate(test))]);
+        if (reached?.has(true)) visit(value.consequent, [...merged, getValueKey(test)]);
+        if (reached?.has(false)) visit(value.alternate, [...merged, getValueKey(negate(test))]);
         return;
       }
       case "JsxExpression":

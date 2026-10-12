@@ -1,6 +1,7 @@
 import type { AbstractValue, BinaryExpressionValue, BindingValue, SymbolicValue } from "./types.js";
 import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks.js";
-import { formatAbstractValue, formatValueKey } from "./format.js";
+import { formatAbstractValue } from "./format.js";
+import { getValueKey } from "./utils/value-key.js";
 import { getBindingPlaceKey, isPlacePrefix } from "./utils/place-key.js";
 import {
   getKnownTruthiness,
@@ -38,9 +39,14 @@ interface Distance {
   isStrict: boolean;
 }
 
+interface AssumedPlace {
+  bindingId: number;
+  placeKey: string;
+}
+
 interface Assumption {
   outcome: boolean;
-  bindingIds: Set<number>;
+  places: AssumedPlace[];
 }
 
 /**
@@ -61,12 +67,13 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
 
 export const getLengthAtom = (bindingId: number): string => `${bindingId}${LENGTH_SUFFIX}`;
 
-const collectBindingIds = (value: SymbolicValue): Set<number> => {
-  const bindingIds = new Set<number>();
+const collectPlaces = (value: SymbolicValue): AssumedPlace[] => {
+  const places: AssumedPlace[] = [];
   forEachSymbolicValue(value, (part) => {
-    if (part.kind === "Binding") bindingIds.add(part.binding.id);
+    if (part.kind === "Binding")
+      places.push({ bindingId: part.binding.id, placeKey: getBindingPlaceKey(part) });
   });
-  return bindingIds;
+  return places;
 };
 
 const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
@@ -245,7 +252,7 @@ const evaluateTruthiness = (values: AbstractValue[]): boolean | null => {
  * still possible.
  */
 export const evaluate = (value: SymbolicValue, constraints: Constraints): boolean | null => {
-  const assumption = constraints.assumptions.get(formatValueKey(value));
+  const assumption = constraints.assumptions.get(getValueKey(value));
   if (assumption) return assumption.outcome;
   switch (value.kind) {
     case "Binding": {
@@ -343,9 +350,9 @@ export const assume = (
   }
   if (hasUnknownPart(value)) return constraints;
   const next = cloneConstraints(constraints);
-  next.assumptions.set(formatValueKey(value), {
+  next.assumptions.set(getValueKey(value), {
     outcome,
-    bindingIds: collectBindingIds(value),
+    places: collectPlaces(value),
   });
   const bounds = getBounds(value, outcome);
   if (bounds) {
@@ -366,8 +373,11 @@ export const forgetBinding = (
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
   for (const [key, assumption] of constraints.assumptions) {
-    if (!assumption.bindingIds.has(bindingId)) continue;
-    if (keepsLength && key.includes(LENGTH_SUFFIX)) continue;
+    const placeKeys = assumption.places
+      .filter((place) => place.bindingId === bindingId)
+      .map((place) => place.placeKey);
+    if (placeKeys.length === 0) continue;
+    if (keepsLength && placeKeys.every((placeKey) => placeKey === lengthAtom)) continue;
     constraints.assumptions.delete(key);
   }
   constraints.bounds = constraints.bounds.filter((bound) => {
