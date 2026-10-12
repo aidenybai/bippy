@@ -44,4 +44,17 @@ export const getSetupInputs = (repo: RepoConfig): string[] => [
   repo.revision,
   repo.install,
   repo.patchFile ? readFileSync(repo.patchFile, "utf8") : "",
+  readFileSync(join(CONFORMANCE_DIRECTORY, "setup.sh"), "utf8"),
 ];
+
+export const getSetupEnvironment = (
+  repo: RepoConfig,
+  appDirectory: string,
+  patchFile: string,
+): Record<string, string> => ({
+  REPOSITORY: repo.repository,
+  REVISION: repo.revision,
+  APP_DIR: appDirectory,
+  INSTALL: repo.install,
+  PATCH_FILE: repo.patchFile ? patchFile : "",
+});

@@ -8,6 +8,7 @@ import {
   CACHE_DIRECTORY,
   CONFORMANCE_DIRECTORY,
   PACKAGE_DIRECTORY,
+  getSetupEnvironment,
   getSetupInputs,
 } from "./repos.js";
 import type { RepoConfig } from "./repos.js";
@@ -99,13 +100,7 @@ const getAnalyzerPackageJson = (): string => {
 
 const getSetupKey = (repo: RepoConfig): string =>
   createHash("sha256")
-    .update(
-      JSON.stringify([
-        ...getSetupInputs(repo),
-        readFileSync(join(CONFORMANCE_DIRECTORY, "setup.sh"), "utf8"),
-        getAnalyzerPackageJson(),
-      ]),
-    )
+    .update(JSON.stringify([...getSetupInputs(repo), getAnalyzerPackageJson()]))
     .digest("hex");
 
 const listFiles = (directory: string): string[] =>
@@ -172,13 +167,7 @@ const prepareSnapshot = async (
         : []),
     ]);
     await runStep(sandbox, "setup", "bash", [`${SANDBOX_ROOT}/setup.sh`], {
-      env: {
-        REPOSITORY: repo.repository,
-        REVISION: repo.revision,
-        APP_DIR: APP_DIRECTORY,
-        INSTALL: repo.install,
-        PATCH_FILE: repo.patchFile ? `${SANDBOX_ROOT}/custom.patch` : "",
-      },
+      env: getSetupEnvironment(repo, APP_DIRECTORY, `${SANDBOX_ROOT}/custom.patch`),
     });
     await runStep(sandbox, "analyzer install", "npm", ["install", "--no-audit", "--no-fund"], {
       cwd: ANALYZER_DIRECTORY,

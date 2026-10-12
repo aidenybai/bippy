@@ -3,7 +3,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { collect } from "./collect.js";
 import type { CollectSummary } from "./collect.js";
-import { CACHE_DIRECTORY, CONFORMANCE_DIRECTORY, getSetupInputs } from "./repos.js";
+import {
+  CACHE_DIRECTORY,
+  CONFORMANCE_DIRECTORY,
+  getSetupEnvironment,
+  getSetupInputs,
+} from "./repos.js";
 import type { RepoConfig } from "./repos.js";
 
 const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
@@ -19,14 +24,7 @@ const prepare = (repo: RepoConfig, log: (line: string) => void): string => {
   mkdirSync(CACHE_DIRECTORY, { recursive: true });
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)}`);
   const result = spawnSync("bash", [join(CONFORMANCE_DIRECTORY, "setup.sh")], {
-    env: {
-      ...process.env,
-      REPOSITORY: repo.repository,
-      REVISION: repo.revision,
-      APP_DIR: appDirectory,
-      INSTALL: repo.install,
-      PATCH_FILE: repo.patchFile ?? "",
-    },
+    env: { ...process.env, ...getSetupEnvironment(repo, appDirectory, repo.patchFile ?? "") },
     encoding: "utf8",
     maxBuffer: SETUP_OUTPUT_BUFFER_BYTES,
   });
