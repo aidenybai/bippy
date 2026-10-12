@@ -141,6 +141,15 @@ const getMutatedPlace = (effect: AliasingEffect): Place | null => {
 
 export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
 
+/** A custom hook of the project, with the resolver for the file it is declared in. */
+export interface ProjectHook {
+  fn: HIRFunction;
+  resolver: DomainResolver;
+}
+
+/** Finds a project hook by its declaration key, like `src/hooks/use-toggle.ts#useToggle`. */
+export type ProjectHookLoader = (declarationKey: string) => ProjectHook | null;
+
 type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
 
 const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
@@ -266,9 +275,11 @@ const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => 
  * updates and prop calls, each with the guards that lead to it.
  */
 export class Interpreter {
-  readonly #resolver: DomainResolver;
+  #resolver: DomainResolver;
   readonly #loadModuleFunction: ModuleFunctionLoader;
-  readonly #values = new Map<IdentifierId, SymbolicValue>();
+  readonly #loadProjectHook: ProjectHookLoader;
+  readonly #values = new WeakMap<object, Map<IdentifierId, SymbolicValue>>();
+  readonly #functionResolvers = new WeakMap<HIRFunction, DomainResolver>();
   readonly #propertyNames = new Map<IdentifierId, string>();
   readonly #functions: HIRFunction[] = [];
   readonly #bindings = new Map<string, Binding>();
@@ -293,9 +304,14 @@ export class Interpreter {
   #blockVisits = 0;
   #inlineDepth = 0;
 
-  constructor(resolver: DomainResolver, loadModuleFunction: ModuleFunctionLoader) {
+  constructor(
+    resolver: DomainResolver,
+    loadModuleFunction: ModuleFunctionLoader,
+    loadProjectHook: ProjectHookLoader,
+  ) {
     this.#resolver = resolver;
     this.#loadModuleFunction = loadModuleFunction;
+    this.#loadProjectHook = loadProjectHook;
   }
 
   get bindings(): Binding[] {
@@ -307,6 +323,7 @@ export class Interpreter {
   }
 
   #registerFunction(fn: HIRFunction): FunctionValue {
+    if (!this.#functionResolvers.has(fn)) this.#functionResolvers.set(fn, this.#resolver);
     this.#functions.push(fn);
     return { kind: "Function", functionId: this.#functions.length - 1, loc: fn.loc };
   }
@@ -348,12 +365,24 @@ export class Interpreter {
     return { kind: "Binding", binding, path };
   }
 
+  /**
+   * The values of the current function's identifiers. A function compiled on its own, like
+   * a hook from another file, numbers its identifiers from zero too, so each compilation
+   * keeps its own.
+   */
+  #getValues(): Map<IdentifierId, SymbolicValue> {
+    const { env } = this.#getCurrentFunction();
+    const values = this.#values.get(env) ?? new Map<IdentifierId, SymbolicValue>();
+    this.#values.set(env, values);
+    return values;
+  }
+
   #read(place: Place): SymbolicValue {
-    return this.#values.get(place.identifier.id) ?? createUnknown("free-variable", place.loc);
+    return this.#getValues().get(place.identifier.id) ?? createUnknown("free-variable", place.loc);
   }
 
   #write(place: Place, value: SymbolicValue): void {
-    this.#values.set(place.identifier.id, value);
+    this.#getValues().set(place.identifier.id, value);
   }
 
   #getPropBinding(propName: string, localName: string, loc: SourceLocation): Binding {
@@ -546,7 +575,7 @@ export class Interpreter {
       testKind: "truthy",
       consequent: { ...element, children: [fallback.value] },
       alternate: element,
-      branch: { terminalId, probe: "none", loc: element.loc },
+      branch: { terminalId, probe: "none", loc: element.loc, file: this.#resolver.fileName },
     };
   }
 
@@ -580,7 +609,7 @@ export class Interpreter {
     const isDuplicate = this.warnings.some(
       (warning) => warning.kind === kind && warning.message === message,
     );
-    if (!isDuplicate) this.warnings.push({ kind, message, loc });
+    if (!isDuplicate) this.warnings.push({ kind, message, loc, file: this.#resolver.fileName });
   }
 
   /**
@@ -692,6 +721,11 @@ export class Interpreter {
     if (this.propsSample === null && propsPlace)
       this.propsSample = this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
+    const projectHook = hookKind === "Custom" ? this.#findProjectHook(calleePlace) : null;
+    if (projectHook && this.#inlineDepth < MAX_INLINE_DEPTH) {
+      this.#functionResolvers.set(projectHook.fn, projectHook.resolver);
+      return this.#callFunction(this.#registerFunction(projectHook.fn), args, loc, state);
+    }
     if (hookKind !== null)
       return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);
     switch (callee.kind) {
@@ -1092,6 +1126,7 @@ export class Interpreter {
       terminalId: terminal.id,
       probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
       loc: test.loc,
+      file: this.#resolver.fileName,
     };
     const testGuard = getTestExpression({ test: testValue, testKind });
     const walkArm = (block: BlockId, isConsequent: boolean): Outcome => {
@@ -1143,7 +1178,12 @@ export class Interpreter {
         kind: "Split",
         test,
         testKind: "truthy",
-        branch: { terminalId: terminal.id, probe: "none", loc: switchCase.test.loc },
+        branch: {
+          terminalId: terminal.id,
+          probe: "none",
+          loc: switchCase.test.loc,
+          file: this.#resolver.fileName,
+        },
         consequent: caseOutcome,
         alternate: buildCases(index + 1),
       };
@@ -1270,9 +1310,20 @@ export class Interpreter {
     }
   }
 
+  /**
+   * The project's own hook a call reaches, which runs inline as part of the component, so
+   * its state is the component's state and the functions it returns are known.
+   */
+  #findProjectHook(calleePlace: Place): ProjectHook | null {
+    const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
+    return declarationKey ? this.#loadProjectHook(declarationKey) : null;
+  }
+
   #evaluateFunction(fn: HIRFunction, args: SymbolicValue[], state: WalkState): SymbolicValue {
     const previousFunction = this.#currentFunction;
+    const previousResolver = this.#resolver;
     this.#currentFunction = fn;
+    this.#resolver = this.#functionResolvers.get(fn) ?? previousResolver;
     try {
       fn.params.forEach((parameter, index) => {
         const place = getPlaceOrSpread(parameter);
@@ -1290,6 +1341,7 @@ export class Interpreter {
       );
     } finally {
       this.#currentFunction = previousFunction;
+      this.#resolver = previousResolver;
     }
   }
 

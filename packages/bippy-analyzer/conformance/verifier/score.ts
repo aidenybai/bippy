@@ -153,10 +153,10 @@ export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
     if (value.kind !== "Conditional") return;
     const { branch } = value;
     if (branch.probe === "none" || branch.loc === GeneratedSource) return;
-    const id = getProbeId(analysis.file, branch.loc);
+    const id = getProbeId(branch.file, branch.loc);
     probes.set(id, {
       id,
-      file: analysis.file,
+      file: branch.file,
       start: branch.loc.start.index,
       end: branch.loc.end.index,
       mode: branch.probe,
@@ -474,9 +474,7 @@ export const scoreComponent = (
   verdict.reachedUnreachableBranches = report.unreachableBranches
     .filter(({ branch, side }) => {
       const { loc } = branch;
-      return (
-        loc !== GeneratedSource && coveredSides.has(`${getProbeId(analysis.file, loc)}:${side}`)
-      );
+      return loc !== GeneratedSource && coveredSides.has(`${getProbeId(branch.file, loc)}:${side}`);
     })
     .map(({ branch, description }) => `${description} ${formatLine(branch.loc)}`.trim());
   return { ...verdict, ...scoreWarnings(analysis, observations, stateBindings) };

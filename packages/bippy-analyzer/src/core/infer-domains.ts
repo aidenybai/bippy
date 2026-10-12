@@ -193,6 +193,10 @@ export class DomainResolver {
     this.#sourceFile = sourceFile;
   }
 
+  get fileName(): string {
+    return this.#sourceFile.fileName;
+  }
+
   #getType(loc: SourceLocation): Type | undefined {
     if (loc === GeneratedSource) return undefined;
     const key = `${loc.start.index}:${loc.end.index}`;

@@ -79,6 +79,8 @@ export interface Branch {
   terminalId: InstructionId;
   probe: TestKind | "none";
   loc: SourceLocation;
+  /** The file the branch is in, the component's own or a hook's it calls. */
+  file: string;
 }
 
 export interface JsxProp {
@@ -184,6 +186,7 @@ export interface Warning {
   kind: WarningKind;
   message: string;
   loc: SourceLocation;
+  file: string;
 }
 
 export interface StateUpdate {

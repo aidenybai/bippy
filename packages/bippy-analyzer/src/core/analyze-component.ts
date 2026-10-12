@@ -1,15 +1,17 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import type { Checker } from "typescript/unstable/sync";
 import type { CompiledFile, CompiledFunction } from "./compile.js";
-import { DomainResolver, addComparedSamples } from "./infer-domains.js";
+import { addComparedSamples } from "./infer-domains.js";
+import type { DomainResolver } from "./infer-domains.js";
 import { collectHandlers } from "./collect-handlers.js";
 import { Interpreter } from "./interpret.js";
+import type { ProjectHookLoader } from "./interpret.js";
 import type { Bailout, ComponentAnalysis } from "./types.js";
 
 interface FileContext {
   sourceFile: SourceFile;
-  checker: Checker;
+  resolver: DomainResolver;
   compiled: CompiledFile;
+  loadProjectHook: ProjectHookLoader;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
@@ -22,7 +24,7 @@ export const analyzeComponent = (
   reactFunction: CompiledFunction,
   context: FileContext,
 ): ComponentAnalysis => {
-  const { sourceFile, checker, exportNames, displayNames } = context;
+  const { sourceFile, exportNames, displayNames } = context;
   const base = {
     name: reactFunction.name,
     exportName: exportNames.get(reactFunction.name) ?? null,
@@ -57,8 +59,9 @@ export const analyzeComponent = (
     };
   }
   const interpreter = new Interpreter(
-    new DomainResolver(checker, sourceFile),
+    context.resolver,
     context.compiled.compileModuleFunction,
+    context.loadProjectHook,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);

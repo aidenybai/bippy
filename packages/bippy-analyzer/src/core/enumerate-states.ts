@@ -92,8 +92,8 @@ type FieldCases = AbstractValue[] | "unchanged" | null;
 const getBranchKey = (conditional: ConditionalValue): string => {
   const { branch } = conditional;
   return branch.loc === GeneratedSource
-    ? `generated:${branch.terminalId}`
-    : `${branch.loc.start.index}:${branch.loc.end.index}:${branch.terminalId}`;
+    ? `${branch.file}:generated:${branch.terminalId}`
+    : `${branch.file}:${branch.loc.start.index}:${branch.loc.end.index}:${branch.terminalId}`;
 };
 
 const getLiteralCases = (

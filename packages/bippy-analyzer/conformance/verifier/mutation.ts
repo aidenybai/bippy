@@ -62,14 +62,24 @@ const getOwnerPredicate = (
     hookIndex >= 0 ? owner === `state:${hookIndex}` : Boolean(owner?.startsWith("state:"));
 };
 
+/** Reads each file a component's warnings are in once. */
+const createSourceReader = (): ((file: string) => string) => {
+  const sources = new Map<string, string>();
+  return (file) => {
+    const source = sources.get(file) ?? readFileSync(file, "utf8");
+    sources.set(file, source);
+    return source;
+  };
+};
+
 const getProbedWarnings = (
   analysis: ComponentAnalysis,
   stateBindings: Binding[] | null,
 ): ProbedWarning[] => {
-  if (analysis.warnings.length === 0) return [];
-  const sourceText = readFileSync(analysis.file, "utf8");
+  const readSource = createSourceReader();
   return analysis.warnings.map((warning) => {
-    const probe = createMutationProbe(analysis.file, sourceText, warning.loc);
+    const sourceText = readSource(warning.file);
+    const probe = createMutationProbe(warning.file, sourceText, warning.loc);
     const placeText = probe ? sourceText.slice(probe.start, probe.end) : null;
     return {
       warning,
@@ -80,10 +90,9 @@ const getProbedWarnings = (
 };
 
 export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] => {
-  if (analysis.warnings.length === 0) return [];
-  const sourceText = readFileSync(analysis.file, "utf8");
+  const readSource = createSourceReader();
   return analysis.warnings.flatMap(
-    (warning) => createMutationProbe(analysis.file, sourceText, warning.loc) ?? [],
+    (warning) => createMutationProbe(warning.file, readSource(warning.file), warning.loc) ?? [],
   );
 };
 

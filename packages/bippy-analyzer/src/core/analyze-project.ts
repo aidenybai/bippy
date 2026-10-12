@@ -1,5 +1,7 @@
 import { compileFile } from "./compile.js";
 import { CompilerTypeProvider } from "./type-provider.js";
+import { DomainResolver } from "./infer-domains.js";
+import type { ProjectHook } from "./interpret.js";
 import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
 import type {
@@ -104,24 +106,35 @@ export const analyzeProject = (
 ): ProjectAnalysis =>
   withProject(configPath, (project) => {
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
-    const analyses: ComponentAnalysis[] = [];
-    for (const fileName of fileNames) {
+    const projectHooks = new Map<string, ProjectHook>();
+    const loadProjectHook = (declarationKey: string): ProjectHook | null =>
+      projectHooks.get(declarationKey) ?? null;
+    const contexts = fileNames.flatMap((fileName) => {
       const sourceFile = project.program.getSourceFile(fileName);
-      if (!sourceFile) continue;
-      const context = {
-        sourceFile,
-        checker: project.checker,
-        compiled: compileFile(fileName, sourceFile.text, {
-          typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
-        }),
-        exportNames: collectExportNames(sourceFile),
-        displayNames: collectDisplayNames(sourceFile),
-      };
-      for (const reactFunction of context.compiled.functions) {
-        if (reactFunction.fnType === "Component")
-          analyses.push(analyzeComponent(reactFunction, context));
-      }
-    }
+      if (!sourceFile) return [];
+      const resolver = new DomainResolver(project.checker, sourceFile);
+      const compiled = compileFile(fileName, sourceFile.text, {
+        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+      });
+      for (const { fnType, hir, name } of compiled.functions)
+        if (fnType === "Hook" && hir)
+          projectHooks.set(`${sourceFile.path}#${name}`, { fn: hir, resolver });
+      return [
+        {
+          sourceFile,
+          resolver,
+          compiled,
+          loadProjectHook,
+          exportNames: collectExportNames(sourceFile),
+          displayNames: collectDisplayNames(sourceFile),
+        },
+      ];
+    });
+    const analyses = contexts.flatMap((context) =>
+      context.compiled.functions.flatMap((reactFunction) =>
+        reactFunction.fnType === "Component" ? [analyzeComponent(reactFunction, context)] : [],
+      ),
+    );
     inferPropsFromCallSites(analyses);
     const components = analyses
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
