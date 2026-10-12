@@ -58,6 +58,7 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
 const DYNAMIC_TAG_NAME = "Dynamic";
+const PORTAL_CALLEE_PATTERN = /(?:^|\.)createPortal$/;
 const isDefinedSample = (sample: Sample): boolean =>
   sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);
 /** A state initialized from a value the program only asserts the type of, which can be anything. */
@@ -802,6 +803,9 @@ export class Interpreter {
     const propsPlace = argumentPlaces[args.findIndex(isPropsValue)];
     if (this.propsSample === null && propsPlace)
       this.propsSample = this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
+    // A portal renders its children where it is in the tree, only into another container.
+    const calleeText = this.#resolver.getCalleeText(loc);
+    if (calleeText !== null && PORTAL_CALLEE_PATTERN.test(calleeText) && args[0]) return args[0];
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
     const projectHook = hookKind === "Custom" ? this.#findProjectHook(calleePlace) : null;
     if (projectHook && this.#inlineDepth < MAX_INLINE_DEPTH) {

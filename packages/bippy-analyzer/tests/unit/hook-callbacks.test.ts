@@ -58,4 +58,12 @@ describe("callbacks passed to hooks", () => {
     const [handler] = getComponent(project, "Seeker").analysis.handlers;
     expect(handler?.updates.map((update) => update.binding.name)).toEqual(["time"]);
   });
+
+  it("renders a portal's children where the portal is, with their handlers", () => {
+    const toolbar = getComponent(project, "PortalToolbar");
+    expect(toolbar.analysis.handlers.map((handler) => handler.trigger)).toEqual([
+      { kind: "Event", tag: "button", event: "onClick" },
+    ]);
+    expect(toolbar.report.states).toHaveLength(2);
+  });
 });

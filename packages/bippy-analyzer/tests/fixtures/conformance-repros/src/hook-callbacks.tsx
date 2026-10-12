@@ -99,3 +99,11 @@ export const Seeker = () => {
     </div>
   );
 };
+
+export const PortalToolbar = () => {
+  const [liked, setLiked] = useState(false);
+  return createPortal(
+    <button onClick={() => setLiked(true)}>{liked ? "Liked" : "Like"}</button>,
+    document.body,
+  );
+};
