@@ -159,7 +159,7 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
  * Strings to mount with, which a name like `createdAt` or `currencyCode` says are a date or a
  * currency code that the component parses, as `new Date("text")` would be invalid.
  */
-const getStringSamples = (name: string | null): Sample[] => {
+export const getStringSamples = (name: string | null): Sample[] => {
   if (name !== null && DATE_NAME_PATTERN.test(name))
     return [{ kind: "Value", value: SAMPLE_DATE }, EMPTY_TEXT_SAMPLE];
   if (name !== null && CURRENCY_NAME_PATTERN.test(name))

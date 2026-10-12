@@ -4,7 +4,7 @@ import { DomainResolver } from "./infer-domains.js";
 import type { ProjectHook } from "./interpret.js";
 import { collectStoreModels } from "./store-models.js";
 import { enumerateStates } from "./enumerate-states.js";
-import { getSampleOfValue } from "./infer-domains.js";
+import { getSampleOfValue, getStringSamples } from "./infer-domains.js";
 import type {
   ComponentAnalysis,
   ContextModels,
@@ -17,10 +17,85 @@ import type {
   SymbolicValue,
 } from "./types.js";
 import { forEachJsxElement } from "./utils/traverse.js";
-import { getPlaceKey } from "./utils/place-key.js";
+import { getPlaceKey, parsePlaceKey } from "./utils/place-key.js";
 import { analyzeComponent } from "./analyze-component.js";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript.js";
 import { isProjectSourceFile, withProject } from "./utils/with-project.js";
+
+const ARRAY_MEMBERS = new Set([
+  "at",
+  "every",
+  "filter",
+  "find",
+  "findIndex",
+  "flatMap",
+  "forEach",
+  "includes",
+  "indexOf",
+  "join",
+  "length",
+  "map",
+  "reduce",
+  "slice",
+  "some",
+  "sort",
+]);
+const INDEX_PATTERN = /^\d+$/;
+
+/**
+ * A sample of an untyped value named `name`, shaped by the paths a component reads from it,
+ * like `{ guests: { fullName: "text" } }` for `booking.guests.fullName`. A value read with an
+ * array's member or an index, like `bookings.reduce` or `items[0]`, is an array, one read
+ * through `props`, like `children.props.id`, is an element, and a string is one its name
+ * suggests, like a date for `startDate`.
+ */
+const getShapeSample = (name: string, paths: string[][]): Sample => {
+  const fields = new Map<string, string[][]>();
+  for (const [field, ...rest] of paths)
+    if (field !== undefined) fields.set(field, [...(fields.get(field) ?? []), rest]);
+  if (fields.size === 0) return getStringSamples(name)[0] ?? { kind: "Undefined" };
+  if (fields.has("props")) return { kind: "Element" };
+  const names = [...fields.keys()];
+  if (names.some((name) => ARRAY_MEMBERS.has(name) || INDEX_PATTERN.test(name))) {
+    const itemPaths = names.flatMap((name) =>
+      INDEX_PATTERN.test(name) ? (fields.get(name) ?? []) : [],
+    );
+    return { kind: "Array", items: itemPaths.length > 0 ? [getShapeSample(name, itemPaths)] : [] };
+  }
+  return {
+    kind: "Object",
+    fields: Object.fromEntries(
+      [...fields].map(([field, rest]) => [
+        field,
+        getShapeSample(
+          field,
+          rest.filter((path) => path.length > 0),
+        ),
+      ]),
+    ),
+    isOpen: false,
+  };
+};
+
+/**
+ * Gives an untyped prop, as in plain JavaScript, a sample shaped by what the component reads
+ * from it, to mount with before the literals its call sites pass.
+ */
+const inferPropShapes = (analysis: ComponentAnalysis): void => {
+  const paths = new Map<number, string[][]>();
+  for (const placeKey of analysis.placeDomains.keys()) {
+    const { bindingId, path } = parsePlaceKey(placeKey);
+    if (path.length > 0) paths.set(bindingId, [...(paths.get(bindingId) ?? []), path]);
+  }
+  for (const binding of analysis.bindings) {
+    const bindingPaths = paths.get(binding.id);
+    if (binding.kind !== "prop" || binding.domain.kind !== "Unknown" || !bindingPaths) continue;
+    binding.samples = [
+      getShapeSample(binding.propName ?? binding.name, bindingPaths),
+      ...binding.samples,
+    ];
+  }
+};
 
 const isPrimitive = (value: SymbolicValue | undefined): value is PrimitiveSymbolicValue =>
   value?.kind === "Primitive";
@@ -203,6 +278,7 @@ export const analyzeProject = (
         ? analyzeComponent(compiled.reactFunction, compiled.context)
         : analysis;
     });
+    for (const analysis of analyses) inferPropShapes(analysis);
     inferPropsFromCallSites(analyses);
     const fileNamesByPath = new Map(
       contexts.map(({ sourceFile }) => [sourceFile.path, sourceFile.fileName]),
