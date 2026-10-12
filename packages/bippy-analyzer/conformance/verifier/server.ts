@@ -180,6 +180,13 @@ const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
+/**
+ * A stylesheet, served as a script so no preprocessor like Sass runs on it. A CSS module's
+ * class names are their own names.
+ */
+const STYLESHEET_PREFIX = "\0bippy-verify-stylesheet:";
+const STYLESHEET_SOURCE =
+  "export default new Proxy({}, { get: (_, key) => (typeof key === 'string' ? key : undefined) });";
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const SERVER_SDK_PATTERN =
   /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|execa|cross-spawn|npm-run-path|node:.+)$/;
@@ -800,6 +807,8 @@ const createHarnessPlugin = (
       if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
       if (SERVER_SDK_PATTERN.test(source) || isNodeOnlyModule(source, importer, polyfilled))
         return `${SERVER_SDK_PREFIX}${source}`;
+      // The id ends in `.js`, as Vite's own CSS handling claims any id ending like a stylesheet.
+      if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
       if (STUBS.has(source)) return STUBS.get(source);
       const assetPath = source.split("?")[0] ?? source;
       if (
@@ -831,7 +840,7 @@ const createHarnessPlugin = (
       return null;
     },
     load: (id) => {
-      if (STYLESHEET_PATTERN.test(id)) return "";
+      if (id.startsWith(STYLESHEET_PREFIX)) return STYLESHEET_SOURCE;
       if (SVG_COMPONENT_PATTERN.test(id)) return SVG_COMPONENT_SOURCE;
       if (id.startsWith(MISSING_ASSET_PREFIX))
         return `export default ${JSON.stringify(id.slice(MISSING_ASSET_PREFIX.length))};`;
