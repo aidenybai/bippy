@@ -1,8 +1,11 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import type { Wrapper, WrapperCandidate } from "./types.js";
 
 const PACKAGE_IMPORT_PATTERN = /import\s+([^;]*?)\s*from\s+["']([^."'][^"']*)["']/g;
 const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
+const RELATIVE_IMPORT_PATTERN = /import\s+(?!type\b)[^;]*?\s*from\s+["'](\.{1,2}\/[^"']*)["']/g;
+const SOURCE_FILE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
 const NAMESPACE_NAME_PATTERN = /^(?:type\s+)?([A-Z]\w*)/;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
 /** A context's provider is the context itself to mount, as `X.Provider` isn't an export. */
@@ -51,12 +54,25 @@ const getPackageImports = (file: string): PackageImport[] => {
   return [...packageImports.values()];
 };
 
+/** The project files a file imports by relative path, like `./DropdownMenuItem`. */
+const getRelativeImports = (file: string): string[] =>
+  [...readFileSync(file, "utf8").matchAll(RELATIVE_IMPORT_PATTERN)].flatMap(
+    ([, specifier = ""]) => {
+      const base = resolve(dirname(file), specifier);
+      const resolved = SOURCE_FILE_SUFFIXES.map((suffix) => `${base}${suffix}`).find(
+        (candidate) => existsSync(candidate) && statSync(candidate).isFile(),
+      );
+      return resolved ? [resolved] : [];
+    },
+  );
+
 /**
  * The parent a component says it needs when it throws without one, like `Menu` in
  * "`MenuItem` must be used within `Menu`", and where it might come from: a project export
  * of that name, nearest first, or the packages the component imports and the namespaces
  * of parts it imports from them, whose `Root` stands in when the name is internal to the
- * package.
+ * package. The parts may come through a file the component imports, like Excalidraw's
+ * `DropdownMenuItem` wrapping Radix's, which throws for want of a `Menu`.
  */
 export const findWrapper = (
   error: string,
@@ -84,7 +100,15 @@ export const findWrapper = (
     exportName: name,
     isRootAllowed: false,
   }));
-  const packageCandidates = getPackageImports(componentFile).map(
+  const packageImports = new Map(
+    [componentFile, ...getRelativeImports(componentFile)]
+      .flatMap(getPackageImports)
+      .map((packageImport) => [
+        `${packageImport.specifier}#${packageImport.namespace}`,
+        packageImport,
+      ]),
+  );
+  const packageCandidates = [...packageImports.values()].map(
     ({ specifier, namespace }): WrapperCandidate => ({
       specifier,
       namespace,
