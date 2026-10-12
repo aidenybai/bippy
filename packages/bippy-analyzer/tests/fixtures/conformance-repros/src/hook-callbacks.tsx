@@ -1,4 +1,12 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  createContext,
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -150,3 +158,21 @@ export const TwoFactor = () => {
     </div>
   );
 };
+
+const EditorContext = createContext<{ openEditor: () => void } | null>(null);
+
+export const MemoCard = ({ children }: { children: React.ReactNode }) => {
+  const [showEditor, setShowEditor] = useState(false);
+  const openEditor = () => setShowEditor(true);
+  return (
+    <EditorContext.Provider value={{ openEditor }}>
+      {showEditor ? <textarea /> : children}
+    </EditorContext.Provider>
+  );
+};
+
+export const Drawer = forwardRef<{ open: () => void }>((_, ref) => {
+  const [isOpen, setIsOpen] = useState(false);
+  useImperativeHandle(ref, () => ({ open: () => setIsOpen(true) }));
+  return isOpen ? <aside>Drawer</aside> : null;
+});

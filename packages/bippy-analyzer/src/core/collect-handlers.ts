@@ -10,12 +10,21 @@ const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 export const ANY_EVENT = "*";
 
 /**
- * Whether a prop holds a handler: one named like an event, or a setter or function passed to
- * a component under any name, like `setSearchTerm`, which the component may call.
+ * Whether a prop holds a handler: one named like an event, or a setter, function or object
+ * of functions passed to a component under any name, like `setSearchTerm`, which the
+ * component may call.
  */
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
-  (tag.kind !== "BuiltinTag" && (prop.value.kind === "Setter" || prop.value.kind === "Function"));
+  (tag.kind !== "BuiltinTag" && (isCallable(prop.value) || hasCallableField(prop.value)));
+
+const isCallable = (value: SymbolicValue): boolean =>
+  value.kind === "Setter" || value.kind === "Function";
+
+/** An object of functions, like a context's `value={{ open, openEditor }}`. */
+const hasCallableField = (value: SymbolicValue): boolean =>
+  value.kind === "ObjectExpression" &&
+  value.properties.some((property) => isCallable(property.value));
 
 /**
  * A ref callback, like `ref={(node) => setWidth(node.offsetWidth)}`, which React calls when
@@ -30,6 +39,8 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
       return `function:${value.functionId}`;
     case "Setter":
       return `setter:${value.binding.id}`;
+    case "ObjectExpression":
+      return `object:${value.properties.map((property) => getHandlerKey(property.value)).join(",")}`;
     case "Binding":
       return value.binding.kind === "prop" ||
         value.binding.kind === "hook" ||

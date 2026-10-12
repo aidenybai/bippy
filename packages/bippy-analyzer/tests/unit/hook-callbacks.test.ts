@@ -78,4 +78,14 @@ describe("callbacks passed to hooks", () => {
   it("runs a handler's catch block, which sets state when what it tries throws", () => {
     expect(getComponent(project, "TwoFactor").report.unreachableBranches).toEqual([]);
   });
+
+  it("runs the functions of an object handed to a component, like a context's value", () => {
+    expect(getComponent(project, "MemoCard").report.unreachableBranches).toEqual([]);
+  });
+
+  it("runs the functions of the handle `useImperativeHandle` gives the parent", () => {
+    expect(project.components.flatMap((component) => component.report.unreachableBranches)).toEqual(
+      [],
+    );
+  });
 });

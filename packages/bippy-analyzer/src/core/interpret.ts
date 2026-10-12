@@ -961,6 +961,9 @@ export class Interpreter {
       return UNDEFINED_VALUE;
     }
     if (hookKind === "Custom") this.#addLaterCallbacks(args, loc);
+    // The parent may call the functions of the handle `useImperativeHandle` gives it.
+    if (hookKind === "useImperativeHandle" && args[1]?.kind === "Function")
+      this.#addLaterCallbacks([this.#callFunction(args[1], [], loc, state)], loc);
     if (hookKind === "useMemo" && args[0]?.kind === "Function")
       return this.#callFunction(args[0], [], loc, state);
     if (hookKind === "useCallback" && args[0]) return args[0];
@@ -1740,6 +1743,24 @@ export class Interpreter {
    * Evaluates an event handler or effect callback and returns the state updates and prop
    * calls it makes.
    */
+  #runCallback(callback: SymbolicValue, args: SymbolicValue[]): void {
+    if (callback.kind === "Function") {
+      const fn = this.#getFunction(callback.functionId);
+      if (fn)
+        this.#collectRenderedHandlers(
+          this.#evaluateFunction(fn, args, ROOT_WALK_STATE),
+          new Set([callback.functionId]),
+        );
+    }
+    if (callback.kind === "Setter")
+      this.#recordUpdate(
+        callback.binding,
+        createUnknown("event", GeneratedSource),
+        ROOT_WALK_STATE,
+      );
+    if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
+  }
+
   collectEffects(callback: SymbolicValue, args: SymbolicValue[]): CollectedEffects {
     const previousMode = this.#mode;
     const previousCollected = this.#collected;
@@ -1748,21 +1769,13 @@ export class Interpreter {
     this.#collected = { updates: [], delegates: [] };
     this.#mutations = new Map();
     try {
-      if (callback.kind === "Function") {
-        const fn = this.#getFunction(callback.functionId);
-        if (fn)
-          this.#collectRenderedHandlers(
-            this.#evaluateFunction(fn, args, ROOT_WALK_STATE),
-            new Set([callback.functionId]),
-          );
-      }
-      if (callback.kind === "Setter")
-        this.#recordUpdate(
-          callback.binding,
-          createUnknown("event", GeneratedSource),
-          ROOT_WALK_STATE,
-        );
-      if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
+      // An object of functions handed to a component, like a context's value, may have any
+      // of them called.
+      const callbacks =
+        callback.kind === "ObjectExpression"
+          ? callback.properties.map((property) => property.value)
+          : [callback];
+      for (const each of callbacks) this.#runCallback(each, args);
       if (callback.kind === "Unknown")
         for (const binding of this.#bindings.values())
           if (isExternalSource(binding))
