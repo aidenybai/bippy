@@ -398,15 +398,19 @@ export class Interpreter {
   }
 
   /**
-   * A function value that keeps what its captured variables held when it was created, as
-   * each call of a helper like `callAll(...fns)` returns a closure over its own `fns`.
+   * A function value created inside a called function keeps what its captured variables
+   * held, as each call of a helper like `callAll(...fns)` returns a closure over its own
+   * `fns`. One the component's body or a handler creates reads them when it runs, as
+   * JavaScript captures variables, and one may be assigned later, like a function declared
+   * below the effect that calls it.
    */
   #createClosure(fn: HIRFunction): FunctionValue {
     const closure = this.#registerFunction(fn);
-    this.#captures.set(
-      closure.functionId,
-      fn.context.map((place) => [place, this.#read(place)]),
-    );
+    if (this.#inlineDepth > 0)
+      this.#captures.set(
+        closure.functionId,
+        fn.context.map((place): [Place, SymbolicValue] => [place, this.#read(place)]),
+      );
     return closure;
   }
 

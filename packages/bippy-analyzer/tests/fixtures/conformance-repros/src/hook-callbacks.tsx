@@ -195,3 +195,16 @@ export const SuggestionEditor = () => {
   }, []);
   return active ? <p>{active}</p> : <div />;
 };
+
+export const WorkspaceLoader = ({ load }: { load: () => Promise<void> }) => {
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    void (async () => await fetchWorkspace())();
+  }, []);
+  const fetchWorkspace = async () => {
+    setLoading(true);
+    await load();
+    setLoading(false);
+  };
+  return loading ? <p>Loading</p> : <p>Ready</p>;
+};

@@ -97,4 +97,8 @@ describe("callbacks passed to hooks", () => {
     const doubleCheck = analyzeProject(getFixtureConfig("conformance-repros"), "double-check");
     expect(getComponent(doubleCheck, "DisableButton").report.unreachableBranches).toEqual([]);
   });
+
+  it("reads a function an effect calls when it runs, though it's declared below the effect", () => {
+    expect(getComponent(project, "WorkspaceLoader").report.unreachableBranches).toEqual([]);
+  });
 });
