@@ -309,10 +309,12 @@ export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
   readonly #types = new Map<string, Type | undefined>();
+  readonly #isStrictNullChecks: boolean;
 
-  constructor(checker: Checker, sourceFile: SourceFile) {
+  constructor(checker: Checker, sourceFile: SourceFile, isStrictNullChecks: boolean) {
     this.#checker = checker;
     this.#sourceFile = sourceFile;
+    this.#isStrictNullChecks = isStrictNullChecks;
   }
 
   get fileName(): string {
@@ -331,9 +333,33 @@ export class DomainResolver {
 
   getDomain(loc: SourceLocation): Domain {
     const type = this.#getType(loc);
-    return this.#isIndexedRead(loc)
+    return this.#isIndexedRead(loc) || this.#isOptionalRead(loc)
       ? getDomainWithUndefined(this.#checker, type)
       : getDomainOfType(this.#checker, type);
+  }
+
+  /**
+   * Whether the value at this location is an optional property, like an `isOpen?: boolean`
+   * prop, in a project without `strictNullChecks`, whose types leave out the `undefined` an
+   * unset property is.
+   */
+  #isOptionalRead(loc: SourceLocation): boolean {
+    if (this.#isStrictNullChecks) return false;
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    if (!node) return false;
+    const element = t.isBindingElement(node)
+      ? node
+      : node.parent && t.isBindingElement(node.parent)
+        ? node.parent
+        : null;
+    const objectNode = t.isPropertyAccessExpression(node) ? node.expression : element?.parent;
+    const nameNode = t.isPropertyAccessExpression(node)
+      ? node.name
+      : (element?.propertyName ?? element?.name);
+    if (!objectNode || !nameNode || !t.isIdentifier(nameNode)) return false;
+    const objectType = this.#checker.getTypeAtLocation(objectNode);
+    const property = objectType && this.#checker.getPropertyOfType(objectType, nameNode.text);
+    return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
   }
 
   /**

@@ -253,6 +253,8 @@ export const analyzeProject = (
 ): ProjectAnalysis =>
   withProject(configPath, (project) => {
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
+    const { strict, strictNullChecks } = project.compilerOptions;
+    const isStrictNullChecks = strictNullChecks ?? strict ?? false;
     const projectHooks = new Map<string, ProjectHook>();
     const contextModels: ContextModels = new Map();
     const storeModels = new Map<string, StoreModel>();
@@ -261,7 +263,7 @@ export const analyzeProject = (
     const contexts = fileNames.flatMap((fileName) => {
       const sourceFile = project.program.getSourceFile(fileName);
       if (!sourceFile) return [];
-      const resolver = new DomainResolver(project.checker, sourceFile);
+      const resolver = new DomainResolver(project.checker, sourceFile, isStrictNullChecks);
       const compiled = compileFile(fileName, sourceFile.text, {
         typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
       });
