@@ -26,6 +26,7 @@ const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
 const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
+const CONTEXT_TYPE_PATTERN = /^(?:React\.)?Context</;
 /** React's own escape hatch, which throws beside `children`, a prop sampled everywhere. */
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 /** A DOM node, which no plain value can stand in for, like a portal's container. */
@@ -396,6 +397,12 @@ export class DomainResolver {
       if (sample) fields[property.name] = sample;
     }
     return Object.keys(fields).length > 0 ? { kind: "Object", fields, isOpen: false } : null;
+  }
+
+  /** Whether the value at this location is a React context, like a JSX tag that provides one. */
+  isContext(loc: SourceLocation): boolean {
+    const type = this.#getType(loc);
+    return type !== undefined && CONTEXT_TYPE_PATTERN.test(this.#checker.typeToString(type));
   }
 
   isReactElement(loc: SourceLocation): boolean {

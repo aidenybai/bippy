@@ -28,7 +28,7 @@ const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => 
 });
 const component = (tag: string): SymbolicValue => ({
   kind: "JsxExpression",
-  tag: { kind: "Component", name: tag, declaration: `/app/${tag}.tsx#${tag}` },
+  tag: { kind: "Component", name: tag, declaration: `/app/${tag}.tsx#${tag}`, isContext: false },
   props: [],
   children: [],
   loc: GeneratedSource,
@@ -122,5 +122,16 @@ describe("matchesExpected", () => {
     const render = element("div", [component("Document")]);
     expect(matches(render, [shapeElement("div", [shapeElement("DOCUMENT")])])).toBe(true);
     expect(matches(render, [shapeElement("div", [shapeElement("PAGE")])])).toBe(false);
+  });
+
+  it("matches a context rendered as its own provider by its children", () => {
+    const render: SymbolicValue = {
+      kind: "JsxExpression",
+      tag: { kind: "Component", name: "FontContext", declaration: null, isContext: true },
+      props: [],
+      children: [element("p")],
+      loc: GeneratedSource,
+    };
+    expect(matches(render, [shapeElement("p")])).toBe(true);
   });
 });

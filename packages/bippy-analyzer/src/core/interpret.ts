@@ -587,6 +587,7 @@ export class Interpreter {
   #buildJsx(
     tag: SymbolicValue,
     declaration: string | null,
+    isContext: boolean,
     props: Array<JsxProp | JsxSpreadProp>,
     children: SymbolicValue[],
     loc: SourceLocation,
@@ -594,15 +595,15 @@ export class Interpreter {
     if (tag.kind === "Conditional") {
       return {
         ...tag,
-        consequent: this.#buildJsx(tag.consequent, declaration, props, children, loc),
-        alternate: this.#buildJsx(tag.alternate, declaration, props, children, loc),
+        consequent: this.#buildJsx(tag.consequent, declaration, isContext, props, children, loc),
+        alternate: this.#buildJsx(tag.alternate, declaration, isContext, props, children, loc),
       };
     }
     const jsxTag: JsxTag =
       tag.kind === "Primitive" && typeof tag.value === "string"
         ? { kind: "BuiltinTag", name: tag.value }
         : tag.kind === "Global" || tag.kind === "Binding"
-          ? { kind: "Component", name: getComponentName(tag), declaration }
+          ? { kind: "Component", name: getComponentName(tag), declaration, isContext }
           : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
     return { kind: "JsxExpression", tag: jsxTag, props, children, loc };
@@ -1098,6 +1099,7 @@ export class Interpreter {
         const element = this.#buildJsx(
           tag,
           value.tag.kind === "BuiltinTag" ? null : this.#resolver.getDeclarationKey(value.tag.loc),
+          value.tag.kind !== "BuiltinTag" && this.#resolver.isContext(value.tag.loc),
           props,
           (value.children ?? []).map((child) => this.#read(child)),
           value.loc,

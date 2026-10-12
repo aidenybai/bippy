@@ -50,6 +50,7 @@ export const toExpected = (
             ],
           },
         ];
+      if (tag.kind === "Component" && tag.isContext) return value.children.flatMap(recurse);
       if (tag.kind === "Component") {
         const runtimeName = tag.declaration ? knownComponents.get(tag.declaration) : undefined;
         return [
