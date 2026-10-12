@@ -814,6 +814,7 @@ export class Interpreter {
     }
     for (const argument of args) this.#visitCallbackArgument(argument, state);
     if (this.#mode !== "render") return createUnknown("call", loc);
+    if (!this.#resolver.isPureMethod(calleePlace.loc)) this.#addLaterCallbacks(args, loc);
     if (this.#resolver.isReactElement(loc)) {
       this.#bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
@@ -892,7 +893,7 @@ export class Interpreter {
         });
       return UNDEFINED_VALUE;
     }
-    if (hookKind === "Custom") this.#addHookCallbacks(args, loc);
+    if (hookKind === "Custom") this.#addLaterCallbacks(args, loc);
     if (hookKind === "useMemo" && args[0]?.kind === "Function")
       return this.#callFunction(args[0], [], loc, state);
     if (hookKind === "useCallback" && args[0]) return args[0];
@@ -909,11 +910,12 @@ export class Interpreter {
   }
 
   /**
-   * A function passed to a hook the analysis can't see into, directly or in its options,
-   * like `useIsomorphicLayoutEffect(() => setMounted(true))` or `useMutation({ onSuccess })`,
-   * may run after any render, with any arguments, as an effect does.
+   * A function passed to a hook or call the analysis can't see into, directly or in its
+   * options, like `useIsomorphicLayoutEffect(() => setMounted(true))`, `useMutation({
+   * onSuccess })` or `form.handleSubmit(onSubmit)`, may run after any render, with any
+   * arguments, as an effect does.
    */
-  #addHookCallbacks(args: SymbolicValue[], loc: SourceLocation): void {
+  #addLaterCallbacks(args: SymbolicValue[], loc: SourceLocation): void {
     const callbacks = args.flatMap((argument) =>
       argument.kind === "ObjectExpression"
         ? argument.properties.map((property) => property.value)

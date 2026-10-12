@@ -21,4 +21,10 @@ describe("callbacks passed to hooks", () => {
       { kind: "Undefined" },
     ]);
   });
+
+  it("runs a function passed to a call it can't see into as an effect, like a submit handler", () => {
+    const signUp = getComponent(project, "SignUp");
+    expect(signUp.report.unreachableBranches).toEqual([]);
+    expect(signUp.report.states).toHaveLength(2);
+  });
 });

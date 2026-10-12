@@ -9,3 +9,15 @@ export const Overlay = ({ container }: { container?: Element | null }) => {
   const target = container ?? (mounted ? document.body : null);
   return target ? createPortal(<p>overlay</p>, target) : null;
 };
+
+declare const handleSubmit: (onValid: (data: unknown) => void) => () => void;
+
+export const SignUp = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const onSubmit = () => setIsLoading(true);
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <button disabled={isLoading}>{isLoading ? "Saving" : "Sign up"}</button>
+    </form>
+  );
+};
