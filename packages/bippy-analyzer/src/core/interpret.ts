@@ -145,6 +145,12 @@ interface CollectedEffects {
   delegates: string[];
 }
 
+interface CompilationTables {
+  values: Map<IdentifierId, SymbolicValue>;
+  propertyNames: Map<IdentifierId, string>;
+  branchOperators: Map<BlockId, BranchOperator>;
+}
+
 interface Mutation {
   binding: Binding;
   loc: SourceLocation;
@@ -316,7 +322,7 @@ const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => 
 export class Interpreter {
   #resolver: DomainResolver;
   readonly #loadProjectHook: ProjectHookLoader;
-  readonly #values = new WeakMap<object, Map<IdentifierId, SymbolicValue>>();
+  readonly #tables = new WeakMap<object, CompilationTables>();
   readonly #functionResolvers = new WeakMap<HIRFunction, DomainResolver>();
   /** The loader of each file's module functions, by that file's resolver. */
   readonly #moduleFunctionLoaders = new Map<DomainResolver, ModuleFunctionLoader>();
@@ -329,11 +335,9 @@ export class Interpreter {
   readonly #contextSetters = new Map<number, Map<string, string>>();
   /** The module each hook binding's hook is imported from, by binding id. */
   readonly #hookModules = new Map<number, string>();
-  readonly #propertyNames = new Map<IdentifierId, string>();
   readonly #functions: HIRFunction[] = [];
   readonly #bindings = new Map<string, Binding>();
   readonly #propBindings = new Map<string, Binding>();
-  readonly #branchOperators = new Map<BlockId, BranchOperator>();
   readonly placeDomains = new Map<string, Domain>();
   readonly bailouts: Bailout[] = [];
   readonly warnings: Warning[] = [];
@@ -466,19 +470,25 @@ export class Interpreter {
    * a hook from another file, numbers its identifiers from zero too, so each compilation
    * keeps its own.
    */
-  #getValues(): Map<IdentifierId, SymbolicValue> {
+  #getTables(): CompilationTables {
     const { env } = this.#getCurrentFunction();
-    const values = this.#values.get(env) ?? new Map<IdentifierId, SymbolicValue>();
-    this.#values.set(env, values);
-    return values;
+    const tables = this.#tables.get(env) ?? {
+      values: new Map(),
+      propertyNames: new Map(),
+      branchOperators: new Map(),
+    };
+    this.#tables.set(env, tables);
+    return tables;
   }
 
   #read(place: Place): SymbolicValue {
-    return this.#getValues().get(place.identifier.id) ?? createUnknown("free-variable", place.loc);
+    return (
+      this.#getTables().values.get(place.identifier.id) ?? createUnknown("free-variable", place.loc)
+    );
   }
 
   #write(place: Place, value: SymbolicValue): void {
-    this.#getValues().set(place.identifier.id, value);
+    this.#getTables().values.set(place.identifier.id, value);
   }
 
   #getPropBinding(propName: string, localName: string, loc: SourceLocation): Binding {
@@ -1089,7 +1099,8 @@ export class Interpreter {
     state: WalkState,
   ): SymbolicValue {
     const receiver = this.#read(instruction.receiver);
-    const propertyName = this.#propertyNames.get(instruction.property.identifier.id) ?? null;
+    const propertyName =
+      this.#getTables().propertyNames.get(instruction.property.identifier.id) ?? null;
     const argumentPlaces = instruction.args.map(getPlaceOrSpread);
     const args = argumentPlaces.map((place) => this.#read(place));
     const [callback] = args;
@@ -1142,7 +1153,7 @@ export class Interpreter {
   #evaluateInstruction(instruction: Instruction, state: WalkState): void {
     const { value } = instruction;
     if (value.kind === "PropertyLoad")
-      this.#propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
+      this.#getTables().propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
     this.#trackMutations(instruction);
     this.#write(instruction.lvalue, this.#evaluateInstructionValue(instruction, state));
   }
@@ -1411,7 +1422,7 @@ export class Interpreter {
     state: WalkState,
   ): Outcome {
     const { test, consequent, alternate, fallthrough } = terminal;
-    const operator = this.#branchOperators.get(fallthrough) ?? "ternary";
+    const operator = this.#getTables().branchOperators.get(fallthrough) ?? "ternary";
     const chainValue = this.#read(test);
     const shortCircuit = operator === "chain" ? getShortCircuit(chainValue) : null;
     const testValue = shortCircuit?.test ?? chainValue;
@@ -1545,7 +1556,7 @@ export class Interpreter {
         case "ternary":
         case "logical":
         case "optional":
-          this.#branchOperators.set(
+          this.#getTables().branchOperators.set(
             terminal.fallthrough,
             terminal.kind === "logical"
               ? terminal.operator
