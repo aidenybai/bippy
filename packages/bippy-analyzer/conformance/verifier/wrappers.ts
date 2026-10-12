@@ -92,32 +92,67 @@ export const findWrapper = (
  * an error names a parent the component already has, as Radix's `AlertDialog` parts throw
  * for want of a `Dialog`.
  */
-export const findCompoundRoot = (
-  exportName: string,
+const getCompoundRootName = (
+  componentName: string,
   componentFile: string,
   exportIndex: Map<string, string[]>,
-): Wrapper | null => {
-  const [name] = [...exportIndex]
+): string | undefined =>
+  [...exportIndex]
     .filter(
       ([candidate, files]) =>
-        candidate !== exportName &&
-        exportName.startsWith(candidate) &&
+        candidate !== componentName &&
+        componentName.startsWith(candidate) &&
         files.includes(componentFile),
     )
     .map(([candidate]) => candidate)
-    .sort((left, right) => right.length - left.length);
-  return name
-    ? {
-        name,
-        candidates: [
-          {
-            specifier: componentFile,
-            namespace: null,
-            importer: componentFile,
-            exportName: name,
-            isRootAllowed: false,
-          },
-        ],
-      }
+    .sort((left, right) => right.length - left.length)[0];
+
+const createFileWrapper = (
+  name: string,
+  componentFile: string,
+  exportNames: string[],
+): Wrapper => ({
+  name,
+  candidates: exportNames.map((exportName) => ({
+    specifier: componentFile,
+    namespace: null,
+    importer: componentFile,
+    exportName,
+    isRootAllowed: false,
+  })),
+});
+
+export const findCompoundRoot = (
+  componentName: string,
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+): Wrapper | null => {
+  const name = getCompoundRootName(componentName, componentFile, exportIndex);
+  return name ? createFileWrapper(name, componentFile, [name]) : null;
+};
+
+/**
+ * The other parts of the compound component a component belongs to, like `TabsList` for
+ * `TabsTrigger`, one of which may be the parent it needs inside the root: Radix's tab
+ * triggers throw for want of the `RovingFocusGroup` only the list renders.
+ */
+export const findSiblingParts = (
+  componentName: string,
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+): Wrapper | null => {
+  const rootName = getCompoundRootName(componentName, componentFile, exportIndex);
+  if (!rootName) return null;
+  const siblings = [...exportIndex]
+    .filter(
+      ([candidate, files]) =>
+        candidate !== rootName &&
+        candidate !== componentName &&
+        candidate.startsWith(rootName) &&
+        files.includes(componentFile),
+    )
+    .map(([candidate]) => candidate);
+  return siblings.length > 0
+    ? createFileWrapper(`${rootName} part`, componentFile, siblings)
     : null;
 };

@@ -564,7 +564,8 @@ const getComponentType = (value: unknown): unknown =>
 /**
  * Loads the first candidate module, or namespace of parts in it, that exports the wrapper.
  * A package may export it under a shorter name than its errors use, like `Content` for
- * Radix's internal `MenuContent`, or only as its `Root`.
+ * Radix's internal `MenuContent`, a module under a longer one, like `DropdownMenu` for
+ * `Menu`, or only as its `Root`.
  */
 const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
   for (const candidate of wrapper.candidates) {
@@ -578,10 +579,14 @@ const loadWrapper = async (wrapper: Wrapper): Promise<unknown> => {
     const moduleExports: Record<string, unknown> = candidate.namespace
       ? Object(imported[candidate.namespace])
       : imported;
+    const exportNames = Object.keys(moduleExports).filter((name) => /^[A-Z]/.test(name));
     const shortName = candidate.isRootAllowed
-      ? Object.keys(moduleExports)
-          .filter((name) => /^[A-Z]/.test(name) && candidate.exportName.endsWith(name))
-          .sort((left, right) => right.length - left.length)[0]
+      ? (exportNames
+          .filter((name) => candidate.exportName.endsWith(name))
+          .sort((left, right) => right.length - left.length)[0] ??
+        exportNames
+          .filter((name) => name.endsWith(candidate.exportName))
+          .sort((left, right) => left.length - right.length)[0])
       : undefined;
     const value =
       moduleExports[candidate.exportName] ??

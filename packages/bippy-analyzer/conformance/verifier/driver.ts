@@ -4,7 +4,7 @@ import { normalizeShapes } from "./match.js";
 import { classifyMountError } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, Wrapper } from "./types.js";
-import { findCompoundRoot, findWrapper, getErrorSubject } from "./wrappers.js";
+import { findCompoundRoot, findSiblingParts, findWrapper, getErrorSubject } from "./wrappers.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -67,7 +67,7 @@ const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper
  * mounts it again inside, trying the parent's next candidate while the error stays the
  * same. Returns the parents it needed, outermost first. An error that names no parent, like
  * cmdk's parts reading a store their `Command` root provides, still gets the compound root
- * the component's file exports.
+ * the component's file exports, and then its other parts, one at a time.
  */
 export const resolveWrappers = async (
   page: Page,
@@ -91,9 +91,12 @@ export const resolveWrappers = async (
       candidate === null || wrappers.some((existing) => existing.name === candidate.name);
     const errorWrapper =
       failure === "provider" ? findWrapper(capture.error, analysis.file, exportIndex) : null;
-    const wrapper = isWrapped(errorWrapper)
+    const compoundRoot = isWrapped(errorWrapper)
       ? findCompoundRoot(analysis.name, analysis.file, exportIndex)
       : errorWrapper;
+    const wrapper = isWrapped(compoundRoot)
+      ? findSiblingParts(analysis.name, analysis.file, exportIndex)
+      : compoundRoot;
     if (!wrapper || isWrapped(wrapper)) break;
     const index = capture.errorDepth ?? getWrapperIndex(capture.error, analysis.name, wrappers);
     wrappers.splice(index, 0, wrapper);
