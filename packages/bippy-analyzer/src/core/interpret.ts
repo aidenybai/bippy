@@ -112,6 +112,7 @@ interface WalkState {
 interface EffectCall {
   hookKind: HookKind;
   callback: SymbolicValue;
+  args: SymbolicValue[];
   dependencies: SourceLocation | null;
   loc: SourceLocation;
 }
@@ -869,9 +870,16 @@ export class Interpreter {
       const [callback] = args;
       const [, dependencies] = argumentPlaces;
       if (callback)
-        this.effectCalls.push({ hookKind, callback, dependencies: dependencies?.loc ?? null, loc });
+        this.effectCalls.push({
+          hookKind,
+          callback,
+          args: [],
+          dependencies: dependencies?.loc ?? null,
+          loc,
+        });
       return UNDEFINED_VALUE;
     }
+    if (hookKind === "Custom") this.#addHookCallbacks(args, loc);
     if (hookKind === "useMemo" && args[0]?.kind === "Function")
       return this.#callFunction(args[0], [], loc, state);
     if (hookKind === "useCallback" && args[0]) return args[0];
@@ -885,6 +893,30 @@ export class Interpreter {
     if (contextKey) this.#contextKeys.set(hookResult, contextKey);
     this.#hookResolvers.set(hookResult, this.#resolver);
     return hookResult;
+  }
+
+  /**
+   * A function passed to a hook the analysis can't see into, directly or in its options,
+   * like `useIsomorphicLayoutEffect(() => setMounted(true))` or `useMutation({ onSuccess })`,
+   * may run after any render, with any arguments, as an effect does.
+   */
+  #addHookCallbacks(args: SymbolicValue[], loc: SourceLocation): void {
+    const callbacks = args.flatMap((argument) =>
+      argument.kind === "ObjectExpression"
+        ? argument.properties.map((property) => property.value)
+        : [argument],
+    );
+    for (const callback of callbacks) {
+      if (callback.kind !== "Function") continue;
+      const parameters = this.#getFunction(callback.functionId)?.params ?? [];
+      this.effectCalls.push({
+        hookKind: "Custom",
+        callback,
+        args: parameters.map(() => createUnknown("callback-argument", callback.loc)),
+        dependencies: null,
+        loc,
+      });
+    }
   }
 
   #evaluateMethodCall(

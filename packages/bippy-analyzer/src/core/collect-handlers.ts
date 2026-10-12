@@ -78,7 +78,7 @@ export const collectHandlers = (
       hookKind: effectCall.hookKind,
       dependencies: getSourceText(sourceFile, effectCall.dependencies),
     };
-    addTransition(trigger, effectCall.callback, [], effectCall.loc);
+    addTransition(trigger, effectCall.callback, effectCall.args, effectCall.loc);
   }
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
