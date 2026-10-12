@@ -24,7 +24,7 @@ import { EQUALITY_OPERATORS } from "./constraints.js";
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
-const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
+const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)(?:<.*>)?$/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
 const CONTEXT_TYPE_PATTERN = /^(?:React\.)?Context</;
 /** React's own escape hatch, which throws beside `children`, a prop sampled everywhere. */
@@ -32,7 +32,7 @@ const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 /** A DOM node, which no plain value can stand in for, like a portal's container. */
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
-const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)\b/;
+const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)$/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
 const EMPTY_TEXT_SAMPLE: Sample = { kind: "Value", value: "" };
 const SAMPLE_DATE = "2024-01-01T00:00:00.000Z";

@@ -30,3 +30,11 @@ export const Greeting = ({ locale }: { locale: string }) => (
 export const Swatch = ({ primaryColor }: { primaryColor: string }) => (
   <span style={{ color: primaryColor }}>Aa</span>
 );
+
+export const Toolbar = ({ actions }: { actions: React.ReactNode[] }) => (
+  <div>
+    {actions.map((action, index) => (
+      <span key={index}>{action}</span>
+    ))}
+  </div>
+);
