@@ -22,3 +22,7 @@ export const Receipt = ({ createdAt, paidOn, price }: ReceiptProps) => (
 export const DateLabel = ({ endDate }: { endDate: any }) => (
   <p>{new Date(endDate).toISOString()}</p>
 );
+
+export const Greeting = ({ locale }: { locale: string }) => (
+  <p>{new Intl.DateTimeFormat(locale).format(0)}</p>
+);

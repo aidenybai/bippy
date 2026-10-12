@@ -38,6 +38,7 @@ const EMPTY_TEXT_SAMPLE: Sample = { kind: "Value", value: "" };
 const SAMPLE_DATE = "2024-01-01T00:00:00.000Z";
 const DATE_NAME_PATTERN = /(?:^date|^time|Date|Time|At|_at)$/;
 const CURRENCY_NAME_PATTERN = /(?:^currency|Currency)(?:Code)?$/;
+const LOCALE_NAME_PATTERN = /^(?:locale|lang|language)$|Locale$/;
 const PURE_ARRAY_METHODS = new Set([
   "at",
   "concat",
@@ -164,14 +165,17 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
 };
 
 /**
- * Strings to mount with, which a name like `createdAt` or `currencyCode` says are a date or a
- * currency code that the component parses, as `new Date("text")` would be invalid.
+ * Strings to mount with, which a name like `createdAt`, `currencyCode` or `locale` says are a
+ * date, a currency code or a locale that the component parses, as `new Date("text")` would be
+ * invalid.
  */
 export const getStringSamples = (name: string | null): Sample[] => {
   if (name !== null && DATE_NAME_PATTERN.test(name))
     return [{ kind: "Value", value: SAMPLE_DATE }, EMPTY_TEXT_SAMPLE];
   if (name !== null && CURRENCY_NAME_PATTERN.test(name))
     return [{ kind: "Value", value: "USD" }, EMPTY_TEXT_SAMPLE];
+  if (name !== null && LOCALE_NAME_PATTERN.test(name))
+    return [{ kind: "Value", value: "en" }, EMPTY_TEXT_SAMPLE];
   return [TEXT_SAMPLE, EMPTY_TEXT_SAMPLE];
 };
 

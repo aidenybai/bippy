@@ -35,4 +35,11 @@ describe("samples of parsed strings", () => {
       { kind: "Value", value: "2024-01-01T00:00:00.000Z" },
     ]);
   });
+
+  it("mounts a string named as a locale with a locale", () => {
+    expect(getBinding(getComponent(project, "Greeting"), "locale").samples[0]).toEqual({
+      kind: "Value",
+      value: "en",
+    });
+  });
 });
