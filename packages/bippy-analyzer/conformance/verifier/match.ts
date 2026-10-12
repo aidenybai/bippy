@@ -61,7 +61,18 @@ export const toExpected = (
           },
         ];
       }
-      return [{ kind: "element", tag: tag.name, children: value.children.flatMap(recurse) }];
+      // An element without children of its own renders the children props spread onto it
+      // carry, like `<label {...labelProps} />`.
+      const hasSpreadChildren =
+        value.children.length === 0 &&
+        value.props.some((prop) => prop.kind === "JsxSpreadAttribute");
+      return [
+        {
+          kind: "element",
+          tag: tag.name,
+          children: hasSpreadChildren ? [{ kind: "hole" }] : value.children.flatMap(recurse),
+        },
+      ];
     }
     case "JsxFragment":
       return value.children.flatMap(recurse);

@@ -134,4 +134,17 @@ describe("matchesExpected", () => {
     };
     expect(matches(render, [shapeElement("p")])).toBe(true);
   });
+
+  it("matches the children a spread carries onto an element without its own", () => {
+    const label: SymbolicValue = {
+      kind: "JsxExpression",
+      tag: { kind: "BuiltinTag", name: "label" },
+      props: [{ kind: "JsxSpreadAttribute", value: binding("labelProps"), handlerId: null }],
+      children: [],
+      loc: GeneratedSource,
+    };
+    expect(matches(label, [shapeElement("label", [{ kind: "text", text: "Remember me" }])])).toBe(
+      true,
+    );
+  });
 });
