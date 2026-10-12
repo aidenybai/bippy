@@ -88,6 +88,17 @@ const PROVIDER_SPECS: ProviderSpec[] = [
   createRouterSpec("react-router"),
   createRouterSpec("react-router-dom"),
   {
+    packageName: "@tanstack/react-router",
+    imports: [
+      'import * as TanStackRouter from "@tanstack/react-router";',
+      "const TanStackRouterProvider = ({ children }) => {",
+      "  const [router] = useState(() => TanStackRouter.createRouter({ routeTree: TanStackRouter.createRootRoute(), history: TanStackRouter.createMemoryHistory() }));",
+      "  return createElement(TanStackRouter.RouterContextProvider, { router }, children);",
+      "};",
+    ].join("\n"),
+    wrap: (children) => `createElement(TanStackRouterProvider, null, ${children})`,
+  },
+  {
     packageName: "next-auth",
     modules: ["next-auth/react"],
     imports: [
