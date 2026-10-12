@@ -97,8 +97,12 @@ export const resolveWrappers = async (
     }
     const failure = classifyMountError(capture.error);
     if (!PARENT_FAILURES.has(failure)) break;
+    // A parent named after the component itself, as when it throws for want of its own
+    // provider part, can't be what it needs.
     const isWrapped = (candidate: Wrapper | null): boolean =>
-      candidate === null || wrappers.some((existing) => existing.name === candidate.name);
+      candidate === null ||
+      candidate.name === analysis.name ||
+      wrappers.some((existing) => existing.name === candidate.name);
     const errorWrapper =
       failure === "provider" ? findWrapper(capture.error, analysis.file, exportIndex) : null;
     const compoundRoot = isWrapped(errorWrapper)

@@ -154,8 +154,9 @@ export const findSiblingParts = (
   componentFile: string,
   exportIndex: Map<string, string[]>,
 ): Wrapper | null => {
-  const rootName = getCompoundRootName(componentName, componentFile, exportIndex);
-  if (!rootName) return null;
+  // A component may be the root itself, like `MessageScroller` needing its
+  // `MessageScrollerProvider` part.
+  const rootName = getCompoundRootName(componentName, componentFile, exportIndex) ?? componentName;
   const siblings = [...exportIndex]
     .filter(
       ([candidate, files]) =>
