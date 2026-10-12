@@ -56,6 +56,7 @@ const MAX_INLINE_DEPTH = 4;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
+const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
 const DYNAMIC_TAG_NAME = "Dynamic";
 const PORTAL_CALLEE_PATTERN = /(?:^|\.)createPortal$/;
@@ -63,11 +64,14 @@ const MAX_OPTIONS_DEPTH = 3;
 
 /**
  * The functions and setters among values passed on, including those nested in options
- * objects, like the `click` of `{ handleDOMEvents: { click() {} } }`.
+ * objects, like the `click` of `{ handleDOMEvents: { click() {} } }`, and either side of a
+ * condition, like `doubleCheck ? undefined : onClick`.
  */
 const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
     if (value.kind === "Function" || value.kind === "Setter") return [value];
+    if (value.kind === "Conditional")
+      return getPassedCallbacks([value.consequent, value.alternate], depth);
     if (value.kind !== "ObjectExpression" || depth >= MAX_OPTIONS_DEPTH) return [];
     return getPassedCallbacks(
       value.properties.map((property) => property.value),
@@ -178,6 +182,8 @@ export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
 export interface ProjectHook {
   fn: HIRFunction;
   resolver: DomainResolver;
+  /** Compiles a function declared at the top level of the hook's file, by name. */
+  loadModuleFunction: ModuleFunctionLoader;
 }
 
 /** Finds a project hook by its declaration key, like `src/hooks/use-toggle.ts#useToggle`. */
@@ -313,6 +319,8 @@ export class Interpreter {
   readonly #loadProjectHook: ProjectHookLoader;
   readonly #values = new WeakMap<object, Map<IdentifierId, SymbolicValue>>();
   readonly #functionResolvers = new WeakMap<HIRFunction, DomainResolver>();
+  /** The loader of each file's module functions, by that file's resolver. */
+  readonly #moduleFunctionLoaders = new Map<DomainResolver, ModuleFunctionLoader>();
   readonly #contextModels: ContextModels;
   readonly #contextKeys = new WeakMap<HookResultValue, string>();
   readonly #hookResolvers = new WeakMap<HookResultValue, DomainResolver>();
@@ -356,6 +364,8 @@ export class Interpreter {
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
   #walkedCatches = new Set<BlockId>();
+  /** The values each function value's captured variables had when it was created, by id. */
+  readonly #captures = new Map<number, Array<[Place, SymbolicValue]>>();
   #inlineDepth = 0;
 
   constructor(
@@ -367,6 +377,7 @@ export class Interpreter {
   ) {
     this.#resolver = resolver;
     this.#loadModuleFunction = loadModuleFunction;
+    this.#moduleFunctionLoaders.set(resolver, loadModuleFunction);
     this.#loadProjectHook = loadProjectHook;
     this.#contextModels = contextModels;
     this.#storeModels = storeModels;
@@ -384,6 +395,29 @@ export class Interpreter {
     if (!this.#functionResolvers.has(fn)) this.#functionResolvers.set(fn, this.#resolver);
     this.#functions.push(fn);
     return { kind: "Function", functionId: this.#functions.length - 1, loc: fn.loc };
+  }
+
+  /**
+   * A function value that keeps what its captured variables held when it was created, as
+   * each call of a helper like `callAll(...fns)` returns a closure over its own `fns`.
+   */
+  #createClosure(fn: HIRFunction): FunctionValue {
+    const closure = this.#registerFunction(fn);
+    this.#captures.set(
+      closure.functionId,
+      fn.context.map((place) => [place, this.#read(place)]),
+    );
+    return closure;
+  }
+
+  /** Writes a closure's captured values while it runs, and returns what restores them. */
+  #applyCaptures(functionId: number | null): () => void {
+    const captures = functionId === null ? [] : (this.#captures.get(functionId) ?? []);
+    const previous = captures.map(([place]): [Place, SymbolicValue] => [place, this.#read(place)]);
+    for (const [place, value] of captures) this.#write(place, value);
+    return () => {
+      for (const [place, value] of previous) this.#write(place, value);
+    };
   }
 
   #getCurrentFunction(): HIRFunction {
@@ -696,7 +730,7 @@ export class Interpreter {
     if (!fn || this.#inlineDepth >= MAX_INLINE_DEPTH) return createUnknown("call", loc);
     this.#inlineDepth++;
     try {
-      return this.#evaluateFunction(fn, args, state);
+      return this.#evaluateFunction(fn, args, state, callee.functionId);
     } finally {
       this.#inlineDepth--;
     }
@@ -834,6 +868,7 @@ export class Interpreter {
     const projectHook = hookKind === "Custom" ? this.#findProjectHook(calleePlace) : null;
     if (projectHook && this.#inlineDepth < MAX_INLINE_DEPTH) {
       this.#functionResolvers.set(projectHook.fn, projectHook.resolver);
+      this.#moduleFunctionLoaders.set(projectHook.resolver, projectHook.loadModuleFunction);
       return this.#callFunction(this.#registerFunction(projectHook.fn), args, loc, state);
     }
     const storeKey =
@@ -845,6 +880,14 @@ export class Interpreter {
       return this.#readStore(storeKey, storeModel, callee, args, loc, state);
     if (hookKind !== null)
       return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);
+    const moduleFunction =
+      callee.kind === "Global" && getPassedCallbacks(args).length > 0
+        ? this.#moduleFunctionLoaders.get(this.#resolver)?.(callee.name)
+        : null;
+    // A helper given a callback may wrap it or call it later, like
+    // `callAll(onClick, props.onClick)`, so it runs as written.
+    if (moduleFunction)
+      return this.#callFunction(this.#registerFunction(moduleFunction), args, loc, state);
     switch (callee.kind) {
       case "Function":
         return this.#callFunction(callee, args, loc, state);
@@ -1037,6 +1080,22 @@ export class Interpreter {
     const argumentPlaces = instruction.args.map(getPlaceOrSpread);
     const args = argumentPlaces.map((place) => this.#read(place));
     const [callback] = args;
+    // A handler that iterates a list it knows, like `fns.forEach((fn) => fn())`, calls back
+    // with each item, and with any item for what spreads into the list.
+    if (
+      this.#mode === "effect" &&
+      propertyName !== null &&
+      ITERATION_METHODS.has(propertyName) &&
+      receiver.kind === "ArrayExpression" &&
+      callback?.kind === "Function"
+    ) {
+      const items = [
+        ...receiver.elements,
+        ...receiver.spreads.map(() => createUnknown("item", instruction.loc)),
+      ];
+      for (const item of items) this.#callFunction(callback, [item], instruction.loc, state);
+      return createUnknown("call", instruction.loc);
+    }
     if (propertyName === "map" && callback?.kind === "Function") {
       const parameter = this.#getFunction(callback.functionId)?.params[0];
       const itemPlace = parameter ? getPlaceOrSpread(parameter) : null;
@@ -1164,7 +1223,7 @@ export class Interpreter {
         };
       case "FunctionExpression":
       case "ObjectMethod":
-        return this.#registerFunction(value.loweredFunc.func);
+        return this.#createClosure(value.loweredFunc.func);
       case "CallExpression": {
         const argumentPlaces = value.args.map(getPlaceOrSpread);
         return this.#evaluateCall(
@@ -1605,20 +1664,31 @@ export class Interpreter {
     return declarationKey ? this.#loadProjectHook(declarationKey) : null;
   }
 
-  #evaluateFunction(fn: HIRFunction, args: SymbolicValue[], state: WalkState): SymbolicValue {
+  #evaluateFunction(
+    fn: HIRFunction,
+    args: SymbolicValue[],
+    state: WalkState,
+    functionId: number | null = null,
+  ): SymbolicValue {
     const previousFunction = this.#currentFunction;
     const previousResolver = this.#resolver;
     const previousCatches = this.#walkedCatches;
     this.#walkedCatches = new Set();
     this.#currentFunction = fn;
     this.#resolver = this.#functionResolvers.get(fn) ?? previousResolver;
+    const restoreCaptures = this.#applyCaptures(functionId);
     try {
       fn.params.forEach((parameter, index) => {
         const place = getPlaceOrSpread(parameter);
         this.#write(
           place,
           parameter.kind === "Spread"
-            ? createUnknown("rest", place.loc)
+            ? // The arguments past the named ones, and any a caller spreads in.
+              {
+                kind: "ArrayExpression",
+                elements: args.slice(index),
+                spreads: [createUnknown("rest", place.loc)],
+              }
             : (args[index] ?? UNDEFINED_VALUE),
         );
       });
@@ -1628,6 +1698,7 @@ export class Interpreter {
         state.guards,
       );
     } finally {
+      restoreCaptures();
       this.#currentFunction = previousFunction;
       this.#resolver = previousResolver;
       this.#walkedCatches = previousCatches;
@@ -1771,23 +1842,20 @@ export class Interpreter {
         const fn = this.#getFunction(handler.functionId);
         if (fn)
           this.#collectRenderedHandlers(
-            this.#evaluateFunction(fn, [event], ROOT_WALK_STATE),
+            this.#evaluateFunction(fn, [event], ROOT_WALK_STATE, handler.functionId),
             visited,
           );
       }
     });
   }
 
-  /**
-   * Evaluates an event handler or effect callback and returns the state updates and prop
-   * calls it makes.
-   */
+  /** Runs one handler: a function, a setter, or a hook or context function it calls into. */
   #runCallback(callback: SymbolicValue, args: SymbolicValue[]): void {
     if (callback.kind === "Function") {
       const fn = this.#getFunction(callback.functionId);
       if (fn)
         this.#collectRenderedHandlers(
-          this.#evaluateFunction(fn, args, ROOT_WALK_STATE),
+          this.#evaluateFunction(fn, args, ROOT_WALK_STATE, callback.functionId),
           new Set([callback.functionId]),
         );
     }
@@ -1800,6 +1868,10 @@ export class Interpreter {
     if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
   }
 
+  /**
+   * Evaluates an event handler or effect callback and returns the state updates and prop
+   * calls it makes.
+   */
   collectEffects(callback: SymbolicValue, args: SymbolicValue[]): CollectedEffects {
     const previousMode = this.#mode;
     const previousCollected = this.#collected;

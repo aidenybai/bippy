@@ -33,6 +33,20 @@ const hasCallableField = (value: SymbolicValue): boolean =>
 const isRefCallback = (prop: JsxProp): boolean =>
   prop.name === "ref" && (prop.value.kind === "Function" || prop.value.kind === "Setter");
 
+/** The handlers among the props an object spreads onto an element, as one object. */
+const getSpreadHandlers = (tag: JsxTag, value: SymbolicValue): SymbolicValue | null => {
+  if (value.kind !== "ObjectExpression") return null;
+  const properties = value.properties.filter((property) =>
+    isHandlerProp(tag, {
+      kind: "JsxAttribute",
+      name: property.key,
+      value: property.value,
+      handlerId: null,
+    }),
+  );
+  return properties.length > 0 ? { kind: "ObjectExpression", properties, spreads: [] } : null;
+};
+
 const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
     case "Function":
@@ -92,13 +106,22 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
       if (prop.kind === "JsxSpreadAttribute") {
-        if (prop.value.kind !== "Unknown") continue;
-        prop.handlerId = addTransition(
-          { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
-          prop.value,
-          [],
-          prop.value.loc,
-        );
+        if (prop.value.kind === "Unknown")
+          prop.handlerId = addTransition(
+            { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
+            prop.value,
+            [],
+            prop.value.loc,
+          );
+        // Props spread from an object, like `{...getButtonProps()}`, install its handlers.
+        const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
+        if (spreadHandlers)
+          prop.handlerId = addTransition(
+            { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
+            spreadHandlers,
+            [{ kind: "Unknown", reason: "event", loc: GeneratedSource }],
+            element.loc,
+          );
         continue;
       }
       if (isRefCallback(prop)) {

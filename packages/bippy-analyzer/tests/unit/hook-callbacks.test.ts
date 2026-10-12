@@ -92,4 +92,9 @@ describe("callbacks passed to hooks", () => {
   it("runs a function a constructor gets in nested options, like an editor's click handler", () => {
     expect(getComponent(project, "SuggestionEditor").report.unreachableBranches).toEqual([]);
   });
+
+  it("runs the handlers props spread from a getter install, through helpers that merge them", () => {
+    const doubleCheck = analyzeProject(getFixtureConfig("conformance-repros"), "double-check");
+    expect(getComponent(doubleCheck, "DisableButton").report.unreachableBranches).toEqual([]);
+  });
 });

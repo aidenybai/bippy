@@ -271,7 +271,11 @@ export const analyzeProject = (
         storeModels.set(storeKey, model);
       for (const { fnType, hir, name } of compiled.functions)
         if (fnType === "Hook" && hir)
-          projectHooks.set(`${sourceFile.path}#${name}`, { fn: hir, resolver });
+          projectHooks.set(`${sourceFile.path}#${name}`, {
+            fn: hir,
+            resolver,
+            loadModuleFunction: compiled.compileModuleFunction,
+          });
       return [
         {
           sourceFile,
