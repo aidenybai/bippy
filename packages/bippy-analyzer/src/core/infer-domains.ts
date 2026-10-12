@@ -3,6 +3,7 @@ import {
   findNodeAtLocation,
   getContextKey,
   getDeclarationKey,
+  getReactExportName,
   isReactElementType,
 } from "./utils/typescript.js";
 import * as t from "typescript/unstable/ast/is";
@@ -397,6 +398,12 @@ export class DomainResolver {
     return loc === GeneratedSource
       ? null
       : this.#sourceFile.text.slice(loc.start.index, loc.end.index).replace(/\s+/g, " ").trim();
+  }
+
+  getReactExportName(loc: SourceLocation): string | null {
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    if (!node) return null;
+    return getReactExportName(this.#checker, t.isCallExpression(node) ? node.expression : node);
   }
 
   getCalleeText(loc: SourceLocation): string | null {

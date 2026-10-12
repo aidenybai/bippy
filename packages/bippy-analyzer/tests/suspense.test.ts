@@ -13,4 +13,9 @@ describe("Suspense", () => {
       ["!suspended"],
     ]);
   });
+
+  it("recognizes Suspense imported under another name", () => {
+    const panel = getComponent(project, "AliasedLazyPanel");
+    expect(getBinding(panel, "suspended").kind).toBe("suspense");
+  });
 });

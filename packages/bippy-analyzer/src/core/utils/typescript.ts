@@ -6,7 +6,7 @@ import { SymbolFlags } from "typescript/unstable/sync";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR.js";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR.js";
 
-const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react[\\/]/;
+const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react(?:-dom)?[\\/]/;
 const REACT_ELEMENT_TYPE_NAMES = new Set(["ReactElement", "ReactPortal", "ReactNode", "Element"]);
 
 export const isReactElementType = (type: Type): boolean =>

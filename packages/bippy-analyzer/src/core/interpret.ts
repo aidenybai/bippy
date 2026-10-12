@@ -58,9 +58,7 @@ const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionSt
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
-const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
 const DYNAMIC_TAG_NAME = "Dynamic";
-const PORTAL_CALLEE_PATTERN = /(?:^|\.)createPortal$/;
 const MAX_OPTIONS_DEPTH = 3;
 
 const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
@@ -234,9 +232,6 @@ const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
   if (operator === "!") return negate(value);
   return { kind: "UnaryExpression", operator, value };
 };
-
-const isSuspenseTag = (tag: SymbolicValue): boolean =>
-  tag.kind === "Global" && tag.module === "react" && SUSPENSE_TAG_PATTERN.test(tag.name);
 
 const getComponentName = (tag: Extract<SymbolicValue, { kind: "Global" | "Binding" }>): string =>
   tag.kind === "Global" ? tag.name : tag.binding.name;
@@ -807,8 +802,7 @@ export class Interpreter {
     if (this.propsSample === null && propsPlace)
       this.propsSample = this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
     // A portal renders its children in place, only into another container.
-    const calleeText = this.#resolver.getCalleeText(loc);
-    if (calleeText !== null && PORTAL_CALLEE_PATTERN.test(calleeText) && args[0]) return args[0];
+    if (this.#resolver.getReactExportName(loc) === "createPortal" && args[0]) return args[0];
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
     const projectHook = hookKind === "Custom" ? this.#findProjectHook(calleePlace) : null;
     if (projectHook && this.#inlineDepth < MAX_INLINE_DEPTH) {
@@ -1186,7 +1180,8 @@ export class Interpreter {
           (value.children ?? []).map((child) => this.#read(child)),
           value.loc,
         );
-        return isSuspenseTag(tag) && element.kind === "JsxExpression"
+        return this.#resolver.getReactExportName(value.tag.loc) === "Suspense" &&
+          element.kind === "JsxExpression"
           ? this.#buildSuspense(element, instruction.id)
           : element;
       }
