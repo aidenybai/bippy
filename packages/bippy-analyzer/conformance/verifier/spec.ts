@@ -52,12 +52,13 @@ const getStateLabel = (state: State): string => state.conditions.join(" ∧ ") |
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };
-  if (typeof value === "function") return { kind: "Function" };
+  if (typeof value === "function") return { kind: "Function", returns: null };
   if (Array.isArray(value)) return { kind: "Array", items: value.map(toSample) };
   if (value !== null && typeof value === "object")
     return {
       kind: "Object",
       fields: Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toSample(item)])),
+      isOpen: false,
     };
   if (
     value === null ||

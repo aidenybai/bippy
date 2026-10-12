@@ -39,7 +39,7 @@ const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
       return sample ? [[key, sample]] : [];
     });
     return fields.length === value.properties.length
-      ? { kind: "Object", fields: Object.fromEntries(fields) }
+      ? { kind: "Object", fields: Object.fromEntries(fields), isOpen: false }
       : null;
   }
   return null;

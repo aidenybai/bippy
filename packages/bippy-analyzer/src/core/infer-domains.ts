@@ -64,16 +64,21 @@ const dedupeSamples = (samples: Sample[]): Sample[] => [
   ...new Map(samples.map((sample) => [getSampleKey(sample), sample])).values(),
 ];
 
+/**
+ * An object of the type's fields. One with more fields than are sampled, or past the depth
+ * sampled, is open: a mount answers its other fields with a stand-in for any value.
+ */
 const getObjectSample = (checker: Checker, type: Type, depth: number): Sample => {
-  if (depth >= MAX_SAMPLE_DEPTH) return { kind: "Object", fields: {} };
+  if (depth >= MAX_SAMPLE_DEPTH) return { kind: "Object", fields: {}, isOpen: true };
+  const properties = checker.getPropertiesOfType(type);
   const fields: Record<string, Sample> = {};
-  for (const property of checker.getPropertiesOfType(type).slice(0, MAX_SAMPLE_FIELDS)) {
+  for (const property of properties.slice(0, MAX_SAMPLE_FIELDS)) {
     const definedSample = getSamples(checker, checker.getTypeOfSymbol(property), depth + 1).find(
       (sample) => sample.kind !== "Undefined",
     );
     if (definedSample) fields[property.name] = definedSample;
   }
-  return { kind: "Object", fields };
+  return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
 
 /**
@@ -107,8 +112,14 @@ const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample
       { kind: "Value", value: true },
       { kind: "Value", value: false },
     ];
-  if (checker.getSignaturesOfType(type, SignatureKind.Call).length > 0)
-    return [{ kind: "Function" }];
+  const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);
+  if (signature) {
+    const [returns] =
+      depth < MAX_SAMPLE_DEPTH
+        ? getSamples(checker, checker.getReturnTypeOfSignature(signature), depth + 1)
+        : [];
+    return [{ kind: "Function", returns: returns ?? null }];
+  }
   if (checker.isArrayType(type) && type.isTypeReference()) {
     const [elementType] = checker.getTypeArguments(type);
     const [elementSample] =

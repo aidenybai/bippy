@@ -216,22 +216,73 @@ const hydrateProp = (name: string, sample: Sample): unknown => {
   return trackWrites(value, true);
 };
 
+const EMPTY_ARRAY_METHODS = new Set([
+  "map",
+  "filter",
+  "flatMap",
+  "flat",
+  "slice",
+  "concat",
+  "sort",
+  "toSorted",
+  "reverse",
+  "entries",
+  "keys",
+  "values",
+]);
+
+/**
+ * A stand-in for any value, for the fields of a library object, like a TanStack table,
+ * that its type has too many of to sample. It can be called, read and iterated, acts as
+ * an empty list, and React renders nothing for it.
+ */
+const STAND_IN: unknown = new Proxy(function standIn() {}, {
+  apply: () => STAND_IN,
+  construct: () => Object(STAND_IN),
+  get: (_target, key) => {
+    if (key === Symbol.iterator) return function* () {};
+    if (key === Symbol.toPrimitive) return () => "";
+    if (typeof key === "symbol" || key === "then" || key === "$$typeof" || key === "toJSON")
+      return undefined;
+    if (key === "length" || key === "size") return 0;
+    if (EMPTY_ARRAY_METHODS.has(key)) return () => [];
+    if (key === "reduce") return (_reducer: unknown, initial: unknown) => initial;
+    if (key === "find" || key === "at") return () => undefined;
+    if (key === "some" || key === "includes") return () => false;
+    if (key === "every") return () => true;
+    if (key === "join" || key === "toString") return () => "";
+    return STAND_IN;
+  },
+});
+
+const createOpenObject = (fields: Record<string, unknown>): Record<string, unknown> =>
+  new Proxy(fields, {
+    get: (target, key) =>
+      Reflect.has(target, key) || typeof key === "symbol" || key === "then" || key === "toJSON"
+        ? Reflect.get(target, key)
+        : STAND_IN,
+  });
+
 const hydrate = (sample: Sample): unknown => {
   switch (sample.kind) {
     case "Value":
       return sample.value;
     case "Undefined":
       return undefined;
-    case "Function":
-      return () => undefined;
+    case "Function": {
+      const { returns } = sample;
+      return () => (returns ? hydrate(returns) : undefined);
+    }
     case "Element":
       return createElement("span", null, "text");
     case "Array":
       return sample.items.map(hydrate);
-    case "Object":
-      return Object.fromEntries(
+    case "Object": {
+      const fields = Object.fromEntries(
         Object.entries(sample.fields).map(([name, field]) => [name, hydrate(field)]),
       );
+      return sample.isOpen ? createOpenObject(fields) : fields;
+    }
   }
 };
 
