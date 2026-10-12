@@ -32,6 +32,12 @@ interface BoundaryProps {
   children: ReactNode;
 }
 
+interface ProvidersProps {
+  children?: ReactNode;
+  /** Leaves out the harness's router, for an app that renders its own. */
+  isRouterless: boolean;
+}
+
 interface BoundaryState {
   hasError: boolean;
 }
@@ -684,6 +690,9 @@ const isAsyncFunction = (
 ): value is (props: Record<string, unknown>) => Promise<unknown> =>
   typeof value === "function" && value.constructor.name === "AsyncFunction";
 
+/** An app that renders its own router, like its `App`, mounts outside the harness's. */
+const NESTED_ROUTER_PATTERN = /cannot render a <Router> inside another <Router>/;
+
 const ASYNC_CLIENT_COMPONENT_PATTERN =
   /async\/await is not yet supported in Client Components|is an async Client Component/;
 
@@ -781,8 +790,9 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   trackedStates = [];
   stateOwners = new WeakMap();
   propWrites = new Set();
-  const { default: Providers }: { default: (props: { children: ReactNode }) => ReactNode } =
-    await import(/* @vite-ignore */ PROVIDERS_PATH);
+  const { default: Providers }: { default: ComponentType<ProvidersProps> } = await import(
+    /* @vite-ignore */ PROVIDERS_PATH
+  );
   if (request.scenario) {
     const { scenarios }: { scenarios?: Record<string, (...args: unknown[]) => unknown> } =
       await import(/* @vite-ignore */ SETUP_PATH);
@@ -802,7 +812,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
     Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
   );
   const loadedWrappers = await Promise.all(request.wrappers.map(loadWrapper));
-  const render = async (type: unknown): Promise<void> => {
+  const render = async (type: unknown, isRouterless = false): Promise<void> => {
     mountedRoot?.unmount();
     renderError = null;
     caughtError = null;
@@ -824,7 +834,9 @@ const mount = async (request: MountRequest): Promise<Capture> => {
           createElement(getDepthMarker(depth), null, element),
         );
     }
-    mountedRoot.render(createElement(Boundary, null, createElement(Providers, null, element)));
+    mountedRoot.render(
+      createElement(Boundary, null, createElement(Providers, { isRouterless }, element)),
+    );
     await settle();
   };
   try {
@@ -844,6 +856,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
         const output = await resolveServerTree(rendered.output, true);
         await render(() => output);
       }
+      if (error && NESTED_ROUTER_PATTERN.test(error.message)) await render(componentType, true);
     }
   } catch (error) {
     return createEmptyCapture(recordError(error).message);

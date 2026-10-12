@@ -75,7 +75,7 @@ const createRouterSpec = (packageName: string): ProviderSpec => ({
     "};",
   ].join("\n"),
   wrap: (children) =>
-    `createElement(ReactRouter.createMemoryRouter ? DataRouter : ReactRouter.MemoryRouter, null, ${children})`,
+    `(isRouterless ? ${children} : createElement(ReactRouter.createMemoryRouter ? DataRouter : ReactRouter.MemoryRouter, null, ${children}))`,
 });
 
 const PROVIDER_SPECS: ProviderSpec[] = [
@@ -582,7 +582,7 @@ const createProvidersSource = (providers: ProviderSpec[], setup: HarnessSetup): 
           "const SetupProviders = setup.default ?? (({ children }) => children);",
         ]
       : []),
-    `export default function Providers({ children }) { return ${wrapped}; }`,
+    `export default function Providers({ children, isRouterless }) { return ${wrapped}; }`,
   ].join("\n");
 };
 
