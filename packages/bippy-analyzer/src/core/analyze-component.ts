@@ -72,7 +72,7 @@ export const analyzeComponent = (
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
-  const handlers = collectHandlers(render, interpreter, sourceFile);
+  const handlers = collectHandlers(render, interpreter);
   const { bindings } = interpreter;
   return {
     ...base,

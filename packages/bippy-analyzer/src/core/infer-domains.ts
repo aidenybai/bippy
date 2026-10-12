@@ -369,6 +369,13 @@ export class DomainResolver {
     return node && t.isIdentifier(node) ? node.text : null;
   }
 
+  /** The source text at a location, with its whitespace collapsed. */
+  getSourceText(loc: SourceLocation): string | null {
+    return loc === GeneratedSource
+      ? null
+      : this.#sourceFile.text.slice(loc.start.index, loc.end.index).replace(/\s+/g, " ").trim();
+  }
+
   /**
    * Gives the callee's source text for a call, like `checkAccess` for
    * `checkAccess({ allowedRoles })`.

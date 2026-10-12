@@ -1,4 +1,3 @@
-import type { SourceFile } from "typescript/unstable/ast";
 import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
 import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
 import type { Interpreter } from "./interpret.js";
@@ -48,21 +47,12 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
   return GeneratedSource;
 };
 
-const getSourceText = (sourceFile: SourceFile, loc: SourceLocation | null): string | null =>
-  loc === null || loc === GeneratedSource
-    ? null
-    : sourceFile.text.slice(loc.start.index, loc.end.index).replace(/\s+/g, " ").trim();
-
 /**
  * Finds every event handler in the render tree and every effect, and records what each one
  * does to state. Handlers reached from several places in the tree are one handler, and
  * each JSX attribute that holds one is linked to it by `handlerId`.
  */
-export const collectHandlers = (
-  render: SymbolicValue,
-  interpreter: Interpreter,
-  sourceFile: SourceFile,
-): Handler[] => {
+export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const handlers: Handler[] = [];
   const handlerIds = new Map<string, string | null>();
 
@@ -83,7 +73,7 @@ export const collectHandlers = (
     const trigger: HandlerTrigger = {
       kind: "Effect",
       hookKind: effectCall.hookKind,
-      dependencies: getSourceText(sourceFile, effectCall.dependencies),
+      dependencies: effectCall.dependencies,
     };
     addTransition(trigger, effectCall.callback, effectCall.args, effectCall.loc);
   }

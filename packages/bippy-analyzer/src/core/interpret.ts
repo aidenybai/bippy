@@ -115,7 +115,8 @@ interface EffectCall {
   hookKind: HookKind;
   callback: SymbolicValue;
   args: SymbolicValue[];
-  dependencies: SourceLocation | null;
+  /** The source text of the dependency list, from the file the effect is in. */
+  dependencies: string | null;
   loc: SourceLocation;
 }
 
@@ -931,7 +932,7 @@ export class Interpreter {
           hookKind,
           callback,
           args: [],
-          dependencies: dependencies?.loc ?? null,
+          dependencies: dependencies ? this.#resolver.getSourceText(dependencies.loc) : null,
           loc,
         });
       return UNDEFINED_VALUE;
