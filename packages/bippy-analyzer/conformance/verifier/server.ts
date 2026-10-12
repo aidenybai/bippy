@@ -114,6 +114,11 @@ const PROVIDER_SPECS: ProviderSpec[] = [
     imports: 'import { NuqsTestingAdapter } from "nuqs/adapters/testing";',
     wrap: (children) => `createElement(NuqsTestingAdapter, { hasMemory: true }, ${children})`,
   },
+  ...["@xyflow/react", "reactflow"].map((packageName): ProviderSpec => ({
+    packageName,
+    imports: `import { ReactFlowProvider } from ${JSON.stringify(packageName)};`,
+    wrap: (children) => `createElement(ReactFlowProvider, null, ${children})`,
+  })),
   {
     packageName: "next-intl",
     imports: 'import { NextIntlClientProvider } from "next-intl";',
