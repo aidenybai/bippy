@@ -6,6 +6,7 @@ import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types.js";
 import {
   findCompoundRoot,
+  findOuterCompoundRoot,
   findContextProvider,
   findSiblingParts,
   findWrapper,
@@ -142,14 +143,15 @@ export const resolveWrappers = async (
     const namedWrapper =
       failure === "provider" ? findWrapper(capture.error, analysis.file, exportIndex) : null;
     const ownRoot = findCompoundRoot(analysis.name, analysis.file, exportIndex);
+    const outerRoot = findOuterCompoundRoot(analysis.name, analysis.file, exportIndex);
     // A parent named for a library part the component's own root renders, like a vaul
     // `DrawerTitle` asking for Radix's `Dialog`, is its root, not another file's `Dialog`.
     const errorWrapper =
       namedWrapper &&
-      ownRoot &&
-      !isWrapped(ownRoot) &&
+      outerRoot &&
+      !isWrapped(outerRoot) &&
       !namedWrapper.candidates.some((candidate) => candidate.specifier === analysis.file)
-        ? { ...namedWrapper, candidates: [...ownRoot.candidates, ...namedWrapper.candidates] }
+        ? { ...namedWrapper, candidates: [...outerRoot.candidates, ...namedWrapper.candidates] }
         : namedWrapper;
     const compoundRoot = isWrapped(errorWrapper) ? ownRoot : errorWrapper;
     const siblingParts = isWrapped(compoundRoot)

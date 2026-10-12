@@ -132,11 +132,11 @@ export const findWrapper = (
  * an error names a parent the component already has, as Radix's `AlertDialog` parts throw
  * for want of a `Dialog`.
  */
-const getCompoundRootName = (
+const getCompoundRootNames = (
   componentName: string,
   componentFile: string,
   exportIndex: Map<string, string[]>,
-): string | undefined =>
+): string[] =>
   [...exportIndex]
     .filter(
       ([candidate, files]) =>
@@ -145,7 +145,13 @@ const getCompoundRootName = (
         files.includes(componentFile),
     )
     .map(([candidate]) => candidate)
-    .sort((left, right) => right.length - left.length)[0];
+    .sort((left, right) => right.length - left.length);
+
+const getCompoundRootName = (
+  componentName: string,
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+): string | undefined => getCompoundRootNames(componentName, componentFile, exportIndex)[0];
 
 const createFileWrapper = (
   name: string,
@@ -162,6 +168,20 @@ const createFileWrapper = (
     isRootAllowed: false,
   })),
 });
+
+/**
+ * The outermost root the component's own file exports, like `DropdownMenu` rather than
+ * `DropdownMenuSub` for `DropdownMenuSubTrigger`, which renders the library root a part's
+ * error names.
+ */
+export const findOuterCompoundRoot = (
+  componentName: string,
+  componentFile: string,
+  exportIndex: Map<string, string[]>,
+): Wrapper | null => {
+  const name = getCompoundRootNames(componentName, componentFile, exportIndex).at(-1);
+  return name ? createFileWrapper(name, componentFile, [name]) : null;
+};
 
 export const findCompoundRoot = (
   componentName: string,
