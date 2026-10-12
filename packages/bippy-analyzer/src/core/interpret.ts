@@ -337,6 +337,7 @@ export class Interpreter {
   #mutations = new Map<number, Mutation>();
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
+  #walkedCatches = new Set<BlockId>();
   #inlineDepth = 0;
 
   constructor(
@@ -1465,6 +1466,16 @@ export class Interpreter {
           nextId = terminal.block;
           break;
         case "maybe-throw":
+          // A handler's `catch` block runs when what it tries throws, like a request that
+          // fails, so its updates happen too. It is walked once per call of the function.
+          if (
+            this.#mode === "effect" &&
+            terminal.handler !== null &&
+            !this.#walkedCatches.has(terminal.handler)
+          ) {
+            this.#walkedCatches.add(terminal.handler);
+            this.#walk(terminal.handler, stops, currentId, currentState, false);
+          }
           nextId = terminal.continuation;
           break;
         case "for":
@@ -1564,6 +1575,8 @@ export class Interpreter {
   #evaluateFunction(fn: HIRFunction, args: SymbolicValue[], state: WalkState): SymbolicValue {
     const previousFunction = this.#currentFunction;
     const previousResolver = this.#resolver;
+    const previousCatches = this.#walkedCatches;
+    this.#walkedCatches = new Set();
     this.#currentFunction = fn;
     this.#resolver = this.#functionResolvers.get(fn) ?? previousResolver;
     try {
@@ -1584,6 +1597,7 @@ export class Interpreter {
     } finally {
       this.#currentFunction = previousFunction;
       this.#resolver = previousResolver;
+      this.#walkedCatches = previousCatches;
     }
   }
 

@@ -74,4 +74,8 @@ describe("callbacks passed to hooks", () => {
   it("calls either function a condition chooses, like one of two setters", () => {
     expect(getComponent(project, "DragPreview").report.unreachableBranches).toEqual([]);
   });
+
+  it("runs a handler's catch block, which sets state when what it tries throws", () => {
+    expect(getComponent(project, "TwoFactor").report.unreachableBranches).toEqual([]);
+  });
 });

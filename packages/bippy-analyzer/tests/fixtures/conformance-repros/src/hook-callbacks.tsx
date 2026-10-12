@@ -131,3 +131,22 @@ export const DragPreview = ({ isDocument }: { isDocument: boolean }) => {
     </div>
   );
 };
+
+declare const verify: (code: string) => Promise<void>;
+
+export const TwoFactor = () => {
+  const [error, setError] = useState<string | null>(null);
+  const submit = async () => {
+    try {
+      await verify("123456");
+    } catch {
+      setError("Invalid code");
+    }
+  };
+  return (
+    <div>
+      <button onClick={submit}>Verify</button>
+      {error ? <p>{error}</p> : null}
+    </div>
+  );
+};
