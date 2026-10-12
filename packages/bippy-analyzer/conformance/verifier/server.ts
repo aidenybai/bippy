@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { builtinModules, createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import MagicString from "magic-string";
 import { createServer, loadEnv, parseAst } from "vite";
@@ -182,7 +182,7 @@ const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const SERVER_SDK_PATTERN =
-  /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|(?:node:)?(?:fs|fs\/promises|child_process|net|tls|dns|worker_threads|readline))$/;
+  /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|node:.+)$/;
 const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
 /** An SVG imported as a component, as `vite-plugin-svgr` does for `logo.svg?react`. */
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
@@ -192,6 +192,8 @@ const SVG_COMPONENT_SOURCE = [
   '  return createElement("svg", props);',
   "}",
 ].join("\n");
+/** An image a build step generates, like an icon sprite, which isn't on disk yet. */
+const MISSING_ASSET_PREFIX = "\0bippy-verify-missing-asset:";
 const NUQS_SERVER_ID = "\0bippy-verify-nuqs-server";
 const NUQS_CACHE_STUB = join(import.meta.dirname, "stubs/nuqs-cache.ts");
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
@@ -239,6 +241,52 @@ const createMissingRequirePlugin = (): OptimizerPlugin => ({
     build.onLoad({ filter: /.*/, namespace: MISSING_MODULE_NAMESPACE }, ({ path }) => ({
       contents: `throw new Error(${JSON.stringify(`Cannot find module '${path}'`)});`,
       loader: "js",
+    }));
+  },
+});
+
+const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
+const NODE_BUILTINS = new Set(builtinModules);
+
+/**
+ * Gives a pre-bundled package's Node module, like `os` in `os.hostname()` at import time,
+ * a stand-in for any value, as a browser has no Node.
+ */
+/** The Node modules an app's bundler polyfills for the browser, Next's own. */
+const getPolyfilledModules = (appDirectory: string): Set<string> =>
+  new Set(isInstalled(appDirectory, "next") ? Object.keys(NEXT_NODE_POLYFILLS) : []);
+
+/**
+ * Whether a module is Node's own with nothing to run in a browser: any `node:` module, and a
+ * bare name like `crypto` unless the app installs a package by it, like `events`, or its
+ * bundler polyfills it.
+ */
+const isNodeOnlyModule = (
+  specifier: string,
+  importer: string | undefined,
+  polyfilled: Set<string>,
+): boolean => {
+  const name = specifier.replace(/^node:/, "").split("/")[0] ?? "";
+  if (!NODE_BUILTINS.has(name) || polyfilled.has(name)) return false;
+  return (
+    specifier.startsWith("node:") ||
+    importer === undefined ||
+    !isRequirable(`${name}/package.json`, importer)
+  );
+};
+
+const createNodeBuiltinPlugin = (polyfilled: Set<string>): OptimizerPlugin => ({
+  name: NODE_BUILTIN_NAMESPACE,
+  setup: (build) => {
+    build.onResolve({ filter: /.*/ }, ({ path, importer }) =>
+      isNodeOnlyModule(path, importer, polyfilled)
+        ? { path, namespace: NODE_BUILTIN_NAMESPACE }
+        : undefined,
+    );
+    build.onLoad({ filter: /.*/, namespace: NODE_BUILTIN_NAMESPACE }, () => ({
+      contents: `module.exports = require(${JSON.stringify(STAND_IN_SOURCE)}).STAND_IN;`,
+      loader: "js",
+      resolveDir: dirname(STAND_IN_SOURCE),
     }));
   },
 });
@@ -565,7 +613,8 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);
     for (const [, clause = "", specifier = ""] of text.matchAll(PACKAGE_IMPORT_PATTERN)) {
-      if (!SERVER_SDK_PATTERN.test(specifier)) continue;
+      const moduleName = specifier.replace(/^node:/, "").split("/")[0] ?? "";
+      if (!SERVER_SDK_PATTERN.test(specifier) && !NODE_BUILTINS.has(moduleName)) continue;
       const names = references.serverSdkImports.get(specifier) ?? new Set();
       for (const namedImport of NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []) {
         const name = namedImport
@@ -735,6 +784,7 @@ const createHarnessPlugin = (
   references: SourceReferences,
 ): Plugin => {
   const isNextApp = isInstalled(appDirectory, "next");
+  const polyfilled = getPolyfilledModules(appDirectory);
   const entryId = join(appDirectory, ENTRY_PATH);
   const providersId = join(appDirectory, PROVIDERS_PATH);
   const setupId = join(appDirectory, SETUP_PATH);
@@ -748,8 +798,17 @@ const createHarnessPlugin = (
     async resolveId(source, importer) {
       if (isNextApp && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
       if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
-      if (SERVER_SDK_PATTERN.test(source)) return `${SERVER_SDK_PREFIX}${source}`;
+      if (SERVER_SDK_PATTERN.test(source) || isNodeOnlyModule(source, importer, polyfilled))
+        return `${SERVER_SDK_PREFIX}${source}`;
       if (STUBS.has(source)) return STUBS.get(source);
+      const assetPath = source.split("?")[0] ?? source;
+      if (
+        importer &&
+        assetPath.startsWith(".") &&
+        IMAGE_FILE_PATTERN.test(assetPath) &&
+        !existsSync(resolve(dirname(importer.split("?")[0] ?? importer), assetPath))
+      )
+        return `${MISSING_ASSET_PREFIX}${assetPath}`;
       if (source === "nuqs/server")
         return importer === NUQS_SERVER_ID
           ? this.resolve(source, appImporter, { skipSelf: true })
@@ -774,6 +833,8 @@ const createHarnessPlugin = (
     load: (id) => {
       if (STYLESHEET_PATTERN.test(id)) return "";
       if (SVG_COMPONENT_PATTERN.test(id)) return SVG_COMPONENT_SOURCE;
+      if (id.startsWith(MISSING_ASSET_PREFIX))
+        return `export default ${JSON.stringify(id.slice(MISSING_ASSET_PREFIX.length))};`;
       if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
       if (id.startsWith(SERVER_SDK_PREFIX))
         return createServerSdkSource(
@@ -875,7 +936,10 @@ export const startHarness = async (
         ...providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
       ],
       esbuildOptions: {
-        plugins: [createMissingRequirePlugin()],
+        plugins: [
+          createMissingRequirePlugin(),
+          createNodeBuiltinPlugin(getPolyfilledModules(appDirectory)),
+        ],
         loader: { ".node": "empty" },
         // Webpack, which Next bundles client code with, makes `__dirname` the root.
         ...(isInstalled(appDirectory, "next") ? { define: { __dirname: '"/"' } } : {}),

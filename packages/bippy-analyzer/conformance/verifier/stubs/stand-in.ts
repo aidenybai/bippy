@@ -26,7 +26,13 @@ export const STAND_IN: unknown = new Proxy(function standIn() {}, {
     if (key === Symbol.iterator) return function* () {};
     if (key === Symbol.toPrimitive) return () => "";
     if (key === "prototype") return Reflect.get(target, key);
-    if (typeof key === "symbol" || key === "then" || key === "$$typeof" || key === "toJSON")
+    if (
+      typeof key === "symbol" ||
+      key === "then" ||
+      key === "$$typeof" ||
+      key === "toJSON" ||
+      key === "__esModule"
+    )
       return undefined;
     if (key === "length" || key === "size") return 0;
     if (EMPTY_ARRAY_METHODS.has(key)) return () => [];
