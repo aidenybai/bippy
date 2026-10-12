@@ -234,9 +234,16 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
   render = (): ReactNode => (this.state.hasError ? null : this.props.children);
 }
 
+/** A ref, like a `ref` prop, which React and the component set `current` of by design. */
+const isRefObject = (value: unknown): boolean =>
+  typeof value === "object" &&
+  value !== null &&
+  Object.keys(value).length === 1 &&
+  Object.hasOwn(value, "current");
+
 const hydrateProp = (name: string, sample: Sample): unknown => {
   const value = hydrate(sample);
-  if (!isPlainData(value)) return value;
+  if (!isPlainData(value) || isRefObject(value)) return value;
   forEachPlainObject(value, (object) => propOwners.set(object, `prop:${name}`));
   return trackWrites(value, true);
 };
