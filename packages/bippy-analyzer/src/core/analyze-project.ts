@@ -202,6 +202,9 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
  * like `setOpen` with `open` in `value={{ open, setOpen }}`. A context provided with
  * different pairings in different places has none.
  */
+const isSamePairing = (left: Map<string, string>, right: Map<string, string>): boolean =>
+  left.size === right.size && [...left].every(([setter, state]) => right.get(setter) === state);
+
 const collectContextModels = (analyses: ComponentAnalysis[]): ContextModels => {
   const models: ContextModels = new Map();
   const conflicting = new Set<string>();
@@ -220,11 +223,11 @@ const collectContextModels = (analyses: ComponentAnalysis[]): ContextModels => {
       if (state) setters.set(property.key, state.key);
     }
     const existing = models.get(contextKey);
-    if (existing && JSON.stringify([...existing]) !== JSON.stringify([...setters]))
-      conflicting.add(contextKey);
-    else if (setters.size > 0) models.set(contextKey, setters);
+    if (existing && !isSamePairing(existing, setters)) conflicting.add(contextKey);
+    else models.set(contextKey, setters);
   }
-  for (const contextKey of conflicting) models.delete(contextKey);
+  for (const [contextKey, setters] of models)
+    if (conflicting.has(contextKey) || setters.size === 0) models.delete(contextKey);
   return models;
 };
 
