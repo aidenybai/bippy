@@ -263,6 +263,33 @@ const findRequireCalls = (program: Rollup.ProgramNode): RequireCall[] => {
   return calls;
 };
 
+const isAppSourceModule = (id: string): boolean =>
+  !id.includes("/node_modules/") && SOURCE_FILE_PATTERN.test(id.split("?")[0] ?? id);
+
+const isModuleStatement = (statement: Rollup.ProgramNode["body"][number]): boolean =>
+  statement.type === "ImportDeclaration" ||
+  statement.type === "ExportNamedDeclaration" ||
+  statement.type === "ExportDefaultDeclaration" ||
+  statement.type === "ExportAllDeclaration";
+
+/**
+ * Makes an app's own CommonJS module, like a Next config that sets `module.exports`,
+ * importable: what it exports becomes its default export.
+ */
+const createCommonJsPlugin = (): Plugin => ({
+  name: "bippy-verify-commonjs",
+  transform: (code, id) => {
+    if (!isAppSourceModule(id) || !code.includes("module.exports")) return null;
+    if (parseAst(code).body.some(isModuleStatement)) return null;
+    return [
+      "const module = { exports: {} };",
+      "const exports = module.exports;",
+      code,
+      "export default module.exports;",
+    ].join("\n");
+  },
+});
+
 /**
  * Turns `require("highlight.js")` in an app's own modules into an import. Next's bundler
  * lets ES modules call `require`, while a browser has no `require` at all.
@@ -270,8 +297,7 @@ const findRequireCalls = (program: Rollup.ProgramNode): RequireCall[] => {
 const createRequirePlugin = (): Plugin => ({
   name: "bippy-verify-require",
   transform: (code, id) => {
-    if (id.includes("/node_modules/") || !code.includes("require(")) return null;
-    if (!SOURCE_FILE_PATTERN.test(id.split("?")[0] ?? id)) return null;
+    if (!isAppSourceModule(id) || !code.includes("require(")) return null;
     const calls = findRequireCalls(parseAst(code));
     if (calls.length === 0) return null;
     const specifiers = [...new Set(calls.map((call) => call.specifier))];
@@ -594,6 +620,7 @@ export const startHarness = async (
       createHarnessPlugin(appDirectory, providers, setup, appImporter, references),
       createProbePlugin(probes),
       createServerActionPlugin(),
+      createCommonJsPlugin(),
       createRequirePlugin(),
       tsconfigPaths({ root: appDirectory }),
     ],
