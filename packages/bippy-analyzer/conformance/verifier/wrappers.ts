@@ -222,12 +222,12 @@ export const findSiblingParts = (
 /**
  * The contexts an error says a hook found empty, named after the hook, like
  * `UIAppStateContext` for "Cannot destructure property 'theme' of 'useUIAppState(...)' as
- * it is null", as a child the component renders may read a context the component doesn't.
+ * it is null", or `ChipsContext` for `useChipsContext(...)`, as a child the component renders may read a context the component doesn't.
  */
 export const getNamedContextKeys = (error: string, contextKeys: Iterable<string>): string[] => {
   const hookName = NULL_HOOK_PATTERN.exec(error)?.[1];
   if (!hookName) return [];
-  const contextName = `${hookName.slice("use".length)}Context`;
+  const contextName = `${hookName.slice("use".length).replace(CONTEXT_SUFFIX, "")}Context`;
   return [...contextKeys].filter((contextKey) => contextKey.endsWith(`#${contextName}`));
 };
 

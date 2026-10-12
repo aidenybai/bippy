@@ -22,6 +22,15 @@ describe("getNamedContextKeys", () => {
     ).toEqual(["/app/App.tsx#AppContext"]);
   });
 
+  it("doesn't repeat the suffix of a hook named after its context", () => {
+    expect(
+      getNamedContextKeys(
+        "Cannot destructure property 'chips' of 'useChipsContext(...)' as it is undefined.",
+        ["/app/chips.tsx#ChipsContext"],
+      ),
+    ).toEqual(["/app/chips.tsx#ChipsContext"]);
+  });
+
   it("finds nothing for an error that names no hook", () => {
     expect(
       getNamedContextKeys("Cannot read properties of null (reading 'scene')", contextKeys),
