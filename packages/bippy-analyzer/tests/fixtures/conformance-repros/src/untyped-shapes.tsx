@@ -12,3 +12,7 @@ export const BookingRow = ({ booking, stays }: { booking: Untyped; stays: Untype
 export const FormRow = ({ children }: { children: Untyped }) => (
   <label htmlFor={children.props.id}>{children}</label>
 );
+
+export const Excerpt = ({ title }: { title: Untyped }) => (
+  <h2>{title.length > 20 ? `${title.slice(0, 20)}…` : title}</h2>
+);
