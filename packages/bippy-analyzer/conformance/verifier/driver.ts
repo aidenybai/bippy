@@ -114,6 +114,17 @@ export const resolveWrappers = async (
       failure === "other" &&
       capture.errorDepth !== null &&
       capture.errorDepth <= added.index;
+    // The parent just added throws the same error itself, so it is the right parent and needs
+    // one of its own parts around it, like a `MessageScroller` its `MessageScrollerProvider`.
+    const parent = added && capture.errorDepth === added.index ? wrappers[added.index] : undefined;
+    const parentCandidate = added?.error === capture.error ? parent?.candidates[0] : undefined;
+    const parentParts = parentCandidate
+      ? findSiblingParts(parentCandidate.exportName, parentCandidate.specifier, exportIndex)
+      : null;
+    if (added && parentParts && !wrappers.some((existing) => existing.name === parentParts.name)) {
+      wrappers.splice(added.index, 0, withSampledProps(parentParts, project, analysis));
+      continue;
+    }
     const isRejected =
       added?.error === capture.error || failure === "did-not-render" || isParentBroken;
     const retried = added && isRejected ? wrappers[added.index] : undefined;
@@ -128,11 +139,19 @@ export const resolveWrappers = async (
       candidate === null ||
       candidate.name === analysis.name ||
       wrappers.some((existing) => existing.name === candidate.name);
-    const errorWrapper =
+    const namedWrapper =
       failure === "provider" ? findWrapper(capture.error, analysis.file, exportIndex) : null;
-    const compoundRoot = isWrapped(errorWrapper)
-      ? findCompoundRoot(analysis.name, analysis.file, exportIndex)
-      : errorWrapper;
+    const ownRoot = findCompoundRoot(analysis.name, analysis.file, exportIndex);
+    // A parent named for a library part the component's own root renders, like a vaul
+    // `DrawerTitle` asking for Radix's `Dialog`, is its root, not another file's `Dialog`.
+    const errorWrapper =
+      namedWrapper &&
+      ownRoot &&
+      !isWrapped(ownRoot) &&
+      !namedWrapper.candidates.some((candidate) => candidate.specifier === analysis.file)
+        ? { ...namedWrapper, candidates: [...ownRoot.candidates, ...namedWrapper.candidates] }
+        : namedWrapper;
+    const compoundRoot = isWrapped(errorWrapper) ? ownRoot : errorWrapper;
     const siblingParts = isWrapped(compoundRoot)
       ? findSiblingParts(analysis.name, analysis.file, exportIndex)
       : compoundRoot;
