@@ -59,7 +59,7 @@ export const startProjectHarness = async (
 
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
-const MAX_PAGES = 4;
+const MAX_PAGES = 8;
 
 /**
  * Opens a harness page. It never leaves the harness: navigations after it loads and
