@@ -25,6 +25,7 @@ const MAX_PROP_COMBINATIONS = 12;
 const MAX_ACTION_DEPTH = 3;
 const MAX_ACTIONS_PER_COMBINATION = 120;
 const MAX_WRAPPERS = 8;
+const MAX_MOUNT_ATTEMPTS = 24;
 const PAGE_TIMEOUT_MS = 30_000;
 const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
 
@@ -88,10 +89,24 @@ export const resolveWrappers = async (
   const { exports: exportIndex } = project;
   const wrappers: Wrapper[] = [];
   let added: { index: number; error: string } | null = null;
-  while (wrappers.length < MAX_WRAPPERS) {
+  for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && wrappers.length < MAX_WRAPPERS; attempt++) {
     const capture = await mountInPage(page, { ...request, wrappers });
     if (!capture.error || capture.shapes.length > 0) break;
     const failure = classifyMountError(capture.error);
+    // A parent added earlier that now throws for want of data is no longer needed, as one
+    // added outside it provides what it stood in for, like a bare `Toast.Root` inside the
+    // app's `Toast`, which passes it the toast it reads.
+    if (
+      added !== null &&
+      capture.errorDepth !== null &&
+      capture.errorDepth < wrappers.length &&
+      capture.errorDepth !== added.index &&
+      (failure === "missing-data" || failure === "other")
+    ) {
+      wrappers.splice(capture.errorDepth, 1);
+      added = null;
+      continue;
+    }
     // The parent just added threw an error no further parent fixes, like a part that renders
     // an `<input>` with children, when React's component stack places it at or above it.
     const isParentBroken =

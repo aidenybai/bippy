@@ -8,8 +8,11 @@ const RELATIVE_IMPORT_PATTERN = /import\s+(?!type\b)[^;]*?\s*from\s+["'](\.{1,2}
 const SOURCE_FILE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
 const NAMESPACE_NAME_PATTERN = /^(?:type\s+)?([A-Z]\w*)/;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
-/** A context's provider is the context itself to mount, as `X.Provider` isn't an export. */
-const CONTEXT_PROVIDER_SUFFIX = /\.Provider$/;
+/**
+ * A context's provider is the context itself to mount, as `XContext.Provider` isn't an
+ * export. A library's `Toast.Provider` is a part of its own.
+ */
+const CONTEXT_PROVIDER_SUFFIX = /(?<=Context)\.Provider$/;
 const CONTEXT_SUFFIX = /Context$/;
 const NULL_HOOK_PATTERN = /of '(use[A-Z]\w*)\(\.\.\.\)' as it is (?:null|undefined)/;
 const PROVIDER_NAME_PATTERNS = [
