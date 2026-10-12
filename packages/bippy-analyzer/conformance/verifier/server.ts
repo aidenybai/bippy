@@ -125,14 +125,16 @@ const T3_ENV_STUB = join(import.meta.dirname, "stubs/t3-env.ts");
 const STUBS = new Map([
   ["@t3-oss/env-nextjs", T3_ENV_STUB],
   ["@t3-oss/env-core", T3_ENV_STUB],
+  ["next-intl/server", join(import.meta.dirname, "stubs/next-intl-server.ts")],
 ]);
 const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
+const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const SERVER_SDK_PATTERN =
-  /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter)$/;
+  /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+)$/;
 const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
 const PACKAGE_IMPORT_PATTERN = /import\s+(?!type\b)([^;]*?)\s*from\s*["']([^"'.][^"']*)["']/g;
@@ -211,6 +213,25 @@ const getExportNames = (program: Rollup.ProgramNode): string[] =>
  * call it, so its exports become async functions that do nothing instead of database code
  * a browser can't load.
  */
+/**
+ * Gives an imported image the shape Next's bundler does, `{ src, width, height }`, which
+ * `next/image` reads, where Vite gives only its URL.
+ */
+const createNextImagePlugin = (): Plugin => ({
+  name: "bippy-verify-next-image",
+  enforce: "post",
+  transform: (code, id) => {
+    if (!IMAGE_FILE_PATTERN.test(id)) return null;
+    const match = /^export default (.+);?$/m.exec(code);
+    return match
+      ? code.replace(
+          match[0],
+          `export default { src: ${match[1]}, width: 1, height: 1, blurDataURL: ${match[1]} };`,
+        )
+      : null;
+  },
+});
+
 const createServerActionPlugin = (): Plugin => ({
   name: "bippy-verify-server-actions",
   transform: (code) => {
@@ -665,6 +686,7 @@ export const startHarness = async (
     plugins: [
       createHarnessPlugin(appDirectory, providers, setup, appImporter, references),
       createProbePlugin(probes),
+      ...(isInstalled(appDirectory, "next") ? [createNextImagePlugin()] : []),
       createServerActionPlugin(),
       createCommonJsPlugin(),
       createRequirePlugin(),

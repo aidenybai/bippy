@@ -662,7 +662,8 @@ const isAsyncFunction = (
 ): value is (props: Record<string, unknown>) => Promise<unknown> =>
   typeof value === "function" && value.constructor.name === "AsyncFunction";
 
-const ASYNC_CLIENT_COMPONENT_PATTERN = /async\/await is not yet supported in Client Components/;
+const ASYNC_CLIENT_COMPONENT_PATTERN =
+  /async\/await is not yet supported in Client Components|is an async Client Component/;
 
 const isFunctionComponent = (
   value: unknown,
