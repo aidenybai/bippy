@@ -182,7 +182,7 @@ const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const SERVER_SDK_PATTERN =
-  /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|node:.+)$/;
+  /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|execa|cross-spawn|npm-run-path|node:.+)$/;
 const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
 /** An SVG imported as a component, as `vite-plugin-svgr` does for `logo.svg?react`. */
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
@@ -249,8 +249,8 @@ const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
 
 /**
- * Gives a pre-bundled package's Node module, like `os` in `os.hostname()` at import time,
- * a stand-in for any value, as a browser has no Node.
+ * Gives a pre-bundled package's Node module or server SDK, like `os` in `os.hostname()` at
+ * import time or `execa`, a stand-in for any value, as a browser has no Node.
  */
 /** The Node modules an app's bundler polyfills for the browser, Next's own. */
 const getPolyfilledModules = (appDirectory: string): Set<string> =>
@@ -279,7 +279,7 @@ const createNodeBuiltinPlugin = (polyfilled: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
     build.onResolve({ filter: /.*/ }, ({ path, importer }) =>
-      isNodeOnlyModule(path, importer, polyfilled)
+      SERVER_SDK_PATTERN.test(path) || isNodeOnlyModule(path, importer, polyfilled)
         ? { path, namespace: NODE_BUILTIN_NAMESPACE }
         : undefined,
     );
