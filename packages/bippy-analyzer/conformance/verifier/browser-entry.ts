@@ -886,6 +886,10 @@ document.addEventListener("submit", preventNavigation, true);
 navigation.addEventListener("navigate", (event) => {
   if (event.cancelable && !event.hashChange) event.preventDefault();
 });
+// Going back can't be canceled, and the harness is the first page, so a "Go back" button
+// calling `navigate(-1)` would leave it.
+history.back = () => {};
+history.go = () => {};
 
 window.__verify = {
   mount,
