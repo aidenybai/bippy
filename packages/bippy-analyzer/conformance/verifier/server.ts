@@ -160,7 +160,7 @@ const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const SERVER_SDK_PATTERN =
-  /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+)$/;
+  /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?)$/;
 const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
 const PACKAGE_IMPORT_PATTERN = /import\s+(?!type\b)([^;]*?)\s*from\s*["']([^"'.][^"']*)["']/g;
