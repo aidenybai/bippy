@@ -59,6 +59,22 @@ const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SUSPENSE_TAG_PATTERN = /(^|\.)Suspense$/;
 const DYNAMIC_TAG_NAME = "Dynamic";
 const PORTAL_CALLEE_PATTERN = /(?:^|\.)createPortal$/;
+const MAX_OPTIONS_DEPTH = 3;
+
+/**
+ * The functions and setters among values passed on, including those nested in options
+ * objects, like the `click` of `{ handleDOMEvents: { click() {} } }`.
+ */
+const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
+  values.flatMap((value) => {
+    if (value.kind === "Function" || value.kind === "Setter") return [value];
+    if (value.kind !== "ObjectExpression" || depth >= MAX_OPTIONS_DEPTH) return [];
+    return getPassedCallbacks(
+      value.properties.map((property) => property.value),
+      depth + 1,
+    );
+  });
+
 const isDefinedSample = (sample: Sample): boolean =>
   sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);
 /** A state initialized from a value the program only asserts the type of, which can be anything. */
@@ -910,9 +926,8 @@ export class Interpreter {
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
     if (this.#mode !== "effect") return;
     if (argument.kind === "ObjectExpression")
-      for (const property of argument.properties)
-        if (property.value.kind !== "ObjectExpression")
-          this.#visitCallbackArgument(property.value, state);
+      for (const callback of getPassedCallbacks([argument]))
+        this.#visitCallbackArgument(callback, state);
     const asyncState = { ...state, isAsync: true };
     if (argument.kind === "Setter")
       this.#recordUpdate(
@@ -986,12 +1001,7 @@ export class Interpreter {
    * arguments, as an effect does.
    */
   #addLaterCallbacks(args: SymbolicValue[], loc: SourceLocation): void {
-    const callbacks = args.flatMap((argument) =>
-      argument.kind === "ObjectExpression"
-        ? argument.properties.map((property) => property.value)
-        : [argument],
-    );
-    for (const callback of callbacks) {
+    for (const callback of getPassedCallbacks(args)) {
       if (callback.kind !== "Function") continue;
       const parameters = this.#getFunction(callback.functionId)?.params ?? [];
       this.effectCalls.push({
@@ -1195,11 +1205,17 @@ export class Interpreter {
         return { kind: "JsxFragment", children: value.children.map((child) => this.#read(child)) };
       case "Await":
         return createUnknown("async", value.loc);
+      case "NewExpression": {
+        // A constructor, like `new EditorView(el, { handleDOMEvents })`, may call what it's given.
+        const args = value.args.map((argument) => this.#read(getPlaceOrSpread(argument)));
+        if (this.#mode === "render") this.#addLaterCallbacks(args, value.loc);
+        else for (const argument of args) this.#visitCallbackArgument(argument, state);
+        return createUnknown(value.kind, value.loc);
+      }
       case "PropertyStore":
       case "ComputedStore":
         this.#storeCallback(this.#read(value.value), value.loc, state);
         return createUnknown(value.kind, value.loc);
-      case "NewExpression":
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
       case "RegExpLiteral":

@@ -88,4 +88,8 @@ describe("callbacks passed to hooks", () => {
       [],
     );
   });
+
+  it("runs a function a constructor gets in nested options, like an editor's click handler", () => {
+    expect(getComponent(project, "SuggestionEditor").report.unreachableBranches).toEqual([]);
+  });
 });

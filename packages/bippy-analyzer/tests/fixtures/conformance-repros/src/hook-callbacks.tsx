@@ -176,3 +176,22 @@ export const Drawer = forwardRef<{ open: () => void }>((_, ref) => {
   useImperativeHandle(ref, () => ({ open: () => setIsOpen(true) }));
   return isOpen ? <aside>Drawer</aside> : null;
 });
+
+declare class EditorView {
+  constructor(options: { handleDOMEvents: { click: () => boolean } });
+}
+
+export const SuggestionEditor = () => {
+  const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    new EditorView({
+      handleDOMEvents: {
+        click() {
+          setActive("suggestion");
+          return true;
+        },
+      },
+    });
+  }, []);
+  return active ? <p>{active}</p> : <div />;
+};
