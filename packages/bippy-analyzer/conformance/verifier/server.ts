@@ -122,7 +122,7 @@ const NEXT_STUBS = new Map([
 const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
-const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?|$)/;
+const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
