@@ -149,7 +149,7 @@ const trackWrites = (target: object, isDeep: boolean): object => {
     get: (innerTarget, key, receiver) => {
       const member: unknown = Reflect.get(innerTarget, key);
       if (innerTarget instanceof Map || innerTarget instanceof Set || innerTarget instanceof Date) {
-        if (typeof member !== "function") return member;
+        if (typeof member !== "function" || key === "constructor") return member;
         return (...args: unknown[]) => {
           if (isMutatingMethod(innerTarget, key)) recordWrite(innerTarget);
           return Reflect.apply(member, innerTarget, args);
