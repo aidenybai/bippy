@@ -41,4 +41,12 @@ describe("callbacks passed to hooks", () => {
       { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
     ]);
   });
+
+  it("runs the handlers a function child renders, as a component gets children as a prop", () => {
+    expect(getComponent(project, "RegionMap").report.unreachableBranches).toEqual([]);
+  });
+
+  it("runs a function a handler stores on an object, which whatever reads it may call", () => {
+    expect(getComponent(project, "Dictation").report.unreachableBranches).toEqual([]);
+  });
 });

@@ -615,7 +615,20 @@ export class Interpreter {
           ? { kind: "Component", name: getComponentName(tag), declaration, isContext }
           : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
-    return { kind: "JsxExpression", tag: jsxTag, props, children, loc };
+    // A component gets its children as a prop, so a function child, like the render function
+    // of `<Geographies>{({ geographies }) => …}</Geographies>`, is a render prop.
+    const functionChildren =
+      jsxTag.kind === "BuiltinTag" ? [] : children.filter((child) => child.kind === "Function");
+    const jsxProps: Array<JsxProp | JsxSpreadProp> = [
+      ...props,
+      ...functionChildren.map((value): JsxProp => ({
+        kind: "JsxAttribute",
+        name: "children",
+        value,
+        handlerId: null,
+      })),
+    ];
+    return { kind: "JsxExpression", tag: jsxTag, props: jsxProps, children, loc };
   }
 
   /**
@@ -880,6 +893,16 @@ export class Interpreter {
       );
   }
 
+  /**
+   * A function stored on an object, like `recognition.onresult = (event) => …`, may be called
+   * by whatever reads it later, as one passed to a call may.
+   */
+  #storeCallback(value: SymbolicValue, loc: SourceLocation, state: WalkState): void {
+    if (value.kind !== "Function") return;
+    if (this.#mode === "render") this.#addLaterCallbacks([value], loc);
+    else this.#visitCallbackArgument(value, state);
+  }
+
   #evaluateHookCall(
     hookKind: HookKind,
     callee: SymbolicValue,
@@ -1133,6 +1156,10 @@ export class Interpreter {
         return { kind: "JsxFragment", children: value.children.map((child) => this.#read(child)) };
       case "Await":
         return createUnknown("async", value.loc);
+      case "PropertyStore":
+      case "ComputedStore":
+        this.#storeCallback(this.#read(value.value), value.loc, state);
+        return createUnknown(value.kind, value.loc);
       case "NewExpression":
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
@@ -1141,8 +1168,6 @@ export class Interpreter {
       case "GetIterator":
       case "IteratorNext":
       case "NextPropertyOf":
-      case "PropertyStore":
-      case "ComputedStore":
       case "PropertyDelete":
       case "ComputedDelete":
       case "PostfixUpdateLocal":

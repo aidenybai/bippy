@@ -42,3 +42,30 @@ export const Truncated = ({ text }: { text: string }) => {
   };
   return isOverflown ? <abbr title={text}>{text}</abbr> : <div ref={refCallback}>{text}</div>;
 };
+
+const Regions = ({ children }: { children: (codes: string[]) => React.ReactNode }) => (
+  <svg>{children(["FR", "JP"])}</svg>
+);
+
+export const RegionMap = () => {
+  const [hovered, setHovered] = useState<string | null>(null);
+  return (
+    <div>
+      <Regions>
+        {(codes) => codes.map((code) => <path key={code} onMouseOver={() => setHovered(code)} />)}
+      </Regions>
+      {hovered ? <p>{hovered}</p> : null}
+    </div>
+  );
+};
+
+declare const recognition: { onresult: ((text: string) => void) | null; start: () => void };
+
+export const Dictation = () => {
+  const [transcript, setTranscript] = useState("");
+  const listen = () => {
+    recognition.onresult = (text) => setTranscript(text);
+    recognition.start();
+  };
+  return transcript ? <p>{transcript}</p> : <button onClick={listen}>Listen</button>;
+};
