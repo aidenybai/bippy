@@ -20,6 +20,7 @@ const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
 const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
+const PROMISE_TYPE_PATTERN = /^Promise</;
 const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)\b/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
 
@@ -130,6 +131,11 @@ const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample
           { kind: "Array", items: [elementSample] },
         ]
       : [{ kind: "Array", items: [] }];
+  }
+  if (PROMISE_TYPE_PATTERN.test(typeText) && type.isTypeReference()) {
+    const [valueType] = checker.getTypeArguments(type);
+    const [value] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
+    return [{ kind: "Promise", value: value ?? { kind: "Undefined" } }];
   }
   if (type.isTupleType() && type.isTypeReference()) {
     return [

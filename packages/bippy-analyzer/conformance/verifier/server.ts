@@ -117,13 +117,26 @@ const NEXT_STUBS = new Map([
   ["next/navigation", NEXT_NAVIGATION_STUB],
   ["next/document", join(import.meta.dirname, "stubs/next-document.ts")],
   ["next/router", NEXT_ROUTER_STUB],
+  ["next/headers", join(import.meta.dirname, "stubs/next-headers.ts")],
+  ["next/cache", join(import.meta.dirname, "stubs/next-cache.ts")],
   ["server-only", join(import.meta.dirname, "stubs/server-only.ts")],
+]);
+const T3_ENV_STUB = join(import.meta.dirname, "stubs/t3-env.ts");
+const STUBS = new Map([
+  ["@t3-oss/env-nextjs", T3_ENV_STUB],
+  ["@t3-oss/env-core", T3_ENV_STUB],
 ]);
 const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "router-context"];
 const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
+const SERVER_SDK_PATTERN =
+  /^(?:@prisma\/client|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter)$/;
+const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
+const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
+const PACKAGE_IMPORT_PATTERN = /import\s+(?!type\b)([^;]*?)\s*from\s*["']([^"'.][^"']*)["']/g;
+const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
 const EXPORT_DECLARATION_PATTERN =
@@ -387,19 +400,22 @@ interface SourceReferences {
   processEnv: Set<string>;
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
+  serverSdkImports: Map<string, Set<string>>;
   exports: Map<string, string[]>;
 }
 
 /**
- * What the harness needs to know about an app's source: the environment variables and
- * `next/font` names it reads at import time, which the harness supplies so modules load, and
- * where each capitalized name is exported, to find a provider a component asks for.
+ * What the harness needs to know about an app's source: the environment variables,
+ * `next/font` names and server SDK exports it reads at import time, which the harness
+ * supplies so modules load, and where each capitalized name is exported, to find a
+ * provider a component asks for.
  */
 const collectSourceReferences = (appDirectory: string): SourceReferences => {
   const references: SourceReferences = {
     processEnv: new Set(),
     importMetaEnv: new Set(),
     nextFonts: new Set(),
+    serverSdkImports: new Map(),
     exports: new Map(),
   };
   const addExport = (name: string, file: string): void => {
@@ -418,6 +434,18 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
       }
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);
+    for (const [, clause = "", specifier = ""] of text.matchAll(PACKAGE_IMPORT_PATTERN)) {
+      if (!SERVER_SDK_PATTERN.test(specifier)) continue;
+      const names = references.serverSdkImports.get(specifier) ?? new Set();
+      for (const namedImport of NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []) {
+        const name = namedImport
+          .replace(/^\s*type\s+/, "")
+          .split(/\s+as\s+/)[0]
+          ?.trim();
+        if (name) names.add(name);
+      }
+      references.serverSdkImports.set(specifier, names);
+    }
     for (const [, names = ""] of text.matchAll(NEXT_FONT_IMPORT_PATTERN))
       for (const name of names.split(",")) {
         const localName = name.split(/\s+as\s+/)[0]?.trim();
@@ -426,6 +454,18 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
   }
   return references;
 };
+
+/**
+ * Stands in for a server SDK, like a database or payments client, which can't run in a
+ * browser and has no backend there to reach: its exports are stand-ins for any value, so
+ * a server component that awaits a query renders around what it gets.
+ */
+const createServerSdkSource = (names: Set<string>): string =>
+  [
+    `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
+    "export default STAND_IN;",
+    ...[...names].map((name) => `export const ${name} = STAND_IN;`),
+  ].join("\n");
 
 const createNextFontSource = (fontNames: Set<string>): string =>
   [
@@ -551,6 +591,8 @@ const createHarnessPlugin = (
     async resolveId(source, importer) {
       if (isNextApp && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
       if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
+      if (SERVER_SDK_PATTERN.test(source)) return `${SERVER_SDK_PREFIX}${source}`;
+      if (STUBS.has(source)) return STUBS.get(source);
       if (source === ENTRY_PATH || source === entryId) return entryId;
       if (importer === entryId && source.startsWith("./"))
         return join(import.meta.dirname, source.replace(/\.js$/, ".ts"));
@@ -571,6 +613,10 @@ const createHarnessPlugin = (
     load: (id) => {
       if (STYLESHEET_PATTERN.test(id)) return "";
       if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
+      if (id.startsWith(SERVER_SDK_PREFIX))
+        return createServerSdkSource(
+          references.serverSdkImports.get(id.slice(SERVER_SDK_PREFIX.length)) ?? new Set(),
+        );
       if (id === entryId) return readFileSync(ENTRY_SOURCE, "utf8");
       if (id === providersId) return providersSource;
       if (id === setupId) return setup.file ? readFileSync(setup.file, "utf8") : "";

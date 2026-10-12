@@ -9,12 +9,13 @@ import {
   traverseFiber,
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
-import { Component, createElement } from "react";
+import { Component, cloneElement, createElement, isValidElement } from "react";
 import type { ComponentType, ErrorInfo, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../src/core/types.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
+import { STAND_IN } from "./stubs/stand-in.js";
 import { PROVIDERS_PATH, SETUP_PATH, TRUNCATED_VALUE, WRAPPER_PATH } from "./types.js";
 import type {
   Action,
@@ -216,45 +217,6 @@ const hydrateProp = (name: string, sample: Sample): unknown => {
   return trackWrites(value, true);
 };
 
-const EMPTY_ARRAY_METHODS = new Set([
-  "map",
-  "filter",
-  "flatMap",
-  "flat",
-  "slice",
-  "concat",
-  "sort",
-  "toSorted",
-  "reverse",
-  "entries",
-  "keys",
-  "values",
-]);
-
-/**
- * A stand-in for any value, for the fields of a library object, like a TanStack table,
- * that its type has too many of to sample. It can be called, read and iterated, acts as
- * an empty list, and React renders nothing for it.
- */
-const STAND_IN: unknown = new Proxy(function standIn() {}, {
-  apply: () => STAND_IN,
-  construct: () => Object(STAND_IN),
-  get: (_target, key) => {
-    if (key === Symbol.iterator) return function* () {};
-    if (key === Symbol.toPrimitive) return () => "";
-    if (typeof key === "symbol" || key === "then" || key === "$$typeof" || key === "toJSON")
-      return undefined;
-    if (key === "length" || key === "size") return 0;
-    if (EMPTY_ARRAY_METHODS.has(key)) return () => [];
-    if (key === "reduce") return (_reducer: unknown, initial: unknown) => initial;
-    if (key === "find" || key === "at") return () => undefined;
-    if (key === "some" || key === "includes") return () => false;
-    if (key === "every") return () => true;
-    if (key === "join" || key === "toString") return () => "";
-    return STAND_IN;
-  },
-});
-
 const createOpenObject = (fields: Record<string, unknown>): Record<string, unknown> =>
   new Proxy(fields, {
     get: (target, key) =>
@@ -275,6 +237,8 @@ const hydrate = (sample: Sample): unknown => {
     }
     case "Element":
       return createElement("span", null, "text");
+    case "Promise":
+      return Promise.resolve(hydrate(sample.value));
     case "Array":
       return sample.items.map(hydrate);
     case "Object": {
@@ -660,6 +624,24 @@ const loadWrapper = async (wrapper: Wrapper): Promise<LoadedWrapper | null> => {
   return null;
 };
 
+const isAsyncFunction = (
+  value: unknown,
+): value is (props: Record<string, unknown>) => Promise<unknown> =>
+  typeof value === "function" && value.constructor.name === "AsyncFunction";
+
+/**
+ * Renders the server components in a tree as a server does before the browser gets it:
+ * each async component is awaited, and what it returns is resolved in turn.
+ */
+const resolveServerTree = async (node: unknown): Promise<unknown> => {
+  if (Array.isArray(node)) return Promise.all(node.map(resolveServerTree));
+  if (node instanceof Promise) return resolveServerTree(await node);
+  if (!isValidElement<Record<string, unknown>>(node)) return node;
+  if (isAsyncFunction(node.type)) return resolveServerTree(await node.type(node.props));
+  if (node.props.children === undefined) return node;
+  return cloneElement(node, { children: await resolveServerTree(node.props.children) });
+};
+
 /**
  * A component that only renders its children, named for how many wrappers enclose it, so
  * that React's component stack for an error says which wrapper it came from.
@@ -706,6 +688,14 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   const props = Object.fromEntries(
     Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
   );
+  if (isAsyncFunction(mountedType)) {
+    try {
+      const output = await resolveServerTree(await mountedType(props));
+      mountedType = () => output;
+    } catch (error) {
+      return createEmptyCapture(recordError(error).message);
+    }
+  }
   const container = document.createElement("div");
   document.body.replaceChildren(container);
   mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
