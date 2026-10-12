@@ -2,13 +2,21 @@ import type { SourceFile } from "typescript/unstable/ast";
 import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
 import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
 import type { Interpreter } from "./interpret.js";
-import type { SymbolicValue, Handler, HandlerTrigger } from "./types.js";
+import type { SymbolicValue, Handler, HandlerTrigger, JsxProp, JsxTag } from "./types.js";
 import { forEachJsxElement } from "./utils/traverse.js";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
 /** The event of a handler that spread props may install: any of them. */
 export const ANY_EVENT = "*";
+
+/**
+ * Whether a prop holds a handler: one named like an event, or a setter or function passed to
+ * a component under any name, like `setSearchTerm`, which the component may call.
+ */
+const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
+  EVENT_HANDLER_PATTERN.test(prop.name) ||
+  (tag.kind !== "BuiltinTag" && (prop.value.kind === "Setter" || prop.value.kind === "Function"));
 
 const getHandlerKey = (value: SymbolicValue): string | null => {
   switch (value.kind) {
@@ -84,7 +92,7 @@ export const collectHandlers = (
         );
         continue;
       }
-      if (!EVENT_HANDLER_PATTERN.test(prop.name)) continue;
+      if (!isHandlerProp(element.tag, prop)) continue;
       const key = getHandlerKey(prop.value);
       if (key === null) continue;
       if (!handlerIds.has(key)) {
