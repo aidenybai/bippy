@@ -486,6 +486,7 @@ const formatSample = (sample: Sample): string => {
   if (sample.kind === "Object") return "{…}";
   if (sample.kind === "Element") return "<span>";
   if (sample.kind === "Promise") return `Promise(${formatSample(sample.value)})`;
+  if (sample.kind === "Date") return `Date(${sample.value})`;
   return sample.kind === "Function" ? "fn" : "undefined";
 };
 

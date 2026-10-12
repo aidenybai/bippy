@@ -28,6 +28,10 @@ const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)\b/;
 const PROMISE_TYPE_PATTERN = /^Promise</;
 const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)\b/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
+const EMPTY_TEXT_SAMPLE: Sample = { kind: "Value", value: "" };
+const SAMPLE_DATE = "2024-01-01T00:00:00.000Z";
+const DATE_NAME_PATTERN = /(?:^date|^time|Date|Time|At|_at)$/;
+const CURRENCY_NAME_PATTERN = /(?:^currency|Currency)(?:Code)?$/;
 const PURE_ARRAY_METHODS = new Set([
   "at",
   "concat",
@@ -140,26 +144,46 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
   const properties = checker.getPropertiesOfType(type);
   const fields: Record<string, Sample> = {};
   for (const property of properties.slice(0, MAX_SAMPLE_FIELDS)) {
-    const definedSample = getSamples(checker, checker.getTypeOfSymbol(property), depth + 1).find(
-      (sample) => sample.kind !== "Undefined",
-    );
+    const definedSample = getSamples(
+      checker,
+      checker.getTypeOfSymbol(property),
+      depth + 1,
+      property.name,
+    ).find((sample) => sample.kind !== "Undefined");
     if (definedSample) fields[property.name] = definedSample;
   }
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
 
 /**
+ * Strings to mount with, which a name like `createdAt` or `currencyCode` says are a date or a
+ * currency code that the component parses, as `new Date("text")` would be invalid.
+ */
+const getStringSamples = (name: string | null): Sample[] => {
+  if (name !== null && DATE_NAME_PATTERN.test(name))
+    return [{ kind: "Value", value: SAMPLE_DATE }, EMPTY_TEXT_SAMPLE];
+  if (name !== null && CURRENCY_NAME_PATTERN.test(name))
+    return [{ kind: "Value", value: "USD" }, EMPTY_TEXT_SAMPLE];
+  return [TEXT_SAMPLE, EMPTY_TEXT_SAMPLE];
+};
+
+/**
  * Concrete values a prop of this type can be mounted with: every case of a union, an empty
  * and a one-item array, and so on.
  */
-const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample[] => {
+const getSamples = (
+  checker: Checker,
+  type: Type | undefined,
+  depth = 0,
+  name: string | null = null,
+): Sample[] => {
   if (!type || type.isErrorType() || type.flags & TypeFlags.AnyOrUnknown) return [TEXT_SAMPLE];
   const typeText = checker.typeToString(type);
   if (ELEMENT_TYPE_PATTERN.test(typeText)) return [{ kind: "Element" }];
   if (NODE_TYPE_PATTERN.test(typeText)) return [TEXT_SAMPLE];
   if (type.isUnionType()) {
     const samples = dedupeSamples(
-      type.getTypes().flatMap((member) => getSamples(checker, member, depth)),
+      type.getTypes().flatMap((member) => getSamples(checker, member, depth, name)),
     );
     return [
       ...samples.filter((sample) => sample.kind !== "Undefined"),
@@ -172,7 +196,8 @@ const getSamples = (checker: Checker, type: Type | undefined, depth = 0): Sample
     return [{ kind: "Value", value: checker.typeToString(type) === "true" }];
   if (type.flags & TypeFlags.Null) return [{ kind: "Value", value: null }];
   if (type.flags & (TypeFlags.Undefined | TypeFlags.Void)) return [{ kind: "Undefined" }];
-  if (type.flags & TypeFlags.StringLike) return [TEXT_SAMPLE, { kind: "Value", value: "" }];
+  if (type.flags & TypeFlags.StringLike) return getStringSamples(name);
+  if (typeText === "Date") return [{ kind: "Date", value: SAMPLE_DATE }];
   if (type.flags & (TypeFlags.NumberLike | TypeFlags.BigIntLike))
     return [
       { kind: "Value", value: 0 },
@@ -277,8 +302,9 @@ export class DomainResolver {
     return getDomainOfType(this.#checker, this.#getType(loc));
   }
 
-  getSamples(loc: SourceLocation): Sample[] {
-    return getSamples(this.#checker, this.#getType(loc));
+  /** Samples of the type at a location, of a value named `name`, like a prop's. */
+  getSamples(loc: SourceLocation, name: string | null = null): Sample[] {
+    return getSamples(this.#checker, this.#getType(loc), 0, name);
   }
 
   /**
@@ -352,7 +378,12 @@ export class DomainResolver {
     const fields: Record<string, Sample> = {};
     for (const property of this.#checker.getPropertiesOfType(type)) {
       if (property.flags & SymbolFlags.Optional) continue;
-      const [sample] = getSamples(this.#checker, this.#checker.getTypeOfSymbol(property), 1);
+      const [sample] = getSamples(
+        this.#checker,
+        this.#checker.getTypeOfSymbol(property),
+        1,
+        property.name,
+      );
       if (sample) fields[property.name] = sample;
     }
     return Object.keys(fields).length > 0 ? { kind: "Object", fields, isOpen: false } : null;

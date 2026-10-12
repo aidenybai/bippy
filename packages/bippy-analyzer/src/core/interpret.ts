@@ -382,7 +382,7 @@ export class Interpreter {
       propName: options.propName ?? null,
       loc,
       domain: options.domain ?? resolver.getDomain(loc),
-      samples: kind === "prop" ? resolver.getSamples(loc) : [],
+      samples: kind === "prop" ? resolver.getSamples(loc, options.propName ?? name) : [],
       initial: options.initial ?? null,
       inputs: options.inputs ?? [],
     };

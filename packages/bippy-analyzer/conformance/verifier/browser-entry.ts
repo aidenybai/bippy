@@ -261,6 +261,8 @@ const hydrate = (sample: Sample): unknown => {
     }
     case "Element":
       return createElement("span", null, "text");
+    case "Date":
+      return new Date(sample.value);
     case "Promise":
       return Promise.resolve(hydrate(sample.value));
     case "Array":

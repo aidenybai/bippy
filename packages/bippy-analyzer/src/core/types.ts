@@ -39,6 +39,7 @@ export type Sample =
   | { kind: "Undefined" }
   | { kind: "Function"; returns: Sample | null }
   | { kind: "Element" }
+  | { kind: "Date"; value: string }
   | { kind: "Promise"; value: Sample }
   | { kind: "Array"; items: Sample[] }
   | { kind: "Object"; fields: Record<string, Sample>; isOpen: boolean };
