@@ -10,6 +10,7 @@ import {
   findSiblingParts,
   findWrapper,
   getErrorSubject,
+  getNamedContextKeys,
 } from "./wrappers.js";
 
 export interface Observation {
@@ -74,7 +75,9 @@ const getWrapperIndex = (error: string, componentName: string, wrappers: Wrapper
  * until something is selected. Returns the parents it needed, outermost first. An error that
  * names no parent, like cmdk's parts reading a store their `Command` root provides, still
  * gets the compound root the component's file exports, then its other parts, one at a time,
- * and then the providers of the contexts it reads.
+ * and then the providers of the contexts it reads, starting with one named after a hook the
+ * error says came up empty, like `UIAppStateContext` for `useUIAppState(...)`, which a child
+ * it renders may read.
  */
 export const resolveWrappers = async (
   page: Page,
@@ -120,7 +123,10 @@ export const resolveWrappers = async (
       : compoundRoot;
     const wrapper = isWrapped(siblingParts)
       ? findContextProvider(
-          [...analysis.contextSamples.keys()],
+          [
+            ...getNamedContextKeys(capture.error, project.contextSamples.keys()),
+            ...analysis.contextSamples.keys(),
+          ],
           analysis.file,
           exportIndex,
           (name) => wrappers.some((existing) => existing.name === name),
@@ -177,7 +183,7 @@ const withSampledProps = (
   candidates: wrapper.candidates.map((candidate) => {
     const key = `${candidate.specifier}#${candidate.exportName}`;
     const parentAnalysis = project.components.get(key);
-    const contextSample = analysis.contextSamples.get(key);
+    const contextSample = analysis.contextSamples.get(key) ?? project.contextSamples.get(key);
     if (parentAnalysis) return { ...candidate, props: getDefaultProps(parentAnalysis) };
     return contextSample ? { ...candidate, props: { value: contextSample } } : candidate;
   }),

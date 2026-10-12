@@ -11,6 +11,7 @@ const SUBJECT_PATTERN = /^`?(\w+)`?/;
 /** A context's provider is the context itself to mount, as `X.Provider` isn't an export. */
 const CONTEXT_PROVIDER_SUFFIX = /\.Provider$/;
 const CONTEXT_SUFFIX = /Context$/;
+const NULL_HOOK_PATTERN = /of '(use[A-Z]\w*)\(\.\.\.\)' as it is (?:null|undefined)/;
 const PROVIDER_NAME_PATTERNS = [
   /(?:within|inside|outside of|outside|from|descendant of|placed in)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*(?:\.[A-Z]\w*)?)/,
   /([A-Z]\w*Provider) was not found/,
@@ -193,6 +194,18 @@ export const findSiblingParts = (
   return siblings.length > 0
     ? createFileWrapper(`${rootName} part`, componentFile, siblings)
     : null;
+};
+
+/**
+ * The contexts an error says a hook found empty, named after the hook, like
+ * `UIAppStateContext` for "Cannot destructure property 'theme' of 'useUIAppState(...)' as
+ * it is null", as a child the component renders may read a context the component doesn't.
+ */
+export const getNamedContextKeys = (error: string, contextKeys: Iterable<string>): string[] => {
+  const hookName = NULL_HOOK_PATTERN.exec(error)?.[1];
+  if (!hookName) return [];
+  const contextName = `${hookName.slice("use".length)}Context`;
+  return [...contextKeys].filter((contextKey) => contextKey.endsWith(`#${contextName}`));
 };
 
 /**

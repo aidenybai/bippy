@@ -48,6 +48,7 @@ export const startProjectHarness = async (
           analysis.exportName ? [[`${analysis.file}#${analysis.exportName}`, analysis]] : [],
         ),
       ),
+      contextSamples: new Map(analyzed.flatMap(({ analysis }) => [...analysis.contextSamples])),
     },
     knownComponents: new Map(
       analyzed.flatMap(({ analysis }) =>

@@ -76,13 +76,14 @@ export interface Wrapper {
 }
 
 /**
- * Where a component's parents are looked up: every export of the project by name, and
- * the analysis of each exported component by `file#exportName`, whose props a project
- * parent mounts with.
+ * Where a component's parents are looked up: every export of the project by name, the
+ * analysis of each exported component by `file#exportName`, whose props a project parent
+ * mounts with, and a sample of the value each context any component reads holds.
  */
 export interface ProjectIndex {
   exports: Map<string, string[]>;
   components: Map<string, ComponentAnalysis>;
+  contextSamples: Map<string, Sample>;
 }
 
 export interface MountRequest {
