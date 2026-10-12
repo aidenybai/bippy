@@ -71,7 +71,7 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
 6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??`, `?.` and `switch` all produce one. A `?:`, `&&`, `||`, `??` or `?.` merges where it ends, so a `?.` in a `className` doesn't split the rest of the render. Member reads past a `?.`, and reads of a value that may be `undefined`, are assumed not to throw.
 7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types.
-8. Collects handlers from event handlers and effects:
+8. Collects handlers from event handlers, effects, setters and functions passed to child components under any prop name, and functions passed to hooks it can't see into, like `useMutation({ onSuccess })`, which run as effects with unknown arguments:
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
