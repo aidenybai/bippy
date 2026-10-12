@@ -117,4 +117,10 @@ describe("matchesExpected", () => {
     ];
     expect(matches(render, renamed, knownComponents)).toBe(false);
   });
+
+  it("matches a library component that is a host element at runtime by its name", () => {
+    const render = element("div", [component("Document")]);
+    expect(matches(render, [shapeElement("div", [shapeElement("DOCUMENT")])])).toBe(true);
+    expect(matches(render, [shapeElement("div", [shapeElement("PAGE")])])).toBe(false);
+  });
 });

@@ -99,6 +99,10 @@ interface MatchBudget {
 const matchOne = (expected: ExpectedShape, actual: Shape, budget: MatchBudget): boolean => {
   if (expected.kind === "text") return actual.kind === "text" && actual.text === expected.text;
   if (expected.kind === "component") {
+    // A library may export a host element under a component's name, like react-pdf's
+    // `Document`, which is the string "DOCUMENT".
+    if (actual.kind === "element")
+      return !expected.isKnown && actual.tag.toLowerCase() === expected.name.toLowerCase();
     if (actual.kind !== "component") return false;
     return (
       !expected.isKnown ||
