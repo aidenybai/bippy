@@ -78,6 +78,7 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
    - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it; it may not happen, since a consumer can render without its provider
    - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state
    - calling into any other hook's result or context value, like `query.fetchNextPage()`, may change it to anything, later
+   - a built-in array or string method that changes nothing, like `items.find()` or `query.trim()`, leaves the value it's called on as it is, as its type shows
    - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
