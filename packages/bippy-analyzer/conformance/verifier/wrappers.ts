@@ -7,6 +7,7 @@ const NAMESPACE_NAME_PATTERN = /^(?:type\s+)?([A-Z]\w*)/;
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
 /** A context's provider is the context itself to mount, as `X.Provider` isn't an export. */
 const CONTEXT_PROVIDER_SUFFIX = /\.Provider$/;
+const CONTEXT_SUFFIX = /Context$/;
 const PROVIDER_NAME_PATTERNS = [
   /(?:within|inside|outside of|outside|from|descendant of|placed in)\s+(?:an?\s+|the\s+)?[<`]{0,2}([A-Z]\w*(?:\.[A-Z]\w*)?)/,
   /([A-Z]\w*Provider) was not found/,
@@ -62,10 +63,15 @@ export const findWrapper = (
   componentFile: string,
   exportIndex: Map<string, string[]>,
 ): Wrapper | null => {
-  const name = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1])
+  const namedParent = PROVIDER_NAME_PATTERNS.map((pattern) => pattern.exec(error)?.[1])
     .find(Boolean)
     ?.replace(CONTEXT_PROVIDER_SUFFIX, "");
-  if (!name) return null;
+  if (!namedParent) return null;
+  // A context an error names may not be exported, but its provider, like `UsersProvider`
+  // for `UsersContext`, usually is.
+  const providerName = namedParent.replace(CONTEXT_SUFFIX, "Provider");
+  const name =
+    !exportIndex.has(namedParent) && exportIndex.has(providerName) ? providerName : namedParent;
   const projectFiles = [...(exportIndex.get(name) ?? [])].sort(
     (left, right) =>
       getSharedPrefixLength(right, componentFile) - getSharedPrefixLength(left, componentFile),
