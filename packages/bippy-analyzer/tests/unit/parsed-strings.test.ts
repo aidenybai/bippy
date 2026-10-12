@@ -42,4 +42,11 @@ describe("samples of parsed strings", () => {
       value: "en",
     });
   });
+
+  it("mounts a string named as a color with a color", () => {
+    expect(getBinding(getComponent(project, "Swatch"), "primaryColor").samples[0]).toEqual({
+      kind: "Value",
+      value: "#808080",
+    });
+  });
 });

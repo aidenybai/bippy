@@ -26,3 +26,7 @@ export const DateLabel = ({ endDate }: { endDate: any }) => (
 export const Greeting = ({ locale }: { locale: string }) => (
   <p>{new Intl.DateTimeFormat(locale).format(0)}</p>
 );
+
+export const Swatch = ({ primaryColor }: { primaryColor: string }) => (
+  <span style={{ color: primaryColor }}>Aa</span>
+);
