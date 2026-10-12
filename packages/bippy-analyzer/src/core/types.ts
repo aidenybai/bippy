@@ -227,6 +227,17 @@ export interface Bailout {
 /**
  * Everything the analysis knows about one component.
  */
+export interface ProvidedContext {
+  contextKey: string;
+  value: SymbolicValue;
+}
+
+/**
+ * What the providers of a context put in it: for each setter field, like `setOpen`, the
+ * state field it sets, like `open`.
+ */
+export type ContextModels = Map<string, Map<string, string>>;
+
 export interface ComponentAnalysis {
   name: string;
   exportName: string | null;
@@ -240,6 +251,8 @@ export interface ComponentAnalysis {
   bindings: Binding[];
   /** A sample of the whole props object, when the component passes it on whole. */
   propsSample: Sample | null;
+  /** The values the component provides to contexts, by each context's declaration key. */
+  providedContexts: ProvidedContext[];
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
   /** The guards each branch's value was computed under, as formatted keys. */

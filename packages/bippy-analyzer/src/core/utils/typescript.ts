@@ -77,6 +77,15 @@ export const getDeclarationKey = (checker: Checker, node: Node): string | null =
 };
 
 /**
+ * The context a JSX tag provides, as its declaration key: the context of `X.Provider`, or
+ * `X` itself, which React 19 renders as its provider.
+ */
+export const getContextKey = (checker: Checker, node: Node): string | null =>
+  t.isPropertyAccessExpression(node) && node.name.text === "Provider"
+    ? getDeclarationKey(checker, node.expression)
+    : getDeclarationKey(checker, node);
+
+/**
  * Gives the name React exports a reference under, following import aliases and re-exports
  * to React's own declarations. `React.useState`, `import { useState as useLocal }` and a
  * re-export from a local barrel all resolve to `useState`.

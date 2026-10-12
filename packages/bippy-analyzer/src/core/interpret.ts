@@ -23,6 +23,7 @@ import type {
   BindingKind,
   BindingValue,
   ConditionalValue,
+  ContextModels,
   Branch,
   DispatchValue,
   Domain,
@@ -32,6 +33,7 @@ import type {
   JsxProp,
   JsxSpreadProp,
   JsxTag,
+  ProvidedContext,
   Sample,
   SetterValue,
   StateUpdate,
@@ -90,6 +92,13 @@ interface SplitOutcome {
 type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "chain";
 
 type EvaluationMode = "render" | "effect";
+
+/** How to create a binding, and the resolver for the file its location is in. */
+interface BindingOptions extends Partial<
+  Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "domain">
+> {
+  resolver?: DomainResolver;
+}
 
 interface WalkState {
   guards: SymbolicValue[];
@@ -280,6 +289,10 @@ export class Interpreter {
   readonly #loadProjectHook: ProjectHookLoader;
   readonly #values = new WeakMap<object, Map<IdentifierId, SymbolicValue>>();
   readonly #functionResolvers = new WeakMap<HIRFunction, DomainResolver>();
+  readonly #contextModels: ContextModels;
+  readonly #contextKeys = new WeakMap<HookResultValue, string>();
+  readonly #hookResolvers = new WeakMap<HookResultValue, DomainResolver>();
+  readonly #contextSetters = new Map<number, Map<string, string>>();
   readonly #propertyNames = new Map<IdentifierId, string>();
   readonly #functions: HIRFunction[] = [];
   readonly #bindings = new Map<string, Binding>();
@@ -297,6 +310,7 @@ export class Interpreter {
    * `templateCtx(props)`, and so reads props that no binding names.
    */
   propsSample: Sample | null = null;
+  readonly providedContexts: ProvidedContext[] = [];
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
   #mutations = new Map<number, Mutation>();
@@ -308,10 +322,12 @@ export class Interpreter {
     resolver: DomainResolver,
     loadModuleFunction: ModuleFunctionLoader,
     loadProjectHook: ProjectHookLoader,
+    contextModels: ContextModels,
   ) {
     this.#resolver = resolver;
     this.#loadModuleFunction = loadModuleFunction;
     this.#loadProjectHook = loadProjectHook;
+    this.#contextModels = contextModels;
   }
 
   get bindings(): Binding[] {
@@ -337,20 +353,22 @@ export class Interpreter {
     name: string,
     kind: BindingKind,
     loc: SourceLocation,
-    options: Partial<Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "domain">> = {},
+    options: BindingOptions = {},
   ): Binding {
-    const key = `${kind}:${name}:${loc === GeneratedSource ? "generated" : loc.start.index}`;
+    const resolver = options.resolver ?? this.#resolver;
+    const position = loc === GeneratedSource ? "generated" : loc.start.index;
+    const key = `${kind}:${name}:${resolver.fileName}:${position}`;
     const existing = this.#bindings.get(key);
     if (existing) return existing;
     const binding: Binding = {
       id: this.#bindings.size,
-      name: this.#resolver.getSourceName(loc) ?? name,
+      name: resolver.getSourceName(loc) ?? name,
       kind,
       hookKind: options.hookKind ?? null,
       propName: options.propName ?? null,
       loc,
-      domain: options.domain ?? this.#resolver.getDomain(loc),
-      samples: kind === "prop" ? this.#resolver.getSamples(loc) : [],
+      domain: options.domain ?? resolver.getDomain(loc),
+      samples: kind === "prop" ? resolver.getSamples(loc) : [],
       initial: options.initial ?? null,
       inputs: options.inputs ?? [],
     };
@@ -394,14 +412,24 @@ export class Interpreter {
   }
 
   #bindHookResult(place: Place, hook: HookResultValue): BindingValue {
-    return createBindingValue(
-      this.#createBinding(
-        getIdentifierName(place) ?? hook.name,
-        getHookBindingKind(hook.hookKind),
-        getDeclarationLocation(place),
-        { hookKind: hook.hookKind },
-      ),
+    const binding = this.#createBinding(
+      getIdentifierName(place) ?? hook.name,
+      getHookBindingKind(hook.hookKind),
+      getDeclarationLocation(place),
+      { hookKind: hook.hookKind },
     );
+    this.#linkContext(binding, hook);
+    return createBindingValue(binding);
+  }
+
+  /**
+   * Links a context binding to what its providers put in the context, so a handler that
+   * calls one of its setters, like `setOpen(true)`, sets the field it pairs with.
+   */
+  #linkContext(binding: Binding, hook: HookResultValue): void {
+    const contextKey = this.#contextKeys.get(hook);
+    const setters = contextKey ? this.#contextModels.get(contextKey) : undefined;
+    if (setters) this.#contextSetters.set(binding.id, setters);
   }
 
   #destructure(
@@ -479,8 +507,9 @@ export class Interpreter {
           `${value.name}()`,
           getHookBindingKind(value.hookKind),
           value.loc,
-          { hookKind: value.hookKind },
+          { hookKind: value.hookKind, resolver: this.#hookResolvers.get(value) },
         );
+        this.#linkContext(binding, value);
         this.#write(property.place, this.#readField(binding, [key], property.place.loc));
       } else {
         this.#write(property.place, this.#evaluatePropertyLoad(value, key, property.place.loc));
@@ -738,7 +767,7 @@ export class Interpreter {
         this.#applyDispatch(callee, args[0], loc, state);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (this.#mode === "effect") this.#callBinding(callee, state);
+        if (this.#mode === "effect") this.#callBinding(callee, args, state);
         break;
       default:
         break;
@@ -819,7 +848,15 @@ export class Interpreter {
       return this.#callFunction(args[0], [], loc, state);
     if (hookKind === "useCallback" && args[0]) return args[0];
     const name = callee.kind === "Global" ? callee.name : hookKind;
-    return { kind: "HookResult", hookKind, name, args, loc };
+    const hookResult: HookResultValue = { kind: "HookResult", hookKind, name, args, loc };
+    const [contextPlace] = argumentPlaces;
+    const contextKey =
+      hookKind === "useContext" && contextPlace
+        ? this.#resolver.getDeclarationKey(contextPlace.loc)
+        : null;
+    if (contextKey) this.#contextKeys.set(hookResult, contextKey);
+    this.#hookResolvers.set(hookResult, this.#resolver);
+    return hookResult;
   }
 
   #evaluateMethodCall(
@@ -988,6 +1025,15 @@ export class Interpreter {
               },
         );
         const tag = this.#getJsxTag(value.tag);
+        const providedValue = props.find(
+          (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "value",
+        );
+        const contextKey =
+          providedValue && value.tag.kind !== "BuiltinTag"
+            ? this.#resolver.getContextKey(value.tag.loc)
+            : null;
+        if (providedValue && contextKey)
+          this.providedContexts.push({ contextKey, value: providedValue.value });
         const element = this.#buildJsx(
           tag,
           value.tag.kind === "BuiltinTag" ? null : this.#resolver.getDeclarationKey(value.tag.loc),
@@ -1356,10 +1402,50 @@ export class Interpreter {
    * Calls a function held in a binding: a prop the parent handles, or a hook or context
    * function that may change that source.
    */
-  #callBinding(callee: BindingValue, state: WalkState): void {
+  #callBinding(callee: BindingValue, args: SymbolicValue[], state: WalkState): void {
     if (callee.binding.kind === "prop")
       this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
-    if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
+    const [setterField] = callee.path;
+    const field =
+      callee.path.length === 1 && setterField
+        ? this.#contextSetters.get(callee.binding.id)?.get(setterField)
+        : undefined;
+    if (field) this.#setContextField(callee.binding, field, args[0], state);
+    else if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
+  }
+
+  /**
+   * Sets a field of a context through the setter its provider pairs with it. Whether a
+   * provider is mounted above isn't known here, and a context's default value often has
+   * setters that do nothing, so the update is async: it may not happen. The value is still
+   * the one the handler computed, unlike a callback's that runs later.
+   */
+  #setContextField(
+    binding: Binding,
+    field: string,
+    argument: SymbolicValue | undefined,
+    state: WalkState,
+  ): void {
+    const next =
+      argument?.kind === "Function"
+        ? this.#callFunction(
+            argument,
+            [{ kind: "Binding", binding, path: [field] }],
+            binding.loc,
+            state,
+          )
+        : (argument ?? UNDEFINED_VALUE);
+    if (this.#mode !== "effect") return;
+    this.#collected.updates.push({
+      binding,
+      value: {
+        kind: "ObjectExpression",
+        properties: [{ key: field, value: this.#forgetMutations(next) }],
+        spreads: [createBindingValue(binding)],
+      },
+      guards: state.guards,
+      isAsync: true,
+    });
   }
 
   /**
@@ -1421,7 +1507,7 @@ export class Interpreter {
           createUnknown("event", GeneratedSource),
           ROOT_WALK_STATE,
         );
-      if (callback.kind === "Binding") this.#callBinding(callback, ROOT_WALK_STATE);
+      if (callback.kind === "Binding") this.#callBinding(callback, [], ROOT_WALK_STATE);
       if (callback.kind === "Unknown")
         for (const binding of this.#bindings.values())
           if (isExternalSource(binding))

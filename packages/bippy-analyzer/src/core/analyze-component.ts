@@ -5,13 +5,14 @@ import type { DomainResolver } from "./infer-domains.js";
 import { collectHandlers } from "./collect-handlers.js";
 import { Interpreter } from "./interpret.js";
 import type { ProjectHookLoader } from "./interpret.js";
-import type { Bailout, ComponentAnalysis } from "./types.js";
+import type { Bailout, ComponentAnalysis, ContextModels } from "./types.js";
 
 interface FileContext {
   sourceFile: SourceFile;
   resolver: DomainResolver;
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
+  contextModels: ContextModels;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
@@ -43,6 +44,7 @@ export const analyzeComponent = (
       isAsync: false,
       bindings: [],
       propsSample: null,
+      providedContexts: [],
       placeDomains: new Map(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
       branchGuards: new WeakMap(),
@@ -62,6 +64,7 @@ export const analyzeComponent = (
     context.resolver,
     context.compiled.compileModuleFunction,
     context.loadProjectHook,
+    context.contextModels,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
@@ -73,6 +76,7 @@ export const analyzeComponent = (
     isAsync: hir.async,
     bindings,
     propsSample: interpreter.propsSample,
+    providedContexts: interpreter.providedContexts,
     placeDomains: interpreter.placeDomains,
     render,
     branchGuards: interpreter.branchGuards,

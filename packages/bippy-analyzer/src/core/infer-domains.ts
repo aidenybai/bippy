@@ -1,5 +1,10 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import { findNodeAtLocation, getDeclarationKey, isReactElementType } from "./utils/typescript.js";
+import {
+  findNodeAtLocation,
+  getContextKey,
+  getDeclarationKey,
+  isReactElementType,
+} from "./utils/typescript.js";
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
@@ -245,6 +250,11 @@ export class DomainResolver {
   getDeclarationKey(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node ? getDeclarationKey(this.#checker, node) : null;
+  }
+
+  getContextKey(loc: SourceLocation): string | null {
+    const node = findNodeAtLocation(this.#sourceFile, loc);
+    return node ? getContextKey(this.#checker, node) : null;
   }
 
   isReactElement(loc: SourceLocation): boolean {

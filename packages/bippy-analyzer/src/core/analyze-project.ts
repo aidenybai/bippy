@@ -6,6 +6,7 @@ import { enumerateStates } from "./enumerate-states.js";
 import { getSampleOfValue } from "./infer-domains.js";
 import type {
   ComponentAnalysis,
+  ContextModels,
   JsxExpressionValue,
   JsxProp,
   PrimitiveSymbolicValue,
@@ -97,6 +98,37 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
 };
 
 /**
+ * The setters each context's providers put in it, paired with the state fields they set,
+ * like `setOpen` with `open` in `value={{ open, setOpen }}`. A context provided with
+ * different pairings in different places has none.
+ */
+const collectContextModels = (analyses: ComponentAnalysis[]): ContextModels => {
+  const models: ContextModels = new Map();
+  const conflicting = new Set<string>();
+  for (const { contextKey, value } of analyses.flatMap((analysis) => analysis.providedContexts)) {
+    if (value.kind !== "ObjectExpression") continue;
+    const setters = new Map<string, string>();
+    for (const property of value.properties) {
+      if (property.value.kind !== "Setter") continue;
+      const { binding } = property.value;
+      const state = value.properties.find(
+        (candidate) =>
+          candidate.value.kind === "Binding" &&
+          candidate.value.binding === binding &&
+          candidate.value.path.length === 0,
+      );
+      if (state) setters.set(property.key, state.key);
+    }
+    const existing = models.get(contextKey);
+    if (existing && JSON.stringify([...existing]) !== JSON.stringify([...setters]))
+      conflicting.add(contextKey);
+    else if (setters.size > 0) models.set(contextKey, setters);
+  }
+  for (const contextKey of conflicting) models.delete(contextKey);
+  return models;
+};
+
+/**
  * Analyzes every component in a TypeScript project: lowers each to HIR, runs the compiler
  * passes and ours, and lists its states.
  */
@@ -107,6 +139,7 @@ export const analyzeProject = (
   withProject(configPath, (project) => {
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
     const projectHooks = new Map<string, ProjectHook>();
+    const contextModels: ContextModels = new Map();
     const loadProjectHook = (declarationKey: string): ProjectHook | null =>
       projectHooks.get(declarationKey) ?? null;
     const contexts = fileNames.flatMap((fileName) => {
@@ -125,16 +158,28 @@ export const analyzeProject = (
           resolver,
           compiled,
           loadProjectHook,
+          contextModels,
           exportNames: collectExportNames(sourceFile),
           displayNames: collectDisplayNames(sourceFile),
         },
       ];
     });
-    const analyses = contexts.flatMap((context) =>
+    const compiledComponents = contexts.flatMap((context) =>
       context.compiled.functions.flatMap((reactFunction) =>
-        reactFunction.fnType === "Component" ? [analyzeComponent(reactFunction, context)] : [],
+        reactFunction.fnType === "Component" ? [{ reactFunction, context }] : [],
       ),
     );
+    const firstAnalyses = compiledComponents.map(({ reactFunction, context }) =>
+      analyzeComponent(reactFunction, context),
+    );
+    for (const [contextKey, setters] of collectContextModels(firstAnalyses))
+      contextModels.set(contextKey, setters);
+    const analyses = firstAnalyses.map((analysis, index) => {
+      const compiled = compiledComponents[index];
+      return compiled && analysis.bindings.some((binding) => binding.kind === "context")
+        ? analyzeComponent(compiled.reactFunction, compiled.context)
+        : analysis;
+    });
     inferPropsFromCallSites(analyses);
     const components = analyses
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
