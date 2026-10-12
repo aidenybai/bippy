@@ -427,6 +427,18 @@ const isDeclared = (appDirectory: string, packageName: string): boolean => {
   );
 };
 
+/**
+ * The package's directory in the `node_modules` nearest the app, found by name, since a
+ * package's `exports` may not include its `package.json`, like next-intl's.
+ */
+const findInstalledDirectory = (appDirectory: string, packageName: string): string | null => {
+  for (let directory = appDirectory; ; directory = dirname(directory)) {
+    const packageDirectory = join(directory, "node_modules", packageName);
+    if (existsSync(join(packageDirectory, "package.json"))) return packageDirectory;
+    if (dirname(directory) === directory) return null;
+  }
+};
+
 const resolvePackageDirectory = (appDirectory: string, packageName: string): string | null => {
   if (!isDeclared(appDirectory, packageName)) return null;
   try {
@@ -434,7 +446,7 @@ const resolvePackageDirectory = (appDirectory: string, packageName: string): str
       createRequire(join(appDirectory, "package.json")).resolve(`${packageName}/package.json`),
     );
   } catch {
-    return null;
+    return findInstalledDirectory(appDirectory, packageName);
   }
 };
 
