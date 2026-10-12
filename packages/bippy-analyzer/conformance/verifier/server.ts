@@ -190,7 +190,7 @@ const STYLESHEET_SOURCE =
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
 const SERVER_SDK_PATTERN =
   /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|execa|cross-spawn|npm-run-path|node:.+)$/;
-const SERVER_SDK_PREFIX = "\0bippy-verify-server-sdk:";
+const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
 /** An SVG imported as a component, as `vite-plugin-svgr` does for `logo.svg?react`. */
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
 const SVG_COMPONENT_SOURCE = [
@@ -206,6 +206,8 @@ const NUQS_CACHE_STUB = join(import.meta.dirname, "stubs/nuqs-cache.ts");
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
 const PACKAGE_IMPORT_PATTERN = /import\s+(?!type\b)([^;]*?)\s*from\s*["']([^"'.][^"']*)["']/g;
 const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
+/** A package or path alias, like `react` or `@/lib/utils`, rather than a relative path. */
+const PACKAGE_SPECIFIER_PATTERN = /^[^./\0]/;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
 const EXPORT_DECLARATION_PATTERN =
@@ -255,10 +257,6 @@ const createMissingRequirePlugin = (): OptimizerPlugin => ({
 const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
 
-/**
- * Gives a pre-bundled package's Node module or server SDK, like `os` in `os.hostname()` at
- * import time or `execa`, a stand-in for any value, as a browser has no Node.
- */
 /** The Node modules an app's bundler polyfills for the browser, Next's own. */
 const getPolyfilledModules = (appDirectory: string): Set<string> =>
   new Set(isInstalled(appDirectory, "next") ? Object.keys(NEXT_NODE_POLYFILLS) : []);
@@ -282,6 +280,10 @@ const isNodeOnlyModule = (
   );
 };
 
+/**
+ * Gives a pre-bundled package's Node module or server SDK, like `os` in `os.hostname()` at
+ * import time or `execa`, a stand-in for any value, as a browser has no Node.
+ */
 const createNodeBuiltinPlugin = (polyfilled: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
@@ -551,7 +553,7 @@ interface SourceReferences {
   processEnv: Set<string>;
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
-  serverSdkImports: Map<string, Set<string>>;
+  packageImports: Map<string, Set<string>>;
   exports: Map<string, string[]>;
   reduxStore: ExportedValue | null;
 }
@@ -587,17 +589,17 @@ const createReduxSpec = ({ file, exportName }: ExportedValue): ProviderSpec => (
 });
 
 /**
- * What the harness needs to know about an app's source: the environment variables,
- * `next/font` names and server SDK exports it reads at import time, which the harness
- * supplies so modules load, and where each capitalized name is exported, to find a
- * provider a component asks for.
+ * What the harness needs to know about an app's source: the environment variables and
+ * `next/font` names it reads at import time and the names it imports from each package,
+ * which the harness supplies so modules load, and where each capitalized name is exported,
+ * to find a provider a component asks for.
  */
 const collectSourceReferences = (appDirectory: string): SourceReferences => {
   const references: SourceReferences = {
     processEnv: new Set(),
     importMetaEnv: new Set(),
     nextFonts: new Set(),
-    serverSdkImports: new Map(),
+    packageImports: new Map(),
     exports: new Map(),
     reduxStore: null,
   };
@@ -620,9 +622,7 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
     for (const [, source = "", name = ""] of text.matchAll(ENV_REFERENCE_PATTERN))
       (source === "process.env" ? references.processEnv : references.importMetaEnv).add(name);
     for (const [, clause = "", specifier = ""] of text.matchAll(PACKAGE_IMPORT_PATTERN)) {
-      const moduleName = specifier.replace(/^node:/, "").split("/")[0] ?? "";
-      if (!SERVER_SDK_PATTERN.test(specifier) && !NODE_BUILTINS.has(moduleName)) continue;
-      const names = references.serverSdkImports.get(specifier) ?? new Set();
+      const names = references.packageImports.get(specifier) ?? new Set();
       for (const namedImport of NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []) {
         const name = namedImport
           .replace(/^\s*type\s+/, "")
@@ -630,7 +630,7 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
           ?.trim();
         if (name) names.add(name);
       }
-      references.serverSdkImports.set(specifier, names);
+      references.packageImports.set(specifier, names);
     }
     for (const [, names = ""] of text.matchAll(NEXT_FONT_IMPORT_PATTERN))
       for (const name of names.split(",")) {
@@ -642,11 +642,12 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
 };
 
 /**
- * Stands in for a server SDK, like a database or payments client, which can't run in a
- * browser and has no backend there to reach: its exports are stand-ins for any value, so
- * a server component that awaits a query renders around what it gets.
+ * Stands in for a module that can't load in a browser: a server SDK, like a database or
+ * payments client, with no backend there to reach, or a module the app imports but doesn't
+ * have, like an undeclared package. Its exports are stand-ins for any value, so a server
+ * component that awaits a query renders around what it gets.
  */
-const createServerSdkSource = (names: Set<string>): string =>
+const createStandInModuleSource = (names: Set<string>): string =>
   [
     `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
     "export default STAND_IN;",
@@ -806,7 +807,7 @@ const createHarnessPlugin = (
       if (isNextApp && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
       if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
       if (SERVER_SDK_PATTERN.test(source) || isNodeOnlyModule(source, importer, polyfilled))
-        return `${SERVER_SDK_PREFIX}${source}`;
+        return `${STAND_IN_MODULE_PREFIX}${source}`;
       // The id ends in `.js`, as Vite's own CSS handling claims any id ending like a stylesheet.
       if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
       if (STUBS.has(source)) return STUBS.get(source);
@@ -837,7 +838,12 @@ const createHarnessPlugin = (
         return this.resolve(source, appImporter, { skipSelf: true });
       if (importer === setupId && setup.file)
         return this.resolve(source, setup.file, { skipSelf: true });
-      return null;
+      if (!importer || !isAppSourceModule(importer) || !PACKAGE_SPECIFIER_PATTERN.test(source))
+        return null;
+      return (
+        (await this.resolve(source, importer, { skipSelf: true })) ??
+        `${STAND_IN_MODULE_PREFIX}${source}`
+      );
     },
     load: (id) => {
       if (id.startsWith(STYLESHEET_PREFIX)) return STYLESHEET_SOURCE;
@@ -845,9 +851,9 @@ const createHarnessPlugin = (
       if (id.startsWith(MISSING_ASSET_PREFIX))
         return `export default ${JSON.stringify(id.slice(MISSING_ASSET_PREFIX.length))};`;
       if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
-      if (id.startsWith(SERVER_SDK_PREFIX))
-        return createServerSdkSource(
-          references.serverSdkImports.get(id.slice(SERVER_SDK_PREFIX.length)) ?? new Set(),
+      if (id.startsWith(STAND_IN_MODULE_PREFIX))
+        return createStandInModuleSource(
+          references.packageImports.get(id.slice(STAND_IN_MODULE_PREFIX.length)) ?? new Set(),
         );
       if (id === NUQS_SERVER_ID)
         return `export * from "nuqs/server";\nexport { createSearchParamsCache } from ${JSON.stringify(NUQS_CACHE_STUB)};`;
