@@ -298,6 +298,8 @@ const toPlain = (value: unknown): unknown => {
     )
       return current;
     if (current === undefined) return undefined;
+    // The harness made up this value, so it says nothing about what the component holds.
+    if (current === STAND_IN) return TRUNCATED_VALUE;
     if (typeof current === "function") return "[function]";
     if (depth >= MAX_PLAIN_DEPTH || typeof current !== "object") return "[value]";
     if (current instanceof Node) return "[node]";
