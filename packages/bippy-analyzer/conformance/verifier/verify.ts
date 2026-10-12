@@ -50,14 +50,21 @@ const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 const MAX_PAGES = 4;
 
+/**
+ * Opens a harness page. It never leaves the harness: navigations after it loads and
+ * requests to any other origin fail, so no component waits on the internet.
+ */
 export const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
     const page = await browser.newPage();
     let isHarnessLoaded = false;
+    const { origin } = new URL(url);
     await page.route("**/*", (route) => {
       const request = route.request();
       const isMainDocument = request.isNavigationRequest() && request.frame() === page.mainFrame();
-      return isMainDocument && isHarnessLoaded ? route.abort() : route.continue();
+      const requestUrl = new URL(request.url());
+      const isExternal = requestUrl.protocol.startsWith("http") && requestUrl.origin !== origin;
+      return (isMainDocument && isHarnessLoaded) || isExternal ? route.abort() : route.continue();
     });
     try {
       await page.goto(url, { waitUntil: "domcontentloaded" });
