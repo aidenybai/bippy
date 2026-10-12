@@ -92,7 +92,13 @@ describe("matchesExpected", () => {
       testKind: "truthy",
       consequent: element("s"),
       alternate: element("span"),
-      branch: { terminalId: makeInstructionId(0), probe: "truthy", loc: GeneratedSource },
+      branch: {
+        terminalId: makeInstructionId(0),
+        probe: "truthy",
+        loc: GeneratedSource,
+        file: "match.tsx",
+      },
+      guardKeys: [],
     };
     expect(matches(render, [shapeElement("s")])).toBe(true);
     expect(matches(render, [shapeElement("span")])).toBe(true);
