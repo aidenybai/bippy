@@ -107,7 +107,6 @@ interface TriggerLabel {
 
 const FIRST_COMMIT = "first commit";
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
-const MAX_RECORDED_FAILURES = 10;
 const MAX_RENDERED_LENGTH = 300;
 const ORDERED_HOOK_KINDS = new Set<string>([
   "useState",
@@ -231,10 +230,6 @@ const readPath = (value: unknown, path: string[]): unknown =>
 const formatRuntimeValue = (value: unknown): string =>
   value === undefined ? "undefined" : JSON.stringify(value);
 
-const recordFailure = <Failure>(failures: Failure[], failure: Failure): void => {
-  if (failures.length < MAX_RECORDED_FAILURES) failures.push(failure);
-};
-
 export const scoreComponent = (
   analysis: ComponentAnalysis,
   report: StateReport,
@@ -356,8 +351,7 @@ export const scoreComponent = (
     const afterMatches = getMatches(after.shapes);
     if (!isEveryRegionMatched(afterMatches)) {
       if (report.isTruncated) continue;
-      recordFailure(
-        verdict.stateCounterexamples,
+      verdict.stateCounterexamples.push(
         describeMismatch(observation.props, path, normalizeShapes(after.shapes)),
       );
     } else {
@@ -368,8 +362,7 @@ export const scoreComponent = (
       const firstMatches = getMatches(after.firstCommitShapes);
       if (!isEveryRegionMatched(firstMatches)) {
         if (!report.isTruncated)
-          recordFailure(
-            verdict.stateCounterexamples,
+          verdict.stateCounterexamples.push(
             describeMismatch(
               observation.props,
               [FIRST_COMMIT],
@@ -387,7 +380,7 @@ export const scoreComponent = (
             ),
         );
         if (!hasExternalData && isUnexplained) {
-          recordFailure(verdict.transitionCounterexamples, {
+          verdict.transitionCounterexamples.push({
             path: [],
             action: FIRST_COMMIT,
             fromStates: firstMatches,
@@ -411,7 +404,7 @@ export const scoreComponent = (
             continue;
           const value = readPath(after.hookStates[hookIndex], placePath);
           if (value === TRUNCATED_VALUE || isPredictedValue(value, predicted)) continue;
-          recordFailure(verdict.valueCounterexamples, {
+          verdict.valueCounterexamples.push({
             path,
             place: formatPlace(binding, placePath),
             value: formatRuntimeValue(value),
@@ -434,8 +427,8 @@ export const scoreComponent = (
     const maybeTriggeredIds = new Set(
       triggers.flatMap(({ handler, trigger }) => (trigger === "maybe" ? [handler.id] : [])),
     );
-    const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void =>
-      recordFailure(verdict.transitionCounterexamples, {
+    const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void => {
+      verdict.transitionCounterexamples.push({
         path,
         action: action.key,
         fromStates: beforeMatches,
@@ -447,6 +440,7 @@ export const scoreComponent = (
         ],
         reason,
       });
+    };
     // A child's handler can change any hook or context value the component reads.
     const isFreeToChange = (region: number): boolean =>
       action.isInChild && isExternalRegion(region);
