@@ -19,7 +19,6 @@ export interface ParentQuery {
   project: ProjectIndex;
 }
 
-/** The component an error is about, like `Tooltip` in "`Tooltip` must be used within …". */
 export const getErrorSubject = (error: string): string | null =>
   SUBJECT_PATTERN.exec(error)?.[1] ?? null;
 
@@ -48,10 +47,6 @@ const createProjectWrapper = (
   return { name, candidate: { kind: "project", file, exportName, props } };
 };
 
-/**
- * The parent an error names, like `Menu` in "`MenuItem` must be used within `Menu`". A
- * context's `XContext.Provider` mounts as the context, or its exported `XProvider`.
- */
 export const getNamedParent = (error: string, project: ProjectIndex): string | null => {
   const named = getParentName(error)?.replace(CONTEXT_PROVIDER_SUFFIX, "");
   if (!named) return null;
@@ -59,11 +54,6 @@ export const getNamedParent = (error: string, project: ProjectIndex): string | n
   return !project.exports.has(named) && project.exports.has(providerName) ? providerName : named;
 };
 
-/**
- * Where a named parent may come from: project exports of that name, nearest first, then
- * the packages the component's file and the files it imports use, and the namespaces of
- * parts imported from them, like `DropdownMenu` from `radix-ui`.
- */
 const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
   const projectWrappers = [...(query.project.exports.get(name) ?? [])]
     .sort(
@@ -93,7 +83,6 @@ const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
   return [...projectWrappers, ...packageWrappers];
 };
 
-/** Exports of the component's own file that start its name, longest first. */
 const getCompoundRootNames = (query: ParentQuery): string[] =>
   [...query.project.exports]
     .filter(
@@ -110,11 +99,6 @@ const findOwnExport = (name: string, query: ParentQuery): Wrapper[] =>
     .filter(({ file }) => file === query.file)
     .map((exported) => createProjectWrapper(name, exported, query));
 
-/**
- * The other parts of the component's compound component, like `TabsList` for `TabsTrigger`,
- * one of which may render the parent it needs. A component may be the root itself, like a
- * `MessageScroller` needing its `MessageScrollerProvider`.
- */
 const findSiblingParts = (query: ParentQuery): Wrapper[] => {
   const rootName = getCompoundRootNames(query)[0] ?? query.name;
   return [...query.project.exports.keys()]
@@ -125,10 +109,8 @@ const findSiblingParts = (query: ParentQuery): Wrapper[] => {
     .flatMap((candidate) => findOwnExport(candidate, query));
 };
 
-/**
- * The contexts the component reads, first one an error says a hook found empty, named after
- * the hook, like `UIAppStateContext` for `useUIAppState(...)`, which a child may read.
- */
+// HACK: React's "of 'useX(...)' as it is null" error is the only hint, so guess the empty context
+// is named XContext.
 const findContextProviders = (query: ParentQuery): Wrapper[] => {
   const hookName = NULL_HOOK_PATTERN.exec(query.error)?.[1];
   const hookContextName = hookName
@@ -147,12 +129,8 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
   });
 };
 
-/**
- * Every parent that may fix an error, in the order to try them: the parent it names, then
- * the component's compound roots, its sibling parts and the providers of contexts it reads.
- * A parent named for a library part the component's own outermost root renders, like a vaul
- * `DrawerTitle` asking for Radix's `Dialog`, is that root first.
- */
+// A named parent outside the component's own file is likely a library part its outermost root
+// renders, so that root goes first.
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
   const namedParent = query.isNamingParent ? getNamedParent(query.error, query.project) : null;
   const rootNames = getCompoundRootNames(query);

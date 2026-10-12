@@ -18,11 +18,6 @@ export interface ProjectHarness extends Harness {
   projectIndex: ProjectIndex;
 }
 
-/**
- * Starts the harness for a project: probes on the components it will mount, the runtime
- * name of every component so a render can be matched by declaration, and an index of the
- * project's exports to find parents in.
- */
 export const startProjectHarness = async (
   appDirectory: string,
   analyzed: AnalyzedComponent[],
@@ -62,10 +57,8 @@ const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 const MAX_PAGES = 8;
 
-/**
- * Opens a harness page. It never leaves the harness: navigations after it loads and
- * requests to any other origin fail, so no component waits on the internet.
- */
+// HACK: retries flaky harness loads, and aborts external requests and post-load navigations so no
+// component hangs on the network.
 export const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
     const page = await browser.newPage();

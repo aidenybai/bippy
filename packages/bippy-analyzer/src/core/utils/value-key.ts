@@ -81,8 +81,5 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
   }
 };
 
-/**
- * A key two values share only when they are the same value, unlike their printed text,
- * which two bindings with one name share.
- */
+// Unlike printed text, which two bindings with one name share.
 export const getValueKey = (value: SymbolicValue): string => JSON.stringify(getKeyPart(value));

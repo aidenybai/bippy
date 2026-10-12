@@ -52,13 +52,6 @@ const STRING_MEMBERS = new Set([
 const SHARED_MEMBERS = new Set(["at", "includes", "indexOf", "length", "slice"]);
 const INDEX_PATTERN = /^\d+$/;
 
-/**
- * A sample of an untyped value named `name`, shaped by the paths a component reads from it,
- * like `{ guests: { fullName: "text" } }` for `booking.guests.fullName`. A value read with an
- * array's own member or an index, like `bookings.reduce` or `items[0]`, is an array, one read
- * through `props`, like `children.props.id`, is an element, and one read with no member, a
- * string's own, or only members both share, like `title.slice`, is a string its name suggests.
- */
 const getShapeSample = (name: string, paths: string[][]): Sample => {
   const fields = new Map<string, string[][]>();
   for (const [field, ...rest] of paths)
@@ -92,11 +85,6 @@ const getShapeSample = (name: string, paths: string[][]): Sample => {
   };
 };
 
-/**
- * Gives an untyped prop, as in plain JavaScript, a sample shaped by what the component reads
- * from it, to mount with before the literals its call sites pass, and an untyped context a
- * sample its provider mounts with.
- */
 const inferPropShapes = (analysis: ComponentAnalysis): void => {
   const paths = new Map<number, string[][]>();
   for (const placeKey of analysis.placeDomains.keys()) {
@@ -120,10 +108,6 @@ const inferPropShapes = (analysis: ComponentAnalysis): void => {
 const isPrimitive = (value: SymbolicValue | undefined): value is PrimitiveSymbolicValue =>
   value?.kind === "Primitive";
 
-/**
- * A literal a call site passes, as a sample, like the options array of a `<Select>`. Null
- * when any part of it is computed.
- */
 const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
   if (value?.kind === "Primitive") return getSampleOfValue(value.value);
   if (value?.kind === "ArrayExpression" && value.spreads.length === 0) {
@@ -145,12 +129,6 @@ const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
   return null;
 };
 
-/**
- * Gives untyped props, as in plain JavaScript, the literal values their call sites pass.
- * A prop is narrowed only when every call site in the project passes a primitive literal
- * for it. Otherwise the literals some call sites pass, like arrays of options, are only
- * samples to mount it with.
- */
 const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
   const usages: JsxExpressionValue[] = [];
   for (const analysis of analyses)
@@ -196,11 +174,6 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
   }
 };
 
-/**
- * The setters each context's providers put in it, paired with the state fields they set,
- * like `setOpen` with `open` in `value={{ open, setOpen }}`. A context provided with
- * different pairings in different places has none.
- */
 const isSamePairing = (left: Map<string, string>, right: Map<string, string>): boolean =>
   left.size === right.size && [...left].every(([setter, state]) => right.get(setter) === state);
 
@@ -230,10 +203,8 @@ const collectContextModels = (analyses: ComponentAnalysis[]): ContextModels => {
   return models;
 };
 
-/**
- * Keys a component's context samples by the file name a context is declared in, as a test
- * imports it, rather than the checker's path, which is lowercase where file names ignore case.
- */
+// HACK: the checker lowercases paths on case-insensitive file systems, so key by the declared file
+// name.
 const withContextFileNames = (
   analysis: ComponentAnalysis,
   fileNames: Map<string, string>,
@@ -247,10 +218,6 @@ const withContextFileNames = (
   ),
 });
 
-/**
- * Analyzes every component in a TypeScript project: lowers each to HIR, runs the compiler
- * passes and ours, and lists its states.
- */
 export const analyzeProject = (
   configPath: string,
   fileFilter: string | null = null,

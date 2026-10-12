@@ -163,10 +163,7 @@ const formatLeaf = (value: SymbolicValue, options: PrintOptions): string | null 
 const getConditionLabel = (value: ConditionalValue): string =>
   formatSymbolicValue(getTestExpression(value));
 
-/**
- * Prints a render on one line, stopping once the line is too wide to show. Render values
- * share subtrees, so printing all of a large one could take exponential time.
- */
+// Shared subtrees make a full print exponential, so stop once the line is too wide.
 const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): string => {
   const parts: string[] = [];
   let length = 0;

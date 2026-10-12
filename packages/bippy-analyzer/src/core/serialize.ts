@@ -16,11 +16,8 @@ const countReferences = (root: unknown): WeakMap<object, number> => {
   return counts;
 };
 
-/**
- * Serializes the analysis as JSON. Render values share subtrees, which plain JSON would
- * repeat in full, so an object referenced more than once is written once with an `$id`
- * and then as `{ "$ref": id }`.
- */
+// Render values share subtrees, so a repeated object is written once with `$id`, then as `{ $ref
+// }`.
 export const serializeProjectAnalysis = (analysis: ProjectAnalysis): string => {
   const counts = countReferences(analysis.components);
   const ids = new WeakMap<object, number>();

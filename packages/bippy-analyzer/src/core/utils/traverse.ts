@@ -1,9 +1,5 @@
 import type { JsxExpressionValue, SymbolicValue } from "../types.js";
 
-/**
- * Calls `visit` on every node of a render tree, parents before children and consequents
- * before alternates. A subtree rendered in several places is visited once.
- */
 export const forEachRenderNode = (
   value: SymbolicValue,
   visit: (node: SymbolicValue) => void,
@@ -32,10 +28,6 @@ export const forEachRenderNode = (
   walk(value);
 };
 
-/**
- * Calls `visit` on every JSX element of a render tree, including those passed in props,
- * like a dialog's `desc={<form>…</form>}`, which the component it's passed to renders.
- */
 export const forEachJsxElement = (
   value: SymbolicValue,
   visit: (element: JsxExpressionValue) => void,
@@ -76,9 +68,6 @@ const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
   }
 };
 
-/**
- * Visits every part of a value once, including subtrees it shares with itself.
- */
 export const forEachSymbolicValue = (
   root: SymbolicValue,
   visit: (value: SymbolicValue) => void,
@@ -93,9 +82,6 @@ export const forEachSymbolicValue = (
   walk(root);
 };
 
-/**
- * Rebuilds a value bottom-up, letting `replace` swap any part of it.
- */
 export const mapSymbolicValue = (
   value: SymbolicValue,
   replace: (value: SymbolicValue) => SymbolicValue,

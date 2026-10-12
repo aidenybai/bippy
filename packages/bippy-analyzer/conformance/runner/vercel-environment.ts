@@ -109,10 +109,7 @@ const listFiles = (directory: string): string[] =>
     return statSync(path).isDirectory() ? listFiles(path) : [path];
   });
 
-/**
- * Waiting on a command is one long request, which the network can drop while a big repo
- * verifies for half an hour. The command keeps running in the sandbox, so it waits again.
- */
+// HACK: the network can drop a long wait while the sandbox command keeps running, so wait again.
 const waitForCommand = async (command: Command, attempt = 1): Promise<CommandFinished> => {
   try {
     return await command.wait();

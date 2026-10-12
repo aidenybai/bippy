@@ -51,10 +51,6 @@ import {
 const MAX_ALTERNATIVES = 256;
 const MAX_REACHABILITY_ROUNDS = 8;
 
-/**
- * One way a render can come out. `branches` holds every branch outcome taken to reach
- * it, which identifies the state however concrete its values become after a transition.
- */
 interface Enumerator {
   enumerate: (value: SymbolicValue, constraints: Constraints) => Alternative[];
   getIsTruncated: () => boolean;
@@ -116,10 +112,6 @@ const getLiteralCases = (
   return consequent && alternate ? [...consequent, ...alternate] : null;
 };
 
-/**
- * Replaces the branches `constraints` decides with the arm taken, so a test reads as what is
- * still open: `x?.y` once `x != null` is known reads `x.y`.
- */
 const simplify = (value: SymbolicValue, constraints: Constraints): SymbolicValue =>
   mapSymbolicValue(value, (part) => {
     if (part.kind !== "Conditional") return part;
@@ -127,10 +119,6 @@ const simplify = (value: SymbolicValue, constraints: Constraints): SymbolicValue
     return decided === null ? part : decided ? part.consequent : part.alternate;
   });
 
-/**
- * The values an update assigns to `path` within `binding`, or `"unchanged"` when it keeps
- * the current value, as in `{ ...state, other: 1 }`.
- */
 const getFieldCases = (
   value: SymbolicValue | null,
   path: string[],
@@ -166,11 +154,6 @@ const getToggleCases = (
   }));
 };
 
-/**
- * Every value a place of a state binding can reach: its initial value plus whatever the
- * handlers assign, repeated until nothing new appears. Falls back to the type's cases
- * when an update assigns something the analysis can't list, or the values keep growing.
- */
 const getReachableCases = (
   analysis: ComponentAnalysis,
   binding: Binding,
@@ -181,8 +164,7 @@ const getReachableCases = (
   const updates = analysis.handlers
     .flatMap((handler) => handler.updates)
     .filter((update) => update.binding.id === binding.id);
-  // `useState()` with no initial value or type argument is typed `undefined`, though a handler
-  // sets it, like to a value cast `as any`, so the type says nothing about it.
+  // HACK: an untyped `useState()` is typed `undefined` though handlers set it, so ignore its type.
   const isUntypedState =
     typeCases?.every((value) => value.kind === "Literal" && value.value === undefined) ?? false;
   if (isUntypedState && updates.length > 0) return null;
@@ -222,9 +204,6 @@ const createInitialKnowledge = (analysis: ComponentAnalysis): Constraints => {
   return { values, assumptions: new Map(), bounds: [] };
 };
 
-/**
- * Whether an update keeps the array's length: `items.map(...)` or `[...items]`.
- */
 const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => {
   if (value.kind === "ArrayMap") return isWholeBinding(value.array, binding);
   return (
@@ -256,10 +235,6 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   ];
 };
 
-/**
- * The call results each binding feeds, directly or through other results, like
- * `locales.filter(...)` for the `query` its callback reads.
- */
 const getDependents = (bindings: Binding[]): Map<number, number[]> => {
   const dependents = new Map<number, number[]>();
   for (const binding of bindings)
@@ -313,13 +288,6 @@ const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getVal
 const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
   prefix.every((guardKey, index) => guardKeys[index] === guardKey);
 
-/**
- * The constraints after a handler runs, one for each path through it. A path is the guards
- * its last update ran under, and it takes the updates made on the way there, so updates on
- * different paths, like `return setOpen(true)` in one branch and `setOpen(false)` in
- * another, stay apart. A guarded update may not happen, so a guarded handler also keeps the
- * constraints it started from.
- */
 const applyTransition = (
   handler: Handler,
   constraints: Constraints,
@@ -340,16 +308,12 @@ const applyTransition = (
       dependents,
     ),
   );
+  // A guarded update may not run, so the starting constraints stay reachable.
   return handler.updates.some((update) => update.guards.length > 0)
     ? [constraints, ...applied]
     : applied;
 };
 
-/**
- * Lists every way a render value can come out under what's known. Results are cached per
- * value and constraints, so a subtree rendered in several places under the same constraints is
- * listed once and its results stay shared.
- */
 const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): Enumerator => {
   let isTruncated = false;
   const cache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
@@ -405,8 +369,6 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
         for (const child of value.children) {
           const nextPartials: PartialChildren[] = [];
           for (const partial of partials) {
-            // Past the cap, enumerating the child under every other partial's knowledge would
-            // only be thrown away, and multiplies with each level of nesting.
             if (nextPartials.length >= MAX_ALTERNATIVES) {
               isTruncated = true;
               break;
@@ -442,14 +404,6 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
   return { enumerate, getIsTruncated: () => isTruncated };
 };
 
-/**
- * Splits the render tree's branches into regions that vary independently. Branches join a
- * region when their tests read overlapping places, like `toast` and `toast.cancel`. Fields of
- * a hook result or context value, like `query.isPending` and `query.data`, come from one
- * source and change together, so any field joins the whole value. A call result joins the
- * bindings its arguments read, so `hasPermission(role)` stays with `role`. A branch in
- * another's arm joins it too.
- */
 const findRegions = (render: SymbolicValue): RegionBranches[] => {
   const decisionSets = new DisjointSet<string>();
   const branchKeys: string[] = [];
@@ -467,6 +421,7 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
         decisionSets.union(enclosingKey ? [key, enclosingKey] : [key]);
         forEachSymbolicValue(getTestExpression(value), (part) => {
           if (part.kind !== "Binding") return;
+          // Fields of a hook result or context change together, so they join the whole binding.
           const atoms = [
             isExternalSource(part.binding) ? String(part.binding.id) : getBindingPlaceKey(part),
             ...part.binding.inputs,
@@ -526,10 +481,7 @@ const collectHandlerIds = (render: SymbolicValue, handlerIds: Set<string>): void
     for (const prop of element.props) if (prop.handlerId) handlerIds.add(prop.handlerId);
   });
 
-/**
- * The branches inside other branches' tests, like the `?.` of `if (!getOption(value)?.icon)`.
- * States don't decide them, so either side may run.
- */
+// States don't decide branches nested in tests, so either side may run.
 const collectTestedBranchKeys = (render: SymbolicValue): Set<string> => {
   const keys = new Set<string>();
   forEachRenderNode(render, (value) => {
@@ -541,13 +493,6 @@ const collectTestedBranchKeys = (render: SymbolicValue): Set<string> => {
   return keys;
 };
 
-/**
- * Lists the branch outcomes no state reaches. Only the arms some state reaches are
- * searched, and an unreached alternate that renders nothing is not worth reporting. A
- * branch rendered under a condition it wasn't computed under, like a ternary kept in a
- * variable that renders only behind `&&`, still runs without that condition, so the
- * states that render it say nothing about the side it takes.
- */
 const collectUnreachableBranches = (
   render: SymbolicValue,
   outcomes: DecisionOutcomes,
@@ -565,6 +510,8 @@ const collectUnreachableBranches = (
       case "Conditional": {
         const key = getBranchKey(value);
         const guards = value.guardKeys;
+        // Rendered under conditions it wasn't computed under, so its states say nothing about its
+        // side.
         if ([...merged].some((condition) => !guards.includes(condition))) narrowedKeys.add(key);
         const reached = outcomes.get(key);
         const test = getTestExpression(value);
@@ -604,10 +551,6 @@ const collectUnreachableBranches = (
   );
 };
 
-/**
- * Lists the reachable states of a component, region by region: each consistent way through
- * a region's branches, with the handlers that change the region and where they lead.
- */
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const reachable = createInitialKnowledge(analysis);
   const dependents = getDependents(analysis.bindings);
@@ -670,8 +613,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     places: new Map(reachable.values),
     states,
     regions,
-    // A truncated enumeration never tried every combination, so a side it didn't reach may
-    // still run.
+    // A truncated enumeration may have missed sides that do run.
     unreachableBranches: isTruncated ? [] : collectUnreachableBranches(analysis.render, outcomes),
     isTruncated,
   };

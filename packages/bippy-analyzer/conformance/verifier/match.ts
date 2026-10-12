@@ -38,8 +38,7 @@ export const toExpected = (
       const { tag } = value;
       if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
       if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
-      // A context's `Provider` renders only its children, but a library's, like Base UI's
-      // `Tooltip.Provider`, is a component of its own.
+      // A library's `*.Provider` may be its own component rather than a context provider.
       if (CONTEXT_TAG_PATTERN.test(tag.name))
         return [
           {
@@ -61,8 +60,7 @@ export const toExpected = (
           },
         ];
       }
-      // An element without children of its own renders the children props spread onto it
-      // carry, like `<label {...labelProps} />`.
+      // Spread props may carry the children.
       const hasSpreadChildren =
         value.children.length === 0 &&
         value.props.some((prop) => prop.kind === "JsxSpreadAttribute");
@@ -111,8 +109,7 @@ interface MatchBudget {
 const matchOne = (expected: ExpectedShape, actual: Shape, budget: MatchBudget): boolean => {
   if (expected.kind === "text") return actual.kind === "text" && actual.text === expected.text;
   if (expected.kind === "component") {
-    // A library may export a host element under a component's name, like react-pdf's
-    // `Document`, which is the string "DOCUMENT".
+    // A library may export a host element string under a component's name.
     if (actual.kind === "element")
       return !expected.isKnown && actual.tag.toLowerCase() === expected.name.toLowerCase();
     if (actual.kind !== "component") return false;
@@ -251,10 +248,6 @@ const getExpectedTokens = (shapes: ExpectedShape[], actualTokens: Set<string>): 
     }
   });
 
-/**
- * Says where a render departs from the closest predicted state: the first elements or text
- * the state predicts that the render lacks, and what it shows instead.
- */
 export const explainMismatch = (expected: ExpectedShape[], actual: Shape[]): string => {
   const actualTokens = getActualTokens(actual);
   const changes = diffArrays(getExpectedTokens(expected, new Set(actualTokens)), actualTokens, {

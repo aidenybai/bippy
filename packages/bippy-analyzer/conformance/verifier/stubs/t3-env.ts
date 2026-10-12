@@ -1,8 +1,5 @@
-/**
- * Stands in for t3-env's `createEnv`, which throws when a client reads a server variable.
- * Server components mount in the browser, so every variable reads from the runtime env
- * the app passes, which the harness fills with placeholders.
- */
+// HACK: t3-env throws when a client reads a server variable, so every variable reads from
+// runtimeEnv.
 interface EnvOptions {
   runtimeEnv?: Record<string, unknown>;
   experimental__runtimeEnv?: Record<string, unknown>;

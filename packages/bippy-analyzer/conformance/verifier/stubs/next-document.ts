@@ -1,10 +1,7 @@
 import { Component, Fragment, createElement } from "react";
 import type { ReactNode } from "react";
 
-/**
- * Stands in for `next/document`, whose real module pulls Next's server into the browser
- * bundle, failing dependency optimization for every component.
- */
+// HACK: the real next/document pulls Next's server into the browser bundle.
 interface DocumentChildrenProps {
   children?: ReactNode;
 }

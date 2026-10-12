@@ -1,8 +1,4 @@
-/**
- * Stands in for `next/headers`, which reads the request a server component renders for.
- * A mount has no request: no cookies, no headers and no draft mode. Next 15 makes these
- * async, so each value also works when awaited.
- */
+// HACK: a mount has no request; values are awaitable because Next 15 made these async.
 const cookieStore = {
   get: () => undefined,
   getAll: () => [],

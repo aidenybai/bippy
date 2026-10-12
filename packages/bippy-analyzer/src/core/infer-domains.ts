@@ -29,9 +29,9 @@ const PROMISE_TYPE_PATTERN = /^Promise</;
 const SET_TYPE_NAMES = new Set(["Set", "ReadonlySet"]);
 const MAP_TYPE_NAMES = new Set(["Map", "ReadonlyMap"]);
 const CONTEXT_TYPE_PATTERN = /^(?:React\.)?Context</;
-/** React's own escape hatch, which throws beside `children`, a prop sampled everywhere. */
+// Throws beside `children`, which is sampled everywhere.
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
-/** A DOM node, which no plain value can stand in for, like a portal's container. */
+// No plain value can stand in for a DOM node.
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
 const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)$/;
@@ -139,7 +139,6 @@ const getDomainOfType = (checker: Checker, type: Type | undefined): Domain => {
   return { kind: "Opaque", typeText: checker.typeToString(type) };
 };
 
-/** A domain that may also be `undefined`, like a key an index signature may not have. */
 const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {
   const domain = getDomainOfType(checker, type);
   const undefinedCase: AbstractValue = { kind: "Literal", value: undefined };
@@ -162,10 +161,7 @@ const dedupeSamples = (samples: Sample[]): Sample[] => [
   ...new Map(samples.map((sample) => [getSampleKey(sample), sample])).values(),
 ];
 
-/**
- * An object of the type's fields. One with more fields than are sampled, or past the depth
- * sampled, is open: a mount answers its other fields with a stand-in for any value.
- */
+// Past the depth or field cap the object is open: a mount answers other fields with a stand-in.
 const getObjectSample = (checker: Checker, type: Type, depth: number): Sample => {
   if (depth >= MAX_SAMPLE_DEPTH) return { kind: "Object", fields: {}, isOpen: true };
   const properties = checker
@@ -184,11 +180,7 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
 
-/**
- * Strings to mount with, which a name like `createdAt`, `currencyCode`, `locale` or
- * `primaryColor` says are a date, a currency code, a locale or a color that the component
- * parses, as `new Date("text")` would be invalid.
- */
+/** Strings a component may parse by name, since `new Date("text")` is invalid. */
 export const getStringSamples = (name: string | null): Sample[] => {
   if (name !== null && DATE_NAME_PATTERN.test(name))
     return [{ kind: "Value", value: SAMPLE_DATE }, EMPTY_TEXT_SAMPLE];
@@ -201,10 +193,6 @@ export const getStringSamples = (name: string | null): Sample[] => {
   return [TEXT_SAMPLE, EMPTY_TEXT_SAMPLE];
 };
 
-/**
- * Concrete values a prop of this type can be mounted with: every case of a union, an empty
- * and a one-item array, and so on.
- */
 const getSamples = (
   checker: Checker,
   type: Type | undefined,
@@ -263,7 +251,7 @@ const getSamples = (
         ]
       : [{ kind: "Array", items: [] }];
   }
-  // By the type's own name, as an alias like `type SvgCache = Map<…>` prints as its alias.
+  // Match by symbol name, since an alias like `type Cache = Map<…>` prints as the alias.
   const symbolName = type.getSymbol()?.name;
   if (symbolName && SET_TYPE_NAMES.has(symbolName) && type.isTypeReference()) {
     const [itemType] = checker.getTypeArguments(type);
@@ -299,10 +287,7 @@ const getSamples = (
 export const getSampleOfValue = (value: PrimitiveValue): Sample =>
   value === undefined ? { kind: "Undefined" } : { kind: "Value", value };
 
-/**
- * Adds each string or number a prop is compared against in the render as a sample, so a
- * branch like `role === "admin"` runs when the component is mounted.
- */
+/** Samples each literal a prop is compared to, so branches like `role === "admin"` run. */
 export const addComparedSamples = (render: SymbolicValue): void => {
   forEachSymbolicValue(render, (value) => {
     if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return;
@@ -319,10 +304,6 @@ export const addComparedSamples = (render: SymbolicValue): void => {
   });
 };
 
-/**
- * Looks up domains and samples for HIR locations through the type checker, caching by
- * location so each node is asked about once.
- */
 export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
@@ -356,11 +337,7 @@ export class DomainResolver {
       : getDomainOfType(this.#checker, type);
   }
 
-  /**
-   * Whether the value at this location is an optional property, like an `isOpen?: boolean`
-   * prop, or a call's result, in a project without `strictNullChecks`, whose types leave out
-   * the `undefined` an unset property or a `ShareTheme | undefined` return is.
-   */
+  // Without `strictNullChecks`, optional properties and call results omit `undefined`.
   #isOptionalRead(loc: SourceLocation): boolean {
     if (this.#isStrictNullChecks) return false;
     const node = findNodeAtLocation(this.#sourceFile, loc);
@@ -381,10 +358,7 @@ export class DomainResolver {
     return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
   }
 
-  /**
-   * Whether the value at this location is destructured with a default, like `min = 0`,
-   * whose type leaves out the `undefined` the default replaces.
-   */
+  // A destructuring default's type omits the `undefined` the default replaces.
   #isDefaultedBinding(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return false;
@@ -394,11 +368,7 @@ export class DomainResolver {
     );
   }
 
-  /**
-   * Whether the value at this location is read through an index signature, like
-   * `envKeyMap["azure"]` of a `Record<string, Key>` or `items[0]` of an array, whose type
-   * promises nothing about which keys exist.
-   */
+  // An index signature promises nothing about which keys exist.
   #isIndexedRead(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node || !(t.isElementAccessExpression(node) || t.isPropertyAccessExpression(node)))
@@ -413,40 +383,28 @@ export class DomainResolver {
     return key === null || !this.#checker.getPropertyOfType(objectType, key);
   }
 
-  /** Samples of the type at a location, of a value named `name`, like a prop's. */
   getSamples(loc: SourceLocation, name: string | null = null): Sample[] {
     return getSamples(this.#checker, this.#getType(loc), 0, name);
   }
 
-  /**
-   * Gives the name a declaration has in the source, before the compiler renames shadowed
-   * names (`todo` rather than `todo_0`).
-   */
+  // The name before the compiler renames shadowed ones (`todo` rather than `todo_0`).
   getSourceName(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node && t.isIdentifier(node) ? node.text : null;
   }
 
-  /** The source text at a location, with its whitespace collapsed. */
   getSourceText(loc: SourceLocation): string | null {
     return loc === GeneratedSource
       ? null
       : this.#sourceFile.text.slice(loc.start.index, loc.end.index).replace(/\s+/g, " ").trim();
   }
 
-  /**
-   * Gives the callee's source text for a call, like `checkAccess` for
-   * `checkAccess({ allowedRoles })`.
-   */
   getCalleeText(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node && t.isCallExpression(node) ? node.expression.getText(this.#sourceFile) : null;
   }
 
-  /**
-   * Whether the source at this location is an expression a probe can wrap. Tests the
-   * compiler generates, like the `=== undefined` check of a destructuring default, are not.
-   */
+  // Compiler-generated tests, like a destructuring default's `=== undefined`, aren't wrappable.
   isExpression(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node !== null && t.isExpression(node);
@@ -462,10 +420,7 @@ export class DomainResolver {
     return node ? getContextKey(this.#checker, node) : null;
   }
 
-  /**
-   * Whether the method a callee names changes nothing when called, like an array's `find`
-   * or a string's `replace`. A nullish receiver, as in `items?.find()`, never reaches it.
-   */
+  // Nullish members are skipped because `items?.find()` never calls on them.
   isPureMethod(calleeLoc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, calleeLoc);
     if (!node || !t.isPropertyAccessExpression(node)) return false;
@@ -486,10 +441,6 @@ export class DomainResolver {
     );
   }
 
-  /**
-   * A sample of the fields the type at this location requires, like `name` and `render` of
-   * the props a `<Controller {...props} />` passes on. Null when it requires none.
-   */
   getRequiredSample(loc: SourceLocation): Sample | null {
     const type = this.#getType(loc);
     if (!type) return null;
@@ -507,7 +458,6 @@ export class DomainResolver {
     return Object.keys(fields).length > 0 ? { kind: "Object", fields, isOpen: false } : null;
   }
 
-  /** Whether the value at this location is a React context, like a JSX tag that provides one. */
   isContext(loc: SourceLocation): boolean {
     const type = this.#getType(loc);
     return type !== undefined && CONTEXT_TYPE_PATTERN.test(this.#checker.typeToString(type));

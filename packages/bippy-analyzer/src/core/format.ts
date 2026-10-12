@@ -55,9 +55,7 @@ const formatWithPrecedence = (value: SymbolicValue, minimumPrecedence: number): 
   return getPrecedence(value) < minimumPrecedence ? `(${text})` : text;
 };
 
-/**
- * Prints `x != null ? x.y : undefined`, how `x?.y` lowers, as the optional chain.
- */
+// `x?.y` lowers to `x != null ? x.y : undefined`; print it back as the chain.
 const formatOptionalChain = (value: ConditionalValue): string | null => {
   if (
     value.testKind !== "nullish" ||

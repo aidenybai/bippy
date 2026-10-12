@@ -5,35 +5,22 @@ export type PrimitiveValue = string | number | boolean | null | undefined;
 
 export type PrimitiveTypeName = "string" | "number" | "bigint" | "boolean";
 
-/**
- * One value a place can hold. A `Literal` is exact; a `Type` stands for every value of a
- * type that is not split further, like `User` or `string`.
- */
 export type AbstractValue =
   | { kind: "Literal"; value: PrimitiveValue }
   | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null };
 
 export type Truthiness = "truthy" | "falsy" | "either";
 
-/**
- * How a branch reads its test: `truthy` branches on the value itself, `nullish` on
- * whether it is `!= null`.
- */
 export type TestKind = "truthy" | "nullish";
 
 type UnknownTypeReason = "any" | "unknown" | "never" | "unresolved" | "cast";
 
-/**
- * Every value a binding or one of its fields can hold, read from its TypeScript type.
- */
 export type Domain =
   | { kind: "Cases"; cases: AbstractValue[]; origin: "type" | "call-sites" }
   | { kind: "Opaque"; typeText: string }
   | { kind: "Unknown"; reason: UnknownTypeReason };
 
-/**
- * A prop value a test can mount with. It mirrors JSON so a browser can rebuild it.
- */
+/** Mirrors JSON so a browser can rebuild it. */
 export type Sample =
   | { kind: "Value"; value: string | number | boolean | null }
   | { kind: "Undefined" }
@@ -57,9 +44,6 @@ export type BindingKind =
   | "call"
   | "suspense";
 
-/**
- * A name the render output depends on: a prop, a piece of state, a hook result, or a list item.
- */
 export interface Binding {
   id: number;
   name: string;
@@ -70,19 +54,14 @@ export interface Binding {
   domain: Domain;
   samples: Sample[];
   initial: SymbolicValue | null;
-  /** The places a call result's arguments read, which its value may depend on. */
+  /** Places a call result's arguments read. */
   inputs: string[];
 }
 
-/**
- * Where a branch came from: the terminal that branches, how its test is checked at
- * runtime, and the location of the test expression.
- */
 export interface Branch {
   terminalId: InstructionId;
   probe: TestKind | "none";
   loc: SourceLocation;
-  /** The file the branch is in, the component's own or a hook's it calls. */
   file: string;
 }
 
@@ -93,22 +72,12 @@ export interface JsxProp {
   handlerId: string | null;
 }
 
-/**
- * Props spread onto an element. When what they hold isn't known, like `{...register("name")}`,
- * they may install any handler, which `handlerId` stands for.
- */
 export interface JsxSpreadProp {
   kind: "JsxSpreadAttribute";
   value: SymbolicValue;
   handlerId: string | null;
 }
 
-/**
- * A JSX tag. A component tag records where its component is declared, as
- * `<file>#<name>`, when the checker can resolve it, and whether it is a context, which React
- * 19 renders as its provider. A dynamic tag is one the analysis can't
- * name, like `` `h${level}` ``.
- */
 export type JsxTag =
   | { kind: "BuiltinTag"; name: string }
   | { kind: "Component"; name: string; declaration: string | null; isContext: boolean }
@@ -119,11 +88,7 @@ interface SymbolicObjectProperty {
   value: SymbolicValue;
 }
 
-/**
- * The value of an instruction, computed symbolically. Kinds follow the HIR instruction they
- * come from. `Conditional` is where control flow merged: a phi, an early return, or a
- * ternary, logical, or switch.
- */
+/** `Conditional` is where control flow merged: a phi, early return, ternary, logical, or switch. */
 export type SymbolicValue =
   | { kind: "Primitive"; value: PrimitiveValue }
   | { kind: "Binding"; binding: Binding; path: string[] }
@@ -158,7 +123,6 @@ export type SymbolicValue =
       kind: "HookResult";
       hookKind: HookKind;
       name: string;
-      /** The module the hook is imported from, like `react-redux`. */
       module: string | null;
       args: SymbolicValue[];
       loc: SourceLocation;
@@ -186,9 +150,6 @@ export type HookResultValue = Extract<SymbolicValue, { kind: "HookResult" }>;
 
 export type WarningKind = "lost-update" | "state-mutation" | "render-mutation" | "prop-mutation";
 
-/**
- * A mutation the compiler's effects prove, which React won't render as written.
- */
 export interface Warning {
   kind: WarningKind;
   message: string;
@@ -207,9 +168,6 @@ export type HandlerTrigger =
   | { kind: "Event"; tag: string; event: string }
   | { kind: "Effect"; hookKind: HookKind; dependencies: string | null };
 
-/**
- * What one event handler or effect does: the bindings it updates and the props it calls.
- */
 export interface Handler {
   id: string;
   trigger: HandlerTrigger;
@@ -232,9 +190,6 @@ export interface Bailout {
   loc: SourceLocation;
 }
 
-/**
- * Everything the analysis knows about one component.
- */
 export type StoreFieldValue =
   | { kind: "Argument"; index: number }
   | { kind: "Literal"; value: PrimitiveValue }
@@ -246,7 +201,7 @@ export interface StoreAssignment {
   value: StoreFieldValue;
 }
 
-/** What each action of a store sets, by the action's name. */
+/** Assignments by action name. */
 export type StoreModel = Map<string, StoreAssignment[]>;
 
 export interface ProvidedContext {
@@ -254,34 +209,28 @@ export interface ProvidedContext {
   value: SymbolicValue;
 }
 
-/**
- * What the providers of a context put in it: for each setter field, like `setOpen`, the
- * state field it sets, like `open`.
- */
+/** By context key, each setter field's state field, like `setOpen` to `open`. */
 export type ContextModels = Map<string, Map<string, string>>;
 
 export interface ComponentAnalysis {
   name: string;
   exportName: string | null;
-  /** The name React shows for it, or null when a `displayName` is set at runtime. */
+  /** Null when `displayName` is set at runtime. */
   runtimeName: string | null;
   file: string;
   declaration: string;
   loc: SourceLocation;
-  /** An `async` component, which renders only on a server. */
   isAsync: boolean;
   bindings: Binding[];
-  /** A sample of the whole props object, when the component passes it on whole. */
+  /** Set when the component passes its props object on whole. */
   propsSample: Sample | null;
-  /** The values the component provides to contexts, by each context's declaration key. */
   providedContexts: ProvidedContext[];
-  /** A sample of the value each context the component reads holds, by declaration key. */
+  /** By context declaration key. */
   contextSamples: Map<string, Sample>;
-  /** The binding an untyped context is read through, by declaration key. */
+  /** Binding id each untyped context is read through, by declaration key. */
   untypedContexts: Map<string, number>;
   placeDomains: Map<string, Domain>;
   render: SymbolicValue;
-  /** The guards each branch's value was computed under, as formatted keys. */
   handlers: Handler[];
   renders: string[];
   bailouts: Bailout[];
@@ -294,10 +243,7 @@ export interface Transition {
   isAsync: boolean;
 }
 
-/**
- * One state of a region. `render` decides only the region's own branches and leaves every
- * other region's undecided. `fragments` are what the region's outermost branches render.
- */
+/** `render` decides only this region's branches. */
 export interface State {
   region: number;
   conditions: string[];
@@ -306,11 +252,7 @@ export interface State {
   transitions: Transition[];
 }
 
-/**
- * Branches that depend on each other: their tests read overlapping places, or one sits in
- * the other's arm. Groups vary independently, so the component's screens are every
- * combination of one state from each region.
- */
+/** Regions vary independently: a screen is one state from each. */
 export interface Region {
   places: string[];
   bindingIds: number[];
@@ -323,10 +265,6 @@ export interface UnreachableBranch {
   description: string;
 }
 
-/**
- * The reachable states of one component. `places` holds every value each place can take
- * before any branch narrows it.
- */
 export interface StateReport {
   places: Map<string, AbstractValue[]>;
   states: State[];

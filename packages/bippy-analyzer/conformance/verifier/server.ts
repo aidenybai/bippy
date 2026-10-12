@@ -17,11 +17,6 @@ export interface Probe {
   mode: ProbeMode;
 }
 
-/**
- * What a repo needs before its components can mount, from its `verify` directory:
- * `setup.tsx` runs before any component loads and may export default providers to wrap
- * every component in, and `harness.json` adds environment variables and module aliases.
- */
 interface HarnessSetup {
   file: string | null;
   env: Record<string, string>;
@@ -34,10 +29,8 @@ type OptimizerPlugin = NonNullable<
   NonNullable<DepOptimizationConfig["esbuildOptions"]>["plugins"]
 >[number];
 
-/**
- * A running harness. `getDependencyHash` changes whenever Vite pre-bundles dependencies again,
- * after which a page that already loaded them holds a stale copy of React.
- */
+// `getDependencyHash` changes when Vite re-bundles dependencies, leaving loaded pages with a stale
+// React.
 export interface Harness {
   url: string;
   sourceIndex: SourceIndex;
@@ -46,10 +39,6 @@ export interface Harness {
   close: () => Promise<void>;
 }
 
-/**
- * A provider the harness mounts every component in when its package is installed. `modules`
- * are what it imports, pre-bundled before any component mounts, and default to the package.
- */
 interface ProviderSpec {
   packageName: string;
   modules?: string[];
@@ -62,10 +51,8 @@ const ENTRY_PATH = "/__bippy_verify_entry.ts";
 
 const SETUP_FILE = "setup.tsx";
 const HARNESS_CONFIG_FILE = "harness.json";
-/**
- * Mounts inside a data router where the package has one, since hooks like `useNavigation`
- * throw outside it, and inside a `MemoryRouter` before React Router 6.4.
- */
+// Hooks like `useNavigation` throw outside a data router; React Router before 6.4 has only
+// `MemoryRouter`.
 const createRouterSpec = (packageName: string): ProviderSpec => ({
   packageName,
   imports: [
@@ -150,10 +137,6 @@ const STUBS = new Map([
   ["@t3-oss/env-core", T3_ENV_STUB],
   ["next-intl/server", join(import.meta.dirname, "stubs/next-intl-server.ts")],
 ]);
-/**
- * The browser polyfills Next bundles for Node's modules in client code, which a package like
- * `@apidevtools/json-schema-ref-parser` needs as it calls `path.join` when it loads.
- */
 const NEXT_NODE_POLYFILLS: Record<string, string> = {
   assert: "assert",
   buffer: "buffer",
@@ -181,10 +164,8 @@ const ENV_PLACEHOLDER = "https://example.com";
 const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
-/**
- * A stylesheet, served as a script so no preprocessor like Sass runs on it. A CSS module's
- * class names are their own names.
- */
+// HACK: stylesheets load as scripts so no preprocessor runs; a CSS module's class names are their
+// own names.
 const STYLESHEET_PREFIX = "\0bippy-verify-stylesheet:";
 const STYLESHEET_SOURCE =
   "export default new Proxy({}, { get: (_, key) => (typeof key === 'string' ? key : undefined) });";
@@ -192,7 +173,6 @@ const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-
 const SERVER_SDK_PATTERN =
   /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|execa|cross-spawn|npm-run-path|node:.+)$/;
 const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
-/** An SVG imported as a component, as `vite-plugin-svgr` does for `logo.svg?react`. */
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
 const SVG_COMPONENT_SOURCE = [
   'import { createElement } from "react";',
@@ -200,12 +180,10 @@ const SVG_COMPONENT_SOURCE = [
   '  return createElement("svg", props);',
   "}",
 ].join("\n");
-/** An image a build step generates, like an icon sprite, which isn't on disk yet. */
 const MISSING_ASSET_PREFIX = "\0bippy-verify-missing-asset:";
 const NUQS_SERVER_ID = "\0bippy-verify-nuqs-server";
 const NUQS_CACHE_STUB = join(import.meta.dirname, "stubs/nuqs-cache.ts");
 const STAND_IN_SOURCE = join(import.meta.dirname, "stubs/stand-in.ts");
-/** A package or path alias, like `react` or `@/lib/utils`, rather than a relative path. */
 const PACKAGE_SPECIFIER_PATTERN = /^[^./\0]/;
 const NEXT_FONT_IMPORT_PATTERN =
   /import\s+(?:\w+\s*,?\s*)?(?:\{([^}]*)\})?\s*from\s*["']next\/font\/(?:google|local)["']/g;
@@ -225,13 +203,8 @@ const isRequirable = (specifier: string, importer: string): boolean => {
   }
 };
 
-/**
- * Dependencies pre-bundle in one batch, and one `require` of a module that isn't installed,
- * like Next's server requiring `critters` or an ungenerated `.prisma/client`, fails the whole
- * batch and so every component. It becomes a module that throws as Node would, so only code
- * that runs it fails, and a `try` around it, like Next's for `@opentelemetry/api`, still
- * falls back.
- */
+// HACK: one missing `require` fails the whole pre-bundle batch, so it becomes a module that throws
+// as Node would.
 const createMissingRequirePlugin = (): OptimizerPlugin => ({
   name: MISSING_MODULE_NAMESPACE,
   setup: (build) => {
@@ -253,15 +226,9 @@ const createMissingRequirePlugin = (): OptimizerPlugin => ({
 const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
 
-/** The Node modules an app's bundler polyfills for the browser, Next's own. */
 const getPolyfilledModules = (appDirectory: string): Set<string> =>
   new Set(isInstalled(appDirectory, "next") ? Object.keys(NEXT_NODE_POLYFILLS) : []);
 
-/**
- * Whether a module is Node's own with nothing to run in a browser: any `node:` module, and a
- * bare name like `crypto` unless the app installs a package by it, like `events`, or its
- * bundler polyfills it.
- */
 const isNodeOnlyModule = (
   specifier: string,
   importer: string | undefined,
@@ -276,10 +243,8 @@ const isNodeOnlyModule = (
   );
 };
 
-/**
- * Gives a pre-bundled package's Node module or server SDK, like `os` in `os.hostname()` at
- * import time or `execa`, a stand-in for any value, as a browser has no Node.
- */
+// HACK: a browser has no Node, so Node modules and server SDKs in pre-bundled packages become
+// stand-ins.
 const createNodeBuiltinPlugin = (polyfilled: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
@@ -319,15 +284,8 @@ const getExportNames = (program: Rollup.ProgramNode): string[] =>
     ];
   });
 
-/**
- * A `"use server"` module runs on the server, and a client bundle only gets functions that
- * call it, so its exports become async functions that do nothing instead of database code
- * a browser can't load.
- */
-/**
- * Gives an imported image the shape Next's bundler does, `{ src, width, height }`, which
- * `next/image` reads, where Vite gives only its URL.
- */
+// HACK: `next/image` reads `{ src, width, height }` the way Next's bundler gives it, where Vite
+// gives only a URL.
 const createNextImagePlugin = (): Plugin => ({
   name: "bippy-verify-next-image",
   enforce: "post",
@@ -417,10 +375,8 @@ const isModuleStatement = (statement: Rollup.ProgramNode["body"][number]): boole
   statement.type === "ExportDefaultDeclaration" ||
   statement.type === "ExportAllDeclaration";
 
-/**
- * Makes an app's own CommonJS module, like a Next config that sets `module.exports`,
- * importable: what it exports becomes its default export.
- */
+// HACK: an app's own CommonJS module, like a Next config, imports with `module.exports` as its
+// default export.
 const createCommonJsPlugin = (): Plugin => ({
   name: "bippy-verify-commonjs",
   transform: (code, id) => {
@@ -435,10 +391,8 @@ const createCommonJsPlugin = (): Plugin => ({
   },
 });
 
-/**
- * Turns `require("highlight.js")` in an app's own modules into an import. Next's bundler
- * lets ES modules call `require`, while a browser has no `require` at all.
- */
+// HACK: Next's bundler lets ES modules call `require`, which a browser lacks, so it becomes an
+// import.
 const createRequirePlugin = (): Plugin => ({
   name: "bippy-verify-require",
   transform: (code, id) => {
@@ -493,10 +447,8 @@ interface PackageManifest {
   peerDependencies?: Record<string, string>;
 }
 
-/**
- * Whether the app declares a package. Resolving it isn't enough: Node looks in every
- * enclosing `node_modules`, where a monorepo installs packages its other apps use.
- */
+// Resolving isn't enough: Node searches every enclosing `node_modules`, where a monorepo installs
+// other apps' packages.
 const isDeclared = (appDirectory: string, packageName: string): boolean => {
   const manifestPath = join(appDirectory, "package.json");
   if (!existsSync(manifestPath)) return true;
@@ -506,10 +458,7 @@ const isDeclared = (appDirectory: string, packageName: string): boolean => {
   );
 };
 
-/**
- * The package's directory in the `node_modules` nearest the app, found by name, since a
- * package's `exports` may not include its `package.json`, like next-intl's.
- */
+// Found by name, since a package's `exports` may not include its `package.json`.
 const findInstalledDirectory = (appDirectory: string, packageName: string): string | null => {
   for (let directory = appDirectory; ; directory = dirname(directory)) {
     const packageDirectory = join(directory, "node_modules", packageName);
@@ -558,7 +507,6 @@ const STORE_DECLARATION_PATTERN =
   /\b(?:const|let)\s+(\w+)\s*=\s*(?:configureStore|createStore|legacy_createStore)\(/;
 const TEST_FILE_PATTERN = /\.(?:test|spec|stories)\.[jt]sx?$/;
 
-/** The Redux store a file creates and exports, like `export const store = configureStore(…)`. */
 const findReduxStore = (file: string, text: string): ExportedValue | null => {
   const name = STORE_DECLARATION_PATTERN.exec(text)?.[1];
   if (!name) return null;
@@ -571,10 +519,6 @@ const findReduxStore = (file: string, text: string): ExportedValue | null => {
     : null;
 };
 
-/**
- * Mounts every component in the app's own Redux store, as its root does, since a component
- * reading it throws outside a `Provider`.
- */
 const createReduxSpec = ({ file, exportName }: ExportedValue): ProviderSpec => ({
   packageName: "react-redux",
   imports: [
@@ -584,12 +528,6 @@ const createReduxSpec = ({ file, exportName }: ExportedValue): ProviderSpec => (
   wrap: (children) => `createElement(ReduxProvider, { store: reduxStore }, ${children})`,
 });
 
-/**
- * What the harness needs to know about an app's source: the environment variables and
- * `next/font` names it reads at import time and the names it imports from each package,
- * which the harness supplies so modules load, and where each capitalized name is exported,
- * to find a provider a component asks for.
- */
 const collectSourceReferences = (appDirectory: string): SourceReferences => {
   const references: SourceReferences = {
     processEnv: new Set(),
@@ -623,12 +561,8 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
   return references;
 };
 
-/**
- * Stands in for a module that can't load in a browser: a server SDK, like a database or
- * payments client, with no backend there to reach, or a module the app imports but doesn't
- * have, like an undeclared package. Its exports are stand-ins for any value, so a server
- * component that awaits a query renders around what it gets.
- */
+// HACK: a module that can't load in a browser exports stand-ins, so code awaiting it renders around
+// what it gets.
 const createStandInModuleSource = (names: Set<string>): string =>
   [
     `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
@@ -643,10 +577,7 @@ const createNextFontSource = (fontNames: Set<string>): string =>
     ...[...fontNames].map((name) => `export const ${name} = font;`),
   ].join("\n");
 
-/**
- * The module that defines one of Next's router contexts, named with `.shared-runtime` since
- * Next 13.5.
- */
+// Named with `.shared-runtime` since Next 13.5.
 const resolveNextContextModule = (nextDirectory: string, name: string): string | null => {
   const fileName = [`${name}.shared-runtime`, name].find((candidate) =>
     existsSync(join(nextDirectory, "dist/shared/lib", `${candidate}.js`)),
@@ -667,11 +598,8 @@ const getNextPolyfillAliases = (
   });
 };
 
-/**
- * Provides Next's own router contexts with the stub routers, so `next/navigation` and
- * `next/router` work when a package imports them, like `@clerk/nextjs` does, where the stubs
- * for the app's own imports don't reach.
- */
+// HACK: packages importing `next/navigation` or `next/router` bypass the stubs, so provide Next's
+// own router contexts.
 const createNextContextSpec = (appDirectory: string): ProviderSpec | null => {
   const nextDirectory = resolvePackageDirectory(appDirectory, "next");
   if (!nextDirectory) return null;
@@ -701,11 +629,7 @@ const createNextContextSpec = (appDirectory: string): ProviderSpec | null => {
   };
 };
 
-/**
- * The image config Next gives client code, its defaults without optimizing, since the
- * harness has no `/_next/image` route and doesn't read the app's `next.config` for the hosts
- * it allows.
- */
+// Unoptimized, since the harness has no `/_next/image` route.
 const getNextImageOptions = (appDirectory: string): Record<string, unknown> => {
   const nextDirectory = resolvePackageDirectory(appDirectory, "next");
   const configFile = nextDirectory && join(nextDirectory, "dist/shared/lib/image-config.js");
@@ -761,11 +685,8 @@ const createProvidersSource = (providers: ProviderSpec[], setup: HarnessSetup): 
   ].join("\n");
 };
 
-/**
- * Serves the harness page, its entry, the providers every component mounts in, and the
- * repo's setup. The setup lives outside the app, so its imports resolve as if from a file
- * of the app, where path aliases such as `@/` apply.
- */
+// The setup lives outside the app, so its imports resolve as if from an app file, where path
+// aliases apply.
 const createHarnessPlugin = (
   appDirectory: string,
   providers: ProviderSpec[],
@@ -909,8 +830,7 @@ export const startHarness = async (
       ],
       dedupe: ["react", "react-dom"],
     },
-    // Fibers don't depend on styles, so stylesheets load empty, and with no PostCSS
-    // config to find, an app's Tailwind or Sass setup can't fail its imports.
+    // HACK: an empty PostCSS config keeps an app's Tailwind or Sass setup from failing imports.
     css: { postcss: {} },
     esbuild: { jsx: "automatic", jsxDev: true },
     define: {

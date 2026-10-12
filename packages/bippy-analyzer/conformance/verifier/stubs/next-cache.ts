@@ -1,7 +1,4 @@
-/**
- * Stands in for `next/cache`, whose caching only exists on a server. Cached functions run
- * directly, and revalidating does nothing.
- */
+// HACK: next/cache only works on a server, so cached functions run directly.
 export const unstable_cache = <Callback>(callback: Callback): Callback => callback;
 export const unstable_noStore = () => undefined;
 export const revalidatePath = () => undefined;

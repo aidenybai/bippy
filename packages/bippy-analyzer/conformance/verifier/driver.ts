@@ -22,10 +22,8 @@ const MAX_MOUNT_ATTEMPTS = 24;
 const PAGE_TIMEOUT_MS = 30_000;
 const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
 
-/**
- * Gives up on a page that stops answering, like one whose component rendered `<html>` and
- * so replaced the harness document.
- */
+// HACK: a component that renders `<html>` replaces the harness document, leaving the page
+// unresponsive.
 const withTimeout = <Result>(promise: Promise<Result>): Promise<Result> =>
   Promise.race([
     promise,
@@ -54,11 +52,6 @@ interface Layer {
 
 const getLayerWrapper = (layer: Layer): Wrapper | undefined => layer.proposals[layer.cursor];
 
-/**
- * Where a new parent goes among the layers, outermost first, when React's component stack
- * doesn't say which one threw: around the wrapper the error is about, inside them all when
- * it is about the component itself, and otherwise outside them all.
- */
 const getInsertIndex = (error: string, componentName: string, layers: Layer[]): number => {
   const subject = getErrorSubject(error);
   const subjectIndex = layers.findIndex((layer) => getLayerWrapper(layer)?.name === subject);
@@ -67,14 +60,6 @@ const getInsertIndex = (error: string, componentName: string, layers: Layer[]): 
   return isComponent || layers.length === 0 ? layers.length : 0;
 };
 
-/**
- * Mounts a component, and while it throws for want of a parent, adds the parents that may
- * fix the error as a layer and tries them in turn, outermost first. A parent that leaves the
- * error as it was, doesn't render the component, or breaks itself gives way to the next. A
- * parent that throws the same error itself is the right one and gets a layer of its own
- * around it, and an earlier parent that throws for want of data once an outer one provides
- * what it stood in for is dropped. Returns the parents it settled on.
- */
 export const resolveWrappers = async (
   page: Page,
   request: MountRequest,
@@ -103,6 +88,7 @@ export const resolveWrappers = async (
     if (newest) {
       const newestIndex = layers.indexOf(newest);
       const newestWrapper = getLayerWrapper(newest);
+      // A new parent throwing the same error itself is the right one but needs its own parent.
       if (
         thrower === newest &&
         capture.error === newest.error &&
@@ -120,6 +106,7 @@ export const resolveWrappers = async (
           continue;
         }
       }
+      // An earlier parent made redundant by an outer one throws for missing data, so drop it.
       if (thrower && thrower !== newest && (failure === "missing-data" || failure === "other")) {
         layers.splice(layers.indexOf(thrower), 1);
         newest = null;

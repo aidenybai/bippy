@@ -6,14 +6,8 @@ import { forEachJsxElement } from "./utils/traverse.js";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
-/** The event of a handler that spread props may install: any of them. */
 export const ANY_EVENT = "*";
 
-/**
- * Whether a prop holds a handler: one named like an event, or a setter, function or object
- * of functions passed to a component under any name, like `setSearchTerm`, which the
- * component may call.
- */
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
   (tag.kind !== "BuiltinTag" && (isCallable(prop.value) || hasCallableField(prop.value)));
@@ -21,19 +15,14 @@ export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
 const isCallable = (value: SymbolicValue): boolean =>
   value.kind === "Setter" || value.kind === "Function";
 
-/** An object of functions, like a context's `value={{ open, openEditor }}`. */
 const hasCallableField = (value: SymbolicValue): boolean =>
   value.kind === "ObjectExpression" &&
   value.properties.some((property) => isCallable(property.value));
 
-/**
- * A ref callback, like `ref={(node) => setWidth(node.offsetWidth)}`, which React calls when
- * it attaches the element, as a layout effect runs.
- */
+// React calls a ref callback on attach, so it runs like a layout effect.
 const isRefCallback = (prop: JsxProp): boolean =>
   prop.name === "ref" && (prop.value.kind === "Function" || prop.value.kind === "Setter");
 
-/** The handlers among the props an object spreads onto an element, as one object. */
 const getSpreadHandlers = (tag: JsxTag, value: SymbolicValue): SymbolicValue | null => {
   if (value.kind !== "ObjectExpression") return null;
   const properties = value.properties.filter((property) =>
@@ -72,11 +61,6 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
   return GeneratedSource;
 };
 
-/**
- * Finds every event handler in the render tree and every effect, and records what each one
- * does to state. Handlers reached from several places in the tree are one handler, and
- * each JSX attribute that holds one is linked to it by `handlerId`.
- */
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const handlers: Handler[] = [];
   const handlerIds = new Map<string, string | null>();
@@ -113,7 +97,6 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
             [],
             prop.value.loc,
           );
-        // Props spread from an object, like `{...getButtonProps()}`, install its handlers.
         const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
         if (spreadHandlers)
           prop.handlerId = addTransition(

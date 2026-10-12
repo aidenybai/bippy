@@ -65,12 +65,6 @@ const toSample = (value: unknown): Sample => {
   throw new Error(`Can't pass ${typeof value} as a prop`);
 };
 
-/**
- * Playwright fixtures for hand-written scenarios. A spec names its repo with
- * `test.use({ repo })`, mounts components in the harness, drives them, and asserts the
- * states it expects. Everything a test observes is scored against the analyzer's claims
- * when it ends, so a scenario fails on any counterexample it runs into.
- */
 export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
   repo: ["", { scope: "worker", option: true }],
   project: [

@@ -63,11 +63,6 @@ const DYNAMIC_TAG_NAME = "Dynamic";
 const PORTAL_CALLEE_PATTERN = /(?:^|\.)createPortal$/;
 const MAX_OPTIONS_DEPTH = 3;
 
-/**
- * The functions and setters among values passed on, including those nested in options
- * objects, like the `click` of `{ handleDOMEvents: { click() {} } }`, and either side of a
- * condition, like `doubleCheck ? undefined : onClick`.
- */
 const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
     if (value.kind === "Function" || value.kind === "Setter") return [value];
@@ -82,7 +77,6 @@ const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[]
 
 const isDefinedSample = (sample: Sample): boolean =>
   sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);
-/** A state initialized from a value the program only asserts the type of, which can be anything. */
 const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
@@ -93,11 +87,6 @@ const SUSPENDED_DOMAIN: Domain = {
   origin: "type",
 };
 
-/**
- * How a region of the control-flow graph ended: by returning, by falling through from
- * `from` to `to`, one of the joins the walk stops at, or by splitting on a branch into
- * two outcomes.
- */
 type Outcome =
   | { kind: "Return"; value: SymbolicValue }
   | { kind: "Fallthrough"; from: BlockId | null; to: BlockId }
@@ -112,15 +101,11 @@ interface SplitOutcome {
   alternate: Outcome;
 }
 
-/**
- * `chain` is the non-optional part of an optional chain, like `.c()` in `a?.b.c()`. Its
- * branch only asks whether the chain before it short-circuited.
- */
+// `chain` is the `.c()` of `a?.b.c()`; its branch only tests whether `a?.b` short-circuited.
 type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "chain";
 
 type EvaluationMode = "render" | "effect";
 
-/** How to create a binding, and the resolver for the file its location is in. */
 interface BindingOptions extends Partial<
   Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "domain">
 > {
@@ -136,7 +121,6 @@ interface EffectCall {
   hookKind: HookKind;
   callback: SymbolicValue;
   args: SymbolicValue[];
-  /** The source text of the dependency list, from the file the effect is in. */
   dependencies: string | null;
   loc: SourceLocation;
 }
@@ -164,10 +148,7 @@ const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
     left.start.index === right.start.index &&
     left.end.index === right.end.index);
 
-/**
- * A function's effects are attached to the instruction that creates it but only happen when
- * it's called, which the interpreter follows separately.
- */
+// A function's mutations happen when it's called, not where it's created.
 const isFunctionCreation = (value: InstructionValue): boolean =>
   value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
 
@@ -185,15 +166,12 @@ const getMutatedPlace = (effect: AliasingEffect): Place | null => {
 
 export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
 
-/** A custom hook of the project, with the resolver for the file it is declared in. */
 export interface ProjectHook {
   fn: HIRFunction;
   resolver: DomainResolver;
-  /** Compiles a function declared at the top level of the hook's file, by name. */
   loadModuleFunction: ModuleFunctionLoader;
 }
 
-/** Finds a project hook by its declaration key, like `src/hooks/use-toggle.ts#useToggle`. */
 export type ProjectHookLoader = (declarationKey: string) => ProjectHook | null;
 
 type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
@@ -296,10 +274,7 @@ const getHookBindingKind = (hookKind: HookKind): BindingKind =>
 const isNullishValue = (value: SymbolicValue): boolean =>
   value.kind === "Primitive" && isNullish(value.value);
 
-/**
- * The test under which an optional chain's value short-circuits to `undefined`, or null
- * when it never does. Member accesses past the `?.` are assumed not to throw.
- */
+// Assumes member accesses past the `?.` never throw.
 const getShortCircuit = (
   value: SymbolicValue,
 ): { test: SymbolicValue; testKind: TestKind } | null =>
@@ -314,20 +289,12 @@ const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => 
   return isConsequent ? test : negate(test);
 };
 
-/**
- * Runs HIR symbolically. Values are expressions over bindings instead of runtime values.
- * Where control flow joins, phis become `Conditional` values keyed by the branch that
- * split them, so a component's return value is its render tree with every branch kept.
- *
- * The same walk serves event handlers and effects: in `effect` mode it also collects state
- * updates and prop calls, each with the guards that lead to it.
- */
+/** Runs HIR symbolically; phis at joins become `Conditional` values, so every branch is kept. */
 export class Interpreter {
   #resolver: DomainResolver;
   readonly #loadProjectHook: ProjectHookLoader;
   readonly #tables = new WeakMap<object, CompilationTables>();
   readonly #functionResolvers = new WeakMap<HIRFunction, DomainResolver>();
-  /** The loader of each file's module functions, by that file's resolver. */
   readonly #moduleFunctionLoaders = new Map<DomainResolver, ModuleFunctionLoader>();
   readonly #contextModels: ContextModels;
   readonly #contextKeys = new WeakMap<HookResultValue, string>();
@@ -336,7 +303,6 @@ export class Interpreter {
   readonly #storeBindings = new Map<string, Binding>();
   readonly #storeActions = new Map<number, StoreModel>();
   readonly #contextSetters = new Map<number, Map<string, string>>();
-  /** The module each hook binding's hook is imported from, by binding id. */
   readonly #hookModules = new Map<number, string>();
   readonly #functions: HIRFunction[] = [];
   readonly #bindings = new Map<string, Binding>();
@@ -346,22 +312,9 @@ export class Interpreter {
   readonly warnings: Warning[] = [];
   readonly effectCalls: EffectCall[] = [];
   readonly renderedComponents = new Set<string>();
-  /** The guards each branch's value was computed under, as formatted keys. */
-  /**
-   * A sample of the whole props object, once the component passes it on whole, like
-   * `templateCtx(props)`, and so reads props that no binding names.
-   */
   propsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
-  /**
-   * A sample of the value each context the component reads holds, by the context's
-   * declaration key, which a test mounts the context's provider with.
-   */
   readonly contextSamples = new Map<string, Sample>();
-  /**
-   * The binding each untyped context the component reads is read through, by declaration
-   * key, whose sample is shaped later by what the component reads from it.
-   */
   readonly untypedContexts = new Map<string, number>();
   #mode: EvaluationMode = "render";
   #collected: CollectedEffects = { updates: [], delegates: [] };
@@ -369,7 +322,6 @@ export class Interpreter {
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
   #walkedCatches = new Set<BlockId>();
-  /** The values each function value's captured variables had when it was created, by id. */
   readonly #captures = new Map<number, Array<[Place, SymbolicValue]>>();
   #inlineDepth = 0;
 
@@ -401,13 +353,7 @@ export class Interpreter {
     return { kind: "Function", functionId: this.#functions.length - 1, loc: fn.loc };
   }
 
-  /**
-   * A function value created inside a called function keeps what its captured variables
-   * held, as each call of a helper like `callAll(...fns)` returns a closure over its own
-   * `fns`. One the component's body or a handler creates reads them when it runs, as
-   * JavaScript captures variables, and one may be assigned later, like a function declared
-   * below the effect that calls it.
-   */
+  // Closures created in an inlined call snapshot their captures; others read them live.
   #createClosure(fn: HIRFunction): FunctionValue {
     const closure = this.#registerFunction(fn);
     if (this.#inlineDepth > 0)
@@ -418,7 +364,6 @@ export class Interpreter {
     return closure;
   }
 
-  /** Writes a closure's captured values while it runs, and returns what restores them. */
   #applyCaptures(functionId: number | null): () => void {
     const captures = functionId === null ? [] : (this.#captures.get(functionId) ?? []);
     const previous = captures.map(([place]): [Place, SymbolicValue] => [place, this.#read(place)]);
@@ -467,11 +412,7 @@ export class Interpreter {
     return { kind: "Binding", binding, path };
   }
 
-  /**
-   * The values of the current function's identifiers. A function compiled on its own, like
-   * a hook from another file, numbers its identifiers from zero too, so each compilation
-   * keeps its own.
-   */
+  // Each compilation numbers identifiers from zero, so tables are kept per compilation.
   #getTables(): CompilationTables {
     const { env } = this.#getCurrentFunction();
     const tables = this.#tables.get(env) ?? {
@@ -512,11 +453,6 @@ export class Interpreter {
     return createBindingValue(binding);
   }
 
-  /**
-   * Links a hook binding to the module its hook comes from, and a context binding to what its
-   * providers put in the context, so a handler that calls one of its setters, like
-   * `setOpen(true)`, sets the field it pairs with.
-   */
   #linkHook(binding: Binding, hook: HookResultValue): void {
     if (hook.module !== null) this.#hookModules.set(binding.id, hook.module);
     const contextKey = this.#contextKeys.get(hook);
@@ -537,7 +473,6 @@ export class Interpreter {
     value: SymbolicValue,
     loc: SourceLocation,
   ): Array<SymbolicValue | null> {
-    // A list whose items are known, like what a project hook returns as `[value, setValue]`.
     if (value.kind === "ArrayExpression" && value.spreads.length === 0)
       return items.map((_, index) => value.elements[index] ?? UNDEFINED_VALUE);
     if (value.kind !== "HookResult") return items.map(() => null);
@@ -612,8 +547,7 @@ export class Interpreter {
           createBindingValue(this.#getPropBinding(key, localName, property.place.loc)),
         );
       } else if (value.kind === "HookResult") {
-        // One hook call is one binding, so fields destructured from it, like `isFirstStep` and
-        // `previousStep` from `useWizard()`, stay paths of the same value.
+        // One binding per hook call, so destructured fields stay paths of the same value.
         const binding = this.#createBinding(
           `${value.name}()`,
           getHookBindingKind(value.hookKind),
@@ -652,8 +586,7 @@ export class Interpreter {
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
       case "Conditional":
-        // Reading a property of null or undefined throws, so a render that gets past the read
-        // took the other arm.
+        // Reading a property of nullish throws, so a render past the read took the other arm.
         if (isNullishValue(object.alternate))
           return this.#evaluatePropertyLoad(object.consequent, property, loc);
         if (isNullishValue(object.consequent))
@@ -688,8 +621,6 @@ export class Interpreter {
         alternate: this.#buildJsx(tag.alternate, declaration, isContext, props, children, loc),
       };
     }
-    // A tag held in a prop, state or hook result, like `buttonComponent` in
-    // `<ButtonComponent>` for `buttonComponent || Button`, may be any element type.
     const jsxTag: JsxTag =
       tag.kind === "Primitive" && typeof tag.value === "string"
         ? { kind: "BuiltinTag", name: tag.value }
@@ -697,9 +628,7 @@ export class Interpreter {
           ? { kind: "Component", name: getComponentName(tag), declaration, isContext }
           : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
     if (jsxTag.kind === "Component") this.renderedComponents.add(jsxTag.name);
-    // A component gets its children as a prop, so a function child, like the render function
-    // of `<Geographies>{({ geographies }) => …}</Geographies>`, is a render prop, and so is a
-    // component declared inside this one, like `<Emoji />`, which React calls with its props.
+    // React calls function children and locally declared components with props: render props.
     const functionChildren =
       jsxTag.kind === "BuiltinTag" ? [] : children.filter((child) => child.kind === "Function");
     const renderFunctions = tag.kind === "Function" ? [tag] : [];
@@ -721,10 +650,7 @@ export class Interpreter {
     return { kind: "JsxExpression", tag: jsxTag, props: jsxProps, children, loc };
   }
 
-  /**
-   * A `Suspense` boundary renders its fallback while anything inside it suspends, which the
-   * render can't decide, so it branches on whether it is suspended.
-   */
+  // Whether a Suspense boundary is suspended is unknowable, so branch on it.
   #buildSuspense(element: JsxExpressionValue, terminalId: InstructionId): SymbolicValue {
     const fallback = element.props.find(
       (prop) => prop.kind === "JsxAttribute" && prop.name === "fallback",
@@ -760,9 +686,6 @@ export class Interpreter {
     }
   }
 
-  /**
-   * Records a bailout once per reason and location, however often the interpreter revisits it.
-   */
   #resolveModuleFunction(value: SymbolicValue): SymbolicValue {
     if (value.kind !== "Global") return value;
     const moduleFunction = this.#moduleFunctionLoaders.get(this.#resolver)?.(value.name);
@@ -783,10 +706,6 @@ export class Interpreter {
     if (!isDuplicate) this.warnings.push({ kind, message, loc, file: this.#resolver.fileName });
   }
 
-  /**
-   * Records state and props the compiler's effects prove an instruction mutates. In a
-   * handler, later reads of mutated state no longer match what was rendered.
-   */
   #trackMutations(instruction: Instruction): void {
     if (isFunctionCreation(instruction.value)) return;
     for (const effect of instruction.effects ?? []) {
@@ -887,7 +806,7 @@ export class Interpreter {
     const propsPlace = argumentPlaces[args.findIndex(isPropsValue)];
     if (this.propsSample === null && propsPlace)
       this.propsSample = this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
-    // A portal renders its children where it is in the tree, only into another container.
+    // A portal renders its children in place, only into another container.
     const calleeText = this.#resolver.getCalleeText(loc);
     if (calleeText !== null && PORTAL_CALLEE_PATTERN.test(calleeText) && args[0]) return args[0];
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
@@ -910,15 +829,12 @@ export class Interpreter {
       callee.kind === "Global" && getPassedCallbacks(args).length > 0
         ? this.#moduleFunctionLoaders.get(this.#resolver)?.(callee.name)
         : null;
-    // A helper given a callback may wrap it or call it later, like
-    // `callAll(onClick, props.onClick)`, so it runs as written.
+    // A helper given a callback may wrap it or call it later, so inline it.
     if (moduleFunction)
       return this.#callFunction(this.#registerFunction(moduleFunction), args, loc, state);
     switch (callee.kind) {
       case "Function":
         return this.#callFunction(callee, args, loc, state);
-      // A callee chosen by a condition, like `isDocument ? setDraggedDocument : setDraggedFolder`,
-      // may be either.
       case "Conditional":
         return {
           ...callee,
@@ -962,11 +878,6 @@ export class Interpreter {
     return this.#createCallResult(args, loc);
   }
 
-  /**
-   * The places a value reads, through the places a callback captures, like `query` in
-   * `locales.filter((locale) => matches(locale, query))`. A callback that captures itself,
-   * like a recursive one, is followed once.
-   */
   #collectInputs(value: SymbolicValue, inputs: Set<string>, visited = new Set<number>()): void {
     forEachSymbolicValue(value, (part) => {
       if (part.kind === "Binding") inputs.add(getBindingPlaceKey(part));
@@ -977,12 +888,6 @@ export class Interpreter {
     });
   }
 
-  /**
-   * Gives a call the analysis can't see into a value of its return type. When the type has
-   * a finite set of values, like `boolean`, or the arguments read the component's data, the
-   * result is a binding that changes with them and that states can split on. The same call
-   * with different arguments, like a helper called twice, is a different binding.
-   */
   #createCallResult(args: SymbolicValue[], loc: SourceLocation): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(loc);
     if (calleeText === null) return createUnknown("call", loc);
@@ -994,10 +899,6 @@ export class Interpreter {
     return createBindingValue(this.#createBinding(name, "call", loc, { inputs: [...inputs] }));
   }
 
-  /**
-   * Runs a callback a handler passes on, directly or in an options object, like the
-   * `onSuccess` of `mutateAsync(data, { onSuccess })`, as it may be called later.
-   */
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
     if (this.#mode !== "effect") return;
     if (argument.kind === "ObjectExpression")
@@ -1019,10 +920,6 @@ export class Interpreter {
       );
   }
 
-  /**
-   * A function stored on an object, like `recognition.onresult = (event) => …`, may be called
-   * by whatever reads it later, as one passed to a call may.
-   */
   #storeCallback(value: SymbolicValue, loc: SourceLocation, state: WalkState): void {
     if (value.kind !== "Function") return;
     if (this.#mode === "render") this.#addLaterCallbacks([value], loc);
@@ -1051,7 +948,6 @@ export class Interpreter {
       return UNDEFINED_VALUE;
     }
     if (hookKind === "Custom") this.#addLaterCallbacks(args, loc);
-    // The parent may call the functions of the handle `useImperativeHandle` gives it.
     if (hookKind === "useImperativeHandle" && args[1]?.kind === "Function")
       this.#addLaterCallbacks([this.#callFunction(args[1], [], loc, state)], loc);
     if (hookKind === "useMemo" && args[0]?.kind === "Function")
@@ -1077,12 +973,7 @@ export class Interpreter {
     return hookResult;
   }
 
-  /**
-   * A function passed to a hook or call the analysis can't see into, directly or in its
-   * options, like `useIsomorphicLayoutEffect(() => setMounted(true))`, `useMutation({
-   * onSuccess })` or `form.handleSubmit(onSubmit)`, may run after any render, with any
-   * arguments, as an effect does.
-   */
+  // Callbacks passed into opaque calls may run after any render, with any arguments.
   #addLaterCallbacks(args: SymbolicValue[], loc: SourceLocation): void {
     for (const callback of getPassedCallbacks(args)) {
       if (callback.kind !== "Function") continue;
@@ -1107,8 +998,6 @@ export class Interpreter {
     const argumentPlaces = instruction.args.map(getPlaceOrSpread);
     const args = argumentPlaces.map((place) => this.#read(place));
     const [callback] = args;
-    // A handler that iterates a list it knows, like `fns.forEach((fn) => fn())`, calls back
-    // with each item, and with any item for what spreads into the list.
     if (
       this.#mode === "effect" &&
       propertyName !== null &&
@@ -1306,7 +1195,6 @@ export class Interpreter {
       case "Await":
         return createUnknown("async", value.loc);
       case "NewExpression": {
-        // A constructor, like `new EditorView(el, { handleDOMEvents })`, may call what it's given.
         const args = value.args.map((argument) => this.#read(getPlaceOrSpread(argument)));
         if (this.#mode === "render") this.#addLaterCallbacks(args, value.loc);
         else for (const argument of args) this.#visitCallbackArgument(argument, state);
@@ -1371,12 +1259,8 @@ export class Interpreter {
     }
   }
 
-  /**
-   * Continues past a join. When every path reaches the join, phis merge into conditionals
-   * and the rest is walked once. When some paths returned or left for an enclosing join,
-   * the rest is walked separately for each path that reaches this join, with its guards.
-   * A join an enclosing walk stops at is left for that walk to merge.
-   */
+  // Merges phis when every path reaches the join, else walks the rest once per arriving path.
+  // A join an enclosing walk stops at is left for that walk to merge.
   #continueAfter(
     outcome: Outcome,
     join: BlockId,
@@ -1500,9 +1384,6 @@ export class Interpreter {
     return this.#continueAfter(buildCases(0), terminal.fallthrough, stops, state);
   }
 
-  /**
-   * Walks blocks from `blockId` until a return, or until control reaches one of `stops`.
-   */
   #walk(
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
@@ -1586,8 +1467,7 @@ export class Interpreter {
           nextId = terminal.block;
           break;
         case "maybe-throw":
-          // A handler's `catch` block runs when what it tries throws, like a request that
-          // fails, so its updates happen too. It is walked once per call of the function.
+          // A `catch` runs when the `try` throws, like a failed request; walk it once per call.
           if (
             this.#mode === "effect" &&
             terminal.handler !== null &&
@@ -1631,11 +1511,7 @@ export class Interpreter {
     }
   }
 
-  /**
-   * Reads a zustand store, like `useConfig((state) => state.darkmodeEnabled)`. Every read
-   * of one store is a field of one binding, so an action called through any of them, like
-   * `toggleDarkMode(true)`, sets the fields the store's model says it does.
-   */
+  // Every read of one store shares one binding, so an action through any read sets its fields.
   #readStore(
     storeKey: string,
     model: StoreModel,
@@ -1659,7 +1535,6 @@ export class Interpreter {
       : createBindingValue(binding);
   }
 
-  /** The value a store action gives a field, from the arguments it was called with. */
   #getStoreFieldValue(
     binding: Binding,
     { field, value }: StoreAssignment,
@@ -1683,10 +1558,6 @@ export class Interpreter {
     }
   }
 
-  /**
-   * The project's own hook a call reaches, which runs inline as part of the component, so
-   * its state is the component's state and the functions it returns are known.
-   */
   #findProjectHook(calleePlace: Place): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
     return declarationKey ? this.#loadProjectHook(declarationKey) : null;
@@ -1711,8 +1582,7 @@ export class Interpreter {
         this.#write(
           place,
           parameter.kind === "Spread"
-            ? // The arguments past the named ones, and any a caller spreads in.
-              {
+            ? {
                 kind: "ArrayExpression",
                 elements: args.slice(index),
                 spreads: [createUnknown("rest", place.loc)],
@@ -1733,18 +1603,11 @@ export class Interpreter {
     }
   }
 
-  /**
-   * Evaluates a component in render mode: its first parameter is the props object.
-   */
   evaluateComponent(fn: HIRFunction): SymbolicValue {
     this.#blockVisits = 0;
     return this.#evaluateFunction(fn, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
-  /**
-   * Calls a function held in a binding: a prop the parent handles, or a hook or context
-   * function that may change that source.
-   */
   #callBinding(callee: BindingValue, args: SymbolicValue[], state: WalkState): void {
     if (callee.binding.kind === "prop")
       this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
@@ -1774,12 +1637,7 @@ export class Interpreter {
     else if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
   }
 
-  /**
-   * Sets a field of a context through the setter its provider pairs with it. Whether a
-   * provider is mounted above isn't known here, and a context's default value often has
-   * setters that do nothing, so the update is async: it may not happen. The value is still
-   * the one the handler computed, unlike a callback's that runs later.
-   */
+  // Async because a provider may not be mounted, and default context setters are often no-ops.
   #setContextField(
     binding: Binding,
     field: string,
@@ -1808,12 +1666,7 @@ export class Interpreter {
     });
   }
 
-  /**
-   * A handler that calls into a custom hook's result or a context value, like
-   * `query.refetch()` or `auth.logout()`, can change what that source returns, and what
-   * every hook from the same module returns, like a Redux `dispatch` changes `useSelector`.
-   * When and to what is unknown, so they change to anything, asynchronously.
-   */
+  // Calling into a hook or context value may change it, and every hook from its module, anytime.
   #recordExternalUpdate(callee: BindingValue, state: WalkState): void {
     this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
     const module = this.#hookModules.get(callee.binding.id);
@@ -1833,10 +1686,7 @@ export class Interpreter {
     }
   }
 
-  /**
-   * State a handler mutates but never sets still changes: React shows the new contents the
-   * next time anything re-renders. The state is forgotten so later states stay sound.
-   */
+  // Mutated-but-unset state shows on the next re-render, so forget it to keep later states sound.
   #recordUnsetMutations(): void {
     for (const { binding, loc } of this.#mutations.values()) {
       if (this.#collected.updates.some((update) => update.binding.id === binding.id)) continue;
@@ -1854,10 +1704,7 @@ export class Interpreter {
     }
   }
 
-  /**
-   * Runs the handlers in the JSX a handler returns, like the buttons a render prop gives a
-   * table to render, since the component renders them for its user to click.
-   */
+  // Handlers in JSX a handler returns, like render-prop output, are rendered for the user to click.
   #collectRenderedHandlers(value: SymbolicValue, visited: Set<number>): void {
     const event = createUnknown("event", GeneratedSource);
     forEachJsxElement(value, (element) => {
@@ -1878,7 +1725,6 @@ export class Interpreter {
     });
   }
 
-  /** Runs one handler: a function, a setter, or a hook or context function it calls into. */
   #runCallback(callback: SymbolicValue, args: SymbolicValue[]): void {
     if (callback.kind === "Function") {
       const fn = this.#getFunction(callback.functionId);
@@ -1897,10 +1743,6 @@ export class Interpreter {
     if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
   }
 
-  /**
-   * Evaluates an event handler or effect callback and returns the state updates and prop
-   * calls it makes.
-   */
   collectEffects(callback: SymbolicValue, args: SymbolicValue[]): CollectedEffects {
     const previousMode = this.#mode;
     const previousCollected = this.#collected;
@@ -1911,8 +1753,6 @@ export class Interpreter {
     this.#collected = { updates: [], delegates: [] };
     this.#mutations = new Map();
     try {
-      // An object of functions handed to a component, like a context's value, may have any
-      // of them called.
       const callbacks =
         callback.kind === "ObjectExpression"
           ? callback.properties.map((property) => property.value)

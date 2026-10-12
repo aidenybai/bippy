@@ -27,11 +27,7 @@ export interface CompiledFile {
   compileModuleFunction: (name: string) => HIRFunction | null;
 }
 
-/**
- * The HIR our analysis reads is the compiler's right after reactivity inference. Later passes
- * rewrite it in place, so compiling stops there by throwing this past the compiler, which
- * logs it as the function's error and moves on.
- */
+// HACK: later passes rewrite the HIR in place, so throw past the compiler to stop after STOP_PASS.
 const STOP = Symbol("stop");
 const STOP_PASS = "InferReactivePlaces";
 const ANONYMOUS_NAME = "<anonymous>";
@@ -53,11 +49,6 @@ const describeEvent = (event: LoggerEvent): string | null => {
   }
 };
 
-/**
- * The name a function is declared under: its own, the variable, property or member it's
- * assigned to, or, through wrappers like `memo(forwardRef(...))`, the variable holding the
- * result. `export default memo(...)` is `default`.
- */
 const getFunctionName = (path: NodePath<t.Function>, code: string): string => {
   if (t.isFunctionDeclaration(path.node) && path.node.id) return path.node.id.name;
   const parent = path.parentPath?.node;
@@ -75,17 +66,10 @@ const getFunctionName = (path: NodePath<t.Function>, code: string): string => {
   return t.isFunctionExpression(path.node) && path.node.id ? path.node.id.name : ANONYMOUS_NAME;
 };
 
-/**
- * A function that failed before lowering finished never reports its type, so it's read from
- * its name, as the compiler's `infer` mode does.
- */
+// A function that fails before lowering never reports its type, so infer it from the name.
 const getFunctionType = (name: string): ReactFunctionType =>
   COMPONENT_NAME_PATTERN.test(name) ? "Component" : isHookName(name) ? "Hook" : "Other";
 
-/**
- * Compiles every component and hook in a file the way the compiler's `infer` mode finds them,
- * keeping each one's HIR. A function the compiler can't lower keeps its errors instead.
- */
 export const compileFile = (
   fileName: string,
   code: string,

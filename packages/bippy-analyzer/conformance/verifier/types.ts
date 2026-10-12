@@ -40,11 +40,6 @@ export interface ActionTarget {
   label: string;
 }
 
-/**
- * An element the page can act on. `isInChild` marks one a child component rendered, whose
- * handler the mounted component's analysis can't see. `clickAncestors` are the elements
- * around it with a click handler, which a click bubbles up to.
- */
 export interface Action extends ActionTarget {
   key: string;
   kind: "click" | "change";
@@ -64,10 +59,6 @@ export interface ProjectCandidate {
   props: Record<string, Sample>;
 }
 
-/**
- * A part of a package, by the name an error gives it, which the package may export under a
- * shorter name, like `Content` for Radix's `MenuContent`, or only as its `Root`.
- */
 export interface PackageCandidate {
   kind: "package";
   specifier: string;

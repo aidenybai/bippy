@@ -6,9 +6,6 @@ import type { Project } from "typescript/unstable/sync";
 
 const SOURCE_FILE_PATTERN = /\.[jt]sx?$/;
 
-/**
- * Whether a file belongs to the project itself, not to its dependencies or declarations.
- */
 export const isProjectSourceFile = (fileName: string): boolean =>
   !fileName.includes(`${sep}node_modules${sep}`) &&
   !fileName.endsWith(".d.ts") &&
@@ -21,11 +18,7 @@ const isPathMap = (value: unknown): value is Record<string, string[]> =>
     (targets) => Array.isArray(targets) && targets.every((target) => typeof target === "string"),
   );
 
-/**
- * TypeScript 7 no longer resolves bare imports like `types` through `baseUrl`. A config that
- * sets it is opened through one that extends it and spells `baseUrl` out as `paths`, which
- * resolve against `baseUrl` as they did before.
- */
+// HACK: TypeScript 7 no longer resolves bare imports through `baseUrl`, so spell it out as `paths`.
 const getBaseUrlPaths = (api: API, configPath: string): Record<string, string[]> | null => {
   const { baseUrl, paths } = api.parseConfigFile(configPath).options;
   if (typeof baseUrl !== "string") return null;
@@ -38,9 +31,6 @@ const getBaseUrlPaths = (api: API, configPath: string): Record<string, string[]>
   return { ...resolvedPaths, "*": [...(resolvedPaths["*"] ?? []), join(baseUrl, "*")] };
 };
 
-/**
- * Opens the TypeScript project for a tsconfig, runs `callback` on it, and closes it.
- */
 export const withProject = <Result>(
   configPath: string,
   callback: (project: Project) => Result,

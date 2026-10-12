@@ -34,7 +34,6 @@ interface BoundaryProps {
 
 interface ProvidersProps {
   children?: ReactNode;
-  /** Leaves out the harness's router, for an app that renders its own. */
   isRouterless: boolean;
 }
 
@@ -124,10 +123,7 @@ const isMutatingMethod = (target: object, key: string | symbol): boolean =>
   typeof key === "string" &&
   (target instanceof Date ? key.startsWith("set") : MUTATING_COLLECTION_METHODS.has(key));
 
-/**
- * Whether redefining a property keeps its value, as `Object.freeze` does, which React DOM's
- * development build calls on every `style` object it renders.
- */
+// React DOM's development build freezes every `style` object it renders, which isn't a mutation.
 const isFreezing = (
   target: object,
   key: string | symbol,
@@ -234,7 +230,7 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
   render = (): ReactNode => (this.state.hasError ? null : this.props.children);
 }
 
-/** A ref, like a `ref` prop, which React and the component set `current` of by design. */
+// React and the component write a ref's `current` by design.
 const isRefObject = (value: unknown): boolean =>
   typeof value === "object" &&
   value !== null &&
@@ -287,10 +283,6 @@ const hydrate = (sample: Sample): unknown => {
   }
 };
 
-/**
- * A hook's state as plain data to send to the verifier, cut off past a depth and a number of
- * objects, since a component's state can hold a whole table of rows.
- */
 const toPlain = (value: unknown): unknown => {
   let nodeCount = 0;
   const visit = (current: unknown, depth: number): unknown => {
@@ -322,10 +314,7 @@ const getChildren = (fiber: Fiber): Fiber[] => {
   return children;
 };
 
-/**
- * The fiber that renders the mounted component's output. `memo(forwardRef(...))` mounts as
- * a memo fiber around a forward ref fiber, and the inner one holds its hooks and children.
- */
+// `memo(forwardRef(...))` mounts as a memo fiber around the forward ref fiber that holds the hooks.
 const findMountedFiber = (): Fiber | null => {
   let fiber = traverseFiber(
     latestRoot?.current ?? null,
@@ -336,10 +325,6 @@ const findMountedFiber = (): Fiber | null => {
   return fiber;
 };
 
-/**
- * Whether a render has more fibers than a comparison can handle, like a subtree repeated
- * at every level, which doubles with each.
- */
 const isTooLarge = (fiber: Fiber): boolean => {
   let count = 0;
   const pending = [...getChildren(fiber)];
@@ -451,11 +436,8 @@ const trackRequest = <Result>(request: Promise<Result>): Promise<Result> => {
   pendingRequests++;
   return request.finally(() => pendingRequests--);
 };
-/**
- * The answer to a request for another origin, which the harness blocks: JSON with any
- * field, so an app that fetches its data from an API renders around it. Its `error` and
- * `errors` are absent, as in a successful response.
- */
+// HACK: external requests are blocked, so answer with JSON that has any field but `error` and
+// `errors`.
 const createStandInResponse = (): Response => {
   const response = new Response("{}", { headers: { "content-type": "application/json" } });
   Object.defineProperty(response, "json", {
@@ -482,10 +464,6 @@ XMLHttpRequest.prototype.send = function send(...args) {
 
 const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
-/**
- * What an error says, including a plain object thrown with a `message`, as a data client
- * might throw for a failed request.
- */
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
   const message: unknown =
@@ -493,10 +471,6 @@ const getErrorMessage = (error: unknown): string => {
   return typeof message === "string" ? message : String(error);
 };
 
-/**
- * An error and how many wrappers enclose the component that threw it, read from the depth
- * markers on React's component stack: none when it threw above them all.
- */
 const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
   const componentStack = errorInfo?.componentStack;
   return {
@@ -505,23 +479,15 @@ const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
   };
 };
 
-/**
- * An error boundary of the app's own, like one its setup wraps every component in, catches
- * a render error before the harness's boundary does. React still reports it, through
- * `onCaughtError` from React 19 and as a global error event before, so a component that
- * rendered nothing can say why.
- */
+// An app's own error boundary catches first; React still reports it through `onCaughtError` (19) or
+// a global error event (18).
 const recordCaughtError = (error: unknown, errorInfo?: ErrorInfo): void => {
   caughtError ??= recordError(error, errorInfo);
 };
 
 window.addEventListener("error", (event) => recordCaughtError(event.error));
 
-/**
- * Waits for the page to go quiet: no requests in flight and, once mounting, the component
- * rendered. Data loads through mocked APIs, so a screen right after an action often still
- * shows its loading state.
- */
+// HACK: mocked data loads after a delay, so poll until requests finish and the component rendered.
 const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
   do await wait();
@@ -582,10 +548,7 @@ const isMountedType = (type: unknown): boolean =>
     type === Reflect.get(Object(mountedType), "type") ||
     type === Reflect.get(Object(mountedType), "render"));
 
-/**
- * Whether a child component, not the mounted one, created an element: React records the
- * component that rendered each element as its owner in development builds.
- */
+// HACK: React records an element's owner only in development builds, as `_debugOwner`.
 const isRenderedByChild = (fiber: Fiber): boolean => {
   const owner: unknown = Reflect.get(fiber, "_debugOwner");
   const ownerType: unknown = owner && typeof owner === "object" ? Reflect.get(owner, "type") : null;
@@ -647,21 +610,15 @@ const isComponentType = (value: unknown): boolean =>
   typeof value === "function" ||
   (typeof value === "object" && value !== null && "$$typeof" in value);
 
-/**
- * A component, the provider of a context, or the `Root` of a namespace of parts, like Base
- * UI's `Menu`. React 18 renders a context itself as its consumer.
- */
+// React 18 renders a context itself as its consumer.
 const getComponentType = (value: unknown): unknown => {
   if (!isComponentType(value)) return Reflect.get(Object(value), "Root");
   const provider = Reflect.get(Object(value), "Provider");
   return "Consumer" in Object(value) && isComponentType(provider) ? provider : value;
 };
 
-/**
- * Loads a wrapper's component. A package may export the part an error names under a
- * shorter name, like `Content` for Radix's internal `MenuContent`, a longer one, like
- * `DropdownMenu` for `Menu`, or only as its `Root`.
- */
+// A package may export the part an error names under a shorter or longer name, or only as its
+// `Root`.
 const loadWrapper = async ({ candidate }: Wrapper): Promise<LoadedWrapper | null> => {
   const isPackage = candidate.kind === "package";
   const query = new URLSearchParams(
@@ -703,7 +660,7 @@ const isAsyncFunction = (
 ): value is (props: Record<string, unknown>) => Promise<unknown> =>
   typeof value === "function" && value.constructor.name === "AsyncFunction";
 
-/** An app that renders its own router, like its `App`, mounts outside the harness's. */
+// HACK: react-router reports an app's own router only through this error.
 const NESTED_ROUTER_PATTERN = /cannot render a <Router> inside another <Router>/;
 
 const ASYNC_CLIENT_COMPONENT_PATTERN =
@@ -714,10 +671,6 @@ const isFunctionComponent = (
 ): value is (props: Record<string, unknown>) => unknown =>
   typeof value === "function" && !Reflect.get(Object(value.prototype), "isReactComponent");
 
-/**
- * A component of the same name as one a server rendered, which returns what it rendered,
- * so the mounted tree still has a fiber for it.
- */
 const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNode) => {
   // HACK: what a server component rendered is whatever React accepts as children.
   const resolved = (): ReactNode => output as ReactNode;
@@ -727,10 +680,7 @@ const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNo
   return resolved;
 };
 
-/**
- * Calls a component as a server would, or returns null for one that only renders on the
- * client, which throws outside React for want of its hooks.
- */
+// A client-only component throws outside React for want of hooks, so it renders normally instead.
 const callServerComponent = async (
   type: (props: Record<string, unknown>) => unknown,
   props: Record<string, unknown>,
@@ -742,13 +692,7 @@ const callServerComponent = async (
   }
 };
 
-/**
- * Renders the server components in a tree as a server does before the browser gets it:
- * each async component is awaited, and what it returns, and every element passed as a
- * prop, like a Suspense `fallback`, is resolved in turn. Once a page turns out to render
- * async components under synchronous ones, every component is called this way, except
- * those that need a client.
- */
+// HACK: resolves server components as a server would before the browser gets the tree.
 const resolveServerTree = async (node: unknown, isEveryComponent = false): Promise<unknown> => {
   if (Array.isArray(node))
     return Promise.all(node.map((item) => resolveServerTree(item, isEveryComponent)));
@@ -777,10 +721,7 @@ const resolveServerTree = async (node: unknown, isEveryComponent = false): Promi
   return cloneElement(node, Object.fromEntries(props));
 };
 
-/**
- * A component that only renders its children, named for how many wrappers enclose it, so
- * that React's component stack for an error says which wrapper it came from.
- */
+// Named by depth so React's component stack says which wrapper an error came from.
 const getDepthMarker = (depth: number): ComponentType<{ children?: ReactNode }> => {
   const cached = depthMarkers.get(depth);
   if (cached) return cached;
@@ -894,13 +835,11 @@ const preventNavigation = (event: Event): void => {
 
 document.addEventListener("click", preventNavigation, true);
 document.addEventListener("submit", preventNavigation, true);
-// Scripts navigate too, like next-auth setting `location.href` when sign-in fails, and
-// leaving the page would unload the harness.
+// HACK: scripts navigate too, and leaving the page would unload the harness.
 navigation.addEventListener("navigate", (event) => {
   if (event.cancelable && !event.hashChange) event.preventDefault();
 });
-// Going back can't be canceled, and the harness is the first page, so a "Go back" button
-// calling `navigate(-1)` would leave it.
+// HACK: going back can't be canceled, and the harness is the first page.
 history.back = () => {};
 history.go = () => {};
 

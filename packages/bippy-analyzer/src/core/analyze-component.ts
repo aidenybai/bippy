@@ -18,10 +18,6 @@ interface FileContext {
   displayNames: Map<string, string | null>;
 }
 
-/**
- * Lowers one component and runs our analysis passes on its HIR: the symbolic render tree,
- * its bindings and their domains, and its handlers.
- */
 export const analyzeComponent = (
   reactFunction: CompiledFunction,
   context: FileContext,

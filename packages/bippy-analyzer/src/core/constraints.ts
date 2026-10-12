@@ -18,10 +18,7 @@ const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
-/**
- * A difference constraint `left - right <= constant` (or `<` when strict) between two
- * numeric places. `#` stands for the constant zero.
- */
+/** `left - right <= constant` (`<` when strict); `#` is the constant zero. */
 export interface Bound {
   left: string;
   right: string;
@@ -49,10 +46,6 @@ interface Assumption {
   places: AssumedPlace[];
 }
 
-/**
- * What is known along one path through the render tree: the values each place can still
- * hold, the outcomes of tests that couldn't be reduced to a place, and numeric bounds.
- */
 export interface Constraints {
   values: Map<string, AbstractValue[]>;
   assumptions: Map<string, Assumption>;
@@ -139,11 +132,7 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
   candidate.weight < current.weight ||
   (candidate.weight === current.weight && candidate.isStrict && !current.isStrict);
 
-/**
- * Checks a set of difference constraints for a contradiction with Floyd–Warshall: the
- * constraints are inconsistent exactly when some atom has a negative cycle to itself.
- * Every `.length` is also known to be at least zero.
- */
+// Floyd–Warshall: inconsistent exactly when some atom has a negative cycle to itself.
 const areBoundsConsistent = (bounds: Bound[]): boolean => {
   const lengthBounds = bounds
     .flatMap((bound) => [bound.left, bound.right])
@@ -202,10 +191,6 @@ const isBooleanExpression = (value: SymbolicValue): boolean =>
   (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
   (value.kind === "UnaryExpression" && value.operator === "!");
 
-/**
- * Gives the literal a value must be when the constraints decide it: a place narrowed to one
- * literal, or a comparison whose outcome is known.
- */
 export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
   if (isBooleanExpression(value)) {
     const outcome = evaluate(value, constraints);
@@ -247,10 +232,6 @@ const evaluateTruthiness = (values: AbstractValue[]): boolean | null => {
   return null;
 };
 
-/**
- * Decides `value` as a test under `constraints`: `true`, `false`, or `null` when both are
- * still possible.
- */
 export const evaluate = (value: SymbolicValue, constraints: Constraints): boolean | null => {
   const assumption = constraints.assumptions.get(getValueKey(value));
   if (assumption) return assumption.outcome;
@@ -293,10 +274,7 @@ const restrictPlace = (
   return next;
 };
 
-/**
- * Whether a value reads something the analysis can't see. Two unknowns print alike, so
- * an assumption about one, kept by its text, would decide the other.
- */
+// Unknowns print alike, so an assumption about one, keyed by its text, would decide another.
 const hasUnknownPart = (value: SymbolicValue): boolean => {
   let hasUnknown = false;
   forEachSymbolicValue(value, (part) => {
@@ -305,10 +283,6 @@ const hasUnknownPart = (value: SymbolicValue): boolean => {
   return hasUnknown;
 };
 
-/**
- * Narrows `constraints` by assuming `value` tests as `outcome`. Returns `null` when that
- * contradicts what is already known.
- */
 export const assume = (
   value: SymbolicValue,
   outcome: boolean,
@@ -362,10 +336,6 @@ export const assume = (
   return next;
 };
 
-/**
- * Drops every assumption and bound about a binding after an update changes it. An update that
- * keeps the array length, like `items.map(...)`, keeps what is known about `.length`.
- */
 export const forgetBinding = (
   constraints: Constraints,
   bindingId: number,

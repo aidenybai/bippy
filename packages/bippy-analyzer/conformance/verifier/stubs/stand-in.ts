@@ -13,12 +13,8 @@ const EMPTY_ARRAY_METHODS = new Set([
   "values",
 ]);
 
-/**
- * A stand-in for any value: the fields of a library object, like a TanStack table, that
- * its type has too many of to sample, and the exports of a server SDK. It can be called,
- * constructed, extended, read, awaited and iterated, acts as an empty list, and React
- * renders nothing for it.
- */
+// HACK: callable, constructable, iterable empty value for objects too wide to sample; `then` and
+// `$$typeof` stay undefined so it is neither awaited nor rendered.
 export const STAND_IN: unknown = new Proxy(function standIn() {}, {
   apply: () => STAND_IN,
   construct: () => Object(STAND_IN),

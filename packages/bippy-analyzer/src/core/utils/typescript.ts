@@ -9,10 +9,6 @@ import type { SourceLocation } from "../../react-compiler/HIR/HIR.js";
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react[\\/]/;
 const REACT_ELEMENT_TYPE_NAMES = new Set(["ReactElement", "ReactPortal", "ReactNode", "Element"]);
 
-/**
- * Whether a value of this type can be React elements: the type, or a member of its union,
- * is one of React's element types as React's own typings declare it.
- */
 export const isReactElementType = (type: Type): boolean =>
   (type.isUnionType() ? type.getTypes() : [type]).some((member) => {
     const symbol = member.getSymbol();
@@ -45,18 +41,11 @@ const getNodeIndex = (sourceFile: SourceFile): Map<string, Node> => {
   return index;
 };
 
-/**
- * Finds the TypeScript node a HIR location was lowered from: the innermost node whose
- * range is exactly `[start, end)`.
- */
 export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
   loc === GeneratedSource
     ? null
     : (getNodeIndex(sourceFile).get(getRangeKey(loc.start.index, loc.end.index)) ?? null);
 
-/**
- * The symbol a reference, or the name of `a.b`, resolves to through import aliases.
- */
 const resolveSymbol = (checker: Checker, node: Node) => {
   const nameNode = t.isPropertyAccessExpression(node) ? node.name : node;
   if (!t.isIdentifier(nameNode)) return null;
@@ -65,10 +54,6 @@ const resolveSymbol = (checker: Checker, node: Node) => {
   return symbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
 };
 
-/**
- * Identifies the declaration a reference resolves to, through imports and re-exports, as
- * `<file>#<name>`. Two components with the same name in different files stay distinct.
- */
 export const getDeclarationKey = (checker: Checker, node: Node): string | null => {
   const target = resolveSymbol(checker, node);
   const [declaration] = target?.declarations ?? [];
@@ -76,20 +61,12 @@ export const getDeclarationKey = (checker: Checker, node: Node): string | null =
   return declaration ? `${declaration.path}#${target.name}` : null;
 };
 
-/**
- * The context a JSX tag provides, as its declaration key: the context of `X.Provider`, or
- * `X` itself, which React 19 renders as its provider.
- */
+// React 19 renders a context itself as its provider.
 export const getContextKey = (checker: Checker, node: Node): string | null =>
   t.isPropertyAccessExpression(node) && node.name.text === "Provider"
     ? getDeclarationKey(checker, node.expression)
     : getDeclarationKey(checker, node);
 
-/**
- * Gives the name React exports a reference under, following import aliases and re-exports
- * to React's own declarations. `React.useState`, `import { useState as useLocal }` and a
- * re-export from a local barrel all resolve to `useState`.
- */
 export const getReactExportName = (checker: Checker, node: Node): string | null => {
   const target = resolveSymbol(checker, node);
   return target?.declarations.some((declaration) =>
@@ -104,9 +81,6 @@ const hasModifier = (node: Node, kind: SyntaxKind): boolean =>
   Array.isArray(node.modifiers) &&
   node.modifiers.some((modifier: Node) => modifier.kind === kind);
 
-/**
- * Maps each exported local name in a file to the name it is exported as.
- */
 export const collectExportNames = (sourceFile: SourceFile): Map<string, string> => {
   const exportNames = new Map<string, string>();
   for (const statement of sourceFile.statements) {
@@ -142,10 +116,6 @@ export const collectExportNames = (sourceFile: SourceFile): Map<string, string> 
   return exportNames;
 };
 
-/**
- * The `displayName` each component is given. A name assigned from anything but a string
- * literal, like `Sheet.displayName = Dialog.displayName`, is known only at runtime: null.
- */
 export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string | null> => {
   const displayNames = new Map<string, string | null>();
   for (const statement of sourceFile.statements) {

@@ -1,9 +1,5 @@
-/**
- * Stands in for nuqs's `createSearchParamsCache`, which keeps a request's parsed search
- * params in React's `cache`, kept only on a server. Here the parsed params persist for the
- * page, and before a page parses any, like a listing mounted on its own, every key has its
- * parser's default, as a URL without them would.
- */
+// HACK: nuqs keeps parsed params in React's server-only `cache`; until parsed, every key has its
+// parser's default.
 type SearchParamValue = string | string[] | undefined;
 
 interface Parser {

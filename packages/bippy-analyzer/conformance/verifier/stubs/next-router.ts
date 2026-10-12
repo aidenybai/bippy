@@ -1,7 +1,4 @@
-/**
- * Stands in for `next/router` outside a Next pages app, which throws when a component reads
- * the router without one mounted.
- */
+// HACK: next/router throws outside a mounted pages router.
 const events = {
   on: () => undefined,
   off: () => undefined,

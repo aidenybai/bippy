@@ -1,10 +1,6 @@
 import { STAND_IN } from "./stand-in.js";
 
-/**
- * Stands in for `next-intl/server`, which reads the request's locale and messages on a
- * server. A mount renders in English, and a server component's translations are their
- * keys, like `Index.title`.
- */
+// HACK: next-intl/server needs a request; translations render as their keys.
 interface TranslationOptions {
   namespace?: string;
 }

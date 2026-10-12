@@ -1,7 +1,4 @@
-/**
- * Stands in for `next/navigation` outside a Next app router, which throws when a component
- * reads the router without one mounted.
- */
+// HACK: next/navigation throws outside a mounted app router.
 const router = {
   push: () => undefined,
   replace: () => undefined,

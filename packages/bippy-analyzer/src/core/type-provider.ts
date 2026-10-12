@@ -45,11 +45,7 @@ const isPrimitiveType = (type: TypeScriptType): boolean =>
   Boolean(type.flags & PRIMITIVE_FLAGS) ||
   (type.isUnionType() && type.getTypes().every(isPrimitiveType));
 
-/**
- * Types the compiler's HIR from the TypeScript checker. The compiler only knows React's
- * APIs and a few globals; the checker knows every import, prop and call result. Values the
- * compiler leaves untyped take the type the checker gives their expression.
- */
+/** Types the compiler's HIR from the TypeScript checker. */
 export class CompilerTypeProvider implements TypeProvider {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
@@ -110,11 +106,7 @@ export class CompilerTypeProvider implements TypeProvider {
     return null;
   }
 
-  /**
-   * A signature only says which arguments are read and what kind of value comes back. It
-   * can't say an argument may alias the return value, so functions returning anything but a
-   * primitive keep the compiler's conservative handling of unknown calls.
-   */
+  // A signature can't say an argument aliases the return, so only primitive returns are precise.
   #convertSignature(signature: Signature, shapes: ShapeRegistry, depth: number): BuiltInType {
     const parameterEffects = signature
       .getParameters()
@@ -140,9 +132,6 @@ export class CompilerTypeProvider implements TypeProvider {
     });
   }
 
-  /**
-   * Arrays, tuples, and `Map` and `Set` from the standard library.
-   */
   #getCollectionType(type: TypeScriptType): BuiltInType | null {
     const symbol = type.getSymbol();
     const isLibCollection = symbol?.declarations.some((declaration) =>
@@ -163,10 +152,7 @@ export class CompilerTypeProvider implements TypeProvider {
     };
   }
 
-  /**
-   * TypeScript's `readonly` is shallow: `readonly Item[]` still lets each item be mutated.
-   * Only a readonly collection of primitives can't be mutated at all.
-   */
+  // `readonly` is shallow, so only a readonly collection of primitives can't be mutated.
   #isDeeplyReadonly(type: TypeScriptType, collection: Collection): boolean {
     if (this.#checker.getPropertyOfType(type, collection.mutatingMethod)) return false;
     return type.isTypeReference() && this.#checker.getTypeArguments(type).every(isPrimitiveType);

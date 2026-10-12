@@ -19,7 +19,6 @@ const getParameterNames = (node: Node): string[] =>
       )
     : [];
 
-/** The names a file imports zustand's store creators under, like `create`. */
 const getCreatorNames = (sourceFile: SourceFile): Set<string> => {
   const names = new Set<string>();
   for (const statement of sourceFile.statements) {
@@ -35,10 +34,7 @@ const getCreatorNames = (sourceFile: SourceFile): Set<string> => {
   return names;
 };
 
-/**
- * The function a store is created from, `(set) => ({ ... })`, through the curried
- * `create<State>()(...)` and middleware like `persist(...)` that wrap it.
- */
+// Unwraps curried `create<State>()(...)` and middleware like `persist(...)`.
 const findCreatorFunction = (initializer: Node, creatorNames: Set<string>): Node | null => {
   if (!t.isCallExpression(initializer)) return null;
   const callee = initializer.expression;
@@ -53,7 +49,6 @@ const findCreatorFunction = (initializer: Node, creatorNames: Set<string>): Node
   return argument && isFunctionNode(argument) ? argument : null;
 };
 
-/** The object a function returns, from an expression body or a `return` statement. */
 const getReturnedObject = (fn: Node): Node | null => {
   if (!t.isArrowFunction(fn) && !t.isFunctionExpression(fn)) return null;
   const body = skipParentheses(fn.body);
@@ -74,10 +69,6 @@ const getLiteralValue = (node: Node): StoreFieldValue | null => {
   return null;
 };
 
-/**
- * What one field is set to: an argument of the action, a literal, the negation of the
- * field itself read from the previous state, or something else.
- */
 const getFieldValue = (
   node: Expression,
   field: string,
@@ -101,10 +92,6 @@ const getFieldValue = (
   return { kind: "Unknown" };
 };
 
-/**
- * The fields a `set` call assigns, from `set({ open })` or `set((state) => ({ ... }))`.
- * Null when a field's name is computed, as in `set({ [name]: open })`.
- */
 const getAssignments = (argument: Node, actionParameters: string[]): StoreAssignment[] | null => {
   const expression = skipParentheses(argument);
   const [stateParameter = null] = getParameterNames(expression);
@@ -133,7 +120,6 @@ const getAssignments = (argument: Node, actionParameters: string[]): StoreAssign
   return assignments;
 };
 
-/** The `set` calls an action makes directly, not in callbacks it passes on. */
 const findSetCalls = (node: Node, setName: string): Node[] => {
   const calls: Node[] = [];
   const visit = (current: Node): void => {
@@ -150,10 +136,6 @@ const findSetCalls = (node: Node, setName: string): Node[] => {
   return calls;
 };
 
-/**
- * What an action sets. One `set` call that is all the action does assigns its fields as
- * written; an action that does more sets the same fields to values the model can't tell.
- */
 const getActionAssignments = (action: Node, setName: string): StoreAssignment[] | null => {
   if (!t.isArrowFunction(action) && !t.isFunctionExpression(action)) return null;
   const parameters = getParameterNames(action);
@@ -178,10 +160,6 @@ const getActionAssignments = (action: Node, setName: string): StoreAssignment[] 
     : fields.map(({ field }) => ({ field, value: { kind: "Unknown" } }));
 };
 
-/**
- * The zustand stores a file creates, by declaration key, with what each action sets, like
- * `toggleDarkMode` setting `darkmodeEnabled` to its argument.
- */
 export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreModel> => {
   const models = new Map<string, StoreModel>();
   const creatorNames = getCreatorNames(sourceFile);

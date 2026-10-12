@@ -117,26 +117,15 @@ const ORDERED_HOOK_KINDS = new Set<string>([
   "useContext",
 ]);
 
-/**
- * A component given a handler, like `<Modal onClose>`, may call it from any element it
- * renders, so a click on any of its elements, under any event name, can trigger it.
- */
+// A component may call a handler prop from any element it renders, under any event name.
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
 const isLabelTarget = (label: TriggerLabel, target: ActionTarget): boolean =>
   label.tag === target.tag && (label.text === null || label.text === target.label);
 
-/**
- * The events the harness dispatches itself. Any other, like `onFocus` or `onPlay`, may fire
- * as a side effect of an action, as a click focuses its target and `video.play()` plays.
- */
+// Other events can fire as a side effect of these, like focus on a click.
 const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
 
-/**
- * Whether an action runs a handler: surely, when it acts on the handler's own element, or
- * maybe, when the handler belongs to a component or to an element the click bubbles up to,
- * where the component or a `stopPropagation` decides.
- */
 const getTrigger = (label: TriggerLabel, action: Action): Trigger | null => {
   if (isComponentTag(label.tag))
     return label.text === null || label.text.includes(action.label) ? "maybe" : null;

@@ -16,11 +16,7 @@ interface MountFailurePattern {
   pattern: RegExp;
 }
 
-/**
- * Why a component couldn't mount, read from its error. Each failure points at a different
- * fix: an async server component can't mount in a browser at all, while a missing provider
- * or environment variable is the harness's job to supply.
- */
+// HACK: libraries report these failures only as error text, so they're classified by message.
 const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   {
     failure: "server-component",
@@ -60,7 +56,6 @@ const PARENT_NAME_PATTERNS = [
   /wrapped in a <([A-Z]\w*)/,
 ];
 
-/** The parent a provider error names, like `Menu` in "`MenuItem` must be used within `Menu`". */
 export const getParentName = (message: string): string | null =>
   PARENT_NAME_PATTERNS.map((pattern) => pattern.exec(message)?.[1]).find(Boolean) ?? null;
 

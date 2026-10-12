@@ -25,10 +25,6 @@ export const negate = (value: SymbolicValue): SymbolicValue =>
     ? value.value
     : { kind: "UnaryExpression", operator: "!", value };
 
-/**
- * The test a branch checks, as an expression: the value itself, or `value != null` for a
- * nullish test.
- */
 export const getTestExpression = ({
   test,
   testKind,
@@ -45,10 +41,6 @@ export const getTestExpression = ({
       }
     : test;
 
-/**
- * Whether a value is truthy no matter what the bindings hold: primitives by their value,
- * JSX, functions, objects and arrays always. `null` when it depends.
- */
 export const getKnownTruthiness = (value: SymbolicValue): boolean | null => {
   switch (value.kind) {
     case "Primitive":

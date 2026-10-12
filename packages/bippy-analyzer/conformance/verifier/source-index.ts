@@ -22,16 +22,11 @@ const getImportedNames = (clause: string): string[] =>
     return name ? [name] : [];
   });
 
-/** The modules a file imports values from, and the names it imports from each. */
 export const parseImports = (text: string): ParsedImport[] =>
   [...text.matchAll(IMPORT_PATTERN)].flatMap(([, typeOnly, clause = "", specifier = ""]) =>
     typeOnly ? [] : [{ specifier, names: getImportedNames(clause) }],
   );
 
-/**
- * The capitalized names a file exports, each under the name a module import sees, like
- * `default` for `export default function Panel`.
- */
 export const parseExports = (text: string): Array<{ name: string; exportName: string }> => [
   ...[...text.matchAll(EXPORT_DECLARATION_PATTERN)].map(([, isDefault, name = ""]) => ({
     name,

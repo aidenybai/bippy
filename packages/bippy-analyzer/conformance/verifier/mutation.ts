@@ -21,10 +21,6 @@ interface ProbedWarning {
 const PLACE_PATTERN = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/;
 const MEMBER_ACCESS_PATTERN = /^!?(\?\.|\.|\[)/;
 
-/**
- * Probes the place a warning says is mutated, when it is a plain reference read for a
- * member access like `tags.push(…)`, so the page can watch that exact object.
- */
 export const createMutationProbe = (
   file: string,
   sourceText: string,
@@ -62,7 +58,6 @@ const getOwnerPredicate = (
     hookIndex >= 0 ? owner === `state:${hookIndex}` : Boolean(owner?.startsWith("state:"));
 };
 
-/** Reads each file a component's warnings are in once. */
 const createSourceReader = (): ((file: string) => string) => {
   const sources = new Map<string, string>();
   return (file) => {
@@ -106,13 +101,7 @@ const formatOwner = (owner: string, stateBindings: Binding[] | null): string => 
   return binding ? `state ${binding.name}` : `state hook ${name}`;
 };
 
-/**
- * Checks each mutation warning against what the page saw. A warning is covered when its
- * probed object was written (and, for a lost update, React didn't re-render), refuted when
- * the probed code ran on the right owner but never mutated it. Runtime mutations of state
- * or props that no warning covers are listed as unwarned, which isn't a counterexample since
- * the analyzer only reports mutations it can prove.
- */
+// Unwarned mutations aren't refutations: the analyzer only warns on mutations it can prove.
 export const scoreWarnings = (
   analysis: ComponentAnalysis,
   observations: Observation[],

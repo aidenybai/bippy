@@ -21,10 +21,6 @@ const getChildValues = (value: object): unknown[] => {
   return Object.values(value);
 };
 
-/**
- * Visits every plain object and array reachable from a value, stopping at class instances,
- * cycles and a depth limit.
- */
 export const forEachPlainObject = (value: unknown, visitor: (object: object) => void): void => {
   const seen = new Set<object>();
   const visit = (current: unknown, depth: number): void => {
@@ -37,11 +33,6 @@ export const forEachPlainObject = (value: unknown, visitor: (object: object) => 
   visit(value, 0);
 };
 
-/**
- * Serializes the plain data reachable from a value, so two snapshots of the same object
- * differ exactly when its contents changed. Functions, class instances and cycles become
- * markers instead of being followed.
- */
 export const snapshotValue = (value: unknown): string => {
   const ancestors = new Set<object>();
   let nodeCount = 0;
