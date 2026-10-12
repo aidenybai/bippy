@@ -29,4 +29,10 @@ describe("samples of parsed strings", () => {
       isOpen: false,
     });
   });
+
+  it("mounts an untyped value a name marks as a date with a date", () => {
+    expect(getBinding(getComponent(project, "DateLabel"), "endDate").samples).toEqual([
+      { kind: "Value", value: "2024-01-01T00:00:00.000Z" },
+    ]);
+  });
 });

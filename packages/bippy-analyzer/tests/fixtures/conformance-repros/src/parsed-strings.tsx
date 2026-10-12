@@ -17,3 +17,8 @@ export const Receipt = ({ createdAt, paidOn, price }: ReceiptProps) => (
     )}
   </p>
 );
+
+// oxlint-disable-next-line typescript/no-explicit-any -- an untyped prop, as in plain JavaScript.
+export const DateLabel = ({ endDate }: { endDate: any }) => (
+  <p>{new Date(endDate).toISOString()}</p>
+);

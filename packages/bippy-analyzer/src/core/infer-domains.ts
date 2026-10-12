@@ -184,7 +184,8 @@ const getSamples = (
   depth = 0,
   name: string | null = null,
 ): Sample[] => {
-  if (!type || type.isErrorType() || type.flags & TypeFlags.AnyOrUnknown) return [TEXT_SAMPLE];
+  if (!type || type.isErrorType() || type.flags & TypeFlags.AnyOrUnknown)
+    return getStringSamples(name).slice(0, 1);
   const typeText = checker.typeToString(type);
   if (ELEMENT_TYPE_PATTERN.test(typeText)) return [{ kind: "Element" }];
   if (NODE_TYPE_PATTERN.test(typeText)) return [TEXT_SAMPLE];
