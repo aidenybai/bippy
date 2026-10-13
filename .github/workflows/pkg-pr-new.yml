@@ -33,4 +33,4 @@ jobs:
         run: bun run build
 
       - name: Publish
-        run: pbunx pkg-pr-new publish --compact ./packages/bippy
+        run: bunx pkg-pr-new publish --compact ./packages/bippy
