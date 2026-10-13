@@ -110,12 +110,12 @@ export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
           : null,
         wrappers: [],
       };
-      request.wrappers = await resolveWrappers(
+      ({ wrappers: request.wrappers } = await resolveWrappers(
         page,
         { ...request, scenario: null },
         analysis,
         project.projectIndex,
-      );
+      ));
       const session: Session = { component, observations: [] };
       sessions.push(session);
       let current: Capture = await mountInPage(page, request);

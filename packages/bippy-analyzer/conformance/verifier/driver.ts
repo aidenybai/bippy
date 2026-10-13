@@ -47,6 +47,11 @@ export const performInPage = (page: Page, actionKey: string): Promise<Capture | 
 export const listActionsInPage = (page: Page): Promise<Action[]> =>
   withTimeout(page.evaluate(() => window.__verify.actions()));
 
+export interface ResolvedWrappers {
+  wrappers: Wrapper[];
+  mounted: Capture | null;
+}
+
 interface Layer {
   proposals: Wrapper[];
   cursor: number;
@@ -68,7 +73,7 @@ export const resolveWrappers = async (
   request: MountRequest,
   analysis: ComponentAnalysis,
   project: ProjectIndex,
-): Promise<Wrapper[]> => {
+): Promise<ResolvedWrappers> => {
   const layers: Layer[] = [];
   let newest: Layer | null = null;
   const getWrappers = (): Wrapper[] => layers.flatMap((layer) => getLayerWrapper(layer) ?? []);
@@ -85,7 +90,8 @@ export const resolveWrappers = async (
   };
   for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && layers.length <= MAX_WRAPPERS; attempt++) {
     const capture = await mountInPage(page, { ...request, wrappers: getWrappers() });
-    if (!capture.error || capture.shapes.length > 0) break;
+    if (!capture.error || capture.shapes.length > 0)
+      return { wrappers: getWrappers(), mounted: capture };
     const failure = getCaptureFailure(capture);
     const thrower = capture.errorDepth === null ? undefined : layers[capture.errorDepth];
     if (newest) {
@@ -134,7 +140,7 @@ export const resolveWrappers = async (
       newest,
     );
   }
-  return getWrappers();
+  return { wrappers: getWrappers(), mounted: null };
 };
 
 const getCaptureKey = (capture: Capture): string =>
@@ -150,7 +156,7 @@ export const exploreComponent = async (
   if (!exportName) return [];
   const observations: Observation[] = [];
   const propCombinations = getPropCombinations(analysis);
-  const wrappers = await resolveWrappers(
+  const { wrappers, mounted } = await resolveWrappers(
     page,
     {
       moduleUrl,
@@ -174,7 +180,8 @@ export const exploreComponent = async (
       return capture;
     };
 
-    const initial = await mountInPage(page, request);
+    const initial =
+      mounted && props === propCombinations[0] ? mounted : await mountInPage(page, request);
     observations.push({ props, path: [], action: null, before: null, after: initial });
     if (initial.error && initial.shapes.length === 0) continue;
 
@@ -185,7 +192,7 @@ export const exploreComponent = async (
     for (const currentPath of queue) {
       if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
       if (currentPath.length >= MAX_ACTION_DEPTH) continue;
-      if (!(await replay(currentPath))) continue;
+      if (currentPath.length > 0 && !(await replay(currentPath))) continue;
       const actions = await listActionsInPage(page);
       for (const action of actions) {
         if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
