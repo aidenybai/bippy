@@ -32,7 +32,16 @@ Examples: `fix(core): harden useFiber capture across React versions`, `feat(webs
 
 Keep each commit and PR to one concern. Never merge with failing CI, and merge only when asked.
 
-Use the `/writing-guidelines` skill for PR descriptions.
+Follow the writing rules below for PR descriptions.
+
+## Writing
+
+Follow these steps for documentation, technical prose, and PR descriptions.
+
+1. Fetch and read [the current writing rules](https://aidenybai.com/blog/write.md).
+2. Read the code, docs, and history behind the subject. If they don't answer a question, ask instead of guessing.
+3. Pick the content type from the rules. Outline the headings, then draft each section.
+4. Check the text against every rule. After you revise, check the revised text again.
 
 ## Style guide
 

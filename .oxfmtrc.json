@@ -5,7 +5,6 @@
   "ignorePatterns": [
     "**/routeTree.gen.ts",
     "packages/bippy/src/react-internals/generated/**",
-    ".agents/skills/*/sample/**",
     "packages/bippy/tests/fixtures/react-devtools-headless/fixtures/hook-sources/**"
   ]
 }
