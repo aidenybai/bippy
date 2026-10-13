@@ -931,9 +931,12 @@ export class Interpreter {
   }
 
   #storeCallback(value: SymbolicValue, loc: SourceLocation, state: WalkState): void {
-    if (value.kind !== "Function") return;
-    if (this.#mode === "render") this.#addLaterCallbacks([value], loc);
-    else this.#visitCallbackArgument(value, state);
+    if (value.kind === "Function") this.#passCallbacks([value], loc, state);
+  }
+
+  #passCallbacks(args: SymbolicValue[], loc: SourceLocation, state: WalkState): void {
+    if (this.#mode === "render") this.#addLaterCallbacks(args, loc);
+    else for (const argument of args) this.#visitCallbackArgument(argument, state);
   }
 
   #evaluateHookCall(
@@ -1207,8 +1210,7 @@ export class Interpreter {
         return createUnknown("async", value.loc);
       case "NewExpression": {
         const args = value.args.map((argument) => this.#read(getPlaceOrSpread(argument)));
-        if (this.#mode === "render") this.#addLaterCallbacks(args, value.loc);
-        else for (const argument of args) this.#visitCallbackArgument(argument, state);
+        this.#passCallbacks(args, value.loc, state);
         return createUnknown(value.kind, value.loc);
       }
       case "PropertyStore":
@@ -1701,32 +1703,13 @@ export class Interpreter {
   #collectRenderedHandlers(value: SymbolicValue, visited: Set<number>): void {
     const event = createUnknown("event", GeneratedSource);
     forEachJsxElement(value, (element) => {
-      for (const prop of element.props) {
-        if (prop.kind !== "JsxAttribute" || !isHandlerProp(element.tag, prop)) continue;
-        const handler = prop.value;
-        if (handler.kind === "Setter") this.#recordUpdate(handler.binding, event, ROOT_WALK_STATE);
-        if (handler.kind === "Binding") this.#callBinding(handler, [event], ROOT_WALK_STATE);
-        if (handler.kind !== "Function" || visited.has(handler.functionId)) continue;
-        visited.add(handler.functionId);
-        const fn = this.#getFunction(handler.functionId);
-        if (fn)
-          this.#collectRenderedHandlers(
-            this.#evaluateFunction(fn, [event], ROOT_WALK_STATE, handler.functionId),
-            visited,
-          );
-      }
+      for (const prop of element.props)
+        if (prop.kind === "JsxAttribute" && isHandlerProp(element.tag, prop))
+          this.#runCallback(prop.value, [event], visited);
     });
   }
 
-  #runCallback(callback: SymbolicValue, args: SymbolicValue[]): void {
-    if (callback.kind === "Function") {
-      const fn = this.#getFunction(callback.functionId);
-      if (fn)
-        this.#collectRenderedHandlers(
-          this.#evaluateFunction(fn, args, ROOT_WALK_STATE, callback.functionId),
-          new Set([callback.functionId]),
-        );
-    }
+  #runCallback(callback: SymbolicValue, args: SymbolicValue[], visited: Set<number>): void {
     if (callback.kind === "Setter")
       this.#recordUpdate(
         callback.binding,
@@ -1734,6 +1717,14 @@ export class Interpreter {
         ROOT_WALK_STATE,
       );
     if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
+    if (callback.kind !== "Function" || visited.has(callback.functionId)) return;
+    visited.add(callback.functionId);
+    const fn = this.#getFunction(callback.functionId);
+    if (fn)
+      this.#collectRenderedHandlers(
+        this.#evaluateFunction(fn, args, ROOT_WALK_STATE, callback.functionId),
+        visited,
+      );
   }
 
   collectEffects(callback: SymbolicValue, args: SymbolicValue[]): CollectedEffects {
@@ -1750,7 +1741,7 @@ export class Interpreter {
         callback.kind === "ObjectExpression"
           ? callback.properties.map((property) => property.value)
           : [callback];
-      for (const each of callbacks) this.#runCallback(each, args);
+      for (const each of callbacks) this.#runCallback(each, args, new Set());
       if (callback.kind === "Unknown")
         for (const binding of this.#bindings.values())
           if (isExternalSource(binding))
