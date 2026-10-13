@@ -4,7 +4,7 @@ import "../src/index";
 
 import React from "react";
 import * as ReactTestRenderer from "react-test-renderer";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getRDTHook } from "bippy";
 import { getFiberHooks } from "bippy/source";
 

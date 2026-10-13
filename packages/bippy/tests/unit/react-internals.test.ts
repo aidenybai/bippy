@@ -1,4 +1,4 @@
-import { expect, expectTypeOf, it, vi } from "vite-plus/test";
+import { expect, expectTypeOf, it, vi } from "vitest";
 import { createFiber, linkChildren } from "../conformance/fiber-fixture";
 import {
   compareSemver,

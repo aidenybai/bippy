@@ -1,6 +1,6 @@
 import "../../src/index"; // KEEP THIS LINE ON TOP
 
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import React from "react";
 
 import { didFiberRender, instrument } from "../../src/index";

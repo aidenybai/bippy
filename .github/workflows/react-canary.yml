@@ -18,22 +18,23 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Update to the latest experimental nightlies
-        run: pnpm --filter @bippy/e2e-refresh-experimental run update-experimental
+        run: bun run --filter @bippy/e2e-refresh-experimental update-experimental
       - name: Report nightly versions
-        run: node -e "const pkg = require('./packages/bippy/tests/fixtures/refresh-app-experimental/package.json'); console.log(JSON.stringify(pkg.dependencies, null, 2))"
+        run: bun -e "const pkg = require('./packages/bippy/tests/fixtures/refresh-app-experimental/package.json'); console.log(JSON.stringify(pkg.dependencies, null, 2))"
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
         working-directory: packages/bippy/tests/e2e
       - name: Run refresh suite against the nightlies
-        run: npx playwright test --project=refresh-experimental
+        run: bunx playwright test --project=refresh-experimental
         working-directory: packages/bippy/tests/e2e
         env:
           # Only the experimental fixture's dev server is needed; without

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getFlamegraphChartData, getRankedChartData } from "../src/profiling-charts";
 import type { ProfilingChartNode } from "../src/profiling-charts";
 

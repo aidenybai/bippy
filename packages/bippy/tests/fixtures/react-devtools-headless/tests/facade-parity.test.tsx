@@ -2,7 +2,7 @@ import "../src/index";
 
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installFacade } from "../src/facade";
 import { createTools } from "../src/index";
 import type { Facade, Tools, TreeNode } from "../src/types";

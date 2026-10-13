@@ -1,13 +1,4 @@
-import { execFileSync } from "node:child_process";
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -33,7 +24,7 @@ const getRequestedRef = (): string => {
   for (let argumentIndex = 0; argumentIndex < scriptArguments.length; argumentIndex++) {
     const argument = scriptArguments[argumentIndex];
     if (argument === "--help") {
-      console.log("Usage: pnpm --filter bippy sync:devtools [--ref <git-ref>]");
+      console.log("Usage: bun run --filter bippy sync:devtools [--ref <git-ref>]");
       process.exit(0);
     }
     if (argument !== "--ref") throw new Error(`Unknown argument: ${argument}`);
@@ -45,11 +36,13 @@ const getRequestedRef = (): string => {
   return requestedRef;
 };
 
-const runGit = (repositoryDirectory: string, gitArguments: string[]): string =>
-  execFileSync("git", ["-C", repositoryDirectory, ...gitArguments], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-  }).trim();
+const runGit = (repositoryDirectory: string, gitArguments: string[]): string => {
+  const result = Bun.spawnSync(["git", "-C", repositoryDirectory, ...gitArguments], {
+    stderr: "inherit",
+  });
+  if (!result.success) throw new Error(`git ${gitArguments[0]} failed`);
+  return result.stdout.toString().trim();
+};
 
 const getTestFiles = (reactDirectory: string): UpstreamTestFile[] => {
   const testFiles: UpstreamTestFile[] = [];
@@ -126,7 +119,7 @@ try {
   );
   rmSync(stagedHookSourcesDirectory, { force: true, recursive: true });
   cpSync(sourceHookSourcesDirectory, stagedHookSourcesDirectory, { recursive: true });
-  writeFileSync(stagedReferencePath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await Bun.write(stagedReferencePath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   rmSync(backupHookSourcesDirectory, { force: true, recursive: true });
   if (existsSync(hookSourcesDirectory)) {

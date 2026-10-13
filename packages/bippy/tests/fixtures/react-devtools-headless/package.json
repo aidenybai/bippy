@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "coverage": "vp test --coverage",
-    "test": "vp test"
+    "coverage": "vitest run --coverage",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
@@ -51,6 +51,6 @@
     "react-dom-19-2": "npm:react-dom@19.2.8",
     "react-test-renderer": "^19.3.0",
     "typescript": "^7.0.2",
-    "vite-plus": "latest"
+    "vitest": "4.1.11"
   }
 }

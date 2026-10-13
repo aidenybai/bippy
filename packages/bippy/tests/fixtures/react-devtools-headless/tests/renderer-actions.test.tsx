@@ -3,7 +3,7 @@ import "../src/index";
 import { cleanup, render } from "@testing-library/react";
 import { traverseFiber } from "bippy";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installFacade } from "../src/facade";
 import { getFiberDisplayName, getFiberTypeName } from "../src/fiber-metadata";
 import { createRendererActions } from "../src/renderer-actions";

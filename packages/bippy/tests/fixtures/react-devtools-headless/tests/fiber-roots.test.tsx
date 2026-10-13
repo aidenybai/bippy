@@ -1,7 +1,7 @@
 import "../src/index";
 
 import { cleanup, render } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installFacade } from "../src/facade";
 import {
   getFiberRoot,

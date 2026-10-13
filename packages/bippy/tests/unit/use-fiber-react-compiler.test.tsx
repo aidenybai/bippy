@@ -8,7 +8,7 @@ import { transformSync } from "@babel/core";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import React from "react";
 import * as compilerRuntime from "react/compiler-runtime";
-import { afterEach, expect, it } from "vite-plus/test";
+import { afterEach, expect, it } from "vitest";
 import { checkCallingFiber, createFiberRootRegistry, matchByProps } from "./use-fiber-oracle";
 
 interface CompiledProbeProps {

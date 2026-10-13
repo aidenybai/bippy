@@ -498,17 +498,21 @@ const findSharedIndex = (
   // bounds of a later, shorter root stack (e.g. truncated Error.stackTraceLimit)
   if (rootIndex >= rootStack.length) return -1;
   const source = rootStack[rootIndex].source;
-  hookSearch: for (let hookIndex = 0; hookIndex < hookStack.length; hookIndex++) {
-    if (hookStack[hookIndex].source === source) {
-      for (
-        let rootOffset = rootIndex + 1, hookOffset = hookIndex + 1;
-        rootOffset < rootStack.length && hookOffset < hookStack.length;
-        rootOffset++, hookOffset++
-      ) {
-        if (hookStack[hookOffset].source !== rootStack[rootOffset].source) continue hookSearch;
-      }
-      return hookIndex;
+  // A labeled `continue` would be shorter, but Vite's SSR transform rewrites a minified
+  // label that shares its name with an import, which produces invalid JavaScript.
+  for (let hookIndex = 0; hookIndex < hookStack.length; hookIndex++) {
+    if (hookStack[hookIndex].source !== source) continue;
+    let rootOffset = rootIndex + 1;
+    let hookOffset = hookIndex + 1;
+    while (
+      rootOffset < rootStack.length &&
+      hookOffset < hookStack.length &&
+      hookStack[hookOffset].source === rootStack[rootOffset].source
+    ) {
+      rootOffset++;
+      hookOffset++;
     }
+    if (rootOffset === rootStack.length || hookOffset === hookStack.length) return hookIndex;
   }
   return -1;
 };

@@ -1,6 +1,6 @@
 import "../src/index";
 
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { installFacade } from "../src/facade";
 import { createTools } from "../src/index";
 import { buildToolGroup, register } from "../src/mcp";

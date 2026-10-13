@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
-import { afterAll, afterEach, describe, expect, it } from "vite-plus/test";
+import { afterAll, afterEach, describe, expect, it } from "vitest";
 import {
   createBrowserBootstrapScript,
   createIsolatedReactRuntime,

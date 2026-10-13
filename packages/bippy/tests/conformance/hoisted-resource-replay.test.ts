@@ -16,7 +16,7 @@ import {
   type Fiber,
   type FiberRoot,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { getFiberPreorder } from "./fiber-fixture";
 
 interface ResourceProps {

@@ -1,7 +1,7 @@
 import { instrument, type FiberRoot } from "bippy";
 import { act, type ReactNode } from "react";
 import { createRoot, type RootOptions } from "react-dom/client";
-import { afterEach } from "vite-plus/test";
+import { afterEach } from "vitest";
 
 const cleanups: Array<() => Promise<void>> = [];
 

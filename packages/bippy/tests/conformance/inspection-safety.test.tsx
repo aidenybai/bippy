@@ -2,7 +2,7 @@ import * as React from "react";
 import "react-dom/client";
 import { getRDTHook } from "bippy";
 import { BippyHookInspectionError, getFiberHooks, inspectHooks } from "bippy/source";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createFiber } from "./fiber-fixture";
 import { getStateValues } from "./hook-tree";
 

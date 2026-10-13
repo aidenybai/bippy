@@ -3,11 +3,11 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import ReactDevToolsCore from "react-devtools-core";
 import type { ReactDevToolsCore as ReactDevToolsCoreModule } from "react-devtools-core";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import {
   createGeneratedReactInternals,
   generateReactInternals,
-} from "../../scripts/react-internals-plugin";
+} from "../../scripts/react-internals-generator";
 
 const TYPESCRIPT_COMPILER_TEST_TIMEOUT_MS = 15_000;
 

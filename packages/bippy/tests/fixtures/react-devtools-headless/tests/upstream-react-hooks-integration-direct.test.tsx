@@ -5,7 +5,7 @@ import "../src/index";
 import React from "react";
 import * as ReactTestRenderer from "react-test-renderer";
 import { c as useMemoCache } from "react/compiler-runtime";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getFiberHooks } from "bippy/source";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

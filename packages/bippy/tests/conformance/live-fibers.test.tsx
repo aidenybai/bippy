@@ -16,7 +16,7 @@ import {
   type Fiber,
 } from "bippy";
 import { getFiberHooks } from "bippy/source";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createRenderHarness } from "./render-harness";
 import { getHookLeaves } from "./hook-tree";
 

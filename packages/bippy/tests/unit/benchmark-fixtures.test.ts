@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import * as Bippy from "../../src/index";
 import * as Source from "../../src/source/index";
 import React from "react";

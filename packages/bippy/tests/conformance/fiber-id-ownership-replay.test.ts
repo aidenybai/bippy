@@ -7,7 +7,7 @@ import {
   type FiberRoot,
   type ReactDevToolsTarget,
 } from "bippy";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { createFiber } from "./fiber-fixture";
 
 interface IdOperation {

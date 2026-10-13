@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { evaluateGate, satisfyAllReactVersions, satisfiesReactVersion } from "../src/react-version";
 
 const version = "18.0.0";

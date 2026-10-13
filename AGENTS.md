@@ -14,7 +14,7 @@ When implementing anything in this project, clone `facebook/react` locally and s
 
 ## Verifying changes
 
-Run `pnpm check`, `pnpm typecheck`, and `pnpm test` before you finish. Run `pnpm test:e2e` when a change affects framework integration.
+Run `bun fmt`, `bun lint`, `bun typecheck`, and `bun run test` before you finish. Run `bun test:e2e` when a change affects framework integration.
 
 ## Branch names
 
@@ -44,7 +44,9 @@ Use the `/writing-guidelines` skill for PR descriptions.
 - Avoid `any`. Avoid `as` unless necessary.
 - Never use star imports or alias imports, such as `import { resolve as pathResolve }`.
 - Omit file extensions in relative imports: `./core`, not `./core.js`.
-- Use pnpm for project scripts, which run with `tsx`. Use Bun only for one-off scripts.
+- Use Bun for everything: installing, running scripts, building, formatting, and type checking. Do not add pnpm or npm tooling.
+- Run tests with `bun run test`, which starts Vitest on Node. Do not port tests to `bun test`: Bun loads React before Bippy's hook, removes single-use function names, and runs JavaScriptCore instead of V8.
+- Prefer Bun APIs such as `Bun.file()`, `Bun.write()`, `Bun.spawn()`, and `Bun.Glob` over their `node:` equivalents outside `packages/bippy/src`, which must run in any JavaScript runtime.
 - Use TypeScript interfaces over types. Keep them at module scope.
 - Rely on type inference. Add annotations only for exports.
 - Do not extract single-use helpers or variables. Inline them at the call site unless the helper is reused, hides a complex boundary, or has a name that clarifies the caller.

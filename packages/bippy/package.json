@@ -75,23 +75,23 @@
     "access": "public"
   },
   "scripts": {
-    "bench": "pnpm build && tsx scripts/benchmark-all.ts",
-    "bench:smoke": "tsx scripts/benchmark-all.ts --quick",
-    "bench:use-fiber": "pnpm build && tsx scripts/benchmark-use-fiber.ts",
-    "build": "NODE_ENV=production vp pack && tsx scripts/check-react-entry.ts",
-    "check:react-internals": "tsx scripts/generate-react-internals.ts --check",
-    "check:upstream": "tsx scripts/check-upstream.ts",
-    "coverage": "vp test --coverage --project unit",
-    "dev": "NODE_ENV=development vp pack --watch",
-    "generate:react-internals": "tsx scripts/generate-react-internals.ts",
+    "bench": "bun run build && bun scripts/benchmark-all.ts",
+    "bench:smoke": "bun scripts/benchmark-all.ts --quick",
+    "bench:use-fiber": "bun run build && bun scripts/benchmark-use-fiber.ts",
+    "build": "NODE_ENV=production bun scripts/build.ts && bun scripts/check-react-entry.ts",
+    "check:react-internals": "bun scripts/generate-react-internals.ts --check",
+    "check:upstream": "bun scripts/check-upstream.ts",
+    "coverage": "vitest run --coverage --project unit",
+    "dev": "NODE_ENV=development bun scripts/build.ts --watch",
+    "generate:react-internals": "bun scripts/generate-react-internals.ts",
     "prepack": "cp ../../README.md ../../LICENSE .",
-    "prepublishOnly": "nr build",
+    "prepublishOnly": "bun run build",
     "publint": "publint",
-    "sync:devtools": "tsx scripts/sync-devtools.ts",
-    "test": "vp test",
-    "test:all": "pnpm test && pnpm typecheck && pnpm test:built",
-    "test:built": "pnpm build && tsx scripts/check-built.ts",
-    "typecheck": "tsc --noEmit"
+    "sync:devtools": "bun scripts/sync-devtools.ts",
+    "test": "vitest run",
+    "test:all": "bun run test && bun run typecheck && bun run test:built",
+    "test:built": "bun run build && bun scripts/check-built.ts",
+    "typecheck": "bun check"
   },
   "dependencies": {
     "@types/react-reconciler": "^0.33.0"
@@ -110,6 +110,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
     "@types/babel__core": "^7.20.5",
+    "@types/bun": "^1.4.3",
     "@types/node": "^20",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -121,6 +122,7 @@
     "ink": "^7.1.1",
     "ink-testing-library": "^4.0.0",
     "konva": "^10.3.0",
+    "oxfmt": "0.66.0",
     "pixi.js": "^8.19.0",
     "publint": "^0.3.0",
     "react": "^19.3.0",
@@ -161,7 +163,7 @@
     "three": "^0.185.1",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
-    "vite-plus": "latest",
+    "vitest": "4.1.11",
     "zod": "^4.4.3"
   },
   "peerDependencies": {

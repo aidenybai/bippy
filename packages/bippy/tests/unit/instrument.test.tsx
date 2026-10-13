@@ -1,6 +1,6 @@
 import "../../src/index"; // KEEP THIS LINE ON TOP
 
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { ReactBuildType } from "../../src/react-internals/index";
 import type { FiberRoot, ReactDevToolsGlobalHook } from "../../src/react-internals/index";
 import { _fiberRoots, getRDTHook, instrument, isInstrumentationActive } from "../../src/index";

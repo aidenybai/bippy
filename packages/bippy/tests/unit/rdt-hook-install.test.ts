@@ -1,6 +1,6 @@
 // intentionally avoids importing ../index.js so this file controls hook installation
 import { runInNewContext } from "node:vm";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { ReactBuildType } from "../../src/react-internals/index";
 import {
   _onActiveListeners,

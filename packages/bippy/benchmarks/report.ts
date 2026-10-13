@@ -51,7 +51,7 @@ export interface BundleInfo {
 export interface RunMetadata {
   timestamp: string;
   isQuickMode: boolean;
-  node: string;
+  runtime: string;
   platform: string;
   arch: string;
   cpu?: string;
@@ -177,7 +177,7 @@ export const formatBenchmarkReport = (report: BenchmarkRunReport): string => {
     "",
     metadata.isQuickMode
       ? "Smoke validation only; timings are not performance results."
-      : `${metadata.node}; ${metadata.cpu}; ${metadata.platform}/${metadata.arch}.`,
+      : `${metadata.runtime}; ${metadata.cpu}; ${metadata.platform}/${metadata.arch}.`,
     "",
     "Timings are per complete operation. Setup and validation are outside timing. GC is not forced; small timings include harness overhead. Worker RSS includes fixtures and runtime, not just library allocations. Source fetching uses in-memory responses, not real network latency. These are not browser/mobile guarantees.",
     "",

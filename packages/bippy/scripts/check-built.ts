@@ -1,35 +1,34 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { Window } from "happy-dom";
-import ts from "@typescript/typescript6";
 import type { Fiber, FiberRoot } from "bippy";
 import { getStateValues } from "../tests/conformance/hook-tree";
 import { getExpectedExports } from "./test-inventory";
 
 const mode = process.argv[2];
 if (!mode) {
+  // Bun strips unknown directives when it loads a module, so read the published files directly.
+  for (const entryPath of ["../dist/index.js", "../dist/index.cjs"]) {
+    assert.match(
+      await Bun.file(new URL(entryPath, import.meta.url)).text(),
+      /\{\s*["']use no memo["'];/,
+      `${entryPath} lost the React Compiler opt-out directive in useFiber`,
+    );
+  }
   for (const environment of ["development", "production"]) {
     for (const format of ["import", "require"]) {
-      const result = spawnSync(
-        process.execPath,
-        ["--import", "tsx", import.meta.filename, format],
-        {
-          encoding: "utf8",
-          env: {
-            ...process.env,
-            NODE_ENV: environment,
-            TSX_TSCONFIG_PATH: fileURLToPath(new URL("../tsconfig-built.json", import.meta.url)),
-          },
-          timeout: 15000,
-        },
+      const result = Bun.spawnSync(
+        [
+          "bun",
+          "--tsconfig-override",
+          fileURLToPath(new URL("../tsconfig-built.json", import.meta.url)),
+          import.meta.filename,
+          format,
+        ],
+        { env: { ...process.env, NODE_ENV: environment }, timeout: 15000 },
       );
-      assert.equal(
-        result.status,
-        0,
-        `${environment}/${format}\n${result.stdout}\n${result.stderr}\n${result.error ?? ""}`,
-      );
+      assert.ok(result.success, `${environment}/${format}\n${result.stdout}\n${result.stderr}`);
       console.log(`Published entrypoints: ${environment}/${format} passed`);
     }
   }
@@ -53,28 +52,6 @@ if (!mode) {
     mode === "import" ? await import("bippy") : require("bippy");
   const Source: typeof import("bippy/source") =
     mode === "import" ? await import("bippy/source") : require("bippy/source");
-  const hookSyntax = ts.createSourceFile(
-    "use-fiber.js",
-    `(${Function.prototype.toString.call(Bippy.useFiber)});`,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.JS,
-  );
-  const hookStatement = hookSyntax.statements[0];
-  assert.ok(ts.isExpressionStatement(hookStatement));
-  assert.ok(ts.isParenthesizedExpression(hookStatement.expression));
-  const hookFunction = hookStatement.expression.expression;
-  assert.ok(ts.isArrowFunction(hookFunction) || ts.isFunctionExpression(hookFunction));
-  assert.ok(ts.isBlock(hookFunction.body));
-  const directives: string[] = [];
-  for (const statement of hookFunction.body.statements) {
-    if (!ts.isExpressionStatement(statement) || !ts.isStringLiteral(statement.expression)) break;
-    directives.push(statement.expression.text);
-  }
-  assert.ok(
-    directives.includes("use no memo"),
-    "Built useFiber lost its React Compiler opt-out directive",
-  );
   for (const { entry, module } of [
     { entry: "bippy", module: Bippy },
     { entry: "bippy/source", module: Source },

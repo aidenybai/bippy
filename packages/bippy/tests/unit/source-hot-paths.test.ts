@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { it } from "vite-plus/test";
+import { it } from "vitest";
 import { createStackParser, extractLocation, parseStack } from "../../src/source/parse-stack";
 import {
   getSourceContentFromSourceMap,

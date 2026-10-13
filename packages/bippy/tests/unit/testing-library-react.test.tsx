@@ -2,7 +2,7 @@ import "../../src/index"; // KEEP THIS LINE ON TOP
 
 import { fireEvent, render } from "@testing-library/react";
 import React from "react";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { instrument, traverseFiber } from "../../src/index";
 import type { FiberRoot } from "../../src/react-internals/index";
 

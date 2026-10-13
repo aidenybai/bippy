@@ -1,7 +1,7 @@
 import "../../src/index"; // KEEP THIS LINE ON TOP
 
 import { encode } from "@jridgewell/sourcemap-codec";
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getHookSourceLocationKey,
   extractHookVariableName,

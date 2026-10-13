@@ -1,6 +1,6 @@
 # Benchmarks
 
-`pnpm --filter bippy bench:use-fiber` builds production ESM, loads it against isolated React versions, and compares mounts/updates with and without `useFiber`. It covers all nine React fixtures at 100/1,000 components with 0/32 preceding hooks. Add `--cjs` for CommonJS. It reports medians of five samples after warm-up, with five updates per sample. Timing is diagnostic, not a CI threshold.
+`bun run --filter bippy bench:use-fiber` builds production ESM, loads it against isolated React versions, and compares mounts/updates with and without `useFiber`. It covers all nine React fixtures at 100/1,000 components with 0/32 preceding hooks. Add `--cjs` for CommonJS. It reports medians of five samples after warm-up, with five updates per sample. Timing is diagnostic, not a CI threshold.
 
 One local Node 24.20.0/Happy DOM run, with 1,000 null-rendering components and no preceding hooks, measured these milliseconds per full update:
 
@@ -16,7 +16,7 @@ The meaningful change is removal of repeated root searches on ordinary early-Rea
 
 ## Full public-export benchmarks
 
-`pnpm --filter bippy bench` builds Bippy and benchmarks all **65 function/constructor exports** from `bippy` and `bippy/source`. Aliases are verified rather than presented as independent implementations. Data exports are inventoried, not timed as functions. Coverage checks reuse the canonical export reader and reject missing or invented exports.
+`bun run --filter bippy bench` builds Bippy and benchmarks all **65 function/constructor exports** from `bippy` and `bippy/source`. Aliases are verified rather than presented as independent implementations. Data exports are inventoried, not timed as functions. Coverage checks reuse the canonical export reader and reject missing or invented exports.
 
 The suite produces 708 microbenchmark rows (177 scenarios across ESM/CJS × development/production), 72 production `useFiber` configurations, and 12 cold-import measurements:
 
@@ -32,7 +32,7 @@ Each run writes validated results incrementally to `packages/bippy/benchmarks/re
 
 `bench:smoke` requires existing build output. CI runs it after the packaged checks to validate fixtures, measurements, and export accounting, not to enforce timing thresholds. Smoke mode uses one iteration/sample and a small React 19 `useFiber` configuration; its timings are not benchmark results. Harness unit tests cover async waiting, timing boundaries, cleanup, calibration caps, and coverage failures. Report tests reject malformed values, null/nonfinite timings, inconsistent summaries, and duplicate IDs. Fixture tests check independent cleanup and distinct source contents. Journaling tests verify that interrupted runs preserve completed results.
 
-Workers are checked-in TypeScript files. The cold-import probe is compiled before launching native Node, so its timings exclude both compilation and the `tsx` loader. Case registration, variants, groups, statistics, process execution, and report encoding each have a shared implementation. Hook benchmarks verify state values, not just hook counts.
+Workers are checked-in TypeScript files that Bun runs directly. Case registration, variants, groups, statistics, process execution, and report encoding each have a shared implementation. Hook benchmarks verify state values, not just hook counts.
 
 Before the source hot-path optimization below, a local Apple M5 Max / Node 24.20.0 / Happy DOM run of production ESM showed these approximate per-operation medians:
 

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getSourceMap, parseHookNames } from "bippy/source";
 import type { HooksNode, HookSource, SourceFetch } from "bippy/source";
 import { getFilesRecursively } from "./file-inventory";

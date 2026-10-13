@@ -1,5 +1,5 @@
 import { traverseFiber, type Fiber } from "bippy";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createFiber, linkChildren } from "./fiber-fixture";
 import { createSeededRandom, fuzzSeeds } from "./seeded-random";
 

@@ -5,7 +5,7 @@ import "../src/index";
 import React from "react";
 import * as ReactDOM from "react-dom";
 import * as ReactDOMClient from "react-dom/client";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getFiberHooks, inspectHooks } from "bippy/source";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

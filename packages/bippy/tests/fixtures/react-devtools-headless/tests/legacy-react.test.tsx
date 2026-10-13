@@ -2,7 +2,7 @@ import "../src/index";
 
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createComponentStore } from "../src/component-store";
 import type { StoreElement } from "../src/component-store";
 import { createConsoleModel } from "../src/console-model";

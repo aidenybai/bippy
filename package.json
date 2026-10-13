@@ -1,38 +1,43 @@
 {
   "name": "@bippy/monorepo",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "packages/bippy/tests/e2e",
+    "packages/bippy/tests/fixtures/*"
+  ],
   "type": "module",
   "scripts": {
-    "dev": "vp run bippy#dev",
-    "build": "vp run bippy#build",
-    "test": "pnpm --filter bippy test",
-    "test:all": "pnpm --filter bippy test:all",
-    "test:e2e": "vp run @bippy/e2e#test",
-    "publint": "vp run bippy#publint",
-    "fmt": "vp fmt",
-    "lint": "vp lint",
-    "check": "vp check",
-    "typecheck": "pnpm --filter bippy typecheck",
+    "dev": "bun run --filter bippy dev",
+    "build": "bun run --filter bippy build",
+    "test": "bun run --filter bippy test",
+    "test:all": "bun run --filter bippy test:all",
+    "test:e2e": "bun run --filter @bippy/e2e test",
+    "publint": "bun run --filter bippy publint",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint",
+    "typecheck": "bun run --filter bippy typecheck",
     "sherif": "sherif --fix -p './packages/bippy/tests/fixtures/*'",
-    "changeset": "nr build && changeset",
+    "changeset": "bun run build && changeset",
     "version": "changeset version",
     "release": "changeset publish"
   },
   "devDependencies": {
-    "@antfu/ni": "^27.0.1",
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.30.0",
+    "oxfmt": "0.66.0",
+    "oxlint": "1.81.0",
     "sherif": "^1.2.0",
-    "vite-plus": "latest"
+    "typescript": "^7.0.2",
+    "vite": "^7.3.4"
   },
-  "packageManager": "pnpm@10.12.1",
-  "pnpm": {
-    "overrides": {
-      "react": "^19.3.0",
-      "react-dom": "^19.3.0"
-    },
-    "patchedDependencies": {
-      "react-devtools-core@8.0.0": "patches/react-devtools-core@8.0.0.patch"
-    }
+  "overrides": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "packageManager": "bun@1.4.3",
+  "patchedDependencies": {
+    "react-devtools-core@8.0.0": "patches/react-devtools-core@8.0.0.patch"
   }
 }

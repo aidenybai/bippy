@@ -11,8 +11,7 @@ import type {
   ReactWorkTagMap,
   ReactWorkTagVersionRange,
 } from "react-devtools-core";
-import { format } from "vite-plus/fmt";
-import type { Plugin } from "vite-plus";
+import { format } from "oxfmt";
 import { z } from "zod";
 import { compareSemver, isSemver } from "../src/react-internals/semver";
 
@@ -497,14 +496,9 @@ export const generateReactInternals = async ({
     return;
   }
   if (mode === "check") {
-    throw new Error("Generated React internals are stale; run nr build and commit the result");
+    throw new Error("Generated React internals are stale; run bun run build and commit the result");
   }
   writeGeneratedModule(generatedModulePath, generatedModule);
   rmSync(legacyDeclarationModulePath, { force: true });
   rmSync(legacyRuntimeModulePath, { force: true });
 };
-
-export const reactInternalsPlugin = (options: ReactInternalsPluginOptions): Plugin => ({
-  name: "bippy-react-internals",
-  buildStart: () => generateReactInternals(options),
-});

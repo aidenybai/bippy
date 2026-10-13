@@ -1,7 +1,7 @@
 import { getDisplayName, getType, isValidElement } from "bippy";
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 
 const Component = (): null => null;
 

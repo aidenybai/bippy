@@ -1,6 +1,6 @@
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createBrowserBootstrapScript } from "./isolated-react-runtime";
 import { describeRuntimeFailure, runNodeScript } from "./run-node-script";
 import { openSourceInjectionTargets } from "./use-fiber-open-source-loader";

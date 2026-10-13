@@ -11,7 +11,7 @@ import {
   traverseRenderedFibers,
   type Fiber,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { getFiberPreorder } from "./fiber-fixture";
 import { createRenderHarness } from "./render-harness";
 

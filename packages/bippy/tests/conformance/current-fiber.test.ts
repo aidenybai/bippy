@@ -1,5 +1,5 @@
 import { getLatestFiber, getReactWorkTags } from "bippy";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { createFiber, linkChildren } from "./fiber-fixture";
 
 it.each(["separate", "previous", "current"])(

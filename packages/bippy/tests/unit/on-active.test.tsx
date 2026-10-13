@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 
 import { instrument } from "../../src/index";
 import React from "react";

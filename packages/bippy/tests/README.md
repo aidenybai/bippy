@@ -5,7 +5,7 @@ The canonical home for Bippy's unit tests (`unit/`), React conformance tests (`c
 ## Run
 
 ```sh
-pnpm test:all
+bun test:all
 ```
 
 Runs library tests, DevTools fixture tests, conformance tests, TypeScript checks, a production Bippy build, and fresh-process ESM/CJS checks against development/production React. CI uses the same checks. Browser and Detox E2E remain separate.
@@ -13,14 +13,14 @@ Runs library tests, DevTools fixture tests, conformance tests, TypeScript checks
 Focused commands:
 
 ```sh
-pnpm --filter bippy test --project unit
-pnpm --filter bippy test --project conformance
-pnpm --filter bippy typecheck
-pnpm --filter bippy coverage
-pnpm --filter bippy test:built
-pnpm --filter bippy bench:use-fiber
-pnpm --filter bippy bench
-pnpm --filter bippy bench:smoke
+bun run --filter bippy test:unit
+bun run --filter bippy test:conformance
+bun run --filter bippy typecheck
+bun run --filter bippy coverage
+bun run --filter bippy test:built
+bun run --filter bippy bench:use-fiber
+bun run --filter bippy bench
+bun run --filter bippy bench:smoke
 ```
 
 Library coverage retains its original unit-test scope and writes reports to `packages/bippy/coverage/`. The normal test command runs all projects, including exact upstream stack assertions, without coverage instrumentation.
@@ -43,7 +43,7 @@ Matching test titles or export names is accounting, not proof of behavioral equi
 Use a local `facebook/react` checkout at the main revision recorded in `upstream.json`:
 
 ```sh
-REACT_SOURCE=/path/to/react pnpm --filter bippy check:upstream
+REACT_SOURCE=/path/to/react bun run --filter bippy check:upstream
 ```
 
 This verifies source hashes and direct-port titles. Normal tests need no React checkout. The standalone hook-inspection suite ports all upstream development cases, retaining hook values, IDs, editability, nesting, debug information, and function names; only source file/line/column coordinates are normalized.
@@ -51,8 +51,8 @@ This verifies source hashes and direct-port titles. Normal tests need no React c
 To synchronize the DevTools inventory and hook-source fixtures:
 
 ```sh
-pnpm --filter bippy sync:devtools
-pnpm --filter bippy sync:devtools --ref <reviewed-git-ref>
+bun run --filter bippy sync:devtools
+bun run --filter bippy sync:devtools --ref <reviewed-git-ref>
 ```
 
 The default is the already-pinned DevTools revision, not `main`. Synchronization preserves the other inventory sections and recorded local mappings. Review upstream changes and port assertions before changing a pin or expected coverage; do not merely update counts to make checks pass.

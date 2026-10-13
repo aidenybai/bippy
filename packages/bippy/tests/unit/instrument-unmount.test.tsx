@@ -2,7 +2,7 @@ import "../../src/index"; // KEEP THIS LINE ON TOP
 
 import { render } from "@testing-library/react";
 import React from "react";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { instrument } from "../../src/index";
 
 const Example = () => {

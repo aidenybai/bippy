@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { connectToDevTools } from "../src/backend-connection";
 import type { DevToolsWebSocket } from "../src/backend-connection";
 

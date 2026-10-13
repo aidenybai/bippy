@@ -3,7 +3,7 @@ import "../src/index";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import React from "react";
 import { jsx } from "react/jsx-runtime";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildToolGroup, createTools, installFacade } from "../src/index";
 import type { Facade, McpToolGroup, Tools, TreeNode } from "../src/index";
 

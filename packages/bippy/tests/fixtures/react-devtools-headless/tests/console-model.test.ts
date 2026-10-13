@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { createConsoleModel } from "../src/console-model";
 import type { ConsoleModelSettings, ConsoleTarget } from "../src/console-model";
 

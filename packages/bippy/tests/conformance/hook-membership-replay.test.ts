@@ -6,7 +6,7 @@ import {
   type ReactDevToolsTarget,
   type ReactRenderer,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { onRDTHookReplace, onRendererInject, type Unsubscribe } from "../../src/rdt-hook";
 
 interface HookMembershipOptions {

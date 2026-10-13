@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createProfilerStore } from "../src/profiler-store";
 import type { ProfilerStoreRootData } from "../src/profiler-store";
 

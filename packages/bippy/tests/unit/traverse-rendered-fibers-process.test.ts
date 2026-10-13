@@ -1,4 +1,4 @@
-import { afterAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, describe, expect, it } from "vitest";
 import {
   createBrowserBootstrapScript,
   createIsolatedReactRuntime,

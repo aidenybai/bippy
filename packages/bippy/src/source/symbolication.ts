@@ -1,9 +1,14 @@
-import { decode, type SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
+import { decode } from "@jridgewell/sourcemap-codec";
 
 import { BippySourceMapError } from "../errors";
 import { SCHEME_REGEX } from "./constants";
 import { normalizeFileName } from "./normalize-file-name";
 import type { StackFrame } from "./parse-stack";
+
+type SourceMapSegment =
+  | [number]
+  | [number, number, number, number]
+  | [number, number, number, number, number];
 
 export interface DecodedSourceMapSection {
   map: {
@@ -124,7 +129,7 @@ const getSourceFromSegment = (
 };
 
 const getSourceFromMappings = (
-  mappings: SourceMapMappings,
+  mappings: SourceMapSegment[][],
   sources: string[],
   lineIndexInMappings: number,
   column: number,
@@ -216,7 +221,7 @@ const getStringIndex = (values: string[], target: string): number => {
 };
 
 const getSourceFromMappingsByFunctionName = (
-  mappings: SourceMapMappings,
+  mappings: SourceMapSegment[][],
   sources: string[],
   names: string[] | undefined,
   functionName: string,

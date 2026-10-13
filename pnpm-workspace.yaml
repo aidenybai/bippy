@@ -1,6 +1,0 @@
-nodeLinker: hoisted
-
-packages:
-  - "packages/*"
-  - "packages/bippy/tests/e2e"
-  - "packages/bippy/tests/fixtures/*"

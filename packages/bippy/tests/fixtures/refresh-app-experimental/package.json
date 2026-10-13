@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "update-experimental": "pnpm add react-experimental@npm:react@experimental react-dom-experimental@npm:react-dom@experimental react-refresh@experimental"
+    "update-experimental": "bun add react-experimental@npm:react@experimental react-dom-experimental@npm:react-dom@experimental react-refresh@experimental"
   },
   "dependencies": {
     "bippy": "workspace:*",

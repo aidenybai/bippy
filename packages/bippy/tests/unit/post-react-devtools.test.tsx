@@ -1,7 +1,7 @@
 // import bippy, then react devtools
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 
-import { expect, vi } from "vite-plus/test";
+import { expect, vi } from "vitest";
 import { getDevtoolsTestOrSkip } from "./devtools-test-or-skip";
 const { instrument } = await import("../../src/index");
 

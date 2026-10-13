@@ -1,4 +1,4 @@
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { getRDTHook, isRealReactDevtools } from "../../src/rdt-hook";
 
 it("allows react-devtools-core to replace the preinstalled bippy hook", async () => {

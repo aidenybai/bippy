@@ -3,7 +3,7 @@ import "../../src/index"; // KEEP THIS LINE ON TOP
 import React from "react";
 import { sourceFetch } from "./source-fetch";
 import { createRoot } from "react-dom/client";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import {
   didFiberRender,
   getDisplayName,

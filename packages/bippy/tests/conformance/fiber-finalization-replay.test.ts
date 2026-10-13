@@ -1,4 +1,4 @@
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { runCoreWorker } from "./run-core-worker";
 
 const runChurn = (mode: string, deletedIndex: number): string => {
