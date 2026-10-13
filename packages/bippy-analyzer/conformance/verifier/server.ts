@@ -276,8 +276,8 @@ const createMissingRequirePlugin = (): OptimizerPlugin => ({
 const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
 
-const getPolyfilledModules = (appDirectory: string): Set<string> =>
-  new Set(isInstalled(appDirectory, "next") ? Object.keys(NEXT_NODE_POLYFILLS) : []);
+const getPolyfilledModules = (nextDirectory: string | null): Set<string> =>
+  new Set(nextDirectory ? Object.keys(NEXT_NODE_POLYFILLS) : []);
 
 const isNodeOnlyModule = (
   specifier: string,
@@ -636,9 +636,8 @@ const resolveNextContextModule = (nextDirectory: string, name: string): string |
 };
 
 const getNextPolyfillAliases = (
-  appDirectory: string,
+  nextDirectory: string | null,
 ): Array<{ find: RegExp; replacement: string }> => {
-  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
   if (!nextDirectory) return [];
   return Object.entries(NEXT_NODE_POLYFILLS).flatMap(([name, polyfill]) => {
     const directory = join(nextDirectory, "dist/compiled", polyfill);
@@ -650,8 +649,7 @@ const getNextPolyfillAliases = (
 
 // HACK: packages importing `next/navigation` or `next/router` bypass the stubs, so provide Next's
 // own router contexts.
-const createNextContextSpec = (appDirectory: string): ProviderSpec | null => {
-  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+const createNextContextSpec = (nextDirectory: string | null): ProviderSpec | null => {
   if (!nextDirectory) return null;
   const [appRouterModule, hooksModule, routerModule] = NEXT_CONTEXT_MODULES.map((name) =>
     resolveNextContextModule(nextDirectory, name),
@@ -680,8 +678,7 @@ const createNextContextSpec = (appDirectory: string): ProviderSpec | null => {
 };
 
 // Unoptimized, since the harness has no `/_next/image` route.
-const getNextImageOptions = (appDirectory: string): Record<string, unknown> => {
-  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+const getNextImageOptions = (nextDirectory: string | null): Record<string, unknown> => {
   const configFile = nextDirectory && join(nextDirectory, "dist/shared/lib/image-config.js");
   if (!configFile || !existsSync(configFile)) return {};
   const { imageConfigDefault }: { imageConfigDefault: object } =
@@ -689,9 +686,12 @@ const getNextImageOptions = (appDirectory: string): Record<string, unknown> => {
   return { __NEXT_IMAGE_OPTS: { ...imageConfigDefault, unoptimized: true } };
 };
 
-const getInstalledProviders = (appDirectory: string): ProviderSpec[] => {
+const getInstalledProviders = (
+  appDirectory: string,
+  nextDirectory: string | null,
+): ProviderSpec[] => {
   const installed = PROVIDER_SPECS.filter((spec) => isInstalled(appDirectory, spec.packageName));
-  const nextContextSpec = createNextContextSpec(appDirectory);
+  const nextContextSpec = createNextContextSpec(nextDirectory);
   const providers = nextContextSpec ? [nextContextSpec, ...installed] : installed;
   return providers.some((spec) => spec.packageName === "react-router")
     ? providers.filter((spec) => spec.packageName !== "react-router-dom")
@@ -739,13 +739,14 @@ const createProvidersSource = (providers: ProviderSpec[], setup: HarnessSetup): 
 // aliases apply.
 const createHarnessPlugin = (
   appDirectory: string,
+  nextDirectory: string | null,
   providers: ProviderSpec[],
   setup: HarnessSetup,
   appImporter: string,
   references: SourceReferences,
 ): Plugin => {
-  const isNextApp = isInstalled(appDirectory, "next");
-  const polyfilled = getPolyfilledModules(appDirectory);
+  const isNextApp = nextDirectory !== null;
+  const polyfilled = getPolyfilledModules(nextDirectory);
   const entryId = join(appDirectory, ENTRY_PATH);
   const providersId = join(appDirectory, PROVIDERS_PATH);
   const setupId = join(appDirectory, SETUP_PATH);
@@ -835,7 +836,8 @@ export const startHarness = async (
   componentFiles: string[],
   setup: HarnessSetup,
 ): Promise<Harness> => {
-  const installedProviders = getInstalledProviders(appDirectory);
+  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+  const installedProviders = getInstalledProviders(appDirectory, nextDirectory);
   const appImporter = componentFiles[0] ?? join(appDirectory, "index.ts");
   const references = collectSourceReferences(appDirectory);
   const providers =
@@ -852,7 +854,7 @@ export const startHarness = async (
     ...loadedEnv,
     ...setup.env,
     NODE_ENV: "development",
-    ...getNextImageOptions(appDirectory),
+    ...getNextImageOptions(nextDirectory),
   };
   const importMetaEnv = { ...getPlaceholders(references.importMetaEnv), ...setup.env };
   const server = await createServer({
@@ -861,9 +863,9 @@ export const startHarness = async (
     logLevel: "error",
     appType: "custom",
     plugins: [
-      createHarnessPlugin(appDirectory, providers, setup, appImporter, references),
+      createHarnessPlugin(appDirectory, nextDirectory, providers, setup, appImporter, references),
       createProbePlugin(probes),
-      ...(isInstalled(appDirectory, "next") ? [createNextImagePlugin()] : []),
+      ...(nextDirectory ? [createNextImagePlugin()] : []),
       createServerActionPlugin(),
       createCommonJsPlugin(),
       createRequirePlugin(),
@@ -872,7 +874,7 @@ export const startHarness = async (
     resolve: {
       alias: [
         { find: /^bippy$/, replacement: BIPPY_SOURCE },
-        ...getNextPolyfillAliases(appDirectory),
+        ...getNextPolyfillAliases(nextDirectory),
         ...Object.entries(setup.alias).map(([source, target]) => ({
           find: new RegExp(`^${RegExp.escape(source)}$`),
           replacement: target,
@@ -905,11 +907,11 @@ export const startHarness = async (
       esbuildOptions: {
         plugins: [
           createMissingRequirePlugin(),
-          createNodeBuiltinPlugin(getPolyfilledModules(appDirectory)),
+          createNodeBuiltinPlugin(getPolyfilledModules(nextDirectory)),
         ],
         loader: { ".node": "empty" },
         // Webpack, which Next bundles client code with, makes `__dirname` the root.
-        ...(isInstalled(appDirectory, "next") ? { define: { __dirname: '"/"' } } : {}),
+        ...(nextDirectory ? { define: { __dirname: '"/"' } } : {}),
       },
     },
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
