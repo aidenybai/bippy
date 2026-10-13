@@ -498,8 +498,7 @@ const findSharedIndex = (
   // bounds of a later, shorter root stack (e.g. truncated Error.stackTraceLimit)
   if (rootIndex >= rootStack.length) return -1;
   const source = rootStack[rootIndex].source;
-  // A labeled `continue` would be shorter, but Vite's SSR transform rewrites a minified
-  // label that shares its name with an import, which produces invalid JavaScript.
+  // Avoid a labeled loop: Vite's SSR transform breaks on a minified label named like an import.
   for (let hookIndex = 0; hookIndex < hookStack.length; hookIndex++) {
     if (hookStack[hookIndex].source !== source) continue;
     let rootOffset = rootIndex + 1;

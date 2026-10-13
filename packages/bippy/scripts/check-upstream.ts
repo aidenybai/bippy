@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
+import { $ } from "bun";
 import {
   conformanceDirectory,
   getPortTitles,
@@ -13,10 +14,7 @@ if (!sourceDirectory)
     "Set REACT_SOURCE to a local facebook/react checkout at the revision in upstream.json.",
   );
 const manifest = readUpstreamManifest();
-assert.equal(
-  Bun.spawnSync(["git", "-C", sourceDirectory, "rev-parse", "HEAD"]).stdout.toString().trim(),
-  manifest.revision,
-);
+assert.equal((await $`git -C ${sourceDirectory} rev-parse HEAD`.text()).trim(), manifest.revision);
 for (const [path, hash] of Object.entries(manifest.sources)) {
   assert.equal(
     new Bun.CryptoHasher("sha256")

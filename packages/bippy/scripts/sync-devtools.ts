@@ -1,6 +1,7 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { $ } from "bun";
 import {
   conformanceDirectory,
   devtoolsDirectory,
@@ -36,17 +37,12 @@ const getRequestedRef = (): string => {
   return requestedRef;
 };
 
-const runGit = (repositoryDirectory: string, gitArguments: string[]): string => {
-  const result = Bun.spawnSync(["git", "-C", repositoryDirectory, ...gitArguments], {
-    stderr: "inherit",
-  });
-  if (!result.success) throw new Error(`git ${gitArguments[0]} failed`);
-  return result.stdout.toString().trim();
-};
+const runGit = async (repositoryDirectory: string, gitArguments: string[]): Promise<string> =>
+  (await $`git -C ${repositoryDirectory} ${gitArguments}`.text()).trim();
 
-const getTestFiles = (reactDirectory: string): UpstreamTestFile[] => {
+const getTestFiles = async (reactDirectory: string): Promise<UpstreamTestFile[]> => {
   const testFiles: UpstreamTestFile[] = [];
-  const trackedPaths = runGit(reactDirectory, ["ls-files"]).split("\n");
+  const trackedPaths = (await runGit(reactDirectory, ["ls-files"])).split("\n");
 
   for (const path of trackedPaths) {
     if (!path.endsWith(".js") || supportFiles.has(path)) continue;
@@ -82,9 +78,9 @@ const stagedReferencePath = join(conformanceDirectory, `.upstream-${process.pid}
 
 try {
   mkdirSync(reactDirectory);
-  runGit(reactDirectory, ["init", "--quiet"]);
-  runGit(reactDirectory, ["remote", "add", "origin", manifest.repository]);
-  runGit(reactDirectory, [
+  await runGit(reactDirectory, ["init", "--quiet"]);
+  await runGit(reactDirectory, ["remote", "add", "origin", manifest.repository]);
+  await runGit(reactDirectory, [
     "fetch",
     "--quiet",
     "--depth=1",
@@ -92,8 +88,8 @@ try {
     "origin",
     requestedRef,
   ]);
-  runGit(reactDirectory, ["sparse-checkout", "init", "--no-cone"]);
-  runGit(reactDirectory, [
+  await runGit(reactDirectory, ["sparse-checkout", "init", "--no-cone"]);
+  await runGit(reactDirectory, [
     "sparse-checkout",
     "set",
     "/.github/**/*devtools*",
@@ -107,10 +103,10 @@ try {
     "/scripts/**/*devtools*",
     "/scripts/**/*DevTools*",
   ]);
-  runGit(reactDirectory, ["checkout", "--quiet", "--detach", "FETCH_HEAD"]);
+  await runGit(reactDirectory, ["checkout", "--quiet", "--detach", "FETCH_HEAD"]);
 
-  const revision = runGit(reactDirectory, ["rev-parse", "HEAD"]);
-  const testFiles = getTestFiles(reactDirectory);
+  const revision = await runGit(reactDirectory, ["rev-parse", "HEAD"]);
+  const testFiles = await getTestFiles(reactDirectory);
   manifest.devtools = { revision, testFiles };
 
   const sourceHookSourcesDirectory = join(

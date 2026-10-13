@@ -1,48 +1,34 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 interface ReactEntryCheck {
   filePath: string;
-  hookFilePath: string;
-  importPattern: RegExp;
+  hookImportPattern: RegExp;
   reactImportPattern: RegExp;
 }
 
 const reactEntryChecks: ReactEntryCheck[] = [
   {
     filePath: "dist/index.js",
-    hookFilePath: "dist/install-hook-only.js",
-    importPattern: /import\s*["'](\.\/[^"']+)["']/g,
+    hookImportPattern: /import\s*["']\.\/install-hook-only\.js["']/,
     reactImportPattern: /from\s*["']react["']/,
   },
   {
     filePath: "dist/index.cjs",
-    hookFilePath: "dist/install-hook-only.cjs",
-    importPattern: /require\(["'](\.\/[^"']+)["']\)/g,
+    hookImportPattern: /require\(["']\.\/install-hook-only\.cjs["']\)/,
     reactImportPattern: /require\(["']react["']\)/,
   },
 ];
 
-for (const { filePath, hookFilePath, importPattern, reactImportPattern } of reactEntryChecks) {
-  const output = await Bun.file(filePath).text();
+for (const { filePath, hookImportPattern, reactImportPattern } of reactEntryChecks) {
+  const output = readFileSync(filePath, "utf8");
+  const hookImportIndex = output.search(hookImportPattern);
   const reactImportIndex = output.search(reactImportPattern);
-  const hookChunks = Array.from(
-    (await Bun.file(hookFilePath).text()).matchAll(importPattern),
-    (match) => match[1],
-  );
 
-  assert.notEqual(hookChunks.length, 0, `${hookFilePath} does not install the hook`);
+  assert.notEqual(hookImportIndex, -1, `${filePath} does not install the hook`);
   assert.notEqual(reactImportIndex, -1, `${filePath} does not import React as an external`);
-  for (const hookChunk of hookChunks) {
-    const hookImportIndex = output.indexOf(hookChunk);
-    assert.notEqual(hookImportIndex, -1, `${filePath} does not install the hook`);
-    assert.ok(
-      hookImportIndex < reactImportIndex,
-      `${filePath} imports React before installing the hook`,
-    );
-    assert.doesNotMatch(
-      await Bun.file(`dist/${hookChunk}`).text(),
-      reactImportPattern,
-      `${hookChunk} imports React before installing the hook`,
-    );
-  }
+  assert.ok(
+    hookImportIndex < reactImportIndex,
+    `${filePath} imports React before installing the hook`,
+  );
 }

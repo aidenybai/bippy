@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readdirSync } from "node:fs";
 import { cpus } from "node:os";
 import { fileURLToPath } from "node:url";
+import { $ } from "bun";
 import { benchmarkBuilds, benchmarkFormats } from "../benchmarks/configuration";
 import { benchmarkGroups } from "../benchmarks/groups";
 import { createBenchmarkJournal } from "../benchmarks/journal";
@@ -19,8 +20,6 @@ import { getExpectedExports, repositoryDirectory } from "./test-inventory";
 
 const isQuickMode = process.argv.includes("--quick");
 const builtDirectory = new URL("../dist/", import.meta.url);
-const gitRevision = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: repositoryDirectory });
-assert.ok(gitRevision.success, gitRevision.stderr.toString());
 const metadata: RunMetadata = {
   timestamp: new Date().toISOString(),
   isQuickMode,
@@ -28,7 +27,7 @@ const metadata: RunMetadata = {
   platform: process.platform,
   arch: process.arch,
   cpu: cpus()[0]?.model,
-  gitRevision: gitRevision.stdout.toString().trim(),
+  gitRevision: (await $`git rev-parse HEAD`.cwd(repositoryDirectory).text()).trim(),
   lockfileSha256: new Bun.CryptoHasher("sha256")
     .update(await Bun.file(new URL("../../../bun.lock", import.meta.url)).bytes())
     .digest("hex"),
