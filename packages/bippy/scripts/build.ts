@@ -28,22 +28,12 @@ const build = async (): Promise<void> => {
     external: ["react", "react-dom", "react-reconciler"],
     minify,
     outdir: "dist",
-    plugins: [
-      {
-        name: "external-hook",
-        setup: (builder) => {
-          builder.onResolve({ filter: /^\.\/install-hook-only$/ }, () => ({
-            external: true,
-            path: "./install-hook-only.js",
-          }));
-        },
-      },
-    ],
     splitting: true,
   });
 
   // Bun splits chunks only for ESM, so each CommonJS file is converted from its ESM file.
   await Bun.build({
+    banner,
     entrypoints: moduleBuild.outputs.map((output) => output.path),
     format: "cjs",
     minify,
