@@ -71,6 +71,7 @@ describe("proposeParents", () => {
     expect(proposals.map((wrapper) => wrapper.name).slice(0, 2)).toEqual(["Drawer", "Dialog"]);
     expect(proposals).toContainEqual({
       name: "Dialog",
+      source: "named",
       candidate: {
         kind: "package",
         specifier: "vaul",
