@@ -744,19 +744,27 @@ const getDepthMarker = (depth: number): ComponentType<{ children?: ReactNode }> 
   return marker;
 };
 
-const mount = async (request: MountRequest): Promise<Capture> => {
-  mountedRoot?.unmount();
-  mountedType = null;
-  await settle();
-  probeHits = [];
+const resetRenderState = (): void => {
   renderError = null;
   caughtError = null;
   lastCommittedFiber = null;
   firstCommitShapes = null;
+};
+
+const resetMountState = (): void => {
+  resetRenderState();
+  probeHits = [];
   pendingMutationHits = [];
   trackedStates = [];
   stateOwners = new WeakMap();
   propWrites = new Set();
+};
+
+const mount = async (request: MountRequest): Promise<Capture> => {
+  mountedRoot?.unmount();
+  mountedType = null;
+  await settle();
+  resetMountState();
   const { default: Providers }: { default: ComponentType<ProvidersProps> } = await import(
     /* @vite-ignore */ PROVIDERS_PATH
   );
@@ -781,10 +789,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   const loadedWrappers = await Promise.all(request.wrappers.map(loadWrapper));
   const render = async (type: unknown, isRouterless = false): Promise<void> => {
     mountedRoot?.unmount();
-    renderError = null;
-    caughtError = null;
-    lastCommittedFiber = null;
-    firstCommitShapes = null;
+    resetRenderState();
     mountedType = type;
     const container = document.createElement("div");
     document.body.replaceChildren(container);
