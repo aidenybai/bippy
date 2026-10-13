@@ -737,16 +737,87 @@ const createProvidersSource = (providers: ProviderSpec[], setup: HarnessSetup): 
 
 // The setup lives outside the app, so its imports resolve as if from an app file, where path
 // aliases apply.
+const createStubPlugin = (
+  nextDirectory: string | null,
+  appImporter: string,
+  references: SourceReferences,
+): Plugin => ({
+  name: "bippy-verify-stubs",
+  enforce: "pre",
+  resolveId(source, importer) {
+    if (nextDirectory && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
+    if (nextDirectory && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
+    if (STUBS.has(source)) return STUBS.get(source);
+    if (source !== "nuqs/server") return null;
+    return importer === NUQS_SERVER_ID
+      ? this.resolve(source, appImporter, { skipSelf: true })
+      : NUQS_SERVER_ID;
+  },
+  load: (id) => {
+    if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
+    if (id === NUQS_SERVER_ID)
+      return `export * from "nuqs/server";\nexport { createSearchParamsCache } from ${JSON.stringify(NUQS_CACHE_STUB)};`;
+    return null;
+  },
+});
+
+const createAssetPlugin = (): Plugin => ({
+  name: "bippy-verify-assets",
+  enforce: "pre",
+  resolveId: (source, importer) => {
+    // The id ends in `.js`, as Vite's own CSS handling claims any id ending like a stylesheet.
+    if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
+    const assetPath = source.split("?")[0] ?? source;
+    const isMissingImage =
+      importer !== undefined &&
+      assetPath.startsWith(".") &&
+      IMAGE_FILE_PATTERN.test(assetPath) &&
+      !existsSync(resolve(dirname(importer.split("?")[0] ?? importer), assetPath));
+    return isMissingImage ? `${MISSING_ASSET_PREFIX}${assetPath}` : null;
+  },
+  load: (id) => {
+    if (id.startsWith(STYLESHEET_PREFIX)) return STYLESHEET_SOURCE;
+    if (SVG_COMPONENT_PATTERN.test(id)) return SVG_COMPONENT_SOURCE;
+    if (id.startsWith(MISSING_ASSET_PREFIX))
+      return `export default ${JSON.stringify(id.slice(MISSING_ASSET_PREFIX.length))};`;
+    return null;
+  },
+});
+
+const createStandInPlugin = (polyfilled: Set<string>, references: SourceReferences): Plugin => ({
+  name: "bippy-verify-stand-ins",
+  enforce: "pre",
+  resolveId: (source, importer) =>
+    isServerOnlyPackage(source) || isNodeOnlyModule(source, importer, polyfilled)
+      ? `${STAND_IN_MODULE_PREFIX}${source}`
+      : null,
+  load: (id) =>
+    id.startsWith(STAND_IN_MODULE_PREFIX)
+      ? createStandInModuleSource(
+          references.packageImports.get(id.slice(STAND_IN_MODULE_PREFIX.length)) ?? new Set(),
+        )
+      : null,
+});
+
+const createMissingModulePlugin = (): Plugin => ({
+  name: "bippy-verify-missing-modules",
+  enforce: "pre",
+  async resolveId(source, importer) {
+    if (!importer || !isAppSourceModule(importer) || !PACKAGE_SPECIFIER_PATTERN.test(source))
+      return null;
+    return (
+      (await this.resolve(source, importer, { skipSelf: true })) ??
+      `${STAND_IN_MODULE_PREFIX}${source}`
+    );
+  },
+});
+
 const createHarnessPlugin = (
   appDirectory: string,
-  nextDirectory: string | null,
   providers: ProviderSpec[],
   setup: HarnessSetup,
   appImporter: string,
-  references: SourceReferences,
 ): Plugin => {
-  const isNextApp = nextDirectory !== null;
-  const polyfilled = getPolyfilledModules(nextDirectory);
   const entryId = join(appDirectory, ENTRY_PATH);
   const providersId = join(appDirectory, PROVIDERS_PATH);
   const setupId = join(appDirectory, SETUP_PATH);
@@ -757,26 +828,7 @@ const createHarnessPlugin = (
   return {
     name: "bippy-verify-harness",
     enforce: "pre",
-    async resolveId(source, importer) {
-      if (isNextApp && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
-      if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
-      if (isServerOnlyPackage(source) || isNodeOnlyModule(source, importer, polyfilled))
-        return `${STAND_IN_MODULE_PREFIX}${source}`;
-      // The id ends in `.js`, as Vite's own CSS handling claims any id ending like a stylesheet.
-      if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
-      if (STUBS.has(source)) return STUBS.get(source);
-      const assetPath = source.split("?")[0] ?? source;
-      if (
-        importer &&
-        assetPath.startsWith(".") &&
-        IMAGE_FILE_PATTERN.test(assetPath) &&
-        !existsSync(resolve(dirname(importer.split("?")[0] ?? importer), assetPath))
-      )
-        return `${MISSING_ASSET_PREFIX}${assetPath}`;
-      if (source === "nuqs/server")
-        return importer === NUQS_SERVER_ID
-          ? this.resolve(source, appImporter, { skipSelf: true })
-          : NUQS_SERVER_ID;
+    resolveId(source, importer) {
       if (source === ENTRY_PATH || source === entryId) return entryId;
       if (importer === entryId && source.startsWith("./"))
         return join(import.meta.dirname, source.replace(/\.js$/, ".ts"));
@@ -792,25 +844,9 @@ const createHarnessPlugin = (
         return this.resolve(source, appImporter, { skipSelf: true });
       if (importer === setupId && setup.file)
         return this.resolve(source, setup.file, { skipSelf: true });
-      if (!importer || !isAppSourceModule(importer) || !PACKAGE_SPECIFIER_PATTERN.test(source))
-        return null;
-      return (
-        (await this.resolve(source, importer, { skipSelf: true })) ??
-        `${STAND_IN_MODULE_PREFIX}${source}`
-      );
+      return null;
     },
     load: (id) => {
-      if (id.startsWith(STYLESHEET_PREFIX)) return STYLESHEET_SOURCE;
-      if (SVG_COMPONENT_PATTERN.test(id)) return SVG_COMPONENT_SOURCE;
-      if (id.startsWith(MISSING_ASSET_PREFIX))
-        return `export default ${JSON.stringify(id.slice(MISSING_ASSET_PREFIX.length))};`;
-      if (id === NEXT_FONT_ID) return createNextFontSource(references.nextFonts);
-      if (id.startsWith(STAND_IN_MODULE_PREFIX))
-        return createStandInModuleSource(
-          references.packageImports.get(id.slice(STAND_IN_MODULE_PREFIX.length)) ?? new Set(),
-        );
-      if (id === NUQS_SERVER_ID)
-        return `export * from "nuqs/server";\nexport { createSearchParamsCache } from ${JSON.stringify(NUQS_CACHE_STUB)};`;
       if (id === entryId) return readFileSync(ENTRY_SOURCE, "utf8");
       if (id === providersId) return providersSource;
       if (id === setupId) return setup.file ? readFileSync(setup.file, "utf8") : "";
@@ -863,7 +899,11 @@ export const startHarness = async (
     logLevel: "error",
     appType: "custom",
     plugins: [
-      createHarnessPlugin(appDirectory, nextDirectory, providers, setup, appImporter, references),
+      createStubPlugin(nextDirectory, appImporter, references),
+      createStandInPlugin(getPolyfilledModules(nextDirectory), references),
+      createAssetPlugin(),
+      createHarnessPlugin(appDirectory, providers, setup, appImporter),
+      createMissingModulePlugin(),
       createProbePlugin(probes),
       ...(nextDirectory ? [createNextImagePlugin()] : []),
       createServerActionPlugin(),
