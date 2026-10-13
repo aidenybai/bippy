@@ -102,7 +102,7 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
         ),
       };
       const request: MountRequest = {
-        moduleUrl: project.getModuleUrl(analysis.file),
+        module: project.getComponentModule(analysis.file),
         exportName,
         props,
         scenario: options.scenario

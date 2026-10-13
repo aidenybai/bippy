@@ -776,11 +776,16 @@ const mount = async (request: MountRequest): Promise<Capture> => {
     if (!scenario) return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
     await scenario(...request.scenario.args);
   }
+  // The app loads a module in an import cycle through its importers, so one that reads it at its
+  // top level, like a route table, finds it initialized. Loading it first would leave that read
+  // in the temporal dead zone.
+  for (const url of request.module.importerUrls)
+    await import(/* @vite-ignore */ new URL(url, location.origin).href).catch(() => undefined);
   // HACK: Vite adds `?import` to a root-relative URL imported at runtime, which would load
   // the component's file a second time beside its static importers, like a wrapper from
   // the same file, each with its own contexts. A full URL is left alone.
   const moduleExports: Record<string, unknown> = await import(
-    /* @vite-ignore */ new URL(request.moduleUrl, location.origin).href
+    /* @vite-ignore */ new URL(request.module.url, location.origin).href
   );
   const componentType = moduleExports[request.exportName];
   if (!componentType) return createEmptyCapture(`export ${request.exportName} not found`);

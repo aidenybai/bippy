@@ -3,7 +3,14 @@ import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 import { normalizeShapes } from "./match";
 import { HarnessError, getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
-import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types";
+import type {
+  Action,
+  Capture,
+  ComponentModule,
+  MountRequest,
+  ProjectIndex,
+  Wrapper,
+} from "./types";
 import { getPropCombinations } from "./props";
 import { findSiblingParts, getErrorSubject, getNamedParent, proposeParents } from "./wrappers";
 
@@ -178,7 +185,7 @@ const getCaptureKey = (capture: Capture): string =>
 export const exploreComponent = async (
   page: Page,
   analysis: ComponentAnalysis,
-  moduleUrl: string,
+  module: ComponentModule,
   project: ProjectIndex,
 ): Promise<Observation[]> => {
   const { exportName } = analysis;
@@ -188,7 +195,7 @@ export const exploreComponent = async (
   const { wrappers, mounted } = await resolveWrappers(
     page,
     {
-      moduleUrl,
+      module,
       exportName,
       props: propCombinations[0] ?? {},
       scenario: null,
@@ -199,7 +206,7 @@ export const exploreComponent = async (
   );
 
   for (const props of propCombinations) {
-    const request: MountRequest = { moduleUrl, exportName, props, scenario: null, wrappers };
+    const request: MountRequest = { module, exportName, props, scenario: null, wrappers };
     const replay = async (path: string[]): Promise<Capture | null> => {
       let capture: Capture | null = await mountInPage(page, request);
       for (const actionKey of path) {

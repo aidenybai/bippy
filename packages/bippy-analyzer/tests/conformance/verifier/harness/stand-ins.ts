@@ -90,7 +90,9 @@ const createStandInModuleSource = (names: Set<string>): string =>
   [
     `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
     "export default STAND_IN;",
-    ...[...names].map((name) => `export const ${name} = STAND_IN;`),
+    ...[...names]
+      .filter((name) => name !== "default")
+      .map((name) => `export const ${name} = STAND_IN;`),
   ].join("\n");
 
 export const createStandInPlugin = (

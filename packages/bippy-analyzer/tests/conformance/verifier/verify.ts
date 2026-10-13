@@ -4,17 +4,19 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
-import type { ProjectIndex } from "./types";
+import type { ComponentModule, ProjectIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectMutationProbes } from "./mutation";
 import { collectProbes, scoreComponent } from "./score";
 import type { ComponentVerdict } from "./score";
 import { HarnessError, classifyMountError } from "./reasons";
 import { readHarnessSetup } from "./harness/setup";
+import { getCycleImporters } from "./source-index";
 import { startHarness } from "./server";
 import type { Harness } from "./server";
 
 export interface ProjectHarness extends Harness {
+  getComponentModule: (file: string) => ComponentModule;
   knownComponents: Map<string, string>;
   projectIndex: ProjectIndex;
 }
@@ -35,8 +37,13 @@ export const startProjectHarness = async (
     [...new Set(exported.map(({ analysis }) => analysis.file))],
     readHarnessSetup(setupDirectory),
   );
+  const cycleImporters = getCycleImporters(harness.sourceIndex.imports);
   return {
     ...harness,
+    getComponentModule: (file) => ({
+      url: harness.getModuleUrl(file),
+      importerUrls: (cycleImporters.get(file) ?? []).map(harness.getModuleUrl),
+    }),
     projectIndex: {
       ...harness.sourceIndex,
       components: new Map(
@@ -133,7 +140,7 @@ export const verifyProject = async (
         ? await exploreComponent(
             page,
             component.analysis,
-            harness.getModuleUrl(component.analysis.file),
+            harness.getComponentModule(component.analysis.file),
             harness.projectIndex,
           )
         : [];

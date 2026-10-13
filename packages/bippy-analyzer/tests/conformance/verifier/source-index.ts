@@ -3,6 +3,8 @@ import { dirname, resolve } from "node:path";
 import type { ExportedName, FileImports, PackageImport } from "./types";
 
 const IMPORT_PATTERN = /import\s+(type\s+)?([^;]*?)\s*from\s*["']([^"']+)["']/g;
+const REEXPORT_PATTERN =
+  /export\s+(type\s+)?(\*(?:\s+as\s+[\w$]+)?|\{[^}]*\})\s*from\s*["']([^"']+)["']/g;
 const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
 const EXPORT_DECLARATION_PATTERN =
   /export\s+(default\s+)?(?:async\s+)?(?:const|let|var|function|class)\s+([A-Z]\w*)/g;
@@ -22,9 +24,11 @@ const getImportedNames = (clause: string): string[] =>
     return name ? [name] : [];
   });
 
+// A re-export, like a barrel's `export { Sidebar } from "./sidebar"`, loads its module too.
 export const parseImports = (text: string): ParsedImport[] =>
-  [...text.matchAll(IMPORT_PATTERN)].flatMap(([, typeOnly, clause = "", specifier = ""]) =>
-    typeOnly ? [] : [{ specifier, names: getImportedNames(clause) }],
+  [...text.matchAll(IMPORT_PATTERN), ...text.matchAll(REEXPORT_PATTERN)].flatMap(
+    ([, typeOnly, clause = "", specifier = ""]) =>
+      typeOnly ? [] : [{ specifier, names: getImportedNames(clause) }],
   );
 
 export const parseExports = (text: string): Array<{ name: string; exportName: string }> => [
@@ -79,4 +83,59 @@ export const addExports = (
 ): void => {
   for (const { name, exportName } of parseExports(text))
     exports.set(name, [...(exports.get(name) ?? []), { file, exportName }]);
+};
+
+/** For each file in an import cycle, the files in that cycle that import it. */
+export const getCycleImporters = (imports: Map<string, FileImports>): Map<string, string[]> => {
+  const indices = new Map<string, number>();
+  const lowLinks = new Map<string, number>();
+  const stack: string[] = [];
+  const onStack = new Set<string>();
+  const cycles: string[][] = [];
+  const getLowLink = (file: string): number => lowLinks.get(file) ?? Infinity;
+  const enter = (file: string): void => {
+    indices.set(file, indices.size);
+    lowLinks.set(file, indices.size - 1);
+    stack.push(file);
+    onStack.add(file);
+  };
+  // Tarjan's strongly connected components, walked with an explicit stack so a long import chain
+  // can't overflow the call stack.
+  for (const root of imports.keys()) {
+    if (indices.has(root)) continue;
+    enter(root);
+    const frames = [{ file: root, nextIndex: 0 }];
+    while (frames.length > 0) {
+      const frame = frames[frames.length - 1];
+      const target = imports.get(frame.file)?.files[frame.nextIndex++];
+      if (target !== undefined) {
+        if (!indices.has(target)) {
+          enter(target);
+          frames.push({ file: target, nextIndex: 0 });
+        } else if (onStack.has(target)) {
+          lowLinks.set(
+            frame.file,
+            Math.min(getLowLink(frame.file), indices.get(target) ?? Infinity),
+          );
+        }
+        continue;
+      }
+      frames.pop();
+      const parent = frames.at(-1);
+      if (parent)
+        lowLinks.set(parent.file, Math.min(getLowLink(parent.file), getLowLink(frame.file)));
+      if (getLowLink(frame.file) !== indices.get(frame.file)) continue;
+      const cycle = stack.splice(stack.indexOf(frame.file));
+      for (const file of cycle) onStack.delete(file);
+      if (cycle.length > 1) cycles.push(cycle);
+    }
+  }
+  return new Map(
+    cycles.flatMap((cycle) =>
+      cycle.map((file): [string, string[]] => [
+        file,
+        cycle.filter((importer) => imports.get(importer)?.files.includes(file)),
+      ]),
+    ),
+  );
 };

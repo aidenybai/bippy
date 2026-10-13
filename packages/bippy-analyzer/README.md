@@ -68,6 +68,8 @@ Stylesheets load empty, since fibers don't depend on them. `next/image` loads im
 
 An async server component is awaited in the page, along with those it renders, and mounted as what it returned. An app that renders its own router, like its `App`, mounts outside the harness's router.
 
+A component in an import cycle loads the way the app loads it, after the files in that cycle that import it. A route table that renders `RootLayout` then finds it initialized, whichever component the page loaded before.
+
 ### Missing parents
 
 A component may throw for want of a parent, like "`DialogTitle` must be used within `Dialog`". The verifier then tries parents in this order, one at a time:
