@@ -1,4 +1,3 @@
-import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects.js";
 import type {
   BlockId,
   HIRFunction,
@@ -9,7 +8,6 @@ import type {
   Phi,
   Place,
   SourceLocation,
-  SpreadPattern,
   Terminal,
 } from "../react-compiler/HIR/HIR.js";
 import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR.js";
@@ -22,7 +20,6 @@ import type {
   Binding,
   BindingKind,
   BindingValue,
-  ConditionalValue,
   ContextModels,
   Branch,
   DispatchValue,
@@ -45,12 +42,39 @@ import type {
   WarningKind,
 } from "./types.js";
 import { formatPlace, formatSymbolicValue } from "./format.js";
-import { getValueKey } from "./utils/value-key.js";
 import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
 import { isHandlerProp } from "./collect-handlers.js";
 import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key.js";
-import { isExternalSource, isNullish, isStateBinding, isWholeBinding } from "./utils/checks.js";
-import { getKnownTruthiness, getTestExpression, negate } from "./utils/truthiness.js";
+import { isExternalSource, isStateBinding, isWholeBinding } from "./utils/checks.js";
+import { getTestExpression, negate } from "./utils/truthiness.js";
+import {
+  UNDEFINED_VALUE,
+  createBindingValue,
+  createUnknown,
+  foldBinary,
+  foldUnary,
+  getComponentName,
+  getKnownOutcome,
+  getPassedCallbacks,
+  getShortCircuit,
+  isNullishValue,
+} from "./symbolic-values.js";
+import {
+  NO_STOPS,
+  createConditional,
+  getGuard,
+  hasFallthrough,
+  isFallthroughOnly,
+} from "./control-flow.js";
+import type { BranchTerminal, Outcome } from "./control-flow.js";
+import {
+  getDeclarationLocation,
+  getIdentifierName,
+  getMutatedPlace,
+  getPlaceOrSpread,
+  isFunctionCreation,
+  isSameLocation,
+} from "./utils/hir.js";
 
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_INLINE_DEPTH = 4;
@@ -59,21 +83,7 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const DYNAMIC_TAG_NAME = "Dynamic";
-const MAX_OPTIONS_DEPTH = 3;
 const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
-const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
-
-const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
-  values.flatMap((value) => {
-    if (value.kind === "Function" || value.kind === "Setter") return [value];
-    if (value.kind === "Conditional")
-      return getPassedCallbacks([value.consequent, value.alternate], depth);
-    if (value.kind !== "ObjectExpression" || depth >= MAX_OPTIONS_DEPTH) return [];
-    return getPassedCallbacks(
-      value.properties.map((property) => property.value),
-      depth + 1,
-    );
-  });
 
 const isDefinedSample = (sample: Sample): boolean =>
   sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);
@@ -86,20 +96,6 @@ const SUSPENDED_DOMAIN: Domain = {
   ],
   origin: "type",
 };
-
-type Outcome =
-  | { kind: "Return"; value: SymbolicValue }
-  | { kind: "Fallthrough"; from: BlockId | null; to: BlockId }
-  | SplitOutcome;
-
-interface SplitOutcome {
-  kind: "Split";
-  test: SymbolicValue;
-  testKind: TestKind;
-  branch: Branch;
-  consequent: Outcome;
-  alternate: Outcome;
-}
 
 // `chain` is the `.c()` of `a?.b.c()`; its branch only tests whether `a?.b` short-circuited.
 type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "chain";
@@ -141,29 +137,6 @@ interface Mutation {
   loc: SourceLocation;
 }
 
-const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
-  left === right ||
-  (left !== GeneratedSource &&
-    right !== GeneratedSource &&
-    left.start.index === right.start.index &&
-    left.end.index === right.end.index);
-
-// A function's mutations happen when it's called, not where it's created.
-const isFunctionCreation = (value: InstructionValue): boolean =>
-  value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
-
-const getMutatedPlace = (effect: AliasingEffect): Place | null => {
-  switch (effect.kind) {
-    case "Mutate":
-    case "MutateTransitive":
-      return effect.value;
-    case "MutateFrozen":
-      return effect.place;
-    default:
-      return null;
-  }
-};
-
 export type ModuleFunctionLoader = (name: string) => HIRFunction | null;
 
 export interface ProjectHook {
@@ -174,110 +147,8 @@ export interface ProjectHook {
 
 export type ProjectHookLoader = (declarationKey: string) => ProjectHook | null;
 
-type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
-
-const createUnknown = (reason: string, loc: SourceLocation): SymbolicValue => ({
-  kind: "Unknown",
-  reason,
-  loc,
-});
-
-const createBindingValue = (binding: Binding): BindingValue => ({
-  kind: "Binding",
-  binding,
-  path: [],
-});
-
-const getIdentifierName = (place: Place): string | null => place.identifier.name?.value ?? null;
-
-const getDeclarationLocation = (place: Place): SourceLocation =>
-  place.identifier.loc === GeneratedSource ? place.loc : place.identifier.loc;
-
-const getPlaceOrSpread = (argument: Place | SpreadPattern): Place =>
-  argument.kind === "Spread" ? argument.place : argument;
-
-const foldBinary = (operator: string, left: SymbolicValue, right: SymbolicValue): SymbolicValue => {
-  if (left.kind !== "Primitive" || right.kind !== "Primitive")
-    return { kind: "BinaryExpression", operator, left, right };
-  const leftValue = left.value;
-  const rightValue = right.value;
-  switch (operator) {
-    case "===":
-      return { kind: "Primitive", value: leftValue === rightValue };
-    case "!==":
-      return { kind: "Primitive", value: leftValue !== rightValue };
-    case "==":
-      // oxlint-disable-next-line eqeqeq -- Folds JavaScript loose equality as written.
-      return { kind: "Primitive", value: leftValue == rightValue };
-    case "!=":
-      // oxlint-disable-next-line eqeqeq -- Folds JavaScript loose equality as written.
-      return { kind: "Primitive", value: leftValue != rightValue };
-    default:
-      return { kind: "BinaryExpression", operator, left, right };
-  }
-};
-
-const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolean | null => {
-  if (testKind === "truthy") return getKnownTruthiness(test);
-  return test.kind === "Primitive" ? test.value !== null && test.value !== undefined : null;
-};
-
-const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
-  if (operator === "!" && value.kind === "Primitive")
-    return { kind: "Primitive", value: !value.value };
-  if (operator === "!") return negate(value);
-  return { kind: "UnaryExpression", operator, value };
-};
-
-const getComponentName = (tag: Extract<SymbolicValue, { kind: "Global" | "Binding" }>): string =>
-  tag.kind === "Global" ? tag.name : tag.binding.name;
-
-const createConditional = (
-  split: SplitOutcome,
-  guards: SymbolicValue[],
-  toArm: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
-): ConditionalValue => ({
-  kind: "Conditional",
-  test: split.test,
-  testKind: split.testKind,
-  consequent: toArm(split.consequent, [...guards, getGuard(split, true)]),
-  alternate: toArm(split.alternate, [...guards, getGuard(split, false)]),
-  branch: split.branch,
-  guardKeys: guards.map(getValueKey),
-});
-
-const isFallthroughOnly = (outcome: Outcome, join: BlockId): boolean =>
-  outcome.kind === "Split"
-    ? isFallthroughOnly(outcome.consequent, join) && isFallthroughOnly(outcome.alternate, join)
-    : outcome.kind === "Fallthrough" && outcome.to === join;
-
-const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
-  outcome.kind === "Split"
-    ? hasFallthrough(outcome.consequent, join) || hasFallthrough(outcome.alternate, join)
-    : outcome.kind === "Fallthrough" && outcome.to === join;
-
-const NO_STOPS: ReadonlySet<BlockId> = new Set();
-
 const getHookBindingKind = (hookKind: HookKind): BindingKind =>
   hookKind === "useRef" ? "ref" : hookKind === "useContext" ? "context" : "hook";
-
-const isNullishValue = (value: SymbolicValue): boolean =>
-  value.kind === "Primitive" && isNullish(value.value);
-
-// Assumes member accesses past the `?.` never throw.
-const getShortCircuit = (
-  value: SymbolicValue,
-): { test: SymbolicValue; testKind: TestKind } | null =>
-  value.kind === "Conditional" &&
-  value.alternate.kind === "Primitive" &&
-  value.alternate.value === undefined
-    ? { test: value.test, testKind: value.testKind }
-    : null;
-
-const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
-  const test = getTestExpression(split);
-  return isConsequent ? test : negate(test);
-};
 
 /** Runs HIR symbolically; phis at joins become `Conditional` values, so every branch is kept. */
 export class Interpreter {
