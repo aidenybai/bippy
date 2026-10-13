@@ -60,6 +60,8 @@ const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const DYNAMIC_TAG_NAME = "Dynamic";
 const MAX_OPTIONS_DEPTH = 3;
+const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
+const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
 
 const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
@@ -173,10 +175,6 @@ export interface ProjectHook {
 export type ProjectHookLoader = (declarationKey: string) => ProjectHook | null;
 
 type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
-
-const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
-
-const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
 
 const createUnknown = (reason: string, loc: SourceLocation): SymbolicValue => ({
   kind: "Unknown",
@@ -568,9 +566,7 @@ export class Interpreter {
       case "ObjectExpression":
         return (
           object.properties.findLast((candidate) => candidate.key === property)?.value ??
-          (object.spreads.length > 0
-            ? createUnknown("spread", loc)
-            : { kind: "Primitive", value: undefined })
+          (object.spreads.length > 0 ? createUnknown("spread", loc) : UNDEFINED_VALUE)
         );
       case "ArrayExpression":
         return property === "length" && object.spreads.length === 0
