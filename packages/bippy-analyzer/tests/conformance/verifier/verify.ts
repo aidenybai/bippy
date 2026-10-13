@@ -10,7 +10,8 @@ import { collectMutationProbes } from "./mutation";
 import { collectProbes, scoreComponent } from "./score";
 import type { ComponentVerdict } from "./score";
 import { HarnessError, classifyMountError } from "./reasons";
-import { readHarnessSetup, startHarness } from "./server";
+import { readHarnessSetup } from "./harness/setup";
+import { startHarness } from "./server";
 import type { Harness } from "./server";
 
 export interface ProjectHarness extends Harness {

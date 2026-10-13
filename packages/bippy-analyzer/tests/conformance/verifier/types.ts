@@ -13,6 +13,14 @@ export type Shape =
 
 export type ProbeMode = "truthy" | "nullish" | "mutation";
 
+export interface Probe {
+  id: string;
+  file: string;
+  start: number;
+  end: number;
+  mode: ProbeMode;
+}
+
 export interface ProbeHit {
   id: string;
   outcome: boolean;

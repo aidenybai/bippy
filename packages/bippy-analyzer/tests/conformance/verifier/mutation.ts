@@ -4,7 +4,7 @@ import { formatLine } from "../../../src/core/format";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
-import type { Probe } from "./server";
+import type { Probe } from "./types";
 
 interface WarningScore {
   coveredWarnings: number;

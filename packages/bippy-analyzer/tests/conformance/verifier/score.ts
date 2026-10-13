@@ -16,7 +16,7 @@ import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
 import { TRUNCATED_VALUE } from "./types";
-import type { Action, ActionTarget, Shape } from "./types";
+import type { Action, ActionTarget, Probe, Shape } from "./types";
 import {
   explainMismatch,
   findClosest,
@@ -29,7 +29,6 @@ import {
 import { scoreWarnings } from "./mutation";
 import { getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
-import type { Probe } from "./server";
 
 type ComponentStatus = "verified" | "not-exported" | "mount-failed";
 
