@@ -1,7 +1,7 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { DomainResolver } from "./infer-domains";
-import type { Binding, BindingKind, BindingValue, Domain } from "./types";
+import type { AbstractValue, Binding, BindingKind, BindingValue, Domain } from "./types";
 import { PlaceMap, getBindingPlace } from "./utils/place";
 
 export interface BindingOptions extends Partial<
@@ -12,7 +12,9 @@ export interface BindingOptions extends Partial<
 export class BindingTable {
   readonly #bindings = new Map<string, Binding>();
   readonly #propBindings = new Map<string, Binding>();
+  readonly #resolvers = new Map<number, DomainResolver>();
   readonly placeDomains = new PlaceMap<Domain>();
+  readonly memberCases = new PlaceMap<AbstractValue[][]>();
 
   get bindings(): Binding[] {
     return [...this.#bindings.values()];
@@ -42,6 +44,7 @@ export class BindingTable {
       inputs: options.inputs ?? [],
     };
     this.#bindings.set(key, binding);
+    this.#resolvers.set(binding.id, resolver);
     this.placeDomains.set(getBindingPlace(binding), binding.domain);
     return binding;
   }
@@ -66,7 +69,15 @@ export class BindingTable {
     loc: SourceLocation,
   ): BindingValue {
     const place = getBindingPlace(binding, path);
-    if (!this.placeDomains.has(place)) this.placeDomains.set(place, resolver.getDomain(loc));
+    if (!this.placeDomains.has(place)) {
+      this.placeDomains.set(place, resolver.getDomain(loc));
+      const [field] = path;
+      const memberCases =
+        path.length === 1 && field !== undefined
+          ? this.#resolvers.get(binding.id)?.getMemberCases(binding.loc, field)
+          : null;
+      if (memberCases) this.memberCases.set(place, memberCases);
+    }
     return { kind: "Binding", binding, path };
   }
 }

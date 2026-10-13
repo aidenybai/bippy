@@ -51,12 +51,18 @@ export interface Constraints {
   values: PlaceMap<AbstractValue[]>;
   assumptions: Map<string, Assumption>;
   bounds: Bound[];
+  /** Shared across clones: for a union-typed binding, the values each member gives a field. */
+  memberCases: PlaceMap<AbstractValue[][]>;
+  /** By binding id, the union members still possible; every member when absent. */
+  members: Map<number, number[]>;
 }
 
 export const cloneConstraints = (constraints: Constraints): Constraints => ({
   values: new PlaceMap(constraints.values),
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
+  memberCases: constraints.memberCases,
+  members: new Map(constraints.members),
 });
 
 export const getLengthAtom = (bindingId: number): Place => ({ bindingId, path: [LENGTH_FIELD] });
@@ -269,6 +275,43 @@ export const evaluate = (value: SymbolicValue, constraints: Constraints): boolea
   }
 };
 
+const getValueKeys = (values: AbstractValue[]): Set<string> =>
+  new Set(values.map(formatAbstractValue));
+
+// A value no member names, like a defaulted read's `undefined`, says nothing about the member.
+const restrictMembers = (
+  constraints: Constraints,
+  place: Place,
+  restricted: AbstractValue[],
+): Constraints | null => {
+  const placeCases = constraints.memberCases.get(place);
+  if (!placeCases) return constraints;
+  const restrictedKeys = getValueKeys(restricted);
+  const namedKeys = getValueKeys(placeCases.flat());
+  if ([...restrictedKeys].some((key) => !namedKeys.has(key))) return constraints;
+  const members = (
+    constraints.members.get(place.bindingId) ?? placeCases.map((_, index) => index)
+  ).filter((member) =>
+    placeCases[member]?.some((value) => restrictedKeys.has(formatAbstractValue(value))),
+  );
+  if (members.length === 0) return null;
+  constraints.members.set(place.bindingId, members);
+  for (const [otherPlace, otherCases] of constraints.memberCases) {
+    if (otherPlace.bindingId !== place.bindingId || isSamePlace(otherPlace, place)) continue;
+    const values = constraints.values.get(otherPlace);
+    if (!values) continue;
+    const otherNamedKeys = getValueKeys(otherCases.flat());
+    const allowedKeys = getValueKeys(members.flatMap((member) => otherCases[member] ?? []));
+    const narrowed = values.filter((value) => {
+      const key = formatAbstractValue(value);
+      return !otherNamedKeys.has(key) || allowedKeys.has(key);
+    });
+    if (narrowed.length === 0) return null;
+    constraints.values.set(otherPlace, narrowed);
+  }
+  return constraints;
+};
+
 const restrictPlace = (
   place: BindingValue,
   constraints: Constraints,
@@ -280,7 +323,7 @@ const restrictPlace = (
   if (restricted.length === 0) return null;
   const next = cloneConstraints(constraints);
   next.values.set(getValuePlace(place), restricted);
-  return next;
+  return restrictMembers(next, getValuePlace(place), restricted);
 };
 
 // Unknowns print alike, so an assumption about one, keyed by its text, would decide another.
@@ -310,25 +353,26 @@ export const assume = (
     const held = assume(getTestExpression(value), true, constraints);
     return held && assume(value.consequent, true, held);
   }
-  if (value.kind === "Binding") {
-    const restricted = restrictPlace(
+  if (value.kind === "Binding" && getPlaceValues(value, constraints))
+    return restrictPlace(
       value,
       constraints,
       (candidate) => getTruthiness(candidate) !== (outcome ? "falsy" : "truthy"),
     );
-    if (restricted) return restricted;
-  }
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator)) {
     const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
     const [placeSide, literalSide] = splitEquality(value);
-    if (literalSide.kind === "Primitive" && placeSide.kind === "Binding") {
+    if (
+      literalSide.kind === "Primitive" &&
+      placeSide.kind === "Binding" &&
+      getPlaceValues(placeSide, constraints)
+    ) {
       const wantsMatch = outcome !== isNegated;
-      const restricted = restrictPlace(placeSide, constraints, (candidate) =>
+      return restrictPlace(placeSide, constraints, (candidate) =>
         isEqualToLiteral(candidate, literalSide.value, value.operator)
           ? wantsMatch
           : !wantsMatch || canTypeEqualLiteral(candidate, literalSide.value),
       );
-      if (restricted) return restricted;
     }
   }
   if (hasUnknownPart(value)) return constraints;
@@ -352,6 +396,7 @@ export const forgetBinding = (
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
   const isLength = (atom: Place | null): boolean => atom !== null && isSamePlace(atom, lengthAtom);
+  constraints.members.delete(bindingId);
   for (const [key, assumption] of constraints.assumptions) {
     const places = assumption.places.filter((place) => place.bindingId === bindingId);
     if (places.length === 0) continue;

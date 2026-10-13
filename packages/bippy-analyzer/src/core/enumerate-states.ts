@@ -201,7 +201,13 @@ const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
           : null;
     if (cases) values.set(place, cases);
   }
-  return { values, assumptions: new Map(), bounds: [] };
+  return {
+    values,
+    assumptions: new Map(),
+    bounds: [],
+    memberCases: analysis.memberCases,
+    members: new Map(),
+  };
 };
 
 const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => {

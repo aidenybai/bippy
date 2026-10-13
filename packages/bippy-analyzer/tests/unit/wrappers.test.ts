@@ -25,6 +25,7 @@ const createAnalysis = (name: string, file: string): ComponentAnalysis => ({
   contextSamples: new Map(),
   untypedContexts: new Map(),
   placeDomains: new PlaceMap(),
+  memberCases: new PlaceMap(),
   render: { kind: "Primitive", value: null },
   handlers: [],
   renders: [],

@@ -293,6 +293,32 @@ exports[`fixture analysis > ProfileCard keeps its states, transitions and unreac
       └─ <div> {query.data.name}"
 `;
 
+exports[`fixture analysis > ProfileStatus keeps its states, transitions and unreachable branches 1`] = `
+"ProfileStatus src/query.tsx:22
+├─ data
+│  └─ useQuery() hook:Custom QueryObserverLoadingErrorResult<NoInfer<Profile>, Error> | QueryObserverLoadingResult<NoInfer<Profile>, Error> | Que…
+│     ├─ .isPending false | true
+│     ├─ .isError false | true
+│     └─ .data undefined | NoInfer<Profile>
+├─ render
+│  └─ <div>
+│     ├─ ◆ useQuery().isPending
+│     │  └─ ✓ <p> "Loading"
+│     ├─ ◆ useQuery().isError
+│     │  └─ ✓ <p> "Error"
+│     └─ ◆ useQuery().data
+│        └─ ✓ <p> {useQuery().data.name}
+└─ states (4)
+   ├─ S1 useQuery().isPending
+   │  └─ <div> <p> "Loading"
+   ├─ S2 !useQuery().isPending ∧ useQuery().isError ∧ useQuery().data
+   │  └─ <div> <p> "Error" <p> {useQuery().data.name}
+   ├─ S3 !useQuery().isPending ∧ useQuery().isError ∧ !useQuery().data
+   │  └─ <div> <p> "Error"
+   └─ S4 !useQuery().isPending ∧ !useQuery().isError
+      └─ <div> <p> {useQuery().data.name}"
+`;
+
 exports[`fixture analysis > RoleBadge keeps its states, transitions and unreachable branches 1`] = `
 "RoleBadge src/literals.tsx:30
 ├─ data

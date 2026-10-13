@@ -46,6 +46,7 @@ export const analyzeComponent = (
       contextSamples: new Map(),
       untypedContexts: new Map(),
       placeDomains: new PlaceMap(),
+      memberCases: new PlaceMap(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
       handlers: [],
       renders: [],
@@ -69,7 +70,7 @@ export const analyzeComponent = (
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
-  const { bindings, placeDomains } = interpreter.bindingTable;
+  const { bindings, placeDomains, memberCases } = interpreter.bindingTable;
   return {
     ...base,
     loc: hir.loc,
@@ -80,6 +81,7 @@ export const analyzeComponent = (
     contextSamples: interpreter.externalSources.contextSamples,
     untypedContexts: interpreter.externalSources.untypedContexts,
     placeDomains,
+    memberCases,
     render,
     handlers,
     renders: [...interpreter.renderedComponents],

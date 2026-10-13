@@ -246,6 +246,8 @@ export interface ComponentAnalysis {
   /** Binding id each untyped context is read through, by declaration key. */
   untypedContexts: Map<string, number>;
   placeDomains: PlaceMap<Domain>;
+  /** For a binding typed as a union of objects, the values each member gives a field. */
+  memberCases: PlaceMap<AbstractValue[][]>;
   render: SymbolicValue;
   handlers: Handler[];
   renders: string[];
