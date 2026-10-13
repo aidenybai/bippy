@@ -3,7 +3,7 @@ import { analyzeProject } from "../src/core/analyze-project.js";
 import { getComponent, getFixtureConfig } from "./helpers.js";
 
 describe("pure built-in methods", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "pure-methods");
+  const project = analyzeProject(getFixtureConfig("conformance-repros"), "non-mutating-methods");
   const picker = getComponent(project, "ItemPicker");
   const [pick, refresh] = picker.analysis.handlers;
 

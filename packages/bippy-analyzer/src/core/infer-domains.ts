@@ -46,7 +46,7 @@ const DATE_NAME_PATTERN = /(?:^date|^time|Date|Time|At|_at)$/;
 const CURRENCY_NAME_PATTERN = /(?:^currency|Currency)(?:Code)?$/;
 const LOCALE_NAME_PATTERN = /^(?:locale|lang|language)$|Locale$/;
 const COLOR_NAME_PATTERN = /^(?:color|background)$|(?:Color|Background)$/;
-const PURE_ARRAY_METHODS = new Set([
+const NON_MUTATING_ARRAY_METHODS = new Set([
   "at",
   "concat",
   "entries",
@@ -75,7 +75,7 @@ const PURE_ARRAY_METHODS = new Set([
   "values",
   "with",
 ]);
-const PURE_STRING_METHODS = new Set([
+const NON_MUTATING_STRING_METHODS = new Set([
   "at",
   "charAt",
   "charCodeAt",
@@ -430,7 +430,7 @@ export class DomainResolver {
   }
 
   // Nullish members are skipped because `items?.find()` never calls on them.
-  isPureMethod(calleeLoc: SourceLocation): boolean {
+  isNonMutatingMethod(calleeLoc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, calleeLoc);
     if (!node || !t.isPropertyAccessExpression(node)) return false;
     const method = node.name.text;
@@ -443,9 +443,9 @@ export class DomainResolver {
       members.length > 0 &&
       members.every((member) =>
         member.flags & TypeFlags.StringLike
-          ? PURE_STRING_METHODS.has(method)
+          ? NON_MUTATING_STRING_METHODS.has(method)
           : (this.#checker.isArrayType(member) || member.isTupleType()) &&
-            PURE_ARRAY_METHODS.has(method),
+            NON_MUTATING_ARRAY_METHODS.has(method),
       )
     );
   }

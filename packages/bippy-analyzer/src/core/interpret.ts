@@ -856,7 +856,7 @@ export class Interpreter {
         this.#applyDispatch(callee, args[0], loc, state);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (this.#mode === "effect" && !this.#resolver.isPureMethod(calleePlace.loc))
+        if (this.#mode === "effect" && !this.#resolver.isNonMutatingMethod(calleePlace.loc))
           this.#callBinding(callee, args, state);
         break;
       default:
@@ -864,7 +864,7 @@ export class Interpreter {
     }
     for (const argument of args) this.#visitCallbackArgument(argument, state);
     if (this.#mode !== "render") return createUnknown("call", loc);
-    if (!this.#resolver.isPureMethod(calleePlace.loc)) this.#addLaterCallbacks(args, loc);
+    if (!this.#resolver.isNonMutatingMethod(calleePlace.loc)) this.#addLaterCallbacks(args, loc);
     if (this.#resolver.isReactElement(loc)) {
       this.#bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
