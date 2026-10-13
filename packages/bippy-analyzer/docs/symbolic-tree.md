@@ -44,13 +44,16 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `analyze-component.ts`      | Runs our passes on one component's HIR                                           |
 | `type-provider.ts`          | Types the compiler's HIR from the TS checker                                     |
 | `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept               |
+| `symbolic-values.ts`        | Builds and folds the values the interpreter produces                             |
+| `control-flow.ts`           | Branch outcomes and the conditionals they merge into                             |
 | `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with  |
+| `string-samples.ts`         | Strings a component may parse, picked by name                                    |
 | `collect-handlers.ts`       | What each event handler and effect updates                                       |
 | `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions      |
 | `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds            |
 | `format.ts`, `serialize.ts` | Printing and JSON output                                                         |
 | `types.ts`                  | The data passed between stages                                                   |
-| `utils/`                    | Small helpers: places, predicates, truthiness, traversal, TS nodes, projects     |
+| `utils/`                    | Small helpers: places, value keys, HIR, predicates, truthiness, traversal, TS    |
 
 The browser verifier lives in `conformance/verifier`, next to the repos it runs on.
 
@@ -85,7 +88,7 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
    - calls to local and module functions are followed, and a call to a function a condition chooses, like `isDocument ? setDraggedDocument : setDraggedFolder`, may be either
    - `catch` blocks run too, as what a handler tries may throw
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
-   - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it; it may not happen, since a consumer can render without its provider
+   - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it. It may not happen, since a consumer can render without its provider.
    - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state
    - calling into any other hook's result or context value, like `query.fetchNextPage()`, may change it, and every hook from the same module, like `useSelector` after a Redux `dispatch`, to anything, later
    - a built-in array or string method that changes nothing, like `items.find()` or `query.trim()`, leaves the value it's called on as it is, as its type shows
@@ -93,7 +96,8 @@ The browser verifier lives in `conformance/verifier`, next to the repos it runs 
 
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
-   - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null. What it learns about a value is tied to the bindings it reads, not to how it prints, so two calls to one helper that print the same, like `parseDate(values[0])` and `parseDate(values[1])` when it can't tell the indexes apart, stay separate.
+   - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
+   - What it learns about a value is keyed by the value's structure and bindings, not its printed text. Two calls to one helper that print the same stay separate.
    - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`.
    - State values are limited to the initial value plus every value a handler can set. A state initialized from an untyped value cast to a type, like `useState(cell.getValue() as boolean)`, can hold anything, since the cast only asserts the type.
 10. For each state and each handler that changes its region, finds which states of the region can come next. A handler that doesn't touch a region leaves it as it is. It also reports branches that can never render. A branch whose value renders only under a test it wasn't computed under, like a ternary kept in a variable and shown behind `&&`, still runs without that test, so it is never reported.
@@ -148,7 +152,7 @@ The error alert can never show, because nothing dispatches `fail`.
 ## Known gaps
 
 - **Hook result fields are independent.** `query.isPending` and `query.isError` share a state region but each takes every value, even though React Query's union ties them together. The fix is to split on the union type's tag field.
-- **Context and stores aren't linked to their source.** A context value or store is typed from its declaration, not from the provider or store that sets it, so its values and the actions that change it are unknown.
+- **Context values come from their type.** A provider's setters are paired with the fields they set, and zustand actions with the fields they assign. Other context values and stores are typed from their declaration, not from what the provider passes.
 - **Calls are opaque unless their return type is finite.** `.filter` results are still `Unknown(call)`, so the analysis doesn't know the result is empty when the source is.
 - **Only definite mutations are tracked.** Passing state to a function that may mutate it doesn't forget it.
 - **Loops bail out.** A `for` or `while` in render makes the values it changes `Unknown`.
