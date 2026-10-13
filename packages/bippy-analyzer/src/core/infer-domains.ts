@@ -4,7 +4,9 @@ import {
   getContextKey,
   getDeclarationKey,
   getReactExportName,
+  isLibraryType,
   isReactElementType,
+  isReactType,
 } from "./utils/typescript.js";
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
@@ -25,17 +27,18 @@ import { EQUALITY_OPERATORS } from "./constraints.js";
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
-const ELEMENT_TYPE_PATTERN = /^(?:React\.)?(?:ReactElement|JSX\.Element)(?:<.*>)?$/;
-const PROMISE_TYPE_PATTERN = /^Promise</;
+const ELEMENT_TYPE_PATTERN = /^(?:ReactElement|Element)$/;
+const PROMISE_TYPE_PATTERN = /^Promise$/;
+const DATE_TYPE_PATTERN = /^Date$/;
 const SET_TYPE_NAMES = new Set(["Set", "ReadonlySet"]);
 const MAP_TYPE_NAMES = new Set(["Map", "ReadonlyMap"]);
-const CONTEXT_TYPE_PATTERN = /^(?:React\.)?Context</;
+const CONTEXT_TYPE_PATTERN = /^Context$/;
 // Throws beside `children`, which is sampled everywhere.
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 // No plain value can stand in for a DOM node.
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
-const NODE_TYPE_PATTERN = /^(?:React\.)?(?:ReactNode|ReactChild|ReactPortal)$/;
+const NODE_TYPE_PATTERN = /^(?:ReactNode|ReactChild|ReactPortal)$/;
 const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
 const EMPTY_TEXT_SAMPLE: Sample = { kind: "Value", value: "" };
 const SAMPLE_DATE = "2024-01-01T00:00:00.000Z";
@@ -202,10 +205,9 @@ const getSamples = (
 ): Sample[] => {
   if (!type || type.isErrorType() || type.flags & TypeFlags.AnyOrUnknown)
     return getStringSamples(name).slice(0, 1);
-  const typeText = checker.typeToString(type);
-  if (ELEMENT_TYPE_PATTERN.test(typeText)) return [{ kind: "Element" }];
-  if (NODE_TYPE_PATTERN.test(typeText)) return [TEXT_SAMPLE];
-  if (DOM_NODE_TYPE_PATTERN.test(typeText)) return [{ kind: "Undefined" }];
+  if (isLibraryType(type, DOM_NODE_TYPE_PATTERN)) return [{ kind: "Undefined" }];
+  if (isReactType(type, ELEMENT_TYPE_PATTERN)) return [{ kind: "Element" }];
+  if (isReactType(type, NODE_TYPE_PATTERN)) return [TEXT_SAMPLE];
   if (type.isUnionType()) {
     const samples = dedupeSamples(
       type.getTypes().flatMap((member) => getSamples(checker, member, depth, name)),
@@ -222,7 +224,7 @@ const getSamples = (
   if (type.flags & TypeFlags.Null) return [{ kind: "Value", value: null }];
   if (type.flags & (TypeFlags.Undefined | TypeFlags.Void)) return [{ kind: "Undefined" }];
   if (type.flags & TypeFlags.StringLike) return getStringSamples(name);
-  if (typeText === "Date") return [{ kind: "Date", value: SAMPLE_DATE }];
+  if (isLibraryType(type, DATE_TYPE_PATTERN)) return [{ kind: "Date", value: SAMPLE_DATE }];
   if (type.flags & (TypeFlags.NumberLike | TypeFlags.BigIntLike))
     return [
       { kind: "Value", value: 0 },
@@ -265,7 +267,7 @@ const getSamples = (
     const [value] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
     return [{ kind: "Map", entries: key && value ? [[key, value]] : [] }];
   }
-  if (PROMISE_TYPE_PATTERN.test(typeText) && type.isTypeReference()) {
+  if (isLibraryType(type, PROMISE_TYPE_PATTERN) && type.isTypeReference()) {
     const [valueType] = checker.getTypeArguments(type);
     const [value] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
     return [{ kind: "Promise", value: value ?? { kind: "Undefined" } }];
@@ -467,7 +469,7 @@ export class DomainResolver {
 
   isContext(loc: SourceLocation): boolean {
     const type = this.#getType(loc);
-    return type !== undefined && CONTEXT_TYPE_PATTERN.test(this.#checker.typeToString(type));
+    return type !== undefined && isReactType(type, CONTEXT_TYPE_PATTERN);
   }
 
   isReactElement(loc: SourceLocation): boolean {

@@ -46,3 +46,13 @@ export const NamespaceFilter = ({ namespaces }: { namespaces: Set<string> }) => 
 type SvgCache = Map<string, string>;
 
 export const CachedIcon = ({ cache }: { cache: SvgCache }) => <p>{cache.get("icon")}</p>;
+
+type Moment = Date;
+type Icon = React.ReactElement;
+
+export const AliasedTypes = ({ when, icon }: { when: Moment; icon: Icon }) => (
+  <p>
+    {icon}
+    {when.toISOString()}
+  </p>
+);

@@ -7,17 +7,28 @@ import { GeneratedSource } from "../../react-compiler/HIR/HIR.js";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR.js";
 
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react(?:-dom)?[\\/]/;
-const REACT_ELEMENT_TYPE_NAMES = new Set(["ReactElement", "ReactPortal", "ReactNode", "Element"]);
+const REACT_ELEMENT_TYPE_PATTERN = /^(?:ReactElement|ReactPortal|ReactNode|Element)$/;
+
+const LIBRARY_DECLARATION_PATTERN = /[\\/]lib\.[\w.]+\.d\.ts$/;
+
+const isDeclaredType = (type: Type, namePattern: RegExp, declarationPattern: RegExp): boolean =>
+  [type.getSymbol(), type.getAliasSymbol()].some(
+    (symbol) =>
+      symbol !== undefined &&
+      namePattern.test(symbol.name) &&
+      symbol.declarations.some((declaration) => declarationPattern.test(declaration.path)),
+  );
+
+export const isReactType = (type: Type, namePattern: RegExp): boolean =>
+  isDeclaredType(type, namePattern, REACT_DECLARATION_PATTERN);
+
+export const isLibraryType = (type: Type, namePattern: RegExp): boolean =>
+  isDeclaredType(type, namePattern, LIBRARY_DECLARATION_PATTERN);
 
 export const isReactElementType = (type: Type): boolean =>
-  (type.isUnionType() ? type.getTypes() : [type]).some((member) => {
-    const symbol = member.getSymbol();
-    return (
-      symbol !== undefined &&
-      REACT_ELEMENT_TYPE_NAMES.has(symbol.name) &&
-      symbol.declarations.some((declaration) => REACT_DECLARATION_PATTERN.test(declaration.path))
-    );
-  });
+  (type.isUnionType() ? type.getTypes() : [type]).some((member) =>
+    isReactType(member, REACT_ELEMENT_TYPE_PATTERN),
+  );
 
 const skipParentheses = (node: Node): Node =>
   t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;

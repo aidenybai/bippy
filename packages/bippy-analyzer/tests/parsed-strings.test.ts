@@ -76,4 +76,10 @@ describe("samples of parsed strings", () => {
       },
     ]);
   });
+
+  it("recognizes a library type by its declaration, even under an alias", () => {
+    const aliased = getComponent(project, "AliasedTypes");
+    expect(getBinding(aliased, "when").samples[0]?.kind).toBe("Date");
+    expect(getBinding(aliased, "icon").samples[0]?.kind).toBe("Element");
+  });
 });
