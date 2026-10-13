@@ -1,7 +1,7 @@
-import { GeneratedSource } from "../../react-compiler/HIR/HIR.js";
-import type { SourceLocation } from "../../react-compiler/HIR/HIR.js";
-import { assertExhaustive } from "../../react-compiler/Utils/utils.js";
-import type { JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "../types.js";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
+import type { SourceLocation } from "../../react-compiler/HIR/HIR";
+import { assertExhaustive } from "../../react-compiler/Utils/utils";
+import type { JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "../types";
 
 type KeyPart = string | number | boolean | null | KeyPart[];
 

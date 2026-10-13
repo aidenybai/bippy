@@ -1,14 +1,14 @@
 import { parseSync, traverse, types as t } from "@babel/core";
 import type { NodePath } from "@babel/core";
-import { compileFn } from "../react-compiler/Entrypoint/Pipeline.js";
-import { compileProgram } from "../react-compiler/Entrypoint/Program.js";
-import { ProgramContext } from "../react-compiler/Entrypoint/Imports.js";
-import { parsePluginOptions } from "../react-compiler/Entrypoint/Options.js";
-import type { CompilerPipelineValue } from "../react-compiler/Entrypoint/Pipeline.js";
-import type { LoggerEvent, PluginOptions } from "../react-compiler/Entrypoint/Options.js";
-import type { ReactFunctionType } from "../react-compiler/HIR/Environment.js";
-import { isHookName } from "../react-compiler/HIR/Environment.js";
-import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR.js";
+import { compileFn } from "../react-compiler/Entrypoint/Pipeline";
+import { compileProgram } from "../react-compiler/Entrypoint/Program";
+import { ProgramContext } from "../react-compiler/Entrypoint/Imports";
+import { parsePluginOptions } from "../react-compiler/Entrypoint/Options";
+import type { CompilerPipelineValue } from "../react-compiler/Entrypoint/Pipeline";
+import type { LoggerEvent, PluginOptions } from "../react-compiler/Entrypoint/Options";
+import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
+import { isHookName } from "../react-compiler/HIR/Environment";
+import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 
 type BabelFunction = NodePath<
   t.FunctionDeclaration | t.FunctionExpression | t.ArrowFunctionExpression

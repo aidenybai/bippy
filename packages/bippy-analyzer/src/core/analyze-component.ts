@@ -1,11 +1,11 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import type { CompiledFile, CompiledFunction } from "./compile.js";
-import { addComparedSamples } from "./infer-domains.js";
-import type { DomainResolver } from "./infer-domains.js";
-import { collectHandlers } from "./collect-handlers.js";
-import { Interpreter } from "./interpret.js";
-import type { ProjectHookLoader } from "./interpret.js";
-import type { Bailout, ComponentAnalysis, ContextModels, StoreModel } from "./types.js";
+import type { CompiledFile, CompiledFunction } from "./compile";
+import { addComparedSamples } from "./infer-domains";
+import type { DomainResolver } from "./infer-domains";
+import { collectHandlers } from "./collect-handlers";
+import { Interpreter } from "./interpret";
+import type { ProjectHookLoader } from "./interpret";
+import type { Bailout, ComponentAnalysis, ContextModels, StoreModel } from "./types";
 
 interface FileContext {
   sourceFile: SourceFile;

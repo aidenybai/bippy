@@ -55,7 +55,7 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `types.ts`                  | The data passed between stages                                                   |
 | `utils/`                    | Small helpers: places, value keys, HIR, predicates, truthiness, traversal, TS    |
 
-The browser verifier lives in `conformance/verifier`, next to the repos it runs on.
+The browser verifier lives in `tests/conformance/verifier`, next to the repos it runs on.
 
 1. Loads the project with `typescript/unstable/sync` (TypeScript 7).
 2. Parses each file with Babel and runs the React Compiler on it in `infer` mode, so it finds components by the compiler's own rules: a capitalized function that returns JSX or calls a hook, or one wrapped in `memo` or `forwardRef`.

@@ -1,6 +1,6 @@
-import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
-import DisjointSet from "../react-compiler/Utils/DisjointSet.js";
-import type { Bound, Constraints } from "./constraints.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import DisjointSet from "../react-compiler/Utils/DisjointSet";
+import type { Bound, Constraints } from "./constraints";
 import {
   CONSTANT_ATOM,
   assume,
@@ -10,7 +10,7 @@ import {
   forgetBinding,
   getLengthAtom,
   resolveLiteral,
-} from "./constraints.js";
+} from "./constraints";
 import type {
   AbstractValue,
   Binding,
@@ -25,28 +25,23 @@ import type {
   SymbolicValue,
   Handler,
   StateUpdate,
-} from "./types.js";
+} from "./types";
 import {
   forEachJsxElement,
   forEachRenderNode,
   forEachSymbolicValue,
   mapSymbolicValue,
-} from "./utils/traverse.js";
-import { formatNegated, formatSymbolicValue } from "./format.js";
-import { getValueKey } from "./utils/value-key.js";
-import {
-  getBindingPlaceKey,
-  getPlaceKey,
-  isPlacePrefix,
-  parsePlaceKey,
-} from "./utils/place-key.js";
-import { getTestExpression, getTruthiness, negate } from "./utils/truthiness.js";
+} from "./utils/traverse";
+import { formatNegated, formatSymbolicValue } from "./format";
+import { getValueKey } from "./utils/value-key";
+import { getBindingPlaceKey, getPlaceKey, isPlacePrefix, parsePlaceKey } from "./utils/place-key";
+import { getTestExpression, getTruthiness, negate } from "./utils/truthiness";
 import {
   isExternalSource,
   isRenderingNothingWhenFalse,
   isStateBinding,
   isWholeBinding,
-} from "./utils/checks.js";
+} from "./utils/checks";
 
 const MAX_ALTERNATIVES = 256;
 const MAX_REACHABILITY_ROUNDS = 8;

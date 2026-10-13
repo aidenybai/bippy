@@ -1,4 +1,4 @@
-import type { ProjectAnalysis } from "./types.js";
+import type { ProjectAnalysis } from "./types";
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
 

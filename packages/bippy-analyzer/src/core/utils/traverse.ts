@@ -1,4 +1,4 @@
-import type { JsxExpressionValue, SymbolicValue } from "../types.js";
+import type { JsxExpressionValue, SymbolicValue } from "../types";
 
 export const forEachRenderNode = (
   value: SymbolicValue,

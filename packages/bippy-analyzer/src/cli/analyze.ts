@@ -1,10 +1,10 @@
 import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError, Option } from "commander";
 import picocolors from "picocolors";
-import { analyzeProject } from "../core/analyze-project.js";
-import { serializeProjectAnalysis } from "../core/serialize.js";
-import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent, formatHierarchy } from "./print.js";
-import type { View } from "./print.js";
+import { analyzeProject } from "../core/analyze-project";
+import { serializeProjectAnalysis } from "../core/serialize";
+import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent, formatHierarchy } from "./print";
+import type { View } from "./print";
 
 interface AnalyzeCliOptions {
   component?: string[];

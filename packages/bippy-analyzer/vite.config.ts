@@ -1,8 +1,14 @@
-import { defineConfig } from "vite-plus";
+import { defineConfig, defineProject } from "vite-plus";
 
 export default defineConfig({
   test: {
-    name: "bippy-analyzer",
-    include: ["tests/**/*.test.ts"],
+    projects: [
+      defineProject({
+        test: {
+          name: "unit",
+          include: ["tests/unit/**/*.test.ts"],
+        },
+      }),
+    ],
   },
 });

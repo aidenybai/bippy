@@ -1,7 +1,7 @@
-import type { BlockId, Terminal } from "../react-compiler/HIR/HIR.js";
-import type { Branch, ConditionalValue, SymbolicValue, TestKind } from "./types.js";
-import { getTestExpression, negate } from "./utils/truthiness.js";
-import { getValueKey } from "./utils/value-key.js";
+import type { BlockId, Terminal } from "../react-compiler/HIR/HIR";
+import type { Branch, ConditionalValue, SymbolicValue, TestKind } from "./types";
+import { getTestExpression, negate } from "./utils/truthiness";
+import { getValueKey } from "./utils/value-key";
 
 export type Outcome =
   | { kind: "Return"; value: SymbolicValue }

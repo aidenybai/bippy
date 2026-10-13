@@ -1,14 +1,14 @@
-import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
-import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
-import { assertExhaustive } from "../react-compiler/Utils/utils.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
+import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type {
   AbstractValue,
   Binding,
   ConditionalValue,
   PrimitiveValue,
   SymbolicValue,
-} from "./types.js";
-import { getNegatedOperator } from "./utils/truthiness.js";
+} from "./types";
+import { getNegatedOperator } from "./utils/truthiness";
 
 const BINARY_PRECEDENCE = new Map<string, number>([
   ["??", 1],

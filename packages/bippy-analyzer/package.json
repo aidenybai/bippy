@@ -11,8 +11,8 @@
     "build": "tsx scripts/build-react-compiler.ts",
     "prepare": "pnpm build",
     "analyze": "tsx src/cli/analyze.ts",
-    "conformance": "tsx conformance/runner/cli.ts",
-    "test": "vp test --project bippy-analyzer",
+    "conformance": "tsx tests/conformance/runner/cli.ts",
+    "test": "vp test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

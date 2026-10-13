@@ -1,15 +1,15 @@
-import type { AbstractValue, BinaryExpressionValue, BindingValue, SymbolicValue } from "./types.js";
-import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks.js";
-import { formatAbstractValue } from "./format.js";
-import { getValueKey } from "./utils/value-key.js";
-import { getBindingPlaceKey, isPlacePrefix } from "./utils/place-key.js";
+import type { AbstractValue, BinaryExpressionValue, BindingValue, SymbolicValue } from "./types";
+import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks";
+import { formatAbstractValue } from "./format";
+import { getValueKey } from "./utils/value-key";
+import { getBindingPlaceKey, isPlacePrefix } from "./utils/place-key";
 import {
   getKnownTruthiness,
   getNegatedOperator,
   getTestExpression,
   getTruthiness,
-} from "./utils/truthiness.js";
-import { forEachSymbolicValue } from "./utils/traverse.js";
+} from "./utils/truthiness";
+import { forEachSymbolicValue } from "./utils/traverse";
 
 export const CONSTANT_ATOM = "#";
 const LENGTH_SUFFIX = ".length";

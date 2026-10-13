@@ -1,11 +1,11 @@
-import type { AliasingEffect } from "../../react-compiler/Inference/AliasingEffects.js";
+import type { AliasingEffect } from "../../react-compiler/Inference/AliasingEffects";
 import type {
   InstructionValue,
   Place,
   SourceLocation,
   SpreadPattern,
-} from "../../react-compiler/HIR/HIR.js";
-import { GeneratedSource } from "../../react-compiler/HIR/HIR.js";
+} from "../../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 
 export const isSameLocation = (left: SourceLocation, right: SourceLocation): boolean =>
   left === right ||

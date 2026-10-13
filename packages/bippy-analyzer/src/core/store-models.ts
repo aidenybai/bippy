@@ -1,7 +1,7 @@
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { Expression, Node, SourceFile } from "typescript/unstable/ast";
 import * as t from "typescript/unstable/ast/is";
-import type { StoreAssignment, StoreFieldValue, StoreModel } from "./types.js";
+import type { StoreAssignment, StoreFieldValue, StoreModel } from "./types";
 
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;
 const STORE_CREATORS = new Set(["create", "createWithEqualityFn"]);

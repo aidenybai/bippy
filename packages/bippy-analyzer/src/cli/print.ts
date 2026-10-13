@@ -1,7 +1,7 @@
 import { relative } from "node:path";
 import type picocolors from "picocolors";
-import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
-import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type {
   AbstractValue,
   AnalyzedComponent,
@@ -13,17 +13,12 @@ import type {
   State,
   SymbolicValue,
   Handler,
-} from "../core/types.js";
-import { forEachJsxElement } from "../core/utils/traverse.js";
-import {
-  formatAbstractValue,
-  formatLine,
-  formatPlace,
-  formatSymbolicValue,
-} from "../core/format.js";
-import { getTestExpression } from "../core/utils/truthiness.js";
-import { getPlaceKey } from "../core/utils/place-key.js";
-import { isRenderingNothing, isRenderingNothingWhenFalse } from "../core/utils/checks.js";
+} from "../core/types";
+import { forEachJsxElement } from "../core/utils/traverse";
+import { formatAbstractValue, formatLine, formatPlace, formatSymbolicValue } from "../core/format";
+import { getTestExpression } from "../core/utils/truthiness";
+import { getPlaceKey } from "../core/utils/place-key";
+import { isRenderingNothing, isRenderingNothingWhenFalse } from "../core/utils/checks";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
 

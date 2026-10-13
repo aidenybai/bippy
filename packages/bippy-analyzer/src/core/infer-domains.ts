@@ -7,12 +7,12 @@ import {
   isLibraryType,
   isReactElementType,
   isReactType,
-} from "./utils/typescript.js";
+} from "./utils/typescript";
 import * as t from "typescript/unstable/ast/is";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
-import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
-import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type {
   AbstractValue,
   Domain,
@@ -20,10 +20,10 @@ import type {
   PrimitiveValue,
   Sample,
   SymbolicValue,
-} from "./types.js";
-import { forEachSymbolicValue } from "./utils/traverse.js";
-import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples.js";
-import { EQUALITY_OPERATORS } from "./constraints.js";
+} from "./types";
+import { forEachSymbolicValue } from "./utils/traverse";
+import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples";
+import { EQUALITY_OPERATORS } from "./constraints";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
 const MAX_SAMPLE_DEPTH = 3;

@@ -1,11 +1,11 @@
-import { compileFile } from "./compile.js";
-import { CompilerTypeProvider } from "./type-provider.js";
-import { DomainResolver } from "./infer-domains.js";
-import type { ProjectHook } from "./interpret.js";
-import { collectStoreModels } from "./store-models.js";
-import { enumerateStates } from "./enumerate-states.js";
-import { getSampleOfValue } from "./infer-domains.js";
-import { getStringSamples } from "./string-samples.js";
+import { compileFile } from "./compile";
+import { CompilerTypeProvider } from "./type-provider";
+import { DomainResolver } from "./infer-domains";
+import type { ProjectHook } from "./interpret";
+import { collectStoreModels } from "./store-models";
+import { enumerateStates } from "./enumerate-states";
+import { getSampleOfValue } from "./infer-domains";
+import { getStringSamples } from "./string-samples";
 import type {
   ComponentAnalysis,
   ContextModels,
@@ -16,12 +16,12 @@ import type {
   ProjectAnalysis,
   Sample,
   SymbolicValue,
-} from "./types.js";
-import { forEachJsxElement } from "./utils/traverse.js";
-import { getPlaceKey, parsePlaceKey } from "./utils/place-key.js";
-import { analyzeComponent } from "./analyze-component.js";
-import { collectDisplayNames, collectExportNames } from "./utils/typescript.js";
-import { isProjectSourceFile, withProject } from "./utils/with-project.js";
+} from "./types";
+import { forEachJsxElement } from "./utils/traverse";
+import { getPlaceKey, parsePlaceKey } from "./utils/place-key";
+import { analyzeComponent } from "./analyze-component";
+import { collectDisplayNames, collectExportNames } from "./utils/typescript";
+import { isProjectSourceFile, withProject } from "./utils/with-project";
 
 const ARRAY_MEMBERS = new Set([
   "every",

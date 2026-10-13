@@ -1,4 +1,4 @@
-import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type {
   BinaryOperator,
   Binding,
@@ -6,9 +6,9 @@ import type {
   SymbolicValue,
   TestKind,
   UnaryOperator,
-} from "./types.js";
-import { isNullish } from "./utils/checks.js";
-import { getKnownTruthiness, negate } from "./utils/truthiness.js";
+} from "./types";
+import { isNullish } from "./utils/checks";
+import { getKnownTruthiness, negate } from "./utils/truthiness";
 
 const MAX_OPTIONS_DEPTH = 3;
 

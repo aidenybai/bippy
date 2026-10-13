@@ -1,8 +1,8 @@
-import { GeneratedSource } from "../react-compiler/HIR/HIR.js";
-import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
-import type { Interpreter } from "./interpret.js";
-import type { SymbolicValue, Handler, HandlerTrigger, JsxProp, JsxTag } from "./types.js";
-import { forEachJsxElement } from "./utils/traverse.js";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
+import type { Interpreter } from "./interpret";
+import type { SymbolicValue, Handler, HandlerTrigger, JsxProp, JsxTag } from "./types";
+import { forEachJsxElement } from "./utils/traverse";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 

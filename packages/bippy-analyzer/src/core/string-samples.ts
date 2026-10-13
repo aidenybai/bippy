@@ -1,4 +1,4 @@
-import type { Sample } from "./types.js";
+import type { Sample } from "./types";
 
 interface NamedStringSample {
   namePattern: RegExp;

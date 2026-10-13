@@ -1,10 +1,4 @@
-import type {
-  AbstractValue,
-  BinaryOperator,
-  SymbolicValue,
-  TestKind,
-  Truthiness,
-} from "../types.js";
+import type { AbstractValue, BinaryOperator, SymbolicValue, TestKind, Truthiness } from "../types";
 
 const NEGATED_OPERATORS = new Map<BinaryOperator, BinaryOperator>([
   ["===", "!=="],

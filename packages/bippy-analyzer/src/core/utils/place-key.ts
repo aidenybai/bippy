@@ -1,4 +1,4 @@
-import type { Binding, BindingValue } from "../types.js";
+import type { Binding, BindingValue } from "../types";
 
 export const getPlaceKey = (binding: Binding, path: readonly string[]): string =>
   [String(binding.id), ...path].join(".");

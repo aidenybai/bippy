@@ -9,11 +9,11 @@ import type {
   Place,
   SourceLocation,
   Terminal,
-} from "../react-compiler/HIR/HIR.js";
-import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR.js";
-import type { HookKind } from "../react-compiler/HIR/ObjectShape.js";
-import { assertExhaustive } from "../react-compiler/Utils/utils.js";
-import type { DomainResolver } from "./infer-domains.js";
+} from "../react-compiler/HIR/HIR";
+import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR";
+import type { HookKind } from "../react-compiler/HIR/ObjectShape";
+import { assertExhaustive } from "../react-compiler/Utils/utils";
+import type { DomainResolver } from "./infer-domains";
 import type {
   Bailout,
   BailoutReason,
@@ -40,13 +40,13 @@ import type {
   TestKind,
   Warning,
   WarningKind,
-} from "./types.js";
-import { formatPlace, formatSymbolicValue } from "./format.js";
-import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse.js";
-import { isHandlerProp } from "./collect-handlers.js";
-import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key.js";
-import { isExternalSource, isStateBinding, isWholeBinding } from "./utils/checks.js";
-import { getTestExpression, negate } from "./utils/truthiness.js";
+} from "./types";
+import { formatPlace, formatSymbolicValue } from "./format";
+import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse";
+import { isHandlerProp } from "./collect-handlers";
+import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key";
+import { isExternalSource, isStateBinding, isWholeBinding } from "./utils/checks";
+import { getTestExpression, negate } from "./utils/truthiness";
 import {
   UNDEFINED_VALUE,
   createBindingValue,
@@ -58,15 +58,15 @@ import {
   getPassedCallbacks,
   getShortCircuit,
   isNullishValue,
-} from "./symbolic-values.js";
+} from "./symbolic-values";
 import {
   NO_STOPS,
   createConditional,
   getGuard,
   hasFallthrough,
   isFallthroughOnly,
-} from "./control-flow.js";
-import type { BranchTerminal, Outcome } from "./control-flow.js";
+} from "./control-flow";
+import type { BranchTerminal, Outcome } from "./control-flow";
 import {
   getDeclarationLocation,
   getIdentifierName,
@@ -74,7 +74,7 @@ import {
   getPlaceOrSpread,
   isFunctionCreation,
   isSameLocation,
-} from "./utils/hir.js";
+} from "./utils/hir";
 
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_INLINE_DEPTH = 4;

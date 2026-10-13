@@ -1,4 +1,4 @@
-import { assertExhaustive } from "../../react-compiler/Utils/utils.js";
+import { assertExhaustive } from "../../react-compiler/Utils/utils";
 import type {
   AbstractValue,
   BinaryOperator,
@@ -6,8 +6,8 @@ import type {
   ConditionalValue,
   PrimitiveValue,
   SymbolicValue,
-} from "../types.js";
-import { getValueKey } from "./value-key.js";
+} from "../types";
+import { getValueKey } from "./value-key";
 
 export const isWholeBinding = (value: SymbolicValue, binding: Binding): boolean =>
   value.kind === "Binding" && value.binding.id === binding.id && value.path.length === 0;
