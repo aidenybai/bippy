@@ -22,6 +22,7 @@ import type {
   SymbolicValue,
 } from "./types.js";
 import { forEachSymbolicValue } from "./utils/traverse.js";
+import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples.js";
 import { EQUALITY_OPERATORS } from "./constraints.js";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
@@ -39,13 +40,6 @@ const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
 const NODE_TYPE_PATTERN = /^(?:ReactNode|ReactChild|ReactPortal)$/;
-const TEXT_SAMPLE: Sample = { kind: "Value", value: "text" };
-const EMPTY_TEXT_SAMPLE: Sample = { kind: "Value", value: "" };
-const SAMPLE_DATE = "2024-01-01T00:00:00.000Z";
-const DATE_NAME_PATTERN = /(?:^date|^time|Date|Time|At|_at)$/;
-const CURRENCY_NAME_PATTERN = /(?:^currency|Currency)(?:Code)?$/;
-const LOCALE_NAME_PATTERN = /^(?:locale|lang|language)$|Locale$/;
-const COLOR_NAME_PATTERN = /^(?:color|background)$|(?:Color|Background)$/;
 const NON_MUTATING_ARRAY_METHODS = new Set([
   "at",
   "concat",
@@ -182,19 +176,6 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
     if (definedSample) fields[property.name] = definedSample;
   }
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
-};
-
-/** Strings a component may parse by name, since `new Date("text")` is invalid. */
-export const getStringSamples = (name: string | null): Sample[] => {
-  if (name !== null && DATE_NAME_PATTERN.test(name))
-    return [{ kind: "Value", value: SAMPLE_DATE }, EMPTY_TEXT_SAMPLE];
-  if (name !== null && CURRENCY_NAME_PATTERN.test(name))
-    return [{ kind: "Value", value: "USD" }, EMPTY_TEXT_SAMPLE];
-  if (name !== null && LOCALE_NAME_PATTERN.test(name))
-    return [{ kind: "Value", value: "en" }, EMPTY_TEXT_SAMPLE];
-  if (name !== null && COLOR_NAME_PATTERN.test(name))
-    return [{ kind: "Value", value: "#808080" }, EMPTY_TEXT_SAMPLE];
-  return [TEXT_SAMPLE, EMPTY_TEXT_SAMPLE];
 };
 
 const getSamples = (

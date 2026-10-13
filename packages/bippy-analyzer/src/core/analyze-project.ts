@@ -4,7 +4,8 @@ import { DomainResolver } from "./infer-domains.js";
 import type { ProjectHook } from "./interpret.js";
 import { collectStoreModels } from "./store-models.js";
 import { enumerateStates } from "./enumerate-states.js";
-import { getSampleOfValue, getStringSamples } from "./infer-domains.js";
+import { getSampleOfValue } from "./infer-domains.js";
+import { getStringSamples } from "./string-samples.js";
 import type {
   ComponentAnalysis,
   ContextModels,
