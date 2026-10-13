@@ -23,7 +23,7 @@ interface HarnessSetup {
   alias: Record<string, string>;
 }
 
-type HarnessConfig = Partial<Pick<HarnessSetup, "env" | "alias">>;
+interface HarnessConfig extends Partial<Pick<HarnessSetup, "env" | "alias">> {}
 
 type OptimizerPlugin = NonNullable<
   NonNullable<DepOptimizationConfig["esbuildOptions"]>["plugins"]

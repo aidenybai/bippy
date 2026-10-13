@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeProject } from "../../src/core/analyze-project.js";
 import { serializeProjectAnalysis } from "../../src/core/serialize.js";
-import type { AnalyzedComponent } from "../../src/core/types.js";
+import type { AnalyzedComponent, BailoutReason } from "../../src/core/types.js";
 import { sum, summarizeVerdicts } from "../verifier/score.js";
 import type { VerificationSummary } from "../verifier/score.js";
 import { verifyProject } from "../verifier/verify.js";
@@ -18,7 +18,7 @@ export interface CollectSummary {
   bindings: number;
   untypedBindings: number;
   unresolvedTypeBindings: number;
-  bailouts: Record<string, number>;
+  bailouts: Partial<Record<BailoutReason, number>>;
   durationMs: number;
   verification: VerificationSummary | null;
 }
@@ -29,14 +29,9 @@ const summarize = (
   durationMs: number,
   verification: VerificationSummary | null,
 ): CollectSummary => {
-  const bailouts = Object.fromEntries(
-    Object.entries(
-      Object.groupBy(
-        components.flatMap(({ analysis }) => analysis.bailouts),
-        (bailout) => bailout.reason,
-      ),
-    ).map(([reason, list]) => [reason, list?.length ?? 0]),
-  );
+  const bailouts: Partial<Record<BailoutReason, number>> = {};
+  for (const { analysis } of components)
+    for (const { reason } of analysis.bailouts) bailouts[reason] = (bailouts[reason] ?? 0) + 1;
   const bindings = components.flatMap(({ analysis }) => analysis.bindings);
   return {
     files: fileCount,

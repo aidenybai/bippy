@@ -108,6 +108,7 @@ interface TriggerLabel {
 const FIRST_COMMIT = "first commit";
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
 const MAX_RENDERED_LENGTH = 300;
+const MAX_PROPS_LENGTH = 160;
 const ORDERED_HOOK_KINDS = new Set<string>([
   "useState",
   "useReducer",
@@ -531,7 +532,7 @@ const formatProps = (props: Record<string, Sample>): string =>
     .filter(([, sample]) => sample.kind !== "Undefined")
     .map(([name, sample]) => `${name}=${formatSample(sample)}`)
     .join(" ")
-    .slice(0, 160) || "no props";
+    .slice(0, MAX_PROPS_LENGTH) || "no props";
 
 export const formatStates = (states: number[]): string =>
   states.map((state) => `S${state + 1}`).join("|");

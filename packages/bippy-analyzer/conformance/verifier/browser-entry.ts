@@ -74,6 +74,7 @@ interface TrackedState {
 const ANONYMOUS_NAME = "Anonymous";
 const OPEN_PARENT_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
+const MAX_LABEL_LENGTH = 40;
 const MAX_CAPTURED_FIBERS = 10_000;
 const MAX_SETTLE_MS = 3000;
 const MAX_PLAIN_DEPTH = 4;
@@ -553,7 +554,7 @@ const getLabel = (element: HTMLElement): string =>
   )
     .trim()
     .replace(/\s+/g, " ")
-    .slice(0, 40);
+    .slice(0, MAX_LABEL_LENGTH);
 
 const isMountedType = (type: unknown): boolean =>
   type !== null &&
