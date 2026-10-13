@@ -2,20 +2,12 @@ import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { DomainResolver } from "./infer-domains";
 import type { AbstractValue, Binding, BindingKind, BindingValue, Domain } from "./types";
-import { formatAbstractValue } from "./format";
+import { dedupeValues } from "./constraints";
 import { PlaceMap, getBindingPlace } from "./utils/place";
 
 export interface BindingOptions extends Partial<
   Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "lengthSource" | "domain">
 > {}
-
-// A read TypeScript already narrowed, like `state.type` after `state.isOpen`, lacks the values of
-// members ruled out there, so it can't tell members apart.
-const isCoveringMembers = (domain: Domain, memberCases: AbstractValue[][]): boolean => {
-  if (domain.kind !== "Cases") return false;
-  const keys = new Set(domain.cases.map(formatAbstractValue));
-  return memberCases.flat().every((value) => keys.has(formatAbstractValue(value)));
-};
 
 /** One binding per declaration, so evaluating it again reads the same binding. */
 export class BindingTable {
@@ -81,14 +73,22 @@ export class BindingTable {
     const place = getBindingPlace(binding, path);
     if (!this.placeDomains.has(place)) {
       const domain = resolver.getDomain(loc);
-      this.placeDomains.set(place, domain);
       const [field] = path;
       const memberCases =
         path.length === 1 && field !== undefined
           ? this.#resolvers.get(binding.id)?.getMemberCases(binding.loc, field)
           : null;
-      if (memberCases && isCoveringMembers(domain, memberCases))
+      // The read may be narrowed, like `state.type` after `state.isOpen`, but the field holds
+      // whatever any member gives it.
+      if (memberCases && domain.kind === "Cases") {
+        this.placeDomains.set(place, {
+          ...domain,
+          cases: dedupeValues([...domain.cases, ...memberCases.flat()]),
+        });
         this.memberCases.set(place, memberCases);
+      } else {
+        this.placeDomains.set(place, domain);
+      }
     }
     return { kind: "Binding", binding, path };
   }

@@ -454,7 +454,7 @@ exports[`fixture analysis > ShareButton keeps its states, transitions and unreac
 ├─ data
 │  └─ dialog state { isOpen: false; } | { isOpen: true; type: "invite" | "share"; } = { isOpen: false }
 │     ├─ .isOpen false | true
-│     └─ .type "invite" | "share"
+│     └─ .type "invite" | "share" | undefined
 ├─ render
 │  └─ ◆ !dialog.isOpen
 │     ├─ ✓ <button onClick ⇒ dialog.isOpen = true, dialog.type = "share"> "Share"
