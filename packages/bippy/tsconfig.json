@@ -23,6 +23,7 @@
     "benchmarks",
     "tests/unit",
     "tests/conformance",
+    "tsdown.config.ts",
     "vitest.config.ts"
   ],
   "exclude": ["**/node_modules/**", "**/dist/**"]
