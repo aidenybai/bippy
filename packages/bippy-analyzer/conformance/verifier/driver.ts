@@ -5,7 +5,7 @@ import { HarnessError, getCaptureFailure } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types.js";
 import { getPropCombinations } from "./props.js";
-import { getErrorSubject, proposeParents } from "./wrappers.js";
+import { findSiblingParts, getErrorSubject, getNamedParent, proposeParents } from "./wrappers.js";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -44,6 +44,9 @@ export const mountInPage = (page: Page, request: MountRequest): Promise<Capture>
 export const performInPage = (page: Page, actionKey: string): Promise<Capture | null> =>
   withTimeout(page.evaluate((key) => window.__verify.perform(key), actionKey));
 
+const canLoadInPage = (page: Page, wrapper: Wrapper): Promise<boolean> =>
+  withTimeout(page.evaluate((candidate) => window.__verify.canLoad(candidate), wrapper));
+
 export const listActionsInPage = (page: Page): Promise<Action[]> =>
   withTimeout(page.evaluate(() => window.__verify.actions()));
 
@@ -77,16 +80,25 @@ export const resolveWrappers = async (
   const layers: Layer[] = [];
   let newest: Layer | null = null;
   const getWrappers = (): Wrapper[] => layers.flatMap((layer) => getLayerWrapper(layer) ?? []);
-  const proposeFor = (name: string, file: string, error: string, failure: MountFailure) => {
+  const getQuery = (name: string, file: string, error: string, failure: MountFailure) => ({
+    name,
+    file,
+    error,
+    isNamingParent: failure === "provider",
+    analysis,
+    project,
+  });
+  const createLayer = (proposals: Wrapper[], error: string): Layer => {
     const usedNames = new Set([analysis.name, ...getWrappers().map((wrapper) => wrapper.name)]);
-    return proposeParents({
-      name,
-      file,
-      error,
-      isNamingParent: failure === "provider",
-      analysis,
-      project,
-    }).filter((wrapper) => !usedNames.has(wrapper.name));
+    return { proposals: proposals.filter(({ name }) => !usedNames.has(name)), cursor: 0, error };
+  };
+  // Skips proposals that can't load, like a package with no part of the name, without a mount.
+  const advanceToLoadable = async (layer: Layer): Promise<boolean> => {
+    for (let wrapper = getLayerWrapper(layer); wrapper; wrapper = getLayerWrapper(layer)) {
+      if (await canLoadInPage(page, wrapper)) return true;
+      layer.cursor++;
+    }
+    return false;
   };
   for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && layers.length <= MAX_WRAPPERS; attempt++) {
     const capture = await mountInPage(page, { ...request, wrappers: getWrappers() });
@@ -94,50 +106,67 @@ export const resolveWrappers = async (
       return { wrappers: getWrappers(), mounted: capture };
     const failure = getCaptureFailure(capture);
     const thrower = capture.errorDepth === null ? undefined : layers[capture.errorDepth];
-    if (newest) {
-      const newestIndex = layers.indexOf(newest);
-      const newestWrapper = getLayerWrapper(newest);
-      // A new parent throwing the same error itself is the right one but needs its own parent.
+    const current = newest;
+    if (current) {
+      const currentIndex = layers.indexOf(current);
+      const currentWrapper = getLayerWrapper(current);
+      const isSameError = capture.error === current.error;
+      // The parent the error names throws it too, so it needs a parent of its own.
       if (
-        thrower === newest &&
-        capture.error === newest.error &&
-        newestWrapper?.candidate.kind === "project"
+        thrower === current &&
+        isSameError &&
+        currentWrapper?.candidate.kind === "project" &&
+        currentWrapper.name === getNamedParent(capture.error, project)
       ) {
-        const proposals = proposeFor(
-          newestWrapper.candidate.exportName,
-          newestWrapper.candidate.file,
+        const { exportName, file } = currentWrapper.candidate;
+        const layer = createLayer(
+          proposeParents(getQuery(exportName, file, capture.error, failure)),
           capture.error,
-          failure,
         );
-        if (proposals.length > 0) {
-          newest = { proposals, cursor: 0, error: capture.error };
-          layers.splice(newestIndex, 0, newest);
+        if (await advanceToLoadable(layer)) {
+          newest = layer;
+          layers.splice(currentIndex, 0, layer);
+          continue;
+        }
+      }
+      // A part may need its root and another part inside it, like a list inside its popover.
+      if (isSameError && thrower === undefined && currentWrapper?.source === "root") {
+        const layer = createLayer(
+          findSiblingParts(getQuery(analysis.name, analysis.file, capture.error, failure)),
+          capture.error,
+        );
+        if (await advanceToLoadable(layer)) {
+          newest = layer;
+          layers.splice(currentIndex + 1, 0, layer);
           continue;
         }
       }
       // An earlier parent made redundant by an outer one throws for missing data, so drop it.
-      if (thrower && thrower !== newest && (failure === "missing-data" || failure === "other")) {
+      if (thrower && thrower !== current && (failure === "missing-data" || failure === "other")) {
         layers.splice(layers.indexOf(thrower), 1);
         newest = null;
         continue;
       }
-      const isBrokenByNewest =
-        failure === "other" && capture.errorDepth !== null && capture.errorDepth <= newestIndex;
-      if (capture.error === newest.error || failure === "did-not-render" || isBrokenByNewest) {
-        newest.cursor++;
-        if (getLayerWrapper(newest)) continue;
-        layers.splice(newestIndex, 1);
+      const isBrokenByCurrent =
+        failure === "other" && capture.errorDepth !== null && capture.errorDepth <= currentIndex;
+      if (isSameError || failure === "did-not-render" || isBrokenByCurrent) {
+        current.cursor++;
+        if (await advanceToLoadable(current)) continue;
+        layers.splice(currentIndex, 1);
         break;
       }
     }
     if (!PARENT_FAILURES.has(failure)) break;
-    const proposals = proposeFor(analysis.name, analysis.file, capture.error, failure);
-    if (proposals.length === 0) break;
-    newest = { proposals, cursor: 0, error: capture.error };
+    const layer = createLayer(
+      proposeParents(getQuery(analysis.name, analysis.file, capture.error, failure)),
+      capture.error,
+    );
+    if (!(await advanceToLoadable(layer))) break;
+    newest = layer;
     layers.splice(
       capture.errorDepth ?? getInsertIndex(capture.error, analysis.name, layers),
       0,
-      newest,
+      layer,
     );
   }
   return { wrappers: getWrappers(), mounted: null };

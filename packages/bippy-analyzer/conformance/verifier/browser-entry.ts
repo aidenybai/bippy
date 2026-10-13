@@ -870,4 +870,5 @@ window.__verify = {
     await settle();
     return capture();
   },
+  canLoad: async (wrapper) => (await loadWrapper(wrapper)) !== null,
 };

@@ -72,8 +72,11 @@ export interface PackageCandidate {
 
 export type WrapperCandidate = ProjectCandidate | PackageCandidate;
 
+export type WrapperSource = "named" | "root" | "part" | "context";
+
 export interface Wrapper {
   name: string;
+  source: WrapperSource;
   candidate: WrapperCandidate;
 }
 
@@ -115,6 +118,7 @@ interface VerifyApi {
   actions: () => Action[];
   perform: (key: string) => Promise<Capture | null>;
   observe: () => Promise<Capture>;
+  canLoad: (wrapper: Wrapper) => Promise<boolean>;
 }
 
 declare global {

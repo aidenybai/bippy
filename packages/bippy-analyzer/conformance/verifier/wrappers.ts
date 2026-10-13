@@ -2,7 +2,7 @@ import { sep } from "node:path";
 import type { ComponentAnalysis } from "../../src/core/types.js";
 import { getDefaultProps } from "./props.js";
 import { getParentName } from "./reasons.js";
-import type { ExportedName, ProjectIndex, Wrapper } from "./types.js";
+import type { ExportedName, ProjectIndex, Wrapper, WrapperSource } from "./types.js";
 
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
 const CONTEXT_PROVIDER_SUFFIX = /(?<=Context)\.Provider$/;
@@ -32,6 +32,7 @@ const getSharedSegmentCount = (left: string, right: string): number => {
 
 const createProjectWrapper = (
   name: string,
+  source: WrapperSource,
   { file, exportName }: ExportedName,
   query: ParentQuery,
 ): Wrapper => {
@@ -44,7 +45,7 @@ const createProjectWrapper = (
     : contextSample
       ? { value: contextSample }
       : {};
-  return { name, candidate: { kind: "project", file, exportName, props } };
+  return { name, source, candidate: { kind: "project", file, exportName, props } };
 };
 
 export const getNamedParent = (error: string, project: ProjectIndex): string | null => {
@@ -61,7 +62,7 @@ const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
         getSharedSegmentCount(right.file, query.file) -
         getSharedSegmentCount(left.file, query.file),
     )
-    .map((exported) => createProjectWrapper(name, exported, query));
+    .map((exported) => createProjectWrapper(name, "named", exported, query));
   const importingFiles = [query.file, ...(query.project.imports.get(query.file)?.files ?? [])];
   const packageWrappers = importingFiles
     .flatMap((file) => query.project.imports.get(file)?.packages ?? [])
@@ -69,6 +70,7 @@ const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
       [null, ...names.filter((importedName) => NAMESPACE_NAME_PATTERN.test(importedName))].map(
         (namespace): Wrapper => ({
           name,
+          source: "named",
           candidate: {
             kind: "package",
             specifier,
@@ -94,19 +96,19 @@ const getCompoundRootNames = (query: ParentQuery): string[] =>
     .map(([candidate]) => candidate)
     .sort((left, right) => right.length - left.length);
 
-const findOwnExport = (name: string, query: ParentQuery): Wrapper[] =>
+const findOwnExport = (name: string, source: WrapperSource, query: ParentQuery): Wrapper[] =>
   (query.project.exports.get(name) ?? [])
     .filter(({ file }) => file === query.file)
-    .map((exported) => createProjectWrapper(name, exported, query));
+    .map((exported) => createProjectWrapper(name, source, exported, query));
 
-const findSiblingParts = (query: ParentQuery): Wrapper[] => {
+export const findSiblingParts = (query: ParentQuery): Wrapper[] => {
   const rootName = getCompoundRootNames(query)[0] ?? query.name;
   return [...query.project.exports.keys()]
     .filter(
       (candidate) =>
         candidate !== rootName && candidate !== query.name && candidate.startsWith(rootName),
     )
-    .flatMap((candidate) => findOwnExport(candidate, query));
+    .flatMap((candidate) => findOwnExport(candidate, "part", query));
 };
 
 // HACK: React's "of 'useX(...)' as it is null" error is the only hint, so guess the empty context
@@ -125,7 +127,7 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
     const name = contextKey.slice(separatorIndex + 1);
     return (query.project.exports.get(name) ?? [])
       .filter((exported) => exported.file === file)
-      .map((exported) => createProjectWrapper(name, exported, query));
+      .map((exported) => createProjectWrapper(name, "context", exported, query));
   });
 };
 
@@ -134,8 +136,12 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
   const namedParent = query.isNamingParent ? getNamedParent(query.error, query.project) : null;
   const rootNames = getCompoundRootNames(query);
-  const outerRoots = rootNames.slice(-1).flatMap((rootName) => findOwnExport(rootName, query));
-  const innerRoots = rootNames.slice(0, -1).flatMap((rootName) => findOwnExport(rootName, query));
+  const outerRoots = rootNames
+    .slice(-1)
+    .flatMap((rootName) => findOwnExport(rootName, "root", query));
+  const innerRoots = rootNames
+    .slice(0, -1)
+    .flatMap((rootName) => findOwnExport(rootName, "root", query));
   const namedParents = namedParent ? findNamedParents(namedParent, query) : [];
   const isNamedInOwnFile = namedParents.some(
     ({ candidate }) => candidate.kind === "project" && candidate.file === query.file,
