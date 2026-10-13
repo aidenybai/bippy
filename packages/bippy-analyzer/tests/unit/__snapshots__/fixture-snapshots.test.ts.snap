@@ -427,6 +427,24 @@ exports[`fixture analysis > SearchList keeps its states, transitions and unreach
       └─ <input> onChange → S2"
 `;
 
+exports[`fixture analysis > ShareButton keeps its states, transitions and unreachable branches 1`] = `
+"ShareButton src/share-dialog.tsx:5
+├─ data
+│  └─ dialog state { isOpen: false; } | { isOpen: true; type: "invite" | "share"; } = { isOpen: false }
+│     ├─ .isOpen false | true
+│     └─ .type "invite" | "share"
+├─ render
+│  └─ ◆ !dialog.isOpen
+│     ├─ ✓ <button onClick ⇒ dialog.isOpen = true, dialog.type = "share"> "Share"
+│     └─ ✗ <p> {dialog.type}
+└─ states (2)
+   ├─ S1 !dialog.isOpen
+   │  ├─ <button> "Share"
+   │  └─ "Share" → S2
+   └─ S2 dialog.isOpen
+      └─ <p> {dialog.type}"
+`;
+
 exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
 "SignIn src/dashboard.tsx:15
 ├─ data
