@@ -17,7 +17,7 @@ import type {
 import { forEachJsxElement } from "../core/utils/traverse";
 import { formatAbstractValue, formatLine, formatPlace, formatSymbolicValue } from "../core/format";
 import { getTestExpression } from "../core/utils/truthiness";
-import { getPlaceKey } from "../core/utils/place-key";
+import { getBindingPlace } from "../core/utils/place";
 import { isRenderingNothing, isRenderingNothingWhenFalse } from "../core/utils/checks";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
@@ -315,7 +315,7 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
           : binding.kind;
       const details: string[] = [];
       if (binding.initial) details.push(`= ${formatSymbolicValue(binding.initial)}`);
-      const reachable = report.places.get(getPlaceKey(binding, []));
+      const reachable = report.places.get(getBindingPlace(binding));
       if (
         reachable &&
         binding.domain.kind === "Cases" &&
@@ -328,17 +328,14 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
         updates.filter((update) => update.binding.id === binding.id),
       );
       if (invariant) details.push(colors.dim(invariant));
-      const prefix = `${getPlaceKey(binding, [])}.`;
-      const fields = [...report.places.entries()]
-        .filter(([placeKey]) => placeKey.startsWith(prefix))
-        .map(([placeKey, values]) => {
-          const domain = analysis.placeDomains.get(placeKey);
+      const fields = [...report.places]
+        .filter(([place]) => place.bindingId === binding.id && place.path.length > 0)
+        .map(([place, values]) => {
+          const domain = analysis.placeDomains.get(place);
           const isNarrowed = domain?.kind === "Cases" && values.length < domain.cases.length;
           const narrowed = isNarrowed ? ` ${colors.dim(`reachable ${formatCases(values)}`)}` : "";
           return createTreeNode(
-            truncate(
-              `.${placeKey.slice(prefix.length)} ${domain ? formatDomain(domain) : ""}${narrowed}`,
-            ),
+            truncate(`.${place.path.join(".")} ${domain ? formatDomain(domain) : ""}${narrowed}`),
           );
         });
       const domainText =

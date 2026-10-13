@@ -44,7 +44,7 @@ import type {
 import { formatPlace, formatSymbolicValue } from "./format";
 import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse";
 import { isHandlerProp } from "./collect-handlers";
-import { getBindingPlaceKey, getPlaceKey } from "./utils/place-key";
+import { PlaceMap, getBindingPlace, getValuePlace } from "./utils/place";
 import { isExternalSource, isStateBinding, isWholeBinding } from "./utils/checks";
 import { getTestExpression, negate } from "./utils/truthiness";
 import {
@@ -177,7 +177,7 @@ export class Interpreter {
   readonly #functionIds = new Map<HIRFunction, number>();
   readonly #bindings = new Map<string, Binding>();
   readonly #propBindings = new Map<string, Binding>();
-  readonly placeDomains = new Map<string, Domain>();
+  readonly placeDomains = new PlaceMap<Domain>();
   readonly bailouts: Bailout[] = [];
   readonly warnings: Warning[] = [];
   readonly effectCalls: EffectCall[] = [];
@@ -277,13 +277,13 @@ export class Interpreter {
       inputs: options.inputs ?? [],
     };
     this.#bindings.set(key, binding);
-    this.placeDomains.set(getPlaceKey(binding, []), binding.domain);
+    this.placeDomains.set(getBindingPlace(binding), binding.domain);
     return binding;
   }
 
   #readField(binding: Binding, path: string[], loc: SourceLocation): BindingValue {
-    const key = getPlaceKey(binding, path);
-    if (!this.placeDomains.has(key)) this.placeDomains.set(key, this.#resolver.getDomain(loc));
+    const place = getBindingPlace(binding, path);
+    if (!this.placeDomains.has(place)) this.placeDomains.set(place, this.#resolver.getDomain(loc));
     return { kind: "Binding", binding, path };
   }
 
@@ -805,9 +805,9 @@ export class Interpreter {
     return this.#createCallResult(args, loc);
   }
 
-  #collectInputs(value: SymbolicValue, inputs: Set<string>, visited = new Set<number>()): void {
+  #collectInputs(value: SymbolicValue, inputs: PlaceMap<true>, visited = new Set<number>()): void {
     forEachSymbolicValue(value, (part) => {
-      if (part.kind === "Binding") inputs.add(getBindingPlaceKey(part));
+      if (part.kind === "Binding") inputs.set(getValuePlace(part), true);
       if (part.kind !== "Function" || visited.has(part.functionId)) return;
       visited.add(part.functionId);
       for (const place of this.#getFunction(part.functionId)?.context ?? [])
@@ -818,12 +818,12 @@ export class Interpreter {
   #createCallResult(args: SymbolicValue[], loc: SourceLocation): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(loc);
     if (calleeText === null) return createUnknown("call", loc);
-    const inputs = new Set<string>();
+    const inputs = new PlaceMap<true>();
     for (const argument of args) this.#collectInputs(argument, inputs);
     if (inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
       return createUnknown("call", loc);
     const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
-    return createBindingValue(this.#createBinding(name, "call", loc, { inputs: [...inputs] }));
+    return createBindingValue(this.#createBinding(name, "call", loc, { inputs: inputs.places() }));
   }
 
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {

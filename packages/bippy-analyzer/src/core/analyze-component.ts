@@ -4,6 +4,7 @@ import { addComparedSamples } from "./infer-domains";
 import type { DomainResolver } from "./infer-domains";
 import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";
+import { PlaceMap } from "./utils/place";
 import type { ProjectHookLoader } from "./interpret";
 import type { Bailout, ComponentAnalysis, ContextModels, StoreModel } from "./types";
 
@@ -44,7 +45,7 @@ export const analyzeComponent = (
       providedContexts: [],
       contextSamples: new Map(),
       untypedContexts: new Map(),
-      placeDomains: new Map(),
+      placeDomains: new PlaceMap(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
       handlers: [],
       renders: [],

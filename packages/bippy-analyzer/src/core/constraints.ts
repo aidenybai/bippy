@@ -1,8 +1,14 @@
-import type { AbstractValue, BinaryExpressionValue, BindingValue, SymbolicValue } from "./types";
+import type {
+  AbstractValue,
+  BinaryExpressionValue,
+  BindingValue,
+  Place,
+  SymbolicValue,
+} from "./types";
 import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks";
 import { formatAbstractValue } from "./format";
 import { getValueKey } from "./utils/value-key";
-import { getBindingPlaceKey, isPlacePrefix } from "./utils/place-key";
+import { PlaceMap, getPlaceKey, getValuePlace, isSamePlace } from "./utils/place";
 import {
   getKnownTruthiness,
   getNegatedOperator,
@@ -11,23 +17,23 @@ import {
 } from "./utils/truthiness";
 import { forEachSymbolicValue } from "./utils/traverse";
 
-export const CONSTANT_ATOM = "#";
-const LENGTH_SUFFIX = ".length";
+const CONSTANT_KEY = "#";
+const LENGTH_FIELD = "length";
 export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
-/** `left - right <= constant` (`<` when strict); `#` is the constant zero. */
+/** `left - right <= constant` (`<` when strict); a null atom is the constant zero. */
 export interface Bound {
-  left: string;
-  right: string;
+  left: Place | null;
+  right: Place | null;
   constant: number;
   isStrict: boolean;
 }
 
 interface LinearTerm {
-  atom: string;
+  atom: Place | null;
   constant: number;
 }
 
@@ -36,59 +42,55 @@ interface Distance {
   isStrict: boolean;
 }
 
-interface AssumedPlace {
-  bindingId: number;
-  placeKey: string;
-}
-
 interface Assumption {
   outcome: boolean;
-  places: AssumedPlace[];
+  places: Place[];
 }
 
 export interface Constraints {
-  values: Map<string, AbstractValue[]>;
+  values: PlaceMap<AbstractValue[]>;
   assumptions: Map<string, Assumption>;
   bounds: Bound[];
 }
 
 export const cloneConstraints = (constraints: Constraints): Constraints => ({
-  values: new Map(constraints.values),
+  values: new PlaceMap(constraints.values),
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
 });
 
-export const getLengthAtom = (bindingId: number): string => `${bindingId}${LENGTH_SUFFIX}`;
+export const getLengthAtom = (bindingId: number): Place => ({ bindingId, path: [LENGTH_FIELD] });
 
-const collectPlaces = (value: SymbolicValue): AssumedPlace[] => {
-  const places: AssumedPlace[] = [];
+const getAtomKey = (atom: Place | null): string => (atom ? getPlaceKey(atom) : CONSTANT_KEY);
+
+const collectPlaces = (value: SymbolicValue): Place[] => {
+  const places: Place[] = [];
   forEachSymbolicValue(value, (part) => {
-    if (part.kind === "Binding")
-      places.push({ bindingId: part.binding.id, placeKey: getBindingPlaceKey(part) });
+    if (part.kind === "Binding") places.push(getValuePlace(part));
   });
   return places;
 };
 
 const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   if (value.kind === "Primitive")
-    return typeof value.value === "number" ? { atom: CONSTANT_ATOM, constant: value.value } : null;
-  if (value.kind === "Binding") return { atom: getBindingPlaceKey(value), constant: 0 };
+    return typeof value.value === "number" ? { atom: null, constant: value.value } : null;
+  if (value.kind === "Binding") return { atom: getValuePlace(value), constant: 0 };
   if (
     value.kind === "UnaryExpression" &&
     value.operator === "-" &&
     value.value.kind === "Primitive" &&
     typeof value.value.value === "number"
   ) {
-    return { atom: CONSTANT_ATOM, constant: -value.value.value };
+    return { atom: null, constant: -value.value.value };
   }
   if (value.kind === "BinaryExpression" && (value.operator === "+" || value.operator === "-")) {
     const left = getLinearTerm(value.left);
     const right = getLinearTerm(value.right);
     if (!left || !right) return null;
     const sign = value.operator === "+" ? 1 : -1;
-    if (right.atom === CONSTANT_ATOM)
+    if (right.atom === null)
       return { atom: left.atom, constant: left.constant + sign * right.constant };
-    if (left.atom === CONSTANT_ATOM && sign === 1)
+    if (left.atom === null && sign === 1)
       return { atom: right.atom, constant: left.constant + right.constant };
   }
   return null;
@@ -100,7 +102,7 @@ const getBounds = (value: SymbolicValue, outcome: boolean): Bound[] | null => {
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
   const left = getLinearTerm(value.left);
   const right = getLinearTerm(value.right);
-  if (!left || !right || (left.atom === CONSTANT_ATOM && right.atom === CONSTANT_ATOM)) return null;
+  if (!left || !right || (left.atom === null && right.atom === null)) return null;
   const difference = right.constant - left.constant;
   const lessThan = (isStrict: boolean): Bound => ({
     left: left.atom,
@@ -136,11 +138,14 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
 const areBoundsConsistent = (bounds: Bound[]): boolean => {
   const lengthBounds = bounds
     .flatMap((bound) => [bound.left, bound.right])
-    .filter((atom) => atom.endsWith(LENGTH_SUFFIX))
-    .map((atom): Bound => ({ left: CONSTANT_ATOM, right: atom, constant: 0, isStrict: false }));
+    .filter((atom) => atom?.path.at(-1) === LENGTH_FIELD)
+    .map((atom): Bound => ({ left: null, right: atom, constant: 0, isStrict: false }));
   const allBounds = [...bounds, ...lengthBounds];
   const atoms = [
-    ...new Set([CONSTANT_ATOM, ...allBounds.flatMap((bound) => [bound.left, bound.right])]),
+    ...new Set([
+      CONSTANT_KEY,
+      ...allBounds.flatMap((bound) => [getAtomKey(bound.left), getAtomKey(bound.right)]),
+    ]),
   ];
   const atomIndices = new Map(atoms.map((atom, index) => [atom, index]));
   const distances = atoms.map((_row, rowIndex) =>
@@ -149,9 +154,9 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
       isStrict: false,
     })),
   );
-  const getIndex = (atom: string): number => {
-    const index = atomIndices.get(atom);
-    if (index === undefined) throw new Error(`Unindexed bound atom ${atom}`);
+  const getIndex = (atom: Place | null): number => {
+    const index = atomIndices.get(getAtomKey(atom));
+    if (index === undefined) throw new Error(`Unindexed bound atom ${getAtomKey(atom)}`);
     return index;
   };
   for (const bound of allBounds) {
@@ -189,7 +194,7 @@ const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean
 };
 
 const getPlaceValues = (value: SymbolicValue, constraints: Constraints): AbstractValue[] | null =>
-  value.kind === "Binding" ? (constraints.values.get(getBindingPlaceKey(value)) ?? null) : null;
+  value.kind === "Binding" ? (constraints.values.get(getValuePlace(value)) ?? null) : null;
 
 const isBooleanExpression = (value: SymbolicValue): boolean =>
   (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
@@ -274,7 +279,7 @@ const restrictPlace = (
   const restricted = values.filter(keep);
   if (restricted.length === 0) return null;
   const next = cloneConstraints(constraints);
-  next.values.set(getBindingPlaceKey(place), restricted);
+  next.values.set(getValuePlace(place), restricted);
   return next;
 };
 
@@ -346,21 +351,16 @@ export const forgetBinding = (
   keepsLength: boolean,
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
+  const isLength = (atom: Place | null): boolean => atom !== null && isSamePlace(atom, lengthAtom);
   for (const [key, assumption] of constraints.assumptions) {
-    const placeKeys = assumption.places
-      .filter((place) => place.bindingId === bindingId)
-      .map((place) => place.placeKey);
-    if (placeKeys.length === 0) continue;
-    if (keepsLength && placeKeys.every((placeKey) => placeKey === lengthAtom)) continue;
+    const places = assumption.places.filter((place) => place.bindingId === bindingId);
+    if (places.length === 0) continue;
+    if (keepsLength && places.every(isLength)) continue;
     constraints.assumptions.delete(key);
   }
   constraints.bounds = constraints.bounds.filter((bound) => {
-    const mentionsBinding = [bound.left, bound.right].some((atom) =>
-      isPlacePrefix(String(bindingId), atom),
-    );
-    return (
-      !mentionsBinding || (keepsLength && (bound.left === lengthAtom || bound.right === lengthAtom))
-    );
+    const mentionsBinding = [bound.left, bound.right].some((atom) => atom?.bindingId === bindingId);
+    return !mentionsBinding || (keepsLength && (isLength(bound.left) || isLength(bound.right)));
   });
 };
 

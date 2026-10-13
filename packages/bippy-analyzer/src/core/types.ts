@@ -1,5 +1,6 @@
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionId, InstructionValue, SourceLocation } from "../react-compiler/HIR/HIR";
+import type { PlaceMap } from "./utils/place";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
 
@@ -44,6 +45,12 @@ export type BindingKind =
   | "call"
   | "suspense";
 
+/** A binding or a field path inside it, like `user.name`. */
+export interface Place {
+  bindingId: number;
+  path: string[];
+}
+
 export interface Binding {
   id: number;
   name: string;
@@ -55,7 +62,7 @@ export interface Binding {
   samples: Sample[];
   initial: SymbolicValue | null;
   /** Places a call result's arguments read. */
-  inputs: string[];
+  inputs: Place[];
 }
 
 export interface Branch {
@@ -238,7 +245,7 @@ export interface ComponentAnalysis {
   contextSamples: Map<string, Sample>;
   /** Binding id each untyped context is read through, by declaration key. */
   untypedContexts: Map<string, number>;
-  placeDomains: Map<string, Domain>;
+  placeDomains: PlaceMap<Domain>;
   render: SymbolicValue;
   handlers: Handler[];
   renders: string[];
@@ -275,7 +282,7 @@ export interface UnreachableBranch {
 }
 
 export interface StateReport {
-  places: Map<string, AbstractValue[]>;
+  places: PlaceMap<AbstractValue[]>;
   states: State[];
   regions: Region[];
   unreachableBranches: UnreachableBranch[];

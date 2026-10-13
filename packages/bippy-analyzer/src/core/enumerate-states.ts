@@ -2,7 +2,6 @@ import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import DisjointSet from "../react-compiler/Utils/DisjointSet";
 import type { Bound, Constraints } from "./constraints";
 import {
-  CONSTANT_ATOM,
   assume,
   cloneConstraints,
   dedupeValues,
@@ -16,6 +15,7 @@ import type {
   Binding,
   ComponentAnalysis,
   ConditionalValue,
+  Place,
   UnreachableBranch,
   Domain,
   Transition,
@@ -34,7 +34,13 @@ import {
 } from "./utils/traverse";
 import { formatNegated, formatSymbolicValue } from "./format";
 import { getValueKey } from "./utils/value-key";
-import { getBindingPlaceKey, getPlaceKey, isPlacePrefix, parsePlaceKey } from "./utils/place-key";
+import {
+  PlaceMap,
+  getBindingPlace,
+  getValuePlace,
+  isPlacePrefix,
+  isSamePlace,
+} from "./utils/place";
 import { getTestExpression, getTruthiness, negate } from "./utils/truthiness";
 import {
   isExternalSource,
@@ -132,7 +138,7 @@ const getFieldCases = (
 
 const getToggleCases = (
   value: SymbolicValue,
-  placeKey: string,
+  place: Place,
   current: AbstractValue[] | undefined,
 ): AbstractValue[] | null => {
   if (
@@ -142,7 +148,7 @@ const getToggleCases = (
     value.value.kind !== "Binding"
   )
     return null;
-  if (getBindingPlaceKey(value.value) !== placeKey) return null;
+  if (!isSamePlace(getValuePlace(value.value), place)) return null;
   return current.map((candidate): AbstractValue => ({
     kind: "Literal",
     value: getTruthiness(candidate) === "falsy",
@@ -166,13 +172,13 @@ const getReachableCases = (
   const initialCases = getFieldCases(binding.initial, path, binding, null);
   if (!Array.isArray(initialCases)) return typeCases;
   let reachable = dedupeValues(initialCases);
-  const placeKey = getPlaceKey(binding, path);
+  const place = getBindingPlace(binding, path);
   for (let round = 0; round < MAX_REACHABILITY_ROUNDS; round++) {
     const previousCount = reachable.length;
     for (const update of updates) {
       const cases =
         getFieldCases(update.value, path, binding, null) ??
-        getToggleCases(update.value, placeKey, reachable);
+        getToggleCases(update.value, place, reachable);
       if (cases === "unchanged") continue;
       if (!cases) return typeCases;
       reachable = dedupeValues([...reachable, ...cases]);
@@ -183,18 +189,17 @@ const getReachableCases = (
 };
 
 const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
-  const values = new Map<string, AbstractValue[]>();
+  const values = new PlaceMap<AbstractValue[]>();
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
-  for (const [placeKey, domain] of analysis.placeDomains) {
-    const { bindingId, path } = parsePlaceKey(placeKey);
-    const binding = bindingsById.get(bindingId);
+  for (const [place, domain] of analysis.placeDomains) {
+    const binding = bindingsById.get(place.bindingId);
     const cases =
       binding && isStateBinding(binding)
-        ? getReachableCases(analysis, binding, path, domain)
+        ? getReachableCases(analysis, binding, place.path, domain)
         : domain.kind === "Cases"
           ? domain.cases
           : null;
-    if (cases) values.set(placeKey, cases);
+    if (cases) values.set(place, cases);
   }
   return { values, assumptions: new Map(), bounds: [] };
 };
@@ -213,7 +218,7 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   if (value.kind !== "ArrayExpression") return [];
   const lengthAtom = getLengthAtom(binding.id);
   const minimum: Bound = {
-    left: CONSTANT_ATOM,
+    left: null,
     right: lengthAtom,
     constant: -value.elements.length,
     isStrict: false,
@@ -223,7 +228,7 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
     minimum,
     {
       left: lengthAtom,
-      right: CONSTANT_ATOM,
+      right: null,
       constant: value.elements.length,
       isStrict: false,
     },
@@ -233,10 +238,8 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
 const getDependents = (bindings: Binding[]): Map<number, number[]> => {
   const dependents = new Map<number, number[]>();
   for (const binding of bindings)
-    for (const input of binding.inputs) {
-      const { bindingId } = parsePlaceKey(input);
+    for (const { bindingId } of binding.inputs)
       dependents.set(bindingId, [...(dependents.get(bindingId) ?? []), binding.id]);
-    }
   const collect = (bindingId: number, collected: Set<number>): Set<number> => {
     for (const dependentId of dependents.get(bindingId) ?? [])
       if (!collected.has(dependentId)) collect(dependentId, collected.add(dependentId));
@@ -255,24 +258,20 @@ const applyUpdates = (
 ): Constraints => {
   const next = cloneConstraints(constraints);
   for (const update of updates) {
-    for (const placeKey of reachable.values.keys()) {
-      const { bindingId, path } = parsePlaceKey(placeKey);
-      if (bindingId !== update.binding.id) continue;
-      const current = constraints.values.get(placeKey);
+    for (const [place, reachableValues] of reachable.values) {
+      if (place.bindingId !== update.binding.id) continue;
+      const current = constraints.values.get(place);
       const cases =
-        getFieldCases(update.value, path, update.binding, constraints) ??
-        getToggleCases(update.value, placeKey, current);
+        getFieldCases(update.value, place.path, update.binding, constraints) ??
+        getToggleCases(update.value, place, current);
       if (cases === "unchanged") continue;
-      next.values.set(
-        placeKey,
-        cases ? dedupeValues(cases) : (reachable.values.get(placeKey) ?? []),
-      );
+      next.values.set(place, cases ? dedupeValues(cases) : reachableValues);
     }
     forgetBinding(next, update.binding.id, isLengthPreserving(update.value, update.binding));
     next.bounds.push(...getLengthBounds(update.value, update.binding));
     const dependentIds = new Set(dependents.get(update.binding.id));
-    for (const [placeKey, values] of reachable.values)
-      if (dependentIds.has(parsePlaceKey(placeKey).bindingId)) next.values.set(placeKey, values);
+    for (const [place, values] of reachable.values)
+      if (dependentIds.has(place.bindingId)) next.values.set(place, values);
     for (const dependentId of dependentIds) forgetBinding(next, dependentId, false);
   }
   return next;
@@ -402,8 +401,8 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
 const findRegions = (render: SymbolicValue): RegionBranches[] => {
   const decisionSets = new DisjointSet<string>();
   const branchKeys: string[] = [];
-  const decisionsByAtom = new Map<string, string[]>();
-  const places = new Map<string, { name: string; branchKey: string }>();
+  const decisionsByPlace = new PlaceMap<string[]>();
+  const places = new PlaceMap<{ name: string; branchKey: string }>();
   const visited = new WeakMap<SymbolicValue, Set<string | null>>();
   const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
     const enclosingKeys = visited.get(value) ?? new Set();
@@ -417,13 +416,13 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
         forEachSymbolicValue(getTestExpression(value), (part) => {
           if (part.kind !== "Binding") return;
           // Fields of a hook result or context change together, so they join the whole binding.
-          const atoms = [
-            isExternalSource(part.binding) ? String(part.binding.id) : getBindingPlaceKey(part),
+          const decidingPlaces = [
+            isExternalSource(part.binding) ? getBindingPlace(part.binding) : getValuePlace(part),
             ...part.binding.inputs,
           ];
-          for (const atom of atoms)
-            decisionsByAtom.set(atom, [...(decisionsByAtom.get(atom) ?? []), key]);
-          places.set(getBindingPlaceKey(part), {
+          for (const place of decidingPlaces)
+            decisionsByPlace.set(place, [...(decisionsByPlace.get(place) ?? []), key]);
+          places.set(getValuePlace(part), {
             name: formatSymbolicValue(part),
             branchKey: key,
           });
@@ -441,9 +440,9 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
     }
   };
   visit(render, null);
-  for (const [atom, keys] of decisionsByAtom)
-    for (const [otherAtom, otherKeys] of decisionsByAtom)
-      if (isPlacePrefix(atom, otherAtom)) decisionSets.union([...keys, ...otherKeys]);
+  for (const [place, keys] of decisionsByPlace)
+    for (const [otherPlace, otherKeys] of decisionsByPlace)
+      if (isPlacePrefix(place, otherPlace)) decisionSets.union([...keys, ...otherKeys]);
 
   const regions = new Map<string, RegionBranches>();
   const getRegion = (key: string): RegionBranches => {
@@ -457,14 +456,14 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
     return region;
   };
   for (const key of branchKeys) getRegion(key).branchKeys.add(key);
-  for (const [atom, keys] of decisionsByAtom)
-    for (const key of keys) getRegion(key).bindingIds.add(parsePlaceKey(atom).bindingId);
-  for (const [placeKey, place] of places) {
-    const isNested = [...places.keys()].some(
-      (otherKey) => otherKey !== placeKey && isPlacePrefix(otherKey, placeKey),
-    );
-    const region = getRegion(place.branchKey);
-    if (!isNested && !region.places.includes(place.name)) region.places.push(place.name);
+  for (const [place, keys] of decisionsByPlace)
+    for (const key of keys) getRegion(key).bindingIds.add(place.bindingId);
+  for (const [place, { name, branchKey }] of places) {
+    const isNested = places
+      .places()
+      .some((other) => !isSamePlace(other, place) && isPlacePrefix(other, place));
+    const region = getRegion(branchKey);
+    if (!isNested && !region.places.includes(name)) region.places.push(name);
   }
   return regions.size > 0
     ? [...regions.values()]
@@ -605,7 +604,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   });
 
   return {
-    places: new Map(reachable.values),
+    places: new PlaceMap(reachable.values),
     states,
     regions,
     // A truncated enumeration may have missed sides that do run.

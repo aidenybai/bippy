@@ -11,7 +11,6 @@ import type {
 import { forEachJsxElement, forEachRenderNode } from "../../../src/core/utils/traverse";
 import { formatAbstractValue, formatLine, formatPlace } from "../../../src/core/format";
 import { isStateBinding } from "../../../src/core/utils/checks";
-import { parsePlaceKey } from "../../../src/core/utils/place-key";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
@@ -362,8 +361,7 @@ const scoreFirstCommit = (
 /** Checks each state value the page holds against the literals the analysis predicts. */
 const scoreValues = (context: ScoringContext, observation: Observation): void => {
   context.stateBindings?.forEach((binding, hookIndex) => {
-    for (const [placeKey, predicted] of context.report.places) {
-      const { bindingId, path: placePath } = parsePlaceKey(placeKey);
+    for (const [{ bindingId, path: placePath }, predicted] of context.report.places) {
       if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
         continue;
       const value = readPath(observation.after.hookStates[hookIndex], placePath);

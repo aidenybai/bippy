@@ -18,7 +18,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { forEachJsxElement } from "./utils/traverse";
-import { getPlaceKey, parsePlaceKey } from "./utils/place-key";
+import { getBindingPlace } from "./utils/place";
 import { analyzeComponent } from "./analyze-component";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript";
 import { isProjectSourceFile, withProject } from "./utils/with-project";
@@ -88,8 +88,7 @@ const getShapeSample = (name: string, paths: string[][]): Sample => {
 
 const inferPropShapes = (analysis: ComponentAnalysis): void => {
   const paths = new Map<number, string[][]>();
-  for (const placeKey of analysis.placeDomains.keys()) {
-    const { bindingId, path } = parsePlaceKey(placeKey);
+  for (const { bindingId, path } of analysis.placeDomains.places()) {
     if (path.length > 0) paths.set(bindingId, [...(paths.get(bindingId) ?? []), path]);
   }
   for (const binding of analysis.bindings) {
@@ -167,7 +166,7 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
         origin: "call-sites",
       };
       binding.samples = literals.map(getSampleOfValue);
-      analysis.placeDomains.set(getPlaceKey(binding, []), binding.domain);
+      analysis.placeDomains.set(getBindingPlace(binding), binding.domain);
       analysis.bailouts = analysis.bailouts.filter(
         (bailout) => !(bailout.reason === "untyped-prop" && bailout.loc === binding.loc),
       );

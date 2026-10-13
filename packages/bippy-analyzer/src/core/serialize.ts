@@ -1,4 +1,5 @@
 import type { ProjectAnalysis } from "./types";
+import { PlaceMap } from "./utils/place";
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
 
@@ -9,7 +10,8 @@ const countReferences = (root: unknown): WeakMap<object, number> => {
     const count = counts.get(value) ?? 0;
     counts.set(value, count + 1);
     if (count > 0) return;
-    const children = value instanceof Map ? value.values() : Object.values(value);
+    const children =
+      value instanceof Map || value instanceof PlaceMap ? value.values() : Object.values(value);
     for (const child of children) visit(child);
   };
   visit(root);

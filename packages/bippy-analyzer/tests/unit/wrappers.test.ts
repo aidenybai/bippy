@@ -3,6 +3,7 @@ import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { ComponentAnalysis, Sample } from "../../src/core/types";
 import { parseExports } from "../conformance/verifier/source-index";
 import type { ExportedName, ProjectIndex } from "../conformance/verifier/types";
+import { PlaceMap } from "../../src/core/utils/place";
 import { proposeParents } from "../conformance/verifier/wrappers";
 import type { ParentQuery } from "../conformance/verifier/wrappers";
 
@@ -23,7 +24,7 @@ const createAnalysis = (name: string, file: string): ComponentAnalysis => ({
   providedContexts: [],
   contextSamples: new Map(),
   untypedContexts: new Map(),
-  placeDomains: new Map(),
+  placeDomains: new PlaceMap(),
   render: { kind: "Primitive", value: null },
   handlers: [],
   renders: [],
