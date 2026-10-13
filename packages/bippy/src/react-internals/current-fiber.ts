@@ -1,6 +1,6 @@
 // Adapted from ReactFiberTreeReflection.js. Copyright (c) Meta Platforms, Inc. and affiliates. MIT licensed.
-import type { Fiber } from "./types.js";
-import { getReactWorkTagsForFiber } from "./index.js";
+import type { Fiber } from "./types";
+import { getReactWorkTagsForFiber } from "./index";
 
 export const getCurrentFiberFromRoot = (fiber: Fiber): Fiber | null => {
   const alternate = fiber.alternate;

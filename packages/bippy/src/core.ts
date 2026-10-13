@@ -1,6 +1,6 @@
 // React must remain a type-only import because this module loads immediately after the DevTools hook.
 import type * as React from "react";
-import { callListener } from "./call-listener.js";
+import { callListener } from "./call-listener";
 
 import type {
   Fiber,
@@ -8,7 +8,7 @@ import type {
   HostFiber,
   ReactDevToolsGlobalHook,
   ReactRenderer,
-} from "./react-internals/index.js";
+} from "./react-internals/index";
 
 import {
   BIPPY_INSTRUMENTATION_STRING,
@@ -20,16 +20,16 @@ import {
   isRealReactDevtools,
   onRDTHookReplace,
   removeActiveListener,
-} from "./rdt-hook.js";
-import type { ReactDevToolsTarget, Unsubscribe } from "./rdt-hook.js";
-import { getCurrentFiberFromRoot } from "./react-internals/current-fiber.js";
+} from "./rdt-hook";
+import type { ReactDevToolsTarget, Unsubscribe } from "./rdt-hook";
+import { getCurrentFiberFromRoot } from "./react-internals/current-fiber";
 import {
   getReactWorkTagsForFiber,
   ReactBuildType,
   ReactFiberFlags,
   ReactSymbols,
   setReactWorkTagsForFiber,
-} from "./react-internals/index.js";
+} from "./react-internals/index";
 
 export {
   BippyError,
@@ -37,7 +37,7 @@ export {
   BippyHookRenderError,
   BippySourceMapError,
   BippyUnsupportedHookError,
-} from "./errors.js";
+} from "./errors";
 
 const isComponentType = (value: unknown): value is React.ComponentType<unknown> =>
   typeof value === "function";
@@ -1023,6 +1023,6 @@ export {
   onRendererInject,
   patchRDTHook,
   version,
-} from "./rdt-hook.js";
-export type { ReactDevToolsTarget, Unsubscribe } from "./rdt-hook.js";
-export * from "./react-internals/index.js";
+} from "./rdt-hook";
+export type { ReactDevToolsTarget, Unsubscribe } from "./rdt-hook";
+export * from "./react-internals/index";

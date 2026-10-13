@@ -1,11 +1,11 @@
-import "./install-hook-only.js";
+import "./install-hook-only";
 import React from "react";
-import { isFiber, traverseFiber } from "./core.js";
-import { _renderers } from "./rdt-hook.js";
-import { getCurrentFiberFromRoot } from "./react-internals/current-fiber.js";
-import type { Fiber } from "./react-internals/index.js";
+import { isFiber, traverseFiber } from "./core";
+import { _renderers } from "./rdt-hook";
+import { getCurrentFiberFromRoot } from "./react-internals/current-fiber";
+import type { Fiber } from "./react-internals/index";
 
-export type { Fiber } from "./react-internals/index.js";
+export type { Fiber } from "./react-internals/index";
 
 interface RenderMarker {
   (state: undefined): undefined;

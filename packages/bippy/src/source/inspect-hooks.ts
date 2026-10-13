@@ -1,5 +1,5 @@
-import { getRenderer } from "../core.js";
-import type { ReactDevToolsTarget } from "../rdt-hook.js";
+import { getRenderer } from "../core";
+import type { ReactDevToolsTarget } from "../rdt-hook";
 import type {
   Fiber,
   ContextDependency,
@@ -7,19 +7,15 @@ import type {
   ReactContext,
   ReactDebugInfo,
   RendererDispatcherRef,
-} from "../react-internals/index.js";
+} from "../react-internals/index";
 import {
   BippyHookInspectionError,
   BippyHookRenderError,
   BippyUnsupportedHookError,
-} from "../errors.js";
-import { getReactWorkTagsForFiber } from "../react-internals/index.js";
-import { createStackParser, parseStack, type StackFrame } from "./parse-stack.js";
-import {
-  getRendererDispatcherRefs,
-  readDispatcher,
-  writeDispatcher,
-} from "./renderer-dispatchers.js";
+} from "../errors";
+import { getReactWorkTagsForFiber } from "../react-internals/index";
+import { createStackParser, parseStack, type StackFrame } from "./parse-stack";
+import { getRendererDispatcherRefs, readDispatcher, writeDispatcher } from "./renderer-dispatchers";
 
 const REACT_CONTEXT_TYPE = Symbol.for("react.context");
 const REACT_MEMO_CACHE_SENTINEL = Symbol.for("react.memo_cache_sentinel");

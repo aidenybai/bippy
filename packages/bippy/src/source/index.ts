@@ -6,8 +6,8 @@ export {
   getParentStack,
   getRawOwnerStack,
   hasDebugStack,
-} from "./owner-stack.js";
-export { getRawSource, getSource, isSourceFile, normalizeFileName } from "./get-source.js";
+} from "./owner-stack";
+export { getRawSource, getSource, isSourceFile, normalizeFileName } from "./get-source";
 export {
   getSourceContentFromSourceMap,
   getSourceFromSourceMap,
@@ -20,22 +20,22 @@ export {
   type SourceMap,
   type SourceMapRequestOptions,
   type StandardSourceMap,
-} from "./symbolication.js";
-export type { FiberSource } from "./types.js";
-export { parseStack, type ParseOptions, type StackFrame } from "./parse-stack.js";
-export { getDisplayNameFromSource } from "./get-display-name-from-source.js";
+} from "./symbolication";
+export type { FiberSource } from "./types";
+export { parseStack, type ParseOptions, type StackFrame } from "./parse-stack";
+export { getDisplayNameFromSource } from "./get-display-name-from-source";
 export {
   BippyError,
   BippyHookInspectionError,
   BippyHookRenderError,
   BippySourceMapError,
   BippyUnsupportedHookError,
-} from "../errors.js";
+} from "../errors";
 export {
   getFiberHooks,
   inspectHooks,
   type HookSource,
   type HooksNode,
   type HooksTree,
-} from "./inspect-hooks.js";
-export { parseHookNames, type HookNames } from "./parse-hook-names.js";
+} from "./inspect-hooks";
+export { parseHookNames, type HookNames } from "./parse-hook-names";

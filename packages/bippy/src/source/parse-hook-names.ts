@@ -1,11 +1,11 @@
-import type { HooksNode, HooksTree, HookSource } from "./inspect-hooks.js";
+import type { HooksNode, HooksTree, HookSource } from "./inspect-hooks";
 import {
   getSourceContentFromSourceMap,
   getSourceFromSourceMap,
   getSourceMap,
   type SourceFetch,
   type SourceMapRequestOptions,
-} from "./symbolication.js";
+} from "./symbolication";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface HookNames extends Map<string, string> {}

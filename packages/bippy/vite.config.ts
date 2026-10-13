@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
-import { defineConfig } from "vite-plus";
+import { resolve } from "node:path";
+import { defineConfig, defineProject } from "vite-plus";
 import type { PackUserConfig } from "vite-plus/pack";
-import { reactInternalsPlugin } from "./scripts/react-internals-plugin.js";
+import { reactInternalsPlugin } from "./scripts/react-internals-plugin";
 
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const isContinuousIntegration = Boolean(process.env.CI && process.env.CI !== "false");
@@ -44,4 +45,40 @@ export default defineConfig({
     target: "esnext",
     treeshake: true,
   } satisfies PackUserConfig,
+  test: {
+    projects: [
+      defineProject({
+        test: {
+          name: "unit",
+          include: ["tests/unit/**/*.test.{ts,tsx}"],
+          environment: "happy-dom",
+        },
+      }),
+      defineProject({
+        resolve: {
+          alias: [
+            { find: /^bippy$/, replacement: resolve(import.meta.dirname, "src/index.ts") },
+            {
+              find: "bippy/source",
+              replacement: resolve(import.meta.dirname, "src/source/index.ts"),
+            },
+          ],
+        },
+        test: {
+          name: "conformance",
+          include: ["tests/conformance/*.test.{ts,tsx}"],
+          environment: "happy-dom",
+          setupFiles: ["./tests/conformance/setup.ts"],
+          testTimeout: 10000,
+        },
+      }),
+      "tests/fixtures/react-devtools-headless/vite.config.ts",
+    ],
+    coverage: {
+      include: ["src/**/*.ts", "scripts/react-internals-plugin.ts"],
+      exclude: ["src/react-internals/types.ts"],
+      provider: "istanbul",
+      reporter: ["text", "json", "json-summary", "html"],
+    },
+  },
 });

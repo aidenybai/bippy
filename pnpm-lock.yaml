@@ -14,7 +14,6 @@ patchedDependencies:
     path: patches/react-devtools-core@8.0.0.patch
 
 importers:
-
   .:
     devDependencies:
       '@antfu/ni':
@@ -38,39 +37,7 @@ importers:
       '@types/react-reconciler':
         specifier: ^0.33.0
         version: 0.33.0(@types/react@19.3.0)
-    devDependencies:
-      '@jridgewell/sourcemap-codec':
-        specifier: ^1.5.0
-        version: 1.5.5
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      publint:
-        specifier: ^0.3.0
-        version: 0.3.24
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-devtools-core:
-        specifier: 8.0.0
-        version: 8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150)
-      tsx:
-        specifier: ^4.21.0
-        version: 4.23.12
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vite-plus:
-        specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
-      zod:
-        specifier: ^4.4.3
-        version: 4.4.3
 
-  packages/conformance:
     devDependencies:
       '@babel/core':
         specifier: ^7.29.7
@@ -129,9 +96,6 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
-      bippy:
-        specifier: workspace:*
-        version: link:../bippy
       happy-dom:
         specifier: ^20.11.6
         version: 20.11.6
@@ -147,6 +111,9 @@ importers:
       pixi.js:
         specifier: ^8.19.0
         version: 8.19.0
+      publint:
+        specifier: ^0.3.0
+        version: 0.3.24
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -264,146 +231,11 @@ importers:
       vite-plus:
         specifier: latest
         version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
 
-  packages/conformance/fixtures/react-devtools-headless:
-    devDependencies:
-      '@testing-library/react':
-        specifier: ^16.1.0
-        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      '@types/react-test-renderer':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@vitest/coverage-istanbul':
-        specifier: 4.1.11
-        version: 4.1.11(vitest@4.1.11)
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      happy-dom:
-        specifier: ^20.11.6
-        version: 20.11.6
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-16-0:
-        specifier: npm:react@16.0.0
-        version: react@16.0.0
-      react-16-1:
-        specifier: npm:react@16.1.1
-        version: react@16.1.1
-      react-16-2:
-        specifier: npm:react@16.2.0
-        version: react@16.2.0
-      react-16-3:
-        specifier: npm:react@16.3.2
-        version: react@16.3.2
-      react-16-4:
-        specifier: npm:react@16.4.2
-        version: react@16.4.2
-      react-16-5:
-        specifier: npm:react@16.5.2
-        version: react@16.5.2
-      react-16-6:
-        specifier: npm:react@16.6.3
-        version: react@16.6.3
-      react-16-7:
-        specifier: npm:react@16.7.0
-        version: react@16.7.0
-      react-16-8:
-        specifier: npm:react@16.8.6
-        version: react@16.8.6
-      react-17:
-        specifier: npm:react@17.0.2
-        version: react@17.0.2
-      react-18-0:
-        specifier: npm:react@18.0.0
-        version: react@18.0.0
-      react-18-2:
-        specifier: npm:react@18.2.0
-        version: react@18.2.0
-      react-18-3:
-        specifier: npm:react@18.3.1
-        version: react@18.3.1
-      react-19-0:
-        specifier: npm:react@19.0.0
-        version: react@19.0.0
-      react-19-1:
-        specifier: npm:react@19.1.0
-        version: react@19.1.0
-      react-19-2:
-        specifier: npm:react@19.2.8
-        version: react@19.2.8
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      react-dom-16-0:
-        specifier: npm:react-dom@16.0.0
-        version: react-dom@16.0.0(react@19.3.0)
-      react-dom-16-1:
-        specifier: npm:react-dom@16.1.1
-        version: react-dom@16.1.1(react@19.3.0)
-      react-dom-16-2:
-        specifier: npm:react-dom@16.2.0
-        version: react-dom@16.2.0(react@19.3.0)
-      react-dom-16-3:
-        specifier: npm:react-dom@16.3.2
-        version: react-dom@16.3.2(react@19.3.0)
-      react-dom-16-4:
-        specifier: npm:react-dom@16.4.2
-        version: react-dom@16.4.2(react@19.3.0)
-      react-dom-16-5:
-        specifier: npm:react-dom@16.5.2
-        version: react-dom@16.5.2(react@19.3.0)
-      react-dom-16-6:
-        specifier: npm:react-dom@16.6.3
-        version: react-dom@16.6.3(react@19.3.0)
-      react-dom-16-7:
-        specifier: npm:react-dom@16.7.0
-        version: react-dom@16.7.0(react@19.3.0)
-      react-dom-16-8:
-        specifier: npm:react-dom@16.8.6
-        version: react-dom@16.8.6(react@19.3.0)
-      react-dom-17:
-        specifier: npm:react-dom@17.0.2
-        version: react-dom@17.0.2(react@19.3.0)
-      react-dom-18-0:
-        specifier: npm:react-dom@18.0.0
-        version: react-dom@18.0.0(react@19.3.0)
-      react-dom-18-2:
-        specifier: npm:react-dom@18.2.0
-        version: react-dom@18.2.0(react@19.3.0)
-      react-dom-18-3:
-        specifier: npm:react-dom@18.3.1
-        version: react-dom@18.3.1(react@19.3.0)
-      react-dom-19-0:
-        specifier: npm:react-dom@19.0.0
-        version: react-dom@19.0.0(react@19.3.0)
-      react-dom-19-1:
-        specifier: npm:react-dom@19.1.0
-        version: react-dom@19.1.0(react@19.3.0)
-      react-dom-19-2:
-        specifier: npm:react-dom@19.2.8
-        version: react-dom@19.2.8(react@19.3.0)
-      react-test-renderer:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-      vite-plus:
-        specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
-
-  packages/e2e:
+  packages/bippy/tests/e2e:
     devDependencies:
       '@jest/globals':
         specifier: ^30.4.1
@@ -419,7 +251,7 @@ importers:
         version: 20.19.43
       bippy:
         specifier: workspace:*
-        version: link:../bippy
+        version: link:../..
       detox:
         specifier: latest
         version: 20.51.4(@jest/environment@30.5.1)(@jest/types@30.5.1)(expect@30.5.1)(jest-environment-node@30.5.1)(jest@30.5.1(@types/node@20.19.43)(babel-plugin-macros@3.1.0))
@@ -433,7 +265,7 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/e2e/fixtures/astro-app:
+  packages/bippy/tests/fixtures/astro-app:
     dependencies:
       '@astrojs/react':
         specifier: ^6.0.2
@@ -443,7 +275,7 @@ importers:
         version: 7.2.3(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@20.19.43)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       cookie:
         specifier: ^2.0.1
         version: 2.0.1
@@ -464,11 +296,11 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/e2e/fixtures/chrome-extension:
+  packages/bippy/tests/fixtures/chrome-extension:
     dependencies:
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -486,14 +318,14 @@ importers:
         specifier: ^6
         version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/e2e/fixtures/expo-app:
+  packages/bippy/tests/fixtures/expo-app:
     dependencies:
       '@shopify/react-native-skia':
         specifier: ^2.9.0
         version: 2.11.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0))(react@19.3.0)
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       expo:
         specifier: ~54.0.33
         version: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
@@ -511,11 +343,42 @@ importers:
         specifier: ~5.9.2
         version: 5.9.3
 
-  packages/e2e/fixtures/hmr-app:
+  packages/bippy/tests/fixtures/expo-playground:
+    dependencies:
+      '@bippy/next-playground':
+        specifier: workspace:*
+        version: link:../next-playground
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      expo:
+        specifier: ~54.0.33
+        version: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      react-native:
+        specifier: 0.81.5
+        version: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0)
+      react-native-web:
+        specifier: ^0.21.2
+        version: 0.21.2(encoding@0.1.13)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ~19.1.17
+        version: 19.1.17
+      typescript:
+        specifier: ~5.9.2
+        version: 5.9.3
+
+  packages/bippy/tests/fixtures/hmr-app:
     dependencies:
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -539,7 +402,7 @@ importers:
         specifier: ^7.3.4
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/e2e/fixtures/kitchen-sink-app:
+  packages/bippy/tests/fixtures/kitchen-sink-app:
     dependencies:
       '@dnd-kit/core':
         specifier: ^6.3.1
@@ -609,7 +472,7 @@ importers:
         version: 6.6.1(date-fns@4.4.0)(moment@2.30.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       chart.js:
         specifier: ^4.5.1
         version: 4.5.1
@@ -759,11 +622,11 @@ importers:
         specifier: ^7
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  packages/e2e/fixtures/next-app:
+  packages/bippy/tests/fixtures/next-app:
     dependencies:
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       next:
         specifier: 15.5.18
         version: 15.5.18(@playwright/test@1.63.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -787,11 +650,11 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/e2e/fixtures/next-hmr-app:
+  packages/bippy/tests/fixtures/next-hmr-app:
     dependencies:
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
+        version: link:../../..
       next:
         specifier: 15.5.18
         version: 15.5.18(@playwright/test@1.63.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -815,412 +678,11 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/e2e/fixtures/profiling-app:
+  packages/bippy/tests/fixtures/next-playground:
     dependencies:
       bippy:
         specifier: workspace:*
-        version: link:../../../bippy
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^7.3.4
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/react-router-app:
-    dependencies:
-      '@react-router/node':
-        specifier: ^7.10.2
-        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
-      '@react-router/serve':
-        specifier: ^7.10.2
-        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      isbot:
-        specifier: ^5.1.17
-        version: 5.2.1
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      react-router:
-        specifier: ^7.10.2
-        version: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      react-router-dom:
-        specifier: ^7.10.2
-        version: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-    devDependencies:
-      '@react-router/dev':
-        specifier: ^7.10.2
-        version: 7.18.2(@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^7
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/refresh-app:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      konva:
-        specifier: ^10.3.0
-        version: 10.3.1
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      react-konva:
-        specifier: ^19.2.5
-        version: 19.2.5(@types/react@19.3.0)(konva@10.3.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      react-refresh:
-        specifier: ^0.19.0
-        version: 0.19.0
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^7.3.4
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/refresh-app-experimental:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react-dom-experimental:
-        specifier: npm:react-dom@0.0.0-experimental-eb8feb71-20260814
-        version: react-dom@0.0.0-experimental-eb8feb71-20260814(react@19.3.0)
-      react-experimental:
-        specifier: npm:react@0.0.0-experimental-eb8feb71-20260814
-        version: react@0.0.0-experimental-eb8feb71-20260814
-      react-refresh:
-        specifier: 0.0.0-experimental-eb8feb71-20260814
-        version: 0.0.0-experimental-eb8feb71-20260814
-    devDependencies:
-      vite:
-        specifier: ^7.3.4
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/refresh-app-react17:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react-17:
-        specifier: npm:react@17.0.2
-        version: react@17.0.2
-      react-dom-17:
-        specifier: npm:react-dom@17.0.2
-        version: react-dom@17.0.2(react@19.3.0)
-      react-refresh:
-        specifier: ^0.18.0
-        version: 0.18.0
-    devDependencies:
-      vite:
-        specifier: ^7.3.4
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/refresh-app-react18:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react-18:
-        specifier: npm:react@18.3.1
-        version: react@18.3.1
-      react-dom-18:
-        specifier: npm:react-dom@18.3.1
-        version: react-dom@18.3.1(react@19.3.0)
-      react-refresh:
-        specifier: ^0.18.0
-        version: 0.18.0
-    devDependencies:
-      vite:
-        specifier: ^7.3.4
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/remix-app:
-    dependencies:
-      '@remix-run/node':
-        specifier: ^2.17.1
-        version: 2.17.5(typescript@5.9.3)
-      '@remix-run/react':
-        specifier: ^2.17.1
-        version: 2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
-      '@remix-run/serve':
-        specifier: ^2.17.1
-        version: 2.17.5(typescript@5.9.3)
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      isbot:
-        specifier: ^5.1.17
-        version: 5.2.1
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      react-router:
-        specifier: 6.30.4
-        version: 6.30.4(react@19.3.0)
-      react-router-dom:
-        specifier: 6.30.4
-        version: 6.30.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-    devDependencies:
-      '@remix-run/dev':
-        specifier: ^2.17.1
-        version: 2.17.5(@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(@remix-run/serve@2.17.5(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^6
-        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/rsbuild-app:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@rsbuild/core':
-        specifier: ^2.1.13
-        version: 2.1.13
-      '@rsbuild/plugin-react':
-        specifier: ^2.1.0
-        version: 2.1.0(@rsbuild/core@2.1.13)(@rspack/core@2.1.10(@swc/helpers@0.5.23))
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  packages/e2e/fixtures/script-tag-app:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react-18:
-        specifier: npm:react@18.3.1
-        version: react@18.3.1
-      react-dom-18:
-        specifier: npm:react-dom@18.3.1
-        version: react-dom@18.3.1(react@19.3.0)
-    devDependencies:
-      esbuild:
-        specifier: ^0.25.0
-        version: 0.25.12
-      vite:
-        specifier: ^7.3.4
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/stress-app:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^19
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.4(@types/react@19.2.18)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^7
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/tanstack-app:
-    dependencies:
-      '@tanstack/react-router':
-        specifier: ^1.132.0
-        version: 1.170.30(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@tanstack/react-start':
-        specifier: ^1.132.0
-        version: 1.168.47(@rsbuild/core@2.1.13)(@rspack/core@2.1.10(@swc/helpers@0.5.23))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.4)(rollup@4.62.4)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      '@vitejs/plugin-react':
-        specifier: ^5
-        version: 5.2.0(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^7
-        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/use-fiber-versions-app:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react-17:
-        specifier: npm:react@17.0.2
-        version: react@17.0.2
-      react-18:
-        specifier: npm:react@18.3.1
-        version: react@18.3.1
-      react-dom-17:
-        specifier: npm:react-dom@17.0.2
-        version: react-dom@17.0.2(react@19.3.0)
-      react-dom-18:
-        specifier: npm:react-dom@18.3.1
-        version: react-dom@18.3.1(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^6
-        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/e2e/fixtures/vite-app:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../../../bippy
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: ^19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.4
-        version: 4.7.0(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-      vite:
-        specifier: ^6
-        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
-
-  packages/expo-playground:
-    dependencies:
-      '@bippy/next-playground':
-        specifier: workspace:*
-        version: link:../next-playground
-      bippy:
-        specifier: workspace:*
-        version: link:../bippy
-      expo:
-        specifier: ~54.0.33
-        version: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
-      react:
-        specifier: ^19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: ^19.3.0
-        version: 19.3.0(react@19.3.0)
-      react-native:
-        specifier: 0.81.5
-        version: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0)
-      react-native-web:
-        specifier: ^0.21.2
-        version: 0.21.2(encoding@0.1.13)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-    devDependencies:
-      '@types/react':
-        specifier: ~19.1.17
-        version: 19.1.17
-      typescript:
-        specifier: ~5.9.2
-        version: 5.9.3
-
-  packages/next-playground:
-    dependencies:
-      bippy:
-        specifier: workspace:*
-        version: link:../bippy
+        version: link:../../..
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1256,14 +718,522 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/vite-playground:
+  packages/bippy/tests/fixtures/profiling-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.4
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/react-devtools-headless:
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/node':
+        specifier: ^20
+        version: 20.19.43
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@types/react-test-renderer':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@vitest/coverage-istanbul':
+        specifier: 4.1.11
+        version: 4.1.11(vitest@4.1.11)
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      happy-dom:
+        specifier: ^20.11.6
+        version: 20.11.6
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-16-0:
+        specifier: npm:react@16.0.0
+        version: react@16.0.0
+      react-16-1:
+        specifier: npm:react@16.1.1
+        version: react@16.1.1
+      react-16-2:
+        specifier: npm:react@16.2.0
+        version: react@16.2.0
+      react-16-3:
+        specifier: npm:react@16.3.2
+        version: react@16.3.2
+      react-16-4:
+        specifier: npm:react@16.4.2
+        version: react@16.4.2
+      react-16-5:
+        specifier: npm:react@16.5.2
+        version: react@16.5.2
+      react-16-6:
+        specifier: npm:react@16.6.3
+        version: react@16.6.3
+      react-16-7:
+        specifier: npm:react@16.7.0
+        version: react@16.7.0
+      react-16-8:
+        specifier: npm:react@16.8.6
+        version: react@16.8.6
+      react-17:
+        specifier: npm:react@17.0.2
+        version: react@17.0.2
+      react-18-0:
+        specifier: npm:react@18.0.0
+        version: react@18.0.0
+      react-18-2:
+        specifier: npm:react@18.2.0
+        version: react@18.2.0
+      react-18-3:
+        specifier: npm:react@18.3.1
+        version: react@18.3.1
+      react-19-0:
+        specifier: npm:react@19.0.0
+        version: react@19.0.0
+      react-19-1:
+        specifier: npm:react@19.1.0
+        version: react@19.1.0
+      react-19-2:
+        specifier: npm:react@19.2.8
+        version: react@19.2.8
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      react-dom-16-0:
+        specifier: npm:react-dom@16.0.0
+        version: react-dom@16.0.0(react@19.3.0)
+      react-dom-16-1:
+        specifier: npm:react-dom@16.1.1
+        version: react-dom@16.1.1(react@19.3.0)
+      react-dom-16-2:
+        specifier: npm:react-dom@16.2.0
+        version: react-dom@16.2.0(react@19.3.0)
+      react-dom-16-3:
+        specifier: npm:react-dom@16.3.2
+        version: react-dom@16.3.2(react@19.3.0)
+      react-dom-16-4:
+        specifier: npm:react-dom@16.4.2
+        version: react-dom@16.4.2(react@19.3.0)
+      react-dom-16-5:
+        specifier: npm:react-dom@16.5.2
+        version: react-dom@16.5.2(react@19.3.0)
+      react-dom-16-6:
+        specifier: npm:react-dom@16.6.3
+        version: react-dom@16.6.3(react@19.3.0)
+      react-dom-16-7:
+        specifier: npm:react-dom@16.7.0
+        version: react-dom@16.7.0(react@19.3.0)
+      react-dom-16-8:
+        specifier: npm:react-dom@16.8.6
+        version: react-dom@16.8.6(react@19.3.0)
+      react-dom-17:
+        specifier: npm:react-dom@17.0.2
+        version: react-dom@17.0.2(react@19.3.0)
+      react-dom-18-0:
+        specifier: npm:react-dom@18.0.0
+        version: react-dom@18.0.0(react@19.3.0)
+      react-dom-18-2:
+        specifier: npm:react-dom@18.2.0
+        version: react-dom@18.2.0(react@19.3.0)
+      react-dom-18-3:
+        specifier: npm:react-dom@18.3.1
+        version: react-dom@18.3.1(react@19.3.0)
+      react-dom-19-0:
+        specifier: npm:react-dom@19.0.0
+        version: react-dom@19.0.0(react@19.3.0)
+      react-dom-19-1:
+        specifier: npm:react-dom@19.1.0
+        version: react-dom@19.1.0(react@19.3.0)
+      react-dom-19-2:
+        specifier: npm:react-dom@19.2.8
+        version: react-dom@19.2.8(react@19.3.0)
+      react-test-renderer:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite-plus:
+        specifier: latest
+        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/react-router-app:
+    dependencies:
+      '@react-router/node':
+        specifier: ^7.10.2
+        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+      '@react-router/serve':
+        specifier: ^7.10.2
+        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      isbot:
+        specifier: ^5.1.17
+        version: 5.2.1
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      react-router:
+        specifier: ^7.10.2
+        version: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react-router-dom:
+        specifier: ^7.10.2
+        version: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@react-router/dev':
+        specifier: ^7.10.2
+        version: 7.18.2(@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^7
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/refresh-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      konva:
+        specifier: ^10.3.0
+        version: 10.3.1
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      react-konva:
+        specifier: ^19.2.5
+        version: 19.2.5(@types/react@19.3.0)(konva@10.3.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react-refresh:
+        specifier: ^0.19.0
+        version: 0.19.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.4
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/refresh-app-experimental:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react-dom-experimental:
+        specifier: npm:react-dom@0.0.0-experimental-eb8feb71-20260814
+        version: react-dom@0.0.0-experimental-eb8feb71-20260814(react@19.3.0)
+      react-experimental:
+        specifier: npm:react@0.0.0-experimental-eb8feb71-20260814
+        version: react@0.0.0-experimental-eb8feb71-20260814
+      react-refresh:
+        specifier: 0.0.0-experimental-eb8feb71-20260814
+        version: 0.0.0-experimental-eb8feb71-20260814
+    devDependencies:
+      vite:
+        specifier: ^7.3.4
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/refresh-app-react17:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react-17:
+        specifier: npm:react@17.0.2
+        version: react@17.0.2
+      react-dom-17:
+        specifier: npm:react-dom@17.0.2
+        version: react-dom@17.0.2(react@19.3.0)
+      react-refresh:
+        specifier: ^0.18.0
+        version: 0.18.0
+    devDependencies:
+      vite:
+        specifier: ^7.3.4
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/refresh-app-react18:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react-18:
+        specifier: npm:react@18.3.1
+        version: react@18.3.1
+      react-dom-18:
+        specifier: npm:react-dom@18.3.1
+        version: react-dom@18.3.1(react@19.3.0)
+      react-refresh:
+        specifier: ^0.18.0
+        version: 0.18.0
+    devDependencies:
+      vite:
+        specifier: ^7.3.4
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/remix-app:
+    dependencies:
+      '@remix-run/node':
+        specifier: ^2.17.1
+        version: 2.17.5(typescript@5.9.3)
+      '@remix-run/react':
+        specifier: ^2.17.1
+        version: 2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      '@remix-run/serve':
+        specifier: ^2.17.1
+        version: 2.17.5(typescript@5.9.3)
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      isbot:
+        specifier: ^5.1.17
+        version: 5.2.1
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+      react-router:
+        specifier: 6.30.4
+        version: 6.30.4(react@19.3.0)
+      react-router-dom:
+        specifier: 6.30.4
+        version: 6.30.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+    devDependencies:
+      '@remix-run/dev':
+        specifier: ^2.17.1
+        version: 2.17.5(@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(@remix-run/serve@2.17.5(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^6
+        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/rsbuild-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@rsbuild/core':
+        specifier: ^2.1.13
+        version: 2.1.13
+      '@rsbuild/plugin-react':
+        specifier: ^2.1.0
+        version: 2.1.0(@rsbuild/core@2.1.13)(@rspack/core@2.1.10(@swc/helpers@0.5.23))
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/bippy/tests/fixtures/script-tag-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react-18:
+        specifier: npm:react@18.3.1
+        version: react@18.3.1
+      react-dom-18:
+        specifier: npm:react-dom@18.3.1
+        version: react-dom@18.3.1(react@19.3.0)
+    devDependencies:
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.12
+      vite:
+        specifier: ^7.3.4
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/stress-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.4(@types/react@19.2.18)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^7
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/tanstack-app:
+    dependencies:
+      '@tanstack/react-router':
+        specifier: ^1.132.0
+        version: 1.170.30(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-start':
+        specifier: ^1.132.0
+        version: 1.168.47(@rsbuild/core@2.1.13)(@rspack/core@2.1.10(@swc/helpers@0.5.23))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.4)(rollup@4.62.4)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^5
+        version: 5.2.0(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^7
+        version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/use-fiber-versions-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react-17:
+        specifier: npm:react@17.0.2
+        version: react@17.0.2
+      react-18:
+        specifier: npm:react@18.3.1
+        version: react@18.3.1
+      react-dom-17:
+        specifier: npm:react-dom@17.0.2
+        version: react-dom@17.0.2(react@19.3.0)
+      react-dom-18:
+        specifier: npm:react-dom@18.3.1
+        version: react-dom@18.3.1(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^6
+        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/vite-app:
+    dependencies:
+      bippy:
+        specifier: workspace:*
+        version: link:../../..
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.4
+        version: 4.7.0(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vite:
+        specifier: ^6
+        version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
+
+  packages/bippy/tests/fixtures/vite-playground:
     dependencies:
       '@bippy/next-playground':
         specifier: workspace:*
         version: link:../next-playground
       bippy:
         specifier: workspace:*
-        version: link:../bippy
+        version: link:../../..
       react:
         specifier: ^19.3.0
         version: 19.3.0

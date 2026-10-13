@@ -1,6 +1,6 @@
-import type { RendererDispatcherRef } from "../react-internals/index.js";
-import { _renderers, getRDTHook, isRendererMap } from "../rdt-hook.js";
-import type { ReactDevToolsTarget } from "../rdt-hook.js";
+import type { RendererDispatcherRef } from "../react-internals/index";
+import { _renderers, getRDTHook, isRendererMap } from "../rdt-hook";
+import type { ReactDevToolsTarget } from "../rdt-hook";
 
 export const getRendererDispatcherRefs = (
   target: ReactDevToolsTarget = globalThis,

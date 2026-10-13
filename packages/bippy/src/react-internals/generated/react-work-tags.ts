@@ -1,4 +1,4 @@
-import { compareSemver } from "../semver.js";
+import { compareSemver } from "../semver";
 
 export const ReactBuildType = {
   Development: 1,

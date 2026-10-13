@@ -1,4 +1,4 @@
-import "./install-hook-only.js";
+import "./install-hook-only";
 
-export * from "./core.js";
-export * from "./react.js";
+export * from "./core";
+export * from "./react";
