@@ -43,6 +43,7 @@ export type BindingKind =
   | "ref"
   | "item"
   | "call"
+  | "loop"
   | "suspense";
 
 /** A binding or a field path inside it, like `user.name`. */
@@ -205,7 +206,6 @@ export interface Handler {
 
 export type BailoutReason =
   | "compiler-error"
-  | "loop"
   | "unknown-call"
   | "conditional-hook"
   | "too-complex"

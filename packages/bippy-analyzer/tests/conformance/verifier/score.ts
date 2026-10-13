@@ -197,6 +197,7 @@ const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
       binding.kind !== "prop" &&
       binding.kind !== "item" &&
       binding.kind !== "call" &&
+      binding.kind !== "loop" &&
       binding.kind !== "suspense",
   );
   if (

@@ -19,6 +19,46 @@ export interface SplitOutcome {
 
 export type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
 
+export type LoopTerminal = Extract<
+  Terminal,
+  { kind: "for" | "for-of" | "for-in" | "while" | "do-while" }
+>;
+
+type FallthroughOutcome = Extract<Outcome, { kind: "Fallthrough" }>;
+
+/** Blocks each iteration enters again, where the values the loop carries meet. */
+export const getLoopHeaders = (terminal: LoopTerminal): BlockId[] => {
+  switch (terminal.kind) {
+    case "for":
+      return [terminal.init, terminal.test, ...(terminal.update === null ? [] : [terminal.update])];
+    case "for-of":
+      return [terminal.init, terminal.test];
+    case "for-in":
+      return [terminal.init];
+    case "while":
+      return [terminal.test];
+    case "do-while":
+      return [terminal.loop, terminal.test];
+  }
+};
+
+/** The block whose test leaves the loop. */
+export const getLoopExit = (terminal: LoopTerminal): BlockId =>
+  terminal.kind === "for-in" ? terminal.init : terminal.test;
+
+export const mapFallthroughs = (
+  outcome: Outcome,
+  map: (fallthrough: FallthroughOutcome) => Outcome,
+): Outcome => {
+  if (outcome.kind === "Fallthrough") return map(outcome);
+  if (outcome.kind === "Return") return outcome;
+  return {
+    ...outcome,
+    consequent: mapFallthroughs(outcome.consequent, map),
+    alternate: mapFallthroughs(outcome.alternate, map),
+  };
+};
+
 export const createConditional = (
   split: SplitOutcome,
   guards: SymbolicValue[],

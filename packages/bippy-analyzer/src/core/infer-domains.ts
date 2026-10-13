@@ -330,6 +330,19 @@ export class DomainResolver {
       : getDomainOfType(this.#checker, type);
   }
 
+  /** The type a variable is declared with, not the narrower one where it's read. */
+  getDeclaredDomain(loc: SourceLocation): Domain | null {
+    if (loc === GeneratedSource) return null;
+    // Babel's identifier spans its type annotation, so fall back to the name alone.
+    const nameLoc = loc.identifierName
+      ? { ...loc, end: { ...loc.end, index: loc.start.index + loc.identifierName.length } }
+      : loc;
+    const node =
+      findNodeAtLocation(this.#sourceFile, loc) ?? findNodeAtLocation(this.#sourceFile, nameLoc);
+    const symbol = node && isIdentifier(node) ? this.#checker.getSymbolAtLocation(node) : undefined;
+    return symbol ? getDomainOfType(this.#checker, this.#checker.getTypeOfSymbol(symbol)) : null;
+  }
+
   // Without `strictNullChecks`, optional properties and call results omit `undefined`.
   #isOptionalRead(loc: SourceLocation): boolean {
     if (this.#isStrictNullChecks) return false;

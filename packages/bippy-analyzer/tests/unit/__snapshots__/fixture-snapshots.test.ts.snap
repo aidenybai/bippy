@@ -86,6 +86,24 @@ exports[`fixture analysis > Composer keeps its states, transitions and unreachab
       └─ "Send" → S1"
 `;
 
+exports[`fixture analysis > Countdown keeps its states, transitions and unreachable branches 1`] = `
+"Countdown src/loops.tsx:39
+├─ data
+│  ├─ start prop number
+│  ├─ value loop number
+│  └─ steps loop number
+├─ render
+│  └─ <p>
+│     └─ ◆ steps === 0
+│        ├─ ✓ {"Done"}
+│        └─ ✗ {"Counted"}
+└─ states (2)
+   ├─ S1 steps === 0
+   │  └─ <p> {"Done"}
+   └─ S2 steps !== 0
+      └─ <p> {"Counted"}"
+`;
+
 exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
 "Dashboard src/dashboard.tsx:25
 ├─ data
@@ -186,6 +204,26 @@ exports[`fixture analysis > FilterLabel keeps its states, transitions and unreac
       └─ <div> <p> {filter} <button> "Active" <button> "Done""
 `;
 
+exports[`fixture analysis > FirstMatch keeps its states, transitions and unreachable branches 1`] = `
+"FirstMatch src/loops.tsx:27
+├─ data
+│  ├─ items prop string[]
+│  ├─ query prop string
+│  ├─ index loop number
+│  └─ found loop null | string
+├─ render
+│  └─ ◆ found === null
+│     ├─ ✓ <p> "No match"
+│     └─ ✗ <p>
+│        ├─ "Found "
+│        └─ {found}
+└─ states (2)
+   ├─ S1 found === null
+   │  └─ <p> "No match"
+   └─ S2 found !== null
+      └─ <p> "Found " {found}"
+`;
+
 exports[`fixture analysis > Inbox keeps its states, transitions and unreachable branches 1`] = `
 "Inbox src/literals.tsx:17
 ├─ data
@@ -220,6 +258,35 @@ exports[`fixture analysis > Loading keeps its states, transitions and unreachabl
 └─ states (1)
    └─ S1 always
       └─ <p> "Loading…""
+`;
+
+exports[`fixture analysis > LoopList keeps its states, transitions and unreachable branches 1`] = `
+"LoopList src/loops.tsx:3
+├─ data
+│  ├─ items prop string[]
+│  ├─ isSelected state false | true = false
+│  └─ hasLong loop false | true
+├─ render
+│  └─ <div>
+│     ├─ <ul> {[...Unknown(mutation).map(…)]}
+│     ├─ ◆ hasLong
+│     │  └─ ✓ <p> "Long"
+│     └─ <button onClick ⇒ if Unknown(IteratorNext) && Unknown(IteratorNext): isSelected = true>
+│        └─ ◆ isSelected
+│           ├─ ✓ {"Selected"}
+│           └─ ✗ {"Select"}
+└─ states (4 in 2 regions, 4 combinations)
+   ├─ hasLong
+   │  ├─ S1 hasLong
+   │  │  └─ <p> "Long"
+   │  └─ S2 !hasLong
+   │     └─ ∅
+   └─ isSelected
+      ├─ S3 isSelected
+      │  └─ {"Selected"}
+      └─ S4 !isSelected
+         ├─ {"Select"}
+         └─ <button> onClick → S3"
 `;
 
 exports[`fixture analysis > Page keeps its states, transitions and unreachable branches 1`] = `

@@ -67,10 +67,14 @@ import {
   NO_STOPS,
   createConditional,
   getGuard,
+  getLoopExit,
+  getLoopHeaders,
   hasFallthrough,
   isFallthroughOnly,
+  mapFallthroughs,
 } from "./control-flow";
-import type { BranchTerminal, Outcome } from "./control-flow";
+import type { BranchTerminal, LoopTerminal, Outcome } from "./control-flow";
+import { eachTerminalSuccessor } from "../react-compiler/HIR/visitors";
 import {
   getDeclarationLocation,
   getIdentifierName,
@@ -173,6 +177,8 @@ export class Interpreter {
   /** Where each array or object literal was created, to tell when a mutation always runs. */
   readonly #definitions = new WeakMap<SymbolicValue, Definition>();
   #loopDepth = 0;
+  /** Headers of the loops being walked, and whether this walk has entered each yet. */
+  readonly #loopHeaders = new Map<BlockId, boolean>();
   #walkedCatches = new Set<BlockId>();
   #inlineDepth = 0;
 
@@ -1116,12 +1122,14 @@ export class Interpreter {
     join: BlockId,
     stops: ReadonlySet<BlockId>,
     state: WalkState,
+    hasResolvedPhis = false,
   ): Outcome {
     if (stops.has(join)) return outcome;
     const block = this.#getBlock(join);
     if (isFallthroughOnly(outcome, join)) {
-      for (const phi of block.phis)
-        this.#write(phi.place, this.#resolvePhi(phi, outcome, state.guards));
+      if (!hasResolvedPhis)
+        for (const phi of block.phis)
+          this.#write(phi.place, this.#resolvePhi(phi, outcome, state.guards));
       return this.#walk(join, stops, null, state, true);
     }
     const resume = (current: Outcome, guards: SymbolicValue[]): Outcome => {
@@ -1130,7 +1138,7 @@ export class Interpreter {
           return current;
         case "Fallthrough":
           return current.to === join
-            ? this.#walk(join, stops, current.from, { ...state, guards }, false)
+            ? this.#walk(join, stops, current.from, { ...state, guards }, hasResolvedPhis)
             : current;
         case "Split":
           return {
@@ -1174,8 +1182,8 @@ export class Interpreter {
     const testGuard = getTestExpression({ test: testValue, testKind });
     const walkArm = (block: BlockId, isConsequent: boolean): Outcome => {
       const guards = [...state.guards, isConsequent ? testGuard : negate(testGuard)];
-      return block === fallthrough
-        ? { kind: "Fallthrough", from, to: fallthrough }
+      return block === fallthrough || stops.has(block)
+        ? { kind: "Fallthrough", from, to: block }
         : this.#walk(block, new Set([...stops, fallthrough]), from, { ...state, guards }, false);
     };
     const consequentOutcome = walkArm(consequent, true);
@@ -1234,6 +1242,76 @@ export class Interpreter {
     return this.#continueAfter(buildCases(0), terminal.fallthrough, stops, state);
   }
 
+  // One walk of the body covers every iteration: each value the loop carries becomes a binding its
+  // type bounds, and leaving through `continue` is leaving through the test.
+  #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, state: WalkState): Outcome {
+    const headers = getLoopHeaders(terminal);
+    const loopBindings: Binding[] = [];
+    for (const header of headers) {
+      this.#loopHeaders.set(header, false);
+      for (const phi of this.#getBlock(header).phis)
+        this.#write(phi.place, this.#createLoopValue(phi, loopBindings));
+    }
+    const [entry = terminal.fallthrough] = headers;
+    this.#loopDepth++;
+    let outcome: Outcome;
+    try {
+      outcome = this.#walk(entry, new Set([...stops, terminal.fallthrough]), null, state, true);
+    } finally {
+      this.#loopDepth--;
+      for (const header of headers) this.#loopHeaders.delete(header);
+    }
+    // Which iteration leaves is unknown, so values merging where the loop ends are bound too.
+    for (const phi of this.#getBlock(terminal.fallthrough).phis)
+      this.#write(phi.place, this.#createLoopValue(phi, loopBindings));
+    this.#addLoopInputs(loopBindings, entry, terminal.fallthrough);
+    const exit: Outcome = {
+      kind: "Fallthrough",
+      from: getLoopExit(terminal),
+      to: terminal.fallthrough,
+    };
+    const exited = mapFallthroughs(outcome, (fallthrough) =>
+      fallthrough.to === terminal.fallthrough || headers.includes(fallthrough.to)
+        ? exit
+        : fallthrough,
+    );
+    return this.#continueAfter(exited, terminal.fallthrough, stops, state, true);
+  }
+
+  // Typed as declared, since the value of any iteration may reach here.
+  #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
+    const name = getIdentifierName(phi.place);
+    const loc = [phi.place, ...phi.operands.values()]
+      .map(getDeclarationLocation)
+      .find((candidate) => this.#resolver.getDeclaredDomain(candidate) !== null);
+    const domain = loc && this.#resolver.getDeclaredDomain(loc);
+    if (name === null || !loc || !domain) return createUnknown("loop", phi.place.loc);
+    const binding = this.#createBinding(name, "loop", loc, { domain });
+    if (!loopBindings.includes(binding)) loopBindings.push(binding);
+    return createBindingValue(binding);
+  }
+
+  // A value the loop carries may depend on anything the loop reads.
+  #addLoopInputs(loopBindings: Binding[], entry: BlockId, exit: BlockId): void {
+    if (loopBindings.length === 0) return;
+    const inputs = new PlaceMap<true>();
+    const seen = new Set([entry, exit]);
+    const queue = [entry];
+    for (const blockId of queue) {
+      const block = this.#getBlock(blockId);
+      for (const instruction of block.instructions)
+        this.#collectInputs(this.#read(instruction.lvalue), inputs);
+      for (const successor of eachTerminalSuccessor(block.terminal)) {
+        if (seen.has(successor)) continue;
+        seen.add(successor);
+        queue.push(successor);
+      }
+    }
+    const loopIds = new Set(loopBindings.map((binding) => binding.id));
+    const places = inputs.places().filter((place) => !loopIds.has(place.bindingId));
+    for (const binding of loopBindings) binding.inputs = [...binding.inputs, ...places];
+  }
+
   #walk(
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
@@ -1250,8 +1328,14 @@ export class Interpreter {
         this.diagnostics.bailOut("too-complex", "visits too many blocks", GeneratedSource);
         return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
       }
+      const isLoopHeader = this.#loopHeaders.has(currentId);
+      if (isLoopHeader) {
+        if (this.#loopHeaders.get(currentId))
+          return { kind: "Fallthrough", from: previousId, to: currentId };
+        this.#loopHeaders.set(currentId, true);
+      }
       const block = this.#getBlock(currentId);
-      if (!isPhiResolved) {
+      if (!isPhiResolved && !isLoopHeader) {
         for (const phi of block.phis)
           this.#write(
             phi.place,
@@ -1333,14 +1417,7 @@ export class Interpreter {
         case "for-in":
         case "while":
         case "do-while":
-          this.diagnostics.bailOut(
-            "loop",
-            "values assigned in a loop are not modeled",
-            terminal.loc,
-          );
-          nextId = terminal.fallthrough;
-          nextFrom = null;
-          break;
+          return this.#walkLoop(terminal, stops, currentState);
         default:
           return assertExhaustive(terminal, "Unhandled terminal");
       }
