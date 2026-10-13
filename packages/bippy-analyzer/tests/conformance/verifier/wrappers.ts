@@ -131,7 +131,7 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
   });
 };
 
-// A named parent outside the component's own file is likely a library part its outermost root
+// A named parent the component's file can't reach is likely a library part its outermost root
 // renders, so that root goes first.
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
   const namedParent = query.isNamingParent ? getNamedParent(query.error, query.project) : null;
@@ -143,11 +143,15 @@ export const proposeParents = (query: ParentQuery): Wrapper[] => {
     .slice(0, -1)
     .flatMap((rootName) => findOwnExport(rootName, "root", query));
   const namedParents = namedParent ? findNamedParents(namedParent, query) : [];
-  const isNamedInOwnFile = namedParents.some(
-    ({ candidate }) => candidate.kind === "project" && candidate.file === query.file,
+  const reachableFiles = new Set([
+    query.file,
+    ...(query.project.imports.get(query.file)?.files ?? []),
+  ]);
+  const isNamedReachable = namedParents.some(
+    ({ candidate }) => candidate.kind === "project" && reachableFiles.has(candidate.file),
   );
   const ordered =
-    namedParents.length > 0 && !isNamedInOwnFile
+    namedParents.length > 0 && !isNamedReachable
       ? [...outerRoots, ...namedParents, ...innerRoots]
       : [...namedParents, ...innerRoots, ...outerRoots];
   return [...ordered, ...findSiblingParts(query), ...findContextProviders(query)];

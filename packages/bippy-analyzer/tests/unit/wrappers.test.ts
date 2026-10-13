@@ -100,6 +100,29 @@ describe("proposeParents", () => {
     ).toBe("Dialog");
   });
 
+  it("tries the named parent first when the component's file imports the file that exports it", () => {
+    const selectFile = "/app/ui/select.tsx";
+    const codeBlockFile = "/app/ai/code-block.tsx";
+    const project: ProjectIndex = {
+      ...createProject({
+        CodeBlock: [{ file: codeBlockFile, exportName: "CodeBlock" }],
+        CodeBlockSelectorTrigger: [{ file: codeBlockFile, exportName: "CodeBlockSelectorTrigger" }],
+        Select: [{ file: selectFile, exportName: "Select" }],
+      }),
+      imports: new Map([[codeBlockFile, { packages: [], files: [selectFile] }]]),
+    };
+    expect(
+      getNames(
+        createQuery({
+          name: "CodeBlockSelectorTrigger",
+          file: codeBlockFile,
+          error: "`SelectTrigger` must be used within `Select`",
+          project,
+        }),
+      ).slice(0, 2),
+    ).toEqual(["Select", "CodeBlock"]);
+  });
+
   it("offers the context named after a hook that came up empty, with a sample of its value", () => {
     const project = createProject({
       UIAppStateContext: [{ file: CONTEXT_FILE, exportName: "UIAppStateContext" }],

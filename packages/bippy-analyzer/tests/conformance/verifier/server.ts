@@ -1,13 +1,14 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { builtinModules, createRequire } from "node:module";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import MagicString from "magic-string";
 import { createServer, loadEnv, parseAst } from "vite";
-import type { DepOptimizationConfig, Plugin, Rollup } from "vite";
+import type { DepOptimizationConfig, Plugin, Rollup, ViteDevServer } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
-import type { ProbeMode, SourceIndex } from "./types";
+import type { FileImports, ProbeMode, SourceIndex } from "./types";
 import { addExports, getFileImports, parseImports } from "./source-index";
+import type { ParsedImport } from "./source-index";
 
 export interface Probe {
   id: string;
@@ -531,6 +532,44 @@ const resolvePackageDirectory = (appDirectory: string, packageName: string): str
 const isInstalled = (appDirectory: string, packageName: string): boolean =>
   resolvePackageDirectory(appDirectory, packageName) !== null;
 
+const getPackageName = (specifier: string): string =>
+  specifier
+    .split("/")
+    .slice(0, specifier.startsWith("@") ? 2 : 1)
+    .join("/");
+
+const hasPackageDirectory = (directory: string, packageName: string): boolean =>
+  existsSync(join(directory, "node_modules", packageName)) ||
+  (dirname(directory) !== directory && hasPackageDirectory(dirname(directory), packageName));
+
+// An alias like `@/components/ui/select` names a project file only the app's resolver knows. An
+// installed package never goes to the resolver, which would register it for optimizing.
+const createAliasResolver = (server: ViteDevServer) => {
+  const resolved = new Map<string, Promise<string | null>>();
+  return (specifier: string, importer: string): Promise<string | null> => {
+    const directory = dirname(importer);
+    const key = `${directory}\0${specifier}`;
+    const cached = resolved.get(key);
+    if (cached) return cached;
+    const result = hasPackageDirectory(directory, getPackageName(specifier))
+      ? Promise.resolve(null)
+      : server.environments.client.pluginContainer
+          .resolveId(specifier, importer)
+          .then((partial) => {
+            const id = partial?.id.split("?")[0];
+            return id &&
+              isAbsolute(id) &&
+              !id.includes(`${sep}node_modules${sep}`) &&
+              existsSync(id)
+              ? id
+              : null;
+          })
+          .catch(() => null);
+    resolved.set(key, result);
+    return result;
+  };
+};
+
 const listSourceFiles = (directory: string): string[] =>
   readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (entry.name.startsWith(".") || entry.name === "node_modules") return [];
@@ -549,7 +588,8 @@ interface SourceReferences {
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
   packageImports: Map<string, Set<string>>;
-  sourceIndex: SourceIndex;
+  exports: SourceIndex["exports"];
+  fileImports: Map<string, ParsedImport[]>;
   reduxStore: ExportedValue | null;
 }
 
@@ -584,16 +624,17 @@ const collectSourceReferences = (appDirectory: string): SourceReferences => {
     importMetaEnv: new Set(),
     nextFonts: new Set(),
     packageImports: new Map(),
-    sourceIndex: { exports: new Map(), imports: new Map() },
+    exports: new Map(),
+    fileImports: new Map(),
     reduxStore: null,
   };
   for (const file of listSourceFiles(appDirectory)) {
     const text = readFileSync(file, "utf8");
     if (!references.reduxStore && !TEST_FILE_PATTERN.test(file))
       references.reduxStore = findReduxStore(file, text);
-    addExports(references.sourceIndex.exports, file, text);
+    addExports(references.exports, file, text);
     const imports = parseImports(text);
-    references.sourceIndex.imports.set(file, getFileImports(file, imports));
+    references.fileImports.set(file, imports);
     for (const { specifier, names } of imports) {
       if (!PACKAGE_SPECIFIER_PATTERN.test(specifier)) continue;
       const packageNames = references.packageImports.get(specifier) ?? new Set();
@@ -965,11 +1006,15 @@ export const startHarness = async (
     ].map((url) => server.warmupRequest(url)),
   );
   await server.waitForRequestsIdle();
+  const resolveAlias = createAliasResolver(server);
+  const imports = new Map<string, FileImports>();
+  for (const [file, fileImports] of references.fileImports)
+    imports.set(file, await getFileImports(file, fileImports, resolveAlias));
   const address = server.httpServer?.address();
   if (!address || typeof address === "string") throw new Error("Harness server has no port");
   return {
     url: `http://localhost:${address.port}${HARNESS_PATH}`,
-    sourceIndex: references.sourceIndex,
+    sourceIndex: { exports: references.exports, imports },
     getModuleUrl: (file) => `/${relative(appDirectory, file)}`,
     getDependencyHash: () => server.environments.client.depsOptimizer?.metadata.browserHash ?? "",
     close: () => server.close(),

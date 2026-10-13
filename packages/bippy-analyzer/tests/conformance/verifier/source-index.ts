@@ -10,7 +10,7 @@ const EXPORT_LIST_PATTERN = /export\s*\{([^}]*)\}/g;
 const RELATIVE_SPECIFIER_PATTERN = /^\.{1,2}\//;
 const SOURCE_FILE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
 
-interface ParsedImport {
+export interface ParsedImport {
   specifier: string;
   names: string[];
 }
@@ -52,16 +52,22 @@ const resolveRelativeImport = (file: string, specifier: string): string | null =
   );
 };
 
-export const getFileImports = (file: string, imports: ParsedImport[]): FileImports => {
+export const getFileImports = async (
+  file: string,
+  imports: ParsedImport[],
+  resolveAlias: (specifier: string, importer: string) => Promise<string | null>,
+): Promise<FileImports> => {
   const packages: PackageImport[] = [];
   const files: string[] = [];
   for (const { specifier, names } of imports) {
-    if (!RELATIVE_SPECIFIER_PATTERN.test(specifier)) {
-      packages.push({ specifier, names });
+    if (RELATIVE_SPECIFIER_PATTERN.test(specifier)) {
+      const resolved = resolveRelativeImport(file, specifier);
+      if (resolved) files.push(resolved);
       continue;
     }
-    const resolved = resolveRelativeImport(file, specifier);
-    if (resolved) files.push(resolved);
+    const aliased = await resolveAlias(specifier, file);
+    if (aliased) files.push(aliased);
+    else packages.push({ specifier, names });
   }
   return { packages, files };
 };
