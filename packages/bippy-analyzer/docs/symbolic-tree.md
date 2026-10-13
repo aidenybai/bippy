@@ -79,6 +79,8 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - other hooks, typed from their return type
    - `.map` items
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
+   - values a loop carries, like a flag a `for` body sets, typed as declared. The body runs once with them, so the setters and pushes inside it count, and a value a `break` leaves with is kept.
+   - a `push` or property store on a local array or object, applied as is when it always runs. One that may not run, or runs in a loop, widens the value to cover both.
 6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??`, `?.` and `switch` all produce one. A `?:`, `&&`, `||`, `??` or `?.` merges where it ends, so a `?.` in a `className` doesn't split the rest of the render. Member reads past a `?.`, and reads of a value that may be `undefined`, are assumed not to throw.
 7. Turns each binding's type into its possible values. Unions split into cases, and `any` becomes `Unknown`. For plain JS, literal values at call sites stand in for prop types. A type isn't trusted where it can't hold:
    - a read through an index signature, like `envKeyMap["azure"]` of a `Record` or `items[0]`, may be `undefined`
@@ -99,13 +101,14 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state
    - calling into any other hook's result or context value, like `query.fetchNextPage()`, may change it, and every hook from the same module, like `useSelector` after a Redux `dispatch`, to anything, later
    - a built-in array or string method that changes nothing, like `items.find()` or `query.trim()`, leaves the value it's called on as it is, as its type shows
-   - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render
+   - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render. State it passes to a function that may mutate it, like a library's `remove(items, item)`, is forgotten too, without a warning.
 
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
    - Within a region it splits only on branches in the render output, and narrows each value as it goes. A truthy `x?.y` also proves `x` isn't null.
    - What it learns about a value is keyed by the value's structure and bindings, not its printed text. Two calls to one helper that print the same stay separate.
-   - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`.
+   - A difference-bound solver handles `<`, `<=` and `===` on numbers and `.length`. A `.filter()` or `.slice()` result is no longer than the array it's called on, and `.toSorted()`, `.toReversed()` and `.with()` keep its length.
+   - The fields of a value typed as a union of objects vary together. Once `query.isPending` is false, `query.isError` and `query.data` take only what the remaining members of React Query's result give them. A field's values come from every member, even where TypeScript narrowed the read.
    - State values are limited to the initial value plus every value a handler can set. A state initialized from an untyped value cast to a type, like `useState(cell.getValue() as boolean)`, can hold anything, since the cast only asserts the type.
 10. For each state and each handler that changes its region, finds which states of the region can come next. A handler that doesn't touch a region leaves it as it is. It also reports branches that can never render. A branch whose value renders only under a test it wasn't computed under, like a ternary kept in a variable and shown behind `&&`, still runs without that test, so it is never reported.
 11. Reports warnings from the compiler's mutation effects:
@@ -158,10 +161,8 @@ The error alert can never show, because nothing dispatches `fail`.
 
 ## Known gaps
 
-- **Hook result fields are independent.** `query.isPending` and `query.isError` share a state region but each takes every value, even though React Query's union ties them together. The fix is to split on the union type's tag field.
-- **Context values come from their type.** A provider's setters are paired with the fields they set, and zustand actions with the fields they assign. Other context values and stores are typed from their declaration, not from what the provider passes.
-- **Calls are opaque unless their return type is finite.** `.filter` results are still `Unknown(call)`, so the analysis doesn't know the result is empty when the source is.
-- **Only definite mutations are tracked.** Passing state to a function that may mutate it doesn't forget it.
-- **Loops bail out.** A `for` or `while` in render makes the values it changes `Unknown`.
-- **No parent-child linking.** Components are modeled separately. Props are narrowed from call sites only when the type is `any`.
-- **Class components are skipped.**
+- **Context values come from their type.** A provider's setters are paired with the fields they set, and zustand actions with the fields they assign. Other values keep their declared type, since a component may render under any provider and the verifier mounts it with any value the type allows.
+- **No parent-child linking.** Each component is verified on its own with any props its type allows, so narrowing props to what its parents pass would be wrong for other callers. Props are narrowed from call sites only when the type is `any`.
+- **Library calls are opaque.** Their code isn't in the project, so a call's result is known only from its return type and, for array methods, its length.
+- **Loops run once.** A value a loop carries can take any value its type allows after the loop, even when every iteration sets the same one.
+- **Class components are skipped.** The React Compiler finds and lowers only function components and hooks, so a class has no HIR to interpret.
