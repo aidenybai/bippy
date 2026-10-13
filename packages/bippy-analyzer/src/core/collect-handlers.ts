@@ -8,6 +8,8 @@ const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
 export const ANY_EVENT = "*";
 
+const EVENT_ARGUMENT: SymbolicValue = { kind: "Unknown", reason: "event", loc: GeneratedSource };
+
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
   (tag.kind !== "BuiltinTag" && (isCallable(prop.value) || hasCallableField(prop.value)));
@@ -20,8 +22,7 @@ const hasCallableField = (value: SymbolicValue): boolean =>
   value.properties.some((property) => isCallable(property.value));
 
 // React calls a ref callback on attach, so it runs like a layout effect.
-const isRefCallback = (prop: JsxProp): boolean =>
-  prop.name === "ref" && (prop.value.kind === "Function" || prop.value.kind === "Setter");
+const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
 const getSpreadHandlers = (tag: JsxTag, value: SymbolicValue): SymbolicValue | null => {
   if (value.kind !== "ObjectExpression") return null;
@@ -43,7 +44,9 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
     case "Setter":
       return `setter:${value.binding.id}`;
     case "ObjectExpression":
-      return `object:${value.properties.map((property) => getHandlerKey(property.value)).join(",")}`;
+      return `object:${value.properties
+        .map((property) => `${property.key}=${getHandlerKey(property.value)}`)
+        .join(",")}`;
     case "Binding":
       return value.binding.kind === "prop" ||
         value.binding.kind === "hook" ||
@@ -64,6 +67,17 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const handlers: Handler[] = [];
   const handlerIds = new Map<string, string | null>();
+
+  const addHandler = (
+    key: string,
+    trigger: HandlerTrigger,
+    handler: SymbolicValue,
+    loc: SourceLocation,
+  ): string | null => {
+    if (!handlerIds.has(key))
+      handlerIds.set(key, addTransition(trigger, handler, [EVENT_ARGUMENT], loc));
+    return handlerIds.get(key) ?? null;
+  };
 
   const addTransition = (
     trigger: HandlerTrigger,
@@ -90,21 +104,13 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
       if (prop.kind === "JsxSpreadAttribute") {
-        if (prop.value.kind === "Unknown")
-          prop.handlerId = addTransition(
-            { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
-            prop.value,
-            [],
-            prop.value.loc,
-          );
+        const trigger: HandlerTrigger = { kind: "Event", tag: element.tag.name, event: ANY_EVENT };
         const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
-        if (spreadHandlers)
-          prop.handlerId = addTransition(
-            { kind: "Event", tag: element.tag.name, event: ANY_EVENT },
-            spreadHandlers,
-            [{ kind: "Unknown", reason: "event", loc: GeneratedSource }],
-            element.loc,
-          );
+        const spreadKey = spreadHandlers && getHandlerKey(spreadHandlers);
+        if (prop.value.kind === "Unknown")
+          prop.handlerId = addTransition(trigger, prop.value, [], prop.value.loc);
+        else if (spreadHandlers && spreadKey)
+          prop.handlerId = addHandler(spreadKey, trigger, spreadHandlers, element.loc);
         continue;
       }
       if (isRefCallback(prop)) {
@@ -114,7 +120,7 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
           addTransition(
             { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
             prop.value,
-            [{ kind: "Unknown", reason: "event", loc: GeneratedSource }],
+            [EVENT_ARGUMENT],
             getHandlerLocation(prop.value),
           );
         }
@@ -123,19 +129,12 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       if (!isHandlerProp(element.tag, prop)) continue;
       const key = getHandlerKey(prop.value);
       if (key === null) continue;
-      if (!handlerIds.has(key)) {
-        const trigger: HandlerTrigger = {
-          kind: "Event",
-          tag: element.tag.name,
-          event: prop.name,
-        };
-        const event: SymbolicValue = { kind: "Unknown", reason: "event", loc: GeneratedSource };
-        handlerIds.set(
-          key,
-          addTransition(trigger, prop.value, [event], getHandlerLocation(prop.value)),
-        );
-      }
-      prop.handlerId = handlerIds.get(key) ?? null;
+      prop.handlerId = addHandler(
+        key,
+        { kind: "Event", tag: element.tag.name, event: prop.name },
+        prop.value,
+        getHandlerLocation(prop.value),
+      );
     }
   });
   return handlers;
