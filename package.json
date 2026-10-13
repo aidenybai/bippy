@@ -28,6 +28,8 @@
     "@changesets/cli": "^2.30.0",
     "oxfmt": "0.66.0",
     "oxlint": "1.81.0",
+    "react-dom-experimental": "npm:react-dom@0.0.0-experimental-1d34f91d-20260909",
+    "react-experimental": "npm:react@0.0.0-experimental-1d34f91d-20260909",
     "sherif": "^1.2.0",
     "typescript": "^7.0.2",
     "vite": "^7.3.4"
