@@ -1,5 +1,5 @@
 import type { HookKind } from "../react-compiler/HIR/ObjectShape.js";
-import type { InstructionId, SourceLocation } from "../react-compiler/HIR/HIR.js";
+import type { InstructionId, InstructionValue, SourceLocation } from "../react-compiler/HIR/HIR.js";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
 
@@ -89,11 +89,20 @@ interface SymbolicObjectProperty {
 }
 
 /** `Conditional` is where control flow merged: a phi, early return, ternary, logical, or switch. */
+export type BinaryOperator = Extract<InstructionValue, { kind: "BinaryExpression" }>["operator"];
+
+export type UnaryOperator = Extract<InstructionValue, { kind: "UnaryExpression" }>["operator"];
+
 export type SymbolicValue =
   | { kind: "Primitive"; value: PrimitiveValue }
   | { kind: "Binding"; binding: Binding; path: string[] }
-  | { kind: "BinaryExpression"; operator: string; left: SymbolicValue; right: SymbolicValue }
-  | { kind: "UnaryExpression"; operator: string; value: SymbolicValue }
+  | {
+      kind: "BinaryExpression";
+      operator: BinaryOperator;
+      left: SymbolicValue;
+      right: SymbolicValue;
+    }
+  | { kind: "UnaryExpression"; operator: UnaryOperator; value: SymbolicValue }
   | {
       kind: "Conditional";
       test: SymbolicValue;

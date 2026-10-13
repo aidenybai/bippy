@@ -1,6 +1,12 @@
-import type { AbstractValue, SymbolicValue, TestKind, Truthiness } from "../types.js";
+import type {
+  AbstractValue,
+  BinaryOperator,
+  SymbolicValue,
+  TestKind,
+  Truthiness,
+} from "../types.js";
 
-const NEGATED_OPERATORS = new Map<string, string>([
+const NEGATED_OPERATORS = new Map<BinaryOperator, BinaryOperator>([
   ["===", "!=="],
   ["!==", "==="],
   ["==", "!="],
@@ -11,7 +17,7 @@ const NEGATED_OPERATORS = new Map<string, string>([
   [">=", "<"],
 ]);
 
-export const getNegatedOperator = (operator: string): string | null =>
+export const getNegatedOperator = (operator: BinaryOperator): BinaryOperator | null =>
   NEGATED_OPERATORS.get(operator) ?? null;
 
 export const getTruthiness = (value: AbstractValue): Truthiness => {

@@ -1,6 +1,7 @@
 import { assertExhaustive } from "../../react-compiler/Utils/utils.js";
 import type {
   AbstractValue,
+  BinaryOperator,
   Binding,
   ConditionalValue,
   PrimitiveValue,
@@ -22,7 +23,7 @@ export const isNullish = (value: PrimitiveValue): boolean => value === null || v
 export const isEqualToLiteral = (
   value: AbstractValue,
   literal: PrimitiveValue,
-  operator: string,
+  operator: BinaryOperator,
 ): boolean => {
   if (value.kind !== "Literal") return false;
   if ((operator === "==" || operator === "!=") && isNullish(literal)) return isNullish(value.value);

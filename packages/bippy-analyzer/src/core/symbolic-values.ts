@@ -1,5 +1,12 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR.js";
-import type { Binding, BindingValue, SymbolicValue, TestKind } from "./types.js";
+import type {
+  BinaryOperator,
+  Binding,
+  BindingValue,
+  SymbolicValue,
+  TestKind,
+  UnaryOperator,
+} from "./types.js";
 import { isNullish } from "./utils/checks.js";
 import { getKnownTruthiness, negate } from "./utils/truthiness.js";
 
@@ -32,7 +39,7 @@ export const createBindingValue = (binding: Binding): BindingValue => ({
 });
 
 export const foldBinary = (
-  operator: string,
+  operator: BinaryOperator,
   left: SymbolicValue,
   right: SymbolicValue,
 ): SymbolicValue => {
@@ -61,7 +68,7 @@ export const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolea
   return test.kind === "Primitive" ? test.value !== null && test.value !== undefined : null;
 };
 
-export const foldUnary = (operator: string, value: SymbolicValue): SymbolicValue => {
+export const foldUnary = (operator: UnaryOperator, value: SymbolicValue): SymbolicValue => {
   if (operator === "!" && value.kind === "Primitive")
     return { kind: "Primitive", value: !value.value };
   if (operator === "!") return negate(value);
