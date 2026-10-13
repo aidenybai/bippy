@@ -170,9 +170,59 @@ const STYLESHEET_PREFIX = "\0bippy-verify-stylesheet:";
 const STYLESHEET_SOURCE =
   "export default new Proxy({}, { get: (_, key) => (typeof key === 'string' ? key : undefined) });";
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
-const SERVER_SDK_PATTERN =
-  /^(?:@prisma\/client(?:\/.+)?|stripe|nodemailer|resend|pg|postgres|mysql2|mongodb|mongoose|ioredis|@upstash\/redis|@vercel\/(?:postgres|kv|blob)|@neondatabase\/serverless|@planetscale\/database|firebase-admin(?:\/.+)?|@aws-sdk\/.+|bcrypt|next-auth|next-auth\/(?:next|providers\/.+)|@auth\/.+-adapter|@next-auth\/.+-adapter|drizzle-orm\/(?:node-postgres|postgres-js|neon-http|neon-serverless|pglite|mysql2|libsql|better-sqlite3|vercel-postgres|planetscale-serverless)|@clerk\/nextjs\/server|@clerk\/backend|@arcjet\/.+|dotenv(?:\/config)?|execa|cross-spawn|npm-run-path|node:.+)$/;
+const SERVER_ONLY_PACKAGES = new Set([
+  "@prisma/client",
+  "firebase-admin",
+  "@clerk/backend",
+  "@clerk/nextjs/server",
+  "@neondatabase/serverless",
+  "@planetscale/database",
+  "@upstash/redis",
+  "@vercel/blob",
+  "@vercel/kv",
+  "@vercel/postgres",
+  "bcrypt",
+  "cross-spawn",
+  "dotenv",
+  "dotenv/config",
+  "execa",
+  "ioredis",
+  "mongodb",
+  "mongoose",
+  "mysql2",
+  "next-auth",
+  "next-auth/next",
+  "nodemailer",
+  "npm-run-path",
+  "pg",
+  "postgres",
+  "resend",
+  "stripe",
+]);
+const SERVER_ONLY_PREFIXES = [
+  "@arcjet/",
+  "@aws-sdk/",
+  "@prisma/client/",
+  "drizzle-orm/node-postgres",
+  "drizzle-orm/postgres-js",
+  "drizzle-orm/neon-",
+  "drizzle-orm/pglite",
+  "drizzle-orm/mysql2",
+  "drizzle-orm/libsql",
+  "drizzle-orm/better-sqlite3",
+  "drizzle-orm/vercel-postgres",
+  "drizzle-orm/planetscale-serverless",
+  "firebase-admin/",
+  "next-auth/providers/",
+  "node:",
+];
+const SERVER_ONLY_ADAPTER_PATTERN = /^@(?:next-)?auth\/.+-adapter$/;
 const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
+
+const isServerOnlyPackage = (specifier: string): boolean =>
+  SERVER_ONLY_PACKAGES.has(specifier) ||
+  SERVER_ONLY_PREFIXES.some((prefix) => specifier.startsWith(prefix)) ||
+  SERVER_ONLY_ADAPTER_PATTERN.test(specifier);
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
 const SVG_COMPONENT_SOURCE = [
   'import { createElement } from "react";',
@@ -249,7 +299,7 @@ const createNodeBuiltinPlugin = (polyfilled: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
     build.onResolve({ filter: /.*/ }, ({ path, importer }) =>
-      SERVER_SDK_PATTERN.test(path) || isNodeOnlyModule(path, importer, polyfilled)
+      isServerOnlyPackage(path) || isNodeOnlyModule(path, importer, polyfilled)
         ? { path, namespace: NODE_BUILTIN_NAMESPACE }
         : undefined,
     );
@@ -709,7 +759,7 @@ const createHarnessPlugin = (
     async resolveId(source, importer) {
       if (isNextApp && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
       if (isNextApp && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
-      if (SERVER_SDK_PATTERN.test(source) || isNodeOnlyModule(source, importer, polyfilled))
+      if (isServerOnlyPackage(source) || isNodeOnlyModule(source, importer, polyfilled))
         return `${STAND_IN_MODULE_PREFIX}${source}`;
       // The id ends in `.js`, as Vite's own CSS handling claims any id ending like a stylesheet.
       if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
