@@ -747,27 +747,43 @@ export class Interpreter {
       );
     }
     const knownValue = this.#forgetMutations(value);
-    this.#collected.updates.push({
+    this.#pushUpdate(
       binding,
-      value:
-        state.isAsync && knownValue.kind !== "Primitive"
-          ? createUnknown("async", GeneratedSource)
-          : knownValue,
-      guards: state.guards,
-      isAsync: state.isAsync,
-    });
+      state.isAsync && knownValue.kind !== "Primitive"
+        ? createUnknown("async", GeneratedSource)
+        : knownValue,
+      state.guards,
+      state.isAsync,
+    );
+  }
+
+  #pushUpdate(
+    binding: Binding,
+    value: SymbolicValue,
+    guards: SymbolicValue[],
+    isAsync: boolean,
+  ): void {
+    this.#collected.updates.push({ binding, value, guards, isAsync });
+  }
+
+  #hasUpdate(binding: Binding): boolean {
+    return this.#collected.updates.some((update) => update.binding.id === binding.id);
+  }
+
+  #getNextValue(
+    argument: SymbolicValue | undefined,
+    previous: SymbolicValue,
+    loc: SourceLocation,
+    state: WalkState,
+  ): SymbolicValue {
+    return argument?.kind === "Function"
+      ? this.#callFunction(argument, [previous], loc, state)
+      : (argument ?? UNDEFINED_VALUE);
   }
 
   #applySetter(setter: SetterValue, argument: SymbolicValue | undefined, state: WalkState): void {
-    const next =
-      argument?.kind === "Function"
-        ? this.#callFunction(
-            argument,
-            [createBindingValue(setter.binding)],
-            setter.binding.loc,
-            state,
-          )
-        : (argument ?? UNDEFINED_VALUE);
+    const previous = createBindingValue(setter.binding);
+    const next = this.#getNextValue(argument, previous, setter.binding.loc, state);
     this.#recordUpdate(setter.binding, next, state);
   }
 
@@ -1639,26 +1655,19 @@ export class Interpreter {
     argument: SymbolicValue | undefined,
     state: WalkState,
   ): void {
-    const next =
-      argument?.kind === "Function"
-        ? this.#callFunction(
-            argument,
-            [{ kind: "Binding", binding, path: [field] }],
-            binding.loc,
-            state,
-          )
-        : (argument ?? UNDEFINED_VALUE);
     if (this.#mode !== "effect") return;
-    this.#collected.updates.push({
+    const previous: SymbolicValue = { kind: "Binding", binding, path: [field] };
+    const next = this.#getNextValue(argument, previous, binding.loc, state);
+    this.#pushUpdate(
       binding,
-      value: {
+      {
         kind: "ObjectExpression",
         properties: [{ key: field, value: this.#forgetMutations(next) }],
         spreads: [createBindingValue(binding)],
       },
-      guards: state.guards,
-      isAsync: true,
-    });
+      state.guards,
+      true,
+    );
   }
 
   // Calling into a hook or context value may change it, and every hook from its module, anytime.
@@ -1670,32 +1679,21 @@ export class Interpreter {
         binding.id === callee.binding.id ||
         (module !== undefined && this.#hookModules.get(binding.id) === module),
     );
-    for (const binding of sources) {
-      if (this.#collected.updates.some((update) => update.binding.id === binding.id)) continue;
-      this.#collected.updates.push({
-        binding,
-        value: createUnknown("external", GeneratedSource),
-        guards: state.guards,
-        isAsync: true,
-      });
-    }
+    for (const binding of sources)
+      if (!this.#hasUpdate(binding))
+        this.#pushUpdate(binding, createUnknown("external", GeneratedSource), state.guards, true);
   }
 
   // Mutated-but-unset state shows on the next re-render, so forget it to keep later states sound.
   #recordUnsetMutations(): void {
     for (const { binding, loc } of this.#mutations.values()) {
-      if (this.#collected.updates.some((update) => update.binding.id === binding.id)) continue;
+      if (this.#hasUpdate(binding)) continue;
       this.#warn(
         "state-mutation",
         `mutates ${binding.name} without setting it, so the change shows only on the next render`,
         loc,
       );
-      this.#collected.updates.push({
-        binding,
-        value: createUnknown("mutated", GeneratedSource),
-        guards: [],
-        isAsync: false,
-      });
+      this.#pushUpdate(binding, createUnknown("mutated", GeneratedSource), [], false);
     }
   }
 
