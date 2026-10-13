@@ -10,7 +10,7 @@ const getPropSamples = (analysis: ComponentAnalysis) =>
   );
 
 const getWholeProps = (analysis: ComponentAnalysis): Record<string, Sample> =>
-  analysis.propsSample?.kind === "Object" ? analysis.propsSample.fields : {};
+  analysis.wholePropsSample?.kind === "Object" ? analysis.wholePropsSample.fields : {};
 
 export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sample> => ({
   ...getWholeProps(analysis),

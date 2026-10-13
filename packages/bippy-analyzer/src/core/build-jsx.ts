@@ -12,17 +12,16 @@ export interface JsxElementParts {
   loc: SourceLocation;
 }
 
-/** Builds the element a tag renders, one per tag a conditional tag can be. */
 export const buildJsx = (
   tag: SymbolicValue,
-  parts: JsxElementParts,
+  elementParts: JsxElementParts,
   renderedComponents: Set<string>,
 ): SymbolicValue => {
   if (tag.kind === "Conditional")
     return {
       ...tag,
-      consequent: buildJsx(tag.consequent, parts, renderedComponents),
-      alternate: buildJsx(tag.alternate, parts, renderedComponents),
+      consequent: buildJsx(tag.consequent, elementParts, renderedComponents),
+      alternate: buildJsx(tag.alternate, elementParts, renderedComponents),
     };
   const jsxTag: JsxTag =
     tag.kind === "Primitive" && typeof tag.value === "string"
@@ -31,18 +30,19 @@ export const buildJsx = (
         ? {
             kind: "Component",
             name: getComponentName(tag),
-            declaration: parts.declaration,
-            isContext: parts.isContext,
+            declaration: elementParts.declaration,
+            isContext: elementParts.isContext,
           }
         : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
   if (jsxTag.kind === "Component") renderedComponents.add(jsxTag.name);
-  // React calls function children and locally declared components with props: render props.
-  const functionChildren =
-    jsxTag.kind === "BuiltinTag" ? [] : parts.children.filter((child) => child.kind === "Function");
+  const renderPropChildren =
+    jsxTag.kind === "BuiltinTag"
+      ? []
+      : elementParts.children.filter((child) => child.kind === "Function");
   const renderFunctions = tag.kind === "Function" ? [tag] : [];
   const props: Array<JsxProp | JsxSpreadProp> = [
-    ...parts.props,
-    ...functionChildren.map((value): JsxProp => ({
+    ...elementParts.props,
+    ...renderPropChildren.map((value): JsxProp => ({
       kind: "JsxAttribute",
       name: "children",
       value,
@@ -55,5 +55,11 @@ export const buildJsx = (
       handlerId: null,
     })),
   ];
-  return { kind: "JsxExpression", tag: jsxTag, props, children: parts.children, loc: parts.loc };
+  return {
+    kind: "JsxExpression",
+    tag: jsxTag,
+    props,
+    children: elementParts.children,
+    loc: elementParts.loc,
+  };
 };

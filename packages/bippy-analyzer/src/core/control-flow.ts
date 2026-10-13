@@ -26,7 +26,6 @@ export type LoopTerminal = Extract<
 
 type FallthroughOutcome = Extract<Outcome, { kind: "Fallthrough" }>;
 
-/** Blocks each iteration enters again, where the values the loop carries meet. */
 export const getLoopHeaders = (terminal: LoopTerminal): BlockId[] => {
   switch (terminal.kind) {
     case "for":
@@ -42,33 +41,32 @@ export const getLoopHeaders = (terminal: LoopTerminal): BlockId[] => {
   }
 };
 
-/** The block whose test leaves the loop. */
 export const getLoopExit = (terminal: LoopTerminal): BlockId =>
   terminal.kind === "for-in" ? terminal.init : terminal.test;
 
 export const mapFallthroughs = (
   outcome: Outcome,
-  map: (fallthrough: FallthroughOutcome) => Outcome,
+  mapFallthrough: (fallthrough: FallthroughOutcome) => Outcome,
 ): Outcome => {
-  if (outcome.kind === "Fallthrough") return map(outcome);
+  if (outcome.kind === "Fallthrough") return mapFallthrough(outcome);
   if (outcome.kind === "Return") return outcome;
   return {
     ...outcome,
-    consequent: mapFallthroughs(outcome.consequent, map),
-    alternate: mapFallthroughs(outcome.alternate, map),
+    consequent: mapFallthroughs(outcome.consequent, mapFallthrough),
+    alternate: mapFallthroughs(outcome.alternate, mapFallthrough),
   };
 };
 
 export const createConditional = (
   split: SplitOutcome,
   guards: SymbolicValue[],
-  toArm: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
+  getArmValue: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
 ): ConditionalValue => ({
   kind: "Conditional",
   test: split.test,
   testKind: split.testKind,
-  consequent: toArm(split.consequent, [...guards, getGuard(split, true)]),
-  alternate: toArm(split.alternate, [...guards, getGuard(split, false)]),
+  consequent: getArmValue(split.consequent, [...guards, getGuard(split, true)]),
+  alternate: getArmValue(split.alternate, [...guards, getGuard(split, false)]),
   branch: split.branch,
   guardKeys: guards.map(getValueKey),
 });

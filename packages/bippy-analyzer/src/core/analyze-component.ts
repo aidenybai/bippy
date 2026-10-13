@@ -6,15 +6,15 @@ import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";
 import { PlaceMap } from "./utils/place";
 import type { ProjectHookLoader } from "./interpret";
-import type { Bailout, ComponentAnalysis, ContextModels, StoreModel } from "./types";
+import type { Bailout, ComponentAnalysis, ContextSetterFields, StoreActions } from "./types";
 
 interface FileContext {
   sourceFile: SourceFile;
   resolver: DomainResolver;
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
-  contextModels: ContextModels;
-  storeModels: Map<string, StoreModel>;
+  contextSetterFields: ContextSetterFields;
+  storeActionsByStore: Map<string, StoreActions>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
@@ -41,12 +41,12 @@ export const analyzeComponent = (
       loc,
       isAsync: false,
       bindings: [],
-      propsSample: null,
+      wholePropsSample: null,
       providedContexts: [],
       contextSamples: new Map(),
-      untypedContexts: new Map(),
+      untypedContextBindingIds: new Map(),
       placeDomains: new PlaceMap(),
-      memberCases: new PlaceMap(),
+      unionMemberValues: new PlaceMap(),
       render: { kind: "Unknown", reason: "compiler-error", loc },
       handlers: [],
       renders: [],
@@ -64,24 +64,24 @@ export const analyzeComponent = (
     context.resolver,
     context.compiled.compileModuleFunction,
     context.loadProjectHook,
-    context.contextModels,
-    context.storeModels,
+    context.contextSetterFields,
+    context.storeActionsByStore,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
-  const { bindings, placeDomains, memberCases } = interpreter.bindingTable;
+  const { bindings, placeDomains, unionMemberValues } = interpreter.bindingTable;
   return {
     ...base,
     loc: hir.loc,
     isAsync: hir.async,
     bindings,
-    propsSample: interpreter.propsSample,
+    wholePropsSample: interpreter.wholePropsSample,
     providedContexts: interpreter.providedContexts,
     contextSamples: interpreter.externalSources.contextSamples,
-    untypedContexts: interpreter.externalSources.untypedContexts,
+    untypedContextBindingIds: interpreter.externalSources.untypedContextBindingIds,
     placeDomains,
-    memberCases,
+    unionMemberValues,
     render,
     handlers,
     renders: [...interpreter.renderedComponents],

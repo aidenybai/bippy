@@ -21,7 +21,7 @@ import {
   isStringLiteral,
   isVariableStatement,
 } from "typescript/unstable/ast/is";
-import type { StoreAssignment, StoreFieldValue, StoreModel } from "./types";
+import type { StoreAssignment, StoreFieldValue, StoreActions } from "./types";
 
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;
 const STORE_CREATORS = new Set(["create", "createWithEqualityFn"]);
@@ -37,21 +37,20 @@ const getParameterNames = (node: Node): string[] =>
     : [];
 
 const getCreatorNames = (sourceFile: SourceFile): Set<string> => {
-  const names = new Set<string>();
+  const creatorNames = new Set<string>();
   for (const statement of sourceFile.statements) {
     if (!isImportDeclaration(statement) || !isStringLiteral(statement.moduleSpecifier)) continue;
     if (!STORE_MODULE_PATTERN.test(statement.moduleSpecifier.text)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !isNamedImports(bindings)) continue;
-    for (const element of bindings.elements)
-      if (STORE_CREATORS.has(element.propertyName?.text ?? element.name.text))
-        names.add(element.name.text);
+    const namedBindings = statement.importClause?.namedBindings;
+    if (!namedBindings || !isNamedImports(namedBindings)) continue;
+    for (const specifier of namedBindings.elements)
+      if (STORE_CREATORS.has(specifier.propertyName?.text ?? specifier.name.text))
+        creatorNames.add(specifier.name.text);
   }
-  return names;
+  return creatorNames;
 };
 
-// Unwraps curried `create<State>()(...)` and middleware like `persist(...)`.
-const findCreatorFunction = (initializer: Node, creatorNames: Set<string>): Node | null => {
+const findStateCreator = (initializer: Node, creatorNames: Set<string>): Node | null => {
   if (!isCallExpression(initializer)) return null;
   const callee = initializer.expression;
   const isCreator =
@@ -60,19 +59,20 @@ const findCreatorFunction = (initializer: Node, creatorNames: Set<string>): Node
       isIdentifier(callee.expression) &&
       creatorNames.has(callee.expression.text));
   if (!isCreator) return null;
-  let argument: Node | undefined = initializer.arguments[0];
-  while (argument && isCallExpression(argument)) argument = argument.arguments[0];
-  return argument && isFunctionNode(argument) ? argument : null;
+  let middlewareOrCreator: Node | undefined = initializer.arguments[0];
+  while (middlewareOrCreator && isCallExpression(middlewareOrCreator))
+    middlewareOrCreator = middlewareOrCreator.arguments[0];
+  return middlewareOrCreator && isFunctionNode(middlewareOrCreator) ? middlewareOrCreator : null;
 };
 
-const getReturnedObject = (fn: Node): Node | null => {
-  if (!isArrowFunction(fn) && !isFunctionExpression(fn)) return null;
-  const body = skipParentheses(fn.body);
+const getReturnedObject = (functionNode: Node): Node | null => {
+  if (!isArrowFunction(functionNode) && !isFunctionExpression(functionNode)) return null;
+  const body = skipParentheses(functionNode.body);
   if (isObjectLiteralExpression(body)) return body;
   if (!isBlock(body)) return null;
-  const returned = body.statements.find(isReturnStatement)?.expression;
-  return returned && isObjectLiteralExpression(skipParentheses(returned))
-    ? skipParentheses(returned)
+  const returnedExpression = body.statements.find(isReturnStatement)?.expression;
+  return returnedExpression && isObjectLiteralExpression(skipParentheses(returnedExpression))
+    ? skipParentheses(returnedExpression)
     : null;
 };
 
@@ -108,13 +108,16 @@ const getFieldValue = (
   return { kind: "Unknown" };
 };
 
-const getAssignments = (argument: Node, actionParameters: string[]): StoreAssignment[] | null => {
-  const expression = skipParentheses(argument);
+const getAssignments = (
+  setArgument: Node,
+  actionParameters: string[],
+): StoreAssignment[] | null => {
+  const expression = skipParentheses(setArgument);
   const [stateParameter = null] = getParameterNames(expression);
-  const object = isFunctionNode(expression) ? getReturnedObject(expression) : expression;
-  if (!object || !isObjectLiteralExpression(object)) return null;
+  const assignedObject = isFunctionNode(expression) ? getReturnedObject(expression) : expression;
+  if (!assignedObject || !isObjectLiteralExpression(assignedObject)) return null;
   const assignments: StoreAssignment[] = [];
-  for (const property of object.properties) {
+  for (const property of assignedObject.properties) {
     if (isSpreadAssignment(property)) continue;
     if (isShorthandPropertyAssignment(property)) {
       const { name } = property;
@@ -136,66 +139,61 @@ const getAssignments = (argument: Node, actionParameters: string[]): StoreAssign
   return assignments;
 };
 
-const findSetCalls = (node: Node, setName: string): Node[] => {
-  const calls: Node[] = [];
-  const visit = (current: Node): void => {
-    if (isFunctionNode(current)) return;
-    if (
-      isCallExpression(current) &&
-      isIdentifier(current.expression) &&
-      current.expression.text === setName
-    )
-      calls.push(current);
-    current.forEachChild(visit);
+const findSetCalls = (action: Node, setName: string): Node[] => {
+  const setCalls: Node[] = [];
+  const visit = (node: Node): void => {
+    if (isFunctionNode(node)) return;
+    if (isCallExpression(node) && isIdentifier(node.expression) && node.expression.text === setName)
+      setCalls.push(node);
+    node.forEachChild(visit);
   };
-  node.forEachChild(visit);
-  return calls;
+  action.forEachChild(visit);
+  return setCalls;
 };
 
 const getActionAssignments = (action: Node, setName: string): StoreAssignment[] | null => {
   if (!isArrowFunction(action) && !isFunctionExpression(action)) return null;
-  const parameters = getParameterNames(action);
+  const actionParameters = getParameterNames(action);
   const body = skipParentheses(action.body);
-  const calls = findSetCalls(action, setName);
-  const onlyStatement = isBlock(body) && body.statements.length === 1 ? body.statements[0] : null;
+  const setCalls = findSetCalls(action, setName);
+  const [onlyStatement] = isBlock(body) && body.statements.length === 1 ? body.statements : [];
   const isOnlySetCall =
-    calls.length === 1 &&
-    (calls[0] === body ||
-      (onlyStatement !== null &&
-        onlyStatement !== undefined &&
+    setCalls.length === 1 &&
+    (setCalls[0] === body ||
+      (onlyStatement !== undefined &&
         isExpressionStatement(onlyStatement) &&
-        skipParentheses(onlyStatement.expression) === calls[0]));
-  const assignments = calls.flatMap((call) => {
-    const [argument] = isCallExpression(call) ? call.arguments : [];
-    return argument ? [getAssignments(argument, parameters)] : [null];
+        skipParentheses(onlyStatement.expression) === setCalls[0]));
+  const assignmentsPerCall = setCalls.map((setCall) => {
+    const [setArgument] = isCallExpression(setCall) ? setCall.arguments : [];
+    return setArgument ? getAssignments(setArgument, actionParameters) : null;
   });
-  if (assignments.length === 0 || assignments.some((assigned) => assigned === null)) return null;
-  const fields = assignments.flat().filter((assigned) => assigned !== null);
+  if (assignmentsPerCall.length === 0 || assignmentsPerCall.includes(null)) return null;
+  const assignments = assignmentsPerCall.flat().filter((assignment) => assignment !== null);
   return isOnlySetCall
-    ? fields
-    : fields.map(({ field }) => ({ field, value: { kind: "Unknown" } }));
+    ? assignments
+    : assignments.map(({ field }) => ({ field, value: { kind: "Unknown" } }));
 };
 
-export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreModel> => {
-  const models = new Map<string, StoreModel>();
+export const collectStoreActions = (sourceFile: SourceFile): Map<string, StoreActions> => {
+  const actionsByStore = new Map<string, StoreActions>();
   const creatorNames = getCreatorNames(sourceFile);
-  if (creatorNames.size === 0) return models;
+  if (creatorNames.size === 0) return actionsByStore;
   for (const statement of sourceFile.statements) {
     if (!isVariableStatement(statement)) continue;
     for (const declaration of statement.declarationList.declarations) {
       if (!isIdentifier(declaration.name) || !declaration.initializer) continue;
-      const creator = findCreatorFunction(declaration.initializer, creatorNames);
+      const creator = findStateCreator(declaration.initializer, creatorNames);
       const [setName] = creator ? getParameterNames(creator) : [];
-      const state = creator ? getReturnedObject(creator) : null;
-      if (!setName || !state || !isObjectLiteralExpression(state)) continue;
-      const model: StoreModel = new Map();
-      for (const property of state.properties) {
+      const initialState = creator ? getReturnedObject(creator) : null;
+      if (!setName || !initialState || !isObjectLiteralExpression(initialState)) continue;
+      const actions: StoreActions = new Map();
+      for (const property of initialState.properties) {
         if (!isPropertyAssignment(property) || !isIdentifier(property.name)) continue;
         const assignments = getActionAssignments(property.initializer, setName);
-        if (assignments) model.set(property.name.text, assignments);
+        if (assignments) actions.set(property.name.text, assignments);
       }
-      models.set(`${sourceFile.path}#${declaration.name.text}`, model);
+      actionsByStore.set(`${sourceFile.path}#${declaration.name.text}`, actions);
     }
   }
-  return models;
+  return actionsByStore;
 };

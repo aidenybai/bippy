@@ -188,13 +188,23 @@ const getReachableCases = (
   return typeCases;
 };
 
-const getSourceLengthBounds = (binding: Binding): Bound[] => {
-  if (!binding.lengthSource) return [];
-  const { place, isExact } = binding.lengthSource;
-  const lengthAtom = getLengthAtom(binding.id);
-  const atMost: Bound = { left: lengthAtom, right: place, constant: 0, isStrict: false };
-  const atLeast: Bound = { left: place, right: lengthAtom, constant: 0, isStrict: false };
-  return isExact ? [atMost, atLeast] : [atMost];
+const getLengthLimitBounds = (binding: Binding): Bound[] => {
+  if (!binding.lengthLimit) return [];
+  const { arrayLength, isSameLength } = binding.lengthLimit;
+  const resultLength = getLengthAtom(binding.id);
+  const isNoLonger: Bound = {
+    left: resultLength,
+    right: arrayLength,
+    constant: 0,
+    isStrict: false,
+  };
+  const isNoShorter: Bound = {
+    left: arrayLength,
+    right: resultLength,
+    constant: 0,
+    isStrict: false,
+  };
+  return isSameLength ? [isNoLonger, isNoShorter] : [isNoLonger];
 };
 
 const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
@@ -214,8 +224,8 @@ const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
     values,
     assumptions: new Map(),
     bounds: [],
-    invariants: analysis.bindings.flatMap(getSourceLengthBounds),
-    memberCases: analysis.memberCases,
+    invariants: analysis.bindings.flatMap(getLengthLimitBounds),
+    unionMemberValues: analysis.unionMemberValues,
     members: new Map(),
   };
 };
@@ -254,7 +264,7 @@ const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
 const getDependents = (bindings: Binding[]): Map<number, number[]> => {
   const dependents = new Map<number, number[]>();
   for (const binding of bindings)
-    for (const { bindingId } of binding.inputs)
+    for (const { bindingId } of binding.inputPlaces)
       dependents.set(bindingId, [...(dependents.get(bindingId) ?? []), binding.id]);
   const collect = (bindingId: number, collected: Set<number>): Set<number> => {
     for (const dependentId of dependents.get(bindingId) ?? [])
@@ -434,7 +444,7 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
           // Fields of a hook result or context change together, so they join the whole binding.
           const decidingPlaces = [
             isExternalSource(part.binding) ? getBindingPlace(part.binding) : getValuePlace(part),
-            ...part.binding.inputs,
+            ...part.binding.inputPlaces,
           ];
           for (const place of decidingPlaces)
             decisionsByPlace.set(place, [...(decisionsByPlace.get(place) ?? []), key]);

@@ -2,7 +2,6 @@ import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Bailout, BailoutReason, Warning, WarningKind } from "./types";
 import { isSameLocation } from "./utils/hir";
 
-/** What the analysis couldn't model, and the bugs it saw, each reported once. */
 export class Diagnostics {
   readonly bailouts: Bailout[] = [];
   readonly warnings: Warning[] = [];

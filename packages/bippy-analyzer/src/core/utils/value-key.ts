@@ -81,5 +81,4 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
   }
 };
 
-// Unlike printed text, which two bindings with one name share.
 export const getValueKey = (value: SymbolicValue): string => JSON.stringify(getKeyPart(value));

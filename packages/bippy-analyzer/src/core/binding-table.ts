@@ -1,24 +1,23 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { DomainResolver } from "./infer-domains";
-import type { AbstractValue, Binding, BindingKind, BindingValue, Domain } from "./types";
+import type { AbstractValue, Binding, BindingKind, BindingValue, Domain, Place } from "./types";
 import { dedupeValues } from "./constraints";
 import { PlaceMap, getBindingPlace } from "./utils/place";
 
 export interface BindingOptions extends Partial<
-  Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "lengthSource" | "domain">
+  Pick<Binding, "hookKind" | "propName" | "initial" | "inputPlaces" | "lengthLimit" | "domain">
 > {}
 
-/** One binding per declaration, so evaluating it again reads the same binding. */
 export class BindingTable {
-  readonly #bindings = new Map<string, Binding>();
-  readonly #propBindings = new Map<string, Binding>();
-  readonly #resolvers = new Map<number, DomainResolver>();
+  readonly #bindingsByDeclaration = new Map<string, Binding>();
+  readonly #bindingsByProp = new Map<string, Binding>();
+  readonly #resolversByBinding = new Map<number, DomainResolver>();
   readonly placeDomains = new PlaceMap<Domain>();
-  readonly memberCases = new PlaceMap<AbstractValue[][]>();
+  readonly unionMemberValues = new PlaceMap<AbstractValue[][]>();
 
   get bindings(): Binding[] {
-    return [...this.#bindings.values()];
+    return [...this.#bindingsByDeclaration.values()];
   }
 
   create(
@@ -29,11 +28,11 @@ export class BindingTable {
     options: BindingOptions = {},
   ): Binding {
     const position = loc === GeneratedSource ? "generated" : loc.start.index;
-    const key = `${kind}:${name}:${resolver.fileName}:${position}`;
-    const existing = this.#bindings.get(key);
-    if (existing) return existing;
+    const declarationKey = `${kind}:${name}:${resolver.fileName}:${position}`;
+    const existingBinding = this.#bindingsByDeclaration.get(declarationKey);
+    if (existingBinding) return existingBinding;
     const binding: Binding = {
-      id: this.#bindings.size,
+      id: this.#bindingsByDeclaration.size,
       name: resolver.getSourceName(loc) ?? name,
       kind,
       hookKind: options.hookKind ?? null,
@@ -42,25 +41,25 @@ export class BindingTable {
       domain: options.domain ?? resolver.getDomain(loc),
       samples: kind === "prop" ? resolver.getSamples(loc, options.propName ?? name) : [],
       initial: options.initial ?? null,
-      inputs: options.inputs ?? [],
-      lengthSource: options.lengthSource ?? null,
+      inputPlaces: options.inputPlaces ?? [],
+      lengthLimit: options.lengthLimit ?? null,
     };
-    this.#bindings.set(key, binding);
-    this.#resolvers.set(binding.id, resolver);
+    this.#bindingsByDeclaration.set(declarationKey, binding);
+    this.#resolversByBinding.set(binding.id, resolver);
     this.placeDomains.set(getBindingPlace(binding), binding.domain);
     return binding;
   }
 
-  getProp(
+  getPropBinding(
     resolver: DomainResolver,
     propName: string,
     localName: string,
     loc: SourceLocation,
   ): Binding {
-    const existing = this.#propBindings.get(propName);
-    if (existing) return existing;
+    const existingBinding = this.#bindingsByProp.get(propName);
+    if (existingBinding) return existingBinding;
     const binding = this.create(resolver, localName, "prop", loc, { propName });
-    this.#propBindings.set(propName, binding);
+    this.#bindingsByProp.set(propName, binding);
     return binding;
   }
 
@@ -71,25 +70,25 @@ export class BindingTable {
     loc: SourceLocation,
   ): BindingValue {
     const place = getBindingPlace(binding, path);
-    if (!this.placeDomains.has(place)) {
-      const domain = resolver.getDomain(loc);
-      const [field] = path;
-      const memberCases =
-        path.length === 1 && field !== undefined
-          ? this.#resolvers.get(binding.id)?.getMemberCases(binding.loc, field)
-          : null;
-      // The read may be narrowed, like `state.type` after `state.isOpen`, but the field holds
-      // whatever any member gives it.
-      if (memberCases && domain.kind === "Cases") {
-        this.placeDomains.set(place, {
-          ...domain,
-          cases: dedupeValues([...domain.cases, ...memberCases.flat()]),
-        });
-        this.memberCases.set(place, memberCases);
-      } else {
-        this.placeDomains.set(place, domain);
-      }
-    }
+    if (!this.placeDomains.has(place))
+      this.#addFieldDomain(binding, place, resolver.getDomain(loc));
     return { kind: "Binding", binding, path };
+  }
+
+  #addFieldDomain(binding: Binding, place: Place, readDomain: Domain): void {
+    const [field] = place.path;
+    const unionMemberValues =
+      place.path.length === 1 && field !== undefined
+        ? this.#resolversByBinding.get(binding.id)?.getUnionMemberValues(binding.loc, field)
+        : null;
+    if (!unionMemberValues || readDomain.kind !== "Cases") {
+      this.placeDomains.set(place, readDomain);
+      return;
+    }
+    this.unionMemberValues.set(place, unionMemberValues);
+    this.placeDomains.set(place, {
+      ...readDomain,
+      cases: dedupeValues([...readDomain.cases, ...unionMemberValues.flat()]),
+    });
   }
 }

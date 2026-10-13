@@ -21,7 +21,6 @@ export type Domain =
   | { kind: "Opaque"; typeText: string }
   | { kind: "Unknown"; reason: UnknownTypeReason };
 
-/** Mirrors JSON so a browser can rebuild it. */
 export type Sample =
   | { kind: "Value"; value: string | number | boolean | null }
   | { kind: "Undefined" }
@@ -46,7 +45,6 @@ export type BindingKind =
   | "loop"
   | "suspense";
 
-/** A binding or a field path inside it, like `user.name`. */
 export interface Place {
   bindingId: number;
   path: string[];
@@ -62,15 +60,13 @@ export interface Binding {
   domain: Domain;
   samples: Sample[];
   initial: SymbolicValue | null;
-  /** Places a call result's receiver and arguments read. */
-  inputs: Place[];
-  /** The array a call result is no longer than, like `items` for `items.filter(…)`. */
-  lengthSource: LengthSource | null;
+  inputPlaces: Place[];
+  lengthLimit: LengthLimit | null;
 }
 
-export interface LengthSource {
-  place: Place;
-  isExact: boolean;
+export interface LengthLimit {
+  arrayLength: Place;
+  isSameLength: boolean;
 }
 
 export interface Branch {
@@ -103,7 +99,6 @@ interface SymbolicObjectProperty {
   value: SymbolicValue;
 }
 
-/** `Conditional` is where control flow merged: a phi, early return, ternary, logical, or switch. */
 export type BinaryOperator = Extract<InstructionValue, { kind: "BinaryExpression" }>["operator"];
 
 export type UnaryOperator = Extract<InstructionValue, { kind: "UnaryExpression" }>["operator"];
@@ -228,37 +223,30 @@ export interface StoreAssignment {
   value: StoreFieldValue;
 }
 
-/** Assignments by action name. */
-export type StoreModel = Map<string, StoreAssignment[]>;
+export type StoreActions = Map<string, StoreAssignment[]>;
 
 export interface ProvidedContext {
   contextKey: string;
   value: SymbolicValue;
 }
 
-/** By context key, each setter field's state field, like `setOpen` to `open`. */
-export type ContextModels = Map<string, Map<string, string>>;
+export type ContextSetterFields = Map<string, Map<string, string>>;
 
 export interface ComponentAnalysis {
   name: string;
   exportName: string | null;
-  /** Null when `displayName` is set at runtime. */
   runtimeName: string | null;
   file: string;
   declaration: string;
   loc: SourceLocation;
   isAsync: boolean;
   bindings: Binding[];
-  /** Set when the component passes its props object on whole. */
-  propsSample: Sample | null;
+  wholePropsSample: Sample | null;
   providedContexts: ProvidedContext[];
-  /** By context declaration key. */
   contextSamples: Map<string, Sample>;
-  /** Binding id each untyped context is read through, by declaration key. */
-  untypedContexts: Map<string, number>;
+  untypedContextBindingIds: Map<string, number>;
   placeDomains: PlaceMap<Domain>;
-  /** For a binding typed as a union of objects, the values each member gives a field. */
-  memberCases: PlaceMap<AbstractValue[][]>;
+  unionMemberValues: PlaceMap<AbstractValue[][]>;
   render: SymbolicValue;
   handlers: Handler[];
   renders: string[];
@@ -272,7 +260,6 @@ export interface Transition {
   isAsync: boolean;
 }
 
-/** `render` decides only this region's branches. */
 export interface State {
   region: number;
   conditions: string[];
@@ -281,7 +268,6 @@ export interface State {
   transitions: Transition[];
 }
 
-/** Regions vary independently: a screen is one state from each. */
 export interface Region {
   places: string[];
   bindingIds: number[];

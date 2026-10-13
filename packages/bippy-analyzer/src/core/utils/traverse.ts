@@ -72,10 +72,10 @@ export const forEachSymbolicValue = (
   root: SymbolicValue,
   visit: (value: SymbolicValue) => void,
 ): void => {
-  const seen = new Set<SymbolicValue>();
+  const visited = new WeakSet<SymbolicValue>();
   const walk = (value: SymbolicValue): void => {
-    if (seen.has(value)) return;
-    seen.add(value);
+    if (visited.has(value)) return;
+    visited.add(value);
     visit(value);
     for (const child of getChildValues(value)) walk(child);
   };
@@ -86,33 +86,33 @@ export const mapSymbolicValue = (
   value: SymbolicValue,
   replace: (value: SymbolicValue) => SymbolicValue,
 ): SymbolicValue => {
-  const map = (child: SymbolicValue): SymbolicValue => mapSymbolicValue(child, replace);
+  const mapChild = (child: SymbolicValue): SymbolicValue => mapSymbolicValue(child, replace);
   switch (value.kind) {
     case "BinaryExpression":
-      return replace({ ...value, left: map(value.left), right: map(value.right) });
+      return replace({ ...value, left: mapChild(value.left), right: mapChild(value.right) });
     case "UnaryExpression":
-      return replace({ ...value, value: map(value.value) });
+      return replace({ ...value, value: mapChild(value.value) });
     case "Conditional":
       return replace({
         ...value,
-        test: map(value.test),
-        consequent: map(value.consequent),
-        alternate: map(value.alternate),
+        test: mapChild(value.test),
+        consequent: mapChild(value.consequent),
+        alternate: mapChild(value.alternate),
       });
     case "ObjectExpression":
       return replace({
         ...value,
         properties: value.properties.map((property) => ({
           ...property,
-          value: map(property.value),
+          value: mapChild(property.value),
         })),
-        spreads: value.spreads.map(map),
+        spreads: value.spreads.map(mapChild),
       });
     case "ArrayExpression":
       return replace({
         ...value,
-        elements: value.elements.map(map),
-        spreads: value.spreads.map(map),
+        elements: value.elements.map(mapChild),
+        spreads: value.spreads.map(mapChild),
       });
     default:
       return replace(value);

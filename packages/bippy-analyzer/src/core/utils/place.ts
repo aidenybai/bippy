@@ -21,7 +21,6 @@ export const isPlacePrefix = (prefix: Place, place: Place): boolean =>
   prefix.path.length <= place.path.length &&
   prefix.path.every((segment, index) => place.path[index] === segment);
 
-/** A map keyed by place, so a field path is never encoded and parsed back. */
 export class PlaceMap<Value> {
   readonly #entries = new Map<string, [Place, Value]>();
 

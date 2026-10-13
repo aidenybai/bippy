@@ -6,7 +6,7 @@ describe("rest props", () => {
   const project = analyzeProject(getFixtureConfig("conformance-repros"), "rest-props");
 
   it("samples the props a rest spread's type requires, to mount with", () => {
-    expect(getComponent(project, "PassedField").analysis.propsSample).toEqual({
+    expect(getComponent(project, "PassedField").analysis.wholePropsSample).toEqual({
       kind: "Object",
       fields: {
         name: { kind: "Value", value: "text" },
@@ -17,6 +17,6 @@ describe("rest props", () => {
   });
 
   it("samples nothing when the type requires no props, like a button's attributes", () => {
-    expect(getComponent(project, "PlainButton").analysis.propsSample).toBeNull();
+    expect(getComponent(project, "PlainButton").analysis.wholePropsSample).toBeNull();
   });
 });

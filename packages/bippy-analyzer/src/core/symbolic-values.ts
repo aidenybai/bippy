@@ -3,6 +3,7 @@ import type {
   BinaryOperator,
   Binding,
   BindingValue,
+  ConditionalValue,
   SymbolicValue,
   TestKind,
   UnaryOperator,
@@ -10,7 +11,7 @@ import type {
 import { isNullish } from "./utils/checks";
 import { getKnownTruthiness, negate } from "./utils/truthiness";
 
-const MAX_OPTIONS_DEPTH = 3;
+const MAX_OPTIONS_NESTING = 3;
 
 export const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
 
@@ -19,7 +20,7 @@ export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): Symbolic
     if (value.kind === "Function" || value.kind === "Setter") return [value];
     if (value.kind === "Conditional")
       return getPassedCallbacks([value.consequent, value.alternate], depth);
-    if (value.kind !== "ObjectExpression" || depth >= MAX_OPTIONS_DEPTH) return [];
+    if (value.kind !== "ObjectExpression" || depth >= MAX_OPTIONS_NESTING) return [];
     return getPassedCallbacks(
       value.properties.map((property) => property.value),
       depth + 1,
@@ -82,10 +83,9 @@ export const getComponentName = (
 export const isNullishValue = (value: SymbolicValue): boolean =>
   value.kind === "Primitive" && isNullish(value.value);
 
-// Assumes member accesses past the `?.` never throw.
 export const getShortCircuit = (
   value: SymbolicValue,
-): { test: SymbolicValue; testKind: TestKind } | null =>
+): Pick<ConditionalValue, "test" | "testKind"> | null =>
   value.kind === "Conditional" &&
   value.alternate.kind === "Primitive" &&
   value.alternate.value === undefined

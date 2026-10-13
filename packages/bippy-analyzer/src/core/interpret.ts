@@ -19,7 +19,7 @@ import type {
   Binding,
   BindingKind,
   BindingValue,
-  ContextModels,
+  ContextSetterFields,
   Branch,
   DispatchValue,
   Domain,
@@ -31,7 +31,7 @@ import type {
   ObjectExpressionValue,
   ProvidedContext,
   Sample,
-  StoreModel,
+  StoreActions,
   SetterValue,
   SymbolicValue,
   TestKind,
@@ -144,7 +144,7 @@ interface CompilationTables {
 type CallTarget =
   | { kind: "Portal"; children: SymbolicValue }
   | { kind: "ProjectHook"; projectHook: ProjectHook }
-  | { kind: "Store"; storeKey: string; storeModel: StoreModel }
+  | { kind: "Store"; storeKey: string; storeActions: StoreActions }
   | { kind: "Hook"; hookKind: HookKind }
   | { kind: "ModuleFunction"; fn: HIRFunction }
   | { kind: "Value" };
@@ -187,13 +187,13 @@ export class Interpreter {
     resolver: DomainResolver,
     loadModuleFunction: ModuleFunctionLoader,
     loadProjectHook: ProjectHookLoader,
-    contextModels: ContextModels,
-    storeModels: Map<string, StoreModel>,
+    contextSetterFields: ContextSetterFields,
+    storeActionsByStore: Map<string, StoreActions>,
   ) {
     this.#resolver = resolver;
     this.#functions.addModule(resolver, loadModuleFunction);
     this.#loadProjectHook = loadProjectHook;
-    this.externalSources = new ExternalSources(contextModels, storeModels);
+    this.externalSources = new ExternalSources(contextSetterFields, storeActionsByStore);
   }
 
   #registerFunction(fn: HIRFunction, isSnapshot = false): FunctionValue {
@@ -204,7 +204,7 @@ export class Interpreter {
   #createClosure(fn: HIRFunction): FunctionValue {
     const closure = this.#registerFunction(fn, this.#inlineDepth > 0);
     if (this.#inlineDepth > 0)
-      this.#functions.setCaptures(
+      this.#functions.setCapturedValues(
         closure.functionId,
         fn.context.map((place): [Place, SymbolicValue] => [place, this.#read(place)]),
       );
@@ -212,7 +212,7 @@ export class Interpreter {
   }
 
   #applyCaptures(functionId: number | null): () => void {
-    const captures = this.#functions.getCaptures(functionId);
+    const captures = this.#functions.getCapturedValues(functionId);
     const previous = captures.map(([place]): [Place, SymbolicValue] => [place, this.#read(place)]);
     for (const [place, value] of captures) this.#write(place, value);
     return () => {
@@ -261,7 +261,7 @@ export class Interpreter {
   }
 
   #getPropBinding(propName: string, localName: string, loc: SourceLocation): Binding {
-    return this.bindingTable.getProp(this.#resolver, propName, localName, loc);
+    return this.bindingTable.getPropBinding(this.#resolver, propName, localName, loc);
   }
 
   #bindHookResult(place: Place, hook: HookResultValue): BindingValue {
@@ -271,7 +271,7 @@ export class Interpreter {
       getDeclarationLocation(place),
       { hookKind: hook.hookKind },
     );
-    this.externalSources.link(binding, hook, this.#resolver);
+    this.externalSources.bindHookResult(binding, hook, this.#resolver);
     return createBindingValue(binding);
   }
 
@@ -361,7 +361,7 @@ export class Interpreter {
           value.loc,
           { hookKind: value.hookKind, resolver: this.externalSources.getHookResolver(value) },
         );
-        this.externalSources.link(binding, value, this.#resolver);
+        this.externalSources.bindHookResult(binding, value, this.#resolver);
         this.#write(property.place, this.#readField(binding, [key], property.place.loc));
       } else {
         this.#write(property.place, this.#evaluatePropertyLoad(value, key, property.place.loc));
@@ -583,7 +583,7 @@ export class Interpreter {
   #applySetter(setter: SetterValue, argument: SymbolicValue | undefined, state: WalkState): void {
     const previous = createBindingValue(setter.binding);
     const next = this.#getNextValue(argument, previous, setter.binding.loc, state);
-    this.#effects?.record(setter.binding, next, state);
+    this.#effects?.recordSetterCall(setter.binding, next, state);
   }
 
   #applyDispatch(
@@ -602,7 +602,7 @@ export class Interpreter {
             state,
           )
         : createUnknown("dispatch", loc);
-    this.#effects?.record(dispatch.binding, next, state);
+    this.#effects?.recordSetterCall(dispatch.binding, next, state);
   }
 
   #recordWholeProps(args: SymbolicValue[], argumentPlaces: Place[]): void {
@@ -627,8 +627,8 @@ export class Interpreter {
           ? { kind: "ProjectHook", projectHook }
           : { kind: "Hook", hookKind };
       const storeKey = this.#resolver.getDeclarationKey(calleePlace.loc);
-      const storeModel = storeKey ? this.externalSources.getStoreModel(storeKey) : undefined;
-      if (storeKey && storeModel) return { kind: "Store", storeKey, storeModel };
+      const storeActions = storeKey ? this.externalSources.getStoreActions(storeKey) : undefined;
+      if (storeKey && storeActions) return { kind: "Store", storeKey, storeActions };
     }
     if (hookKind !== null) return { kind: "Hook", hookKind };
     // A helper given a callback may wrap it or call it later, so inline it.
@@ -660,7 +660,7 @@ export class Interpreter {
         );
         return this.#callFunction(this.#registerFunction(target.projectHook.fn), args, loc, state);
       case "Store":
-        return this.#readStore(target.storeKey, target.storeModel, callee, args, loc, state);
+        return this.#readStore(target.storeKey, target.storeActions, callee, args, loc, state);
       case "Hook":
         return this.#evaluateHookCall(target.hookKind, callee, args, argumentPlaces, loc, state);
       case "ModuleFunction":
@@ -751,17 +751,17 @@ export class Interpreter {
       callee.kind === "Binding" && method !== undefined
         ? getBindingPlace(callee.binding, callee.path.slice(0, -1))
         : null;
-    const isExact = method === undefined ? undefined : LENGTH_METHODS.get(method);
-    const lengthSource =
-      receiver && isExact !== undefined && this.#resolver.isNonMutatingMethod(calleePlace.loc)
-        ? { place: { ...receiver, path: [...receiver.path, "length"] }, isExact }
+    const isSameLength = method === undefined ? undefined : LENGTH_METHODS.get(method);
+    const lengthLimit =
+      receiver && isSameLength !== undefined && this.#resolver.isNonMutatingMethod(calleePlace.loc)
+        ? { arrayLength: { ...receiver, path: [...receiver.path, "length"] }, isSameLength }
         : null;
-    if (!lengthSource && inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
+    if (!lengthLimit && inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
       return createUnknown("call", loc);
     if (receiver) inputs.set(receiver, true);
     const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
     return createBindingValue(
-      this.#createBinding(name, "call", loc, { inputs: inputs.places(), lengthSource }),
+      this.#createBinding(name, "call", loc, { inputPlaces: inputs.places(), lengthLimit }),
     );
   }
 
@@ -772,7 +772,7 @@ export class Interpreter {
         this.#visitCallbackArgument(callback, state);
     const asyncState = { ...state, isAsync: true };
     if (argument.kind === "Setter")
-      this.#effects.record(
+      this.#effects.recordSetterCall(
         argument.binding,
         createUnknown("callback-argument", GeneratedSource),
         asyncState,
@@ -1317,7 +1317,7 @@ export class Interpreter {
     }
     const loopIds = new Set(loopBindings.map((binding) => binding.id));
     const places = inputs.places().filter((place) => !loopIds.has(place.bindingId));
-    for (const binding of loopBindings) binding.inputs = [...binding.inputs, ...places];
+    for (const binding of loopBindings) binding.inputPlaces = [...binding.inputPlaces, ...places];
   }
 
   #walk(
@@ -1452,14 +1452,14 @@ export class Interpreter {
 
   #readStore(
     storeKey: string,
-    model: StoreModel,
+    model: StoreActions,
     callee: SymbolicValue,
     args: SymbolicValue[],
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
     const name = callee.kind === "Global" ? callee.name : "store";
-    const binding = this.externalSources.bindStore(storeKey, model, () =>
+    const binding = this.externalSources.getStoreBinding(storeKey, model, () =>
       this.#createBinding(`${name}()`, "hook", loc, {
         hookKind: "Custom",
         domain: { kind: "Opaque", typeText: name },
@@ -1516,7 +1516,7 @@ export class Interpreter {
     }
   }
 
-  get propsSample(): Sample | null {
+  get wholePropsSample(): Sample | null {
     return this.#wholePropsSample ?? this.#restPropsSample;
   }
 
@@ -1529,11 +1529,11 @@ export class Interpreter {
     const { binding, path } = callee;
     if (binding.kind === "prop") this.#effects?.addDelegate(formatPlace(binding, path));
     const member = path.length === 1 ? path[0] : undefined;
-    const contextField = member && this.externalSources.getContextField(binding, member);
+    const contextField = member && this.externalSources.getSetterField(binding, member);
     if (contextField) return this.#setContextField(binding, contextField, args[0], state);
-    const assignments = member && this.externalSources.getStoreAssignments(binding, member);
+    const assignments = member && this.externalSources.getActionAssignments(binding, member);
     if (assignments)
-      return this.#effects?.record(
+      return this.#effects?.recordSetterCall(
         binding,
         {
           kind: "ObjectExpression",
@@ -1559,11 +1559,11 @@ export class Interpreter {
     if (!this.#effects) return;
     const previous: SymbolicValue = { kind: "Binding", binding, path: [field] };
     const next = this.#getNextValue(argument, previous, binding.loc, state);
-    this.#effects.push(
+    this.#effects.addUpdate(
       binding,
       {
         kind: "ObjectExpression",
-        properties: [{ key: field, value: this.#effects.forgetMutations(next) }],
+        properties: [{ key: field, value: this.#effects.forgetMutatedBindings(next) }],
         spreads: [createBindingValue(binding)],
       },
       state.guards,
@@ -1581,7 +1581,7 @@ export class Interpreter {
     );
     for (const binding of sources)
       if (!effects.hasUpdate(binding))
-        effects.push(binding, createUnknown("external", GeneratedSource), state.guards, true);
+        effects.addUpdate(binding, createUnknown("external", GeneratedSource), state.guards, true);
   }
 
   // Handlers in JSX a handler returns, like render-prop output, are rendered for the user to click.
@@ -1596,7 +1596,7 @@ export class Interpreter {
 
   #runCallback(callback: SymbolicValue, args: SymbolicValue[], visited: Set<number>): void {
     if (callback.kind === "Setter")
-      this.#effects?.record(
+      this.#effects?.recordSetterCall(
         callback.binding,
         createUnknown("event", GeneratedSource),
         ROOT_WALK_STATE,

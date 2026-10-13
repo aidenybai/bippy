@@ -14,7 +14,7 @@ describe("memos patterns", () => {
     const list = getComponent(project, "LocaleList");
     const query = getBinding(list, "query");
     const matches = getBinding(list, "LOCALES.filter(function)");
-    expect(matches.inputs).toContainEqual({ bindingId: query.id, path: [] });
+    expect(matches.inputPlaces).toContainEqual({ bindingId: query.id, path: [] });
   });
 
   it("doesn't call a branch unreachable when another branch's test takes it", () => {

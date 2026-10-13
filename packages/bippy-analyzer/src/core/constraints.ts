@@ -54,7 +54,7 @@ export interface Constraints {
   /** Shared across clones: bounds every render keeps, like a filtered array's length. */
   invariants: Bound[];
   /** Shared across clones: for a union-typed binding, the values each member gives a field. */
-  memberCases: PlaceMap<AbstractValue[][]>;
+  unionMemberValues: PlaceMap<AbstractValue[][]>;
   /** By binding id, the union members still possible; every member when absent. */
   members: Map<number, number[]>;
 }
@@ -64,7 +64,7 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
   invariants: constraints.invariants,
-  memberCases: constraints.memberCases,
+  unionMemberValues: constraints.unionMemberValues,
   members: new Map(constraints.members),
 });
 
@@ -288,7 +288,7 @@ const restrictMembers = (
   place: Place,
   restricted: AbstractValue[],
 ): Constraints | null => {
-  const placeCases = constraints.memberCases.get(place);
+  const placeCases = constraints.unionMemberValues.get(place);
   if (!placeCases) return constraints;
   const restrictedKeys = getValueKeys(restricted);
   const namedKeys = getValueKeys(placeCases.flat());
@@ -300,7 +300,7 @@ const restrictMembers = (
   );
   if (members.length === 0) return null;
   constraints.members.set(place.bindingId, members);
-  for (const [otherPlace, otherCases] of constraints.memberCases) {
+  for (const [otherPlace, otherCases] of constraints.unionMemberValues) {
     if (otherPlace.bindingId !== place.bindingId || isSamePlace(otherPlace, place)) continue;
     const values = constraints.values.get(otherPlace);
     if (!values) continue;

@@ -15,43 +15,48 @@ interface Mutation {
   loc: SourceLocation;
 }
 
-type Warn = (kind: WarningKind, message: string, loc: SourceLocation) => void;
+interface WarnCallback {
+  (kind: WarningKind, message: string, loc: SourceLocation): void;
+}
 
-/** The state updates one handler or effect makes, and the state it mutates on the way. */
 export class EffectCollector {
   readonly #updates: StateUpdate[] = [];
   readonly #delegates: string[] = [];
-  readonly #mutations = new Map<number, Mutation>();
-  /** State passed to a function that may mutate it, like a library's `remove(items, item)`. */
-  readonly #possibleMutations = new Map<number, Binding>();
-  readonly #warn: Warn;
+  readonly #mutationsByBinding = new Map<number, Mutation>();
+  readonly #possiblyMutatedBindings = new Map<number, Binding>();
+  readonly #warn: WarnCallback;
 
-  constructor(warn: Warn) {
+  constructor(warn: WarnCallback) {
     this.#warn = warn;
   }
 
   addMutation(binding: Binding, loc: SourceLocation): void {
-    if (!this.#mutations.has(binding.id)) this.#mutations.set(binding.id, { binding, loc });
+    if (!this.#mutationsByBinding.has(binding.id))
+      this.#mutationsByBinding.set(binding.id, { binding, loc });
   }
 
   addPossibleMutation(binding: Binding): void {
-    this.#possibleMutations.set(binding.id, binding);
+    this.#possiblyMutatedBindings.set(binding.id, binding);
   }
 
-  addDelegate(name: string): void {
-    this.#delegates.push(name);
+  addDelegate(delegateName: string): void {
+    this.#delegates.push(delegateName);
   }
 
-  forgetMutations(value: SymbolicValue): SymbolicValue {
+  forgetMutatedBindings(value: SymbolicValue): SymbolicValue {
     return mapSymbolicValue(value, (part) =>
-      part.kind === "Binding" &&
-      (this.#mutations.has(part.binding.id) || this.#possibleMutations.has(part.binding.id))
+      part.kind === "Binding" && this.#isMutated(part.binding)
         ? createUnknown("mutated", GeneratedSource)
         : part,
     );
   }
 
-  push(binding: Binding, value: SymbolicValue, guards: SymbolicValue[], isAsync: boolean): void {
+  addUpdate(
+    binding: Binding,
+    value: SymbolicValue,
+    guards: SymbolicValue[],
+    isAsync: boolean,
+  ): void {
     this.#updates.push({ binding, value, guards, isAsync });
   }
 
@@ -59,14 +64,14 @@ export class EffectCollector {
     return this.#updates.some((update) => update.binding.id === binding.id);
   }
 
-  record(
+  recordSetterCall(
     binding: Binding,
-    value: SymbolicValue,
+    nextValue: SymbolicValue,
     context: Pick<StateUpdate, "guards" | "isAsync">,
   ): void {
-    const mutation = this.#mutations.get(binding.id);
+    const mutation = this.#mutationsByBinding.get(binding.id);
     if (mutation) {
-      const isSameReference = isWholeBinding(value, binding);
+      const isSameReference = isWholeBinding(nextValue, binding);
       this.#warn(
         isSameReference ? "lost-update" : "state-mutation",
         isSameReference
@@ -75,8 +80,8 @@ export class EffectCollector {
         mutation.loc,
       );
     }
-    const knownValue = this.forgetMutations(value);
-    this.push(
+    const knownValue = this.forgetMutatedBindings(nextValue);
+    this.addUpdate(
       binding,
       context.isAsync && knownValue.kind !== "Primitive"
         ? createUnknown("async", GeneratedSource)
@@ -86,20 +91,25 @@ export class EffectCollector {
     );
   }
 
-  // Mutated-but-unset state shows on the next re-render, so forget it to keep later states sound.
   finish(): CollectedEffects {
-    for (const { binding, loc } of this.#mutations.values()) {
+    for (const { binding, loc } of this.#mutationsByBinding.values()) {
       if (this.hasUpdate(binding)) continue;
       this.#warn(
         "state-mutation",
         `mutates ${binding.name} without setting it, so the change shows only on the next render`,
         loc,
       );
-      this.push(binding, createUnknown("mutated", GeneratedSource), [], false);
+      this.addUpdate(binding, createUnknown("mutated", GeneratedSource), [], false);
     }
-    for (const binding of this.#possibleMutations.values())
+    for (const binding of this.#possiblyMutatedBindings.values())
       if (!this.hasUpdate(binding))
-        this.push(binding, createUnknown("mutated", GeneratedSource), [], false);
+        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), [], false);
     return { updates: this.#updates, delegates: this.#delegates };
+  }
+
+  #isMutated(binding: Binding): boolean {
+    return (
+      this.#mutationsByBinding.has(binding.id) || this.#possiblyMutatedBindings.has(binding.id)
+    );
   }
 }

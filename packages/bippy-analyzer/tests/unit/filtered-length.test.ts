@@ -16,7 +16,7 @@ describe("filtered length", () => {
 
   it("makes a filtered list depend on the list it filters", () => {
     const items = getBinding(component, "items");
-    expect(getBinding(component, "items.filter(function)").inputs).toContainEqual({
+    expect(getBinding(component, "items.filter(function)").inputPlaces).toContainEqual({
       bindingId: items.id,
       path: [],
     });

@@ -13,8 +13,8 @@ const createBinding = (id: number): Binding => ({
   domain: { kind: "Unknown", reason: "unresolved" },
   samples: [],
   initial: null,
-  inputs: [],
-  lengthSource: null,
+  inputPlaces: [],
+  lengthLimit: null,
 });
 
 const isSameKey = (left: SymbolicValue, right: SymbolicValue): boolean =>

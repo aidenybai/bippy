@@ -2,14 +2,14 @@ import { compileFile } from "./compile";
 import { CompilerTypeProvider } from "./type-provider";
 import { DomainResolver } from "./infer-domains";
 import type { ProjectHook } from "./interpret";
-import { collectStoreModels } from "./store-models";
+import { collectStoreActions } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
 import { getSampleOfValue } from "./infer-domains";
 import { getStringSamples } from "./string-samples";
 import type {
   ComponentAnalysis,
-  ContextModels,
-  StoreModel,
+  ContextSetterFields,
+  StoreActions,
   JsxExpressionValue,
   JsxProp,
   PrimitiveSymbolicValue,
@@ -99,7 +99,7 @@ const inferPropShapes = (analysis: ComponentAnalysis): void => {
       ...binding.samples,
     ];
   }
-  for (const [contextKey, bindingId] of analysis.untypedContexts) {
+  for (const [contextKey, bindingId] of analysis.untypedContextBindingIds) {
     const bindingPaths = paths.get(bindingId);
     if (bindingPaths) analysis.contextSamples.set(contextKey, getShapeSample("", bindingPaths));
   }
@@ -177,8 +177,8 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
 const isSamePairing = (left: Map<string, string>, right: Map<string, string>): boolean =>
   left.size === right.size && [...left].every(([setter, state]) => right.get(setter) === state);
 
-const collectContextModels = (analyses: ComponentAnalysis[]): ContextModels => {
-  const models: ContextModels = new Map();
+const collectContextModels = (analyses: ComponentAnalysis[]): ContextSetterFields => {
+  const models: ContextSetterFields = new Map();
   const conflicting = new Set<string>();
   for (const { contextKey, value } of analyses.flatMap((analysis) => analysis.providedContexts)) {
     if (value.kind !== "ObjectExpression") continue;
@@ -227,7 +227,7 @@ export const analyzeProject = (
     const { strict, strictNullChecks } = project.compilerOptions;
     const isStrictNullChecks = strictNullChecks ?? strict ?? false;
     const projectHooks = new Map<string, ProjectHook>();
-    const storeModels = new Map<string, StoreModel>();
+    const storeActionsByStore = new Map<string, StoreActions>();
     const loadProjectHook = (declarationKey: string): ProjectHook | null =>
       projectHooks.get(declarationKey) ?? null;
     const contexts = fileNames.flatMap((fileName) => {
@@ -237,8 +237,8 @@ export const analyzeProject = (
       const compiled = compileFile(fileName, sourceFile.text, {
         typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
       });
-      for (const [storeKey, model] of collectStoreModels(sourceFile))
-        storeModels.set(storeKey, model);
+      for (const [storeKey, model] of collectStoreActions(sourceFile))
+        storeActionsByStore.set(storeKey, model);
       for (const { fnType, hir, name } of compiled.functions)
         if (fnType === "Hook" && hir)
           projectHooks.set(`${sourceFile.path}#${name}`, {
@@ -252,7 +252,7 @@ export const analyzeProject = (
           resolver,
           compiled,
           loadProjectHook,
-          storeModels,
+          storeActionsByStore,
           exportNames: collectExportNames(sourceFile),
           displayNames: collectDisplayNames(sourceFile),
         },
@@ -265,16 +265,18 @@ export const analyzeProject = (
     );
     const analyze = (
       { reactFunction, context }: (typeof compiledComponents)[number],
-      contextModels: ContextModels,
-    ) => analyzeComponent(reactFunction, { ...context, contextModels });
+      contextSetterFields: ContextSetterFields,
+    ) => analyzeComponent(reactFunction, { ...context, contextSetterFields });
     const initialAnalyses = compiledComponents.map((component) => ({
       component,
       analysis: analyze(component, new Map()),
     }));
-    const contextModels = collectContextModels(initialAnalyses.map(({ analysis }) => analysis));
+    const contextSetterFields = collectContextModels(
+      initialAnalyses.map(({ analysis }) => analysis),
+    );
     const analyses = initialAnalyses.map(({ component, analysis }) =>
       analysis.bindings.some((binding) => binding.kind === "context")
-        ? analyze(component, contextModels)
+        ? analyze(component, contextSetterFields)
         : analysis,
     );
     for (const analysis of analyses) inferPropShapes(analysis);

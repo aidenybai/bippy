@@ -53,7 +53,8 @@ export const isRenderingNothing = (value: SymbolicValue): boolean =>
   value.kind === "Primitive" &&
   (value.value === null || value.value === undefined || typeof value.value === "boolean");
 
-// In `cond && <A />` the alternate is the test itself.
-export const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
-  isRenderingNothing(conditional.alternate) ||
+const isLogicalAnd = (conditional: ConditionalValue): boolean =>
   getValueKey(conditional.alternate) === getValueKey(conditional.test);
+
+export const isRenderingNothingWhenFalse = (conditional: ConditionalValue): boolean =>
+  isRenderingNothing(conditional.alternate) || isLogicalAnd(conditional);

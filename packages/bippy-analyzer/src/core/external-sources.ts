@@ -4,11 +4,11 @@ import type { DomainResolver } from "./infer-domains";
 import type {
   Binding,
   BindingKind,
-  ContextModels,
+  ContextSetterFields,
   HookResultValue,
   Sample,
   StoreAssignment,
-  StoreModel,
+  StoreActions,
   SymbolicValue,
 } from "./types";
 import { UNDEFINED_VALUE, createUnknown } from "./symbolic-values";
@@ -20,93 +20,94 @@ export const getHookBindingKind = (hookKind: HookKind): BindingKind =>
   hookKind === "useRef" ? "ref" : hookKind === "useContext" ? "context" : "hook";
 
 export const getStoreFieldValue = (
-  binding: Binding,
-  { field, value }: StoreAssignment,
-  args: SymbolicValue[],
+  storeBinding: Binding,
+  assignment: StoreAssignment,
+  actionArguments: SymbolicValue[],
 ): SymbolicValue => {
+  const { field, value } = assignment;
   switch (value.kind) {
     case "Argument":
-      return args[value.index] ?? UNDEFINED_VALUE;
+      return actionArguments[value.index] ?? UNDEFINED_VALUE;
     case "Literal":
       return { kind: "Primitive", value: value.value };
     case "Toggle":
       return {
         kind: "UnaryExpression",
         operator: "!",
-        value: { kind: "Binding", binding, path: [field] },
+        value: { kind: "Binding", binding: storeBinding, path: [field] },
       };
     case "Unknown":
-      return createUnknown("store", binding.loc);
+      return createUnknown("store", storeBinding.loc);
     default:
       return assertExhaustive(value, "Unhandled store field value");
   }
 };
 
-/** Hooks, contexts and stores: values that change from outside the component. */
 export class ExternalSources {
-  readonly #contextModels: ContextModels;
-  readonly #storeModels: Map<string, StoreModel>;
-  readonly #contextKeys = new WeakMap<HookResultValue, string>();
-  readonly #hookResolvers = new WeakMap<HookResultValue, DomainResolver>();
-  readonly #contextSetters = new Map<number, Map<string, string>>();
-  readonly #hookModules = new Map<number, string>();
-  readonly #storeBindings = new Map<string, Binding>();
-  readonly #storeActions = new Map<number, StoreModel>();
+  readonly #contextSetterFields: ContextSetterFields;
+  readonly #actionsByStore: Map<string, StoreActions>;
+  readonly #contextKeysByHook = new WeakMap<HookResultValue, string>();
+  readonly #resolversByHook = new WeakMap<HookResultValue, DomainResolver>();
+  readonly #setterFieldsByBinding = new Map<number, Map<string, string>>();
+  readonly #modulesByBinding = new Map<number, string>();
+  readonly #bindingsByStore = new Map<string, Binding>();
+  readonly #actionsByStoreBinding = new Map<number, StoreActions>();
   readonly contextSamples = new Map<string, Sample>();
-  readonly untypedContexts = new Map<string, number>();
+  readonly untypedContextBindingIds = new Map<string, number>();
 
-  constructor(contextModels: ContextModels, storeModels: Map<string, StoreModel>) {
-    this.#contextModels = contextModels;
-    this.#storeModels = storeModels;
+  constructor(contextSetterFields: ContextSetterFields, actionsByStore: Map<string, StoreActions>) {
+    this.#contextSetterFields = contextSetterFields;
+    this.#actionsByStore = actionsByStore;
   }
 
   addHookResult(hook: HookResultValue, resolver: DomainResolver, contextKey: string | null): void {
-    if (contextKey) this.#contextKeys.set(hook, contextKey);
-    this.#hookResolvers.set(hook, resolver);
+    if (contextKey) this.#contextKeysByHook.set(hook, contextKey);
+    this.#resolversByHook.set(hook, resolver);
   }
 
   getHookResolver(hook: HookResultValue): DomainResolver | undefined {
-    return this.#hookResolvers.get(hook);
+    return this.#resolversByHook.get(hook);
   }
 
-  link(binding: Binding, hook: HookResultValue, resolver: DomainResolver): void {
-    if (hook.module !== null) this.#hookModules.set(binding.id, hook.module);
-    const contextKey = this.#contextKeys.get(hook);
+  bindHookResult(binding: Binding, hook: HookResultValue, resolver: DomainResolver): void {
+    if (hook.module !== null) this.#modulesByBinding.set(binding.id, hook.module);
+    const contextKey = this.#contextKeysByHook.get(hook);
     if (!contextKey) return;
-    const setters = this.#contextModels.get(contextKey);
-    if (setters) this.#contextSetters.set(binding.id, setters);
+    const setterFields = this.#contextSetterFields.get(contextKey);
+    if (setterFields) this.#setterFieldsByBinding.set(binding.id, setterFields);
     if (binding.domain.kind === "Unknown") {
-      if (!this.untypedContexts.has(contextKey)) this.untypedContexts.set(contextKey, binding.id);
+      if (!this.untypedContextBindingIds.has(contextKey))
+        this.untypedContextBindingIds.set(contextKey, binding.id);
       return;
     }
-    const sample = (this.#hookResolvers.get(hook) ?? resolver)
+    const contextSample = (this.#resolversByHook.get(hook) ?? resolver)
       .getSamples(binding.loc)
       .find(isDefinedSample);
-    if (sample && !this.contextSamples.has(contextKey)) this.contextSamples.set(contextKey, sample);
+    if (contextSample && !this.contextSamples.has(contextKey))
+      this.contextSamples.set(contextKey, contextSample);
   }
 
-  isFromSameModule(binding: Binding, other: Binding): boolean {
-    const module = this.#hookModules.get(binding.id);
-    return module !== undefined && this.#hookModules.get(other.id) === module;
+  isFromSameModule(binding: Binding, otherBinding: Binding): boolean {
+    const hookModule = this.#modulesByBinding.get(binding.id);
+    return hookModule !== undefined && this.#modulesByBinding.get(otherBinding.id) === hookModule;
   }
 
-  getContextField(binding: Binding, member: string): string | undefined {
-    return this.#contextSetters.get(binding.id)?.get(member);
+  getSetterField(contextBinding: Binding, setterName: string): string | undefined {
+    return this.#setterFieldsByBinding.get(contextBinding.id)?.get(setterName);
   }
 
-  getStoreModel(storeKey: string): StoreModel | undefined {
-    return this.#storeModels.get(storeKey);
+  getStoreActions(storeKey: string): StoreActions | undefined {
+    return this.#actionsByStore.get(storeKey);
   }
 
-  // Every read of one store shares one binding, so an action through any read sets its fields.
-  bindStore(storeKey: string, model: StoreModel, createBinding: () => Binding): Binding {
-    const binding = this.#storeBindings.get(storeKey) ?? createBinding();
-    this.#storeBindings.set(storeKey, binding);
-    this.#storeActions.set(binding.id, model);
-    return binding;
+  getStoreBinding(storeKey: string, actions: StoreActions, createBinding: () => Binding): Binding {
+    const storeBinding = this.#bindingsByStore.get(storeKey) ?? createBinding();
+    this.#bindingsByStore.set(storeKey, storeBinding);
+    this.#actionsByStoreBinding.set(storeBinding.id, actions);
+    return storeBinding;
   }
 
-  getStoreAssignments(binding: Binding, member: string): StoreAssignment[] | undefined {
-    return this.#storeActions.get(binding.id)?.get(member);
+  getActionAssignments(storeBinding: Binding, actionName: string): StoreAssignment[] | undefined {
+    return this.#actionsByStoreBinding.get(storeBinding.id)?.get(actionName);
   }
 }

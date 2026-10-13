@@ -14,7 +14,6 @@ export const isSameLocation = (left: SourceLocation, right: SourceLocation): boo
     left.start.index === right.start.index &&
     left.end.index === right.end.index);
 
-// A function's mutations happen when it's called, not where it's created.
 export const isFunctionCreation = (value: InstructionValue): boolean =>
   value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
 

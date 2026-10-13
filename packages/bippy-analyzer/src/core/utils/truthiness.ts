@@ -1,4 +1,10 @@
-import type { AbstractValue, BinaryOperator, SymbolicValue, TestKind, Truthiness } from "../types";
+import type {
+  AbstractValue,
+  BinaryOperator,
+  ConditionalValue,
+  SymbolicValue,
+  Truthiness,
+} from "../types";
 
 const NEGATED_OPERATORS = new Map<BinaryOperator, BinaryOperator>([
   ["===", "!=="],
@@ -25,21 +31,17 @@ export const negate = (value: SymbolicValue): SymbolicValue =>
     ? value.value
     : { kind: "UnaryExpression", operator: "!", value };
 
-export const getTestExpression = ({
-  test,
-  testKind,
-}: {
-  test: SymbolicValue;
-  testKind: TestKind;
-}): SymbolicValue =>
-  testKind === "nullish"
+export const getTestExpression = (
+  branch: Pick<ConditionalValue, "test" | "testKind">,
+): SymbolicValue =>
+  branch.testKind === "nullish"
     ? {
         kind: "BinaryExpression",
         operator: "!=",
-        left: test,
+        left: branch.test,
         right: { kind: "Primitive", value: null },
       }
-    : test;
+    : branch.test;
 
 export const getKnownTruthiness = (value: SymbolicValue): boolean | null => {
   switch (value.kind) {

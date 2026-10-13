@@ -45,29 +45,27 @@ export const isReactElementType = (type: Type): boolean =>
 const skipParentheses = (node: Node): Node =>
   isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
-const nodeIndexes = new WeakMap<SourceFile, Map<string, Node>>();
+const nodesByRangeCache = new WeakMap<SourceFile, Map<string, Node>>();
 
 const getRangeKey = (start: number, end: number): string => `${start}:${end}`;
 
-const getNodeIndex = (sourceFile: SourceFile): Map<string, Node> => {
-  let index = nodeIndexes.get(sourceFile);
-  if (!index) {
-    const nodes = new Map<string, Node>();
-    const visit = (node: Node): void => {
-      nodes.set(getRangeKey(node.getStart(sourceFile), node.getEnd()), node);
-      node.forEachChild(visit);
-    };
-    sourceFile.forEachChild(visit);
-    index = nodes;
-    nodeIndexes.set(sourceFile, index);
-  }
-  return index;
+const getNodesByRange = (sourceFile: SourceFile): Map<string, Node> => {
+  const cachedNodes = nodesByRangeCache.get(sourceFile);
+  if (cachedNodes) return cachedNodes;
+  const nodesByRange = new Map<string, Node>();
+  const visit = (node: Node): void => {
+    nodesByRange.set(getRangeKey(node.getStart(sourceFile), node.getEnd()), node);
+    node.forEachChild(visit);
+  };
+  sourceFile.forEachChild(visit);
+  nodesByRangeCache.set(sourceFile, nodesByRange);
+  return nodesByRange;
 };
 
 export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
   loc === GeneratedSource
     ? null
-    : (getNodeIndex(sourceFile).get(getRangeKey(loc.start.index, loc.end.index)) ?? null);
+    : (getNodesByRange(sourceFile).get(getRangeKey(loc.start.index, loc.end.index)) ?? null);
 
 const resolveSymbol = (checker: Checker, node: Node) => {
   const nameNode = isPropertyAccessExpression(node) ? node.name : node;
@@ -78,24 +76,22 @@ const resolveSymbol = (checker: Checker, node: Node) => {
 };
 
 export const getDeclarationKey = (checker: Checker, node: Node): string | null => {
-  const target = resolveSymbol(checker, node);
-  const [declaration] = target?.declarations ?? [];
-  if (!target) return null;
-  return declaration ? `${declaration.path}#${target.name}` : null;
+  const symbol = resolveSymbol(checker, node);
+  const [declaration] = symbol?.declarations ?? [];
+  return symbol && declaration ? `${declaration.path}#${symbol.name}` : null;
 };
 
-// React 19 renders a context itself as its provider.
 export const getContextKey = (checker: Checker, node: Node): string | null =>
   isPropertyAccessExpression(node) && node.name.text === "Provider"
     ? getDeclarationKey(checker, node.expression)
     : getDeclarationKey(checker, node);
 
 export const getReactExportName = (checker: Checker, node: Node): string | null => {
-  const target = resolveSymbol(checker, node);
-  return target?.declarations.some((declaration) =>
+  const symbol = resolveSymbol(checker, node);
+  return symbol?.declarations.some((declaration) =>
     REACT_DECLARATION_PATTERN.test(declaration.path),
   )
-    ? target.name
+    ? symbol.name
     : null;
 };
 
@@ -128,10 +124,10 @@ export const collectExportNames = (sourceFile: SourceFile): Map<string, string> 
       statement.exportClause &&
       isNamedExports(statement.exportClause)
     ) {
-      for (const element of statement.exportClause.elements) {
+      for (const specifier of statement.exportClause.elements) {
         exportNames.set(
-          element.propertyName?.getText(sourceFile) ?? element.name.getText(sourceFile),
-          element.name.getText(sourceFile),
+          specifier.propertyName?.getText(sourceFile) ?? specifier.name.getText(sourceFile),
+          specifier.name.getText(sourceFile),
         );
       }
     }

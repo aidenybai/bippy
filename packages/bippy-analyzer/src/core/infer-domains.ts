@@ -388,31 +388,31 @@ export class DomainResolver {
   }
 
   /** For each member of a union of objects, the values it gives a field, like a query's status. */
-  getMemberCases(loc: SourceLocation, field: string): AbstractValue[][] | null {
+  getUnionMemberValues(loc: SourceLocation, field: string): AbstractValue[][] | null {
     const type = this.#getType(loc);
     if (!type?.isUnionType()) return null;
     const members = type.getTypes();
-    const memberCases: AbstractValue[][] = [];
+    const unionMemberValues: AbstractValue[][] = [];
     for (const member of members) {
       if (member.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
-        memberCases.push([{ kind: "Literal", value: undefined }]);
+        unionMemberValues.push([{ kind: "Literal", value: undefined }]);
         continue;
       }
       if (!(member.flags & (TypeFlags.Object | TypeFlags.Intersection))) return null;
       const property = this.#checker.getPropertyOfType(member, field);
       if (!property) {
-        memberCases.push([{ kind: "Literal", value: undefined }]);
+        unionMemberValues.push([{ kind: "Literal", value: undefined }]);
         continue;
       }
       const propertyType = this.#checker.getTypeOfSymbol(property);
       if (!propertyType) return null;
-      memberCases.push(
+      unionMemberValues.push(
         (propertyType.isUnionType() ? propertyType.getTypes() : [propertyType]).map((memberType) =>
           getAbstractValue(this.#checker, memberType),
         ),
       );
     }
-    return memberCases;
+    return unionMemberValues;
   }
 
   getSamples(loc: SourceLocation, name: string | null = null): Sample[] {
