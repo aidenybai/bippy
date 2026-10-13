@@ -1622,32 +1622,26 @@ export class Interpreter {
   }
 
   #callBinding(callee: BindingValue, args: SymbolicValue[], state: WalkState): void {
-    if (callee.binding.kind === "prop")
-      this.#collected.delegates.push(formatPlace(callee.binding, callee.path));
-    const [setterField] = callee.path;
-    const field =
-      callee.path.length === 1 && setterField
-        ? this.#contextSetters.get(callee.binding.id)?.get(setterField)
-        : undefined;
-    const assignments =
-      callee.path.length === 1 && setterField
-        ? this.#storeActions.get(callee.binding.id)?.get(setterField)
-        : undefined;
-    if (field) this.#setContextField(callee.binding, field, args[0], state);
-    else if (assignments)
-      this.#recordUpdate(
-        callee.binding,
+    const { binding, path } = callee;
+    if (binding.kind === "prop") this.#collected.delegates.push(formatPlace(binding, path));
+    const member = path.length === 1 ? path[0] : undefined;
+    const contextField = member && this.#contextSetters.get(binding.id)?.get(member);
+    if (contextField) return this.#setContextField(binding, contextField, args[0], state);
+    const assignments = member && this.#storeActions.get(binding.id)?.get(member);
+    if (assignments)
+      return this.#recordUpdate(
+        binding,
         {
           kind: "ObjectExpression",
           properties: assignments.map((assignment) => ({
             key: assignment.field,
-            value: this.#getStoreFieldValue(callee.binding, assignment, args),
+            value: this.#getStoreFieldValue(binding, assignment, args),
           })),
-          spreads: [createBindingValue(callee.binding)],
+          spreads: [createBindingValue(binding)],
         },
         state,
       );
-    else if (isExternalSource(callee.binding)) this.#recordExternalUpdate(callee, state);
+    if (isExternalSource(binding)) this.#recordExternalUpdate(callee, state);
   }
 
   // Async because a provider may not be mounted, and default context setters are often no-ops.
