@@ -22,6 +22,8 @@ export class EffectCollector {
   readonly #updates: StateUpdate[] = [];
   readonly #delegates: string[] = [];
   readonly #mutations = new Map<number, Mutation>();
+  /** State passed to a function that may mutate it, like a library's `remove(items, item)`. */
+  readonly #possibleMutations = new Map<number, Binding>();
   readonly #warn: Warn;
 
   constructor(warn: Warn) {
@@ -32,13 +34,18 @@ export class EffectCollector {
     if (!this.#mutations.has(binding.id)) this.#mutations.set(binding.id, { binding, loc });
   }
 
+  addPossibleMutation(binding: Binding): void {
+    this.#possibleMutations.set(binding.id, binding);
+  }
+
   addDelegate(name: string): void {
     this.#delegates.push(name);
   }
 
   forgetMutations(value: SymbolicValue): SymbolicValue {
     return mapSymbolicValue(value, (part) =>
-      part.kind === "Binding" && this.#mutations.has(part.binding.id)
+      part.kind === "Binding" &&
+      (this.#mutations.has(part.binding.id) || this.#possibleMutations.has(part.binding.id))
         ? createUnknown("mutated", GeneratedSource)
         : part,
     );
@@ -90,6 +97,9 @@ export class EffectCollector {
       );
       this.push(binding, createUnknown("mutated", GeneratedSource), [], false);
     }
+    for (const binding of this.#possibleMutations.values())
+      if (!this.hasUpdate(binding))
+        this.push(binding, createUnknown("mutated", GeneratedSource), [], false);
     return { updates: this.#updates, delegates: this.#delegates };
   }
 }

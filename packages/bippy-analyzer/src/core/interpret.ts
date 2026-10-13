@@ -78,6 +78,7 @@ import { eachTerminalSuccessor } from "../react-compiler/HIR/visitors";
 import {
   getDeclarationLocation,
   getIdentifierName,
+  getConditionallyMutatedPlace,
   getMutatedPlace,
   getPlaceOrSpread,
   isFunctionCreation,
@@ -461,7 +462,16 @@ export class Interpreter {
     const mutatedLocals = new Set<SymbolicValue>();
     for (const effect of instruction.effects ?? []) {
       const place = getMutatedPlace(effect);
-      if (!place) continue;
+      if (!place) {
+        const possiblePlace = getConditionallyMutatedPlace(effect);
+        const possibleOperand =
+          possiblePlace && possiblePlace.identifier.type.kind !== "Primitive"
+            ? this.#read(possiblePlace)
+            : null;
+        if (possibleOperand?.kind === "Binding" && isStateBinding(possibleOperand.binding))
+          this.#effects?.addPossibleMutation(possibleOperand.binding);
+        continue;
+      }
       const operand = this.#read(place);
       if (
         (operand.kind === "ArrayExpression" || operand.kind === "ObjectExpression") &&

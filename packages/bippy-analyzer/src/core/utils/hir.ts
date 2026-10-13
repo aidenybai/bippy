@@ -30,7 +30,12 @@ export const getMutatedPlace = (effect: AliasingEffect): Place | null => {
   }
 };
 
-export const getIdentifierName = (place: Place): string | null =>
+export const getConditionallyMutatedPlace = (effect: AliasingEffect): Place | null =>
+  effect.kind === "MutateConditionally" || effect.kind === "MutateTransitiveConditionally"
+    ? effect.value
+    : null;
+
+export const getIdentifierName =(place: Place): string | null =>
   place.identifier.name?.value ?? null;
 
 export const getDeclarationLocation = (place: Place): SourceLocation =>

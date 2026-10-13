@@ -136,6 +136,28 @@ exports[`fixture analysis > Dashboard keeps its states, transitions and unreacha
       └─ on mount → S3 (async)"
 `;
 
+exports[`fixture analysis > Deck keeps its states, transitions and unreachable branches 1`] = `
+"Deck src/possible-mutation.tsx:5
+├─ data
+│  ├─ cards state string[] = []
+│  └─ count state number = 0  integer ≥ 0
+├─ render
+│  └─ <div>
+│     ├─ ◆ cards.length === 0
+│     │  ├─ ✓ <p> "Empty"
+│     │  └─ ✗ <p> "Cards"
+│     └─ <button onClick ⇒ count = count + 1; cards = Unknown(mutated)>
+│        ├─ "Shuffle "
+│        └─ {count}
+└─ states (2)
+   ├─ S1 cards.length === 0
+   │  ├─ <div> <p> "Empty" <button> "Shuffle " {count}
+   │  └─ "Shuffle" {count} → S2
+   └─ S2 cards.length !== 0
+      ├─ <div> <p> "Cards" <button> "Shuffle " {count}
+      └─ "Shuffle" {count} → S1"
+`;
+
 exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
 "EditButton src/access.tsx:5
 ├─ data
