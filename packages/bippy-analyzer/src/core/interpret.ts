@@ -132,6 +132,14 @@ interface CompilationTables {
   branchOperators: Map<BlockId, BranchOperator>;
 }
 
+type CallTarget =
+  | { kind: "Portal"; children: SymbolicValue }
+  | { kind: "ProjectHook"; projectHook: ProjectHook }
+  | { kind: "Store"; storeKey: string; storeModel: StoreModel }
+  | { kind: "Hook"; hookKind: HookKind }
+  | { kind: "ModuleFunction"; fn: HIRFunction }
+  | { kind: "Value" };
+
 interface Mutation {
   binding: Binding;
   loc: SourceLocation;
@@ -676,6 +684,40 @@ export class Interpreter {
     this.#recordUpdate(dispatch.binding, next, state);
   }
 
+  #recordWholeProps(args: SymbolicValue[], argumentPlaces: Place[]): void {
+    const propsPlace = argumentPlaces[args.findIndex((argument) => argument.kind === "Props")];
+    if (propsPlace) this.#wholePropsSample ??= this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
+  }
+
+  #getCallTarget(
+    callee: SymbolicValue,
+    calleePlace: Place,
+    args: SymbolicValue[],
+    loc: SourceLocation,
+  ): CallTarget {
+    // A portal renders its children in place, only into another container.
+    if (this.#resolver.getReactExportName(loc) === "createPortal" && args[0])
+      return { kind: "Portal", children: args[0] };
+    const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
+    if (hookKind === "Custom") {
+      const projectHook = this.#findProjectHook(calleePlace);
+      if (projectHook)
+        return this.#inlineDepth < MAX_INLINE_DEPTH
+          ? { kind: "ProjectHook", projectHook }
+          : { kind: "Hook", hookKind };
+      const storeKey = this.#resolver.getDeclarationKey(calleePlace.loc);
+      const storeModel = storeKey ? this.#storeModels.get(storeKey) : undefined;
+      if (storeKey && storeModel) return { kind: "Store", storeKey, storeModel };
+    }
+    if (hookKind !== null) return { kind: "Hook", hookKind };
+    // A helper given a callback may wrap it or call it later, so inline it.
+    const moduleFunction =
+      callee.kind === "Global" && getPassedCallbacks(args).length > 0
+        ? this.#moduleFunctionLoaders.get(this.#resolver)?.(callee.name)
+        : null;
+    return moduleFunction ? { kind: "ModuleFunction", fn: moduleFunction } : { kind: "Value" };
+  }
+
   #evaluateCall(
     callee: SymbolicValue,
     calleePlace: Place,
@@ -684,33 +726,39 @@ export class Interpreter {
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
-    const propsPlace = argumentPlaces[args.findIndex((argument) => argument.kind === "Props")];
-    if (propsPlace) this.#wholePropsSample ??= this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
-    // A portal renders its children in place, only into another container.
-    if (this.#resolver.getReactExportName(loc) === "createPortal" && args[0]) return args[0];
-    const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
-    const projectHook = hookKind === "Custom" ? this.#findProjectHook(calleePlace) : null;
-    if (projectHook && this.#inlineDepth < MAX_INLINE_DEPTH) {
-      this.#functionResolvers.set(projectHook.fn, projectHook.resolver);
-      this.#moduleFunctionLoaders.set(projectHook.resolver, projectHook.loadModuleFunction);
-      return this.#callFunction(this.#registerFunction(projectHook.fn), args, loc, state);
+    this.#recordWholeProps(args, argumentPlaces);
+    const target = this.#getCallTarget(callee, calleePlace, args, loc);
+    switch (target.kind) {
+      case "Portal":
+        return target.children;
+      case "ProjectHook":
+        this.#functionResolvers.set(target.projectHook.fn, target.projectHook.resolver);
+        this.#moduleFunctionLoaders.set(
+          target.projectHook.resolver,
+          target.projectHook.loadModuleFunction,
+        );
+        return this.#callFunction(this.#registerFunction(target.projectHook.fn), args, loc, state);
+      case "Store":
+        return this.#readStore(target.storeKey, target.storeModel, callee, args, loc, state);
+      case "Hook":
+        return this.#evaluateHookCall(target.hookKind, callee, args, argumentPlaces, loc, state);
+      case "ModuleFunction":
+        return this.#callFunction(this.#registerFunction(target.fn), args, loc, state);
+      case "Value":
+        return this.#callValue(callee, calleePlace, args, argumentPlaces, loc, state);
+      default:
+        return assertExhaustive(target, "Unhandled call target");
     }
-    const storeKey =
-      hookKind === "Custom" && !projectHook
-        ? this.#resolver.getDeclarationKey(calleePlace.loc)
-        : null;
-    const storeModel = storeKey ? this.#storeModels.get(storeKey) : undefined;
-    if (storeKey && storeModel)
-      return this.#readStore(storeKey, storeModel, callee, args, loc, state);
-    if (hookKind !== null)
-      return this.#evaluateHookCall(hookKind, callee, args, argumentPlaces, loc, state);
-    const moduleFunction =
-      callee.kind === "Global" && getPassedCallbacks(args).length > 0
-        ? this.#moduleFunctionLoaders.get(this.#resolver)?.(callee.name)
-        : null;
-    // A helper given a callback may wrap it or call it later, so inline it.
-    if (moduleFunction)
-      return this.#callFunction(this.#registerFunction(moduleFunction), args, loc, state);
+  }
+
+  #callValue(
+    callee: SymbolicValue,
+    calleePlace: Place,
+    args: SymbolicValue[],
+    argumentPlaces: Place[],
+    loc: SourceLocation,
+    state: WalkState,
+  ): SymbolicValue {
     switch (callee.kind) {
       case "Function":
         return this.#callFunction(callee, args, loc, state);
