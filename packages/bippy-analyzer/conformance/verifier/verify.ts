@@ -1,4 +1,4 @@
-import { availableParallelism } from "node:os";
+import { availableParallelism, totalmem } from "node:os";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
@@ -56,6 +56,10 @@ export const startProjectHarness = async (
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 const MAX_PAGES = 8;
+// A page's renderer measured near 0.5 GB and the analyzer with its dev server near 4.5 GB, so
+// these leave headroom for growth over a long run.
+const PAGE_MEMORY_BYTES = 1.5 * 1024 ** 3;
+const RESERVED_MEMORY_BYTES = 5 * 1024 ** 3;
 
 // HACK: retries flaky harness loads, and aborts external requests and post-load navigations so no
 // component hangs on the network.
@@ -184,7 +188,15 @@ export const verifyProject = async (
     }
   };
   try {
-    const pageCount = Math.min(MAX_PAGES, availableParallelism(), components.length);
+    const pageCount = Math.max(
+      1,
+      Math.min(
+        MAX_PAGES,
+        availableParallelism(),
+        Math.floor((totalmem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
+        components.length,
+      ),
+    );
     await Promise.all(Array.from({ length: pageCount }, runPage));
   } finally {
     await browser.close();
