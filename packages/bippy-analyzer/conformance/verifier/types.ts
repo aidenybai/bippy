@@ -1,4 +1,5 @@
 import type { ComponentAnalysis, Sample } from "../../src/core/types.js";
+import type { MountFailure } from "./reasons.js";
 
 export const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 export const SETUP_PATH = "/__bippy_verify_setup.tsx";
@@ -33,6 +34,7 @@ export interface Capture {
   firstCommitShapes: Shape[] | null;
   error: string | null;
   errorDepth: number | null;
+  failure: MountFailure | null;
 }
 
 export interface ActionTarget {

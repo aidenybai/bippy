@@ -9,7 +9,7 @@ import { exploreComponent } from "./driver.js";
 import { collectMutationProbes } from "./mutation.js";
 import { collectProbes, scoreComponent } from "./score.js";
 import type { ComponentVerdict } from "./score.js";
-import { classifyMountError } from "./reasons.js";
+import { HarnessError, classifyMountError } from "./reasons.js";
 import { readHarnessSetup, startHarness } from "./server.js";
 import type { Harness } from "./server.js";
 
@@ -148,7 +148,7 @@ export const verifyProject = async (
           ...scoreComponent(component.analysis, component.report, [], knownComponents),
           status: "mount-failed",
           error: message,
-          mountFailure: classifyMountError(message),
+          mountFailure: error instanceof HarnessError ? error.failure : classifyMountError(message),
         },
         isPageBroken: true,
       };

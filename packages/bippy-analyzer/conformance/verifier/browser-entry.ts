@@ -14,6 +14,7 @@ import type { ComponentType, ErrorInfo, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../src/core/types.js";
+import type { MountFailure } from "./reasons.js";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot.js";
 import { STAND_IN } from "./stubs/stand-in.js";
 import { PROVIDERS_PATH, SETUP_PATH, TRUNCATED_VALUE, WRAPPER_PATH } from "./types.js";
@@ -500,7 +501,11 @@ const settle = async (): Promise<void> => {
 
 const getRecordedError = (): RecordedError | null => renderError ?? caughtError;
 
-const createEmptyCapture = (error: string, errorDepth: number | null = null): Capture => ({
+const createEmptyCapture = (
+  error: string,
+  errorDepth: number | null = null,
+  failure: MountFailure | null = null,
+): Capture => ({
   shapes: [],
   hookStates: [],
   probes: takeProbeHits(),
@@ -509,16 +514,23 @@ const createEmptyCapture = (error: string, errorDepth: number | null = null): Ca
   firstCommitShapes: null,
   error,
   errorDepth,
+  failure,
 });
 
 const capture = (): Capture => {
   const fiber = findMountedFiber();
   if (!fiber) {
     const error = getRecordedError();
-    return createEmptyCapture(error?.message ?? "component did not render", error?.depth);
+    return error
+      ? createEmptyCapture(error.message, error.depth)
+      : createEmptyCapture("component did not render", null, "did-not-render");
   }
   if (isTooLarge(fiber))
-    return createEmptyCapture(`component rendered more than ${MAX_CAPTURED_FIBERS} fibers`);
+    return createEmptyCapture(
+      `component rendered more than ${MAX_CAPTURED_FIBERS} fibers`,
+      null,
+      "too-large",
+    );
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
     hookStates: readHookStates(fiber),
@@ -527,6 +539,7 @@ const capture = (): Capture => {
     firstCommitShapes: null,
     error: renderError?.message ?? null,
     errorDepth: renderError?.depth ?? null,
+    failure: null,
   };
 };
 

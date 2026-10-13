@@ -1,3 +1,5 @@
+import type { Capture } from "./types.js";
+
 export type MountFailure =
   | "server-component"
   | "env"
@@ -44,9 +46,6 @@ const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
       /Cannot read properties of (?:undefined|null)|is not a function|Cannot destructure|Invalid time value/,
   },
   { failure: "navigation", pattern: /Execution context was destroyed/ },
-  { failure: "did-not-render", pattern: /did not render/ },
-  { failure: "too-large", pattern: /rendered more than \d+ fibers/ },
-  { failure: "unresponsive", pattern: /page stopped responding/ },
 ];
 
 const PARENT_NAME_PATTERNS = [
@@ -58,6 +57,18 @@ const PARENT_NAME_PATTERNS = [
 
 export const getParentName = (message: string): string | null =>
   PARENT_NAME_PATTERNS.map((pattern) => pattern.exec(message)?.[1]).find(Boolean) ?? null;
+
+export class HarnessError extends Error {
+  readonly failure: MountFailure;
+
+  constructor(failure: MountFailure, message: string) {
+    super(message);
+    this.failure = failure;
+  }
+}
+
+export const getCaptureFailure = (capture: Capture): MountFailure =>
+  capture.failure ?? classifyMountError(capture.error ?? "");
 
 export const classifyMountError = (message: string): MountFailure =>
   MOUNT_FAILURE_PATTERNS.find(({ pattern }) => pattern.test(message))?.failure ?? "other";

@@ -27,7 +27,7 @@ import {
   toExpected,
 } from "./match.js";
 import { scoreWarnings } from "./mutation.js";
-import { classifyMountError } from "./reasons.js";
+import { getCaptureFailure } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Probe } from "./server.js";
 
@@ -255,12 +255,12 @@ export const scoreComponent = (
       (observation) => observation.after.error && observation.after.shapes.length === 0,
     )
   ) {
-    const error = observations[0]?.after.error ?? "nothing was mounted";
+    const first = observations[0]?.after;
     return {
       ...verdict,
       status: "mount-failed",
-      error,
-      mountFailure: classifyMountError(error),
+      error: first?.error ?? "nothing was mounted",
+      mountFailure: first ? getCaptureFailure(first) : "did-not-render",
     };
   }
 

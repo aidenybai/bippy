@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 import type { ComponentAnalysis, Sample } from "../../src/core/types.js";
 import { normalizeShapes } from "./match.js";
-import { classifyMountError } from "./reasons.js";
+import { HarnessError, getCaptureFailure } from "./reasons.js";
 import type { MountFailure } from "./reasons.js";
 import type { Action, Capture, MountRequest, ProjectIndex, Wrapper } from "./types.js";
 import { getPropCombinations } from "./props.js";
@@ -29,7 +29,10 @@ const withTimeout = <Result>(promise: Promise<Result>): Promise<Result> =>
     promise,
     new Promise<never>((_, reject) =>
       setTimeout(
-        () => reject(new Error(`page stopped responding after ${PAGE_TIMEOUT_MS} ms`)),
+        () =>
+          reject(
+            new HarnessError("unresponsive", `page stopped responding after ${PAGE_TIMEOUT_MS} ms`),
+          ),
         PAGE_TIMEOUT_MS,
       ).unref(),
     ),
@@ -83,7 +86,7 @@ export const resolveWrappers = async (
   for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && layers.length <= MAX_WRAPPERS; attempt++) {
     const capture = await mountInPage(page, { ...request, wrappers: getWrappers() });
     if (!capture.error || capture.shapes.length > 0) break;
-    const failure = classifyMountError(capture.error);
+    const failure = getCaptureFailure(capture);
     const thrower = capture.errorDepth === null ? undefined : layers[capture.errorDepth];
     if (newest) {
       const newestIndex = layers.indexOf(newest);
