@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { test as base, expect } from "@playwright/test";
+import playwrightTest, { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
 import { analyzeProject } from "../../../src/core/analyze-project";
@@ -65,7 +65,7 @@ const toSample = (value: unknown): Sample => {
   throw new Error(`Can't pass ${typeof value} as a prop`);
 };
 
-export const test = base.extend<VerifyFixtures, VerifyWorkerFixtures>({
+export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>({
   repo: ["", { scope: "worker", option: true }],
   project: [
     async ({ repo: repoId }, use) => {

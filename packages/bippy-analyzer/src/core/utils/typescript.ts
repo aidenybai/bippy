@@ -1,6 +1,18 @@
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { Node, SourceFile } from "typescript/unstable/ast";
-import * as t from "typescript/unstable/ast/is";
+import {
+  isBinaryExpression,
+  isExportAssignment,
+  isExportDeclaration,
+  isExpressionStatement,
+  isFunctionDeclaration,
+  isIdentifier,
+  isNamedExports,
+  isParenthesizedExpression,
+  isPropertyAccessExpression,
+  isStringLiteral,
+  isVariableStatement,
+} from "typescript/unstable/ast/is";
 import type { Checker, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
@@ -31,7 +43,7 @@ export const isReactElementType = (type: Type): boolean =>
   );
 
 const skipParentheses = (node: Node): Node =>
-  t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
+  isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
 const nodeIndexes = new WeakMap<SourceFile, Map<string, Node>>();
 
@@ -58,8 +70,8 @@ export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation):
     : (getNodeIndex(sourceFile).get(getRangeKey(loc.start.index, loc.end.index)) ?? null);
 
 const resolveSymbol = (checker: Checker, node: Node) => {
-  const nameNode = t.isPropertyAccessExpression(node) ? node.name : node;
-  if (!t.isIdentifier(nameNode)) return null;
+  const nameNode = isPropertyAccessExpression(node) ? node.name : node;
+  if (!isIdentifier(nameNode)) return null;
   const symbol = checker.getSymbolAtLocation(nameNode);
   if (!symbol) return null;
   return symbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
@@ -74,7 +86,7 @@ export const getDeclarationKey = (checker: Checker, node: Node): string | null =
 
 // React 19 renders a context itself as its provider.
 export const getContextKey = (checker: Checker, node: Node): string | null =>
-  t.isPropertyAccessExpression(node) && node.name.text === "Provider"
+  isPropertyAccessExpression(node) && node.name.text === "Provider"
     ? getDeclarationKey(checker, node.expression)
     : getDeclarationKey(checker, node);
 
@@ -96,25 +108,25 @@ export const collectExportNames = (sourceFile: SourceFile): Map<string, string> 
   const exportNames = new Map<string, string>();
   for (const statement of sourceFile.statements) {
     const isExported = hasModifier(statement, SyntaxKind.ExportKeyword);
-    if (t.isFunctionDeclaration(statement) && isExported) {
+    if (isFunctionDeclaration(statement) && isExported) {
       const name = statement.name?.text ?? "default";
       exportNames.set(name, hasModifier(statement, SyntaxKind.DefaultKeyword) ? "default" : name);
     }
-    if (t.isVariableStatement(statement) && isExported) {
+    if (isVariableStatement(statement) && isExported) {
       for (const declaration of statement.declarationList.declarations) {
-        if (t.isIdentifier(declaration.name))
+        if (isIdentifier(declaration.name))
           exportNames.set(declaration.name.text, declaration.name.text);
       }
     }
-    if (t.isExportAssignment(statement)) {
+    if (isExportAssignment(statement)) {
       const expression = skipParentheses(statement.expression);
-      exportNames.set(t.isIdentifier(expression) ? expression.text : "default", "default");
+      exportNames.set(isIdentifier(expression) ? expression.text : "default", "default");
     }
     if (
-      t.isExportDeclaration(statement) &&
+      isExportDeclaration(statement) &&
       !statement.moduleSpecifier &&
       statement.exportClause &&
-      t.isNamedExports(statement.exportClause)
+      isNamedExports(statement.exportClause)
     ) {
       for (const element of statement.exportClause.elements) {
         exportNames.set(
@@ -130,20 +142,17 @@ export const collectExportNames = (sourceFile: SourceFile): Map<string, string> 
 export const collectDisplayNames = (sourceFile: SourceFile): Map<string, string | null> => {
   const displayNames = new Map<string, string | null>();
   for (const statement of sourceFile.statements) {
-    if (!t.isExpressionStatement(statement)) continue;
+    if (!isExpressionStatement(statement)) continue;
     const expression = skipParentheses(statement.expression);
-    if (
-      !t.isBinaryExpression(expression) ||
-      expression.operatorToken.kind !== SyntaxKind.EqualsToken
-    )
+    if (!isBinaryExpression(expression) || expression.operatorToken.kind !== SyntaxKind.EqualsToken)
       continue;
     const { left, right } = expression;
     if (
-      t.isPropertyAccessExpression(left) &&
+      isPropertyAccessExpression(left) &&
       left.name.text === "displayName" &&
-      t.isIdentifier(left.expression)
+      isIdentifier(left.expression)
     ) {
-      displayNames.set(left.expression.text, t.isStringLiteral(right) ? right.text : null);
+      displayNames.set(left.expression.text, isStringLiteral(right) ? right.text : null);
     }
   }
   return displayNames;

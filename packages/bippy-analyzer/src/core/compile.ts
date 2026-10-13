@@ -1,4 +1,4 @@
-import { parseSync, traverse, types as t } from "@babel/core";
+import { parseSync, traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
 import { compileFn } from "../react-compiler/Entrypoint/Pipeline";
 import { compileProgram } from "../react-compiler/Entrypoint/Program";
@@ -11,7 +11,7 @@ import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 
 type BabelFunction = NodePath<
-  t.FunctionDeclaration | t.FunctionExpression | t.ArrowFunctionExpression
+  types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression
 >;
 
 export interface CompiledFunction {
@@ -33,7 +33,7 @@ const STOP_PASS = "InferReactivePlaces";
 const ANONYMOUS_NAME = "<anonymous>";
 const COMPONENT_NAME_PATTERN = /^[A-Z]/;
 
-const getLocationKey = (loc: t.SourceLocation): string => `${loc.start.index}:${loc.end.index}`;
+const getLocationKey = (loc: types.SourceLocation): string => `${loc.start.index}:${loc.end.index}`;
 
 const describeEvent = (event: LoggerEvent): string | null => {
   switch (event.kind) {
@@ -49,21 +49,21 @@ const describeEvent = (event: LoggerEvent): string | null => {
   }
 };
 
-const getFunctionName = (path: NodePath<t.Function>, code: string): string => {
-  if (t.isFunctionDeclaration(path.node) && path.node.id) return path.node.id.name;
+const getFunctionName = (path: NodePath<types.Function>, code: string): string => {
+  if (types.isFunctionDeclaration(path.node) && path.node.id) return path.node.id.name;
   const parent = path.parentPath?.node;
-  if (t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)) return parent.id.name;
-  if (t.isAssignmentExpression(parent) && parent.right === path.node)
+  if (types.isVariableDeclarator(parent) && types.isIdentifier(parent.id)) return parent.id.name;
+  if (types.isAssignmentExpression(parent) && parent.right === path.node)
     return code.slice(parent.left.start ?? 0, parent.left.end ?? 0);
-  if (t.isObjectProperty(parent) && t.isIdentifier(parent.key)) return parent.key.name;
-  if (t.isAssignmentPattern(parent) && t.isIdentifier(parent.left)) return parent.left.name;
+  if (types.isObjectProperty(parent) && types.isIdentifier(parent.key)) return parent.key.name;
+  if (types.isAssignmentPattern(parent) && types.isIdentifier(parent.left)) return parent.left.name;
   const ancestor = path.findParent(
     (candidate) => !candidate.isCallExpression() && !candidate.isTSAsExpression(),
   );
-  if (ancestor?.isVariableDeclarator() && t.isIdentifier(ancestor.node.id))
+  if (ancestor?.isVariableDeclarator() && types.isIdentifier(ancestor.node.id))
     return ancestor.node.id.name;
   if (ancestor?.isExportDefaultDeclaration()) return "default";
-  return t.isFunctionExpression(path.node) && path.node.id ? path.node.id.name : ANONYMOUS_NAME;
+  return types.isFunctionExpression(path.node) && path.node.id ? path.node.id.name : ANONYMOUS_NAME;
 };
 
 // A function that fails before lowering never reports its type, so infer it from the name.
@@ -84,7 +84,7 @@ export const compileFile = (
   if (!ast) return { functions: [], compileModuleFunction: () => null };
 
   const functions = new Map<string, CompiledFunction>();
-  const getFunction = (loc: t.SourceLocation): CompiledFunction => {
+  const getFunction = (loc: types.SourceLocation): CompiledFunction => {
     const key = getLocationKey(loc);
     const compiled = functions.get(key) ?? {
       name: ANONYMOUS_NAME,
@@ -133,7 +133,7 @@ export const compileFile = (
     },
   });
 
-  let programPath: NodePath<t.Program> | null = null;
+  let programPath: NodePath<types.Program> | null = null;
   traverse(ast, {
     Program(path) {
       programPath = path;

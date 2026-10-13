@@ -8,7 +8,16 @@ import {
   isReactElementType,
   isReactType,
 } from "./utils/typescript";
-import * as t from "typescript/unstable/ast/is";
+import {
+  isBindingElement,
+  isCallExpression,
+  isElementAccessExpression,
+  isExpression,
+  isIdentifier,
+  isNumericLiteral,
+  isPropertyAccessExpression,
+  isStringLiteral,
+} from "typescript/unstable/ast/is";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
@@ -326,17 +335,17 @@ export class DomainResolver {
     if (this.#isStrictNullChecks) return false;
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return false;
-    if (t.isCallExpression(node)) return true;
-    const element = t.isBindingElement(node)
+    if (isCallExpression(node)) return true;
+    const element = isBindingElement(node)
       ? node
-      : node.parent && t.isBindingElement(node.parent)
+      : node.parent && isBindingElement(node.parent)
         ? node.parent
         : null;
-    const objectNode = t.isPropertyAccessExpression(node) ? node.expression : element?.parent;
-    const nameNode = t.isPropertyAccessExpression(node)
+    const objectNode = isPropertyAccessExpression(node) ? node.expression : element?.parent;
+    const nameNode = isPropertyAccessExpression(node)
       ? node.name
       : (element?.propertyName ?? element?.name);
-    if (!objectNode || !nameNode || !t.isIdentifier(nameNode)) return false;
+    if (!objectNode || !nameNode || !isIdentifier(nameNode)) return false;
     const objectType = this.#checker.getTypeAtLocation(objectNode);
     const property = objectType && this.#checker.getPropertyOfType(objectType, nameNode.text);
     return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
@@ -346,22 +355,20 @@ export class DomainResolver {
   #isDefaultedBinding(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return false;
-    const element = t.isBindingElement(node) ? node : node.parent;
-    return (
-      element !== undefined && t.isBindingElement(element) && element.initializer !== undefined
-    );
+    const element = isBindingElement(node) ? node : node.parent;
+    return element !== undefined && isBindingElement(element) && element.initializer !== undefined;
   }
 
   // An index signature promises nothing about which keys exist.
   #isIndexedRead(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
-    if (!node || !(t.isElementAccessExpression(node) || t.isPropertyAccessExpression(node)))
+    if (!node || !(isElementAccessExpression(node) || isPropertyAccessExpression(node)))
       return false;
     const objectType = this.#checker.getTypeAtLocation(node.expression);
     if (!objectType || this.#checker.getIndexInfosOfType(objectType).length === 0) return false;
-    const key = t.isPropertyAccessExpression(node)
+    const key = isPropertyAccessExpression(node)
       ? node.name.text
-      : t.isStringLiteral(node.argumentExpression) || t.isNumericLiteral(node.argumentExpression)
+      : isStringLiteral(node.argumentExpression) || isNumericLiteral(node.argumentExpression)
         ? node.argumentExpression.text
         : null;
     return key === null || !this.#checker.getPropertyOfType(objectType, key);
@@ -374,7 +381,7 @@ export class DomainResolver {
   // The name before the compiler renames shadowed ones (`todo` rather than `todo_0`).
   getSourceName(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
-    return node && t.isIdentifier(node) ? node.text : null;
+    return node && isIdentifier(node) ? node.text : null;
   }
 
   getSourceText(loc: SourceLocation): string | null {
@@ -386,18 +393,18 @@ export class DomainResolver {
   getReactExportName(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return null;
-    return getReactExportName(this.#checker, t.isCallExpression(node) ? node.expression : node);
+    return getReactExportName(this.#checker, isCallExpression(node) ? node.expression : node);
   }
 
   getCalleeText(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
-    return node && t.isCallExpression(node) ? node.expression.getText(this.#sourceFile) : null;
+    return node && isCallExpression(node) ? node.expression.getText(this.#sourceFile) : null;
   }
 
   // Compiler-generated tests, like a destructuring default's `=== undefined`, aren't wrappable.
   isExpression(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
-    return node !== null && t.isExpression(node);
+    return node !== null && isExpression(node);
   }
 
   getDeclarationKey(loc: SourceLocation): string | null {
@@ -413,7 +420,7 @@ export class DomainResolver {
   // Nullish members are skipped because `items?.find()` never calls on them.
   isNonMutatingMethod(calleeLoc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, calleeLoc);
-    if (!node || !t.isPropertyAccessExpression(node)) return false;
+    if (!node || !isPropertyAccessExpression(node)) return false;
     const method = node.name.text;
     const type = this.#checker.getTypeAtLocation(node.expression);
     if (!type) return false;

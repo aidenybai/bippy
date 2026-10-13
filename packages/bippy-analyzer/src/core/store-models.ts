@@ -1,32 +1,48 @@
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { Expression, Node, SourceFile } from "typescript/unstable/ast";
-import * as t from "typescript/unstable/ast/is";
+import {
+  isArrowFunction,
+  isBlock,
+  isCallExpression,
+  isExpressionStatement,
+  isFunctionExpression,
+  isIdentifier,
+  isImportDeclaration,
+  isNamedImports,
+  isNumericLiteral,
+  isObjectLiteralExpression,
+  isParenthesizedExpression,
+  isPrefixUnaryExpression,
+  isPropertyAccessExpression,
+  isPropertyAssignment,
+  isReturnStatement,
+  isShorthandPropertyAssignment,
+  isSpreadAssignment,
+  isStringLiteral,
+  isVariableStatement,
+} from "typescript/unstable/ast/is";
 import type { StoreAssignment, StoreFieldValue, StoreModel } from "./types";
 
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;
 const STORE_CREATORS = new Set(["create", "createWithEqualityFn"]);
 
 const skipParentheses = (node: Node): Node =>
-  t.isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
+  isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
-const isFunctionNode = (node: Node): boolean =>
-  t.isArrowFunction(node) || t.isFunctionExpression(node);
+const isFunctionNode = (node: Node): boolean => isArrowFunction(node) || isFunctionExpression(node);
 
 const getParameterNames = (node: Node): string[] =>
-  t.isArrowFunction(node) || t.isFunctionExpression(node)
-    ? node.parameters.map((parameter) =>
-        t.isIdentifier(parameter.name) ? parameter.name.text : "",
-      )
+  isArrowFunction(node) || isFunctionExpression(node)
+    ? node.parameters.map((parameter) => (isIdentifier(parameter.name) ? parameter.name.text : ""))
     : [];
 
 const getCreatorNames = (sourceFile: SourceFile): Set<string> => {
   const names = new Set<string>();
   for (const statement of sourceFile.statements) {
-    if (!t.isImportDeclaration(statement) || !t.isStringLiteral(statement.moduleSpecifier))
-      continue;
+    if (!isImportDeclaration(statement) || !isStringLiteral(statement.moduleSpecifier)) continue;
     if (!STORE_MODULE_PATTERN.test(statement.moduleSpecifier.text)) continue;
     const bindings = statement.importClause?.namedBindings;
-    if (!bindings || !t.isNamedImports(bindings)) continue;
+    if (!bindings || !isNamedImports(bindings)) continue;
     for (const element of bindings.elements)
       if (STORE_CREATORS.has(element.propertyName?.text ?? element.name.text))
         names.add(element.name.text);
@@ -36,26 +52,26 @@ const getCreatorNames = (sourceFile: SourceFile): Set<string> => {
 
 // Unwraps curried `create<State>()(...)` and middleware like `persist(...)`.
 const findCreatorFunction = (initializer: Node, creatorNames: Set<string>): Node | null => {
-  if (!t.isCallExpression(initializer)) return null;
+  if (!isCallExpression(initializer)) return null;
   const callee = initializer.expression;
   const isCreator =
-    (t.isIdentifier(callee) && creatorNames.has(callee.text)) ||
-    (t.isCallExpression(callee) &&
-      t.isIdentifier(callee.expression) &&
+    (isIdentifier(callee) && creatorNames.has(callee.text)) ||
+    (isCallExpression(callee) &&
+      isIdentifier(callee.expression) &&
       creatorNames.has(callee.expression.text));
   if (!isCreator) return null;
   let argument: Node | undefined = initializer.arguments[0];
-  while (argument && t.isCallExpression(argument)) argument = argument.arguments[0];
+  while (argument && isCallExpression(argument)) argument = argument.arguments[0];
   return argument && isFunctionNode(argument) ? argument : null;
 };
 
 const getReturnedObject = (fn: Node): Node | null => {
-  if (!t.isArrowFunction(fn) && !t.isFunctionExpression(fn)) return null;
+  if (!isArrowFunction(fn) && !isFunctionExpression(fn)) return null;
   const body = skipParentheses(fn.body);
-  if (t.isObjectLiteralExpression(body)) return body;
-  if (!t.isBlock(body)) return null;
-  const returned = body.statements.find(t.isReturnStatement)?.expression;
-  return returned && t.isObjectLiteralExpression(skipParentheses(returned))
+  if (isObjectLiteralExpression(body)) return body;
+  if (!isBlock(body)) return null;
+  const returned = body.statements.find(isReturnStatement)?.expression;
+  return returned && isObjectLiteralExpression(skipParentheses(returned))
     ? skipParentheses(returned)
     : null;
 };
@@ -64,8 +80,8 @@ const getLiteralValue = (node: Node): StoreFieldValue | null => {
   if (node.kind === SyntaxKind.TrueKeyword) return { kind: "Literal", value: true };
   if (node.kind === SyntaxKind.FalseKeyword) return { kind: "Literal", value: false };
   if (node.kind === SyntaxKind.NullKeyword) return { kind: "Literal", value: null };
-  if (t.isStringLiteral(node)) return { kind: "Literal", value: node.text };
-  if (t.isNumericLiteral(node)) return { kind: "Literal", value: Number(node.text) };
+  if (isStringLiteral(node)) return { kind: "Literal", value: node.text };
+  if (isNumericLiteral(node)) return { kind: "Literal", value: Number(node.text) };
   return null;
 };
 
@@ -76,15 +92,15 @@ const getFieldValue = (
   stateParameter: string | null,
 ): StoreFieldValue => {
   const expression = skipParentheses(node);
-  if (t.isIdentifier(expression) && actionParameters.includes(expression.text))
+  if (isIdentifier(expression) && actionParameters.includes(expression.text))
     return { kind: "Argument", index: actionParameters.indexOf(expression.text) };
   const literal = getLiteralValue(expression);
   if (literal) return literal;
   if (
-    t.isPrefixUnaryExpression(expression) &&
+    isPrefixUnaryExpression(expression) &&
     expression.operator === SyntaxKind.ExclamationToken &&
-    t.isPropertyAccessExpression(expression.operand) &&
-    t.isIdentifier(expression.operand.expression) &&
+    isPropertyAccessExpression(expression.operand) &&
+    isIdentifier(expression.operand.expression) &&
     expression.operand.expression.text === stateParameter &&
     expression.operand.name.text === field
   )
@@ -96,22 +112,22 @@ const getAssignments = (argument: Node, actionParameters: string[]): StoreAssign
   const expression = skipParentheses(argument);
   const [stateParameter = null] = getParameterNames(expression);
   const object = isFunctionNode(expression) ? getReturnedObject(expression) : expression;
-  if (!object || !t.isObjectLiteralExpression(object)) return null;
+  if (!object || !isObjectLiteralExpression(object)) return null;
   const assignments: StoreAssignment[] = [];
   for (const property of object.properties) {
-    if (t.isSpreadAssignment(property)) continue;
-    if (t.isShorthandPropertyAssignment(property)) {
+    if (isSpreadAssignment(property)) continue;
+    if (isShorthandPropertyAssignment(property)) {
       const { name } = property;
-      if (!t.isIdentifier(name)) return null;
+      if (!isIdentifier(name)) return null;
       assignments.push({
         field: name.text,
         value: getFieldValue(name, name.text, actionParameters, stateParameter),
       });
       continue;
     }
-    if (!t.isPropertyAssignment(property)) return null;
+    if (!isPropertyAssignment(property)) return null;
     const { name } = property;
-    if (!t.isIdentifier(name) && !t.isStringLiteral(name)) return null;
+    if (!isIdentifier(name) && !isStringLiteral(name)) return null;
     assignments.push({
       field: name.text,
       value: getFieldValue(property.initializer, name.text, actionParameters, stateParameter),
@@ -125,8 +141,8 @@ const findSetCalls = (node: Node, setName: string): Node[] => {
   const visit = (current: Node): void => {
     if (isFunctionNode(current)) return;
     if (
-      t.isCallExpression(current) &&
-      t.isIdentifier(current.expression) &&
+      isCallExpression(current) &&
+      isIdentifier(current.expression) &&
       current.expression.text === setName
     )
       calls.push(current);
@@ -137,20 +153,20 @@ const findSetCalls = (node: Node, setName: string): Node[] => {
 };
 
 const getActionAssignments = (action: Node, setName: string): StoreAssignment[] | null => {
-  if (!t.isArrowFunction(action) && !t.isFunctionExpression(action)) return null;
+  if (!isArrowFunction(action) && !isFunctionExpression(action)) return null;
   const parameters = getParameterNames(action);
   const body = skipParentheses(action.body);
   const calls = findSetCalls(action, setName);
-  const onlyStatement = t.isBlock(body) && body.statements.length === 1 ? body.statements[0] : null;
+  const onlyStatement = isBlock(body) && body.statements.length === 1 ? body.statements[0] : null;
   const isOnlySetCall =
     calls.length === 1 &&
     (calls[0] === body ||
       (onlyStatement !== null &&
         onlyStatement !== undefined &&
-        t.isExpressionStatement(onlyStatement) &&
+        isExpressionStatement(onlyStatement) &&
         skipParentheses(onlyStatement.expression) === calls[0]));
   const assignments = calls.flatMap((call) => {
-    const [argument] = t.isCallExpression(call) ? call.arguments : [];
+    const [argument] = isCallExpression(call) ? call.arguments : [];
     return argument ? [getAssignments(argument, parameters)] : [null];
   });
   if (assignments.length === 0 || assignments.some((assigned) => assigned === null)) return null;
@@ -165,16 +181,16 @@ export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreMod
   const creatorNames = getCreatorNames(sourceFile);
   if (creatorNames.size === 0) return models;
   for (const statement of sourceFile.statements) {
-    if (!t.isVariableStatement(statement)) continue;
+    if (!isVariableStatement(statement)) continue;
     for (const declaration of statement.declarationList.declarations) {
-      if (!t.isIdentifier(declaration.name) || !declaration.initializer) continue;
+      if (!isIdentifier(declaration.name) || !declaration.initializer) continue;
       const creator = findCreatorFunction(declaration.initializer, creatorNames);
       const [setName] = creator ? getParameterNames(creator) : [];
       const state = creator ? getReturnedObject(creator) : null;
-      if (!setName || !state || !t.isObjectLiteralExpression(state)) continue;
+      if (!setName || !state || !isObjectLiteralExpression(state)) continue;
       const model: StoreModel = new Map();
       for (const property of state.properties) {
-        if (!t.isPropertyAssignment(property) || !t.isIdentifier(property.name)) continue;
+        if (!isPropertyAssignment(property) || !isIdentifier(property.name)) continue;
         const assignments = getActionAssignments(property.initializer, setName);
         if (assignments) model.set(property.name.text, assignments);
       }
