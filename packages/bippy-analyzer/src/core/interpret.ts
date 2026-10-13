@@ -195,8 +195,6 @@ const getIdentifierName = (place: Place): string | null => place.identifier.name
 const getDeclarationLocation = (place: Place): SourceLocation =>
   place.identifier.loc === GeneratedSource ? place.loc : place.identifier.loc;
 
-const isPropsValue = (value: SymbolicValue): boolean => value.kind === "Props";
-
 const getPlaceOrSpread = (argument: Place | SpreadPattern): Place =>
   argument.kind === "Spread" ? argument.place : argument;
 
@@ -307,7 +305,8 @@ export class Interpreter {
   readonly warnings: Warning[] = [];
   readonly effectCalls: EffectCall[] = [];
   readonly renderedComponents = new Set<string>();
-  propsSample: Sample | null = null;
+  #wholePropsSample: Sample | null = null;
+  #restPropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
   readonly contextSamples = new Map<string, Sample>();
   readonly untypedContexts = new Map<string, number>();
@@ -524,8 +523,8 @@ export class Interpreter {
     }
     for (const property of pattern.properties) {
       if (property.kind === "Spread") {
-        if (value.kind === "Props" && this.propsSample === null)
-          this.propsSample = this.#resolver.getRequiredSample(property.place.loc);
+        if (value.kind === "Props")
+          this.#restPropsSample ??= this.#resolver.getRequiredSample(property.place.loc);
         this.#write(property.place, createUnknown("rest", property.place.loc));
         continue;
       }
@@ -814,9 +813,8 @@ export class Interpreter {
     loc: SourceLocation,
     state: WalkState,
   ): SymbolicValue {
-    const propsPlace = argumentPlaces[args.findIndex(isPropsValue)];
-    if (this.propsSample === null && propsPlace)
-      this.propsSample = this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
+    const propsPlace = argumentPlaces[args.findIndex((argument) => argument.kind === "Props")];
+    if (propsPlace) this.#wholePropsSample ??= this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
     // A portal renders its children in place, only into another container.
     if (this.#resolver.getReactExportName(loc) === "createPortal" && args[0]) return args[0];
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
@@ -1614,6 +1612,10 @@ export class Interpreter {
       this.#resolver = previousResolver;
       this.#walkedCatches = previousCatches;
     }
+  }
+
+  get propsSample(): Sample | null {
+    return this.#wholePropsSample ?? this.#restPropsSample;
   }
 
   evaluateComponent(fn: HIRFunction): SymbolicValue {
