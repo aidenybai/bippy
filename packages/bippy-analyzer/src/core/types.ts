@@ -171,6 +171,10 @@ export type DispatchValue = Extract<SymbolicValue, { kind: "Dispatch" }>;
 
 export type HookResultValue = Extract<SymbolicValue, { kind: "HookResult" }>;
 
+export type ArrayExpressionValue = Extract<SymbolicValue, { kind: "ArrayExpression" }>;
+
+export type ObjectExpressionValue = Extract<SymbolicValue, { kind: "ObjectExpression" }>;
+
 export type WarningKind = "lost-update" | "state-mutation" | "render-mutation" | "prop-mutation";
 
 export interface Warning {

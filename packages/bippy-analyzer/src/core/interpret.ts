@@ -15,6 +15,7 @@ import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type { DomainResolver } from "./infer-domains";
 import type {
+  ArrayExpressionValue,
   Binding,
   BindingKind,
   BindingValue,
@@ -27,6 +28,7 @@ import type {
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
+  ObjectExpressionValue,
   ProvidedContext,
   Sample,
   StoreModel,
@@ -90,7 +92,7 @@ const LENGTH_METHODS = new Map([
   ["toSorted", true],
   ["with", true],
 ]);
-const ITERATION_METHODS =new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
+const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
 
 const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
@@ -113,6 +115,11 @@ interface InterpreterBindingOptions extends BindingOptions {
 interface WalkState {
   guards: SymbolicValue[];
   isAsync: boolean;
+}
+
+interface Definition {
+  guards: SymbolicValue[];
+  loopDepth: number;
 }
 
 interface EffectCall {
@@ -163,6 +170,9 @@ export class Interpreter {
   #effects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
+  /** Where each array or object literal was created, to tell when a mutation always runs. */
+  readonly #definitions = new WeakMap<SymbolicValue, Definition>();
+  #loopDepth = 0;
   #walkedCatches = new Set<BlockId>();
   #inlineDepth = 0;
 
@@ -440,12 +450,20 @@ export class Interpreter {
     this.diagnostics.warn(kind, message, loc, this.#resolver.fileName);
   }
 
-  #trackMutations(instruction: Instruction): void {
+  #trackMutations(instruction: Instruction, state: WalkState): void {
     if (isFunctionCreation(instruction.value)) return;
+    const mutatedLocals = new Set<SymbolicValue>();
     for (const effect of instruction.effects ?? []) {
       const place = getMutatedPlace(effect);
       if (!place) continue;
       const operand = this.#read(place);
+      if (
+        (operand.kind === "ArrayExpression" || operand.kind === "ObjectExpression") &&
+        !mutatedLocals.has(operand)
+      ) {
+        mutatedLocals.add(this.#mutateLocal(instruction, place, operand, state));
+        continue;
+      }
       if (operand.kind !== "Binding") continue;
       const { binding } = operand;
       if (binding.kind === "prop")
@@ -459,6 +477,82 @@ export class Interpreter {
       else if (isStateBinding(binding))
         this.#warn("render-mutation", `mutates ${binding.name} during render`, place.loc);
     }
+  }
+
+  // A mutation on the path that created the value always runs, so it applies as is. Others may
+  // not run, or run many times, so the value widens to cover both. Every alias sees the change.
+  #mutateLocal(
+    instruction: Instruction,
+    place: Place,
+    operand: ArrayExpressionValue | ObjectExpressionValue,
+    state: WalkState,
+  ): SymbolicValue {
+    const definition = this.#definitions.get(operand);
+    const isCertain =
+      definition !== undefined &&
+      definition.guards === state.guards &&
+      definition.loopDepth === this.#loopDepth;
+    const next = this.#getMutatedValue(instruction, place, operand, isCertain);
+    if (isCertain) this.#definitions.set(next, definition);
+    const { values } = this.#getTables();
+    for (const [identifierId, value] of values)
+      if (value === operand) values.set(identifierId, next);
+    return next;
+  }
+
+  #getMutatedValue(
+    instruction: Instruction,
+    place: Place,
+    operand: ArrayExpressionValue | ObjectExpressionValue,
+    isCertain: boolean,
+  ): SymbolicValue {
+    const { value, loc } = instruction;
+    if (
+      operand.kind === "ArrayExpression" &&
+      value.kind === "MethodCall" &&
+      value.receiver.identifier.id === place.identifier.id &&
+      this.#getTables().propertyNames.get(value.property.identifier.id) === "push"
+    ) {
+      const items = value.args.flatMap((argument) =>
+        argument.kind === "Identifier" ? [this.#read(argument)] : [],
+      );
+      const spreads = value.args.flatMap((argument) =>
+        argument.kind === "Spread" ? [this.#read(argument.place)] : [],
+      );
+      return isCertain
+        ? {
+            ...operand,
+            elements: [...operand.elements, ...items],
+            spreads: [...operand.spreads, ...spreads],
+          }
+        : {
+            ...operand,
+            spreads: [
+              ...operand.spreads,
+              ...spreads,
+              ...items.map(
+                (item): SymbolicValue => ({
+                  kind: "ArrayMap",
+                  array: createUnknown("mutation", loc),
+                  item,
+                  loc,
+                }),
+              ),
+            ],
+          };
+    }
+    if (
+      operand.kind === "ObjectExpression" &&
+      value.kind === "PropertyStore" &&
+      value.object.identifier.id === place.identifier.id
+    ) {
+      const property = {
+        key: String(value.property),
+        value: isCertain ? this.#read(value.value) : createUnknown("mutation", loc),
+      };
+      return { ...operand, properties: [...operand.properties, property] };
+    }
+    return createUnknown("mutation", loc);
   }
 
   #getNextValue(
@@ -806,8 +900,11 @@ export class Interpreter {
     const { value } = instruction;
     if (value.kind === "PropertyLoad")
       this.#getTables().propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
-    this.#trackMutations(instruction);
-    this.#write(instruction.lvalue, this.#evaluateInstructionValue(instruction, state));
+    this.#trackMutations(instruction, state);
+    const result = this.#evaluateInstructionValue(instruction, state);
+    if (value.kind === "ArrayExpression" || value.kind === "ObjectExpression")
+      this.#definitions.set(result, { guards: state.guards, loopDepth: this.#loopDepth });
+    this.#write(instruction.lvalue, result);
   }
 
   #evaluateInstructionValue(instruction: Instruction, state: WalkState): SymbolicValue {

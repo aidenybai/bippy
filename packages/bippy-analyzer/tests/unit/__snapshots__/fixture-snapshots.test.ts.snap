@@ -412,6 +412,27 @@ exports[`fixture analysis > StatusBanner keeps its states, transitions and unrea
       └─ never status === "error" L24"
 `;
 
+exports[`fixture analysis > TagEditor keeps its states, transitions and unreachable branches 1`] = `
+"TagEditor src/local-mutations.tsx:3
+├─ data
+│  ├─ title prop string
+│  ├─ tags state string[] = []
+│  └─ header.push(<h2 />) call number
+├─ render
+│  └─ <div>
+│     ├─ {[<h2 />]}
+│     ├─ ◆ tags.length === 0
+│     │  ├─ ✓ <p> "No tags"
+│     │  └─ ✗ <p> "Some tags"
+│     └─ <button onClick ⇒ tags = [...tags, "tag"]> "Add"
+└─ states (2)
+   ├─ S1 tags.length === 0
+   │  ├─ <div> {[<h2 />]} <p> "No tags" <button> "Add"
+   │  └─ "Add" → S2
+   └─ S2 tags.length !== 0
+      └─ <div> {[<h2 />]} <p> "Some tags" <button> "Add""
+`;
+
 exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
 "TagList src/mutation.tsx:3
 ├─ data
