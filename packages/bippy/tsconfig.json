@@ -1,15 +1,21 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
     "jsx": "react",
-    "module": "NodeNext",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
-    "lib": ["esnext", "dom"]
+    "paths": {
+      "bippy": ["./src/index.ts"],
+      "bippy/install-hook-only": ["./src/install-hook-only.ts"],
+      "bippy/source": ["./src/source/index.ts"]
+    }
   },
-  "include": ["src", "scripts", "vite.config.ts"],
+  "include": ["src", "scripts", "benchmarks", "tests/unit", "tests/conformance", "vite.config.ts"],
   "exclude": ["**/node_modules/**", "**/dist/**"]
 }

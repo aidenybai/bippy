@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
+  },
+  "include": [
+    "src",
+    "vite.config.ts",
+    "../shared/fiber-reference.ts",
+    "../shared/use-fiber-scenarios.ts"
+  ]
+}

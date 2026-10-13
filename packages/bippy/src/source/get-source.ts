@@ -1,17 +1,17 @@
-import type { Fiber } from "../react-internals/index.js";
-import { getDisplayName } from "../core.js";
+import type { Fiber } from "../react-internals/index";
+import { getDisplayName } from "../core";
 
-import type { FiberSource } from "./types.js";
-import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack.js";
-import { parseDebugStack } from "./parse-debug-stack.js";
-import { parseStack, type StackFrame } from "./parse-stack.js";
+import type { FiberSource } from "./types";
+import { getDefinitionFrameFromOwnedChild, getParentStack, hasDebugStack } from "./owner-stack";
+import { parseDebugStack } from "./parse-debug-stack";
+import { parseStack, type StackFrame } from "./parse-stack";
 import {
   getSourceFromSourceMapByFunctionName,
   getSourceMap,
   symbolicateStack,
   type SourceFetch,
   type SourceMapRequestOptions,
-} from "./symbolication.js";
+} from "./symbolication";
 
 export const hasDebugSource = (
   fiber: Fiber,
@@ -156,4 +156,4 @@ export const getSource = async (
   return getSourceByComponentName(fiber, shouldUseCache, sourceFetch, requestOptions);
 };
 
-export { isSourceFile, normalizeFileName } from "./normalize-file-name.js";
+export { isSourceFile, normalizeFileName } from "./normalize-file-name";

@@ -28,13 +28,13 @@ jobs:
       - name: Update to the latest experimental nightlies
         run: pnpm --filter @bippy/e2e-refresh-experimental run update-experimental
       - name: Report nightly versions
-        run: node -e "const pkg = require('./packages/e2e/fixtures/refresh-app-experimental/package.json'); console.log(JSON.stringify(pkg.dependencies, null, 2))"
+        run: node -e "const pkg = require('./packages/bippy/tests/fixtures/refresh-app-experimental/package.json'); console.log(JSON.stringify(pkg.dependencies, null, 2))"
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
       - name: Run refresh suite against the nightlies
         run: npx playwright test --project=refresh-experimental
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
         env:
           # Only the experimental fixture's dev server is needed; without
           # this, playwright would boot every configured webServer.
@@ -43,5 +43,5 @@ jobs:
         if: failure()
         with:
           name: react-canary-report
-          path: packages/e2e/playwright-report/
+          path: packages/bippy/tests/e2e/playwright-report/
           retention-days: 14

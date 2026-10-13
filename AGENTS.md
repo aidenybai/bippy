@@ -1,4 +1,4 @@
-Bippy hacks into React internals. `packages/bippy` is the library. `packages/conformance` holds unit and React conformance tests. `packages/e2e` runs Playwright tests against framework fixtures. `packages/website` and the playgrounds are demos.
+Bippy hacks into React internals. `packages/bippy` is the library. `packages/bippy/tests` holds its unit tests (`unit`), React conformance tests (`conformance`), Playwright and Detox tests (`e2e`), and the framework fixtures and playgrounds they run against (`fixtures`). `packages/website` is a demo.
 
 When implementing anything in this project, clone `facebook/react` locally and search its source to understand the relevant React internals. Do not rely on memory or assumptions.
 
@@ -6,7 +6,7 @@ When implementing anything in this project, clone `facebook/react` locally and s
 
 - Make every change work in production builds and across all supported React versions. Never bundle React.
 - Keep the public API small. Justify every new export.
-- Build demos and integrations on bippy's public API. Keep logic that isn't core out of `packages/bippy`.
+- Build demos and integrations on bippy's public API. Keep logic that isn't core out of `packages/bippy/src`.
 - Derive React types and constants from `react-reconciler` or `src/react-internals`. Keep version-specific values there.
 - Throw named errors from `src/errors.ts` and let them propagate. Do not wrap them in helpers such as `fail()`.
 - Make source resolution work across all bundlers without configuration or plugins.
@@ -43,6 +43,7 @@ Use the `/writing-guidelines` skill for PR descriptions.
 - Use arrow functions and kebab-case file names.
 - Avoid `any`. Avoid `as` unless necessary.
 - Never use star imports or alias imports, such as `import { resolve as pathResolve }`.
+- Omit file extensions in relative imports: `./core`, not `./core.js`.
 - Use pnpm for project scripts, which run with `tsx`. Use Bun only for one-off scripts.
 - Use TypeScript interfaces over types. Keep them at module scope.
 - Rely on type inference. Add annotations only for exports.

@@ -1,28 +1,16 @@
-import { getDisplayName, getType, traverseFiber } from "../core.js";
-import { getReactWorkTagsForFiber } from "../react-internals/index.js";
-import type {
-  Fiber,
-  RendererDispatcherRef,
-  ServerComponentInfo,
-} from "../react-internals/index.js";
+import { getDisplayName, getType, traverseFiber } from "../core";
+import { getReactWorkTagsForFiber } from "../react-internals/index";
+import type { Fiber, RendererDispatcherRef, ServerComponentInfo } from "../react-internals/index";
 import {
   REACT_STACK_BOTTOM_FRAME_PATTERNS,
   SERVER_ENV_PATTERN,
   SERVER_COMPONENT_URL_PREFIXES,
-} from "./constants.js";
-import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack.js";
-import { parseDebugStack } from "./parse-debug-stack.js";
-import { parseStack, type StackFrame } from "./parse-stack.js";
-import {
-  getRendererDispatcherRefs,
-  readDispatcher,
-  writeDispatcher,
-} from "./renderer-dispatchers.js";
-import {
-  symbolicateStack,
-  type SourceFetch,
-  type SourceMapRequestOptions,
-} from "./symbolication.js";
+} from "./constants";
+import { getPrepareStackTrace, setPrepareStackTrace } from "./error-stack";
+import { parseDebugStack } from "./parse-debug-stack";
+import { parseStack, type StackFrame } from "./parse-stack";
+import { getRendererDispatcherRefs, readDispatcher, writeDispatcher } from "./renderer-dispatchers";
+import { symbolicateStack, type SourceFetch, type SourceMapRequestOptions } from "./symbolication";
 
 interface RendererDispatcherSnapshot {
   currentDispatcherRef: RendererDispatcherRef;

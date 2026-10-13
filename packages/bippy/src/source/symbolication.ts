@@ -1,9 +1,9 @@
 import { decode, type SourceMapMappings, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
 
-import { BippySourceMapError } from "../errors.js";
-import { SCHEME_REGEX } from "./constants.js";
-import { normalizeFileName } from "./normalize-file-name.js";
-import type { StackFrame } from "./parse-stack.js";
+import { BippySourceMapError } from "../errors";
+import { SCHEME_REGEX } from "./constants";
+import { normalizeFileName } from "./normalize-file-name";
+import type { StackFrame } from "./parse-stack";
 
 export interface DecodedSourceMapSection {
   map: {

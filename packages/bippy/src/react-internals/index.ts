@@ -1,22 +1,22 @@
-import { getReactWorkTags, ReactFiberFlags } from "./generated/react-work-tags.js";
-import type { ReactWorkTagMap } from "./generated/react-work-tags.js";
-import { isSemver } from "./semver.js";
-import type { Fiber, ReactRenderer } from "./types.js";
+import { getReactWorkTags, ReactFiberFlags } from "./generated/react-work-tags";
+import type { ReactWorkTagMap } from "./generated/react-work-tags";
+import { isSemver } from "./semver";
+import type { Fiber, ReactRenderer } from "./types";
 
-export { compareSemver } from "./semver.js";
+export { compareSemver } from "./semver";
 export {
   getReactWorkTags,
   ReactBuildType,
   ReactFiberFlags,
   ReactSymbols,
-} from "./generated/react-work-tags.js";
+} from "./generated/react-work-tags";
 export type {
   HostWorkTag,
   ReactWorkTag,
   ReactWorkTagMap,
   ReactWorkTagVersion,
-} from "./generated/react-work-tags.js";
-export * from "./types.js";
+} from "./generated/react-work-tags";
+export * from "./types";
 
 interface InheritedWorkTags {
   workTags: Readonly<ReactWorkTagMap>;

@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "module": "Preserve",
+    "target": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "paths": {
+      "bippy": ["../../../src/index.ts"],
+      "bippy/source": ["../../../src/source/index.ts"]
+    },
+    "skipLibCheck": true,
+    "strict": true
+  },
+  "include": ["src", "tests", "vite.config.ts"]
+}

@@ -6,7 +6,7 @@ import {
   QUERY_PARAMETER_PATTERN_REGEX,
   SCHEME_REGEX,
   SOURCE_FILE_EXTENSION_REGEX,
-} from "./constants.js";
+} from "./constants";
 
 const VITE_FS_PREFIX = "/@fs/";
 const VITE_ID_PREFIX = "/@id/";

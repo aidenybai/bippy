@@ -1,14 +1,14 @@
-import type { Fiber } from "../react-internals/index.js";
-import { getDisplayName } from "../core.js";
-import { getDefinitionFrameFromOwnedChild, getRawParentStack } from "./owner-stack.js";
+import type { Fiber } from "../react-internals/index";
+import { getDisplayName } from "../core";
+import { getDefinitionFrameFromOwnedChild, getRawParentStack } from "./owner-stack";
 import {
   getSourceContentFromSourceMap,
   getSourceFromSourceMap,
   getSourceMap,
   type SourceFetch,
   type SourceMapRequestOptions,
-} from "./symbolication.js";
-import type { StackFrame } from "./parse-stack.js";
+} from "./symbolication";
+import type { StackFrame } from "./parse-stack";
 
 const COMPONENT_DECLARATION_PATTERNS = [
   /(?:^|export\s+)(?:const|let|var)\s+(\w+)\s*=/,

@@ -1,7 +1,7 @@
 // This module must load before React so renderers can inject into the hook.
 
-import { callListener } from "./call-listener.js";
-import type { FiberRoot, ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index.js";
+import { callListener } from "./call-listener";
+import type { FiberRoot, ReactDevToolsGlobalHook, ReactRenderer } from "./react-internals/index";
 
 export interface Unsubscribe extends Disposable {
   (): void;

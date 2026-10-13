@@ -14,7 +14,7 @@ import type {
 import { format } from "vite-plus/fmt";
 import type { Plugin } from "vite-plus";
 import { z } from "zod";
-import { compareSemver, isSemver } from "../src/react-internals/semver.js";
+import { compareSemver, isSemver } from "../src/react-internals/semver";
 
 interface ReactInternalsPluginOptions {
   mode: "check" | "generate";
@@ -357,7 +357,7 @@ const renderGeneratedModule = (
     );
 
   return [
-    'import { compareSemver } from "../semver.js";',
+    'import { compareSemver } from "../semver";',
     "",
     ...renderNumericMap("ReactBuildType", reactBuildType),
     "",

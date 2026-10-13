@@ -29,8 +29,6 @@ jobs:
           filters: |
             native:
               - "packages/bippy/**"
-              - "packages/conformance/**"
-              - "packages/e2e/**"
               - ".github/workflows/e2e.yml"
               - "pnpm-lock.yaml"
 
@@ -49,21 +47,21 @@ jobs:
       - run: pnpm build
       - name: Run Metro artifact source-map test
         run: pnpm exec nr test:metro-artifact
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
       - name: Run Playwright tests
         run: pnpm exec nr test:web
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
       - name: Run Playwright tests against production builds
         run: pnpm exec nr test:web:production
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: packages/e2e/playwright-report/
+          path: packages/bippy/tests/e2e/playwright-report/
           retention-days: 14
 
   e2e-native:
@@ -108,29 +106,29 @@ jobs:
         id: app-cache
         uses: actions/cache/restore@v4
         with:
-          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
-          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
+          path: packages/bippy/tests/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json') }}
       - name: Cache CocoaPods downloads
         if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/CocoaPods
-          key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/e2e/fixtures/expo-app/package.json') }}
+          key: cocoapods-${{ runner.os }}-${{ hashFiles('packages/bippy/tests/fixtures/expo-app/package.json') }}
           restore-keys: cocoapods-${{ runner.os }}-
       - name: Prebuild and build iOS app
         if: steps.app-cache.outputs.cache-hit != 'true'
         run: |
-          cd packages/e2e/fixtures/expo-app
+          cd packages/bippy/tests/fixtures/expo-app
           npx expo prebuild --platform ios --clean
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
       - name: Save iOS app binary
         if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          path: packages/e2e/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
-          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json') }}
+          path: packages/bippy/tests/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json') }}
       - name: Start Metro
-        working-directory: packages/e2e/fixtures/expo-app
+        working-directory: packages/bippy/tests/fixtures/expo-app
         # CI=false: expo disables file watching (and therefore fast refresh)
         # when it detects CI, but the refresh spec saves files at runtime.
         # watchman must be warmed up (daemon running, repo root watched)
@@ -162,9 +160,9 @@ jobs:
       - name: Build Detox framework cache
         if: steps.detox-framework-cache.outputs.cache-hit != 'true'
         run: npx detox clean-framework-cache && npx detox build-framework-cache
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
       - name: Run Detox tests
-        working-directory: packages/e2e
+        working-directory: packages/bippy/tests/e2e
         run: |
           echo "Using simulator: $DETOX_DEVICE_NAME"
           npx detox test --configuration ios.sim.debug --device-name "$DETOX_DEVICE_NAME" --headless --record-logs failing
@@ -180,7 +178,7 @@ jobs:
         if: failure()
         with:
           name: detox-artifacts
-          path: packages/e2e/artifacts/
+          path: packages/bippy/tests/e2e/artifacts/
           retention-days: 14
           if-no-files-found: ignore
 
@@ -222,13 +220,13 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json', 'packages/e2e/fixtures/expo-app/plugins/**') }}
+            packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
+            packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json', 'packages/bippy/tests/fixtures/expo-app/plugins/**') }}
       - name: Prebuild and build Android app
         if: steps.android-app-cache.outputs.cache-hit != 'true'
         run: |
-          cd packages/e2e/fixtures/expo-app
+          cd packages/bippy/tests/fixtures/expo-app
           npx expo prebuild --platform android --clean
           cd android
           ./gradlew :app:assembleDebug :app:assembleAndroidTest -DtestBuildType=debug --no-daemon --stacktrace
@@ -237,11 +235,11 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
-            packages/e2e/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/e2e/fixtures/expo-app/app.json', 'packages/e2e/fixtures/expo-app/package.json', 'packages/e2e/fixtures/expo-app/plugins/**') }}
+            packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
+            packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json', 'packages/bippy/tests/fixtures/expo-app/plugins/**') }}
       - name: Start Metro
-        working-directory: packages/e2e/fixtures/expo-app
+        working-directory: packages/bippy/tests/fixtures/expo-app
         run: |
           nohup env CI=false npx expo start --port 8081 > /tmp/metro-android.log 2>&1 &
           for attempt in $(seq 1 60); do
@@ -267,7 +265,7 @@ jobs:
             adb shell wm dismiss-keyguard
             adb shell input keyevent KEYCODE_HOME
             adb reverse tcp:8081 tcp:8081
-            cd packages/e2e && npx detox test --configuration android.emu.debug --record-logs failing
+            cd packages/bippy/tests/e2e && npx detox test --configuration android.emu.debug --record-logs failing
       - name: Upload Android Metro log
         uses: actions/upload-artifact@v4
         if: failure()
@@ -280,6 +278,6 @@ jobs:
         if: failure()
         with:
           name: detox-android-artifacts
-          path: packages/e2e/artifacts/
+          path: packages/bippy/tests/e2e/artifacts/
           retention-days: 14
           if-no-files-found: ignore

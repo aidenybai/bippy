@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type ReactReconciler from "react-reconciler";
-import type { HostWorkTag, ReactWorkTag } from "./generated/react-work-tags.js";
+import type { HostWorkTag, ReactWorkTag } from "./generated/react-work-tags";
 
 export type WorkTag = ReactReconciler.WorkTag | ReactWorkTag;
 
