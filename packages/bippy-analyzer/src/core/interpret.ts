@@ -236,15 +236,14 @@ const getComponentName = (tag: Extract<SymbolicValue, { kind: "Global" | "Bindin
 
 const createConditional = (
   split: SplitOutcome,
-  consequent: SymbolicValue,
-  alternate: SymbolicValue,
   guards: SymbolicValue[],
+  toArm: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
 ): ConditionalValue => ({
   kind: "Conditional",
   test: split.test,
   testKind: split.testKind,
-  consequent,
-  alternate,
+  consequent: toArm(split.consequent, [...guards, getGuard(split, true)]),
+  alternate: toArm(split.alternate, [...guards, getGuard(split, false)]),
   branch: split.branch,
   guardKeys: guards.map(getValueKey),
 });
@@ -1240,19 +1239,6 @@ export class Interpreter {
     }
   }
 
-  #createConditional(
-    split: SplitOutcome,
-    guards: SymbolicValue[],
-    toArm: (arm: Outcome, armGuards: SymbolicValue[]) => SymbolicValue,
-  ): ConditionalValue {
-    return createConditional(
-      split,
-      toArm(split.consequent, [...guards, getGuard(split, true)]),
-      toArm(split.alternate, [...guards, getGuard(split, false)]),
-      guards,
-    );
-  }
-
   #resolvePhi(phi: Phi, outcome: Outcome, guards: SymbolicValue[]): SymbolicValue {
     switch (outcome.kind) {
       case "Fallthrough": {
@@ -1260,7 +1246,7 @@ export class Interpreter {
         return operand ? this.#read(operand) : createUnknown("loop", phi.place.loc);
       }
       case "Split":
-        return this.#createConditional(outcome, guards, (arm, armGuards) =>
+        return createConditional(outcome, guards, (arm, armGuards) =>
           this.#resolvePhi(phi, arm, armGuards),
         );
       case "Return":
@@ -1514,7 +1500,7 @@ export class Interpreter {
       case "Fallthrough":
         return createUnknown("fallthrough", loc);
       case "Split":
-        return this.#createConditional(outcome, guards, (arm, armGuards) =>
+        return createConditional(outcome, guards, (arm, armGuards) =>
           this.#toValue(arm, loc, armGuards),
         );
       default:
