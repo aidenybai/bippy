@@ -174,22 +174,53 @@ const matchSequence = (
 export const matchesExpected = (expected: ExpectedShape[], actual: Shape[]): boolean =>
   matchSequence(expected, actual, { steps: 0 });
 
-const flattenTags = (shapes: Array<Shape | ExpectedShape>): string[] =>
+const HOLE_TOKEN = "…";
+const MAX_EXPLAINED_TOKENS = 4;
+
+const getActualTokens = (shapes: Shape[]): string[] =>
   shapes.flatMap((shape) => {
-    if (shape.kind === "element") return [shape.tag, ...flattenTags(shape.children)];
+    if (shape.kind === "element") return [`<${shape.tag}>`, ...getActualTokens(shape.children)];
     if (shape.kind === "component") return [`<${shape.name}>`];
-    if (shape.kind === "text") return [`"${shape.text}"`];
-    if (shape.kind === "repeat") return flattenTags(shape.item);
-    if (shape.kind === "choice") return shape.options.flatMap(flattenTags);
-    return [];
+    return [JSON.stringify(shape.text)];
+  });
+
+/** With `actualTokens`, a choice takes its option closest to them, and otherwise every option. */
+const getExpectedTokens = (shapes: ExpectedShape[], actualTokens: Set<string> | null): string[] =>
+  shapes.flatMap((shape): string[] => {
+    switch (shape.kind) {
+      case "element":
+        return [`<${shape.tag}>`, ...getExpectedTokens(shape.children, actualTokens)];
+      case "component":
+        return [`<${shape.name}>`];
+      case "text":
+        return [JSON.stringify(shape.text)];
+      case "hole":
+        return [HOLE_TOKEN];
+      case "repeat":
+        return getExpectedTokens(shape.item, actualTokens);
+      case "choice": {
+        const options = shape.options.map((option) => getExpectedTokens(option, actualTokens));
+        if (!actualTokens) return options.flat();
+        const getOverlap = (tokens: string[]): number =>
+          tokens.filter((token) => actualTokens.has(token)).length;
+        return options.reduce(
+          (best, option) => (getOverlap(option) > getOverlap(best) ? option : best),
+          options[0] ?? [],
+        );
+      }
+      default:
+        return [];
+    }
   });
 
 export const findClosest = (candidates: ExpectedShape[][], actual: Shape[]): number => {
-  const actualTags = new Set(flattenTags(actual));
+  const actualTags = new Set(getActualTokens(actual));
   let bestIndex = 0;
   let bestScore = -1;
   candidates.forEach((candidate, index) => {
-    const candidateTags = new Set(flattenTags(candidate));
+    const candidateTags = new Set(
+      getExpectedTokens(candidate, null).filter((token) => token !== HOLE_TOKEN),
+    );
     const shared = [...candidateTags].filter((tag) => actualTags.has(tag)).length;
     const score = shared / Math.max(1, new Set([...candidateTags, ...actualTags]).size);
     if (score > bestScore) {
@@ -210,43 +241,6 @@ export const formatShapes = (shapes: Shape[]): string =>
         : `<${shape.tag}>`;
     })
     .join(" ");
-
-const HOLE_TOKEN = "…";
-const MAX_EXPLAINED_TOKENS = 4;
-
-const getActualTokens = (shapes: Shape[]): string[] =>
-  shapes.flatMap((shape) => {
-    if (shape.kind === "element") return [`<${shape.tag}>`, ...getActualTokens(shape.children)];
-    if (shape.kind === "component") return [`<${shape.name}>`];
-    return [JSON.stringify(shape.text)];
-  });
-
-const getExpectedTokens = (shapes: ExpectedShape[], actualTokens: Set<string>): string[] =>
-  shapes.flatMap((shape): string[] => {
-    switch (shape.kind) {
-      case "element":
-        return [`<${shape.tag}>`, ...getExpectedTokens(shape.children, actualTokens)];
-      case "component":
-        return [`<${shape.name}>`];
-      case "text":
-        return [JSON.stringify(shape.text)];
-      case "hole":
-        return [HOLE_TOKEN];
-      case "repeat":
-        return getExpectedTokens(shape.item, actualTokens);
-      case "choice": {
-        const options = shape.options.map((option) => getExpectedTokens(option, actualTokens));
-        const getOverlap = (tokens: string[]): number =>
-          tokens.filter((token) => actualTokens.has(token)).length;
-        return options.reduce(
-          (best, option) => (getOverlap(option) > getOverlap(best) ? option : best),
-          options[0] ?? [],
-        );
-      }
-      default:
-        return [];
-    }
-  });
 
 export const explainMismatch = (expected: ExpectedShape[], actual: Shape[]): string => {
   const actualTokens = getActualTokens(actual);
