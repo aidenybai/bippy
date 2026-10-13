@@ -74,14 +74,14 @@ interface RegionBranches {
   places: string[];
 }
 
-const NO_DECISIONS: ReadonlySet<string> = new Set();
+const NO_BRANCHES: ReadonlySet<string> = new Set();
 
 const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternative => ({
   constraints,
   render,
   fragments: [],
   conditions: [],
-  branches: NO_DECISIONS,
+  branches: NO_BRANCHES,
 });
 
 const getStateKey = (alternative: Alternative): string =>
@@ -187,7 +187,7 @@ const getReachableCases = (
   return typeCases;
 };
 
-const createInitialKnowledge = (analysis: ComponentAnalysis): Constraints => {
+const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
   const values = new Map<string, AbstractValue[]>();
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [placeKey, domain] of analysis.placeDomains) {
@@ -318,15 +318,15 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
   let isTruncated = false;
   const cache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
   const enumerate = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
-    let cacheByKnowledge = cache.get(value);
-    if (!cacheByKnowledge) {
-      cacheByKnowledge = new WeakMap();
-      cache.set(value, cacheByKnowledge);
+    let cacheByConstraints = cache.get(value);
+    if (!cacheByConstraints) {
+      cacheByConstraints = new WeakMap();
+      cache.set(value, cacheByConstraints);
     }
-    const cached = cacheByKnowledge.get(constraints);
+    const cached = cacheByConstraints.get(constraints);
     if (cached) return cached;
     const alternatives = enumerateUncached(value, constraints);
-    cacheByKnowledge.set(constraints, alternatives);
+    cacheByConstraints.set(constraints, alternatives);
     return alternatives;
   };
   const enumerateUncached = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
@@ -364,7 +364,7 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
       case "JsxExpression":
       case "JsxFragment": {
         let partials: PartialChildren[] = [
-          { constraints, children: [], fragments: [], conditions: [], branches: NO_DECISIONS },
+          { constraints, children: [], fragments: [], conditions: [], branches: NO_BRANCHES },
         ];
         for (const child of value.children) {
           const nextPartials: PartialChildren[] = [];
@@ -451,7 +451,7 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
       if (isPlacePrefix(atom, otherAtom)) decisionSets.union([...keys, ...otherKeys]);
 
   const regions = new Map<string, RegionBranches>();
-  const getGroup = (key: string): RegionBranches => {
+  const getRegion = (key: string): RegionBranches => {
     const root = decisionSets.find(key) ?? key;
     const region = regions.get(root) ?? {
       branchKeys: new Set(),
@@ -461,14 +461,14 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
     regions.set(root, region);
     return region;
   };
-  for (const key of branchKeys) getGroup(key).branchKeys.add(key);
+  for (const key of branchKeys) getRegion(key).branchKeys.add(key);
   for (const [atom, keys] of decisionsByAtom)
-    for (const key of keys) getGroup(key).bindingIds.add(parsePlaceKey(atom).bindingId);
+    for (const key of keys) getRegion(key).bindingIds.add(parsePlaceKey(atom).bindingId);
   for (const [placeKey, place] of places) {
     const isNested = [...places.keys()].some(
       (otherKey) => otherKey !== placeKey && isPlacePrefix(otherKey, placeKey),
     );
-    const region = getGroup(place.branchKey);
+    const region = getRegion(place.branchKey);
     if (!isNested && !region.places.includes(place.name)) region.places.push(place.name);
   }
   return regions.size > 0
@@ -552,7 +552,7 @@ const collectUnreachableBranches = (
 };
 
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
-  const reachable = createInitialKnowledge(analysis);
+  const reachable = createInitialConstraints(analysis);
   const dependents = getDependents(analysis.bindings);
   const outcomes: DecisionOutcomes = new Map();
   const regionBranches = findRegions(analysis.render);

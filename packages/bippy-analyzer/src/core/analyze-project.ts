@@ -266,12 +266,12 @@ export const analyzeProject = (
         reactFunction.fnType === "Component" ? [{ reactFunction, context }] : [],
       ),
     );
-    const firstAnalyses = compiledComponents.map(({ reactFunction, context }) =>
+    const initialAnalyses = compiledComponents.map(({ reactFunction, context }) =>
       analyzeComponent(reactFunction, context),
     );
-    for (const [contextKey, setters] of collectContextModels(firstAnalyses))
+    for (const [contextKey, setters] of collectContextModels(initialAnalyses))
       contextModels.set(contextKey, setters);
-    const analyses = firstAnalyses.map((analysis, index) => {
+    const analyses = initialAnalyses.map((analysis, index) => {
       const compiled = compiledComponents[index];
       return compiled && analysis.bindings.some((binding) => binding.kind === "context")
         ? analyzeComponent(compiled.reactFunction, compiled.context)
