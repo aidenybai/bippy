@@ -69,7 +69,7 @@ export const analyzeComponent = (
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
-  const { bindings } = interpreter;
+  const { bindings, placeDomains } = interpreter.bindingTable;
   return {
     ...base,
     loc: hir.loc,
@@ -77,20 +77,20 @@ export const analyzeComponent = (
     bindings,
     propsSample: interpreter.propsSample,
     providedContexts: interpreter.providedContexts,
-    contextSamples: interpreter.contextSamples,
-    untypedContexts: interpreter.untypedContexts,
-    placeDomains: interpreter.placeDomains,
+    contextSamples: interpreter.externalSources.contextSamples,
+    untypedContexts: interpreter.externalSources.untypedContexts,
+    placeDomains,
     render,
     handlers,
     renders: [...interpreter.renderedComponents],
     bailouts: [
-      ...interpreter.bailouts,
+      ...interpreter.diagnostics.bailouts,
       ...bindings.flatMap((binding): Bailout[] =>
         binding.domain.kind === "Unknown"
           ? [{ reason: `untyped-${binding.kind}`, message: binding.name, loc: binding.loc }]
           : [],
       ),
     ],
-    warnings: interpreter.warnings,
+    warnings: interpreter.diagnostics.warnings,
   };
 };
