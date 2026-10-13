@@ -14,6 +14,7 @@ const createBinding = (id: number): Binding => ({
   samples: [],
   initial: null,
   inputs: [],
+  lengthSource: null,
 });
 
 const isSameKey = (left: SymbolicValue, right: SymbolicValue): boolean =>

@@ -61,8 +61,15 @@ export interface Binding {
   domain: Domain;
   samples: Sample[];
   initial: SymbolicValue | null;
-  /** Places a call result's arguments read. */
+  /** Places a call result's receiver and arguments read. */
   inputs: Place[];
+  /** The array a call result is no longer than, like `items` for `items.filter(…)`. */
+  lengthSource: LengthSource | null;
+}
+
+export interface LengthSource {
+  place: Place;
+  isExact: boolean;
 }
 
 export interface Branch {

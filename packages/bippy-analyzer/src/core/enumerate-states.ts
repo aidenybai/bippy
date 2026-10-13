@@ -188,7 +188,16 @@ const getReachableCases = (
   return typeCases;
 };
 
-const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
+const getSourceLengthBounds = (binding: Binding): Bound[] => {
+  if (!binding.lengthSource) return [];
+  const { place, isExact } = binding.lengthSource;
+  const lengthAtom = getLengthAtom(binding.id);
+  const atMost: Bound = { left: lengthAtom, right: place, constant: 0, isStrict: false };
+  const atLeast: Bound = { left: place, right: lengthAtom, constant: 0, isStrict: false };
+  return isExact ? [atMost, atLeast] : [atMost];
+};
+
+const createInitialConstraints =(analysis: ComponentAnalysis): Constraints => {
   const values = new PlaceMap<AbstractValue[]>();
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place, domain] of analysis.placeDomains) {
@@ -205,6 +214,7 @@ const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
     values,
     assumptions: new Map(),
     bounds: [],
+    invariants: analysis.bindings.flatMap(getSourceLengthBounds),
     memberCases: analysis.memberCases,
     members: new Map(),
   };

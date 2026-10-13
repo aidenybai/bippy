@@ -5,7 +5,7 @@ import type { AbstractValue, Binding, BindingKind, BindingValue, Domain } from "
 import { PlaceMap, getBindingPlace } from "./utils/place";
 
 export interface BindingOptions extends Partial<
-  Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "domain">
+  Pick<Binding, "hookKind" | "propName" | "initial" | "inputs" | "lengthSource" | "domain">
 > {}
 
 /** One binding per declaration, so evaluating it again reads the same binding. */
@@ -42,6 +42,7 @@ export class BindingTable {
       samples: kind === "prop" ? resolver.getSamples(loc, options.propName ?? name) : [],
       initial: options.initial ?? null,
       inputs: options.inputs ?? [],
+      lengthSource: options.lengthSource ?? null,
     };
     this.#bindings.set(key, binding);
     this.#resolvers.set(binding.id, resolver);

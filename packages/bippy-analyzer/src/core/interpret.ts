@@ -38,7 +38,7 @@ import type {
 import { formatPlace, formatSymbolicValue } from "./format";
 import { forEachJsxElement, forEachSymbolicValue } from "./utils/traverse";
 import { isHandlerProp } from "./collect-handlers";
-import { PlaceMap, getValuePlace } from "./utils/place";
+import { PlaceMap, getBindingPlace, getValuePlace } from "./utils/place";
 import { isExternalSource, isStateBinding } from "./utils/checks";
 import { getTestExpression, negate } from "./utils/truthiness";
 import {
@@ -82,7 +82,15 @@ const MAX_INLINE_DEPTH = 4;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
-const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
+// Whether each method's result keeps its receiver's length, rather than possibly being shorter.
+const LENGTH_METHODS = new Map([
+  ["filter", false],
+  ["slice", false],
+  ["toReversed", true],
+  ["toSorted", true],
+  ["with", true],
+]);
+const ITERATION_METHODS =new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
 
 const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
@@ -607,7 +615,7 @@ export class Interpreter {
       this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
     }
-    return this.#createCallResult(args, loc);
+    return this.#createCallResult(callee, calleePlace, args, loc);
   }
 
   #collectInputs(value: SymbolicValue, inputs: PlaceMap<true>, visited = new Set<number>()): void {
@@ -620,15 +628,33 @@ export class Interpreter {
     });
   }
 
-  #createCallResult(args: SymbolicValue[], loc: SourceLocation): SymbolicValue {
+  #createCallResult(
+    callee: SymbolicValue,
+    calleePlace: Place,
+    args: SymbolicValue[],
+    loc: SourceLocation,
+  ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(loc);
     if (calleeText === null) return createUnknown("call", loc);
     const inputs = new PlaceMap<true>();
     for (const argument of args) this.#collectInputs(argument, inputs);
-    if (inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
+    const method = callee.kind === "Binding" ? callee.path.at(-1) : undefined;
+    const receiver =
+      callee.kind === "Binding" && method !== undefined
+        ? getBindingPlace(callee.binding, callee.path.slice(0, -1))
+        : null;
+    const isExact = method === undefined ? undefined : LENGTH_METHODS.get(method);
+    const lengthSource =
+      receiver && isExact !== undefined && this.#resolver.isNonMutatingMethod(calleePlace.loc)
+        ? { place: { ...receiver, path: [...receiver.path, "length"] }, isExact }
+        : null;
+    if (!lengthSource && inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
       return createUnknown("call", loc);
+    if (receiver) inputs.set(receiver, true);
     const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
-    return createBindingValue(this.#createBinding(name, "call", loc, { inputs: inputs.places() }));
+    return createBindingValue(
+      this.#createBinding(name, "call", loc, { inputs: inputs.places(), lengthSource }),
+    );
   }
 
   #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {

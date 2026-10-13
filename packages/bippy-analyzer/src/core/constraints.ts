@@ -51,6 +51,8 @@ export interface Constraints {
   values: PlaceMap<AbstractValue[]>;
   assumptions: Map<string, Assumption>;
   bounds: Bound[];
+  /** Shared across clones: bounds every render keeps, like a filtered array's length. */
+  invariants: Bound[];
   /** Shared across clones: for a union-typed binding, the values each member gives a field. */
   memberCases: PlaceMap<AbstractValue[][]>;
   /** By binding id, the union members still possible; every member when absent. */
@@ -61,6 +63,7 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   values: new PlaceMap(constraints.values),
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
+  invariants: constraints.invariants,
   memberCases: constraints.memberCases,
   members: new Map(constraints.members),
 });
@@ -191,11 +194,12 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
 };
 
 const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean | null => {
-  if (constraints.bounds.length === 0) return null;
+  const bounds = [...constraints.invariants, ...constraints.bounds];
+  if (bounds.length === 0) return null;
   const whenTrue = getBounds(value, true);
   const whenFalse = getBounds(value, false);
-  if (whenTrue && !areBoundsConsistent([...constraints.bounds, ...whenTrue])) return false;
-  if (whenFalse && !areBoundsConsistent([...constraints.bounds, ...whenFalse])) return true;
+  if (whenTrue && !areBoundsConsistent([...bounds, ...whenTrue])) return false;
+  if (whenFalse && !areBoundsConsistent([...bounds, ...whenFalse])) return true;
   return null;
 };
 
@@ -384,7 +388,7 @@ export const assume = (
   const bounds = getBounds(value, outcome);
   if (bounds) {
     next.bounds.push(...bounds);
-    if (!areBoundsConsistent(next.bounds)) return null;
+    if (!areBoundsConsistent([...next.invariants, ...next.bounds])) return null;
   }
   return next;
 };

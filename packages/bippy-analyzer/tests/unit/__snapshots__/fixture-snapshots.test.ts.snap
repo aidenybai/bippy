@@ -334,6 +334,32 @@ exports[`fixture analysis > RoleBadge keeps its states, transitions and unreacha
       └─ <span> "Member""
 `;
 
+exports[`fixture analysis > SearchList keeps its states, transitions and unreachable branches 1`] = `
+"SearchList src/search.tsx:3
+├─ data
+│  ├─ items prop string[]
+│  ├─ query state string = ""
+│  └─ items.filter(function) call string[]
+├─ render
+│  └─ <div>
+│     ├─ <input onChange ⇒ query = Unknown(member)>
+│     ├─ ◆ items.length === 0
+│     │  └─ ✓ <p> "No items"
+│     └─ ◆ items.filter(function).length > 0
+│        └─ ✓ <ul>
+│           └─ ↻ each of items.filter(function)
+│              └─ <li> {match}
+└─ states (3)
+   ├─ S1 items.length === 0
+   │  └─ <div> <input> <p> "No items"
+   ├─ S2 items.length !== 0 ∧ items.filter(function).length > 0
+   │  ├─ <div> <input> <ul> ↻ items.filter(function)
+   │  └─ <input> onChange → S3
+   └─ S3 items.length !== 0 ∧ items.filter(function).length <= 0
+      ├─ <div> <input>
+      └─ <input> onChange → S2"
+`;
+
 exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
 "SignIn src/dashboard.tsx:15
 ├─ data

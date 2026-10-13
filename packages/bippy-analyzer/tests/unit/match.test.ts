@@ -17,6 +17,7 @@ const createBinding = (name: string): Binding => ({
   samples: [],
   initial: null,
   inputs: [],
+  lengthSource: null,
 });
 
 const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => ({
