@@ -219,37 +219,234 @@ const readPath = (value: unknown, path: string[]): unknown =>
 const formatRuntimeValue = (value: unknown): string =>
   value === undefined ? "undefined" : JSON.stringify(value);
 
+interface ScoringContext {
+  analysis: ComponentAnalysis;
+  report: StateReport;
+  verdict: ComponentVerdict;
+  expectedStates: ReturnType<typeof toExpected>[];
+  triggerLabels: Map<string, TriggerLabel>;
+  stateBindings: Binding[] | null;
+  externalBindingIds: Set<number>;
+  effectIds: Set<string>;
+  coveredStates: Set<number>;
+  matchCache: Map<string, number[]>;
+}
+
+const createEmptyVerdict = (
+  analysis: ComponentAnalysis,
+  report: StateReport,
+): ComponentVerdict => ({
+  name: analysis.name,
+  file: analysis.file,
+  status: analysis.exportName ? "verified" : "not-exported",
+  error: null,
+  mountFailure: null,
+  observations: 0,
+  renderErrors: 0,
+  predictedStates: report.states.length,
+  coveredStates: [],
+  stateCounterexamples: [],
+  coveredTransitions: 0,
+  transitionCounterexamples: [],
+  branchSides: 0,
+  coveredBranchSides: 0,
+  unreachableClaims: report.unreachableBranches.length,
+  reachedUnreachableBranches: [],
+  valueCounterexamples: [],
+  warnings: analysis.warnings.length,
+  coveredWarnings: 0,
+  refutedWarnings: [],
+  unwarnedMutations: [],
+});
+
+const getMatches = (context: ScoringContext, capturedShapes: Shape[]): number[] => {
+  const shapes = normalizeShapes(capturedShapes);
+  const key = JSON.stringify(shapes);
+  const cached = context.matchCache.get(key);
+  if (cached) return cached;
+  const matches = context.expectedStates.flatMap((expected, index) =>
+    matchesExpected(expected, shapes) ? [index] : [],
+  );
+  context.matchCache.set(key, matches);
+  return matches;
+};
+
+const getRegionIndices = (context: ScoringContext): number[] =>
+  context.report.regions.map((_, index) => index);
+
+const inRegion = (context: ScoringContext, matches: number[], region: number): number[] =>
+  matches.filter((match) => context.report.states[match]?.region === region);
+
+const isEveryRegionMatched = (context: ScoringContext, matches: number[]): boolean =>
+  getRegionIndices(context).every((region) => inRegion(context, matches, region).length > 0);
+
+const isRegionUnchanged = (
+  context: ScoringContext,
+  before: number[],
+  after: number[],
+  region: number,
+): boolean => inRegion(context, before, region).some((match) => after.includes(match));
+
+const isExternalRegion = (context: ScoringContext, region: number): boolean =>
+  context.report.regions[region]?.bindingIds.some((bindingId) =>
+    context.externalBindingIds.has(bindingId),
+  ) ?? false;
+
+const getTransitions = (context: ScoringContext, from: number[], handlerIds: Set<string>) =>
+  from.flatMap(
+    (index) =>
+      context.report.states[index]?.transitions.filter((transition) =>
+        handlerIds.has(transition.handlerId),
+      ) ?? [],
+  );
+
+const getTargets = (context: ScoringContext, from: number[], handlerIds: Set<string>): number[] => [
+  ...new Set(getTransitions(context, from, handlerIds).flatMap((transition) => transition.targets)),
+];
+
+/** Records a render that matches no predicted state, or the states it covers. */
+const scoreRender = (
+  context: ScoringContext,
+  props: Record<string, Sample>,
+  path: string[],
+  shapes: Shape[],
+): number[] | null => {
+  const matches = getMatches(context, shapes);
+  if (isEveryRegionMatched(context, matches)) {
+    for (const match of matches) context.coveredStates.add(match);
+    return matches;
+  }
+  if (!context.report.isTruncated) {
+    const normalized = normalizeShapes(shapes);
+    const closestState = findClosest(context.expectedStates, normalized);
+    context.verdict.stateCounterexamples.push({
+      props,
+      path,
+      rendered: formatShapes(normalized).slice(0, MAX_RENDERED_LENGTH),
+      closestState,
+      reason: explainMismatch(context.expectedStates[closestState] ?? [], normalized),
+    });
+  }
+  return null;
+};
+
+/** Checks that what effects changed between the first commit and the settled render was predicted. */
+const scoreFirstCommit = (
+  context: ScoringContext,
+  observation: Observation,
+  settledMatches: number[] | null,
+): void => {
+  const { firstCommitShapes } = observation.after;
+  if (observation.action || !firstCommitShapes) return;
+  const firstMatches = scoreRender(context, observation.props, [FIRST_COMMIT], firstCommitShapes);
+  if (!firstMatches || !settledMatches || context.externalBindingIds.size > 0) return;
+  const isUnexplained = getRegionIndices(context).some(
+    (region) =>
+      inRegion(context, settledMatches, region).length > 0 &&
+      !isRegionUnchanged(context, firstMatches, settledMatches, region) &&
+      !getTransitions(context, inRegion(context, firstMatches, region), context.effectIds).some(
+        (transition) => transition.targets.some((target) => settledMatches.includes(target)),
+      ),
+  );
+  if (isUnexplained)
+    context.verdict.transitionCounterexamples.push({
+      path: [],
+      action: FIRST_COMMIT,
+      fromStates: firstMatches,
+      toStates: settledMatches,
+      predictedStates: getTargets(context, firstMatches, context.effectIds),
+      reason: "unpredicted-effect",
+    });
+};
+
+/** Checks each state value the page holds against the literals the analysis predicts. */
+const scoreValues = (context: ScoringContext, observation: Observation): void => {
+  context.stateBindings?.forEach((binding, hookIndex) => {
+    for (const [placeKey, predicted] of context.report.places) {
+      const { bindingId, path: placePath } = parsePlaceKey(placeKey);
+      if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
+        continue;
+      const value = readPath(observation.after.hookStates[hookIndex], placePath);
+      if (value === TRUNCATED_VALUE || isPredictedValue(value, predicted)) continue;
+      context.verdict.valueCounterexamples.push({
+        path: observation.path,
+        place: formatPlace(binding, placePath),
+        value: formatRuntimeValue(value),
+        predicted: predicted.map(formatAbstractValue),
+      });
+    }
+  });
+};
+
+/** Checks that an action moved every region to a state its handlers predict. */
+const scoreTransition = (
+  context: ScoringContext,
+  observation: Observation,
+  afterMatches: number[],
+): void => {
+  const { action, before, path } = observation;
+  if (!action || !before || before.error) return;
+  const beforeMatches = getMatches(context, before.shapes);
+  if (!isEveryRegionMatched(context, beforeMatches)) return;
+  const triggers = context.analysis.handlers.flatMap((handler) => {
+    const label = context.triggerLabels.get(handler.id);
+    const trigger = label ? getTrigger(label, action) : null;
+    return trigger ? [{ handler, trigger }] : [];
+  });
+  const triggeredIds = new Set(triggers.map(({ handler }) => handler.id));
+  const maybeTriggeredIds = new Set(
+    triggers.flatMap(({ handler, trigger }) => (trigger === "maybe" ? [handler.id] : [])),
+  );
+  // A child's handler can change any hook or context value the component reads.
+  const isFreeToChange = (region: number): boolean =>
+    action.isInChild && isExternalRegion(context, region);
+  const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void => {
+    context.verdict.transitionCounterexamples.push({
+      path,
+      action: action.key,
+      fromStates: beforeMatches,
+      toStates: afterMatches,
+      predictedStates: getTargets(context, beforeMatches, triggeredIds),
+      reason,
+    });
+  };
+  const regions = getRegionIndices(context);
+  if (triggeredIds.size === 0) {
+    const isExplained = regions.every(
+      (region) =>
+        isRegionUnchanged(context, beforeMatches, afterMatches, region) || isFreeToChange(region),
+    );
+    if (!isExplained) recordWrongEdge("unmodeled-handler");
+    return;
+  }
+  const isPredicted = regions.every((region) => {
+    if (isFreeToChange(region)) return true;
+    const isUnchanged = isRegionUnchanged(context, beforeMatches, afterMatches, region);
+    const transitions = getTransitions(
+      context,
+      inRegion(context, beforeMatches, region),
+      triggeredIds,
+    );
+    return transitions.length === 0
+      ? isUnchanged
+      : transitions.some(
+          (transition) =>
+            transition.targets.some((target) => afterMatches.includes(target)) ||
+            (isUnchanged && (transition.isAsync || maybeTriggeredIds.has(transition.handlerId))),
+        );
+  });
+  if (isPredicted) context.verdict.coveredTransitions++;
+  else if (!context.report.isTruncated) recordWrongEdge("unpredicted-target");
+};
+
 export const scoreComponent = (
   analysis: ComponentAnalysis,
   report: StateReport,
   observations: Observation[],
   knownComponents: Map<string, string>,
 ): ComponentVerdict => {
-  const verdict: ComponentVerdict = {
-    name: analysis.name,
-    file: analysis.file,
-    status: analysis.exportName ? "verified" : "not-exported",
-    error: null,
-    mountFailure: null,
-    observations: observations.length,
-    renderErrors: 0,
-    predictedStates: report.states.length,
-    coveredStates: [],
-    stateCounterexamples: [],
-    coveredTransitions: 0,
-    transitionCounterexamples: [],
-    branchSides: 0,
-    coveredBranchSides: 0,
-    unreachableClaims: report.unreachableBranches.length,
-    reachedUnreachableBranches: [],
-    valueCounterexamples: [],
-    warnings: analysis.warnings.length,
-    coveredWarnings: 0,
-    refutedWarnings: [],
-    unwarnedMutations: [],
-  };
+  const verdict = { ...createEmptyVerdict(analysis, report), observations: observations.length };
   if (!analysis.exportName) return verdict;
-
   if (
     observations.every(
       (observation) => observation.after.error && observation.after.shapes.length === 0,
@@ -263,202 +460,49 @@ export const scoreComponent = (
       mountFailure: first ? getCaptureFailure(first) : "did-not-render",
     };
   }
-
-  const expectedStates = report.states.map((state) => toExpected(state.render, knownComponents));
-  const triggerLabels = collectTriggerLabels(analysis.render);
-  const stateBindings = getStateBindings(analysis);
-  const coveredStates = new Set<number>();
-  const matchCache = new Map<string, number[]>();
-
-  const describeMismatch = (props: Record<string, Sample>, path: string[], shapes: Shape[]) => {
-    const closestState = findClosest(expectedStates, shapes);
-    return {
-      props,
-      path,
-      rendered: formatShapes(shapes).slice(0, MAX_RENDERED_LENGTH),
-      closestState,
-      reason: explainMismatch(expectedStates[closestState] ?? [], shapes),
-    };
+  const context: ScoringContext = {
+    analysis,
+    report,
+    verdict,
+    expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
+    triggerLabels: collectTriggerLabels(analysis.render),
+    stateBindings: getStateBindings(analysis),
+    externalBindingIds: new Set(
+      analysis.bindings
+        .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
+        .map((binding) => binding.id),
+    ),
+    effectIds: new Set(
+      analysis.handlers
+        .filter((handler) => handler.trigger.kind === "Effect")
+        .map((handler) => handler.id),
+    ),
+    coveredStates: new Set(),
+    matchCache: new Map(),
   };
-
-  const getMatches = (capturedShapes: Shape[]): number[] => {
-    const shapes = normalizeShapes(capturedShapes);
-    const key = JSON.stringify(shapes);
-    const cached = matchCache.get(key);
-    if (cached) return cached;
-    const matches = expectedStates.flatMap((expected, index) =>
-      matchesExpected(expected, shapes) ? [index] : [],
-    );
-    matchCache.set(key, matches);
-    return matches;
-  };
-
-  const regionIndices = report.regions.map((_, index) => index);
-  const inRegion = (matches: number[], region: number): number[] =>
-    matches.filter((match) => report.states[match]?.region === region);
-  const isEveryRegionMatched = (matches: number[]): boolean =>
-    regionIndices.every((region) => inRegion(matches, region).length > 0);
-  const isRegionUnchanged = (before: number[], after: number[], region: number): boolean =>
-    inRegion(before, region).some((match) => after.includes(match));
-  const externalBindingIds = new Set(
-    analysis.bindings
-      .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
-      .map((binding) => binding.id),
-  );
-  const isExternalRegion = (region: number): boolean =>
-    report.regions[region]?.bindingIds.some((bindingId) => externalBindingIds.has(bindingId)) ??
-    false;
-  const getTransitions = (from: number[], handlerIds: Set<string>) =>
-    from.flatMap(
-      (index) =>
-        report.states[index]?.transitions.filter((transition) =>
-          handlerIds.has(transition.handlerId),
-        ) ?? [],
-    );
-
-  const effectIds = new Set(
-    analysis.handlers
-      .filter((handler) => handler.trigger.kind === "Effect")
-      .map((handler) => handler.id),
-  );
-  const hasExternalData = analysis.bindings.some((binding) =>
-    EXTERNAL_DATA_BINDING_KINDS.has(binding.kind),
-  );
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));
   const coveredSides = new Set<string>();
 
   for (const observation of observations) {
-    const { after, before, action, path } = observation;
-    for (const hit of after.probes)
+    for (const hit of observation.after.probes)
       if (probeIds.has(hit.id)) coveredSides.add(`${hit.id}:${hit.outcome}`);
-    if (after.error) {
+    if (observation.after.error) {
       verdict.renderErrors++;
       continue;
     }
-
-    const afterMatches = getMatches(after.shapes);
-    if (!isEveryRegionMatched(afterMatches)) {
-      if (report.isTruncated) continue;
-      verdict.stateCounterexamples.push(
-        describeMismatch(observation.props, path, normalizeShapes(after.shapes)),
-      );
-    } else {
-      for (const match of afterMatches) coveredStates.add(match);
-    }
-
-    if (!action && after.firstCommitShapes) {
-      const firstMatches = getMatches(after.firstCommitShapes);
-      if (!isEveryRegionMatched(firstMatches)) {
-        if (!report.isTruncated)
-          verdict.stateCounterexamples.push(
-            describeMismatch(
-              observation.props,
-              [FIRST_COMMIT],
-              normalizeShapes(after.firstCommitShapes),
-            ),
-          );
-      } else {
-        for (const match of firstMatches) coveredStates.add(match);
-        const isUnexplained = regionIndices.some(
-          (region) =>
-            inRegion(afterMatches, region).length > 0 &&
-            !isRegionUnchanged(firstMatches, afterMatches, region) &&
-            !getTransitions(inRegion(firstMatches, region), effectIds).some((transition) =>
-              transition.targets.some((target) => afterMatches.includes(target)),
-            ),
-        );
-        if (!hasExternalData && isUnexplained) {
-          verdict.transitionCounterexamples.push({
-            path: [],
-            action: FIRST_COMMIT,
-            fromStates: firstMatches,
-            toStates: afterMatches,
-            predictedStates: [
-              ...new Set(
-                getTransitions(firstMatches, effectIds).flatMap((transition) => transition.targets),
-              ),
-            ],
-            reason: "unpredicted-effect",
-          });
-        }
-      }
-    }
-
-    if (stateBindings) {
-      stateBindings.forEach((binding, hookIndex) => {
-        for (const [placeKey, predicted] of report.places) {
-          const { bindingId, path: placePath } = parsePlaceKey(placeKey);
-          if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
-            continue;
-          const value = readPath(after.hookStates[hookIndex], placePath);
-          if (value === TRUNCATED_VALUE || isPredictedValue(value, predicted)) continue;
-          verdict.valueCounterexamples.push({
-            path,
-            place: formatPlace(binding, placePath),
-            value: formatRuntimeValue(value),
-            predicted: predicted.map(formatAbstractValue),
-          });
-        }
-      });
-    }
-
-    if (!action || !before || before.error) continue;
-    const beforeMatches = getMatches(before.shapes);
-    if (!isEveryRegionMatched(beforeMatches) || !isEveryRegionMatched(afterMatches)) continue;
-    const triggers = analysis.handlers.flatMap((handler) => {
-      const label = triggerLabels.get(handler.id);
-      const trigger = label ? getTrigger(label, action) : null;
-      return trigger ? [{ handler, trigger }] : [];
-    });
-    const candidates = triggers.map(({ handler }) => handler);
-    const candidateIds = new Set(candidates.map((candidate) => candidate.id));
-    const maybeTriggeredIds = new Set(
-      triggers.flatMap(({ handler, trigger }) => (trigger === "maybe" ? [handler.id] : [])),
+    const afterMatches = scoreRender(
+      context,
+      observation.props,
+      observation.path,
+      observation.after.shapes,
     );
-    const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void => {
-      verdict.transitionCounterexamples.push({
-        path,
-        action: action.key,
-        fromStates: beforeMatches,
-        toStates: afterMatches,
-        predictedStates: [
-          ...new Set(
-            getTransitions(beforeMatches, candidateIds).flatMap((transition) => transition.targets),
-          ),
-        ],
-        reason,
-      });
-    };
-    // A child's handler can change any hook or context value the component reads.
-    const isFreeToChange = (region: number): boolean =>
-      action.isInChild && isExternalRegion(region);
-    if (candidates.length === 0) {
-      const isExplained = regionIndices.every(
-        (region) =>
-          isRegionUnchanged(beforeMatches, afterMatches, region) || isFreeToChange(region),
-      );
-      if (!isExplained) recordWrongEdge("unmodeled-handler");
-      continue;
-    }
-    const isPredicted = regionIndices.every((region) => {
-      const isUnchangedInRegion = isRegionUnchanged(beforeMatches, afterMatches, region);
-      const transitions = getTransitions(inRegion(beforeMatches, region), candidateIds);
-      if (isFreeToChange(region)) return true;
-      return transitions.length === 0
-        ? isUnchangedInRegion
-        : transitions.some(
-            (transition) =>
-              transition.targets.some((target) => afterMatches.includes(target)) ||
-              (isUnchangedInRegion &&
-                (transition.isAsync || maybeTriggeredIds.has(transition.handlerId))),
-          );
-    });
-    if (isPredicted) verdict.coveredTransitions++;
-    else if (!report.isTruncated) recordWrongEdge("unpredicted-target");
+    scoreFirstCommit(context, observation, afterMatches);
+    scoreValues(context, observation);
+    if (afterMatches) scoreTransition(context, observation, afterMatches);
   }
 
-  verdict.coveredStates = [...coveredStates].sort((left, right) => left - right);
+  verdict.coveredStates = [...context.coveredStates].sort((left, right) => left - right);
   verdict.branchSides = probes.length * 2;
   verdict.coveredBranchSides = coveredSides.size;
   verdict.reachedUnreachableBranches = report.unreachableBranches
@@ -467,7 +511,7 @@ export const scoreComponent = (
       return loc !== GeneratedSource && coveredSides.has(`${getProbeId(branch.file, loc)}:${side}`);
     })
     .map(({ branch, description }) => `${description} ${formatLine(branch.loc)}`.trim());
-  return { ...verdict, ...scoreWarnings(analysis, observations, stateBindings) };
+  return { ...verdict, ...scoreWarnings(analysis, observations, context.stateBindings) };
 };
 
 const formatSample = (sample: Sample): string => {
