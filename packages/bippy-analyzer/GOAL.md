@@ -41,9 +41,11 @@ If the real app shows something the model doesn't have, the model is wrong.
 - Use TypeScript types to guess the possible values. `boolean` gives two cases, `User | null` gives two, and `any` gives `Unknown`.
 - Stay with React for now. Its rules (pure render, state only through setters) keep the number of states manageable.
 
-## Open questions
+## Answers
 
-1. What does the output look like? Write it by hand for the example above before picking an engine.
-2. One model per component, or one for the whole app?
-3. How deep do we go into libraries like React Query or Redux?
-4. How do we build the model: our own interpreter, a real JS engine, or running the code many times?
+The four questions this started with, and what the analyzer does.
+
+1. **What does the output look like?** For each component, the data it reads, its render tree with every branch kept, and its states with the actions between them. [docs/symbolic-tree.md](docs/symbolic-tree.md) shows one for a form wizard.
+2. **One model per component, or one for the app?** One per component. The project's own hooks run inline across files, so their state is the component's state. A context's setters are tied to the fields they set. Parents and children aren't linked yet.
+3. **How deep into libraries?** React's own hooks are modeled, and zustand stores from their `create` call. Other hooks, like React Query's, take the values their return type allows. Calling into one may change it, and any hook from the same module, later. The verifier mounts each component inside the providers the app installs.
+4. **How is the model built?** By our own interpreter. The React Compiler lowers each component to HIR, the TypeScript 7 checker types it, and the interpreter runs the HIR without executing it. Where branches merge, a value becomes a conditional, so no branch is lost.

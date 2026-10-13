@@ -44,9 +44,16 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `analyze-component.ts`      | Runs our passes on one component's HIR                                           |
 | `type-provider.ts`          | Types the compiler's HIR from the TS checker                                     |
 | `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept               |
+| `binding-table.ts`          | The interpreter's bindings, one per declaration, and each place's domain         |
+| `function-registry.ts`      | Functions values refer to, the file each came from, and closure captures         |
+| `external-sources.ts`       | Hooks, contexts and stores: values that change from outside                      |
+| `effect-collector.ts`       | The updates and mutations one handler or effect makes                            |
+| `build-jsx.ts`              | The element each JSX tag renders                                                 |
+| `diagnostics.ts`            | Bailouts and warnings, each reported once                                        |
 | `symbolic-values.ts`        | Builds and folds the values the interpreter produces                             |
 | `control-flow.ts`           | Branch outcomes and the conditionals they merge into                             |
 | `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with  |
+| `store-models.ts`           | What each zustand store action sets                                              |
 | `string-samples.ts`         | Strings a component may parse, picked by name                                    |
 | `collect-handlers.ts`       | What each event handler and effect updates                                       |
 | `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions      |
