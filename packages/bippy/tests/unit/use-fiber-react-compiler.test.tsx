@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ModuleKind, ScriptTarget, transpileModule } from "typescript";
+import { ModuleKind, ScriptTarget, transpileModule } from "@typescript/typescript6";
 import { useFiber } from "../../src/index";
 import type { Fiber } from "../../src/react-internals/index";
 import { transformSync } from "@babel/core";

@@ -44,6 +44,7 @@ export default defineConfig({
     sourcemap: Boolean(process.env.BIPPY_SOURCEMAP),
     target: "esnext",
     treeshake: true,
+    tsconfig: "./tsconfig.build.json",
   } satisfies PackUserConfig,
   test: {
     projects: [

@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import { benchmarkBuilds, benchmarkFormats } from "../benchmarks/configuration";
 import { benchmarkGroups } from "../benchmarks/groups";
 import { createBenchmarkJournal } from "../benchmarks/journal";

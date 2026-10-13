@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { Window } from "happy-dom";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 import type { Fiber, FiberRoot } from "bippy";
 import { getStateValues } from "../tests/conformance/hook-tree";
 import { getExpectedExports } from "./test-inventory";

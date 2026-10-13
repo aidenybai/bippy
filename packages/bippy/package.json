@@ -114,6 +114,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/react-test-renderer": "^19.3.0",
+    "@typescript/typescript6": "^6.0.2",
     "@vitest/coverage-istanbul": "4.1.11",
     "babel-plugin-react-compiler": "^1.0.0",
     "happy-dom": "^20.11.6",
@@ -159,7 +160,7 @@
     "remotion": "^4.0.496",
     "three": "^0.185.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite-plus": "latest",
     "zod": "^4.4.3"
   },

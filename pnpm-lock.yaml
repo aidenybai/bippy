@@ -30,7 +30,7 @@ importers:
         version: 1.13.0
       vite-plus:
         specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/bippy:
     dependencies:
@@ -53,10 +53,10 @@ importers:
         version: 1.5.5
       '@opentui/core':
         specifier: ^0.5.1
-        version: 0.5.4(typescript@5.9.3)(web-tree-sitter@0.25.10)
+        version: 0.5.4(typescript@7.0.2)(web-tree-sitter@0.25.10)
       '@opentui/react':
         specifier: ^0.5.1
-        version: 0.5.4(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.3)
+        version: 0.5.4(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)(typescript@7.0.2)(web-tree-sitter@0.25.10)(ws@8.21.3)
       '@pixi/react':
         specifier: ^8.0.5
         version: 8.0.5(@types/react@19.3.0)(pixi.js@8.19.0)(react@19.3.0)
@@ -65,10 +65,10 @@ importers:
         version: 4.6.1(react@19.3.0)
       '@react-three/fiber':
         specifier: ^9.6.1
-        version: 9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1)
+        version: 9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1)
       '@react-three/test-renderer':
         specifier: ^9.1.0
-        version: 9.1.1(@react-three/fiber@9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1))(react@19.3.0)(three@0.185.1)
+        version: 9.1.1(@react-three/fiber@9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1))(react@19.3.0)(three@0.185.1)
       '@testing-library/dom':
         specifier: ^10.4.0
         version: 10.4.1
@@ -90,6 +90,9 @@ importers:
       '@types/react-test-renderer':
         specifier: ^19.3.0
         version: 19.3.0
+      '@typescript/typescript6':
+        specifier: ^6.0.2
+        version: 6.0.2
       '@vitest/coverage-istanbul':
         specifier: 4.1.11
         version: 4.1.11(vitest@4.1.11)
@@ -226,11 +229,11 @@ importers:
         specifier: ^4.21.0
         version: 4.23.12
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite-plus:
         specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -293,8 +296,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
 
   packages/bippy/tests/fixtures/chrome-extension:
     dependencies:
@@ -312,8 +315,8 @@ importers:
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^6
         version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -396,8 +399,8 @@ importers:
         specifier: ^5.1.2
         version: 5.2.0(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7.3.4
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -496,7 +499,7 @@ importers:
         version: 2.4.9(@types/react@19.3.0)(react@19.3.0)
       i18next:
         specifier: ^26.3.6
-        version: 26.3.6(typescript@5.9.3)
+        version: 26.3.6(typescript@7.0.2)
       jotai:
         specifier: ^2.20.2
         version: 2.20.2(@babel/core@7.29.7)(@babel/template@7.29.7)(@types/react@19.3.0)(react@19.3.0)
@@ -547,7 +550,7 @@ importers:
         version: 2.6.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react-i18next:
         specifier: ^17.0.11
-        version: 17.0.11(i18next@26.3.6(typescript@5.9.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+        version: 17.0.11(i18next@26.3.6(typescript@7.0.2))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       react-intersection-observer:
         specifier: ^11.0.0
         version: 11.0.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -616,8 +619,8 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -737,8 +740,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7.3.4
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -875,20 +878,20 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite-plus:
         specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/bippy/tests/fixtures/react-router-app:
     dependencies:
       '@react-router/node':
         specifier: ^7.10.2
-        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
       '@react-router/serve':
         specifier: ^7.10.2
-        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+        version: 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
       bippy:
         specifier: workspace:*
         version: link:../../..
@@ -910,7 +913,7 @@ importers:
     devDependencies:
       '@react-router/dev':
         specifier: ^7.10.2
-        version: 7.18.2(@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
+        version: 7.18.2(@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -918,8 +921,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -952,8 +955,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7.3.4
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1019,13 +1022,13 @@ importers:
     dependencies:
       '@remix-run/node':
         specifier: ^2.17.1
-        version: 2.17.5(typescript@5.9.3)
+        version: 2.17.5(typescript@7.0.2)
       '@remix-run/react':
         specifier: ^2.17.1
-        version: 2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+        version: 2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       '@remix-run/serve':
         specifier: ^2.17.1
-        version: 2.17.5(typescript@5.9.3)
+        version: 2.17.5(typescript@7.0.2)
       bippy:
         specifier: workspace:*
         version: link:../../..
@@ -1047,7 +1050,7 @@ importers:
     devDependencies:
       '@remix-run/dev':
         specifier: ^2.17.1
-        version: 2.17.5(@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(@remix-run/serve@2.17.5(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
+        version: 2.17.5(@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(@remix-run/serve@2.17.5(typescript@7.0.2))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)
       '@types/react':
         specifier: ^19.3.0
         version: 19.3.0
@@ -1055,8 +1058,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^6
         version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1086,8 +1089,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
 
   packages/bippy/tests/fixtures/script-tag-app:
     dependencies:
@@ -1127,8 +1130,8 @@ importers:
         specifier: ^19
         version: 19.2.4(@types/react@19.2.18)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1161,8 +1164,8 @@ importers:
         specifier: ^5
         version: 5.2.0(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^7
         version: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1192,8 +1195,8 @@ importers:
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.0)
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^6
         version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1220,8 +1223,8 @@ importers:
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))
       typescript:
-        specifier: ^5
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite:
         specifier: ^6
         version: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
@@ -1257,11 +1260,11 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^7.0.2
+        version: 7.0.2
       vite-plus:
         specifier: latest
-        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+        version: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
   packages/website:
     dependencies:
@@ -5943,6 +5946,130 @@ packages:
 
   '@types/yargs@17.0.35':
     resolution: {integrity: sha512-qUHkeCyQFxMXg79wQfTtfndEC+N9ZZg76HJftDJp+qH2tV7Gj4OJi7l+PiWwJ+pWtW8GwSmqsDj/oymhrTWXjg==}
+
+  '@typescript/typescript-aix-ppc64@7.0.2':
+    resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [ppc64]
+    os: [aix]
+
+  '@typescript/typescript-darwin-arm64@7.0.2':
+    resolution: {integrity: sha512-gowzar9MwS/aRWp6f3a4KUqzRjAZjOsmGNCM6LcTgXum+dBfgsBVMN+AgvOCCbguXyick6LJhpBszxMebJ8syA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@typescript/typescript-darwin-x64@7.0.2':
+    resolution: {integrity: sha512-SZ9xZInqApNlNGc9s0W1VSsktYSOe9cFqNOIqmN1Gs8SmkjKZYFt017G4VwPxASInODuAdbTW7sXiFUf893RgA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@typescript/typescript-freebsd-arm64@7.0.2':
+    resolution: {integrity: sha512-W5NH4y/J0plIIS5b2xvTEkU7JFxyqdMAOgf+Ilhl0vHQXKO5dZoxd+C/jEtq56c4F3wk71RB4BMRQ2XdI+bwYQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [freebsd]
+
+  '@typescript/typescript-freebsd-x64@7.0.2':
+    resolution: {integrity: sha512-UMGDx5sTpzNw3WiPebH7l90IWfJggEd+egHt/q6p7/Cm3zqoV7VxkGXt+3DxPIw8CcmvAB0j3sVVfbhX+M4Tpw==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@typescript/typescript-linux-arm64@7.0.2':
+    resolution: {integrity: sha512-Qh4eU4/y3yDjnfjjyPYihMj5/ODIlmt+Bzu17OI+fiSRDW57QmU5SiN63exPRNJPKUzcc1INa1NXdrJ+MqHjUQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typescript/typescript-linux-arm@7.0.2':
+    resolution: {integrity: sha512-gffT3xPz9sR7j/YJExkyPntrI0P2EP9XbOyWzth2/Gs0RstK+90RBcO0ncXoXy/beYll1SXw846Nf2zdnEz0QQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@typescript/typescript-linux-loong64@7.0.2':
+    resolution: {integrity: sha512-uEHck9i8hoAzXPiYRib1O7miOnz23SxIeVl6F4LXox+qov1K35jHcEW6VHKvZI+pyvl7fZEP4MCU5LYvIq1GuQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [loong64]
+    os: [linux]
+
+  '@typescript/typescript-linux-mips64el@7.0.2':
+    resolution: {integrity: sha512-R4KvAMnE43W5Qeqb0Ly56O3mWMWIAgsMyz36DCaycd5nbg/9kzm0liw3JocfRqyJY0KPmzFjbswozXyW0DnIYA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [mips64el]
+    os: [linux]
+
+  '@typescript/typescript-linux-ppc64@7.0.2':
+    resolution: {integrity: sha512-DORx5b3sd/4S7eayxm4FQv+A7CrkUIGRaHiwI8oiHTAI1fAPWhF4J0vAlkC8biAlHSVVwxMQ3tjZ2/DVbnQiiA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [ppc64]
+    os: [linux]
+
+  '@typescript/typescript-linux-riscv64@7.0.2':
+    resolution: {integrity: sha512-wf0jqEDOjrPRnKwYRyyJDRo11KMbvMFrU+q4zqKyChODBzvlkbhNQfKvLxQCcwTpdDaXSHZTVuh0JoCrKCUMHQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [riscv64]
+    os: [linux]
+
+  '@typescript/typescript-linux-s390x@7.0.2':
+    resolution: {integrity: sha512-IkwJc3L7yhytWd/ewjyxNDfOmswCm9GWMJT/ue/dU4aZNbwZeYAetq42VyLmsmSjvoX7z74X6ZaYCtzAr0EuGw==}
+    engines: {node: '>=16.20.0'}
+    cpu: [s390x]
+    os: [linux]
+
+  '@typescript/typescript-linux-x64@7.0.2':
+    resolution: {integrity: sha512-EYdf2cNg7rgCWJnxCdJ+F3V39O8ihb37eHAu1LK8oAFizgTQbPOK7zHHXbPt8rX24COqODXeI3sIf0fCXG7H/A==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@typescript/typescript-netbsd-arm64@7.0.2':
+    resolution: {integrity: sha512-+polYF4MF04aPpO5FTkHran9yUQDSXqy5GiSDKpsll5jy3l3+g9QLhpf39T+ePtefhXLOGrLl0QIjkQP6VnelA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [netbsd]
+
+  '@typescript/typescript-netbsd-x64@7.0.2':
+    resolution: {integrity: sha512-8YIT0EHM/3dq10ZOVF/A7pc/YSMtbcecct4rWtexrnSCHOPcpC2KTLXfTCR6vDpnSiY12heNb1GiN/wu+T/FyA==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [netbsd]
+
+  '@typescript/typescript-openbsd-arm64@7.0.2':
+    resolution: {integrity: sha512-APT8+ClYnuYm1u9+kgGXoMj2VzWzcymwh2gNSQVySHfkRDGOTVkoWLjCmOQSaO+PoqQ57B0flRp9SA+7GnnkzQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [openbsd]
+
+  '@typescript/typescript-openbsd-x64@7.0.2':
+    resolution: {integrity: sha512-yX7s+Q0Dln0Dt9tEzZsAjXXR/+ytBM7AlglaqyeMPxQszJ1JhlJdZ6jLA+IzldHtflX81em7lDao1xXu+aRRkg==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [openbsd]
+
+  '@typescript/typescript-sunos-x64@7.0.2':
+    resolution: {integrity: sha512-dLJDGaLZ1D4HPQn62u1n8mBDkJREwMsAkCdkwd4Ieqw+x3TUyTsqY0YiBCtE6H6OzzgGk3iuZ3vFWRS+E8/d1g==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [sunos]
+
+  '@typescript/typescript-win32-arm64@7.0.2':
+    resolution: {integrity: sha512-Gyl1Vy6OsWesLzmq+EP0Fb7b4Nid5232AvcA2SFcdYreldpNtYFFofPjnt62y9hQy7VTaZp65ICJjuAQRaVcIQ==}
+    engines: {node: '>=16.20.0'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@typescript/typescript-win32-x64@7.0.2':
+    resolution: {integrity: sha512-0BQ3HkAHHlKLSp1qRvf3SUhGpGsDuhB/jgFw75guyqbxJqEaS0Cw/VFO8i2nHglJUzQCRtMMR/IBAKE3ETMC4g==}
+    engines: {node: '>=16.20.0'}
+    cpu: [x64]
+    os: [win32]
+
+  '@typescript/typescript6@6.0.2':
+    resolution: {integrity: sha512-mbCddXd+jm7hfx7w2YU64/Av4/NqqeG3GoRZgxPcgoTxYjhrcfJRw9ULch71SS4G+Q3bOXFhRvPqjguN0Hyp5w==}
+    hasBin: true
 
   '@ungap/structured-clone@1.3.3':
     resolution: {integrity: sha512-60YRaenCQcVjYEKOcG824+DRGGIQ3VKErcBoAEDJZz5bKIs2ZG+X/H9Nk+Q6EVkwJk5QNApxbrc5QtBSwtrXAg==}
@@ -11990,6 +12117,16 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  typescript@7.0.2:
+    resolution: {integrity: sha512-8FYau96o3NKOhbjKi/qNvG/W5jhzxkbdm5sj9AbZ/5T5sWqn3hJgLfGx27sRKZWTvyzCP8dLRBTf5tBTSRVUNA==}
+    engines: {node: '>=16.20.0'}
+    hasBin: true
+
   ua-parser-js@0.7.41:
     resolution: {integrity: sha512-O3oYyCMPYgNNHuO7Jjk3uacJWZF8loBgwrfd/5LE/HyZ3lUIOdniQ7DNXJcIgZbwioZxk0fLfI4EVnetdiX5jg==}
     hasBin: true
@@ -14363,7 +14500,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@expo/cli@54.0.27(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(typescript@5.9.3)':
+  '@expo/cli@54.0.27(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(typescript@7.0.2)':
     dependencies:
       '@0no-co/graphql.web': 1.3.3
       '@expo/code-signing-certificates': 0.0.6
@@ -14371,14 +14508,14 @@ snapshots:
       '@expo/config-plugins': 54.0.5
       '@expo/devcert': 1.2.1
       '@expo/env': 2.0.12
-      '@expo/image-utils': 0.8.16(typescript@5.9.3)
+      '@expo/image-utils': 0.8.16(typescript@7.0.2)
       '@expo/json-file': 10.2.0
       '@expo/metro': 54.2.0
-      '@expo/metro-config': 54.0.17(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))
+      '@expo/metro-config': 54.0.17(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))
       '@expo/osascript': 2.7.1
       '@expo/package-manager': 1.13.1
       '@expo/plist': 0.4.9
-      '@expo/prebuild-config': 54.0.9(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3)
+      '@expo/prebuild-config': 54.0.9(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(typescript@7.0.2)
       '@expo/schema-utils': 0.1.9
       '@expo/spawn-async': 1.8.0
       '@expo/ws-tunnel': 1.0.6
@@ -14398,7 +14535,7 @@ snapshots:
       connect: 3.7.0
       debug: 4.4.3
       env-editor: 0.4.2
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       expo-server: 1.0.7
       freeport-async: 2.0.0
       getenv: 2.0.0
@@ -14544,6 +14681,19 @@ snapshots:
       - supports-color
       - typescript
 
+  '@expo/image-utils@0.8.16(typescript@7.0.2)':
+    dependencies:
+      '@expo/require-utils': 55.0.7(typescript@7.0.2)
+      '@expo/spawn-async': 1.8.0
+      chalk: 4.1.2
+      getenv: 2.0.0
+      jimp-compact: 0.16.1
+      parse-png: 2.1.0
+      semver: 7.8.5
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
   '@expo/json-file@10.0.16':
     dependencies:
       '@babel/code-frame': 7.10.4
@@ -14589,7 +14739,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@expo/metro-config@54.0.17(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))':
+  '@expo/metro-config@54.0.17(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))':
     dependencies:
       '@babel/code-frame': 7.29.7
       '@babel/core': 7.29.7
@@ -14613,7 +14763,7 @@ snapshots:
       postcss: 8.4.49
       resolve-from: 5.0.0
     optionalDependencies:
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -14677,16 +14827,16 @@ snapshots:
       - supports-color
       - typescript
 
-  '@expo/prebuild-config@54.0.9(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(typescript@5.9.3)':
+  '@expo/prebuild-config@54.0.9(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(typescript@7.0.2)':
     dependencies:
       '@expo/config': 12.0.14
       '@expo/config-plugins': 54.0.5
       '@expo/config-types': 54.0.10
-      '@expo/image-utils': 0.8.16(typescript@5.9.3)
+      '@expo/image-utils': 0.8.16(typescript@7.0.2)
       '@expo/json-file': 10.2.0
       '@react-native/normalize-colors': 0.81.5
       debug: 4.4.3
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       resolve-from: 5.0.0
       semver: 7.8.5
       xml2js: 0.6.0
@@ -14702,6 +14852,16 @@ snapshots:
       '@babel/plugin-transform-modules-commonjs': 7.29.7(@babel/core@7.29.7)
     optionalDependencies:
       typescript: 5.9.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@expo/require-utils@55.0.7(typescript@7.0.2)':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@babel/core': 7.29.7
+      '@babel/plugin-transform-modules-commonjs': 7.29.7(@babel/core@7.29.7)
+    optionalDependencies:
+      typescript: 7.0.2
     transitivePeerDependencies:
       - supports-color
 
@@ -14721,9 +14881,9 @@ snapshots:
       react: 19.3.0
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0)
 
-  '@expo/vector-icons@15.1.1(expo-font@14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)':
+  '@expo/vector-icons@15.1.1(expo-font@14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)':
     dependencies:
-      expo-font: 14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      expo-font: 14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react: 19.3.0
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
     optional: true
@@ -15647,9 +15807,9 @@ snapshots:
   '@opentui/core-win32-x64@0.5.4':
     optional: true
 
-  '@opentui/core@0.5.4(typescript@5.9.3)(web-tree-sitter@0.25.10)':
+  '@opentui/core@0.5.4(typescript@7.0.2)(web-tree-sitter@0.25.10)':
     dependencies:
-      bun-ffi-structs: 0.3.1(typescript@5.9.3)
+      bun-ffi-structs: 0.3.1(typescript@7.0.2)
       diff: 9.0.0
       marked: 17.0.1
       string-width: 7.2.0
@@ -15667,9 +15827,9 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@opentui/react@0.5.4(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)(typescript@5.9.3)(web-tree-sitter@0.25.10)(ws@8.21.3)':
+  '@opentui/react@0.5.4(react-devtools-core@8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150))(react@19.3.0)(typescript@7.0.2)(web-tree-sitter@0.25.10)(ws@8.21.3)':
     dependencies:
-      '@opentui/core': 0.5.4(typescript@5.9.3)(web-tree-sitter@0.25.10)
+      '@opentui/core': 0.5.4(typescript@7.0.2)(web-tree-sitter@0.25.10)
       react: 19.3.0
       react-devtools-core: 8.0.0(patch_hash=47886232e68b19809b61aba4995906eaa988f0022190ef1a67c1aab54b6df150)
       react-reconciler: 0.33.0(react@19.3.0)
@@ -16855,7 +17015,7 @@ snapshots:
       '@react-pdf/primitives': 4.3.0
       '@react-pdf/stylesheet': 6.2.3
 
-  '@react-router/dev@7.18.2(@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)':
+  '@react-router/dev@7.18.2(@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(vite@7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/generator': 7.29.8
@@ -16864,7 +17024,7 @@ snapshots:
       '@babel/preset-typescript': 7.29.7(@babel/core@7.29.7)
       '@babel/traverse': 7.29.8
       '@babel/types': 7.29.8
-      '@react-router/node': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+      '@react-router/node': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
       '@remix-run/node-fetch-server': 0.13.3
       arg: 5.0.2
       babel-dead-code-elimination: 1.0.12
@@ -16884,12 +17044,12 @@ snapshots:
       react-router: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       semver: 7.8.5
       tinyglobby: 0.2.17
-      valibot: 1.4.2(typescript@5.9.3)
+      valibot: 1.4.2(typescript@7.0.2)
       vite: 7.3.6(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
       vite-node: 3.2.4(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
     optionalDependencies:
-      '@react-router/serve': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
-      typescript: 5.9.3
+      '@react-router/serve': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
+      typescript: 7.0.2
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -16905,26 +17065,26 @@ snapshots:
       - tsx
       - yaml
 
-  '@react-router/express@7.18.2(express@4.22.2)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)':
+  '@react-router/express@7.18.2(express@4.22.2)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)':
     dependencies:
-      '@react-router/node': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+      '@react-router/node': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
       express: 4.22.2
       react-router: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
-  '@react-router/node@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)':
+  '@react-router/node@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)':
     dependencies:
       '@mjackson/node-fetch-server': 0.2.0
       react-router: 7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
-  '@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)':
+  '@react-router/serve@7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)':
     dependencies:
       '@mjackson/node-fetch-server': 0.2.0
-      '@react-router/express': 7.18.2(express@4.22.2)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
-      '@react-router/node': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
+      '@react-router/express': 7.18.2(express@4.22.2)(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
+      '@react-router/node': 7.18.2(react-router@7.18.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@7.0.2)
       compression: 1.8.1
       express: 4.22.2
       get-port: 5.1.1
@@ -16968,7 +17128,7 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
-  '@react-three/fiber@9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1)':
+  '@react-three/fiber@9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1)':
     dependencies:
       '@babel/runtime': 7.29.7
       '@types/webxr': 0.5.24
@@ -16983,18 +17143,18 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.3.0)
       zustand: 5.0.15(@types/react@19.3.0)(immer@11.1.18)(react@19.3.0)(use-sync-external-store@1.6.0(react@19.3.0))
     optionalDependencies:
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
-      expo-asset: 12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
-      expo-file-system: 19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
+      expo-asset: 12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
+      expo-file-system: 19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
       react-dom: 19.3.0(react@19.3.0)
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
 
-  '@react-three/test-renderer@9.1.1(@react-three/fiber@9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1))(react@19.3.0)(three@0.185.1)':
+  '@react-three/test-renderer@9.1.1(@react-three/fiber@9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1))(react@19.3.0)(three@0.185.1)':
     dependencies:
-      '@react-three/fiber': 9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1)
+      '@react-three/fiber': 9.7.0(@types/react@19.3.0)(expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)))(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(immer@11.1.18)(react-dom@19.3.0(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(three@0.185.1)
       react: 19.3.0
       three: 0.185.1
 
@@ -17014,7 +17174,7 @@ snapshots:
       react: 19.3.0
       react-redux: 9.3.0(@types/react@19.3.0)(react@19.3.0)(redux@5.0.1)
 
-  '@remix-run/dev@2.17.5(@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(@remix-run/serve@2.17.5(typescript@5.9.3))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)':
+  '@remix-run/dev@2.17.5(@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(@remix-run/serve@2.17.5(typescript@7.0.2))(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(vite@6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))(yaml@2.9.0)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/generator': 7.29.8
@@ -17026,10 +17186,10 @@ snapshots:
       '@babel/types': 7.29.8
       '@mdx-js/mdx': 2.3.0
       '@npmcli/package-json': 4.0.1
-      '@remix-run/node': 2.17.5(typescript@5.9.3)
-      '@remix-run/react': 2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      '@remix-run/node': 2.17.5(typescript@7.0.2)
+      '@remix-run/react': 2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       '@remix-run/router': 1.23.3
-      '@remix-run/server-runtime': 2.17.5(typescript@5.9.3)
+      '@remix-run/server-runtime': 2.17.5(typescript@7.0.2)
       '@types/mdx': 2.0.14
       '@vanilla-extract/integration': 6.5.0(@types/node@20.19.43)(babel-plugin-macros@3.1.0)(lightningcss@1.33.0)(terser@5.50.0)
       arg: 5.0.2
@@ -17070,12 +17230,12 @@ snapshots:
       set-cookie-parser: 2.7.2
       tar-fs: 2.1.5
       tsconfig-paths: 4.2.0
-      valibot: 1.4.2(typescript@5.9.3)
+      valibot: 1.4.2(typescript@7.0.2)
       vite-node: 3.2.4(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
       ws: 7.5.13
     optionalDependencies:
-      '@remix-run/serve': 2.17.5(typescript@5.9.3)
-      typescript: 5.9.3
+      '@remix-run/serve': 2.17.5(typescript@7.0.2)
+      typescript: 7.0.2
       vite: 6.4.3(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@types/node'
@@ -17096,18 +17256,18 @@ snapshots:
       - utf-8-validate
       - yaml
 
-  '@remix-run/express@2.17.5(express@4.22.2)(typescript@5.9.3)':
+  '@remix-run/express@2.17.5(express@4.22.2)(typescript@7.0.2)':
     dependencies:
-      '@remix-run/node': 2.17.5(typescript@5.9.3)
+      '@remix-run/node': 2.17.5(typescript@7.0.2)
       express: 4.22.2
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   '@remix-run/node-fetch-server@0.13.3': {}
 
-  '@remix-run/node@2.17.5(typescript@5.9.3)':
+  '@remix-run/node@2.17.5(typescript@7.0.2)':
     dependencies:
-      '@remix-run/server-runtime': 2.17.5(typescript@5.9.3)
+      '@remix-run/server-runtime': 2.17.5(typescript@7.0.2)
       '@remix-run/web-fetch': 4.4.2
       '@web3-storage/multipart-parser': 1.0.0
       cookie-signature: 1.2.2
@@ -17115,26 +17275,26 @@ snapshots:
       stream-slice: 0.1.2
       undici: 6.28.0
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
-  '@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3)':
+  '@remix-run/react@2.17.5(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2)':
     dependencies:
       '@remix-run/router': 1.23.3
-      '@remix-run/server-runtime': 2.17.5(typescript@5.9.3)
+      '@remix-run/server-runtime': 2.17.5(typescript@7.0.2)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
       react-router: 6.30.4(react@19.3.0)
       react-router-dom: 6.30.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       turbo-stream: 2.4.1
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   '@remix-run/router@1.23.3': {}
 
-  '@remix-run/serve@2.17.5(typescript@5.9.3)':
+  '@remix-run/serve@2.17.5(typescript@7.0.2)':
     dependencies:
-      '@remix-run/express': 2.17.5(express@4.22.2)(typescript@5.9.3)
-      '@remix-run/node': 2.17.5(typescript@5.9.3)
+      '@remix-run/express': 2.17.5(express@4.22.2)(typescript@7.0.2)
+      '@remix-run/node': 2.17.5(typescript@7.0.2)
       chokidar: 3.6.0
       compression: 1.8.1
       express: 4.22.2
@@ -17145,7 +17305,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@remix-run/server-runtime@2.17.5(typescript@5.9.3)':
+  '@remix-run/server-runtime@2.17.5(typescript@7.0.2)':
     dependencies:
       '@remix-run/router': 1.23.3
       '@types/cookie': 0.6.0
@@ -17155,7 +17315,7 @@ snapshots:
       source-map: 0.7.6
       turbo-stream: 2.4.1
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   '@remix-run/web-blob@3.1.0':
     dependencies:
@@ -18058,6 +18218,70 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
+  '@typescript/typescript-aix-ppc64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-darwin-arm64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-darwin-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-freebsd-arm64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-freebsd-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-arm64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-arm@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-loong64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-mips64el@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-ppc64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-riscv64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-s390x@7.0.2':
+    optional: true
+
+  '@typescript/typescript-linux-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-netbsd-arm64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-netbsd-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-openbsd-arm64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-openbsd-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-sunos-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-win32-arm64@7.0.2':
+    optional: true
+
+  '@typescript/typescript-win32-x64@7.0.2':
+    optional: true
+
+  '@typescript/typescript6@6.0.2':
+    dependencies:
+      '@typescript/old': typescript@6.0.3
+
   '@ungap/structured-clone@1.3.3': {}
 
   '@unrs/resolver-binding-android-arm-eabi@1.12.2':
@@ -18241,12 +18465,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/browser-preview@4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)':
+  '@vitest/browser-preview@4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@testing-library/dom': 10.4.1
       '@testing-library/user-event': 14.6.5(@testing-library/dom@10.4.1)
-      '@vitest/browser': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6)
+      '@vitest/browser': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)
+      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -18266,16 +18490,16 @@ snapshots:
       - vite
     optional: true
 
-  '@vitest/browser@4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)':
+  '@vitest/browser@4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)':
     dependencies:
       '@blazediff/core': 1.9.1
-      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       '@vitest/utils': 4.1.11
       magic-string: 0.30.21
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6)
+      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6)
       ws: 8.21.3
     transitivePeerDependencies:
       - bufferutil
@@ -18313,7 +18537,7 @@ snapshots:
       magicast: 0.5.4
       obug: 2.1.4
       tinyrainbow: 3.1.1
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6)
+      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -18326,13 +18550,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.1
 
-  '@vitest/mocker@4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))':
+  '@vitest/mocker@4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 4.1.11
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)'
+      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
 
   '@vitest/mocker@4.1.11(vite@8.2.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0))':
     dependencies:
@@ -18367,7 +18591,7 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.1
 
-  '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)':
+  '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)':
     dependencies:
       '@oxc-project/runtime': 0.148.0
       '@oxc-project/types': 0.148.0
@@ -18391,7 +18615,7 @@ snapshots:
       publint: 0.3.24
       terser: 5.50.0
       tsx: 4.23.12
-      typescript: 5.9.3
+      typescript: 7.0.2
       yaml: 2.9.0
 
   '@voidzero-dev/vite-plus-darwin-arm64@0.3.1':
@@ -18977,7 +19201,7 @@ snapshots:
       - '@babel/core'
       - supports-color
 
-  babel-preset-expo@54.0.12(@babel/core@7.29.7)(@babel/runtime@7.29.7)(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-refresh@0.14.2):
+  babel-preset-expo@54.0.12(@babel/core@7.29.7)(@babel/runtime@7.29.7)(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-refresh@0.14.2):
     dependencies:
       '@babel/helper-module-imports': 7.29.7
       '@babel/plugin-proposal-decorators': 7.29.7(@babel/core@7.29.7)
@@ -19004,7 +19228,7 @@ snapshots:
       resolve-from: 5.0.0
     optionalDependencies:
       '@babel/runtime': 7.29.7
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -19159,9 +19383,9 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  bun-ffi-structs@0.3.1(typescript@5.9.3):
+  bun-ffi-structs@0.3.1(typescript@7.0.2):
     dependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   bunyamin@1.6.3(bunyan@2.0.5):
     dependencies:
@@ -20155,11 +20379,11 @@ snapshots:
       - supports-color
       - typescript
 
-  expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3):
+  expo-asset@12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2):
     dependencies:
-      '@expo/image-utils': 0.8.16(typescript@5.9.3)
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
-      expo-constants: 18.0.14(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
+      '@expo/image-utils': 0.8.16(typescript@7.0.2)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
+      expo-constants: 18.0.14(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
       react: 19.3.0
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
     transitivePeerDependencies:
@@ -20176,11 +20400,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  expo-constants@18.0.14(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)):
+  expo-constants@18.0.14(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)):
     dependencies:
       '@expo/config': 12.0.14
       '@expo/env': 2.0.12
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
     transitivePeerDependencies:
       - supports-color
@@ -20191,9 +20415,9 @@ snapshots:
       expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0)
 
-  expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)):
+  expo-file-system@19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)):
     dependencies:
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
     optional: true
 
@@ -20204,9 +20428,9 @@ snapshots:
       react: 19.3.0
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0)
 
-  expo-font@14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
+  expo-font@14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
     dependencies:
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       fontfaceobserver: 2.3.0
       react: 19.3.0
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0)
@@ -20217,9 +20441,9 @@ snapshots:
       expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
       react: 19.3.0
 
-  expo-keep-awake@15.0.8(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react@19.3.0):
+  expo-keep-awake@15.0.8(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react@19.3.0):
     dependencies:
-      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
+      expo: 54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       react: 19.3.0
     optional: true
 
@@ -20280,24 +20504,24 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3):
+  expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2):
     dependencies:
       '@babel/runtime': 7.29.7
-      '@expo/cli': 54.0.27(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(typescript@5.9.3)
+      '@expo/cli': 54.0.27(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(typescript@7.0.2)
       '@expo/config': 12.0.14
       '@expo/config-plugins': 54.0.5
       '@expo/devtools': 0.1.8(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       '@expo/fingerprint': 0.15.5
       '@expo/metro': 54.2.0
-      '@expo/metro-config': 54.0.17(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))
-      '@expo/vector-icons': 15.1.1(expo-font@14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      '@expo/metro-config': 54.0.17(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))
+      '@expo/vector-icons': 15.1.1(expo-font@14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       '@ungap/structured-clone': 1.3.3
-      babel-preset-expo: 54.0.12(@babel/core@7.29.7)(@babel/runtime@7.29.7)(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-refresh@0.14.2)
-      expo-asset: 12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3)
-      expo-constants: 18.0.14(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
-      expo-file-system: 19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
-      expo-font: 14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
-      expo-keep-awake: 15.0.8(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@5.9.3))(react@19.3.0)
+      babel-preset-expo: 54.0.12(@babel/core@7.29.7)(@babel/runtime@7.29.7)(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-refresh@0.14.2)
+      expo-asset: 12.0.13(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
+      expo-constants: 18.0.14(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
+      expo-file-system: 19.0.24(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))
+      expo-font: 14.0.12(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+      expo-keep-awake: 15.0.8(expo@54.0.37(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(typescript@7.0.2))(react@19.3.0)
       expo-modules-autolinking: 3.0.27
       expo-modules-core: 3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       pretty-format: 29.7.0
@@ -20935,9 +21159,9 @@ snapshots:
 
   hyphenate-style-name@1.1.0: {}
 
-  i18next@26.3.6(typescript@5.9.3):
+  i18next@26.3.6(typescript@7.0.2):
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   iconv-lite@0.4.24:
     dependencies:
@@ -23321,7 +23545,7 @@ snapshots:
 
   outdent@0.8.0: {}
 
-  oxfmt@0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)):
+  oxfmt@0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)):
     dependencies:
       tinypool: 2.1.0
     optionalDependencies:
@@ -23344,9 +23568,9 @@ snapshots:
       '@oxfmt/binding-win32-arm64-msvc': 0.66.0
       '@oxfmt/binding-win32-ia32-msvc': 0.66.0
       '@oxfmt/binding-win32-x64-msvc': 0.66.0
-      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
-  oxfmt@0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)):
+  oxfmt@0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)):
     dependencies:
       tinypool: 2.1.0
     optionalDependencies:
@@ -23369,7 +23593,7 @@ snapshots:
       '@oxfmt/binding-win32-arm64-msvc': 0.66.0
       '@oxfmt/binding-win32-ia32-msvc': 0.66.0
       '@oxfmt/binding-win32-x64-msvc': 0.66.0
-      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
   oxlint-tsgolint@7.0.2001:
     optionalDependencies:
@@ -23380,7 +23604,7 @@ snapshots:
       '@oxlint-tsgolint/win32-arm64': 7.0.2001
       '@oxlint-tsgolint/win32-x64': 7.0.2001
 
-  oxlint@1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)):
+  oxlint@1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.81.0
       '@oxlint/binding-android-arm64': 1.81.0
@@ -23402,9 +23626,9 @@ snapshots:
       '@oxlint/binding-win32-ia32-msvc': 1.81.0
       '@oxlint/binding-win32-x64-msvc': 1.81.0
       oxlint-tsgolint: 7.0.2001
-      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
-  oxlint@1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)):
+  oxlint@1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)):
     optionalDependencies:
       '@oxlint/binding-android-arm-eabi': 1.81.0
       '@oxlint/binding-android-arm64': 1.81.0
@@ -23426,7 +23650,7 @@ snapshots:
       '@oxlint/binding-win32-ia32-msvc': 1.81.0
       '@oxlint/binding-win32-x64-msvc': 1.81.0
       oxlint-tsgolint: 7.0.2001
-      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)
+      vite-plus: 0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)
 
   p-filter@2.1.0:
     dependencies:
@@ -24130,16 +24354,16 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
-  react-i18next@17.0.11(i18next@26.3.6(typescript@5.9.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@5.9.3):
+  react-i18next@17.0.11(i18next@26.3.6(typescript@7.0.2))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2):
     dependencies:
       '@babel/runtime': 7.29.7
       html-parse-stringify: 4.0.1
-      i18next: 26.3.6(typescript@5.9.3)
+      i18next: 26.3.6(typescript@7.0.2)
       react: 19.3.0
       use-sync-external-store: 1.6.0(react@19.3.0)
     optionalDependencies:
       react-dom: 19.3.0(react@19.3.0)
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   react-intersection-observer@11.0.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
@@ -24602,9 +24826,9 @@ snapshots:
 
   react@19.2.8: {}
 
-  react@19.3.0: {}
-
   react@19.3.0-canary-1d34f91d-20260909: {}
+
+  react@19.3.0: {}
 
   read-yaml-file@1.1.0:
     dependencies:
@@ -24987,17 +25211,17 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  scheduler@0.25.0: {}
-
   scheduler@0.25.0-rc-603e6108-20241029: {}
+
+  scheduler@0.25.0: {}
 
   scheduler@0.26.0: {}
 
   scheduler@0.27.0: {}
 
-  scheduler@0.28.0: {}
-
   scheduler@0.28.0-canary-1d34f91d-20260909: {}
+
+  scheduler@0.28.0: {}
 
   screenfull@5.2.0: {}
 
@@ -25709,6 +25933,31 @@ snapshots:
 
   typescript@5.9.3: {}
 
+  typescript@6.0.3: {}
+
+  typescript@7.0.2:
+    optionalDependencies:
+      '@typescript/typescript-aix-ppc64': 7.0.2
+      '@typescript/typescript-darwin-arm64': 7.0.2
+      '@typescript/typescript-darwin-x64': 7.0.2
+      '@typescript/typescript-freebsd-arm64': 7.0.2
+      '@typescript/typescript-freebsd-x64': 7.0.2
+      '@typescript/typescript-linux-arm': 7.0.2
+      '@typescript/typescript-linux-arm64': 7.0.2
+      '@typescript/typescript-linux-loong64': 7.0.2
+      '@typescript/typescript-linux-mips64el': 7.0.2
+      '@typescript/typescript-linux-ppc64': 7.0.2
+      '@typescript/typescript-linux-riscv64': 7.0.2
+      '@typescript/typescript-linux-s390x': 7.0.2
+      '@typescript/typescript-linux-x64': 7.0.2
+      '@typescript/typescript-netbsd-arm64': 7.0.2
+      '@typescript/typescript-netbsd-x64': 7.0.2
+      '@typescript/typescript-openbsd-arm64': 7.0.2
+      '@typescript/typescript-openbsd-x64': 7.0.2
+      '@typescript/typescript-sunos-x64': 7.0.2
+      '@typescript/typescript-win32-arm64': 7.0.2
+      '@typescript/typescript-win32-x64': 7.0.2
+
   ua-parser-js@0.7.41: {}
 
   ua-parser-js@1.0.41: {}
@@ -25973,9 +26222,9 @@ snapshots:
       '@types/istanbul-lib-coverage': 2.0.6
       convert-source-map: 2.0.0
 
-  valibot@1.4.2(typescript@5.9.3):
+  valibot@1.4.2(typescript@7.0.2):
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 7.0.2
 
   validate-npm-package-license@3.0.4:
     dependencies:
@@ -26091,24 +26340,24 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0):
+  vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       '@oxc-project/types': 0.148.0
       '@oxlint/plugins': 1.79.0
-      '@vitest/browser': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)
-      '@vitest/browser-preview': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser-preview': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
       '@vitest/spy': 4.1.11
       '@vitest/utils': 4.1.11
-      oxfmt: 0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
-      oxlint: 1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      oxfmt: 0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
+      oxlint: 1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       oxlint-tsgolint: 7.0.2001
-      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)'
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6)
+      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
+      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6)
     optionalDependencies:
       '@voidzero-dev/vite-plus-darwin-arm64': 0.3.1
       '@voidzero-dev/vite-plus-darwin-x64': 0.3.1
@@ -26148,24 +26397,24 @@ snapshots:
       - utf-8-validate
       - yaml
 
-  vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0):
+  vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0):
     dependencies:
       '@oxc-project/types': 0.148.0
       '@oxlint/plugins': 1.79.0
-      '@vitest/browser': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)
-      '@vitest/browser-preview': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser-preview': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
       '@vitest/spy': 4.1.11
       '@vitest/utils': 4.1.11
-      oxfmt: 0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
-      oxlint: 1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      oxfmt: 0.66.0(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
+      oxlint: 1.81.0(oxlint-tsgolint@7.0.2001)(vite-plus@0.3.1(@types/node@20.19.43)(@vitest/coverage-istanbul@4.1.11)(esbuild@0.28.2)(happy-dom@20.11.6)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       oxlint-tsgolint: 7.0.2001
-      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)'
-      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11)(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6)
+      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
+      vitest: 4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11)(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6)
     optionalDependencies:
       '@voidzero-dev/vite-plus-darwin-arm64': 0.3.1
       '@voidzero-dev/vite-plus-darwin-x64': 0.3.1
@@ -26274,10 +26523,10 @@ snapshots:
     optionalDependencies:
       vite: 8.2.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.50.0)(tsx@4.23.12)(yaml@2.9.0)
 
-  vitest@4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6):
+  vitest@4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11(vitest@4.1.11))(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -26294,20 +26543,20 @@ snapshots:
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)'
+      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.43
-      '@vitest/browser-preview': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(vitest@4.1.11)
+      '@vitest/browser-preview': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(vitest@4.1.11)
       '@vitest/coverage-istanbul': 4.1.11(vitest@4.1.11)
       happy-dom: 20.11.6
     transitivePeerDependencies:
       - msw
 
-  vitest@4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11)(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))(happy-dom@20.11.6):
+  vitest@4.1.11(@types/node@20.19.43)(@vitest/browser-preview@4.1.11)(@vitest/coverage-istanbul@4.1.11)(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(happy-dom@20.11.6):
     dependencies:
       '@vitest/expect': 4.1.11
-      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0))
+      '@vitest/mocker': 4.1.11(@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
       '@vitest/pretty-format': 4.1.11
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -26324,7 +26573,7 @@ snapshots:
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.1
-      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@5.9.3)(yaml@2.9.0)'
+      vite: '@voidzero-dev/vite-plus-core@0.3.1(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(publint@0.3.24)(terser@5.50.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.43

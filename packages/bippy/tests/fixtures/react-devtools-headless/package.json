@@ -50,7 +50,7 @@
     "react-dom-19-1": "npm:react-dom@19.1.0",
     "react-dom-19-2": "npm:react-dom@19.2.8",
     "react-test-renderer": "^19.3.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite-plus": "latest"
   }
 }
