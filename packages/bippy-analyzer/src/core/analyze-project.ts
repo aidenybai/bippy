@@ -228,7 +228,6 @@ export const analyzeProject = (
     const { strict, strictNullChecks } = project.compilerOptions;
     const isStrictNullChecks = strictNullChecks ?? strict ?? false;
     const projectHooks = new Map<string, ProjectHook>();
-    const contextModels: ContextModels = new Map();
     const storeModels = new Map<string, StoreModel>();
     const loadProjectHook = (declarationKey: string): ProjectHook | null =>
       projectHooks.get(declarationKey) ?? null;
@@ -254,7 +253,6 @@ export const analyzeProject = (
           resolver,
           compiled,
           loadProjectHook,
-          contextModels,
           storeModels,
           exportNames: collectExportNames(sourceFile),
           displayNames: collectDisplayNames(sourceFile),
@@ -266,17 +264,20 @@ export const analyzeProject = (
         reactFunction.fnType === "Component" ? [{ reactFunction, context }] : [],
       ),
     );
-    const initialAnalyses = compiledComponents.map(({ reactFunction, context }) =>
-      analyzeComponent(reactFunction, context),
+    const analyze = (
+      { reactFunction, context }: (typeof compiledComponents)[number],
+      contextModels: ContextModels,
+    ) => analyzeComponent(reactFunction, { ...context, contextModels });
+    const initialAnalyses = compiledComponents.map((component) => ({
+      component,
+      analysis: analyze(component, new Map()),
+    }));
+    const contextModels = collectContextModels(initialAnalyses.map(({ analysis }) => analysis));
+    const analyses = initialAnalyses.map(({ component, analysis }) =>
+      analysis.bindings.some((binding) => binding.kind === "context")
+        ? analyze(component, contextModels)
+        : analysis,
     );
-    for (const [contextKey, setters] of collectContextModels(initialAnalyses))
-      contextModels.set(contextKey, setters);
-    const analyses = initialAnalyses.map((analysis, index) => {
-      const compiled = compiledComponents[index];
-      return compiled && analysis.bindings.some((binding) => binding.kind === "context")
-        ? analyzeComponent(compiled.reactFunction, compiled.context)
-        : analysis;
-    });
     for (const analysis of analyses) inferPropShapes(analysis);
     inferPropsFromCallSites(analyses);
     const fileNamesByPath = new Map(
