@@ -11,12 +11,15 @@ import {
   getSetupEnvironment,
   getSetupInputs,
 } from "./repos.js";
+import { z } from "zod";
 import type { RepoConfig } from "./repos.js";
 
-interface SnapshotRecord {
-  key: string;
-  snapshotId: string;
-}
+const SNAPSHOTS_SCHEMA = z.record(
+  z.string(),
+  z.object({ key: z.string(), snapshotId: z.string() }),
+);
+
+type SnapshotRecord = z.infer<typeof SNAPSHOTS_SCHEMA>[string];
 
 interface Credentials {
   token: string;
@@ -76,7 +79,9 @@ const getCredentials = (): Credentials => {
 };
 
 const readSnapshots = (): Record<string, SnapshotRecord> =>
-  existsSync(SNAPSHOTS_FILE) ? JSON.parse(readFileSync(SNAPSHOTS_FILE, "utf8")) : {};
+  existsSync(SNAPSHOTS_FILE)
+    ? SNAPSHOTS_SCHEMA.parse(JSON.parse(readFileSync(SNAPSHOTS_FILE, "utf8")))
+    : {};
 
 const writeSnapshot = (id: string, record: SnapshotRecord): void => {
   mkdirSync(CACHE_DIRECTORY, { recursive: true });

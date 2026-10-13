@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { z } from "zod";
 
 export interface RepoConfig {
   id: string;
@@ -12,7 +13,13 @@ export interface RepoConfig {
   setupDirectory: string | null;
 }
 
-type RepoFile = Omit<RepoConfig, "id" | "patchFile" | "setupDirectory">;
+const REPO_FILE_SCHEMA = z.object({
+  repository: z.string(),
+  revision: z.string(),
+  workingDirectory: z.string(),
+  tsconfig: z.string(),
+  install: z.string(),
+});
 
 export const CONFORMANCE_DIRECTORY = join(import.meta.dirname, "..");
 export const PACKAGE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "..");
@@ -26,8 +33,8 @@ export const loadRepos = (ids: string[]): RepoConfig[] => {
   const unknownIds = ids.filter((id) => !allIds.includes(id));
   if (unknownIds.length > 0) throw new Error(`Unknown repos: ${unknownIds.join(", ")}`);
   return (ids.length > 0 ? ids : allIds).map((id) => {
-    const repoFile: RepoFile = JSON.parse(
-      readFileSync(join(REPOS_DIRECTORY, id, "repo.json"), "utf8"),
+    const repoFile = REPO_FILE_SCHEMA.parse(
+      JSON.parse(readFileSync(join(REPOS_DIRECTORY, id, "repo.json"), "utf8")),
     );
     const patchFile = join(REPOS_DIRECTORY, id, "custom.patch");
     const setupDirectory = join(REPOS_DIRECTORY, id, "verify");
