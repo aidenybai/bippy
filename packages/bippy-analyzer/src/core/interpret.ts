@@ -166,6 +166,7 @@ export class Interpreter {
   readonly #contextSetters = new Map<number, Map<string, string>>();
   readonly #hookModules = new Map<number, string>();
   readonly #functions: HIRFunction[] = [];
+  readonly #functionIds = new Map<HIRFunction, number>();
   readonly #bindings = new Map<string, Binding>();
   readonly #propBindings = new Map<string, Binding>();
   readonly placeDomains = new Map<string, Domain>();
@@ -209,15 +210,19 @@ export class Interpreter {
     return this.#functions[functionId] ?? null;
   }
 
-  #registerFunction(fn: HIRFunction): FunctionValue {
+  #registerFunction(fn: HIRFunction, isSnapshot = false): FunctionValue {
     if (!this.#functionResolvers.has(fn)) this.#functionResolvers.set(fn, this.#resolver);
+    const existingId = isSnapshot ? undefined : this.#functionIds.get(fn);
+    if (existingId !== undefined) return { kind: "Function", functionId: existingId, loc: fn.loc };
     this.#functions.push(fn);
-    return { kind: "Function", functionId: this.#functions.length - 1, loc: fn.loc };
+    const functionId = this.#functions.length - 1;
+    if (!isSnapshot) this.#functionIds.set(fn, functionId);
+    return { kind: "Function", functionId, loc: fn.loc };
   }
 
   // Closures created in an inlined call snapshot their captures; others read them live.
   #createClosure(fn: HIRFunction): FunctionValue {
-    const closure = this.#registerFunction(fn);
+    const closure = this.#registerFunction(fn, this.#inlineDepth > 0);
     if (this.#inlineDepth > 0)
       this.#captures.set(
         closure.functionId,
