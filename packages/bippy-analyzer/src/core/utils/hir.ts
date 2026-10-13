@@ -35,7 +35,7 @@ export const getConditionallyMutatedPlace = (effect: AliasingEffect): Place | nu
     ? effect.value
     : null;
 
-export const getIdentifierName =(place: Place): string | null =>
+export const getIdentifierName = (place: Place): string | null =>
   place.identifier.name?.value ?? null;
 
 export const getDeclarationLocation = (place: Place): SourceLocation =>

@@ -546,14 +546,12 @@ export class Interpreter {
             spreads: [
               ...operand.spreads,
               ...spreads,
-              ...items.map(
-                (item): SymbolicValue => ({
-                  kind: "ArrayMap",
-                  array: createUnknown("mutation", loc),
-                  item,
-                  loc,
-                }),
-              ),
+              ...items.map((item): SymbolicValue => ({
+                kind: "ArrayMap",
+                array: createUnknown("mutation", loc),
+                item,
+                loc,
+              })),
             ],
           };
     }

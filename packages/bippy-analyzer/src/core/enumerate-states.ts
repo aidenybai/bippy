@@ -197,7 +197,7 @@ const getSourceLengthBounds = (binding: Binding): Bound[] => {
   return isExact ? [atMost, atLeast] : [atMost];
 };
 
-const createInitialConstraints =(analysis: ComponentAnalysis): Constraints => {
+const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
   const values = new PlaceMap<AbstractValue[]>();
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place, domain] of analysis.placeDomains) {

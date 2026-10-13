@@ -407,8 +407,8 @@ export class DomainResolver {
       const propertyType = this.#checker.getTypeOfSymbol(property);
       if (!propertyType) return null;
       memberCases.push(
-        (propertyType.isUnionType() ? propertyType.getTypes() : [propertyType]).map(
-          (memberType) => getAbstractValue(this.#checker, memberType),
+        (propertyType.isUnionType() ? propertyType.getTypes() : [propertyType]).map((memberType) =>
+          getAbstractValue(this.#checker, memberType),
         ),
       );
     }
