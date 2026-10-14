@@ -175,6 +175,7 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SHORTENING_METHODS = new Set(["filter", "slice"]);
 const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
+const RENDERED_ITERATION_METHODS = new Set(["map", "flatMap"]);
 const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
 const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
@@ -1130,7 +1131,11 @@ export class Interpreter {
       this.#callForEachItem(callback, receiver, methodCall.loc, walkState);
       return createUnknown("call", methodCall.loc);
     }
-    if (methodName === "map" && callback?.kind === "Function")
+    if (
+      methodName !== null &&
+      RENDERED_ITERATION_METHODS.has(methodName) &&
+      callback?.kind === "Function"
+    )
       return this.#evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
     if (methodName !== null && PROMISE_METHODS.has(methodName)) {
       for (const argument of argumentValues)
