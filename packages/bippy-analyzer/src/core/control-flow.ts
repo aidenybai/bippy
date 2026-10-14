@@ -3,10 +3,18 @@ import type { Branch, ConditionalValue, SymbolicValue, TestKind } from "./types"
 import { getTestExpression, negate } from "./utils/truthiness";
 import { getValueKey } from "./utils/value-key";
 
-export type Outcome =
-  | { kind: "Return"; value: SymbolicValue }
-  | { kind: "Fallthrough"; from: BlockId | null; to: BlockId }
-  | SplitOutcome;
+interface ReturnOutcome {
+  kind: "Return";
+  value: SymbolicValue;
+}
+
+interface FallthroughOutcome {
+  kind: "Fallthrough";
+  from: BlockId | null;
+  to: BlockId;
+}
+
+export type Outcome = ReturnOutcome | FallthroughOutcome | SplitOutcome;
 
 interface SplitOutcome {
   kind: "Split";
@@ -25,8 +33,6 @@ export type LoopTerminal = Extract<
   Terminal,
   { kind: "for" | "for-of" | "for-in" | "while" | "do-while" }
 >;
-
-type FallthroughOutcome = Extract<Outcome, { kind: "Fallthrough" }>;
 
 export const getLoopHeaders = (terminal: LoopTerminal): BlockId[] => {
   switch (terminal.kind) {

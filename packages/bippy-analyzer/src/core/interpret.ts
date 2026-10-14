@@ -89,51 +89,10 @@ import {
   isFunctionCreation,
 } from "./utils/hir";
 
-const MAX_BLOCK_VISITS = 20_000;
-const MAX_INLINE_DEPTH = 4;
-const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
-const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
-const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
-const SHORTENING_METHODS = new Set(["filter", "slice"]);
-const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
-const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
-const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
-
-const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
-const SUSPENDED_DOMAIN: Domain = {
-  kind: "Cases",
-  cases: [
-    { kind: "Literal", value: true },
-    { kind: "Literal", value: false },
-  ],
-  origin: "type",
-};
-
 type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
   { kind: Kind }
 >;
-
-const getAsyncWalkState = (walkState: WalkState): WalkState => ({ ...walkState, isAsync: true });
-
-const createFieldUpdate = (
-  binding: Binding,
-  properties: ObjectExpressionValue["properties"],
-): ObjectExpressionValue => ({
-  kind: "ObjectExpression",
-  properties,
-  spreads: [createBindingValue(binding)],
-});
-
-const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
-  const { binding } = loadGlobal;
-  if (binding.kind === "Global" && binding.name === "undefined") return UNDEFINED_VALUE;
-  return {
-    kind: "Global",
-    name: binding.name,
-    module: "module" in binding ? binding.module : null,
-  };
-};
 
 type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-chain-tail";
 
@@ -141,31 +100,18 @@ type ValueBranchTerminal = Extract<Terminal, { kind: "ternary" | "logical" | "op
 
 type PhiState = "resolved" | "unresolved";
 
-type TerminalStep = Outcome | { kind: "Next"; block: BlockId };
+interface NextStep {
+  kind: "Next";
+  block: BlockId;
+}
 
-const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
+type TerminalStep = Outcome | NextStep;
 
 interface BranchTest {
   test: SymbolicValue;
   testKind: TestKind;
   knownOutcome: boolean | null;
 }
-
-const getBranchTest = (operator: BranchOperator, testedValue: SymbolicValue): BranchTest => {
-  const shortCircuit = operator === "optional-chain-tail" ? getShortCircuit(testedValue) : null;
-  const test = shortCircuit?.test ?? testedValue;
-  const testKind: TestKind =
-    shortCircuit?.testKind ?? (NULLISH_BRANCH_OPERATORS.has(operator) ? "nullish" : "truthy");
-  const knownOutcome =
-    operator === "optional-chain-tail" && !shortCircuit ? true : getKnownOutcome(test, testKind);
-  return { test, testKind, knownOutcome };
-};
-
-const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
-  if (terminal.kind === "logical") return terminal.operator;
-  if (terminal.kind === "optional" && !terminal.optional) return "optional-chain-tail";
-  return terminal.kind;
-};
 
 interface InterpreterBindingOptions extends BindingOptions {
   resolver?: SourceFileResolver;
@@ -220,6 +166,64 @@ export interface ProjectHook {
 export interface ProjectHookLoader {
   (declarationKey: string): ProjectHook | null;
 }
+
+const MAX_BLOCK_VISITS = 20_000;
+const MAX_INLINE_DEPTH = 4;
+const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
+const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
+const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
+const SHORTENING_METHODS = new Set(["filter", "slice"]);
+const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
+const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
+const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
+const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
+
+const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
+const SUSPENDED_DOMAIN: Domain = {
+  kind: "Cases",
+  cases: [
+    { kind: "Literal", value: true },
+    { kind: "Literal", value: false },
+  ],
+  origin: "type",
+};
+
+const getAsyncWalkState = (walkState: WalkState): WalkState => ({ ...walkState, isAsync: true });
+
+const createFieldUpdate = (
+  binding: Binding,
+  properties: ObjectExpressionValue["properties"],
+): ObjectExpressionValue => ({
+  kind: "ObjectExpression",
+  properties,
+  spreads: [createBindingValue(binding)],
+});
+
+const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
+  const { binding } = loadGlobal;
+  if (binding.kind === "Global" && binding.name === "undefined") return UNDEFINED_VALUE;
+  return {
+    kind: "Global",
+    name: binding.name,
+    module: "module" in binding ? binding.module : null,
+  };
+};
+
+const getBranchTest = (operator: BranchOperator, testedValue: SymbolicValue): BranchTest => {
+  const shortCircuit = operator === "optional-chain-tail" ? getShortCircuit(testedValue) : null;
+  const test = shortCircuit?.test ?? testedValue;
+  const testKind: TestKind =
+    shortCircuit?.testKind ?? (NULLISH_BRANCH_OPERATORS.has(operator) ? "nullish" : "truthy");
+  const knownOutcome =
+    operator === "optional-chain-tail" && !shortCircuit ? true : getKnownOutcome(test, testKind);
+  return { test, testKind, knownOutcome };
+};
+
+const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
+  if (terminal.kind === "logical") return terminal.operator;
+  if (terminal.kind === "optional" && !terminal.optional) return "optional-chain-tail";
+  return terminal.kind;
+};
 
 export class Interpreter {
   #resolver: SourceFileResolver;
