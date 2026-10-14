@@ -10,7 +10,7 @@ import {
 } from "bippy";
 import type { Fiber, FiberRoot } from "bippy";
 import { Component, cloneElement, createElement, isValidElement } from "react";
-import type { ComponentType, ErrorInfo, ReactNode } from "react";
+import type { ComponentType, ErrorInfo, ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../../src/core/types";
@@ -761,79 +761,120 @@ const resetMountState = (): void => {
   propWrites = new Set();
 };
 
+interface ProvidersModule {
+  default: ComponentType<ProvidersProps>;
+}
+
+interface SetupModule {
+  scenarios?: Record<string, (...scenarioArguments: unknown[]) => unknown>;
+}
+
+interface MountedComponent {
+  props: Record<string, unknown>;
+  wrappers: Array<LoadedWrapper | null>;
+  Providers: ComponentType<ProvidersProps>;
+}
+
+const runScenario = async (scenario: NonNullable<MountRequest["scenario"]>): Promise<boolean> => {
+  const setupModule: SetupModule = await import(/* @vite-ignore */ SETUP_PATH);
+  const runner = setupModule.scenarios?.[scenario.name];
+  if (!runner) return false;
+  await runner(...scenario.args);
+  return true;
+};
+
+const importComponentModule = async (
+  componentModule: MountRequest["module"],
+): Promise<Record<string, unknown>> => {
+  // HACK: load a module's cycle importers first, as the app does, so a top-level read of it, like a
+  // route table, isn't in the temporal dead zone.
+  for (const url of componentModule.importerUrls)
+    await import(/* @vite-ignore */ new URL(url, location.origin).href).catch(() => undefined);
+  // HACK: Vite adds `?import` to a root-relative URL imported at runtime, which would load
+  // the component's file a second time beside its static importers, like a wrapper from
+  // the same file, each with its own contexts. A full URL is left alone.
+  return import(/* @vite-ignore */ new URL(componentModule.url, location.origin).href);
+};
+
+const createMountElement = (type: unknown, mounted: MountedComponent): ReactElement => {
+  // HACK: the component and wrapper types come from dynamic imports, so React's element
+  // typing can't see them.
+  let element = createElement(type as Parameters<typeof createElement>[0], mounted.props);
+  for (let depth = mounted.wrappers.length; depth > 0; depth--) {
+    const wrapper = mounted.wrappers[depth - 1];
+    if (wrapper)
+      element = createElement(
+        wrapper.type as ComponentType<Record<string, unknown>>,
+        { ...wrapper.props, ...OPEN_PARENT_PROPS },
+        createElement(getDepthMarker(depth), null, element),
+      );
+  }
+  return element;
+};
+
+const renderMounted = async (
+  type: unknown,
+  mounted: MountedComponent,
+  isRouterless = false,
+): Promise<void> => {
+  mountedRoot?.unmount();
+  resetRenderState();
+  mountedType = type;
+  const container = document.createElement("div");
+  document.body.replaceChildren(container);
+  mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
+  const element = createMountElement(type, mounted);
+  mountedRoot.render(
+    createElement(Boundary, null, createElement(mounted.Providers, { isRouterless }, element)),
+  );
+  await settle();
+};
+
+const renderClientComponent = async (
+  componentType: unknown,
+  mounted: MountedComponent,
+): Promise<void> => {
+  await renderMounted(componentType, mounted);
+  const error = getRecordedError();
+  const isAsyncClientComponent =
+    error !== null &&
+    ASYNC_CLIENT_COMPONENT_PATTERN.test(error.message) &&
+    isFunctionComponent(componentType);
+  const serverRendered = isAsyncClientComponent
+    ? await callServerComponent(componentType, mounted.props)
+    : null;
+  if (serverRendered) {
+    const output = await resolveServerTree(serverRendered.output, true);
+    await renderMounted(() => output, mounted);
+  }
+  if (error && NESTED_ROUTER_PATTERN.test(error.message))
+    await renderMounted(componentType, mounted, true);
+};
+
 const mount = async (request: MountRequest): Promise<Capture> => {
   mountedRoot?.unmount();
   mountedType = null;
   await settle();
   resetMountState();
-  const { default: Providers }: { default: ComponentType<ProvidersProps> } = await import(
-    /* @vite-ignore */ PROVIDERS_PATH
-  );
-  if (request.scenario) {
-    const { scenarios }: { scenarios?: Record<string, (...args: unknown[]) => unknown> } =
-      await import(/* @vite-ignore */ SETUP_PATH);
-    const scenario = scenarios?.[request.scenario.name];
-    if (!scenario) return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
-    await scenario(...request.scenario.args);
-  }
-  // HACK: load a module's cycle importers first, as the app does, so a top-level read of it, like a
-  // route table, isn't in the temporal dead zone.
-  for (const url of request.module.importerUrls)
-    await import(/* @vite-ignore */ new URL(url, location.origin).href).catch(() => undefined);
-  // HACK: Vite adds `?import` to a root-relative URL imported at runtime, which would load
-  // the component's file a second time beside its static importers, like a wrapper from
-  // the same file, each with its own contexts. A full URL is left alone.
-  const moduleExports: Record<string, unknown> = await import(
-    /* @vite-ignore */ new URL(request.module.url, location.origin).href
-  );
+  const providersModule: ProvidersModule = await import(/* @vite-ignore */ PROVIDERS_PATH);
+  if (request.scenario && !(await runScenario(request.scenario)))
+    return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
+  const moduleExports = await importComponentModule(request.module);
   const componentType = moduleExports[request.exportName];
   if (!componentType) return createEmptyCapture(`export ${request.exportName} not found`);
-  const props = Object.fromEntries(
-    Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
-  );
-  const loadedWrappers = await Promise.all(request.wrappers.map(loadWrapper));
-  const render = async (type: unknown, isRouterless = false): Promise<void> => {
-    mountedRoot?.unmount();
-    resetRenderState();
-    mountedType = type;
-    const container = document.createElement("div");
-    document.body.replaceChildren(container);
-    mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
-    // HACK: the component and wrapper types come from dynamic imports, so React's element
-    // typing can't see them.
-    let element = createElement(type as Parameters<typeof createElement>[0], props);
-    for (let depth = loadedWrappers.length; depth > 0; depth--) {
-      const wrapper = loadedWrappers[depth - 1];
-      if (wrapper)
-        element = createElement(
-          wrapper.type as ComponentType<Record<string, unknown>>,
-          { ...wrapper.props, ...OPEN_PARENT_PROPS },
-          createElement(getDepthMarker(depth), null, element),
-        );
-    }
-    mountedRoot.render(
-      createElement(Boundary, null, createElement(Providers, { isRouterless }, element)),
-    );
-    await settle();
+  const mounted: MountedComponent = {
+    props: Object.fromEntries(
+      Object.entries(request.props).map(([name, sample]) => [name, hydrateProp(name, sample)]),
+    ),
+    wrappers: await Promise.all(request.wrappers.map(loadWrapper)),
+    Providers: providersModule.default,
   };
   try {
     if (isAsyncFunction(componentType)) {
-      const output = await resolveServerTree(await componentType(props));
-      await render(() => output);
+      const output = await resolveServerTree(await componentType(mounted.props));
+      await renderMounted(() => output, mounted);
     } else {
-      await render(componentType);
-      const error = getRecordedError();
-      const rendered =
-        error &&
-        ASYNC_CLIENT_COMPONENT_PATTERN.test(error.message) &&
-        isFunctionComponent(componentType)
-          ? await callServerComponent(componentType, props)
-          : null;
-      if (rendered) {
-        const output = await resolveServerTree(rendered.output, true);
-        await render(() => output);
-      }
-      if (error && NESTED_ROUTER_PATTERN.test(error.message)) await render(componentType, true);
+      await renderClientComponent(componentType, mounted);
     }
   } catch (error) {
     return createEmptyCapture(recordError(error).message);

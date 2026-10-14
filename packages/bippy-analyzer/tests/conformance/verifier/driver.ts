@@ -13,6 +13,7 @@ import type {
 } from "./types";
 import { getPropCombinations } from "./props";
 import { findSiblingParts, getErrorSubject, getNamedParent, proposeParents } from "./wrappers";
+import type { ParentQuery } from "./wrappers";
 
 export interface Observation {
   props: Record<string, Sample>;
@@ -78,113 +79,212 @@ const getInsertIndex = (error: string, componentName: string, layers: Layer[]): 
   return isComponent || layers.length === 0 ? layers.length : 0;
 };
 
+interface FailedMount {
+  error: string;
+  errorDepth: number | null;
+  failure: MountFailure;
+}
+
+type LayerRevision = "retry" | "give-up" | "unchanged";
+
+class WrapperSearch {
+  readonly #page: Page;
+  readonly #analysis: ComponentAnalysis;
+  readonly #project: ProjectIndex;
+  readonly #layers: Layer[] = [];
+  #newestLayer: Layer | null = null;
+
+  constructor(page: Page, analysis: ComponentAnalysis, project: ProjectIndex) {
+    this.#page = page;
+    this.#analysis = analysis;
+    this.#project = project;
+  }
+
+  get wrappers(): Wrapper[] {
+    return this.#layers.flatMap((layer) => getLayerWrapper(layer) ?? []);
+  }
+
+  get layerCount(): number {
+    return this.#layers.length;
+  }
+
+  async reviseNewestLayer(failedMount: FailedMount): Promise<LayerRevision> {
+    const newestLayer = this.#newestLayer;
+    if (!newestLayer) return "unchanged";
+    const newestIndex = this.#layers.indexOf(newestLayer);
+    const newestWrapper = getLayerWrapper(newestLayer);
+    const throwingLayer =
+      failedMount.errorDepth === null ? undefined : this.#layers[failedMount.errorDepth];
+    const isSameError = failedMount.error === newestLayer.error;
+    const throwingNamedParent =
+      throwingLayer === newestLayer &&
+      isSameError &&
+      newestWrapper?.candidate.kind === "project" &&
+      newestWrapper.name === getNamedParent(failedMount.error, this.#project)
+        ? newestWrapper.candidate
+        : null;
+    if (throwingNamedParent) {
+      const parentQuery = this.#getQuery(
+        throwingNamedParent.exportName,
+        throwingNamedParent.file,
+        failedMount,
+      );
+      if (await this.#tryAddLayer(proposeParents(parentQuery), failedMount.error, newestIndex))
+        return "retry";
+    }
+    const isPartMissingSibling =
+      isSameError && throwingLayer === undefined && newestWrapper?.source === "root";
+    if (isPartMissingSibling) {
+      const siblingQuery = this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount);
+      if (
+        await this.#tryAddLayer(findSiblingParts(siblingQuery), failedMount.error, newestIndex + 1)
+      )
+        return "retry";
+    }
+    const isRedundantParent =
+      throwingLayer !== undefined &&
+      throwingLayer !== newestLayer &&
+      (failedMount.failure === "missing-data" || failedMount.failure === "other");
+    if (throwingLayer && isRedundantParent) {
+      this.#layers.splice(this.#layers.indexOf(throwingLayer), 1);
+      this.#newestLayer = null;
+      return "retry";
+    }
+    const isBrokenByNewest =
+      failedMount.failure === "other" &&
+      failedMount.errorDepth !== null &&
+      failedMount.errorDepth <= newestIndex;
+    if (!isSameError && failedMount.failure !== "did-not-render" && !isBrokenByNewest)
+      return "unchanged";
+    newestLayer.cursor++;
+    if (await this.#advanceToLoadable(newestLayer)) return "retry";
+    this.#layers.splice(newestIndex, 1);
+    return "give-up";
+  }
+
+  async addParentLayer(failedMount: FailedMount): Promise<boolean> {
+    const parentQuery = this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount);
+    const insertIndex =
+      failedMount.errorDepth ??
+      getInsertIndex(failedMount.error, this.#analysis.name, this.#layers);
+    return this.#tryAddLayer(proposeParents(parentQuery), failedMount.error, insertIndex);
+  }
+
+  #getQuery(name: string, file: string, failedMount: FailedMount): ParentQuery {
+    return {
+      name,
+      file,
+      error: failedMount.error,
+      isNamingParent: failedMount.failure === "provider",
+      analysis: this.#analysis,
+      project: this.#project,
+    };
+  }
+
+  async #tryAddLayer(proposals: Wrapper[], error: string, insertIndex: number): Promise<boolean> {
+    const usedNames = new Set([
+      this.#analysis.name,
+      ...this.wrappers.map((wrapper) => wrapper.name),
+    ]);
+    const layer: Layer = {
+      proposals: proposals.filter((proposal) => !usedNames.has(proposal.name)),
+      cursor: 0,
+      error,
+    };
+    if (!(await this.#advanceToLoadable(layer))) return false;
+    this.#newestLayer = layer;
+    this.#layers.splice(insertIndex, 0, layer);
+    return true;
+  }
+
+  async #advanceToLoadable(layer: Layer): Promise<boolean> {
+    for (let wrapper = getLayerWrapper(layer); wrapper; wrapper = getLayerWrapper(layer)) {
+      if (await canLoadInPage(this.#page, wrapper)) return true;
+      layer.cursor++;
+    }
+    return false;
+  }
+}
+
 export const resolveWrappers = async (
   page: Page,
   request: MountRequest,
   analysis: ComponentAnalysis,
   project: ProjectIndex,
 ): Promise<ResolvedWrappers> => {
-  const layers: Layer[] = [];
-  let newest: Layer | null = null;
-  const getWrappers = (): Wrapper[] => layers.flatMap((layer) => getLayerWrapper(layer) ?? []);
-  const getQuery = (name: string, file: string, error: string, failure: MountFailure) => ({
-    name,
-    file,
-    error,
-    isNamingParent: failure === "provider",
-    analysis,
-    project,
-  });
-  const createLayer = (proposals: Wrapper[], error: string): Layer => {
-    const usedNames = new Set([analysis.name, ...getWrappers().map((wrapper) => wrapper.name)]);
-    return { proposals: proposals.filter(({ name }) => !usedNames.has(name)), cursor: 0, error };
-  };
-  const advanceToLoadable = async (layer: Layer): Promise<boolean> => {
-    for (let wrapper = getLayerWrapper(layer); wrapper; wrapper = getLayerWrapper(layer)) {
-      if (await canLoadInPage(page, wrapper)) return true;
-      layer.cursor++;
-    }
-    return false;
-  };
-  for (let attempt = 0; attempt < MAX_MOUNT_ATTEMPTS && layers.length <= MAX_WRAPPERS; attempt++) {
-    const capture = await mountInPage(page, { ...request, wrappers: getWrappers() });
+  const search = new WrapperSearch(page, analysis, project);
+  for (
+    let attempt = 0;
+    attempt < MAX_MOUNT_ATTEMPTS && search.layerCount <= MAX_WRAPPERS;
+    attempt++
+  ) {
+    const capture = await mountInPage(page, { ...request, wrappers: search.wrappers });
     if (!capture.error || capture.shapes.length > 0)
-      return { wrappers: getWrappers(), mounted: capture };
-    const failure = getCaptureFailure(capture);
-    const thrower = capture.errorDepth === null ? undefined : layers[capture.errorDepth];
-    const current = newest;
-    if (current) {
-      const currentIndex = layers.indexOf(current);
-      const currentWrapper = getLayerWrapper(current);
-      const isSameError = capture.error === current.error;
-      const throwingNamedParent =
-        thrower === current &&
-        isSameError &&
-        currentWrapper?.candidate.kind === "project" &&
-        currentWrapper.name === getNamedParent(capture.error, project)
-          ? currentWrapper.candidate
-          : null;
-      if (throwingNamedParent) {
-        const { exportName, file } = throwingNamedParent;
-        const layer = createLayer(
-          proposeParents(getQuery(exportName, file, capture.error, failure)),
-          capture.error,
-        );
-        if (await advanceToLoadable(layer)) {
-          newest = layer;
-          layers.splice(currentIndex, 0, layer);
-          continue;
-        }
-      }
-      const isPartMissingSibling =
-        isSameError && thrower === undefined && currentWrapper?.source === "root";
-      if (isPartMissingSibling) {
-        const layer = createLayer(
-          findSiblingParts(getQuery(analysis.name, analysis.file, capture.error, failure)),
-          capture.error,
-        );
-        if (await advanceToLoadable(layer)) {
-          newest = layer;
-          layers.splice(currentIndex + 1, 0, layer);
-          continue;
-        }
-      }
-      const isRedundantParent =
-        thrower !== undefined &&
-        thrower !== current &&
-        (failure === "missing-data" || failure === "other");
-      if (thrower && isRedundantParent) {
-        layers.splice(layers.indexOf(thrower), 1);
-        newest = null;
-        continue;
-      }
-      const isBrokenByCurrent =
-        failure === "other" && capture.errorDepth !== null && capture.errorDepth <= currentIndex;
-      if (isSameError || failure === "did-not-render" || isBrokenByCurrent) {
-        current.cursor++;
-        if (await advanceToLoadable(current)) continue;
-        layers.splice(currentIndex, 1);
-        break;
-      }
-    }
-    if (!PARENT_FAILURES.has(failure)) break;
-    const layer = createLayer(
-      proposeParents(getQuery(analysis.name, analysis.file, capture.error, failure)),
-      capture.error,
-    );
-    if (!(await advanceToLoadable(layer))) break;
-    newest = layer;
-    layers.splice(
-      capture.errorDepth ?? getInsertIndex(capture.error, analysis.name, layers),
-      0,
-      layer,
-    );
+      return { wrappers: search.wrappers, mounted: capture };
+    const failedMount: FailedMount = {
+      error: capture.error,
+      errorDepth: capture.errorDepth,
+      failure: getCaptureFailure(capture),
+    };
+    const revision = await search.reviseNewestLayer(failedMount);
+    if (revision === "retry") continue;
+    if (revision === "give-up" || !PARENT_FAILURES.has(failedMount.failure)) break;
+    if (!(await search.addParentLayer(failedMount))) break;
   }
-  return { wrappers: getWrappers(), mounted: null };
+  return { wrappers: search.wrappers, mounted: null };
 };
 
 const getCaptureKey = (capture: Capture): string =>
   JSON.stringify([normalizeShapes(capture.shapes), capture.hookStates]);
+
+const replayPath = async (
+  page: Page,
+  request: MountRequest,
+  path: string[],
+): Promise<Capture | null> => {
+  let capture: Capture | null = await mountInPage(page, request);
+  for (const actionKey of path) {
+    capture = await performInPage(page, actionKey);
+    if (!capture) return null;
+  }
+  return capture;
+};
+
+const explorePropCombination = async (
+  page: Page,
+  request: MountRequest,
+  initialCapture: Capture,
+): Promise<Observation[]> => {
+  const { props } = request;
+  const observations: Observation[] = [
+    { props, path: [], action: null, before: null, after: initialCapture },
+  ];
+  if (initialCapture.error && initialCapture.shapes.length === 0) return observations;
+  const seenCaptureKeys = new Set([getCaptureKey(initialCapture)]);
+  const pendingPaths: string[][] = [[]];
+  let actionCount = 0;
+  for (const currentPath of pendingPaths) {
+    if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
+    if (currentPath.length >= MAX_ACTION_DEPTH) continue;
+    if (currentPath.length > 0 && !(await replayPath(page, request, currentPath))) continue;
+    for (const action of await listActionsInPage(page)) {
+      if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
+      const before = await replayPath(page, request, currentPath);
+      if (!before) continue;
+      const after = await performInPage(page, action.key);
+      if (!after) continue;
+      actionCount++;
+      const path = [...currentPath, action.key];
+      observations.push({ props, path, action, before, after });
+      const captureKey = getCaptureKey(after);
+      if (!seenCaptureKeys.has(captureKey)) {
+        seenCaptureKeys.add(captureKey);
+        pendingPaths.push(path);
+      }
+    }
+  }
+  return observations;
+};
 
 export const exploreComponent = async (
   page: Page,
@@ -194,62 +294,28 @@ export const exploreComponent = async (
 ): Promise<Observation[]> => {
   const { exportName } = analysis;
   if (!exportName) return [];
-  const observations: Observation[] = [];
   const propCombinations = getPropCombinations(analysis);
-  const { wrappers, mounted } = await resolveWrappers(
+  const [firstProps = {}] = propCombinations;
+  const resolved = await resolveWrappers(
     page,
-    {
-      module,
-      exportName,
-      props: propCombinations[0] ?? {},
-      scenario: null,
-      wrappers: [],
-    },
+    { module, exportName, props: firstProps, scenario: null, wrappers: [] },
     analysis,
     project,
   );
-
+  const observations: Observation[] = [];
   for (const props of propCombinations) {
-    const request: MountRequest = { module, exportName, props, scenario: null, wrappers };
-    const replay = async (path: string[]): Promise<Capture | null> => {
-      let capture: Capture | null = await mountInPage(page, request);
-      for (const actionKey of path) {
-        capture = await performInPage(page, actionKey);
-        if (!capture) return null;
-      }
-      return capture;
+    const request: MountRequest = {
+      module,
+      exportName,
+      props,
+      scenario: null,
+      wrappers: resolved.wrappers,
     };
-
-    const initial =
-      mounted && props === propCombinations[0] ? mounted : await mountInPage(page, request);
-    observations.push({ props, path: [], action: null, before: null, after: initial });
-    if (initial.error && initial.shapes.length === 0) continue;
-
-    const seen = new Set([getCaptureKey(initial)]);
-    const queue: string[][] = [[]];
-    let actionCount = 0;
-
-    for (const currentPath of queue) {
-      if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
-      if (currentPath.length >= MAX_ACTION_DEPTH) continue;
-      if (currentPath.length > 0 && !(await replay(currentPath))) continue;
-      const actions = await listActionsInPage(page);
-      for (const action of actions) {
-        if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
-        const before = await replay(currentPath);
-        if (!before) continue;
-        const after = await performInPage(page, action.key);
-        if (!after) continue;
-        actionCount++;
-        const path = [...currentPath, action.key];
-        observations.push({ props, path, action, before, after });
-        const key = getCaptureKey(after);
-        if (!seen.has(key)) {
-          seen.add(key);
-          queue.push(path);
-        }
-      }
-    }
+    const initialCapture =
+      resolved.mounted && props === propCombinations[0]
+        ? resolved.mounted
+        : await mountInPage(page, request);
+    observations.push(...(await explorePropCombination(page, request, initialCapture)));
   }
   return observations;
 };

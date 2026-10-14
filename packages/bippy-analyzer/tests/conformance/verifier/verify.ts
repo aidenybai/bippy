@@ -108,102 +108,156 @@ interface VerifyReport {
   durationMs: number;
 }
 
+interface ComponentVerification {
+  verdict: ComponentVerdict;
+  isPageBroken: boolean;
+}
+
+const createFailedVerdict = (
+  component: AnalyzedComponent,
+  error: unknown,
+  knownComponents: Map<string, string>,
+): ComponentVerdict => {
+  const message = error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
+  return {
+    ...scoreComponent(component.analysis, component.report, [], knownComponents),
+    status: "mount-failed",
+    error: message,
+    mountFailure: error instanceof HarnessError ? error.failure : classifyMountError(message),
+  };
+};
+
+const verifyComponent = async (
+  page: Page,
+  component: AnalyzedComponent,
+  harness: ProjectHarness,
+): Promise<ComponentVerification> => {
+  try {
+    const observations = component.analysis.exportName
+      ? await exploreComponent(
+          page,
+          component.analysis,
+          harness.getComponentModule(component.analysis.file),
+          harness.projectIndex,
+        )
+      : [];
+    return {
+      verdict: scoreComponent(
+        component.analysis,
+        component.report,
+        observations,
+        harness.knownComponents,
+      ),
+      isPageBroken: false,
+    };
+  } catch (error) {
+    return {
+      verdict: createFailedVerdict(component, error, harness.knownComponents),
+      isPageBroken: true,
+    };
+  }
+};
+
+const getPageCount = (componentCount: number): number =>
+  Math.max(
+    1,
+    Math.min(
+      MAX_PAGES,
+      availableParallelism(),
+      Math.floor((totalmem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
+      componentCount,
+    ),
+  );
+
+class HarnessPage {
+  readonly #browser: Browser;
+  readonly #harness: ProjectHarness;
+  #page: Page;
+  #dependencyHash: string;
+
+  private constructor(browser: Browser, harness: ProjectHarness, page: Page) {
+    this.#browser = browser;
+    this.#harness = harness;
+    this.#page = page;
+    this.#dependencyHash = harness.getDependencyHash();
+  }
+
+  static async open(browser: Browser, harness: ProjectHarness): Promise<HarnessPage> {
+    return new HarnessPage(browser, harness, await openPage(browser, harness.url));
+  }
+
+  get page(): Page {
+    return this.#page;
+  }
+
+  get isStale(): boolean {
+    return this.#harness.getDependencyHash() !== this.#dependencyHash;
+  }
+
+  async reopen(): Promise<void> {
+    await this.close();
+    this.#page = await openPage(this.#browser, this.#harness.url);
+    this.#dependencyHash = this.#harness.getDependencyHash();
+  }
+
+  async close(): Promise<void> {
+    await this.#page.close().catch(() => undefined);
+  }
+}
+
+const verifyOnFreshPage = async (
+  harnessPage: HarnessPage,
+  component: AnalyzedComponent,
+  harness: ProjectHarness,
+): Promise<ComponentVerdict> => {
+  if (harnessPage.isStale) await harnessPage.reopen();
+  let verification = await verifyComponent(harnessPage.page, component, harness);
+  if (harnessPage.isStale) {
+    await harnessPage.reopen();
+    verification = await verifyComponent(harnessPage.page, component, harness);
+  }
+  if (verification.isPageBroken) await harnessPage.reopen();
+  return verification.verdict;
+};
+
 export const verifyProject = async (
   tsconfigPath: string,
   options: VerifyOptions = {},
 ): Promise<VerifyReport> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
-  const appDirectory = dirname(configPath);
   const analyzed = options.analyzed ?? analyzeProject(configPath).components;
-  const { componentNames } = options;
+  const componentNames = options.componentNames;
   const components = componentNames
-    ? analyzed.filter(({ analysis }) => componentNames.includes(analysis.name))
+    ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
     : analyzed;
   const harness = await startProjectHarness(
-    appDirectory,
+    dirname(configPath),
     analyzed,
     components,
     options.setupDirectory ?? null,
   );
-  const { knownComponents } = harness;
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
-  const verifyComponent = async (
-    page: Page,
-    component: AnalyzedComponent,
-  ): Promise<{ verdict: ComponentVerdict; isPageBroken: boolean }> => {
-    try {
-      const observations = component.analysis.exportName
-        ? await exploreComponent(
-            page,
-            component.analysis,
-            harness.getComponentModule(component.analysis.file),
-            harness.projectIndex,
-          )
-        : [];
-      return {
-        verdict: scoreComponent(
-          component.analysis,
-          component.report,
-          observations,
-          knownComponents,
-        ),
-        isPageBroken: false,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
-      return {
-        verdict: {
-          ...scoreComponent(component.analysis, component.report, [], knownComponents),
-          status: "mount-failed",
-          error: message,
-          mountFailure: error instanceof HarnessError ? error.failure : classifyMountError(message),
-        },
-        isPageBroken: true,
-      };
-    }
-  };
   let nextIndex = 0;
-  const runPage = async (): Promise<void> => {
-    let page = await openPage(browser, harness.url);
-    let pageDependencyHash = harness.getDependencyHash();
-    const reopenPage = async (): Promise<void> => {
-      await page.close().catch(() => undefined);
-      page = await openPage(browser, harness.url);
-      pageDependencyHash = harness.getDependencyHash();
-    };
-    const isPageStale = (): boolean => harness.getDependencyHash() !== pageDependencyHash;
+  const verifyRemainingOnOnePage = async (): Promise<void> => {
+    const harnessPage = await HarnessPage.open(browser, harness);
     try {
       for (let index = nextIndex++; index < components.length; index = nextIndex++) {
         const component = components[index];
         if (!component) continue;
         options.onStart?.(component.analysis.name);
-        if (isPageStale()) await reopenPage();
-        let result = await verifyComponent(page, component);
-        if (isPageStale()) {
-          await reopenPage();
-          result = await verifyComponent(page, component);
-        }
-        if (result.isPageBroken) await reopenPage();
-        verdicts[index] = result.verdict;
-        options.onComponent?.(result.verdict);
+        const verdict = await verifyOnFreshPage(harnessPage, component, harness);
+        verdicts[index] = verdict;
+        options.onComponent?.(verdict);
       }
     } finally {
-      await page.close().catch(() => undefined);
+      await harnessPage.close();
     }
   };
   try {
-    const pageCount = Math.max(
-      1,
-      Math.min(
-        MAX_PAGES,
-        availableParallelism(),
-        Math.floor((totalmem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
-        components.length,
-      ),
-    );
-    await Promise.all(Array.from({ length: pageCount }, runPage));
+    const pageCount = getPageCount(components.length);
+    await Promise.all(Array.from({ length: pageCount }, verifyRemainingOnOnePage));
   } finally {
     await browser.close();
     await harness.close();

@@ -454,6 +454,85 @@ const scoreTransition = (
   else if (!context.report.isTruncated) recordWrongEdge("unpredicted-target");
 };
 
+const getMountFailedVerdict = (
+  verdict: ComponentVerdict,
+  observations: Observation[],
+): ComponentVerdict | null => {
+  const isNothingMounted = observations.every(
+    (observation) => observation.after.error && observation.after.shapes.length === 0,
+  );
+  if (!isNothingMounted) return null;
+  const firstCapture = observations[0]?.after;
+  return {
+    ...verdict,
+    status: "mount-failed",
+    error: firstCapture?.error ?? "nothing was mounted",
+    mountFailure: firstCapture ? getCaptureFailure(firstCapture) : "did-not-render",
+  };
+};
+
+const createScoringContext = (
+  analysis: ComponentAnalysis,
+  report: StateReport,
+  verdict: ComponentVerdict,
+  knownComponents: Map<string, string>,
+): ScoringContext => ({
+  analysis,
+  report,
+  verdict,
+  expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
+  triggerLabels: collectTriggerLabels(analysis.render),
+  stateBindings: getStateBindings(analysis),
+  externalBindingIds: new Set(
+    analysis.bindings
+      .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
+      .map((binding) => binding.id),
+  ),
+  effectIds: new Set(
+    analysis.handlers
+      .filter((handler) => handler.trigger.kind === "Effect")
+      .map((handler) => handler.id),
+  ),
+  coveredStates: new Set(),
+  matchedStatesCache: new Map(),
+});
+
+const getReachedUnreachableBranches = (report: StateReport, coveredSides: Set<string>): string[] =>
+  report.unreachableBranches
+    .filter(
+      (unreachableBranch) =>
+        unreachableBranch.branch.loc !== GeneratedSource &&
+        coveredSides.has(
+          `${getProbeId(unreachableBranch.branch.file, unreachableBranch.branch.loc)}:${unreachableBranch.side}`,
+        ),
+    )
+    .map((unreachableBranch) =>
+      `${unreachableBranch.description} ${formatLine(unreachableBranch.branch.loc)}`.trim(),
+    );
+
+const scoreObservation = (
+  context: ScoringContext,
+  observation: Observation,
+  probeIds: Set<string>,
+  coveredSides: Set<string>,
+): void => {
+  for (const probeHit of observation.after.probes)
+    if (probeIds.has(probeHit.id)) coveredSides.add(`${probeHit.id}:${probeHit.outcome}`);
+  if (observation.after.error) {
+    context.verdict.renderErrors++;
+    return;
+  }
+  const afterMatches = scoreRender(
+    context,
+    observation.props,
+    observation.path,
+    observation.after.shapes,
+  );
+  scoreFirstCommit(context, observation, afterMatches);
+  scoreValues(context, observation);
+  if (afterMatches) scoreTransition(context, observation, afterMatches);
+};
+
 export const scoreComponent = (
   analysis: ComponentAnalysis,
   report: StateReport,
@@ -462,70 +541,18 @@ export const scoreComponent = (
 ): ComponentVerdict => {
   const verdict = { ...createEmptyVerdict(analysis, report), observations: observations.length };
   if (!analysis.exportName) return verdict;
-  if (
-    observations.every(
-      (observation) => observation.after.error && observation.after.shapes.length === 0,
-    )
-  ) {
-    const first = observations[0]?.after;
-    return {
-      ...verdict,
-      status: "mount-failed",
-      error: first?.error ?? "nothing was mounted",
-      mountFailure: first ? getCaptureFailure(first) : "did-not-render",
-    };
-  }
-  const context: ScoringContext = {
-    analysis,
-    report,
-    verdict,
-    expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
-    triggerLabels: collectTriggerLabels(analysis.render),
-    stateBindings: getStateBindings(analysis),
-    externalBindingIds: new Set(
-      analysis.bindings
-        .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
-        .map((binding) => binding.id),
-    ),
-    effectIds: new Set(
-      analysis.handlers
-        .filter((handler) => handler.trigger.kind === "Effect")
-        .map((handler) => handler.id),
-    ),
-    coveredStates: new Set(),
-    matchedStatesCache: new Map(),
-  };
+  const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
+  if (mountFailedVerdict) return mountFailedVerdict;
+  const context = createScoringContext(analysis, report, verdict, knownComponents);
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));
   const coveredSides = new Set<string>();
-
-  for (const observation of observations) {
-    for (const hit of observation.after.probes)
-      if (probeIds.has(hit.id)) coveredSides.add(`${hit.id}:${hit.outcome}`);
-    if (observation.after.error) {
-      verdict.renderErrors++;
-      continue;
-    }
-    const afterMatches = scoreRender(
-      context,
-      observation.props,
-      observation.path,
-      observation.after.shapes,
-    );
-    scoreFirstCommit(context, observation, afterMatches);
-    scoreValues(context, observation);
-    if (afterMatches) scoreTransition(context, observation, afterMatches);
-  }
-
+  for (const observation of observations)
+    scoreObservation(context, observation, probeIds, coveredSides);
   verdict.coveredStates = [...context.coveredStates].sort((left, right) => left - right);
   verdict.branchSides = probes.length * 2;
   verdict.coveredBranchSides = coveredSides.size;
-  verdict.reachedUnreachableBranches = report.unreachableBranches
-    .filter(({ branch, side }) => {
-      const { loc } = branch;
-      return loc !== GeneratedSource && coveredSides.has(`${getProbeId(branch.file, loc)}:${side}`);
-    })
-    .map(({ branch, description }) => `${description} ${formatLine(branch.loc)}`.trim());
+  verdict.reachedUnreachableBranches = getReachedUnreachableBranches(report, coveredSides);
   return { ...verdict, ...scoreWarnings(analysis, observations, context.stateBindings) };
 };
 

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { createServer, loadEnv } from "vite";
-import type { Plugin } from "vite";
+import type { InlineConfig, Plugin, ViteDevServer } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { createAssetPlugin } from "./harness/assets";
 import {
@@ -15,6 +15,7 @@ import { createProvidersSource, getInstalledProviders } from "./harness/provider
 import type { ProviderSpec } from "./harness/providers";
 import type { HarnessSetup } from "./harness/setup";
 import { collectSourceReferences, indexSource } from "./harness/source-references";
+import type { SourceReferences } from "./harness/source-references";
 import {
   createMissingModulePlugin,
   createMissingRequirePlugin,
@@ -44,6 +45,13 @@ export interface Harness {
 const HARNESS_PATH = "/__bippy_verify";
 const ENTRY_PATH = "/__bippy_verify_entry.ts";
 const ENV_PLACEHOLDER = "https://example.com";
+const PREBUNDLED_REACT_MODULES = [
+  "react",
+  "react-dom",
+  "react-dom/client",
+  "react/jsx-dev-runtime",
+  "react/jsx-runtime",
+];
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../../bippy/src/index.ts");
 
@@ -103,41 +111,60 @@ const createHarnessPlugin = (
   };
 };
 
-export const startHarness = async (
-  appDirectory: string,
-  probes: Probe[],
-  componentFiles: string[],
-  setup: HarnessSetup,
-): Promise<Harness> => {
-  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
-  const appImporter = componentFiles[0] ?? join(appDirectory, "index.ts");
-  const references = collectSourceReferences(appDirectory);
-  const providers = getInstalledProviders(appDirectory, nextDirectory, references.reduxStore);
-  const loadedEnv = loadEnv("development", appDirectory, "");
+interface HarnessContext {
+  appDirectory: string;
+  nextDirectory: string | null;
+  appImporter: string;
+  componentFiles: string[];
+  probes: Probe[];
+  references: SourceReferences;
+  providers: ProviderSpec[];
+  setup: HarnessSetup;
+}
+
+const getEnvDefines = (context: HarnessContext): Record<string, string> => {
+  const loadedEnv = loadEnv("development", context.appDirectory, "");
   const getPlaceholders = (names: Set<string>): Record<string, string> =>
     Object.fromEntries(
       [...names].filter((name) => !(name in loadedEnv)).map((name) => [name, ENV_PLACEHOLDER]),
     );
   const processEnv = {
-    ...getPlaceholders(references.processEnv),
+    ...getPlaceholders(context.references.processEnv),
     ...loadedEnv,
-    ...setup.env,
+    ...context.setup.env,
     NODE_ENV: "development",
-    ...getNextImageOptions(nextDirectory),
+    ...getNextImageOptions(context.nextDirectory),
   };
-  const importMetaEnv = { ...getPlaceholders(references.importMetaEnv), ...setup.env };
-  const server = await createServer({
+  const importMetaEnv = {
+    ...getPlaceholders(context.references.importMetaEnv),
+    ...context.setup.env,
+  };
+  return {
+    "process.env": JSON.stringify(processEnv),
+    ...Object.fromEntries(
+      Object.entries(importMetaEnv).map(([name, value]) => [
+        `import.meta.env.${name}`,
+        JSON.stringify(value),
+      ]),
+    ),
+  };
+};
+
+const createHarnessConfig = (context: HarnessContext): InlineConfig => {
+  const { appDirectory, nextDirectory, references, providers, setup } = context;
+  const polyfilledModules = getPolyfilledModules(nextDirectory);
+  return {
     configFile: false,
     root: appDirectory,
     logLevel: "error",
     appType: "custom",
     plugins: [
-      createStubPlugin(nextDirectory, appImporter, references.nextFonts),
-      createStandInPlugin(getPolyfilledModules(nextDirectory), references.packageImports),
+      createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
+      createStandInPlugin(polyfilledModules, references.packageImports),
       createAssetPlugin(),
-      createHarnessPlugin(appDirectory, providers, setup, appImporter),
+      createHarnessPlugin(appDirectory, providers, setup, context.appImporter),
       createMissingModulePlugin(),
-      createProbePlugin(probes),
+      createProbePlugin(context.probes),
       ...(nextDirectory ? [createNextImagePlugin()] : []),
       createServerActionPlugin(),
       createCommonJsPlugin(),
@@ -158,51 +185,64 @@ export const startHarness = async (
     // HACK: an empty PostCSS config keeps an app's Tailwind or Sass setup from failing imports.
     css: { postcss: {} },
     esbuild: { jsx: "automatic", jsxDev: true },
-    define: {
-      "process.env": JSON.stringify(processEnv),
-      ...Object.fromEntries(
-        Object.entries(importMetaEnv).map(([name, value]) => [
-          `import.meta.env.${name}`,
-          JSON.stringify(value),
-        ]),
-      ),
-    },
+    define: getEnvDefines(context),
     optimizeDeps: {
-      entries: componentFiles.map((file) => relative(appDirectory, file)),
+      entries: context.componentFiles.map((file) => relative(appDirectory, file)),
       include: [
-        "react",
-        "react-dom",
-        "react-dom/client",
-        "react/jsx-dev-runtime",
-        "react/jsx-runtime",
+        ...PREBUNDLED_REACT_MODULES,
         ...providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
       ],
       esbuildOptions: {
-        plugins: [
-          createMissingRequirePlugin(),
-          createNodeBuiltinPlugin(getPolyfilledModules(nextDirectory)),
-        ],
+        plugins: [createMissingRequirePlugin(), createNodeBuiltinPlugin(polyfilledModules)],
         loader: { ".node": "empty" },
         // HACK: Webpack, which Next bundles client code with, makes `__dirname` the root.
         ...(nextDirectory ? { define: { __dirname: '"/"' } } : {}),
       },
     },
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
-  });
-  await server.listen();
+  };
+};
+
+const warmUpHarness = async (server: ViteDevServer, context: HarnessContext): Promise<void> => {
+  const componentUrls = context.componentFiles.map(
+    (file) => `/${relative(context.appDirectory, file)}`,
+  );
   await Promise.all(
-    [
-      ENTRY_PATH,
-      PROVIDERS_PATH,
-      ...componentFiles.map((file) => `/${relative(appDirectory, file)}`),
-    ].map((url) => server.warmupRequest(url)),
+    [ENTRY_PATH, PROVIDERS_PATH, ...componentUrls].map((url) => server.warmupRequest(url)),
   );
   await server.waitForRequestsIdle();
-  const sourceIndex = await indexSource(references, server);
+};
+
+const getServerPort = (server: ViteDevServer): number => {
   const address = server.httpServer?.address();
   if (!address || typeof address === "string") throw new Error("Harness server has no port");
+  return address.port;
+};
+
+export const startHarness = async (
+  appDirectory: string,
+  probes: Probe[],
+  componentFiles: string[],
+  setup: HarnessSetup,
+): Promise<Harness> => {
+  const nextDirectory = resolvePackageDirectory(appDirectory, "next");
+  const references = collectSourceReferences(appDirectory);
+  const context: HarnessContext = {
+    appDirectory,
+    nextDirectory,
+    appImporter: componentFiles[0] ?? join(appDirectory, "index.ts"),
+    componentFiles,
+    probes,
+    references,
+    providers: getInstalledProviders(appDirectory, nextDirectory, references.reduxStore),
+    setup,
+  };
+  const server = await createServer(createHarnessConfig(context));
+  await server.listen();
+  await warmUpHarness(server, context);
+  const sourceIndex = await indexSource(references, server);
   return {
-    url: `http://localhost:${address.port}${HARNESS_PATH}`,
+    url: `http://localhost:${getServerPort(server)}${HARNESS_PATH}`,
     sourceIndex,
     getModuleUrl: (file) => `/${relative(appDirectory, file)}`,
     getDependencyHash: () => server.environments.client.depsOptimizer?.metadata.browserHash ?? "",
