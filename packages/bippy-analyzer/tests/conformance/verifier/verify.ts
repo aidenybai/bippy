@@ -5,7 +5,7 @@ import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
 import { createDeclarationKey } from "../../../src/core/utils/declaration-key";
-import type { ComponentModule, ProjectIndex } from "./types";
+import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectMutationProbes } from "./mutation";
 import { collectProbes, createEmptyVerdict, scoreComponent } from "./score";
@@ -21,6 +21,28 @@ export interface ProjectHarness extends Harness {
   knownComponents: Map<string, string>;
   projectIndex: ProjectIndex;
 }
+
+const createProjectIndex = (
+  sourceIndex: SourceIndex,
+  analyzed: AnalyzedComponent[],
+): ProjectIndex => ({
+  ...sourceIndex,
+  components: new Map(
+    analyzed.flatMap(({ analysis }) =>
+      analysis.exportName
+        ? [[createDeclarationKey(analysis.file, analysis.exportName), analysis]]
+        : [],
+    ),
+  ),
+  contextSamples: new Map(analyzed.flatMap(({ analysis }) => [...analysis.contextSamples])),
+});
+
+const getKnownComponents = (analyzed: AnalyzedComponent[]): Map<string, string> =>
+  new Map(
+    analyzed.flatMap(({ analysis }) =>
+      analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
+    ),
+  );
 
 export const startProjectHarness = async (
   appDirectory: string,
@@ -45,22 +67,8 @@ export const startProjectHarness = async (
       url: harness.getModuleUrl(file),
       importerUrls: (cycleImporters.get(file) ?? []).map(harness.getModuleUrl),
     }),
-    projectIndex: {
-      ...harness.sourceIndex,
-      components: new Map(
-        analyzed.flatMap(({ analysis }) =>
-          analysis.exportName
-            ? [[createDeclarationKey(analysis.file, analysis.exportName), analysis]]
-            : [],
-        ),
-      ),
-      contextSamples: new Map(analyzed.flatMap(({ analysis }) => [...analysis.contextSamples])),
-    },
-    knownComponents: new Map(
-      analyzed.flatMap(({ analysis }) =>
-        analysis.runtimeName ? [[analysis.declaration, analysis.runtimeName]] : [],
-      ),
-    ),
+    projectIndex: createProjectIndex(harness.sourceIndex, analyzed),
+    knownComponents: getKnownComponents(analyzed),
   };
 };
 
@@ -219,23 +227,11 @@ const verifyOnFreshPage = async (
   return verification.verdict;
 };
 
-export const verifyProject = async (
-  tsconfigPath: string,
-  options: VerifyOptions = {},
-): Promise<VerifyReport> => {
-  const startTime = performance.now();
-  const configPath = resolve(tsconfigPath);
-  const analyzed = options.analyzed ?? analyzeProject(configPath).components;
-  const componentNames = options.componentNames;
-  const components = componentNames
-    ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
-    : analyzed;
-  const harness = await startProjectHarness(
-    dirname(configPath),
-    analyzed,
-    components,
-    options.setupDirectory ?? null,
-  );
+const verifyOnPages = async (
+  harness: ProjectHarness,
+  components: AnalyzedComponent[],
+  options: VerifyOptions,
+): Promise<ComponentVerdict[]> => {
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
   let nextIndex = 0;
@@ -259,7 +255,31 @@ export const verifyProject = async (
     await Promise.all(Array.from({ length: pageCount }, verifyRemainingOnOnePage));
   } finally {
     await browser.close();
+  }
+  return verdicts;
+};
+
+export const verifyProject = async (
+  tsconfigPath: string,
+  options: VerifyOptions = {},
+): Promise<VerifyReport> => {
+  const startTime = performance.now();
+  const configPath = resolve(tsconfigPath);
+  const analyzed = options.analyzed ?? analyzeProject(configPath).components;
+  const componentNames = options.componentNames;
+  const components = componentNames
+    ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
+    : analyzed;
+  const harness = await startProjectHarness(
+    dirname(configPath),
+    analyzed,
+    components,
+    options.setupDirectory ?? null,
+  );
+  try {
+    const verdicts = await verifyOnPages(harness, components, options);
+    return { verdicts, durationMs: Math.round(performance.now() - startTime) };
+  } finally {
     await harness.close();
   }
-  return { verdicts, durationMs: Math.round(performance.now() - startTime) };
 };
