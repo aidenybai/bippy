@@ -29,6 +29,7 @@ const MAX_WRAPPERS = 8;
 const MAX_MOUNT_ATTEMPTS = 24;
 const PAGE_TIMEOUT_MS = 30_000;
 const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
+const REDUNDANT_PARENT_FAILURES = new Set<MountFailure>(["missing-data", "other"]);
 
 // HACK: a component that renders `<html>` replaces the harness document, leaving the page
 // unresponsive.
@@ -111,45 +112,63 @@ class WrapperSearch {
   async reviseNewestLayer(failedMount: FailedMount): Promise<LayerRevision> {
     const newestLayer = this.#newestLayer;
     if (!newestLayer) return "unchanged";
-    const newestIndex = this.#layers.indexOf(newestLayer);
-    const newestWrapper = getLayerWrapper(newestLayer);
     const throwingLayer =
       failedMount.errorDepth === null ? undefined : this.#layers[failedMount.errorDepth];
     const isSameError = failedMount.error === newestLayer.error;
-    const throwingNamedParent =
-      throwingLayer === newestLayer &&
+    if (
       isSameError &&
-      newestWrapper?.candidate.kind === "project" &&
-      newestWrapper.name === resolveNamedParent(failedMount.error, this.#project)
-        ? newestWrapper.candidate
-        : null;
-    if (throwingNamedParent) {
-      const parentQuery = this.#getQuery(
-        throwingNamedParent.exportName,
-        throwingNamedParent.file,
-        failedMount,
-      );
-      if (await this.#tryAddLayer(proposeParents(parentQuery), failedMount.error, newestIndex))
-        return "retry";
-    }
-    const isPartMissingSibling =
-      isSameError && throwingLayer === undefined && newestWrapper?.source === "root";
-    if (isPartMissingSibling) {
-      const siblingQuery = this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount);
-      if (
-        await this.#tryAddLayer(findSiblingParts(siblingQuery), failedMount.error, newestIndex + 1)
-      )
-        return "retry";
-    }
-    const isRedundantParent =
-      throwingLayer !== undefined &&
+      throwingLayer === newestLayer &&
+      (await this.#addNamedParent(newestLayer, failedMount))
+    )
+      return "retry";
+    if (
+      isSameError &&
+      throwingLayer === undefined &&
+      (await this.#addSiblingParts(newestLayer, failedMount))
+    )
+      return "retry";
+    if (
+      throwingLayer &&
       throwingLayer !== newestLayer &&
-      (failedMount.failure === "missing-data" || failedMount.failure === "other");
-    if (throwingLayer && isRedundantParent) {
+      REDUNDANT_PARENT_FAILURES.has(failedMount.failure)
+    ) {
       this.#layers.splice(this.#layers.indexOf(throwingLayer), 1);
       this.#newestLayer = null;
       return "retry";
     }
+    return this.#advanceNewestLayer(newestLayer, failedMount, isSameError);
+  }
+
+  async #addNamedParent(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
+    const newestWrapper = getLayerWrapper(newestLayer);
+    if (
+      newestWrapper?.candidate.kind !== "project" ||
+      newestWrapper.name !== resolveNamedParent(failedMount.error, this.#project)
+    )
+      return false;
+    const { exportName, file } = newestWrapper.candidate;
+    return this.#tryAddLayer(
+      proposeParents(this.#getQuery(exportName, file, failedMount)),
+      failedMount.error,
+      this.#layers.indexOf(newestLayer),
+    );
+  }
+
+  async #addSiblingParts(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
+    if (getLayerWrapper(newestLayer)?.source !== "root") return false;
+    return this.#tryAddLayer(
+      findSiblingParts(this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount)),
+      failedMount.error,
+      this.#layers.indexOf(newestLayer) + 1,
+    );
+  }
+
+  async #advanceNewestLayer(
+    newestLayer: Layer,
+    failedMount: FailedMount,
+    isSameError: boolean,
+  ): Promise<LayerRevision> {
+    const newestIndex = this.#layers.indexOf(newestLayer);
     const isBrokenByNewest =
       failedMount.failure === "other" &&
       failedMount.errorDepth !== null &&
