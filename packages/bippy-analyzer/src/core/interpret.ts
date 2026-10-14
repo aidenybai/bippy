@@ -560,7 +560,6 @@ export class Interpreter {
     const fallback = element.props.find(
       (prop) => prop.kind === "JsxAttribute" && prop.name === "fallback",
     );
-    if (!fallback) return element;
     const suspendedBinding = this.#createBinding("suspended", "suspense", element.loc, {
       domain: SUSPENDED_DOMAIN,
     });
@@ -568,7 +567,7 @@ export class Interpreter {
       kind: "Conditional",
       test: createBindingValue(suspendedBinding),
       testKind: "truthy",
-      consequent: { ...element, children: [fallback.value] },
+      consequent: { ...element, children: [fallback?.value ?? UNDEFINED_VALUE] },
       alternate: element,
       branch: this.#createBranch(terminalId, element.loc, "none"),
       guardKeys: [],
