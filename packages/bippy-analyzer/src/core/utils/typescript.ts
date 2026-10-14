@@ -13,7 +13,7 @@ import {
   isStringLiteral,
   isVariableStatement,
 } from "typescript/unstable/ast/is";
-import type { Checker, Type } from "typescript/unstable/sync";
+import type { Checker, Symbol, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
@@ -66,7 +66,7 @@ const getNodesByRange = (sourceFile: SourceFile): Map<string, Node> => {
 export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
   loc === GeneratedSource ? null : (getNodesByRange(sourceFile).get(getLocationKey(loc)) ?? null);
 
-const resolveSymbol = (checker: Checker, node: Node) => {
+const resolveSymbol = (checker: Checker, node: Node): Symbol | null => {
   const nameNode = isPropertyAccessExpression(node) ? node.name : node;
   if (!isIdentifier(nameNode)) return null;
   const symbol = checker.getSymbolAtLocation(nameNode);

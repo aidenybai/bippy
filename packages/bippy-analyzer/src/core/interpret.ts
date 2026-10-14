@@ -1325,7 +1325,7 @@ export class Interpreter {
     return { terminalId, probe, loc, file: this.#resolver.fileName };
   }
 
-  #getBlock(blockId: BlockId) {
+  #getBlock(blockId: BlockId): BasicBlock {
     const block = this.#getCurrentFunction().body.blocks.get(blockId);
     if (!block) throw new Error(`Block bb${blockId} is missing`);
     return block;

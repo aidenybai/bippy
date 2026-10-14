@@ -122,7 +122,7 @@ const createPluginOptions = (
     logger,
   });
 
-const parseFile = (fileName: string, code: string) =>
+const parseFile = (fileName: string, code: string): types.File | null =>
   parseSync(code, {
     filename: fileName,
     babelrc: false,
