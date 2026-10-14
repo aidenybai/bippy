@@ -193,6 +193,9 @@ const SUSPENDED_DOMAIN: Domain = {
   origin: "type",
 };
 
+const isLiteralDomain = (domain: Domain): boolean =>
+  domain.kind === "Cases" && domain.cases.every((value) => value.kind === "Literal");
+
 const getAsyncWalkState = (walkState: WalkState): WalkState => ({ ...walkState, isAsync: true });
 
 const createFieldUpdate = (
@@ -1346,10 +1349,13 @@ export class Interpreter {
 
   #evaluateTypeCast(typeCast: InstructionValueOfKind<"TypeCastExpression">): SymbolicValue {
     const castValue = this.#read(typeCast.value);
-    const isUntypedCast =
-      castValue.kind === "Unknown" &&
-      this.#resolver.getDomain(typeCast.value.loc).kind === "Unknown";
-    return isUntypedCast ? createUnknown("cast", typeCast.value.loc) : castValue;
+    const sourceDomain = this.#resolver.getDomain(typeCast.value.loc);
+    const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
+    const isNarrowingCast =
+      castValue.kind !== "Primitive" &&
+      !isLiteralDomain(sourceDomain) &&
+      isLiteralDomain(this.#resolver.getDomain(typeCast.loc));
+    return isUntypedCast || isNarrowingCast ? createUnknown("cast", typeCast.value.loc) : castValue;
   }
 
   #evaluateObjectLiteral(objectLiteral: InstructionValueOfKind<"ObjectExpression">): SymbolicValue {

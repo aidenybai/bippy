@@ -24,7 +24,7 @@ import type {
   Handler,
   StateUpdate,
 } from "./types";
-import { forEachJsxElement, mapSymbolicValue } from "./utils/traverse";
+import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse";
 import { formatNegated, formatSymbolicValue } from "./format";
 import { appendToGroup } from "./utils/group";
 import { getValueKey } from "./utils/value-key";
@@ -154,6 +154,14 @@ const getToggleCases = (
   }));
 };
 
+const hasCastPart = (value: SymbolicValue): boolean => {
+  let isCast = false;
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Unknown" && part.reason === "cast") isCast = true;
+  });
+  return isCast;
+};
+
 const getReachableCases = (
   analysis: ComponentAnalysis,
   binding: Binding,
@@ -165,6 +173,7 @@ const getReachableCases = (
   const isUntypedState =
     typeCases?.every((value) => value.kind === "Literal" && value.value === undefined) ?? false;
   if (isUntypedState && updates.length > 0) return null;
+  if (updates.some((update) => hasCastPart(update.value))) return null;
   const initialCases = getFieldCases(binding.initial, path, binding, null);
   if (!Array.isArray(initialCases)) return typeCases;
   let reachable = dedupeAbstractValues(initialCases);
