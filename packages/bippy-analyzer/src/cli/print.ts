@@ -181,14 +181,27 @@ const formatLeaf = (value: SymbolicValue, options: PrintOptions): string | null 
 const getConditionLabel = (value: ConditionalValue): string =>
   formatSymbolicValue(getTestExpression(value));
 
+const getCompactLabel = (node: SymbolicValue, context: ComponentPrintContext): string => {
+  const leaf = formatLeaf(node, context);
+  if (leaf !== null) return leaf;
+  switch (node.kind) {
+    case "JsxExpression":
+      return `<${node.tag.name}>`;
+    case "ArrayMap":
+      return `↻ ${formatSymbolicValue(node.array)}`;
+    case "Conditional":
+      return `◆ ${getConditionLabel(node)}`;
+    default:
+      return "";
+  }
+};
+
+const getCompactChildren = (node: SymbolicValue): SymbolicValue[] =>
+  node.kind === "JsxExpression" || node.kind === "JsxFragment" ? node.children : [];
+
 const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): string => {
   const parts: string[] = [];
   let printedLength = 0;
-  const appendPart = (part: string): void => {
-    if (!part) return;
-    parts.push(part);
-    printedLength += part.length + 1;
-  };
   let isCut = false;
   const visit = (node: SymbolicValue): void => {
     if (printedLength > MAX_LABEL_WIDTH) {
@@ -196,31 +209,47 @@ const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): st
       return;
     }
     if (isRenderingNothing(node)) return;
-    const leaf = formatLeaf(node, context);
-    if (leaf !== null) {
-      appendPart(leaf);
-      return;
+    const label = getCompactLabel(node, context);
+    if (label) {
+      parts.push(label);
+      printedLength += label.length + 1;
     }
-    switch (node.kind) {
-      case "JsxExpression":
-        appendPart(`<${node.tag.name}>`);
-        node.children.forEach(visit);
-        break;
-      case "JsxFragment":
-        node.children.forEach(visit);
-        break;
-      case "ArrayMap":
-        appendPart(`↻ ${formatSymbolicValue(node.array)}`);
-        break;
-      case "Conditional":
-        appendPart(`◆ ${getConditionLabel(node)}`);
-        break;
-      default:
-        break;
-    }
+    getCompactChildren(node).forEach(visit);
   };
   visit(value);
   return `${parts.join(" ")}${isCut ? "…" : ""}`;
+};
+
+const buildElementNode = (
+  element: JsxExpressionValue,
+  context: ComponentPrintContext,
+  depth: number,
+  prefix: string,
+): TreeNode => {
+  const [onlyChild] = element.children;
+  const onlyLeaf =
+    element.children.length === 1 && onlyChild && !isRenderingNothing(onlyChild)
+      ? formatLeaf(onlyChild, context)
+      : null;
+  if (onlyLeaf !== null)
+    return createTreeNode(truncate(`${prefix}${formatTag(element, context)} ${onlyLeaf}`));
+  return createTreeNode(
+    truncate(`${prefix}${formatTag(element, context)}`),
+    element.children.map((child) => buildRenderNode(child, context, depth + 1)),
+  );
+};
+
+const buildConditionalNode = (
+  conditional: ConditionalValue,
+  context: ComponentPrintContext,
+  depth: number,
+  prefix: string,
+): TreeNode => {
+  const { colors } = context;
+  const arms = [buildRenderNode(conditional.consequent, context, depth + 1, colors.dim("✓ "))];
+  if (!isRenderingNothingWhenFalse(conditional))
+    arms.push(buildRenderNode(conditional.alternate, context, depth + 1, colors.dim("✗ ")));
+  return createTreeNode(truncate(`${prefix}◆ ${getConditionLabel(conditional)}`), arms);
 };
 
 const buildRenderNode = (
@@ -229,26 +258,14 @@ const buildRenderNode = (
   depth: number,
   prefix = "",
 ): TreeNode => {
-  const { colors } = context;
   const leaf = formatLeaf(value, context);
   if (leaf !== null) return createTreeNode(`${prefix}${leaf}`);
   if (depth >= context.maxDepth || context.renderNodeBudget.remaining <= 0)
-    return createTreeNode(`${prefix}${colors.dim("…")}`);
+    return createTreeNode(`${prefix}${context.colors.dim("…")}`);
   context.renderNodeBudget.remaining--;
   switch (value.kind) {
-    case "JsxExpression": {
-      const [onlyChild] = value.children;
-      const onlyLeaf =
-        value.children.length === 1 && onlyChild && !isRenderingNothing(onlyChild)
-          ? formatLeaf(onlyChild, context)
-          : null;
-      if (onlyLeaf !== null)
-        return createTreeNode(truncate(`${prefix}${formatTag(value, context)} ${onlyLeaf}`));
-      return createTreeNode(
-        truncate(`${prefix}${formatTag(value, context)}`),
-        value.children.map((child) => buildRenderNode(child, context, depth + 1)),
-      );
-    }
+    case "JsxExpression":
+      return buildElementNode(value, context, depth, prefix);
     case "JsxFragment":
       return createTreeNode(
         `${prefix}<>`,
@@ -258,12 +275,8 @@ const buildRenderNode = (
       return createTreeNode(truncate(`${prefix}↻ each of ${formatSymbolicValue(value.array)}`), [
         buildRenderNode(value.item, context, depth + 1),
       ]);
-    case "Conditional": {
-      const arms = [buildRenderNode(value.consequent, context, depth + 1, colors.dim("✓ "))];
-      if (!isRenderingNothingWhenFalse(value))
-        arms.push(buildRenderNode(value.alternate, context, depth + 1, colors.dim("✗ ")));
-      return createTreeNode(truncate(`${prefix}◆ ${getConditionLabel(value)}`), arms);
-    }
+    case "Conditional":
+      return buildConditionalNode(value, context, depth, prefix);
     default:
       return createTreeNode(prefix);
   }
