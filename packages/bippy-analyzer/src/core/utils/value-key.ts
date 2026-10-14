@@ -70,7 +70,7 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
         value.name,
         value.module,
         getLocationPart(value.loc),
-        value.args.map(getKeyPart),
+        value.argumentValues.map(getKeyPart),
       ];
     case "Global":
       return [value.kind, value.name, value.module];

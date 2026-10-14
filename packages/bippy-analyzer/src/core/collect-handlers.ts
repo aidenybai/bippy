@@ -97,7 +97,7 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       hookKind: effectCall.hookKind,
       dependencies: effectCall.dependencies,
     };
-    addHandler(trigger, effectCall.callback, effectCall.args, effectCall.loc);
+    addHandler(trigger, effectCall.callback, effectCall.callbackArguments, effectCall.loc);
   }
   const refCallbackKeys = new Set<string>();
   forEachJsxElement(render, (element) => {

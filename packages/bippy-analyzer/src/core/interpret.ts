@@ -12,6 +12,7 @@ import type {
 } from "../react-compiler/HIR/HIR";
 import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
+import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type { DomainResolver } from "./infer-domains";
 import type {
@@ -62,7 +63,7 @@ import { EffectCollector } from "./effect-collector";
 import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getHookBindingKind, getStoreFieldValue } from "./external-sources";
 import { FunctionRegistry } from "./function-registry";
-import type { ModuleFunctionLoader } from "./function-registry";
+import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import {
   NO_STOPS,
   createConditional,
@@ -89,14 +90,8 @@ const MAX_INLINE_DEPTH = 4;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
-// Whether each method's result keeps its receiver's length, rather than possibly being shorter.
-const LENGTH_METHODS = new Map([
-  ["filter", false],
-  ["slice", false],
-  ["toReversed", true],
-  ["toSorted", true],
-  ["with", true],
-]);
+const SHORTENING_METHODS = new Set(["filter", "slice"]);
+const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
 const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 const ROOT_WALK_STATE: WalkState = { guards: [], isAsync: false };
 
@@ -110,8 +105,7 @@ const SUSPENDED_DOMAIN: Domain = {
   origin: "type",
 };
 
-// `chain` is the `.c()` of `a?.b.c()`; its branch only tests whether `a?.b` short-circuited.
-type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "chain";
+type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-chain-tail";
 
 interface InterpreterBindingOptions extends BindingOptions {
   resolver?: DomainResolver;
@@ -122,7 +116,7 @@ interface WalkState {
   isAsync: boolean;
 }
 
-interface Definition {
+interface CreationPath {
   guards: SymbolicValue[];
   loopDepth: number;
 }
@@ -130,7 +124,7 @@ interface Definition {
 interface EffectCall {
   hookKind: HookKind;
   callback: SymbolicValue;
-  args: SymbolicValue[];
+  callbackArguments: SymbolicValue[];
   dependencies: string | null;
   loc: SourceLocation;
 }
@@ -146,7 +140,7 @@ type CallTarget =
   | { kind: "ProjectHook"; projectHook: ProjectHook }
   | { kind: "Store"; storeKey: string; storeActions: StoreActions }
   | { kind: "Hook"; hookKind: HookKind }
-  | { kind: "ModuleFunction"; fn: HIRFunction }
+  | { kind: "ModuleFunction"; hirFunction: HIRFunction }
   | { kind: "Value" };
 
 export interface ProjectHook {
@@ -155,13 +149,14 @@ export interface ProjectHook {
   loadModuleFunction: ModuleFunctionLoader;
 }
 
-export type ProjectHookLoader = (declarationKey: string) => ProjectHook | null;
+export interface ProjectHookLoader {
+  (declarationKey: string): ProjectHook | null;
+}
 
-/** Runs HIR symbolically; phis at joins become `Conditional` values, so every branch is kept. */
 export class Interpreter {
   #resolver: DomainResolver;
   readonly #loadProjectHook: ProjectHookLoader;
-  readonly #tables = new WeakMap<object, CompilationTables>();
+  readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly bindingTable = new BindingTable();
   readonly externalSources: ExternalSources;
@@ -171,15 +166,12 @@ export class Interpreter {
   #wholePropsSample: Sample | null = null;
   #restPropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
-  /** Set while a handler or effect runs; null during render. */
-  #effects: EffectCollector | null = null;
+  #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
-  /** Where each array or object literal was created, to tell when a mutation always runs. */
-  readonly #definitions = new WeakMap<SymbolicValue, Definition>();
+  readonly #creationPaths = new WeakMap<SymbolicValue, CreationPath>();
   #loopDepth = 0;
-  /** Headers of the loops being walked, and whether this walk has entered each yet. */
-  readonly #loopHeaders = new Map<BlockId, boolean>();
+  readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
   #walkedCatches = new Set<BlockId>();
   #inlineDepth = 0;
 
@@ -196,27 +188,27 @@ export class Interpreter {
     this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
   }
 
-  #registerFunction(fn: HIRFunction, isSnapshot = false): FunctionValue {
-    return this.#functions.register(fn, this.#resolver, isSnapshot);
+  #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
+    return this.#functions.register(hirFunction, this.#resolver, isSnapshot);
   }
 
-  // Closures created in an inlined call snapshot their captures; others read them live.
-  #createClosure(fn: HIRFunction): FunctionValue {
-    const closure = this.#registerFunction(fn, this.#inlineDepth > 0);
-    if (this.#inlineDepth > 0)
+  #createClosure(hirFunction: HIRFunction): FunctionValue {
+    const isInlined = this.#inlineDepth > 0;
+    const closure = this.#registerFunction(hirFunction, isInlined);
+    if (isInlined)
       this.#functions.setCapturedValues(
         closure.functionId,
-        fn.context.map((place): [Place, SymbolicValue] => [place, this.#read(place)]),
+        hirFunction.context.map((place): CapturedValue => [place, this.#read(place)]),
       );
     return closure;
   }
 
-  #applyCaptures(functionId: number | null): () => void {
-    const captures = this.#functions.getCapturedValues(functionId);
-    const previous = captures.map(([place]): [Place, SymbolicValue] => [place, this.#read(place)]);
-    for (const [place, value] of captures) this.#write(place, value);
+  #applyCapturedValues(functionId: number | null): () => void {
+    const capturedValues = this.#functions.getCapturedValues(functionId);
+    const liveValues = capturedValues.map(([place]): CapturedValue => [place, this.#read(place)]);
+    for (const [place, value] of capturedValues) this.#write(place, value);
     return () => {
-      for (const [place, value] of previous) this.#write(place, value);
+      for (const [place, value] of liveValues) this.#write(place, value);
     };
   }
 
@@ -238,26 +230,26 @@ export class Interpreter {
     return this.bindingTable.readField(this.#resolver, binding, path, loc);
   }
 
-  // Each compilation numbers identifiers from zero, so tables are kept per compilation.
-  #getTables(): CompilationTables {
+  #getCompilationTables(): CompilationTables {
     const { env } = this.#getCurrentFunction();
-    const tables = this.#tables.get(env) ?? {
+    const compilationTables = this.#tablesByEnvironment.get(env) ?? {
       values: new Map(),
       propertyNames: new Map(),
       branchOperators: new Map(),
     };
-    this.#tables.set(env, tables);
-    return tables;
+    this.#tablesByEnvironment.set(env, compilationTables);
+    return compilationTables;
   }
 
   #read(place: Place): SymbolicValue {
     return (
-      this.#getTables().values.get(place.identifier.id) ?? createUnknown("free-variable", place.loc)
+      this.#getCompilationTables().values.get(place.identifier.id) ??
+      createUnknown("free-variable", place.loc)
     );
   }
 
   #write(place: Place, value: SymbolicValue): void {
-    this.#getTables().values.set(place.identifier.id, value);
+    this.#getCompilationTables().values.set(place.identifier.id, value);
   }
 
   #getPropBinding(propName: string, localName: string, loc: SourceLocation): Binding {
@@ -276,22 +268,23 @@ export class Interpreter {
   }
 
   #destructure(
-    items: Array<Place | null>,
+    itemPlaces: Array<Place | null>,
     value: SymbolicValue,
     loc: SourceLocation,
   ): Array<SymbolicValue | null> {
     if (value.kind === "ArrayExpression" && value.spreads.length === 0)
-      return items.map((_, index) => value.elements[index] ?? UNDEFINED_VALUE);
-    if (value.kind !== "HookResult") return items.map(() => null);
-    const [valuePlace] = items;
-    const [firstArgument, secondArgument] = value.args;
-    if (STATE_HOOKS.has(value.hookKind) && valuePlace) {
-      const initial = firstArgument && firstArgument.kind !== "Function" ? firstArgument : null;
+      return itemPlaces.map((_itemPlace, index) => value.elements[index] ?? UNDEFINED_VALUE);
+    if (value.kind !== "HookResult") return itemPlaces.map(() => null);
+    const [statePlace] = itemPlaces;
+    if (STATE_HOOKS.has(value.hookKind) && statePlace) {
+      const [initialArgument] = value.argumentValues;
+      const initial =
+        initialArgument && initialArgument.kind !== "Function" ? initialArgument : null;
       const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
       const binding = this.#createBinding(
-        getIdentifierName(valuePlace) ?? "state",
+        getIdentifierName(statePlace) ?? "state",
         "state",
-        valuePlace.loc,
+        statePlace.loc,
         {
           hookKind: value.hookKind,
           initial,
@@ -300,33 +293,34 @@ export class Interpreter {
       );
       return [createBindingValue(binding), { kind: "Setter", binding }];
     }
-    if (value.hookKind === "useReducer" && valuePlace) {
+    if (value.hookKind === "useReducer" && statePlace) {
+      const [reducerArgument, initialArgument] = value.argumentValues;
       const binding = this.#createBinding(
-        getIdentifierName(valuePlace) ?? "state",
+        getIdentifierName(statePlace) ?? "state",
         "reducer",
-        valuePlace.loc,
-        { hookKind: value.hookKind, initial: secondArgument ?? null },
+        statePlace.loc,
+        { hookKind: value.hookKind, initial: initialArgument ?? null },
       );
       return [
         createBindingValue(binding),
         {
           kind: "Dispatch",
           binding,
-          reducer: firstArgument
-            ? this.#resolveModuleFunction(firstArgument)
+          reducer: reducerArgument
+            ? this.#resolveModuleFunction(reducerArgument)
             : createUnknown("reducer", loc),
         },
       ];
     }
-    return items.map((place) => (place ? this.#bindHookResult(place, value) : null));
+    return itemPlaces.map((place) => (place ? this.#bindHookResult(place, value) : null));
   }
 
-  #evaluateDestructure(instruction: Extract<InstructionValue, { kind: "Destructure" }>): void {
-    const { pattern } = instruction.lvalue;
-    const value = this.#read(instruction.value);
+  #evaluateDestructure(destructure: Extract<InstructionValue, { kind: "Destructure" }>): void {
+    const { pattern } = destructure.lvalue;
+    const value = this.#read(destructure.value);
     if (pattern.kind === "ArrayPattern") {
-      const items = pattern.items.map((item) => (item.kind === "Identifier" ? item : null));
-      const destructured = this.#destructure(items, value, instruction.loc);
+      const itemPlaces = pattern.items.map((item) => (item.kind === "Identifier" ? item : null));
+      const destructured = this.#destructure(itemPlaces, value, destructure.loc);
       pattern.items.forEach((item, index) => {
         if (item.kind === "Hole") return;
         const place = getPlaceOrSpread(item);
@@ -354,7 +348,6 @@ export class Interpreter {
           createBindingValue(this.#getPropBinding(key, localName, property.place.loc)),
         );
       } else if (value.kind === "HookResult") {
-        // One binding per hook call, so destructured fields stay paths of the same value.
         const binding = this.#createBinding(
           `${value.name}()`,
           getHookBindingKind(value.hookKind),
@@ -391,7 +384,6 @@ export class Interpreter {
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
       case "Conditional":
-        // Reading a property of nullish throws, so a render past the read took the other arm.
         if (isNullishValue(object.alternate))
           return this.#evaluatePropertyLoad(object.consequent, property, loc);
         if (isNullishValue(object.consequent))
@@ -411,18 +403,17 @@ export class Interpreter {
     return this.#read(tag);
   }
 
-  // Whether a Suspense boundary is suspended is unknowable, so branch on it.
   #buildSuspense(element: JsxExpressionValue, terminalId: InstructionId): SymbolicValue {
     const fallback = element.props.find(
       (prop) => prop.kind === "JsxAttribute" && prop.name === "fallback",
     );
     if (!fallback) return element;
-    const suspended = this.#createBinding("suspended", "suspense", element.loc, {
+    const suspendedBinding = this.#createBinding("suspended", "suspense", element.loc, {
       domain: SUSPENDED_DOMAIN,
     });
     return {
       kind: "Conditional",
-      test: createBindingValue(suspended),
+      test: createBindingValue(suspendedBinding),
       testKind: "truthy",
       consequent: { ...element, children: [fallback.value] },
       alternate: element,
@@ -433,15 +424,15 @@ export class Interpreter {
 
   #callFunction(
     callee: FunctionValue,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): SymbolicValue {
-    const fn = this.#functions.get(callee.functionId);
-    if (!fn || this.#inlineDepth >= MAX_INLINE_DEPTH) return createUnknown("call", loc);
+    const hirFunction = this.#functions.get(callee.functionId);
+    if (!hirFunction || this.#inlineDepth >= MAX_INLINE_DEPTH) return createUnknown("call", loc);
     this.#inlineDepth++;
     try {
-      return this.#evaluateFunction(fn, args, state, callee.functionId);
+      return this.#evaluateFunction(hirFunction, argumentValues, walkState, callee.functionId);
     } finally {
       this.#inlineDepth--;
     }
@@ -457,96 +448,103 @@ export class Interpreter {
     this.diagnostics.warn(kind, message, loc, this.#resolver.fileName);
   }
 
-  #trackMutations(instruction: Instruction, state: WalkState): void {
+  #trackMutations(instruction: Instruction, walkState: WalkState): void {
     if (isFunctionCreation(instruction.value)) return;
-    const mutatedLocals = new Set<SymbolicValue>();
+    const mutatedLiterals = new Set<SymbolicValue>();
     for (const effect of instruction.effects ?? []) {
-      const place = getMutatedPlace(effect);
-      if (!place) {
-        const possiblePlace = getConditionallyMutatedPlace(effect);
-        const possibleOperand =
-          possiblePlace && possiblePlace.identifier.type.kind !== "Primitive"
-            ? this.#read(possiblePlace)
-            : null;
-        if (possibleOperand?.kind === "Binding" && isStateBinding(possibleOperand.binding))
-          this.#effects?.addPossibleMutation(possibleOperand.binding);
+      const mutatedPlace = getMutatedPlace(effect);
+      if (!mutatedPlace) {
+        this.#trackPossibleMutation(effect);
         continue;
       }
-      const operand = this.#read(place);
+      const mutatedValue = this.#read(mutatedPlace);
       if (
-        (operand.kind === "ArrayExpression" || operand.kind === "ObjectExpression") &&
-        !mutatedLocals.has(operand)
+        (mutatedValue.kind === "ArrayExpression" || mutatedValue.kind === "ObjectExpression") &&
+        !mutatedLiterals.has(mutatedValue)
       ) {
-        mutatedLocals.add(this.#mutateLocal(instruction, place, operand, state));
+        mutatedLiterals.add(
+          this.#mutateLiteral(instruction, mutatedPlace, mutatedValue, walkState),
+        );
         continue;
       }
-      if (operand.kind !== "Binding") continue;
-      const { binding } = operand;
+      if (mutatedValue.kind !== "Binding") continue;
+      const { binding } = mutatedValue;
       if (binding.kind === "prop")
         this.#warn(
           "prop-mutation",
-          `mutates prop ${formatPlace(binding, operand.path)}`,
-          place.loc,
+          `mutates prop ${formatPlace(binding, mutatedValue.path)}`,
+          mutatedPlace.loc,
         );
-      else if (isStateBinding(binding) && this.#effects)
-        this.#effects.addMutation(binding, place.loc);
+      else if (isStateBinding(binding) && this.#handlerEffects)
+        this.#handlerEffects.addMutation(binding, mutatedPlace.loc);
       else if (isStateBinding(binding))
-        this.#warn("render-mutation", `mutates ${binding.name} during render`, place.loc);
+        this.#warn("render-mutation", `mutates ${binding.name} during render`, mutatedPlace.loc);
     }
   }
 
-  // A mutation on the path that created the value always runs, so it applies as is. Others may
-  // not run, or run many times, so the value widens to cover both. Every alias sees the change.
-  #mutateLocal(
-    instruction: Instruction,
-    place: Place,
-    operand: ArrayExpressionValue | ObjectExpressionValue,
-    state: WalkState,
-  ): SymbolicValue {
-    const definition = this.#definitions.get(operand);
-    const isCertain =
-      definition !== undefined &&
-      definition.guards === state.guards &&
-      definition.loopDepth === this.#loopDepth;
-    const next = this.#getMutatedValue(instruction, place, operand, isCertain);
-    if (isCertain) this.#definitions.set(next, definition);
-    const { values } = this.#getTables();
-    for (const [identifierId, value] of values)
-      if (value === operand) values.set(identifierId, next);
-    return next;
+  #trackPossibleMutation(effect: AliasingEffect): void {
+    const possiblyMutatedPlace = getConditionallyMutatedPlace(effect);
+    if (!possiblyMutatedPlace || possiblyMutatedPlace.identifier.type.kind === "Primitive") return;
+    const possiblyMutatedValue = this.#read(possiblyMutatedPlace);
+    if (possiblyMutatedValue.kind === "Binding" && isStateBinding(possiblyMutatedValue.binding))
+      this.#handlerEffects?.addPossibleMutation(possiblyMutatedValue.binding);
   }
 
-  #getMutatedValue(
+  #mutateLiteral(
     instruction: Instruction,
-    place: Place,
-    operand: ArrayExpressionValue | ObjectExpressionValue,
-    isCertain: boolean,
+    mutatedPlace: Place,
+    literal: ArrayExpressionValue | ObjectExpressionValue,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const creationPath = this.#creationPaths.get(literal);
+    const isOnCreationPath =
+      creationPath !== undefined &&
+      creationPath.guards === walkState.guards &&
+      creationPath.loopDepth === this.#loopDepth;
+    const mutatedLiteral = this.#getMutatedLiteral(
+      instruction,
+      mutatedPlace,
+      literal,
+      isOnCreationPath,
+    );
+    if (isOnCreationPath) this.#creationPaths.set(mutatedLiteral, creationPath);
+    const { values } = this.#getCompilationTables();
+    for (const [identifierId, value] of values)
+      if (value === literal) values.set(identifierId, mutatedLiteral);
+    return mutatedLiteral;
+  }
+
+  #getMutatedLiteral(
+    instruction: Instruction,
+    mutatedPlace: Place,
+    literal: ArrayExpressionValue | ObjectExpressionValue,
+    isOnCreationPath: boolean,
   ): SymbolicValue {
     const { value, loc } = instruction;
     if (
-      operand.kind === "ArrayExpression" &&
+      literal.kind === "ArrayExpression" &&
       value.kind === "MethodCall" &&
-      value.receiver.identifier.id === place.identifier.id &&
-      this.#getTables().propertyNames.get(value.property.identifier.id) === "push"
+      value.receiver.identifier.id === mutatedPlace.identifier.id &&
+      this.#getCompilationTables().propertyNames.get(value.property.identifier.id) === "push"
     ) {
-      const items = value.args.flatMap((argument) =>
+      const pushedItems = value.args.flatMap((argument) =>
         argument.kind === "Identifier" ? [this.#read(argument)] : [],
       );
-      const spreads = value.args.flatMap((argument) =>
+      const pushedSpreads = value.args.flatMap((argument) =>
         argument.kind === "Spread" ? [this.#read(argument.place)] : [],
       );
-      return isCertain
+      return isOnCreationPath
         ? {
-            ...operand,
-            elements: [...operand.elements, ...items],
-            spreads: [...operand.spreads, ...spreads],
+            ...literal,
+            elements: [...literal.elements, ...pushedItems],
+            spreads: [...literal.spreads, ...pushedSpreads],
           }
         : {
-            ...operand,
+            ...literal,
             spreads: [
-              ...operand.spreads,
-              ...spreads,
-              ...items.map((item): SymbolicValue => ({
+              ...literal.spreads,
+              ...pushedSpreads,
+              ...pushedItems.map((item): SymbolicValue => ({
                 kind: "ArrayMap",
                 array: createUnknown("mutation", loc),
                 item,
@@ -556,69 +554,78 @@ export class Interpreter {
           };
     }
     if (
-      operand.kind === "ObjectExpression" &&
+      literal.kind === "ObjectExpression" &&
       value.kind === "PropertyStore" &&
-      value.object.identifier.id === place.identifier.id
+      value.object.identifier.id === mutatedPlace.identifier.id
     ) {
-      const property = {
+      const storedProperty = {
         key: String(value.property),
-        value: isCertain ? this.#read(value.value) : createUnknown("mutation", loc),
+        value: isOnCreationPath ? this.#read(value.value) : createUnknown("mutation", loc),
       };
-      return { ...operand, properties: [...operand.properties, property] };
+      return { ...literal, properties: [...literal.properties, storedProperty] };
     }
     return createUnknown("mutation", loc);
   }
 
-  #getNextValue(
-    argument: SymbolicValue | undefined,
-    previous: SymbolicValue,
+  #getSetterNextValue(
+    setterArgument: SymbolicValue | undefined,
+    previousValue: SymbolicValue,
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): SymbolicValue {
-    return argument?.kind === "Function"
-      ? this.#callFunction(argument, [previous], loc, state)
-      : (argument ?? UNDEFINED_VALUE);
+    return setterArgument?.kind === "Function"
+      ? this.#callFunction(setterArgument, [previousValue], loc, walkState)
+      : (setterArgument ?? UNDEFINED_VALUE);
   }
 
-  #applySetter(setter: SetterValue, argument: SymbolicValue | undefined, state: WalkState): void {
-    const previous = createBindingValue(setter.binding);
-    const next = this.#getNextValue(argument, previous, setter.binding.loc, state);
-    this.#effects?.recordSetterCall(setter.binding, next, state);
+  #applySetter(
+    setter: SetterValue,
+    setterArgument: SymbolicValue | undefined,
+    walkState: WalkState,
+  ): void {
+    const previousValue = createBindingValue(setter.binding);
+    const nextValue = this.#getSetterNextValue(
+      setterArgument,
+      previousValue,
+      setter.binding.loc,
+      walkState,
+    );
+    this.#handlerEffects?.recordSetterCall(setter.binding, nextValue, walkState);
   }
 
   #applyDispatch(
     dispatch: DispatchValue,
     action: SymbolicValue | undefined,
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): void {
-    const reducer = dispatch.reducer;
-    const next =
+    const { reducer } = dispatch;
+    const nextValue =
       reducer.kind === "Function"
         ? this.#callFunction(
             reducer,
             [createBindingValue(dispatch.binding), action ?? UNDEFINED_VALUE],
             loc,
-            state,
+            walkState,
           )
         : createUnknown("dispatch", loc);
-    this.#effects?.recordSetterCall(dispatch.binding, next, state);
+    this.#handlerEffects?.recordSetterCall(dispatch.binding, nextValue, walkState);
   }
 
-  #recordWholeProps(args: SymbolicValue[], argumentPlaces: Place[]): void {
-    const propsPlace = argumentPlaces[args.findIndex((argument) => argument.kind === "Props")];
+  #recordWholeProps(argumentValues: SymbolicValue[], argumentPlaces: Place[]): void {
+    const propsPlace =
+      argumentPlaces[argumentValues.findIndex((argument) => argument.kind === "Props")];
     if (propsPlace) this.#wholePropsSample ??= this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
   }
 
   #getCallTarget(
     callee: SymbolicValue,
     calleePlace: Place,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     loc: SourceLocation,
   ): CallTarget {
-    // A portal renders its children in place, only into another container.
-    if (this.#resolver.getReactExportName(loc) === "createPortal" && args[0])
-      return { kind: "Portal", children: args[0] };
+    if (this.#resolver.getReactExportName(loc) === "createPortal" && argumentValues[0])
+      return { kind: "Portal", children: argumentValues[0] };
     const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
     if (hookKind === "Custom") {
       const projectHook = this.#findProjectHook(calleePlace);
@@ -631,24 +638,25 @@ export class Interpreter {
       if (storeKey && storeActions) return { kind: "Store", storeKey, storeActions };
     }
     if (hookKind !== null) return { kind: "Hook", hookKind };
-    // A helper given a callback may wrap it or call it later, so inline it.
-    const moduleFunction =
-      callee.kind === "Global" && getPassedCallbacks(args).length > 0
+    const helperTakingCallbacks =
+      callee.kind === "Global" && getPassedCallbacks(argumentValues).length > 0
         ? this.#functions.loadModuleFunction(this.#resolver, callee.name)
         : null;
-    return moduleFunction ? { kind: "ModuleFunction", fn: moduleFunction } : { kind: "Value" };
+    return helperTakingCallbacks
+      ? { kind: "ModuleFunction", hirFunction: helperTakingCallbacks }
+      : { kind: "Value" };
   }
 
   #evaluateCall(
     callee: SymbolicValue,
     calleePlace: Place,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     argumentPlaces: Place[],
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): SymbolicValue {
-    this.#recordWholeProps(args, argumentPlaces);
-    const target = this.#getCallTarget(callee, calleePlace, args, loc);
+    this.#recordWholeProps(argumentValues, argumentPlaces);
+    const target = this.#getCallTarget(callee, calleePlace, argumentValues, loc);
     switch (target.kind) {
       case "Portal":
         return target.children;
@@ -660,18 +668,37 @@ export class Interpreter {
         );
         return this.#callFunction(
           this.#registerFunction(target.projectHook.hirFunction),
-          args,
+          argumentValues,
           loc,
-          state,
+          walkState,
         );
       case "Store":
-        return this.#readStore(target.storeKey, target.storeActions, callee, args, loc, state);
+        return this.#readStore(
+          target.storeKey,
+          target.storeActions,
+          callee,
+          argumentValues,
+          loc,
+          walkState,
+        );
       case "Hook":
-        return this.#evaluateHookCall(target.hookKind, callee, args, argumentPlaces, loc, state);
+        return this.#evaluateHookCall(
+          target.hookKind,
+          callee,
+          argumentValues,
+          argumentPlaces,
+          loc,
+          walkState,
+        );
       case "ModuleFunction":
-        return this.#callFunction(this.#registerFunction(target.fn), args, loc, state);
+        return this.#callFunction(
+          this.#registerFunction(target.hirFunction),
+          argumentValues,
+          loc,
+          walkState,
+        );
       case "Value":
-        return this.#callValue(callee, calleePlace, args, argumentPlaces, loc, state);
+        return this.#callValue(callee, calleePlace, argumentValues, argumentPlaces, loc, walkState);
       default:
         return assertExhaustive(target, "Unhandled call target");
     }
@@ -680,161 +707,176 @@ export class Interpreter {
   #callValue(
     callee: SymbolicValue,
     calleePlace: Place,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     argumentPlaces: Place[],
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): SymbolicValue {
     switch (callee.kind) {
       case "Function":
-        return this.#callFunction(callee, args, loc, state);
+        return this.#callFunction(callee, argumentValues, loc, walkState);
       case "Conditional":
         return {
           ...callee,
           consequent: this.#evaluateCall(
             callee.consequent,
             calleePlace,
-            args,
+            argumentValues,
             argumentPlaces,
             loc,
-            state,
+            walkState,
           ),
           alternate: this.#evaluateCall(
             callee.alternate,
             calleePlace,
-            args,
+            argumentValues,
             argumentPlaces,
             loc,
-            state,
+            walkState,
           ),
         };
       case "Setter":
-        this.#applySetter(callee, args[0], state);
+        this.#applySetter(callee, argumentValues[0], walkState);
         return UNDEFINED_VALUE;
       case "Dispatch":
-        this.#applyDispatch(callee, args[0], loc, state);
+        this.#applyDispatch(callee, argumentValues[0], loc, walkState);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (this.#effects && !this.#resolver.isNonMutatingMethod(calleePlace.loc))
-          this.#callBinding(callee, args, state);
+        if (this.#handlerEffects && !this.#resolver.isNonMutatingMethod(calleePlace.loc))
+          this.#callBinding(callee, argumentValues, walkState);
         break;
       default:
         break;
     }
-    for (const argument of args) this.#visitCallbackArgument(argument, state);
-    if (this.#effects) return createUnknown("call", loc);
-    if (!this.#resolver.isNonMutatingMethod(calleePlace.loc)) this.#addLaterCallbacks(args, loc);
+    for (const argument of argumentValues) this.#visitCallbackArgument(argument, walkState);
+    if (this.#handlerEffects) return createUnknown("call", loc);
+    if (!this.#resolver.isNonMutatingMethod(calleePlace.loc))
+      this.#addDeferredCallbacks(argumentValues, loc);
     if (this.#resolver.isReactElement(loc)) {
       this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
     }
-    return this.#createCallResult(callee, calleePlace, args, loc);
+    return this.#createCallResult(callee, calleePlace, argumentValues, loc);
   }
 
-  #collectInputs(value: SymbolicValue, inputs: PlaceMap<true>, visited = new Set<number>()): void {
+  #collectInputPlaces(
+    value: SymbolicValue,
+    inputPlaces: PlaceMap<true>,
+    visitedFunctionIds = new Set<number>(),
+  ): void {
     forEachSymbolicValue(value, (part) => {
-      if (part.kind === "Binding") inputs.set(getValuePlace(part), true);
-      if (part.kind !== "Function" || visited.has(part.functionId)) return;
-      visited.add(part.functionId);
-      for (const place of this.#functions.get(part.functionId)?.context ?? [])
-        this.#collectInputs(this.#read(place), inputs, visited);
+      if (part.kind === "Binding") inputPlaces.set(getValuePlace(part), true);
+      if (part.kind !== "Function" || visitedFunctionIds.has(part.functionId)) return;
+      visitedFunctionIds.add(part.functionId);
+      for (const capturedPlace of this.#functions.get(part.functionId)?.context ?? [])
+        this.#collectInputPlaces(this.#read(capturedPlace), inputPlaces, visitedFunctionIds);
     });
   }
 
   #createCallResult(
     callee: SymbolicValue,
     calleePlace: Place,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     loc: SourceLocation,
   ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(loc);
     if (calleeText === null) return createUnknown("call", loc);
-    const inputs = new PlaceMap<true>();
-    for (const argument of args) this.#collectInputs(argument, inputs);
-    const method = callee.kind === "Binding" ? callee.path.at(-1) : undefined;
-    const receiver =
-      callee.kind === "Binding" && method !== undefined
+    const inputPlaces = new PlaceMap<true>();
+    for (const argument of argumentValues) this.#collectInputPlaces(argument, inputPlaces);
+    const methodName = callee.kind === "Binding" ? callee.path.at(-1) : undefined;
+    const receiverPlace =
+      callee.kind === "Binding" && methodName !== undefined
         ? getBindingPlace(callee.binding, callee.path.slice(0, -1))
         : null;
-    const isSameLength = method === undefined ? undefined : LENGTH_METHODS.get(method);
+    const isSameLength = methodName !== undefined && LENGTH_PRESERVING_METHODS.has(methodName);
+    const isLengthLimited =
+      isSameLength || (methodName !== undefined && SHORTENING_METHODS.has(methodName));
     const lengthLimit =
-      receiver && isSameLength !== undefined && this.#resolver.isNonMutatingMethod(calleePlace.loc)
-        ? { arrayLength: { ...receiver, path: [...receiver.path, "length"] }, isSameLength }
+      receiverPlace && isLengthLimited && this.#resolver.isNonMutatingMethod(calleePlace.loc)
+        ? {
+            arrayLength: { ...receiverPlace, path: [...receiverPlace.path, "length"] },
+            isSameLength,
+          }
         : null;
-    if (!lengthLimit && inputs.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
+    if (!lengthLimit && inputPlaces.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
       return createUnknown("call", loc);
-    if (receiver) inputs.set(receiver, true);
-    const name = `${calleeText}(${args.map(formatSymbolicValue).join(", ")})`;
+    if (receiverPlace) inputPlaces.set(receiverPlace, true);
+    const callText = `${calleeText}(${argumentValues.map(formatSymbolicValue).join(", ")})`;
     return createBindingValue(
-      this.#createBinding(name, "call", loc, { inputPlaces: inputs.places(), lengthLimit }),
+      this.#createBinding(callText, "call", loc, {
+        inputPlaces: inputPlaces.places(),
+        lengthLimit,
+      }),
     );
   }
 
-  #visitCallbackArgument(argument: SymbolicValue, state: WalkState): void {
-    if (!this.#effects) return;
+  #visitCallbackArgument(argument: SymbolicValue, walkState: WalkState): void {
+    if (!this.#handlerEffects) return;
     if (argument.kind === "ObjectExpression")
       for (const callback of getPassedCallbacks([argument]))
-        this.#visitCallbackArgument(callback, state);
-    const asyncState = { ...state, isAsync: true };
+        this.#visitCallbackArgument(callback, walkState);
+    const asyncWalkState = { ...walkState, isAsync: true };
     if (argument.kind === "Setter")
-      this.#effects.recordSetterCall(
+      this.#handlerEffects.recordSetterCall(
         argument.binding,
         createUnknown("callback-argument", GeneratedSource),
-        asyncState,
+        asyncWalkState,
       );
     if (argument.kind === "Function")
       this.#callFunction(
         argument,
         [createUnknown("callback-argument", argument.loc)],
         argument.loc,
-        asyncState,
+        asyncWalkState,
       );
   }
 
-  #storeCallback(value: SymbolicValue, loc: SourceLocation, state: WalkState): void {
-    if (value.kind === "Function") this.#passCallbacks([value], loc, state);
+  #storeCallback(value: SymbolicValue, loc: SourceLocation, walkState: WalkState): void {
+    if (value.kind === "Function") this.#passCallbacks([value], loc, walkState);
   }
 
-  #passCallbacks(args: SymbolicValue[], loc: SourceLocation, state: WalkState): void {
-    if (!this.#effects) this.#addLaterCallbacks(args, loc);
-    else for (const argument of args) this.#visitCallbackArgument(argument, state);
+  #passCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation, walkState: WalkState): void {
+    if (!this.#handlerEffects) this.#addDeferredCallbacks(argumentValues, loc);
+    else for (const argument of argumentValues) this.#visitCallbackArgument(argument, walkState);
   }
 
   #evaluateHookCall(
     hookKind: HookKind,
     callee: SymbolicValue,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     argumentPlaces: Place[],
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): SymbolicValue {
     if (EFFECT_HOOKS.has(hookKind)) {
-      const [callback] = args;
-      const [, dependencies] = argumentPlaces;
+      const [callback] = argumentValues;
+      const [, dependenciesPlace] = argumentPlaces;
       if (callback)
         this.effectCalls.push({
           hookKind,
           callback,
-          args: [],
-          dependencies: dependencies ? this.#resolver.getSourceText(dependencies.loc) : null,
+          callbackArguments: [],
+          dependencies: dependenciesPlace
+            ? this.#resolver.getSourceText(dependenciesPlace.loc)
+            : null,
           loc,
         });
       return UNDEFINED_VALUE;
     }
-    if (hookKind === "Custom") this.#addLaterCallbacks(args, loc);
-    if (hookKind === "useImperativeHandle" && args[1]?.kind === "Function")
-      this.#addLaterCallbacks([this.#callFunction(args[1], [], loc, state)], loc);
-    if (hookKind === "useMemo" && args[0]?.kind === "Function")
-      return this.#callFunction(args[0], [], loc, state);
-    if (hookKind === "useCallback" && args[0]) return args[0];
-    const name = callee.kind === "Global" ? callee.name : hookKind;
+    if (hookKind === "Custom") this.#addDeferredCallbacks(argumentValues, loc);
+    if (hookKind === "useImperativeHandle" && argumentValues[1]?.kind === "Function")
+      this.#addDeferredCallbacks([this.#callFunction(argumentValues[1], [], loc, walkState)], loc);
+    if (hookKind === "useMemo" && argumentValues[0]?.kind === "Function")
+      return this.#callFunction(argumentValues[0], [], loc, walkState);
+    if (hookKind === "useCallback" && argumentValues[0]) return argumentValues[0];
+    const hookName = callee.kind === "Global" ? callee.name : hookKind;
     const hookModule = callee.kind === "Global" ? callee.module : null;
     const hookResult: HookResultValue = {
       kind: "HookResult",
       hookKind,
-      name,
+      name: hookName,
       module: hookModule,
-      args,
+      argumentValues,
       loc,
     };
     const [contextPlace] = argumentPlaces;
@@ -846,15 +888,14 @@ export class Interpreter {
     return hookResult;
   }
 
-  // Callbacks passed into opaque calls may run after any render, with any arguments.
-  #addLaterCallbacks(args: SymbolicValue[], loc: SourceLocation): void {
-    for (const callback of getPassedCallbacks(args)) {
+  #addDeferredCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation): void {
+    for (const callback of getPassedCallbacks(argumentValues)) {
       if (callback.kind !== "Function") continue;
       const parameters = this.#functions.get(callback.functionId)?.params ?? [];
       this.effectCalls.push({
         hookKind: "Custom",
         callback,
-        args: parameters.map(() => createUnknown("callback-argument", callback.loc)),
+        callbackArguments: parameters.map(() => createUnknown("callback-argument", callback.loc)),
         dependencies: null,
         loc,
       });
@@ -862,71 +903,78 @@ export class Interpreter {
   }
 
   #evaluateMethodCall(
-    instruction: Extract<InstructionValue, { kind: "MethodCall" }>,
-    state: WalkState,
+    methodCall: Extract<InstructionValue, { kind: "MethodCall" }>,
+    walkState: WalkState,
   ): SymbolicValue {
-    const receiver = this.#read(instruction.receiver);
-    const propertyName =
-      this.#getTables().propertyNames.get(instruction.property.identifier.id) ?? null;
-    const argumentPlaces = instruction.args.map(getPlaceOrSpread);
-    const args = argumentPlaces.map((place) => this.#read(place));
-    const [callback] = args;
+    const receiver = this.#read(methodCall.receiver);
+    const methodName =
+      this.#getCompilationTables().propertyNames.get(methodCall.property.identifier.id) ?? null;
+    const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
+    const argumentValues = argumentPlaces.map((place) => this.#read(place));
+    const [callback] = argumentValues;
     if (
-      this.#effects &&
-      propertyName !== null &&
-      ITERATION_METHODS.has(propertyName) &&
+      this.#handlerEffects &&
+      methodName !== null &&
+      ITERATION_METHODS.has(methodName) &&
       receiver.kind === "ArrayExpression" &&
       callback?.kind === "Function"
     ) {
-      const items = [
+      const iteratedItems = [
         ...receiver.elements,
-        ...receiver.spreads.map(() => createUnknown("item", instruction.loc)),
+        ...receiver.spreads.map(() => createUnknown("item", methodCall.loc)),
       ];
-      for (const item of items) this.#callFunction(callback, [item], instruction.loc, state);
-      return createUnknown("call", instruction.loc);
+      for (const item of iteratedItems)
+        this.#callFunction(callback, [item], methodCall.loc, walkState);
+      return createUnknown("call", methodCall.loc);
     }
-    if (propertyName === "map" && callback?.kind === "Function") {
-      const parameter = this.#functions.get(callback.functionId)?.params[0];
-      const itemPlace = parameter ? getPlaceOrSpread(parameter) : null;
+    if (methodName === "map" && callback?.kind === "Function") {
+      const [itemParameter] = this.#functions.get(callback.functionId)?.params ?? [];
+      const itemPlace = itemParameter ? getPlaceOrSpread(itemParameter) : null;
       const item: SymbolicValue = itemPlace
         ? createBindingValue(
             this.#createBinding(getIdentifierName(itemPlace) ?? "item", "item", itemPlace.loc),
           )
-        : createUnknown("item", instruction.loc);
+        : createUnknown("item", methodCall.loc);
       return {
         kind: "ArrayMap",
         array: receiver,
-        item: this.#callFunction(callback, [item], instruction.loc, state),
-        loc: instruction.loc,
+        item: this.#callFunction(callback, [item], methodCall.loc, walkState),
+        loc: methodCall.loc,
       };
     }
-    if (propertyName !== null && PROMISE_METHODS.has(propertyName)) {
-      for (const argument of args)
-        this.#visitCallbackArgument(argument, { ...state, isAsync: true });
-      return createUnknown("async", instruction.loc);
+    if (methodName !== null && PROMISE_METHODS.has(methodName)) {
+      for (const argument of argumentValues)
+        this.#visitCallbackArgument(argument, { ...walkState, isAsync: true });
+      return createUnknown("async", methodCall.loc);
     }
     return this.#evaluateCall(
-      this.#read(instruction.property),
-      instruction.property,
-      args,
+      this.#read(methodCall.property),
+      methodCall.property,
+      argumentValues,
       argumentPlaces,
-      instruction.loc,
-      state,
+      methodCall.loc,
+      walkState,
     );
   }
 
-  #evaluateInstruction(instruction: Instruction, state: WalkState): void {
+  #evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
     const { value } = instruction;
     if (value.kind === "PropertyLoad")
-      this.#getTables().propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
-    this.#trackMutations(instruction, state);
-    const result = this.#evaluateInstructionValue(instruction, state);
+      this.#getCompilationTables().propertyNames.set(
+        instruction.lvalue.identifier.id,
+        String(value.property),
+      );
+    this.#trackMutations(instruction, walkState);
+    const instructionResult = this.#evaluateInstructionValue(instruction, walkState);
     if (value.kind === "ArrayExpression" || value.kind === "ObjectExpression")
-      this.#definitions.set(result, { guards: state.guards, loopDepth: this.#loopDepth });
-    this.#write(instruction.lvalue, result);
+      this.#creationPaths.set(instructionResult, {
+        guards: walkState.guards,
+        loopDepth: this.#loopDepth,
+      });
+    this.#write(instruction.lvalue, instructionResult);
   }
 
-  #evaluateInstructionValue(instruction: Instruction, state: WalkState): SymbolicValue {
+  #evaluateInstructionValue(instruction: Instruction, walkState: WalkState): SymbolicValue {
     const { value } = instruction;
     switch (value.kind) {
       case "Primitive":
@@ -938,13 +986,13 @@ export class Interpreter {
         return this.#read(value.place);
       case "StoreLocal":
       case "StoreContext": {
-        const stored = this.#read(value.value);
-        const bound =
-          stored.kind === "HookResult" && getIdentifierName(value.lvalue.place) !== null
-            ? this.#bindHookResult(value.lvalue.place, stored)
-            : stored;
-        this.#write(value.lvalue.place, bound);
-        return bound;
+        const storedValue = this.#read(value.value);
+        const localValue =
+          storedValue.kind === "HookResult" && getIdentifierName(value.lvalue.place) !== null
+            ? this.#bindHookResult(value.lvalue.place, storedValue)
+            : storedValue;
+        this.#write(value.lvalue.place, localValue);
+        return localValue;
       }
       case "DeclareLocal":
       case "DeclareContext":
@@ -968,11 +1016,15 @@ export class Interpreter {
           value.loc,
         );
       case "ComputedLoad": {
-        const property = this.#read(value.property);
-        return property.kind === "Primitive" &&
-          property.value !== null &&
-          property.value !== undefined
-          ? this.#evaluatePropertyLoad(this.#read(value.object), String(property.value), value.loc)
+        const propertyKey = this.#read(value.property);
+        return propertyKey.kind === "Primitive" &&
+          propertyKey.value !== null &&
+          propertyKey.value !== undefined
+          ? this.#evaluatePropertyLoad(
+              this.#read(value.object),
+              String(propertyKey.value),
+              value.loc,
+            )
           : createUnknown("computed-member", value.loc);
       }
       case "BinaryExpression":
@@ -980,11 +1032,11 @@ export class Interpreter {
       case "UnaryExpression":
         return foldUnary(value.operator, this.#read(value.value));
       case "TypeCastExpression": {
-        const operand = this.#read(value.value);
-        return operand.kind === "Unknown" &&
+        const castValue = this.#read(value.value);
+        return castValue.kind === "Unknown" &&
           this.#resolver.getDomain(value.value.loc).kind === "Unknown"
           ? createUnknown("cast", value.value.loc)
-          : operand;
+          : castValue;
       }
       case "ObjectExpression":
         return {
@@ -1024,11 +1076,11 @@ export class Interpreter {
           argumentPlaces.map((place) => this.#read(place)),
           argumentPlaces,
           value.loc,
-          state,
+          walkState,
         );
       }
       case "MethodCall":
-        return this.#evaluateMethodCall(value, state);
+        return this.#evaluateMethodCall(value, walkState);
       case "JsxExpression": {
         const props = value.props.map((attribute): JsxProp | JsxSpreadProp =>
           attribute.kind === "JsxAttribute"
@@ -1044,7 +1096,7 @@ export class Interpreter {
                 handlerId: null,
               },
         );
-        const tag = this.#getJsxTag(value.tag);
+        const tagValue = this.#getJsxTag(value.tag);
         const providedValue = props.find(
           (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "value",
         );
@@ -1055,7 +1107,7 @@ export class Interpreter {
         if (providedValue && contextKey)
           this.providedContexts.push({ contextKey, value: providedValue.value });
         const element = buildJsx(
-          tag,
+          tagValue,
           {
             declaration:
               value.tag.kind === "BuiltinTag"
@@ -1078,13 +1130,15 @@ export class Interpreter {
       case "Await":
         return createUnknown("async", value.loc);
       case "NewExpression": {
-        const args = value.args.map((argument) => this.#read(getPlaceOrSpread(argument)));
-        this.#passCallbacks(args, value.loc, state);
+        const constructorArguments = value.args.map((argument) =>
+          this.#read(getPlaceOrSpread(argument)),
+        );
+        this.#passCallbacks(constructorArguments, value.loc, walkState);
         return createUnknown(value.kind, value.loc);
       }
       case "PropertyStore":
       case "ComputedStore":
-        this.#storeCallback(this.#read(value.value), value.loc, state);
+        this.#storeCallback(this.#read(value.value), value.loc, walkState);
         return createUnknown(value.kind, value.loc);
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
@@ -1128,13 +1182,11 @@ export class Interpreter {
     }
   }
 
-  // Merges phis when every path reaches the join, else walks the rest once per arriving path.
-  // A join an enclosing walk stops at is left for that walk to merge.
   #continueAfter(
     outcome: Outcome,
     join: BlockId,
     stops: ReadonlySet<BlockId>,
-    state: WalkState,
+    walkState: WalkState,
     hasResolvedPhis = false,
   ): Outcome {
     if (stops.has(join)) return outcome;
@@ -1142,28 +1194,28 @@ export class Interpreter {
     if (isFallthroughOnly(outcome, join)) {
       if (!hasResolvedPhis)
         for (const phi of block.phis)
-          this.#write(phi.place, this.#resolvePhi(phi, outcome, state.guards));
-      return this.#walk(join, stops, null, state, true);
+          this.#write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
+      return this.#walk(join, stops, null, walkState, true);
     }
-    const resume = (current: Outcome, guards: SymbolicValue[]): Outcome => {
-      switch (current.kind) {
+    const resumeAtJoin = (arm: Outcome, guards: SymbolicValue[]): Outcome => {
+      switch (arm.kind) {
         case "Return":
-          return current;
+          return arm;
         case "Fallthrough":
-          return current.to === join
-            ? this.#walk(join, stops, current.from, { ...state, guards }, hasResolvedPhis)
-            : current;
+          return arm.to === join
+            ? this.#walk(join, stops, arm.from, { ...walkState, guards }, hasResolvedPhis)
+            : arm;
         case "Split":
           return {
-            ...current,
-            consequent: resume(current.consequent, [...guards, getGuard(current, true)]),
-            alternate: resume(current.alternate, [...guards, getGuard(current, false)]),
+            ...arm,
+            consequent: resumeAtJoin(arm.consequent, [...guards, getGuard(arm, true)]),
+            alternate: resumeAtJoin(arm.alternate, [...guards, getGuard(arm, false)]),
           };
         default:
-          return assertExhaustive(current, "Unhandled outcome");
+          return assertExhaustive(arm, "Unhandled outcome");
       }
     };
-    return hasFallthrough(outcome, join) ? resume(outcome, state.guards) : outcome;
+    return hasFallthrough(outcome, join) ? resumeAtJoin(outcome, walkState.guards) : outcome;
   }
 
   #getBlock(blockId: BlockId) {
@@ -1172,20 +1224,22 @@ export class Interpreter {
     return block;
   }
 
-  #split(
+  #walkBranch(
     terminal: BranchTerminal,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
-    state: WalkState,
+    walkState: WalkState,
   ): Outcome {
     const { test, consequent, alternate, fallthrough } = terminal;
-    const operator = this.#getTables().branchOperators.get(fallthrough) ?? "ternary";
+    const operator = this.#getCompilationTables().branchOperators.get(fallthrough) ?? "ternary";
     const chainValue = this.#read(test);
-    const shortCircuit = operator === "chain" ? getShortCircuit(chainValue) : null;
+    const shortCircuit = operator === "optional-chain-tail" ? getShortCircuit(chainValue) : null;
     const testValue = shortCircuit?.test ?? chainValue;
     const testKind: TestKind =
       shortCircuit?.testKind ??
-      (operator === "??" || operator === "optional" || operator === "chain" ? "nullish" : "truthy");
+      (operator === "??" || operator === "optional" || operator === "optional-chain-tail"
+        ? "nullish"
+        : "truthy");
     const branch: Branch = {
       terminalId: terminal.id,
       probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
@@ -1193,20 +1247,28 @@ export class Interpreter {
       file: this.#resolver.fileName,
     };
     const testGuard = getTestExpression({ test: testValue, testKind });
-    const walkArm = (block: BlockId, isConsequent: boolean): Outcome => {
-      const guards = [...state.guards, isConsequent ? testGuard : negate(testGuard)];
-      return block === fallthrough || stops.has(block)
-        ? { kind: "Fallthrough", from, to: block }
-        : this.#walk(block, new Set([...stops, fallthrough]), from, { ...state, guards }, false);
+    const walkArm = (armBlock: BlockId, isConsequent: boolean): Outcome => {
+      const guards = [...walkState.guards, isConsequent ? testGuard : negate(testGuard)];
+      return armBlock === fallthrough || stops.has(armBlock)
+        ? { kind: "Fallthrough", from, to: armBlock }
+        : this.#walk(
+            armBlock,
+            new Set([...stops, fallthrough]),
+            from,
+            { ...walkState, guards },
+            false,
+          );
     };
     const consequentOutcome = walkArm(consequent, true);
     const alternateOutcome = walkArm(alternate, false);
     const isSwapped = operator === "&&";
-    const decided =
-      operator === "chain" && !shortCircuit ? true : getKnownOutcome(testValue, testKind);
-    const split: Outcome =
-      decided !== null
-        ? decided !== isSwapped
+    const decidedOutcome =
+      operator === "optional-chain-tail" && !shortCircuit
+        ? true
+        : getKnownOutcome(testValue, testKind);
+    const branchOutcome: Outcome =
+      decidedOutcome !== null
+        ? decidedOutcome !== isSwapped
           ? consequentOutcome
           : alternateOutcome
         : {
@@ -1217,30 +1279,31 @@ export class Interpreter {
             consequent: isSwapped ? alternateOutcome : consequentOutcome,
             alternate: isSwapped ? consequentOutcome : alternateOutcome,
           };
-    return this.#continueAfter(split, fallthrough, stops, state);
+    return this.#continueAfter(branchOutcome, fallthrough, stops, walkState);
   }
 
   #walkSwitch(
     terminal: Extract<Terminal, { kind: "switch" }>,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
-    state: WalkState,
+    walkState: WalkState,
   ): Outcome {
     const caseStops = new Set([...stops, terminal.fallthrough]);
     const discriminant = this.#read(terminal.test);
-    const buildCases = (index: number): Outcome => {
-      const switchCase = terminal.cases[index];
+    const buildCaseOutcome = (caseIndex: number): Outcome => {
+      const switchCase = terminal.cases[caseIndex];
       if (!switchCase) return { kind: "Fallthrough", from, to: terminal.fallthrough };
       const caseOutcome: Outcome =
         switchCase.block === terminal.fallthrough
           ? { kind: "Fallthrough", from, to: terminal.fallthrough }
-          : this.#walk(switchCase.block, caseStops, from, state, false);
+          : this.#walk(switchCase.block, caseStops, from, walkState, false);
       if (switchCase.test === null) return caseOutcome;
-      const test = foldBinary("===", discriminant, this.#read(switchCase.test));
-      if (test.kind === "Primitive") return test.value ? caseOutcome : buildCases(index + 1);
+      const caseTest = foldBinary("===", discriminant, this.#read(switchCase.test));
+      if (caseTest.kind === "Primitive")
+        return caseTest.value ? caseOutcome : buildCaseOutcome(caseIndex + 1);
       return {
         kind: "Split",
-        test,
+        test: caseTest,
         testKind: "truthy",
         branch: {
           terminalId: terminal.id,
@@ -1249,103 +1312,110 @@ export class Interpreter {
           file: this.#resolver.fileName,
         },
         consequent: caseOutcome,
-        alternate: buildCases(index + 1),
+        alternate: buildCaseOutcome(caseIndex + 1),
       };
     };
-    return this.#continueAfter(buildCases(0), terminal.fallthrough, stops, state);
+    return this.#continueAfter(buildCaseOutcome(0), terminal.fallthrough, stops, walkState);
   }
 
-  // One walk of the body covers every iteration: each value the loop carries becomes a binding its
-  // type bounds, and leaving through `continue` is leaving through the test.
-  #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, state: WalkState): Outcome {
-    const headers = getLoopHeaders(terminal);
+  #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, walkState: WalkState): Outcome {
+    const loopHeaders = getLoopHeaders(terminal);
     const loopBindings: Binding[] = [];
-    for (const header of headers) {
-      this.#loopHeaders.set(header, false);
-      for (const phi of this.#getBlock(header).phis)
+    for (const loopHeader of loopHeaders) {
+      this.#enteredLoopHeaders.set(loopHeader, false);
+      for (const phi of this.#getBlock(loopHeader).phis)
         this.#write(phi.place, this.#createLoopValue(phi, loopBindings));
     }
-    const [entry = terminal.fallthrough] = headers;
+    const [loopEntry = terminal.fallthrough] = loopHeaders;
     this.#loopDepth++;
-    let outcome: Outcome;
+    let bodyOutcome: Outcome;
     try {
-      outcome = this.#walk(entry, new Set([...stops, terminal.fallthrough]), null, state, true);
+      bodyOutcome = this.#walk(
+        loopEntry,
+        new Set([...stops, terminal.fallthrough]),
+        null,
+        walkState,
+        true,
+      );
     } finally {
       this.#loopDepth--;
-      for (const header of headers) this.#loopHeaders.delete(header);
+      for (const loopHeader of loopHeaders) this.#enteredLoopHeaders.delete(loopHeader);
     }
-    // Which iteration leaves is unknown, so values merging where the loop ends are bound too.
     for (const phi of this.#getBlock(terminal.fallthrough).phis)
       this.#write(phi.place, this.#createLoopValue(phi, loopBindings));
-    this.#addLoopInputs(loopBindings, entry, terminal.fallthrough);
-    const exit: Outcome = {
+    this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
+    const loopExit: Outcome = {
       kind: "Fallthrough",
       from: getLoopExit(terminal),
       to: terminal.fallthrough,
     };
-    const exited = mapFallthroughs(outcome, (fallthrough) =>
-      fallthrough.to === terminal.fallthrough || headers.includes(fallthrough.to)
-        ? exit
+    const exitOutcome = mapFallthroughs(bodyOutcome, (fallthrough) =>
+      fallthrough.to === terminal.fallthrough || loopHeaders.includes(fallthrough.to)
+        ? loopExit
         : fallthrough,
     );
-    return this.#continueAfter(exited, terminal.fallthrough, stops, state, true);
+    return this.#continueAfter(exitOutcome, terminal.fallthrough, stops, walkState, true);
   }
 
-  // Typed as declared, since the value of any iteration may reach here.
   #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
-    const name = getIdentifierName(phi.place);
-    const loc = [phi.place, ...phi.operands.values()]
+    const variableName = getIdentifierName(phi.place);
+    const declarationLoc = [phi.place, ...phi.operands.values()]
       .map(getDeclarationLocation)
       .find((candidate) => this.#resolver.getDeclaredDomain(candidate) !== null);
-    const domain = loc && this.#resolver.getDeclaredDomain(loc);
-    if (name === null || !loc || !domain) return createUnknown("loop", phi.place.loc);
-    const binding = this.#createBinding(name, "loop", loc, { domain });
+    const declaredDomain = declarationLoc && this.#resolver.getDeclaredDomain(declarationLoc);
+    if (variableName === null || !declarationLoc || !declaredDomain)
+      return createUnknown("loop", phi.place.loc);
+    const binding = this.#createBinding(variableName, "loop", declarationLoc, {
+      domain: declaredDomain,
+    });
     if (!loopBindings.includes(binding)) loopBindings.push(binding);
     return createBindingValue(binding);
   }
 
-  // A value the loop carries may depend on anything the loop reads.
-  #addLoopInputs(loopBindings: Binding[], entry: BlockId, exit: BlockId): void {
+  #addLoopInputPlaces(loopBindings: Binding[], loopEntry: BlockId, loopFallthrough: BlockId): void {
     if (loopBindings.length === 0) return;
-    const inputs = new PlaceMap<true>();
-    const seen = new Set([entry, exit]);
-    const queue = [entry];
-    for (const blockId of queue) {
+    const inputPlaces = new PlaceMap<true>();
+    const visitedBlocks = new Set([loopEntry, loopFallthrough]);
+    const pendingBlocks = [loopEntry];
+    for (const blockId of pendingBlocks) {
       const block = this.#getBlock(blockId);
       for (const instruction of block.instructions)
-        this.#collectInputs(this.#read(instruction.lvalue), inputs);
+        this.#collectInputPlaces(this.#read(instruction.lvalue), inputPlaces);
       for (const successor of eachTerminalSuccessor(block.terminal)) {
-        if (seen.has(successor)) continue;
-        seen.add(successor);
-        queue.push(successor);
+        if (visitedBlocks.has(successor)) continue;
+        visitedBlocks.add(successor);
+        pendingBlocks.push(successor);
       }
     }
-    const loopIds = new Set(loopBindings.map((binding) => binding.id));
-    const places = inputs.places().filter((place) => !loopIds.has(place.bindingId));
-    for (const binding of loopBindings) binding.inputPlaces = [...binding.inputPlaces, ...places];
+    const loopBindingIds = new Set(loopBindings.map((binding) => binding.id));
+    const outsidePlaces = inputPlaces
+      .places()
+      .filter((place) => !loopBindingIds.has(place.bindingId));
+    for (const binding of loopBindings)
+      binding.inputPlaces = [...binding.inputPlaces, ...outsidePlaces];
   }
 
   #walk(
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
     from: BlockId | null,
-    state: WalkState,
+    walkState: WalkState,
     hasResolvedPhis: boolean,
   ): Outcome {
     let currentId = blockId;
     let previousId = from;
     let isPhiResolved = hasResolvedPhis;
-    let currentState = state;
+    let currentWalkState = walkState;
     while (true) {
       if (++this.#blockVisits > MAX_BLOCK_VISITS) {
         this.diagnostics.bailOut("too-complex", "visits too many blocks", GeneratedSource);
         return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
       }
-      const isLoopHeader = this.#loopHeaders.has(currentId);
+      const isLoopHeader = this.#enteredLoopHeaders.has(currentId);
       if (isLoopHeader) {
-        if (this.#loopHeaders.get(currentId))
+        if (this.#enteredLoopHeaders.get(currentId))
           return { kind: "Fallthrough", from: previousId, to: currentId };
-        this.#loopHeaders.set(currentId, true);
+        this.#enteredLoopHeaders.set(currentId, true);
       }
       const block = this.#getBlock(currentId);
       if (!isPhiResolved && !isLoopHeader) {
@@ -1355,13 +1425,14 @@ export class Interpreter {
             this.#resolvePhi(
               phi,
               { kind: "Fallthrough", from: previousId, to: currentId },
-              currentState.guards,
+              currentWalkState.guards,
             ),
           );
       }
       for (const instruction of block.instructions) {
-        this.#evaluateInstruction(instruction, currentState);
-        if (instruction.value.kind === "Await") currentState = { ...currentState, isAsync: true };
+        this.#evaluateInstruction(instruction, currentWalkState);
+        if (instruction.value.kind === "Await")
+          currentWalkState = { ...currentWalkState, isAsync: true };
       }
       const { terminal } = block;
       let nextId: BlockId;
@@ -1380,18 +1451,18 @@ export class Interpreter {
           break;
         case "if":
         case "branch":
-          return this.#split(terminal, currentId, stops, currentState);
+          return this.#walkBranch(terminal, currentId, stops, currentWalkState);
         case "switch":
-          return this.#walkSwitch(terminal, currentId, stops, currentState);
+          return this.#walkSwitch(terminal, currentId, stops, currentWalkState);
         case "ternary":
         case "logical":
         case "optional":
-          this.#getTables().branchOperators.set(
+          this.#getCompilationTables().branchOperators.set(
             terminal.fallthrough,
             terminal.kind === "logical"
               ? terminal.operator
               : terminal.kind === "optional" && !terminal.optional
-                ? "chain"
+                ? "optional-chain-tail"
                 : terminal.kind,
           );
           return this.#continueAfter(
@@ -1399,12 +1470,12 @@ export class Interpreter {
               terminal.test,
               new Set([...stops, terminal.fallthrough]),
               currentId,
-              currentState,
+              currentWalkState,
               false,
             ),
             terminal.fallthrough,
             stops,
-            currentState,
+            currentWalkState,
           );
         case "label":
         case "sequence":
@@ -1414,14 +1485,13 @@ export class Interpreter {
           nextId = terminal.block;
           break;
         case "maybe-throw":
-          // A `catch` runs when the `try` throws, like a failed request; walk it once per call.
           if (
-            this.#effects &&
+            this.#handlerEffects &&
             terminal.handler !== null &&
             !this.#walkedCatches.has(terminal.handler)
           ) {
             this.#walkedCatches.add(terminal.handler);
-            this.#walk(terminal.handler, stops, currentId, currentState, false);
+            this.#walk(terminal.handler, stops, currentId, currentWalkState, false);
           }
           nextId = terminal.continuation;
           break;
@@ -1430,7 +1500,7 @@ export class Interpreter {
         case "for-in":
         case "while":
         case "do-while":
-          return this.#walkLoop(terminal, stops, currentState);
+          return this.#walkLoop(terminal, stops, currentWalkState);
         default:
           return assertExhaustive(terminal, "Unhandled terminal");
       }
@@ -1440,7 +1510,7 @@ export class Interpreter {
     }
   }
 
-  #toValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {
+  #getOutcomeValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {
     switch (outcome.kind) {
       case "Return":
         return outcome.value;
@@ -1448,7 +1518,7 @@ export class Interpreter {
         return createUnknown("fallthrough", loc);
       case "Split":
         return createConditional(outcome, guards, (arm, armGuards) =>
-          this.#toValue(arm, loc, armGuards),
+          this.#getOutcomeValue(arm, loc, armGuards),
         );
       default:
         return assertExhaustive(outcome, "Unhandled outcome");
@@ -1457,22 +1527,22 @@ export class Interpreter {
 
   #readStore(
     storeKey: string,
-    model: StoreActions,
+    storeActions: StoreActions,
     callee: SymbolicValue,
-    args: SymbolicValue[],
+    argumentValues: SymbolicValue[],
     loc: SourceLocation,
-    state: WalkState,
+    walkState: WalkState,
   ): SymbolicValue {
-    const name = callee.kind === "Global" ? callee.name : "store";
-    const binding = this.externalSources.getStoreBinding(storeKey, model, () =>
-      this.#createBinding(`${name}()`, "hook", loc, {
+    const storeHookName = callee.kind === "Global" ? callee.name : "store";
+    const binding = this.externalSources.getStoreBinding(storeKey, storeActions, () =>
+      this.#createBinding(`${storeHookName}()`, "hook", loc, {
         hookKind: "Custom",
-        domain: { kind: "Opaque", typeText: name },
+        domain: { kind: "Opaque", typeText: storeHookName },
       }),
     );
-    const [selector] = args;
+    const [selector] = argumentValues;
     return selector?.kind === "Function"
-      ? this.#callFunction(selector, [createBindingValue(binding)], loc, state)
+      ? this.#callFunction(selector, [createBindingValue(binding)], loc, walkState)
       : createBindingValue(binding);
   }
 
@@ -1482,42 +1552,42 @@ export class Interpreter {
   }
 
   #evaluateFunction(
-    fn: HIRFunction,
-    args: SymbolicValue[],
-    state: WalkState,
+    hirFunction: HIRFunction,
+    argumentValues: SymbolicValue[],
+    walkState: WalkState,
     functionId: number | null = null,
   ): SymbolicValue {
     const previousFunction = this.#currentFunction;
     const previousResolver = this.#resolver;
-    const previousCatches = this.#walkedCatches;
+    const previousWalkedCatches = this.#walkedCatches;
     this.#walkedCatches = new Set();
-    this.#currentFunction = fn;
-    this.#resolver = this.#functions.getResolver(fn) ?? previousResolver;
-    const restoreCaptures = this.#applyCaptures(functionId);
+    this.#currentFunction = hirFunction;
+    this.#resolver = this.#functions.getResolver(hirFunction) ?? previousResolver;
+    const restoreLiveValues = this.#applyCapturedValues(functionId);
     try {
-      fn.params.forEach((parameter, index) => {
-        const place = getPlaceOrSpread(parameter);
+      hirFunction.params.forEach((parameter, parameterIndex) => {
+        const parameterPlace = getPlaceOrSpread(parameter);
         this.#write(
-          place,
+          parameterPlace,
           parameter.kind === "Spread"
             ? {
                 kind: "ArrayExpression",
-                elements: args.slice(index),
-                spreads: [createUnknown("rest", place.loc)],
+                elements: argumentValues.slice(parameterIndex),
+                spreads: [createUnknown("rest", parameterPlace.loc)],
               }
-            : (args[index] ?? UNDEFINED_VALUE),
+            : (argumentValues[parameterIndex] ?? UNDEFINED_VALUE),
         );
       });
-      return this.#toValue(
-        this.#walk(fn.body.entry, NO_STOPS, null, state, false),
-        fn.loc,
-        state.guards,
+      return this.#getOutcomeValue(
+        this.#walk(hirFunction.body.entry, NO_STOPS, null, walkState, false),
+        hirFunction.loc,
+        walkState.guards,
       );
     } finally {
-      restoreCaptures();
+      restoreLiveValues();
       this.#currentFunction = previousFunction;
       this.#resolver = previousResolver;
-      this.#walkedCatches = previousCatches;
+      this.#walkedCatches = previousWalkedCatches;
     }
   }
 
@@ -1525,117 +1595,141 @@ export class Interpreter {
     return this.#wholePropsSample ?? this.#restPropsSample;
   }
 
-  evaluateComponent(fn: HIRFunction): SymbolicValue {
+  evaluateComponent(hirFunction: HIRFunction): SymbolicValue {
     this.#blockVisits = 0;
-    return this.#evaluateFunction(fn, [{ kind: "Props" }], ROOT_WALK_STATE);
+    return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
-  #callBinding(callee: BindingValue, args: SymbolicValue[], state: WalkState): void {
+  #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], walkState: WalkState): void {
     const { binding, path } = callee;
-    if (binding.kind === "prop") this.#effects?.addDelegate(formatPlace(binding, path));
-    const member = path.length === 1 ? path[0] : undefined;
-    const contextField = member && this.externalSources.getSetterField(binding, member);
-    if (contextField) return this.#setContextField(binding, contextField, args[0], state);
-    const assignments = member && this.externalSources.getActionAssignments(binding, member);
+    if (binding.kind === "prop") this.#handlerEffects?.addDelegate(formatPlace(binding, path));
+    const memberName = path.length === 1 ? path[0] : undefined;
+    const setterField = memberName && this.externalSources.getSetterField(binding, memberName);
+    if (setterField)
+      return this.#setContextField(binding, setterField, argumentValues[0], walkState);
+    const assignments =
+      memberName && this.externalSources.getActionAssignments(binding, memberName);
     if (assignments)
-      return this.#effects?.recordSetterCall(
+      return this.#handlerEffects?.recordSetterCall(
         binding,
         {
           kind: "ObjectExpression",
           properties: assignments.map((assignment) => ({
             key: assignment.field,
-            value: getStoreFieldValue(binding, assignment, args),
+            value: getStoreFieldValue(binding, assignment, argumentValues),
           })),
           spreads: [createBindingValue(binding)],
         },
-        state,
+        walkState,
       );
-    if (isExternalSource(binding) && this.#effects)
-      this.#recordExternalUpdate(this.#effects, callee, state);
+    if (isExternalSource(binding) && this.#handlerEffects)
+      this.#recordExternalUpdate(this.#handlerEffects, callee, walkState);
   }
 
-  // Async because a provider may not be mounted, and default context setters are often no-ops.
   #setContextField(
     binding: Binding,
     field: string,
-    argument: SymbolicValue | undefined,
-    state: WalkState,
+    setterArgument: SymbolicValue | undefined,
+    walkState: WalkState,
   ): void {
-    if (!this.#effects) return;
-    const previous: SymbolicValue = { kind: "Binding", binding, path: [field] };
-    const next = this.#getNextValue(argument, previous, binding.loc, state);
-    this.#effects.addUpdate(
+    if (!this.#handlerEffects) return;
+    const previousValue: SymbolicValue = { kind: "Binding", binding, path: [field] };
+    const nextValue = this.#getSetterNextValue(
+      setterArgument,
+      previousValue,
+      binding.loc,
+      walkState,
+    );
+    this.#handlerEffects.addUpdate(
       binding,
       {
         kind: "ObjectExpression",
-        properties: [{ key: field, value: this.#effects.forgetMutatedBindings(next) }],
+        properties: [{ key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) }],
         spreads: [createBindingValue(binding)],
       },
-      state.guards,
+      walkState.guards,
       true,
     );
   }
 
-  // Calling into a hook or context value may change it, and every hook from its module, anytime.
-  #recordExternalUpdate(effects: EffectCollector, callee: BindingValue, state: WalkState): void {
-    effects.addDelegate(formatPlace(callee.binding, callee.path));
-    const sources = this.bindingTable.bindings.filter(
+  #recordExternalUpdate(
+    handlerEffects: EffectCollector,
+    callee: BindingValue,
+    walkState: WalkState,
+  ): void {
+    handlerEffects.addDelegate(formatPlace(callee.binding, callee.path));
+    const affectedBindings = this.bindingTable.bindings.filter(
       (binding) =>
         binding.id === callee.binding.id ||
         this.externalSources.isFromSameModule(callee.binding, binding),
     );
-    for (const binding of sources)
-      if (!effects.hasUpdate(binding))
-        effects.addUpdate(binding, createUnknown("external", GeneratedSource), state.guards, true);
+    for (const binding of affectedBindings)
+      if (!handlerEffects.hasUpdate(binding))
+        handlerEffects.addUpdate(
+          binding,
+          createUnknown("external", GeneratedSource),
+          walkState.guards,
+          true,
+        );
   }
 
-  // Handlers in JSX a handler returns, like render-prop output, are rendered for the user to click.
-  #collectRenderedHandlers(value: SymbolicValue, visited: Set<number>): void {
-    const event = createUnknown("event", GeneratedSource);
-    forEachJsxElement(value, (element) => {
+  #collectRenderedHandlers(renderedValue: SymbolicValue, visitedFunctionIds: Set<number>): void {
+    const eventArgument = createUnknown("event", GeneratedSource);
+    forEachJsxElement(renderedValue, (element) => {
       for (const prop of element.props)
         if (prop.kind === "JsxAttribute" && isHandlerProp(element.tag, prop))
-          this.#runCallback(prop.value, [event], visited);
+          this.#runCallback(prop.value, [eventArgument], visitedFunctionIds);
     });
   }
 
-  #runCallback(callback: SymbolicValue, args: SymbolicValue[], visited: Set<number>): void {
+  #runCallback(
+    callback: SymbolicValue,
+    argumentValues: SymbolicValue[],
+    visitedFunctionIds: Set<number>,
+  ): void {
     if (callback.kind === "Setter")
-      this.#effects?.recordSetterCall(
+      this.#handlerEffects?.recordSetterCall(
         callback.binding,
         createUnknown("event", GeneratedSource),
         ROOT_WALK_STATE,
       );
-    if (callback.kind === "Binding") this.#callBinding(callback, args, ROOT_WALK_STATE);
-    if (callback.kind !== "Function" || visited.has(callback.functionId)) return;
-    visited.add(callback.functionId);
-    const fn = this.#functions.get(callback.functionId);
-    if (fn)
+    if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, ROOT_WALK_STATE);
+    if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return;
+    visitedFunctionIds.add(callback.functionId);
+    const hirFunction = this.#functions.get(callback.functionId);
+    if (hirFunction)
       this.#collectRenderedHandlers(
-        this.#evaluateFunction(fn, args, ROOT_WALK_STATE, callback.functionId),
-        visited,
+        this.#evaluateFunction(hirFunction, argumentValues, ROOT_WALK_STATE, callback.functionId),
+        visitedFunctionIds,
       );
   }
 
-  collectEffects(callback: SymbolicValue, args: SymbolicValue[]): CollectedEffects {
-    const previousEffects = this.#effects;
+  collectEffects(callback: SymbolicValue, argumentValues: SymbolicValue[]): CollectedEffects {
+    const previousEffects = this.#handlerEffects;
     const previousBlockVisits = this.#blockVisits;
-    const effects = new EffectCollector((kind, message, loc) => this.#warn(kind, message, loc));
-    this.#effects = effects;
+    const handlerEffects = new EffectCollector((kind, message, loc) =>
+      this.#warn(kind, message, loc),
+    );
+    this.#handlerEffects = handlerEffects;
     this.#blockVisits = 0;
     try {
       const callbacks =
         callback.kind === "ObjectExpression"
           ? callback.properties.map((property) => property.value)
           : [callback];
-      for (const each of callbacks) this.#runCallback(each, args, new Set());
+      for (const eachCallback of callbacks)
+        this.#runCallback(eachCallback, argumentValues, new Set());
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
-            this.#recordExternalUpdate(effects, createBindingValue(binding), ROOT_WALK_STATE);
-      return effects.finish();
+            this.#recordExternalUpdate(
+              handlerEffects,
+              createBindingValue(binding),
+              ROOT_WALK_STATE,
+            );
+      return handlerEffects.finish();
     } finally {
-      this.#effects = previousEffects;
+      this.#handlerEffects = previousEffects;
       this.#blockVisits = previousBlockVisits;
     }
   }

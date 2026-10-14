@@ -143,7 +143,7 @@ export type SymbolicValue =
       hookKind: HookKind;
       name: string;
       module: string | null;
-      args: SymbolicValue[];
+      argumentValues: SymbolicValue[];
       loc: SourceLocation;
     }
   | { kind: "Global"; name: string; module: string | null }

@@ -62,7 +62,7 @@ const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
     case "JsxFragment":
       return value.children;
     case "HookResult":
-      return value.args;
+      return value.argumentValues;
     default:
       return [];
   }
