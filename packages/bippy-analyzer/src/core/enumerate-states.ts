@@ -1,4 +1,3 @@
-import DisjointSet from "../react-compiler/Utils/DisjointSet";
 import type { Bound, Constraints } from "./constraints";
 import {
   assumeCondition,
@@ -12,12 +11,10 @@ import {
 import type {
   AbstractValue,
   Binding,
-  BindingValue,
   ComponentAnalysis,
   ConditionalValue,
   JsxContainerValue,
   BindingPlace,
-  UnreachableBranch,
   Domain,
   Transition,
   State,
@@ -27,31 +24,18 @@ import type {
   Handler,
   StateUpdate,
 } from "./types";
-import {
-  forEachJsxElement,
-  forEachRenderNode,
-  forEachSymbolicValue,
-  mapSymbolicValue,
-} from "./utils/traverse";
+import { forEachJsxElement, mapSymbolicValue } from "./utils/traverse";
 import { formatNegated, formatSymbolicValue } from "./format";
 import { appendToGroup } from "./utils/group";
 import { getValueKey } from "./utils/value-key";
-import { getLocationKey } from "./utils/hir";
-import {
-  PlaceMap,
-  getBindingPlace,
-  getValuePlace,
-  isPlacePrefix,
-  isSamePlace,
-} from "./utils/place";
-import { getTestExpression, getTruthiness, negate } from "./utils/truthiness";
-import {
-  isExternalSource,
-  isRenderingNothingWhenFalse,
-  isStateBinding,
-  isWholeBinding,
-} from "./utils/checks";
+import { PlaceMap, getBindingPlace, getValuePlace, isSamePlace } from "./utils/place";
+import { getTestExpression, getTruthiness } from "./utils/truthiness";
+import { isStateBinding, isWholeBinding } from "./utils/checks";
 import { getBindingUpdates, isEffectHandler } from "./collect-handlers";
+import { findRegions, getBranchKey } from "./regions";
+import type { RegionBranches } from "./regions";
+import { collectUnreachableBranches } from "./unreachable-branches";
+import type { BranchOutcomes } from "./unreachable-branches";
 
 const MAX_ALTERNATIVES = 256;
 const MAX_REACHABILITY_ROUNDS = 8;
@@ -67,30 +51,6 @@ interface Alternative {
 interface PartialChildren extends Omit<Alternative, "render"> {
   children: SymbolicValue[];
 }
-
-interface TestedPlace {
-  name: string;
-  branchKey: string;
-}
-
-interface BranchTests {
-  allBranchKeys: string[];
-  branchGroups: DisjointSet<string>;
-  branchKeysByPlace: PlaceMap<string[]>;
-  testedPlaces: PlaceMap<TestedPlace>;
-}
-
-interface KeyedUnreachableBranch extends UnreachableBranch {
-  branchKey: string;
-}
-
-interface RegionBranches {
-  branchKeys: Set<string>;
-  bindingIds: Set<number>;
-  placeNames: string[];
-}
-
-interface BranchOutcomes extends Map<string, Set<boolean>> {}
 
 type FieldCases = AbstractValue[] | "unchanged" | null;
 
@@ -129,9 +89,6 @@ const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternativ
 
 const getStateKey = (alternative: Alternative): string =>
   [...alternative.branches].sort().join("|");
-
-const getBranchKey = (conditional: ConditionalValue): string =>
-  `${conditional.branch.file}:${getLocationKey(conditional.branch.loc)}:${conditional.branch.terminalId}`;
 
 const getLiteralCases = (
   value: SymbolicValue,
@@ -489,171 +446,12 @@ class StateEnumerator {
   }
 }
 
-const getDecidingPlaces = (testedValue: BindingValue): BindingPlace[] => [
-  isExternalSource(testedValue.binding)
-    ? getBindingPlace(testedValue.binding)
-    : getValuePlace(testedValue),
-  ...testedValue.binding.inputPlaces,
-];
-
-const collectBranchTests = (render: SymbolicValue): BranchTests => {
-  const branchTests: BranchTests = {
-    allBranchKeys: [],
-    branchGroups: new DisjointSet<string>(),
-    branchKeysByPlace: new PlaceMap<string[]>(),
-    testedPlaces: new PlaceMap<TestedPlace>(),
-  };
-  const visitedEnclosingKeys = new WeakMap<SymbolicValue, Set<string | null>>();
-  const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
-    const enclosingKeys = visitedEnclosingKeys.get(value) ?? new Set();
-    if (enclosingKeys.has(enclosingKey)) return;
-    visitedEnclosingKeys.set(value, enclosingKeys.add(enclosingKey));
-    if (value.kind === "JsxExpression" || value.kind === "JsxFragment") {
-      for (const child of value.children) visit(child, enclosingKey);
-      return;
-    }
-    if (value.kind !== "Conditional") return;
-    const branchKey = getBranchKey(value);
-    if (!branchTests.allBranchKeys.includes(branchKey)) branchTests.allBranchKeys.push(branchKey);
-    branchTests.branchGroups.union(enclosingKey ? [branchKey, enclosingKey] : [branchKey]);
-    forEachSymbolicValue(getTestExpression(value), (part) => {
-      if (part.kind !== "Binding") return;
-      for (const place of getDecidingPlaces(part))
-        branchTests.branchKeysByPlace.set(place, [
-          ...(branchTests.branchKeysByPlace.get(place) ?? []),
-          branchKey,
-        ]);
-      branchTests.testedPlaces.set(getValuePlace(part), {
-        name: formatSymbolicValue(part),
-        branchKey,
-      });
-    });
-    visit(value.consequent, branchKey);
-    visit(value.alternate, branchKey);
-  };
-  visit(render, null);
-  for (const [place, branchKeys] of branchTests.branchKeysByPlace)
-    for (const [otherPlace, otherBranchKeys] of branchTests.branchKeysByPlace)
-      if (isPlacePrefix(place, otherPlace))
-        branchTests.branchGroups.union([...branchKeys, ...otherBranchKeys]);
-  return branchTests;
-};
-
-const createEmptyRegion = (): RegionBranches => ({
-  branchKeys: new Set(),
-  bindingIds: new Set(),
-  placeNames: [],
-});
-
-const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
-  const regionsByGroup = new Map<string, RegionBranches>();
-  const getRegion = (branchKey: string): RegionBranches => {
-    const groupKey = branchTests.branchGroups.find(branchKey) ?? branchKey;
-    const region = regionsByGroup.get(groupKey) ?? createEmptyRegion();
-    regionsByGroup.set(groupKey, region);
-    return region;
-  };
-  for (const branchKey of branchTests.allBranchKeys) getRegion(branchKey).branchKeys.add(branchKey);
-  for (const [place, branchKeys] of branchTests.branchKeysByPlace)
-    for (const branchKey of branchKeys) getRegion(branchKey).bindingIds.add(place.bindingId);
-  const testedPlaces = branchTests.testedPlaces.places();
-  for (const [place, { name, branchKey }] of branchTests.testedPlaces) {
-    const isNested = testedPlaces.some(
-      (otherPlace) => !isSamePlace(otherPlace, place) && isPlacePrefix(otherPlace, place),
-    );
-    const region = getRegion(branchKey);
-    if (!isNested && !region.placeNames.includes(name)) region.placeNames.push(name);
-  }
-  return regionsByGroup.size > 0 ? [...regionsByGroup.values()] : [createEmptyRegion()];
-};
-
 const collectHandlerIds = (render: SymbolicValue): Set<string> => {
   const handlerIds = new Set<string>();
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) if (prop.handlerId) handlerIds.add(prop.handlerId);
   });
   return handlerIds;
-};
-
-const collectBranchKeysInTests = (render: SymbolicValue): Set<string> => {
-  const branchKeysInTests = new Set<string>();
-  forEachRenderNode(render, (value) => {
-    if (value.kind !== "Conditional") return;
-    forEachSymbolicValue(getTestExpression(value), (part) => {
-      if (part.kind === "Conditional") branchKeysInTests.add(getBranchKey(part));
-    });
-  });
-  return branchKeysInTests;
-};
-
-const getUnreachedSides = (
-  conditional: ConditionalValue,
-  branchKey: string,
-  reachedOutcomes: Set<boolean>,
-): KeyedUnreachableBranch[] => {
-  const test = getTestExpression(conditional);
-  const unreachedSides: KeyedUnreachableBranch[] = [];
-  if (!reachedOutcomes.has(true))
-    unreachedSides.push({
-      branchKey,
-      branch: conditional.branch,
-      isTrueSide: true,
-      description: `never ${formatSymbolicValue(test)}`,
-    });
-  if (!reachedOutcomes.has(false) && !isRenderingNothingWhenFalse(conditional))
-    unreachedSides.push({
-      branchKey,
-      branch: conditional.branch,
-      isTrueSide: false,
-      description: `never ${formatNegated(test)}`,
-    });
-  return unreachedSides;
-};
-
-const collectUnreachableBranches = (
-  render: SymbolicValue,
-  branchOutcomes: BranchOutcomes,
-): UnreachableBranch[] => {
-  const unreachableBranches: KeyedUnreachableBranch[] = [];
-  const skippedBranchKeys = collectBranchKeysInTests(render);
-  const displacedKeys = new Set<string>();
-  const conditionsByValue = new WeakMap<SymbolicValue, Set<string>>();
-  const visit = (value: SymbolicValue, conditions: string[]): void => {
-    const knownConditions = conditionsByValue.get(value);
-    if (knownConditions && conditions.every((condition) => knownConditions.has(condition))) return;
-    const pathConditions = new Set([...(knownConditions ?? []), ...conditions]);
-    conditionsByValue.set(value, pathConditions);
-    switch (value.kind) {
-      case "Conditional": {
-        const branchKey = getBranchKey(value);
-        const isRenderedOutsideItsGuards = [...pathConditions].some(
-          (condition) => !value.guardKeys.includes(condition),
-        );
-        if (isRenderedOutsideItsGuards) displacedKeys.add(branchKey);
-        const reachedOutcomes = branchOutcomes.get(branchKey);
-        const test = getTestExpression(value);
-        if (reachedOutcomes && !skippedBranchKeys.has(branchKey)) {
-          skippedBranchKeys.add(branchKey);
-          unreachableBranches.push(...getUnreachedSides(value, branchKey, reachedOutcomes));
-        }
-        if (reachedOutcomes?.has(true))
-          visit(value.consequent, [...pathConditions, getValueKey(test)]);
-        if (reachedOutcomes?.has(false))
-          visit(value.alternate, [...pathConditions, getValueKey(negate(test))]);
-        return;
-      }
-      case "JsxExpression":
-      case "JsxFragment":
-        for (const child of value.children) visit(child, [...pathConditions]);
-        return;
-      default:
-        return;
-    }
-  };
-  visit(render, []);
-  return unreachableBranches.flatMap(({ branchKey, ...unreachableBranch }) =>
-    displacedKeys.has(branchKey) ? [] : [unreachableBranch],
-  );
 };
 
 const getRegionHandlers = (analysis: ComponentAnalysis, region: RegionBranches): Handler[] =>
@@ -740,7 +538,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const states: State[] = [];
   const regions: Region[] = [];
   let isTruncated = false;
-  groupIntoRegions(collectBranchTests(analysis.render)).forEach((regionBranches, regionIndex) => {
+  findRegions(analysis.render).forEach((regionBranches, regionIndex) => {
     const enumerated = enumerateRegion(regionBranches, regionIndex, states.length, context);
     states.push(...enumerated.states);
     regions.push(enumerated.region);

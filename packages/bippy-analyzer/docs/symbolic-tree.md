@@ -58,7 +58,9 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `store-actions.ts`          | What each zustand store action sets                                              |
 | `string-samples.ts`         | Strings a component may parse, picked by name                                    |
 | `collect-handlers.ts`       | What each event handler and effect updates                                       |
-| `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions      |
+| `regions.ts`                | Groups branches that test the same data into regions                             |
+| `enumerate-states.ts`       | Lists each region's states and transitions                                       |
+| `unreachable-branches.ts`   | Reports branch sides no state reaches                                            |
 | `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds            |
 | `format.ts`, `serialize.ts` | Printing and JSON output                                                         |
 | `types.ts`                  | The data passed between stages                                                   |
