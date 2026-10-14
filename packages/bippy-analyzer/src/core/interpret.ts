@@ -10,6 +10,7 @@ import type {
   ObjectPattern,
   Phi,
   Place,
+  SpreadPattern,
   SourceLocation,
   Terminal,
 } from "../react-compiler/HIR/HIR";
@@ -1022,10 +1023,17 @@ export class Interpreter {
     if (argument.kind === "Function")
       this.#callFunction(
         argument,
-        [createUnknown("callback-argument", argument.loc)],
+        this.#getUnknownArguments(argument),
         argument.loc,
         asyncWalkState,
       );
+  }
+
+  #getUnknownArguments(callback: FunctionValue): SymbolicValue[] {
+    const parameterCount = this.#functions.get(callback.functionId)?.params.length ?? 1;
+    return Array.from({ length: Math.max(parameterCount, 1) }, () =>
+      createUnknown("callback-argument", callback.loc),
+    );
   }
 
   #passStoredCallback(
@@ -1148,7 +1156,14 @@ export class Interpreter {
     walkState: WalkState,
   ): void {
     const items = [...array.elements, ...array.spreads.map(() => createUnknown("item", loc))];
-    for (const item of items) this.#callFunction(callback, [item], loc, walkState);
+    items.forEach((item, itemIndex) =>
+      this.#callFunction(
+        callback,
+        [item, { kind: "Primitive", value: itemIndex }, array],
+        loc,
+        walkState,
+      ),
+    );
   }
 
   #evaluateArrayMap(
@@ -1157,19 +1172,28 @@ export class Interpreter {
     loc: SourceLocation,
     walkState: WalkState,
   ): SymbolicValue {
-    const [itemParameter] = this.#functions.get(callback.functionId)?.params ?? [];
-    const itemPlace = itemParameter ? getPlaceOrSpread(itemParameter) : null;
-    const item: SymbolicValue = itemPlace
-      ? createBindingValue(
-          this.#createBinding(getIdentifierName(itemPlace) ?? "item", "item", itemPlace.loc),
-        )
-      : createUnknown("item", loc);
+    const [itemParameter, indexParameter] = this.#functions.get(callback.functionId)?.params ?? [];
+    const item = this.#createItemValue(itemParameter, "item", loc);
+    const index = this.#createItemValue(indexParameter, "index", loc);
     return {
       kind: "ArrayMap",
       array,
-      item: this.#callFunction(callback, [item], loc, walkState),
+      item: this.#callFunction(callback, [item, index, array], loc, walkState),
       loc,
     };
+  }
+
+  #createItemValue(
+    parameter: Place | SpreadPattern | undefined,
+    fallbackName: string,
+    loc: SourceLocation,
+  ): SymbolicValue {
+    const place = parameter ? getPlaceOrSpread(parameter) : null;
+    return place
+      ? createBindingValue(
+          this.#createBinding(getIdentifierName(place) ?? fallbackName, "item", place.loc),
+        )
+      : createUnknown(fallbackName, loc);
   }
 
   #evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
