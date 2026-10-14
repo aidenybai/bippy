@@ -214,6 +214,10 @@ const createFieldUpdate = (
   spreads: [createBindingValue(binding)],
 });
 
+const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
+  instruction.value.kind === "StoreContext" &&
+  instruction.value.lvalue.place.identifier.id === place.identifier.id;
+
 const isOwnedValue = (value: SymbolicValue): value is BindingValue =>
   value.kind === "Binding" && (value.binding.kind === "prop" || isStateBinding(value.binding));
 
@@ -623,6 +627,7 @@ export class Interpreter {
     const mutatedLiterals = new Set<SymbolicValue>();
     for (const effect of instruction.effects ?? []) {
       const mutatedPlace = getMutatedPlace(effect);
+      if (mutatedPlace && isReassignedPlace(instruction, mutatedPlace)) continue;
       if (!mutatedPlace) {
         this.#trackPossibleMutation(effect);
         continue;
