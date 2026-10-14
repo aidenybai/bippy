@@ -169,6 +169,7 @@ export interface ProjectHookLoader {
 }
 
 const MAX_BLOCK_VISITS = 20_000;
+const MAX_WALK_DEPTH = 256;
 const MAX_INLINE_DEPTH = 4;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
@@ -243,6 +244,7 @@ export class Interpreter {
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
   #blockVisits = 0;
+  #walkDepth = 0;
   readonly #creationPaths = new WeakMap<SymbolicValue, CreationPath>();
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
@@ -1658,15 +1660,34 @@ export class Interpreter {
     walkState: WalkState,
     entryPhiState: PhiState,
   ): Outcome {
+    if (this.#walkDepth >= MAX_WALK_DEPTH) return this.#bailOutTooComplex("nests too many blocks");
+    this.#walkDepth++;
+    try {
+      return this.#walkBlocks(blockId, stops, from, walkState, entryPhiState);
+    } finally {
+      this.#walkDepth--;
+    }
+  }
+
+  #bailOutTooComplex(message: string): Outcome {
+    this.diagnostics.bailOut("too-complex", message, GeneratedSource);
+    return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
+  }
+
+  #walkBlocks(
+    blockId: BlockId,
+    stops: ReadonlySet<BlockId>,
+    from: BlockId | null,
+    walkState: WalkState,
+    entryPhiState: PhiState,
+  ): Outcome {
     let currentId = blockId;
     let previousId = from;
     let isPhiResolved = entryPhiState === "resolved";
     let currentWalkState = walkState;
     while (true) {
-      if (++this.#blockVisits > MAX_BLOCK_VISITS) {
-        this.diagnostics.bailOut("too-complex", "visits too many blocks", GeneratedSource);
-        return { kind: "Return", value: createUnknown("too-complex", GeneratedSource) };
-      }
+      if (++this.#blockVisits > MAX_BLOCK_VISITS)
+        return this.#bailOutTooComplex("visits too many blocks");
       const isLoopHeader = this.#enteredLoopHeaders.has(currentId);
       if (isLoopHeader) {
         if (this.#enteredLoopHeaders.get(currentId))
