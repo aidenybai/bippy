@@ -56,6 +56,11 @@ export const resolveNamedParent = (error: string, project: ProjectIndex): string
   return !project.exports.has(named) && project.exports.has(providerName) ? providerName : named;
 };
 
+const getReachableFiles = (query: ParentQuery): string[] => [
+  query.file,
+  ...(query.project.imports.get(query.file)?.files ?? []),
+];
+
 const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
   const projectWrappers = [...(query.project.exports.get(name) ?? [])]
     .sort(
@@ -64,8 +69,7 @@ const findNamedParents = (name: string, query: ParentQuery): Wrapper[] => {
         getSharedSegmentCount(left.file, query.file),
     )
     .map((exported) => createProjectWrapper(name, "named", exported, query));
-  const importingFiles = [query.file, ...(query.project.imports.get(query.file)?.files ?? [])];
-  const packageWrappers = importingFiles
+  const packageWrappers = getReachableFiles(query)
     .flatMap((file) => query.project.imports.get(file)?.packages ?? [])
     .flatMap(({ specifier, names }) =>
       [null, ...names.filter((importedName) => NAMESPACE_NAME_PATTERN.test(importedName))].map(
@@ -143,10 +147,7 @@ export const proposeParents = (query: ParentQuery): Wrapper[] => {
     .slice(0, -1)
     .flatMap((rootName) => findOwnExport(rootName, "root", query));
   const namedParents = namedParent ? findNamedParents(namedParent, query) : [];
-  const reachableFiles = new Set([
-    query.file,
-    ...(query.project.imports.get(query.file)?.files ?? []),
-  ]);
+  const reachableFiles = new Set(getReachableFiles(query));
   const isNamedReachable = namedParents.some(
     ({ candidate }) => candidate.kind === "project" && reachableFiles.has(candidate.file),
   );
