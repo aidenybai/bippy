@@ -1,8 +1,6 @@
-/**
- * Stands in for `@supabase/supabase-js`: a signed-in user and a few rows per table, enough
- * for pages to render with data. Writes succeed and change nothing, and a filter on a
- * missing value, like a route param the harness doesn't set, matches every row.
- */
+// HACK: stands in for `@supabase/supabase-js`: a signed-in user and a few rows per table, enough
+// for pages to render with data. Writes succeed and change nothing, and a filter on a missing
+// value, like a route param the harness doesn't set, matches every row.
 type Row = Record<string, unknown>;
 
 interface QueryResult {
