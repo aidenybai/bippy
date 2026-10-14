@@ -38,15 +38,15 @@ const parseDepth = (value: string): number => {
   return depth;
 };
 
-const countBailouts = (reasons: string[]): string[] => {
-  const counts = new Map<string, number>();
-  for (const reason of reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1);
-  return [...counts]
+const formatBailoutCounts = (reasons: string[]): string[] => {
+  const countsByReason = new Map<string, number>();
+  for (const reason of reasons) countsByReason.set(reason, (countsByReason.get(reason) ?? 0) + 1);
+  return [...countsByReason]
     .sort((left, right) => right[1] - left[1])
     .map(([reason, count]) => `${reason} ${count}`);
 };
 
-const run = (tsconfig: string, options: AnalyzeCliOptions): void => {
+const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
   const { components: allComponents, fileCount } = analyzeProject(configPath, options.file ?? null);
@@ -76,16 +76,16 @@ const run = (tsconfig: string, options: AnalyzeCliOptions): void => {
   }
 
   const stateCount = components.reduce((total, { report }) => total + report.states.length, 0);
-  const elapsed = Math.round(performance.now() - startTime);
+  const elapsedMs = Math.round(performance.now() - startTime);
   console.log(
     colors.dim(
-      `${components.length} components · ${stateCount} states · ${fileCount} files · ${elapsed} ms`,
+      `${components.length} components · ${stateCount} states · ${fileCount} files · ${elapsedMs} ms`,
     ),
   );
-  const bailouts = countBailouts(
+  const bailoutCounts = formatBailoutCounts(
     components.flatMap(({ analysis }) => analysis.bailouts.map((bailout) => bailout.reason)),
   );
-  if (bailouts.length > 0) console.log(colors.dim(`bailouts: ${bailouts.join(", ")}`));
+  if (bailoutCounts.length > 0) console.log(colors.dim(`bailouts: ${bailoutCounts.join(", ")}`));
 };
 
 new Command()
@@ -104,5 +104,5 @@ new Command()
   .option("-a, --attributes", "show every JSX attribute, not only event handlers", false)
   .option("--json", "print the analyses as JSON", false)
   .option("--no-color", "disable colors")
-  .action(run)
+  .action(runAnalyze)
   .parse();

@@ -37,10 +37,20 @@ export interface PrintOptions {
   isShowingAttributes: boolean;
 }
 
+interface RenderNodeBudget {
+  remaining: number;
+}
+
+interface Note {
+  kind: string;
+  loc: SourceLocation;
+  message: string;
+}
+
 interface ComponentPrintContext extends PrintOptions {
-  effects: Map<string, string>;
-  triggers: Map<string, string>;
-  renderNodeBudget: { remaining: number };
+  effectLabelsByHandler: Map<string, string>;
+  triggerLabelsByHandler: Map<string, string>;
+  renderNodeBudget: RenderNodeBudget;
 }
 
 const MAX_LABEL_WIDTH = 140;
@@ -124,10 +134,10 @@ const formatAttributes = (
   const attributes = node.props.flatMap((prop) => {
     const name = prop.kind === "JsxAttribute" ? prop.name : "{...}";
     if (prop.handlerId)
-      return [colors.dim(`${name} ⇒ ${context.effects.get(prop.handlerId) ?? "?"}`)];
+      return [colors.dim(`${name} ⇒ ${context.effectLabelsByHandler.get(prop.handlerId) ?? "?"}`)];
     if (!context.isShowingAttributes) return [];
-    const value = truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH);
-    return [colors.dim(prop.kind === "JsxAttribute" ? `${name}=${value}` : `...${value}`)];
+    const valueText = truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH);
+    return [colors.dim(prop.kind === "JsxAttribute" ? `${name}=${valueText}` : `...${valueText}`)];
   });
   return attributes.length > 0 ? ` ${attributes.join(" ")}` : "";
 };
@@ -158,34 +168,33 @@ const formatLeaf = (value: SymbolicValue, options: PrintOptions): string | null 
 const getConditionLabel = (value: ConditionalValue): string =>
   formatSymbolicValue(getTestExpression(value));
 
-// Shared subtrees make a full print exponential, so stop once the line is too wide.
 const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): string => {
   const parts: string[] = [];
-  let length = 0;
-  const write = (part: string): void => {
+  let printedLength = 0;
+  const appendPart = (part: string): void => {
     if (!part) return;
     parts.push(part);
-    length += part.length + 1;
+    printedLength += part.length + 1;
   };
   let isCut = false;
-  const visit = (current: SymbolicValue): void => {
-    if (length > MAX_LABEL_WIDTH) {
+  const visit = (node: SymbolicValue): void => {
+    if (printedLength > MAX_LABEL_WIDTH) {
       isCut = true;
       return;
     }
-    if (isRenderingNothing(current)) return;
-    const leaf = formatLeaf(current, context);
-    if (leaf !== null) return write(leaf);
-    switch (current.kind) {
+    if (isRenderingNothing(node)) return;
+    const leaf = formatLeaf(node, context);
+    if (leaf !== null) return appendPart(leaf);
+    switch (node.kind) {
       case "JsxExpression":
-        write(formatTag(current, context, true));
-        return current.children.forEach(visit);
+        appendPart(formatTag(node, context, true));
+        return node.children.forEach(visit);
       case "JsxFragment":
-        return current.children.forEach(visit);
+        return node.children.forEach(visit);
       case "ArrayMap":
-        return write(`↻ ${formatSymbolicValue(current.array)}`);
+        return appendPart(`↻ ${formatSymbolicValue(node.array)}`);
       case "Conditional":
-        return write(`◆ ${getConditionLabel(current)}`);
+        return appendPart(`◆ ${getConditionLabel(node)}`);
       default:
         return;
     }
@@ -249,9 +258,10 @@ const formatUpdate = (update: StateUpdate): string => {
             `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
         )
       : [`${binding.name} = ${formatSymbolicValue(value)}`];
-  const guard =
+  const guardPrefix =
     update.guards.length > 0 ? `if ${update.guards.map(formatSymbolicValue).join(" && ")}: ` : "";
-  return `${guard}${assignments.join(", ")}${update.isAsync ? " (async)" : ""}`;
+  const asyncSuffix = update.isAsync ? " (async)" : "";
+  return `${guardPrefix}${assignments.join(", ")}${asyncSuffix}`;
 };
 
 const formatTransitionEffect = (handler: Handler): string =>
@@ -280,16 +290,20 @@ const getTextContent = (value: SymbolicValue): string => {
   }
 };
 
-const collectTriggers = (render: SymbolicValue, triggers: Map<string, string>): void =>
+const collectTriggerLabels = (
+  render: SymbolicValue,
+  triggerLabelsByHandler: Map<string, string>,
+): void =>
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
-      if (!prop.handlerId || triggers.has(prop.handlerId)) continue;
-      const text = getTextContent(element);
-      triggers.set(
+      if (!prop.handlerId || triggerLabelsByHandler.has(prop.handlerId)) continue;
+      const textContent = getTextContent(element);
+      const propName = prop.kind === "JsxAttribute" ? prop.name : "{...}";
+      triggerLabelsByHandler.set(
         prop.handlerId,
-        text
-          ? truncate(text, MAX_TRIGGER_TEXT_WIDTH)
-          : `<${element.tag.name}> ${prop.kind === "JsxAttribute" ? prop.name : "{...}"}`,
+        textContent
+          ? truncate(textContent, MAX_TRIGGER_TEXT_WIDTH)
+          : `<${element.tag.name}> ${propName}`,
       );
     }
   });
@@ -306,63 +320,68 @@ const buildBindings = (component: AnalyzedComponent, options: PrintOptions): Tre
   const { analysis, report } = component;
   const { colors } = options;
   const updates = analysis.handlers.flatMap((handler) => handler.updates);
-  const children = analysis.bindings
+  const bindingNodes = analysis.bindings
     .filter((binding) => binding.kind !== "item")
     .map((binding) => {
-      const source =
+      const bindingSource =
         binding.hookKind && binding.kind !== "state" && binding.kind !== "reducer"
           ? `${binding.kind}:${binding.hookKind}`
           : binding.kind;
       const details: string[] = [];
       if (binding.initial) details.push(`= ${formatSymbolicValue(binding.initial)}`);
-      const reachable = report.places.get(getBindingPlace(binding));
+      const reachableValues = report.places.get(getBindingPlace(binding));
       if (
-        reachable &&
+        reachableValues &&
         binding.domain.kind === "Cases" &&
-        reachable.length < binding.domain.cases.length
+        reachableValues.length < binding.domain.cases.length
       ) {
-        details.push(colors.dim(`reachable ${formatCases(reachable)}`));
+        details.push(colors.dim(`reachable ${formatCases(reachableValues)}`));
       }
       const invariant = getNumericInvariant(
         binding,
         updates.filter((update) => update.binding.id === binding.id),
       );
       if (invariant) details.push(colors.dim(invariant));
-      const fields = [...report.places]
+      const fieldNodes = [...report.places]
         .filter(([place]) => place.bindingId === binding.id && place.path.length > 0)
-        .map(([place, values]) => {
-          const domain = analysis.placeDomains.get(place);
-          const isNarrowed = domain?.kind === "Cases" && values.length < domain.cases.length;
-          const narrowed = isNarrowed ? ` ${colors.dim(`reachable ${formatCases(values)}`)}` : "";
+        .map(([place, reachableFieldValues]) => {
+          const fieldDomain = analysis.placeDomains.get(place);
+          const isNarrowed =
+            fieldDomain?.kind === "Cases" && reachableFieldValues.length < fieldDomain.cases.length;
+          const reachableSuffix = isNarrowed
+            ? ` ${colors.dim(`reachable ${formatCases(reachableFieldValues)}`)}`
+            : "";
+          const domainText = fieldDomain ? formatDomain(fieldDomain) : "";
           return createTreeNode(
-            truncate(`.${place.path.join(".")} ${domain ? formatDomain(domain) : ""}${narrowed}`),
+            truncate(`.${place.path.join(".")} ${domainText}${reachableSuffix}`),
           );
         });
       const domainText =
         binding.domain.kind === "Unknown"
           ? colors.red(formatDomain(binding.domain))
           : formatDomain(binding.domain);
+      const detailsSuffix = details.length > 0 ? ` ${details.join("  ")}` : "";
       return createTreeNode(
         truncate(
-          `${colors.bold(binding.name)} ${colors.dim(source)} ${domainText}${details.length > 0 ? ` ${details.join("  ")}` : ""}`,
+          `${colors.bold(binding.name)} ${colors.dim(bindingSource)} ${domainText}${detailsSuffix}`,
         ),
-        fields,
+        fieldNodes,
       );
     });
   return createTreeNode(
     colors.dim("data"),
-    children.length > 0 ? children : [createTreeNode(colors.dim("none"))],
+    bindingNodes.length > 0 ? bindingNodes : [createTreeNode(colors.dim("none"))],
   );
 };
 
 const buildState = (
   state: State,
-  index: number,
+  stateIndex: number,
   hasRegions: boolean,
   context: ComponentPrintContext,
 ): TreeNode => {
   const { colors } = context;
-  const label =
+  const conditionLabel =
     state.conditions.length > 0 ? state.conditions.join(colors.dim(" ∧ ")) : colors.dim("always");
   const rendered = hasRegions
     ? state.fragments
@@ -372,67 +391,69 @@ const buildState = (
     : formatCompact(state.render, context);
   const details = [createTreeNode(truncate(rendered || colors.dim("∅")))];
   for (const transition of state.transitions) {
-    const targets = transition.targets
-      .filter((target) => target !== index)
-      .map((target) => `S${target + 1}`);
-    if (targets.length === 0) continue;
-    const trigger = context.triggers.get(transition.handlerId) ?? transition.handlerId;
+    const targetLabels = transition.targets
+      .filter((targetIndex) => targetIndex !== stateIndex)
+      .map((targetIndex) => `S${targetIndex + 1}`);
+    if (targetLabels.length === 0) continue;
+    const triggerLabel =
+      context.triggerLabelsByHandler.get(transition.handlerId) ?? transition.handlerId;
+    const asyncSuffix = transition.isAsync ? colors.dim(" (async)") : "";
     details.push(
       createTreeNode(
-        `${trigger} ${colors.dim("→")} ${targets.join(" | ")}${transition.isAsync ? colors.dim(" (async)") : ""}`,
+        `${triggerLabel} ${colors.dim("→")} ${targetLabels.join(" | ")}${asyncSuffix}`,
       ),
     );
   }
-  return createTreeNode(truncate(`${colors.bold(`S${index + 1}`)} ${label}`), details);
+  return createTreeNode(
+    truncate(`${colors.bold(`S${stateIndex + 1}`)} ${conditionLabel}`),
+    details,
+  );
 };
 
 const buildStates = (component: AnalyzedComponent, context: ComponentPrintContext): TreeNode => {
   const { colors } = context;
   const { report } = component;
   const hasRegions = report.regions.length > 1;
-  const children = hasRegions
+  const stateNodes = hasRegions
     ? report.regions.map((region) =>
         createTreeNode(
           truncate(region.places.join(colors.dim(", ")) || colors.dim("other")),
-          region.states.map((index) => {
-            const state = report.states[index];
-            return state ? buildState(state, index, true, context) : createTreeNode("");
+          region.states.map((stateIndex) => {
+            const state = report.states[stateIndex];
+            return state ? buildState(state, stateIndex, true, context) : createTreeNode("");
           }),
         ),
       )
-    : report.states.map((state, index) => buildState(state, index, false, context));
+    : report.states.map((state, stateIndex) => buildState(state, stateIndex, false, context));
   if (report.unreachableBranches.length > 0) {
-    children.push(
+    stateNodes.push(
       createTreeNode(
         colors.red("unreachable branches"),
-        report.unreachableBranches.map((unreachableBranch) => {
-          return createTreeNode(
+        report.unreachableBranches.map((unreachableBranch) =>
+          createTreeNode(
             `${colors.red(unreachableBranch.description)} ${colors.dim(formatLine(unreachableBranch.branch.loc))}`,
-          );
-        }),
+          ),
+        ),
       ),
     );
   }
-  const truncated = report.isTruncated ? "+, truncated" : "";
-  const combinations = report.regions.reduce(
+  const truncatedSuffix = report.isTruncated ? "+, truncated" : "";
+  const combinationCount = report.regions.reduce(
     (product, region) => product * region.states.length,
     1,
   );
+  const stateCountLabel = `${report.states.length}${truncatedSuffix}`;
   return createTreeNode(
     colors.dim(
       hasRegions
-        ? `states (${report.states.length}${truncated} in ${report.regions.length} regions, ${combinations} combinations)`
-        : `states (${report.states.length}${truncated})`,
+        ? `states (${stateCountLabel} in ${report.regions.length} regions, ${combinationCount} combinations)`
+        : `states (${stateCountLabel})`,
     ),
-    children,
+    stateNodes,
   );
 };
 
-const buildNotes = (
-  title: string,
-  notes: Array<{ kind: string; loc: SourceLocation; message: string }>,
-  { colors }: PrintOptions,
-): TreeNode =>
+const buildNotes = (title: string, notes: Note[], { colors }: PrintOptions): TreeNode =>
   createTreeNode(
     colors.dim(title),
     notes.map((note) =>
@@ -444,16 +465,17 @@ const buildNotes = (
 
 export const formatComponent = (component: AnalyzedComponent, options: PrintOptions): string => {
   const { analysis } = component;
-  const triggers = new Map<string, string>();
-  collectTriggers(analysis.render, triggers);
+  const triggerLabelsByHandler = new Map<string, string>();
+  collectTriggerLabels(analysis.render, triggerLabelsByHandler);
   for (const handler of analysis.handlers) {
-    if (handler.trigger.kind === "Effect") triggers.set(handler.id, getEffectLabel(handler));
+    if (handler.trigger.kind === "Effect")
+      triggerLabelsByHandler.set(handler.id, getEffectLabel(handler));
   }
   const context: ComponentPrintContext = {
     ...options,
     renderNodeBudget: { remaining: MAX_RENDER_NODES },
-    triggers,
-    effects: new Map(
+    triggerLabelsByHandler,
+    effectLabelsByHandler: new Map(
       analysis.handlers.map((handler) => [handler.id, formatTransitionEffect(handler)]),
     ),
   };
@@ -461,17 +483,17 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   const sections: TreeNode[] = [];
   if (views.has("data")) sections.push(buildBindings(component, context));
   if (views.has("render")) {
-    const effects = analysis.handlers
+    const effectNodes = analysis.handlers
       .filter((handler) => handler.trigger.kind === "Effect")
-      .map((handler) =>
-        createTreeNode(
-          colors.dim(`${triggers.get(handler.id)} ⇒ ${context.effects.get(handler.id)}`),
-        ),
-      );
+      .map((handler) => {
+        const triggerLabel = triggerLabelsByHandler.get(handler.id);
+        const effectLabel = context.effectLabelsByHandler.get(handler.id);
+        return createTreeNode(colors.dim(`${triggerLabel} ⇒ ${effectLabel}`));
+      });
     sections.push(
       createTreeNode(colors.dim("render"), [
         buildRenderNode(analysis.render, context, 0),
-        ...effects,
+        ...effectNodes,
       ]),
     );
   }
@@ -486,8 +508,8 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
         context,
       ),
     );
-  const line = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
-  const location = `${relative(context.rootDirectory, analysis.file)}${line}`;
+  const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
+  const location = `${relative(context.rootDirectory, analysis.file)}${lineSuffix}`;
   return renderAsciiTree(
     createTreeNode(`${colors.bold(analysis.name)} ${colors.dim(location)}`, sections),
   ).join("\n");
@@ -498,28 +520,30 @@ export const formatHierarchy = (components: AnalyzedComponent[], options: PrintO
   const componentsByName = new Map(
     components.map((component) => [component.analysis.name, component]),
   );
-  const rendered = new Set(components.flatMap((component) => component.analysis.renders));
-  const roots = components.filter((component) => !rendered.has(component.analysis.name));
-  const build = (component: AnalyzedComponent, ancestors: Set<string>): TreeNode => {
+  const renderedNames = new Set(components.flatMap((component) => component.analysis.renders));
+  const rootComponents = components.filter(
+    (component) => !renderedNames.has(component.analysis.name),
+  );
+  const buildComponentNode = (component: AnalyzedComponent, ancestors: Set<string>): TreeNode => {
     const { analysis, report } = component;
     const stateCount = report.states.length;
-    const transitionCount = analysis.handlers.length;
-    const stats = colors.dim(
-      `${stateCount} state${stateCount === 1 ? "" : "s"}${transitionCount > 0 ? `, ${transitionCount} handler${transitionCount === 1 ? "" : "s"}` : ""}`,
-    );
-    const label = `${analysis.name} ${stats}`;
+    const handlerCount = analysis.handlers.length;
+    const stateLabel = `${stateCount} state${stateCount === 1 ? "" : "s"}`;
+    const handlerLabel =
+      handlerCount > 0 ? `, ${handlerCount} handler${handlerCount === 1 ? "" : "s"}` : "";
+    const label = `${analysis.name} ${colors.dim(`${stateLabel}${handlerLabel}`)}`;
     if (ancestors.has(analysis.name)) return createTreeNode(`${label} ${colors.dim("(cycle)")}`);
-    const nextAncestors = new Set([...ancestors, analysis.name]);
-    const children = analysis.renders.flatMap((childName) => {
-      const child = componentsByName.get(childName);
-      return child ? [build(child, nextAncestors)] : [];
+    const childAncestors = new Set([...ancestors, analysis.name]);
+    const childNodes = analysis.renders.flatMap((childName) => {
+      const childComponent = componentsByName.get(childName);
+      return childComponent ? [buildComponentNode(childComponent, childAncestors)] : [];
     });
-    return createTreeNode(label, children);
+    return createTreeNode(label, childNodes);
   };
   return renderAsciiTree(
     createTreeNode(
       colors.bold("components"),
-      roots.map((root) => build(root, new Set())),
+      rootComponents.map((rootComponent) => buildComponentNode(rootComponent, new Set())),
     ),
   ).join("\n");
 };
