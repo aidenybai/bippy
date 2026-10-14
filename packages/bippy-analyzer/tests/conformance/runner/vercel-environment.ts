@@ -214,6 +214,64 @@ const prepareSnapshot = async (
   }
 };
 
+const uploadAnalyzerSource = (sandbox: Sandbox): Promise<void> => {
+  const sourceFiles = ANALYZER_SOURCE_DIRECTORIES.flatMap((directory) =>
+    listFiles(join(PACKAGE_DIRECTORY, directory)),
+  );
+  return sandbox.writeFiles([
+    ...sourceFiles.map((path) => ({
+      path: `${ANALYZER_DIRECTORY}/${relative(PACKAGE_DIRECTORY, path)}`,
+      content: readFileSync(path),
+    })),
+    ...listFiles(BIPPY_SOURCE_DIRECTORY).map((path) => ({
+      path: `${SANDBOX_ROOT}/bippy/src/${relative(BIPPY_SOURCE_DIRECTORY, path)}`,
+      content: readFileSync(path),
+    })),
+  ]);
+};
+
+const runCollect = async (
+  sandbox: Sandbox,
+  repo: RepoConfig,
+  shouldVerify: boolean,
+): Promise<void> => {
+  const tsconfigPath = `${APP_DIRECTORY}/${repo.workingDirectory}/${repo.tsconfig}`;
+  await runStep(
+    sandbox,
+    "analyze",
+    "node_modules/.bin/tsx",
+    [
+      "tests/conformance/runner/collect.ts",
+      tsconfigPath,
+      OUTPUT_DIRECTORY,
+      ...(shouldVerify ? ["--verify"] : []),
+      ...(repo.setupDirectory
+        ? ["--setup", `${ANALYZER_DIRECTORY}/${relative(PACKAGE_DIRECTORY, repo.setupDirectory)}`]
+        : []),
+    ],
+    {
+      cwd: ANALYZER_DIRECTORY,
+    },
+  );
+};
+
+const downloadResults = async (
+  sandbox: Sandbox,
+  outputDirectory: string,
+  shouldVerify: boolean,
+): Promise<void> => {
+  mkdirSync(outputDirectory, { recursive: true });
+  for (const fileName of [
+    "analysis.json",
+    "summary.json",
+    ...(shouldVerify ? ["verify.json"] : []),
+  ]) {
+    const content = await sandbox.readFileToBuffer({ path: `${OUTPUT_DIRECTORY}/${fileName}` });
+    if (!content) throw new Error(`${fileName} was not written`);
+    writeFileSync(join(outputDirectory, fileName), content);
+  }
+};
+
 export const runVercel = async (
   repo: RepoConfig,
   outputDirectory: string,
@@ -229,47 +287,9 @@ export const runVercel = async (
     timeout: RUN_TIMEOUT_MS,
   });
   try {
-    const sourceFiles = ANALYZER_SOURCE_DIRECTORIES.flatMap((directory) =>
-      listFiles(join(PACKAGE_DIRECTORY, directory)),
-    );
-    await sandbox.writeFiles([
-      ...sourceFiles.map((path) => ({
-        path: `${ANALYZER_DIRECTORY}/${relative(PACKAGE_DIRECTORY, path)}`,
-        content: readFileSync(path),
-      })),
-      ...listFiles(BIPPY_SOURCE_DIRECTORY).map((path) => ({
-        path: `${SANDBOX_ROOT}/bippy/src/${relative(BIPPY_SOURCE_DIRECTORY, path)}`,
-        content: readFileSync(path),
-      })),
-    ]);
-    const tsconfigPath = `${APP_DIRECTORY}/${repo.workingDirectory}/${repo.tsconfig}`;
-    await runStep(
-      sandbox,
-      "analyze",
-      "node_modules/.bin/tsx",
-      [
-        "tests/conformance/runner/collect.ts",
-        tsconfigPath,
-        OUTPUT_DIRECTORY,
-        ...(shouldVerify ? ["--verify"] : []),
-        ...(repo.setupDirectory
-          ? ["--setup", `${ANALYZER_DIRECTORY}/${relative(PACKAGE_DIRECTORY, repo.setupDirectory)}`]
-          : []),
-      ],
-      {
-        cwd: ANALYZER_DIRECTORY,
-      },
-    );
-    mkdirSync(outputDirectory, { recursive: true });
-    for (const fileName of [
-      "analysis.json",
-      "summary.json",
-      ...(shouldVerify ? ["verify.json"] : []),
-    ]) {
-      const content = await sandbox.readFileToBuffer({ path: `${OUTPUT_DIRECTORY}/${fileName}` });
-      if (!content) throw new Error(`${fileName} was not written`);
-      writeFileSync(join(outputDirectory, fileName), content);
-    }
+    await uploadAnalyzerSource(sandbox);
+    await runCollect(sandbox, repo, shouldVerify);
+    await downloadResults(sandbox, outputDirectory, shouldVerify);
     return JSON.parse(readFileSync(join(outputDirectory, "summary.json"), "utf8"));
   } finally {
     await sandbox.stop().catch(() => undefined);
