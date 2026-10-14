@@ -2,6 +2,7 @@ import type { BlockId, Terminal } from "../react-compiler/HIR/HIR";
 import type { Branch, ConditionalValue, SymbolicValue, TestKind } from "./types";
 import { getTestExpression, negate } from "./utils/truthiness";
 import { getValueKey } from "./utils/value-key";
+import { getLocationKey } from "./utils/hir";
 
 interface ReturnOutcome {
   kind: "Return";
@@ -90,6 +91,9 @@ export const hasFallthrough = (outcome: Outcome, join: BlockId): boolean =>
     : outcome.kind === "Fallthrough" && outcome.to === join;
 
 export const NO_STOPS: ReadonlySet<BlockId> = new Set();
+
+export const getBranchKey = (branch: Branch): string =>
+  `${branch.file}:${getLocationKey(branch.loc)}:${branch.terminalId}`;
 
 export const getGuard = (split: SplitOutcome, isConsequent: boolean): SymbolicValue => {
   const test = getTestExpression(split);

@@ -73,6 +73,7 @@ import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import {
   NO_STOPS,
   createConditional,
+  getBranchKey,
   getGuard,
   getLoopExit,
   getLoopHeaders,
@@ -238,6 +239,7 @@ export class Interpreter {
   readonly externalSources: ExternalSources;
   readonly diagnostics = new Diagnostics();
   readonly effectCalls: EffectCall[] = [];
+  readonly decidedBranchOutcomes = new Map<string, boolean[]>();
   readonly #renderPhaseEffects = new EffectCollector((kind, message, loc) =>
     this.#warn(kind, message, loc),
   );
@@ -1535,23 +1537,33 @@ export class Interpreter {
     const consequentOutcome = this.#walkArm(consequent, from, armStops, walkState, testGuard);
     const alternateOutcome = this.#walkArm(alternate, from, armStops, walkState, negate(testGuard));
     const isSwapped = operator === "&&";
-    if (branchTest.knownOutcome !== null)
+    const probe = this.#resolver.isExpression(terminal.test.loc) ? branchTest.testKind : "none";
+    const branch = this.#createBranch(terminal.id, terminal.test.loc, probe);
+    if (branchTest.knownOutcome !== null) {
+      this.#recordDecidedBranch(branch, branchTest.knownOutcome);
       return this.#continueAfter(
         branchTest.knownOutcome !== isSwapped ? consequentOutcome : alternateOutcome,
         fallthrough,
         stops,
         walkState,
       );
-    const probe = this.#resolver.isExpression(terminal.test.loc) ? branchTest.testKind : "none";
+    }
     const splitOutcome: Outcome = {
       kind: "Split",
       test: branchTest.test,
       testKind: branchTest.testKind,
-      branch: this.#createBranch(terminal.id, terminal.test.loc, probe),
+      branch,
       consequent: isSwapped ? alternateOutcome : consequentOutcome,
       alternate: isSwapped ? consequentOutcome : alternateOutcome,
     };
     return this.#continueAfter(splitOutcome, fallthrough, stops, walkState);
+  }
+
+  #recordDecidedBranch(branch: Branch, outcome: boolean): void {
+    const branchKey = getBranchKey(branch);
+    const outcomes = this.decidedBranchOutcomes.get(branchKey) ?? [];
+    if (!outcomes.includes(outcome))
+      this.decidedBranchOutcomes.set(branchKey, [...outcomes, outcome]);
   }
 
   #walkArm(

@@ -4,7 +4,7 @@ import { formatNegated, formatSymbolicValue } from "./format";
 import { getValueKey } from "./utils/value-key";
 import { getTestExpression, negate } from "./utils/truthiness";
 import { isRenderingNothingWhenFalse } from "./utils/checks";
-import { getBranchKey } from "./regions";
+import { getBranchKey } from "./control-flow";
 
 export interface BranchOutcomes extends Map<string, Set<boolean>> {}
 
@@ -17,7 +17,7 @@ const collectBranchKeysInTests = (render: SymbolicValue): Set<string> => {
   forEachRenderNode(render, (value) => {
     if (value.kind !== "Conditional") return;
     forEachSymbolicValue(getTestExpression(value), (part) => {
-      if (part.kind === "Conditional") branchKeysInTests.add(getBranchKey(part));
+      if (part.kind === "Conditional") branchKeysInTests.add(getBranchKey(part.branch));
     });
   });
   return branchKeysInTests;
@@ -77,7 +77,7 @@ class UnreachableBranchCollector {
   }
 
   #visitConditional(conditional: ConditionalValue, pathConditions: string[]): void {
-    const branchKey = getBranchKey(conditional);
+    const branchKey = getBranchKey(conditional.branch);
     const isRenderedOutsideItsGuards = pathConditions.some(
       (condition) => !conditional.guardKeys.includes(condition),
     );

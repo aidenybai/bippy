@@ -32,7 +32,8 @@ import { PlaceMap, getBindingPlace, getValuePlace, isSamePlace } from "./utils/p
 import { getTestExpression, getTruthiness } from "./utils/truthiness";
 import { isStateBinding, isWholeBinding } from "./utils/checks";
 import { getBindingUpdates, isEffectHandler } from "./collect-handlers";
-import { findRegions, getBranchKey } from "./regions";
+import { findRegions } from "./regions";
+import { getBranchKey } from "./control-flow";
 import type { RegionBranches } from "./regions";
 import { collectUnreachableBranches } from "./unreachable-branches";
 import type { BranchOutcomes } from "./unreachable-branches";
@@ -398,7 +399,7 @@ class StateEnumerator {
   }
 
   #enumerateBranch(conditional: ConditionalValue, constraints: Constraints): Alternative[] {
-    const branchKey = getBranchKey(conditional);
+    const branchKey = getBranchKey(conditional.branch);
     if (!this.#region.branchKeys.has(branchKey)) return [createLeaf(constraints, conditional)];
     const alternatives: Alternative[] = [];
     const test = getTestExpression(conditional);
@@ -505,6 +506,17 @@ const createRegion = (
   ),
 });
 
+const withDecidedOutcomes = (
+  branchOutcomes: BranchOutcomes,
+  decidedBranchOutcomes: Map<string, boolean[]>,
+): BranchOutcomes =>
+  new Map(
+    [...branchOutcomes].map(([branchKey, outcomes]) => [
+      branchKey,
+      new Set([...outcomes, ...(decidedBranchOutcomes.get(branchKey) ?? [])]),
+    ]),
+  );
+
 const enumerateRegion = (
   regionBranches: RegionBranches,
   regionIndex: number,
@@ -566,7 +578,10 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     regions,
     unreachableBranches: isTruncated
       ? []
-      : collectUnreachableBranches(analysis.render, context.branchOutcomes),
+      : collectUnreachableBranches(
+          analysis.render,
+          withDecidedOutcomes(context.branchOutcomes, analysis.decidedBranchOutcomes),
+        ),
     isTruncated,
   };
 };

@@ -244,6 +244,7 @@ export interface ComponentAnalysis {
   isAsync: boolean;
   bindings: Binding[];
   wholePropsSample: Sample | null;
+  decidedBranchOutcomes: Map<string, boolean[]>;
   providedContexts: ProvidedContext[];
   contextSamples: Map<string, Sample>;
   untypedContextBindingIds: Map<string, number>;

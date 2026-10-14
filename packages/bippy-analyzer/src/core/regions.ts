@@ -2,7 +2,6 @@ import DisjointSet from "../react-compiler/Utils/DisjointSet";
 import type { BindingPlace, BindingValue, ConditionalValue, SymbolicValue } from "./types";
 import { forEachSymbolicValue } from "./utils/traverse";
 import { formatSymbolicValue } from "./format";
-import { getLocationKey } from "./utils/hir";
 import {
   PlaceMap,
   getBindingPlace,
@@ -12,6 +11,7 @@ import {
 } from "./utils/place";
 import { getTestExpression } from "./utils/truthiness";
 import { isExternalSource } from "./utils/checks";
+import { getBranchKey } from "./control-flow";
 
 interface TestedPlace {
   name: string;
@@ -32,9 +32,6 @@ export interface RegionBranches {
   placeNames: string[];
   hasUnknownTest: boolean;
 }
-
-export const getBranchKey = (conditional: ConditionalValue): string =>
-  `${conditional.branch.file}:${getLocationKey(conditional.branch.loc)}:${conditional.branch.terminalId}`;
 
 const getDecidingPlaces = (testedValue: BindingValue): BindingPlace[] => [
   isExternalSource(testedValue.binding)
@@ -87,7 +84,7 @@ const collectBranchTests = (render: SymbolicValue): BranchTests => {
       return;
     }
     if (value.kind !== "Conditional") return;
-    const branchKey = getBranchKey(value);
+    const branchKey = getBranchKey(value.branch);
     if (!branchTests.allBranchKeys.includes(branchKey)) branchTests.allBranchKeys.push(branchKey);
     branchTests.branchGroups.union(enclosingKey ? [branchKey, enclosingKey] : [branchKey]);
     recordTestedPlaces(branchTests, value, branchKey);
