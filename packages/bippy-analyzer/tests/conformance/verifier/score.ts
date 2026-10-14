@@ -300,6 +300,7 @@ interface ScoringContext {
   effectIds: Set<string>;
   backgroundHandlerIds: Set<string>;
   spontaneousIds: Set<string>;
+  actionsByKey: Map<string, Action>;
   coveredStates: Set<number>;
   matchedStatesCache: Map<string, number[]>;
 }
@@ -481,6 +482,7 @@ interface ObservedEdge {
   afterMatches: number[];
   triggeredIds: Set<string>;
   maybeTriggeredIds: Set<string>;
+  earlierTriggeredIds: Set<string>;
 }
 
 const getTriggeredHandlerIds = (
@@ -503,6 +505,14 @@ const canChildActionChange = (
   regionIndex: number,
 ): boolean => edge.action.isInChild && isExternalRegion(context, regionIndex);
 
+const getEarlierTriggeredIds = (context: ScoringContext, path: string[]): Set<string> =>
+  new Set(
+    path.slice(0, -1).flatMap((actionKey) => {
+      const earlierAction = context.actionsByKey.get(actionKey);
+      return earlierAction ? [...getTriggeredHandlerIds(context, earlierAction).triggeredIds] : [];
+    }),
+  );
+
 const canBackgroundChange = (
   context: ScoringContext,
   edge: ObservedEdge,
@@ -511,7 +521,7 @@ const canBackgroundChange = (
   getTransitions(
     context,
     getStatesInRegion(context, edge.beforeMatches, regionIndex),
-    context.backgroundHandlerIds,
+    new Set([...context.backgroundHandlerIds, ...edge.earlierTriggeredIds]),
   ).some(
     (transition) =>
       (transition.isAsync || context.spontaneousIds.has(transition.handlerId)) &&
@@ -574,6 +584,7 @@ const scoreTransition = (
     beforeMatches,
     afterMatches,
     ...getTriggeredHandlerIds(context, action),
+    earlierTriggeredIds: getEarlierTriggeredIds(context, observation.path),
   };
   const regions = getRegionIndices(context);
   if (edge.triggeredIds.size === 0) {
@@ -634,6 +645,11 @@ const createScoringContext = (
   ),
   spontaneousIds: new Set(
     analysis.handlers.filter(isSpontaneousHandler).map((handler) => handler.id),
+  ),
+  actionsByKey: new Map(
+    observations.flatMap((observation) =>
+      observation.action ? [[observation.action.key, observation.action]] : [],
+    ),
   ),
   coveredStates: new Set(),
   matchedStatesCache: new Map(),
