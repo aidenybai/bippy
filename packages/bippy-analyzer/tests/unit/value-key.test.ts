@@ -49,4 +49,11 @@ describe("getValueKey", () => {
       ),
     ).toBe(true);
   });
+
+  it("keeps keys short for values that share subexpressions", () => {
+    let value: SymbolicValue = { kind: "Binding", binding: createBinding(1), path: [] };
+    for (let depth = 0; depth < 20; depth++)
+      value = { kind: "BinaryExpression", operator: "+", left: value, right: value };
+    expect(getValueKey(value).length).toBeLessThan(100);
+  });
 });

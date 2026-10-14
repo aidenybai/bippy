@@ -11,10 +11,13 @@ const getLocationPart = (loc: SourceLocation): KeyPart =>
 const getTagPart = (tag: JsxTag): KeyPart =>
   tag.kind === "Component" ? [tag.kind, tag.name, tag.declaration] : [tag.kind, tag.name];
 
+const internedIds = new Map<string, number>();
+const keysByValue = new WeakMap<SymbolicValue, string>();
+
 const getPropPart = (prop: JsxProp | JsxSpreadProp): KeyPart =>
   prop.kind === "JsxAttribute"
-    ? [prop.name, getKeyPart(prop.value)]
-    : ["...", getKeyPart(prop.value)];
+    ? [prop.name, getValueKey(prop.value)]
+    : ["...", getValueKey(prop.value)];
 
 const getKeyPart = (value: SymbolicValue): KeyPart => {
   switch (value.kind) {
@@ -23,38 +26,38 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
     case "Binding":
       return [value.kind, value.binding.id, value.path];
     case "BinaryExpression":
-      return [value.kind, value.operator, getKeyPart(value.left), getKeyPart(value.right)];
+      return [value.kind, value.operator, getValueKey(value.left), getValueKey(value.right)];
     case "UnaryExpression":
-      return [value.kind, value.operator, getKeyPart(value.value)];
+      return [value.kind, value.operator, getValueKey(value.value)];
     case "Conditional":
       return [
         value.kind,
         value.testKind,
         value.branch.file,
         getLocationPart(value.branch.loc),
-        getKeyPart(value.test),
-        getKeyPart(value.consequent),
-        getKeyPart(value.alternate),
+        getValueKey(value.test),
+        getValueKey(value.consequent),
+        getValueKey(value.alternate),
       ];
     case "ObjectExpression":
       return [
         value.kind,
-        value.properties.map((property) => [property.key, getKeyPart(property.value)]),
-        value.spreads.map(getKeyPart),
+        value.properties.map((property) => [property.key, getValueKey(property.value)]),
+        value.spreads.map(getValueKey),
       ];
     case "ArrayExpression":
-      return [value.kind, value.elements.map(getKeyPart), value.spreads.map(getKeyPart)];
+      return [value.kind, value.elements.map(getValueKey), value.spreads.map(getValueKey)];
     case "ArrayMap":
-      return [value.kind, getKeyPart(value.array), getKeyPart(value.item)];
+      return [value.kind, getValueKey(value.array), getValueKey(value.item)];
     case "JsxExpression":
       return [
         value.kind,
         getTagPart(value.tag),
         value.props.map(getPropPart),
-        value.children.map(getKeyPart),
+        value.children.map(getValueKey),
       ];
     case "JsxFragment":
-      return [value.kind, value.children.map(getKeyPart)];
+      return [value.kind, value.children.map(getValueKey)];
     case "JSXText":
       return [value.kind, value.value];
     case "Function":
@@ -70,7 +73,7 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
         value.name,
         value.module,
         getLocationPart(value.loc),
-        value.argumentValues.map(getKeyPart),
+        value.argumentValues.map(getValueKey),
       ];
     case "Global":
       return [value.kind, value.name, value.module];
@@ -81,4 +84,13 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
   }
 };
 
-export const getValueKey = (value: SymbolicValue): string => JSON.stringify(getKeyPart(value));
+export const getValueKey = (value: SymbolicValue): string => {
+  const cachedKey = keysByValue.get(value);
+  if (cachedKey !== undefined) return cachedKey;
+  const structure = JSON.stringify(getKeyPart(value));
+  const internedId = internedIds.get(structure) ?? internedIds.size;
+  internedIds.set(structure, internedId);
+  const valueKey = `#${internedId}`;
+  keysByValue.set(value, valueKey);
+  return valueKey;
+};
