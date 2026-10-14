@@ -794,25 +794,21 @@ export class Interpreter {
       case "Dispatch":
         this.#applyDispatch(callee, firstArgument, callSite.loc, walkState);
         return UNDEFINED_VALUE;
-      case "Binding":
-        if (this.#handlerEffects && !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
-          this.#callBinding(callee, callSite.argumentValues, walkState);
-        break;
       default:
-        break;
+        return this.#callOpaqueValue(callSite, walkState);
     }
-    for (const argument of callSite.argumentValues)
-      this.#visitCallbackArgument(argument, walkState);
-    if (this.#handlerEffects) return createUnknown("call", callSite.loc);
-    if (!this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
-      this.#addDeferredCallbacks(callSite.argumentValues, callSite.loc);
-    if (this.#resolver.isReactElement(callSite.loc)) {
-      this.diagnostics.bailOut(
-        "unknown-call",
-        "call returns JSX the analysis can't see into",
-        callSite.loc,
-      );
-      return createUnknown("call", callSite.loc);
+  }
+
+  #callOpaqueValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
+    const { callee, argumentValues, loc } = callSite;
+    const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
+    if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
+      this.#callBinding(callee, argumentValues, walkState);
+    if (this.#handlerEffects || isMutatingCall) this.#passCallbacks(argumentValues, loc, walkState);
+    if (this.#handlerEffects) return createUnknown("call", loc);
+    if (this.#resolver.isReactElement(loc)) {
+      this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
+      return createUnknown("call", loc);
     }
     return this.#createCallResult(callSite);
   }
