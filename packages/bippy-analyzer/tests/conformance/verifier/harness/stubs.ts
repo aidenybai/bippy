@@ -31,7 +31,8 @@ const createNextFontSource = (fontNames: Set<string>): string =>
     ...[...fontNames].map((name) => `export const ${name} = font;`),
   ].join("\n");
 
-// The `nuqs/server` stub is a virtual module, so the real one it re-exports resolves from an app file.
+// HACK: the `nuqs/server` stub is a virtual module, so the real one it re-exports resolves from an
+// app file.
 export const createStubPlugin = (
   nextDirectory: string | null,
   appImporter: string,

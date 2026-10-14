@@ -45,7 +45,7 @@ export const getNextPolyfillAliases = (
   });
 };
 
-// Named with `.shared-runtime` since Next 13.5.
+// HACK: named with `.shared-runtime` since Next 13.5.
 const resolveNextContextModule = (nextDirectory: string, name: string): string | null => {
   const fileName = [`${name}.shared-runtime`, name].find((candidate) =>
     existsSync(join(nextDirectory, "dist/shared/lib", `${candidate}.js`)),
@@ -83,7 +83,7 @@ export const createNextContextSpec = (nextDirectory: string | null): ProviderSpe
   };
 };
 
-// Unoptimized, since the harness has no `/_next/image` route.
+// HACK: unoptimized, since the harness has no `/_next/image` route.
 export const getNextImageOptions = (nextDirectory: string | null): Record<string, unknown> => {
   const configFile = nextDirectory && join(nextDirectory, "dist/shared/lib/image-config.js");
   if (!configFile || !existsSync(configFile)) return {};

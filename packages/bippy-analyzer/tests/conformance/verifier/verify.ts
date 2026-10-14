@@ -64,8 +64,6 @@ export const startProjectHarness = async (
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 const MAX_PAGES = 8;
-// A page's renderer measured near 0.5 GB and the analyzer with its dev server near 4.5 GB, so
-// these leave headroom for growth over a long run.
 const PAGE_MEMORY_BYTES = 1.5 * 1024 ** 3;
 const RESERVED_MEMORY_BYTES = 5 * 1024 ** 3;
 

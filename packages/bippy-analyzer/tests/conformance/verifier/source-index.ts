@@ -24,7 +24,6 @@ const getImportedNames = (clause: string): string[] =>
     return name ? [name] : [];
   });
 
-// A re-export, like a barrel's `export { Sidebar } from "./sidebar"`, loads its module too.
 export const parseImports = (text: string): ParsedImport[] =>
   [...text.matchAll(IMPORT_PATTERN), ...text.matchAll(REEXPORT_PATTERN)].flatMap(
     ([, typeOnly, clause = "", specifier = ""]) =>
@@ -85,7 +84,6 @@ export const addExports = (
     exports.set(name, [...(exports.get(name) ?? []), { file, exportName }]);
 };
 
-/** For each file in an import cycle, the files in that cycle that import it. */
 export const getCycleImporters = (imports: Map<string, FileImports>): Map<string, string[]> => {
   const indices = new Map<string, number>();
   const lowLinks = new Map<string, number>();
@@ -99,8 +97,6 @@ export const getCycleImporters = (imports: Map<string, FileImports>): Map<string
     stack.push(file);
     onStack.add(file);
   };
-  // Tarjan's strongly connected components, walked with an explicit stack so a long import chain
-  // can't overflow the call stack.
   for (const root of imports.keys()) {
     if (indices.has(root)) continue;
     enter(root);

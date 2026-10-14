@@ -99,7 +99,6 @@ export const resolveWrappers = async (
     const usedNames = new Set([analysis.name, ...getWrappers().map((wrapper) => wrapper.name)]);
     return { proposals: proposals.filter(({ name }) => !usedNames.has(name)), cursor: 0, error };
   };
-  // Skips proposals that can't load, like a package with no part of the name, without a mount.
   const advanceToLoadable = async (layer: Layer): Promise<boolean> => {
     for (let wrapper = getLayerWrapper(layer); wrapper; wrapper = getLayerWrapper(layer)) {
       if (await canLoadInPage(page, wrapper)) return true;
@@ -118,14 +117,15 @@ export const resolveWrappers = async (
       const currentIndex = layers.indexOf(current);
       const currentWrapper = getLayerWrapper(current);
       const isSameError = capture.error === current.error;
-      // The parent the error names throws it too, so it needs a parent of its own.
-      if (
+      const throwingNamedParent =
         thrower === current &&
         isSameError &&
         currentWrapper?.candidate.kind === "project" &&
         currentWrapper.name === getNamedParent(capture.error, project)
-      ) {
-        const { exportName, file } = currentWrapper.candidate;
+          ? currentWrapper.candidate
+          : null;
+      if (throwingNamedParent) {
+        const { exportName, file } = throwingNamedParent;
         const layer = createLayer(
           proposeParents(getQuery(exportName, file, capture.error, failure)),
           capture.error,
@@ -136,8 +136,9 @@ export const resolveWrappers = async (
           continue;
         }
       }
-      // A part may need its root and another part inside it, like a list inside its popover.
-      if (isSameError && thrower === undefined && currentWrapper?.source === "root") {
+      const isPartMissingSibling =
+        isSameError && thrower === undefined && currentWrapper?.source === "root";
+      if (isPartMissingSibling) {
         const layer = createLayer(
           findSiblingParts(getQuery(analysis.name, analysis.file, capture.error, failure)),
           capture.error,
@@ -148,8 +149,11 @@ export const resolveWrappers = async (
           continue;
         }
       }
-      // An earlier parent made redundant by an outer one throws for missing data, so drop it.
-      if (thrower && thrower !== current && (failure === "missing-data" || failure === "other")) {
+      const isRedundantParent =
+        thrower !== undefined &&
+        thrower !== current &&
+        (failure === "missing-data" || failure === "other");
+      if (thrower && isRedundantParent) {
         layers.splice(layers.indexOf(thrower), 1);
         newest = null;
         continue;

@@ -7,6 +7,7 @@ import type {
   Sample,
   StateReport,
   SymbolicValue,
+  Transition,
 } from "../../../src/core/types";
 import { forEachJsxElement, forEachRenderNode } from "../../../src/core/utils/traverse";
 import { formatAbstractValue, formatLine, formatPlace } from "../../../src/core/format";
@@ -116,13 +117,11 @@ const ORDERED_HOOK_KINDS = new Set<string>([
   "useContext",
 ]);
 
-// A component may call a handler prop from any element it renders, under any event name.
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
 const isLabelTarget = (label: TriggerLabel, target: ActionTarget): boolean =>
   label.tag === target.tag && (label.text === null || label.text === target.label);
 
-// Other events can fire as a side effect of these, like focus on a click.
 const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
 
 const getTrigger = (label: TriggerLabel, action: Action): Trigger | null => {
@@ -229,7 +228,7 @@ interface ScoringContext {
   externalBindingIds: Set<number>;
   effectIds: Set<string>;
   coveredStates: Set<number>;
-  matchCache: Map<string, number[]>;
+  matchedStatesCache: Map<string, number[]>;
 }
 
 const createEmptyVerdict = (
@@ -259,62 +258,80 @@ const createEmptyVerdict = (
   unwarnedMutations: [],
 });
 
-const getMatches = (context: ScoringContext, capturedShapes: Shape[]): number[] => {
+const getMatchedStates = (context: ScoringContext, capturedShapes: Shape[]): number[] => {
   const shapes = normalizeShapes(capturedShapes);
-  const key = JSON.stringify(shapes);
-  const cached = context.matchCache.get(key);
-  if (cached) return cached;
-  const matches = context.expectedStates.flatMap((expected, index) =>
-    matchesExpected(expected, shapes) ? [index] : [],
+  const shapesKey = JSON.stringify(shapes);
+  const cachedStates = context.matchedStatesCache.get(shapesKey);
+  if (cachedStates) return cachedStates;
+  const matchedStates = context.expectedStates.flatMap((expected, stateIndex) =>
+    matchesExpected(expected, shapes) ? [stateIndex] : [],
   );
-  context.matchCache.set(key, matches);
-  return matches;
+  context.matchedStatesCache.set(shapesKey, matchedStates);
+  return matchedStates;
 };
 
 const getRegionIndices = (context: ScoringContext): number[] =>
-  context.report.regions.map((_, index) => index);
+  context.report.regions.map((_region, regionIndex) => regionIndex);
 
-const inRegion = (context: ScoringContext, matches: number[], region: number): number[] =>
-  matches.filter((match) => context.report.states[match]?.region === region);
+const getStatesInRegion = (
+  context: ScoringContext,
+  stateIndices: number[],
+  region: number,
+): number[] =>
+  stateIndices.filter((stateIndex) => context.report.states[stateIndex]?.region === region);
 
-const isEveryRegionMatched = (context: ScoringContext, matches: number[]): boolean =>
-  getRegionIndices(context).every((region) => inRegion(context, matches, region).length > 0);
+const isEveryRegionMatched = (context: ScoringContext, matchedStates: number[]): boolean =>
+  getRegionIndices(context).every(
+    (region) => getStatesInRegion(context, matchedStates, region).length > 0,
+  );
 
 const isRegionUnchanged = (
   context: ScoringContext,
-  before: number[],
-  after: number[],
+  beforeStates: number[],
+  afterStates: number[],
   region: number,
-): boolean => inRegion(context, before, region).some((match) => after.includes(match));
+): boolean =>
+  getStatesInRegion(context, beforeStates, region).some((stateIndex) =>
+    afterStates.includes(stateIndex),
+  );
 
 const isExternalRegion = (context: ScoringContext, region: number): boolean =>
   context.report.regions[region]?.bindingIds.some((bindingId) =>
     context.externalBindingIds.has(bindingId),
   ) ?? false;
 
-const getTransitions = (context: ScoringContext, from: number[], handlerIds: Set<string>) =>
-  from.flatMap(
-    (index) =>
-      context.report.states[index]?.transitions.filter((transition) =>
+const getTransitions = (
+  context: ScoringContext,
+  fromStates: number[],
+  handlerIds: Set<string>,
+): Transition[] =>
+  fromStates.flatMap(
+    (stateIndex) =>
+      context.report.states[stateIndex]?.transitions.filter((transition) =>
         handlerIds.has(transition.handlerId),
       ) ?? [],
   );
 
-const getTargets = (context: ScoringContext, from: number[], handlerIds: Set<string>): number[] => [
-  ...new Set(getTransitions(context, from, handlerIds).flatMap((transition) => transition.targets)),
+const getTargetStates = (
+  context: ScoringContext,
+  fromStates: number[],
+  handlerIds: Set<string>,
+): number[] => [
+  ...new Set(
+    getTransitions(context, fromStates, handlerIds).flatMap((transition) => transition.targets),
+  ),
 ];
 
-/** Records a render that matches no predicted state, or the states it covers. */
 const scoreRender = (
   context: ScoringContext,
   props: Record<string, Sample>,
   path: string[],
   shapes: Shape[],
 ): number[] | null => {
-  const matches = getMatches(context, shapes);
-  if (isEveryRegionMatched(context, matches)) {
-    for (const match of matches) context.coveredStates.add(match);
-    return matches;
+  const matchedStates = getMatchedStates(context, shapes);
+  if (isEveryRegionMatched(context, matchedStates)) {
+    for (const stateIndex of matchedStates) context.coveredStates.add(stateIndex);
+    return matchedStates;
   }
   if (!context.report.isTruncated) {
     const normalized = normalizeShapes(shapes);
@@ -330,7 +347,6 @@ const scoreRender = (
   return null;
 };
 
-/** Checks that what effects changed between the first commit and the settled render was predicted. */
 const scoreFirstCommit = (
   context: ScoringContext,
   observation: Observation,
@@ -342,11 +358,13 @@ const scoreFirstCommit = (
   if (!firstMatches || !settledMatches || context.externalBindingIds.size > 0) return;
   const isUnexplained = getRegionIndices(context).some(
     (region) =>
-      inRegion(context, settledMatches, region).length > 0 &&
+      getStatesInRegion(context, settledMatches, region).length > 0 &&
       !isRegionUnchanged(context, firstMatches, settledMatches, region) &&
-      !getTransitions(context, inRegion(context, firstMatches, region), context.effectIds).some(
-        (transition) => transition.targets.some((target) => settledMatches.includes(target)),
-      ),
+      !getTransitions(
+        context,
+        getStatesInRegion(context, firstMatches, region),
+        context.effectIds,
+      ).some((transition) => transition.targets.some((target) => settledMatches.includes(target))),
   );
   if (isUnexplained)
     context.verdict.transitionCounterexamples.push({
@@ -354,12 +372,11 @@ const scoreFirstCommit = (
       action: FIRST_COMMIT,
       fromStates: firstMatches,
       toStates: settledMatches,
-      predictedStates: getTargets(context, firstMatches, context.effectIds),
+      predictedStates: getTargetStates(context, firstMatches, context.effectIds),
       reason: "unpredicted-effect",
     });
 };
 
-/** Checks each state value the page holds against the literals the analysis predicts. */
 const scoreValues = (context: ScoringContext, observation: Observation): void => {
   context.stateBindings?.forEach((binding, hookIndex) => {
     for (const [{ bindingId, path: placePath }, predicted] of context.report.places) {
@@ -377,7 +394,6 @@ const scoreValues = (context: ScoringContext, observation: Observation): void =>
   });
 };
 
-/** Checks that an action moved every region to a state its handlers predict. */
 const scoreTransition = (
   context: ScoringContext,
   observation: Observation,
@@ -385,7 +401,7 @@ const scoreTransition = (
 ): void => {
   const { action, before, path } = observation;
   if (!action || !before || before.error) return;
-  const beforeMatches = getMatches(context, before.shapes);
+  const beforeMatches = getMatchedStates(context, before.shapes);
   if (!isEveryRegionMatched(context, beforeMatches)) return;
   const triggers = context.analysis.handlers.flatMap((handler) => {
     const label = context.triggerLabels.get(handler.id);
@@ -396,8 +412,7 @@ const scoreTransition = (
   const maybeTriggeredIds = new Set(
     triggers.flatMap(({ handler, trigger }) => (trigger === "maybe" ? [handler.id] : [])),
   );
-  // A child's handler can change any hook or context value the component reads.
-  const isFreeToChange = (region: number): boolean =>
+  const canChildActionChange = (region: number): boolean =>
     action.isInChild && isExternalRegion(context, region);
   const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void => {
     context.verdict.transitionCounterexamples.push({
@@ -405,7 +420,7 @@ const scoreTransition = (
       action: action.key,
       fromStates: beforeMatches,
       toStates: afterMatches,
-      predictedStates: getTargets(context, beforeMatches, triggeredIds),
+      predictedStates: getTargetStates(context, beforeMatches, triggeredIds),
       reason,
     });
   };
@@ -413,17 +428,18 @@ const scoreTransition = (
   if (triggeredIds.size === 0) {
     const isExplained = regions.every(
       (region) =>
-        isRegionUnchanged(context, beforeMatches, afterMatches, region) || isFreeToChange(region),
+        isRegionUnchanged(context, beforeMatches, afterMatches, region) ||
+        canChildActionChange(region),
     );
     if (!isExplained) recordWrongEdge("unmodeled-handler");
     return;
   }
   const isPredicted = regions.every((region) => {
-    if (isFreeToChange(region)) return true;
+    if (canChildActionChange(region)) return true;
     const isUnchanged = isRegionUnchanged(context, beforeMatches, afterMatches, region);
     const transitions = getTransitions(
       context,
-      inRegion(context, beforeMatches, region),
+      getStatesInRegion(context, beforeMatches, region),
       triggeredIds,
     );
     return transitions.length === 0
@@ -477,7 +493,7 @@ export const scoreComponent = (
         .map((handler) => handler.id),
     ),
     coveredStates: new Set(),
-    matchCache: new Map(),
+    matchedStatesCache: new Map(),
   };
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));

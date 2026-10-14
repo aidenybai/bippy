@@ -87,8 +87,8 @@ export const collectSourceReferences = (appDirectory: string): SourceReferences 
   return references;
 };
 
-// An alias like `@/components/ui/select` names a project file only the app's resolver knows. An
-// installed package never goes to the resolver, which would register it for optimizing.
+// HACK: an alias like `@/components/ui/select` names a project file only the app's resolver knows.
+// An installed package never goes to the resolver, which would register it for optimizing.
 const createAliasResolver = (server: ViteDevServer) => {
   const resolved = new Map<string, Promise<string | null>>();
   return (specifier: string, importer: string): Promise<string | null> => {

@@ -22,7 +22,8 @@ export const createAssetPlugin = (): Plugin => ({
   name: "bippy-verify-assets",
   enforce: "pre",
   resolveId: (source, importer) => {
-    // The id ends in `.js`, as Vite's own CSS handling claims any id ending like a stylesheet.
+    // HACK: the id ends in `.js`, as Vite's own CSS handling claims any id ending like a
+    // stylesheet.
     if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
     const assetPath = source.split("?")[0] ?? source;
     const isMissingImage =

@@ -59,11 +59,11 @@ export const createServerActionPlugin = (): Plugin => ({
 
 const getRequireCall = (node: object): RequireCall | null => {
   const callee: unknown = Reflect.get(node, "callee");
-  const args: unknown = Reflect.get(node, "arguments");
-  if (Reflect.get(node, "type") !== "CallExpression" || !Array.isArray(args)) return null;
-  const [specifierNode]: unknown[] = args;
+  const callArguments: unknown = Reflect.get(node, "arguments");
+  if (Reflect.get(node, "type") !== "CallExpression" || !Array.isArray(callArguments)) return null;
+  const [specifierNode]: unknown[] = callArguments;
   const specifier: unknown =
-    args.length === 1 && typeof specifierNode === "object" && specifierNode !== null
+    callArguments.length === 1 && typeof specifierNode === "object" && specifierNode !== null
       ? Reflect.get(specifierNode, "value")
       : null;
   const start: unknown = Reflect.get(node, "start");

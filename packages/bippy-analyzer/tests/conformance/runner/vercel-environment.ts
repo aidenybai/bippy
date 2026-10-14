@@ -124,14 +124,25 @@ const waitForCommand = async (command: Command, attempt = 1): Promise<CommandFin
   }
 };
 
+interface StepOptions {
+  cwd?: string;
+  env?: Record<string, string>;
+  sudo?: boolean;
+}
+
 const runStep = async (
   sandbox: Sandbox,
   label: string,
-  cmd: string,
-  args: string[],
-  options: { cwd?: string; env?: Record<string, string>; sudo?: boolean } = {},
+  commandName: string,
+  commandArguments: string[],
+  options: StepOptions = {},
 ): Promise<void> => {
-  const command = await sandbox.runCommand({ cmd, args, ...options, detached: true });
+  const command = await sandbox.runCommand({
+    cmd: commandName,
+    args: commandArguments,
+    ...options,
+    detached: true,
+  });
   const result = await waitForCommand(command);
   if (result.exitCode !== 0) {
     const output = await result.output("both");

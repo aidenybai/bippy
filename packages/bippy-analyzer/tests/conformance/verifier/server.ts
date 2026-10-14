@@ -31,8 +31,8 @@ import {
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
 import type { Probe, SourceIndex } from "./types";
 
-// `getDependencyHash` changes when Vite re-bundles dependencies, leaving loaded pages with a stale
-// React.
+// HACK: `getDependencyHash` changes when Vite re-bundles dependencies, leaving loaded pages with a
+// stale React.
 export interface Harness {
   url: string;
   sourceIndex: SourceIndex;
@@ -75,8 +75,8 @@ const createHarnessPlugin = (
         return this.resolve(source, getWrapperQuery(importer).get("importer") ?? appImporter, {
           skipSelf: true,
         });
-      // The setup lives outside the app, so its imports resolve as if from an app file, where path
-      // aliases apply.
+      // HACK: the setup lives outside the app, so its imports resolve as if from an app file, where
+      // path aliases apply.
       if (importer === setupId && !source.startsWith("."))
         return this.resolve(source, appImporter, { skipSelf: true });
       if (importer === setupId && setup.file)
@@ -183,7 +183,7 @@ export const startHarness = async (
           createNodeBuiltinPlugin(getPolyfilledModules(nextDirectory)),
         ],
         loader: { ".node": "empty" },
-        // Webpack, which Next bundles client code with, makes `__dirname` the root.
+        // HACK: Webpack, which Next bundles client code with, makes `__dirname` the root.
         ...(nextDirectory ? { define: { __dirname: '"/"' } } : {}),
       },
     },

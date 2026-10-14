@@ -131,8 +131,8 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
   });
 };
 
-// A named parent the component's file can't reach is likely a library part its outermost root
-// renders, so that root goes first.
+// HACK: a named parent the component's file can't reach is likely a library part its outermost
+// root renders, so that root goes first.
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
   const namedParent = query.isNamingParent ? getNamedParent(query.error, query.project) : null;
   const rootNames = getCompoundRootNames(query);

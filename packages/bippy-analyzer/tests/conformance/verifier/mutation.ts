@@ -101,7 +101,6 @@ const formatOwner = (owner: string, stateBindings: Binding[] | null): string => 
   return binding ? `state ${binding.name}` : `state hook ${name}`;
 };
 
-// Unwarned mutations aren't refutations: the analyzer only warns on mutations it can prove.
 export const scoreWarnings = (
   analysis: ComponentAnalysis,
   observations: Observation[],

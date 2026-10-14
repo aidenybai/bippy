@@ -38,7 +38,7 @@ export const toExpected = (
       const { tag } = value;
       if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
       if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
-      // A library's `*.Provider` may be its own component rather than a context provider.
+      // HACK: a library's `*.Provider` may be its own component rather than a context provider.
       if (CONTEXT_TAG_PATTERN.test(tag.name))
         return [
           {
@@ -60,7 +60,6 @@ export const toExpected = (
           },
         ];
       }
-      // Spread props may carry the children.
       const hasSpreadChildren =
         value.children.length === 0 &&
         value.props.some((prop) => prop.kind === "JsxSpreadAttribute");
@@ -109,7 +108,7 @@ interface MatchBudget {
 const matchOne = (expected: ExpectedShape, actual: Shape, budget: MatchBudget): boolean => {
   if (expected.kind === "text") return actual.kind === "text" && actual.text === expected.text;
   if (expected.kind === "component") {
-    // A library may export a host element string under a component's name.
+    // HACK: a library may export a host element string under a component's name.
     if (actual.kind === "element")
       return !expected.isKnown && actual.tag.toLowerCase() === expected.name.toLowerCase();
     if (actual.kind !== "component") return false;
@@ -184,7 +183,6 @@ const getActualTokens = (shapes: Shape[]): string[] =>
     return [JSON.stringify(shape.text)];
   });
 
-/** With `actualTokens`, a choice takes its option closest to them, and otherwise every option. */
 const getExpectedTokens = (shapes: ExpectedShape[], actualTokens: Set<string> | null): string[] =>
   shapes.flatMap((shape): string[] => {
     switch (shape.kind) {

@@ -125,7 +125,8 @@ const isMutatingMethod = (target: object, key: string | symbol): boolean =>
   typeof key === "string" &&
   (target instanceof Date ? key.startsWith("set") : MUTATING_COLLECTION_METHODS.has(key));
 
-// React DOM's development build freezes every `style` object it renders, which isn't a mutation.
+// HACK: React DOM's development build freezes every `style` object it renders, which isn't a
+// mutation.
 const isFreezing = (
   target: object,
   key: string | symbol,
@@ -148,9 +149,9 @@ const trackWrites = (target: object, isDeep: boolean): object => {
       const member: unknown = Reflect.get(innerTarget, key);
       if (innerTarget instanceof Map || innerTarget instanceof Set || innerTarget instanceof Date) {
         if (typeof member !== "function" || key === "constructor") return member;
-        return (...args: unknown[]) => {
+        return (...callArguments: unknown[]) => {
           if (isMutatingMethod(innerTarget, key)) recordWrite(innerTarget);
-          return Reflect.apply(member, innerTarget, args);
+          return Reflect.apply(member, innerTarget, callArguments);
         };
       }
       if (
@@ -159,9 +160,9 @@ const trackWrites = (target: object, isDeep: boolean): object => {
         typeof key === "string" &&
         MUTATING_ARRAY_METHODS.has(key)
       ) {
-        return (...args: unknown[]) => {
+        return (...callArguments: unknown[]) => {
           recordWrite(innerTarget);
-          return Reflect.apply(member, receiver, args);
+          return Reflect.apply(member, receiver, callArguments);
         };
       }
       return isDeep && isPlainData(member) && !Object.isFrozen(innerTarget)
@@ -232,7 +233,6 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
   render = (): ReactNode => (this.state.hasError ? null : this.props.children);
 }
 
-// React and the component write a ref's `current` by design.
 const isRefObject = (value: unknown): boolean =>
   typeof value === "object" &&
   value !== null &&
@@ -296,7 +296,6 @@ const toPlain = (value: unknown): unknown => {
     )
       return current;
     if (current === undefined) return undefined;
-    // The harness made up this value, so it says nothing about what the component holds.
     if (current === STAND_IN) return TRUNCATED_VALUE;
     if (typeof current === "function") return "[function]";
     if (depth >= MAX_PLAIN_DEPTH || typeof current !== "object") return "[value]";
@@ -458,10 +457,10 @@ window.fetch = (input, init) => {
   );
 };
 const originalSend = XMLHttpRequest.prototype.send;
-XMLHttpRequest.prototype.send = function send(...args) {
+XMLHttpRequest.prototype.send = function send(...sendArguments) {
   pendingRequests++;
   this.addEventListener("loadend", () => pendingRequests--, { once: true });
-  originalSend.apply(this, args);
+  originalSend.apply(this, sendArguments);
 };
 
 const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
@@ -631,8 +630,8 @@ const getComponentType = (value: unknown): unknown => {
   return "Consumer" in Object(value) && isComponentType(provider) ? provider : value;
 };
 
-// A package may export the part an error names under a shorter or longer name, or only as its
-// `Root`.
+// HACK: a package may export the part an error names under a shorter or longer name, or only as
+// its `Root`.
 const loadWrapper = async ({ candidate }: Wrapper): Promise<LoadedWrapper | null> => {
   const isPackage = candidate.kind === "package";
   const query = new URLSearchParams(
@@ -694,7 +693,8 @@ const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNo
   return resolved;
 };
 
-// A client-only component throws outside React for want of hooks, so it renders normally instead.
+// HACK: a client-only component throws outside React for want of hooks, so it renders normally
+// instead.
 const callServerComponent = async (
   type: (props: Record<string, unknown>) => unknown,
   props: Record<string, unknown>,
@@ -735,7 +735,7 @@ const resolveServerTree = async (node: unknown, isEveryComponent = false): Promi
   return cloneElement(node, Object.fromEntries(props));
 };
 
-// Named by depth so React's component stack says which wrapper an error came from.
+// HACK: named by depth so React's component stack says which wrapper an error came from.
 const getDepthMarker = (depth: number): ComponentType<{ children?: ReactNode }> => {
   const cached = depthMarkers.get(depth);
   if (cached) return cached;
@@ -776,9 +776,8 @@ const mount = async (request: MountRequest): Promise<Capture> => {
     if (!scenario) return createEmptyCapture(`setup has no scenario ${request.scenario.name}`);
     await scenario(...request.scenario.args);
   }
-  // The app loads a module in an import cycle through its importers, so one that reads it at its
-  // top level, like a route table, finds it initialized. Loading it first would leave that read
-  // in the temporal dead zone.
+  // HACK: load a module's cycle importers first, as the app does, so a top-level read of it, like a
+  // route table, isn't in the temporal dead zone.
   for (const url of request.module.importerUrls)
     await import(/* @vite-ignore */ new URL(url, location.origin).href).catch(() => undefined);
   // HACK: Vite adds `?import` to a root-relative URL imported at runtime, which would load

@@ -113,7 +113,6 @@ export interface ProjectIndex extends SourceIndex {
   contextSamples: Map<string, Sample>;
 }
 
-/** A component's module, and the modules in an import cycle with it that import it. */
 export interface ComponentModule {
   url: string;
   importerUrls: string[];

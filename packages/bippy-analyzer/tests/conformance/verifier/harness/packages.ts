@@ -31,8 +31,8 @@ export const isRequirable = (specifier: string, importer: string): boolean => {
   }
 };
 
-// Resolving isn't enough: Node searches every enclosing `node_modules`, where a monorepo installs
-// other apps' packages.
+// HACK: resolving isn't enough, as Node searches every enclosing `node_modules`, where a monorepo
+// installs other apps' packages.
 const isDeclared = (appDirectory: string, packageName: string): boolean => {
   const manifestPath = join(appDirectory, "package.json");
   if (!existsSync(manifestPath)) return true;
@@ -42,7 +42,7 @@ const isDeclared = (appDirectory: string, packageName: string): boolean => {
   );
 };
 
-// Found by name, since a package's `exports` may not include its `package.json`.
+// HACK: found by name, since a package's `exports` may not include its `package.json`.
 const findInstalledDirectory = (appDirectory: string, packageName: string): string | null => {
   for (let directory = appDirectory; ; directory = dirname(directory)) {
     const packageDirectory = join(directory, "node_modules", packageName);
