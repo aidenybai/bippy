@@ -1479,20 +1479,9 @@ export class Interpreter {
     const operator = this.#getCompilationTables().branchOperators.get(fallthrough) ?? "ternary";
     const branchTest = getBranchTest(operator, this.#read(terminal.test));
     const testGuard = getTestExpression(branchTest);
-    const walkArm = (armBlock: BlockId, isConsequent: boolean): Outcome => {
-      const guards = [...walkState.guards, isConsequent ? testGuard : negate(testGuard)];
-      return armBlock === fallthrough || stops.has(armBlock)
-        ? { kind: "Fallthrough", from, to: armBlock }
-        : this.#walk(
-            armBlock,
-            new Set([...stops, fallthrough]),
-            from,
-            { ...walkState, guards },
-            "unresolved",
-          );
-    };
-    const consequentOutcome = walkArm(consequent, true);
-    const alternateOutcome = walkArm(alternate, false);
+    const armStops = new Set([...stops, fallthrough]);
+    const consequentOutcome = this.#walkArm(consequent, from, armStops, walkState, testGuard);
+    const alternateOutcome = this.#walkArm(alternate, from, armStops, walkState, negate(testGuard));
     const isSwapped = operator === "&&";
     if (branchTest.knownOutcome !== null)
       return this.#continueAfter(
@@ -1511,6 +1500,18 @@ export class Interpreter {
       alternate: isSwapped ? consequentOutcome : alternateOutcome,
     };
     return this.#continueAfter(splitOutcome, fallthrough, stops, walkState);
+  }
+
+  #walkArm(
+    armBlock: BlockId,
+    from: BlockId,
+    armStops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+    guard: SymbolicValue,
+  ): Outcome {
+    if (armStops.has(armBlock)) return { kind: "Fallthrough", from, to: armBlock };
+    const guards = [...walkState.guards, guard];
+    return this.#walk(armBlock, armStops, from, { ...walkState, guards }, "unresolved");
   }
 
   #walkSwitch(
