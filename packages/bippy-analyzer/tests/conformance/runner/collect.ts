@@ -69,7 +69,7 @@ export const collect = async (
   if (shouldVerify) {
     const report = await verifyProject(configPath, { analyzed: components, setupDirectory });
     writeFileSync(join(outputDirectory, "verify.json"), `${JSON.stringify(report, null, 2)}\n`);
-    verification = summarizeVerdicts(report.components, report.durationMs);
+    verification = summarizeVerdicts(report.verdicts, report.durationMs);
   }
   const summary = summarize(components, fileCount, analysisDuration, verification);
   writeFileSync(join(outputDirectory, "summary.json"), `${JSON.stringify(summary, null, 2)}\n`);

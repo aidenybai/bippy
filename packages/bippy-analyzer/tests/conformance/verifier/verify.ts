@@ -8,7 +8,7 @@ import { createDeclarationKey } from "../../../src/core/utils/declaration-key";
 import type { ComponentModule, ProjectIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectMutationProbes } from "./mutation";
-import { collectProbes, scoreComponent } from "./score";
+import { collectProbes, createEmptyVerdict, scoreComponent } from "./score";
 import type { ComponentVerdict } from "./score";
 import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
 import { readHarnessSetup } from "./harness/setup";
@@ -25,10 +25,10 @@ export interface ProjectHarness extends Harness {
 export const startProjectHarness = async (
   appDirectory: string,
   analyzed: AnalyzedComponent[],
-  mounted: AnalyzedComponent[],
+  verifiedComponents: AnalyzedComponent[],
   setupDirectory: string | null,
 ): Promise<ProjectHarness> => {
-  const exported = mounted.filter(({ analysis }) => analysis.exportName);
+  const exported = verifiedComponents.filter(({ analysis }) => analysis.exportName);
   const harness = await startHarness(
     appDirectory,
     exported.flatMap(({ analysis }) => [
@@ -107,7 +107,7 @@ interface VerifyOptions {
 }
 
 interface VerifyReport {
-  components: ComponentVerdict[];
+  verdicts: ComponentVerdict[];
   durationMs: number;
 }
 
@@ -116,14 +116,10 @@ interface ComponentVerification {
   isPageBroken: boolean;
 }
 
-const createFailedVerdict = (
-  component: AnalyzedComponent,
-  error: unknown,
-  knownComponents: Map<string, string>,
-): ComponentVerdict => {
+const createFailedVerdict = (component: AnalyzedComponent, error: unknown): ComponentVerdict => {
   const message = getErrorMessage(error).split("\n")[0] ?? "";
   return {
-    ...scoreComponent(component.analysis, component.report, [], knownComponents),
+    ...createEmptyVerdict(component.analysis, component.report),
     status: "mount-failed",
     error: message,
     mountFailure: error instanceof HarnessError ? error.failure : classifyMountError(message),
@@ -155,7 +151,7 @@ const verifyComponent = async (
     };
   } catch (error) {
     return {
-      verdict: createFailedVerdict(component, error, harness.knownComponents),
+      verdict: createFailedVerdict(component, error),
       isPageBroken: true,
     };
   }
@@ -265,5 +261,5 @@ export const verifyProject = async (
     await browser.close();
     await harness.close();
   }
-  return { components: verdicts, durationMs: Math.round(performance.now() - startTime) };
+  return { verdicts, durationMs: Math.round(performance.now() - startTime) };
 };

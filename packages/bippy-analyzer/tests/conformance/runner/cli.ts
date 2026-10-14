@@ -260,7 +260,7 @@ program
       console.log(JSON.stringify(report, null, 2));
       return;
     }
-    const summary = summarizeVerdicts(report.components, report.durationMs);
+    const summary = summarizeVerdicts(report.verdicts, report.durationMs);
     console.log(
       picocolors.dim(
         `\n${summary.verifiedCount} verified · ${summary.unmountableCount} couldn't mount${summary.unmountableCount > 0 ? ` (${formatMountFailures(summary.mountFailureCounts)})` : ""} · ${summary.notExportedCount} not exported · ${summary.counterexampleCount} counterexamples · states ${summary.coveredStateCount}/${summary.predictedStateCount} covered · warnings ${summary.coveredWarningCount}/${summary.warningCount} covered · ${summary.unwarnedMutationCount} unwarned mutations · ${summary.durationMs} ms`,

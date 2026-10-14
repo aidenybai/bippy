@@ -242,7 +242,7 @@ interface ScoringContext {
   matchedStatesCache: Map<string, number[]>;
 }
 
-const createEmptyVerdict = (
+export const createEmptyVerdict = (
   analysis: ComponentAnalysis,
   report: StateReport,
 ): ComponentVerdict => ({
