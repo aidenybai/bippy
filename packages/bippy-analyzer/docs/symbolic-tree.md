@@ -55,6 +55,8 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `source-file-resolver.ts`   | Reads types, names and source text at a compiler location                        |
 | `domains.ts`                | Turns a TS type into the values it can take                                      |
 | `type-samples.ts`           | Turns a TS type into sample values to mount props with                           |
+| `infer-props.ts`            | Samples untyped props from what they read and what callers pass                  |
+| `context-setter-fields.ts`  | Which context fields set which state, across the providers that supply them      |
 | `store-actions.ts`          | What each zustand store action sets                                              |
 | `string-samples.ts`         | Strings a component may parse, picked by name                                    |
 | `collect-handlers.ts`       | What each event handler and effect updates                                       |
@@ -64,7 +66,7 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds            |
 | `format.ts`, `serialize.ts` | Printing and JSON output                                                         |
 | `types.ts`                  | The data passed between stages                                                   |
-| `utils/`                    | Small helpers: places, value keys, HIR, predicates, truthiness, traversal, TS    |
+| `utils/`                    | Small helpers: places, keys, HIR, predicates, truthiness, traversal, groups, TS  |
 
 The browser verifier lives in `tests/conformance/verifier`, next to the repos it runs on.
 
