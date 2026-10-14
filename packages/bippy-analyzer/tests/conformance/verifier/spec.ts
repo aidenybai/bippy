@@ -3,7 +3,7 @@ import playwrightTest, { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { CACHE_DIRECTORY, loadRepos } from "../runner/repos";
 import { analyzeProject } from "../../../src/core/analyze-project";
-import type { AnalyzedComponent, Sample, State } from "../../../src/core/types";
+import type { AnalyzedComponent, ComponentAnalysis, Sample, State } from "../../../src/core/types";
 import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "./driver";
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
@@ -28,6 +28,11 @@ interface ComponentFixture {
   click: (label: string) => Promise<void>;
   observe: () => Promise<void>;
   expectState: (label: string) => void;
+}
+
+interface ExportedComponent {
+  component: AnalyzedComponent;
+  exportName: string;
 }
 
 interface Session {
@@ -124,6 +129,67 @@ const createComponentFixture = ({
   };
 };
 
+const findExportedComponent = (
+  project: VerifyProject,
+  componentName: string,
+): ExportedComponent => {
+  for (const component of project.components) {
+    const { exportName } = component.analysis;
+    if (component.analysis.name === componentName && exportName) return { component, exportName };
+  }
+  throw new Error(`No exported component named ${componentName}`);
+};
+
+const getMountProps = (
+  analysis: ComponentAnalysis,
+  options: MountOptions,
+): Record<string, Sample> => ({
+  ...getDefaultProps(analysis),
+  ...Object.fromEntries(
+    Object.entries(options.props ?? {}).map(([name, value]) => [name, toSample(value)]),
+  ),
+});
+
+const startSession = async (
+  page: Page,
+  project: VerifyProject,
+  componentName: string,
+  options: MountOptions,
+): Promise<FixtureContext> => {
+  const { component, exportName } = findExportedComponent(project, componentName);
+  const { analysis } = component;
+  const props = getMountProps(analysis, options);
+  const baseRequest: MountRequest = {
+    module: project.getComponentModule(analysis.file),
+    exportName,
+    props,
+    scenario: null,
+    wrappers: [],
+  };
+  const { wrappers } = await resolveWrappers(page, baseRequest, analysis, project.projectIndex);
+  const initialCapture = await mountInPage(page, {
+    ...baseRequest,
+    scenario: options.scenario ?? null,
+    wrappers,
+  });
+  expect(initialCapture.error, `${componentName} failed to render`).toBeNull();
+  const session: Session = {
+    component,
+    observations: [{ props, path: [], action: null, before: null, after: initialCapture }],
+  };
+  return { page, project, session, props, initialCapture };
+};
+
+const expectNoCounterexamples = (project: VerifyProject, session: Session): void => {
+  const verdict = scoreComponent(
+    session.component.analysis,
+    session.component.report,
+    session.observations,
+    project.knownComponents,
+  );
+  expect(formatCounterexamples(verdict), `${verdict.name} has counterexamples`).toEqual([]);
+};
+
 export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>({
   repo: ["", { scope: "worker", option: true }],
   project: [
@@ -147,54 +213,12 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
     const sessions: Session[] = [];
     const page = await openPage(browser, project.url);
     await use(async (componentName, options = {}) => {
-      const component = project.components.find(
-        ({ analysis }) => analysis.name === componentName && analysis.exportName,
-      );
-      const exportName = component?.analysis.exportName;
-      if (!component || !exportName)
-        throw new Error(`No exported component named ${componentName}`);
-      const { analysis } = component;
-      const props = {
-        ...getDefaultProps(analysis),
-        ...Object.fromEntries(
-          Object.entries(options.props ?? {}).map(([name, value]) => [name, toSample(value)]),
-        ),
-      };
-      const baseRequest: MountRequest = {
-        module: project.getComponentModule(analysis.file),
-        exportName,
-        props,
-        scenario: null,
-        wrappers: [],
-      };
-      const { wrappers } = await resolveWrappers(page, baseRequest, analysis, project.projectIndex);
-      const session: Session = { component, observations: [] };
-      sessions.push(session);
-      const initialCapture = await mountInPage(page, {
-        ...baseRequest,
-        scenario: options.scenario ?? null,
-        wrappers,
-      });
-      expect(initialCapture.error, `${componentName} failed to render`).toBeNull();
-      session.observations.push({
-        props,
-        path: [],
-        action: null,
-        before: null,
-        after: initialCapture,
-      });
-      return createComponentFixture({ page, project, session, props, initialCapture });
+      const fixtureContext = await startSession(page, project, componentName, options);
+      sessions.push(fixtureContext.session);
+      return createComponentFixture(fixtureContext);
     });
     await page.close();
-    for (const session of sessions) {
-      const verdict = scoreComponent(
-        session.component.analysis,
-        session.component.report,
-        session.observations,
-        project.knownComponents,
-      );
-      expect(formatCounterexamples(verdict), `${verdict.name} has counterexamples`).toEqual([]);
-    }
+    for (const session of sessions) expectNoCounterexamples(project, session);
   },
 });
 
