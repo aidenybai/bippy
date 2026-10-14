@@ -126,7 +126,11 @@ const parseFile = (fileName: string, code: string): types.File | null =>
     filename: fileName,
     babelrc: false,
     configFile: false,
-    parserOpts: { plugins: /\.[cm]?ts$/.test(fileName) ? ["typescript"] : ["typescript", "jsx"] },
+    parserOpts: {
+      plugins: /\.[cm]?ts$/.test(fileName)
+        ? ["typescript", "decorators-legacy"]
+        : ["typescript", "jsx", "decorators-legacy"],
+    },
   });
 
 const lowerModuleFunction = (
