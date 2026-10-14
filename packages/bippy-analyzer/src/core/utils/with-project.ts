@@ -30,6 +30,14 @@ const getBaseUrlPaths = (api: API, configPath: string): Record<string, string[]>
   return { ...resolvedPaths, "*": [...(resolvedPaths["*"] ?? []), join(baseUrl, "*")] };
 };
 
+const closeAfterFailure = (api: API): void => {
+  try {
+    api.close();
+  } catch {
+    return;
+  }
+};
+
 export const withProject = <Result>(
   configPath: string,
   callback: (project: Project) => Result,
@@ -44,19 +52,16 @@ export const withProject = <Result>(
       JSON.stringify({ extends: resolve(configPath), compilerOptions: { paths } }),
     );
   }
-  let isCallbackFinished = false;
   try {
     const project = api.updateSnapshot({ openProjects: [projectConfigPath] }).getProjects()[0];
     if (!project) throw new Error(`No TypeScript project found for ${configPath}`);
     const result = callback(project);
-    isCallbackFinished = true;
+    api.close();
     return result;
+  } catch (error) {
+    closeAfterFailure(api);
+    throw error;
   } finally {
-    try {
-      api.close();
-    } catch (closeError) {
-      if (isCallbackFinished) throw closeError;
-    }
     if (shimDirectory) rmSync(shimDirectory, { recursive: true, force: true });
   }
 };
