@@ -2,20 +2,10 @@ import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { Binding, SymbolicValue } from "../../src/core/types";
 import { getValueKey } from "../../src/core/utils/value-key";
+import { createTestBinding } from "./helpers";
 
-const createBinding = (id: number): Binding => ({
-  id,
-  name: "date",
-  kind: "call",
-  hookKind: null,
-  propName: null,
-  loc: GeneratedSource,
-  domain: { kind: "Unknown", reason: "unresolved" },
-  samples: [],
-  initial: null,
-  inputPlaces: [],
-  lengthLimit: null,
-});
+const createBinding = (id: number): Binding =>
+  createTestBinding({ id, name: "date", kind: "call" });
 
 const isSameKey = (left: SymbolicValue, right: SymbolicValue): boolean =>
   getValueKey(left) === getValueKey(right);

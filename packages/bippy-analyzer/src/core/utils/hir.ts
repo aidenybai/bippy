@@ -19,7 +19,9 @@ export const isSameLocation = (left: SourceLocation, right: SourceLocation): boo
     left.start.index === right.start.index &&
     left.end.index === right.end.index);
 
-export const isFunctionCreation = (value: InstructionValue): boolean =>
+export const isFunctionCreation = (
+  value: InstructionValue,
+): value is Extract<InstructionValue, { kind: "FunctionExpression" | "ObjectMethod" }> =>
   value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
 
 export const getMutatedPlace = (effect: AliasingEffect): Place | null => {

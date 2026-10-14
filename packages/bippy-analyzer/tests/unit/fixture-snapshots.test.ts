@@ -1,10 +1,11 @@
-import { dirname, resolve } from "node:path";
+import { dirname } from "node:path";
 import picocolors from "picocolors";
 import { describe, expect, it } from "vite-plus/test";
 import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent } from "../../src/cli/print";
 import { analyzeProject } from "../../src/core/analyze-project";
+import { getFixtureConfig } from "./helpers";
 
-const FIXTURE_CONFIG = resolve(import.meta.dirname, "../fixtures/symbolic-tree/tsconfig.json");
+const FIXTURE_CONFIG = getFixtureConfig("symbolic-tree");
 
 describe("fixture analysis", () => {
   const { components } = analyzeProject(FIXTURE_CONFIG);

@@ -3,22 +3,11 @@ import { GeneratedSource, makeInstructionId } from "../../src/react-compiler/HIR
 import type { Binding, SymbolicValue } from "../../src/core/types";
 import { matchesExpected, normalizeShapes, toExpected } from "../conformance/verifier/match";
 import type { Shape } from "../conformance/verifier/types";
+import { createTestBinding } from "./helpers";
 
 const NO_KNOWN_COMPONENTS = new Map<string, string>();
 
-const createBinding = (name: string): Binding => ({
-  id: 0,
-  name,
-  kind: "state",
-  hookKind: "useState",
-  propName: null,
-  loc: GeneratedSource,
-  domain: { kind: "Unknown", reason: "unknown" },
-  samples: [],
-  initial: null,
-  inputPlaces: [],
-  lengthLimit: null,
-});
+const createBinding = (name: string): Binding => createTestBinding({ name, hookKind: "useState" });
 
 const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => ({
   kind: "JsxExpression",
