@@ -2,12 +2,14 @@ import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Interpreter } from "./interpret";
 import type {
+  Binding,
   Handler,
   HandlerTrigger,
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
   JsxTag,
+  StateUpdate,
   SymbolicValue,
 } from "./types";
 import { forEachJsxElement } from "./utils/traverse";
@@ -24,6 +26,11 @@ export const EVENT_ARGUMENT: SymbolicValue = {
 };
 
 export const isEffectHandler = (handler: Handler): boolean => handler.trigger.kind === "Effect";
+
+export const getBindingUpdates = (handlers: Handler[], binding: Binding): StateUpdate[] =>
+  handlers
+    .flatMap((handler) => handler.updates)
+    .filter((update) => update.binding.id === binding.id);
 
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||

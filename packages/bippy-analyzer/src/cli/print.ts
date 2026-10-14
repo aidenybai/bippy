@@ -33,7 +33,7 @@ import {
   isRenderingNothingWhenFalse,
   isStateBinding,
 } from "../core/utils/checks";
-import { isEffectHandler } from "../core/collect-handlers";
+import { getBindingUpdates, isEffectHandler } from "../core/collect-handlers";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
 
@@ -381,9 +381,7 @@ const buildBindingNode = (
   const reachableValues = component.report.places.get(getBindingPlace(binding));
   const reachableLabel = reachableValues && getReachableLabel(binding.domain, reachableValues);
   if (reachableLabel) details.push(colors.dim(reachableLabel));
-  const bindingUpdates = component.analysis.handlers
-    .flatMap((handler) => handler.updates)
-    .filter((update) => update.binding.id === binding.id);
+  const bindingUpdates = getBindingUpdates(component.analysis.handlers, binding);
   const invariant = getNumericInvariant(binding, bindingUpdates);
   if (invariant) details.push(colors.dim(invariant));
   const domainText =

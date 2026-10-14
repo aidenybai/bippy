@@ -51,7 +51,7 @@ import {
   isStateBinding,
   isWholeBinding,
 } from "./utils/checks";
-import { isEffectHandler } from "./collect-handlers";
+import { getBindingUpdates, isEffectHandler } from "./collect-handlers";
 
 const MAX_ALTERNATIVES = 256;
 const MAX_REACHABILITY_ROUNDS = 8;
@@ -203,9 +203,7 @@ const getReachableCases = (
   domain: Domain,
 ): AbstractValue[] | null => {
   const typeCases = domain.kind === "Cases" ? domain.cases : null;
-  const updates = analysis.handlers
-    .flatMap((handler) => handler.updates)
-    .filter((update) => update.binding.id === binding.id);
+  const updates = getBindingUpdates(analysis.handlers, binding);
   // HACK: an untyped `useState()` is typed `undefined` though handlers set it, so ignore its type.
   const isUntypedState =
     typeCases?.every((value) => value.kind === "Literal" && value.value === undefined) ?? false;
