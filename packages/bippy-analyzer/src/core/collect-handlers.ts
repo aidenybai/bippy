@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import { forEachJsxElement } from "./utils/traverse";
 import { isExternalSource } from "./utils/checks";
+import { getValueKey } from "./utils/value-key";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
@@ -72,6 +73,13 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
       return value.binding.kind === "prop" || isExternalSource(value.binding)
         ? `binding:${value.binding.id}:${value.path.join(".")}`
         : null;
+    case "Conditional": {
+      const consequentKey = getHandlerKey(value.consequent);
+      const alternateKey = getHandlerKey(value.alternate);
+      return consequentKey === null && alternateKey === null
+        ? null
+        : `conditional:${getValueKey(value.test)}?${consequentKey}:${alternateKey}`;
+    }
     default:
       return null;
   }
@@ -80,6 +88,12 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
 const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
   if (value.kind === "Function") return value.loc;
   if (value.kind === "Setter" || value.kind === "Binding") return value.binding.loc;
+  if (value.kind === "Conditional") {
+    const consequentLocation = getHandlerLocation(value.consequent);
+    return consequentLocation === GeneratedSource
+      ? getHandlerLocation(value.alternate)
+      : consequentLocation;
+  }
   return GeneratedSource;
 };
 

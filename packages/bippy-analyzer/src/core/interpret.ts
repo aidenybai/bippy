@@ -1876,16 +1876,30 @@ export class Interpreter {
     callback: SymbolicValue,
     argumentValues: SymbolicValue[],
     visitedFunctionIds: Set<number>,
+    walkState: WalkState = ROOT_WALK_STATE,
   ): void {
+    if (callback.kind === "Conditional") {
+      const test = getTestExpression(callback);
+      const consequentWalkState = { ...walkState, guards: [...walkState.guards, test] };
+      const alternateWalkState = { ...walkState, guards: [...walkState.guards, negate(test)] };
+      this.#runCallback(
+        callback.consequent,
+        argumentValues,
+        visitedFunctionIds,
+        consequentWalkState,
+      );
+      this.#runCallback(callback.alternate, argumentValues, visitedFunctionIds, alternateWalkState);
+      return;
+    }
     if (callback.kind === "Setter")
-      this.#handlerEffects?.recordSetterCall(callback.binding, EVENT_ARGUMENT, ROOT_WALK_STATE);
-    if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, ROOT_WALK_STATE);
+      this.#handlerEffects?.recordSetterCall(callback.binding, EVENT_ARGUMENT, walkState);
+    if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return;
     visitedFunctionIds.add(callback.functionId);
     const hirFunction = this.#functions.get(callback.functionId);
     if (hirFunction)
       this.#runRenderedHandlers(
-        this.#evaluateFunction(hirFunction, argumentValues, ROOT_WALK_STATE, callback.functionId),
+        this.#evaluateFunction(hirFunction, argumentValues, walkState, callback.functionId),
         visitedFunctionIds,
       );
   }
