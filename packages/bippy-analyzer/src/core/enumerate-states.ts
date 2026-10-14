@@ -483,6 +483,19 @@ const getTransition = (
   };
 };
 
+const createRegion = (
+  regionBranches: RegionBranches,
+  firstStateIndex: number,
+  stateCount: number,
+): Region => ({
+  placeNames: regionBranches.placeNames,
+  bindingIds: [...regionBranches.bindingIds],
+  states: Array.from(
+    { length: stateCount },
+    (_state, regionStateIndex) => firstStateIndex + regionStateIndex,
+  ),
+});
+
 const enumerateRegion = (
   regionBranches: RegionBranches,
   regionIndex: number,
@@ -515,13 +528,7 @@ const enumerateRegion = (
       fragments: alternative.fragments,
       transitions: getTransitions(alternative),
     })),
-    region: {
-      placeNames: regionBranches.placeNames,
-      bindingIds: [...regionBranches.bindingIds],
-      states: alternatives.map(
-        (_alternative, regionStateIndex) => firstStateIndex + regionStateIndex,
-      ),
-    },
+    region: createRegion(regionBranches, firstStateIndex, alternatives.length),
     isTruncated: enumerator.isTruncated || transitionContext.targetEnumerator.isTruncated,
   };
 };
