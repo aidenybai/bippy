@@ -176,34 +176,41 @@ const isFreezing = (
   );
 };
 
+const getTrackedMember = (
+  target: object,
+  key: string | symbol,
+  receiver: unknown,
+  isDeep: boolean,
+): unknown => {
+  const member: unknown = Reflect.get(target, key);
+  if (target instanceof Map || target instanceof Set || target instanceof Date) {
+    if (typeof member !== "function" || key === "constructor") return member;
+    return (...callArguments: unknown[]) => {
+      if (isMutatingMethod(target, key)) recordWrite(target);
+      return Reflect.apply(member, target, callArguments);
+    };
+  }
+  if (
+    Array.isArray(target) &&
+    typeof member === "function" &&
+    typeof key === "string" &&
+    MUTATING_ARRAY_METHODS.has(key)
+  ) {
+    return (...callArguments: unknown[]) => {
+      recordWrite(target);
+      return Reflect.apply(member, receiver, callArguments);
+    };
+  }
+  return isDeep && isPlainData(member) && !Object.isFrozen(target)
+    ? trackWrites(member, true)
+    : member;
+};
+
 const trackWrites = (target: object, isDeep: boolean): object => {
   const existing = writeTrackers.get(target);
   if (existing) return existing;
   const tracker = new Proxy(target, {
-    get: (innerTarget, key, receiver) => {
-      const member: unknown = Reflect.get(innerTarget, key);
-      if (innerTarget instanceof Map || innerTarget instanceof Set || innerTarget instanceof Date) {
-        if (typeof member !== "function" || key === "constructor") return member;
-        return (...callArguments: unknown[]) => {
-          if (isMutatingMethod(innerTarget, key)) recordWrite(innerTarget);
-          return Reflect.apply(member, innerTarget, callArguments);
-        };
-      }
-      if (
-        Array.isArray(innerTarget) &&
-        typeof member === "function" &&
-        typeof key === "string" &&
-        MUTATING_ARRAY_METHODS.has(key)
-      ) {
-        return (...callArguments: unknown[]) => {
-          recordWrite(innerTarget);
-          return Reflect.apply(member, receiver, callArguments);
-        };
-      }
-      return isDeep && isPlainData(member) && !Object.isFrozen(innerTarget)
-        ? trackWrites(member, true)
-        : member;
-    },
+    get: (innerTarget, key, receiver) => getTrackedMember(innerTarget, key, receiver, isDeep),
     set: (innerTarget, key, value) => {
       recordWrite(innerTarget);
       return Reflect.set(innerTarget, key, value);
