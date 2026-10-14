@@ -19,7 +19,7 @@ import { getErrorMessage } from "./reasons";
 import type { MountFailure } from "./reasons";
 import { forEachPlainObject, isPlainData, isPlainRecord, snapshotValue } from "./snapshot";
 import { STAND_IN } from "./stubs/stand-in";
-import { isLibraryHookDispatch, isWrittenByLibrary, watchHookCallers } from "./write-origins";
+import { isLibraryHookQueue, isWrittenByLibrary, watchHookCallers } from "./write-origins";
 import {
   MAX_ACTION_LABEL_LENGTH,
   PROVIDERS_PATH,
@@ -414,11 +414,6 @@ const getQueuedHooks = (fiber: Fiber): MemoizedState[] => {
 const getQueuedHookStates = (fiber: Fiber): unknown[] =>
   getQueuedHooks(fiber).map((hook) => hook.memoizedState);
 
-const isLibraryHook = (hook: MemoizedState): boolean =>
-  typeof hook.queue === "object" &&
-  hook.queue !== null &&
-  isLibraryHookDispatch(Reflect.get(hook.queue, "dispatch"));
-
 const getStateOwners = (states: unknown[]): Map<object, string> => {
   const owners = new Map<object, string>();
   states.forEach((state, hookIndex) =>
@@ -433,7 +428,7 @@ const trackStates = (fiber: Fiber): Map<object, string> => {
   const hooks = getQueuedHooks(fiber);
   hooks.forEach((hook, hookIndex) => {
     const state = hook.memoizedState;
-    if (!isPlainData(state) || isLibraryHook(hook)) return;
+    if (!isPlainData(state) || isLibraryHookQueue(hook.queue)) return;
     if (trackedStates.some((tracked) => tracked.target === state)) return;
     trackedStates.push({
       owner: getStateOwner(hookIndex),

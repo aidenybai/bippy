@@ -7,11 +7,12 @@ interface DispatcherHook {
 const HARNESS_PATH_PATTERN = /\/conformance\/verifier\//;
 const LIBRARY_PATH_PATTERN = /\/node_modules\//;
 const STACK_FRAME_PATTERN = /^\s+at .*\bhttps?:\/\//;
-const QUEUED_HOOK_NAMES = ["useState", "useReducer"];
+const QUEUED_HOOK_NAMES = ["useState", "useReducer", "useSyncExternalStore"];
+const QUEUE_FUNCTION_KEYS = ["dispatch", "getSnapshot"];
 const DISPATCHER_KEYS = ["H", "current"];
 
-const libraryDispatches = new WeakSet<object>();
-const attributedDispatches = new WeakSet<object>();
+const libraryQueueFunctions = new WeakSet<object>();
+const attributedQueueFunctions = new WeakSet<object>();
 const patchedDispatchers = new WeakSet<object>();
 const watchedDispatcherRefs = new WeakSet<object>();
 
@@ -26,16 +27,28 @@ const getOutsideFrames = (): string[] =>
 export const isWrittenByLibrary = (): boolean =>
   LIBRARY_PATH_PATTERN.test(getOutsideFrames()[0] ?? "");
 
-export const isLibraryHookDispatch = (dispatch: unknown): boolean =>
-  typeof dispatch === "function" && libraryDispatches.has(dispatch);
+export const isLibraryHookQueue = (queue: unknown): boolean =>
+  typeof queue === "object" &&
+  queue !== null &&
+  QUEUE_FUNCTION_KEYS.some((key) => {
+    const queueFunction: unknown = Reflect.get(queue, key);
+    return typeof queueFunction === "function" && libraryQueueFunctions.has(queueFunction);
+  });
 
-const recordHookCaller = (hookResult: unknown): void => {
-  if (!Array.isArray(hookResult)) return;
-  const dispatch: unknown = hookResult[1];
-  if (typeof dispatch !== "function" || attributedDispatches.has(dispatch)) return;
-  attributedDispatches.add(dispatch);
+const getQueueFunction = (
+  hookName: string,
+  hookArguments: unknown[],
+  hookResult: unknown,
+): unknown => {
+  if (hookName === "useSyncExternalStore") return hookArguments[1];
+  return Array.isArray(hookResult) ? hookResult[1] : null;
+};
+
+const recordHookCaller = (queueFunction: unknown): void => {
+  if (typeof queueFunction !== "function" || attributedQueueFunctions.has(queueFunction)) return;
+  attributedQueueFunctions.add(queueFunction);
   const [, callerFrame = ""] = getOutsideFrames();
-  if (LIBRARY_PATH_PATTERN.test(callerFrame)) libraryDispatches.add(dispatch);
+  if (LIBRARY_PATH_PATTERN.test(callerFrame)) libraryQueueFunctions.add(queueFunction);
 };
 
 const patchDispatcher = (dispatcher: unknown): void => {
@@ -47,7 +60,7 @@ const patchDispatcher = (dispatcher: unknown): void => {
     if (typeof hook !== "function") continue;
     const recordingHook: DispatcherHook = (...hookArguments) => {
       const hookResult: unknown = Reflect.apply(hook, dispatcher, hookArguments);
-      recordHookCaller(hookResult);
+      recordHookCaller(getQueueFunction(hookName, hookArguments, hookResult));
       return hookResult;
     };
     Reflect.set(dispatcher, hookName, recordingHook);
