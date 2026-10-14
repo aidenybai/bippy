@@ -13,6 +13,7 @@ import type {
   JsxSpreadProp,
   StateUpdate,
   State,
+  StateReport,
   SymbolicValue,
   Handler,
 } from "../core/types";
@@ -142,12 +143,7 @@ const getNumericInvariant = (binding: Binding, updates: StateUpdate[]): string |
     : null;
 };
 
-const formatAttributes = (
-  node: JsxExpressionValue,
-  context: ComponentPrintContext,
-  isCompact: boolean,
-): string => {
-  if (isCompact) return "";
+const formatAttributes = (node: JsxExpressionValue, context: ComponentPrintContext): string => {
   const { colors } = context;
   const attributes = node.props.flatMap((prop) => {
     const name = getPropLabel(prop);
@@ -162,11 +158,8 @@ const formatAttributes = (
   return attributes.length > 0 ? ` ${attributes.join(" ")}` : "";
 };
 
-const formatTag = (
-  node: JsxExpressionValue,
-  context: ComponentPrintContext,
-  isCompact: boolean,
-): string => `<${node.tag.name}${formatAttributes(node, context, isCompact)}>`;
+const formatTag = (node: JsxExpressionValue, context: ComponentPrintContext): string =>
+  `<${node.tag.name}${formatAttributes(node, context)}>`;
 
 const formatLeaf = (value: SymbolicValue, options: PrintOptions): string | null => {
   const { colors } = options;
@@ -210,7 +203,7 @@ const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): st
     }
     switch (node.kind) {
       case "JsxExpression":
-        appendPart(formatTag(node, context, true));
+        appendPart(`<${node.tag.name}>`);
         node.children.forEach(visit);
         break;
       case "JsxFragment":
@@ -250,9 +243,9 @@ const buildRenderNode = (
           ? formatLeaf(onlyChild, context)
           : null;
       if (onlyLeaf !== null)
-        return createTreeNode(truncate(`${prefix}${formatTag(value, context, false)} ${onlyLeaf}`));
+        return createTreeNode(truncate(`${prefix}${formatTag(value, context)} ${onlyLeaf}`));
       return createTreeNode(
-        truncate(`${prefix}${formatTag(value, context, false)}`),
+        truncate(`${prefix}${formatTag(value, context)}`),
         value.children.map((child) => buildRenderNode(child, context, depth + 1)),
       );
     }
@@ -397,7 +390,7 @@ const buildBindingNode = (
   );
 };
 
-const buildBindings = (component: AnalyzedComponent, options: PrintOptions): TreeNode => {
+const buildDataSection = (component: AnalyzedComponent, options: PrintOptions): TreeNode => {
   const bindingNodes = component.analysis.bindings
     .filter((binding) => binding.kind !== "item")
     .map((binding) => buildBindingNode(component, binding, options));
@@ -445,47 +438,49 @@ const buildState = (
   );
 };
 
-const buildStates = (component: AnalyzedComponent, context: ComponentPrintContext): TreeNode => {
-  const { colors } = context;
-  const { report } = component;
-  const hasRegions = report.regions.length > 1;
-  const stateNodes = hasRegions
-    ? report.regions.map((region) =>
-        createTreeNode(
-          truncate(region.placeNames.join(colors.dim(", ")) || colors.dim("other")),
-          region.states.map((stateIndex) => {
-            const state = report.states[stateIndex];
-            return state ? buildState(state, stateIndex, true, context) : createTreeNode("");
-          }),
-        ),
-      )
-    : report.states.map((state, stateIndex) => buildState(state, stateIndex, false, context));
-  if (report.unreachableBranches.length > 0) {
-    stateNodes.push(
+const buildStateNodes = (report: StateReport, context: ComponentPrintContext): TreeNode[] => {
+  if (report.regions.length <= 1)
+    return report.states.map((state, stateIndex) => buildState(state, stateIndex, false, context));
+  return report.regions.map((region) =>
+    createTreeNode(
+      truncate(region.placeNames.join(context.colors.dim(", ")) || context.colors.dim("other")),
+      region.states.map((stateIndex) => {
+        const state = report.states[stateIndex];
+        return state ? buildState(state, stateIndex, true, context) : createTreeNode("");
+      }),
+    ),
+  );
+};
+
+const buildUnreachableNode = (report: StateReport, { colors }: PrintOptions): TreeNode =>
+  createTreeNode(
+    colors.red("unreachable branches"),
+    report.unreachableBranches.map((unreachableBranch) =>
       createTreeNode(
-        colors.red("unreachable branches"),
-        report.unreachableBranches.map((unreachableBranch) =>
-          createTreeNode(
-            `${colors.red(unreachableBranch.description)} ${colors.dim(formatLine(unreachableBranch.branch.loc))}`,
-          ),
-        ),
+        `${colors.red(unreachableBranch.description)} ${colors.dim(formatLine(unreachableBranch.branch.loc))}`,
       ),
-    );
-  }
+    ),
+  );
+
+const getStatesTitle = (report: StateReport): string => {
   const truncatedSuffix = report.isTruncated ? "+, truncated" : "";
+  const stateCountLabel = `${report.states.length}${truncatedSuffix}`;
+  if (report.regions.length <= 1) return `states (${stateCountLabel})`;
   const combinationCount = report.regions.reduce(
     (product, region) => product * region.states.length,
     1,
   );
-  const stateCountLabel = `${report.states.length}${truncatedSuffix}`;
-  return createTreeNode(
-    colors.dim(
-      hasRegions
-        ? `states (${stateCountLabel} in ${report.regions.length} regions, ${combinationCount} combinations)`
-        : `states (${stateCountLabel})`,
-    ),
-    stateNodes,
-  );
+  return `states (${stateCountLabel} in ${report.regions.length} regions, ${combinationCount} combinations)`;
+};
+
+const buildStatesSection = (
+  component: AnalyzedComponent,
+  context: ComponentPrintContext,
+): TreeNode => {
+  const { report } = component;
+  const stateNodes = buildStateNodes(report, context);
+  if (report.unreachableBranches.length > 0) stateNodes.push(buildUnreachableNode(report, context));
+  return createTreeNode(context.colors.dim(getStatesTitle(report)), stateNodes);
 };
 
 const buildNotes = (title: string, notes: Note[], { colors }: PrintOptions): TreeNode =>
@@ -537,9 +532,9 @@ const buildSections = (
 ): TreeNode[] => {
   const { analysis } = component;
   const sections: TreeNode[] = [];
-  if (context.views.has("data")) sections.push(buildBindings(component, context));
+  if (context.views.has("data")) sections.push(buildDataSection(component, context));
   if (context.views.has("render")) sections.push(buildRenderSection(component, context));
-  if (context.views.has("states")) sections.push(buildStates(component, context));
+  if (context.views.has("states")) sections.push(buildStatesSection(component, context));
   if (context.views.has("warnings") && analysis.warnings.length > 0)
     sections.push(buildNotes("warnings", analysis.warnings, context));
   if (context.views.has("bailouts") && analysis.bailouts.length > 0) {
