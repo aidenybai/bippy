@@ -30,7 +30,7 @@ import { appendToGroup } from "./utils/group";
 import { getValueKey } from "./utils/value-key";
 import { PlaceMap, getBindingPlace, getValuePlace, isSamePlace } from "./utils/place";
 import { getTestExpression, getTruthiness } from "./utils/truthiness";
-import { isStateBinding, isWholeBinding } from "./utils/checks";
+import { isNullish, isStateBinding, isWholeBinding } from "./utils/checks";
 import { getBindingUpdates, isEffectHandler } from "./collect-handlers";
 import { findRegions } from "./regions";
 import { getBranchKey } from "./control-flow";
@@ -171,7 +171,7 @@ const getReachableCases = (
   const typeCases = domain.kind === "Cases" ? domain.cases : null;
   const updates = getBindingUpdates(analysis.handlers, binding);
   const isUntypedState =
-    typeCases?.every((value) => value.kind === "Literal" && value.value === undefined) ?? false;
+    typeCases?.every((value) => value.kind === "Literal" && isNullish(value.value)) ?? false;
   if (isUntypedState && updates.length > 0) return null;
   if (updates.some((update) => hasCastPart(update.value))) return null;
   const initialCases = getFieldCases(binding.initial, path, binding, null);
