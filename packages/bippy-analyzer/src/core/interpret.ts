@@ -1027,6 +1027,29 @@ export class Interpreter {
     );
   }
 
+  #visitPromiseCallbacks(
+    methodName: string,
+    argumentValues: SymbolicValue[],
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): void {
+    const asyncWalkState = getAsyncWalkState(walkState);
+    const isRejected = createUnknown("rejected", loc);
+    const guardsByArgument =
+      methodName === "then"
+        ? [negate(isRejected), isRejected]
+        : methodName === "catch"
+          ? [isRejected]
+          : [];
+    argumentValues.forEach((argument, argumentIndex) => {
+      const guard = guardsByArgument[argumentIndex];
+      this.#visitCallbackArgument(
+        argument,
+        guard ? { ...asyncWalkState, guards: [...asyncWalkState.guards, guard] } : asyncWalkState,
+      );
+    });
+  }
+
   #visitCallbackArgument(argument: SymbolicValue, walkState: WalkState): void {
     if (!this.#handlerEffects) return;
     if (argument.kind === "ObjectExpression")
@@ -1156,8 +1179,7 @@ export class Interpreter {
     )
       return this.#evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
     if (methodName !== null && PROMISE_METHODS.has(methodName)) {
-      for (const argument of argumentValues)
-        this.#visitCallbackArgument(argument, getAsyncWalkState(walkState));
+      this.#visitPromiseCallbacks(methodName, argumentValues, methodCall.loc, walkState);
       return createUnknown("async", methodCall.loc);
     }
     return this.#evaluateCall(

@@ -122,7 +122,7 @@ exports[`fixture analysis > Dashboard keeps its states, transitions and unreacha
 │  │        │  ├─ ✓ <List>
 │  │        │  └─ ✗ <Empty>
 │  │        └─ <button onClick ⇒ count = count + 1> {count}
-│  └─ on mount ⇒ items = Unknown(async) (async)
+│  └─ on mount ⇒ if !Unknown(rejected): items = Unknown(async) (async)
 └─ states (4)
    ├─ S1 status === "loading"
    │  └─ <Spinner>
