@@ -20,12 +20,21 @@ export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): Symbolic
     if (value.kind === "Function" || value.kind === "Setter") return [value];
     if (value.kind === "Conditional")
       return getPassedCallbacks([value.consequent, value.alternate], depth);
-    if (value.kind !== "ObjectExpression" || depth >= MAX_OPTIONS_NESTING) return [];
+    if (depth >= MAX_OPTIONS_NESTING) return [];
+    if (value.kind === "ArrayExpression") return getPassedCallbacks(value.elements, depth + 1);
+    if (value.kind !== "ObjectExpression") return [];
     return getPassedCallbacks(
       value.properties.map((property) => property.value),
       depth + 1,
     );
   });
+
+export const getContainedValues = (value: SymbolicValue): SymbolicValue[] => {
+  if (value.kind === "ObjectExpression")
+    return value.properties.flatMap((property) => getContainedValues(property.value));
+  if (value.kind === "ArrayExpression") return value.elements.flatMap(getContainedValues);
+  return [value];
+};
 
 export const createUnknown = (reason: string, loc: SourceLocation): SymbolicValue => ({
   kind: "Unknown",

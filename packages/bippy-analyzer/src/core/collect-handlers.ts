@@ -16,6 +16,7 @@ import type {
 import { forEachJsxElement } from "./utils/traverse";
 import { isExternalSource } from "./utils/checks";
 import { getValueKey } from "./utils/value-key";
+import { getPassedCallbacks } from "./symbolic-values";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
@@ -36,14 +37,10 @@ export const getBindingUpdates = (handlers: Handler[], binding: Binding): StateU
 
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
-  (tag.kind !== "BuiltinTag" && (isCallable(prop.value) || hasCallableField(prop.value)));
+  (tag.kind !== "BuiltinTag" && getPassedCallbacks([prop.value]).length > 0);
 
 const isCallable = (value: SymbolicValue): boolean =>
   value.kind === "Setter" || value.kind === "Function";
-
-const hasCallableField = (value: SymbolicValue): boolean =>
-  value.kind === "ObjectExpression" &&
-  value.properties.some((property) => isCallable(property.value));
 
 const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
@@ -66,6 +63,8 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
       return `function:${value.functionId}`;
     case "Setter":
       return `setter:${value.binding.id}`;
+    case "ArrayExpression":
+      return `array:${value.elements.map(getHandlerKey).join(",")}`;
     case "ObjectExpression":
       return `object:${value.properties
         .map((property) => `${property.key}=${getHandlerKey(property.value)}`)

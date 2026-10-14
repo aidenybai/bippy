@@ -58,6 +58,7 @@ import {
   foldBinary,
   foldUnary,
   getKnownOutcome,
+  getContainedValues,
   getPassedCallbacks,
   getShortCircuit,
 } from "./symbolic-values";
@@ -296,10 +297,7 @@ export class Interpreter {
     this.#handlerEffects = handlerEffects;
     this.#blockVisits = 0;
     try {
-      const callbacks =
-        callback.kind === "ObjectExpression"
-          ? callback.properties.map((property) => property.value)
-          : [callback];
+      const callbacks = getContainedValues(callback);
       for (const handlerCallback of callbacks)
         this.#runCallback(handlerCallback, argumentValues, new Set());
       if (callback.kind === "Unknown")
