@@ -204,19 +204,26 @@ const formatCompact = (value: SymbolicValue, context: ComponentPrintContext): st
     }
     if (isRenderingNothing(node)) return;
     const leaf = formatLeaf(node, context);
-    if (leaf !== null) return appendPart(leaf);
+    if (leaf !== null) {
+      appendPart(leaf);
+      return;
+    }
     switch (node.kind) {
       case "JsxExpression":
         appendPart(formatTag(node, context, true));
-        return node.children.forEach(visit);
+        node.children.forEach(visit);
+        break;
       case "JsxFragment":
-        return node.children.forEach(visit);
+        node.children.forEach(visit);
+        break;
       case "ArrayMap":
-        return appendPart(`↻ ${formatSymbolicValue(node.array)}`);
+        appendPart(`↻ ${formatSymbolicValue(node.array)}`);
+        break;
       case "Conditional":
-        return appendPart(`◆ ${getConditionLabel(node)}`);
+        appendPart(`◆ ${getConditionLabel(node)}`);
+        break;
       default:
-        return;
+        break;
     }
   };
   visit(value);

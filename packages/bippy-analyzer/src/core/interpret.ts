@@ -1695,12 +1695,14 @@ export class Interpreter {
     if (binding.kind === "prop") this.#handlerEffects?.addDelegate(formatPlace(binding, path));
     const memberName = path.length === 1 ? path[0] : undefined;
     const setterField = memberName && this.externalSources.getSetterField(binding, memberName);
-    if (setterField)
-      return this.#setContextField(binding, setterField, argumentValues[0], walkState);
+    if (setterField) {
+      this.#setContextField(binding, setterField, argumentValues[0], walkState);
+      return;
+    }
     const assignments =
       memberName && this.externalSources.getActionAssignments(binding, memberName);
-    if (assignments)
-      return this.#handlerEffects?.recordSetterCall(
+    if (assignments) {
+      this.#handlerEffects?.recordSetterCall(
         binding,
         createFieldUpdate(
           binding,
@@ -1711,6 +1713,8 @@ export class Interpreter {
         ),
         walkState,
       );
+      return;
+    }
     if (isExternalSource(binding) && this.#handlerEffects)
       this.#recordExternalUpdate(this.#handlerEffects, callee, walkState);
   }
