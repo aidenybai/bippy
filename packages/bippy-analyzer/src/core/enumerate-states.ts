@@ -501,20 +501,20 @@ const enumerateRegion = (
     firstStateIndex,
   };
   const regionHandlers = getRegionHandlers(analysis, regionBranches);
-  const states = alternatives.map((alternative): State => {
+  const getTransitions = (alternative: Alternative): Transition[] => {
     const renderedHandlerIds = new Set([...effectIds, ...collectHandlerIds(alternative.render)]);
-    return {
+    return regionHandlers
+      .filter((handler) => renderedHandlerIds.has(handler.id))
+      .map((handler) => getTransition(handler, alternative, transitionContext));
+  };
+  return {
+    states: alternatives.map((alternative) => ({
       regionIndex,
       conditions: alternative.conditions,
       render: alternative.render,
       fragments: alternative.fragments,
-      transitions: regionHandlers
-        .filter((handler) => renderedHandlerIds.has(handler.id))
-        .map((handler) => getTransition(handler, alternative, transitionContext)),
-    };
-  });
-  return {
-    states,
+      transitions: getTransitions(alternative),
+    })),
     region: {
       placeNames: regionBranches.placeNames,
       bindingIds: [...regionBranches.bindingIds],
