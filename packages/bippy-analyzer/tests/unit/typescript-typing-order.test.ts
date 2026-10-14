@@ -9,8 +9,8 @@ interface MethodCallInstruction {
   value: MethodCall;
 }
 
-const getMethodCalls = (fn: HIRFunction, method: string): MethodCallInstruction[] => {
-  const instructions = getInstructions(fn);
+const getMethodCalls = (hirFunction: HIRFunction, method: string): MethodCallInstruction[] => {
+  const instructions = getInstructions(hirFunction);
   const propertyNames = new Map(
     instructions.flatMap((instruction) =>
       instruction.value.kind === "PropertyLoad"
@@ -26,9 +26,12 @@ const getMethodCalls = (fn: HIRFunction, method: string): MethodCallInstruction[
   );
 };
 
-const getOnlyMethodCall = (fn: HIRFunction | undefined, method: string): MethodCallInstruction => {
-  if (!fn) throw new Error("Function was not lowered");
-  const [call, ...otherCalls] = getMethodCalls(fn, method);
+const getOnlyMethodCall = (
+  hirFunction: HIRFunction | undefined,
+  method: string,
+): MethodCallInstruction => {
+  if (!hirFunction) throw new Error("Function was not lowered");
+  const [call, ...otherCalls] = getMethodCalls(hirFunction, method);
   if (!call || otherCalls.length > 0) throw new Error(`Expected one ${method} call`);
   return call;
 };
@@ -55,10 +58,10 @@ describe("TypeScript typing order", () => {
   });
 
   it("gives items.push in a handler the compiler's own push signature", () => {
-    const fn = functions.get("LostUpdate");
-    const push = getOnlyMethodCall(fn, "push");
+    const hirFunction = functions.get("LostUpdate");
+    const push = getOnlyMethodCall(hirFunction, "push");
     expect(push.value.property.identifier.type).toEqual(
-      fn?.env.getPropertyType(push.value.receiver.identifier.type, "push"),
+      hirFunction?.env.getPropertyType(push.value.receiver.identifier.type, "push"),
     );
     expect(getReceiverMutations(push)).toEqual(["Mutate"]);
     expect(getEffectKinds(push)).not.toContain("MutateTransitiveConditionally");

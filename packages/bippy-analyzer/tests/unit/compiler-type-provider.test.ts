@@ -125,10 +125,10 @@ describe("CompilerTypeProvider.getType", () => {
 
   beforeAll(() => {
     const functions = getHirFunctionsByName("types");
-    const fn = functions.get("Typed");
-    if (!fn) throw new Error("Typed was not lowered");
-    typed = fn;
-    types = getLocalTypesByName(fn);
+    const hirFunction = functions.get("Typed");
+    if (!hirFunction) throw new Error("Typed was not lowered");
+    typed = hirFunction;
+    types = getLocalTypesByName(hirFunction);
   });
 
   it.each(["label", "count", "mode", "isActive", "maybeLabel"])(

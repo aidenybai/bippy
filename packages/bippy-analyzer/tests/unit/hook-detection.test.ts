@@ -45,8 +45,8 @@ const getCalleeExportNames = (fixture: string): Map<string, Array<string | null>
     return exportNames;
   });
 
-const getHookCallResultShapes = (fn: HIRFunction): Array<string | null> =>
-  getInstructions(fn).flatMap((instruction) =>
+const getHookCallResultShapes = (hirFunction: HIRFunction): Array<string | null> =>
+  getInstructions(hirFunction).flatMap((instruction) =>
     instruction.value.kind === "CallExpression" || instruction.value.kind === "MethodCall"
       ? [
           instruction.lvalue.identifier.type.kind === "Object"
@@ -104,9 +104,9 @@ describe("hook detection through the checker", () => {
   });
 
   it.each(STATE_COMPONENTS)("types the useState call in %s with the compiler's shape", (name) => {
-    const fn = functions.get(name);
-    expect(fn).toBeDefined();
-    expect(fn && getHookCallResultShapes(fn)).toContain(BuiltInUseStateId);
+    const hirFunction = functions.get(name);
+    expect(hirFunction).toBeDefined();
+    expect(hirFunction && getHookCallResultShapes(hirFunction)).toContain(BuiltInUseStateId);
   });
 
   it("treats a custom hook from another file as a custom hook", () => {
