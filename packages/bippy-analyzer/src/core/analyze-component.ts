@@ -1,3 +1,4 @@
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { SourceFile } from "typescript/unstable/ast";
 import type { CompiledFile, CompiledFunction } from "./compile";
 import type { SourceFileResolver } from "./source-file-resolver";
@@ -17,7 +18,7 @@ import type {
   SymbolicValue,
 } from "./types";
 
-interface ComponentIdentity extends Pick<
+export interface ComponentIdentity extends Pick<
   ComponentAnalysis,
   "name" | "exportName" | "runtimeName" | "file" | "declaration"
 > {}
@@ -64,27 +65,36 @@ const getComponentIdentity = (
   };
 };
 
+export const createEmptyAnalysis = (
+  identity: ComponentIdentity,
+  loc: SourceLocation,
+  render: SymbolicValue,
+): ComponentAnalysis => ({
+  ...identity,
+  loc,
+  isAsync: false,
+  bindings: [],
+  wholePropsSample: null,
+  providedContexts: [],
+  contextSamples: new Map(),
+  untypedContextBindingIds: new Map(),
+  placeDomains: new PlaceMap(),
+  unionMemberValues: new PlaceMap(),
+  render,
+  handlers: [],
+  renders: [],
+  bailouts: [],
+  warnings: [],
+});
+
 const createCompilerErrorAnalysis = (
   identity: ComponentIdentity,
   reactFunction: CompiledFunction,
 ): ComponentAnalysis => {
   const { loc } = reactFunction;
   return {
-    ...identity,
-    loc,
-    isAsync: false,
-    bindings: [],
-    wholePropsSample: null,
-    providedContexts: [],
-    contextSamples: new Map(),
-    untypedContextBindingIds: new Map(),
-    placeDomains: new PlaceMap(),
-    unionMemberValues: new PlaceMap(),
-    render: { kind: "Unknown", reason: "compiler-error", loc },
-    handlers: [],
-    renders: [],
+    ...createEmptyAnalysis(identity, loc, { kind: "Unknown", reason: "compiler-error", loc }),
     bailouts: [{ reason: "compiler-error", message: reactFunction.errors.join("; "), loc }],
-    warnings: [],
   };
 };
 

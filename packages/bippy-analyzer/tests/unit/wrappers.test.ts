@@ -3,7 +3,7 @@ import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { ComponentAnalysis, Sample } from "../../src/core/types";
 import { parseExports } from "../conformance/verifier/source-index";
 import type { ExportedName, ProjectIndex } from "../conformance/verifier/types";
-import { PlaceMap } from "../../src/core/utils/place";
+import { createEmptyAnalysis } from "../../src/core/analyze-component";
 import { proposeParents } from "../conformance/verifier/wrappers";
 import type { ParentQuery } from "../conformance/verifier/wrappers";
 
@@ -11,27 +11,12 @@ const DRAWER_FILE = "/app/ui/drawer.tsx";
 const DIALOG_FILE = "/app/ui/dialog.tsx";
 const CONTEXT_FILE = "/app/context/ui-app-state.ts";
 
-const createAnalysis = (name: string, file: string): ComponentAnalysis => ({
-  name,
-  exportName: name,
-  runtimeName: name,
-  file,
-  declaration: `${file}#${name}`,
-  loc: GeneratedSource,
-  isAsync: false,
-  bindings: [],
-  wholePropsSample: null,
-  providedContexts: [],
-  contextSamples: new Map(),
-  untypedContextBindingIds: new Map(),
-  placeDomains: new PlaceMap(),
-  unionMemberValues: new PlaceMap(),
-  render: { kind: "Primitive", value: null },
-  handlers: [],
-  renders: [],
-  bailouts: [],
-  warnings: [],
-});
+const createAnalysis = (name: string, file: string): ComponentAnalysis =>
+  createEmptyAnalysis(
+    { name, exportName: name, runtimeName: name, file, declaration: `${file}#${name}` },
+    GeneratedSource,
+    { kind: "Primitive", value: null },
+  );
 
 const createProject = (exports: Record<string, ExportedName[]>): ProjectIndex => ({
   exports: new Map(Object.entries(exports)),
