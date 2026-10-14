@@ -317,10 +317,8 @@ const getTextContent = (value: SymbolicValue): string => {
   }
 };
 
-const collectTriggerLabels = (
-  render: SymbolicValue,
-  triggerLabelsByHandler: Map<string, string>,
-): void =>
+const collectTriggerLabels = (render: SymbolicValue): Map<string, string> => {
+  const triggerLabelsByHandler = new Map<string, string>();
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) {
       if (!prop.handlerId || triggerLabelsByHandler.has(prop.handlerId)) continue;
@@ -334,6 +332,8 @@ const collectTriggerLabels = (
       );
     }
   });
+  return triggerLabelsByHandler;
+};
 
 const getEffectTriggerLabel = (handler: Handler): string => {
   const { trigger } = handler;
@@ -505,8 +505,7 @@ const createPrintContext = (
   options: PrintOptions,
 ): ComponentPrintContext => {
   const { analysis } = component;
-  const triggerLabelsByHandler = new Map<string, string>();
-  collectTriggerLabels(analysis.render, triggerLabelsByHandler);
+  const triggerLabelsByHandler = collectTriggerLabels(analysis.render);
   for (const handler of analysis.handlers.filter(isEffectHandler))
     triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
   return {

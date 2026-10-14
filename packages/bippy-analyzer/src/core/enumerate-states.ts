@@ -549,10 +549,13 @@ const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
 const findRegions = (render: SymbolicValue): RegionBranches[] =>
   groupIntoRegions(collectBranchTests(render));
 
-const collectHandlerIds = (render: SymbolicValue, handlerIds: Set<string>): void =>
+const collectHandlerIds = (render: SymbolicValue): Set<string> => {
+  const handlerIds = new Set<string>();
   forEachJsxElement(render, (element) => {
     for (const prop of element.props) if (prop.handlerId) handlerIds.add(prop.handlerId);
   });
+  return handlerIds;
+};
 
 const collectBranchKeysInTests = (render: SymbolicValue): Set<string> => {
   const branchKeysInTests = new Set<string>();
@@ -694,8 +697,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     };
     const regionHandlers = getRegionHandlers(analysis, region);
     for (const alternative of alternatives) {
-      const renderedHandlerIds = new Set(effectIds);
-      collectHandlerIds(alternative.render, renderedHandlerIds);
+      const renderedHandlerIds = new Set([...effectIds, ...collectHandlerIds(alternative.render)]);
       states.push({
         regionIndex,
         conditions: alternative.conditions,
