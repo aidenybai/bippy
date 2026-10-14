@@ -155,6 +155,7 @@ interface CompilationTables {
   values: Map<IdentifierId, SymbolicValue>;
   propertyNames: Map<IdentifierId, string>;
   branchOperators: Map<BlockId, BranchOperator>;
+  aliasSources: Map<IdentifierId, Place>;
 }
 
 type CallTarget =
@@ -178,6 +179,7 @@ export interface ProjectHookLoader {
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_WALK_DEPTH = 256;
 const MAX_INLINE_DEPTH = 4;
+const MAX_ALIAS_CHAIN_LENGTH = 32;
 const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
@@ -211,6 +213,19 @@ const createFieldUpdate = (
   properties,
   spreads: [createBindingValue(binding)],
 });
+
+const isOwnedValue = (value: SymbolicValue): value is BindingValue =>
+  value.kind === "Binding" && (value.binding.kind === "prop" || isStateBinding(value.binding));
+
+const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null => {
+  const [copiedValue] = array.spreads;
+  return array.elements.length === 0 &&
+    array.spreads.length === 1 &&
+    copiedValue &&
+    isOwnedValue(copiedValue)
+    ? copiedValue
+    : null;
+};
 
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
   const { binding } = loadGlobal;
@@ -376,6 +391,7 @@ export class Interpreter {
       values: new Map(),
       propertyNames: new Map(),
       branchOperators: new Map(),
+      aliasSources: new Map(),
     };
     this.#tablesByEnvironment.set(env, compilationTables);
     return compilationTables;
@@ -622,19 +638,38 @@ export class Interpreter {
         continue;
       }
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
-      if (mutatedValue.kind !== "Binding") continue;
-      const { binding } = mutatedValue;
-      if (binding.kind === "prop")
-        this.#warn(
-          "prop-mutation",
-          `mutates prop ${formatPlace(binding, mutatedValue.path)}`,
-          mutatedPlace.loc,
-        );
-      else if (isStateBinding(binding) && this.#handlerEffects)
-        this.#handlerEffects.addMutation(binding, mutatedPlace.loc);
-      else if (isStateBinding(binding))
-        this.#warn("render-mutation", `mutates ${binding.name} during render`, mutatedPlace.loc);
+      const ownedValue = isOwnedValue(mutatedValue)
+        ? mutatedValue
+        : this.#findAliasedOwnedValue(mutatedPlace);
+      if (ownedValue) this.#trackOwnedMutation(ownedValue, mutatedPlace.loc);
     }
+  }
+
+  #trackOwnedMutation(ownedValue: BindingValue, loc: SourceLocation): void {
+    const { binding } = ownedValue;
+    if (binding.kind === "prop")
+      this.#warn("prop-mutation", `mutates prop ${formatPlace(binding, ownedValue.path)}`, loc);
+    else if (this.#handlerEffects) this.#handlerEffects.addMutation(binding, loc);
+    else this.#warn("render-mutation", `mutates ${binding.name} during render`, loc);
+  }
+
+  #recordAliasSources(instruction: Instruction): void {
+    const { aliasSources } = this.#getCompilationTables();
+    for (const effect of instruction.effects ?? [])
+      if (effect.kind === "Assign" || effect.kind === "Alias" || effect.kind === "CreateFrom")
+        aliasSources.set(effect.into.identifier.id, effect.from);
+  }
+
+  #findAliasedOwnedValue(place: Place): BindingValue | null {
+    const { aliasSources } = this.#getCompilationTables();
+    let source = aliasSources.get(place.identifier.id);
+    for (let chainLength = 0; source && chainLength < MAX_ALIAS_CHAIN_LENGTH; chainLength++) {
+      const sourceValue = this.#read(source);
+      if (isOwnedValue(sourceValue)) return sourceValue;
+      if (sourceValue.kind === "ArrayExpression") return getCopiedOwnedValue(sourceValue);
+      source = aliasSources.get(source.identifier.id);
+    }
+    return null;
   }
 
   #trackGlobalMutation(mutatedGlobal: GlobalValue, loc: SourceLocation): void {
@@ -1287,6 +1322,7 @@ export class Interpreter {
         instruction.lvalue.identifier.id,
         String(value.property),
       );
+    this.#recordAliasSources(instruction);
     this.#trackMutations(instruction, walkState);
     const instructionResult = this.#evaluateInstructionValue(instruction, walkState);
     if (value.kind === "ArrayExpression" || value.kind === "ObjectExpression")
