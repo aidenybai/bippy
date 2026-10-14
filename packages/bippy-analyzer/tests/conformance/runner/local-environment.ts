@@ -24,7 +24,7 @@ const prepare = (repo: RepoConfig, log: LineLogger): string => {
   mkdirSync(CACHE_DIRECTORY, { recursive: true });
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)}`);
   const result = spawnSync("bash", [join(CONFORMANCE_DIRECTORY, "setup.sh")], {
-    env: { ...process.env, ...getSetupEnvironment(repo, appDirectory, repo.patchFile ?? "") },
+    env: { ...process.env, ...getSetupEnvironment(repo, appDirectory, repo.patchFile) },
     encoding: "utf8",
     maxBuffer: SETUP_OUTPUT_BUFFER_BYTES,
   });

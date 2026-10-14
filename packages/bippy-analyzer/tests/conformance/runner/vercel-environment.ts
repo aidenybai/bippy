@@ -180,7 +180,11 @@ const prepareSnapshot = async (
         : []),
     ]);
     await runStep(sandbox, "setup", "bash", [`${SANDBOX_ROOT}/setup.sh`], {
-      env: getSetupEnvironment(repo, APP_DIRECTORY, `${SANDBOX_ROOT}/custom.patch`),
+      env: getSetupEnvironment(
+        repo,
+        APP_DIRECTORY,
+        repo.patchFile ? `${SANDBOX_ROOT}/custom.patch` : null,
+      ),
     });
     await runStep(sandbox, "analyzer install", "npm", ["install", "--no-audit", "--no-fund"], {
       cwd: ANALYZER_DIRECTORY,
