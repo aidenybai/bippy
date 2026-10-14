@@ -159,6 +159,8 @@ export type BinaryExpressionValue = Extract<SymbolicValue, { kind: "BinaryExpres
 
 export type BindingValue = Extract<SymbolicValue, { kind: "Binding" }>;
 
+export type GlobalValue = Extract<SymbolicValue, { kind: "Global" }>;
+
 export type PrimitiveSymbolicValue = Extract<SymbolicValue, { kind: "Primitive" }>;
 
 export type FunctionValue = Extract<SymbolicValue, { kind: "Function" }>;

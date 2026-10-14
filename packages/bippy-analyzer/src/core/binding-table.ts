@@ -58,6 +58,10 @@ export class BindingTable {
     return binding;
   }
 
+  isDeclaredIn(binding: Binding, fileName: string): boolean {
+    return this.#resolversByBinding.get(binding.id)?.fileName === fileName;
+  }
+
   getPropBinding(
     resolver: SourceFileResolver,
     propName: string,

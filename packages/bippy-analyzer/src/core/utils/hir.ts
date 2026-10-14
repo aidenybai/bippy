@@ -31,6 +31,7 @@ export const getMutatedPlace = (effect: AliasingEffect): Place | null => {
     case "MutateTransitive":
       return effect.value;
     case "MutateFrozen":
+    case "MutateGlobal":
       return effect.place;
     default:
       return null;

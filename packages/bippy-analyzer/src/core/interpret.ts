@@ -31,6 +31,7 @@ import type {
   DispatchValue,
   Domain,
   FunctionValue,
+  GlobalValue,
   HookResultValue,
   JsxExpressionValue,
   JsxProp,
@@ -620,6 +621,7 @@ export class Interpreter {
         );
         continue;
       }
+      if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
       if (mutatedValue.kind !== "Binding") continue;
       const { binding } = mutatedValue;
       if (binding.kind === "prop")
@@ -633,6 +635,23 @@ export class Interpreter {
       else if (isStateBinding(binding))
         this.#warn("render-mutation", `mutates ${binding.name} during render`, mutatedPlace.loc);
     }
+  }
+
+  #trackGlobalMutation(mutatedGlobal: GlobalValue, loc: SourceLocation): void {
+    if (!this.#handlerEffects) return;
+    for (const binding of this.bindingTable.bindings)
+      if (isStateBinding(binding) && this.#isInitializedFrom(binding, mutatedGlobal))
+        this.#handlerEffects.addMutation(binding, loc);
+  }
+
+  #isInitializedFrom(binding: Binding, mutatedGlobal: GlobalValue): boolean {
+    const { initial } = binding;
+    return (
+      initial?.kind === "Global" &&
+      initial.module === mutatedGlobal.module &&
+      (mutatedGlobal.name === initial.name || mutatedGlobal.name.startsWith(`${initial.name}.`)) &&
+      this.bindingTable.isDeclaredIn(binding, this.#resolver.fileName)
+    );
   }
 
   #trackPossibleMutation(effect: AliasingEffect): void {
