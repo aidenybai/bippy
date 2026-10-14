@@ -61,7 +61,7 @@ const SERVER_ONLY_PREFIXES = [
 ];
 const SERVER_ONLY_ADAPTER_PATTERN = /^@(?:next-)?auth\/.+-adapter$/;
 const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
-const MISSING_MODULE_NAMESPACE = "bippy-missing-module";
+const MISSING_MODULE_NAMESPACE = "bippy-verify-missing-module";
 const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
 
