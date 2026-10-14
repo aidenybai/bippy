@@ -35,6 +35,7 @@ const OUTPUT_DIRECTORY = `${SANDBOX_ROOT}/out`;
 const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 90 * 60 * 1000;
 const SANDBOX_RESOURCES = { vcpus: 8 };
+const ANALYZER_HEAP_MB = 8192;
 const OUTPUT_TAIL_LENGTH = 8000;
 const MAX_WAIT_ATTEMPTS = 5;
 const ANALYZER_SOURCE_DIRECTORIES = [
@@ -257,6 +258,7 @@ const runCollect = async (
     ],
     {
       cwd: ANALYZER_DIRECTORY,
+      env: { NODE_OPTIONS: `--max-old-space-size=${ANALYZER_HEAP_MB}` },
     },
   );
 };
