@@ -10,11 +10,17 @@ import { createDeclarationKey } from "./utils/declaration-key";
 import type { ProjectHookLoader } from "./interpret";
 import type {
   Bailout,
+  Binding,
   ComponentAnalysis,
   ContextSetterFields,
   StoreActions,
   SymbolicValue,
 } from "./types";
+
+interface ComponentIdentity extends Pick<
+  ComponentAnalysis,
+  "name" | "exportName" | "runtimeName" | "file" | "declaration"
+> {}
 
 export interface FileContext {
   sourceFile: SourceFile;
@@ -42,13 +48,12 @@ const addComparedSamples = (render: SymbolicValue): void => {
   });
 };
 
-export const analyzeComponent = (
+const getComponentIdentity = (
   reactFunction: CompiledFunction,
   fileContext: FileContext,
-  contextSetterFields: ContextSetterFields,
-): ComponentAnalysis => {
+): ComponentIdentity => {
   const { sourceFile, exportNames, displayNames } = fileContext;
-  const componentIdentity = {
+  return {
     name: reactFunction.name,
     exportName: exportNames.get(reactFunction.name) ?? null,
     runtimeName: displayNames.has(reactFunction.name)
@@ -57,33 +62,47 @@ export const analyzeComponent = (
     file: sourceFile.fileName,
     declaration: createDeclarationKey(sourceFile.path, reactFunction.name),
   };
-  const hir = reactFunction.hir;
-  if (hir === null) {
-    const loc = reactFunction.loc;
-    return {
-      ...componentIdentity,
-      loc,
-      isAsync: false,
-      bindings: [],
-      wholePropsSample: null,
-      providedContexts: [],
-      contextSamples: new Map(),
-      untypedContextBindingIds: new Map(),
-      placeDomains: new PlaceMap(),
-      unionMemberValues: new PlaceMap(),
-      render: { kind: "Unknown", reason: "compiler-error", loc },
-      handlers: [],
-      renders: [],
-      bailouts: [
-        {
-          reason: "compiler-error",
-          message: reactFunction.errors.join("; "),
-          loc,
-        },
-      ],
-      warnings: [],
-    };
-  }
+};
+
+const createCompilerErrorAnalysis = (
+  identity: ComponentIdentity,
+  reactFunction: CompiledFunction,
+): ComponentAnalysis => {
+  const { loc } = reactFunction;
+  return {
+    ...identity,
+    loc,
+    isAsync: false,
+    bindings: [],
+    wholePropsSample: null,
+    providedContexts: [],
+    contextSamples: new Map(),
+    untypedContextBindingIds: new Map(),
+    placeDomains: new PlaceMap(),
+    unionMemberValues: new PlaceMap(),
+    render: { kind: "Unknown", reason: "compiler-error", loc },
+    handlers: [],
+    renders: [],
+    bailouts: [{ reason: "compiler-error", message: reactFunction.errors.join("; "), loc }],
+    warnings: [],
+  };
+};
+
+const getUntypedBailouts = (bindings: Binding[]): Bailout[] =>
+  bindings.flatMap((binding): Bailout[] =>
+    binding.domain.kind === "Unknown"
+      ? [{ reason: `untyped-${binding.kind}`, message: binding.name, loc: binding.loc }]
+      : [],
+  );
+
+export const analyzeComponent = (
+  reactFunction: CompiledFunction,
+  fileContext: FileContext,
+  contextSetterFields: ContextSetterFields,
+): ComponentAnalysis => {
+  const identity = getComponentIdentity(reactFunction, fileContext);
+  const { hir } = reactFunction;
+  if (hir === null) return createCompilerErrorAnalysis(identity, reactFunction);
   const interpreter = new Interpreter(
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
@@ -96,7 +115,7 @@ export const analyzeComponent = (
   const handlers = collectHandlers(render, interpreter);
   const { bindings, placeDomains, unionMemberValues } = interpreter.bindingTable;
   return {
-    ...componentIdentity,
+    ...identity,
     loc: hir.loc,
     isAsync: hir.async,
     bindings,
@@ -109,14 +128,7 @@ export const analyzeComponent = (
     render,
     handlers,
     renders: [...interpreter.renderedComponents],
-    bailouts: [
-      ...interpreter.diagnostics.bailouts,
-      ...bindings.flatMap((binding): Bailout[] =>
-        binding.domain.kind === "Unknown"
-          ? [{ reason: `untyped-${binding.kind}`, message: binding.name, loc: binding.loc }]
-          : [],
-      ),
-    ],
+    bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings)],
     warnings: interpreter.diagnostics.warnings,
   };
 };
