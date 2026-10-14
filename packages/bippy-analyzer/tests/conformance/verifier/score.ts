@@ -206,7 +206,10 @@ const collectHandlerTargets = (render: SymbolicValue): Map<string, HandlerTarget
   return handlerTargets;
 };
 
-const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
+const getStateBindings = (
+  analysis: ComponentAnalysis,
+  observations: Observation[],
+): Binding[] | null => {
   const hookBindings = analysis.bindings.filter(
     (binding) => !NON_HOOK_BINDING_KINDS.has(binding.kind),
   );
@@ -214,7 +217,11 @@ const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
     hookBindings.some((binding) => !binding.hookKind || !ORDERED_HOOK_KINDS.has(binding.hookKind))
   )
     return null;
-  return analysis.bindings.filter(isStateBinding);
+  const stateBindings = analysis.bindings.filter(isStateBinding);
+  const isEveryQueueAState = observations.every(
+    ({ after }) => after.error !== null || after.hookStates.length === stateBindings.length,
+  );
+  return isEveryQueueAState ? stateBindings : null;
 };
 
 const isPredictedValue = (value: unknown, predicted: AbstractValue[]): boolean =>
@@ -529,6 +536,7 @@ const createScoringContext = (
   analysis: ComponentAnalysis,
   report: StateReport,
   verdict: ComponentVerdict,
+  observations: Observation[],
   knownComponents: Map<string, string>,
 ): ScoringContext => ({
   analysis,
@@ -536,7 +544,7 @@ const createScoringContext = (
   verdict,
   expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
   handlerTargets: collectHandlerTargets(analysis.render),
-  stateBindings: getStateBindings(analysis),
+  stateBindings: getStateBindings(analysis, observations),
   externalBindingIds: new Set(
     analysis.bindings
       .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
@@ -599,7 +607,7 @@ export const scoreComponent = (
   if (!analysis.exportName) return verdict;
   const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
   if (mountFailedVerdict) return mountFailedVerdict;
-  const context = createScoringContext(analysis, report, verdict, knownComponents);
+  const context = createScoringContext(analysis, report, verdict, observations, knownComponents);
   const probes = collectProbes(analysis);
   const probeIds = new Set(probes.map((probe) => probe.id));
   const coveredSides = new Set<string>();
