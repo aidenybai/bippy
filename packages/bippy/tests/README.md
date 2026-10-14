@@ -5,7 +5,7 @@ The canonical home for Bippy's unit tests (`unit/`), React conformance tests (`c
 ## Run
 
 ```sh
-bun test:all
+bun run test:all
 ```
 
 Runs library tests, DevTools fixture tests, conformance tests, TypeScript checks, a production Bippy build, and fresh-process ESM/CJS checks against development/production React. CI uses the same checks. Browser and Detox E2E remain separate.
@@ -13,8 +13,8 @@ Runs library tests, DevTools fixture tests, conformance tests, TypeScript checks
 Focused commands:
 
 ```sh
-bun run --filter bippy test:unit
-bun run --filter bippy test:conformance
+bun run --filter bippy test --project unit
+bun run --filter bippy test --project conformance
 bun run --filter bippy typecheck
 bun run --filter bippy coverage
 bun run --filter bippy test:built

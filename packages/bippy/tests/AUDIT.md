@@ -20,7 +20,7 @@ The source-backed audit reproduced and fixed:
 - **Incorrect identity checks:** forged/coercible element markers were accepted, and unchanged falsy host props were reported as renders. Element markers now use global symbol identity; prop comparison preserves falsy values.
 - **Excessive work:** cached work-tag lookup still walked to the root, current-fiber lookup scanned unrelated subtrees, and invalid host keys polluted the lookup cache. Operation-count regressions cover reductions from 1,001,000 to 2,000 parent reads, 2,000 to zero unrelated child reads, and 500 to zero poisoned-key reads in their respective fixtures.
 
-The audit also replaced the unchecked standalone inspection copy, removed obsolete recursion helpers, and added type/published-entry checks to CI. Public aliases/constants were retained; internal disuse alone does not justify breaking exports.
+The audit also replaced the unchecked standalone inspection copy, removed obsolete recursion helpers, aligned the coverage provider with Vitest, and added type/published-entry checks to CI. Public aliases/constants were retained; internal disuse alone does not justify breaking exports.
 
 ### Runtime isolation and cache invalidation
 
