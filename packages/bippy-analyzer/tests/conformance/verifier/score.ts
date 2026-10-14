@@ -4,6 +4,7 @@ import type {
   BindingKind,
   Binding,
   ComponentAnalysis,
+  Handler,
   Sample,
   StateReport,
   SymbolicValue,
@@ -118,6 +119,27 @@ const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "ca
 const MAX_RENDERED_LENGTH = 300;
 const MAX_PROPS_LENGTH = 160;
 const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
+const SPONTANEOUS_EVENTS = new Set([
+  "onLoad",
+  "onError",
+  "onLoadStart",
+  "onLoadedData",
+  "onLoadedMetadata",
+  "onCanPlay",
+  "onCanPlayThrough",
+  "onPlay",
+  "onPlaying",
+  "onPause",
+  "onEnded",
+  "onTimeUpdate",
+  "onDurationChange",
+  "onProgress",
+  "onAnimationStart",
+  "onAnimationIteration",
+  "onAnimationEnd",
+  "onTransitionStart",
+  "onTransitionEnd",
+]);
 const ORDERED_HOOK_KINDS = new Set<string>([
   "useState",
   "useReducer",
@@ -126,6 +148,9 @@ const ORDERED_HOOK_KINDS = new Set<string>([
   "useCallback",
   "useContext",
 ]);
+
+const isSpontaneousHandler = (handler: Handler): boolean =>
+  handler.trigger.kind === "Event" && SPONTANEOUS_EVENTS.has(handler.trigger.event);
 
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
@@ -258,6 +283,8 @@ interface ScoringContext {
   stateBindings: Binding[] | null;
   externalBindingIds: Set<number>;
   effectIds: Set<string>;
+  backgroundHandlerIds: Set<string>;
+  spontaneousIds: Set<string>;
   coveredStates: Set<number>;
   matchedStatesCache: Map<string, number[]>;
 }
@@ -396,7 +423,7 @@ const scoreFirstCommit = (
       !getTransitions(
         context,
         getStatesInRegion(context, firstMatches, regionIndex),
-        context.effectIds,
+        context.backgroundHandlerIds,
       ).some((transition) => transition.targets.some((target) => settledMatches.includes(target))),
   );
   if (isUnexplained)
@@ -405,7 +432,7 @@ const scoreFirstCommit = (
       action: FIRST_COMMIT,
       fromStates: firstMatches,
       toStates: settledMatches,
-      predictedStates: getTargetStates(context, firstMatches, context.effectIds),
+      predictedStates: getTargetStates(context, firstMatches, context.backgroundHandlerIds),
       reason: "unpredicted-effect",
     });
 };
@@ -462,7 +489,7 @@ const canChildActionChange = (
   regionIndex: number,
 ): boolean => edge.action.isInChild && isExternalRegion(context, regionIndex);
 
-const canAsyncEffectChange = (
+const canBackgroundChange = (
   context: ScoringContext,
   edge: ObservedEdge,
   regionIndex: number,
@@ -470,10 +497,11 @@ const canAsyncEffectChange = (
   getTransitions(
     context,
     getStatesInRegion(context, edge.beforeMatches, regionIndex),
-    context.effectIds,
+    context.backgroundHandlerIds,
   ).some(
     (transition) =>
-      transition.isAsync && transition.targets.some((target) => edge.afterMatches.includes(target)),
+      (transition.isAsync || context.spontaneousIds.has(transition.handlerId)) &&
+      transition.targets.some((target) => edge.afterMatches.includes(target)),
   );
 
 const isRegionEdgePredicted = (
@@ -482,7 +510,7 @@ const isRegionEdgePredicted = (
   regionIndex: number,
 ): boolean => {
   if (canChildActionChange(context, edge, regionIndex)) return true;
-  if (canAsyncEffectChange(context, edge, regionIndex)) return true;
+  if (canBackgroundChange(context, edge, regionIndex)) return true;
   const isUnchanged = isRegionUnchanged(
     context,
     edge.beforeMatches,
@@ -539,7 +567,7 @@ const scoreTransition = (
       (regionIndex) =>
         isRegionUnchanged(context, beforeMatches, afterMatches, regionIndex) ||
         canChildActionChange(context, edge, regionIndex) ||
-        canAsyncEffectChange(context, edge, regionIndex),
+        canBackgroundChange(context, edge, regionIndex),
     );
     if (!isExplained) recordWrongEdge(context, edge, "unmodeled-handler");
     return;
@@ -585,6 +613,14 @@ const createScoringContext = (
       .map((binding) => binding.id),
   ),
   effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),
+  backgroundHandlerIds: new Set(
+    analysis.handlers
+      .filter((handler) => isEffectHandler(handler) || isSpontaneousHandler(handler))
+      .map((handler) => handler.id),
+  ),
+  spontaneousIds: new Set(
+    analysis.handlers.filter(isSpontaneousHandler).map((handler) => handler.id),
+  ),
   coveredStates: new Set(),
   matchedStatesCache: new Map(),
 });
