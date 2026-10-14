@@ -1000,6 +1000,20 @@ export class Interpreter {
     });
   }
 
+  #createDerivedValue(
+    sourceValues: SymbolicValue[],
+    reason: string,
+    loc: SourceLocation,
+  ): SymbolicValue {
+    const inputPlaces = new PlaceMap<true>();
+    for (const sourceValue of sourceValues) this.#collectInputPlaces(sourceValue, inputPlaces);
+    const sourceText = this.#resolver.getSourceText(loc);
+    if (inputPlaces.size === 0 || sourceText === null) return createUnknown(reason, loc);
+    return createBindingValue(
+      this.#createBinding(sourceText, "call", loc, { inputPlaces: inputPlaces.places() }),
+    );
+  }
+
   #getReceiverPlace(callee: SymbolicValue): BindingPlace | null {
     if (callee.kind !== "Binding" || callee.path.length === 0) return null;
     return getBindingPlace(callee.binding, callee.path.slice(0, -1));
@@ -1371,7 +1385,11 @@ export class Interpreter {
   #evaluateComputedLoad(computedLoad: InstructionValueOfKind<"ComputedLoad">): SymbolicValue {
     const propertyKey = this.#read(computedLoad.property);
     if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
-      return createUnknown("computed-member", computedLoad.loc);
+      return this.#createDerivedValue(
+        [this.#read(computedLoad.object), propertyKey],
+        "computed-member",
+        computedLoad.loc,
+      );
     return this.#evaluatePropertyLoad(
       this.#read(computedLoad.object),
       String(propertyKey.value),

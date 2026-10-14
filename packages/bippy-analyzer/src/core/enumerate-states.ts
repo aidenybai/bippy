@@ -575,7 +575,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const states: State[] = [];
   const regions: Region[] = [];
   let isTruncated = false;
-  findRegions(analysis.render).forEach((regionBranches, regionIndex) => {
+  findRegions(analysis.render, analysis.bindings).forEach((regionBranches, regionIndex) => {
     const enumerated = enumerateRegion(regionBranches, regionIndex, states.length, context);
     states.push(...enumerated.states);
     regions.push(enumerated.region);

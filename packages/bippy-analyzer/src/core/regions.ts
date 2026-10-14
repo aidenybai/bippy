@@ -1,5 +1,5 @@
 import DisjointSet from "../react-compiler/Utils/DisjointSet";
-import type { BindingPlace, BindingValue, ConditionalValue, SymbolicValue } from "./types";
+import type { Binding, BindingPlace, BindingValue, ConditionalValue, SymbolicValue } from "./types";
 import { forEachSymbolicValue } from "./utils/traverse";
 import { formatSymbolicValue } from "./format";
 import {
@@ -24,6 +24,7 @@ interface BranchTests {
   branchKeysByPlace: PlaceMap<string[]>;
   testedPlaces: PlaceMap<TestedPlace>;
   unknownTestBranchKeys: Set<string>;
+  bindingsById: Map<number, Binding>;
 }
 
 export interface RegionBranches {
@@ -33,11 +34,31 @@ export interface RegionBranches {
   hasUnknownTest: boolean;
 }
 
-const getDecidingPlaces = (testedValue: BindingValue): BindingPlace[] => [
+const getTransitiveInputPlaces = (
+  binding: Binding,
+  bindingsById: Map<number, Binding>,
+): BindingPlace[] => {
+  const inputPlaces: BindingPlace[] = [];
+  const visitedIds = new Set([binding.id]);
+  const pendingPlaces = [...binding.inputPlaces];
+  for (let place = pendingPlaces.pop(); place; place = pendingPlaces.pop()) {
+    inputPlaces.push(place);
+    const inputBinding = bindingsById.get(place.bindingId);
+    if (!inputBinding || visitedIds.has(inputBinding.id)) continue;
+    visitedIds.add(inputBinding.id);
+    pendingPlaces.push(...inputBinding.inputPlaces);
+  }
+  return inputPlaces;
+};
+
+const getDecidingPlaces = (
+  testedValue: BindingValue,
+  bindingsById: Map<number, Binding>,
+): BindingPlace[] => [
   isExternalSource(testedValue.binding)
     ? getBindingPlace(testedValue.binding)
     : getValuePlace(testedValue),
-  ...testedValue.binding.inputPlaces,
+  ...getTransitiveInputPlaces(testedValue.binding, bindingsById),
 ];
 
 const recordTestedPlaces = (
@@ -48,7 +69,7 @@ const recordTestedPlaces = (
   forEachSymbolicValue(getTestExpression(conditional), (part) => {
     if (part.kind === "Unknown") branchTests.unknownTestBranchKeys.add(branchKey);
     if (part.kind !== "Binding") return;
-    for (const place of getDecidingPlaces(part))
+    for (const place of getDecidingPlaces(part, branchTests.bindingsById))
       branchTests.branchKeysByPlace.set(place, [
         ...(branchTests.branchKeysByPlace.get(place) ?? []),
         branchKey,
@@ -66,13 +87,14 @@ const groupBranchesOnNestedPlaces = (branchTests: BranchTests): void => {
         branchTests.branchGroups.union([...branchKeys, ...otherBranchKeys]);
 };
 
-const collectBranchTests = (render: SymbolicValue): BranchTests => {
+const collectBranchTests = (render: SymbolicValue, bindings: Binding[]): BranchTests => {
   const branchTests: BranchTests = {
     allBranchKeys: [],
     branchGroups: new DisjointSet<string>(),
     branchKeysByPlace: new PlaceMap<string[]>(),
     testedPlaces: new PlaceMap<TestedPlace>(),
     unknownTestBranchKeys: new Set(),
+    bindingsById: new Map(bindings.map((binding) => [binding.id, binding])),
   };
   const visitedEnclosingKeys = new WeakMap<SymbolicValue, Set<string | null>>();
   const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
@@ -127,5 +149,5 @@ const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
   return regionsByGroup.size > 0 ? [...regionsByGroup.values()] : [createEmptyRegion()];
 };
 
-export const findRegions = (render: SymbolicValue): RegionBranches[] =>
-  groupIntoRegions(collectBranchTests(render));
+export const findRegions = (render: SymbolicValue, bindings: Binding[]): RegionBranches[] =>
+  groupIntoRegions(collectBranchTests(render, bindings));

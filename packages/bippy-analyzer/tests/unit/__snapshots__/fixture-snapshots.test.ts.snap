@@ -232,6 +232,8 @@ exports[`fixture analysis > FirstMatch keeps its states, transitions and unreach
 │  ├─ items prop string[]
 │  ├─ query prop string
 │  ├─ index loop number
+│  ├─ items[index] call string | undefined
+│  ├─ items[index] call string | undefined
 │  └─ found loop null | string
 ├─ render
 │  └─ ◆ found === null
