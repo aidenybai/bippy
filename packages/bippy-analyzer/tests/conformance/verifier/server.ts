@@ -88,6 +88,36 @@ const resolveHarnessModule = (
   return null;
 };
 
+const getHarnessImporter = (
+  source: string,
+  importer: string | undefined,
+  ids: HarnessIds,
+  setup: HarnessSetup,
+  appImporter: string,
+): string | null => {
+  if (importer?.startsWith(`${ids.wrapper}?`))
+    return getWrapperQuery(importer).get("importer") ?? appImporter;
+  // HACK: the setup lives outside the app, so its imports resolve as if from an app file, where
+  // path aliases apply.
+  if (importer === ids.setup && !source.startsWith(".")) return appImporter;
+  if (importer === ids.setup && setup.file) return setup.file;
+  return null;
+};
+
+const loadHarnessModule = (
+  id: string,
+  ids: HarnessIds,
+  providersSource: string,
+  setup: HarnessSetup,
+): string | null => {
+  if (id === ids.entry) return readFileSync(ENTRY_SOURCE, "utf8");
+  if (id === ids.providers) return providersSource;
+  if (id === ids.setup) return setup.file ? readFileSync(setup.file, "utf8") : "";
+  if (id.startsWith(`${ids.wrapper}?`))
+    return `export * from ${JSON.stringify(getWrapperQuery(id).get("specifier"))};`;
+  return null;
+};
+
 const createHarnessPlugin = (
   appDirectory: string,
   providers: ProviderSpec[],
@@ -102,26 +132,12 @@ const createHarnessPlugin = (
     resolveId(source, importer) {
       const harnessModule = resolveHarnessModule(source, importer, ids);
       if (harnessModule) return harnessModule;
-      if (importer?.startsWith(`${ids.wrapper}?`))
-        return this.resolve(source, getWrapperQuery(importer).get("importer") ?? appImporter, {
-          skipSelf: true,
-        });
-      // HACK: the setup lives outside the app, so its imports resolve as if from an app file, where
-      // path aliases apply.
-      if (importer === ids.setup && !source.startsWith("."))
-        return this.resolve(source, appImporter, { skipSelf: true });
-      if (importer === ids.setup && setup.file)
-        return this.resolve(source, setup.file, { skipSelf: true });
-      return null;
+      const harnessImporter = getHarnessImporter(source, importer, ids, setup, appImporter);
+      return harnessImporter === null
+        ? null
+        : this.resolve(source, harnessImporter, { skipSelf: true });
     },
-    load: (id) => {
-      if (id === ids.entry) return readFileSync(ENTRY_SOURCE, "utf8");
-      if (id === ids.providers) return providersSource;
-      if (id === ids.setup) return setup.file ? readFileSync(setup.file, "utf8") : "";
-      if (id.startsWith(`${ids.wrapper}?`))
-        return `export * from ${JSON.stringify(getWrapperQuery(id).get("specifier"))};`;
-      return null;
-    },
+    load: (id) => loadHarnessModule(id, ids, providersSource, setup),
     configureServer: (server) => {
       server.middlewares.use((request, response, next) => {
         if (request.url !== HARNESS_PATH) return next();
