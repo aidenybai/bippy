@@ -69,6 +69,15 @@ interface PartialChildren extends Omit<Alternative, "render"> {
   children: SymbolicValue[];
 }
 
+interface TestedPlace {
+  name: string;
+  branchKey: string;
+}
+
+interface KeyedUnreachableBranch extends UnreachableBranch {
+  branchKey: string;
+}
+
 interface RegionBranches {
   branchKeys: Set<string>;
   bindingIds: Set<number>;
@@ -88,7 +97,7 @@ const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternativ
 const getStateKey = (alternative: Alternative): string =>
   [...alternative.branches].sort().join("|");
 
-type DecisionOutcomes = Map<string, Set<boolean>>;
+interface BranchOutcomes extends Map<string, Set<boolean>> {}
 
 type FieldCases = AbstractValue[] | "unchanged" | null;
 
@@ -105,19 +114,20 @@ const getLiteralCases = (
 ): AbstractValue[] | null => {
   if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
   if (value.kind !== "Conditional") return null;
-  const decided = constraints ? evaluate(getTestExpression(value), constraints) : null;
-  if (decided !== null)
-    return getLiteralCases(decided ? value.consequent : value.alternate, constraints);
-  const consequent = getLiteralCases(value.consequent, constraints);
-  const alternate = getLiteralCases(value.alternate, constraints);
-  return consequent && alternate ? [...consequent, ...alternate] : null;
+  const decidedOutcome = constraints ? evaluate(getTestExpression(value), constraints) : null;
+  if (decidedOutcome !== null)
+    return getLiteralCases(decidedOutcome ? value.consequent : value.alternate, constraints);
+  const consequentCases = getLiteralCases(value.consequent, constraints);
+  const alternateCases = getLiteralCases(value.alternate, constraints);
+  return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
 };
 
 const simplify = (value: SymbolicValue, constraints: Constraints): SymbolicValue =>
   mapSymbolicValue(value, (part) => {
     if (part.kind !== "Conditional") return part;
-    const decided = evaluate(getTestExpression(part), constraints);
-    return decided === null ? part : decided ? part.consequent : part.alternate;
+    const decidedOutcome = evaluate(getTestExpression(part), constraints);
+    if (decidedOutcome === null) return part;
+    return decidedOutcome ? part.consequent : part.alternate;
   });
 
 const getFieldCases = (
@@ -131,27 +141,28 @@ const getFieldCases = (
   if (isWholeBinding(value, binding)) return "unchanged";
   if (value.kind !== "ObjectExpression") return null;
   const [field, ...restPath] = path;
-  const assigned = value.properties.findLast((property) => property.key === field);
-  if (assigned) return getFieldCases(assigned.value, restPath, binding, constraints);
+  const assignedProperty = value.properties.findLast((property) => property.key === field);
+  if (assignedProperty)
+    return getFieldCases(assignedProperty.value, restPath, binding, constraints);
   return value.spreads.some((spread) => isWholeBinding(spread, binding)) ? "unchanged" : null;
 };
 
 const getToggleCases = (
   value: SymbolicValue,
   place: Place,
-  current: AbstractValue[] | undefined,
+  currentValues: AbstractValue[] | undefined,
 ): AbstractValue[] | null => {
   if (
-    !current ||
+    !currentValues ||
     value.kind !== "UnaryExpression" ||
     value.operator !== "!" ||
     value.value.kind !== "Binding"
   )
     return null;
   if (!isSamePlace(getValuePlace(value.value), place)) return null;
-  return current.map((candidate): AbstractValue => ({
+  return currentValues.map((currentValue): AbstractValue => ({
     kind: "Literal",
-    value: getTruthiness(candidate) === "falsy",
+    value: getTruthiness(currentValue) === "falsy",
   }));
 };
 
@@ -176,12 +187,12 @@ const getReachableCases = (
   for (let round = 0; round < MAX_REACHABILITY_ROUNDS; round++) {
     const previousCount = reachable.length;
     for (const update of updates) {
-      const cases =
+      const updateCases =
         getFieldCases(update.value, path, binding, null) ??
         getToggleCases(update.value, place, reachable);
-      if (cases === "unchanged") continue;
-      if (!cases) return typeCases;
-      reachable = dedupeValues([...reachable, ...cases]);
+      if (updateCases === "unchanged") continue;
+      if (!updateCases) return typeCases;
+      reachable = dedupeValues([...reachable, ...updateCases]);
     }
     if (reachable.length === previousCount) return reachable;
   }
@@ -195,20 +206,20 @@ const getLengthLimitBounds = (binding: Binding): Bound[] => {
   const isNoLonger: Bound = {
     left: resultLength,
     right: arrayLength,
-    constant: 0,
+    maxDifference: 0,
     isStrict: false,
   };
   const isNoShorter: Bound = {
     left: arrayLength,
     right: resultLength,
-    constant: 0,
+    maxDifference: 0,
     isStrict: false,
   };
   return isSameLength ? [isNoLonger, isNoShorter] : [isNoLonger];
 };
 
 const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
-  const values = new PlaceMap<AbstractValue[]>();
+  const possibleValues = new PlaceMap<AbstractValue[]>();
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
@@ -218,15 +229,15 @@ const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
         : domain.kind === "Cases"
           ? domain.cases
           : null;
-    if (cases) values.set(place, cases);
+    if (cases) possibleValues.set(place, cases);
   }
   return {
-    values,
+    possibleValues,
     assumptions: new Map(),
     bounds: [],
     invariants: analysis.bindings.flatMap(getLengthLimitBounds),
     unionMemberValues: analysis.unionMemberValues,
-    members: new Map(),
+    possibleMembers: new Map(),
   };
 };
 
@@ -243,64 +254,65 @@ const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => 
 const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   if (value.kind !== "ArrayExpression") return [];
   const lengthAtom = getLengthAtom(binding.id);
-  const minimum: Bound = {
+  const isAtLeastElementCount: Bound = {
     left: null,
     right: lengthAtom,
-    constant: -value.elements.length,
+    maxDifference: -value.elements.length,
     isStrict: false,
   };
-  if (value.spreads.length > 0) return [minimum];
-  return [
-    minimum,
-    {
-      left: lengthAtom,
-      right: null,
-      constant: value.elements.length,
-      isStrict: false,
-    },
-  ];
+  if (value.spreads.length > 0) return [isAtLeastElementCount];
+  const isAtMostElementCount: Bound = {
+    left: lengthAtom,
+    right: null,
+    maxDifference: value.elements.length,
+    isStrict: false,
+  };
+  return [isAtLeastElementCount, isAtMostElementCount];
 };
 
-const getDependents = (bindings: Binding[]): Map<number, number[]> => {
-  const dependents = new Map<number, number[]>();
+const getDependentsByBinding = (bindings: Binding[]): Map<number, number[]> => {
+  const directDependents = new Map<number, number[]>();
   for (const binding of bindings)
     for (const { bindingId } of binding.inputPlaces)
-      dependents.set(bindingId, [...(dependents.get(bindingId) ?? []), binding.id]);
-  const collect = (bindingId: number, collected: Set<number>): Set<number> => {
-    for (const dependentId of dependents.get(bindingId) ?? [])
-      if (!collected.has(dependentId)) collect(dependentId, collected.add(dependentId));
+      directDependents.set(bindingId, [...(directDependents.get(bindingId) ?? []), binding.id]);
+  const collectTransitively = (bindingId: number, collected: Set<number>): Set<number> => {
+    for (const dependentId of directDependents.get(bindingId) ?? [])
+      if (!collected.has(dependentId)) collectTransitively(dependentId, collected.add(dependentId));
     return collected;
   };
   return new Map(
-    [...dependents.keys()].map((bindingId) => [bindingId, [...collect(bindingId, new Set())]]),
+    [...directDependents.keys()].map((bindingId) => [
+      bindingId,
+      [...collectTransitively(bindingId, new Set())],
+    ]),
   );
 };
 
 const applyUpdates = (
   updates: StateUpdate[],
   constraints: Constraints,
-  reachable: Constraints,
-  dependents: Map<number, number[]>,
+  reachableConstraints: Constraints,
+  dependentsByBinding: Map<number, number[]>,
 ): Constraints => {
-  const next = cloneConstraints(constraints);
+  const updated = cloneConstraints(constraints);
   for (const update of updates) {
-    for (const [place, reachableValues] of reachable.values) {
+    for (const [place, reachableValues] of reachableConstraints.possibleValues) {
       if (place.bindingId !== update.binding.id) continue;
-      const current = constraints.values.get(place);
-      const cases =
+      const currentValues = constraints.possibleValues.get(place);
+      const fieldCases =
         getFieldCases(update.value, place.path, update.binding, constraints) ??
-        getToggleCases(update.value, place, current);
-      if (cases === "unchanged") continue;
-      next.values.set(place, cases ? dedupeValues(cases) : reachableValues);
+        getToggleCases(update.value, place, currentValues);
+      if (fieldCases === "unchanged") continue;
+      updated.possibleValues.set(place, fieldCases ? dedupeValues(fieldCases) : reachableValues);
     }
-    forgetBinding(next, update.binding.id, isLengthPreserving(update.value, update.binding));
-    next.bounds.push(...getLengthBounds(update.value, update.binding));
-    const dependentIds = new Set(dependents.get(update.binding.id));
-    for (const [place, values] of reachable.values)
-      if (dependentIds.has(place.bindingId)) next.values.set(place, values);
-    for (const dependentId of dependentIds) forgetBinding(next, dependentId, false);
+    forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
+    updated.bounds.push(...getLengthBounds(update.value, update.binding));
+    const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
+    for (const [place, reachableValues] of reachableConstraints.possibleValues)
+      if (dependentIds.has(place.bindingId)) updated.possibleValues.set(place, reachableValues);
+    for (const dependentId of dependentIds) forgetBinding(updated, dependentId, false);
   }
-  return next;
+  return updated;
 };
 
 const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getValueKey);
@@ -311,61 +323,64 @@ const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
 const applyTransition = (
   handler: Handler,
   constraints: Constraints,
-  reachable: Constraints,
-  dependents: Map<number, number[]>,
+  reachableConstraints: Constraints,
+  dependentsByBinding: Map<number, number[]>,
 ): Constraints[] => {
-  const pathGuardKeys = new Map(
+  const guardKeysByPath = new Map(
     handler.updates.map((update) => {
       const guardKeys = getGuardKeys(update);
       return [guardKeys.join("\0"), guardKeys];
     }),
   );
-  const applied = [...pathGuardKeys.values()].map((guardKeys) =>
+  const afterEachPath = [...guardKeysByPath.values()].map((guardKeys) =>
     applyUpdates(
       handler.updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
       constraints,
-      reachable,
-      dependents,
+      reachableConstraints,
+      dependentsByBinding,
     ),
   );
-  // A guarded update may not run, so the starting constraints stay reachable.
-  return handler.updates.some((update) => update.guards.length > 0)
-    ? [constraints, ...applied]
-    : applied;
+  const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
+  return mayChangeNothing ? [constraints, ...afterEachPath] : afterEachPath;
 };
 
-const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): Enumerator => {
+const createEnumerator = (branchOutcomes: BranchOutcomes, region: RegionBranches): Enumerator => {
   let isTruncated = false;
-  const cache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
+  const alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
   const enumerate = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
-    let cacheByConstraints = cache.get(value);
-    if (!cacheByConstraints) {
-      cacheByConstraints = new WeakMap();
-      cache.set(value, cacheByConstraints);
+    let alternativesByConstraints = alternativesCache.get(value);
+    if (!alternativesByConstraints) {
+      alternativesByConstraints = new WeakMap();
+      alternativesCache.set(value, alternativesByConstraints);
     }
-    const cached = cacheByConstraints.get(constraints);
-    if (cached) return cached;
+    const cachedAlternatives = alternativesByConstraints.get(constraints);
+    if (cachedAlternatives) return cachedAlternatives;
     const alternatives = enumerateUncached(value, constraints);
-    cacheByConstraints.set(constraints, alternatives);
+    alternativesByConstraints.set(constraints, alternatives);
     return alternatives;
   };
   const enumerateUncached = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
     switch (value.kind) {
       case "Conditional": {
-        const key = getBranchKey(value);
-        if (!region.branchKeys.has(key)) return [createLeaf(constraints, value)];
+        const branchKey = getBranchKey(value);
+        if (!region.branchKeys.has(branchKey)) return [createLeaf(constraints, value)];
         const alternatives: Alternative[] = [];
         const test = getTestExpression(value);
         const isDecided = evaluate(test, constraints) !== null;
         for (const outcome of [true, false]) {
-          const assumed = assume(test, outcome, constraints);
-          if (!assumed) continue;
-          outcomes.set(key, new Set([...(outcomes.get(key) ?? []), outcome]));
-          const simplified = simplify(test, constraints);
-          const label = outcome ? formatSymbolicValue(simplified) : formatNegated(simplified);
+          const withOutcome = assume(test, outcome, constraints);
+          if (!withOutcome) continue;
+          branchOutcomes.set(
+            branchKey,
+            new Set([...(branchOutcomes.get(branchKey) ?? []), outcome]),
+          );
+          const simplifiedTest = simplify(test, constraints);
+          const conditionLabel = outcome
+            ? formatSymbolicValue(simplifiedTest)
+            : formatNegated(simplifiedTest);
           for (const alternative of enumerate(
             outcome ? value.consequent : value.alternate,
-            assumed,
+            withOutcome,
           )) {
             if (alternatives.length >= MAX_ALTERNATIVES) {
               isTruncated = true;
@@ -374,8 +389,10 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
             alternatives.push({
               ...alternative,
               fragments: [alternative.render],
-              conditions: isDecided ? alternative.conditions : [label, ...alternative.conditions],
-              branches: new Set([...alternative.branches, `${key}:${outcome}`]),
+              conditions: isDecided
+                ? alternative.conditions
+                : [conditionLabel, ...alternative.conditions],
+              branches: new Set([...alternative.branches, `${branchKey}:${outcome}`]),
             });
           }
         }
@@ -425,10 +442,10 @@ const createEnumerator = (outcomes: DecisionOutcomes, region: RegionBranches): E
 };
 
 const findRegions = (render: SymbolicValue): RegionBranches[] => {
-  const decisionSets = new DisjointSet<string>();
-  const branchKeys: string[] = [];
-  const decisionsByPlace = new PlaceMap<string[]>();
-  const places = new PlaceMap<{ name: string; branchKey: string }>();
+  const branchGroups = new DisjointSet<string>();
+  const allBranchKeys: string[] = [];
+  const branchKeysByPlace = new PlaceMap<string[]>();
+  const testedPlaces = new PlaceMap<TestedPlace>();
   const visited = new WeakMap<SymbolicValue, Set<string | null>>();
   const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
     const enclosingKeys = visited.get(value) ?? new Set();
@@ -436,25 +453,21 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
     visited.set(value, enclosingKeys.add(enclosingKey));
     switch (value.kind) {
       case "Conditional": {
-        const key = getBranchKey(value);
-        if (!branchKeys.includes(key)) branchKeys.push(key);
-        decisionSets.union(enclosingKey ? [key, enclosingKey] : [key]);
+        const branchKey = getBranchKey(value);
+        if (!allBranchKeys.includes(branchKey)) allBranchKeys.push(branchKey);
+        branchGroups.union(enclosingKey ? [branchKey, enclosingKey] : [branchKey]);
         forEachSymbolicValue(getTestExpression(value), (part) => {
           if (part.kind !== "Binding") return;
-          // Fields of a hook result or context change together, so they join the whole binding.
           const decidingPlaces = [
             isExternalSource(part.binding) ? getBindingPlace(part.binding) : getValuePlace(part),
             ...part.binding.inputPlaces,
           ];
           for (const place of decidingPlaces)
-            decisionsByPlace.set(place, [...(decisionsByPlace.get(place) ?? []), key]);
-          places.set(getValuePlace(part), {
-            name: formatSymbolicValue(part),
-            branchKey: key,
-          });
+            branchKeysByPlace.set(place, [...(branchKeysByPlace.get(place) ?? []), branchKey]);
+          testedPlaces.set(getValuePlace(part), { name: formatSymbolicValue(part), branchKey });
         });
-        visit(value.consequent, key);
-        visit(value.alternate, key);
+        visit(value.consequent, branchKey);
+        visit(value.alternate, branchKey);
         return;
       }
       case "JsxExpression":
@@ -466,33 +479,33 @@ const findRegions = (render: SymbolicValue): RegionBranches[] => {
     }
   };
   visit(render, null);
-  for (const [place, keys] of decisionsByPlace)
-    for (const [otherPlace, otherKeys] of decisionsByPlace)
-      if (isPlacePrefix(place, otherPlace)) decisionSets.union([...keys, ...otherKeys]);
+  for (const [place, branchKeys] of branchKeysByPlace)
+    for (const [otherPlace, otherBranchKeys] of branchKeysByPlace)
+      if (isPlacePrefix(place, otherPlace)) branchGroups.union([...branchKeys, ...otherBranchKeys]);
 
-  const regions = new Map<string, RegionBranches>();
-  const getRegion = (key: string): RegionBranches => {
-    const root = decisionSets.find(key) ?? key;
-    const region = regions.get(root) ?? {
+  const regionsByGroup = new Map<string, RegionBranches>();
+  const getRegion = (branchKey: string): RegionBranches => {
+    const groupKey = branchGroups.find(branchKey) ?? branchKey;
+    const region = regionsByGroup.get(groupKey) ?? {
       branchKeys: new Set(),
       bindingIds: new Set(),
       places: [],
     };
-    regions.set(root, region);
+    regionsByGroup.set(groupKey, region);
     return region;
   };
-  for (const key of branchKeys) getRegion(key).branchKeys.add(key);
-  for (const [place, keys] of decisionsByPlace)
-    for (const key of keys) getRegion(key).bindingIds.add(place.bindingId);
-  for (const [place, { name, branchKey }] of places) {
-    const isNested = places
+  for (const branchKey of allBranchKeys) getRegion(branchKey).branchKeys.add(branchKey);
+  for (const [place, branchKeys] of branchKeysByPlace)
+    for (const branchKey of branchKeys) getRegion(branchKey).bindingIds.add(place.bindingId);
+  for (const [place, { name, branchKey }] of testedPlaces) {
+    const isNested = testedPlaces
       .places()
-      .some((other) => !isSamePlace(other, place) && isPlacePrefix(other, place));
+      .some((otherPlace) => !isSamePlace(otherPlace, place) && isPlacePrefix(otherPlace, place));
     const region = getRegion(branchKey);
     if (!isNested && !region.places.includes(name)) region.places.push(name);
   }
-  return regions.size > 0
-    ? [...regions.values()]
+  return regionsByGroup.size > 0
+    ? [...regionsByGroup.values()]
     : [{ branchKeys: new Set(), bindingIds: new Set(), places: [] }];
 };
 
@@ -501,80 +514,81 @@ const collectHandlerIds = (render: SymbolicValue, handlerIds: Set<string>): void
     for (const prop of element.props) if (prop.handlerId) handlerIds.add(prop.handlerId);
   });
 
-// States don't decide branches nested in tests, so either side may run.
-const collectTestedBranchKeys = (render: SymbolicValue): Set<string> => {
-  const keys = new Set<string>();
+const collectBranchKeysInTests = (render: SymbolicValue): Set<string> => {
+  const branchKeysInTests = new Set<string>();
   forEachRenderNode(render, (value) => {
     if (value.kind !== "Conditional") return;
     forEachSymbolicValue(getTestExpression(value), (part) => {
-      if (part.kind === "Conditional") keys.add(getBranchKey(part));
+      if (part.kind === "Conditional") branchKeysInTests.add(getBranchKey(part));
     });
   });
-  return keys;
+  return branchKeysInTests;
 };
 
 const collectUnreachableBranches = (
   render: SymbolicValue,
-  outcomes: DecisionOutcomes,
+  branchOutcomes: BranchOutcomes,
 ): UnreachableBranch[] => {
-  const unreachableBranches: Array<UnreachableBranch & { key: string }> = [];
-  const reportedKeys = collectTestedBranchKeys(render);
-  const narrowedKeys = new Set<string>();
-  const pathConditions = new WeakMap<SymbolicValue, Set<string>>();
+  const unreachableBranches: KeyedUnreachableBranch[] = [];
+  const reportedKeys = collectBranchKeysInTests(render);
+  const displacedKeys = new Set<string>();
+  const conditionsByValue = new WeakMap<SymbolicValue, Set<string>>();
   const visit = (value: SymbolicValue, conditions: string[]): void => {
-    const known = pathConditions.get(value);
-    if (known && conditions.every((condition) => known.has(condition))) return;
-    const merged = new Set([...(known ?? []), ...conditions]);
-    pathConditions.set(value, merged);
+    const knownConditions = conditionsByValue.get(value);
+    if (knownConditions && conditions.every((condition) => knownConditions.has(condition))) return;
+    const pathConditions = new Set([...(knownConditions ?? []), ...conditions]);
+    conditionsByValue.set(value, pathConditions);
     switch (value.kind) {
       case "Conditional": {
-        const key = getBranchKey(value);
-        const guards = value.guardKeys;
-        // Rendered under conditions it wasn't computed under, so its states say nothing about its
-        // side.
-        if ([...merged].some((condition) => !guards.includes(condition))) narrowedKeys.add(key);
-        const reached = outcomes.get(key);
+        const branchKey = getBranchKey(value);
+        const isRenderedOutsideItsGuards = [...pathConditions].some(
+          (condition) => !value.guardKeys.includes(condition),
+        );
+        if (isRenderedOutsideItsGuards) displacedKeys.add(branchKey);
+        const reachedOutcomes = branchOutcomes.get(branchKey);
         const test = getTestExpression(value);
-        if (reached && !reportedKeys.has(key)) {
-          reportedKeys.add(key);
-          if (!reached.has(true))
+        if (reachedOutcomes && !reportedKeys.has(branchKey)) {
+          reportedKeys.add(branchKey);
+          if (!reachedOutcomes.has(true))
             unreachableBranches.push({
-              key,
+              branchKey,
               branch: value.branch,
               side: true,
               description: `never ${formatSymbolicValue(test)}`,
             });
-          if (!reached.has(false) && !isRenderingNothingWhenFalse(value)) {
+          if (!reachedOutcomes.has(false) && !isRenderingNothingWhenFalse(value)) {
             unreachableBranches.push({
-              key,
+              branchKey,
               branch: value.branch,
               side: false,
               description: `never ${formatNegated(test)}`,
             });
           }
         }
-        if (reached?.has(true)) visit(value.consequent, [...merged, getValueKey(test)]);
-        if (reached?.has(false)) visit(value.alternate, [...merged, getValueKey(negate(test))]);
+        if (reachedOutcomes?.has(true))
+          visit(value.consequent, [...pathConditions, getValueKey(test)]);
+        if (reachedOutcomes?.has(false))
+          visit(value.alternate, [...pathConditions, getValueKey(negate(test))]);
         return;
       }
       case "JsxExpression":
       case "JsxFragment":
-        for (const child of value.children) visit(child, [...merged]);
+        for (const child of value.children) visit(child, [...pathConditions]);
         return;
       default:
         return;
     }
   };
   visit(render, []);
-  return unreachableBranches.flatMap(({ key, ...unreachableBranch }) =>
-    narrowedKeys.has(key) ? [] : [unreachableBranch],
+  return unreachableBranches.flatMap(({ branchKey, ...unreachableBranch }) =>
+    displacedKeys.has(branchKey) ? [] : [unreachableBranch],
   );
 };
 
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
-  const reachable = createInitialConstraints(analysis);
-  const dependents = getDependents(analysis.bindings);
-  const outcomes: DecisionOutcomes = new Map();
+  const reachableConstraints = createInitialConstraints(analysis);
+  const dependentsByBinding = getDependentsByBinding(analysis.bindings);
+  const branchOutcomes: BranchOutcomes = new Map();
   const regionBranches = findRegions(analysis.render);
   const effectIds = new Set(
     analysis.handlers
@@ -586,9 +600,9 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const regions: Region[] = [];
   let isTruncated = false;
   regionBranches.forEach((regionBranch, regionIndex) => {
-    const enumerator = createEnumerator(outcomes, regionBranch);
+    const enumerator = createEnumerator(branchOutcomes, regionBranch);
     const targetEnumerator = createEnumerator(new Map(), regionBranch);
-    const alternatives = enumerator.enumerate(analysis.render, reachable);
+    const alternatives = enumerator.enumerate(analysis.render, reachableConstraints);
     const firstIndex = states.length;
     const stateKeys = alternatives.map(getStateKey);
     const handlers = analysis.handlers.filter((handler) =>
@@ -601,8 +615,13 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
         .filter((handler) => handlerIds.has(handler.id))
         .map((handler) => {
           const targetKeys = new Set(
-            applyTransition(handler, alternative.constraints, reachable, dependents).flatMap(
-              (after) => targetEnumerator.enumerate(analysis.render, after).map(getStateKey),
+            applyTransition(
+              handler,
+              alternative.constraints,
+              reachableConstraints,
+              dependentsByBinding,
+            ).flatMap((afterTransition) =>
+              targetEnumerator.enumerate(analysis.render, afterTransition).map(getStateKey),
             ),
           );
           return {
@@ -625,16 +644,17 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     regions.push({
       places: regionBranch.places,
       bindingIds: [...regionBranch.bindingIds],
-      states: alternatives.map((_, index) => firstIndex + index),
+      states: alternatives.map((_alternative, index) => firstIndex + index),
     });
   });
 
   return {
-    places: new PlaceMap(reachable.values),
+    places: new PlaceMap(reachableConstraints.possibleValues),
     states,
     regions,
-    // A truncated enumeration may have missed sides that do run.
-    unreachableBranches: isTruncated ? [] : collectUnreachableBranches(analysis.render, outcomes),
+    unreachableBranches: isTruncated
+      ? []
+      : collectUnreachableBranches(analysis.render, branchOutcomes),
     isTruncated,
   };
 };

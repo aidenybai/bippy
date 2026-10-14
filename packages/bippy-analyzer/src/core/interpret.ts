@@ -150,7 +150,7 @@ type CallTarget =
   | { kind: "Value" };
 
 export interface ProjectHook {
-  fn: HIRFunction;
+  hirFunction: HIRFunction;
   resolver: DomainResolver;
   loadModuleFunction: ModuleFunctionLoader;
 }
@@ -188,12 +188,12 @@ export class Interpreter {
     loadModuleFunction: ModuleFunctionLoader,
     loadProjectHook: ProjectHookLoader,
     contextSetterFields: ContextSetterFields,
-    storeActionsByStore: Map<string, StoreActions>,
+    actionsByStore: Map<string, StoreActions>,
   ) {
     this.#resolver = resolver;
     this.#functions.addModule(resolver, loadModuleFunction);
     this.#loadProjectHook = loadProjectHook;
-    this.externalSources = new ExternalSources(contextSetterFields, storeActionsByStore);
+    this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
   }
 
   #registerFunction(fn: HIRFunction, isSnapshot = false): FunctionValue {
@@ -656,9 +656,14 @@ export class Interpreter {
         this.#functions.addModule(
           target.projectHook.resolver,
           target.projectHook.loadModuleFunction,
-          target.projectHook.fn,
+          target.projectHook.hirFunction,
         );
-        return this.#callFunction(this.#registerFunction(target.projectHook.fn), args, loc, state);
+        return this.#callFunction(
+          this.#registerFunction(target.projectHook.hirFunction),
+          args,
+          loc,
+          state,
+        );
       case "Store":
         return this.#readStore(target.storeKey, target.storeActions, callee, args, loc, state);
       case "Hook":

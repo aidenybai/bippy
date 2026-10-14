@@ -18,11 +18,11 @@ const NAMED_STRING_SAMPLES: NamedStringSample[] = [
 ];
 
 export const getStringSamples = (name: string | null): Sample[] => {
-  const named =
+  const namedSample =
     name === null
       ? undefined
       : NAMED_STRING_SAMPLES.find((sample) => sample.namePattern.test(name));
-  return named
-    ? [{ kind: "Value", value: named.value }, EMPTY_TEXT_SAMPLE]
+  return namedSample
+    ? [{ kind: "Value", value: namedSample.value }, EMPTY_TEXT_SAMPLE]
     : [TEXT_SAMPLE, EMPTY_TEXT_SAMPLE];
 };

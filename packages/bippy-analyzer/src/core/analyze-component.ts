@@ -8,23 +8,23 @@ import { PlaceMap } from "./utils/place";
 import type { ProjectHookLoader } from "./interpret";
 import type { Bailout, ComponentAnalysis, ContextSetterFields, StoreActions } from "./types";
 
-interface FileContext {
+export interface FileContext {
   sourceFile: SourceFile;
   resolver: DomainResolver;
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
   contextSetterFields: ContextSetterFields;
-  storeActionsByStore: Map<string, StoreActions>;
+  actionsByStore: Map<string, StoreActions>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
 
 export const analyzeComponent = (
   reactFunction: CompiledFunction,
-  context: FileContext,
+  fileContext: FileContext,
 ): ComponentAnalysis => {
-  const { sourceFile, exportNames, displayNames } = context;
-  const base = {
+  const { sourceFile, exportNames, displayNames } = fileContext;
+  const componentIdentity = {
     name: reactFunction.name,
     exportName: exportNames.get(reactFunction.name) ?? null,
     runtimeName: displayNames.has(reactFunction.name)
@@ -37,7 +37,7 @@ export const analyzeComponent = (
   if (hir === null) {
     const loc = reactFunction.loc;
     return {
-      ...base,
+      ...componentIdentity,
       loc,
       isAsync: false,
       bindings: [],
@@ -61,18 +61,18 @@ export const analyzeComponent = (
     };
   }
   const interpreter = new Interpreter(
-    context.resolver,
-    context.compiled.compileModuleFunction,
-    context.loadProjectHook,
-    context.contextSetterFields,
-    context.storeActionsByStore,
+    fileContext.resolver,
+    fileContext.compiled.compileModuleFunction,
+    fileContext.loadProjectHook,
+    fileContext.contextSetterFields,
+    fileContext.actionsByStore,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
   const { bindings, placeDomains, unionMemberValues } = interpreter.bindingTable;
   return {
-    ...base,
+    ...componentIdentity,
     loc: hir.loc,
     isAsync: hir.async,
     bindings,

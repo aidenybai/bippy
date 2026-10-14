@@ -24,17 +24,16 @@ const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
-/** `left - right <= constant` (`<` when strict); a null atom is the constant zero. */
 export interface Bound {
   left: Place | null;
   right: Place | null;
-  constant: number;
+  maxDifference: number;
   isStrict: boolean;
 }
 
 interface LinearTerm {
   atom: Place | null;
-  constant: number;
+  offset: number;
 }
 
 interface Distance {
@@ -48,24 +47,21 @@ interface Assumption {
 }
 
 export interface Constraints {
-  values: PlaceMap<AbstractValue[]>;
+  possibleValues: PlaceMap<AbstractValue[]>;
   assumptions: Map<string, Assumption>;
   bounds: Bound[];
-  /** Shared across clones: bounds every render keeps, like a filtered array's length. */
   invariants: Bound[];
-  /** Shared across clones: for a union-typed binding, the values each member gives a field. */
   unionMemberValues: PlaceMap<AbstractValue[][]>;
-  /** By binding id, the union members still possible; every member when absent. */
-  members: Map<number, number[]>;
+  possibleMembers: Map<number, number[]>;
 }
 
 export const cloneConstraints = (constraints: Constraints): Constraints => ({
-  values: new PlaceMap(constraints.values),
+  possibleValues: new PlaceMap(constraints.possibleValues),
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
   invariants: constraints.invariants,
   unionMemberValues: constraints.unionMemberValues,
-  members: new Map(constraints.members),
+  possibleMembers: new Map(constraints.possibleMembers),
 });
 
 export const getLengthAtom = (bindingId: number): Place => ({ bindingId, path: [LENGTH_FIELD] });
@@ -82,25 +78,25 @@ const collectPlaces = (value: SymbolicValue): Place[] => {
 
 const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   if (value.kind === "Primitive")
-    return typeof value.value === "number" ? { atom: null, constant: value.value } : null;
-  if (value.kind === "Binding") return { atom: getValuePlace(value), constant: 0 };
+    return typeof value.value === "number" ? { atom: null, offset: value.value } : null;
+  if (value.kind === "Binding") return { atom: getValuePlace(value), offset: 0 };
   if (
     value.kind === "UnaryExpression" &&
     value.operator === "-" &&
     value.value.kind === "Primitive" &&
     typeof value.value.value === "number"
   ) {
-    return { atom: null, constant: -value.value.value };
+    return { atom: null, offset: -value.value.value };
   }
   if (value.kind === "BinaryExpression" && (value.operator === "+" || value.operator === "-")) {
-    const left = getLinearTerm(value.left);
-    const right = getLinearTerm(value.right);
-    if (!left || !right) return null;
+    const leftTerm = getLinearTerm(value.left);
+    const rightTerm = getLinearTerm(value.right);
+    if (!leftTerm || !rightTerm) return null;
     const sign = value.operator === "+" ? 1 : -1;
-    if (right.atom === null)
-      return { atom: left.atom, constant: left.constant + sign * right.constant };
-    if (left.atom === null && sign === 1)
-      return { atom: right.atom, constant: left.constant + right.constant };
+    if (rightTerm.atom === null)
+      return { atom: leftTerm.atom, offset: leftTerm.offset + sign * rightTerm.offset };
+    if (leftTerm.atom === null && sign === 1)
+      return { atom: rightTerm.atom, offset: leftTerm.offset + rightTerm.offset };
   }
   return null;
 };
@@ -109,20 +105,20 @@ const getBounds = (value: SymbolicValue, outcome: boolean): Bound[] | null => {
   if (value.kind !== "BinaryExpression") return null;
   const operator = outcome ? value.operator : getNegatedOperator(value.operator);
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
-  const left = getLinearTerm(value.left);
-  const right = getLinearTerm(value.right);
-  if (!left || !right || (left.atom === null && right.atom === null)) return null;
-  const difference = right.constant - left.constant;
+  const leftTerm = getLinearTerm(value.left);
+  const rightTerm = getLinearTerm(value.right);
+  if (!leftTerm || !rightTerm || (leftTerm.atom === null && rightTerm.atom === null)) return null;
+  const offsetDifference = rightTerm.offset - leftTerm.offset;
   const lessThan = (isStrict: boolean): Bound => ({
-    left: left.atom,
-    right: right.atom,
-    constant: difference,
+    left: leftTerm.atom,
+    right: rightTerm.atom,
+    maxDifference: offsetDifference,
     isStrict,
   });
   const greaterThan = (isStrict: boolean): Bound => ({
-    left: right.atom,
-    right: left.atom,
-    constant: -difference,
+    left: rightTerm.atom,
+    right: leftTerm.atom,
+    maxDifference: -offsetDifference,
     isStrict,
   });
   switch (operator) {
@@ -143,53 +139,52 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
   candidate.weight < current.weight ||
   (candidate.weight === current.weight && candidate.isStrict && !current.isStrict);
 
-// Floyd–Warshall: inconsistent exactly when some atom has a negative cycle to itself.
 const areBoundsConsistent = (bounds: Bound[]): boolean => {
   const lengthBounds = bounds
     .flatMap((bound) => [bound.left, bound.right])
     .filter((atom) => atom?.path.at(-1) === LENGTH_FIELD)
-    .map((atom): Bound => ({ left: null, right: atom, constant: 0, isStrict: false }));
+    .map((atom): Bound => ({ left: null, right: atom, maxDifference: 0, isStrict: false }));
   const allBounds = [...bounds, ...lengthBounds];
-  const atoms = [
+  const atomKeys = [
     ...new Set([
       CONSTANT_KEY,
       ...allBounds.flatMap((bound) => [getAtomKey(bound.left), getAtomKey(bound.right)]),
     ]),
   ];
-  const atomIndices = new Map(atoms.map((atom, index) => [atom, index]));
-  const distances = atoms.map((_row, rowIndex) =>
-    atoms.map((_column, columnIndex): Distance => ({
+  const indicesByAtomKey = new Map(atomKeys.map((atomKey, index) => [atomKey, index]));
+  const distances = atomKeys.map((_rowKey, rowIndex) =>
+    atomKeys.map((_columnKey, columnIndex): Distance => ({
       weight: rowIndex === columnIndex ? 0 : Infinity,
       isStrict: false,
     })),
   );
-  const getIndex = (atom: Place | null): number => {
-    const index = atomIndices.get(getAtomKey(atom));
-    if (index === undefined) throw new Error(`Unindexed bound atom ${getAtomKey(atom)}`);
-    return index;
+  const getAtomIndex = (atom: Place | null): number => {
+    const atomIndex = indicesByAtomKey.get(getAtomKey(atom));
+    if (atomIndex === undefined) throw new Error(`Unindexed bound atom ${getAtomKey(atom)}`);
+    return atomIndex;
   };
   for (const bound of allBounds) {
-    const row = distances[getIndex(bound.right)];
-    const column = getIndex(bound.left);
-    const candidate = { weight: bound.constant, isStrict: bound.isStrict };
-    if (isShorter(candidate, row[column])) row[column] = candidate;
+    const row = distances[getAtomIndex(bound.right)];
+    const columnIndex = getAtomIndex(bound.left);
+    const boundDistance = { weight: bound.maxDifference, isStrict: bound.isStrict };
+    if (isShorter(boundDistance, row[columnIndex])) row[columnIndex] = boundDistance;
   }
-  for (let middle = 0; middle < atoms.length; middle++) {
-    for (let from = 0; from < atoms.length; from++) {
-      for (let to = 0; to < atoms.length; to++) {
-        const first = distances[from][middle];
-        const second = distances[middle][to];
-        const candidate = {
-          weight: first.weight + second.weight,
-          isStrict: first.isStrict || second.isStrict,
+  for (let middle = 0; middle < atomKeys.length; middle++) {
+    for (let from = 0; from < atomKeys.length; from++) {
+      for (let to = 0; to < atomKeys.length; to++) {
+        const toMiddle = distances[from][middle];
+        const fromMiddle = distances[middle][to];
+        const throughMiddle = {
+          weight: toMiddle.weight + fromMiddle.weight,
+          isStrict: toMiddle.isStrict || fromMiddle.isStrict,
         };
-        if (isShorter(candidate, distances[from][to])) distances[from][to] = candidate;
+        if (isShorter(throughMiddle, distances[from][to])) distances[from][to] = throughMiddle;
       }
     }
   }
-  return distances.every((row, index) => {
-    const self = row[index];
-    return !(self.weight < 0 || (self.weight === 0 && self.isStrict));
+  return distances.every((row, atomIndex) => {
+    const cycleDistance = row[atomIndex];
+    return !(cycleDistance.weight < 0 || (cycleDistance.weight === 0 && cycleDistance.isStrict));
   });
 };
 
@@ -204,7 +199,7 @@ const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean
 };
 
 const getPlaceValues = (value: SymbolicValue, constraints: Constraints): AbstractValue[] | null =>
-  value.kind === "Binding" ? (constraints.values.get(getValuePlace(value)) ?? null) : null;
+  value.kind === "Binding" ? (constraints.possibleValues.get(getValuePlace(value)) ?? null) : null;
 
 const isBooleanExpression = (value: SymbolicValue): boolean =>
   (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
@@ -215,9 +210,9 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
     const outcome = evaluate(value, constraints);
     return outcome === null ? value : { kind: "Primitive", value: outcome };
   }
-  const values = getPlaceValues(value, constraints);
-  const [onlyValue] = values ?? [];
-  return values?.length === 1 && onlyValue?.kind === "Literal"
+  const placeValues = getPlaceValues(value, constraints);
+  const [onlyValue] = placeValues ?? [];
+  return placeValues?.length === 1 && onlyValue?.kind === "Literal"
     ? { kind: "Primitive", value: onlyValue.value }
     : value;
 };
@@ -232,20 +227,22 @@ const evaluateEquality = (
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive") return null;
-  const values = getPlaceValues(placeSide, constraints);
-  if (!values) return null;
-  const matchCount = values.filter((candidate) =>
+  const placeValues = getPlaceValues(placeSide, constraints);
+  if (!placeValues) return null;
+  const matchCount = placeValues.filter((candidate) =>
     isEqualToLiteral(candidate, literalSide.value, value.operator),
   ).length;
-  const canAnyEqual = values.some((candidate) => canTypeEqualLiteral(candidate, literalSide.value));
-  if (matchCount === values.length) return !isNegated;
+  const canAnyEqual = placeValues.some((candidate) =>
+    canTypeEqualLiteral(candidate, literalSide.value),
+  );
+  if (matchCount === placeValues.length) return !isNegated;
   if (matchCount === 0 && !canAnyEqual) return isNegated;
   return null;
 };
 
-const evaluateTruthiness = (values: AbstractValue[]): boolean | null => {
-  if (values.length === 0) return null;
-  const truthiness = values.map(getTruthiness);
+const evaluateTruthiness = (placeValues: AbstractValue[]): boolean | null => {
+  if (placeValues.length === 0) return null;
+  const truthiness = placeValues.map(getTruthiness);
   if (truthiness.every((candidate) => candidate === "truthy")) return true;
   if (truthiness.every((candidate) => candidate === "falsy")) return false;
   return null;
@@ -256,8 +253,8 @@ export const evaluate = (value: SymbolicValue, constraints: Constraints): boolea
   if (assumption) return assumption.outcome;
   switch (value.kind) {
     case "Binding": {
-      const values = getPlaceValues(value, constraints);
-      return values ? evaluateTruthiness(values) : null;
+      const placeValues = getPlaceValues(value, constraints);
+      return placeValues ? evaluateTruthiness(placeValues) : null;
     }
     case "UnaryExpression": {
       if (value.operator !== "!") return null;
@@ -282,55 +279,56 @@ export const evaluate = (value: SymbolicValue, constraints: Constraints): boolea
 const getValueKeys = (values: AbstractValue[]): Set<string> =>
   new Set(values.map(formatAbstractValue));
 
-// A value no member names, like a defaulted read's `undefined`, says nothing about the member.
-const restrictMembers = (
+const narrowUnionMembers = (
   constraints: Constraints,
   place: Place,
-  restricted: AbstractValue[],
+  narrowedValues: AbstractValue[],
 ): Constraints | null => {
-  const placeCases = constraints.unionMemberValues.get(place);
-  if (!placeCases) return constraints;
-  const restrictedKeys = getValueKeys(restricted);
-  const namedKeys = getValueKeys(placeCases.flat());
-  if ([...restrictedKeys].some((key) => !namedKeys.has(key))) return constraints;
-  const members = (
-    constraints.members.get(place.bindingId) ?? placeCases.map((_, index) => index)
-  ).filter((member) =>
-    placeCases[member]?.some((value) => restrictedKeys.has(formatAbstractValue(value))),
+  const memberValues = constraints.unionMemberValues.get(place);
+  if (!memberValues) return constraints;
+  const narrowedKeys = getValueKeys(narrowedValues);
+  const memberValueKeys = getValueKeys(memberValues.flat());
+  if ([...narrowedKeys].some((valueKey) => !memberValueKeys.has(valueKey))) return constraints;
+  const allMembers = memberValues.map((_values, memberIndex) => memberIndex);
+  const possibleMembers = (constraints.possibleMembers.get(place.bindingId) ?? allMembers).filter(
+    (memberIndex) =>
+      memberValues[memberIndex]?.some((value) => narrowedKeys.has(formatAbstractValue(value))),
   );
-  if (members.length === 0) return null;
-  constraints.members.set(place.bindingId, members);
-  for (const [otherPlace, otherCases] of constraints.unionMemberValues) {
-    if (otherPlace.bindingId !== place.bindingId || isSamePlace(otherPlace, place)) continue;
-    const values = constraints.values.get(otherPlace);
-    if (!values) continue;
-    const otherNamedKeys = getValueKeys(otherCases.flat());
-    const allowedKeys = getValueKeys(members.flatMap((member) => otherCases[member] ?? []));
-    const narrowed = values.filter((value) => {
-      const key = formatAbstractValue(value);
-      return !otherNamedKeys.has(key) || allowedKeys.has(key);
+  if (possibleMembers.length === 0) return null;
+  constraints.possibleMembers.set(place.bindingId, possibleMembers);
+  for (const [siblingPlace, siblingMemberValues] of constraints.unionMemberValues) {
+    if (siblingPlace.bindingId !== place.bindingId || isSamePlace(siblingPlace, place)) continue;
+    const siblingValues = constraints.possibleValues.get(siblingPlace);
+    if (!siblingValues) continue;
+    const siblingValueKeys = getValueKeys(siblingMemberValues.flat());
+    const allowedKeys = getValueKeys(
+      possibleMembers.flatMap((memberIndex) => siblingMemberValues[memberIndex] ?? []),
+    );
+    const narrowedSiblingValues = siblingValues.filter((value) => {
+      const valueKey = formatAbstractValue(value);
+      return !siblingValueKeys.has(valueKey) || allowedKeys.has(valueKey);
     });
-    if (narrowed.length === 0) return null;
-    constraints.values.set(otherPlace, narrowed);
+    if (narrowedSiblingValues.length === 0) return null;
+    constraints.possibleValues.set(siblingPlace, narrowedSiblingValues);
   }
   return constraints;
 };
 
-const restrictPlace = (
-  place: BindingValue,
+const narrowPlace = (
+  bindingValue: BindingValue,
   constraints: Constraints,
-  keep: (value: AbstractValue) => boolean,
+  isKept: (value: AbstractValue) => boolean,
 ): Constraints | null => {
-  const values = getPlaceValues(place, constraints);
-  if (!values) return null;
-  const restricted = values.filter(keep);
-  if (restricted.length === 0) return null;
-  const next = cloneConstraints(constraints);
-  next.values.set(getValuePlace(place), restricted);
-  return restrictMembers(next, getValuePlace(place), restricted);
+  const placeValues = getPlaceValues(bindingValue, constraints);
+  if (!placeValues) return null;
+  const narrowedValues = placeValues.filter(isKept);
+  if (narrowedValues.length === 0) return null;
+  const narrowed = cloneConstraints(constraints);
+  const place = getValuePlace(bindingValue);
+  narrowed.possibleValues.set(place, narrowedValues);
+  return narrowUnionMembers(narrowed, place, narrowedValues);
 };
 
-// Unknowns print alike, so an assumption about one, keyed by its text, would decide another.
 const hasUnknownPart = (value: SymbolicValue): boolean => {
   let hasUnknown = false;
   forEachSymbolicValue(value, (part) => {
@@ -354,11 +352,11 @@ export const assume = (
     value.alternate.kind === "Primitive" &&
     !value.alternate.value
   ) {
-    const held = assume(getTestExpression(value), true, constraints);
-    return held && assume(value.consequent, true, held);
+    const withTest = assume(getTestExpression(value), true, constraints);
+    return withTest && assume(value.consequent, true, withTest);
   }
   if (value.kind === "Binding" && getPlaceValues(value, constraints))
-    return restrictPlace(
+    return narrowPlace(
       value,
       constraints,
       (candidate) => getTruthiness(candidate) !== (outcome ? "falsy" : "truthy"),
@@ -372,7 +370,7 @@ export const assume = (
       getPlaceValues(placeSide, constraints)
     ) {
       const wantsMatch = outcome !== isNegated;
-      return restrictPlace(placeSide, constraints, (candidate) =>
+      return narrowPlace(placeSide, constraints, (candidate) =>
         isEqualToLiteral(candidate, literalSide.value, value.operator)
           ? wantsMatch
           : !wantsMatch || canTypeEqualLiteral(candidate, literalSide.value),
@@ -380,17 +378,17 @@ export const assume = (
     }
   }
   if (hasUnknownPart(value)) return constraints;
-  const next = cloneConstraints(constraints);
-  next.assumptions.set(getValueKey(value), {
+  const assumed = cloneConstraints(constraints);
+  assumed.assumptions.set(getValueKey(value), {
     outcome,
     places: collectPlaces(value),
   });
-  const bounds = getBounds(value, outcome);
-  if (bounds) {
-    next.bounds.push(...bounds);
-    if (!areBoundsConsistent([...next.invariants, ...next.bounds])) return null;
+  const assumedBounds = getBounds(value, outcome);
+  if (assumedBounds) {
+    assumed.bounds.push(...assumedBounds);
+    if (!areBoundsConsistent([...assumed.invariants, ...assumed.bounds])) return null;
   }
-  return next;
+  return assumed;
 };
 
 export const forgetBinding = (
@@ -400,12 +398,12 @@ export const forgetBinding = (
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
   const isLength = (atom: Place | null): boolean => atom !== null && isSamePlace(atom, lengthAtom);
-  constraints.members.delete(bindingId);
-  for (const [key, assumption] of constraints.assumptions) {
-    const places = assumption.places.filter((place) => place.bindingId === bindingId);
-    if (places.length === 0) continue;
-    if (keepsLength && places.every(isLength)) continue;
-    constraints.assumptions.delete(key);
+  constraints.possibleMembers.delete(bindingId);
+  for (const [assumptionKey, assumption] of constraints.assumptions) {
+    const bindingPlaces = assumption.places.filter((place) => place.bindingId === bindingId);
+    if (bindingPlaces.length === 0) continue;
+    if (keepsLength && bindingPlaces.every(isLength)) continue;
+    constraints.assumptions.delete(assumptionKey);
   }
   constraints.bounds = constraints.bounds.filter((bound) => {
     const mentionsBinding = [bound.left, bound.right].some((atom) => atom?.bindingId === bindingId);

@@ -1,4 +1,5 @@
 import { compileFile } from "./compile";
+import type { CompiledFunction } from "./compile";
 import { CompilerTypeProvider } from "./type-provider";
 import { DomainResolver } from "./infer-domains";
 import type { ProjectHook } from "./interpret";
@@ -20,10 +21,11 @@ import type {
 import { forEachJsxElement } from "./utils/traverse";
 import { getBindingPlace } from "./utils/place";
 import { analyzeComponent } from "./analyze-component";
+import type { FileContext } from "./analyze-component";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript";
 import { isProjectSourceFile, withProject } from "./utils/with-project";
 
-const ARRAY_MEMBERS = new Set([
+const ARRAY_METHOD_NAMES = new Set([
   "every",
   "filter",
   "find",
@@ -36,7 +38,7 @@ const ARRAY_MEMBERS = new Set([
   "some",
   "sort",
 ]);
-const STRING_MEMBERS = new Set([
+const STRING_METHOD_NAMES = new Set([
   "charAt",
   "endsWith",
   "padEnd",
@@ -50,35 +52,44 @@ const STRING_MEMBERS = new Set([
   "toUpperCase",
   "trim",
 ]);
-const SHARED_MEMBERS = new Set(["at", "includes", "indexOf", "length", "slice"]);
+const SHARED_MEMBER_NAMES = new Set(["at", "includes", "indexOf", "length", "slice"]);
 const INDEX_PATTERN = /^\d+$/;
 
-const getShapeSample = (name: string, paths: string[][]): Sample => {
-  const fields = new Map<string, string[][]>();
-  for (const [field, ...rest] of paths)
-    if (field !== undefined) fields.set(field, [...(fields.get(field) ?? []), rest]);
-  const names = [...fields.keys()];
+interface CompiledComponent {
+  reactFunction: CompiledFunction;
+  fileContext: Omit<FileContext, "contextSetterFields">;
+}
+
+const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample => {
+  const restPathsByField = new Map<string, string[][]>();
+  for (const [field, ...restPath] of readPaths)
+    if (field !== undefined)
+      restPathsByField.set(field, [...(restPathsByField.get(field) ?? []), restPath]);
+  const fieldNames = [...restPathsByField.keys()];
   if (
-    names.length === 0 ||
-    names.some((field) => STRING_MEMBERS.has(field)) ||
-    names.every((field) => SHARED_MEMBERS.has(field))
+    fieldNames.length === 0 ||
+    fieldNames.some((field) => STRING_METHOD_NAMES.has(field)) ||
+    fieldNames.every((field) => SHARED_MEMBER_NAMES.has(field))
   )
     return getStringSamples(name)[0] ?? { kind: "Undefined" };
-  if (fields.has("props")) return { kind: "Element" };
-  if (names.some((field) => ARRAY_MEMBERS.has(field) || INDEX_PATTERN.test(field))) {
-    const itemPaths = names.flatMap((field) =>
-      INDEX_PATTERN.test(field) ? (fields.get(field) ?? []) : [],
+  if (restPathsByField.has("props")) return { kind: "Element" };
+  if (fieldNames.some((field) => ARRAY_METHOD_NAMES.has(field) || INDEX_PATTERN.test(field))) {
+    const itemPaths = fieldNames.flatMap((field) =>
+      INDEX_PATTERN.test(field) ? (restPathsByField.get(field) ?? []) : [],
     );
-    return { kind: "Array", items: itemPaths.length > 0 ? [getShapeSample(name, itemPaths)] : [] };
+    return {
+      kind: "Array",
+      items: itemPaths.length > 0 ? [inferSampleFromReadPaths(name, itemPaths)] : [],
+    };
   }
   return {
     kind: "Object",
     fields: Object.fromEntries(
-      [...fields].map(([field, rest]) => [
+      [...restPathsByField].map(([field, restPaths]) => [
         field,
-        getShapeSample(
+        inferSampleFromReadPaths(
           field,
-          rest.filter((path) => path.length > 0),
+          restPaths.filter((restPath) => restPath.length > 0),
         ),
       ]),
     ),
@@ -86,22 +97,23 @@ const getShapeSample = (name: string, paths: string[][]): Sample => {
   };
 };
 
-const inferPropShapes = (analysis: ComponentAnalysis): void => {
-  const paths = new Map<number, string[][]>();
+const addSamplesFromReadPaths = (analysis: ComponentAnalysis): void => {
+  const readPathsByBinding = new Map<number, string[][]>();
   for (const { bindingId, path } of analysis.placeDomains.places()) {
-    if (path.length > 0) paths.set(bindingId, [...(paths.get(bindingId) ?? []), path]);
+    if (path.length > 0)
+      readPathsByBinding.set(bindingId, [...(readPathsByBinding.get(bindingId) ?? []), path]);
   }
   for (const binding of analysis.bindings) {
-    const bindingPaths = paths.get(binding.id);
-    if (binding.kind !== "prop" || binding.domain.kind !== "Unknown" || !bindingPaths) continue;
+    const readPaths = readPathsByBinding.get(binding.id);
+    if (binding.kind !== "prop" || binding.domain.kind !== "Unknown" || !readPaths) continue;
     binding.samples = [
-      getShapeSample(binding.propName ?? binding.name, bindingPaths),
+      inferSampleFromReadPaths(binding.propName ?? binding.name, readPaths),
       ...binding.samples,
     ];
   }
   for (const [contextKey, bindingId] of analysis.untypedContextBindingIds) {
-    const bindingPaths = paths.get(bindingId);
-    if (bindingPaths) analysis.contextSamples.set(contextKey, getShapeSample("", bindingPaths));
+    const readPaths = readPathsByBinding.get(bindingId);
+    if (readPaths) analysis.contextSamples.set(contextKey, inferSampleFromReadPaths("", readPaths));
   }
 };
 
@@ -112,15 +124,15 @@ const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
   if (value?.kind === "Primitive") return getSampleOfValue(value.value);
   if (value?.kind === "ArrayExpression" && value.spreads.length === 0) {
     const items = value.elements.flatMap((element): Sample[] => {
-      const sample = getLiteralSample(element);
-      return sample ? [sample] : [];
+      const itemSample = getLiteralSample(element);
+      return itemSample ? [itemSample] : [];
     });
     return items.length === value.elements.length ? { kind: "Array", items } : null;
   }
   if (value?.kind === "ObjectExpression" && value.spreads.length === 0) {
-    const fields = value.properties.flatMap(({ key, value: field }): Array<[string, Sample]> => {
-      const sample = getLiteralSample(field);
-      return sample ? [[key, sample]] : [];
+    const fields = value.properties.flatMap((property): Array<[string, Sample]> => {
+      const fieldSample = getLiteralSample(property.value);
+      return fieldSample ? [[property.key, fieldSample]] : [];
     });
     return fields.length === value.properties.length
       ? { kind: "Object", fields: Object.fromEntries(fields), isOpen: false }
@@ -130,39 +142,40 @@ const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
 };
 
 const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
-  const usages: JsxExpressionValue[] = [];
+  const componentElements: JsxExpressionValue[] = [];
   for (const analysis of analyses)
     forEachJsxElement(analysis.render, (element) => {
-      if (element.tag.kind === "Component") usages.push(element);
+      if (element.tag.kind === "Component") componentElements.push(element);
     });
   for (const analysis of analyses) {
-    const componentUsages = usages.filter(
-      (usage) => usage.tag.kind === "Component" && usage.tag.declaration === analysis.declaration,
+    const callSites = componentElements.filter(
+      (element) =>
+        element.tag.kind === "Component" && element.tag.declaration === analysis.declaration,
     );
-    if (componentUsages.length === 0) continue;
+    if (callSites.length === 0) continue;
     for (const binding of analysis.bindings) {
       if (binding.kind !== "prop" || binding.domain.kind !== "Unknown") continue;
-      const passedValues = componentUsages.map(
-        (usage) =>
-          usage.props.find(
-            (candidate): candidate is JsxProp =>
-              candidate.kind === "JsxAttribute" && candidate.name === binding.propName,
+      const passedValues = callSites.map(
+        (callSite) =>
+          callSite.props.find(
+            (prop): prop is JsxProp =>
+              prop.kind === "JsxAttribute" && prop.name === binding.propName,
           )?.value,
       );
       if (!passedValues.every(isPrimitive)) {
-        const literalSamples = new Map(
+        const literalSamplesByKey = new Map(
           passedValues.flatMap((passedValue): Array<[string, Sample]> => {
-            const sample = getLiteralSample(passedValue);
-            return sample ? [[JSON.stringify(sample), sample]] : [];
+            const literalSample = getLiteralSample(passedValue);
+            return literalSample ? [[JSON.stringify(literalSample), literalSample]] : [];
           }),
         );
-        binding.samples = [...literalSamples.values(), ...binding.samples];
+        binding.samples = [...literalSamplesByKey.values(), ...binding.samples];
         continue;
       }
       const literals = [...new Set(passedValues.map((passedValue) => passedValue.value))];
       binding.domain = {
         kind: "Cases",
-        cases: literals.map((value) => ({ kind: "Literal", value })),
+        cases: literals.map((literal) => ({ kind: "Literal", value: literal })),
         origin: "call-sites",
       };
       binding.samples = literals.map(getSampleOfValue);
@@ -174,46 +187,50 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
   }
 };
 
-const isSamePairing = (left: Map<string, string>, right: Map<string, string>): boolean =>
-  left.size === right.size && [...left].every(([setter, state]) => right.get(setter) === state);
+const isSameSetterFields = (left: Map<string, string>, right: Map<string, string>): boolean =>
+  left.size === right.size &&
+  [...left].every(([setterName, stateField]) => right.get(setterName) === stateField);
 
-const collectContextModels = (analyses: ComponentAnalysis[]): ContextSetterFields => {
-  const models: ContextSetterFields = new Map();
-  const conflicting = new Set<string>();
-  for (const { contextKey, value } of analyses.flatMap((analysis) => analysis.providedContexts)) {
+const collectContextSetterFields = (analyses: ComponentAnalysis[]): ContextSetterFields => {
+  const setterFieldsByContext: ContextSetterFields = new Map();
+  const conflictingContextKeys = new Set<string>();
+  const providedContexts = analyses.flatMap((analysis) => analysis.providedContexts);
+  for (const { contextKey, value } of providedContexts) {
     if (value.kind !== "ObjectExpression") continue;
-    const setters = new Map<string, string>();
+    const setterFields = new Map<string, string>();
     for (const property of value.properties) {
       if (property.value.kind !== "Setter") continue;
       const { binding } = property.value;
-      const state = value.properties.find(
+      const stateProperty = value.properties.find(
         (candidate) =>
           candidate.value.kind === "Binding" &&
           candidate.value.binding === binding &&
           candidate.value.path.length === 0,
       );
-      if (state) setters.set(property.key, state.key);
+      if (stateProperty) setterFields.set(property.key, stateProperty.key);
     }
-    const existing = models.get(contextKey);
-    if (existing && !isSamePairing(existing, setters)) conflicting.add(contextKey);
-    else models.set(contextKey, setters);
+    const existingSetterFields = setterFieldsByContext.get(contextKey);
+    if (existingSetterFields && !isSameSetterFields(existingSetterFields, setterFields))
+      conflictingContextKeys.add(contextKey);
+    else setterFieldsByContext.set(contextKey, setterFields);
   }
-  for (const [contextKey, setters] of models)
-    if (conflicting.has(contextKey) || setters.size === 0) models.delete(contextKey);
-  return models;
+  for (const [contextKey, setterFields] of setterFieldsByContext)
+    if (conflictingContextKeys.has(contextKey) || setterFields.size === 0)
+      setterFieldsByContext.delete(contextKey);
+  return setterFieldsByContext;
 };
 
 // HACK: the checker lowercases paths on case-insensitive file systems, so key by the declared file
 // name.
 const withContextFileNames = (
   analysis: ComponentAnalysis,
-  fileNames: Map<string, string>,
+  fileNamesByPath: Map<string, string>,
 ): ComponentAnalysis => ({
   ...analysis,
   contextSamples: new Map(
-    [...analysis.contextSamples].map(([contextKey, sample]) => {
-      const [path = "", name = ""] = contextKey.split("#");
-      return [`${fileNames.get(path) ?? path}#${name}`, sample];
+    [...analysis.contextSamples].map(([contextKey, contextSample]) => {
+      const [path = "", contextName = ""] = contextKey.split("#");
+      return [`${fileNamesByPath.get(path) ?? path}#${contextName}`, contextSample];
     }),
   ),
 });
@@ -226,23 +243,23 @@ export const analyzeProject = (
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
     const { strict, strictNullChecks } = project.compilerOptions;
     const isStrictNullChecks = strictNullChecks ?? strict ?? false;
-    const projectHooks = new Map<string, ProjectHook>();
-    const storeActionsByStore = new Map<string, StoreActions>();
+    const projectHooksByDeclaration = new Map<string, ProjectHook>();
+    const actionsByStore = new Map<string, StoreActions>();
     const loadProjectHook = (declarationKey: string): ProjectHook | null =>
-      projectHooks.get(declarationKey) ?? null;
-    const contexts = fileNames.flatMap((fileName) => {
+      projectHooksByDeclaration.get(declarationKey) ?? null;
+    const fileContexts = fileNames.flatMap((fileName) => {
       const sourceFile = project.program.getSourceFile(fileName);
       if (!sourceFile) return [];
       const resolver = new DomainResolver(project.checker, sourceFile, isStrictNullChecks);
       const compiled = compileFile(fileName, sourceFile.text, {
         typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
       });
-      for (const [storeKey, model] of collectStoreActions(sourceFile))
-        storeActionsByStore.set(storeKey, model);
-      for (const { fnType, hir, name } of compiled.functions)
-        if (fnType === "Hook" && hir)
-          projectHooks.set(`${sourceFile.path}#${name}`, {
-            fn: hir,
+      for (const [storeKey, actions] of collectStoreActions(sourceFile))
+        actionsByStore.set(storeKey, actions);
+      for (const { functionType, hir, name } of compiled.functions)
+        if (functionType === "Hook" && hir)
+          projectHooksByDeclaration.set(`${sourceFile.path}#${name}`, {
+            hirFunction: hir,
             resolver,
             loadModuleFunction: compiled.compileModuleFunction,
           });
@@ -252,37 +269,38 @@ export const analyzeProject = (
           resolver,
           compiled,
           loadProjectHook,
-          storeActionsByStore,
+          actionsByStore,
           exportNames: collectExportNames(sourceFile),
           displayNames: collectDisplayNames(sourceFile),
         },
       ];
     });
-    const compiledComponents = contexts.flatMap((context) =>
-      context.compiled.functions.flatMap((reactFunction) =>
-        reactFunction.fnType === "Component" ? [{ reactFunction, context }] : [],
+    const compiledComponents = fileContexts.flatMap((fileContext) =>
+      fileContext.compiled.functions.flatMap((reactFunction): CompiledComponent[] =>
+        reactFunction.functionType === "Component" ? [{ reactFunction, fileContext }] : [],
       ),
     );
-    const analyze = (
-      { reactFunction, context }: (typeof compiledComponents)[number],
+    const analyzeCompiledComponent = (
+      { reactFunction, fileContext }: CompiledComponent,
       contextSetterFields: ContextSetterFields,
-    ) => analyzeComponent(reactFunction, { ...context, contextSetterFields });
-    const initialAnalyses = compiledComponents.map((component) => ({
+    ): ComponentAnalysis =>
+      analyzeComponent(reactFunction, { ...fileContext, contextSetterFields });
+    const firstAnalyses = compiledComponents.map((component) => ({
       component,
-      analysis: analyze(component, new Map()),
+      analysis: analyzeCompiledComponent(component, new Map()),
     }));
-    const contextSetterFields = collectContextModels(
-      initialAnalyses.map(({ analysis }) => analysis),
+    const contextSetterFields = collectContextSetterFields(
+      firstAnalyses.map(({ analysis }) => analysis),
     );
-    const analyses = initialAnalyses.map(({ component, analysis }) =>
+    const analyses = firstAnalyses.map(({ component, analysis }) =>
       analysis.bindings.some((binding) => binding.kind === "context")
-        ? analyze(component, contextSetterFields)
+        ? analyzeCompiledComponent(component, contextSetterFields)
         : analysis,
     );
-    for (const analysis of analyses) inferPropShapes(analysis);
+    for (const analysis of analyses) addSamplesFromReadPaths(analysis);
     inferPropsFromCallSites(analyses);
     const fileNamesByPath = new Map(
-      contexts.map(({ sourceFile }) => [sourceFile.path, sourceFile.fileName]),
+      fileContexts.map(({ sourceFile }) => [sourceFile.path, sourceFile.fileName]),
     );
     const components = analyses
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))

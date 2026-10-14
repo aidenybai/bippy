@@ -1,6 +1,6 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
-import type { Checker, Signature, Type as TypeScriptType } from "typescript/unstable/sync";
+import type { Checker, Signature, Type } from "typescript/unstable/sync";
 import type { MutableCollection, TypeProvider } from "../react-compiler/HIR/Environment";
 import { Effect, ValueKind, makeType } from "../react-compiler/HIR/HIR";
 import type { BuiltInType, SourceLocation } from "../react-compiler/HIR/HIR";
@@ -41,15 +41,14 @@ const LIB_COLLECTIONS = new Map<string, Collection>([
   ["ReadonlySet", { shapeId: BuiltInSetId, mutatingMethod: "add" }],
 ]);
 
-const isPrimitiveType = (type: TypeScriptType): boolean =>
+const isPrimitiveType = (type: Type): boolean =>
   Boolean(type.flags & PRIMITIVE_FLAGS) ||
   (type.isUnionType() && type.getTypes().every(isPrimitiveType));
 
-/** Types the compiler's HIR from the TypeScript checker. */
 export class CompilerTypeProvider implements TypeProvider {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
-  readonly #mutatingMethods = new Map<MutableCollection, Set<string>>();
+  readonly #mutatingMethodsByCollection = new Map<MutableCollection, Set<string>>();
 
   constructor(checker: Checker, sourceFile: SourceFile) {
     this.#checker = checker;
@@ -62,15 +61,14 @@ export class CompilerTypeProvider implements TypeProvider {
   }
 
   isMutatingMethod(collection: MutableCollection, method: string): boolean {
-    let methods = this.#mutatingMethods.get(collection);
-    if (!methods) {
-      const readonlyMethods = new Set(this.#getMemberNames(`Readonly${collection}`));
-      methods = new Set(
-        this.#getMemberNames(collection).filter((name) => !readonlyMethods.has(name)),
-      );
-      this.#mutatingMethods.set(collection, methods);
-    }
-    return methods.has(method);
+    const cachedMethods = this.#mutatingMethodsByCollection.get(collection);
+    if (cachedMethods) return cachedMethods.has(method);
+    const readonlyMethods = new Set(this.#getMemberNames(`Readonly${collection}`));
+    const mutatingMethods = new Set(
+      this.#getMemberNames(collection).filter((memberName) => !readonlyMethods.has(memberName)),
+    );
+    this.#mutatingMethodsByCollection.set(collection, mutatingMethods);
+    return mutatingMethods.has(method);
   }
 
   #getMemberNames(interfaceName: string): string[] {
@@ -83,10 +81,10 @@ export class CompilerTypeProvider implements TypeProvider {
   getType(loc: SourceLocation, shapes: ShapeRegistry): BuiltInType | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     const type = node ? this.#checker.getTypeAtLocation(node) : undefined;
-    return type ? this.#convert(type, shapes, 0) : null;
+    return type ? this.#convertType(type, shapes, 0) : null;
   }
 
-  #convert(type: TypeScriptType, shapes: ShapeRegistry, depth: number): BuiltInType | null {
+  #convertType(type: Type, shapes: ShapeRegistry, depth: number): BuiltInType | null {
     if (type.isErrorType() || type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Never)) return null;
     if (isPrimitiveType(type)) return { kind: "Primitive" };
     if (type.isUnionType()) {
@@ -94,7 +92,7 @@ export class CompilerTypeProvider implements TypeProvider {
         .getTypes()
         .filter((member) => !(member.flags & NULLISH_FLAGS));
       return onlyMember && otherMembers.length === 0
-        ? this.#convert(onlyMember, shapes, depth)
+        ? this.#convertType(onlyMember, shapes, depth)
         : null;
     }
     const collectionType = this.#getCollectionType(type);
@@ -106,15 +104,16 @@ export class CompilerTypeProvider implements TypeProvider {
     return null;
   }
 
-  // A signature can't say an argument aliases the return, so only primitive returns are precise.
   #convertSignature(signature: Signature, shapes: ShapeRegistry, depth: number): BuiltInType {
     const parameterEffects = signature
       .getParameters()
       .map((parameter) => this.#getParameterEffect(this.#checker.getTypeOfSymbol(parameter)));
-    const restParam = signature.hasRestParameter ? (parameterEffects.pop() ?? null) : null;
-    const returnTypeScriptType = this.#checker.getReturnTypeOfSignature(signature);
+    const restParameterEffect = signature.hasRestParameter
+      ? (parameterEffects.pop() ?? null)
+      : null;
+    const signatureReturnType = this.#checker.getReturnTypeOfSignature(signature);
     const returnType =
-      (returnTypeScriptType && this.#convert(returnTypeScriptType, shapes, depth + 1)) ?? null;
+      (signatureReturnType && this.#convertType(signatureReturnType, shapes, depth + 1)) ?? null;
     if (returnType?.kind !== "Primitive") {
       return {
         kind: "Function",
@@ -125,14 +124,14 @@ export class CompilerTypeProvider implements TypeProvider {
     }
     return addFunction(shapes, [], {
       positionalParams: parameterEffects,
-      restParam,
+      restParam: restParameterEffect,
       returnType,
       returnValueKind: ValueKind.Primitive,
       calleeEffect: Effect.Read,
     });
   }
 
-  #getCollectionType(type: TypeScriptType): BuiltInType | null {
+  #getCollectionType(type: Type): BuiltInType | null {
     const symbol = type.getSymbol();
     const isLibCollection = symbol?.declarations.some((declaration) =>
       LIB_DECLARATION_PATTERN.test(declaration.path),
@@ -152,13 +151,12 @@ export class CompilerTypeProvider implements TypeProvider {
     };
   }
 
-  // `readonly` is shallow, so only a readonly collection of primitives can't be mutated.
-  #isDeeplyReadonly(type: TypeScriptType, collection: Collection): boolean {
+  #isDeeplyReadonly(type: Type, collection: Collection): boolean {
     if (this.#checker.getPropertyOfType(type, collection.mutatingMethod)) return false;
     return type.isTypeReference() && this.#checker.getTypeArguments(type).every(isPrimitiveType);
   }
 
-  #getParameterEffect(type: TypeScriptType | undefined): Effect {
+  #getParameterEffect(type: Type | undefined): Effect {
     if (!type) return Effect.ConditionallyMutate;
     const collection = this.#getCollectionType(type);
     const isReadonly =

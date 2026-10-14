@@ -30,6 +30,8 @@ const BINARY_PRECEDENCE = new Map<string, number>([
 ]);
 
 const ATOMIC_PRECEDENCE = 10;
+const COMPARED_OPERAND_PRECEDENCE = 5;
+const TERNARY_TEST_PRECEDENCE = 1;
 const WORD_OPERATOR_PATTERN = /^[a-z]/;
 
 export const formatLine = (loc: SourceLocation): string =>
@@ -55,7 +57,6 @@ const formatWithPrecedence = (value: SymbolicValue, minimumPrecedence: number): 
   return getPrecedence(value) < minimumPrecedence ? `(${text})` : text;
 };
 
-// `x?.y` lowers to `x != null ? x.y : undefined`; print it back as the chain.
 const formatOptionalChain = (value: ConditionalValue): string | null => {
   if (
     value.testKind !== "nullish" ||
@@ -78,20 +79,26 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return formatPrimitive(value.value);
     case "Binding":
       return formatPlace(value.binding, value.path);
-    case "UnaryExpression":
-      return `${value.operator}${WORD_OPERATOR_PATTERN.test(value.operator) ? " " : ""}${formatWithPrecedence(value.value, ATOMIC_PRECEDENCE)}`;
+    case "UnaryExpression": {
+      const separator = WORD_OPERATOR_PATTERN.test(value.operator) ? " " : "";
+      return `${value.operator}${separator}${formatWithPrecedence(value.value, ATOMIC_PRECEDENCE)}`;
+    }
     case "BinaryExpression": {
       const precedence = BINARY_PRECEDENCE.get(value.operator) ?? 0;
-      return `${formatWithPrecedence(value.left, precedence)} ${value.operator} ${formatWithPrecedence(value.right, precedence + 1)}`;
+      const left = formatWithPrecedence(value.left, precedence);
+      const right = formatWithPrecedence(value.right, precedence + 1);
+      return `${left} ${value.operator} ${right}`;
     }
     case "Conditional": {
       const optionalChain = formatOptionalChain(value);
       if (optionalChain) return optionalChain;
       const test =
         value.testKind === "nullish"
-          ? `${formatWithPrecedence(value.test, 5)} != null`
-          : formatWithPrecedence(value.test, 1);
-      return `${test} ? ${formatSymbolicValue(value.consequent)} : ${formatSymbolicValue(value.alternate)}`;
+          ? `${formatWithPrecedence(value.test, COMPARED_OPERAND_PRECEDENCE)} != null`
+          : formatWithPrecedence(value.test, TERNARY_TEST_PRECEDENCE);
+      const consequent = formatSymbolicValue(value.consequent);
+      const alternate = formatSymbolicValue(value.alternate);
+      return `${test} ? ${consequent} : ${alternate}`;
     }
     case "ObjectExpression": {
       const entries = [
@@ -102,8 +109,13 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       ];
       return `{ ${entries.join(", ")} }`;
     }
-    case "ArrayExpression":
-      return `[${[...value.spreads.map((spread) => `...${formatSymbolicValue(spread)}`), ...value.elements.map(formatSymbolicValue)].join(", ")}]`;
+    case "ArrayExpression": {
+      const entries = [
+        ...value.spreads.map((spread) => `...${formatSymbolicValue(spread)}`),
+        ...value.elements.map(formatSymbolicValue),
+      ];
+      return `[${entries.join(", ")}]`;
+    }
     case "ArrayMap":
       return `${formatWithPrecedence(value.array, ATOMIC_PRECEDENCE)}.map(…)`;
     case "JsxExpression":

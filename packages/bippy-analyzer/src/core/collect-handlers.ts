@@ -21,7 +21,6 @@ const hasCallableField = (value: SymbolicValue): boolean =>
   value.kind === "ObjectExpression" &&
   value.properties.some((property) => isCallable(property.value));
 
-// React calls a ref callback on attach, so it runs like a layout effect.
 const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
 const getSpreadHandlers = (tag: JsxTag, value: SymbolicValue): SymbolicValue | null => {
@@ -66,30 +65,30 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
 
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const handlers: Handler[] = [];
-  const handlerIds = new Map<string, string | null>();
+  const handlerIdsByKey = new Map<string, string | null>();
 
   const addHandler = (
-    key: string,
     trigger: HandlerTrigger,
-    handler: SymbolicValue,
+    callback: SymbolicValue,
+    callbackArguments: SymbolicValue[],
     loc: SourceLocation,
   ): string | null => {
-    if (!handlerIds.has(key))
-      handlerIds.set(key, addTransition(trigger, handler, [EVENT_ARGUMENT], loc));
-    return handlerIds.get(key) ?? null;
+    const { updates, delegates } = interpreter.collectEffects(callback, callbackArguments);
+    if (updates.length === 0 && delegates.length === 0) return null;
+    const handlerId = `t${handlers.length + 1}`;
+    handlers.push({ id: handlerId, trigger, updates, delegates, loc });
+    return handlerId;
   };
 
-  const addTransition = (
+  const addEventHandler = (
+    handlerKey: string,
     trigger: HandlerTrigger,
-    handler: SymbolicValue,
-    args: SymbolicValue[],
+    callback: SymbolicValue,
     loc: SourceLocation,
   ): string | null => {
-    const { updates, delegates } = interpreter.collectEffects(handler, args);
-    if (updates.length === 0 && delegates.length === 0) return null;
-    const id = `t${handlers.length + 1}`;
-    handlers.push({ id, trigger, updates, delegates, loc });
-    return id;
+    if (!handlerIdsByKey.has(handlerKey))
+      handlerIdsByKey.set(handlerKey, addHandler(trigger, callback, [EVENT_ARGUMENT], loc));
+    return handlerIdsByKey.get(handlerKey) ?? null;
   };
 
   for (const effectCall of interpreter.effectCalls) {
@@ -98,7 +97,7 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       hookKind: effectCall.hookKind,
       dependencies: effectCall.dependencies,
     };
-    addTransition(trigger, effectCall.callback, effectCall.args, effectCall.loc);
+    addHandler(trigger, effectCall.callback, effectCall.args, effectCall.loc);
   }
   const refCallbackKeys = new Set<string>();
   forEachJsxElement(render, (element) => {
@@ -106,18 +105,18 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       if (prop.kind === "JsxSpreadAttribute") {
         const trigger: HandlerTrigger = { kind: "Event", tag: element.tag.name, event: ANY_EVENT };
         const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
-        const spreadKey = spreadHandlers && getHandlerKey(spreadHandlers);
+        const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
         if (prop.value.kind === "Unknown")
-          prop.handlerId = addTransition(trigger, prop.value, [], prop.value.loc);
-        else if (spreadHandlers && spreadKey)
-          prop.handlerId = addHandler(spreadKey, trigger, spreadHandlers, element.loc);
+          prop.handlerId = addHandler(trigger, prop.value, [], prop.value.loc);
+        else if (spreadHandlers && spreadHandlerKey)
+          prop.handlerId = addEventHandler(spreadHandlerKey, trigger, spreadHandlers, element.loc);
         continue;
       }
       if (isRefCallback(prop)) {
-        const key = getHandlerKey(prop.value);
-        if (key !== null && !refCallbackKeys.has(key)) {
-          refCallbackKeys.add(key);
-          addTransition(
+        const refCallbackKey = getHandlerKey(prop.value);
+        if (refCallbackKey !== null && !refCallbackKeys.has(refCallbackKey)) {
+          refCallbackKeys.add(refCallbackKey);
+          addHandler(
             { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
             prop.value,
             [EVENT_ARGUMENT],
@@ -127,10 +126,10 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
         continue;
       }
       if (!isHandlerProp(element.tag, prop)) continue;
-      const key = getHandlerKey(prop.value);
-      if (key === null) continue;
-      prop.handlerId = addHandler(
-        key,
+      const handlerKey = getHandlerKey(prop.value);
+      if (handlerKey === null) continue;
+      prop.handlerId = addEventHandler(
+        handlerKey,
         { kind: "Event", tag: element.tag.name, event: prop.name },
         prop.value,
         getHandlerLocation(prop.value),

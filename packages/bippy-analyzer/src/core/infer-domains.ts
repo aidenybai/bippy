@@ -43,9 +43,7 @@ const DATE_TYPE_PATTERN = /^Date$/;
 const SET_TYPE_NAMES = new Set(["Set", "ReadonlySet"]);
 const MAP_TYPE_NAMES = new Set(["Map", "ReadonlyMap"]);
 const CONTEXT_TYPE_PATTERN = /^Context$/;
-// Throws beside `children`, which is sampled everywhere.
 const UNSAMPLED_FIELDS = new Set(["dangerouslySetInnerHTML"]);
-// No plain value can stand in for a DOM node.
 const DOM_NODE_TYPE_PATTERN =
   /^(?:Node|Element|HTML\w*Element|SVG\w*Element|DocumentFragment|Document|ShadowRoot)$/;
 const NODE_TYPE_PATTERN = /^(?:ReactNode|ReactChild|ReactPortal)$/;
@@ -168,7 +166,6 @@ const dedupeSamples = (samples: Sample[]): Sample[] => [
   ...new Map(samples.map((sample) => [getSampleKey(sample), sample])).values(),
 ];
 
-// Past the depth or field cap the object is open: a mount answers other fields with a stand-in.
 const getObjectSample = (checker: Checker, type: Type, depth: number): Sample => {
   if (depth >= MAX_SAMPLE_DEPTH) return { kind: "Object", fields: {}, isOpen: true };
   const properties = checker
@@ -227,11 +224,11 @@ const getSamples = (
     ];
   const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);
   if (signature) {
-    const [returns] =
+    const [returnSample] =
       depth < MAX_SAMPLE_DEPTH
         ? getSamples(checker, checker.getReturnTypeOfSignature(signature), depth + 1)
         : [];
-    return [{ kind: "Function", returns: returns ?? null }];
+    return [{ kind: "Function", returns: returnSample ?? null }];
   }
   if (checker.isArrayType(type) && type.isTypeReference()) {
     const [elementType] = checker.getTypeArguments(type);
@@ -244,23 +241,23 @@ const getSamples = (
         ]
       : [{ kind: "Array", items: [] }];
   }
-  // Match by symbol name, since an alias like `type Cache = Map<…>` prints as the alias.
   const symbolName = type.getSymbol()?.name;
   if (symbolName && SET_TYPE_NAMES.has(symbolName) && type.isTypeReference()) {
     const [itemType] = checker.getTypeArguments(type);
-    const [item] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, itemType, depth + 1) : [];
-    return [{ kind: "Set", items: item ? [item] : [] }];
+    const [itemSample] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, itemType, depth + 1) : [];
+    return [{ kind: "Set", items: itemSample ? [itemSample] : [] }];
   }
   if (symbolName && MAP_TYPE_NAMES.has(symbolName) && type.isTypeReference()) {
     const [keyType, valueType] = checker.getTypeArguments(type);
-    const [key] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, keyType, depth + 1) : [];
-    const [value] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
-    return [{ kind: "Map", entries: key && value ? [[key, value]] : [] }];
+    const [keySample] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, keyType, depth + 1) : [];
+    const [valueSample] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
+    return [{ kind: "Map", entries: keySample && valueSample ? [[keySample, valueSample]] : [] }];
   }
   if (isLibraryType(type, PROMISE_TYPE_PATTERN) && type.isTypeReference()) {
     const [valueType] = checker.getTypeArguments(type);
-    const [value] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
-    return [{ kind: "Promise", value: value ?? { kind: "Undefined" } }];
+    const [resolvedSample] =
+      depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
+    return [{ kind: "Promise", value: resolvedSample ?? { kind: "Undefined" } }];
   }
   if (type.isTupleType() && type.isTypeReference()) {
     return [
@@ -280,15 +277,14 @@ const getSamples = (
 export const getSampleOfValue = (value: PrimitiveValue): Sample =>
   value === undefined ? { kind: "Undefined" } : { kind: "Value", value };
 
-/** Samples each literal a prop is compared to, so branches like `role === "admin"` run. */
 export const addComparedSamples = (render: SymbolicValue): void => {
   forEachSymbolicValue(render, (value) => {
     if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return;
-    const [place, literal] =
+    const [comparedValue, literal] =
       value.left.kind === "Binding" ? [value.left, value.right] : [value.right, value.left];
-    if (place.kind !== "Binding" || literal.kind !== "Primitive") return;
-    const { binding } = place;
-    if (binding.kind !== "prop" || place.path.length > 0) return;
+    if (comparedValue.kind !== "Binding" || literal.kind !== "Primitive") return;
+    const { binding } = comparedValue;
+    if (binding.kind !== "prop" || comparedValue.path.length > 0) return;
     if (typeof literal.value !== "string" && typeof literal.value !== "number") return;
     const hasSample = binding.samples.some(
       (sample) => sample.kind === "Value" && sample.value === literal.value,
@@ -300,7 +296,7 @@ export const addComparedSamples = (render: SymbolicValue): void => {
 export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
-  readonly #types = new Map<string, Type | undefined>();
+  readonly #typesByRange = new Map<string, Type | undefined>();
   readonly #isStrictNullChecks: boolean;
 
   constructor(checker: Checker, sourceFile: SourceFile, isStrictNullChecks: boolean) {
@@ -315,12 +311,12 @@ export class DomainResolver {
 
   #getType(loc: SourceLocation): Type | undefined {
     if (loc === GeneratedSource) return undefined;
-    const key = `${loc.start.index}:${loc.end.index}`;
-    if (!this.#types.has(key)) {
+    const rangeKey = `${loc.start.index}:${loc.end.index}`;
+    if (!this.#typesByRange.has(rangeKey)) {
       const node = findNodeAtLocation(this.#sourceFile, loc);
-      this.#types.set(key, node ? this.#checker.getTypeAtLocation(node) : undefined);
+      this.#typesByRange.set(rangeKey, node ? this.#checker.getTypeAtLocation(node) : undefined);
     }
-    return this.#types.get(key);
+    return this.#typesByRange.get(rangeKey);
   }
 
   getDomain(loc: SourceLocation): Domain {
@@ -330,10 +326,9 @@ export class DomainResolver {
       : getDomainOfType(this.#checker, type);
   }
 
-  /** The type a variable is declared with, not the narrower one where it's read. */
   getDeclaredDomain(loc: SourceLocation): Domain | null {
     if (loc === GeneratedSource) return null;
-    // Babel's identifier spans its type annotation, so fall back to the name alone.
+    // HACK: Babel's identifier spans its type annotation, so fall back to the name alone.
     const nameLoc = loc.identifierName
       ? { ...loc, end: { ...loc.end, index: loc.start.index + loc.identifierName.length } }
       : loc;
@@ -343,57 +338,56 @@ export class DomainResolver {
     return symbol ? getDomainOfType(this.#checker, this.#checker.getTypeOfSymbol(symbol)) : null;
   }
 
-  // Without `strictNullChecks`, optional properties and call results omit `undefined`.
   #isOptionalRead(loc: SourceLocation): boolean {
     if (this.#isStrictNullChecks) return false;
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return false;
     if (isCallExpression(node)) return true;
-    const element = isBindingElement(node)
+    const bindingElement = isBindingElement(node)
       ? node
       : node.parent && isBindingElement(node.parent)
         ? node.parent
         : null;
-    const objectNode = isPropertyAccessExpression(node) ? node.expression : element?.parent;
+    const objectNode = isPropertyAccessExpression(node) ? node.expression : bindingElement?.parent;
     const nameNode = isPropertyAccessExpression(node)
       ? node.name
-      : (element?.propertyName ?? element?.name);
+      : (bindingElement?.propertyName ?? bindingElement?.name);
     if (!objectNode || !nameNode || !isIdentifier(nameNode)) return false;
     const objectType = this.#checker.getTypeAtLocation(objectNode);
     const property = objectType && this.#checker.getPropertyOfType(objectType, nameNode.text);
     return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
   }
 
-  // A destructuring default's type omits the `undefined` the default replaces.
   #isDefaultedBinding(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node) return false;
-    const element = isBindingElement(node) ? node : node.parent;
-    return element !== undefined && isBindingElement(element) && element.initializer !== undefined;
+    const bindingElement = isBindingElement(node) ? node : node.parent;
+    return (
+      bindingElement !== undefined &&
+      isBindingElement(bindingElement) &&
+      bindingElement.initializer !== undefined
+    );
   }
 
-  // An index signature promises nothing about which keys exist.
   #isIndexedRead(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     if (!node || !(isElementAccessExpression(node) || isPropertyAccessExpression(node)))
       return false;
     const objectType = this.#checker.getTypeAtLocation(node.expression);
     if (!objectType || this.#checker.getIndexInfosOfType(objectType).length === 0) return false;
-    const key = isPropertyAccessExpression(node)
+    const propertyName = isPropertyAccessExpression(node)
       ? node.name.text
       : isStringLiteral(node.argumentExpression) || isNumericLiteral(node.argumentExpression)
         ? node.argumentExpression.text
         : null;
-    return key === null || !this.#checker.getPropertyOfType(objectType, key);
+    return propertyName === null || !this.#checker.getPropertyOfType(objectType, propertyName);
   }
 
-  /** For each member of a union of objects, the values it gives a field, like a query's status. */
   getUnionMemberValues(loc: SourceLocation, field: string): AbstractValue[][] | null {
     const type = this.#getType(loc);
     if (!type?.isUnionType()) return null;
-    const members = type.getTypes();
     const unionMemberValues: AbstractValue[][] = [];
-    for (const member of members) {
+    for (const member of type.getTypes()) {
       if (member.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
         unionMemberValues.push([{ kind: "Literal", value: undefined }]);
         continue;
@@ -419,7 +413,6 @@ export class DomainResolver {
     return getSamples(this.#checker, this.#getType(loc), 0, name);
   }
 
-  // The name before the compiler renames shadowed ones (`todo` rather than `todo_0`).
   getSourceName(loc: SourceLocation): string | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node && isIdentifier(node) ? node.text : null;
@@ -442,7 +435,6 @@ export class DomainResolver {
     return node && isCallExpression(node) ? node.expression.getText(this.#sourceFile) : null;
   }
 
-  // Compiler-generated tests, like a destructuring default's `=== undefined`, aren't wrappable.
   isExpression(loc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, loc);
     return node !== null && isExpression(node);
@@ -458,23 +450,22 @@ export class DomainResolver {
     return node ? getContextKey(this.#checker, node) : null;
   }
 
-  // Nullish members are skipped because `items?.find()` never calls on them.
   isNonMutatingMethod(calleeLoc: SourceLocation): boolean {
     const node = findNodeAtLocation(this.#sourceFile, calleeLoc);
     if (!node || !isPropertyAccessExpression(node)) return false;
-    const method = node.name.text;
-    const type = this.#checker.getTypeAtLocation(node.expression);
-    if (!type) return false;
-    const members = (type.isUnionType() ? type.getTypes() : [type]).filter(
-      (member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)),
-    );
+    const methodName = node.name.text;
+    const receiverType = this.#checker.getTypeAtLocation(node.expression);
+    if (!receiverType) return false;
+    const definedMembers = (
+      receiverType.isUnionType() ? receiverType.getTypes() : [receiverType]
+    ).filter((member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)));
     return (
-      members.length > 0 &&
-      members.every((member) =>
+      definedMembers.length > 0 &&
+      definedMembers.every((member) =>
         member.flags & TypeFlags.StringLike
-          ? NON_MUTATING_STRING_METHODS.has(method)
+          ? NON_MUTATING_STRING_METHODS.has(methodName)
           : (this.#checker.isArrayType(member) || member.isTupleType()) &&
-            NON_MUTATING_ARRAY_METHODS.has(method),
+            NON_MUTATING_ARRAY_METHODS.has(methodName),
       )
     );
   }
@@ -485,13 +476,13 @@ export class DomainResolver {
     const fields: Record<string, Sample> = {};
     for (const property of this.#checker.getPropertiesOfType(type)) {
       if (property.flags & SymbolFlags.Optional) continue;
-      const [sample] = getSamples(
+      const [fieldSample] = getSamples(
         this.#checker,
         this.#checker.getTypeOfSymbol(property),
         1,
         property.name,
       );
-      if (sample) fields[property.name] = sample;
+      if (fieldSample) fields[property.name] = fieldSample;
     }
     return Object.keys(fields).length > 0 ? { kind: "Object", fields, isOpen: false } : null;
   }

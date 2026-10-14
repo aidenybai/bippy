@@ -9,6 +9,7 @@ import type { LoggerEvent, PluginOptions } from "../react-compiler/Entrypoint/Op
 import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
 import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
+import type { ModuleFunctionLoader } from "./function-registry";
 
 type BabelFunction = NodePath<
   types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression
@@ -16,7 +17,7 @@ type BabelFunction = NodePath<
 
 export interface CompiledFunction {
   name: string;
-  fnType: ReactFunctionType | null;
+  functionType: ReactFunctionType | null;
   loc: SourceLocation;
   hir: HIRFunction | null;
   errors: string[];
@@ -24,7 +25,7 @@ export interface CompiledFunction {
 
 export interface CompiledFile {
   functions: CompiledFunction[];
-  compileModuleFunction: (name: string) => HIRFunction | null;
+  compileModuleFunction: ModuleFunctionLoader;
 }
 
 // HACK: later passes rewrite the HIR in place, so throw past the compiler to stop after STOP_PASS.
@@ -66,8 +67,7 @@ const getFunctionName = (path: NodePath<types.Function>, code: string): string =
   return types.isFunctionExpression(path.node) && path.node.id ? path.node.id.name : ANONYMOUS_NAME;
 };
 
-// A function that fails before lowering never reports its type, so infer it from the name.
-const getFunctionType = (name: string): ReactFunctionType =>
+const guessFunctionTypeFromName = (name: string): ReactFunctionType =>
   COMPONENT_NAME_PATTERN.test(name) ? "Component" : isHookName(name) ? "Hook" : "Other";
 
 export const compileFile = (
@@ -83,22 +83,22 @@ export const compileFile = (
   });
   if (!ast) return { functions: [], compileModuleFunction: () => null };
 
-  const functions = new Map<string, CompiledFunction>();
-  const getFunction = (loc: types.SourceLocation): CompiledFunction => {
-    const key = getLocationKey(loc);
-    const compiled = functions.get(key) ?? {
+  const compiledByLocation = new Map<string, CompiledFunction>();
+  const getCompiledFunction = (loc: types.SourceLocation): CompiledFunction => {
+    const locationKey = getLocationKey(loc);
+    const compiled = compiledByLocation.get(locationKey) ?? {
       name: ANONYMOUS_NAME,
-      fnType: null,
+      functionType: null,
       loc,
       hir: null,
       errors: [],
     };
-    functions.set(key, compiled);
+    compiledByLocation.set(locationKey, compiled);
     return compiled;
   };
-  const names = new Map<string, string>();
-  const modulePaths = new Map<string, BabelFunction>();
-  const opts = parsePluginOptions({
+  const namesByLocation = new Map<string, string>();
+  const moduleFunctionPaths = new Map<string, BabelFunction>();
+  const pluginOptions = parsePluginOptions({
     compilationMode: "infer",
     outputMode: "lint",
     panicThreshold: "none",
@@ -108,26 +108,28 @@ export const compileFile = (
     logger: {
       logEvent: (_fileName: string | null, event: LoggerEvent) => {
         if (!("fnLoc" in event) || !event.fnLoc) return;
-        const compiled = getFunction(event.fnLoc);
-        const description = describeEvent(event);
-        if (compiled.hir === null && description && !description.includes(STOP.toString()))
-          compiled.errors.push(description);
+        const compiled = getCompiledFunction(event.fnLoc);
+        const errorReason = describeEvent(event);
+        if (compiled.hir === null && errorReason && !errorReason.includes(STOP.toString()))
+          compiled.errors.push(errorReason);
       },
-      debugLogIRs: (value: CompilerPipelineValue) => {
-        if (value.kind !== "hir") return;
-        const fn = value.value;
-        const loc = fn.loc;
+      debugLogIRs: (pipelineValue: CompilerPipelineValue) => {
+        if (pipelineValue.kind !== "hir") return;
+        const hirFunction = pipelineValue.value;
+        const { loc } = hirFunction;
         if (typeof loc === "symbol") return;
-        if (value.name === "HIR" && fn.env.hasErrors()) {
-          const compiled = getFunction(loc);
-          compiled.fnType = fn.fnType;
-          compiled.errors.push(...fn.env.aggregateErrors().details.map((detail) => detail.reason));
+        if (pipelineValue.name === "HIR" && hirFunction.env.hasErrors()) {
+          const compiled = getCompiledFunction(loc);
+          compiled.functionType = hirFunction.fnType;
+          compiled.errors.push(
+            ...hirFunction.env.aggregateErrors().details.map((detail) => detail.reason),
+          );
           throw STOP;
         }
-        if (value.name !== STOP_PASS) return;
-        const compiled = getFunction(loc);
-        compiled.fnType = fn.fnType;
-        compiled.hir = fn;
+        if (pipelineValue.name !== STOP_PASS) return;
+        const compiled = getCompiledFunction(loc);
+        compiled.functionType = hirFunction.fnType;
+        compiled.hir = hirFunction;
         throw STOP;
       },
     },
@@ -137,10 +139,16 @@ export const compileFile = (
   traverse(ast, {
     Program(path) {
       programPath = path;
-      compileProgram(path, { opts, filename: fileName, comments: ast.comments ?? [], code });
+      compileProgram(path, {
+        opts: pluginOptions,
+        filename: fileName,
+        comments: ast.comments ?? [],
+        code,
+      });
     },
     Function(path) {
-      if (path.node.loc) names.set(getLocationKey(path.node.loc), getFunctionName(path, code));
+      if (path.node.loc)
+        namesByLocation.set(getLocationKey(path.node.loc), getFunctionName(path, code));
       if (
         path.parentPath.isProgram() ||
         (path.parentPath.isVariableDeclarator() &&
@@ -151,24 +159,25 @@ export const compileFile = (
           path.isFunctionExpression() ||
           path.isArrowFunctionExpression()
         )
-          modulePaths.set(getFunctionName(path, code), path);
+          moduleFunctionPaths.set(getFunctionName(path, code), path);
       }
     },
   });
-  for (const [key, compiled] of functions) {
-    compiled.name = compiled.hir?.id ?? names.get(key) ?? ANONYMOUS_NAME;
-    compiled.fnType ??= getFunctionType(compiled.name);
+  for (const [locationKey, compiled] of compiledByLocation) {
+    compiled.name = compiled.hir?.id ?? namesByLocation.get(locationKey) ?? ANONYMOUS_NAME;
+    compiled.functionType ??= guessFunctionTypeFromName(compiled.name);
   }
 
-  const moduleFunctions = new Map<string, HIRFunction | null>();
-  const compileModuleFunction = (name: string): HIRFunction | null => {
-    if (moduleFunctions.has(name)) return moduleFunctions.get(name) ?? null;
-    const path = modulePaths.get(name);
+  const moduleFunctionsByName = new Map<string, HIRFunction | null>();
+  const compileModuleFunction = (functionName: string): HIRFunction | null => {
+    if (moduleFunctionsByName.has(functionName))
+      return moduleFunctionsByName.get(functionName) ?? null;
+    const functionPath = moduleFunctionPaths.get(functionName);
     let hir: HIRFunction | null = null;
-    if (path && programPath) {
+    if (functionPath && programPath) {
       const programContext = new ProgramContext({
         program: programPath,
-        opts,
+        opts: pluginOptions,
         filename: fileName,
         code,
         suppressions: [],
@@ -176,26 +185,35 @@ export const compileFile = (
       });
       const logger = {
         logEvent: () => {},
-        debugLogIRs: (value: CompilerPipelineValue) => {
-          if (value.kind !== "hir") return;
-          if (value.name === "HIR" && value.value.env.hasErrors()) throw STOP;
-          if (value.name !== STOP_PASS) return;
-          hir = value.value;
+        debugLogIRs: (pipelineValue: CompilerPipelineValue) => {
+          if (pipelineValue.kind !== "hir") return;
+          if (pipelineValue.name === "HIR" && pipelineValue.value.env.hasErrors()) throw STOP;
+          if (pipelineValue.name !== STOP_PASS) return;
+          hir = pipelineValue.value;
           throw STOP;
         },
       };
       try {
-        compileFn(path, opts.environment, "Other", "lint", programContext, logger, fileName, code);
+        compileFn(
+          functionPath,
+          pluginOptions.environment,
+          "Other",
+          "lint",
+          programContext,
+          logger,
+          fileName,
+          code,
+        );
       } catch (error) {
         if (error !== STOP) hir = null;
       }
     }
-    moduleFunctions.set(name, hir);
+    moduleFunctionsByName.set(functionName, hir);
     return hir;
   };
 
   return {
-    functions: [...functions.values()].filter(
+    functions: [...compiledByLocation.values()].filter(
       (compiled) => compiled.hir !== null || compiled.errors.length > 0,
     ),
     compileModuleFunction,
