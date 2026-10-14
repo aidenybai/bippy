@@ -23,7 +23,7 @@ interface MountOptions {
   scenario?: [name: string, ...args: unknown[]];
 }
 
-interface MountedComponent {
+interface ComponentFixture {
   page: Page;
   click: (label: string) => Promise<void>;
   observe: () => Promise<void>;
@@ -36,7 +36,7 @@ interface Session {
 }
 
 interface VerifyFixtures {
-  mountComponent: (componentName: string, options?: MountOptions) => Promise<MountedComponent>;
+  mountComponent: (componentName: string, options?: MountOptions) => Promise<ComponentFixture>;
 }
 
 interface VerifyWorkerFixtures {

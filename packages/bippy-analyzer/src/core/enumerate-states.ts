@@ -15,6 +15,7 @@ import type {
   BindingValue,
   ComponentAnalysis,
   ConditionalValue,
+  JsxContainerValue,
   BindingPlace,
   UnreachableBranch,
   Domain,
@@ -124,7 +125,10 @@ const getLiteralCases = (
   return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
 };
 
-const simplify = (value: SymbolicValue, constraints: Constraints): SymbolicValue =>
+const simplifyDecidedConditionals = (
+  value: SymbolicValue,
+  constraints: Constraints,
+): SymbolicValue =>
   mapSymbolicValue(value, (part) => {
     if (part.kind !== "Conditional") return part;
     const decidedOutcome = evaluateCondition(getTestExpression(part), constraints);
@@ -325,7 +329,7 @@ const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getVal
 const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
   prefix.every((guardKey, index) => guardKeys[index] === guardKey);
 
-const applyTransition = (
+const getConstraintsAfterHandler = (
   handler: Handler,
   constraints: Constraints,
   reachableConstraints: Constraints,
@@ -412,7 +416,7 @@ class StateEnumerator {
       const withOutcome = assumeCondition(test, outcome, constraints);
       if (!withOutcome) continue;
       this.#recordOutcome(branchKey, outcome);
-      const simplifiedTest = simplify(test, constraints);
+      const simplifiedTest = simplifyDecidedConditionals(test, constraints);
       const conditionLabel = outcome
         ? formatSymbolicValue(simplifiedTest)
         : formatNegated(simplifiedTest);
@@ -432,10 +436,7 @@ class StateEnumerator {
     return alternatives;
   }
 
-  #enumerateChildren(
-    element: Extract<SymbolicValue, { kind: "JsxExpression" | "JsxFragment" }>,
-    constraints: Constraints,
-  ): Alternative[] {
+  #enumerateChildren(element: JsxContainerValue, constraints: Constraints): Alternative[] {
     let partials: PartialChildren[] = [
       { constraints, children: [], fragments: [], conditions: [], branches: NO_BRANCHES },
     ];
@@ -649,7 +650,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
         .filter((handler) => handlerIds.has(handler.id))
         .map((handler) => {
           const targetKeys = new Set(
-            applyTransition(
+            getConstraintsAfterHandler(
               handler,
               alternative.constraints,
               reachableConstraints,

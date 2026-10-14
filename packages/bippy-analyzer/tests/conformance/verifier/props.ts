@@ -2,7 +2,12 @@ import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 
 const MAX_PROP_COMBINATIONS = 12;
 
-const getPropSamples = (analysis: ComponentAnalysis) =>
+interface PropSamples {
+  name: string;
+  samples: Sample[];
+}
+
+const getPropSamples = (analysis: ComponentAnalysis): PropSamples[] =>
   analysis.bindings.flatMap((binding) =>
     binding.kind === "prop" && binding.propName && binding.samples.length > 0
       ? [{ name: binding.propName, samples: binding.samples }]
@@ -23,11 +28,11 @@ export const getDefaultProps = (analysis: ComponentAnalysis): Record<string, Sam
 });
 
 export const getPropCombinations = (analysis: ComponentAnalysis): Record<string, Sample>[] => {
-  const props = getPropSamples(analysis);
-  const base = getDefaultProps(analysis);
-  const fullCount = props.reduce((total, { samples }) => total * samples.length, 1);
-  if (fullCount <= MAX_PROP_COMBINATIONS) {
-    return props.reduce<Record<string, Sample>[]>(
+  const propSamples = getPropSamples(analysis);
+  const defaultProps = getDefaultProps(analysis);
+  const combinationCount = propSamples.reduce((total, { samples }) => total * samples.length, 1);
+  if (combinationCount <= MAX_PROP_COMBINATIONS) {
+    return propSamples.reduce<Record<string, Sample>[]>(
       (combinations, { name, samples }) =>
         combinations.flatMap((combination) =>
           samples.map((sample) => ({ ...combination, [name]: sample })),
@@ -35,8 +40,8 @@ export const getPropCombinations = (analysis: ComponentAnalysis): Record<string,
       [getWholeProps(analysis)],
     );
   }
-  const variations = props.flatMap(({ name, samples }) =>
-    samples.slice(1).map((sample) => ({ ...base, [name]: sample })),
+  const variations = propSamples.flatMap(({ name, samples }) =>
+    samples.slice(1).map((sample) => ({ ...defaultProps, [name]: sample })),
   );
-  return [base, ...variations].slice(0, MAX_PROP_COMBINATIONS);
+  return [defaultProps, ...variations].slice(0, MAX_PROP_COMBINATIONS);
 };

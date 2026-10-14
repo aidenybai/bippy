@@ -5,7 +5,7 @@ import picocolors from "picocolors";
 import type { CollectSummary } from "./collect";
 import { runLocal } from "./local-environment";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos";
-import type { RepoConfig } from "./repos";
+import type { LineLogger, RepoConfig } from "./repos";
 import { runVercel } from "./vercel-environment";
 import { execFileSync } from "node:child_process";
 import {
@@ -65,7 +65,7 @@ const runRepo = (
   repo: RepoConfig,
   options: RunOptions,
   outputDirectory: string,
-  log: (line: string) => void,
+  log: LineLogger,
 ): Promise<CollectSummary> =>
   options.env === "vercel"
     ? runVercel(repo, outputDirectory, options.verify, log)

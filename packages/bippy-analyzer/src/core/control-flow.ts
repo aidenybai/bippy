@@ -19,6 +19,8 @@ interface SplitOutcome {
 
 export type BranchTerminal = Extract<Terminal, { kind: "if" | "branch" }>;
 
+export type SwitchTerminal = Extract<Terminal, { kind: "switch" }>;
+
 export type LoopTerminal = Extract<
   Terminal,
   { kind: "for" | "for-of" | "for-in" | "while" | "do-while" }

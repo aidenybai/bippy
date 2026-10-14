@@ -3,6 +3,7 @@ import type {
   BinaryOperator,
   Binding,
   BindingValue,
+  ComponentTagValue,
   ConditionalValue,
   SymbolicValue,
   TestKind,
@@ -76,9 +77,8 @@ export const foldUnary = (operator: UnaryOperator, value: SymbolicValue): Symbol
   return { kind: "UnaryExpression", operator, value };
 };
 
-export const getComponentName = (
-  tag: Extract<SymbolicValue, { kind: "Global" | "Binding" }>,
-): string => (tag.kind === "Global" ? tag.name : tag.binding.name);
+export const getComponentName = (tag: ComponentTagValue): string =>
+  tag.kind === "Global" ? tag.name : tag.binding.name;
 
 export const getShortCircuit = (
   value: SymbolicValue,

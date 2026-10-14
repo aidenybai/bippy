@@ -3,7 +3,7 @@ import type { SymbolicValue } from "../../../src/core/types";
 import { isRenderingNothing } from "../../../src/core/utils/checks";
 import type { Shape } from "./types";
 
-type ExpectedShape =
+export type ExpectedShape =
   | { kind: "element"; tag: string; children: ExpectedShape[] }
   | { kind: "component"; name: string; isKnown: boolean }
   | { kind: "text"; text: string }
@@ -212,15 +212,15 @@ const getExpectedTokens = (shapes: ExpectedShape[], actualTokens: Set<string> | 
   });
 
 export const findClosest = (candidates: ExpectedShape[][], actual: Shape[]): number => {
-  const actualTags = new Set(getActualTokens(actual));
+  const actualTokens = new Set(getActualTokens(actual));
   let bestIndex = 0;
   let bestScore = -1;
   candidates.forEach((candidate, index) => {
-    const candidateTags = new Set(
+    const candidateTokens = new Set(
       getExpectedTokens(candidate, null).filter((token) => token !== HOLE_TOKEN),
     );
-    const shared = [...candidateTags].filter((tag) => actualTags.has(tag)).length;
-    const score = shared / Math.max(1, new Set([...candidateTags, ...actualTags]).size);
+    const shared = [...candidateTokens].filter((token) => actualTokens.has(token)).length;
+    const score = shared / Math.max(1, new Set([...candidateTokens, ...actualTokens]).size);
     if (score > bestScore) {
       bestScore = score;
       bestIndex = index;

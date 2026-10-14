@@ -47,6 +47,10 @@ export const loadRepos = (ids: string[]): RepoConfig[] => {
   });
 };
 
+export interface LineLogger {
+  (line: string): void;
+}
+
 export const getSetupInputs = (repo: RepoConfig): string[] => [
   repo.revision,
   repo.install,
@@ -57,11 +61,11 @@ export const getSetupInputs = (repo: RepoConfig): string[] => [
 export const getSetupEnvironment = (
   repo: RepoConfig,
   appDirectory: string,
-  patchFile: string,
+  patchPath: string,
 ): Record<string, string> => ({
   REPOSITORY: repo.repository,
   REVISION: repo.revision,
   APP_DIR: appDirectory,
   INSTALL: repo.install,
-  PATCH_FILE: repo.patchFile ? patchFile : "",
+  PATCH_FILE: repo.patchFile ? patchPath : "",
 });

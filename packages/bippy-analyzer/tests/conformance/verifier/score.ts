@@ -32,6 +32,7 @@ import {
   normalizeText,
   toExpected,
 } from "./match";
+import type { ExpectedShape } from "./match";
 import { scoreWarnings } from "./mutation";
 import { getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
@@ -224,7 +225,7 @@ interface ScoringContext {
   analysis: ComponentAnalysis;
   report: StateReport;
   verdict: ComponentVerdict;
-  expectedStates: ReturnType<typeof toExpected>[];
+  expectedStates: ExpectedShape[][];
   triggerLabels: Map<string, TriggerLabel>;
   stateBindings: Binding[] | null;
   externalBindingIds: Set<number>;

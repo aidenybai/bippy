@@ -12,7 +12,11 @@ import {
   addFunction,
 } from "../react-compiler/HIR/ObjectShape";
 import type { ShapeRegistry } from "../react-compiler/HIR/ObjectShape";
-import { findNodeAtLocation, getReactExportName } from "./utils/typescript";
+import {
+  LIBRARY_DECLARATION_PATTERN,
+  findNodeAtLocation,
+  getReactExportName,
+} from "./utils/typescript";
 
 const MAX_CONVERSION_DEPTH = 3;
 const PRIMITIVE_FLAGS =
@@ -26,7 +30,6 @@ const PRIMITIVE_FLAGS =
   TypeFlags.Undefined |
   TypeFlags.Void;
 const NULLISH_FLAGS = TypeFlags.Null | TypeFlags.Undefined | TypeFlags.Void;
-const LIB_DECLARATION_PATTERN = /[\\/]lib\.[\w.]*\.d\.ts$/;
 
 interface Collection {
   shapeId: string;
@@ -134,7 +137,7 @@ export class CompilerTypeProvider implements TypeProvider {
   #getCollectionType(type: Type): BuiltInType | null {
     const symbol = type.getSymbol();
     const isLibCollection = symbol?.declarations.some((declaration) =>
-      LIB_DECLARATION_PATTERN.test(declaration.path),
+      LIBRARY_DECLARATION_PATTERN.test(declaration.path),
     );
     const collection =
       this.#checker.isArrayType(type) || this.#checker.isTupleType(type)

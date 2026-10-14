@@ -1,6 +1,12 @@
 import { existsSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import type { ExportedName, FileImports, PackageImport } from "./types";
+import type {
+  AliasResolver,
+  ExportedName,
+  FileImports,
+  ModuleExport,
+  PackageImport,
+} from "./types";
 
 const IMPORT_PATTERN = /import\s+(type\s+)?([^;]*?)\s*from\s*["']([^"']+)["']/g;
 const REEXPORT_PATTERN =
@@ -25,7 +31,7 @@ export const parseImports = (text: string): PackageImport[] =>
       typeOnly ? [] : [{ specifier, names: getImportedNames(clause) }],
   );
 
-export const parseExports = (text: string): Array<{ name: string; exportName: string }> => [
+export const parseExports = (text: string): ModuleExport[] => [
   ...[...text.matchAll(EXPORT_DECLARATION_PATTERN)].map(([, isDefault, name = ""]) => ({
     name,
     exportName: isDefault ? "default" : name,
@@ -53,7 +59,7 @@ const resolveRelativeImport = (file: string, specifier: string): string | null =
 export const getFileImports = async (
   file: string,
   imports: PackageImport[],
-  resolveAlias: (specifier: string, importer: string) => Promise<string | null>,
+  resolveAlias: AliasResolver,
 ): Promise<FileImports> => {
   const packages: PackageImport[] = [];
   const files: string[] = [];

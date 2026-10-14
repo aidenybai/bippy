@@ -2,7 +2,13 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, sep } from "node:path";
 import type { ViteDevServer } from "vite";
 import { addExports, getFileImports, parseImports } from "../source-index";
-import type { ExportedName, FileImports, PackageImport, SourceIndex } from "../types";
+import type {
+  AliasResolver,
+  ExportedName,
+  FileImports,
+  PackageImport,
+  SourceIndex,
+} from "../types";
 import {
   PACKAGE_SPECIFIER_PATTERN,
   SOURCE_FILE_PATTERN,
@@ -84,7 +90,7 @@ export const collectSourceReferences = (appDirectory: string): SourceReferences 
 
 // HACK: an alias like `@/components/ui/select` names a project file only the app's resolver knows.
 // An installed package never goes to the resolver, which would register it for optimizing.
-const createAliasResolver = (server: ViteDevServer) => {
+const createAliasResolver = (server: ViteDevServer): AliasResolver => {
   const resolved = new Map<string, Promise<string | null>>();
   return (specifier: string, importer: string): Promise<string | null> => {
     const directory = dirname(importer);

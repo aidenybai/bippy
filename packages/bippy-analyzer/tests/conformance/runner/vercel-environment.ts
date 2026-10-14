@@ -12,7 +12,7 @@ import {
   getSetupInputs,
 } from "./repos";
 import { z } from "zod";
-import type { RepoConfig } from "./repos";
+import type { LineLogger, RepoConfig } from "./repos";
 
 const SNAPSHOTS_SCHEMA = z.record(
   z.string(),
@@ -155,7 +155,7 @@ const runStep = async (
 const prepareSnapshot = async (
   repo: RepoConfig,
   credentials: Credentials,
-  log: (line: string) => void,
+  log: LineLogger,
 ): Promise<string> => {
   const key = getSnapshotKey(repo);
   const existing = readSnapshots()[repo.id];
@@ -218,7 +218,7 @@ export const runVercel = async (
   repo: RepoConfig,
   outputDirectory: string,
   shouldVerify: boolean,
-  log: (line: string) => void,
+  log: LineLogger,
 ): Promise<CollectSummary> => {
   const credentials = getCredentials();
   const snapshotId = await prepareSnapshot(repo, credentials, log);

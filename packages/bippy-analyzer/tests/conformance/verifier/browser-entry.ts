@@ -79,6 +79,14 @@ interface TrackedState {
   snapshot: string;
 }
 
+interface ChildrenProps {
+  children?: ReactNode;
+}
+
+interface FunctionComponent {
+  (props: Record<string, unknown>): unknown;
+}
+
 const ANONYMOUS_NAME = "Anonymous";
 const OPEN_PARENT_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
@@ -117,7 +125,7 @@ let pendingMutationHits: PendingMutationHit[] = [];
 let trackedStates: TrackedState[] = [];
 let stateOwners = new WeakMap<object, string>();
 let propWrites = new Set<string>();
-const depthMarkers = new Map<number, ComponentType<{ children?: ReactNode }>>();
+const depthMarkers = new Map<number, ComponentType<ChildrenProps>>();
 const propOwners = new WeakMap<object, string>();
 const writeCounts = new WeakMap<object, number>();
 const writeTrackers = new WeakMap<object, object>();
@@ -323,7 +331,8 @@ const getChildren = (fiber: Fiber): Fiber[] => {
   return children;
 };
 
-// `memo(forwardRef(...))` mounts as a memo fiber around the forward ref fiber that holds the hooks.
+// HACK: `memo(forwardRef(...))` mounts as a memo fiber around the forward ref fiber that holds the
+// hooks.
 const findMountedFiber = (): Fiber | null => {
   let fiber = traverseFiber(
     latestRoot?.current ?? null,
@@ -482,8 +491,8 @@ const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
   };
 };
 
-// An app's own error boundary catches first; React still reports it through `onCaughtError` (19) or
-// a global error event (18).
+// HACK: an app's own error boundary catches first, and React still reports it through
+// `onCaughtError` (19) or a global error event (18).
 const recordCaughtError = (error: unknown, errorInfo?: ErrorInfo): void => {
   caughtError ??= recordError(error, errorInfo);
 };
@@ -625,7 +634,7 @@ const isComponentType = (value: unknown): boolean =>
   typeof value === "function" ||
   (typeof value === "object" && value !== null && "$$typeof" in value);
 
-// React 18 renders a context itself as its consumer.
+// HACK: React 18 renders a context itself as its consumer.
 const getComponentType = (value: unknown): unknown => {
   if (!isComponentType(value)) return Reflect.get(Object(value), "Root");
   const provider = Reflect.get(Object(value), "Provider");
@@ -681,9 +690,7 @@ const NESTED_ROUTER_PATTERN = /cannot render a <Router> inside another <Router>/
 const ASYNC_CLIENT_COMPONENT_PATTERN =
   /async\/await is not yet supported in Client Components|is an async Client Component/;
 
-const isFunctionComponent = (
-  value: unknown,
-): value is (props: Record<string, unknown>) => unknown =>
+const isFunctionComponent = (value: unknown): value is FunctionComponent =>
   typeof value === "function" && !Reflect.get(Object(value.prototype), "isReactComponent");
 
 const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNode) => {
@@ -698,7 +705,7 @@ const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNo
 // HACK: a client-only component throws outside React for want of hooks, so it renders normally
 // instead.
 const callServerComponent = async (
-  type: (props: Record<string, unknown>) => unknown,
+  type: FunctionComponent,
   props: Record<string, unknown>,
 ): Promise<{ output: unknown } | null> => {
   try {
@@ -738,7 +745,7 @@ const resolveServerTree = async (node: unknown, isEveryComponent = false): Promi
 };
 
 // HACK: named by depth so React's component stack says which wrapper an error came from.
-const getDepthMarker = (depth: number): ComponentType<{ children?: ReactNode }> => {
+const getDepthMarker = (depth: number): ComponentType<ChildrenProps> => {
   const cached = depthMarkers.get(depth);
   if (cached) return cached;
   const marker = ({ children }: { children?: ReactNode }): ReactNode => children;

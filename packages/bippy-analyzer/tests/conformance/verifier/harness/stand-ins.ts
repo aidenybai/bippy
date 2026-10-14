@@ -73,10 +73,10 @@ const isServerOnlyPackage = (specifier: string): boolean =>
 const isNodeOnlyModule = (
   specifier: string,
   importer: string | undefined,
-  polyfilled: Set<string>,
+  polyfilledModules: Set<string>,
 ): boolean => {
   const name = specifier.replace(/^node:/, "").split("/")[0] ?? "";
-  if (!NODE_BUILTINS.has(name) || polyfilled.has(name)) return false;
+  if (!NODE_BUILTINS.has(name) || polyfilledModules.has(name)) return false;
   return (
     specifier.startsWith("node:") ||
     importer === undefined ||
@@ -96,13 +96,13 @@ const createStandInModuleSource = (names: Set<string>): string =>
   ].join("\n");
 
 export const createStandInPlugin = (
-  polyfilled: Set<string>,
+  polyfilledModules: Set<string>,
   packageImports: Map<string, Set<string>>,
 ): Plugin => ({
   name: "bippy-verify-stand-ins",
   enforce: "pre",
   resolveId: (source, importer) =>
-    isServerOnlyPackage(source) || isNodeOnlyModule(source, importer, polyfilled)
+    isServerOnlyPackage(source) || isNodeOnlyModule(source, importer, polyfilledModules)
       ? `${STAND_IN_MODULE_PREFIX}${source}`
       : null,
   load: (id) =>
@@ -148,11 +148,11 @@ export const createMissingRequirePlugin = (): OptimizerPlugin => ({
 
 // HACK: a browser has no Node, so Node modules and server SDKs in pre-bundled packages become
 // stand-ins.
-export const createNodeBuiltinPlugin = (polyfilled: Set<string>): OptimizerPlugin => ({
+export const createNodeBuiltinPlugin = (polyfilledModules: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
     build.onResolve({ filter: /.*/ }, ({ path, importer }) =>
-      isServerOnlyPackage(path) || isNodeOnlyModule(path, importer, polyfilled)
+      isServerOnlyPackage(path) || isNodeOnlyModule(path, importer, polyfilledModules)
         ? { path, namespace: NODE_BUILTIN_NAMESPACE }
         : undefined,
     );

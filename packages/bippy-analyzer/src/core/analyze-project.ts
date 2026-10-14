@@ -283,14 +283,14 @@ export const analyzeProject = (
       contextSetterFields: ContextSetterFields,
     ): ComponentAnalysis =>
       analyzeComponent(reactFunction, { ...fileContext, contextSetterFields });
-    const firstAnalyses = compiledComponents.map((component) => ({
+    const initialAnalyses = compiledComponents.map((component) => ({
       component,
       analysis: analyzeCompiledComponent(component, new Map()),
     }));
     const contextSetterFields = collectContextSetterFields(
-      firstAnalyses.map(({ analysis }) => analysis),
+      initialAnalyses.map(({ analysis }) => analysis),
     );
-    const analyses = firstAnalyses.map(({ component, analysis }) =>
+    const analyses = initialAnalyses.map(({ component, analysis }) =>
       analysis.bindings.some((binding) => binding.kind === "context")
         ? analyzeCompiledComponent(component, contextSetterFields)
         : analysis,

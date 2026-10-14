@@ -78,7 +78,7 @@ import {
   isFallthroughOnly,
   mapFallthroughs,
 } from "./control-flow";
-import type { BranchTerminal, LoopTerminal, Outcome } from "./control-flow";
+import type { BranchTerminal, LoopTerminal, Outcome, SwitchTerminal } from "./control-flow";
 import { eachTerminalSuccessor } from "../react-compiler/HIR/visitors";
 import {
   getDeclarationLocation,
@@ -317,7 +317,7 @@ export class Interpreter {
     return createBindingValue(binding);
   }
 
-  #destructure(
+  #getDestructuredValues(
     itemPlaces: Array<Place | null>,
     value: SymbolicValue,
     loc: SourceLocation,
@@ -374,7 +374,7 @@ export class Interpreter {
 
   #destructureArray(pattern: ArrayPattern, value: SymbolicValue, loc: SourceLocation): void {
     const itemPlaces = pattern.items.map((item) => (item.kind === "Identifier" ? item : null));
-    const destructuredValues = this.#destructure(itemPlaces, value, loc);
+    const destructuredValues = this.#getDestructuredValues(itemPlaces, value, loc);
     pattern.items.forEach((item, itemIndex) => {
       if (item.kind === "Hole") return;
       const itemPlace = getPlaceOrSpread(item);
@@ -866,8 +866,12 @@ export class Interpreter {
       );
   }
 
-  #storeCallback(value: SymbolicValue, loc: SourceLocation, walkState: WalkState): void {
-    if (value.kind === "Function") this.#passCallbacks([value], loc, walkState);
+  #passStoredCallback(
+    store: InstructionValueOfKind<"PropertyStore" | "ComputedStore">,
+    walkState: WalkState,
+  ): void {
+    const storedValue = this.#read(store.value);
+    if (storedValue.kind === "Function") this.#passCallbacks([storedValue], store.loc, walkState);
   }
 
   #passCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation, walkState: WalkState): void {
@@ -1085,7 +1089,7 @@ export class Interpreter {
         return createUnknown(value.kind, value.loc);
       case "PropertyStore":
       case "ComputedStore":
-        this.#storeCallback(this.#read(value.value), value.loc, walkState);
+        this.#passStoredCallback(value, walkState);
         return createUnknown(value.kind, value.loc);
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
@@ -1361,7 +1365,7 @@ export class Interpreter {
   }
 
   #walkSwitch(
-    terminal: Extract<Terminal, { kind: "switch" }>,
+    terminal: SwitchTerminal,
     from: BlockId,
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
@@ -1786,8 +1790,8 @@ export class Interpreter {
         callback.kind === "ObjectExpression"
           ? callback.properties.map((property) => property.value)
           : [callback];
-      for (const eachCallback of callbacks)
-        this.#runCallback(eachCallback, argumentValues, new Set());
+      for (const handlerCallback of callbacks)
+        this.#runCallback(handlerCallback, argumentValues, new Set());
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))

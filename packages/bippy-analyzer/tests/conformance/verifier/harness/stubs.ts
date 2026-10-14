@@ -16,7 +16,7 @@ const NEXT_STUBS = new Map([
   ["server-only", join(STUB_DIRECTORY, "server-only.ts")],
 ]);
 const T3_ENV_STUB = join(STUB_DIRECTORY, "t3-env.ts");
-const STUBS = new Map([
+const PACKAGE_STUBS = new Map([
   ["@t3-oss/env-nextjs", T3_ENV_STUB],
   ["@t3-oss/env-core", T3_ENV_STUB],
   ["next-intl/server", join(STUB_DIRECTORY, "next-intl-server.ts")],
@@ -43,7 +43,7 @@ export const createStubPlugin = (
   resolveId(source, importer) {
     if (nextDirectory && NEXT_FONT_MODULES.has(source)) return NEXT_FONT_ID;
     if (nextDirectory && NEXT_STUBS.has(source)) return NEXT_STUBS.get(source);
-    if (STUBS.has(source)) return STUBS.get(source);
+    if (PACKAGE_STUBS.has(source)) return PACKAGE_STUBS.get(source);
     if (source !== "nuqs/server") return null;
     return importer === NUQS_SERVER_ID
       ? this.resolve(source, appImporter, { skipSelf: true })

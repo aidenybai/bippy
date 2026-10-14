@@ -11,7 +11,7 @@ export const getBindingPlace = (binding: Binding, path: string[] = []): BindingP
 export const getValuePlace = (value: BindingValue): BindingPlace =>
   getBindingPlace(value.binding, value.path);
 
-export const formatPlaceKey = ({ bindingId, path }: BindingPlace): string =>
+const formatPlaceKey = ({ bindingId, path }: BindingPlace): string =>
   [bindingId, ...path].join(".");
 
 export const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>

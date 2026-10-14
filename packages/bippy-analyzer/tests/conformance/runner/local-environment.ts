@@ -9,14 +9,14 @@ import {
   getSetupEnvironment,
   getSetupInputs,
 } from "./repos";
-import type { RepoConfig } from "./repos";
+import type { LineLogger, RepoConfig } from "./repos";
 
 const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 const SETUP_ERROR_TAIL_LENGTH = 4000;
 
 const getLocalSetupKey = (repo: RepoConfig): string => JSON.stringify(getSetupInputs(repo));
 
-const prepare = (repo: RepoConfig, log: (line: string) => void): string => {
+const prepare = (repo: RepoConfig, log: LineLogger): string => {
   const appDirectory = join(CACHE_DIRECTORY, repo.id);
   const markerFile = join(CACHE_DIRECTORY, `${repo.id}.ready`);
   if (existsSync(markerFile) && readFileSync(markerFile, "utf8") === getLocalSetupKey(repo))
@@ -40,7 +40,7 @@ export const runLocal = async (
   repo: RepoConfig,
   outputDirectory: string,
   shouldVerify: boolean,
-  log: (line: string) => void,
+  log: LineLogger,
 ): Promise<CollectSummary> => {
   const appDirectory = prepare(repo, log);
   return collect(

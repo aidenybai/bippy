@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import type { Plugin } from "vite";
+import type { Alias, Plugin } from "vite";
 import { IMAGE_FILE_PATTERN } from "./packages";
 import type { ProviderSpec } from "./providers";
 import { NEXT_NAVIGATION_STUB, NEXT_ROUTER_STUB } from "./stubs";
@@ -33,9 +33,7 @@ const NEXT_CONTEXT_MODULES = ["app-router-context", "hooks-client-context", "rou
 export const getPolyfilledModules = (nextDirectory: string | null): Set<string> =>
   new Set(nextDirectory ? Object.keys(NEXT_NODE_POLYFILLS) : []);
 
-export const getNextPolyfillAliases = (
-  nextDirectory: string | null,
-): Array<{ find: RegExp; replacement: string }> => {
+export const getNextPolyfillAliases = (nextDirectory: string | null): Alias[] => {
   if (!nextDirectory) return [];
   return Object.entries(NEXT_NODE_POLYFILLS).flatMap(([name, polyfill]) => {
     const directory = join(nextDirectory, "dist/compiled", polyfill);

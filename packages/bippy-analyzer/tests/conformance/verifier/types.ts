@@ -110,6 +110,15 @@ export interface ExportedName {
   exportName: string;
 }
 
+export interface ModuleExport {
+  name: string;
+  exportName: string;
+}
+
+export interface AliasResolver {
+  (specifier: string, importer: string): Promise<string | null>;
+}
+
 export interface PackageImport {
   specifier: string;
   names: string[];
