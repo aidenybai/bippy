@@ -5,6 +5,7 @@ import { analyzeProject } from "../core/analyze-project";
 import { serializeProjectAnalysis } from "../core/serialize";
 import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent, formatHierarchy } from "./print";
 import type { View } from "./print";
+import type { AnalyzedComponent } from "../core/types";
 
 interface AnalyzeCliOptions {
   component?: string[];
@@ -46,6 +47,21 @@ const formatBailoutCounts = (reasons: string[]): string[] => {
     .map(([reason, count]) => `${reason} ${count}`);
 };
 
+const formatTotals = (
+  components: AnalyzedComponent[],
+  fileCount: number,
+  elapsedMs: number,
+): string[] => {
+  const stateCount = components.reduce((total, { report }) => total + report.states.length, 0);
+  const bailoutCounts = formatBailoutCounts(
+    components.flatMap(({ analysis }) => analysis.bailouts.map((bailout) => bailout.reason)),
+  );
+  return [
+    `${components.length} components · ${stateCount} states · ${fileCount} files · ${elapsedMs} ms`,
+    ...(bailoutCounts.length > 0 ? [`bailouts: ${bailoutCounts.join(", ")}`] : []),
+  ];
+};
+
 const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
@@ -75,17 +91,8 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
       console.log(`${formatComponent(component, printOptions)}\n`);
   }
 
-  const stateCount = components.reduce((total, { report }) => total + report.states.length, 0);
   const elapsedMs = Math.round(performance.now() - startTime);
-  console.log(
-    colors.dim(
-      `${components.length} components · ${stateCount} states · ${fileCount} files · ${elapsedMs} ms`,
-    ),
-  );
-  const bailoutCounts = formatBailoutCounts(
-    components.flatMap(({ analysis }) => analysis.bailouts.map((bailout) => bailout.reason)),
-  );
-  if (bailoutCounts.length > 0) console.log(colors.dim(`bailouts: ${bailoutCounts.join(", ")}`));
+  for (const line of formatTotals(components, fileCount, elapsedMs)) console.log(colors.dim(line));
 };
 
 new Command()
