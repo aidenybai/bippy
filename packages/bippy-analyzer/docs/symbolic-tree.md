@@ -53,7 +53,7 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `symbolic-values.ts`        | Builds and folds the values the interpreter produces                             |
 | `control-flow.ts`           | Branch outcomes and the conditionals they merge into                             |
 | `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with  |
-| `store-models.ts`           | What each zustand store action sets                                              |
+| `store-actions.ts`          | What each zustand store action sets                                              |
 | `string-samples.ts`         | Strings a component may parse, picked by name                                    |
 | `collect-handlers.ts`       | What each event handler and effect updates                                       |
 | `enumerate-states.ts`       | Splits branches into regions and lists each region's states and transitions      |
