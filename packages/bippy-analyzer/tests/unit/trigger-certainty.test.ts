@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { getTriggerCertainty } from "../conformance/verifier/score";
+import { getHandlerCertainty, getTriggerCertainty } from "../conformance/verifier/score";
 import type { Action } from "../conformance/verifier/types";
 
 const clickTidy: Action = {
@@ -41,5 +41,22 @@ describe("trigger certainty", () => {
         clickOverlay,
       ),
     ).toBe("maybe");
+  });
+
+  it("uses the strongest match among every element sharing a handler", () => {
+    const toggleMenu: Action = {
+      ...clickTidy,
+      key: "click:button:Toggle menu",
+      label: "Toggle menu",
+    };
+    expect(
+      getHandlerCertainty(
+        [
+          { tag: "a", text: "Docs", event: "onClick" },
+          { tag: "button", text: "Toggle menu", event: "onClick" },
+        ],
+        toggleMenu,
+      ),
+    ).toBe("sure");
   });
 });

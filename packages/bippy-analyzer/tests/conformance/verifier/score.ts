@@ -23,6 +23,7 @@ import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
 import { MAX_ACTION_LABEL_LENGTH, TRUNCATED_VALUE } from "./types";
+import { appendToGroup } from "../../../src/core/utils/group";
 import type { Action, ActionTarget, Probe, Shape } from "./types";
 import {
   explainMismatch,
@@ -188,6 +189,17 @@ export const getTriggerCertainty = (
     : null;
 };
 
+export const getHandlerCertainty = (
+  handlerTargets: HandlerTarget[],
+  action: Action,
+): TriggerCertainty | null => {
+  const certainties = handlerTargets.map((handlerTarget) =>
+    getTriggerCertainty(handlerTarget, action),
+  );
+  if (certainties.includes("sure")) return "sure";
+  return certainties.includes("maybe") ? "maybe" : null;
+};
+
 const getProbeId = (file: string, loc: types.SourceLocation): string =>
   `${file}:${getLocationKey(loc)}`;
 
@@ -228,12 +240,12 @@ const getStaticText = (value: SymbolicValue): string | null => {
   }
 };
 
-const collectHandlerTargets = (render: SymbolicValue): Map<string, HandlerTarget> => {
-  const handlerTargets = new Map<string, HandlerTarget>();
+const collectHandlerTargets = (render: SymbolicValue): Map<string, HandlerTarget[]> => {
+  const handlerTargets = new Map<string, HandlerTarget[]>();
   forEachJsxElement(render, (value) => {
     for (const prop of value.props) {
       if (!prop.handlerId) continue;
-      handlerTargets.set(prop.handlerId, {
+      appendToGroup(handlerTargets, prop.handlerId, {
         tag: value.tag.name,
         text: getStaticText(value) || null,
         event: prop.kind === "JsxAttribute" ? prop.name : ANY_EVENT,
@@ -282,7 +294,7 @@ interface ScoringContext {
   report: StateReport;
   verdict: ComponentVerdict;
   expectedStates: ExpectedShape[][];
-  handlerTargets: Map<string, HandlerTarget>;
+  handlerTargets: Map<string, HandlerTarget[]>;
   stateBindings: Binding[] | null;
   externalBindingIds: Set<number>;
   effectIds: Set<string>;
@@ -478,8 +490,7 @@ const getTriggeredHandlerIds = (
   const triggeredIds = new Set<string>();
   const maybeTriggeredIds = new Set<string>();
   for (const handler of context.analysis.handlers) {
-    const handlerTarget = context.handlerTargets.get(handler.id);
-    const certainty = handlerTarget ? getTriggerCertainty(handlerTarget, action) : null;
+    const certainty = getHandlerCertainty(context.handlerTargets.get(handler.id) ?? [], action);
     if (certainty) triggeredIds.add(handler.id);
     if (certainty === "maybe") maybeTriggeredIds.add(handler.id);
   }
