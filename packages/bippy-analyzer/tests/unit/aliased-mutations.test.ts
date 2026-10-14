@@ -20,3 +20,23 @@ describe("aliased mutations", () => {
     },
   );
 });
+
+describe("iteration callback mutations", () => {
+  const project = analyzeFixture("conformance-repros", "callback-item-mutations");
+
+  it("warns when a handler's forEach callback mutates state items", () => {
+    expect(getComponent(project, "CompleteAllTasks").analysis.warnings).toMatchObject([
+      { kind: "state-mutation", message: "mutates tasks in place before setting it" },
+    ]);
+  });
+
+  it("warns when a render-time forEach callback mutates prop items", () => {
+    expect(getComponent(project, "HighlightProps").analysis.warnings).toMatchObject([
+      { kind: "prop-mutation", message: "mutates prop series" },
+    ]);
+  });
+
+  it("stays quiet when the callback mutates cloned items", () => {
+    expect(getWarningKinds(getComponent(project, "CompleteCopiedTasks"))).toEqual([]);
+  });
+});

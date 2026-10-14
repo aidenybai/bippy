@@ -1246,6 +1246,8 @@ export class Interpreter {
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.#read(place));
     const [callback] = argumentValues;
+    if (ITERATION_METHODS.has(methodName))
+      this.#visitItemCallback(methodName, callback, methodCall, walkState);
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
       ITERATION_METHODS.has(methodName) &&
@@ -1271,6 +1273,23 @@ export class Interpreter {
       },
       walkState,
     );
+  }
+
+  #visitItemCallback(
+    methodName: string,
+    callback: SymbolicValue | undefined,
+    methodCall: InstructionValueOfKind<"MethodCall">,
+    walkState: WalkState,
+  ): void {
+    if (callback?.kind !== "Function") return;
+    const [itemParameter] = this.#functions.get(callback.functionId)?.params ?? [];
+    if (itemParameter?.kind === "Identifier")
+      this.#getCompilationTables().aliasSources.set(
+        itemParameter.identifier.id,
+        methodCall.receiver,
+      );
+    if (!this.#handlerEffects && methodName === "forEach")
+      this.#callFunction(callback, this.#getUnknownArguments(callback), methodCall.loc, walkState);
   }
 
   #callForEachItem(
