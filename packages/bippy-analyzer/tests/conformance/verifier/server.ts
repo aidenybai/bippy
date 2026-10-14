@@ -77,6 +77,7 @@ const resolveHarnessModule = (
   ids: HarnessIds,
 ): string | null => {
   if (source === ENTRY_PATH || source === ids.entry) return ids.entry;
+  if (source === "bippy" && importer === ids.entry) return BIPPY_SOURCE;
   if (importer === ids.entry && source.startsWith("./"))
     return join(import.meta.dirname, `${source.replace(/\.js$/, "")}.ts`);
   if (source === PROVIDERS_PATH || source === ids.providers) return ids.providers;
@@ -204,7 +205,6 @@ const createHarnessPlugins = (
 };
 
 const getHarnessAliases = (context: HarnessContext): Alias[] => [
-  { find: /^bippy$/, replacement: BIPPY_SOURCE },
   ...getNextPolyfillAliases(context.nextDirectory),
   ...Object.entries(context.setup.alias).map(([source, target]) => ({
     find: new RegExp(`^${RegExp.escape(source)}$`),
