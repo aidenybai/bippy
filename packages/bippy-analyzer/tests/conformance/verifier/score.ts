@@ -444,12 +444,27 @@ const canChildActionChange = (
   regionIndex: number,
 ): boolean => edge.action.isInChild && isExternalRegion(context, regionIndex);
 
+const canAsyncEffectChange = (
+  context: ScoringContext,
+  edge: ObservedEdge,
+  regionIndex: number,
+): boolean =>
+  getTransitions(
+    context,
+    getStatesInRegion(context, edge.beforeMatches, regionIndex),
+    context.effectIds,
+  ).some(
+    (transition) =>
+      transition.isAsync && transition.targets.some((target) => edge.afterMatches.includes(target)),
+  );
+
 const isRegionEdgePredicted = (
   context: ScoringContext,
   edge: ObservedEdge,
   regionIndex: number,
 ): boolean => {
   if (canChildActionChange(context, edge, regionIndex)) return true;
+  if (canAsyncEffectChange(context, edge, regionIndex)) return true;
   const isUnchanged = isRegionUnchanged(
     context,
     edge.beforeMatches,
@@ -505,7 +520,8 @@ const scoreTransition = (
     const isExplained = regions.every(
       (regionIndex) =>
         isRegionUnchanged(context, beforeMatches, afterMatches, regionIndex) ||
-        canChildActionChange(context, edge, regionIndex),
+        canChildActionChange(context, edge, regionIndex) ||
+        canAsyncEffectChange(context, edge, regionIndex),
     );
     if (!isExplained) recordWrongEdge(context, edge, "unmodeled-handler");
     return;
