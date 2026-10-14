@@ -97,7 +97,7 @@ const createAliasResolver = (server: ViteDevServer): AliasResolver => {
     const key = `${directory}\0${specifier}`;
     const cached = resolved.get(key);
     if (cached) return cached;
-    const result = hasPackageDirectory(directory, getPackageName(specifier))
+    const resolvedPath = hasPackageDirectory(directory, getPackageName(specifier))
       ? Promise.resolve(null)
       : server.environments.client.pluginContainer
           .resolveId(specifier, importer)
@@ -111,8 +111,8 @@ const createAliasResolver = (server: ViteDevServer): AliasResolver => {
               : null;
           })
           .catch(() => null);
-    resolved.set(key, result);
-    return result;
+    resolved.set(key, resolvedPath);
+    return resolvedPath;
   };
 };
 

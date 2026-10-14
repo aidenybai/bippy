@@ -143,11 +143,11 @@ const runStep = async (
     ...options,
     detached: true,
   });
-  const result = await waitForCommand(command);
-  if (result.exitCode !== 0) {
-    const output = await result.output("both");
+  const finishedCommand = await waitForCommand(command);
+  if (finishedCommand.exitCode !== 0) {
+    const output = await finishedCommand.output("both");
     throw new Error(
-      `${label} failed with exit code ${result.exitCode}:\n${output.slice(-OUTPUT_TAIL_LENGTH)}`,
+      `${label} failed with exit code ${finishedCommand.exitCode}:\n${output.slice(-OUTPUT_TAIL_LENGTH)}`,
     );
   }
 };

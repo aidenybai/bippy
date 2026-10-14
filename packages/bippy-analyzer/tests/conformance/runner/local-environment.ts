@@ -23,14 +23,14 @@ const prepare = (repo: RepoConfig, log: LineLogger): string => {
     return appDirectory;
   mkdirSync(CACHE_DIRECTORY, { recursive: true });
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)}`);
-  const result = spawnSync("bash", [join(CONFORMANCE_DIRECTORY, "setup.sh")], {
+  const setupProcess = spawnSync("bash", [join(CONFORMANCE_DIRECTORY, "setup.sh")], {
     env: { ...process.env, ...getSetupEnvironment(repo, appDirectory, repo.patchFile) },
     encoding: "utf8",
     maxBuffer: SETUP_OUTPUT_BUFFER_BYTES,
   });
-  if (result.status !== 0)
+  if (setupProcess.status !== 0)
     throw new Error(
-      `setup failed for ${repo.id}:\n${result.stderr.slice(-SETUP_ERROR_TAIL_LENGTH)}`,
+      `setup failed for ${repo.id}:\n${setupProcess.stderr.slice(-SETUP_ERROR_TAIL_LENGTH)}`,
     );
   writeFileSync(markerFile, getLocalSetupKey(repo));
   return appDirectory;
