@@ -8,6 +8,7 @@ import { enumerateStates } from "./enumerate-states";
 import { dedupeSamples, getSampleOfValue } from "./type-samples";
 import { getStringSamples } from "./string-samples";
 import type {
+  Binding,
   ComponentAnalysis,
   ContextSetterFields,
   StoreActions,
@@ -142,46 +143,50 @@ const getLiteralSample = (value: SymbolicValue | undefined): Sample | null => {
   return null;
 };
 
+const narrowPropFromCallSites = (
+  analysis: ComponentAnalysis,
+  binding: Binding,
+  callSites: JsxExpressionValue[],
+): void => {
+  const passedValues = callSites.map(
+    (callSite) =>
+      callSite.props.find(
+        (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === binding.propName,
+      )?.value,
+  );
+  if (!passedValues.every(isPrimitive)) {
+    const literalSamples = passedValues.flatMap(
+      (passedValue) => getLiteralSample(passedValue) ?? [],
+    );
+    binding.samples = [...dedupeSamples(literalSamples), ...binding.samples];
+    return;
+  }
+  const literals = [...new Set(passedValues.map((passedValue) => passedValue.value))];
+  binding.domain = {
+    kind: "Cases",
+    cases: literals.map((literal) => ({ kind: "Literal", value: literal })),
+    origin: "call-sites",
+  };
+  binding.samples = literals.map(getSampleOfValue);
+  analysis.placeDomains.set(getBindingPlace(binding), binding.domain);
+  analysis.bailouts = analysis.bailouts.filter(
+    (bailout) => !(bailout.reason === "untyped-prop" && bailout.loc === binding.loc),
+  );
+};
+
 const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
-  const componentElements: JsxExpressionValue[] = [];
+  const callSitesByDeclaration = new Map<string | null, JsxExpressionValue[]>();
   for (const analysis of analyses)
     forEachJsxElement(analysis.render, (element) => {
-      if (element.tag.kind === "Component") componentElements.push(element);
+      if (element.tag.kind === "Component")
+        appendToGroup(callSitesByDeclaration, element.tag.declaration, element);
     });
   for (const analysis of analyses) {
-    const callSites = componentElements.filter(
-      (element) =>
-        element.tag.kind === "Component" && element.tag.declaration === analysis.declaration,
-    );
-    if (callSites.length === 0) continue;
-    for (const binding of analysis.bindings) {
-      if (binding.kind !== "prop" || binding.domain.kind !== "Unknown") continue;
-      const passedValues = callSites.map(
-        (callSite) =>
-          callSite.props.find(
-            (prop): prop is JsxProp =>
-              prop.kind === "JsxAttribute" && prop.name === binding.propName,
-          )?.value,
-      );
-      if (!passedValues.every(isPrimitive)) {
-        const literalSamples = passedValues.flatMap(
-          (passedValue) => getLiteralSample(passedValue) ?? [],
-        );
-        binding.samples = [...dedupeSamples(literalSamples), ...binding.samples];
-        continue;
-      }
-      const literals = [...new Set(passedValues.map((passedValue) => passedValue.value))];
-      binding.domain = {
-        kind: "Cases",
-        cases: literals.map((literal) => ({ kind: "Literal", value: literal })),
-        origin: "call-sites",
-      };
-      binding.samples = literals.map(getSampleOfValue);
-      analysis.placeDomains.set(getBindingPlace(binding), binding.domain);
-      analysis.bailouts = analysis.bailouts.filter(
-        (bailout) => !(bailout.reason === "untyped-prop" && bailout.loc === binding.loc),
-      );
-    }
+    const callSites = callSitesByDeclaration.get(analysis.declaration);
+    if (!callSites) continue;
+    for (const binding of analysis.bindings)
+      if (binding.kind === "prop" && binding.domain.kind === "Unknown")
+        narrowPropFromCallSites(analysis, binding, callSites);
   }
 };
 
