@@ -17,17 +17,17 @@ export interface BindingOptions extends Partial<
 > {}
 
 export class BindingTable {
-  readonly #bindingsByDeclaration = new Map<string, Binding>();
+  readonly #bindingsByKey = new Map<string, Binding>();
   readonly #bindingsByProp = new Map<string, Binding>();
   readonly #resolversByBinding = new Map<number, SourceFileResolver>();
   readonly placeDomains = new PlaceMap<Domain>();
   readonly unionMemberValues = new PlaceMap<AbstractValue[][]>();
 
   get bindings(): Binding[] {
-    return [...this.#bindingsByDeclaration.values()];
+    return [...this.#bindingsByKey.values()];
   }
 
-  create(
+  createBinding(
     resolver: SourceFileResolver,
     name: string,
     kind: BindingKind,
@@ -36,10 +36,10 @@ export class BindingTable {
   ): Binding {
     const position = loc === GeneratedSource ? "generated" : loc.start.index;
     const declarationKey = `${kind}:${name}:${resolver.fileName}:${position}`;
-    const existingBinding = this.#bindingsByDeclaration.get(declarationKey);
+    const existingBinding = this.#bindingsByKey.get(declarationKey);
     if (existingBinding) return existingBinding;
     const binding: Binding = {
-      id: this.#bindingsByDeclaration.size,
+      id: this.#bindingsByKey.size,
       name: resolver.getSourceName(loc) ?? name,
       kind,
       hookKind: options.hookKind ?? null,
@@ -51,7 +51,7 @@ export class BindingTable {
       inputPlaces: options.inputPlaces ?? [],
       lengthLimit: options.lengthLimit ?? null,
     };
-    this.#bindingsByDeclaration.set(declarationKey, binding);
+    this.#bindingsByKey.set(declarationKey, binding);
     this.#resolversByBinding.set(binding.id, resolver);
     this.placeDomains.set(getBindingPlace(binding), binding.domain);
     return binding;
@@ -65,7 +65,7 @@ export class BindingTable {
   ): Binding {
     const existingBinding = this.#bindingsByProp.get(propName);
     if (existingBinding) return existingBinding;
-    const binding = this.create(resolver, localName, "prop", loc, { propName });
+    const binding = this.createBinding(resolver, localName, "prop", loc, { propName });
     this.#bindingsByProp.set(propName, binding);
     return binding;
   }

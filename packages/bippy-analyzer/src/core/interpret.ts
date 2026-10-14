@@ -291,7 +291,13 @@ export class Interpreter {
     loc: SourceLocation,
     options: InterpreterBindingOptions = {},
   ): Binding {
-    return this.bindingTable.create(options.resolver ?? this.#resolver, name, kind, loc, options);
+    return this.bindingTable.createBinding(
+      options.resolver ?? this.#resolver,
+      name,
+      kind,
+      loc,
+      options,
+    );
   }
 
   #readField(binding: Binding, path: string[], loc: SourceLocation): BindingValue {
