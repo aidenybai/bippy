@@ -21,7 +21,6 @@ export interface FileContext {
   resolver: SourceFileResolver;
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
-  contextSetterFields: ContextSetterFields;
   actionsByStore: Map<string, StoreActions>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
@@ -46,6 +45,7 @@ const addComparedSamples = (render: SymbolicValue): void => {
 export const analyzeComponent = (
   reactFunction: CompiledFunction,
   fileContext: FileContext,
+  contextSetterFields: ContextSetterFields,
 ): ComponentAnalysis => {
   const { sourceFile, exportNames, displayNames } = fileContext;
   const componentIdentity = {
@@ -88,7 +88,7 @@ export const analyzeComponent = (
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
     fileContext.loadProjectHook,
-    fileContext.contextSetterFields,
+    contextSetterFields,
     fileContext.actionsByStore,
   );
   const render = interpreter.evaluateComponent(hir);

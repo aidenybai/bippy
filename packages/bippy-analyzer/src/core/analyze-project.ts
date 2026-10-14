@@ -61,7 +61,7 @@ const INDEX_PATTERN = /^\d+$/;
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
-  fileContext: CompiledFileContext;
+  fileContext: FileContext;
 }
 
 const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample => {
@@ -238,16 +238,14 @@ const withContextFileNames = (
   ),
 });
 
-interface CompiledFileContext extends Omit<FileContext, "contextSetterFields"> {}
-
-const compileProjectFiles = (project: Project, fileNames: string[]): CompiledFileContext[] => {
+const compileProjectFiles = (project: Project, fileNames: string[]): FileContext[] => {
   const { strict, strictNullChecks } = project.compilerOptions;
   const isStrictNullChecks = strictNullChecks ?? strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
   const actionsByStore = new Map<string, StoreActions>();
   const loadProjectHook = (declarationKey: string): ProjectHook | null =>
     projectHooksByDeclaration.get(declarationKey) ?? null;
-  return fileNames.flatMap((fileName): CompiledFileContext[] => {
+  return fileNames.flatMap((fileName): FileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
     const resolver = new SourceFileResolver(project.checker, sourceFile, isStrictNullChecks);
@@ -281,9 +279,9 @@ const analyzeCompiledComponent = (
   component: CompiledComponent,
   contextSetterFields: ContextSetterFields,
 ): ComponentAnalysis =>
-  analyzeComponent(component.reactFunction, { ...component.fileContext, contextSetterFields });
+  analyzeComponent(component.reactFunction, component.fileContext, contextSetterFields);
 
-const analyzeComponents = (fileContexts: CompiledFileContext[]): ComponentAnalysis[] => {
+const analyzeComponents = (fileContexts: FileContext[]): ComponentAnalysis[] => {
   const compiledComponents = fileContexts.flatMap((fileContext) =>
     fileContext.compiled.functions.flatMap((reactFunction): CompiledComponent[] =>
       reactFunction.functionType === "Component" ? [{ reactFunction, fileContext }] : [],
