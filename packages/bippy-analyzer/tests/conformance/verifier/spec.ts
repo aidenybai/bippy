@@ -9,7 +9,7 @@ import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
 import { matchesExpected, normalizeShapes, toExpected } from "./match";
 import { formatCounterexamples, scoreComponent } from "./score";
-import type { Capture, MountRequest, Scenario } from "./types";
+import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
 import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/format";
@@ -80,6 +80,43 @@ const toSample = (value: unknown): Sample => {
   throw new Error(`Can't pass ${typeof value} as a prop`);
 };
 
+const findClickAction = async (
+  page: Page,
+  label: string,
+  componentName: string,
+): Promise<Action> => {
+  const actions = await listActionsInPage(page);
+  const action = actions.find(
+    (candidate) => candidate.kind === "click" && candidate.label === label,
+  );
+  if (action) return action;
+  throw new Error(
+    `Nothing clickable labelled "${label}" in ${componentName}: ${actions.map((candidate) => candidate.label).join(", ")}`,
+  );
+};
+
+const expectShowingState = (
+  project: VerifyProject,
+  component: AnalyzedComponent,
+  capture: Capture,
+  label: string,
+): void => {
+  const { name: componentName } = component.analysis;
+  const { states } = component.report;
+  const labelledStates = states.filter((state) => getStateLabel(state) === label);
+  expect(
+    labelledStates.length,
+    `${componentName} has no state labelled "${label}". Its states are:\n${states.map(getStateLabel).join("\n")}`,
+  ).toBeGreaterThan(0);
+  const shapes = normalizeShapes(capture.shapes);
+  expect(
+    labelledStates.some((state) =>
+      matchesExpected(toExpected(state.render, project.knownComponents), shapes),
+    ),
+    `${componentName} isn't showing "${label}"`,
+  ).toBe(true);
+};
+
 const createComponentFixture = ({
   page,
   project,
@@ -87,21 +124,12 @@ const createComponentFixture = ({
   props,
   initialCapture,
 }: FixtureContext): ComponentFixture => {
-  const { name: componentName } = session.component.analysis;
-  const { report } = session.component;
   let current = initialCapture;
   let path: string[] = [];
   return {
     page,
     click: async (label) => {
-      const actions = await listActionsInPage(page);
-      const action = actions.find(
-        (candidate) => candidate.kind === "click" && candidate.label === label,
-      );
-      if (!action)
-        throw new Error(
-          `Nothing clickable labelled "${label}" in ${componentName}: ${actions.map((candidate) => candidate.label).join(", ")}`,
-        );
+      const action = await findClickAction(page, label, session.component.analysis.name);
       const after = await performInPage(page, action.key);
       if (!after) throw new Error(`Clicking "${label}" failed`);
       path = [...path, action.key];
@@ -112,20 +140,7 @@ const createComponentFixture = ({
       current = await page.evaluate(() => window.__verify.observe());
       session.observations.push({ props, path, action: null, before: null, after: current });
     },
-    expectState: (label) => {
-      const states = report.states.filter((state) => getStateLabel(state) === label);
-      expect(
-        states.length,
-        `${componentName} has no state labelled "${label}". Its states are:\n${report.states.map(getStateLabel).join("\n")}`,
-      ).toBeGreaterThan(0);
-      const shapes = normalizeShapes(current.shapes);
-      expect(
-        states.some((state) =>
-          matchesExpected(toExpected(state.render, project.knownComponents), shapes),
-        ),
-        `${componentName} isn't showing "${label}"`,
-      ).toBe(true);
-    },
+    expectState: (label) => expectShowingState(project, session.component, current, label),
   };
 };
 
