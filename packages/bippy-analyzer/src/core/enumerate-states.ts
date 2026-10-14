@@ -617,7 +617,7 @@ const collectUnreachableBranches = (
   branchOutcomes: BranchOutcomes,
 ): UnreachableBranch[] => {
   const unreachableBranches: KeyedUnreachableBranch[] = [];
-  const reportedKeys = collectBranchKeysInTests(render);
+  const skippedBranchKeys = collectBranchKeysInTests(render);
   const displacedKeys = new Set<string>();
   const conditionsByValue = new WeakMap<SymbolicValue, Set<string>>();
   const visit = (value: SymbolicValue, conditions: string[]): void => {
@@ -634,8 +634,8 @@ const collectUnreachableBranches = (
         if (isRenderedOutsideItsGuards) displacedKeys.add(branchKey);
         const reachedOutcomes = branchOutcomes.get(branchKey);
         const test = getTestExpression(value);
-        if (reachedOutcomes && !reportedKeys.has(branchKey)) {
-          reportedKeys.add(branchKey);
+        if (reachedOutcomes && !skippedBranchKeys.has(branchKey)) {
+          skippedBranchKeys.add(branchKey);
           unreachableBranches.push(...getUnreachedSides(value, branchKey, reachedOutcomes));
         }
         if (reachedOutcomes?.has(true))
