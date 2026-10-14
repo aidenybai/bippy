@@ -103,6 +103,8 @@ type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-ch
 
 type ValueBranchTerminal = Extract<Terminal, { kind: "ternary" | "logical" | "optional" }>;
 
+type MaybeThrowTerminal = Extract<Terminal, { kind: "maybe-throw" }>;
+
 type PhiState = "resolved" | "unresolved";
 
 interface NextStep {
@@ -1824,8 +1826,7 @@ export class Interpreter {
       case "pruned-scope":
         return { kind: "Next", block: terminal.block };
       case "maybe-throw":
-        this.#walkCatchOnce(terminal.handler, blockId, stops, walkState);
-        return { kind: "Next", block: terminal.continuation };
+        return this.#walkMaybeThrow(terminal, blockId, stops, walkState);
       case "for":
       case "for-of":
       case "for-in":
@@ -1855,6 +1856,29 @@ export class Interpreter {
       "unresolved",
     );
     return this.#continueAfter(testOutcome, terminal.fallthrough, stops, walkState);
+  }
+
+  #walkMaybeThrow(
+    terminal: MaybeThrowTerminal,
+    blockId: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): TerminalStep {
+    const { handler, continuation } = terminal;
+    if (this.#handlerEffects || handler === null || this.#walkedCatches.has(handler)) {
+      this.#walkCatchOnce(handler, blockId, stops, walkState);
+      return { kind: "Next", block: continuation };
+    }
+    this.#walkedCatches.add(handler);
+    const throwTest = createUnknown("throws", terminal.loc);
+    return {
+      kind: "Split",
+      test: throwTest,
+      testKind: "truthy",
+      branch: this.#createBranch(terminal.id, terminal.loc, "none"),
+      consequent: this.#walkArm(handler, blockId, stops, walkState, throwTest),
+      alternate: this.#walkArm(continuation, blockId, stops, walkState, negate(throwTest)),
+    };
   }
 
   #walkCatchOnce(
