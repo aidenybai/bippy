@@ -307,28 +307,41 @@ const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getVal
 const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
   prefix.every((guardKey, index) => guardKeys[index] === guardKey);
 
-const getConstraintsAfterHandler = (
-  handler: Handler,
+const getConstraintsAfterUpdates = (
+  updates: StateUpdate[],
   constraints: Constraints,
-  reachableConstraints: Constraints,
-  dependentsByBinding: Map<number, number[]>,
+  context: ReachabilityContext,
 ): Constraints[] => {
+  if (updates.length === 0) return [constraints];
   const guardKeysByPath = new Map(
-    handler.updates.map((update) => {
+    updates.map((update) => {
       const guardKeys = getGuardKeys(update);
       return [guardKeys.join("\0"), guardKeys];
     }),
   );
-  const afterEachPath = [...guardKeysByPath.values()].map((guardKeys) =>
+  return [...guardKeysByPath.values()].map((guardKeys) =>
     applyUpdates(
-      handler.updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
+      updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
       constraints,
-      reachableConstraints,
-      dependentsByBinding,
+      context.reachableConstraints,
+      context.dependentsByBinding,
     ),
   );
+};
+
+const getConstraintsAfterHandler = (
+  handler: Handler,
+  constraints: Constraints,
+  context: ReachabilityContext,
+): Constraints[] => {
+  const afterEachPath = getConstraintsAfterUpdates(handler.updates, constraints, context);
+  const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
+  const beforeAsyncUpdates =
+    synchronousUpdates.length < handler.updates.length
+      ? getConstraintsAfterUpdates(synchronousUpdates, constraints, context)
+      : [];
   const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
-  return mayChangeNothing ? [constraints, ...afterEachPath] : afterEachPath;
+  return [...(mayChangeNothing ? [constraints] : []), ...beforeAsyncUpdates, ...afterEachPath];
 };
 
 class StateEnumerator {
@@ -466,12 +479,7 @@ const getTransition = (
   context: TransitionContext,
 ): Transition => {
   const targetKeys = new Set(
-    getConstraintsAfterHandler(
-      handler,
-      alternative.constraints,
-      context.reachableConstraints,
-      context.dependentsByBinding,
-    ).flatMap((afterHandler) =>
+    getConstraintsAfterHandler(handler, alternative.constraints, context).flatMap((afterHandler) =>
       context.targetEnumerator.enumerate(context.analysis.render, afterHandler).map(getStateKey),
     ),
   );
