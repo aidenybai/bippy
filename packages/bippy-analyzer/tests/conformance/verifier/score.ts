@@ -279,27 +279,29 @@ const getRegionIndices = (context: ScoringContext): number[] =>
 const getStatesInRegion = (
   context: ScoringContext,
   stateIndices: number[],
-  region: number,
+  regionIndex: number,
 ): number[] =>
-  stateIndices.filter((stateIndex) => context.report.states[stateIndex]?.region === region);
+  stateIndices.filter(
+    (stateIndex) => context.report.states[stateIndex]?.regionIndex === regionIndex,
+  );
 
 const isEveryRegionMatched = (context: ScoringContext, matchedStates: number[]): boolean =>
   getRegionIndices(context).every(
-    (region) => getStatesInRegion(context, matchedStates, region).length > 0,
+    (regionIndex) => getStatesInRegion(context, matchedStates, regionIndex).length > 0,
   );
 
 const isRegionUnchanged = (
   context: ScoringContext,
   beforeStates: number[],
   afterStates: number[],
-  region: number,
+  regionIndex: number,
 ): boolean =>
-  getStatesInRegion(context, beforeStates, region).some((stateIndex) =>
+  getStatesInRegion(context, beforeStates, regionIndex).some((stateIndex) =>
     afterStates.includes(stateIndex),
   );
 
-const isExternalRegion = (context: ScoringContext, region: number): boolean =>
-  context.report.regions[region]?.bindingIds.some((bindingId) =>
+const isExternalRegion = (context: ScoringContext, regionIndex: number): boolean =>
+  context.report.regions[regionIndex]?.bindingIds.some((bindingId) =>
     context.externalBindingIds.has(bindingId),
   ) ?? false;
 
@@ -360,12 +362,12 @@ const scoreFirstCommit = (
   const firstMatches = scoreRender(context, observation.props, [FIRST_COMMIT], firstCommitShapes);
   if (!firstMatches || !settledMatches || context.externalBindingIds.size > 0) return;
   const isUnexplained = getRegionIndices(context).some(
-    (region) =>
-      getStatesInRegion(context, settledMatches, region).length > 0 &&
-      !isRegionUnchanged(context, firstMatches, settledMatches, region) &&
+    (regionIndex) =>
+      getStatesInRegion(context, settledMatches, regionIndex).length > 0 &&
+      !isRegionUnchanged(context, firstMatches, settledMatches, regionIndex) &&
       !getTransitions(
         context,
-        getStatesInRegion(context, firstMatches, region),
+        getStatesInRegion(context, firstMatches, regionIndex),
         context.effectIds,
       ).some((transition) => transition.targets.some((target) => settledMatches.includes(target))),
   );
@@ -424,19 +426,24 @@ const getTriggeredHandlerIds = (
 const canChildActionChange = (
   context: ScoringContext,
   edge: ObservedEdge,
-  region: number,
-): boolean => edge.action.isInChild && isExternalRegion(context, region);
+  regionIndex: number,
+): boolean => edge.action.isInChild && isExternalRegion(context, regionIndex);
 
 const isRegionEdgePredicted = (
   context: ScoringContext,
   edge: ObservedEdge,
-  region: number,
+  regionIndex: number,
 ): boolean => {
-  if (canChildActionChange(context, edge, region)) return true;
-  const isUnchanged = isRegionUnchanged(context, edge.beforeMatches, edge.afterMatches, region);
+  if (canChildActionChange(context, edge, regionIndex)) return true;
+  const isUnchanged = isRegionUnchanged(
+    context,
+    edge.beforeMatches,
+    edge.afterMatches,
+    regionIndex,
+  );
   const transitions = getTransitions(
     context,
-    getStatesInRegion(context, edge.beforeMatches, region),
+    getStatesInRegion(context, edge.beforeMatches, regionIndex),
     edge.triggeredIds,
   );
   if (transitions.length === 0) return isUnchanged;
@@ -481,14 +488,14 @@ const scoreTransition = (
   const regions = getRegionIndices(context);
   if (edge.triggeredIds.size === 0) {
     const isExplained = regions.every(
-      (region) =>
-        isRegionUnchanged(context, beforeMatches, afterMatches, region) ||
-        canChildActionChange(context, edge, region),
+      (regionIndex) =>
+        isRegionUnchanged(context, beforeMatches, afterMatches, regionIndex) ||
+        canChildActionChange(context, edge, regionIndex),
     );
     if (!isExplained) recordWrongEdge(context, edge, "unmodeled-handler");
     return;
   }
-  if (regions.every((region) => isRegionEdgePredicted(context, edge, region)))
+  if (regions.every((regionIndex) => isRegionEdgePredicted(context, edge, regionIndex)))
     context.verdict.coveredTransitionCount++;
   else if (!context.report.isTruncated) recordWrongEdge(context, edge, "unpredicted-target");
 };
@@ -538,7 +545,7 @@ const getReachedUnreachableBranches = (report: StateReport, coveredSides: Set<st
       (unreachableBranch) =>
         unreachableBranch.branch.loc !== GeneratedSource &&
         coveredSides.has(
-          `${getProbeId(unreachableBranch.branch.file, unreachableBranch.branch.loc)}:${unreachableBranch.side}`,
+          `${getProbeId(unreachableBranch.branch.file, unreachableBranch.branch.loc)}:${unreachableBranch.isTrueSide}`,
         ),
     )
     .map((unreachableBranch) =>
@@ -552,7 +559,7 @@ const scoreObservation = (
   coveredSides: Set<string>,
 ): void => {
   for (const probeHit of observation.after.probes)
-    if (probeIds.has(probeHit.id)) coveredSides.add(`${probeHit.id}:${probeHit.outcome}`);
+    if (probeIds.has(probeHit.id)) coveredSides.add(`${probeHit.id}:${probeHit.isTrueSide}`);
   if (observation.after.error) {
     context.verdict.renderErrorCount++;
     return;

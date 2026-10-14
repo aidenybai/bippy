@@ -86,7 +86,7 @@ interface KeyedUnreachableBranch extends UnreachableBranch {
 interface RegionBranches {
   branchKeys: Set<string>;
   bindingIds: Set<number>;
-  places: string[];
+  placeNames: string[];
 }
 
 const NO_BRANCHES: ReadonlySet<string> = new Set();
@@ -399,10 +399,10 @@ class StateEnumerator {
     return false;
   }
 
-  #recordOutcome(branchKey: string, outcome: boolean): void {
+  #recordOutcome(branchKey: string, isTrue: boolean): void {
     this.#branchOutcomes.set(
       branchKey,
-      new Set([...(this.#branchOutcomes.get(branchKey) ?? []), outcome]),
+      new Set([...(this.#branchOutcomes.get(branchKey) ?? []), isTrue]),
     );
   }
 
@@ -412,15 +412,15 @@ class StateEnumerator {
     const alternatives: Alternative[] = [];
     const test = getTestExpression(conditional);
     const isDecided = evaluateCondition(test, constraints) !== null;
-    for (const outcome of [true, false]) {
-      const withOutcome = assumeCondition(test, outcome, constraints);
+    for (const isTrue of [true, false]) {
+      const withOutcome = assumeCondition(test, isTrue, constraints);
       if (!withOutcome) continue;
-      this.#recordOutcome(branchKey, outcome);
+      this.#recordOutcome(branchKey, isTrue);
       const simplifiedTest = simplifyDecidedConditionals(test, constraints);
-      const conditionLabel = outcome
+      const conditionLabel = isTrue
         ? formatSymbolicValue(simplifiedTest)
         : formatNegated(simplifiedTest);
-      const arm = outcome ? conditional.consequent : conditional.alternate;
+      const arm = isTrue ? conditional.consequent : conditional.alternate;
       for (const alternative of this.enumerate(arm, withOutcome)) {
         if (!this.#hasRoomFor(alternatives.length)) break;
         alternatives.push({
@@ -429,7 +429,7 @@ class StateEnumerator {
           conditions: isDecided
             ? alternative.conditions
             : [conditionLabel, ...alternative.conditions],
-          branches: new Set([...alternative.branches, `${branchKey}:${outcome}`]),
+          branches: new Set([...alternative.branches, `${branchKey}:${isTrue}`]),
         });
       }
     }
@@ -520,7 +520,7 @@ const collectBranchTests = (render: SymbolicValue): BranchTests => {
 const createEmptyRegion = (): RegionBranches => ({
   branchKeys: new Set(),
   bindingIds: new Set(),
-  places: [],
+  placeNames: [],
 });
 
 const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
@@ -540,7 +540,7 @@ const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
       (otherPlace) => !isSamePlace(otherPlace, place) && isPlacePrefix(otherPlace, place),
     );
     const region = getRegion(branchKey);
-    if (!isNested && !region.places.includes(name)) region.places.push(name);
+    if (!isNested && !region.placeNames.includes(name)) region.placeNames.push(name);
   }
   return regionsByGroup.size > 0 ? [...regionsByGroup.values()] : [createEmptyRegion()];
 };
@@ -575,14 +575,14 @@ const getUnreachedSides = (
     unreachedSides.push({
       branchKey,
       branch: conditional.branch,
-      side: true,
+      isTrueSide: true,
       description: `never ${formatSymbolicValue(test)}`,
     });
   if (!reachedOutcomes.has(false) && !isRenderingNothingWhenFalse(conditional))
     unreachedSides.push({
       branchKey,
       branch: conditional.branch,
-      side: false,
+      isTrueSide: false,
       description: `never ${formatNegated(test)}`,
     });
   return unreachedSides;
@@ -696,7 +696,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
       const renderedHandlerIds = new Set(effectIds);
       collectHandlerIds(alternative.render, renderedHandlerIds);
       states.push({
-        region: regionIndex,
+        regionIndex,
         conditions: alternative.conditions,
         render: alternative.render,
         fragments: alternative.fragments,
@@ -707,7 +707,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     }
     isTruncated ||= enumerator.isTruncated || transitionContext.targetEnumerator.isTruncated;
     regions.push({
-      places: region.places,
+      placeNames: region.placeNames,
       bindingIds: [...region.bindingIds],
       states: alternatives.map(
         (_alternative, regionStateIndex) => transitionContext.firstStateIndex + regionStateIndex,

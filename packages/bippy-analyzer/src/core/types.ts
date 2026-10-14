@@ -265,7 +265,7 @@ export interface Transition {
 }
 
 export interface State {
-  region: number;
+  regionIndex: number;
   conditions: string[];
   render: SymbolicValue;
   fragments: SymbolicValue[];
@@ -273,14 +273,14 @@ export interface State {
 }
 
 export interface Region {
-  places: string[];
+  placeNames: string[];
   bindingIds: number[];
   states: number[];
 }
 
 export interface UnreachableBranch {
   branch: Branch;
-  side: boolean;
+  isTrueSide: boolean;
   description: string;
 }
 

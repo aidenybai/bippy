@@ -42,7 +42,7 @@ interface Distance {
 }
 
 interface Assumption {
-  outcome: boolean;
+  isTrue: boolean;
   places: BindingPlace[];
 }
 
@@ -104,9 +104,9 @@ const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   return null;
 };
 
-const getBounds = (value: SymbolicValue, outcome: boolean): Bound[] | null => {
+const getBounds = (value: SymbolicValue, isTrue: boolean): Bound[] | null => {
   if (value.kind !== "BinaryExpression") return null;
-  const operator = outcome ? value.operator : getNegatedOperator(value.operator);
+  const operator = isTrue ? value.operator : getNegatedOperator(value.operator);
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
   const leftTerm = getLinearTerm(value.left);
   const rightTerm = getLinearTerm(value.right);
@@ -259,7 +259,7 @@ export const evaluateCondition = (
   constraints: Constraints,
 ): boolean | null => {
   const assumption = constraints.assumptions.get(getValueKey(value));
-  if (assumption) return assumption.outcome;
+  if (assumption) return assumption.isTrue;
   switch (value.kind) {
     case "Binding": {
       const placeValues = getPossibleValues(value, constraints);
@@ -348,16 +348,16 @@ const hasUnknownPart = (value: SymbolicValue): boolean => {
 
 export const assumeCondition = (
   value: SymbolicValue,
-  outcome: boolean,
+  isTrue: boolean,
   constraints: Constraints,
 ): Constraints | null => {
   const evaluated = evaluateCondition(value, constraints);
-  if (evaluated !== null) return evaluated === outcome ? constraints : null;
+  if (evaluated !== null) return evaluated === isTrue ? constraints : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
-    return assumeCondition(value.value, !outcome, constraints);
+    return assumeCondition(value.value, !isTrue, constraints);
   if (
     value.kind === "Conditional" &&
-    outcome &&
+    isTrue &&
     value.alternate.kind === "Primitive" &&
     !value.alternate.value
   ) {
@@ -368,7 +368,7 @@ export const assumeCondition = (
     return narrowPlace(
       value,
       constraints,
-      (candidate) => getTruthiness(candidate) !== (outcome ? "falsy" : "truthy"),
+      (candidate) => getTruthiness(candidate) !== (isTrue ? "falsy" : "truthy"),
     );
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator)) {
     const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
@@ -378,7 +378,7 @@ export const assumeCondition = (
       placeSide.kind === "Binding" &&
       getPossibleValues(placeSide, constraints)
     ) {
-      const wantsMatch = outcome !== isNegated;
+      const wantsMatch = isTrue !== isNegated;
       return narrowPlace(placeSide, constraints, (candidate) =>
         isEqualToLiteral(candidate, literalSide.value, value.operator)
           ? wantsMatch
@@ -389,10 +389,10 @@ export const assumeCondition = (
   if (hasUnknownPart(value)) return constraints;
   const assumed = cloneConstraints(constraints);
   assumed.assumptions.set(getValueKey(value), {
-    outcome,
+    isTrue,
     places: collectPlaces(value),
   });
-  const assumedBounds = getBounds(value, outcome);
+  const assumedBounds = getBounds(value, isTrue);
   if (assumedBounds) {
     assumed.bounds.push(...assumedBounds);
     if (!areBoundsConsistent([...assumed.invariants, ...assumed.bounds])) return null;

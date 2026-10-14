@@ -447,7 +447,7 @@ const buildStates = (component: AnalyzedComponent, context: ComponentPrintContex
   const stateNodes = hasRegions
     ? report.regions.map((region) =>
         createTreeNode(
-          truncate(region.places.join(colors.dim(", ")) || colors.dim("other")),
+          truncate(region.placeNames.join(colors.dim(", ")) || colors.dim("other")),
           region.states.map((stateIndex) => {
             const state = report.states[stateIndex];
             return state ? buildState(state, stateIndex, true, context) : createTreeNode("");

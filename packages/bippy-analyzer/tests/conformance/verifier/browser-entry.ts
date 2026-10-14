@@ -220,7 +220,7 @@ globalThis.__bippyProbe = (id, mode, value) => {
   if (mode === "mutation") return recordMutationProbe(id, value);
   probeHits.push({
     id,
-    outcome: mode === "nullish" ? value !== null && value !== undefined : Boolean(value),
+    isTrueSide: mode === "nullish" ? value !== null && value !== undefined : Boolean(value),
   });
   return value;
 };

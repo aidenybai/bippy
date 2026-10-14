@@ -40,7 +40,7 @@ export interface Probe {
 
 export interface ProbeHit {
   id: string;
-  outcome: boolean;
+  isTrueSide: boolean;
 }
 
 export interface MutationHit {
