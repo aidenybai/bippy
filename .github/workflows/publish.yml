@@ -24,7 +24,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
+          bun-version: canary
 
       - uses: actions/setup-node@v6
         with:
@@ -59,7 +59,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
+          bun-version: canary
 
       - uses: actions/setup-node@v6
         with:

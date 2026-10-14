@@ -15,10 +15,7 @@ import { createFiber } from "./fiber-fixture";
 
 interface AccessorReplayOptions {
   event:
-    | "onCommitFiberRoot"
-    | "onCommitFiberUnmount"
-    | "onPostCommitFiberRoot"
-    | "onScheduleFiberRoot";
+    "onCommitFiberRoot" | "onCommitFiberUnmount" | "onPostCommitFiberRoot" | "onScheduleFiberRoot";
   result: "callback" | "undefined" | "throw";
   cancelsOther: boolean;
   hasNested: boolean;

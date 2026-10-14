@@ -14,9 +14,6 @@
     "test:all": "bun run --filter bippy test:all",
     "test:e2e": "bun run --filter @bippy/e2e test",
     "publint": "bun run --filter bippy publint",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
-    "lint": "oxlint",
     "typecheck": "bun run --filter bippy typecheck",
     "sherif": "sherif --fix -p './packages/bippy/tests/fixtures/*'",
     "changeset": "bun run build && changeset",
@@ -26,8 +23,6 @@
   "devDependencies": {
     "@changesets/changelog-git": "^0.2.0",
     "@changesets/cli": "^2.30.0",
-    "oxfmt": "0.66.0",
-    "oxlint": "1.81.0",
     "react-dom-experimental": "npm:react-dom@0.0.0-experimental-1d34f91d-20260909",
     "react-experimental": "npm:react@0.0.0-experimental-1d34f91d-20260909",
     "sherif": "^1.2.0",
@@ -38,7 +33,7 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4-canary.1",
   "patchedDependencies": {
     "react-devtools-core@8.0.0": "patches/react-devtools-core@8.0.0.patch"
   }

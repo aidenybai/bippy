@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -79,7 +79,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -196,7 +196,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: package.json
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22

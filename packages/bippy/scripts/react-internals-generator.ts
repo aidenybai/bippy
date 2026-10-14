@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,7 +12,6 @@ import type {
   ReactWorkTagMap,
   ReactWorkTagVersionRange,
 } from "react-devtools-core";
-import { format } from "oxfmt";
 import { z } from "zod";
 import { compareSemver, isSemver } from "../src/react-internals/semver";
 
@@ -448,14 +448,16 @@ export const createGeneratedReactInternals = async (
     reactDevToolsCore.ReactTypeOfSideEffect,
     reactDevToolsCore.ReactSymbols,
   );
-  const formattingResult = await format(defaultGeneratedModulePath, typescriptModule, {
-    semi: true,
-    singleQuote: false,
-  });
-  if (formattingResult.errors.length > 0) {
-    throw new Error(formattingResult.errors.map((error) => error.message).join("\n"));
-  }
-  return formattingResult.code;
+  const formattingResult = spawnSync(
+    "bun",
+    ["fmt", "--stdin-filepath", defaultGeneratedModulePath],
+    {
+      encoding: "utf8",
+      input: typescriptModule,
+    },
+  );
+  if (formattingResult.status !== 0) throw new Error(formattingResult.stderr);
+  return formattingResult.stdout;
 };
 
 const writeGeneratedModule = (generatedModulePath: string, generatedModule: string): void => {

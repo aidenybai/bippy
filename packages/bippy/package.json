@@ -122,7 +122,6 @@
     "ink": "^7.1.1",
     "ink-testing-library": "^4.0.0",
     "konva": "^10.3.0",
-    "oxfmt": "0.66.0",
     "pixi.js": "^8.19.0",
     "publint": "^0.3.0",
     "react": "^19.3.0",
