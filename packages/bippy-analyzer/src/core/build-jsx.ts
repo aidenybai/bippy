@@ -4,7 +4,7 @@ import { getComponentName } from "./symbolic-values";
 
 const DYNAMIC_TAG_NAME = "Dynamic";
 
-export interface JsxElementParts {
+interface JsxElementParts {
   declaration: string | null;
   isContext: boolean;
   props: Array<JsxProp | JsxSpreadProp>;

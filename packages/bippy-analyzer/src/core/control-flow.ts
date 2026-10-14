@@ -8,7 +8,7 @@ export type Outcome =
   | { kind: "Fallthrough"; from: BlockId | null; to: BlockId }
   | SplitOutcome;
 
-export interface SplitOutcome {
+interface SplitOutcome {
   kind: "Split";
   test: SymbolicValue;
   testKind: TestKind;

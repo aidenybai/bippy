@@ -57,7 +57,7 @@ const canLoadInPage = (page: Page, wrapper: Wrapper): Promise<boolean> =>
 export const listActionsInPage = (page: Page): Promise<Action[]> =>
   withTimeout(page.evaluate(() => window.__verify.actions()));
 
-export interface ResolvedWrappers {
+interface ResolvedWrappers {
   wrappers: Wrapper[];
   mounted: Capture | null;
 }

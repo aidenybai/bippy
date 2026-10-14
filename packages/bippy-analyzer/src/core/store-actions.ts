@@ -11,7 +11,6 @@ import {
   isNamedImports,
   isNumericLiteral,
   isObjectLiteralExpression,
-  isParenthesizedExpression,
   isPrefixUnaryExpression,
   isPropertyAccessExpression,
   isPropertyAssignment,
@@ -22,12 +21,10 @@ import {
   isVariableStatement,
 } from "typescript/unstable/ast/is";
 import type { StoreAssignment, StoreFieldValue, StoreActions } from "./types";
+import { skipParentheses } from "./utils/typescript";
 
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;
 const STORE_CREATORS = new Set(["create", "createWithEqualityFn"]);
-
-const skipParentheses = (node: Node): Node =>
-  isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
 const isFunctionNode = (node: Node): boolean => isArrowFunction(node) || isFunctionExpression(node);
 

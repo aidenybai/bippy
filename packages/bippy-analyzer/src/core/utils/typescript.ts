@@ -42,7 +42,7 @@ export const isReactElementType = (type: Type): boolean =>
     isReactType(member, REACT_ELEMENT_TYPE_PATTERN),
   );
 
-const skipParentheses = (node: Node): Node =>
+export const skipParentheses = (node: Node): Node =>
   isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
 const nodesByRangeCache = new WeakMap<SourceFile, Map<string, Node>>();

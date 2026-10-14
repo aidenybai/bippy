@@ -548,8 +548,7 @@ const formatProps = (props: Record<string, Sample>): string =>
     .join(" ")
     .slice(0, MAX_PROPS_LENGTH) || "no props";
 
-export const formatStates = (states: number[]): string =>
-  states.map((state) => `S${state + 1}`).join("|");
+const formatStates = (states: number[]): string => states.map((state) => `S${state + 1}`).join("|");
 
 export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
   ...verdict.stateCounterexamples.map(

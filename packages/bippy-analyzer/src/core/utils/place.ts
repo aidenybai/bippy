@@ -11,7 +11,7 @@ export const getBindingPlace = (binding: Binding, path: string[] = []): BindingP
 export const getValuePlace = (value: BindingValue): BindingPlace =>
   getBindingPlace(value.binding, value.path);
 
-export const formatPlace = ({ bindingId, path }: BindingPlace): string =>
+export const formatPlaceKey = ({ bindingId, path }: BindingPlace): string =>
   [bindingId, ...path].join(".");
 
 export const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
@@ -59,6 +59,6 @@ export class PlaceMap<Value> {
   }
 
   toJSON(): Record<string, Value> {
-    return Object.fromEntries([...this].map(([place, value]) => [formatPlace(place), value]));
+    return Object.fromEntries([...this].map(([place, value]) => [formatPlaceKey(place), value]));
   }
 }

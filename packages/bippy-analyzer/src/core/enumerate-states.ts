@@ -52,11 +52,6 @@ import {
 const MAX_ALTERNATIVES = 256;
 const MAX_REACHABILITY_ROUNDS = 8;
 
-interface Enumerator {
-  enumerate: (value: SymbolicValue, constraints: Constraints) => Alternative[];
-  getIsTruncated: () => boolean;
-}
-
 interface Alternative {
   constraints: Constraints;
   render: SymbolicValue;
@@ -344,102 +339,122 @@ const applyTransition = (
   return mayChangeNothing ? [constraints, ...afterEachPath] : afterEachPath;
 };
 
-const createEnumerator = (branchOutcomes: BranchOutcomes, region: RegionBranches): Enumerator => {
-  let isTruncated = false;
-  const alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
-  const enumerate = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
-    let alternativesByConstraints = alternativesCache.get(value);
+class StateEnumerator {
+  readonly #branchOutcomes: BranchOutcomes;
+  readonly #region: RegionBranches;
+  readonly #alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
+  #isTruncated = false;
+
+  constructor(branchOutcomes: BranchOutcomes, region: RegionBranches) {
+    this.#branchOutcomes = branchOutcomes;
+    this.#region = region;
+  }
+
+  get isTruncated(): boolean {
+    return this.#isTruncated;
+  }
+
+  enumerate(value: SymbolicValue, constraints: Constraints): Alternative[] {
+    let alternativesByConstraints = this.#alternativesCache.get(value);
     if (!alternativesByConstraints) {
       alternativesByConstraints = new WeakMap();
-      alternativesCache.set(value, alternativesByConstraints);
+      this.#alternativesCache.set(value, alternativesByConstraints);
     }
     const cachedAlternatives = alternativesByConstraints.get(constraints);
     if (cachedAlternatives) return cachedAlternatives;
-    const alternatives = enumerateUncached(value, constraints);
+    const alternatives = this.#enumerateUncached(value, constraints);
     alternativesByConstraints.set(constraints, alternatives);
     return alternatives;
-  };
-  const enumerateUncached = (value: SymbolicValue, constraints: Constraints): Alternative[] => {
+  }
+
+  #enumerateUncached(value: SymbolicValue, constraints: Constraints): Alternative[] {
     switch (value.kind) {
-      case "Conditional": {
-        const branchKey = getBranchKey(value);
-        if (!region.branchKeys.has(branchKey)) return [createLeaf(constraints, value)];
-        const alternatives: Alternative[] = [];
-        const test = getTestExpression(value);
-        const isDecided = evaluate(test, constraints) !== null;
-        for (const outcome of [true, false]) {
-          const withOutcome = assume(test, outcome, constraints);
-          if (!withOutcome) continue;
-          branchOutcomes.set(
-            branchKey,
-            new Set([...(branchOutcomes.get(branchKey) ?? []), outcome]),
-          );
-          const simplifiedTest = simplify(test, constraints);
-          const conditionLabel = outcome
-            ? formatSymbolicValue(simplifiedTest)
-            : formatNegated(simplifiedTest);
-          for (const alternative of enumerate(
-            outcome ? value.consequent : value.alternate,
-            withOutcome,
-          )) {
-            if (alternatives.length >= MAX_ALTERNATIVES) {
-              isTruncated = true;
-              break;
-            }
-            alternatives.push({
-              ...alternative,
-              fragments: [alternative.render],
-              conditions: isDecided
-                ? alternative.conditions
-                : [conditionLabel, ...alternative.conditions],
-              branches: new Set([...alternative.branches, `${branchKey}:${outcome}`]),
-            });
-          }
-        }
-        return alternatives;
-      }
+      case "Conditional":
+        return this.#enumerateBranch(value, constraints);
       case "JsxExpression":
-      case "JsxFragment": {
-        let partials: PartialChildren[] = [
-          { constraints, children: [], fragments: [], conditions: [], branches: NO_BRANCHES },
-        ];
-        for (const child of value.children) {
-          const nextPartials: PartialChildren[] = [];
-          for (const partial of partials) {
-            if (nextPartials.length >= MAX_ALTERNATIVES) {
-              isTruncated = true;
-              break;
-            }
-            for (const childAlternative of enumerate(child, partial.constraints)) {
-              if (nextPartials.length >= MAX_ALTERNATIVES) {
-                isTruncated = true;
-                break;
-              }
-              nextPartials.push({
-                constraints: childAlternative.constraints,
-                children: [...partial.children, childAlternative.render],
-                fragments: [...partial.fragments, ...childAlternative.fragments],
-                conditions: [...partial.conditions, ...childAlternative.conditions],
-                branches: new Set([...partial.branches, ...childAlternative.branches]),
-              });
-            }
-          }
-          partials = nextPartials;
-        }
-        return partials.map((partial) => ({
-          constraints: partial.constraints,
-          render: { ...value, children: partial.children },
-          fragments: partial.fragments,
-          conditions: partial.conditions,
-          branches: partial.branches,
-        }));
-      }
+      case "JsxFragment":
+        return this.#enumerateChildren(value, constraints);
       default:
         return [createLeaf(constraints, resolveLiteral(value, constraints))];
     }
-  };
-  return { enumerate, getIsTruncated: () => isTruncated };
-};
+  }
+
+  #hasRoomFor(alternativeCount: number): boolean {
+    if (alternativeCount < MAX_ALTERNATIVES) return true;
+    this.#isTruncated = true;
+    return false;
+  }
+
+  #recordOutcome(branchKey: string, outcome: boolean): void {
+    this.#branchOutcomes.set(
+      branchKey,
+      new Set([...(this.#branchOutcomes.get(branchKey) ?? []), outcome]),
+    );
+  }
+
+  #enumerateBranch(conditional: ConditionalValue, constraints: Constraints): Alternative[] {
+    const branchKey = getBranchKey(conditional);
+    if (!this.#region.branchKeys.has(branchKey)) return [createLeaf(constraints, conditional)];
+    const alternatives: Alternative[] = [];
+    const test = getTestExpression(conditional);
+    const isDecided = evaluate(test, constraints) !== null;
+    for (const outcome of [true, false]) {
+      const withOutcome = assume(test, outcome, constraints);
+      if (!withOutcome) continue;
+      this.#recordOutcome(branchKey, outcome);
+      const simplifiedTest = simplify(test, constraints);
+      const conditionLabel = outcome
+        ? formatSymbolicValue(simplifiedTest)
+        : formatNegated(simplifiedTest);
+      const arm = outcome ? conditional.consequent : conditional.alternate;
+      for (const alternative of this.enumerate(arm, withOutcome)) {
+        if (!this.#hasRoomFor(alternatives.length)) break;
+        alternatives.push({
+          ...alternative,
+          fragments: [alternative.render],
+          conditions: isDecided
+            ? alternative.conditions
+            : [conditionLabel, ...alternative.conditions],
+          branches: new Set([...alternative.branches, `${branchKey}:${outcome}`]),
+        });
+      }
+    }
+    return alternatives;
+  }
+
+  #enumerateChildren(
+    element: Extract<SymbolicValue, { kind: "JsxExpression" | "JsxFragment" }>,
+    constraints: Constraints,
+  ): Alternative[] {
+    let partials: PartialChildren[] = [
+      { constraints, children: [], fragments: [], conditions: [], branches: NO_BRANCHES },
+    ];
+    for (const child of element.children) {
+      const nextPartials: PartialChildren[] = [];
+      for (const partial of partials) {
+        if (!this.#hasRoomFor(nextPartials.length)) break;
+        for (const childAlternative of this.enumerate(child, partial.constraints)) {
+          if (!this.#hasRoomFor(nextPartials.length)) break;
+          nextPartials.push({
+            constraints: childAlternative.constraints,
+            children: [...partial.children, childAlternative.render],
+            fragments: [...partial.fragments, ...childAlternative.fragments],
+            conditions: [...partial.conditions, ...childAlternative.conditions],
+            branches: new Set([...partial.branches, ...childAlternative.branches]),
+          });
+        }
+      }
+      partials = nextPartials;
+    }
+    return partials.map((partial) => ({
+      constraints: partial.constraints,
+      render: { ...element, children: partial.children },
+      fragments: partial.fragments,
+      conditions: partial.conditions,
+      branches: partial.branches,
+    }));
+  }
+}
 
 const findRegions = (render: SymbolicValue): RegionBranches[] => {
   const branchGroups = new DisjointSet<string>();
@@ -600,8 +615,8 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const regions: Region[] = [];
   let isTruncated = false;
   regionBranches.forEach((regionBranch, regionIndex) => {
-    const enumerator = createEnumerator(branchOutcomes, regionBranch);
-    const targetEnumerator = createEnumerator(new Map(), regionBranch);
+    const enumerator = new StateEnumerator(branchOutcomes, regionBranch);
+    const targetEnumerator = new StateEnumerator(new Map(), regionBranch);
     const alternatives = enumerator.enumerate(analysis.render, reachableConstraints);
     const firstIndex = states.length;
     const stateKeys = alternatives.map(getStateKey);
@@ -640,7 +655,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
         transitions,
       });
     }
-    isTruncated ||= enumerator.getIsTruncated() || targetEnumerator.getIsTruncated();
+    isTruncated ||= enumerator.isTruncated || targetEnumerator.isTruncated;
     regions.push({
       places: regionBranch.places,
       bindingIds: [...regionBranch.bindingIds],
