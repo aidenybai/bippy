@@ -1,17 +1,24 @@
 import type { SourceFile } from "typescript/unstable/ast";
 import type { CompiledFile, CompiledFunction } from "./compile";
-import { addComparedSamples } from "./infer-domains";
-import type { DomainResolver } from "./infer-domains";
+import type { SourceFileResolver } from "./source-file-resolver";
+import { EQUALITY_OPERATORS } from "./constraints";
+import { forEachSymbolicValue } from "./utils/traverse";
 import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";
 import { PlaceMap } from "./utils/place";
 import { createDeclarationKey } from "./utils/declaration-key";
 import type { ProjectHookLoader } from "./interpret";
-import type { Bailout, ComponentAnalysis, ContextSetterFields, StoreActions } from "./types";
+import type {
+  Bailout,
+  ComponentAnalysis,
+  ContextSetterFields,
+  StoreActions,
+  SymbolicValue,
+} from "./types";
 
 export interface FileContext {
   sourceFile: SourceFile;
-  resolver: DomainResolver;
+  resolver: SourceFileResolver;
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
   contextSetterFields: ContextSetterFields;
@@ -19,6 +26,22 @@ export interface FileContext {
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
+
+const addComparedSamples = (render: SymbolicValue): void => {
+  forEachSymbolicValue(render, (value) => {
+    if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return;
+    const [comparedValue, literal] =
+      value.left.kind === "Binding" ? [value.left, value.right] : [value.right, value.left];
+    if (comparedValue.kind !== "Binding" || literal.kind !== "Primitive") return;
+    const { binding } = comparedValue;
+    if (binding.kind !== "prop" || comparedValue.path.length > 0) return;
+    if (typeof literal.value !== "string" && typeof literal.value !== "number") return;
+    const hasSample = binding.samples.some(
+      (sample) => sample.kind === "Value" && sample.value === literal.value,
+    );
+    if (!hasSample) binding.samples.push({ kind: "Value", value: literal.value });
+  });
+};
 
 export const analyzeComponent = (
   reactFunction: CompiledFunction,

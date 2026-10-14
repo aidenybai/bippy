@@ -17,7 +17,7 @@ import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
-import type { DomainResolver } from "./infer-domains";
+import type { SourceFileResolver } from "./source-file-resolver";
 import type {
   ArrayExpressionValue,
   Binding,
@@ -168,7 +168,7 @@ const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
 };
 
 interface InterpreterBindingOptions extends BindingOptions {
-  resolver?: DomainResolver;
+  resolver?: SourceFileResolver;
 }
 
 interface WalkState {
@@ -213,7 +213,7 @@ type CallTarget =
 
 export interface ProjectHook {
   hirFunction: HIRFunction;
-  resolver: DomainResolver;
+  resolver: SourceFileResolver;
   loadModuleFunction: ModuleFunctionLoader;
 }
 
@@ -222,7 +222,7 @@ export interface ProjectHookLoader {
 }
 
 export class Interpreter {
-  #resolver: DomainResolver;
+  #resolver: SourceFileResolver;
   readonly #loadProjectHook: ProjectHookLoader;
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
@@ -244,7 +244,7 @@ export class Interpreter {
   #inlineDepth = 0;
 
   constructor(
-    resolver: DomainResolver,
+    resolver: SourceFileResolver,
     loadModuleFunction: ModuleFunctionLoader,
     loadProjectHook: ProjectHookLoader,
     contextSetterFields: ContextSetterFields,

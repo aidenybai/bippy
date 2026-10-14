@@ -52,7 +52,9 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `diagnostics.ts`            | Bailouts and warnings, each reported once                                        |
 | `symbolic-values.ts`        | Builds and folds the values the interpreter produces                             |
 | `control-flow.ts`           | Branch outcomes and the conditionals they merge into                             |
-| `infer-domains.ts`          | Turns each value's TS type into the values it can take, and props to mount with  |
+| `source-file-resolver.ts`   | Reads types, names and source text at a compiler location                        |
+| `domains.ts`                | Turns a TS type into the values it can take                                      |
+| `type-samples.ts`           | Turns a TS type into sample values to mount props with                           |
 | `store-actions.ts`          | What each zustand store action sets                                              |
 | `string-samples.ts`         | Strings a component may parse, picked by name                                    |
 | `collect-handlers.ts`       | What each event handler and effect updates                                       |

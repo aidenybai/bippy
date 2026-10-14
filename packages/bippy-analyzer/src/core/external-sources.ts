@@ -1,6 +1,6 @@
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
-import type { DomainResolver } from "./infer-domains";
+import type { SourceFileResolver } from "./source-file-resolver";
 import type {
   Binding,
   BindingKind,
@@ -47,7 +47,7 @@ export class ExternalSources {
   readonly #contextSetterFields: ContextSetterFields;
   readonly #actionsByStore: Map<string, StoreActions>;
   readonly #contextKeysByHook = new WeakMap<HookResultValue, string>();
-  readonly #resolversByHook = new WeakMap<HookResultValue, DomainResolver>();
+  readonly #resolversByHook = new WeakMap<HookResultValue, SourceFileResolver>();
   readonly #setterFieldsByBinding = new Map<number, Map<string, string>>();
   readonly #modulesByBinding = new Map<number, string>();
   readonly #bindingsByStore = new Map<string, Binding>();
@@ -60,16 +60,20 @@ export class ExternalSources {
     this.#actionsByStore = actionsByStore;
   }
 
-  addHookResult(hook: HookResultValue, resolver: DomainResolver, contextKey: string | null): void {
+  addHookResult(
+    hook: HookResultValue,
+    resolver: SourceFileResolver,
+    contextKey: string | null,
+  ): void {
     if (contextKey) this.#contextKeysByHook.set(hook, contextKey);
     this.#resolversByHook.set(hook, resolver);
   }
 
-  getHookResolver(hook: HookResultValue): DomainResolver | undefined {
+  getHookResolver(hook: HookResultValue): SourceFileResolver | undefined {
     return this.#resolversByHook.get(hook);
   }
 
-  bindHookResult(binding: Binding, hook: HookResultValue, resolver: DomainResolver): void {
+  bindHookResult(binding: Binding, hook: HookResultValue, resolver: SourceFileResolver): void {
     if (hook.module !== null) this.#modulesByBinding.set(binding.id, hook.module);
     const contextKey = this.#contextKeysByHook.get(hook);
     if (!contextKey) return;

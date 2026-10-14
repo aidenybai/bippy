@@ -1,11 +1,11 @@
 import { compileFile } from "./compile";
 import type { CompiledFunction } from "./compile";
 import { CompilerTypeProvider } from "./type-provider";
-import { DomainResolver } from "./infer-domains";
+import { SourceFileResolver } from "./source-file-resolver";
 import type { ProjectHook } from "./interpret";
 import { collectStoreActions } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
-import { dedupeSamples, getSampleOfValue } from "./infer-domains";
+import { dedupeSamples, getSampleOfValue } from "./type-samples";
 import { getStringSamples } from "./string-samples";
 import type {
   ComponentAnalysis,
@@ -246,7 +246,7 @@ const compileProjectFiles = (project: Project, fileNames: string[]): CompiledFil
   return fileNames.flatMap((fileName): CompiledFileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
-    const resolver = new DomainResolver(project.checker, sourceFile, isStrictNullChecks);
+    const resolver = new SourceFileResolver(project.checker, sourceFile, isStrictNullChecks);
     const compiled = compileFile(fileName, sourceFile.text, {
       typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
     });

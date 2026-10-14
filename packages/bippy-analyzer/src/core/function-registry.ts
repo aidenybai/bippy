@@ -1,5 +1,5 @@
 import type { HIRFunction, Place } from "../react-compiler/HIR/HIR";
-import type { DomainResolver } from "./infer-domains";
+import type { SourceFileResolver } from "./source-file-resolver";
 import type { FunctionValue, SymbolicValue } from "./types";
 
 export interface ModuleFunctionLoader {
@@ -11,15 +11,19 @@ export type CapturedValue = [Place, SymbolicValue];
 export class FunctionRegistry {
   readonly #functions: HIRFunction[] = [];
   readonly #idsByFunction = new Map<HIRFunction, number>();
-  readonly #resolversByFunction = new WeakMap<HIRFunction, DomainResolver>();
-  readonly #loadersByModule = new Map<DomainResolver, ModuleFunctionLoader>();
+  readonly #resolversByFunction = new WeakMap<HIRFunction, SourceFileResolver>();
+  readonly #loadersByModule = new Map<SourceFileResolver, ModuleFunctionLoader>();
   readonly #capturedValuesById = new Map<number, CapturedValue[]>();
 
   get(functionId: number): HIRFunction | null {
     return this.#functions[functionId] ?? null;
   }
 
-  register(hirFunction: HIRFunction, resolver: DomainResolver, isSnapshot = false): FunctionValue {
+  register(
+    hirFunction: HIRFunction,
+    resolver: SourceFileResolver,
+    isSnapshot = false,
+  ): FunctionValue {
     if (!this.#resolversByFunction.has(hirFunction))
       this.#resolversByFunction.set(hirFunction, resolver);
     const existingId = isSnapshot ? undefined : this.#idsByFunction.get(hirFunction);
@@ -31,12 +35,12 @@ export class FunctionRegistry {
     return { kind: "Function", functionId, loc: hirFunction.loc };
   }
 
-  getResolver(hirFunction: HIRFunction): DomainResolver | undefined {
+  getResolver(hirFunction: HIRFunction): SourceFileResolver | undefined {
     return this.#resolversByFunction.get(hirFunction);
   }
 
   addModule(
-    resolver: DomainResolver,
+    resolver: SourceFileResolver,
     loadModuleFunction: ModuleFunctionLoader,
     hirFunction: HIRFunction | null = null,
   ): void {
@@ -44,7 +48,7 @@ export class FunctionRegistry {
     this.#loadersByModule.set(resolver, loadModuleFunction);
   }
 
-  loadModuleFunction(resolver: DomainResolver, functionName: string): HIRFunction | null {
+  loadModuleFunction(resolver: SourceFileResolver, functionName: string): HIRFunction | null {
     return this.#loadersByModule.get(resolver)?.(functionName) ?? null;
   }
 

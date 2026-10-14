@@ -1,6 +1,6 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
-import type { DomainResolver } from "./infer-domains";
+import type { SourceFileResolver } from "./source-file-resolver";
 import type {
   AbstractValue,
   Binding,
@@ -19,7 +19,7 @@ export interface BindingOptions extends Partial<
 export class BindingTable {
   readonly #bindingsByDeclaration = new Map<string, Binding>();
   readonly #bindingsByProp = new Map<string, Binding>();
-  readonly #resolversByBinding = new Map<number, DomainResolver>();
+  readonly #resolversByBinding = new Map<number, SourceFileResolver>();
   readonly placeDomains = new PlaceMap<Domain>();
   readonly unionMemberValues = new PlaceMap<AbstractValue[][]>();
 
@@ -28,7 +28,7 @@ export class BindingTable {
   }
 
   create(
-    resolver: DomainResolver,
+    resolver: SourceFileResolver,
     name: string,
     kind: BindingKind,
     loc: SourceLocation,
@@ -58,7 +58,7 @@ export class BindingTable {
   }
 
   getPropBinding(
-    resolver: DomainResolver,
+    resolver: SourceFileResolver,
     propName: string,
     localName: string,
     loc: SourceLocation,
@@ -71,7 +71,7 @@ export class BindingTable {
   }
 
   readField(
-    resolver: DomainResolver,
+    resolver: SourceFileResolver,
     binding: Binding,
     path: string[],
     loc: SourceLocation,
