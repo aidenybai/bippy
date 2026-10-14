@@ -10,7 +10,12 @@ import type {
   Transition,
 } from "../../../src/core/types";
 import { forEachJsxElement, forEachRenderNode } from "../../../src/core/utils/traverse";
-import { formatAbstractValue, formatLine, formatPlace } from "../../../src/core/format";
+import {
+  formatAbstractValue,
+  formatLine,
+  formatPlace,
+  formatStateLabel,
+} from "../../../src/core/format";
 import { isStateBinding } from "../../../src/core/utils/checks";
 import { getLocationKey } from "../../../src/core/utils/hir";
 import type { types } from "@babel/core";
@@ -106,6 +111,7 @@ interface TriggerLabel {
 }
 
 const FIRST_COMMIT = "first commit";
+const NON_HOOK_BINDING_KINDS = new Set<BindingKind>(["prop", "item", "call", "loop", "suspense"]);
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
 const MAX_RENDERED_LENGTH = 300;
 const MAX_PROPS_LENGTH = 160;
@@ -193,12 +199,7 @@ const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> 
 
 const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
   const hookBindings = analysis.bindings.filter(
-    (binding) =>
-      binding.kind !== "prop" &&
-      binding.kind !== "item" &&
-      binding.kind !== "call" &&
-      binding.kind !== "loop" &&
-      binding.kind !== "suspense",
+    (binding) => !NON_HOOK_BINDING_KINDS.has(binding.kind),
   );
   if (
     hookBindings.some((binding) => !binding.hookKind || !ORDERED_HOOK_KINDS.has(binding.hookKind))
@@ -557,15 +558,28 @@ export const scoreComponent = (
 };
 
 const formatSample = (sample: Sample): string => {
-  if (sample.kind === "Value") return JSON.stringify(sample.value);
-  if (sample.kind === "Array") return `[${sample.items.map(formatSample).join(", ")}]`;
-  if (sample.kind === "Object") return "{…}";
-  if (sample.kind === "Element") return "<span>";
-  if (sample.kind === "Promise") return `Promise(${formatSample(sample.value)})`;
-  if (sample.kind === "Date") return `Date(${sample.value})`;
-  if (sample.kind === "Set") return `Set(${sample.items.map(formatSample).join(", ")})`;
-  if (sample.kind === "Map") return "Map(…)";
-  return sample.kind === "Function" ? "fn" : "undefined";
+  switch (sample.kind) {
+    case "Value":
+      return JSON.stringify(sample.value);
+    case "Array":
+      return `[${sample.items.map(formatSample).join(", ")}]`;
+    case "Object":
+      return "{…}";
+    case "Element":
+      return "<span>";
+    case "Promise":
+      return `Promise(${formatSample(sample.value)})`;
+    case "Date":
+      return `Date(${sample.value})`;
+    case "Set":
+      return `Set(${sample.items.map(formatSample).join(", ")})`;
+    case "Map":
+      return "Map(…)";
+    case "Function":
+      return "fn";
+    case "Undefined":
+      return "undefined";
+  }
 };
 
 const formatProps = (props: Record<string, Sample>): string =>
@@ -575,7 +589,8 @@ const formatProps = (props: Record<string, Sample>): string =>
     .join(" ")
     .slice(0, MAX_PROPS_LENGTH) || "no props";
 
-const formatStates = (states: number[]): string => states.map((state) => `S${state + 1}`).join("|");
+const formatStates = (stateIndices: number[]): string =>
+  stateIndices.map(formatStateLabel).join("|");
 
 export const formatCounterexamples = (verdict: ComponentVerdict): string[] => [
   ...verdict.stateCounterexamples.map(

@@ -17,7 +17,15 @@ import type {
   Handler,
 } from "../core/types";
 import { forEachJsxElement } from "../core/utils/traverse";
-import { formatAbstractValue, formatLine, formatPlace, formatSymbolicValue } from "../core/format";
+import {
+  CONDITION_SEPARATOR,
+  UNCONDITIONAL_LABEL,
+  formatAbstractValue,
+  formatLine,
+  formatPlace,
+  formatStateLabel,
+  formatSymbolicValue,
+} from "../core/format";
 import { getTestExpression } from "../core/utils/truthiness";
 import { getBindingPlace } from "../core/utils/place";
 import {
@@ -402,7 +410,9 @@ const buildState = (
 ): TreeNode => {
   const { colors } = context;
   const conditionLabel =
-    state.conditions.length > 0 ? state.conditions.join(colors.dim(" ∧ ")) : colors.dim("always");
+    state.conditions.length > 0
+      ? state.conditions.join(colors.dim(CONDITION_SEPARATOR))
+      : colors.dim(UNCONDITIONAL_LABEL);
   const rendered = hasRegions
     ? state.fragments
         .map((fragment) => formatCompact(fragment, context))
@@ -413,7 +423,7 @@ const buildState = (
   for (const transition of state.transitions) {
     const targetLabels = transition.targets
       .filter((targetIndex) => targetIndex !== stateIndex)
-      .map((targetIndex) => `S${targetIndex + 1}`);
+      .map(formatStateLabel);
     if (targetLabels.length === 0) continue;
     const triggerLabel =
       context.triggerLabelsByHandler.get(transition.handlerId) ?? transition.handlerId;
@@ -425,7 +435,7 @@ const buildState = (
     );
   }
   return createTreeNode(
-    truncate(`${colors.bold(`S${stateIndex + 1}`)} ${conditionLabel}`),
+    truncate(`${colors.bold(formatStateLabel(stateIndex))} ${conditionLabel}`),
     details,
   );
 };

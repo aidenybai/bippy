@@ -13,8 +13,10 @@ export const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 export const PACKAGE_SPECIFIER_PATTERN = /^[^./\0]/;
 export const PATH_SPECIFIER_PATTERN = /^\.{0,2}\//;
 
+export const stripQuery = (id: string): string => id.split("?")[0] ?? id;
+
 export const isAppSourceModule = (id: string): boolean =>
-  !id.includes("/node_modules/") && SOURCE_FILE_PATTERN.test(id.split("?")[0] ?? id);
+  !id.includes("/node_modules/") && SOURCE_FILE_PATTERN.test(stripQuery(id));
 
 export const getPackageName = (specifier: string): string =>
   specifier
@@ -42,13 +44,22 @@ const isDeclared = (appDirectory: string, packageName: string): boolean => {
   );
 };
 
-// HACK: found by name, since a package's `exports` may not include its `package.json`.
-const findInstalledDirectory = (appDirectory: string, packageName: string): string | null => {
-  for (let directory = appDirectory; ; directory = dirname(directory)) {
-    const packageDirectory = join(directory, "node_modules", packageName);
-    if (existsSync(join(packageDirectory, "package.json"))) return packageDirectory;
+const findUpwards = (
+  startDirectory: string,
+  isMatch: (directory: string) => boolean,
+): string | null => {
+  for (let directory = startDirectory; ; directory = dirname(directory)) {
+    if (isMatch(directory)) return directory;
     if (dirname(directory) === directory) return null;
   }
+};
+
+// HACK: found by name, since a package's `exports` may not include its `package.json`.
+const findInstalledDirectory = (appDirectory: string, packageName: string): string | null => {
+  const installingDirectory = findUpwards(appDirectory, (directory) =>
+    existsSync(join(directory, "node_modules", packageName, "package.json")),
+  );
+  return installingDirectory && join(installingDirectory, "node_modules", packageName);
 };
 
 export const resolvePackageDirectory = (
@@ -68,6 +79,7 @@ export const resolvePackageDirectory = (
 export const isInstalled = (appDirectory: string, packageName: string): boolean =>
   resolvePackageDirectory(appDirectory, packageName) !== null;
 
-export const hasPackageDirectory = (directory: string, packageName: string): boolean =>
-  existsSync(join(directory, "node_modules", packageName)) ||
-  (dirname(directory) !== directory && hasPackageDirectory(dirname(directory), packageName));
+export const hasPackageDirectory = (startDirectory: string, packageName: string): boolean =>
+  findUpwards(startDirectory, (directory) =>
+    existsSync(join(directory, "node_modules", packageName)),
+  ) !== null;

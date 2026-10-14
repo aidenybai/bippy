@@ -1,5 +1,12 @@
 import type { Capture } from "./types";
 
+export const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  const message: unknown =
+    typeof error === "object" && error ? Reflect.get(error, "message") : null;
+  return typeof message === "string" ? message : String(error);
+};
+
 export type MountFailure =
   | "server-component"
   | "env"

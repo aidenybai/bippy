@@ -2,7 +2,7 @@ import MagicString from "magic-string";
 import { parseAst } from "vite";
 import type { Plugin, Rollup } from "vite";
 import type { Probe } from "../types";
-import { isAppSourceModule } from "./packages";
+import { isAppSourceModule, stripQuery } from "./packages";
 
 interface RequireCall {
   start: number;
@@ -148,7 +148,7 @@ export const createProbePlugin = (probes: Probe[]): Plugin => {
     name: "bippy-verify-probes",
     enforce: "pre",
     transform: (code, id) => {
-      const fileProbes = probesByFile.get(id.split("?")[0] ?? id);
+      const fileProbes = probesByFile.get(stripQuery(id));
       if (!fileProbes) return null;
       const source = new MagicString(code);
       const innermostFirst = [...fileProbes].sort(

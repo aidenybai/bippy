@@ -10,7 +10,7 @@ import { exploreComponent } from "./driver";
 import { collectMutationProbes } from "./mutation";
 import { collectProbes, scoreComponent } from "./score";
 import type { ComponentVerdict } from "./score";
-import { HarnessError, classifyMountError } from "./reasons";
+import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
 import { readHarnessSetup } from "./harness/setup";
 import { getCycleImporters } from "./source-index";
 import { startHarness } from "./server";
@@ -121,7 +121,7 @@ const createFailedVerdict = (
   error: unknown,
   knownComponents: Map<string, string>,
 ): ComponentVerdict => {
-  const message = error instanceof Error ? (error.message.split("\n")[0] ?? "") : String(error);
+  const message = getErrorMessage(error).split("\n")[0] ?? "";
   return {
     ...scoreComponent(component.analysis, component.report, [], knownComponents),
     status: "mount-failed",

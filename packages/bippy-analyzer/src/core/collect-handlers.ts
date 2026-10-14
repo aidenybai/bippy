@@ -11,6 +11,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { forEachJsxElement } from "./utils/traverse";
+import { isExternalSource } from "./utils/checks";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
@@ -61,9 +62,7 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
         .map((property) => `${property.key}=${getHandlerKey(property.value)}`)
         .join(",")}`;
     case "Binding":
-      return value.binding.kind === "prop" ||
-        value.binding.kind === "hook" ||
-        value.binding.kind === "context"
+      return value.binding.kind === "prop" || isExternalSource(value.binding)
         ? `binding:${value.binding.id}:${value.path.join(".")}`
         : null;
     default:

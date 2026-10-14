@@ -6,6 +6,23 @@ export const SETUP_PATH = "/__bippy_verify_setup.tsx";
 export const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
 export const TRUNCATED_VALUE = "[truncated]";
 
+const PROP_OWNER_PREFIX = "prop:";
+const STATE_OWNER_PREFIX = "state:";
+
+export interface MutationOwner {
+  kind: "prop" | "state";
+  name: string;
+}
+
+export const getPropOwner = (propName: string): string => `${PROP_OWNER_PREFIX}${propName}`;
+
+export const getStateOwner = (hookIndex: number): string => `${STATE_OWNER_PREFIX}${hookIndex}`;
+
+export const parseOwner = (owner: string): MutationOwner =>
+  owner.startsWith(PROP_OWNER_PREFIX)
+    ? { kind: "prop", name: owner.slice(PROP_OWNER_PREFIX.length) }
+    : { kind: "state", name: owner.slice(STATE_OWNER_PREFIX.length) };
+
 export type Shape =
   | { kind: "element"; tag: string; children: Shape[] }
   | { kind: "component"; name: string }

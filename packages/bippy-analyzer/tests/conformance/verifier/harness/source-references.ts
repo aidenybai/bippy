@@ -8,6 +8,7 @@ import {
   SOURCE_FILE_PATTERN,
   getPackageName,
   hasPackageDirectory,
+  stripQuery,
 } from "./packages";
 
 export interface SourceReferences {
@@ -95,7 +96,7 @@ const createAliasResolver = (server: ViteDevServer) => {
       : server.environments.client.pluginContainer
           .resolveId(specifier, importer)
           .then((partial) => {
-            const id = partial?.id.split("?")[0];
+            const id = partial ? stripQuery(partial.id) : undefined;
             return id &&
               isAbsolute(id) &&
               !id.includes(`${sep}node_modules${sep}`) &&

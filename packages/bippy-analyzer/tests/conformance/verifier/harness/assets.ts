@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { Plugin } from "vite";
-import { IMAGE_FILE_PATTERN } from "./packages";
+import { IMAGE_FILE_PATTERN, stripQuery } from "./packages";
 
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 // HACK: stylesheets load as scripts so no preprocessor runs; a CSS module's class names are their
@@ -25,12 +25,12 @@ export const createAssetPlugin = (): Plugin => ({
     // HACK: the id ends in `.js`, as Vite's own CSS handling claims any id ending like a
     // stylesheet.
     if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
-    const assetPath = source.split("?")[0] ?? source;
+    const assetPath = stripQuery(source);
     const isMissingImage =
       importer !== undefined &&
       assetPath.startsWith(".") &&
       IMAGE_FILE_PATTERN.test(assetPath) &&
-      !existsSync(resolve(dirname(importer.split("?")[0] ?? importer), assetPath));
+      !existsSync(resolve(dirname(stripQuery(importer)), assetPath));
     return isMissingImage ? `${MISSING_ASSET_PREFIX}${assetPath}` : null;
   },
   load: (id) => {

@@ -14,10 +14,18 @@ import type { ComponentType, ErrorInfo, ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type { Root } from "react-dom/client";
 import type { Sample } from "../../../src/core/types";
+import { getErrorMessage } from "./reasons";
 import type { MountFailure } from "./reasons";
 import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot";
 import { STAND_IN } from "./stubs/stand-in";
-import { PROVIDERS_PATH, SETUP_PATH, TRUNCATED_VALUE, WRAPPER_PATH } from "./types";
+import {
+  PROVIDERS_PATH,
+  SETUP_PATH,
+  TRUNCATED_VALUE,
+  WRAPPER_PATH,
+  getPropOwner,
+  getStateOwner,
+} from "./types";
 import type {
   Action,
   ActionTarget,
@@ -242,7 +250,7 @@ const isRefObject = (value: unknown): boolean =>
 const hydrateProp = (name: string, sample: Sample): unknown => {
   const value = hydrate(sample);
   if (!isPlainData(value) || isRefObject(value)) return value;
-  forEachPlainObject(value, (object) => propOwners.set(object, `prop:${name}`));
+  forEachPlainObject(value, (object) => propOwners.set(object, getPropOwner(name)));
   return trackWrites(value, true);
 };
 
@@ -373,7 +381,7 @@ const getStateOwners = (states: unknown[]): Map<object, string> => {
   const owners = new Map<object, string>();
   states.forEach((state, hookIndex) =>
     forEachPlainObject(state, (object) => {
-      if (!owners.has(object)) owners.set(object, `state:${hookIndex}`);
+      if (!owners.has(object)) owners.set(object, getStateOwner(hookIndex));
     }),
   );
   return owners;
@@ -384,7 +392,7 @@ const trackStates = (fiber: Fiber): Map<object, string> => {
   states.forEach((state, hookIndex) => {
     if (!isPlainData(state) || trackedStates.some((tracked) => tracked.target === state)) return;
     trackedStates.push({
-      owner: `state:${hookIndex}`,
+      owner: getStateOwner(hookIndex),
       target: state,
       snapshot: snapshotValue(state),
     });
@@ -465,13 +473,6 @@ XMLHttpRequest.prototype.send = function send(...sendArguments) {
 
 const waitForSettleInterval = (): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
-
-const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) return error.message;
-  const message: unknown =
-    typeof error === "object" && error ? Reflect.get(error, "message") : null;
-  return typeof message === "string" ? message : String(error);
-};
 
 const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
   const componentStack = errorInfo?.componentStack;

@@ -12,6 +12,7 @@ import { formatCounterexamples, scoreComponent } from "./score";
 import type { Capture, MountRequest } from "./types";
 import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
+import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/format";
 
 interface VerifyProject extends ProjectHarness {
   components: AnalyzedComponent[];
@@ -43,7 +44,8 @@ interface VerifyWorkerFixtures {
   project: VerifyProject;
 }
 
-const getStateLabel = (state: State): string => state.conditions.join(" ∧ ") || "always";
+const getStateLabel = (state: State): string =>
+  state.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
 
 const toSample = (value: unknown): Sample => {
   if (value === undefined) return { kind: "Undefined" };

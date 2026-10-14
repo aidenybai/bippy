@@ -34,6 +34,11 @@ const COMPARED_OPERAND_PRECEDENCE = 5;
 const TERNARY_TEST_PRECEDENCE = 1;
 const WORD_OPERATOR_PATTERN = /^[a-z]/;
 
+export const CONDITION_SEPARATOR = " ∧ ";
+export const UNCONDITIONAL_LABEL = "always";
+
+export const formatStateLabel = (stateIndex: number): string => `S${stateIndex + 1}`;
+
 export const formatLine = (loc: SourceLocation): string =>
   loc === GeneratedSource ? "" : `L${loc.start.line}`;
 

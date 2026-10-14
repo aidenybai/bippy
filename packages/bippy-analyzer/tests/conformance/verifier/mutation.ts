@@ -5,7 +5,12 @@ import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
 import type { ComponentVerdict } from "./score";
+import { getPropOwner, getStateOwner, parseOwner } from "./types";
 import type { Probe } from "./types";
+
+interface OwnerPredicate {
+  (owner: string | null): boolean;
+}
 
 interface WarningScore extends Pick<
   ComponentVerdict,
@@ -44,18 +49,22 @@ const getOwnerPredicate = (
   bindings: Binding[],
   stateBindings: Binding[] | null,
   placeText: string | null,
-): ((owner: string | null) => boolean) => {
+): OwnerPredicate => {
   const rootName = placeText?.split(".")[0];
   if (warning.kind === "prop-mutation") {
     const propName = bindings.find(
       (binding) => binding.kind === "prop" && binding.name === rootName,
     )?.propName;
     return (owner) =>
-      propName ? owner === `prop:${propName}` : Boolean(owner?.startsWith("prop:"));
+      propName
+        ? owner === getPropOwner(propName)
+        : owner !== null && parseOwner(owner).kind === "prop";
   }
   const hookIndex = stateBindings?.findIndex((binding) => binding.name === rootName) ?? -1;
   return (owner) =>
-    hookIndex >= 0 ? owner === `state:${hookIndex}` : Boolean(owner?.startsWith("state:"));
+    hookIndex >= 0
+      ? owner === getStateOwner(hookIndex)
+      : owner !== null && parseOwner(owner).kind === "state";
 };
 
 const createSourceReader = (): ((file: string) => string) => {
@@ -95,7 +104,7 @@ const formatWarning = (warning: Warning): string =>
   `${[warning.kind, formatLine(warning.loc)].filter(Boolean).join(" ")}: ${warning.message}`;
 
 const formatOwner = (owner: string, stateBindings: Binding[] | null): string => {
-  const [kind, name] = owner.split(":");
+  const { kind, name } = parseOwner(owner);
   if (kind === "prop") return `prop ${name}`;
   const binding = stateBindings?.[Number(name)];
   return binding ? `state ${binding.name}` : `state hook ${name}`;

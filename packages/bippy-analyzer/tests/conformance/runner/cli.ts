@@ -17,6 +17,7 @@ import {
 } from "../verifier/score";
 import type { ComponentVerdict } from "../verifier/score";
 import { verifyProject } from "../verifier/verify";
+import { getErrorMessage } from "../verifier/reasons";
 
 type Environment = "local" | "vercel";
 
@@ -182,7 +183,7 @@ const run = async (ids: string[], options: RunOptions): Promise<void> => {
           error: null,
         };
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = getErrorMessage(error);
         mkdirSync(outputDirectory, { recursive: true });
         writeFileSync(join(outputDirectory, "error.txt"), message);
         return { id: repo.id, revision: repo.revision, summary: null, error: message };
