@@ -12,7 +12,7 @@ import {
   getComponent,
   getFixtureConfig,
   getInstructions,
-  lowerProject,
+  getHirFunctionsByName,
 } from "./helpers";
 
 const STATE_COMPONENTS = [
@@ -24,9 +24,6 @@ const STATE_COMPONENTS = [
   "FromRenamedBarrel",
 ];
 
-/**
- * The React export names the checker gives each call's callee, keyed by the callee's text.
- */
 const getCalleeExportNames = (fixture: string): Map<string, Array<string | null>> =>
   withProject(getFixtureConfig(fixture), (project) => {
     const exportNames = new Map<string, Array<string | null>>();
@@ -94,7 +91,7 @@ describe("hook detection through the checker", () => {
   beforeAll(() => {
     project = analyzeProject(getFixtureConfig("hooks"));
     plainProject = analyzeProject(getFixtureConfig("plain-jsx"));
-    functions = lowerProject("hooks");
+    functions = getHirFunctionsByName("hooks");
   });
 
   it.each(STATE_COMPONENTS)("binds useState in %s as state", (name) => {

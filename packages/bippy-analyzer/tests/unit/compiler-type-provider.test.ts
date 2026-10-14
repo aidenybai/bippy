@@ -11,16 +11,17 @@ import {
   BuiltInSetId,
 } from "../../src/react-compiler/HIR/ObjectShape";
 import { CompilerTypeProvider } from "../../src/core/type-provider";
-import { getFixtureConfig, getNamedTypes, lowerProject } from "./helpers";
+import { getFixtureConfig, getLocalTypesByName, getHirFunctionsByName } from "./helpers";
 
 const COLLECTIONS: MutableCollection[] = ["Array", "Map", "Set"];
 const SYMBOL_MEMBER_PREFIX = "__@";
 
-/**
- * Every member `lib.d.ts` declares on each collection, and the ones the provider calls
- * mutating.
- */
-const getMutatingMembers = (): Map<MutableCollection, { all: string[]; mutating: string[] }> =>
+interface CollectionMembers {
+  all: string[];
+  mutating: string[];
+}
+
+const getMutatingMembers = (): Map<MutableCollection, CollectionMembers> =>
   withProject(getFixtureConfig("types"), (project) => {
     const sourceFile = project.program
       .getSourceFileNames()
@@ -76,7 +77,6 @@ describe("CompilerTypeProvider.isMutatingMethod", () => {
   });
 
   it("derives exactly the in-place Map methods", () => {
-    // `getOrInsert` and `getOrInsertComputed` come from ESNext's upsert proposal and insert.
     expect(members.get("Map")?.mutating.toSorted()).toEqual([
       "clear",
       "delete",
@@ -124,11 +124,11 @@ describe("CompilerTypeProvider.getType", () => {
   };
 
   beforeAll(() => {
-    const functions = lowerProject("types");
+    const functions = getHirFunctionsByName("types");
     const fn = functions.get("Typed");
     if (!fn) throw new Error("Typed was not lowered");
     typed = fn;
-    types = getNamedTypes(fn);
+    types = getLocalTypesByName(fn);
   });
 
   it.each(["label", "count", "mode", "isActive", "maybeLabel"])(

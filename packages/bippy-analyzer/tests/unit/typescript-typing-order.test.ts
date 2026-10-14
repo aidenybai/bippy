@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import type { HIRFunction, Instruction, InstructionValue } from "../../src/react-compiler/HIR/HIR";
-import { getInstructions, lowerProject } from "./helpers";
+import { getInstructions, getHirFunctionsByName } from "./helpers";
 
 type MethodCall = Extract<InstructionValue, { kind: "MethodCall" }>;
 
@@ -33,9 +33,6 @@ const getOnlyMethodCall = (fn: HIRFunction | undefined, method: string): MethodC
   return call;
 };
 
-/**
- * The kinds of the definite mutations an instruction has on the place it was called on.
- */
 const getReceiverMutations = (call: MethodCallInstruction): string[] =>
   (call.instruction.effects ?? []).flatMap((effect) => {
     const place =
@@ -54,7 +51,7 @@ describe("TypeScript typing order", () => {
   let functions = new Map<string, HIRFunction>();
 
   beforeAll(() => {
-    functions = lowerProject("mutations");
+    functions = getHirFunctionsByName("mutations");
   });
 
   it("gives items.push in a handler the compiler's own push signature", () => {

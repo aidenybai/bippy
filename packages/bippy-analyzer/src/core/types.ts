@@ -223,14 +223,14 @@ export interface StoreAssignment {
   value: StoreFieldValue;
 }
 
-export type StoreActions = Map<string, StoreAssignment[]>;
+export interface StoreActions extends Map<string, StoreAssignment[]> {}
 
 export interface ProvidedContext {
   contextKey: string;
   value: SymbolicValue;
 }
 
-export type ContextSetterFields = Map<string, Map<string, string>>;
+export interface ContextSetterFields extends Map<string, Map<string, string>> {}
 
 export interface ComponentAnalysis {
   name: string;

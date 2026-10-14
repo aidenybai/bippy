@@ -24,11 +24,7 @@ export const getBinding = (component: AnalyzedComponent, name: string): Binding 
 export const getWarningKinds = (component: AnalyzedComponent): string[] =>
   component.analysis.warnings.map((warning) => warning.kind);
 
-/**
- * Runs the compiler pipeline on every component and hook in a fixture project and keeps
- * the HIR by function name.
- */
-export const lowerProject = (fixture: string): Map<string, HIRFunction> =>
+export const getHirFunctionsByName = (fixture: string): Map<string, HIRFunction> =>
   withProject(getFixtureConfig(fixture), (project) => {
     const functions = new Map<string, HIRFunction>();
     for (const fileName of project.program.getSourceFileNames().filter(isProjectSourceFile)) {
@@ -44,11 +40,8 @@ export const lowerProject = (fixture: string): Map<string, HIRFunction> =>
     return functions;
   });
 
-/**
- * Every instruction of a function, including those of the functions it creates.
- */
-export const getInstructions = (fn: HIRFunction): Instruction[] =>
-  [...fn.body.blocks.values()].flatMap((block) =>
+export const getInstructions = (hirFunction: HIRFunction): Instruction[] =>
+  [...hirFunction.body.blocks.values()].flatMap((block) =>
     block.instructions.flatMap((instruction) =>
       instruction.value.kind === "FunctionExpression" || instruction.value.kind === "ObjectMethod"
         ? [instruction, ...getInstructions(instruction.value.loweredFunc.func)]
@@ -56,12 +49,9 @@ export const getInstructions = (fn: HIRFunction): Instruction[] =>
     ),
   );
 
-/**
- * The type of each named local a function declares, by source name.
- */
-export const getNamedTypes = (fn: HIRFunction): Map<string, Type> =>
+export const getLocalTypesByName = (hirFunction: HIRFunction): Map<string, Type> =>
   new Map(
-    getInstructions(fn).flatMap((instruction) =>
+    getInstructions(hirFunction).flatMap((instruction) =>
       [...eachInstructionLValue(instruction)].flatMap((place) =>
         place.identifier.name ? [[place.identifier.name.value, place.identifier.type]] : [],
       ),
