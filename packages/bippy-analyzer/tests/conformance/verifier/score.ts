@@ -397,64 +397,100 @@ const scoreValues = (context: ScoringContext, observation: Observation): void =>
   });
 };
 
+interface ObservedEdge {
+  action: Action;
+  path: string[];
+  beforeMatches: number[];
+  afterMatches: number[];
+  triggeredIds: Set<string>;
+  maybeTriggeredIds: Set<string>;
+}
+
+const getTriggeredHandlerIds = (
+  context: ScoringContext,
+  action: Action,
+): Pick<ObservedEdge, "triggeredIds" | "maybeTriggeredIds"> => {
+  const triggeredIds = new Set<string>();
+  const maybeTriggeredIds = new Set<string>();
+  for (const handler of context.analysis.handlers) {
+    const label = context.triggerLabels.get(handler.id);
+    const trigger = label ? getTrigger(label, action) : null;
+    if (trigger) triggeredIds.add(handler.id);
+    if (trigger === "maybe") maybeTriggeredIds.add(handler.id);
+  }
+  return { triggeredIds, maybeTriggeredIds };
+};
+
+const canChildActionChange = (
+  context: ScoringContext,
+  edge: ObservedEdge,
+  region: number,
+): boolean => edge.action.isInChild && isExternalRegion(context, region);
+
+const isRegionEdgePredicted = (
+  context: ScoringContext,
+  edge: ObservedEdge,
+  region: number,
+): boolean => {
+  if (canChildActionChange(context, edge, region)) return true;
+  const isUnchanged = isRegionUnchanged(context, edge.beforeMatches, edge.afterMatches, region);
+  const transitions = getTransitions(
+    context,
+    getStatesInRegion(context, edge.beforeMatches, region),
+    edge.triggeredIds,
+  );
+  if (transitions.length === 0) return isUnchanged;
+  return transitions.some(
+    (transition) =>
+      transition.targets.some((target) => edge.afterMatches.includes(target)) ||
+      (isUnchanged && (transition.isAsync || edge.maybeTriggeredIds.has(transition.handlerId))),
+  );
+};
+
+const recordWrongEdge = (
+  context: ScoringContext,
+  edge: ObservedEdge,
+  reason: TransitionCounterexample["reason"],
+): void => {
+  context.verdict.transitionCounterexamples.push({
+    path: edge.path,
+    action: edge.action.key,
+    fromStates: edge.beforeMatches,
+    toStates: edge.afterMatches,
+    predictedStates: getTargetStates(context, edge.beforeMatches, edge.triggeredIds),
+    reason,
+  });
+};
+
 const scoreTransition = (
   context: ScoringContext,
   observation: Observation,
   afterMatches: number[],
 ): void => {
-  const { action, before, path } = observation;
+  const { action, before } = observation;
   if (!action || !before || before.error) return;
   const beforeMatches = getMatchedStates(context, before.shapes);
   if (!isEveryRegionMatched(context, beforeMatches)) return;
-  const triggers = context.analysis.handlers.flatMap((handler) => {
-    const label = context.triggerLabels.get(handler.id);
-    const trigger = label ? getTrigger(label, action) : null;
-    return trigger ? [{ handler, trigger }] : [];
-  });
-  const triggeredIds = new Set(triggers.map(({ handler }) => handler.id));
-  const maybeTriggeredIds = new Set(
-    triggers.flatMap(({ handler, trigger }) => (trigger === "maybe" ? [handler.id] : [])),
-  );
-  const canChildActionChange = (region: number): boolean =>
-    action.isInChild && isExternalRegion(context, region);
-  const recordWrongEdge = (reason: TransitionCounterexample["reason"]): void => {
-    context.verdict.transitionCounterexamples.push({
-      path,
-      action: action.key,
-      fromStates: beforeMatches,
-      toStates: afterMatches,
-      predictedStates: getTargetStates(context, beforeMatches, triggeredIds),
-      reason,
-    });
+  const edge: ObservedEdge = {
+    action,
+    path: observation.path,
+    beforeMatches,
+    afterMatches,
+    ...getTriggeredHandlerIds(context, action),
   };
   const regions = getRegionIndices(context);
-  if (triggeredIds.size === 0) {
+  if (edge.triggeredIds.size === 0) {
     const isExplained = regions.every(
       (region) =>
         isRegionUnchanged(context, beforeMatches, afterMatches, region) ||
-        canChildActionChange(region),
+        canChildActionChange(context, edge, region),
     );
-    if (!isExplained) recordWrongEdge("unmodeled-handler");
+    if (!isExplained) recordWrongEdge(context, edge, "unmodeled-handler");
     return;
   }
-  const isPredicted = regions.every((region) => {
-    if (canChildActionChange(region)) return true;
-    const isUnchanged = isRegionUnchanged(context, beforeMatches, afterMatches, region);
-    const transitions = getTransitions(
-      context,
-      getStatesInRegion(context, beforeMatches, region),
-      triggeredIds,
-    );
-    return transitions.length === 0
-      ? isUnchanged
-      : transitions.some(
-          (transition) =>
-            transition.targets.some((target) => afterMatches.includes(target)) ||
-            (isUnchanged && (transition.isAsync || maybeTriggeredIds.has(transition.handlerId))),
-        );
-  });
-  if (isPredicted) context.verdict.coveredTransitionCount++;
-  else if (!context.report.isTruncated) recordWrongEdge("unpredicted-target");
+  if (regions.every((region) => isRegionEdgePredicted(context, edge, region)))
+    context.verdict.coveredTransitionCount++;
+  else if (!context.report.isTruncated) recordWrongEdge(context, edge, "unpredicted-target");
 };
 
 const getMountFailedVerdict = (

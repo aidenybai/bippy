@@ -493,15 +493,16 @@ const buildNotes = (title: string, notes: Note[], { colors }: PrintOptions): Tre
     ),
   );
 
-export const formatComponent = (component: AnalyzedComponent, options: PrintOptions): string => {
+const createPrintContext = (
+  component: AnalyzedComponent,
+  options: PrintOptions,
+): ComponentPrintContext => {
   const { analysis } = component;
   const triggerLabelsByHandler = new Map<string, string>();
   collectTriggerLabels(analysis.render, triggerLabelsByHandler);
-  for (const handler of analysis.handlers) {
-    if (isEffectHandler(handler))
-      triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
-  }
-  const context: ComponentPrintContext = {
+  for (const handler of analysis.handlers.filter(isEffectHandler))
+    triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
+  return {
     ...options,
     renderNodeBudget: { remaining: MAX_RENDER_NODES },
     triggerLabelsByHandler,
@@ -509,37 +510,51 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
       analysis.handlers.map((handler) => [handler.id, formatHandlerEffects(handler)]),
     ),
   };
-  const { colors, views } = context;
+};
+
+const buildRenderSection = (
+  component: AnalyzedComponent,
+  context: ComponentPrintContext,
+): TreeNode => {
+  const effectNodes = component.analysis.handlers.filter(isEffectHandler).map((handler) => {
+    const triggerLabel = context.triggerLabelsByHandler.get(handler.id);
+    const effectSummary = context.effectSummariesByHandler.get(handler.id);
+    return createTreeNode(context.colors.dim(`${triggerLabel} ⇒ ${effectSummary}`));
+  });
+  return createTreeNode(context.colors.dim("render"), [
+    buildRenderNode(component.analysis.render, context, 0),
+    ...effectNodes,
+  ]);
+};
+
+const buildSections = (
+  component: AnalyzedComponent,
+  context: ComponentPrintContext,
+): TreeNode[] => {
+  const { analysis } = component;
   const sections: TreeNode[] = [];
-  if (views.has("data")) sections.push(buildBindings(component, context));
-  if (views.has("render")) {
-    const effectNodes = analysis.handlers.filter(isEffectHandler).map((handler) => {
-      const triggerLabel = triggerLabelsByHandler.get(handler.id);
-      const effectLabel = context.effectSummariesByHandler.get(handler.id);
-      return createTreeNode(colors.dim(`${triggerLabel} ⇒ ${effectLabel}`));
-    });
-    sections.push(
-      createTreeNode(colors.dim("render"), [
-        buildRenderNode(analysis.render, context, 0),
-        ...effectNodes,
-      ]),
-    );
-  }
-  if (views.has("states")) sections.push(buildStates(component, context));
-  if (views.has("warnings") && analysis.warnings.length > 0)
+  if (context.views.has("data")) sections.push(buildBindings(component, context));
+  if (context.views.has("render")) sections.push(buildRenderSection(component, context));
+  if (context.views.has("states")) sections.push(buildStates(component, context));
+  if (context.views.has("warnings") && analysis.warnings.length > 0)
     sections.push(buildNotes("warnings", analysis.warnings, context));
-  if (views.has("bailouts") && analysis.bailouts.length > 0)
-    sections.push(
-      buildNotes(
-        "bailouts",
-        analysis.bailouts.map((bailout) => ({ ...bailout, kind: bailout.reason })),
-        context,
-      ),
-    );
+  if (context.views.has("bailouts") && analysis.bailouts.length > 0) {
+    const bailoutNotes = analysis.bailouts.map((bailout) => ({ ...bailout, kind: bailout.reason }));
+    sections.push(buildNotes("bailouts", bailoutNotes, context));
+  }
+  return sections;
+};
+
+export const formatComponent = (component: AnalyzedComponent, options: PrintOptions): string => {
+  const { analysis } = component;
+  const context = createPrintContext(component, options);
   const lineSuffix = analysis.loc === GeneratedSource ? "" : `:${analysis.loc.start.line}`;
   const location = `${relative(context.rootDirectory, analysis.file)}${lineSuffix}`;
   return renderAsciiTree(
-    createTreeNode(`${colors.bold(analysis.name)} ${colors.dim(location)}`, sections),
+    createTreeNode(
+      `${context.colors.bold(analysis.name)} ${context.colors.dim(location)}`,
+      buildSections(component, context),
+    ),
   ).join("\n");
 };
 

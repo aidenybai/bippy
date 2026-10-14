@@ -143,6 +143,24 @@ type PhiState = "resolved" | "unresolved";
 
 type TerminalStep = Outcome | { kind: "Next"; block: BlockId };
 
+const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
+
+interface BranchTest {
+  test: SymbolicValue;
+  testKind: TestKind;
+  knownOutcome: boolean | null;
+}
+
+const getBranchTest = (operator: BranchOperator, testedValue: SymbolicValue): BranchTest => {
+  const shortCircuit = operator === "optional-chain-tail" ? getShortCircuit(testedValue) : null;
+  const test = shortCircuit?.test ?? testedValue;
+  const testKind: TestKind =
+    shortCircuit?.testKind ?? (NULLISH_BRANCH_OPERATORS.has(operator) ? "nullish" : "truthy");
+  const knownOutcome =
+    operator === "optional-chain-tail" && !shortCircuit ? true : getKnownOutcome(test, testKind);
+  return { test, testKind, knownOutcome };
+};
+
 const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
   if (terminal.kind === "logical") return terminal.operator;
   if (terminal.kind === "optional" && !terminal.optional) return "optional-chain-tail";
@@ -1313,22 +1331,10 @@ export class Interpreter {
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
   ): Outcome {
-    const { test, consequent, alternate, fallthrough } = terminal;
+    const { consequent, alternate, fallthrough } = terminal;
     const operator = this.#getCompilationTables().branchOperators.get(fallthrough) ?? "ternary";
-    const chainValue = this.#read(test);
-    const shortCircuit = operator === "optional-chain-tail" ? getShortCircuit(chainValue) : null;
-    const testValue = shortCircuit?.test ?? chainValue;
-    const testKind: TestKind =
-      shortCircuit?.testKind ??
-      (operator === "??" || operator === "optional" || operator === "optional-chain-tail"
-        ? "nullish"
-        : "truthy");
-    const branch = this.#createBranch(
-      terminal.id,
-      test.loc,
-      this.#resolver.isExpression(test.loc) ? testKind : "none",
-    );
-    const testGuard = getTestExpression({ test: testValue, testKind });
+    const branchTest = getBranchTest(operator, this.#read(terminal.test));
+    const testGuard = getTestExpression(branchTest);
     const walkArm = (armBlock: BlockId, isConsequent: boolean): Outcome => {
       const guards = [...walkState.guards, isConsequent ? testGuard : negate(testGuard)];
       return armBlock === fallthrough || stops.has(armBlock)
@@ -1344,24 +1350,23 @@ export class Interpreter {
     const consequentOutcome = walkArm(consequent, true);
     const alternateOutcome = walkArm(alternate, false);
     const isSwapped = operator === "&&";
-    const decidedOutcome =
-      operator === "optional-chain-tail" && !shortCircuit
-        ? true
-        : getKnownOutcome(testValue, testKind);
-    const branchOutcome: Outcome =
-      decidedOutcome !== null
-        ? decidedOutcome !== isSwapped
-          ? consequentOutcome
-          : alternateOutcome
-        : {
-            kind: "Split",
-            test: testValue,
-            testKind,
-            branch,
-            consequent: isSwapped ? alternateOutcome : consequentOutcome,
-            alternate: isSwapped ? consequentOutcome : alternateOutcome,
-          };
-    return this.#continueAfter(branchOutcome, fallthrough, stops, walkState);
+    if (branchTest.knownOutcome !== null)
+      return this.#continueAfter(
+        branchTest.knownOutcome !== isSwapped ? consequentOutcome : alternateOutcome,
+        fallthrough,
+        stops,
+        walkState,
+      );
+    const probe = this.#resolver.isExpression(terminal.test.loc) ? branchTest.testKind : "none";
+    const splitOutcome: Outcome = {
+      kind: "Split",
+      test: branchTest.test,
+      testKind: branchTest.testKind,
+      branch: this.#createBranch(terminal.id, terminal.test.loc, probe),
+      consequent: isSwapped ? alternateOutcome : consequentOutcome,
+      alternate: isSwapped ? consequentOutcome : alternateOutcome,
+    };
+    return this.#continueAfter(splitOutcome, fallthrough, stops, walkState);
   }
 
   #walkSwitch(

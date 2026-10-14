@@ -579,46 +579,55 @@ const isRenderedByChild = (fiber: Fiber): boolean => {
   return ownerType !== null && ownerType !== undefined && !isMountedType(ownerType);
 };
 
+interface ActionCandidate extends Pick<MountedAction, "kind" | "value"> {}
+
+const getActionCandidates = (props: Record<string, unknown>, tag: string): ActionCandidate[] => {
+  const candidates: ActionCandidate[] = [];
+  if (typeof props.onClick === "function" && props.disabled !== true)
+    candidates.push({ kind: "click", value: "" });
+  const isEditable =
+    INPUT_TAGS.has(tag) &&
+    props.type !== "file" &&
+    (typeof props.onChange === "function" || typeof props.onInput === "function");
+  if (isEditable) for (const value of CHANGE_VALUES) candidates.push({ kind: "change", value });
+  return candidates;
+};
+
+const getActionBaseKey = (candidate: ActionCandidate, tag: string, label: string): string => {
+  const valueSuffix = candidate.kind === "change" ? `=${candidate.value}` : "";
+  return `${candidate.kind}:${tag}:${label}${valueSuffix}`;
+};
+
 const collectActions = (): MountedAction[] => {
-  const fiber = findMountedFiber();
+  const mountedFiber = findMountedFiber();
   const actions: MountedAction[] = [];
-  const keyCounts = new Map<string, number>();
-  const visit = (current: Fiber, clickAncestors: ActionTarget[]): void => {
+  const countsByBaseKey = new Map<string, number>();
+  const visit = (fiber: Fiber, clickAncestors: ActionTarget[]): void => {
     let childClickAncestors = clickAncestors;
-    if (isHostFiber(current) && current.stateNode instanceof HTMLElement) {
-      const props: Record<string, unknown> = current.memoizedProps ?? {};
-      const tag = String(current.type);
-      const label = getLabel(current.stateNode);
-      const candidates: Array<Pick<MountedAction, "kind" | "value">> = [];
-      if (typeof props.onClick === "function" && props.disabled !== true)
-        candidates.push({ kind: "click", value: "" });
-      if (
-        INPUT_TAGS.has(tag) &&
-        props.type !== "file" &&
-        (typeof props.onChange === "function" || typeof props.onInput === "function")
-      ) {
-        for (const value of CHANGE_VALUES) candidates.push({ kind: "change", value });
-      }
-      for (const candidate of candidates) {
-        const baseKey = `${candidate.kind}:${tag}:${label}${candidate.kind === "change" ? `=${candidate.value}` : ""}`;
-        const count = keyCounts.get(baseKey) ?? 0;
-        keyCounts.set(baseKey, count + 1);
+    if (isHostFiber(fiber) && fiber.stateNode instanceof HTMLElement) {
+      const props: Record<string, unknown> = fiber.memoizedProps ?? {};
+      const tag = String(fiber.type);
+      const label = getLabel(fiber.stateNode);
+      for (const candidate of getActionCandidates(props, tag)) {
+        const baseKey = getActionBaseKey(candidate, tag, label);
+        const duplicateCount = countsByBaseKey.get(baseKey) ?? 0;
+        countsByBaseKey.set(baseKey, duplicateCount + 1);
         actions.push({
           ...candidate,
-          key: count === 0 ? baseKey : `${baseKey}#${count}`,
+          key: duplicateCount === 0 ? baseKey : `${baseKey}#${duplicateCount}`,
           tag,
           label,
-          isInChild: isRenderedByChild(current),
+          isInChild: isRenderedByChild(fiber),
           clickAncestors,
-          element: current.stateNode,
+          element: fiber.stateNode,
         });
       }
       if (typeof props.onClick === "function")
         childClickAncestors = [...clickAncestors, { tag, label }];
     }
-    for (const child of getChildren(current)) visit(child, childClickAncestors);
+    for (const child of getChildren(fiber)) visit(child, childClickAncestors);
   };
-  if (fiber) for (const child of getChildren(fiber)) visit(child, []);
+  if (mountedFiber) for (const child of getChildren(mountedFiber)) visit(child, []);
   return actions;
 };
 

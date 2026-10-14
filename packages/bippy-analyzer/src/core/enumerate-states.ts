@@ -564,6 +564,30 @@ const collectBranchKeysInTests = (render: SymbolicValue): Set<string> => {
   return branchKeysInTests;
 };
 
+const getUnreachedSides = (
+  conditional: ConditionalValue,
+  branchKey: string,
+  reachedOutcomes: Set<boolean>,
+): KeyedUnreachableBranch[] => {
+  const test = getTestExpression(conditional);
+  const unreachedSides: KeyedUnreachableBranch[] = [];
+  if (!reachedOutcomes.has(true))
+    unreachedSides.push({
+      branchKey,
+      branch: conditional.branch,
+      side: true,
+      description: `never ${formatSymbolicValue(test)}`,
+    });
+  if (!reachedOutcomes.has(false) && !isRenderingNothingWhenFalse(conditional))
+    unreachedSides.push({
+      branchKey,
+      branch: conditional.branch,
+      side: false,
+      description: `never ${formatNegated(test)}`,
+    });
+  return unreachedSides;
+};
+
 const collectUnreachableBranches = (
   render: SymbolicValue,
   branchOutcomes: BranchOutcomes,
@@ -588,21 +612,7 @@ const collectUnreachableBranches = (
         const test = getTestExpression(value);
         if (reachedOutcomes && !reportedKeys.has(branchKey)) {
           reportedKeys.add(branchKey);
-          if (!reachedOutcomes.has(true))
-            unreachableBranches.push({
-              branchKey,
-              branch: value.branch,
-              side: true,
-              description: `never ${formatSymbolicValue(test)}`,
-            });
-          if (!reachedOutcomes.has(false) && !isRenderingNothingWhenFalse(value)) {
-            unreachableBranches.push({
-              branchKey,
-              branch: value.branch,
-              side: false,
-              description: `never ${formatNegated(test)}`,
-            });
-          }
+          unreachableBranches.push(...getUnreachedSides(value, branchKey, reachedOutcomes));
         }
         if (reachedOutcomes?.has(true))
           visit(value.consequent, [...pathConditions, getValueKey(test)]);
@@ -624,65 +634,86 @@ const collectUnreachableBranches = (
   );
 };
 
+interface TransitionContext {
+  analysis: ComponentAnalysis;
+  reachableConstraints: Constraints;
+  dependentsByBinding: Map<number, number[]>;
+  targetEnumerator: StateEnumerator;
+  regionStateKeys: string[];
+  firstStateIndex: number;
+}
+
+const getRegionHandlers = (analysis: ComponentAnalysis, region: RegionBranches): Handler[] =>
+  analysis.handlers.filter((handler) =>
+    handler.updates.some((update) => region.bindingIds.has(update.binding.id)),
+  );
+
+const getTransition = (
+  handler: Handler,
+  alternative: Alternative,
+  context: TransitionContext,
+): Transition => {
+  const targetKeys = new Set(
+    getConstraintsAfterHandler(
+      handler,
+      alternative.constraints,
+      context.reachableConstraints,
+      context.dependentsByBinding,
+    ).flatMap((afterHandler) =>
+      context.targetEnumerator.enumerate(context.analysis.render, afterHandler).map(getStateKey),
+    ),
+  );
+  return {
+    handlerId: handler.id,
+    targets: context.regionStateKeys.flatMap((stateKey, regionStateIndex) =>
+      targetKeys.has(stateKey) ? [context.firstStateIndex + regionStateIndex] : [],
+    ),
+    isAsync: handler.updates.some((update) => update.isAsync),
+  };
+};
+
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const reachableConstraints = createInitialConstraints(analysis);
   const dependentsByBinding = getDependentsByBinding(analysis.bindings);
   const branchOutcomes: BranchOutcomes = new Map();
-  const regionBranches = findRegions(analysis.render);
   const effectIds = new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id));
-
   const states: State[] = [];
   const regions: Region[] = [];
   let isTruncated = false;
-  regionBranches.forEach((regionBranch, regionIndex) => {
-    const enumerator = new StateEnumerator(branchOutcomes, regionBranch);
-    const targetEnumerator = new StateEnumerator(new Map(), regionBranch);
+  findRegions(analysis.render).forEach((region, regionIndex) => {
+    const enumerator = new StateEnumerator(branchOutcomes, region);
     const alternatives = enumerator.enumerate(analysis.render, reachableConstraints);
-    const firstIndex = states.length;
-    const stateKeys = alternatives.map(getStateKey);
-    const handlers = analysis.handlers.filter((handler) =>
-      handler.updates.some((update) => regionBranch.bindingIds.has(update.binding.id)),
-    );
+    const transitionContext: TransitionContext = {
+      analysis,
+      reachableConstraints,
+      dependentsByBinding,
+      targetEnumerator: new StateEnumerator(new Map(), region),
+      regionStateKeys: alternatives.map(getStateKey),
+      firstStateIndex: states.length,
+    };
+    const regionHandlers = getRegionHandlers(analysis, region);
     for (const alternative of alternatives) {
-      const handlerIds = new Set(effectIds);
-      collectHandlerIds(alternative.render, handlerIds);
-      const transitions: Transition[] = handlers
-        .filter((handler) => handlerIds.has(handler.id))
-        .map((handler) => {
-          const targetKeys = new Set(
-            getConstraintsAfterHandler(
-              handler,
-              alternative.constraints,
-              reachableConstraints,
-              dependentsByBinding,
-            ).flatMap((afterTransition) =>
-              targetEnumerator.enumerate(analysis.render, afterTransition).map(getStateKey),
-            ),
-          );
-          return {
-            handlerId: handler.id,
-            targets: stateKeys.flatMap((stateKey, targetIndex) =>
-              targetKeys.has(stateKey) ? [firstIndex + targetIndex] : [],
-            ),
-            isAsync: handler.updates.some((update) => update.isAsync),
-          };
-        });
+      const renderedHandlerIds = new Set(effectIds);
+      collectHandlerIds(alternative.render, renderedHandlerIds);
       states.push({
         region: regionIndex,
         conditions: alternative.conditions,
         render: alternative.render,
         fragments: alternative.fragments,
-        transitions,
+        transitions: regionHandlers
+          .filter((handler) => renderedHandlerIds.has(handler.id))
+          .map((handler) => getTransition(handler, alternative, transitionContext)),
       });
     }
-    isTruncated ||= enumerator.isTruncated || targetEnumerator.isTruncated;
+    isTruncated ||= enumerator.isTruncated || transitionContext.targetEnumerator.isTruncated;
     regions.push({
-      places: regionBranch.places,
-      bindingIds: [...regionBranch.bindingIds],
-      states: alternatives.map((_alternative, index) => firstIndex + index),
+      places: region.places,
+      bindingIds: [...region.bindingIds],
+      states: alternatives.map(
+        (_alternative, regionStateIndex) => transitionContext.firstStateIndex + regionStateIndex,
+      ),
     });
   });
-
   return {
     places: new PlaceMap(reachableConstraints.possibleValues),
     states,

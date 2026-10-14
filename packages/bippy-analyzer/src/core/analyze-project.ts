@@ -24,6 +24,7 @@ import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript";
 import { isProjectSourceFile, withProject } from "./utils/with-project";
+import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-key";
 
 const ARRAY_METHOD_NAMES = new Set([
@@ -58,7 +59,7 @@ const INDEX_PATTERN = /^\d+$/;
 
 interface CompiledComponent {
   reactFunction: CompiledFunction;
-  fileContext: Omit<FileContext, "contextSetterFields">;
+  fileContext: CompiledFileContext;
 }
 
 const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample => {
@@ -233,74 +234,88 @@ const withContextFileNames = (
   ),
 });
 
+interface CompiledFileContext extends Omit<FileContext, "contextSetterFields"> {}
+
+const compileProjectFiles = (project: Project, fileNames: string[]): CompiledFileContext[] => {
+  const { strict, strictNullChecks } = project.compilerOptions;
+  const isStrictNullChecks = strictNullChecks ?? strict ?? false;
+  const projectHooksByDeclaration = new Map<string, ProjectHook>();
+  const actionsByStore = new Map<string, StoreActions>();
+  const loadProjectHook = (declarationKey: string): ProjectHook | null =>
+    projectHooksByDeclaration.get(declarationKey) ?? null;
+  return fileNames.flatMap((fileName): CompiledFileContext[] => {
+    const sourceFile = project.program.getSourceFile(fileName);
+    if (!sourceFile) return [];
+    const resolver = new DomainResolver(project.checker, sourceFile, isStrictNullChecks);
+    const compiled = compileFile(fileName, sourceFile.text, {
+      typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+    });
+    for (const [storeKey, actions] of collectStoreActions(sourceFile))
+      actionsByStore.set(storeKey, actions);
+    for (const { functionType, hir, name } of compiled.functions)
+      if (functionType === "Hook" && hir)
+        projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
+          hirFunction: hir,
+          resolver,
+          loadModuleFunction: compiled.loadModuleFunction,
+        });
+    return [
+      {
+        sourceFile,
+        resolver,
+        compiled,
+        loadProjectHook,
+        actionsByStore,
+        exportNames: collectExportNames(sourceFile),
+        displayNames: collectDisplayNames(sourceFile),
+      },
+    ];
+  });
+};
+
+const analyzeCompiledComponent = (
+  component: CompiledComponent,
+  contextSetterFields: ContextSetterFields,
+): ComponentAnalysis =>
+  analyzeComponent(component.reactFunction, { ...component.fileContext, contextSetterFields });
+
+const analyzeComponents = (fileContexts: CompiledFileContext[]): ComponentAnalysis[] => {
+  const compiledComponents = fileContexts.flatMap((fileContext) =>
+    fileContext.compiled.functions.flatMap((reactFunction): CompiledComponent[] =>
+      reactFunction.functionType === "Component" ? [{ reactFunction, fileContext }] : [],
+    ),
+  );
+  const initialAnalyses = compiledComponents.map((component) => ({
+    component,
+    analysis: analyzeCompiledComponent(component, new Map()),
+  }));
+  const contextSetterFields = collectContextSetterFields(
+    initialAnalyses.map((initial) => initial.analysis),
+  );
+  const analyses = initialAnalyses.map((initial) =>
+    initial.analysis.bindings.some((binding) => binding.kind === "context")
+      ? analyzeCompiledComponent(initial.component, contextSetterFields)
+      : initial.analysis,
+  );
+  for (const analysis of analyses) addSamplesFromReadPaths(analysis);
+  inferPropsFromCallSites(analyses);
+  return analyses;
+};
+
 export const analyzeProject = (
   configPath: string,
   fileFilter: string | null = null,
 ): ProjectAnalysis =>
   withProject(configPath, (project) => {
     const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
-    const { strict, strictNullChecks } = project.compilerOptions;
-    const isStrictNullChecks = strictNullChecks ?? strict ?? false;
-    const projectHooksByDeclaration = new Map<string, ProjectHook>();
-    const actionsByStore = new Map<string, StoreActions>();
-    const loadProjectHook = (declarationKey: string): ProjectHook | null =>
-      projectHooksByDeclaration.get(declarationKey) ?? null;
-    const fileContexts = fileNames.flatMap((fileName) => {
-      const sourceFile = project.program.getSourceFile(fileName);
-      if (!sourceFile) return [];
-      const resolver = new DomainResolver(project.checker, sourceFile, isStrictNullChecks);
-      const compiled = compileFile(fileName, sourceFile.text, {
-        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
-      });
-      for (const [storeKey, actions] of collectStoreActions(sourceFile))
-        actionsByStore.set(storeKey, actions);
-      for (const { functionType, hir, name } of compiled.functions)
-        if (functionType === "Hook" && hir)
-          projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
-            hirFunction: hir,
-            resolver,
-            loadModuleFunction: compiled.loadModuleFunction,
-          });
-      return [
-        {
-          sourceFile,
-          resolver,
-          compiled,
-          loadProjectHook,
-          actionsByStore,
-          exportNames: collectExportNames(sourceFile),
-          displayNames: collectDisplayNames(sourceFile),
-        },
-      ];
-    });
-    const compiledComponents = fileContexts.flatMap((fileContext) =>
-      fileContext.compiled.functions.flatMap((reactFunction): CompiledComponent[] =>
-        reactFunction.functionType === "Component" ? [{ reactFunction, fileContext }] : [],
-      ),
-    );
-    const analyzeCompiledComponent = (
-      { reactFunction, fileContext }: CompiledComponent,
-      contextSetterFields: ContextSetterFields,
-    ): ComponentAnalysis =>
-      analyzeComponent(reactFunction, { ...fileContext, contextSetterFields });
-    const initialAnalyses = compiledComponents.map((component) => ({
-      component,
-      analysis: analyzeCompiledComponent(component, new Map()),
-    }));
-    const contextSetterFields = collectContextSetterFields(
-      initialAnalyses.map(({ analysis }) => analysis),
-    );
-    const analyses = initialAnalyses.map(({ component, analysis }) =>
-      analysis.bindings.some((binding) => binding.kind === "context")
-        ? analyzeCompiledComponent(component, contextSetterFields)
-        : analysis,
-    );
-    for (const analysis of analyses) addSamplesFromReadPaths(analysis);
-    inferPropsFromCallSites(analyses);
+    const fileContexts = compileProjectFiles(project, fileNames);
     const fileNamesByPath = new Map(
-      fileContexts.map(({ sourceFile }) => [sourceFile.path, sourceFile.fileName]),
+      fileContexts.map((fileContext) => [
+        fileContext.sourceFile.path,
+        fileContext.sourceFile.fileName,
+      ]),
     );
-    const components = analyses
+    const components = analyzeComponents(fileContexts)
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
       .map((analysis) => withContextFileNames(analysis, fileNamesByPath))
       .map((analysis) => ({ analysis, report: enumerateStates(analysis) }));
