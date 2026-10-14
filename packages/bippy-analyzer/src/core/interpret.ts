@@ -1478,11 +1478,11 @@ export class Interpreter {
             ? this.#walk(join, stops, arm.from, { ...walkState, guards }, joinPhiState)
             : arm;
         case "Split":
-          return {
+          return this.#nestWalk(() => ({
             ...arm,
             consequent: resumeAtJoin(arm.consequent, [...guards, getGuard(arm, true)]),
             alternate: resumeAtJoin(arm.alternate, [...guards, getGuard(arm, false)]),
-          };
+          }));
         default:
           return assertExhaustive(arm, "Unhandled outcome");
       }
@@ -1660,10 +1660,14 @@ export class Interpreter {
     walkState: WalkState,
     entryPhiState: PhiState,
   ): Outcome {
+    return this.#nestWalk(() => this.#walkBlocks(blockId, stops, from, walkState, entryPhiState));
+  }
+
+  #nestWalk(walkNested: () => Outcome): Outcome {
     if (this.#walkDepth >= MAX_WALK_DEPTH) return this.#bailOutTooComplex("nests too many blocks");
     this.#walkDepth++;
     try {
-      return this.#walkBlocks(blockId, stops, from, walkState, entryPhiState);
+      return walkNested();
     } finally {
       this.#walkDepth--;
     }
