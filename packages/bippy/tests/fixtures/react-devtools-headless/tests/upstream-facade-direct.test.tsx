@@ -4,7 +4,7 @@ import "../src/index";
 
 import React from "react";
 import * as ReactDOMClientModule from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTools, installFacade as installFacadeImplementation } from "../src/index";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

@@ -2,7 +2,7 @@ import "../src/index";
 
 import { cleanup, render } from "@testing-library/react";
 import { getReactWorkTagsForFiber, setReactWorkTagsForFiber, traverseFiber } from "bippy";
-import { afterEach, beforeEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installFacade } from "../src/facade";
 import { getFiberDisplayName, getFiberTypeName } from "../src/fiber-metadata";
 import type { Fiber } from "bippy";

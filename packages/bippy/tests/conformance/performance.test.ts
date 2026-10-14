@@ -6,7 +6,7 @@ import {
   setReactWorkTagsForFiber,
   type Fiber,
 } from "bippy";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { createFiber, linkChildren } from "./fiber-fixture";
 
 it("reuses cached ancestor work tags with linear parent reads", () => {

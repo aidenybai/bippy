@@ -22,22 +22,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
 
       - uses: actions/setup-node@v6
         with:
           node-version: 22.18.0
-          cache: pnpm
 
       - run: npm install -g npm@11
 
-      - run: pnpm install --frozen-lockfile
+      - run: bun install --frozen-lockfile
 
       - name: Create release PR or publish
         uses: changesets/action@v1
         with:
-          publish: pnpm release
-          version: pnpm run version
+          publish: bun run release
+          version: bun run version
           title: "chore: version packages"
           commit: "chore: version packages"
         env:
@@ -56,22 +57,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
 
       - uses: actions/setup-node@v6
         with:
           node-version: 22.18.0
-          cache: pnpm
           registry-url: https://registry.npmjs.org
 
       - run: npm install -g npm@11
 
-      - run: pnpm install --frozen-lockfile
+      - run: bun install --frozen-lockfile
 
       - name: Compute dev version
         id: dev-version
         run: |
-          base_version="$(node -p "require('./packages/bippy/package.json').version")"
+          base_version="$(cd packages/bippy && bun pm pkg get version | tr -d '"')"
           dev_version="${base_version}-dev.$(git rev-parse --short HEAD)"
           echo "version=${dev_version}" >> "$GITHUB_OUTPUT"
           echo "Publishing dev snapshot ${dev_version}"
@@ -79,19 +81,21 @@ jobs:
       - name: Apply dev version to published package
         env:
           DEV_VERSION: ${{ steps.dev-version.outputs.version }}
-        run: |
-          node -e "const fs = require('node:fs'); const path = 'packages/bippy/package.json'; const manifest = JSON.parse(fs.readFileSync(path, 'utf8')); manifest.version = process.env.DEV_VERSION; fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');"
+        working-directory: packages/bippy
+        run: bun pm pkg set version="$DEV_VERSION"
 
       - name: Publish to npm under the dev tag
         env:
+          DEV_VERSION: ${{ steps.dev-version.outputs.version }}
           NPM_CONFIG_PROVENANCE: true
+        working-directory: packages/bippy
         run: |
           for attempt in 1 2 3; do
-            if pnpm publish --recursive --tag dev --no-git-checks --access public; then
+            if npm view "bippy@${DEV_VERSION}" version > /dev/null 2>&1 || npm publish --tag dev --access public; then
               exit 0
             fi
             backoff_seconds=$((attempt * 15))
-            echo "Dev publish attempt ${attempt} failed; retrying in ${backoff_seconds}s (already-published versions are skipped by pnpm)"
+            echo "Dev publish attempt ${attempt} failed; retrying in ${backoff_seconds}s"
             sleep "${backoff_seconds}"
           done
           echo "Dev publish failed after 3 attempts"

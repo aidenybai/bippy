@@ -4,7 +4,7 @@ import { cleanup, render as renderDOM } from "@testing-library/react";
 import React, { act } from "react";
 import { render as renderNil } from "react-nil";
 import ReactTestRenderer from "react-test-renderer";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   checkCallingFiber,
   createFiberRootRegistry,

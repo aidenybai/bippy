@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,8 +12,6 @@ import type {
   ReactWorkTagMap,
   ReactWorkTagVersionRange,
 } from "react-devtools-core";
-import { format } from "vite-plus/fmt";
-import type { Plugin } from "vite-plus";
 import { z } from "zod";
 import { compareSemver, isSemver } from "../src/react-internals/semver";
 
@@ -449,14 +448,16 @@ export const createGeneratedReactInternals = async (
     reactDevToolsCore.ReactTypeOfSideEffect,
     reactDevToolsCore.ReactSymbols,
   );
-  const formattingResult = await format(defaultGeneratedModulePath, typescriptModule, {
-    semi: true,
-    singleQuote: false,
-  });
-  if (formattingResult.errors.length > 0) {
-    throw new Error(formattingResult.errors.map((error) => error.message).join("\n"));
-  }
-  return formattingResult.code;
+  const formattingResult = spawnSync(
+    "bun",
+    ["fmt", "--stdin-filepath", defaultGeneratedModulePath],
+    {
+      encoding: "utf8",
+      input: typescriptModule,
+    },
+  );
+  if (formattingResult.status !== 0) throw new Error(formattingResult.stderr);
+  return formattingResult.stdout;
 };
 
 const writeGeneratedModule = (generatedModulePath: string, generatedModule: string): void => {
@@ -497,14 +498,9 @@ export const generateReactInternals = async ({
     return;
   }
   if (mode === "check") {
-    throw new Error("Generated React internals are stale; run nr build and commit the result");
+    throw new Error("Generated React internals are stale; run bun run build and commit the result");
   }
   writeGeneratedModule(generatedModulePath, generatedModule);
   rmSync(legacyDeclarationModulePath, { force: true });
   rmSync(legacyRuntimeModulePath, { force: true });
 };
-
-export const reactInternalsPlugin = (options: ReactInternalsPluginOptions): Plugin => ({
-  name: "bippy-react-internals",
-  buildStart: () => generateReactInternals(options),
-});

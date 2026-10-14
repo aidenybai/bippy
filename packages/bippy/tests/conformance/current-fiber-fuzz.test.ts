@@ -1,5 +1,5 @@
 import { getFiberById, getFiberId, getLatestFiber, getReactWorkTags, type Fiber } from "bippy";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { createFiber, getFiberPreorder, linkChildren } from "./fiber-fixture";
 import { createSeededRandom, fuzzSeeds } from "./seeded-random";
 

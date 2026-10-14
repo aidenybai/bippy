@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vite-plus/test";
+import { afterEach, expect, it, vi } from "vitest";
 import { benchmarkCase, runBenchmark } from "../../benchmarks/harness";
 import { verifyBenchmarkCoverage, verifyWorkerReport } from "../../benchmarks/report";
 

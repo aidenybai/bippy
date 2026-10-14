@@ -1,6 +1,6 @@
 import "../../src/index"; // KEEP THIS LINE ON TOP
 
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { _fiberRoots, getRDTHook, instrument } from "../../src/index";
 import type { Fiber, FiberRoot } from "../../src/react-internals/index";
 import { latestReactWorkTags } from "./react-work-tags";

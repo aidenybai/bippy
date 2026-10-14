@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createTreeModel } from "../src/tree-model";
 import type { TreeModel, TreeModelNode } from "../src/tree-model";
 

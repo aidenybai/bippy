@@ -10,15 +10,12 @@ import {
   type InstrumentationOptions,
   type ReactDevToolsTarget,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { createFiber } from "./fiber-fixture";
 
 interface AccessorReplayOptions {
   event:
-    | "onCommitFiberRoot"
-    | "onCommitFiberUnmount"
-    | "onPostCommitFiberRoot"
-    | "onScheduleFiberRoot";
+    "onCommitFiberRoot" | "onCommitFiberUnmount" | "onPostCommitFiberRoot" | "onScheduleFiberRoot";
   result: "callback" | "undefined" | "throw";
   cancelsOther: boolean;
   hasNested: boolean;

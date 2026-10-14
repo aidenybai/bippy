@@ -1,4 +1,4 @@
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { mkdtempSync, readFileSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -107,7 +107,7 @@ it("keeps completed groups after failure and only replaces latest output on comp
   const metadata: RunMetadata = {
     timestamp: "test",
     isQuickMode: false,
-    node: "test",
+    runtime: "test",
     platform: "test",
     arch: "test",
     gitRevision: "test",

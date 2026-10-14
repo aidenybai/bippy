@@ -1,6 +1,6 @@
 import "../../src/index"; // KEEP THIS LINE ON TOP
 
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { getRDTHook, getRenderer, instrument } from "../../src/index";
 import type { ReactDevToolsTarget } from "../../src/index";
 import type { Fiber, FiberRoot, ReactRenderer } from "../../src/react-internals/index";

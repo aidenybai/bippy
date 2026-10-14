@@ -1,4 +1,4 @@
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { getFiberById, getFiberId, getRDTHook, setFiberId } from "../../src/index";
 import type { Fiber } from "../../src/react-internals/index";
 import { latestReactWorkTags } from "./react-work-tags";

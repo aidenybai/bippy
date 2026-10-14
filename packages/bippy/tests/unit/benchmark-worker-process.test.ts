@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { packageDirectory } from "../../scripts/test-inventory";
-import { it } from "vite-plus/test";
+import { it } from "vitest";
 import { readReport, verifyUseFiberResult } from "../../benchmarks/report";
 import type { UseFiberWorkerConfiguration } from "../../benchmarks/use-fiber-fixtures";
 import {

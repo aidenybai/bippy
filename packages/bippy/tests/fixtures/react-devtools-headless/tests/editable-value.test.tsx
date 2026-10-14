@@ -1,5 +1,5 @@
 import { act, cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it } from "vitest";
 import { useEditableValue } from "../src/editable-value";
 import type { EditableValueAction, EditableValueState } from "../src/editable-value";
 

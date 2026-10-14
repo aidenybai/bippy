@@ -13,10 +13,10 @@ const group = benchmarkGroups.find((candidate) => candidate.name === groupName);
 assert.ok(group, "Unknown benchmark group");
 const browser = createBrowser();
 let networkAttempts = 0;
-globalThis.fetch = async () => {
+Reflect.set(globalThis, "fetch", async () => {
   networkAttempts++;
   throw new Error("Benchmark attempted a real network request");
-};
+});
 const require = createRequire(import.meta.url);
 try {
   for (const entry of ["bippy", "bippy/source"]) {

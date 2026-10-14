@@ -12,7 +12,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { afterAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, describe, expect, it } from "vitest";
 import { reactVersionFixtures } from "./regression-fixtures";
 import type { ReactVersionFixture } from "./regression-fixtures";
 

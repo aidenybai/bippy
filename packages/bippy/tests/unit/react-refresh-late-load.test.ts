@@ -1,6 +1,6 @@
 // intentionally imports bippy dynamically so react-refresh's hook can be
 // simulated before bippy loads (the Vite/Next dev late-load path)
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import type { ReactDevToolsGlobalHook, ReactRenderer } from "../../src/react-internals/index";
 
 // mirrors injectIntoGlobalHook in react-refresh/src/ReactFreshRuntime.js:

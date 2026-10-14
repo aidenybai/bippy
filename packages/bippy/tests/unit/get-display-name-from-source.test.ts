@@ -1,5 +1,5 @@
 import { encode, type SourceMapSegment } from "@jridgewell/sourcemap-codec";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import type { Fiber } from "../../src/react-internals/index";
 import { getDisplayNameFromSource } from "../../src/source/get-display-name-from-source";
 import { latestReactWorkTags } from "./react-work-tags";

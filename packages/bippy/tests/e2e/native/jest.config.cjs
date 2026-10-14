@@ -13,9 +13,12 @@ module.exports = {
   verbose: true,
   transform: {
     "^.+\\.tsx?$": [
-      "ts-jest",
+      "babel-jest",
       {
-        tsconfig: "<rootDir>/tsconfig.json",
+        babelrc: false,
+        configFile: false,
+        plugins: ["@babel/plugin-transform-modules-commonjs"],
+        presets: ["@babel/preset-typescript"],
       },
     ],
   },

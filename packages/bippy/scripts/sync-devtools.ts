@@ -1,15 +1,7 @@
-import { execFileSync } from "node:child_process";
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { $ } from "bun";
 import {
   conformanceDirectory,
   devtoolsDirectory,
@@ -33,7 +25,7 @@ const getRequestedRef = (): string => {
   for (let argumentIndex = 0; argumentIndex < scriptArguments.length; argumentIndex++) {
     const argument = scriptArguments[argumentIndex];
     if (argument === "--help") {
-      console.log("Usage: pnpm --filter bippy sync:devtools [--ref <git-ref>]");
+      console.log("Usage: bun run --filter bippy sync:devtools [--ref <git-ref>]");
       process.exit(0);
     }
     if (argument !== "--ref") throw new Error(`Unknown argument: ${argument}`);
@@ -45,15 +37,12 @@ const getRequestedRef = (): string => {
   return requestedRef;
 };
 
-const runGit = (repositoryDirectory: string, gitArguments: string[]): string =>
-  execFileSync("git", ["-C", repositoryDirectory, ...gitArguments], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-  }).trim();
+const runGit = async (repositoryDirectory: string, gitArguments: string[]): Promise<string> =>
+  (await $`git -C ${repositoryDirectory} ${gitArguments}`.text()).trim();
 
-const getTestFiles = (reactDirectory: string): UpstreamTestFile[] => {
+const getTestFiles = async (reactDirectory: string): Promise<UpstreamTestFile[]> => {
   const testFiles: UpstreamTestFile[] = [];
-  const trackedPaths = runGit(reactDirectory, ["ls-files"]).split("\n");
+  const trackedPaths = (await runGit(reactDirectory, ["ls-files"])).split("\n");
 
   for (const path of trackedPaths) {
     if (!path.endsWith(".js") || supportFiles.has(path)) continue;
@@ -89,9 +78,9 @@ const stagedReferencePath = join(conformanceDirectory, `.upstream-${process.pid}
 
 try {
   mkdirSync(reactDirectory);
-  runGit(reactDirectory, ["init", "--quiet"]);
-  runGit(reactDirectory, ["remote", "add", "origin", manifest.repository]);
-  runGit(reactDirectory, [
+  await runGit(reactDirectory, ["init", "--quiet"]);
+  await runGit(reactDirectory, ["remote", "add", "origin", manifest.repository]);
+  await runGit(reactDirectory, [
     "fetch",
     "--quiet",
     "--depth=1",
@@ -99,8 +88,8 @@ try {
     "origin",
     requestedRef,
   ]);
-  runGit(reactDirectory, ["sparse-checkout", "init", "--no-cone"]);
-  runGit(reactDirectory, [
+  await runGit(reactDirectory, ["sparse-checkout", "init", "--no-cone"]);
+  await runGit(reactDirectory, [
     "sparse-checkout",
     "set",
     "/.github/**/*devtools*",
@@ -114,10 +103,10 @@ try {
     "/scripts/**/*devtools*",
     "/scripts/**/*DevTools*",
   ]);
-  runGit(reactDirectory, ["checkout", "--quiet", "--detach", "FETCH_HEAD"]);
+  await runGit(reactDirectory, ["checkout", "--quiet", "--detach", "FETCH_HEAD"]);
 
-  const revision = runGit(reactDirectory, ["rev-parse", "HEAD"]);
-  const testFiles = getTestFiles(reactDirectory);
+  const revision = await runGit(reactDirectory, ["rev-parse", "HEAD"]);
+  const testFiles = await getTestFiles(reactDirectory);
   manifest.devtools = { revision, testFiles };
 
   const sourceHookSourcesDirectory = join(
@@ -126,7 +115,7 @@ try {
   );
   rmSync(stagedHookSourcesDirectory, { force: true, recursive: true });
   cpSync(sourceHookSourcesDirectory, stagedHookSourcesDirectory, { recursive: true });
-  writeFileSync(stagedReferencePath, `${JSON.stringify(manifest, null, 2)}\n`);
+  await Bun.write(stagedReferencePath, `${JSON.stringify(manifest, null, 2)}\n`);
 
   rmSync(backupHookSourcesDirectory, { force: true, recursive: true });
   if (existsSync(hookSourcesDirectory)) {

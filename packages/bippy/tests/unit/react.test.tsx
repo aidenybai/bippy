@@ -2,7 +2,7 @@ import { getLatestFiber, useFiber } from "../../src/index";
 import type { Fiber } from "../../src/react-internals/index";
 import { cleanup, render } from "@testing-library/react";
 import React from "react";
-import { afterEach, expect, it } from "vite-plus/test";
+import { afterEach, expect, it } from "vitest";
 
 interface FiberProbeProps {
   onFiber: (fiber: Fiber | undefined) => void;

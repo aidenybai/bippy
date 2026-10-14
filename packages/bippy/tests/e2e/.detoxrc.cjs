@@ -15,7 +15,7 @@ module.exports = {
       binaryPath:
         "../fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app",
       build:
-        "cd ../fixtures/expo-app && npx expo prebuild --platform ios --clean && xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet",
+        "cd ../fixtures/expo-app && bunx expo prebuild --platform ios --clean && xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet",
     },
     "android.debug": {
       type: "android.apk",
@@ -23,7 +23,7 @@ module.exports = {
       testBinaryPath:
         "../fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
       build:
-        "cd ../fixtures/expo-app && npx expo prebuild --platform android --clean && cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -quiet",
+        "cd ../fixtures/expo-app && bunx expo prebuild --platform android --clean && cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug -quiet",
     },
   },
   devices: {

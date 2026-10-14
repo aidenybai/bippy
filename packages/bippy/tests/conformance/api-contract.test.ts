@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import * as main from "bippy";
 import * as source from "bippy/source";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import {
   getExpectedExports,
   getTestDefinitions,

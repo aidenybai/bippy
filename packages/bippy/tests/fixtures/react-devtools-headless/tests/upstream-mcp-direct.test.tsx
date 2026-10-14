@@ -4,7 +4,7 @@ import "../src/index";
 
 import React from "react";
 import * as ReactDOMClientModule from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildToolGroup, register } from "../src/mcp";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

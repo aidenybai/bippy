@@ -1,0 +1,22 @@
+[install]
+linker = "hoisted"
+
+[fmt]
+printWidth = 100
+ignorePatterns = [
+  "**/routeTree.gen.ts",
+  "packages/bippy/src/react-internals/generated/**",
+  "packages/bippy/tests/fixtures/react-devtools-headless/fixtures/hook-sources/**",
+]
+
+[lint]
+ignorePatterns = ["packages/bippy/tests/fixtures/react-devtools-headless/fixtures/hook-sources/**"]
+
+[lint.rules]
+"no-var" = "error"
+"eqeqeq" = "warn"
+"react-hooks/rules-of-hooks" = "off"
+
+[[lint.overrides]]
+files = ["packages/bippy/tests/fixtures/script-tag-app/public/**"]
+globals = { Bippy = "readonly", React = "readonly", ReactDOM = "readonly" }

@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from "vite-plus/test";
+import { afterEach, expect, it } from "vitest";
 import { _fiberRoots, getLatestFiber } from "../../src/index";
 import type { Fiber } from "../../src/react-internals/index";
 import { latestReactWorkTags } from "./react-work-tags";

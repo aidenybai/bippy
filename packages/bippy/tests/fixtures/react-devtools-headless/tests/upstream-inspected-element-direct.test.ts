@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { createInspectionModel } from "../src/inspection-model";
 import type { InspectionBackend, InspectionModel, InspectionRecord } from "../src/inspection-model";
 

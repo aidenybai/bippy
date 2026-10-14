@@ -5,7 +5,7 @@
 import { activate, initialize } from "react-devtools-inline/backend";
 // @ts-expect-error - react-devtools-inline types not available
 import { initialize as initializeFrontend } from "react-devtools-inline/frontend";
-import { expect, vi } from "vite-plus/test";
+import { expect, vi } from "vitest";
 import { getDevtoolsTestOrSkip } from "./devtools-test-or-skip";
 
 initialize(window);

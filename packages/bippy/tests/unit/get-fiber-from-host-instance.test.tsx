@@ -3,7 +3,7 @@ import "../../src/index"; // KEEP THIS LINE ON TOP
 import * as ReactThreeTestRenderer from "@react-three/test-renderer";
 import { render, screen } from "@testing-library/react";
 import React from "react";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import {
   getFiber,
   getFiberFromHostInstance,

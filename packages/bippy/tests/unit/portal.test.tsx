@@ -1,6 +1,6 @@
 import "../../src/index"; // KEEP THIS LINE ON TOP
 
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import type { Fiber } from "../../src/react-internals/index";
 import {
   instrument,

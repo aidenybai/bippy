@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getChangeDescription } from "../src/change-description";
 
 describe("upstream profiler change-description behavior", () => {

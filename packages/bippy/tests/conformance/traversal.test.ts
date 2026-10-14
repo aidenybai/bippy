@@ -5,7 +5,7 @@ import {
   traverseRenderedFibers,
   type Fiber,
 } from "bippy";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createFiber, linkChildren } from "./fiber-fixture";
 
 const workTags = getReactWorkTags();

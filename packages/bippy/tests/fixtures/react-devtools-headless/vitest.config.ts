@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vite-plus";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {

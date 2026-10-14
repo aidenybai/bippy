@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { detectReactBuildType, ReactBuildType, type ReactRenderer } from "../../src/index";
 
 const createRenderer = (bundleType: number): ReactRenderer => ({

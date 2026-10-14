@@ -12,7 +12,7 @@ import {
   type ReactRenderer,
 } from "bippy";
 import { onRDTHookReplace, onRendererInject, removeActiveListener } from "../../src/rdt-hook";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { createFiber } from "./fiber-fixture";
 
 interface RetainedHookFixture {

@@ -10,12 +10,21 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "skipLibCheck": true,
+    "types": ["bun", "node"],
     "paths": {
       "bippy": ["./src/index.ts"],
       "bippy/install-hook-only": ["./src/install-hook-only.ts"],
       "bippy/source": ["./src/source/index.ts"]
     }
   },
-  "include": ["src", "scripts", "benchmarks", "tests/unit", "tests/conformance", "vite.config.ts"],
+  "include": [
+    "src",
+    "scripts",
+    "benchmarks",
+    "tests/unit",
+    "tests/conformance",
+    "tsdown.config.ts",
+    "vitest.config.ts"
+  ],
   "exclude": ["**/node_modules/**", "**/dist/**"]
 }

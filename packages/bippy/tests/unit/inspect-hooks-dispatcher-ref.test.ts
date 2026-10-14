@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { getRDTHook, instrument } from "../../src/core";
 import type { ReactDevToolsTarget } from "../../src/rdt-hook";
 import {

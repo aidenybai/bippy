@@ -3,7 +3,7 @@ import "../src/index";
 import { cleanup, render } from "@testing-library/react";
 import { traverseFiber } from "bippy";
 import { Suspense } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installFacade } from "../src/facade";
 import { getFiberTypeName } from "../src/fiber-metadata";
 import { getFiberSuspenseInfo } from "../src/fiber-suspense";

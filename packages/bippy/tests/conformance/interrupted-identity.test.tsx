@@ -7,7 +7,7 @@ import {
   traverseFiber,
   type Fiber,
 } from "bippy";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { createRenderHarness } from "./render-harness";
 
 interface PrimaryProps {

@@ -1,6 +1,6 @@
 import { makeBadge } from "badge-maker";
 import { unstable_cache } from "next/cache";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET as getVersionBadge } from "../app/api/badges/version/route";
 import { GET as getDownloadsBadge } from "../app/api/badges/downloads/route";
 import { formatDownloads, getBadgeResponse } from "../lib/npm-badges";

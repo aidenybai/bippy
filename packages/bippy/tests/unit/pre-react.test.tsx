@@ -1,7 +1,7 @@
 // import react, then bippy
 
 import React from "react";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 const { instrument } = await import("../../src/index"); // delay it
 import { render } from "@testing-library/react";
 

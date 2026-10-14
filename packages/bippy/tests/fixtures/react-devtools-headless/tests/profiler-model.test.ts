@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { createProfilerModel } from "../src/profiler-model";
 import type { ProfilerRootData } from "../src/profiler-model";
 

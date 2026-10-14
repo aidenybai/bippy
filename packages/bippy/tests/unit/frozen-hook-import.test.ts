@@ -1,6 +1,6 @@
 // intentionally imports bippy dynamically so a frozen foreign hook can be
 // installed before bippy loads
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import type { ReactDevToolsGlobalHook } from "../../src/react-internals/index";
 
 it("does not crash module evaluation when the hook is frozen", async () => {

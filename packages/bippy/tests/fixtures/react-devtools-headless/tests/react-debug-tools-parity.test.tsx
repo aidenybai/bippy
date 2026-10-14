@@ -4,7 +4,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { instrument, traverseFiber } from "bippy";
 import { getFiberHooks } from "bippy/source";
 import React from "react";
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it } from "vitest";
 import type { Fiber } from "bippy";
 import type { HooksNode } from "bippy/source";
 

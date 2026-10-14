@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import { EventEmitter } from "../src/event-emitter";
 
 describe("upstream EventEmitter behavior", () => {

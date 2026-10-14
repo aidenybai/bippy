@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it } from "vitest";
 import { getStyleXData } from "../src/stylex";
 
 const styleElements: HTMLStyleElement[] = [];

@@ -1,4 +1,4 @@
-import { it } from "vite-plus/test";
+import { it } from "vitest";
 
 export const getDevtoolsTestOrSkip = (reactVersion: string) => {
   const reactMajorVersion = Number.parseInt(reactVersion.split(".")[0] ?? "0", 10);

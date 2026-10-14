@@ -9,7 +9,7 @@ import {
   type FiberRoot,
   type ReactDevToolsTarget,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { createFiber, getFiberPreorder, linkChildren } from "./fiber-fixture";
 
 interface UnmountCurrentFixture {

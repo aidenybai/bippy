@@ -1,11 +1,8 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { cpus } from "node:os";
 import { fileURLToPath } from "node:url";
-import { gzipSync } from "node:zlib";
-import ts from "@typescript/typescript6";
+import { $ } from "bun";
 import { benchmarkBuilds, benchmarkFormats } from "../benchmarks/configuration";
 import { benchmarkGroups } from "../benchmarks/groups";
 import { createBenchmarkJournal } from "../benchmarks/journal";
@@ -23,34 +20,31 @@ import { getExpectedExports, repositoryDirectory } from "./test-inventory";
 
 const isQuickMode = process.argv.includes("--quick");
 const builtDirectory = new URL("../dist/", import.meta.url);
-const gitRevision = spawnSync("git", ["rev-parse", "HEAD"], {
-  cwd: repositoryDirectory,
-  encoding: "utf8",
-});
-assert.equal(gitRevision.status, 0, gitRevision.stderr);
 const metadata: RunMetadata = {
   timestamp: new Date().toISOString(),
   isQuickMode,
-  node: process.version,
+  runtime: `Bun ${Bun.version}`,
   platform: process.platform,
   arch: process.arch,
   cpu: cpus()[0]?.model,
-  gitRevision: gitRevision.stdout.trim(),
-  lockfileSha256: createHash("sha256")
-    .update(readFileSync(new URL("../../../pnpm-lock.yaml", import.meta.url)))
+  gitRevision: (await $`git rev-parse HEAD`.cwd(repositoryDirectory).text()).trim(),
+  lockfileSha256: new Bun.CryptoHasher("sha256")
+    .update(await Bun.file(new URL("../../../bun.lock", import.meta.url)).bytes())
     .digest("hex"),
-  bundles: readdirSync(builtDirectory)
-    .filter((name) => /\.(js|cjs)$/.test(name))
-    .sort()
-    .map((name) => {
-      const content = readFileSync(new URL(name, builtDirectory));
-      return {
-        name,
-        bytes: content.byteLength,
-        gzipBytes: gzipSync(content).byteLength,
-        sha256: createHash("sha256").update(content).digest("hex"),
-      };
-    }),
+  bundles: await Promise.all(
+    readdirSync(builtDirectory)
+      .filter((name) => /\.(js|cjs)$/.test(name))
+      .sort()
+      .map(async (name) => {
+        const content = await Bun.file(new URL(name, builtDirectory)).bytes();
+        return {
+          name,
+          bytes: content.byteLength,
+          gzipBytes: Bun.gzipSync(content).byteLength,
+          sha256: new Bun.CryptoHasher("sha256").update(content).digest("hex"),
+        };
+      }),
+  ),
 };
 const journal = createBenchmarkJournal(
   new URL("../benchmarks/results/", import.meta.url),
@@ -62,14 +56,7 @@ console.log(
     : "Benchmarking built output sequentially; no real network requests.",
 );
 console.log(`Progress journal: ${fileURLToPath(journal.progress)}`);
-const nativeProbe = new URL("import-worker.mjs", journal.directory);
-writeFileSync(
-  nativeProbe,
-  ts.transpileModule(
-    readFileSync(new URL("../benchmarks/import-worker.ts", import.meta.url), "utf8"),
-    { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } },
-  ).outputText,
-);
+const importProbe = new URL("../benchmarks/import-worker.ts", import.meta.url);
 const report: BenchmarkRunReport = {
   schemaVersion: 2,
   metadata,
@@ -109,7 +96,7 @@ for (const format of benchmarkFormats) {
     for (const entry of ["index", "source", "install-hook-only"]) {
       const entryUrl = new URL(`${entry}.${format === "esm" ? "js" : "cjs"}`, builtDirectory);
       const sampleUs = Array.from({ length: isQuickMode ? 1 : 7 }, () =>
-        Number(runBenchmarkProcess(nativeProbe, [format, entryUrl.href], reactBuild, true).trim()),
+        Number(runBenchmarkProcess(importProbe, [format, entryUrl.href], reactBuild).trim()),
       );
       const result = {
         entry,

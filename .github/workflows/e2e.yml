@@ -30,7 +30,7 @@ jobs:
             native:
               - "packages/bippy/**"
               - ".github/workflows/e2e.yml"
-              - "pnpm-lock.yaml"
+              - "bun.lock"
 
   e2e-web:
     runs-on: ubuntu-latest
@@ -38,24 +38,25 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Run Metro artifact source-map test
-        run: pnpm exec nr test:metro-artifact
+        run: bun run test:metro-artifact
         working-directory: packages/bippy/tests/e2e
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
         working-directory: packages/bippy/tests/e2e
       - name: Run Playwright tests
-        run: pnpm exec nr test:web
+        run: bun run test:web
         working-directory: packages/bippy/tests/e2e
       - name: Run Playwright tests against production builds
-        run: pnpm exec nr test:web:production
+        run: bun run test:web:production
         working-directory: packages/bippy/tests/e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -76,11 +77,12 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
       - name: Pre-boot simulator
         # boot early so the simulator warms up during dependency install and
         # the xcode build instead of eating into detox's test time
@@ -89,8 +91,8 @@ jobs:
           echo "Pre-booting simulator: $device_name"
           echo "DETOX_DEVICE_NAME=$device_name" >> "$GITHUB_ENV"
           xcrun simctl boot "$device_name" || true
-      - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Install applesimutils and watchman
         # watchman: node fs.watch (FSEvents) delivers no events on the
         # virtualized macOS runners, so Metro never sees file saves and fast
@@ -107,7 +109,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: packages/bippy/tests/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
-          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json') }}
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('bun.lock', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json') }}
       - name: Cache CocoaPods downloads
         if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache@v4
@@ -119,14 +121,14 @@ jobs:
         if: steps.app-cache.outputs.cache-hit != 'true'
         run: |
           cd packages/bippy/tests/fixtures/expo-app
-          npx expo prebuild --platform ios --clean
+          bunx expo prebuild --platform ios --clean
           xcodebuild -workspace ios/bippye2eexpo.xcworkspace -scheme bippye2eexpo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build -quiet
       - name: Save iOS app binary
         if: steps.app-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: packages/bippy/tests/fixtures/expo-app/ios/build/Build/Products/Debug-iphonesimulator/bippye2eexpo.app
-          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json') }}
+          key: expo-app-${{ steps.xcode.outputs.version }}-${{ hashFiles('bun.lock', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json') }}
       - name: Start Metro
         working-directory: packages/bippy/tests/fixtures/expo-app
         # CI=false: expo disables file watching (and therefore fast refresh)
@@ -140,7 +142,7 @@ jobs:
         run: |
           watchman version
           watchman watch-project "$GITHUB_WORKSPACE"
-          nohup bash -c 'env CI=false DEBUG="Metro:Watcher,Metro:WatchmanWatcher,Metro:NativeWatcher,Metro:HMR" npx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
+          nohup bash -c 'env CI=false DEBUG="Metro:Watcher,Metro:WatchmanWatcher,Metro:NativeWatcher,Metro:HMR" bunx expo start --port 8081 2>&1 | while IFS= read -r line; do printf "%s %s\n" "$(date +%T)" "$line"; done' > /tmp/metro.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is up"
@@ -156,16 +158,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Detox/ios
-          key: detox-framework-${{ steps.xcode.outputs.version }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: detox-framework-${{ steps.xcode.outputs.version }}-${{ hashFiles('bun.lock') }}
       - name: Build Detox framework cache
         if: steps.detox-framework-cache.outputs.cache-hit != 'true'
-        run: npx detox clean-framework-cache && npx detox build-framework-cache
+        run: bunx detox clean-framework-cache && bunx detox build-framework-cache
         working-directory: packages/bippy/tests/e2e
       - name: Run Detox tests
         working-directory: packages/bippy/tests/e2e
         run: |
           echo "Using simulator: $DETOX_DEVICE_NAME"
-          npx detox test --configuration ios.sim.debug --device-name "$DETOX_DEVICE_NAME" --headless --record-logs failing
+          bunx detox test --configuration ios.sim.debug --device-name "$DETOX_DEVICE_NAME" --headless --record-logs failing
       - name: Upload Metro log
         uses: actions/upload-artifact@v4
         if: failure()
@@ -192,11 +194,12 @@ jobs:
       )
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -213,8 +216,8 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Restore Android app binaries
         id: android-app-cache
         uses: actions/cache/restore@v4
@@ -222,12 +225,12 @@ jobs:
           path: |
             packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
             packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json', 'packages/bippy/tests/fixtures/expo-app/plugins/**') }}
+          key: expo-app-android-${{ hashFiles('bun.lock', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json', 'packages/bippy/tests/fixtures/expo-app/plugins/**') }}
       - name: Prebuild and build Android app
         if: steps.android-app-cache.outputs.cache-hit != 'true'
         run: |
           cd packages/bippy/tests/fixtures/expo-app
-          npx expo prebuild --platform android --clean
+          bunx expo prebuild --platform android --clean
           cd android
           ./gradlew :app:assembleDebug :app:assembleAndroidTest -DtestBuildType=debug --no-daemon --stacktrace
       - name: Save Android app binaries
@@ -237,11 +240,11 @@ jobs:
           path: |
             packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/debug/app-debug.apk
             packages/bippy/tests/fixtures/expo-app/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-          key: expo-app-android-${{ hashFiles('pnpm-lock.yaml', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json', 'packages/bippy/tests/fixtures/expo-app/plugins/**') }}
+          key: expo-app-android-${{ hashFiles('bun.lock', 'packages/bippy/tests/fixtures/expo-app/app.json', 'packages/bippy/tests/fixtures/expo-app/package.json', 'packages/bippy/tests/fixtures/expo-app/plugins/**') }}
       - name: Start Metro
         working-directory: packages/bippy/tests/fixtures/expo-app
         run: |
-          nohup env CI=false npx expo start --port 8081 > /tmp/metro-android.log 2>&1 &
+          nohup env CI=false bunx expo start --port 8081 > /tmp/metro-android.log 2>&1 &
           for attempt in $(seq 1 60); do
             if curl -sf http://localhost:8081/status | grep -q "packager-status:running"; then
               echo "Metro is up"
@@ -265,7 +268,7 @@ jobs:
             adb shell wm dismiss-keyguard
             adb shell input keyevent KEYCODE_HOME
             adb reverse tcp:8081 tcp:8081
-            cd packages/bippy/tests/e2e && npx detox test --configuration android.emu.debug --record-logs failing
+            cd packages/bippy/tests/e2e && bunx detox test --configuration android.emu.debug --record-logs failing
       - name: Upload Android Metro log
         uses: actions/upload-artifact@v4
         if: failure()

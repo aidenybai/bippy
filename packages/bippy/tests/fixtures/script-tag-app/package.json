@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare-vendor": "node scripts/prepare-vendor.mjs",
+    "prepare-vendor": "bun scripts/prepare-vendor.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

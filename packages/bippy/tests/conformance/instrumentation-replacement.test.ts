@@ -8,7 +8,7 @@ import {
   type InstrumentationOptions,
   type ReactDevToolsTarget,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 import { createFiber } from "./fiber-fixture";
 
 interface ReplacementScenario {

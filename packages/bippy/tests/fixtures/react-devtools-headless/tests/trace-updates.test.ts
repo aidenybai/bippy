@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { groupAndSortNodes } from "../src/trace-updates";
 import type { TraceUpdateData } from "../src/trace-updates";
 

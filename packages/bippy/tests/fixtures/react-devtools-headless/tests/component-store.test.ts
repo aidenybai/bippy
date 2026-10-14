@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { createComponentStore } from "../src/component-store";
 import type { ComponentStore, StoreElement } from "../src/component-store";
 

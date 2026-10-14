@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { copyWithDelete, copyWithRename, copyWithSet } from "../src/object-path";
 
 describe("upstream editable path behavior", () => {

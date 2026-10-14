@@ -1,7 +1,7 @@
 import * as React from "react";
 import "react-dom/client";
 import { inspectHooks, type HooksNode } from "bippy/source";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 
 interface FulfilledPromiseFields {
   status: "fulfilled";

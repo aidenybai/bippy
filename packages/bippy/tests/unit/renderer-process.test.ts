@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 import { type RuntimeResult, runNodeScript } from "./run-node-script";
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "../..");

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { getFiberById, getFiberId, getLatestFiber, instrument, type Fiber } from "bippy";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { getFiberPreorder } from "./fiber-fixture";
 import { createRenderHarness } from "./render-harness";
 

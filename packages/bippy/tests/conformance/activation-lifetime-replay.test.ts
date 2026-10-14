@@ -5,7 +5,7 @@ import {
   type ReactDevToolsGlobalHook,
   type ReactDevToolsTarget,
 } from "bippy";
-import { expect, it, vi } from "vite-plus/test";
+import { expect, it, vi } from "vitest";
 
 interface ActivationScenario {
   name: string;

@@ -4,7 +4,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { traverseFiber } from "bippy";
 import type { Fiber } from "bippy";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installFacade } from "../src/facade";
 import type { Facade } from "../src/types";
 

@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "bun run build",
   "framework": "nextjs",
-  "installCommand": "corepack pnpm install --frozen-lockfile",
+  "installCommand": "bun install --frozen-lockfile",
   "outputDirectory": ".next"
 }

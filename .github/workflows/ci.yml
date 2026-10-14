@@ -20,18 +20,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [build, check, test, typecheck]
+        include:
+          - { task: build, command: bun run build }
+          - { task: fmt, command: bun fmt --check }
+          - { task: lint, command: bun lint }
+          - { task: test, command: bun run test }
+          - { task: typecheck, command: bun run typecheck }
 
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: canary
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run ${{ matrix.task }}
+      - run: bun install --frozen-lockfile
+      - run: ${{ matrix.command }}
       - if: matrix.task == 'build'
         run: |
-          pnpm --filter bippy exec tsx scripts/check-built.ts
-          pnpm --filter bippy bench:smoke
+          cd packages/bippy
+          bun scripts/check-built.ts
+          bun run bench:smoke

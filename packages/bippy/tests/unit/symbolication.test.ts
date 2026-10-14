@@ -1,5 +1,5 @@
 import { encode } from "@jridgewell/sourcemap-codec";
-import { describe, expect, it, vi } from "vite-plus/test";
+import { describe, expect, it, vi } from "vitest";
 import type { StackFrame } from "../../src/source/parse-stack";
 import {
   getSourceContentFromSourceMap,

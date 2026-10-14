@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, it } from "vite-plus/test";
+import { expect, it } from "vitest";
 import { getTestDefinitions, getTestTitles } from "../../scripts/test-inventory";
 
 const withTestSource = (source: string, check: (path: string) => void): void => {
