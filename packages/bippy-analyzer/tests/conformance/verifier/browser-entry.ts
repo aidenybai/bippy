@@ -156,6 +156,12 @@ const recordWrite = (target: object): void => {
   if (owner) propWrites.add(owner);
 };
 
+const isRefObject = (value: unknown): boolean =>
+  typeof value === "object" &&
+  value !== null &&
+  Object.keys(value).length === 1 &&
+  Object.hasOwn(value, "current");
+
 const isMutatingMethod = (target: object, key: string | symbol): boolean =>
   typeof key === "string" &&
   (target instanceof Date ? key.startsWith("set") : MUTATING_COLLECTION_METHODS.has(key));
@@ -199,7 +205,7 @@ const getTrackedMember = (
       return Reflect.apply(member, receiver, callArguments);
     };
   }
-  return isDeep && isPlainData(member) && !Object.isFrozen(target)
+  return isDeep && isPlainData(member) && !isRefObject(member) && !Object.isFrozen(target)
     ? trackWrites(member, true)
     : member;
 };
@@ -272,12 +278,6 @@ class Boundary extends Component<BoundaryProps, BoundaryState> {
 
   render = (): ReactNode => (this.state.hasError ? null : this.props.children);
 }
-
-const isRefObject = (value: unknown): boolean =>
-  typeof value === "object" &&
-  value !== null &&
-  Object.keys(value).length === 1 &&
-  Object.hasOwn(value, "current");
 
 const hydrateProp = (name: string, sample: Sample): unknown => {
   const value = hydrate(sample);
