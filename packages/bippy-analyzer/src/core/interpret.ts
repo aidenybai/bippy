@@ -260,6 +260,45 @@ export class Interpreter {
     this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
   }
 
+  get wholePropsSample(): Sample | null {
+    return this.#wholePropsSample ?? this.#restPropsSample;
+  }
+
+  evaluateComponent(hirFunction: HIRFunction): SymbolicValue {
+    this.#blockVisits = 0;
+    return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
+  }
+
+  collectEffects(callback: SymbolicValue, argumentValues: SymbolicValue[]): CollectedEffects {
+    const previousEffects = this.#handlerEffects;
+    const previousBlockVisits = this.#blockVisits;
+    const handlerEffects = new EffectCollector((kind, message, loc) =>
+      this.#warn(kind, message, loc),
+    );
+    this.#handlerEffects = handlerEffects;
+    this.#blockVisits = 0;
+    try {
+      const callbacks =
+        callback.kind === "ObjectExpression"
+          ? callback.properties.map((property) => property.value)
+          : [callback];
+      for (const handlerCallback of callbacks)
+        this.#runCallback(handlerCallback, argumentValues, new Set());
+      if (callback.kind === "Unknown")
+        for (const binding of this.bindingTable.bindings)
+          if (isExternalSource(binding))
+            this.#recordExternalUpdate(
+              handlerEffects,
+              createBindingValue(binding),
+              ROOT_WALK_STATE,
+            );
+      return handlerEffects.finish();
+    } finally {
+      this.#handlerEffects = previousEffects;
+      this.#blockVisits = previousBlockVisits;
+    }
+  }
+
   #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
     return this.#functions.register(hirFunction, this.#resolver, isSnapshot);
   }
@@ -741,6 +780,30 @@ export class Interpreter {
       : { kind: "Value" };
   }
 
+  #readStore(
+    storeKey: string,
+    storeActions: StoreActions,
+    callSite: CallSite,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const storeHookName = callSite.callee.kind === "Global" ? callSite.callee.name : "store";
+    const storeBinding = this.externalSources.getStoreBinding(storeKey, storeActions, () =>
+      this.#createBinding(`${storeHookName}()`, "hook", callSite.loc, {
+        hookKind: "Custom",
+        domain: { kind: "Opaque", typeText: storeHookName },
+      }),
+    );
+    const [selector] = callSite.argumentValues;
+    return selector?.kind === "Function"
+      ? this.#callFunction(selector, [createBindingValue(storeBinding)], callSite.loc, walkState)
+      : createBindingValue(storeBinding);
+  }
+
+  #findProjectHook(calleePlace: Place): ProjectHook | null {
+    const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
+    return declarationKey ? this.#loadProjectHook(declarationKey) : null;
+  }
+
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
     this.#recordWholeProps(callSite);
     const target = this.#getCallTarget(callSite);
@@ -815,6 +878,78 @@ export class Interpreter {
       return createUnknown("call", loc);
     }
     return this.#createCallResult(callSite);
+  }
+
+  #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], walkState: WalkState): void {
+    const { binding, path } = callee;
+    if (binding.kind === "prop") this.#handlerEffects?.addDelegate(formatPlace(binding, path));
+    const memberName = path.length === 1 ? path[0] : undefined;
+    const setterField = memberName && this.externalSources.getSetterField(binding, memberName);
+    if (setterField) {
+      this.#setContextField(binding, setterField, argumentValues[0], walkState);
+      return;
+    }
+    const assignments =
+      memberName && this.externalSources.getActionAssignments(binding, memberName);
+    if (assignments) {
+      this.#handlerEffects?.recordSetterCall(
+        binding,
+        createFieldUpdate(
+          binding,
+          assignments.map((assignment) => ({
+            key: assignment.field,
+            value: getStoreFieldValue(binding, assignment, argumentValues),
+          })),
+        ),
+        walkState,
+      );
+      return;
+    }
+    if (isExternalSource(binding) && this.#handlerEffects)
+      this.#recordExternalUpdate(this.#handlerEffects, callee, walkState);
+  }
+
+  #setContextField(
+    binding: Binding,
+    field: string,
+    setterArgument: SymbolicValue | undefined,
+    walkState: WalkState,
+  ): void {
+    if (!this.#handlerEffects) return;
+    const previousValue = createBindingValue(binding, [field]);
+    const nextValue = this.#getSetterNextValue(
+      setterArgument,
+      previousValue,
+      binding.loc,
+      walkState,
+    );
+    this.#handlerEffects.addUpdate(
+      binding,
+      createFieldUpdate(binding, [
+        { key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) },
+      ]),
+      getAsyncWalkState(walkState),
+    );
+  }
+
+  #recordExternalUpdate(
+    handlerEffects: EffectCollector,
+    callee: BindingValue,
+    walkState: WalkState,
+  ): void {
+    handlerEffects.addDelegate(formatPlace(callee.binding, callee.path));
+    const affectedBindings = this.bindingTable.bindings.filter(
+      (binding) =>
+        binding.id === callee.binding.id ||
+        this.externalSources.isFromSameModule(callee.binding, binding),
+    );
+    for (const binding of affectedBindings)
+      if (!handlerEffects.hasUpdate(binding))
+        handlerEffects.addUpdate(
+          binding,
+          createUnknown("external", GeneratedSource),
+          getAsyncWalkState(walkState),
+        );
   }
 
   #collectInputPlaces(
@@ -1621,30 +1756,6 @@ export class Interpreter {
     }
   }
 
-  #readStore(
-    storeKey: string,
-    storeActions: StoreActions,
-    callSite: CallSite,
-    walkState: WalkState,
-  ): SymbolicValue {
-    const storeHookName = callSite.callee.kind === "Global" ? callSite.callee.name : "store";
-    const storeBinding = this.externalSources.getStoreBinding(storeKey, storeActions, () =>
-      this.#createBinding(`${storeHookName}()`, "hook", callSite.loc, {
-        hookKind: "Custom",
-        domain: { kind: "Opaque", typeText: storeHookName },
-      }),
-    );
-    const [selector] = callSite.argumentValues;
-    return selector?.kind === "Function"
-      ? this.#callFunction(selector, [createBindingValue(storeBinding)], callSite.loc, walkState)
-      : createBindingValue(storeBinding);
-  }
-
-  #findProjectHook(calleePlace: Place): ProjectHook | null {
-    const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
-    return declarationKey ? this.#loadProjectHook(declarationKey) : null;
-  }
-
   #evaluateFunction(
     hirFunction: HIRFunction,
     argumentValues: SymbolicValue[],
@@ -1685,87 +1796,6 @@ export class Interpreter {
     }
   }
 
-  get wholePropsSample(): Sample | null {
-    return this.#wholePropsSample ?? this.#restPropsSample;
-  }
-
-  evaluateComponent(hirFunction: HIRFunction): SymbolicValue {
-    this.#blockVisits = 0;
-    return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
-  }
-
-  #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], walkState: WalkState): void {
-    const { binding, path } = callee;
-    if (binding.kind === "prop") this.#handlerEffects?.addDelegate(formatPlace(binding, path));
-    const memberName = path.length === 1 ? path[0] : undefined;
-    const setterField = memberName && this.externalSources.getSetterField(binding, memberName);
-    if (setterField) {
-      this.#setContextField(binding, setterField, argumentValues[0], walkState);
-      return;
-    }
-    const assignments =
-      memberName && this.externalSources.getActionAssignments(binding, memberName);
-    if (assignments) {
-      this.#handlerEffects?.recordSetterCall(
-        binding,
-        createFieldUpdate(
-          binding,
-          assignments.map((assignment) => ({
-            key: assignment.field,
-            value: getStoreFieldValue(binding, assignment, argumentValues),
-          })),
-        ),
-        walkState,
-      );
-      return;
-    }
-    if (isExternalSource(binding) && this.#handlerEffects)
-      this.#recordExternalUpdate(this.#handlerEffects, callee, walkState);
-  }
-
-  #setContextField(
-    binding: Binding,
-    field: string,
-    setterArgument: SymbolicValue | undefined,
-    walkState: WalkState,
-  ): void {
-    if (!this.#handlerEffects) return;
-    const previousValue = createBindingValue(binding, [field]);
-    const nextValue = this.#getSetterNextValue(
-      setterArgument,
-      previousValue,
-      binding.loc,
-      walkState,
-    );
-    this.#handlerEffects.addUpdate(
-      binding,
-      createFieldUpdate(binding, [
-        { key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) },
-      ]),
-      getAsyncWalkState(walkState),
-    );
-  }
-
-  #recordExternalUpdate(
-    handlerEffects: EffectCollector,
-    callee: BindingValue,
-    walkState: WalkState,
-  ): void {
-    handlerEffects.addDelegate(formatPlace(callee.binding, callee.path));
-    const affectedBindings = this.bindingTable.bindings.filter(
-      (binding) =>
-        binding.id === callee.binding.id ||
-        this.externalSources.isFromSameModule(callee.binding, binding),
-    );
-    for (const binding of affectedBindings)
-      if (!handlerEffects.hasUpdate(binding))
-        handlerEffects.addUpdate(
-          binding,
-          createUnknown("external", GeneratedSource),
-          getAsyncWalkState(walkState),
-        );
-  }
-
   #runRenderedHandlers(renderedValue: SymbolicValue, visitedFunctionIds: Set<number>): void {
     forEachJsxElement(renderedValue, (element) => {
       for (const prop of element.props)
@@ -1790,35 +1820,5 @@ export class Interpreter {
         this.#evaluateFunction(hirFunction, argumentValues, ROOT_WALK_STATE, callback.functionId),
         visitedFunctionIds,
       );
-  }
-
-  collectEffects(callback: SymbolicValue, argumentValues: SymbolicValue[]): CollectedEffects {
-    const previousEffects = this.#handlerEffects;
-    const previousBlockVisits = this.#blockVisits;
-    const handlerEffects = new EffectCollector((kind, message, loc) =>
-      this.#warn(kind, message, loc),
-    );
-    this.#handlerEffects = handlerEffects;
-    this.#blockVisits = 0;
-    try {
-      const callbacks =
-        callback.kind === "ObjectExpression"
-          ? callback.properties.map((property) => property.value)
-          : [callback];
-      for (const handlerCallback of callbacks)
-        this.#runCallback(handlerCallback, argumentValues, new Set());
-      if (callback.kind === "Unknown")
-        for (const binding of this.bindingTable.bindings)
-          if (isExternalSource(binding))
-            this.#recordExternalUpdate(
-              handlerEffects,
-              createBindingValue(binding),
-              ROOT_WALK_STATE,
-            );
-      return handlerEffects.finish();
-    } finally {
-      this.#handlerEffects = previousEffects;
-      this.#blockVisits = previousBlockVisits;
-    }
   }
 }
