@@ -130,6 +130,46 @@ const parseFile = (fileName: string, code: string): types.File | null =>
     parserOpts: { plugins: /\.[cm]?ts$/.test(fileName) ? ["typescript"] : ["typescript", "jsx"] },
   });
 
+const lowerModuleFunction = (
+  functionPath: BabelFunction,
+  programPath: NodePath<types.Program>,
+  pluginOptions: ParsedPluginOptions,
+  fileName: string,
+  code: string,
+): HIRFunction | null => {
+  let hir: HIRFunction | null = null;
+  const programContext = new ProgramContext({
+    program: programPath,
+    opts: pluginOptions,
+    filename: fileName,
+    code,
+    suppressions: [],
+    hasModuleScopeOptOut: false,
+  });
+  const logger = {
+    logEvent: () => {},
+    debugLogIRs: createLoweringLogger((hirFunction, hasErrors) => {
+      if (!hasErrors) hir = hirFunction;
+      return true;
+    }),
+  };
+  try {
+    compileFn(
+      functionPath,
+      pluginOptions.environment,
+      "Other",
+      "lint",
+      programContext,
+      logger,
+      fileName,
+      code,
+    );
+  } catch (error) {
+    if (error !== STOP) hir = null;
+  }
+  return hir;
+};
+
 const createModuleFunctionLoader = (
   fileName: string,
   code: string,
@@ -137,46 +177,14 @@ const createModuleFunctionLoader = (
   { programPath, moduleFunctionPaths }: ProgramFunctions,
 ): ModuleFunctionLoader => {
   const moduleFunctionsByName = new Map<string, HIRFunction | null>();
-  const loadModuleFunction = (functionPath: BabelFunction): HIRFunction | null => {
-    if (!programPath) return null;
-    let hir: HIRFunction | null = null;
-    const programContext = new ProgramContext({
-      program: programPath,
-      opts: pluginOptions,
-      filename: fileName,
-      code,
-      suppressions: [],
-      hasModuleScopeOptOut: false,
-    });
-    const logger = {
-      logEvent: () => {},
-      debugLogIRs: createLoweringLogger((hirFunction, hasErrors) => {
-        if (!hasErrors) hir = hirFunction;
-        return true;
-      }),
-    };
-    try {
-      compileFn(
-        functionPath,
-        pluginOptions.environment,
-        "Other",
-        "lint",
-        programContext,
-        logger,
-        fileName,
-        code,
-      );
-    } catch (error) {
-      if (error !== STOP) hir = null;
-    }
-    return hir;
-  };
   return (functionName) => {
     if (!moduleFunctionsByName.has(functionName)) {
       const functionPath = moduleFunctionPaths.get(functionName);
       moduleFunctionsByName.set(
         functionName,
-        functionPath ? loadModuleFunction(functionPath) : null,
+        functionPath && programPath
+          ? lowerModuleFunction(functionPath, programPath, pluginOptions, fileName, code)
+          : null,
       );
     }
     return moduleFunctionsByName.get(functionName) ?? null;
