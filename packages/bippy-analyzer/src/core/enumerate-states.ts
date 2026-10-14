@@ -54,19 +54,19 @@ interface PartialChildren extends Omit<Alternative, "render"> {
 
 type FieldCases = AbstractValue[] | "unchanged" | null;
 
-interface TransitionContext {
+interface ReachabilityContext {
   analysis: ComponentAnalysis;
   reachableConstraints: Constraints;
   dependentsByBinding: Map<number, number[]>;
+}
+
+interface TransitionContext extends ReachabilityContext {
   targetEnumerator: StateEnumerator;
   regionStateKeys: string[];
   firstStateIndex: number;
 }
 
-interface EnumerationContext {
-  analysis: ComponentAnalysis;
-  reachableConstraints: Constraints;
-  dependentsByBinding: Map<number, number[]>;
+interface EnumerationContext extends ReachabilityContext {
   branchOutcomes: BranchOutcomes;
   effectIds: Set<string>;
 }
