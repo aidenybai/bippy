@@ -393,43 +393,46 @@ export class Interpreter {
       return itemPlaces.map((_itemPlace, index) => value.elements[index] ?? UNDEFINED_VALUE);
     if (value.kind !== "HookResult") return itemPlaces.map(() => null);
     const [statePlace] = itemPlaces;
-    if (STATE_HOOKS.has(value.hookKind) && statePlace) {
-      const [initialArgument] = value.argumentValues;
-      const initial =
-        initialArgument && initialArgument.kind !== "Function" ? initialArgument : null;
-      const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
-      const binding = this.#createBinding(
-        getIdentifierName(statePlace) ?? "state",
-        "state",
-        statePlace.loc,
-        {
-          hookKind: value.hookKind,
-          initial,
-          ...(isAsserted && { domain: ASSERTED_DOMAIN }),
-        },
-      );
-      return [createBindingValue(binding), { kind: "Setter", binding }];
-    }
-    if (value.hookKind === "useReducer" && statePlace) {
-      const [reducerArgument, initialArgument] = value.argumentValues;
-      const binding = this.#createBinding(
-        getIdentifierName(statePlace) ?? "state",
-        "reducer",
-        statePlace.loc,
-        { hookKind: value.hookKind, initial: initialArgument ?? null },
-      );
-      return [
-        createBindingValue(binding),
-        {
-          kind: "Dispatch",
-          binding,
-          reducer: reducerArgument
-            ? this.#resolveModuleFunction(reducerArgument)
-            : createUnknown("reducer", loc),
-        },
-      ];
-    }
+    if (STATE_HOOKS.has(value.hookKind) && statePlace)
+      return this.#destructureState(value, statePlace);
+    if (value.hookKind === "useReducer" && statePlace)
+      return this.#destructureReducer(value, statePlace, loc);
     return itemPlaces.map((place) => (place ? this.#bindHookResult(place, value) : null));
+  }
+
+  #destructureState(hook: HookResultValue, statePlace: Place): SymbolicValue[] {
+    const [initialArgument] = hook.argumentValues;
+    const initial = initialArgument && initialArgument.kind !== "Function" ? initialArgument : null;
+    const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
+    const binding = this.#createBinding(
+      getIdentifierName(statePlace) ?? "state",
+      "state",
+      statePlace.loc,
+      {
+        hookKind: hook.hookKind,
+        initial,
+        ...(isAsserted && { domain: ASSERTED_DOMAIN }),
+      },
+    );
+    return [createBindingValue(binding), { kind: "Setter", binding }];
+  }
+
+  #destructureReducer(
+    hook: HookResultValue,
+    statePlace: Place,
+    loc: SourceLocation,
+  ): SymbolicValue[] {
+    const [reducerArgument, initialArgument] = hook.argumentValues;
+    const binding = this.#createBinding(
+      getIdentifierName(statePlace) ?? "state",
+      "reducer",
+      statePlace.loc,
+      { hookKind: hook.hookKind, initial: initialArgument ?? null },
+    );
+    const reducer = reducerArgument
+      ? this.#resolveModuleFunction(reducerArgument)
+      : createUnknown("reducer", loc);
+    return [createBindingValue(binding), { kind: "Dispatch", binding, reducer }];
   }
 
   #evaluateDestructure(destructure: InstructionValueOfKind<"Destructure">): void {
