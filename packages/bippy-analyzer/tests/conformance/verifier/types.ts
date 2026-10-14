@@ -5,6 +5,7 @@ export const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 export const SETUP_PATH = "/__bippy_verify_setup.tsx";
 export const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";
 export const TRUNCATED_VALUE = "[truncated]";
+export const MAX_ACTION_LABEL_LENGTH = 40;
 
 const PROP_OWNER_PREFIX = "prop:";
 const STATE_OWNER_PREFIX = "state:";

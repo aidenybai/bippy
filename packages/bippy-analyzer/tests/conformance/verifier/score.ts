@@ -21,7 +21,7 @@ import { getLocationKey } from "../../../src/core/utils/hir";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
-import { TRUNCATED_VALUE } from "./types";
+import { MAX_ACTION_LABEL_LENGTH, TRUNCATED_VALUE } from "./types";
 import type { Action, ActionTarget, Probe, Shape } from "./types";
 import {
   explainMismatch,
@@ -129,9 +129,17 @@ const ORDERED_HOOK_KINDS = new Set<string>([
 
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
+const isSameLabel = (text: string, label: string): boolean => {
+  const compactText = text.replace(/\s+/g, "");
+  const compactLabel = label.replace(/\s+/g, "");
+  return label.length < MAX_ACTION_LABEL_LENGTH
+    ? compactText === compactLabel
+    : compactText.startsWith(compactLabel);
+};
+
 const isSameTarget = (handlerTarget: HandlerTarget, actionTarget: ActionTarget): boolean =>
   handlerTarget.tag === actionTarget.tag &&
-  (handlerTarget.text === null || handlerTarget.text === actionTarget.label);
+  (handlerTarget.text === null || isSameLabel(handlerTarget.text, actionTarget.label));
 
 export const getTriggerCertainty = (
   handlerTarget: HandlerTarget,

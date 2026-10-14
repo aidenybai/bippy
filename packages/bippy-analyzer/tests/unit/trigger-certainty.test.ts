@@ -23,4 +23,23 @@ describe("trigger certainty", () => {
       "maybe",
     );
   });
+
+  it("matches a long label the browser truncated and joined without spaces", () => {
+    const clickOverlay: Action = {
+      ...clickTidy,
+      key: "click:div:UPI QR CodeScan this QR code to make a U",
+      tag: "div",
+      label: "UPI QR CodeScan this QR code to make a U",
+    };
+    expect(
+      getTriggerCertainty(
+        {
+          tag: "div",
+          text: "UPI QR Code Scan this QR code to make a UPI payment",
+          event: "onClick",
+        },
+        clickOverlay,
+      ),
+    ).toBe("sure");
+  });
 });
