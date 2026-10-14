@@ -454,9 +454,11 @@ const collectHandlerIds = (render: SymbolicValue): Set<string> => {
 };
 
 const getRegionHandlers = (analysis: ComponentAnalysis, region: RegionBranches): Handler[] =>
-  analysis.handlers.filter((handler) =>
-    handler.updates.some((update) => region.bindingIds.has(update.binding.id)),
-  );
+  region.hasUnknownTest
+    ? analysis.handlers
+    : analysis.handlers.filter((handler) =>
+        handler.updates.some((update) => region.bindingIds.has(update.binding.id)),
+      );
 
 const getTransition = (
   handler: Handler,

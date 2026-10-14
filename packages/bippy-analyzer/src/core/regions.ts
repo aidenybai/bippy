@@ -23,12 +23,14 @@ interface BranchTests {
   branchGroups: DisjointSet<string>;
   branchKeysByPlace: PlaceMap<string[]>;
   testedPlaces: PlaceMap<TestedPlace>;
+  unknownTestBranchKeys: Set<string>;
 }
 
 export interface RegionBranches {
   branchKeys: Set<string>;
   bindingIds: Set<number>;
   placeNames: string[];
+  hasUnknownTest: boolean;
 }
 
 export const getBranchKey = (conditional: ConditionalValue): string =>
@@ -47,6 +49,7 @@ const recordTestedPlaces = (
   branchKey: string,
 ): void =>
   forEachSymbolicValue(getTestExpression(conditional), (part) => {
+    if (part.kind === "Unknown") branchTests.unknownTestBranchKeys.add(branchKey);
     if (part.kind !== "Binding") return;
     for (const place of getDecidingPlaces(part))
       branchTests.branchKeysByPlace.set(place, [
@@ -72,6 +75,7 @@ const collectBranchTests = (render: SymbolicValue): BranchTests => {
     branchGroups: new DisjointSet<string>(),
     branchKeysByPlace: new PlaceMap<string[]>(),
     testedPlaces: new PlaceMap<TestedPlace>(),
+    unknownTestBranchKeys: new Set(),
   };
   const visitedEnclosingKeys = new WeakMap<SymbolicValue, Set<string | null>>();
   const visit = (value: SymbolicValue, enclosingKey: string | null): void => {
@@ -99,6 +103,7 @@ const createEmptyRegion = (): RegionBranches => ({
   branchKeys: new Set(),
   bindingIds: new Set(),
   placeNames: [],
+  hasUnknownTest: false,
 });
 
 const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
@@ -112,6 +117,8 @@ const groupIntoRegions = (branchTests: BranchTests): RegionBranches[] => {
   for (const branchKey of branchTests.allBranchKeys) getRegion(branchKey).branchKeys.add(branchKey);
   for (const [place, branchKeys] of branchTests.branchKeysByPlace)
     for (const branchKey of branchKeys) getRegion(branchKey).bindingIds.add(place.bindingId);
+  for (const branchKey of branchTests.unknownTestBranchKeys)
+    getRegion(branchKey).hasUnknownTest = true;
   const testedPlaces = branchTests.testedPlaces.places();
   for (const [place, { name, branchKey }] of branchTests.testedPlaces) {
     const isNested = testedPlaces.some(
