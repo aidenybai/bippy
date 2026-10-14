@@ -87,6 +87,24 @@ interface FunctionComponent {
   (props: Record<string, unknown>): unknown;
 }
 
+interface ServerRender {
+  output: unknown;
+}
+
+interface ProvidersModule {
+  default: ComponentType<ProvidersProps>;
+}
+
+interface SetupModule {
+  scenarios?: Record<string, (...scenarioArguments: unknown[]) => unknown>;
+}
+
+interface MountedComponent {
+  props: Record<string, unknown>;
+  wrappers: Array<LoadedWrapper | null>;
+  Providers: ComponentType<ProvidersProps>;
+}
+
 const ANONYMOUS_NAME = "Anonymous";
 const OPEN_PARENT_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
 const SETTLE_MS = 40;
@@ -125,6 +143,7 @@ let pendingMutationHits: PendingMutationHit[] = [];
 let trackedStates: TrackedState[] = [];
 let stateOwners = new WeakMap<object, string>();
 let propWrites = new Set<string>();
+let pendingRequests = 0;
 const depthMarkers = new Map<number, ComponentType<ChildrenProps>>();
 const propOwners = new WeakMap<object, string>();
 const writeCounts = new WeakMap<object, number>();
@@ -449,7 +468,6 @@ const takeProbeHits = (): ProbeHit[] => {
   return hits;
 };
 
-let pendingRequests = 0;
 const trackRequest = <Result>(request: Promise<Result>): Promise<Result> => {
   pendingRequests++;
   return request.finally(() => pendingRequests--);
@@ -650,6 +668,14 @@ const getComponentType = (value: unknown): unknown => {
   return "Consumer" in Object(value) && isComponentType(provider) ? provider : value;
 };
 
+const findPartName = (exportNames: string[], exportName: string): string | undefined =>
+  exportNames
+    .filter((name) => exportName.endsWith(name))
+    .sort((left, right) => right.length - left.length)[0] ??
+  exportNames
+    .filter((name) => name.endsWith(exportName))
+    .sort((left, right) => left.length - right.length)[0];
+
 // HACK: a package may export the part an error names under a shorter or longer name, or only as
 // its `Root`.
 const loadWrapper = async ({ candidate }: Wrapper): Promise<LoadedWrapper | null> => {
@@ -666,14 +692,7 @@ const loadWrapper = async ({ candidate }: Wrapper): Promise<LoadedWrapper | null
   const moduleExports: Record<string, unknown> =
     isPackage && candidate.namespace ? Object(imported[candidate.namespace]) : imported;
   const exportNames = Object.keys(moduleExports).filter((name) => /^[A-Z]/.test(name));
-  const partName = isPackage
-    ? (exportNames
-        .filter((name) => candidate.exportName.endsWith(name))
-        .sort((left, right) => right.length - left.length)[0] ??
-      exportNames
-        .filter((name) => name.endsWith(candidate.exportName))
-        .sort((left, right) => left.length - right.length)[0])
-    : undefined;
+  const partName = isPackage ? findPartName(exportNames, candidate.exportName) : undefined;
   const value =
     moduleExports[candidate.exportName] ??
     (partName ? moduleExports[partName] : undefined) ??
@@ -716,7 +735,7 @@ const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNo
 const callServerComponent = async (
   type: FunctionComponent,
   props: Record<string, unknown>,
-): Promise<{ output: unknown } | null> => {
+): Promise<ServerRender | null> => {
   try {
     return { output: await type(props) };
   } catch {
@@ -757,7 +776,7 @@ const resolveServerTree = async (node: unknown, isEveryComponent = false): Promi
 const getDepthMarker = (depth: number): ComponentType<ChildrenProps> => {
   const cached = depthMarkers.get(depth);
   if (cached) return cached;
-  const marker = ({ children }: { children?: ReactNode }): ReactNode => children;
+  const marker = ({ children }: ChildrenProps): ReactNode => children;
   Object.defineProperty(marker, "name", { value: `${DEPTH_MARKER_PREFIX}${depth}` });
   depthMarkers.set(depth, marker);
   return marker;
@@ -778,20 +797,6 @@ const resetMountState = (): void => {
   stateOwners = new WeakMap();
   propWrites = new Set();
 };
-
-interface ProvidersModule {
-  default: ComponentType<ProvidersProps>;
-}
-
-interface SetupModule {
-  scenarios?: Record<string, (...scenarioArguments: unknown[]) => unknown>;
-}
-
-interface MountedComponent {
-  props: Record<string, unknown>;
-  wrappers: Array<LoadedWrapper | null>;
-  Providers: ComponentType<ProvidersProps>;
-}
 
 const runScenario = async (scenario: NonNullable<MountRequest["scenario"]>): Promise<boolean> => {
   const setupModule: SetupModule = await import(/* @vite-ignore */ SETUP_PATH);
