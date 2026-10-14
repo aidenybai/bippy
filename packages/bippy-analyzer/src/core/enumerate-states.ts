@@ -34,6 +34,7 @@ import {
   mapSymbolicValue,
 } from "./utils/traverse";
 import { formatNegated, formatSymbolicValue } from "./format";
+import { appendToGroup } from "./utils/group";
 import { getValueKey } from "./utils/value-key";
 import { getLocationKey } from "./utils/hir";
 import {
@@ -280,7 +281,7 @@ const getDependentsByBinding = (bindings: Binding[]): Map<number, number[]> => {
   const directDependents = new Map<number, number[]>();
   for (const binding of bindings)
     for (const { bindingId } of binding.inputPlaces)
-      directDependents.set(bindingId, [...(directDependents.get(bindingId) ?? []), binding.id]);
+      appendToGroup(directDependents, bindingId, binding.id);
   const collectTransitively = (bindingId: number, collected: Set<number>): Set<number> => {
     for (const dependentId of directDependents.get(bindingId) ?? [])
       if (!collected.has(dependentId)) collectTransitively(dependentId, collected.add(dependentId));

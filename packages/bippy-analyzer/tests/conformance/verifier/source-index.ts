@@ -1,5 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { appendToGroup } from "../../../src/core/utils/group";
 import type {
   AliasResolver,
   ExportedName,
@@ -82,7 +83,7 @@ export const addExports = (
   text: string,
 ): void => {
   for (const { name, exportName } of parseExports(text))
-    exports.set(name, [...(exports.get(name) ?? []), { file, exportName }]);
+    appendToGroup(exports, name, { file, exportName });
 };
 
 export const getCycleImporters = (imports: Map<string, FileImports>): Map<string, string[]> => {

@@ -19,6 +19,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { forEachJsxElement } from "./utils/traverse";
+import { appendToGroup } from "./utils/group";
 import { getBindingPlace } from "./utils/place";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
@@ -65,8 +66,7 @@ interface CompiledComponent {
 const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample => {
   const restPathsByField = new Map<string, string[][]>();
   for (const [field, ...restPath] of readPaths)
-    if (field !== undefined)
-      restPathsByField.set(field, [...(restPathsByField.get(field) ?? []), restPath]);
+    if (field !== undefined) appendToGroup(restPathsByField, field, restPath);
   const fieldNames = [...restPathsByField.keys()];
   if (
     fieldNames.length === 0 ||
@@ -102,8 +102,7 @@ const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample =
 const addSamplesFromReadPaths = (analysis: ComponentAnalysis): void => {
   const readPathsByBinding = new Map<number, string[][]>();
   for (const { bindingId, path } of analysis.placeDomains.places()) {
-    if (path.length > 0)
-      readPathsByBinding.set(bindingId, [...(readPathsByBinding.get(bindingId) ?? []), path]);
+    if (path.length > 0) appendToGroup(readPathsByBinding, bindingId, path);
   }
   for (const binding of analysis.bindings) {
     const readPaths = readPathsByBinding.get(binding.id);
