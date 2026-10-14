@@ -16,7 +16,7 @@ import type { Root } from "react-dom/client";
 import type { Sample } from "../../../src/core/types";
 import { getErrorMessage } from "./reasons";
 import type { MountFailure } from "./reasons";
-import { forEachPlainObject, isPlainData, snapshotValue } from "./snapshot";
+import { forEachPlainObject, isPlainData, isPlainRecord, snapshotValue } from "./snapshot";
 import { STAND_IN } from "./stubs/stand-in";
 import {
   MAX_ACTION_LABEL_LENGTH,
@@ -340,6 +340,7 @@ const toPlainData = (value: unknown): unknown => {
     if (typeof current === "function") return "[function]";
     if (depth >= MAX_PLAIN_DEPTH || typeof current !== "object") return "[value]";
     if (current instanceof Node) return "[node]";
+    if (!isPlainRecord(current)) return TRUNCATED_VALUE;
     if (++nodeCount > MAX_PLAIN_NODES) return TRUNCATED_VALUE;
     if (Array.isArray(current)) return current.map((item) => visit(item, depth + 1));
     return Object.fromEntries(

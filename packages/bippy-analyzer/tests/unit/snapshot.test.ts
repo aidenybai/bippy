@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { forEachPlainObject, snapshotValue } from "../conformance/verifier/snapshot";
+import { forEachPlainObject, isPlainRecord, snapshotValue } from "../conformance/verifier/snapshot";
 
 describe("snapshotValue", () => {
   it("changes when an array is mutated in place", () => {
@@ -55,5 +55,19 @@ describe("forEachPlainObject", () => {
     expect(visited.filter((object) => object === shared)).toHaveLength(1);
     expect(visited.some((object) => object instanceof Error)).toBe(false);
     expect(visited).toHaveLength(4);
+  });
+});
+
+describe("isPlainRecord", () => {
+  it("accepts objects and arrays but not class instances or collections", () => {
+    class Selection {
+      get isActive(): boolean {
+        return false;
+      }
+    }
+    expect(isPlainRecord({ isActive: false })).toBe(true);
+    expect(isPlainRecord([1])).toBe(true);
+    expect(isPlainRecord(new Selection())).toBe(false);
+    expect(isPlainRecord(new Map())).toBe(false);
   });
 });

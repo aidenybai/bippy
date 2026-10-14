@@ -16,6 +16,11 @@ export const isPlainData = (value: unknown): value is object => {
   );
 };
 
+export const isPlainRecord = (value: object): boolean => {
+  const prototype = Object.getPrototypeOf(value);
+  return Array.isArray(value) || prototype === Object.prototype || prototype === null;
+};
+
 const getChildValues = (value: object): unknown[] => {
   if (value instanceof Map) return [...value].flat();
   if (value instanceof Set) return [...value];
