@@ -1762,7 +1762,7 @@ export class Interpreter {
         );
   }
 
-  #collectRenderedHandlers(renderedValue: SymbolicValue, visitedFunctionIds: Set<number>): void {
+  #runRenderedHandlers(renderedValue: SymbolicValue, visitedFunctionIds: Set<number>): void {
     forEachJsxElement(renderedValue, (element) => {
       for (const prop of element.props)
         if (prop.kind === "JsxAttribute" && isHandlerProp(element.tag, prop))
@@ -1782,7 +1782,7 @@ export class Interpreter {
     visitedFunctionIds.add(callback.functionId);
     const hirFunction = this.#functions.get(callback.functionId);
     if (hirFunction)
-      this.#collectRenderedHandlers(
+      this.#runRenderedHandlers(
         this.#evaluateFunction(hirFunction, argumentValues, ROOT_WALK_STATE, callback.functionId),
         visitedFunctionIds,
       );
