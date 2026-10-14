@@ -8,6 +8,7 @@ import type {
   InstructionId,
   InstructionValue,
   ObjectPattern,
+  ObjectPropertyKey,
   Phi,
   Place,
   SpreadPattern,
@@ -1339,18 +1340,27 @@ export class Interpreter {
   }
 
   #evaluateObjectLiteral(objectLiteral: InstructionValueOfKind<"ObjectExpression">): SymbolicValue {
-    return {
-      kind: "ObjectExpression",
-      properties: objectLiteral.properties.flatMap((property) =>
-        property.kind === "ObjectProperty" &&
-        (property.key.kind === "string" || property.key.kind === "identifier")
-          ? [{ key: property.key.name, value: this.#read(property.place) }]
-          : [],
-      ),
-      spreads: objectLiteral.properties.flatMap((property) =>
-        property.kind === "Spread" ? [this.#read(property.place)] : [],
-      ),
-    };
+    const properties: ObjectExpressionValue["properties"] = [];
+    const spreads: SymbolicValue[] = [];
+    for (const property of objectLiteral.properties) {
+      if (property.kind === "Spread") {
+        spreads.push(this.#read(property.place));
+        continue;
+      }
+      const key = this.#getPropertyKey(property.key);
+      if (key === null) return createUnknown("computed-key", objectLiteral.loc);
+      properties.push({ key, value: this.#read(property.place) });
+    }
+    return { kind: "ObjectExpression", properties, spreads };
+  }
+
+  #getPropertyKey(key: ObjectPropertyKey): string | null {
+    if (key.kind !== "computed") return String(key.name);
+    const keyValue = this.#read(key.name);
+    return keyValue.kind === "Primitive" &&
+      (typeof keyValue.value === "string" || typeof keyValue.value === "number")
+      ? String(keyValue.value)
+      : null;
   }
 
   #evaluateArrayLiteral(arrayLiteral: InstructionValueOfKind<"ArrayExpression">): SymbolicValue {
