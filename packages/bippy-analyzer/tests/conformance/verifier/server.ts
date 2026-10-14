@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { createServer, loadEnv } from "vite";
-import type { InlineConfig, Plugin, ViteDevServer } from "vite";
+import type { Alias, DepOptimizationOptions, InlineConfig, Plugin, ViteDevServer } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { createAssetPlugin } from "./harness/assets";
 import {
@@ -42,6 +42,13 @@ export interface Harness {
   close: () => Promise<void>;
 }
 
+interface HarnessIds {
+  entry: string;
+  providers: string;
+  setup: string;
+  wrapper: string;
+}
+
 const HARNESS_PATH = "/__bippy_verify";
 const ENTRY_PATH = "/__bippy_verify_entry.ts";
 const ENV_PLACEHOLDER = "https://example.com";
@@ -52,8 +59,34 @@ const PREBUNDLED_REACT_MODULES = [
   "react/jsx-dev-runtime",
   "react/jsx-runtime",
 ];
+const HARNESS_HTML = `<!doctype html><html><head><meta charset="utf-8"></head><body><script type="module" src="${ENTRY_PATH}"></script></body></html>`;
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../../bippy/src/index.ts");
+
+const createHarnessIds = (appDirectory: string): HarnessIds => ({
+  entry: join(appDirectory, ENTRY_PATH),
+  providers: join(appDirectory, PROVIDERS_PATH),
+  setup: join(appDirectory, SETUP_PATH),
+  wrapper: join(appDirectory, WRAPPER_PATH),
+});
+
+const getWrapperQuery = (id: string): URLSearchParams =>
+  new URLSearchParams(id.slice(id.indexOf("?") + 1));
+
+const resolveHarnessModule = (
+  source: string,
+  importer: string | undefined,
+  ids: HarnessIds,
+): string | null => {
+  if (source === ENTRY_PATH || source === ids.entry) return ids.entry;
+  if (importer === ids.entry && source.startsWith("./"))
+    return join(import.meta.dirname, `${source.replace(/\.js$/, "")}.ts`);
+  if (source === PROVIDERS_PATH || source === ids.providers) return ids.providers;
+  if (source === SETUP_PATH || source === ids.setup) return ids.setup;
+  if (source.startsWith(`${WRAPPER_PATH}?`))
+    return `${ids.wrapper}${source.slice(WRAPPER_PATH.length)}`;
+  return null;
+};
 
 const createHarnessPlugin = (
   appDirectory: string,
@@ -61,41 +94,31 @@ const createHarnessPlugin = (
   setup: HarnessSetup,
   appImporter: string,
 ): Plugin => {
-  const entryId = join(appDirectory, ENTRY_PATH);
-  const providersId = join(appDirectory, PROVIDERS_PATH);
-  const setupId = join(appDirectory, SETUP_PATH);
-  const wrapperId = join(appDirectory, WRAPPER_PATH);
-  const getWrapperQuery = (id: string): URLSearchParams =>
-    new URLSearchParams(id.slice(id.indexOf("?") + 1));
+  const ids = createHarnessIds(appDirectory);
   const providersSource = createProvidersSource(providers, setup);
   return {
     name: "bippy-verify-harness",
     enforce: "pre",
     resolveId(source, importer) {
-      if (source === ENTRY_PATH || source === entryId) return entryId;
-      if (importer === entryId && source.startsWith("./"))
-        return join(import.meta.dirname, `${source.replace(/\.js$/, "")}.ts`);
-      if (source === PROVIDERS_PATH || source === providersId) return providersId;
-      if (source === SETUP_PATH || source === setupId) return setupId;
-      if (source.startsWith(`${WRAPPER_PATH}?`))
-        return `${wrapperId}${source.slice(WRAPPER_PATH.length)}`;
-      if (importer?.startsWith(`${wrapperId}?`))
+      const harnessModule = resolveHarnessModule(source, importer, ids);
+      if (harnessModule) return harnessModule;
+      if (importer?.startsWith(`${ids.wrapper}?`))
         return this.resolve(source, getWrapperQuery(importer).get("importer") ?? appImporter, {
           skipSelf: true,
         });
       // HACK: the setup lives outside the app, so its imports resolve as if from an app file, where
       // path aliases apply.
-      if (importer === setupId && !source.startsWith("."))
+      if (importer === ids.setup && !source.startsWith("."))
         return this.resolve(source, appImporter, { skipSelf: true });
-      if (importer === setupId && setup.file)
+      if (importer === ids.setup && setup.file)
         return this.resolve(source, setup.file, { skipSelf: true });
       return null;
     },
     load: (id) => {
-      if (id === entryId) return readFileSync(ENTRY_SOURCE, "utf8");
-      if (id === providersId) return providersSource;
-      if (id === setupId) return setup.file ? readFileSync(setup.file, "utf8") : "";
-      if (id.startsWith(`${wrapperId}?`))
+      if (id === ids.entry) return readFileSync(ENTRY_SOURCE, "utf8");
+      if (id === ids.providers) return providersSource;
+      if (id === ids.setup) return setup.file ? readFileSync(setup.file, "utf8") : "";
+      if (id.startsWith(`${ids.wrapper}?`))
         return `export * from ${JSON.stringify(getWrapperQuery(id).get("specifier"))};`;
       return null;
     },
@@ -103,9 +126,7 @@ const createHarnessPlugin = (
       server.middlewares.use((request, response, next) => {
         if (request.url !== HARNESS_PATH) return next();
         response.setHeader("content-type", "text/html");
-        response.end(
-          `<!doctype html><html><head><meta charset="utf-8"></head><body><script type="module" src="${ENTRY_PATH}"></script></body></html>`,
-        );
+        response.end(HARNESS_HTML);
       });
     },
   };
@@ -150,55 +171,66 @@ const getEnvDefines = (context: HarnessContext): Record<string, string> => {
   };
 };
 
+const createHarnessPlugins = (
+  context: HarnessContext,
+  polyfilledModules: Set<string>,
+): Plugin[] => {
+  const { appDirectory, nextDirectory, references } = context;
+  return [
+    createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
+    createStandInPlugin(polyfilledModules, references.packageImports),
+    createAssetPlugin(),
+    createHarnessPlugin(appDirectory, context.providers, context.setup, context.appImporter),
+    createMissingModulePlugin(),
+    createProbePlugin(context.probes),
+    ...(nextDirectory ? [createNextImagePlugin()] : []),
+    createServerActionPlugin(),
+    createCommonJsPlugin(),
+    createRequirePlugin(),
+    tsconfigPaths({ root: appDirectory }),
+  ];
+};
+
+const getHarnessAliases = (context: HarnessContext): Alias[] => [
+  { find: /^bippy$/, replacement: BIPPY_SOURCE },
+  ...getNextPolyfillAliases(context.nextDirectory),
+  ...Object.entries(context.setup.alias).map(([source, target]) => ({
+    find: new RegExp(`^${RegExp.escape(source)}$`),
+    replacement: target,
+  })),
+];
+
+const createOptimizeDepsOptions = (
+  context: HarnessContext,
+  polyfilledModules: Set<string>,
+): DepOptimizationOptions => ({
+  entries: context.componentFiles.map((file) => relative(context.appDirectory, file)),
+  include: [
+    ...PREBUNDLED_REACT_MODULES,
+    ...context.providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
+  ],
+  esbuildOptions: {
+    plugins: [createMissingRequirePlugin(), createNodeBuiltinPlugin(polyfilledModules)],
+    loader: { ".node": "empty" },
+    // HACK: Webpack, which Next bundles client code with, makes `__dirname` the root.
+    ...(context.nextDirectory ? { define: { __dirname: '"/"' } } : {}),
+  },
+});
+
 const createHarnessConfig = (context: HarnessContext): InlineConfig => {
-  const { appDirectory, nextDirectory, references, providers, setup } = context;
-  const polyfilledModules = getPolyfilledModules(nextDirectory);
+  const polyfilledModules = getPolyfilledModules(context.nextDirectory);
   return {
     configFile: false,
-    root: appDirectory,
+    root: context.appDirectory,
     logLevel: "error",
     appType: "custom",
-    plugins: [
-      createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
-      createStandInPlugin(polyfilledModules, references.packageImports),
-      createAssetPlugin(),
-      createHarnessPlugin(appDirectory, providers, setup, context.appImporter),
-      createMissingModulePlugin(),
-      createProbePlugin(context.probes),
-      ...(nextDirectory ? [createNextImagePlugin()] : []),
-      createServerActionPlugin(),
-      createCommonJsPlugin(),
-      createRequirePlugin(),
-      tsconfigPaths({ root: appDirectory }),
-    ],
-    resolve: {
-      alias: [
-        { find: /^bippy$/, replacement: BIPPY_SOURCE },
-        ...getNextPolyfillAliases(nextDirectory),
-        ...Object.entries(setup.alias).map(([source, target]) => ({
-          find: new RegExp(`^${RegExp.escape(source)}$`),
-          replacement: target,
-        })),
-      ],
-      dedupe: ["react", "react-dom"],
-    },
+    plugins: createHarnessPlugins(context, polyfilledModules),
+    resolve: { alias: getHarnessAliases(context), dedupe: ["react", "react-dom"] },
     // HACK: an empty PostCSS config keeps an app's Tailwind or Sass setup from failing imports.
     css: { postcss: {} },
     esbuild: { jsx: "automatic", jsxDev: true },
     define: getEnvDefines(context),
-    optimizeDeps: {
-      entries: context.componentFiles.map((file) => relative(appDirectory, file)),
-      include: [
-        ...PREBUNDLED_REACT_MODULES,
-        ...providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
-      ],
-      esbuildOptions: {
-        plugins: [createMissingRequirePlugin(), createNodeBuiltinPlugin(polyfilledModules)],
-        loader: { ".node": "empty" },
-        // HACK: Webpack, which Next bundles client code with, makes `__dirname` the root.
-        ...(nextDirectory ? { define: { __dirname: '"/"' } } : {}),
-      },
-    },
+    optimizeDeps: createOptimizeDepsOptions(context, polyfilledModules),
     server: { port: 0, strictPort: false, hmr: false, fs: { strict: false } },
   };
 };
