@@ -1,5 +1,11 @@
 import { SyntaxKind } from "typescript/unstable/ast";
-import type { Expression, Node, SourceFile } from "typescript/unstable/ast";
+import type {
+  ArrowFunction,
+  Expression,
+  FunctionExpression,
+  Node,
+  SourceFile,
+} from "typescript/unstable/ast";
 import {
   isArrowFunction,
   isBlock,
@@ -27,10 +33,11 @@ import { createDeclarationKey } from "./utils/declaration-key";
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;
 const STORE_CREATORS = new Set(["create", "createWithEqualityFn"]);
 
-const isFunctionNode = (node: Node): boolean => isArrowFunction(node) || isFunctionExpression(node);
+const isFunctionNode = (node: Node): node is ArrowFunction | FunctionExpression =>
+  isArrowFunction(node) || isFunctionExpression(node);
 
 const getParameterNames = (node: Node): string[] =>
-  isArrowFunction(node) || isFunctionExpression(node)
+  isFunctionNode(node)
     ? node.parameters.map((parameter) => (isIdentifier(parameter.name) ? parameter.name.text : ""))
     : [];
 
@@ -48,7 +55,10 @@ const getCreatorNames = (sourceFile: SourceFile): Set<string> => {
   return creatorNames;
 };
 
-const findStateCreator = (initializer: Node, creatorNames: Set<string>): Node | null => {
+const findStateCreator = (
+  initializer: Node,
+  creatorNames: Set<string>,
+): ArrowFunction | FunctionExpression | null => {
   if (!isCallExpression(initializer)) return null;
   const callee = initializer.expression;
   const isCreator =
@@ -63,8 +73,7 @@ const findStateCreator = (initializer: Node, creatorNames: Set<string>): Node | 
   return middlewareOrCreator && isFunctionNode(middlewareOrCreator) ? middlewareOrCreator : null;
 };
 
-const getReturnedObject = (functionNode: Node): Node | null => {
-  if (!isArrowFunction(functionNode) && !isFunctionExpression(functionNode)) return null;
+const getReturnedObject = (functionNode: ArrowFunction | FunctionExpression): Node | null => {
   const body = skipParentheses(functionNode.body);
   if (isObjectLiteralExpression(body)) return body;
   if (!isBlock(body)) return null;
@@ -117,21 +126,13 @@ const getAssignments = (
   const assignments: StoreAssignment[] = [];
   for (const property of assignedObject.properties) {
     if (isSpreadAssignment(property)) continue;
-    if (isShorthandPropertyAssignment(property)) {
-      const { name } = property;
-      if (!isIdentifier(name)) return null;
-      assignments.push({
-        field: name.text,
-        value: getFieldValue(name, name.text, actionParameters, stateParameter),
-      });
-      continue;
-    }
-    if (!isPropertyAssignment(property)) return null;
+    if (!isShorthandPropertyAssignment(property) && !isPropertyAssignment(property)) return null;
     const { name } = property;
     if (!isIdentifier(name) && !isStringLiteral(name)) return null;
+    const valueNode = isPropertyAssignment(property) ? property.initializer : name;
     assignments.push({
       field: name.text,
-      value: getFieldValue(property.initializer, name.text, actionParameters, stateParameter),
+      value: getFieldValue(valueNode, name.text, actionParameters, stateParameter),
     });
   }
   return assignments;
@@ -150,7 +151,7 @@ const findSetCalls = (action: Node, setName: string): Node[] => {
 };
 
 const getActionAssignments = (action: Node, setName: string): StoreAssignment[] | null => {
-  if (!isArrowFunction(action) && !isFunctionExpression(action)) return null;
+  if (!isFunctionNode(action)) return null;
   const actionParameters = getParameterNames(action);
   const body = skipParentheses(action.body);
   const setCalls = findSetCalls(action, setName);
