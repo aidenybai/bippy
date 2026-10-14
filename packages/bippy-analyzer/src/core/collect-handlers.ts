@@ -1,6 +1,7 @@
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Interpreter } from "./interpret";
+import type { CollectedEffects } from "./effect-collector";
 import type {
   Binding,
   Handler,
@@ -113,7 +114,18 @@ class HandlerCollector {
     callbackArguments: SymbolicValue[],
     loc: SourceLocation,
   ): string | null {
-    const { updates, delegates } = this.#interpreter.collectEffects(callback, callbackArguments);
+    return this.addCollectedHandler(
+      trigger,
+      this.#interpreter.collectEffects(callback, callbackArguments),
+      loc,
+    );
+  }
+
+  addCollectedHandler(
+    trigger: HandlerTrigger,
+    { updates, delegates }: CollectedEffects,
+    loc: SourceLocation,
+  ): string | null {
     if (updates.length === 0 && delegates.length === 0) return null;
     const handlerId = `t${this.handlers.length + 1}`;
     this.handlers.push({ id: handlerId, trigger, updates, delegates, loc });
@@ -192,6 +204,11 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       effectCall.callbackArguments,
       effectCall.loc,
     );
+  collector.addCollectedHandler(
+    { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+    interpreter.finishRenderPhaseEffects(),
+    GeneratedSource,
+  );
   forEachJsxElement(render, (element) => collector.collectElementHandlers(element));
   return collector.handlers;
 };

@@ -238,6 +238,9 @@ export class Interpreter {
   readonly externalSources: ExternalSources;
   readonly diagnostics = new Diagnostics();
   readonly effectCalls: EffectCall[] = [];
+  readonly #renderPhaseEffects = new EffectCollector((kind, message, loc) =>
+    this.#warn(kind, message, loc),
+  );
   readonly renderedComponents = new Set<string>();
   #wholePropsSample: Sample | null = null;
   #restPropsSample: Sample | null = null;
@@ -274,6 +277,10 @@ export class Interpreter {
     return this.#evaluateFunction(hirFunction, [{ kind: "Props" }], ROOT_WALK_STATE);
   }
 
+  finishRenderPhaseEffects(): CollectedEffects {
+    return this.#renderPhaseEffects.finish();
+  }
+
   collectEffects(callback: SymbolicValue, argumentValues: SymbolicValue[]): CollectedEffects {
     const previousEffects = this.#handlerEffects;
     const previousBlockVisits = this.#blockVisits;
@@ -302,6 +309,10 @@ export class Interpreter {
       this.#handlerEffects = previousEffects;
       this.#blockVisits = previousBlockVisits;
     }
+  }
+
+  #getUpdateCollector(): EffectCollector {
+    return this.#handlerEffects ?? this.#renderPhaseEffects;
   }
 
   #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
@@ -735,7 +746,7 @@ export class Interpreter {
       setter.binding.loc,
       walkState,
     );
-    this.#handlerEffects?.recordSetterCall(setter.binding, nextValue, walkState);
+    this.#getUpdateCollector().recordSetterCall(setter.binding, nextValue, walkState);
   }
 
   #applyDispatch(
@@ -754,7 +765,7 @@ export class Interpreter {
             walkState,
           )
         : createUnknown("dispatch", loc);
-    this.#handlerEffects?.recordSetterCall(dispatch.binding, nextValue, walkState);
+    this.#getUpdateCollector().recordSetterCall(dispatch.binding, nextValue, walkState);
   }
 
   #recordWholeProps(callSite: CallSite): void {
