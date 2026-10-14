@@ -86,54 +86,78 @@ export const addExports = (
     appendToGroup(exports, name, { file, exportName });
 };
 
-export const getCycleImporters = (imports: Map<string, FileImports>): Map<string, string[]> => {
-  const indices = new Map<string, number>();
-  const lowLinks = new Map<string, number>();
-  const stack: string[] = [];
-  const onStack = new Set<string>();
-  const cycles: string[][] = [];
-  const getLowLink = (file: string): number => lowLinks.get(file) ?? Infinity;
-  const enter = (file: string): void => {
-    indices.set(file, indices.size);
-    lowLinks.set(file, indices.size - 1);
-    stack.push(file);
-    onStack.add(file);
-  };
-  for (const root of imports.keys()) {
-    if (indices.has(root)) continue;
-    enter(root);
-    const frames = [{ file: root, nextIndex: 0 }];
+interface SearchFrame {
+  file: string;
+  nextIndex: number;
+}
+
+class ImportCycleFinder {
+  readonly #imports: Map<string, FileImports>;
+  readonly #indices = new Map<string, number>();
+  readonly #lowLinks = new Map<string, number>();
+  readonly #stack: string[] = [];
+  readonly #onStack = new Set<string>();
+  readonly #cycles: string[][] = [];
+
+  constructor(imports: Map<string, FileImports>) {
+    this.#imports = imports;
+  }
+
+  findCycles(): string[][] {
+    for (const root of this.#imports.keys()) if (!this.#indices.has(root)) this.#search(root);
+    return this.#cycles;
+  }
+
+  #search(root: string): void {
+    this.#enter(root);
+    const frames: SearchFrame[] = [{ file: root, nextIndex: 0 }];
     while (frames.length > 0) {
       const frame = frames[frames.length - 1];
-      const target = imports.get(frame.file)?.files[frame.nextIndex++];
-      if (target !== undefined) {
-        if (!indices.has(target)) {
-          enter(target);
-          frames.push({ file: target, nextIndex: 0 });
-        } else if (onStack.has(target)) {
-          lowLinks.set(
-            frame.file,
-            Math.min(getLowLink(frame.file), indices.get(target) ?? Infinity),
-          );
-        }
-        continue;
+      const target = this.#imports.get(frame.file)?.files[frame.nextIndex++];
+      if (target === undefined) {
+        frames.pop();
+        this.#finish(frame.file, frames.at(-1)?.file ?? null);
+      } else if (!this.#indices.has(target)) {
+        this.#enter(target);
+        frames.push({ file: target, nextIndex: 0 });
+      } else if (this.#onStack.has(target)) {
+        this.#lowerLink(frame.file, this.#indices.get(target) ?? Infinity);
       }
-      frames.pop();
-      const parent = frames.at(-1);
-      if (parent)
-        lowLinks.set(parent.file, Math.min(getLowLink(parent.file), getLowLink(frame.file)));
-      if (getLowLink(frame.file) !== indices.get(frame.file)) continue;
-      const cycle = stack.splice(stack.indexOf(frame.file));
-      for (const file of cycle) onStack.delete(file);
-      if (cycle.length > 1) cycles.push(cycle);
     }
   }
-  return new Map(
-    cycles.flatMap((cycle) =>
-      cycle.map((file): [string, string[]] => [
-        file,
-        cycle.filter((importer) => imports.get(importer)?.files.includes(file)),
-      ]),
-    ),
+
+  #enter(file: string): void {
+    this.#indices.set(file, this.#indices.size);
+    this.#lowLinks.set(file, this.#indices.size - 1);
+    this.#stack.push(file);
+    this.#onStack.add(file);
+  }
+
+  #getLowLink(file: string): number {
+    return this.#lowLinks.get(file) ?? Infinity;
+  }
+
+  #lowerLink(file: string, candidate: number): void {
+    this.#lowLinks.set(file, Math.min(this.#getLowLink(file), candidate));
+  }
+
+  #finish(file: string, parentFile: string | null): void {
+    if (parentFile !== null) this.#lowerLink(parentFile, this.#getLowLink(file));
+    if (this.#getLowLink(file) !== this.#indices.get(file)) return;
+    const cycle = this.#stack.splice(this.#stack.indexOf(file));
+    for (const cycleFile of cycle) this.#onStack.delete(cycleFile);
+    if (cycle.length > 1) this.#cycles.push(cycle);
+  }
+}
+
+export const getCycleImporters = (imports: Map<string, FileImports>): Map<string, string[]> =>
+  new Map(
+    new ImportCycleFinder(imports)
+      .findCycles()
+      .flatMap((cycle) =>
+        cycle.map((file): [string, string[]] => [
+          file,
+          cycle.filter((importer) => imports.get(importer)?.files.includes(file)),
+        ]),
+      ),
   );
-};
