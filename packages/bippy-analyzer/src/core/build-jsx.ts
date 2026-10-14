@@ -6,6 +6,7 @@ const DYNAMIC_TAG_NAME = "Dynamic";
 interface JsxElementParts {
   declaration: string | null;
   isContext: boolean;
+  reactExport: string | null;
   props: Array<JsxProp | JsxSpreadProp>;
   children: SymbolicValue[];
   loc: SourceLocation;
@@ -20,6 +21,7 @@ const getJsxTag = (tag: SymbolicValue, elementParts: JsxElementParts): JsxTag =>
       name: tag.name,
       declaration: elementParts.declaration,
       isContext: elementParts.isContext,
+      reactExport: elementParts.reactExport,
     };
   return { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
 };

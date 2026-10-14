@@ -1513,19 +1513,20 @@ export class Interpreter {
     const props = this.#readJsxProps(element);
     this.#recordProvidedContext(element, props);
     const isBuiltinTag = element.tag.kind === "BuiltinTag";
+    const reactExport = isBuiltinTag ? null : this.#resolver.getReactExportName(element.tag.loc);
     const jsxValue = buildJsx(
       this.#getJsxTag(element.tag),
       {
         declaration: isBuiltinTag ? null : this.#resolver.getDeclarationKey(element.tag.loc),
         isContext: !isBuiltinTag && this.#resolver.isContext(element.tag.loc),
+        reactExport,
         props,
         children: (element.children ?? []).map((child) => this.#read(child)),
         loc: element.loc,
       },
       this.renderedComponents,
     );
-    const isSuspense = this.#resolver.getReactExportName(element.tag.loc) === "Suspense";
-    return isSuspense && jsxValue.kind === "JsxExpression"
+    return reactExport === "Suspense" && jsxValue.kind === "JsxExpression"
       ? this.#buildSuspense(jsxValue, instructionId)
       : jsxValue;
   }

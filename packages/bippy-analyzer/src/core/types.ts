@@ -91,7 +91,13 @@ export interface JsxSpreadProp {
 
 export type JsxTag =
   | { kind: "BuiltinTag"; name: string }
-  | { kind: "Component"; name: string; declaration: string | null; isContext: boolean }
+  | {
+      kind: "Component";
+      name: string;
+      declaration: string | null;
+      isContext: boolean;
+      reactExport: string | null;
+    }
   | { kind: "DynamicTag"; name: string };
 
 interface SymbolicObjectProperty {

@@ -1,5 +1,5 @@
 import { diffArrays } from "diff";
-import type { JsxExpressionValue, SymbolicValue } from "../../../src/core/types";
+import type { JsxExpressionValue, JsxTag, SymbolicValue } from "../../../src/core/types";
 import { isRenderingNothing } from "../../../src/core/utils/checks";
 import type { Shape } from "./types";
 
@@ -11,7 +11,7 @@ export type ExpectedShape =
   | { kind: "repeat"; item: ExpectedShape[] }
   | { kind: "choice"; options: ExpectedShape[][] };
 
-const TRANSPARENT_TAG_PATTERN = /(^|\.)(Fragment|Suspense|StrictMode|Profiler)$/;
+const TRANSPARENT_EXPORTS = new Set(["Fragment", "Suspense", "StrictMode", "Profiler"]);
 const CONTEXT_TAG_PATTERN = /(^|\.)(Provider|Consumer)$/;
 const WRAPPER_NAME_PATTERN = /^(?:Memo|ForwardRef|Lazy)\((.*)\)$/;
 const MAX_MATCH_STEPS = 200_000;
@@ -25,6 +25,9 @@ const normalizeName = (name: string): string => {
   return unwrapped === name ? (name.split(".").pop() ?? name) : normalizeName(unwrapped);
 };
 
+const getExportName = (tag: JsxTag): string =>
+  (tag.kind === "Component" ? tag.reactExport : null) ?? tag.name.split(".").at(-1) ?? tag.name;
+
 const jsxElementToExpected = (
   element: JsxExpressionValue,
   recurse: (child: SymbolicValue) => ExpectedShape[],
@@ -32,7 +35,7 @@ const jsxElementToExpected = (
 ): ExpectedShape[] => {
   const { tag } = element;
   if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
-  if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return element.children.flatMap(recurse);
+  if (TRANSPARENT_EXPORTS.has(getExportName(tag))) return element.children.flatMap(recurse);
   if (CONTEXT_TAG_PATTERN.test(tag.name))
     return [
       {

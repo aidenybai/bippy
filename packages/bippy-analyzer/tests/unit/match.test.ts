@@ -18,7 +18,13 @@ const element = (tag: string, children: SymbolicValue[] = []): SymbolicValue => 
 });
 const component = (tag: string): SymbolicValue => ({
   kind: "JsxExpression",
-  tag: { kind: "Component", name: tag, declaration: `/app/${tag}.tsx#${tag}`, isContext: false },
+  tag: {
+    kind: "Component",
+    name: tag,
+    declaration: `/app/${tag}.tsx#${tag}`,
+    isContext: false,
+    reactExport: null,
+  },
   props: [],
   children: [],
   loc: GeneratedSource,
@@ -45,6 +51,23 @@ const matches = (
 ): boolean => matchesExpected(toExpected(render, knownComponents), normalizeShapes(shapes));
 
 describe("matchesExpected", () => {
+  it("renders only the children of an aliased React export like Suspense", () => {
+    const boundary: SymbolicValue = {
+      kind: "JsxExpression",
+      tag: {
+        kind: "Component",
+        name: "Boundary",
+        declaration: null,
+        isContext: false,
+        reactExport: "Suspense",
+      },
+      props: [],
+      children: [element("p", [text("Loading")])],
+      loc: GeneratedSource,
+    };
+    expect(matches(boundary, [shapeElement("p", [shapeText("Loading")])])).toBe(true);
+  });
+
   it("matches host elements, static text and value holes", () => {
     const render = element("button", [text("Count:"), value()]);
     expect(matches(render, [shapeElement("button", [shapeText("Count: "), shapeText("3")])])).toBe(
@@ -123,7 +146,13 @@ describe("matchesExpected", () => {
   it("matches a context rendered as its own provider by its children", () => {
     const render: SymbolicValue = {
       kind: "JsxExpression",
-      tag: { kind: "Component", name: "FontContext", declaration: null, isContext: true },
+      tag: {
+        kind: "Component",
+        name: "FontContext",
+        declaration: null,
+        isContext: true,
+        reactExport: null,
+      },
       props: [],
       children: [element("p")],
       loc: GeneratedSource,
