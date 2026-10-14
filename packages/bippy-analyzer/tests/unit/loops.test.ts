@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("loops", () => {
-  const project = analyzeProject(getFixtureConfig("symbolic-tree"), "loops");
+  const project = analyzeFixture("symbolic-tree", "loops");
   const getConditions = (name: string) =>
     getComponent(project, name).report.states.map((state) => state.conditions);
 

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig, getWarningKinds } from "./helpers";
+import { analyzeFixture, getComponent, getWarningKinds } from "./helpers";
 
 describe("possible mutation", () => {
-  const project = analyzeProject(getFixtureConfig("symbolic-tree"), "possible-mutation");
+  const project = analyzeFixture("symbolic-tree", "possible-mutation");
   const component = getComponent(project, "Deck");
 
   it("forgets state a handler passes to a function that may mutate it", () => {

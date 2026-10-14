@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("reads through an index signature", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "indexed-reads");
+  const project = analyzeFixture("conformance-repros", "indexed-reads");
   const label = getComponent(project, "KeyLabel");
 
   it("may be undefined, since the type promises no key exists", () => {

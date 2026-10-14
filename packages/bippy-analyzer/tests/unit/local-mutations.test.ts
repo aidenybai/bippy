@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import { formatSymbolicValue } from "../../src/core/format";
 import { forEachSymbolicValue } from "../../src/core/utils/traverse";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("local mutations", () => {
-  const project = analyzeProject(getFixtureConfig("symbolic-tree"), "local-mutations");
+  const project = analyzeFixture("symbolic-tree", "local-mutations");
   const component = getComponent(project, "TagEditor");
 
   it("sets state to a copy with the pushed item, so adding leaves the empty state", () => {

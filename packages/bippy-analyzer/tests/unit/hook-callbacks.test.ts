@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import { formatSymbolicValue } from "../../src/core/format";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("callbacks passed to hooks", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "hook-callbacks");
+  const project = analyzeFixture("conformance-repros", "hook-callbacks");
   const overlay = getComponent(project, "Overlay");
 
   it("runs a function passed to a hook it can't see into as an effect", () => {
@@ -94,7 +93,7 @@ describe("callbacks passed to hooks", () => {
   });
 
   it("runs the handlers props spread from a getter install, through helpers that merge them", () => {
-    const doubleCheck = analyzeProject(getFixtureConfig("conformance-repros"), "double-check");
+    const doubleCheck = analyzeFixture("conformance-repros", "double-check");
     expect(getComponent(doubleCheck, "DisableButton").report.unreachableBranches).toEqual([]);
   });
 

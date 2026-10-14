@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("a render with more combinations than are listed", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "many-branches");
+  const project = analyzeFixture("conformance-repros", "many-branches");
   const toolbar = getComponent(project, "Toolbar");
 
   it("stops listing at the cap and says so", () => {

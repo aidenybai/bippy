@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("unknown tests", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "unknown-tests");
+  const project = analyzeFixture("conformance-repros", "unknown-tests");
 
   it("doesn't decide one unknown test by another that prints alike", () => {
     const status = getComponent(project, "QueryStatus");

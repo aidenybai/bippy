@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("memos patterns", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "memos-patterns");
+  const project = analyzeFixture("conformance-repros", "memos-patterns");
 
   it("keeps a tag it can't name dynamic instead of calling it a component", () => {
     const { render } = getComponent(project, "Heading").analysis;

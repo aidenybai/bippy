@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import { formatSymbolicValue } from "../../src/core/format";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent, getFixtureConfig } from "./helpers";
 
 describe("context setters", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "context-setter");
+  const project = analyzeFixture("conformance-repros", "context-setter");
   const toggle = getComponent(project, "PickerToggle");
 
   it("types a context read through a hook from another file", () => {

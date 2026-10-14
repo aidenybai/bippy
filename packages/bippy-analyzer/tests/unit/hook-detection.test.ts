@@ -1,18 +1,18 @@
 import type { Node } from "typescript/unstable/ast";
 import { isCallExpression } from "typescript/unstable/ast/is";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project";
 import type { HIRFunction } from "../../src/react-compiler/HIR/HIR";
 import { BuiltInUseStateId } from "../../src/react-compiler/HIR/ObjectShape";
 import type { ProjectAnalysis } from "../../src/core/types";
 import { getReactExportName } from "../../src/core/utils/typescript";
 import {
+  analyzeFixture,
   getBinding,
   getComponent,
   getFixtureConfig,
-  getInstructions,
   getHirFunctionsByName,
+  getInstructions,
 } from "./helpers";
 
 const STATE_COMPONENTS = [
@@ -89,8 +89,8 @@ describe("hook detection through the checker", () => {
   let functions = new Map<string, HIRFunction>();
 
   beforeAll(() => {
-    project = analyzeProject(getFixtureConfig("hooks"));
-    plainProject = analyzeProject(getFixtureConfig("plain-jsx"));
+    project = analyzeFixture("hooks");
+    plainProject = analyzeFixture("plain-jsx");
     functions = getHirFunctionsByName("hooks");
   });
 

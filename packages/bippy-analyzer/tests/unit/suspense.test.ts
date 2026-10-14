@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("Suspense", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "suspense-fallback");
+  const project = analyzeFixture("conformance-repros", "suspense-fallback");
 
   it("predicts the fallback and the children as separate states", () => {
     const panel = getComponent(project, "LazyPanel");

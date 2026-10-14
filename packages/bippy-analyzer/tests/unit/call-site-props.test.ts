@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getFixtureConfig } from "./helpers";
+import { analyzeFixture } from "./helpers";
 
 describe("untyped props from call sites", () => {
-  const project = analyzeProject(getFixtureConfig("plain-jsx"), "badges");
+  const project = analyzeFixture("plain-jsx", "badges");
   const getTone = (file: string) =>
     project.components
       .find(

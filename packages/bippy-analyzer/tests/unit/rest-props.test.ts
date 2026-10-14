@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("rest props", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "rest-props");
+  const project = analyzeFixture("conformance-repros", "rest-props");
 
   it("samples the props a rest spread's type requires, to mount with", () => {
     expect(getComponent(project, "PassedField").analysis.wholePropsSample).toEqual({

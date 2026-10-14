@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("compiler errors", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"));
+  const project = analyzeFixture("conformance-repros");
 
   it.each([
     ["DynamicImport", /Handle Import expressions/],

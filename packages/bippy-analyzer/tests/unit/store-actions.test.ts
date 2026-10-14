@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import { formatSymbolicValue } from "../../src/core/format";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("store actions", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "store-actions");
+  const project = analyzeFixture("conformance-repros", "store-actions");
   const toggle = getComponent(project, "ThemeToggle");
   const updates = toggle.analysis.handlers.map((handler) =>
     handler.updates.map((update) => formatSymbolicValue(update.value)),

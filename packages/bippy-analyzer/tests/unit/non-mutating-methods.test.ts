@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("pure built-in methods", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "non-mutating-methods");
+  const project = analyzeFixture("conformance-repros", "non-mutating-methods");
   const picker = getComponent(project, "ItemPicker");
   const [pick, refresh] = picker.analysis.handlers;
 

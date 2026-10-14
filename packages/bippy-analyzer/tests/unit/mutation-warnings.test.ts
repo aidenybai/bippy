@@ -1,13 +1,12 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import type { ProjectAnalysis } from "../../src/core/types";
 import { formatSymbolicValue } from "../../src/core/format";
-import { getComponent, getFixtureConfig, getWarningKinds } from "./helpers";
+import { analyzeFixture, getComponent, getWarningKinds } from "./helpers";
 
 let project: ProjectAnalysis;
 
 beforeAll(() => {
-  project = analyzeProject(getFixtureConfig("mutations"));
+  project = analyzeFixture("mutations");
 });
 
 describe("mutation warnings", () => {

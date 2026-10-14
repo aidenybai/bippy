@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("shapes of untyped props", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "untyped-shapes");
+  const project = analyzeFixture("conformance-repros", "untyped-shapes");
   const row = getComponent(project, "BookingRow");
 
   it("mounts an untyped prop with the fields the component reads from it", () => {

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("setters passed to a child", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "passed-setter");
+  const project = analyzeFixture("conformance-repros", "passed-setter");
   const panel = getComponent(project, "SearchPanel");
 
   it("lets the child set the state to anything, under a prop name that isn't an event", () => {

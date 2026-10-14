@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("baseUrl", () => {
-  const project = analyzeProject(getFixtureConfig("base-url"));
+  const project = analyzeFixture("base-url");
 
   it("resolves bare imports through baseUrl", () => {
     const nav = getComponent(project, "Nav");

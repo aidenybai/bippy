@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("projects without strictNullChecks", () => {
-  const project = analyzeProject(getFixtureConfig("loose"));
+  const project = analyzeFixture("loose");
 
   it("lets an optional prop be undefined, which its type leaves out", () => {
     const button = getComponent(project, "DialogButton");

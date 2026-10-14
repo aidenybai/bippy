@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getBinding, getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("filtered length", () => {
-  const project = analyzeProject(getFixtureConfig("symbolic-tree"), "search");
+  const project = analyzeFixture("symbolic-tree", "search");
   const component = getComponent(project, "SearchList");
 
   it("never finds matches in an empty list", () => {

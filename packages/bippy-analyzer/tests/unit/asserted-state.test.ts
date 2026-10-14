@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("asserted state", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "asserted-state");
+  const project = analyzeFixture("conformance-repros", "asserted-state");
   const getStateDomain = (name: string) =>
     getComponent(project, name).analysis.bindings.find((binding) => binding.kind === "state")
       ?.domain;

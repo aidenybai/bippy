@@ -2,12 +2,18 @@ import { resolve } from "node:path";
 import { CompilerTypeProvider } from "../../src/core/type-provider";
 import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project";
 import { compileFile } from "../../src/core/compile";
+import { analyzeProject } from "../../src/core/analyze-project";
 import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR";
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
 import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/core/types";
 
 export const getFixtureConfig = (fixture: string): string =>
   resolve(import.meta.dirname, "../fixtures", fixture, "tsconfig.json");
+
+export const analyzeFixture = (
+  fixture: string,
+  fileFilter: string | null = null,
+): ProjectAnalysis => analyzeProject(getFixtureConfig(fixture), fileFilter);
 
 export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedComponent => {
   const component = project.components.find((candidate) => candidate.analysis.name === name);

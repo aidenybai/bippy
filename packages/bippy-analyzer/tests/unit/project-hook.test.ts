@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import { forEachRenderNode } from "../../src/core/utils/traverse";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("project hooks", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "project-hook");
+  const project = analyzeFixture("conformance-repros", "project-hook");
   const disclosure = getComponent(project, "Disclosure");
 
   it("runs a project hook from another file as part of the component", () => {

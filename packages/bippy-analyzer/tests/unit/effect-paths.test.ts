@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("effect paths", () => {
-  const project = analyzeProject(getFixtureConfig("conformance-repros"), "effect-return-paths");
+  const project = analyzeFixture("conformance-repros", "effect-return-paths");
 
   it("leads to every value an effect sets on separate paths", () => {
     const notice = getComponent(project, "ExternalNotice");

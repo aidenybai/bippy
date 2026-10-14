@@ -1,14 +1,13 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import type { ProjectAnalysis } from "../../src/core/types";
 import { formatSymbolicValue } from "../../src/core/format";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("typed call results", () => {
   let project: ProjectAnalysis;
 
   beforeAll(() => {
-    project = analyzeProject(getFixtureConfig("calls"));
+    project = analyzeFixture("calls");
   });
 
   it("binds a cross-file boolean call and splits states on it", () => {

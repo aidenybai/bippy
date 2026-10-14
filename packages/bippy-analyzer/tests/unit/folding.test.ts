@@ -1,13 +1,12 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { analyzeProject } from "../../src/core/analyze-project";
 import type { ProjectAnalysis, SymbolicValue } from "../../src/core/types";
 import { isRenderingNothing } from "../../src/core/utils/checks";
-import { getComponent, getFixtureConfig } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 let project: ProjectAnalysis;
 
 beforeAll(() => {
-  project = analyzeProject(getFixtureConfig("folding"));
+  project = analyzeFixture("folding");
 });
 
 const getStateChildren = (name: string): SymbolicValue[][] =>
