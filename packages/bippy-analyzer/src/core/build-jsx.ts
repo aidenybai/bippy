@@ -1,6 +1,5 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "./types";
-import { getComponentName } from "./symbolic-values";
 
 const DYNAMIC_TAG_NAME = "Dynamic";
 
@@ -29,7 +28,7 @@ export const buildJsx = (
       : tag.kind === "Global"
         ? {
             kind: "Component",
-            name: getComponentName(tag),
+            name: tag.name,
             declaration: elementParts.declaration,
             isContext: elementParts.isContext,
           }

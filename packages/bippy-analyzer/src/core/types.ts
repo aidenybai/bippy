@@ -155,8 +155,6 @@ export type JsxExpressionValue = Extract<SymbolicValue, { kind: "JsxExpression" 
 
 export type JsxContainerValue = Extract<SymbolicValue, { kind: "JsxExpression" | "JsxFragment" }>;
 
-export type ComponentTagValue = Extract<SymbolicValue, { kind: "Global" | "Binding" }>;
-
 export type BinaryExpressionValue = Extract<SymbolicValue, { kind: "BinaryExpression" }>;
 
 export type BindingValue = Extract<SymbolicValue, { kind: "Binding" }>;
