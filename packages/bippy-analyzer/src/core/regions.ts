@@ -41,6 +41,31 @@ const getDecidingPlaces = (testedValue: BindingValue): BindingPlace[] => [
   ...testedValue.binding.inputPlaces,
 ];
 
+const recordTestedPlaces = (
+  branchTests: BranchTests,
+  conditional: ConditionalValue,
+  branchKey: string,
+): void =>
+  forEachSymbolicValue(getTestExpression(conditional), (part) => {
+    if (part.kind !== "Binding") return;
+    for (const place of getDecidingPlaces(part))
+      branchTests.branchKeysByPlace.set(place, [
+        ...(branchTests.branchKeysByPlace.get(place) ?? []),
+        branchKey,
+      ]);
+    branchTests.testedPlaces.set(getValuePlace(part), {
+      name: formatSymbolicValue(part),
+      branchKey,
+    });
+  });
+
+const groupBranchesOnNestedPlaces = (branchTests: BranchTests): void => {
+  for (const [place, branchKeys] of branchTests.branchKeysByPlace)
+    for (const [otherPlace, otherBranchKeys] of branchTests.branchKeysByPlace)
+      if (isPlacePrefix(place, otherPlace))
+        branchTests.branchGroups.union([...branchKeys, ...otherBranchKeys]);
+};
+
 const collectBranchTests = (render: SymbolicValue): BranchTests => {
   const branchTests: BranchTests = {
     allBranchKeys: [],
@@ -61,26 +86,12 @@ const collectBranchTests = (render: SymbolicValue): BranchTests => {
     const branchKey = getBranchKey(value);
     if (!branchTests.allBranchKeys.includes(branchKey)) branchTests.allBranchKeys.push(branchKey);
     branchTests.branchGroups.union(enclosingKey ? [branchKey, enclosingKey] : [branchKey]);
-    forEachSymbolicValue(getTestExpression(value), (part) => {
-      if (part.kind !== "Binding") return;
-      for (const place of getDecidingPlaces(part))
-        branchTests.branchKeysByPlace.set(place, [
-          ...(branchTests.branchKeysByPlace.get(place) ?? []),
-          branchKey,
-        ]);
-      branchTests.testedPlaces.set(getValuePlace(part), {
-        name: formatSymbolicValue(part),
-        branchKey,
-      });
-    });
+    recordTestedPlaces(branchTests, value, branchKey);
     visit(value.consequent, branchKey);
     visit(value.alternate, branchKey);
   };
   visit(render, null);
-  for (const [place, branchKeys] of branchTests.branchKeysByPlace)
-    for (const [otherPlace, otherBranchKeys] of branchTests.branchKeysByPlace)
-      if (isPlacePrefix(place, otherPlace))
-        branchTests.branchGroups.union([...branchKeys, ...otherBranchKeys]);
+  groupBranchesOnNestedPlaces(branchTests);
   return branchTests;
 };
 
