@@ -14,6 +14,7 @@ import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
 import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { ModuleFunctionLoader } from "./function-registry";
+import { getLocationKey } from "./utils/hir";
 
 type BabelFunction = NodePath<
   types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression
@@ -37,8 +38,6 @@ const STOP = Symbol("stop");
 const STOP_PASS = "InferReactivePlaces";
 const ANONYMOUS_NAME = "<anonymous>";
 const COMPONENT_NAME_PATTERN = /^[A-Z]/;
-
-const getLocationKey = (loc: types.SourceLocation): string => `${loc.start.index}:${loc.end.index}`;
 
 const describeEvent = (event: LoggerEvent): string | null => {
   switch (event.kind) {

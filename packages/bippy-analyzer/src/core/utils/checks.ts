@@ -20,6 +20,9 @@ export const isExternalSource = (binding: Binding): boolean =>
 
 export const isNullish = (value: PrimitiveValue): boolean => value === null || value === undefined;
 
+export const isNullishValue = (value: SymbolicValue): boolean =>
+  value.kind === "Primitive" && isNullish(value.value);
+
 export const isEqualToLiteral = (
   value: AbstractValue,
   literal: PrimitiveValue,
@@ -50,8 +53,7 @@ export const canTypeEqualLiteral = (value: AbstractValue, literal: PrimitiveValu
 };
 
 export const isRenderingNothing = (value: SymbolicValue): boolean =>
-  value.kind === "Primitive" &&
-  (value.value === null || value.value === undefined || typeof value.value === "boolean");
+  value.kind === "Primitive" && (isNullish(value.value) || typeof value.value === "boolean");
 
 const isLogicalAnd = (conditional: ConditionalValue): boolean =>
   getValueKey(conditional.alternate) === getValueKey(conditional.test);

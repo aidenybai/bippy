@@ -1,6 +1,7 @@
-import type { SourceFile } from "typescript/unstable/ast";
+import type { Node, SourceFile } from "typescript/unstable/ast";
 import {
   findNodeAtLocation,
+  getUnionMembers,
   getContextKey,
   getDeclarationKey,
   getReactExportName,
@@ -21,6 +22,7 @@ import {
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
+import { getLocationKey } from "./utils/hir";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type {
   AbstractValue,
@@ -35,6 +37,7 @@ import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples";
 import { EQUALITY_OPERATORS } from "./constraints";
 
 const MAX_SAMPLE_ALTERNATIVES = 6;
+const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
 const MAX_SAMPLE_DEPTH = 3;
 const MAX_SAMPLE_FIELDS = 24;
 const ELEMENT_TYPE_PATTERN = /^(?:ReactElement|Element)$/;
@@ -123,7 +126,7 @@ const getAbstractValue = (checker: Checker, type: Type): AbstractValue => {
   if (type.isBooleanLiteralType())
     return { kind: "Literal", value: checker.typeToString(type) === "true" };
   if (type.flags & TypeFlags.Null) return { kind: "Literal", value: null };
-  if (type.flags & TypeFlags.Undefined) return { kind: "Literal", value: undefined };
+  if (type.flags & TypeFlags.Undefined) return UNDEFINED_CASE;
   return { kind: "Type", text: checker.typeToString(type), primitive: getPrimitiveTypeName(type) };
 };
 
@@ -146,15 +149,14 @@ const getDomainOfType = (checker: Checker, type: Type | undefined): Domain => {
 
 const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domain => {
   const domain = getDomainOfType(checker, type);
-  const undefinedCase: AbstractValue = { kind: "Literal", value: undefined };
   if (domain.kind === "Cases")
     return domain.cases.some((value) => value.kind === "Literal" && value.value === undefined)
       ? domain
-      : { ...domain, cases: [...domain.cases, undefinedCase] };
+      : { ...domain, cases: [...domain.cases, UNDEFINED_CASE] };
   if (domain.kind === "Opaque" && type)
     return {
       kind: "Cases",
-      cases: [getAbstractValue(checker, type), undefinedCase],
+      cases: [getAbstractValue(checker, type), UNDEFINED_CASE],
       origin: "type",
     };
   return domain;
@@ -162,7 +164,7 @@ const getDomainWithUndefined = (checker: Checker, type: Type | undefined): Domai
 
 const getSampleKey = (sample: Sample): string => JSON.stringify(sample);
 
-const dedupeSamples = (samples: Sample[]): Sample[] => [
+export const dedupeSamples = (samples: Sample[]): Sample[] => [
   ...new Map(samples.map((sample) => [getSampleKey(sample), sample])).values(),
 ];
 
@@ -315,7 +317,7 @@ export const addComparedSamples = (render: SymbolicValue): void => {
 export class DomainResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
-  readonly #typesByRange = new Map<string, Type | undefined>();
+  readonly #typesByLocation = new Map<string, Type | undefined>();
   readonly #isStrictNullChecks: boolean;
 
   constructor(checker: Checker, sourceFile: SourceFile, isStrictNullChecks: boolean) {
@@ -328,14 +330,21 @@ export class DomainResolver {
     return this.#sourceFile.fileName;
   }
 
+  #findNode(loc: SourceLocation): Node | null {
+    return findNodeAtLocation(this.#sourceFile, loc);
+  }
+
   #getType(loc: SourceLocation): Type | undefined {
     if (loc === GeneratedSource) return undefined;
-    const rangeKey = `${loc.start.index}:${loc.end.index}`;
-    if (!this.#typesByRange.has(rangeKey)) {
-      const node = findNodeAtLocation(this.#sourceFile, loc);
-      this.#typesByRange.set(rangeKey, node ? this.#checker.getTypeAtLocation(node) : undefined);
+    const locationKey = getLocationKey(loc);
+    if (!this.#typesByLocation.has(locationKey)) {
+      const node = this.#findNode(loc);
+      this.#typesByLocation.set(
+        locationKey,
+        node ? this.#checker.getTypeAtLocation(node) : undefined,
+      );
     }
-    return this.#typesByRange.get(rangeKey);
+    return this.#typesByLocation.get(locationKey);
   }
 
   getDomain(loc: SourceLocation): Domain {
@@ -351,15 +360,14 @@ export class DomainResolver {
     const nameLoc = loc.identifierName
       ? { ...loc, end: { ...loc.end, index: loc.start.index + loc.identifierName.length } }
       : loc;
-    const node =
-      findNodeAtLocation(this.#sourceFile, loc) ?? findNodeAtLocation(this.#sourceFile, nameLoc);
+    const node = this.#findNode(loc) ?? this.#findNode(nameLoc);
     const symbol = node && isIdentifier(node) ? this.#checker.getSymbolAtLocation(node) : undefined;
     return symbol ? getDomainOfType(this.#checker, this.#checker.getTypeOfSymbol(symbol)) : null;
   }
 
   #isOptionalRead(loc: SourceLocation): boolean {
     if (this.#isStrictNullChecks) return false;
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     if (!node) return false;
     if (isCallExpression(node)) return true;
     const bindingElement = isBindingElement(node)
@@ -378,7 +386,7 @@ export class DomainResolver {
   }
 
   #isDefaultedBinding(loc: SourceLocation): boolean {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     if (!node) return false;
     const bindingElement = isBindingElement(node) ? node : node.parent;
     return (
@@ -389,7 +397,7 @@ export class DomainResolver {
   }
 
   #isIndexedRead(loc: SourceLocation): boolean {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     if (!node || !(isElementAccessExpression(node) || isPropertyAccessExpression(node)))
       return false;
     const objectType = this.#checker.getTypeAtLocation(node.expression);
@@ -408,19 +416,19 @@ export class DomainResolver {
     const unionMemberValues: AbstractValue[][] = [];
     for (const member of type.getTypes()) {
       if (member.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
-        unionMemberValues.push([{ kind: "Literal", value: undefined }]);
+        unionMemberValues.push([UNDEFINED_CASE]);
         continue;
       }
       if (!(member.flags & (TypeFlags.Object | TypeFlags.Intersection))) return null;
       const property = this.#checker.getPropertyOfType(member, field);
       if (!property) {
-        unionMemberValues.push([{ kind: "Literal", value: undefined }]);
+        unionMemberValues.push([UNDEFINED_CASE]);
         continue;
       }
       const propertyType = this.#checker.getTypeOfSymbol(property);
       if (!propertyType) return null;
       unionMemberValues.push(
-        (propertyType.isUnionType() ? propertyType.getTypes() : [propertyType]).map((memberType) =>
+        getUnionMembers(propertyType).map((memberType) =>
           getAbstractValue(this.#checker, memberType),
         ),
       );
@@ -433,7 +441,7 @@ export class DomainResolver {
   }
 
   getSourceName(loc: SourceLocation): string | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     return node && isIdentifier(node) ? node.text : null;
   }
 
@@ -444,40 +452,40 @@ export class DomainResolver {
   }
 
   getReactExportName(loc: SourceLocation): string | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     if (!node) return null;
     return getReactExportName(this.#checker, isCallExpression(node) ? node.expression : node);
   }
 
   getCalleeText(loc: SourceLocation): string | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     return node && isCallExpression(node) ? node.expression.getText(this.#sourceFile) : null;
   }
 
   isExpression(loc: SourceLocation): boolean {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     return node !== null && isExpression(node);
   }
 
   getDeclarationKey(loc: SourceLocation): string | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     return node ? getDeclarationKey(this.#checker, node) : null;
   }
 
   getContextKey(loc: SourceLocation): string | null {
-    const node = findNodeAtLocation(this.#sourceFile, loc);
+    const node = this.#findNode(loc);
     return node ? getContextKey(this.#checker, node) : null;
   }
 
   isNonMutatingMethod(calleeLoc: SourceLocation): boolean {
-    const node = findNodeAtLocation(this.#sourceFile, calleeLoc);
+    const node = this.#findNode(calleeLoc);
     if (!node || !isPropertyAccessExpression(node)) return false;
     const methodName = node.name.text;
     const receiverType = this.#checker.getTypeAtLocation(node.expression);
     if (!receiverType) return false;
-    const definedMembers = (
-      receiverType.isUnionType() ? receiverType.getTypes() : [receiverType]
-    ).filter((member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)));
+    const definedMembers = getUnionMembers(receiverType).filter(
+      (member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)),
+    );
     return (
       definedMembers.length > 0 &&
       definedMembers.every((member) =>

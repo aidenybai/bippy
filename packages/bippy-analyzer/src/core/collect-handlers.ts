@@ -16,7 +16,13 @@ const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 
 export const ANY_EVENT = "*";
 
-const EVENT_ARGUMENT: SymbolicValue = { kind: "Unknown", reason: "event", loc: GeneratedSource };
+export const EVENT_ARGUMENT: SymbolicValue = {
+  kind: "Unknown",
+  reason: "event",
+  loc: GeneratedSource,
+};
+
+export const isEffectHandler = (handler: Handler): boolean => handler.trigger.kind === "Effect";
 
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||

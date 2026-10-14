@@ -17,6 +17,8 @@ import type { Checker, Type } from "typescript/unstable/sync";
 import { SymbolFlags } from "typescript/unstable/sync";
 import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
+import { createDeclarationKey } from "./declaration-key";
+import { getLocationKey, getRangeKey } from "./hir";
 
 const REACT_DECLARATION_PATTERN = /[\\/]node_modules[\\/](?:@types[\\/])?react(?:-dom)?[\\/]/;
 const REACT_ELEMENT_TYPE_PATTERN = /^(?:ReactElement|ReactPortal|ReactNode|Element)$/;
@@ -37,17 +39,16 @@ export const isReactType = (type: Type, namePattern: RegExp): boolean =>
 export const isLibraryType = (type: Type, namePattern: RegExp): boolean =>
   isDeclaredType(type, namePattern, LIBRARY_DECLARATION_PATTERN);
 
+export const getUnionMembers = (type: Type): readonly Type[] =>
+  type.isUnionType() ? type.getTypes() : [type];
+
 export const isReactElementType = (type: Type): boolean =>
-  (type.isUnionType() ? type.getTypes() : [type]).some((member) =>
-    isReactType(member, REACT_ELEMENT_TYPE_PATTERN),
-  );
+  getUnionMembers(type).some((member) => isReactType(member, REACT_ELEMENT_TYPE_PATTERN));
 
 export const skipParentheses = (node: Node): Node =>
   isParenthesizedExpression(node) ? skipParentheses(node.expression) : node;
 
 const nodesByRangeCache = new WeakMap<SourceFile, Map<string, Node>>();
-
-const getRangeKey = (start: number, end: number): string => `${start}:${end}`;
 
 const getNodesByRange = (sourceFile: SourceFile): Map<string, Node> => {
   const cachedNodes = nodesByRangeCache.get(sourceFile);
@@ -63,9 +64,7 @@ const getNodesByRange = (sourceFile: SourceFile): Map<string, Node> => {
 };
 
 export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
-  loc === GeneratedSource
-    ? null
-    : (getNodesByRange(sourceFile).get(getRangeKey(loc.start.index, loc.end.index)) ?? null);
+  loc === GeneratedSource ? null : (getNodesByRange(sourceFile).get(getLocationKey(loc)) ?? null);
 
 const resolveSymbol = (checker: Checker, node: Node) => {
   const nameNode = isPropertyAccessExpression(node) ? node.name : node;
@@ -78,7 +77,7 @@ const resolveSymbol = (checker: Checker, node: Node) => {
 export const getDeclarationKey = (checker: Checker, node: Node): string | null => {
   const symbol = resolveSymbol(checker, node);
   const [declaration] = symbol?.declarations ?? [];
-  return symbol && declaration ? `${declaration.path}#${symbol.name}` : null;
+  return symbol && declaration ? createDeclarationKey(declaration.path, symbol.name) : null;
 };
 
 export const getContextKey = (checker: Checker, node: Node): string | null =>

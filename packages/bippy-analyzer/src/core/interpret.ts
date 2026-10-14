@@ -45,9 +45,9 @@ import type {
 } from "./types";
 import { formatPlace, formatSymbolicValue } from "./format";
 import { forEachJsxElement, forEachSymbolicValue } from "./utils/traverse";
-import { isHandlerProp } from "./collect-handlers";
+import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap, getBindingPlace, getValuePlace } from "./utils/place";
-import { isExternalSource, isNullish, isStateBinding } from "./utils/checks";
+import { isExternalSource, isNullish, isNullishValue, isStateBinding } from "./utils/checks";
 import { getTestExpression, negate } from "./utils/truthiness";
 import {
   UNDEFINED_VALUE,
@@ -58,7 +58,6 @@ import {
   getKnownOutcome,
   getPassedCallbacks,
   getShortCircuit,
-  isNullishValue,
 } from "./symbolic-values";
 import { BindingTable } from "./binding-table";
 import type { BindingOptions } from "./binding-table";
@@ -114,6 +113,17 @@ type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
   { kind: Kind }
 >;
+
+const getAsyncWalkState = (walkState: WalkState): WalkState => ({ ...walkState, isAsync: true });
+
+const createFieldUpdate = (
+  binding: Binding,
+  properties: ObjectExpressionValue["properties"],
+): ObjectExpressionValue => ({
+  kind: "ObjectExpression",
+  properties,
+  spreads: [createBindingValue(binding)],
+});
 
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
   const { binding } = loadGlobal;
@@ -467,7 +477,7 @@ export class Interpreter {
       testKind: "truthy",
       consequent: { ...element, children: [fallback.value] },
       alternate: element,
-      branch: { terminalId, probe: "none", loc: element.loc, file: this.#resolver.fileName },
+      branch: this.#createBranch(terminalId, element.loc, "none"),
       guardKeys: [],
     };
   }
@@ -713,28 +723,31 @@ export class Interpreter {
           target.projectHook.loadModuleFunction,
           target.projectHook.hirFunction,
         );
-        return this.#callFunction(
-          this.#registerFunction(target.projectHook.hirFunction),
-          callSite.argumentValues,
-          callSite.loc,
-          walkState,
-        );
+        return this.#inlineFunction(target.projectHook.hirFunction, callSite, walkState);
       case "Store":
         return this.#readStore(target.storeKey, target.storeActions, callSite, walkState);
       case "Hook":
         return this.#evaluateHookCall(target.hookKind, callSite, walkState);
       case "ModuleFunction":
-        return this.#callFunction(
-          this.#registerFunction(target.hirFunction),
-          callSite.argumentValues,
-          callSite.loc,
-          walkState,
-        );
+        return this.#inlineFunction(target.hirFunction, callSite, walkState);
       case "Value":
         return this.#callValue(callSite, walkState);
       default:
         return assertExhaustive(target, "Unhandled call target");
     }
+  }
+
+  #inlineFunction(
+    hirFunction: HIRFunction,
+    callSite: CallSite,
+    walkState: WalkState,
+  ): SymbolicValue {
+    return this.#callFunction(
+      this.#registerFunction(hirFunction),
+      callSite.argumentValues,
+      callSite.loc,
+      walkState,
+    );
   }
 
   #callValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
@@ -835,7 +848,7 @@ export class Interpreter {
     if (argument.kind === "ObjectExpression")
       for (const callback of getPassedCallbacks([argument]))
         this.#visitCallbackArgument(callback, walkState);
-    const asyncWalkState = { ...walkState, isAsync: true };
+    const asyncWalkState = getAsyncWalkState(walkState);
     if (argument.kind === "Setter")
       this.#handlerEffects.recordSetterCall(
         argument.binding,
@@ -945,7 +958,7 @@ export class Interpreter {
       return this.#evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
     if (methodName !== null && PROMISE_METHODS.has(methodName)) {
       for (const argument of argumentValues)
-        this.#visitCallbackArgument(argument, { ...walkState, isAsync: true });
+        this.#visitCallbackArgument(argument, getAsyncWalkState(walkState));
       return createUnknown("async", methodCall.loc);
     }
     return this.#evaluateCall(
@@ -1278,6 +1291,10 @@ export class Interpreter {
     return hasFallthrough(outcome, join) ? resumeAtJoin(outcome, walkState.guards) : outcome;
   }
 
+  #createBranch(terminalId: InstructionId, loc: SourceLocation, probe: Branch["probe"]): Branch {
+    return { terminalId, probe, loc, file: this.#resolver.fileName };
+  }
+
   #getBlock(blockId: BlockId) {
     const block = this.#getCurrentFunction().body.blocks.get(blockId);
     if (!block) throw new Error(`Block bb${blockId} is missing`);
@@ -1300,12 +1317,11 @@ export class Interpreter {
       (operator === "??" || operator === "optional" || operator === "optional-chain-tail"
         ? "nullish"
         : "truthy");
-    const branch: Branch = {
-      terminalId: terminal.id,
-      probe: this.#resolver.isExpression(test.loc) ? testKind : "none",
-      loc: test.loc,
-      file: this.#resolver.fileName,
-    };
+    const branch = this.#createBranch(
+      terminal.id,
+      test.loc,
+      this.#resolver.isExpression(test.loc) ? testKind : "none",
+    );
     const testGuard = getTestExpression({ test: testValue, testKind });
     const walkArm = (armBlock: BlockId, isConsequent: boolean): Outcome => {
       const guards = [...walkState.guards, isConsequent ? testGuard : negate(testGuard)];
@@ -1365,12 +1381,7 @@ export class Interpreter {
         kind: "Split",
         test: caseTest,
         testKind: "truthy",
-        branch: {
-          terminalId: terminal.id,
-          probe: "none",
-          loc: switchCase.test.loc,
-          file: this.#resolver.fileName,
-        },
+        branch: this.#createBranch(terminal.id, switchCase.test.loc, "none"),
         consequent: caseOutcome,
         alternate: buildCaseOutcome(caseIndex + 1),
       };
@@ -1483,7 +1494,7 @@ export class Interpreter {
       for (const instruction of block.instructions) {
         this.#evaluateInstruction(instruction, currentWalkState);
         if (instruction.value.kind === "Await")
-          currentWalkState = { ...currentWalkState, isAsync: true };
+          currentWalkState = getAsyncWalkState(currentWalkState);
       }
       const step = this.#walkTerminal(block.terminal, currentId, stops, currentWalkState);
       if (step.kind !== "Next") return step;
@@ -1678,14 +1689,13 @@ export class Interpreter {
     if (assignments)
       return this.#handlerEffects?.recordSetterCall(
         binding,
-        {
-          kind: "ObjectExpression",
-          properties: assignments.map((assignment) => ({
+        createFieldUpdate(
+          binding,
+          assignments.map((assignment) => ({
             key: assignment.field,
             value: getStoreFieldValue(binding, assignment, argumentValues),
           })),
-          spreads: [createBindingValue(binding)],
-        },
+        ),
         walkState,
       );
     if (isExternalSource(binding) && this.#handlerEffects)
@@ -1708,11 +1718,9 @@ export class Interpreter {
     );
     this.#handlerEffects.addUpdate(
       binding,
-      {
-        kind: "ObjectExpression",
-        properties: [{ key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) }],
-        spreads: [createBindingValue(binding)],
-      },
+      createFieldUpdate(binding, [
+        { key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) },
+      ]),
       walkState.guards,
       true,
     );
@@ -1740,11 +1748,10 @@ export class Interpreter {
   }
 
   #collectRenderedHandlers(renderedValue: SymbolicValue, visitedFunctionIds: Set<number>): void {
-    const eventArgument = createUnknown("event", GeneratedSource);
     forEachJsxElement(renderedValue, (element) => {
       for (const prop of element.props)
         if (prop.kind === "JsxAttribute" && isHandlerProp(element.tag, prop))
-          this.#runCallback(prop.value, [eventArgument], visitedFunctionIds);
+          this.#runCallback(prop.value, [EVENT_ARGUMENT], visitedFunctionIds);
     });
   }
 
@@ -1754,11 +1761,7 @@ export class Interpreter {
     visitedFunctionIds: Set<number>,
   ): void {
     if (callback.kind === "Setter")
-      this.#handlerEffects?.recordSetterCall(
-        callback.binding,
-        createUnknown("event", GeneratedSource),
-        ROOT_WALK_STATE,
-      );
+      this.#handlerEffects?.recordSetterCall(callback.binding, EVENT_ARGUMENT, ROOT_WALK_STATE);
     if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, ROOT_WALK_STATE);
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return;
     visitedFunctionIds.add(callback.functionId);

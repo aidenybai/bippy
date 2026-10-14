@@ -66,7 +66,7 @@ export const foldBinary = (
 
 export const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolean | null => {
   if (testKind === "truthy") return getKnownTruthiness(test);
-  return test.kind === "Primitive" ? test.value !== null && test.value !== undefined : null;
+  return test.kind === "Primitive" ? !isNullish(test.value) : null;
 };
 
 export const foldUnary = (operator: UnaryOperator, value: SymbolicValue): SymbolicValue => {
@@ -79,9 +79,6 @@ export const foldUnary = (operator: UnaryOperator, value: SymbolicValue): Symbol
 export const getComponentName = (
   tag: Extract<SymbolicValue, { kind: "Global" | "Binding" }>,
 ): string => (tag.kind === "Global" ? tag.name : tag.binding.name);
-
-export const isNullishValue = (value: SymbolicValue): boolean =>
-  value.kind === "Primitive" && isNullish(value.value);
 
 export const getShortCircuit = (
   value: SymbolicValue,

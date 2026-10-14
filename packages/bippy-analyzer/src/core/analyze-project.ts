@@ -5,7 +5,7 @@ import { DomainResolver } from "./infer-domains";
 import type { ProjectHook } from "./interpret";
 import { collectStoreActions } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
-import { getSampleOfValue } from "./infer-domains";
+import { dedupeSamples, getSampleOfValue } from "./infer-domains";
 import { getStringSamples } from "./string-samples";
 import type {
   ComponentAnalysis,
@@ -24,6 +24,7 @@ import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
 import { collectDisplayNames, collectExportNames } from "./utils/typescript";
 import { isProjectSourceFile, withProject } from "./utils/with-project";
+import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-key";
 
 const ARRAY_METHOD_NAMES = new Set([
   "every",
@@ -163,13 +164,10 @@ const inferPropsFromCallSites = (analyses: ComponentAnalysis[]): void => {
           )?.value,
       );
       if (!passedValues.every(isPrimitive)) {
-        const literalSamplesByKey = new Map(
-          passedValues.flatMap((passedValue): Array<[string, Sample]> => {
-            const literalSample = getLiteralSample(passedValue);
-            return literalSample ? [[JSON.stringify(literalSample), literalSample]] : [];
-          }),
+        const literalSamples = passedValues.flatMap(
+          (passedValue) => getLiteralSample(passedValue) ?? [],
         );
-        binding.samples = [...literalSamplesByKey.values(), ...binding.samples];
+        binding.samples = [...dedupeSamples(literalSamples), ...binding.samples];
         continue;
       }
       const literals = [...new Set(passedValues.map((passedValue) => passedValue.value))];
@@ -229,8 +227,8 @@ const withContextFileNames = (
   ...analysis,
   contextSamples: new Map(
     [...analysis.contextSamples].map(([contextKey, contextSample]) => {
-      const [path = "", contextName = ""] = contextKey.split("#");
-      return [`${fileNamesByPath.get(path) ?? path}#${contextName}`, contextSample];
+      const { path, name } = parseDeclarationKey(contextKey);
+      return [createDeclarationKey(fileNamesByPath.get(path) ?? path, name), contextSample];
     }),
   ),
 });
@@ -258,7 +256,7 @@ export const analyzeProject = (
         actionsByStore.set(storeKey, actions);
       for (const { functionType, hir, name } of compiled.functions)
         if (functionType === "Hook" && hir)
-          projectHooksByDeclaration.set(`${sourceFile.path}#${name}`, {
+          projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
             hirFunction: hir,
             resolver,
             loadModuleFunction: compiled.compileModuleFunction,

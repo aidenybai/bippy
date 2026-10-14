@@ -1,4 +1,3 @@
-import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import DisjointSet from "../react-compiler/Utils/DisjointSet";
 import type { Bound, Constraints } from "./constraints";
 import {
@@ -35,6 +34,7 @@ import {
 } from "./utils/traverse";
 import { formatNegated, formatSymbolicValue } from "./format";
 import { getValueKey } from "./utils/value-key";
+import { getLocationKey } from "./utils/hir";
 import {
   PlaceMap,
   getBindingPlace,
@@ -49,6 +49,7 @@ import {
   isStateBinding,
   isWholeBinding,
 } from "./utils/checks";
+import { isEffectHandler } from "./collect-handlers";
 
 const MAX_ALTERNATIVES = 256;
 const MAX_REACHABILITY_ROUNDS = 8;
@@ -104,12 +105,8 @@ interface BranchOutcomes extends Map<string, Set<boolean>> {}
 
 type FieldCases = AbstractValue[] | "unchanged" | null;
 
-const getBranchKey = (conditional: ConditionalValue): string => {
-  const { branch } = conditional;
-  return branch.loc === GeneratedSource
-    ? `${branch.file}:generated:${branch.terminalId}`
-    : `${branch.file}:${branch.loc.start.index}:${branch.loc.end.index}:${branch.terminalId}`;
-};
+const getBranchKey = (conditional: ConditionalValue): string =>
+  `${conditional.branch.file}:${getLocationKey(conditional.branch.loc)}:${conditional.branch.terminalId}`;
 
 const getLiteralCases = (
   value: SymbolicValue,
@@ -626,11 +623,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const dependentsByBinding = getDependentsByBinding(analysis.bindings);
   const branchOutcomes: BranchOutcomes = new Map();
   const regionBranches = findRegions(analysis.render);
-  const effectIds = new Set(
-    analysis.handlers
-      .filter((handler) => handler.trigger.kind === "Effect")
-      .map((handler) => handler.id),
-  );
+  const effectIds = new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id));
 
   const states: State[] = [];
   const regions: Region[] = [];

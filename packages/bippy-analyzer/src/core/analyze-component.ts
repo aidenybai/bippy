@@ -5,6 +5,7 @@ import type { DomainResolver } from "./infer-domains";
 import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";
 import { PlaceMap } from "./utils/place";
+import { createDeclarationKey } from "./utils/declaration-key";
 import type { ProjectHookLoader } from "./interpret";
 import type { Bailout, ComponentAnalysis, ContextSetterFields, StoreActions } from "./types";
 
@@ -31,7 +32,7 @@ export const analyzeComponent = (
       ? (displayNames.get(reactFunction.name) ?? null)
       : reactFunction.name,
     file: sourceFile.fileName,
-    declaration: `${sourceFile.path}#${reactFunction.name}`,
+    declaration: createDeclarationKey(sourceFile.path, reactFunction.name),
   };
   const hir = reactFunction.hir;
   if (hir === null) {

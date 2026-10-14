@@ -1,5 +1,6 @@
 import { sep } from "node:path";
 import type { ComponentAnalysis } from "../../../src/core/types";
+import { createDeclarationKey, parseDeclarationKey } from "../../../src/core/utils/declaration-key";
 import { getDefaultProps } from "./props";
 import { getParentName } from "./reasons";
 import type { ExportedName, ProjectIndex, Wrapper, WrapperSource } from "./types";
@@ -36,10 +37,10 @@ const createProjectWrapper = (
   { file, exportName }: ExportedName,
   query: ParentQuery,
 ): Wrapper => {
-  const key = `${file}#${name}`;
-  const parentAnalysis = query.project.components.get(`${file}#${exportName}`);
+  const contextKey = createDeclarationKey(file, name);
+  const parentAnalysis = query.project.components.get(createDeclarationKey(file, exportName));
   const contextSample =
-    query.analysis.contextSamples.get(key) ?? query.project.contextSamples.get(key);
+    query.analysis.contextSamples.get(contextKey) ?? query.project.contextSamples.get(contextKey);
   const props = parentAnalysis
     ? getDefaultProps(parentAnalysis)
     : contextSample
@@ -119,14 +120,13 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
     ? `${hookName.slice("use".length).replace(CONTEXT_SUFFIX, "")}Context`
     : null;
   const hookContextKeys = [...query.project.contextSamples.keys()].filter(
-    (contextKey) => hookContextName !== null && contextKey.endsWith(`#${hookContextName}`),
+    (contextKey) =>
+      hookContextName !== null && parseDeclarationKey(contextKey).name === hookContextName,
   );
   return [...hookContextKeys, ...query.analysis.contextSamples.keys()].flatMap((contextKey) => {
-    const separatorIndex = contextKey.lastIndexOf("#");
-    const file = contextKey.slice(0, separatorIndex);
-    const name = contextKey.slice(separatorIndex + 1);
+    const { path, name } = parseDeclarationKey(contextKey);
     return (query.project.exports.get(name) ?? [])
-      .filter((exported) => exported.file === file)
+      .filter((exported) => exported.file === path)
       .map((exported) => createProjectWrapper(name, "context", exported, query));
   });
 };

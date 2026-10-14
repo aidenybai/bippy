@@ -1,4 +1,4 @@
-import { ANY_EVENT } from "../../../src/core/collect-handlers";
+import { ANY_EVENT, isEffectHandler } from "../../../src/core/collect-handlers";
 import type {
   AbstractValue,
   BindingKind,
@@ -12,6 +12,7 @@ import type {
 import { forEachJsxElement, forEachRenderNode } from "../../../src/core/utils/traverse";
 import { formatAbstractValue, formatLine, formatPlace } from "../../../src/core/format";
 import { isStateBinding } from "../../../src/core/utils/checks";
+import { getLocationKey } from "../../../src/core/utils/hir";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
@@ -138,7 +139,7 @@ const getTrigger = (label: TriggerLabel, action: Action): Trigger | null => {
 };
 
 const getProbeId = (file: string, loc: types.SourceLocation): string =>
-  `${file}:${loc.start.index}:${loc.end.index}`;
+  `${file}:${getLocationKey(loc)}`;
 
 export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   const probes = new Map<string, Probe>();
@@ -488,11 +489,7 @@ const createScoringContext = (
       .filter((binding) => EXTERNAL_DATA_BINDING_KINDS.has(binding.kind))
       .map((binding) => binding.id),
   ),
-  effectIds: new Set(
-    analysis.handlers
-      .filter((handler) => handler.trigger.kind === "Effect")
-      .map((handler) => handler.id),
-  ),
+  effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),
   coveredStates: new Set(),
   matchedStatesCache: new Map(),
 });

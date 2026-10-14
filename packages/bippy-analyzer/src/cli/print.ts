@@ -19,6 +19,7 @@ import { formatAbstractValue, formatLine, formatPlace, formatSymbolicValue } fro
 import { getTestExpression } from "../core/utils/truthiness";
 import { getBindingPlace } from "../core/utils/place";
 import { isRenderingNothing, isRenderingNothingWhenFalse } from "../core/utils/checks";
+import { isEffectHandler } from "../core/collect-handlers";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
 
@@ -468,8 +469,7 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   const triggerLabelsByHandler = new Map<string, string>();
   collectTriggerLabels(analysis.render, triggerLabelsByHandler);
   for (const handler of analysis.handlers) {
-    if (handler.trigger.kind === "Effect")
-      triggerLabelsByHandler.set(handler.id, getEffectLabel(handler));
+    if (isEffectHandler(handler)) triggerLabelsByHandler.set(handler.id, getEffectLabel(handler));
   }
   const context: ComponentPrintContext = {
     ...options,
@@ -483,13 +483,11 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   const sections: TreeNode[] = [];
   if (views.has("data")) sections.push(buildBindings(component, context));
   if (views.has("render")) {
-    const effectNodes = analysis.handlers
-      .filter((handler) => handler.trigger.kind === "Effect")
-      .map((handler) => {
-        const triggerLabel = triggerLabelsByHandler.get(handler.id);
-        const effectLabel = context.effectLabelsByHandler.get(handler.id);
-        return createTreeNode(colors.dim(`${triggerLabel} ⇒ ${effectLabel}`));
-      });
+    const effectNodes = analysis.handlers.filter(isEffectHandler).map((handler) => {
+      const triggerLabel = triggerLabelsByHandler.get(handler.id);
+      const effectLabel = context.effectLabelsByHandler.get(handler.id);
+      return createTreeNode(colors.dim(`${triggerLabel} ⇒ ${effectLabel}`));
+    });
     sections.push(
       createTreeNode(colors.dim("render"), [
         buildRenderNode(analysis.render, context, 0),

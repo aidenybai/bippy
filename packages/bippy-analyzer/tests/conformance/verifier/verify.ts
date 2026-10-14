@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
+import { createDeclarationKey } from "../../../src/core/utils/declaration-key";
 import type { ComponentModule, ProjectIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectMutationProbes } from "./mutation";
@@ -48,7 +49,9 @@ export const startProjectHarness = async (
       ...harness.sourceIndex,
       components: new Map(
         analyzed.flatMap(({ analysis }) =>
-          analysis.exportName ? [[`${analysis.file}#${analysis.exportName}`, analysis]] : [],
+          analysis.exportName
+            ? [[createDeclarationKey(analysis.file, analysis.exportName), analysis]]
+            : [],
         ),
       ),
       contextSamples: new Map(analyzed.flatMap(({ analysis }) => [...analysis.contextSamples])),

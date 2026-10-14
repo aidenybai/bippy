@@ -22,6 +22,7 @@ import {
 } from "typescript/unstable/ast/is";
 import type { StoreAssignment, StoreFieldValue, StoreActions } from "./types";
 import { skipParentheses } from "./utils/typescript";
+import { createDeclarationKey } from "./utils/declaration-key";
 
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;
 const STORE_CREATORS = new Set(["create", "createWithEqualityFn"]);
@@ -189,7 +190,7 @@ export const collectStoreActions = (sourceFile: SourceFile): Map<string, StoreAc
         const assignments = getActionAssignments(property.initializer, setName);
         if (assignments) actions.set(property.name.text, assignments);
       }
-      actionsByStore.set(`${sourceFile.path}#${declaration.name.text}`, actions);
+      actionsByStore.set(createDeclarationKey(sourceFile.path, declaration.name.text), actions);
     }
   }
   return actionsByStore;
