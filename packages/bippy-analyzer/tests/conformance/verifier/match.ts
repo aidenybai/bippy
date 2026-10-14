@@ -1,5 +1,5 @@
 import { diffArrays } from "diff";
-import type { SymbolicValue } from "../../../src/core/types";
+import type { JsxExpressionValue, SymbolicValue } from "../../../src/core/types";
 import { isRenderingNothing } from "../../../src/core/utils/checks";
 import type { Shape } from "./types";
 
@@ -25,48 +25,55 @@ const normalizeName = (name: string): string => {
   return unwrapped === name ? (name.split(".").pop() ?? name) : normalizeName(unwrapped);
 };
 
+const jsxElementToExpected = (
+  element: JsxExpressionValue,
+  recurse: (child: SymbolicValue) => ExpectedShape[],
+  knownComponents: Map<string, string>,
+): ExpectedShape[] => {
+  const { tag } = element;
+  if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
+  if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return element.children.flatMap(recurse);
+  if (CONTEXT_TAG_PATTERN.test(tag.name))
+    return [
+      {
+        kind: "choice",
+        options: [
+          element.children.flatMap(recurse),
+          [{ kind: "component", name: normalizeName(tag.name), isKnown: false }],
+        ],
+      },
+    ];
+  if (tag.kind === "Component" && tag.isContext) return element.children.flatMap(recurse);
+  if (tag.kind === "Component") {
+    const runtimeName = tag.declaration ? knownComponents.get(tag.declaration) : undefined;
+    return [
+      {
+        kind: "component",
+        name: normalizeName(runtimeName ?? tag.name),
+        isKnown: runtimeName !== undefined,
+      },
+    ];
+  }
+  const hasSpreadChildren =
+    element.children.length === 0 &&
+    element.props.some((prop) => prop.kind === "JsxSpreadAttribute");
+  return [
+    {
+      kind: "element",
+      tag: tag.name,
+      children: hasSpreadChildren ? [{ kind: "hole" }] : element.children.flatMap(recurse),
+    },
+  ];
+};
+
 export const toExpected = (
   value: SymbolicValue,
   knownComponents: Map<string, string>,
 ): ExpectedShape[] => {
   const recurse = (child: SymbolicValue): ExpectedShape[] => toExpected(child, knownComponents);
   switch (value.kind) {
-    case "JsxExpression": {
-      const { tag } = value;
-      if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
-      if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
-      if (CONTEXT_TAG_PATTERN.test(tag.name))
-        return [
-          {
-            kind: "choice",
-            options: [
-              value.children.flatMap(recurse),
-              [{ kind: "component", name: normalizeName(tag.name), isKnown: false }],
-            ],
-          },
-        ];
-      if (tag.kind === "Component" && tag.isContext) return value.children.flatMap(recurse);
-      if (tag.kind === "Component") {
-        const runtimeName = tag.declaration ? knownComponents.get(tag.declaration) : undefined;
-        return [
-          {
-            kind: "component",
-            name: normalizeName(runtimeName ?? tag.name),
-            isKnown: runtimeName !== undefined,
-          },
-        ];
-      }
-      const hasSpreadChildren =
-        value.children.length === 0 &&
-        value.props.some((prop) => prop.kind === "JsxSpreadAttribute");
-      return [
-        {
-          kind: "element",
-          tag: tag.name,
-          children: hasSpreadChildren ? [{ kind: "hole" }] : value.children.flatMap(recurse),
-        },
-      ];
-    }
+    case "JsxExpression":
+      return jsxElementToExpected(value, recurse, knownComponents);
     case "JsxFragment":
       return value.children.flatMap(recurse);
     case "JSXText": {
