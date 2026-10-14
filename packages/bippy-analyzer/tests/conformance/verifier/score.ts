@@ -112,6 +112,7 @@ export interface HandlerTarget {
 }
 
 const FIRST_COMMIT = "first commit";
+const MISSING_PLACE = Symbol("missing place");
 const NON_HOOK_BINDING_KINDS = new Set<BindingKind>(["prop", "item", "call", "loop", "suspense"]);
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
 const MAX_RENDERED_LENGTH = 300;
@@ -227,11 +228,15 @@ const getStateBindings = (
 const isPredictedValue = (value: unknown, predicted: AbstractValue[]): boolean =>
   predicted.some((candidate) => candidate.kind === "Literal" && Object.is(candidate.value, value));
 
-const readPath = (value: unknown, path: string[]): unknown =>
-  path.reduce<unknown>((current, segment) => {
+const readPath = (value: unknown, path: string[]): unknown => {
+  let current = value;
+  for (const segment of path) {
     if (current === TRUNCATED_VALUE) return current;
-    return current && typeof current === "object" ? Reflect.get(current, segment) : undefined;
-  }, value);
+    if (!current || typeof current !== "object") return MISSING_PLACE;
+    current = Reflect.get(current, segment);
+  }
+  return current;
+};
 
 const formatRuntimeValue = (value: unknown): string =>
   value === undefined ? "undefined" : JSON.stringify(value);
@@ -403,7 +408,12 @@ const scoreValues = (context: ScoringContext, observation: Observation): void =>
       if (bindingId !== binding.id || !predicted.every((value) => value.kind === "Literal"))
         continue;
       const value = readPath(observation.after.hookStates[hookIndex], placePath);
-      if (value === TRUNCATED_VALUE || isPredictedValue(value, predicted)) continue;
+      if (
+        value === TRUNCATED_VALUE ||
+        value === MISSING_PLACE ||
+        isPredictedValue(value, predicted)
+      )
+        continue;
       context.verdict.valueCounterexamples.push({
         path: observation.path,
         place: formatPlace(binding, placePath),
