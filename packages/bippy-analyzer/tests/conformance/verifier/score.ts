@@ -178,7 +178,10 @@ export const getTriggerCertainty = (
     return "maybe";
   const eventName = action.kind === "click" ? "onClick" : "onChange";
   if (handlerTarget.event !== eventName && handlerTarget.event !== ANY_EVENT) return null;
-  if (isSameTarget(handlerTarget, action)) return handlerTarget.text === null ? "maybe" : "sure";
+  if (isSameTarget(handlerTarget, action))
+    return handlerTarget.text === null || action.label.length >= MAX_ACTION_LABEL_LENGTH
+      ? "maybe"
+      : "sure";
   return action.kind === "click" &&
     action.clickAncestors.some((ancestor) => isSameTarget(handlerTarget, ancestor))
     ? "maybe"

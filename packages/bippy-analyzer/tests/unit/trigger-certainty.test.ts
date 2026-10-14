@@ -24,7 +24,7 @@ describe("trigger certainty", () => {
     );
   });
 
-  it("matches a long label the browser truncated and joined without spaces", () => {
+  it("only maybe matches a long label the browser truncated, since others may share it", () => {
     const clickOverlay: Action = {
       ...clickTidy,
       key: "click:div:UPI QR CodeScan this QR code to make a U",
@@ -40,6 +40,6 @@ describe("trigger certainty", () => {
         },
         clickOverlay,
       ),
-    ).toBe("sure");
+    ).toBe("maybe");
   });
 });
