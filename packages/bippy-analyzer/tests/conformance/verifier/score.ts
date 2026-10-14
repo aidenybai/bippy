@@ -105,7 +105,7 @@ export interface VerificationSummary {
 
 type TriggerCertainty = "sure" | "maybe";
 
-interface HandlerTarget {
+export interface HandlerTarget {
   tag: string;
   text: string | null;
   event: string;
@@ -132,7 +132,7 @@ const isSameTarget = (handlerTarget: HandlerTarget, actionTarget: ActionTarget):
   handlerTarget.tag === actionTarget.tag &&
   (handlerTarget.text === null || handlerTarget.text === actionTarget.label);
 
-const getTriggerCertainty = (
+export const getTriggerCertainty = (
   handlerTarget: HandlerTarget,
   action: Action,
 ): TriggerCertainty | null => {
@@ -144,7 +144,7 @@ const getTriggerCertainty = (
     return "maybe";
   const eventName = action.kind === "click" ? "onClick" : "onChange";
   if (handlerTarget.event !== eventName && handlerTarget.event !== ANY_EVENT) return null;
-  if (isSameTarget(handlerTarget, action)) return "sure";
+  if (isSameTarget(handlerTarget, action)) return handlerTarget.text === null ? "maybe" : "sure";
   return action.kind === "click" &&
     action.clickAncestors.some((ancestor) => isSameTarget(handlerTarget, ancestor))
     ? "maybe"
