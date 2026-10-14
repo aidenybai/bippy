@@ -103,9 +103,9 @@ export interface VerificationSummary {
   durationMs: number;
 }
 
-type Trigger = "sure" | "maybe";
+type TriggerCertainty = "sure" | "maybe";
 
-interface TriggerLabel {
+interface HandlerTarget {
   tag: string;
   text: string | null;
   event: string;
@@ -116,6 +116,7 @@ const NON_HOOK_BINDING_KINDS = new Set<BindingKind>(["prop", "item", "call", "lo
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
 const MAX_RENDERED_LENGTH = 300;
 const MAX_PROPS_LENGTH = 160;
+const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
 const ORDERED_HOOK_KINDS = new Set<string>([
   "useState",
   "useReducer",
@@ -127,26 +128,33 @@ const ORDERED_HOOK_KINDS = new Set<string>([
 
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
-const isLabelTarget = (label: TriggerLabel, target: ActionTarget): boolean =>
-  label.tag === target.tag && (label.text === null || label.text === target.label);
+const isSameTarget = (handlerTarget: HandlerTarget, actionTarget: ActionTarget): boolean =>
+  handlerTarget.tag === actionTarget.tag &&
+  (handlerTarget.text === null || handlerTarget.text === actionTarget.label);
 
-const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
-
-const getTrigger = (label: TriggerLabel, action: Action): Trigger | null => {
-  if (isComponentTag(label.tag))
-    return label.text === null || label.text.includes(action.label) ? "maybe" : null;
-  if (!DISPATCHED_EVENTS.has(label.event) && label.event !== ANY_EVENT) return "maybe";
+const getTriggerCertainty = (
+  handlerTarget: HandlerTarget,
+  action: Action,
+): TriggerCertainty | null => {
+  if (isComponentTag(handlerTarget.tag))
+    return handlerTarget.text === null || handlerTarget.text.includes(action.label)
+      ? "maybe"
+      : null;
+  if (!DISPATCHED_EVENTS.has(handlerTarget.event) && handlerTarget.event !== ANY_EVENT)
+    return "maybe";
   const eventName = action.kind === "click" ? "onClick" : "onChange";
-  if (label.event !== eventName && label.event !== ANY_EVENT) return null;
-  if (isLabelTarget(label, action)) return "sure";
+  if (handlerTarget.event !== eventName && handlerTarget.event !== ANY_EVENT) return null;
+  if (isSameTarget(handlerTarget, action)) return "sure";
   return action.kind === "click" &&
-    action.clickAncestors.some((target) => isLabelTarget(label, target))
+    action.clickAncestors.some((ancestor) => isSameTarget(handlerTarget, ancestor))
     ? "maybe"
     : null;
 };
 
 const getProbeId = (file: string, loc: types.SourceLocation): string =>
   `${file}:${getLocationKey(loc)}`;
+
+const getSideKey = (probeId: string, isTrueSide: boolean): string => `${probeId}:${isTrueSide}`;
 
 export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   const probes = new Map<string, Probe>();
@@ -183,19 +191,19 @@ const getStaticText = (value: SymbolicValue): string | null => {
   }
 };
 
-const collectTriggerLabels = (render: SymbolicValue): Map<string, TriggerLabel> => {
-  const labels = new Map<string, TriggerLabel>();
+const collectHandlerTargets = (render: SymbolicValue): Map<string, HandlerTarget> => {
+  const handlerTargets = new Map<string, HandlerTarget>();
   forEachJsxElement(render, (value) => {
     for (const prop of value.props) {
       if (!prop.handlerId) continue;
-      labels.set(prop.handlerId, {
+      handlerTargets.set(prop.handlerId, {
         tag: value.tag.name,
         text: getStaticText(value) || null,
         event: prop.kind === "JsxAttribute" ? prop.name : ANY_EVENT,
       });
     }
   });
-  return labels;
+  return handlerTargets;
 };
 
 const getStateBindings = (analysis: ComponentAnalysis): Binding[] | null => {
@@ -226,7 +234,7 @@ interface ScoringContext {
   report: StateReport;
   verdict: ComponentVerdict;
   expectedStates: ExpectedShape[][];
-  triggerLabels: Map<string, TriggerLabel>;
+  handlerTargets: Map<string, HandlerTarget>;
   stateBindings: Binding[] | null;
   externalBindingIds: Set<number>;
   effectIds: Set<string>;
@@ -415,10 +423,10 @@ const getTriggeredHandlerIds = (
   const triggeredIds = new Set<string>();
   const maybeTriggeredIds = new Set<string>();
   for (const handler of context.analysis.handlers) {
-    const label = context.triggerLabels.get(handler.id);
-    const trigger = label ? getTrigger(label, action) : null;
-    if (trigger) triggeredIds.add(handler.id);
-    if (trigger === "maybe") maybeTriggeredIds.add(handler.id);
+    const handlerTarget = context.handlerTargets.get(handler.id);
+    const certainty = handlerTarget ? getTriggerCertainty(handlerTarget, action) : null;
+    if (certainty) triggeredIds.add(handler.id);
+    if (certainty === "maybe") maybeTriggeredIds.add(handler.id);
   }
   return { triggeredIds, maybeTriggeredIds };
 };
@@ -527,7 +535,7 @@ const createScoringContext = (
   report,
   verdict,
   expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
-  triggerLabels: collectTriggerLabels(analysis.render),
+  handlerTargets: collectHandlerTargets(analysis.render),
   stateBindings: getStateBindings(analysis),
   externalBindingIds: new Set(
     analysis.bindings
@@ -545,7 +553,10 @@ const getReachedUnreachableBranches = (report: StateReport, coveredSides: Set<st
       (unreachableBranch) =>
         unreachableBranch.branch.loc !== GeneratedSource &&
         coveredSides.has(
-          `${getProbeId(unreachableBranch.branch.file, unreachableBranch.branch.loc)}:${unreachableBranch.isTrueSide}`,
+          getSideKey(
+            getProbeId(unreachableBranch.branch.file, unreachableBranch.branch.loc),
+            unreachableBranch.isTrueSide,
+          ),
         ),
     )
     .map((unreachableBranch) =>
@@ -559,7 +570,7 @@ const scoreObservation = (
   coveredSides: Set<string>,
 ): void => {
   for (const probeHit of observation.after.probes)
-    if (probeIds.has(probeHit.id)) coveredSides.add(`${probeHit.id}:${probeHit.isTrueSide}`);
+    if (probeIds.has(probeHit.id)) coveredSides.add(getSideKey(probeHit.id, probeHit.isTrueSide));
   if (observation.after.error) {
     context.verdict.renderErrorCount++;
     return;
