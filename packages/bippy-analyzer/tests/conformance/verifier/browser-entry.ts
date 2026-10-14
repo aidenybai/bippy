@@ -2,13 +2,14 @@ import "./stubs/node-globals";
 import {
   didFiberRender,
   getDisplayName,
+  getRDTHook,
   getReactWorkTagsForFiber,
   instrument,
   isCompositeFiber,
   isHostFiber,
   traverseFiber,
 } from "bippy";
-import type { Fiber, FiberRoot } from "bippy";
+import type { Fiber, FiberRoot, MemoizedState } from "bippy";
 import { Component, cloneElement, createElement, isValidElement } from "react";
 import type { ComponentType, ErrorInfo, ReactElement, ReactNode } from "react";
 import { createRoot } from "react-dom/client";
@@ -18,6 +19,7 @@ import { getErrorMessage } from "./reasons";
 import type { MountFailure } from "./reasons";
 import { forEachPlainObject, isPlainData, isPlainRecord, snapshotValue } from "./snapshot";
 import { STAND_IN } from "./stubs/stand-in";
+import { isLibraryHookDispatch, isWrittenByLibrary, watchHookCallers } from "./write-origins";
 import {
   MAX_ACTION_LABEL_LENGTH,
   PROVIDERS_PATH,
@@ -153,7 +155,7 @@ const trackedTargets = new WeakMap<object, object>();
 const recordWrite = (target: object): void => {
   writeCounts.set(target, (writeCounts.get(target) ?? 0) + 1);
   const owner = propOwners.get(target);
-  if (owner) propWrites.add(owner);
+  if (owner && !isWrittenByLibrary()) propWrites.add(owner);
 };
 
 const isRefObject = (value: unknown): boolean =>
@@ -397,17 +399,25 @@ const toShapes = (fiber: Fiber): Shape[] => {
   return getChildren(fiber).flatMap(toShapes);
 };
 
-const getQueuedHookStates = (fiber: Fiber): unknown[] => {
-  const values: unknown[] = [];
+const getQueuedHooks = (fiber: Fiber): MemoizedState[] => {
+  const hooks: MemoizedState[] = [];
   for (
     let hook = fiber.memoizedState;
     hook && typeof hook === "object" && "next" in hook;
     hook = hook.next
   ) {
-    if (hook.queue) values.push(hook.memoizedState);
+    if (hook.queue) hooks.push(hook);
   }
-  return values;
+  return hooks;
 };
+
+const getQueuedHookStates = (fiber: Fiber): unknown[] =>
+  getQueuedHooks(fiber).map((hook) => hook.memoizedState);
+
+const isLibraryHook = (hook: MemoizedState): boolean =>
+  typeof hook.queue === "object" &&
+  hook.queue !== null &&
+  isLibraryHookDispatch(Reflect.get(hook.queue, "dispatch"));
 
 const getStateOwners = (states: unknown[]): Map<object, string> => {
   const owners = new Map<object, string>();
@@ -420,16 +430,18 @@ const getStateOwners = (states: unknown[]): Map<object, string> => {
 };
 
 const trackStates = (fiber: Fiber): Map<object, string> => {
-  const states = getQueuedHookStates(fiber);
-  states.forEach((state, hookIndex) => {
-    if (!isPlainData(state) || trackedStates.some((tracked) => tracked.target === state)) return;
+  const hooks = getQueuedHooks(fiber);
+  hooks.forEach((hook, hookIndex) => {
+    const state = hook.memoizedState;
+    if (!isPlainData(state) || isLibraryHook(hook)) return;
+    if (trackedStates.some((tracked) => tracked.target === state)) return;
     trackedStates.push({
       owner: getStateOwner(hookIndex),
       target: state,
       snapshot: snapshotValue(state),
     });
   });
-  const currentOwners = getStateOwners(states);
+  const currentOwners = getStateOwners(hooks.map((hook) => hook.memoizedState));
   for (const [object, owner] of currentOwners)
     if (!stateOwners.has(object)) stateOwners.set(object, owner);
   return currentOwners;
@@ -825,6 +837,9 @@ const renderMounted = async (
   mountedRoot?.unmount();
   resetRenderState();
   mountedType = type;
+  watchHookCallers(
+    [...getRDTHook().renderers.values()].flatMap((renderer) => renderer.currentDispatcherRef ?? []),
+  );
   const container = document.createElement("div");
   document.body.replaceChildren(container);
   mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });

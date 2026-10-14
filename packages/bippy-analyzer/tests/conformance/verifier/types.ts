@@ -1,6 +1,7 @@
 import type { ComponentAnalysis, Sample } from "../../../src/core/types";
 import type { MountFailure } from "./reasons";
 
+export const ENTRY_PATH = "/__bippy_verify_entry.ts";
 export const PROVIDERS_PATH = "/__bippy_verify_providers.ts";
 export const SETUP_PATH = "/__bippy_verify_setup.tsx";
 export const WRAPPER_PATH = "/__bippy_verify_wrapper.ts";

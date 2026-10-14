@@ -29,7 +29,7 @@ import {
   createRequirePlugin,
   createServerActionPlugin,
 } from "./harness/transforms";
-import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
+import { ENTRY_PATH, PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
 import type { Probe, SourceIndex } from "./types";
 
 export interface Harness {
@@ -48,7 +48,6 @@ interface HarnessIds {
 }
 
 const HARNESS_PATH = "/__bippy_verify";
-const ENTRY_PATH = "/__bippy_verify_entry.ts";
 const ENV_PLACEHOLDER = "https://example.com";
 const PREBUNDLED_REACT_MODULES = [
   "react",
