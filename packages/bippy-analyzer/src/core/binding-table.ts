@@ -1,7 +1,14 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { DomainResolver } from "./infer-domains";
-import type { AbstractValue, Binding, BindingKind, BindingValue, Domain, Place } from "./types";
+import type {
+  AbstractValue,
+  Binding,
+  BindingKind,
+  BindingValue,
+  Domain,
+  BindingPlace,
+} from "./types";
 import { dedupeValues } from "./constraints";
 import { PlaceMap, getBindingPlace } from "./utils/place";
 
@@ -75,7 +82,7 @@ export class BindingTable {
     return { kind: "Binding", binding, path };
   }
 
-  #addFieldDomain(binding: Binding, place: Place, readDomain: Domain): void {
+  #addFieldDomain(binding: Binding, place: BindingPlace, readDomain: Domain): void {
     const [field] = place.path;
     const unionMemberValues =
       place.path.length === 1 && field !== undefined

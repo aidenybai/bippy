@@ -1,30 +1,31 @@
-import type { Binding, BindingValue, Place } from "../types";
+import type { Binding, BindingValue, BindingPlace } from "../types";
 
-export const getPlaceKey = ({ bindingId, path }: Place): string =>
+export const getPlaceKey = ({ bindingId, path }: BindingPlace): string =>
   JSON.stringify([bindingId, ...path]);
 
-export const getBindingPlace = (binding: Binding, path: string[] = []): Place => ({
+export const getBindingPlace = (binding: Binding, path: string[] = []): BindingPlace => ({
   bindingId: binding.id,
   path,
 });
 
-export const getValuePlace = (value: BindingValue): Place =>
+export const getValuePlace = (value: BindingValue): BindingPlace =>
   getBindingPlace(value.binding, value.path);
 
-export const formatPlace = ({ bindingId, path }: Place): string => [bindingId, ...path].join(".");
+export const formatPlace = ({ bindingId, path }: BindingPlace): string =>
+  [bindingId, ...path].join(".");
 
-export const isSamePlace = (left: Place, right: Place): boolean =>
+export const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
   getPlaceKey(left) === getPlaceKey(right);
 
-export const isPlacePrefix = (prefix: Place, place: Place): boolean =>
+export const isPlacePrefix = (prefix: BindingPlace, place: BindingPlace): boolean =>
   prefix.bindingId === place.bindingId &&
   prefix.path.length <= place.path.length &&
   prefix.path.every((segment, index) => place.path[index] === segment);
 
 export class PlaceMap<Value> {
-  readonly #entries = new Map<string, [Place, Value]>();
+  readonly #entries = new Map<string, [BindingPlace, Value]>();
 
-  constructor(entries: Iterable<[Place, Value]> = []) {
+  constructor(entries: Iterable<[BindingPlace, Value]> = []) {
     for (const [place, value] of entries) this.set(place, value);
   }
 
@@ -32,20 +33,20 @@ export class PlaceMap<Value> {
     return this.#entries.size;
   }
 
-  get(place: Place): Value | undefined {
+  get(place: BindingPlace): Value | undefined {
     return this.#entries.get(getPlaceKey(place))?.[1];
   }
 
-  has(place: Place): boolean {
+  has(place: BindingPlace): boolean {
     return this.#entries.has(getPlaceKey(place));
   }
 
-  set(place: Place, value: Value): this {
+  set(place: BindingPlace, value: Value): this {
     this.#entries.set(getPlaceKey(place), [place, value]);
     return this;
   }
 
-  places(): Place[] {
+  places(): BindingPlace[] {
     return [...this.#entries.values()].map(([place]) => place);
   }
 
@@ -53,7 +54,7 @@ export class PlaceMap<Value> {
     return [...this.#entries.values()].map(([, value]) => value);
   }
 
-  [Symbol.iterator](): IterableIterator<[Place, Value]> {
+  [Symbol.iterator](): IterableIterator<[BindingPlace, Value]> {
     return this.#entries.values();
   }
 

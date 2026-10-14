@@ -45,7 +45,7 @@ export type BindingKind =
   | "loop"
   | "suspense";
 
-export interface Place {
+export interface BindingPlace {
   bindingId: number;
   path: string[];
 }
@@ -60,12 +60,12 @@ export interface Binding {
   domain: Domain;
   samples: Sample[];
   initial: SymbolicValue | null;
-  inputPlaces: Place[];
+  inputPlaces: BindingPlace[];
   lengthLimit: LengthLimit | null;
 }
 
 export interface LengthLimit {
-  arrayLength: Place;
+  arrayLength: BindingPlace;
   isSameLength: boolean;
 }
 

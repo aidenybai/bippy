@@ -15,7 +15,7 @@ import type {
   Binding,
   ComponentAnalysis,
   ConditionalValue,
-  Place,
+  BindingPlace,
   UnreachableBranch,
   Domain,
   Transition,
@@ -149,7 +149,7 @@ const getFieldCases = (
 
 const getToggleCases = (
   value: SymbolicValue,
-  place: Place,
+  place: BindingPlace,
   currentValues: AbstractValue[] | undefined,
 ): AbstractValue[] | null => {
   if (

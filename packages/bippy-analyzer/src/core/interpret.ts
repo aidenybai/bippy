@@ -1,10 +1,13 @@
 import type {
+  ArrayPattern,
+  BasicBlock,
   BlockId,
   HIRFunction,
   IdentifierId,
   Instruction,
   InstructionId,
   InstructionValue,
+  ObjectPattern,
   Phi,
   Place,
   SourceLocation,
@@ -19,6 +22,7 @@ import type {
   ArrayExpressionValue,
   Binding,
   BindingKind,
+  BindingPlace,
   BindingValue,
   ContextSetterFields,
   Branch,
@@ -29,6 +33,7 @@ import type {
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
+  LengthLimit,
   ObjectExpressionValue,
   ProvidedContext,
   Sample,
@@ -42,7 +47,7 @@ import { formatPlace, formatSymbolicValue } from "./format";
 import { forEachJsxElement, forEachSymbolicValue } from "./utils/traverse";
 import { isHandlerProp } from "./collect-handlers";
 import { PlaceMap, getBindingPlace, getValuePlace } from "./utils/place";
-import { isExternalSource, isStateBinding } from "./utils/checks";
+import { isExternalSource, isNullish, isStateBinding } from "./utils/checks";
 import { getTestExpression, negate } from "./utils/truthiness";
 import {
   UNDEFINED_VALUE,
@@ -105,7 +110,32 @@ const SUSPENDED_DOMAIN: Domain = {
   origin: "type",
 };
 
+type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
+  InstructionValue,
+  { kind: Kind }
+>;
+
+const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
+  const { binding } = loadGlobal;
+  if (binding.kind === "Global" && binding.name === "undefined") return UNDEFINED_VALUE;
+  return {
+    kind: "Global",
+    name: binding.name,
+    module: "module" in binding ? binding.module : null,
+  };
+};
+
 type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-chain-tail";
+
+type ValueBranchTerminal = Extract<Terminal, { kind: "ternary" | "logical" | "optional" }>;
+
+type TerminalStep = Outcome | { kind: "Next"; block: BlockId };
+
+const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
+  if (terminal.kind === "logical") return terminal.operator;
+  if (terminal.kind === "optional" && !terminal.optional) return "optional-chain-tail";
+  return terminal.kind;
+};
 
 interface InterpreterBindingOptions extends BindingOptions {
   resolver?: DomainResolver;
@@ -126,6 +156,14 @@ interface EffectCall {
   callback: SymbolicValue;
   callbackArguments: SymbolicValue[];
   dependencies: string | null;
+  loc: SourceLocation;
+}
+
+interface CallSite {
+  callee: SymbolicValue;
+  calleePlace: Place;
+  argumentValues: SymbolicValue[];
+  argumentPlaces: Place[];
   loc: SourceLocation;
 }
 
@@ -315,19 +353,27 @@ export class Interpreter {
     return itemPlaces.map((place) => (place ? this.#bindHookResult(place, value) : null));
   }
 
-  #evaluateDestructure(destructure: Extract<InstructionValue, { kind: "Destructure" }>): void {
+  #evaluateDestructure(destructure: InstructionValueOfKind<"Destructure">): void {
     const { pattern } = destructure.lvalue;
     const value = this.#read(destructure.value);
-    if (pattern.kind === "ArrayPattern") {
-      const itemPlaces = pattern.items.map((item) => (item.kind === "Identifier" ? item : null));
-      const destructured = this.#destructure(itemPlaces, value, destructure.loc);
-      pattern.items.forEach((item, index) => {
-        if (item.kind === "Hole") return;
-        const place = getPlaceOrSpread(item);
-        this.#write(place, destructured[index] ?? createUnknown("destructure", place.loc));
-      });
-      return;
-    }
+    if (pattern.kind === "ArrayPattern") this.#destructureArray(pattern, value, destructure.loc);
+    else this.#destructureObject(pattern, value);
+  }
+
+  #destructureArray(pattern: ArrayPattern, value: SymbolicValue, loc: SourceLocation): void {
+    const itemPlaces = pattern.items.map((item) => (item.kind === "Identifier" ? item : null));
+    const destructuredValues = this.#destructure(itemPlaces, value, loc);
+    pattern.items.forEach((item, itemIndex) => {
+      if (item.kind === "Hole") return;
+      const itemPlace = getPlaceOrSpread(item);
+      this.#write(
+        itemPlace,
+        destructuredValues[itemIndex] ?? createUnknown("destructure", itemPlace.loc),
+      );
+    });
+  }
+
+  #destructureObject(pattern: ObjectPattern, value: SymbolicValue): void {
     for (const property of pattern.properties) {
       if (property.kind === "Spread") {
         if (value.kind === "Props")
@@ -339,27 +385,31 @@ export class Interpreter {
         property.key.kind === "string" || property.key.kind === "identifier"
           ? property.key.name
           : null;
-      const localName = getIdentifierName(property.place) ?? key ?? "value";
-      if (key === null) {
-        this.#write(property.place, createUnknown("computed-key", property.place.loc));
-      } else if (value.kind === "Props") {
-        this.#write(
-          property.place,
-          createBindingValue(this.#getPropBinding(key, localName, property.place.loc)),
-        );
-      } else if (value.kind === "HookResult") {
-        const binding = this.#createBinding(
-          `${value.name}()`,
-          getHookBindingKind(value.hookKind),
-          value.loc,
-          { hookKind: value.hookKind, resolver: this.externalSources.getHookResolver(value) },
-        );
-        this.externalSources.bindHookResult(binding, value, this.#resolver);
-        this.#write(property.place, this.#readField(binding, [key], property.place.loc));
-      } else {
-        this.#write(property.place, this.#evaluatePropertyLoad(value, key, property.place.loc));
-      }
+      this.#write(
+        property.place,
+        key === null
+          ? createUnknown("computed-key", property.place.loc)
+          : this.#getDestructuredField(value, key, property.place),
+      );
     }
+  }
+
+  #getDestructuredField(value: SymbolicValue, key: string, fieldPlace: Place): SymbolicValue {
+    if (value.kind === "Props") {
+      const localName = getIdentifierName(fieldPlace) ?? key;
+      return createBindingValue(this.#getPropBinding(key, localName, fieldPlace.loc));
+    }
+    if (value.kind === "HookResult") {
+      const hookCallBinding = this.#createBinding(
+        `${value.name}()`,
+        getHookBindingKind(value.hookKind),
+        value.loc,
+        { hookKind: value.hookKind, resolver: this.externalSources.getHookResolver(value) },
+      );
+      this.externalSources.bindHookResult(hookCallBinding, value, this.#resolver);
+      return this.#readField(hookCallBinding, [key], fieldPlace.loc);
+    }
+    return this.#evaluatePropertyLoad(value, key, fieldPlace.loc);
   }
 
   #evaluatePropertyLoad(
@@ -398,7 +448,7 @@ export class Interpreter {
     }
   }
 
-  #getJsxTag(tag: Extract<InstructionValue, { kind: "JsxExpression" }>["tag"]): SymbolicValue {
+  #getJsxTag(tag: InstructionValueOfKind<"JsxExpression">["tag"]): SymbolicValue {
     if (tag.kind === "BuiltinTag") return { kind: "Primitive", value: tag.name };
     return this.#read(tag);
   }
@@ -521,50 +571,58 @@ export class Interpreter {
     isOnCreationPath: boolean,
   ): SymbolicValue {
     const { value, loc } = instruction;
-    if (
+    const isPushIntoLiteral =
       literal.kind === "ArrayExpression" &&
       value.kind === "MethodCall" &&
       value.receiver.identifier.id === mutatedPlace.identifier.id &&
-      this.#getCompilationTables().propertyNames.get(value.property.identifier.id) === "push"
-    ) {
-      const pushedItems = value.args.flatMap((argument) =>
-        argument.kind === "Identifier" ? [this.#read(argument)] : [],
-      );
-      const pushedSpreads = value.args.flatMap((argument) =>
-        argument.kind === "Spread" ? [this.#read(argument.place)] : [],
-      );
-      return isOnCreationPath
-        ? {
-            ...literal,
-            elements: [...literal.elements, ...pushedItems],
-            spreads: [...literal.spreads, ...pushedSpreads],
-          }
-        : {
-            ...literal,
-            spreads: [
-              ...literal.spreads,
-              ...pushedSpreads,
-              ...pushedItems.map((item): SymbolicValue => ({
-                kind: "ArrayMap",
-                array: createUnknown("mutation", loc),
-                item,
-                loc,
-              })),
-            ],
-          };
-    }
-    if (
+      this.#getCompilationTables().propertyNames.get(value.property.identifier.id) === "push";
+    if (isPushIntoLiteral) return this.#pushIntoArray(literal, value, isOnCreationPath, loc);
+    const isStoreIntoLiteral =
       literal.kind === "ObjectExpression" &&
       value.kind === "PropertyStore" &&
-      value.object.identifier.id === mutatedPlace.identifier.id
-    ) {
-      const storedProperty = {
-        key: String(value.property),
-        value: isOnCreationPath ? this.#read(value.value) : createUnknown("mutation", loc),
-      };
-      return { ...literal, properties: [...literal.properties, storedProperty] };
-    }
+      value.object.identifier.id === mutatedPlace.identifier.id;
+    if (isStoreIntoLiteral) return this.#storeIntoObject(literal, value, isOnCreationPath, loc);
     return createUnknown("mutation", loc);
+  }
+
+  #pushIntoArray(
+    array: ArrayExpressionValue,
+    push: InstructionValueOfKind<"MethodCall">,
+    isOnCreationPath: boolean,
+    loc: SourceLocation,
+  ): ArrayExpressionValue {
+    const pushedItems = push.args.flatMap((argument) =>
+      argument.kind === "Identifier" ? [this.#read(argument)] : [],
+    );
+    const pushedSpreads = push.args.flatMap((argument) =>
+      argument.kind === "Spread" ? [this.#read(argument.place)] : [],
+    );
+    if (isOnCreationPath)
+      return {
+        ...array,
+        elements: [...array.elements, ...pushedItems],
+        spreads: [...array.spreads, ...pushedSpreads],
+      };
+    const maybePushedItems = pushedItems.map((item): SymbolicValue => ({
+      kind: "ArrayMap",
+      array: createUnknown("mutation", loc),
+      item,
+      loc,
+    }));
+    return { ...array, spreads: [...array.spreads, ...pushedSpreads, ...maybePushedItems] };
+  }
+
+  #storeIntoObject(
+    object: ObjectExpressionValue,
+    store: InstructionValueOfKind<"PropertyStore">,
+    isOnCreationPath: boolean,
+    loc: SourceLocation,
+  ): ObjectExpressionValue {
+    const storedProperty = {
+      key: String(store.property),
+      value: isOnCreationPath ? this.#read(store.value) : createUnknown("mutation", loc),
+    };
+    return { ...object, properties: [...object.properties, storedProperty] };
   }
 
   #getSetterNextValue(
@@ -612,51 +670,40 @@ export class Interpreter {
     this.#handlerEffects?.recordSetterCall(dispatch.binding, nextValue, walkState);
   }
 
-  #recordWholeProps(argumentValues: SymbolicValue[], argumentPlaces: Place[]): void {
-    const propsPlace =
-      argumentPlaces[argumentValues.findIndex((argument) => argument.kind === "Props")];
+  #recordWholeProps(callSite: CallSite): void {
+    const propsIndex = callSite.argumentValues.findIndex((argument) => argument.kind === "Props");
+    const propsPlace = callSite.argumentPlaces[propsIndex];
     if (propsPlace) this.#wholePropsSample ??= this.#resolver.getSamples(propsPlace.loc)[0] ?? null;
   }
 
-  #getCallTarget(
-    callee: SymbolicValue,
-    calleePlace: Place,
-    argumentValues: SymbolicValue[],
-    loc: SourceLocation,
-  ): CallTarget {
-    if (this.#resolver.getReactExportName(loc) === "createPortal" && argumentValues[0])
-      return { kind: "Portal", children: argumentValues[0] };
-    const hookKind = getHookKind(this.#getCurrentFunction().env, calleePlace.identifier);
+  #getCallTarget(callSite: CallSite): CallTarget {
+    const [firstArgument] = callSite.argumentValues;
+    if (this.#resolver.getReactExportName(callSite.loc) === "createPortal" && firstArgument)
+      return { kind: "Portal", children: firstArgument };
+    const hookKind = getHookKind(this.#getCurrentFunction().env, callSite.calleePlace.identifier);
     if (hookKind === "Custom") {
-      const projectHook = this.#findProjectHook(calleePlace);
+      const projectHook = this.#findProjectHook(callSite.calleePlace);
       if (projectHook)
         return this.#inlineDepth < MAX_INLINE_DEPTH
           ? { kind: "ProjectHook", projectHook }
           : { kind: "Hook", hookKind };
-      const storeKey = this.#resolver.getDeclarationKey(calleePlace.loc);
+      const storeKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
       const storeActions = storeKey ? this.externalSources.getStoreActions(storeKey) : undefined;
       if (storeKey && storeActions) return { kind: "Store", storeKey, storeActions };
     }
     if (hookKind !== null) return { kind: "Hook", hookKind };
     const helperTakingCallbacks =
-      callee.kind === "Global" && getPassedCallbacks(argumentValues).length > 0
-        ? this.#functions.loadModuleFunction(this.#resolver, callee.name)
+      callSite.callee.kind === "Global" && getPassedCallbacks(callSite.argumentValues).length > 0
+        ? this.#functions.loadModuleFunction(this.#resolver, callSite.callee.name)
         : null;
     return helperTakingCallbacks
       ? { kind: "ModuleFunction", hirFunction: helperTakingCallbacks }
       : { kind: "Value" };
   }
 
-  #evaluateCall(
-    callee: SymbolicValue,
-    calleePlace: Place,
-    argumentValues: SymbolicValue[],
-    argumentPlaces: Place[],
-    loc: SourceLocation,
-    walkState: WalkState,
-  ): SymbolicValue {
-    this.#recordWholeProps(argumentValues, argumentPlaces);
-    const target = this.#getCallTarget(callee, calleePlace, argumentValues, loc);
+  #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
+    this.#recordWholeProps(callSite);
+    const target = this.#getCallTarget(callSite);
     switch (target.kind) {
       case "Portal":
         return target.children;
@@ -668,95 +715,67 @@ export class Interpreter {
         );
         return this.#callFunction(
           this.#registerFunction(target.projectHook.hirFunction),
-          argumentValues,
-          loc,
+          callSite.argumentValues,
+          callSite.loc,
           walkState,
         );
       case "Store":
-        return this.#readStore(
-          target.storeKey,
-          target.storeActions,
-          callee,
-          argumentValues,
-          loc,
-          walkState,
-        );
+        return this.#readStore(target.storeKey, target.storeActions, callSite, walkState);
       case "Hook":
-        return this.#evaluateHookCall(
-          target.hookKind,
-          callee,
-          argumentValues,
-          argumentPlaces,
-          loc,
-          walkState,
-        );
+        return this.#evaluateHookCall(target.hookKind, callSite, walkState);
       case "ModuleFunction":
         return this.#callFunction(
           this.#registerFunction(target.hirFunction),
-          argumentValues,
-          loc,
+          callSite.argumentValues,
+          callSite.loc,
           walkState,
         );
       case "Value":
-        return this.#callValue(callee, calleePlace, argumentValues, argumentPlaces, loc, walkState);
+        return this.#callValue(callSite, walkState);
       default:
         return assertExhaustive(target, "Unhandled call target");
     }
   }
 
-  #callValue(
-    callee: SymbolicValue,
-    calleePlace: Place,
-    argumentValues: SymbolicValue[],
-    argumentPlaces: Place[],
-    loc: SourceLocation,
-    walkState: WalkState,
-  ): SymbolicValue {
+  #callValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
+    const { callee } = callSite;
+    const [firstArgument] = callSite.argumentValues;
     switch (callee.kind) {
       case "Function":
-        return this.#callFunction(callee, argumentValues, loc, walkState);
+        return this.#callFunction(callee, callSite.argumentValues, callSite.loc, walkState);
       case "Conditional":
         return {
           ...callee,
-          consequent: this.#evaluateCall(
-            callee.consequent,
-            calleePlace,
-            argumentValues,
-            argumentPlaces,
-            loc,
-            walkState,
-          ),
-          alternate: this.#evaluateCall(
-            callee.alternate,
-            calleePlace,
-            argumentValues,
-            argumentPlaces,
-            loc,
-            walkState,
-          ),
+          consequent: this.#evaluateCall({ ...callSite, callee: callee.consequent }, walkState),
+          alternate: this.#evaluateCall({ ...callSite, callee: callee.alternate }, walkState),
         };
       case "Setter":
-        this.#applySetter(callee, argumentValues[0], walkState);
+        this.#applySetter(callee, firstArgument, walkState);
         return UNDEFINED_VALUE;
       case "Dispatch":
-        this.#applyDispatch(callee, argumentValues[0], loc, walkState);
+        this.#applyDispatch(callee, firstArgument, callSite.loc, walkState);
         return UNDEFINED_VALUE;
       case "Binding":
-        if (this.#handlerEffects && !this.#resolver.isNonMutatingMethod(calleePlace.loc))
-          this.#callBinding(callee, argumentValues, walkState);
+        if (this.#handlerEffects && !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
+          this.#callBinding(callee, callSite.argumentValues, walkState);
         break;
       default:
         break;
     }
-    for (const argument of argumentValues) this.#visitCallbackArgument(argument, walkState);
-    if (this.#handlerEffects) return createUnknown("call", loc);
-    if (!this.#resolver.isNonMutatingMethod(calleePlace.loc))
-      this.#addDeferredCallbacks(argumentValues, loc);
-    if (this.#resolver.isReactElement(loc)) {
-      this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
-      return createUnknown("call", loc);
+    for (const argument of callSite.argumentValues)
+      this.#visitCallbackArgument(argument, walkState);
+    if (this.#handlerEffects) return createUnknown("call", callSite.loc);
+    if (!this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
+      this.#addDeferredCallbacks(callSite.argumentValues, callSite.loc);
+    if (this.#resolver.isReactElement(callSite.loc)) {
+      this.diagnostics.bailOut(
+        "unknown-call",
+        "call returns JSX the analysis can't see into",
+        callSite.loc,
+      );
+      return createUnknown("call", callSite.loc);
     }
-    return this.#createCallResult(callee, calleePlace, argumentValues, loc);
+    return this.#createCallResult(callSite);
   }
 
   #collectInputPlaces(
@@ -773,37 +792,38 @@ export class Interpreter {
     });
   }
 
-  #createCallResult(
-    callee: SymbolicValue,
-    calleePlace: Place,
-    argumentValues: SymbolicValue[],
-    loc: SourceLocation,
-  ): SymbolicValue {
-    const calleeText = this.#resolver.getCalleeText(loc);
-    if (calleeText === null) return createUnknown("call", loc);
+  #getReceiverPlace(callee: SymbolicValue): BindingPlace | null {
+    if (callee.kind !== "Binding" || callee.path.length === 0) return null;
+    return getBindingPlace(callee.binding, callee.path.slice(0, -1));
+  }
+
+  #getLengthLimit(callSite: CallSite, receiverPlace: BindingPlace | null): LengthLimit | null {
+    const methodName = callSite.callee.kind === "Binding" ? callSite.callee.path.at(-1) : undefined;
+    if (!receiverPlace || methodName === undefined) return null;
+    const isSameLength = LENGTH_PRESERVING_METHODS.has(methodName);
+    const isLengthLimited = isSameLength || SHORTENING_METHODS.has(methodName);
+    if (!isLengthLimited || !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
+      return null;
+    return {
+      arrayLength: { ...receiverPlace, path: [...receiverPlace.path, "length"] },
+      isSameLength,
+    };
+  }
+
+  #createCallResult(callSite: CallSite): SymbolicValue {
+    const calleeText = this.#resolver.getCalleeText(callSite.loc);
+    if (calleeText === null) return createUnknown("call", callSite.loc);
     const inputPlaces = new PlaceMap<true>();
-    for (const argument of argumentValues) this.#collectInputPlaces(argument, inputPlaces);
-    const methodName = callee.kind === "Binding" ? callee.path.at(-1) : undefined;
-    const receiverPlace =
-      callee.kind === "Binding" && methodName !== undefined
-        ? getBindingPlace(callee.binding, callee.path.slice(0, -1))
-        : null;
-    const isSameLength = methodName !== undefined && LENGTH_PRESERVING_METHODS.has(methodName);
-    const isLengthLimited =
-      isSameLength || (methodName !== undefined && SHORTENING_METHODS.has(methodName));
-    const lengthLimit =
-      receiverPlace && isLengthLimited && this.#resolver.isNonMutatingMethod(calleePlace.loc)
-        ? {
-            arrayLength: { ...receiverPlace, path: [...receiverPlace.path, "length"] },
-            isSameLength,
-          }
-        : null;
-    if (!lengthLimit && inputPlaces.size === 0 && this.#resolver.getDomain(loc).kind !== "Cases")
-      return createUnknown("call", loc);
+    for (const argument of callSite.argumentValues) this.#collectInputPlaces(argument, inputPlaces);
+    const receiverPlace = this.#getReceiverPlace(callSite.callee);
+    const lengthLimit = this.#getLengthLimit(callSite, receiverPlace);
+    const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
+    if (!lengthLimit && inputPlaces.size === 0 && !hasFiniteResult)
+      return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
-    const callText = `${calleeText}(${argumentValues.map(formatSymbolicValue).join(", ")})`;
+    const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
     return createBindingValue(
-      this.#createBinding(callText, "call", loc, {
+      this.#createBinding(`${calleeText}(${argumentText})`, "call", callSite.loc, {
         inputPlaces: inputPlaces.places(),
         lengthLimit,
       }),
@@ -840,35 +860,19 @@ export class Interpreter {
     else for (const argument of argumentValues) this.#visitCallbackArgument(argument, walkState);
   }
 
-  #evaluateHookCall(
-    hookKind: HookKind,
-    callee: SymbolicValue,
-    argumentValues: SymbolicValue[],
-    argumentPlaces: Place[],
-    loc: SourceLocation,
-    walkState: WalkState,
-  ): SymbolicValue {
+  #evaluateHookCall(hookKind: HookKind, callSite: CallSite, walkState: WalkState): SymbolicValue {
+    const { callee, argumentValues, argumentPlaces, loc } = callSite;
+    const [firstArgument, secondArgument] = argumentValues;
     if (EFFECT_HOOKS.has(hookKind)) {
-      const [callback] = argumentValues;
-      const [, dependenciesPlace] = argumentPlaces;
-      if (callback)
-        this.effectCalls.push({
-          hookKind,
-          callback,
-          callbackArguments: [],
-          dependencies: dependenciesPlace
-            ? this.#resolver.getSourceText(dependenciesPlace.loc)
-            : null,
-          loc,
-        });
+      if (firstArgument) this.#addEffectCall(hookKind, firstArgument, argumentPlaces[1], loc);
       return UNDEFINED_VALUE;
     }
     if (hookKind === "Custom") this.#addDeferredCallbacks(argumentValues, loc);
-    if (hookKind === "useImperativeHandle" && argumentValues[1]?.kind === "Function")
-      this.#addDeferredCallbacks([this.#callFunction(argumentValues[1], [], loc, walkState)], loc);
-    if (hookKind === "useMemo" && argumentValues[0]?.kind === "Function")
-      return this.#callFunction(argumentValues[0], [], loc, walkState);
-    if (hookKind === "useCallback" && argumentValues[0]) return argumentValues[0];
+    if (hookKind === "useImperativeHandle" && secondArgument?.kind === "Function")
+      this.#addDeferredCallbacks([this.#callFunction(secondArgument, [], loc, walkState)], loc);
+    if (hookKind === "useMemo" && firstArgument?.kind === "Function")
+      return this.#callFunction(firstArgument, [], loc, walkState);
+    if (hookKind === "useCallback" && firstArgument) return firstArgument;
     const hookName = callee.kind === "Global" ? callee.name : hookKind;
     const hookModule = callee.kind === "Global" ? callee.module : null;
     const hookResult: HookResultValue = {
@@ -888,6 +892,21 @@ export class Interpreter {
     return hookResult;
   }
 
+  #addEffectCall(
+    hookKind: HookKind,
+    callback: SymbolicValue,
+    dependenciesPlace: Place | undefined,
+    loc: SourceLocation,
+  ): void {
+    this.effectCalls.push({
+      hookKind,
+      callback,
+      callbackArguments: [],
+      dependencies: dependenciesPlace ? this.#resolver.getSourceText(dependenciesPlace.loc) : null,
+      loc,
+    });
+  }
+
   #addDeferredCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation): void {
     for (const callback of getPassedCallbacks(argumentValues)) {
       if (callback.kind !== "Function") continue;
@@ -903,7 +922,7 @@ export class Interpreter {
   }
 
   #evaluateMethodCall(
-    methodCall: Extract<InstructionValue, { kind: "MethodCall" }>,
+    methodCall: InstructionValueOfKind<"MethodCall">,
     walkState: WalkState,
   ): SymbolicValue {
     const receiver = this.#read(methodCall.receiver);
@@ -912,49 +931,64 @@ export class Interpreter {
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.#read(place));
     const [callback] = argumentValues;
-    if (
-      this.#handlerEffects &&
+    const isIteratingLiteral =
+      this.#handlerEffects !== null &&
       methodName !== null &&
       ITERATION_METHODS.has(methodName) &&
       receiver.kind === "ArrayExpression" &&
-      callback?.kind === "Function"
-    ) {
-      const iteratedItems = [
-        ...receiver.elements,
-        ...receiver.spreads.map(() => createUnknown("item", methodCall.loc)),
-      ];
-      for (const item of iteratedItems)
-        this.#callFunction(callback, [item], methodCall.loc, walkState);
+      callback?.kind === "Function";
+    if (isIteratingLiteral) {
+      this.#callForEachItem(callback, receiver, methodCall.loc, walkState);
       return createUnknown("call", methodCall.loc);
     }
-    if (methodName === "map" && callback?.kind === "Function") {
-      const [itemParameter] = this.#functions.get(callback.functionId)?.params ?? [];
-      const itemPlace = itemParameter ? getPlaceOrSpread(itemParameter) : null;
-      const item: SymbolicValue = itemPlace
-        ? createBindingValue(
-            this.#createBinding(getIdentifierName(itemPlace) ?? "item", "item", itemPlace.loc),
-          )
-        : createUnknown("item", methodCall.loc);
-      return {
-        kind: "ArrayMap",
-        array: receiver,
-        item: this.#callFunction(callback, [item], methodCall.loc, walkState),
-        loc: methodCall.loc,
-      };
-    }
+    if (methodName === "map" && callback?.kind === "Function")
+      return this.#evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
     if (methodName !== null && PROMISE_METHODS.has(methodName)) {
       for (const argument of argumentValues)
         this.#visitCallbackArgument(argument, { ...walkState, isAsync: true });
       return createUnknown("async", methodCall.loc);
     }
     return this.#evaluateCall(
-      this.#read(methodCall.property),
-      methodCall.property,
-      argumentValues,
-      argumentPlaces,
-      methodCall.loc,
+      {
+        callee: this.#read(methodCall.property),
+        calleePlace: methodCall.property,
+        argumentValues,
+        argumentPlaces,
+        loc: methodCall.loc,
+      },
       walkState,
     );
+  }
+
+  #callForEachItem(
+    callback: FunctionValue,
+    array: ArrayExpressionValue,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): void {
+    const items = [...array.elements, ...array.spreads.map(() => createUnknown("item", loc))];
+    for (const item of items) this.#callFunction(callback, [item], loc, walkState);
+  }
+
+  #evaluateArrayMap(
+    array: SymbolicValue,
+    callback: FunctionValue,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const [itemParameter] = this.#functions.get(callback.functionId)?.params ?? [];
+    const itemPlace = itemParameter ? getPlaceOrSpread(itemParameter) : null;
+    const item: SymbolicValue = itemPlace
+      ? createBindingValue(
+          this.#createBinding(getIdentifierName(itemPlace) ?? "item", "item", itemPlace.loc),
+        )
+      : createUnknown("item", loc);
+    return {
+      kind: "ArrayMap",
+      array,
+      item: this.#callFunction(callback, [item], loc, walkState),
+      loc,
+    };
   }
 
   #evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
@@ -985,15 +1019,8 @@ export class Interpreter {
       case "LoadContext":
         return this.#read(value.place);
       case "StoreLocal":
-      case "StoreContext": {
-        const storedValue = this.#read(value.value);
-        const localValue =
-          storedValue.kind === "HookResult" && getIdentifierName(value.lvalue.place) !== null
-            ? this.#bindHookResult(value.lvalue.place, storedValue)
-            : storedValue;
-        this.#write(value.lvalue.place, localValue);
-        return localValue;
-      }
+      case "StoreContext":
+        return this.#evaluateStoreLocal(value);
       case "DeclareLocal":
       case "DeclareContext":
         this.#write(value.lvalue.place, UNDEFINED_VALUE);
@@ -1002,140 +1029,45 @@ export class Interpreter {
         this.#evaluateDestructure(value);
         return this.#read(value.value);
       case "LoadGlobal":
-        if (value.binding.kind === "Global" && value.binding.name === "undefined")
-          return UNDEFINED_VALUE;
-        return {
-          kind: "Global",
-          name: value.binding.name,
-          module: "module" in value.binding ? value.binding.module : null,
-        };
+        return getGlobalValue(value);
       case "PropertyLoad":
         return this.#evaluatePropertyLoad(
           this.#read(value.object),
           String(value.property),
           value.loc,
         );
-      case "ComputedLoad": {
-        const propertyKey = this.#read(value.property);
-        return propertyKey.kind === "Primitive" &&
-          propertyKey.value !== null &&
-          propertyKey.value !== undefined
-          ? this.#evaluatePropertyLoad(
-              this.#read(value.object),
-              String(propertyKey.value),
-              value.loc,
-            )
-          : createUnknown("computed-member", value.loc);
-      }
+      case "ComputedLoad":
+        return this.#evaluateComputedLoad(value);
       case "BinaryExpression":
         return foldBinary(value.operator, this.#read(value.left), this.#read(value.right));
       case "UnaryExpression":
         return foldUnary(value.operator, this.#read(value.value));
-      case "TypeCastExpression": {
-        const castValue = this.#read(value.value);
-        return castValue.kind === "Unknown" &&
-          this.#resolver.getDomain(value.value.loc).kind === "Unknown"
-          ? createUnknown("cast", value.value.loc)
-          : castValue;
-      }
+      case "TypeCastExpression":
+        return this.#evaluateTypeCast(value);
       case "ObjectExpression":
-        return {
-          kind: "ObjectExpression",
-          properties: value.properties.flatMap((property) =>
-            property.kind === "ObjectProperty" &&
-            (property.key.kind === "string" || property.key.kind === "identifier")
-              ? [{ key: property.key.name, value: this.#read(property.place) }]
-              : [],
-          ),
-          spreads: value.properties.flatMap((property) =>
-            property.kind === "Spread" ? [this.#read(property.place)] : [],
-          ),
-        };
+        return this.#evaluateObjectLiteral(value);
       case "ArrayExpression":
-        return {
-          kind: "ArrayExpression",
-          elements: value.elements.flatMap((element): SymbolicValue[] =>
-            element.kind === "Identifier"
-              ? [this.#read(element)]
-              : element.kind === "Hole"
-                ? [UNDEFINED_VALUE]
-                : [],
-          ),
-          spreads: value.elements.flatMap((element) =>
-            element.kind === "Spread" ? [this.#read(element.place)] : [],
-          ),
-        };
+        return this.#evaluateArrayLiteral(value);
       case "FunctionExpression":
       case "ObjectMethod":
         return this.#createClosure(value.loweredFunc.func);
-      case "CallExpression": {
-        const argumentPlaces = value.args.map(getPlaceOrSpread);
-        return this.#evaluateCall(
-          this.#read(value.callee),
-          value.callee,
-          argumentPlaces.map((place) => this.#read(place)),
-          argumentPlaces,
-          value.loc,
-          walkState,
-        );
-      }
+      case "CallExpression":
+        return this.#evaluateCallExpression(value, walkState);
       case "MethodCall":
         return this.#evaluateMethodCall(value, walkState);
-      case "JsxExpression": {
-        const props = value.props.map((attribute): JsxProp | JsxSpreadProp =>
-          attribute.kind === "JsxAttribute"
-            ? {
-                kind: "JsxAttribute",
-                name: attribute.name,
-                value: this.#read(attribute.place),
-                handlerId: null,
-              }
-            : {
-                kind: "JsxSpreadAttribute",
-                value: this.#read(attribute.argument),
-                handlerId: null,
-              },
-        );
-        const tagValue = this.#getJsxTag(value.tag);
-        const providedValue = props.find(
-          (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "value",
-        );
-        const contextKey =
-          providedValue && value.tag.kind !== "BuiltinTag"
-            ? this.#resolver.getContextKey(value.tag.loc)
-            : null;
-        if (providedValue && contextKey)
-          this.providedContexts.push({ contextKey, value: providedValue.value });
-        const element = buildJsx(
-          tagValue,
-          {
-            declaration:
-              value.tag.kind === "BuiltinTag"
-                ? null
-                : this.#resolver.getDeclarationKey(value.tag.loc),
-            isContext: value.tag.kind !== "BuiltinTag" && this.#resolver.isContext(value.tag.loc),
-            props,
-            children: (value.children ?? []).map((child) => this.#read(child)),
-            loc: value.loc,
-          },
-          this.renderedComponents,
-        );
-        return this.#resolver.getReactExportName(value.tag.loc) === "Suspense" &&
-          element.kind === "JsxExpression"
-          ? this.#buildSuspense(element, instruction.id)
-          : element;
-      }
+      case "JsxExpression":
+        return this.#evaluateJsxElement(value, instruction.id);
       case "JsxFragment":
         return { kind: "JsxFragment", children: value.children.map((child) => this.#read(child)) };
       case "Await":
         return createUnknown("async", value.loc);
-      case "NewExpression": {
-        const constructorArguments = value.args.map((argument) =>
-          this.#read(getPlaceOrSpread(argument)),
+      case "NewExpression":
+        this.#passCallbacks(
+          value.args.map((argument) => this.#read(getPlaceOrSpread(argument))),
+          value.loc,
+          walkState,
         );
-        this.#passCallbacks(constructorArguments, value.loc, walkState);
         return createUnknown(value.kind, value.loc);
-      }
       case "PropertyStore":
       case "ComputedStore":
         this.#storeCallback(this.#read(value.value), value.loc, walkState);
@@ -1163,6 +1095,134 @@ export class Interpreter {
       default:
         return assertExhaustive(value, "Unhandled instruction value");
     }
+  }
+
+  #evaluateStoreLocal(store: InstructionValueOfKind<"StoreLocal" | "StoreContext">): SymbolicValue {
+    const storedValue = this.#read(store.value);
+    const localValue =
+      storedValue.kind === "HookResult" && getIdentifierName(store.lvalue.place) !== null
+        ? this.#bindHookResult(store.lvalue.place, storedValue)
+        : storedValue;
+    this.#write(store.lvalue.place, localValue);
+    return localValue;
+  }
+
+  #evaluateComputedLoad(computedLoad: InstructionValueOfKind<"ComputedLoad">): SymbolicValue {
+    const propertyKey = this.#read(computedLoad.property);
+    if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
+      return createUnknown("computed-member", computedLoad.loc);
+    return this.#evaluatePropertyLoad(
+      this.#read(computedLoad.object),
+      String(propertyKey.value),
+      computedLoad.loc,
+    );
+  }
+
+  #evaluateTypeCast(typeCast: InstructionValueOfKind<"TypeCastExpression">): SymbolicValue {
+    const castValue = this.#read(typeCast.value);
+    const isUntypedCast =
+      castValue.kind === "Unknown" &&
+      this.#resolver.getDomain(typeCast.value.loc).kind === "Unknown";
+    return isUntypedCast ? createUnknown("cast", typeCast.value.loc) : castValue;
+  }
+
+  #evaluateObjectLiteral(objectLiteral: InstructionValueOfKind<"ObjectExpression">): SymbolicValue {
+    return {
+      kind: "ObjectExpression",
+      properties: objectLiteral.properties.flatMap((property) =>
+        property.kind === "ObjectProperty" &&
+        (property.key.kind === "string" || property.key.kind === "identifier")
+          ? [{ key: property.key.name, value: this.#read(property.place) }]
+          : [],
+      ),
+      spreads: objectLiteral.properties.flatMap((property) =>
+        property.kind === "Spread" ? [this.#read(property.place)] : [],
+      ),
+    };
+  }
+
+  #evaluateArrayLiteral(arrayLiteral: InstructionValueOfKind<"ArrayExpression">): SymbolicValue {
+    return {
+      kind: "ArrayExpression",
+      elements: arrayLiteral.elements.flatMap((element): SymbolicValue[] => {
+        if (element.kind === "Identifier") return [this.#read(element)];
+        return element.kind === "Hole" ? [UNDEFINED_VALUE] : [];
+      }),
+      spreads: arrayLiteral.elements.flatMap((element) =>
+        element.kind === "Spread" ? [this.#read(element.place)] : [],
+      ),
+    };
+  }
+
+  #evaluateCallExpression(
+    call: InstructionValueOfKind<"CallExpression">,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const argumentPlaces = call.args.map(getPlaceOrSpread);
+    return this.#evaluateCall(
+      {
+        callee: this.#read(call.callee),
+        calleePlace: call.callee,
+        argumentValues: argumentPlaces.map((place) => this.#read(place)),
+        argumentPlaces,
+        loc: call.loc,
+      },
+      walkState,
+    );
+  }
+
+  #readJsxProps(element: InstructionValueOfKind<"JsxExpression">): Array<JsxProp | JsxSpreadProp> {
+    return element.props.map((attribute): JsxProp | JsxSpreadProp =>
+      attribute.kind === "JsxAttribute"
+        ? {
+            kind: "JsxAttribute",
+            name: attribute.name,
+            value: this.#read(attribute.place),
+            handlerId: null,
+          }
+        : {
+            kind: "JsxSpreadAttribute",
+            value: this.#read(attribute.argument),
+            handlerId: null,
+          },
+    );
+  }
+
+  #recordProvidedContext(
+    element: InstructionValueOfKind<"JsxExpression">,
+    props: Array<JsxProp | JsxSpreadProp>,
+  ): void {
+    if (element.tag.kind === "BuiltinTag") return;
+    const providedValue = props.find(
+      (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "value",
+    );
+    const contextKey = providedValue ? this.#resolver.getContextKey(element.tag.loc) : null;
+    if (providedValue && contextKey)
+      this.providedContexts.push({ contextKey, value: providedValue.value });
+  }
+
+  #evaluateJsxElement(
+    element: InstructionValueOfKind<"JsxExpression">,
+    instructionId: InstructionId,
+  ): SymbolicValue {
+    const props = this.#readJsxProps(element);
+    this.#recordProvidedContext(element, props);
+    const isBuiltinTag = element.tag.kind === "BuiltinTag";
+    const jsxValue = buildJsx(
+      this.#getJsxTag(element.tag),
+      {
+        declaration: isBuiltinTag ? null : this.#resolver.getDeclarationKey(element.tag.loc),
+        isContext: !isBuiltinTag && this.#resolver.isContext(element.tag.loc),
+        props,
+        children: (element.children ?? []).map((child) => this.#read(child)),
+        loc: element.loc,
+      },
+      this.renderedComponents,
+    );
+    const isSuspense = this.#resolver.getReactExportName(element.tag.loc) === "Suspense";
+    return isSuspense && jsxValue.kind === "JsxExpression"
+      ? this.#buildSuspense(jsxValue, instructionId)
+      : jsxValue;
   }
 
   #resolvePhi(phi: Phi, outcome: Outcome, guards: SymbolicValue[]): SymbolicValue {
@@ -1418,96 +1478,104 @@ export class Interpreter {
         this.#enteredLoopHeaders.set(currentId, true);
       }
       const block = this.#getBlock(currentId);
-      if (!isPhiResolved && !isLoopHeader) {
-        for (const phi of block.phis)
-          this.#write(
-            phi.place,
-            this.#resolvePhi(
-              phi,
-              { kind: "Fallthrough", from: previousId, to: currentId },
-              currentWalkState.guards,
-            ),
-          );
-      }
+      if (!isPhiResolved && !isLoopHeader)
+        this.#resolveBlockPhis(block, previousId, currentWalkState.guards);
       for (const instruction of block.instructions) {
         this.#evaluateInstruction(instruction, currentWalkState);
         if (instruction.value.kind === "Await")
           currentWalkState = { ...currentWalkState, isAsync: true };
       }
-      const { terminal } = block;
-      let nextId: BlockId;
-      let nextFrom: BlockId | null = currentId;
-      switch (terminal.kind) {
-        case "return":
-          return { kind: "Return", value: this.#read(terminal.value) };
-        case "throw":
-        case "unreachable":
-        case "unsupported":
-          return { kind: "Return", value: createUnknown(terminal.kind, terminal.loc) };
-        case "goto":
-          if (stops.has(terminal.block))
-            return { kind: "Fallthrough", from: currentId, to: terminal.block };
-          nextId = terminal.block;
-          break;
-        case "if":
-        case "branch":
-          return this.#walkBranch(terminal, currentId, stops, currentWalkState);
-        case "switch":
-          return this.#walkSwitch(terminal, currentId, stops, currentWalkState);
-        case "ternary":
-        case "logical":
-        case "optional":
-          this.#getCompilationTables().branchOperators.set(
-            terminal.fallthrough,
-            terminal.kind === "logical"
-              ? terminal.operator
-              : terminal.kind === "optional" && !terminal.optional
-                ? "optional-chain-tail"
-                : terminal.kind,
-          );
-          return this.#continueAfter(
-            this.#walk(
-              terminal.test,
-              new Set([...stops, terminal.fallthrough]),
-              currentId,
-              currentWalkState,
-              false,
-            ),
-            terminal.fallthrough,
-            stops,
-            currentWalkState,
-          );
-        case "label":
-        case "sequence":
-        case "try":
-        case "scope":
-        case "pruned-scope":
-          nextId = terminal.block;
-          break;
-        case "maybe-throw":
-          if (
-            this.#handlerEffects &&
-            terminal.handler !== null &&
-            !this.#walkedCatches.has(terminal.handler)
-          ) {
-            this.#walkedCatches.add(terminal.handler);
-            this.#walk(terminal.handler, stops, currentId, currentWalkState, false);
-          }
-          nextId = terminal.continuation;
-          break;
-        case "for":
-        case "for-of":
-        case "for-in":
-        case "while":
-        case "do-while":
-          return this.#walkLoop(terminal, stops, currentWalkState);
-        default:
-          return assertExhaustive(terminal, "Unhandled terminal");
-      }
-      previousId = nextFrom;
-      currentId = nextId;
+      const step = this.#walkTerminal(block.terminal, currentId, stops, currentWalkState);
+      if (step.kind !== "Next") return step;
+      previousId = currentId;
+      currentId = step.block;
       isPhiResolved = false;
     }
+  }
+
+  #resolveBlockPhis(block: BasicBlock, from: BlockId | null, guards: SymbolicValue[]): void {
+    for (const phi of block.phis)
+      this.#write(
+        phi.place,
+        this.#resolvePhi(phi, { kind: "Fallthrough", from, to: block.id }, guards),
+      );
+  }
+
+  #walkTerminal(
+    terminal: Terminal,
+    blockId: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): TerminalStep {
+    switch (terminal.kind) {
+      case "return":
+        return { kind: "Return", value: this.#read(terminal.value) };
+      case "throw":
+      case "unreachable":
+      case "unsupported":
+        return { kind: "Return", value: createUnknown(terminal.kind, terminal.loc) };
+      case "goto":
+        return stops.has(terminal.block)
+          ? { kind: "Fallthrough", from: blockId, to: terminal.block }
+          : { kind: "Next", block: terminal.block };
+      case "if":
+      case "branch":
+        return this.#walkBranch(terminal, blockId, stops, walkState);
+      case "switch":
+        return this.#walkSwitch(terminal, blockId, stops, walkState);
+      case "ternary":
+      case "logical":
+      case "optional":
+        return this.#walkValueBranch(terminal, blockId, stops, walkState);
+      case "label":
+      case "sequence":
+      case "try":
+      case "scope":
+      case "pruned-scope":
+        return { kind: "Next", block: terminal.block };
+      case "maybe-throw":
+        this.#walkCatchOnce(terminal.handler, blockId, stops, walkState);
+        return { kind: "Next", block: terminal.continuation };
+      case "for":
+      case "for-of":
+      case "for-in":
+      case "while":
+      case "do-while":
+        return this.#walkLoop(terminal, stops, walkState);
+      default:
+        return assertExhaustive(terminal, "Unhandled terminal");
+    }
+  }
+
+  #walkValueBranch(
+    terminal: ValueBranchTerminal,
+    blockId: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): Outcome {
+    this.#getCompilationTables().branchOperators.set(
+      terminal.fallthrough,
+      getBranchOperator(terminal),
+    );
+    const testOutcome = this.#walk(
+      terminal.test,
+      new Set([...stops, terminal.fallthrough]),
+      blockId,
+      walkState,
+      false,
+    );
+    return this.#continueAfter(testOutcome, terminal.fallthrough, stops, walkState);
+  }
+
+  #walkCatchOnce(
+    catchBlock: BlockId | null,
+    blockId: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): void {
+    if (!this.#handlerEffects || catchBlock === null || this.#walkedCatches.has(catchBlock)) return;
+    this.#walkedCatches.add(catchBlock);
+    this.#walk(catchBlock, stops, blockId, walkState, false);
   }
 
   #getOutcomeValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {
@@ -1528,22 +1596,20 @@ export class Interpreter {
   #readStore(
     storeKey: string,
     storeActions: StoreActions,
-    callee: SymbolicValue,
-    argumentValues: SymbolicValue[],
-    loc: SourceLocation,
+    callSite: CallSite,
     walkState: WalkState,
   ): SymbolicValue {
-    const storeHookName = callee.kind === "Global" ? callee.name : "store";
-    const binding = this.externalSources.getStoreBinding(storeKey, storeActions, () =>
-      this.#createBinding(`${storeHookName}()`, "hook", loc, {
+    const storeHookName = callSite.callee.kind === "Global" ? callSite.callee.name : "store";
+    const storeBinding = this.externalSources.getStoreBinding(storeKey, storeActions, () =>
+      this.#createBinding(`${storeHookName}()`, "hook", callSite.loc, {
         hookKind: "Custom",
         domain: { kind: "Opaque", typeText: storeHookName },
       }),
     );
-    const [selector] = argumentValues;
+    const [selector] = callSite.argumentValues;
     return selector?.kind === "Function"
-      ? this.#callFunction(selector, [createBindingValue(binding)], loc, walkState)
-      : createBindingValue(binding);
+      ? this.#callFunction(selector, [createBindingValue(storeBinding)], callSite.loc, walkState)
+      : createBindingValue(storeBinding);
   }
 
   #findProjectHook(calleePlace: Place): ProjectHook | null {

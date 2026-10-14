@@ -2,7 +2,7 @@ import type {
   AbstractValue,
   BinaryExpressionValue,
   BindingValue,
-  Place,
+  BindingPlace,
   SymbolicValue,
 } from "./types";
 import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks";
@@ -25,14 +25,14 @@ const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
 export interface Bound {
-  left: Place | null;
-  right: Place | null;
+  left: BindingPlace | null;
+  right: BindingPlace | null;
   maxDifference: number;
   isStrict: boolean;
 }
 
 interface LinearTerm {
-  atom: Place | null;
+  atom: BindingPlace | null;
   offset: number;
 }
 
@@ -43,7 +43,7 @@ interface Distance {
 
 interface Assumption {
   outcome: boolean;
-  places: Place[];
+  places: BindingPlace[];
 }
 
 export interface Constraints {
@@ -64,12 +64,15 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   possibleMembers: new Map(constraints.possibleMembers),
 });
 
-export const getLengthAtom = (bindingId: number): Place => ({ bindingId, path: [LENGTH_FIELD] });
+export const getLengthAtom = (bindingId: number): BindingPlace => ({
+  bindingId,
+  path: [LENGTH_FIELD],
+});
 
-const getAtomKey = (atom: Place | null): string => (atom ? getPlaceKey(atom) : CONSTANT_KEY);
+const getAtomKey = (atom: BindingPlace | null): string => (atom ? getPlaceKey(atom) : CONSTANT_KEY);
 
-const collectPlaces = (value: SymbolicValue): Place[] => {
-  const places: Place[] = [];
+const collectPlaces = (value: SymbolicValue): BindingPlace[] => {
+  const places: BindingPlace[] = [];
   forEachSymbolicValue(value, (part) => {
     if (part.kind === "Binding") places.push(getValuePlace(part));
   });
@@ -158,7 +161,7 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
       isStrict: false,
     })),
   );
-  const getAtomIndex = (atom: Place | null): number => {
+  const getAtomIndex = (atom: BindingPlace | null): number => {
     const atomIndex = indicesByAtomKey.get(getAtomKey(atom));
     if (atomIndex === undefined) throw new Error(`Unindexed bound atom ${getAtomKey(atom)}`);
     return atomIndex;
@@ -281,7 +284,7 @@ const getValueKeys = (values: AbstractValue[]): Set<string> =>
 
 const narrowUnionMembers = (
   constraints: Constraints,
-  place: Place,
+  place: BindingPlace,
   narrowedValues: AbstractValue[],
 ): Constraints | null => {
   const memberValues = constraints.unionMemberValues.get(place);
@@ -397,7 +400,8 @@ export const forgetBinding = (
   keepsLength: boolean,
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
-  const isLength = (atom: Place | null): boolean => atom !== null && isSamePlace(atom, lengthAtom);
+  const isLength = (atom: BindingPlace | null): boolean =>
+    atom !== null && isSamePlace(atom, lengthAtom);
   constraints.possibleMembers.delete(bindingId);
   for (const [assumptionKey, assumption] of constraints.assumptions) {
     const bindingPlaces = assumption.places.filter((place) => place.bindingId === bindingId);
