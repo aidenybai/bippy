@@ -184,6 +184,77 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
 
+const getPrimitiveSamples = (
+  checker: Checker,
+  type: Type,
+  name: string | null,
+): Sample[] | null => {
+  if (type.isStringLiteralType() || type.isNumberLiteralType())
+    return [{ kind: "Value", value: type.value }];
+  if (type.isBooleanLiteralType())
+    return [{ kind: "Value", value: checker.typeToString(type) === "true" }];
+  if (type.flags & TypeFlags.Null) return [{ kind: "Value", value: null }];
+  if (type.flags & (TypeFlags.Undefined | TypeFlags.Void)) return [{ kind: "Undefined" }];
+  if (type.flags & TypeFlags.StringLike) return getStringSamples(name);
+  if (type.flags & (TypeFlags.NumberLike | TypeFlags.BigIntLike))
+    return [
+      { kind: "Value", value: 0 },
+      { kind: "Value", value: 1 },
+    ];
+  if (type.flags & TypeFlags.BooleanLike)
+    return [
+      { kind: "Value", value: true },
+      { kind: "Value", value: false },
+    ];
+  return null;
+};
+
+const getFirstSample = (
+  checker: Checker,
+  type: Type | undefined,
+  depth: number,
+): Sample | undefined =>
+  depth < MAX_SAMPLE_DEPTH ? getSamples(checker, type, depth + 1)[0] : undefined;
+
+const getCollectionSamples = (checker: Checker, type: Type, depth: number): Sample[] | null => {
+  if (isLibraryType(type, DATE_TYPE_PATTERN)) return [{ kind: "Date", value: SAMPLE_DATE }];
+  if (!type.isTypeReference()) return null;
+  const typeArguments = checker.getTypeArguments(type);
+  if (checker.isArrayType(type)) {
+    const itemSample = getFirstSample(checker, typeArguments[0], depth);
+    return itemSample
+      ? [
+          { kind: "Array", items: [] },
+          { kind: "Array", items: [itemSample] },
+        ]
+      : [{ kind: "Array", items: [] }];
+  }
+  const symbolName = type.getSymbol()?.name;
+  if (symbolName && SET_TYPE_NAMES.has(symbolName)) {
+    const itemSample = getFirstSample(checker, typeArguments[0], depth);
+    return [{ kind: "Set", items: itemSample ? [itemSample] : [] }];
+  }
+  if (symbolName && MAP_TYPE_NAMES.has(symbolName)) {
+    const keySample = getFirstSample(checker, typeArguments[0], depth);
+    const valueSample = getFirstSample(checker, typeArguments[1], depth);
+    return [{ kind: "Map", entries: keySample && valueSample ? [[keySample, valueSample]] : [] }];
+  }
+  if (isLibraryType(type, PROMISE_TYPE_PATTERN)) {
+    const resolvedSample = getFirstSample(checker, typeArguments[0], depth);
+    return [{ kind: "Promise", value: resolvedSample ?? { kind: "Undefined" } }];
+  }
+  if (type.isTupleType())
+    return [
+      {
+        kind: "Array",
+        items: typeArguments.map(
+          (itemType) => getSamples(checker, itemType, depth + 1)[0] ?? TEXT_SAMPLE,
+        ),
+      },
+    ];
+  return null;
+};
+
 const getSamples = (
   checker: Checker,
   type: Type | undefined,
@@ -196,79 +267,27 @@ const getSamples = (
   if (isReactType(type, ELEMENT_TYPE_PATTERN)) return [{ kind: "Element" }];
   if (isReactType(type, NODE_TYPE_PATTERN)) return [TEXT_SAMPLE];
   if (type.isUnionType()) {
-    const samples = dedupeSamples(
+    const memberSamples = dedupeSamples(
       type.getTypes().flatMap((member) => getSamples(checker, member, depth, name)),
     );
     return [
-      ...samples.filter((sample) => sample.kind !== "Undefined"),
-      ...samples.filter((sample) => sample.kind === "Undefined"),
+      ...memberSamples.filter((sample) => sample.kind !== "Undefined"),
+      ...memberSamples.filter((sample) => sample.kind === "Undefined"),
     ].slice(0, MAX_SAMPLE_ALTERNATIVES);
   }
-  if (type.isStringLiteralType() || type.isNumberLiteralType())
-    return [{ kind: "Value", value: type.value }];
-  if (type.isBooleanLiteralType())
-    return [{ kind: "Value", value: checker.typeToString(type) === "true" }];
-  if (type.flags & TypeFlags.Null) return [{ kind: "Value", value: null }];
-  if (type.flags & (TypeFlags.Undefined | TypeFlags.Void)) return [{ kind: "Undefined" }];
-  if (type.flags & TypeFlags.StringLike) return getStringSamples(name);
-  if (isLibraryType(type, DATE_TYPE_PATTERN)) return [{ kind: "Date", value: SAMPLE_DATE }];
-  if (type.flags & (TypeFlags.NumberLike | TypeFlags.BigIntLike))
-    return [
-      { kind: "Value", value: 0 },
-      { kind: "Value", value: 1 },
-    ];
-  if (type.flags & TypeFlags.BooleanLike)
-    return [
-      { kind: "Value", value: true },
-      { kind: "Value", value: false },
-    ];
+  const primitiveSamples = getPrimitiveSamples(checker, type, name);
+  if (primitiveSamples) return primitiveSamples;
   const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);
   if (signature) {
-    const [returnSample] =
-      depth < MAX_SAMPLE_DEPTH
-        ? getSamples(checker, checker.getReturnTypeOfSignature(signature), depth + 1)
-        : [];
+    const returnSample = getFirstSample(
+      checker,
+      checker.getReturnTypeOfSignature(signature),
+      depth,
+    );
     return [{ kind: "Function", returns: returnSample ?? null }];
   }
-  if (checker.isArrayType(type) && type.isTypeReference()) {
-    const [elementType] = checker.getTypeArguments(type);
-    const [elementSample] =
-      depth < MAX_SAMPLE_DEPTH ? getSamples(checker, elementType, depth + 1) : [];
-    return elementSample
-      ? [
-          { kind: "Array", items: [] },
-          { kind: "Array", items: [elementSample] },
-        ]
-      : [{ kind: "Array", items: [] }];
-  }
-  const symbolName = type.getSymbol()?.name;
-  if (symbolName && SET_TYPE_NAMES.has(symbolName) && type.isTypeReference()) {
-    const [itemType] = checker.getTypeArguments(type);
-    const [itemSample] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, itemType, depth + 1) : [];
-    return [{ kind: "Set", items: itemSample ? [itemSample] : [] }];
-  }
-  if (symbolName && MAP_TYPE_NAMES.has(symbolName) && type.isTypeReference()) {
-    const [keyType, valueType] = checker.getTypeArguments(type);
-    const [keySample] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, keyType, depth + 1) : [];
-    const [valueSample] = depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
-    return [{ kind: "Map", entries: keySample && valueSample ? [[keySample, valueSample]] : [] }];
-  }
-  if (isLibraryType(type, PROMISE_TYPE_PATTERN) && type.isTypeReference()) {
-    const [valueType] = checker.getTypeArguments(type);
-    const [resolvedSample] =
-      depth < MAX_SAMPLE_DEPTH ? getSamples(checker, valueType, depth + 1) : [];
-    return [{ kind: "Promise", value: resolvedSample ?? { kind: "Undefined" } }];
-  }
-  if (type.isTupleType() && type.isTypeReference()) {
-    return [
-      {
-        kind: "Array",
-        items: checker
-          .getTypeArguments(type)
-          .map((itemType) => getSamples(checker, itemType, depth + 1)[0] ?? TEXT_SAMPLE),
-      },
-    ];
-  }
+  const collectionSamples = getCollectionSamples(checker, type, depth);
+  if (collectionSamples) return collectionSamples;
   if (type.flags & (TypeFlags.Object | TypeFlags.Intersection))
     return [getObjectSample(checker, type, depth)];
   return [TEXT_SAMPLE];

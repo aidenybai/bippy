@@ -1,7 +1,15 @@
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Interpreter } from "./interpret";
-import type { SymbolicValue, Handler, HandlerTrigger, JsxProp, JsxTag } from "./types";
+import type {
+  Handler,
+  HandlerTrigger,
+  JsxExpressionValue,
+  JsxProp,
+  JsxSpreadProp,
+  JsxTag,
+  SymbolicValue,
+} from "./types";
 import { forEachJsxElement } from "./utils/traverse";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -63,78 +71,101 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
   return GeneratedSource;
 };
 
-export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
-  const handlers: Handler[] = [];
-  const handlerIdsByKey = new Map<string, string | null>();
+class HandlerCollector {
+  readonly handlers: Handler[] = [];
+  readonly #interpreter: Interpreter;
+  readonly #handlerIdsByKey = new Map<string, string | null>();
+  readonly #refCallbackKeys = new Set<string>();
 
-  const addHandler = (
+  constructor(interpreter: Interpreter) {
+    this.#interpreter = interpreter;
+  }
+
+  addHandler(
     trigger: HandlerTrigger,
     callback: SymbolicValue,
     callbackArguments: SymbolicValue[],
     loc: SourceLocation,
-  ): string | null => {
-    const { updates, delegates } = interpreter.collectEffects(callback, callbackArguments);
+  ): string | null {
+    const { updates, delegates } = this.#interpreter.collectEffects(callback, callbackArguments);
     if (updates.length === 0 && delegates.length === 0) return null;
-    const handlerId = `t${handlers.length + 1}`;
-    handlers.push({ id: handlerId, trigger, updates, delegates, loc });
+    const handlerId = `t${this.handlers.length + 1}`;
+    this.handlers.push({ id: handlerId, trigger, updates, delegates, loc });
     return handlerId;
-  };
+  }
 
-  const addEventHandler = (
+  collectElementHandlers(element: JsxExpressionValue): void {
+    for (const prop of element.props) {
+      if (prop.kind === "JsxSpreadAttribute") this.#collectSpreadHandlers(element, prop);
+      else if (isRefCallback(prop)) this.#collectRefCallback(prop);
+      else if (isHandlerProp(element.tag, prop)) this.#collectEventHandler(element, prop);
+    }
+  }
+
+  #addEventHandler(
     handlerKey: string,
     trigger: HandlerTrigger,
     callback: SymbolicValue,
     loc: SourceLocation,
-  ): string | null => {
-    if (!handlerIdsByKey.has(handlerKey))
-      handlerIdsByKey.set(handlerKey, addHandler(trigger, callback, [EVENT_ARGUMENT], loc));
-    return handlerIdsByKey.get(handlerKey) ?? null;
-  };
-
-  for (const effectCall of interpreter.effectCalls) {
-    const trigger: HandlerTrigger = {
-      kind: "Effect",
-      hookKind: effectCall.hookKind,
-      dependencies: effectCall.dependencies,
-    };
-    addHandler(trigger, effectCall.callback, effectCall.callbackArguments, effectCall.loc);
-  }
-  const refCallbackKeys = new Set<string>();
-  forEachJsxElement(render, (element) => {
-    for (const prop of element.props) {
-      if (prop.kind === "JsxSpreadAttribute") {
-        const trigger: HandlerTrigger = { kind: "Event", tag: element.tag.name, event: ANY_EVENT };
-        const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
-        const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
-        if (prop.value.kind === "Unknown")
-          prop.handlerId = addHandler(trigger, prop.value, [], prop.value.loc);
-        else if (spreadHandlers && spreadHandlerKey)
-          prop.handlerId = addEventHandler(spreadHandlerKey, trigger, spreadHandlers, element.loc);
-        continue;
-      }
-      if (isRefCallback(prop)) {
-        const refCallbackKey = getHandlerKey(prop.value);
-        if (refCallbackKey !== null && !refCallbackKeys.has(refCallbackKey)) {
-          refCallbackKeys.add(refCallbackKey);
-          addHandler(
-            { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
-            prop.value,
-            [EVENT_ARGUMENT],
-            getHandlerLocation(prop.value),
-          );
-        }
-        continue;
-      }
-      if (!isHandlerProp(element.tag, prop)) continue;
-      const handlerKey = getHandlerKey(prop.value);
-      if (handlerKey === null) continue;
-      prop.handlerId = addEventHandler(
+  ): string | null {
+    if (!this.#handlerIdsByKey.has(handlerKey))
+      this.#handlerIdsByKey.set(
         handlerKey,
-        { kind: "Event", tag: element.tag.name, event: prop.name },
-        prop.value,
-        getHandlerLocation(prop.value),
+        this.addHandler(trigger, callback, [EVENT_ARGUMENT], loc),
       );
+    return this.#handlerIdsByKey.get(handlerKey) ?? null;
+  }
+
+  #collectSpreadHandlers(element: JsxExpressionValue, prop: JsxSpreadProp): void {
+    const trigger: HandlerTrigger = { kind: "Event", tag: element.tag.name, event: ANY_EVENT };
+    if (prop.value.kind === "Unknown") {
+      prop.handlerId = this.addHandler(trigger, prop.value, [], prop.value.loc);
+      return;
     }
-  });
-  return handlers;
+    const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
+    const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
+    if (spreadHandlers && spreadHandlerKey)
+      prop.handlerId = this.#addEventHandler(
+        spreadHandlerKey,
+        trigger,
+        spreadHandlers,
+        element.loc,
+      );
+  }
+
+  #collectRefCallback(prop: JsxProp): void {
+    const refCallbackKey = getHandlerKey(prop.value);
+    if (refCallbackKey === null || this.#refCallbackKeys.has(refCallbackKey)) return;
+    this.#refCallbackKeys.add(refCallbackKey);
+    this.addHandler(
+      { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+      prop.value,
+      [EVENT_ARGUMENT],
+      getHandlerLocation(prop.value),
+    );
+  }
+
+  #collectEventHandler(element: JsxExpressionValue, prop: JsxProp): void {
+    const handlerKey = getHandlerKey(prop.value);
+    if (handlerKey === null) return;
+    prop.handlerId = this.#addEventHandler(
+      handlerKey,
+      { kind: "Event", tag: element.tag.name, event: prop.name },
+      prop.value,
+      getHandlerLocation(prop.value),
+    );
+  }
+}
+
+export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
+  const collector = new HandlerCollector(interpreter);
+  for (const effectCall of interpreter.effectCalls)
+    collector.addHandler(
+      { kind: "Effect", hookKind: effectCall.hookKind, dependencies: effectCall.dependencies },
+      effectCall.callback,
+      effectCall.callbackArguments,
+      effectCall.loc,
+    );
+  forEachJsxElement(render, (element) => collector.collectElementHandlers(element));
+  return collector.handlers;
 };
