@@ -1726,7 +1726,7 @@ export class Interpreter {
     walkState: WalkState,
   ): void {
     if (!this.#handlerEffects) return;
-    const previousValue: SymbolicValue = { kind: "Binding", binding, path: [field] };
+    const previousValue = createBindingValue(binding, [field]);
     const nextValue = this.#getSetterNextValue(
       setterArgument,
       previousValue,

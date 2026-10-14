@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { dedupeAbstractValues } from "./constraints";
 import { PlaceMap, getBindingPlace } from "./utils/place";
+import { createBindingValue } from "./symbolic-values";
 
 export interface BindingOptions extends Partial<
   Pick<Binding, "hookKind" | "propName" | "initial" | "inputPlaces" | "lengthLimit" | "domain">
@@ -79,7 +80,7 @@ export class BindingTable {
     const place = getBindingPlace(binding, path);
     if (!this.placeDomains.has(place))
       this.#addFieldDomain(binding, place, resolver.getDomain(loc));
-    return { kind: "Binding", binding, path };
+    return createBindingValue(binding, path);
   }
 
   #addFieldDomain(binding: Binding, place: BindingPlace, readDomain: Domain): void {

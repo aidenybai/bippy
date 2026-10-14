@@ -33,10 +33,10 @@ export const createUnknown = (reason: string, loc: SourceLocation): SymbolicValu
   loc,
 });
 
-export const createBindingValue = (binding: Binding): BindingValue => ({
+export const createBindingValue = (binding: Binding, path: string[] = []): BindingValue => ({
   kind: "Binding",
   binding,
-  path: [],
+  path,
 });
 
 export const foldBinary = (

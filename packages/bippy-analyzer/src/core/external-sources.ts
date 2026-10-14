@@ -11,7 +11,7 @@ import type {
   StoreActions,
   SymbolicValue,
 } from "./types";
-import { UNDEFINED_VALUE, createUnknown } from "./symbolic-values";
+import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
 
 const isDefinedSample = (sample: Sample): boolean =>
   sample.kind !== "Undefined" && !(sample.kind === "Value" && sample.value === null);
@@ -34,7 +34,7 @@ export const getStoreFieldValue = (
       return {
         kind: "UnaryExpression",
         operator: "!",
-        value: { kind: "Binding", binding: storeBinding, path: [field] },
+        value: createBindingValue(storeBinding, [field]),
       };
     case "Unknown":
       return createUnknown("store", storeBinding.loc);
