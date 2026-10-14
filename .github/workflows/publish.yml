@@ -73,7 +73,7 @@ jobs:
       - name: Compute dev version
         id: dev-version
         run: |
-          base_version="$(bun -p "require('./packages/bippy/package.json').version")"
+          base_version="$(cd packages/bippy && bun pm pkg get version | tr -d '"')"
           dev_version="${base_version}-dev.$(git rev-parse --short HEAD)"
           echo "version=${dev_version}" >> "$GITHUB_OUTPUT"
           echo "Publishing dev snapshot ${dev_version}"
@@ -81,8 +81,8 @@ jobs:
       - name: Apply dev version to published package
         env:
           DEV_VERSION: ${{ steps.dev-version.outputs.version }}
-        run: |
-          bun -e "const fs = require('node:fs'); const path = 'packages/bippy/package.json'; const manifest = JSON.parse(fs.readFileSync(path, 'utf8')); manifest.version = process.env.DEV_VERSION; fs.writeFileSync(path, JSON.stringify(manifest, null, 2) + '\n');"
+        working-directory: packages/bippy
+        run: bun pm pkg set version="$DEV_VERSION"
 
       - name: Publish to npm under the dev tag
         env:

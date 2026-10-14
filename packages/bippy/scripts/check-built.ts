@@ -8,7 +8,6 @@ import { getExpectedExports } from "./test-inventory";
 
 const mode = process.argv[2];
 if (!mode) {
-  // Bun strips unknown directives when it loads a module, so read the published files directly.
   for (const entryPath of ["../dist/index.js", "../dist/index.cjs"]) {
     assert.match(
       await Bun.file(new URL(entryPath, import.meta.url)).text(),

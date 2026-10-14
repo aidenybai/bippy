@@ -29,7 +29,8 @@ jobs:
       - name: Update to the latest experimental nightlies
         run: bun run --filter @bippy/e2e-refresh-experimental update-experimental
       - name: Report nightly versions
-        run: bun -e "const pkg = require('./packages/bippy/tests/fixtures/refresh-app-experimental/package.json'); console.log(JSON.stringify(pkg.dependencies, null, 2))"
+        run: bun pm pkg get dependencies
+        working-directory: packages/bippy/tests/fixtures/refresh-app-experimental
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
         working-directory: packages/bippy/tests/e2e
