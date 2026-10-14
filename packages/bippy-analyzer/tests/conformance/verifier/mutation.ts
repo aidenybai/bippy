@@ -20,7 +20,7 @@ interface WarningScore extends Pick<
 interface ProbedWarning {
   warning: Warning;
   probe: Probe | null;
-  isOwner: (owner: string | null) => boolean;
+  isOwner: OwnerPredicate;
 }
 
 const PLACE_PATTERN = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/;
@@ -93,12 +93,8 @@ const getProbedWarnings = (
   });
 };
 
-export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] => {
-  const readSource = createSourceReader();
-  return analysis.warnings.flatMap(
-    (warning) => createMutationProbe(warning.file, readSource(warning.file), warning.loc) ?? [],
-  );
-};
+export const collectMutationProbes = (analysis: ComponentAnalysis): Probe[] =>
+  getProbedWarnings(analysis, null).flatMap((probed) => probed.probe ?? []);
 
 const formatWarning = (warning: Warning): string =>
   `${[warning.kind, formatLine(warning.loc)].filter(Boolean).join(" ")}: ${warning.message}`;
@@ -110,32 +106,21 @@ const formatOwner = (owner: string, stateBindings: Binding[] | null): string => 
   return binding ? `state ${binding.name}` : `state hook ${name}`;
 };
 
-export const scoreWarnings = (
-  analysis: ComponentAnalysis,
+const isWarningWitnessed = (probed: ProbedWarning, observations: Observation[]): boolean | null => {
+  const probeId = probed.probe?.id;
+  if (probeId === undefined) return null;
+  const hits = observations.flatMap((observation) =>
+    observation.after.mutationHits.filter((hit) => hit.id === probeId && probed.isOwner(hit.owner)),
+  );
+  if (hits.length === 0) return null;
+  return hits.some((hit) => (probed.warning.kind === "lost-update" ? hit.isLost : hit.isWritten));
+};
+
+const collectUnwarnedMutations = (
   observations: Observation[],
+  probedWarnings: ProbedWarning[],
   stateBindings: Binding[] | null,
-): WarningScore => {
-  const probedWarnings = getProbedWarnings(analysis, stateBindings);
-  const score: WarningScore = {
-    coveredWarningCount: 0,
-    refutedWarnings: [],
-    unwarnedMutations: [],
-  };
-  for (const probed of probedWarnings) {
-    if (!probed.probe) continue;
-    const probeId = probed.probe.id;
-    const hits = observations.flatMap((observation) =>
-      observation.after.mutationHits.filter(
-        (hit) => hit.id === probeId && probed.isOwner(hit.owner),
-      ),
-    );
-    if (hits.length === 0) continue;
-    const isWitnessed = hits.some((hit) =>
-      probed.warning.kind === "lost-update" ? hit.isLost : hit.isWritten,
-    );
-    if (isWitnessed) score.coveredWarningCount++;
-    else score.refutedWarnings.push(formatWarning(probed.warning));
-  }
+): string[] => {
   const unwarned = new Map<string, string>();
   for (const observation of observations) {
     for (const owner of observation.after.mutatedOwners) {
@@ -150,6 +135,25 @@ export const scoreWarnings = (
         );
     }
   }
-  score.unwarnedMutations = [...unwarned.values()];
-  return score;
+  return [...unwarned.values()];
+};
+
+export const scoreWarnings = (
+  analysis: ComponentAnalysis,
+  observations: Observation[],
+  stateBindings: Binding[] | null,
+): WarningScore => {
+  const probedWarnings = getProbedWarnings(analysis, stateBindings);
+  let coveredWarningCount = 0;
+  const refutedWarnings: string[] = [];
+  for (const probed of probedWarnings) {
+    const isWitnessed = isWarningWitnessed(probed, observations);
+    if (isWitnessed === true) coveredWarningCount++;
+    if (isWitnessed === false) refutedWarnings.push(formatWarning(probed.warning));
+  }
+  return {
+    coveredWarningCount,
+    refutedWarnings,
+    unwarnedMutations: collectUnwarnedMutations(observations, probedWarnings, stateBindings),
+  };
 };
