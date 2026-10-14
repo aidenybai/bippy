@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/slymnoyann/hey.xyz",
+  "revision": "44dee0c1223b9202699915fd3e92e670fd8e34e6",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.26.0 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

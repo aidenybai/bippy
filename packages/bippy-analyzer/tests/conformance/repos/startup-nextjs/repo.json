@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/NextJSTemplates/startup-nextjs",
+  "revision": "e730b6a99c77b96c835f11347231faa4f4e9f767",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/noodle-run/noodle",
+  "revision": "4e26fb7c990ccccce203f1c30f79126ef1bfbcaa",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "BUN_DIR=$(mktemp -d) && npm install --no-save --no-audit --no-fund --prefix \"$BUN_DIR\" bun@1.1.38 && \"$(ls -d \"$BUN_DIR\"/node_modules/@oven/bun-*/bin/bun | head -1)\" install --frozen-lockfile --ignore-scripts"
+}

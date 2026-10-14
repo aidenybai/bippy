@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Superflows-AI/superflows",
+  "revision": "4c8c40c05fa7ba812f1a0c78d00be61ca932b93c",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/codeforreal1/compressO",
+  "revision": "a02501733570f74c7111b866b5c03c8c1f9f0788",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

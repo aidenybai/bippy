@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/jellyfin/jellyfin-web",
+  "revision": "e7a146f4b5807d6367ef87f4b7aa30ec993eb317",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

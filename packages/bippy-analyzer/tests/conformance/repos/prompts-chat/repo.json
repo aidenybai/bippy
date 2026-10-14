@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/f/prompts.chat",
+  "revision": "bbd0529530d99fa76ab2f51809b6184ea4b625b8",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/devias-io/material-kit-react",
+  "revision": "6423e1a2f092c50d7e1e22f3e43344df02af41de",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/yournextstore/yournextstore",
+  "revision": "cde67e633a1e12c9f3805fc71ffef685a9ecc447",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "BUN_DIR=$(mktemp -d) && npm install --no-save --no-audit --no-fund --prefix \"$BUN_DIR\" bun@1.3.0 && \"$(ls -d \"$BUN_DIR\"/node_modules/@oven/bun-*/bin/bun | head -1)\" install --frozen-lockfile --ignore-scripts"
+}

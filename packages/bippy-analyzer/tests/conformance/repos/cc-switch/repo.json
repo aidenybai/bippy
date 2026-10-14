@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/farion1231/cc-switch",
+  "revision": "23dc945e8950bdace653320f9e491dc455c5cebf",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.12.3 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/lnkiai/m3e-canvas",
+  "revision": "0239ae1a8532f905388de4b46ff88a1c90641bb2",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

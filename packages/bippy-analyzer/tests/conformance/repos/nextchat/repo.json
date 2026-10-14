@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ChatGPTNextWeb/NextChat",
+  "revision": "839a24df5d655eb8c3477fb35e8da578dc206f39",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/tremorlabs/tremor",
+  "revision": "ca4d588f47820ff3d514d37fa4ee08a4222dec11",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

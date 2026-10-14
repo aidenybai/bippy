@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ncdai/chanhdai.com",
+  "revision": "1951e213749f58787fc2211cb1cfdc4f386de033",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@12.4.2 install --frozen-lockfile --ignore-scripts"
+}

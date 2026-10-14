@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/LibreSpark/LibreTV",
+  "revision": "a24ad336a3f7c8a16ca93d1f1198e08ac6b7e943",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}
