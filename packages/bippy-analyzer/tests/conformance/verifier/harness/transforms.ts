@@ -100,8 +100,6 @@ const isModuleStatement = (statement: Rollup.ProgramNode["body"][number]): boole
   statement.type === "ExportDefaultDeclaration" ||
   statement.type === "ExportAllDeclaration";
 
-// HACK: an app's own CommonJS module, like a Next config, imports with `module.exports` as its
-// default export.
 export const createCommonJsPlugin = (): Plugin => ({
   name: "bippy-verify-commonjs",
   transform: (code, id) => {
@@ -116,8 +114,6 @@ export const createCommonJsPlugin = (): Plugin => ({
   },
 });
 
-// HACK: Next's bundler lets ES modules call `require`, which a browser lacks, so it becomes an
-// import.
 export const createRequirePlugin = (): Plugin => ({
   name: "bippy-verify-require",
   transform: (code, id) => {

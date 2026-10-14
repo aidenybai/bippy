@@ -33,7 +33,6 @@ export interface CompiledFile {
   loadModuleFunction: ModuleFunctionLoader;
 }
 
-// HACK: later passes rewrite the HIR in place, so throw past the compiler to stop after STOP_PASS.
 const STOP = Symbol("stop");
 const STOP_PASS = "InferReactivePlaces";
 const ANONYMOUS_NAME = "<anonymous>";

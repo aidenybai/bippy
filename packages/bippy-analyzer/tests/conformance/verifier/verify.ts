@@ -78,8 +78,6 @@ const MAX_PAGES = 8;
 const PAGE_MEMORY_BYTES = 1.5 * 1024 ** 3;
 const RESERVED_MEMORY_BYTES = 5 * 1024 ** 3;
 
-// HACK: retries flaky harness loads, and aborts external requests and post-load navigations so no
-// component hangs on the network.
 export const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
     const page = await browser.newPage();

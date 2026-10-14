@@ -1,4 +1,3 @@
-// HACK: server-leaning modules read these Node globals at import time; they only need to exist.
 class BufferShim {
   readonly bytes: Uint8Array;
 

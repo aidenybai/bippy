@@ -116,8 +116,6 @@ export const findSiblingParts = (query: ParentQuery): Wrapper[] => {
     .flatMap((candidate) => findOwnExport(candidate, "part", query));
 };
 
-// HACK: React's "of 'useX(...)' as it is null" error is the only hint, so guess the empty context
-// is named XContext.
 const findContextProviders = (query: ParentQuery): Wrapper[] => {
   const hookName = NULL_HOOK_PATTERN.exec(query.error)?.[1];
   const hookContextName = hookName
@@ -135,8 +133,6 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
   });
 };
 
-// HACK: a named parent the component's file can't reach is likely a library part its outermost
-// root renders, so that root goes first.
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
   const namedParent = query.isNamingParent ? resolveNamedParent(query.error, query.project) : null;
   const rootNames = getCompoundRootNames(query);

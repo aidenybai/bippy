@@ -4,8 +4,6 @@ import type { Plugin } from "vite";
 import { IMAGE_FILE_PATTERN, stripQuery } from "./packages";
 
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
-// HACK: stylesheets load as scripts so no preprocessor runs; a CSS module's class names are their
-// own names.
 const STYLESHEET_PREFIX = "\0bippy-verify-stylesheet:";
 const STYLESHEET_SOURCE =
   "export default new Proxy({}, { get: (_, key) => (typeof key === 'string' ? key : undefined) });";
@@ -22,8 +20,6 @@ export const createAssetPlugin = (): Plugin => ({
   name: "bippy-verify-assets",
   enforce: "pre",
   resolveId: (source, importer) => {
-    // HACK: the id ends in `.js`, as Vite's own CSS handling claims any id ending like a
-    // stylesheet.
     if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
     const assetPath = stripQuery(source);
     const isMissingImage =

@@ -1,4 +1,3 @@
-// HACK: next/navigation throws outside a mounted app router.
 const router = {
   push: () => undefined,
   replace: () => undefined,

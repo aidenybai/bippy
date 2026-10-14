@@ -18,7 +18,6 @@ const isPathMap = (value: unknown): value is Record<string, string[]> =>
     (targets) => Array.isArray(targets) && targets.every((target) => typeof target === "string"),
   );
 
-// HACK: TypeScript 7 no longer resolves bare imports through `baseUrl`, so spell it out as `paths`.
 const getBaseUrlPaths = (api: API, configPath: string): Record<string, string[]> | null => {
   const { baseUrl, paths } = api.parseConfigFile(configPath).options;
   if (typeof baseUrl !== "string") return null;

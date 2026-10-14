@@ -32,8 +32,6 @@ import {
 import { PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
 import type { Probe, SourceIndex } from "./types";
 
-// HACK: `getDependencyHash` changes when Vite re-bundles dependencies, leaving loaded pages with a
-// stale React.
 export interface Harness {
   url: string;
   sourceIndex: SourceIndex;
@@ -97,8 +95,6 @@ const getHarnessImporter = (
 ): string | null => {
   if (importer?.startsWith(`${ids.wrapper}?`))
     return getWrapperQuery(importer).get("importer") ?? appImporter;
-  // HACK: the setup lives outside the app, so its imports resolve as if from an app file, where
-  // path aliases apply.
   if (importer === ids.setup && !source.startsWith(".")) return appImporter;
   if (importer === ids.setup && setup.file) return setup.file;
   return null;
@@ -228,7 +224,6 @@ const createOptimizeDepsOptions = (
   esbuildOptions: {
     plugins: [createMissingRequirePlugin(), createNodeBuiltinPlugin(polyfilledModules)],
     loader: { ".node": "empty" },
-    // HACK: Webpack, which Next bundles client code with, makes `__dirname` the root.
     ...(context.nextDirectory ? { define: { __dirname: '"/"' } } : {}),
   },
 });
@@ -242,7 +237,6 @@ const createHarnessConfig = (context: HarnessContext): InlineConfig => {
     appType: "custom",
     plugins: createHarnessPlugins(context, polyfilledModules),
     resolve: { alias: getHarnessAliases(context), dedupe: ["react", "react-dom"] },
-    // HACK: an empty PostCSS config keeps an app's Tailwind or Sass setup from failing imports.
     css: { postcss: {} },
     esbuild: { jsx: "automatic", jsxDev: true },
     define: getEnvDefines(context),

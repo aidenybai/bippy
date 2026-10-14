@@ -11,8 +11,6 @@ export interface ProviderSpec {
   wrap: (children: string) => string;
 }
 
-// HACK: hooks like `useNavigation` throw outside a data router, and React Router before 6.4 has
-// only `MemoryRouter`.
 const createRouterSpec = (packageName: string): ProviderSpec => ({
   packageName,
   imports: [

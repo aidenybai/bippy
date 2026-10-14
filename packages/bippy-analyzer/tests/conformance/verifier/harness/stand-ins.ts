@@ -84,8 +84,6 @@ const isNodeOnlyModule = (
   );
 };
 
-// HACK: a module that can't load in a browser exports stand-ins, so code awaiting it renders around
-// what it gets.
 const createStandInModuleSource = (names: Set<string>): string =>
   [
     `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
@@ -126,8 +124,6 @@ export const createMissingModulePlugin = (): Plugin => ({
   },
 });
 
-// HACK: one missing `require` fails the whole pre-bundle batch, so it becomes a module that throws
-// as Node would.
 export const createMissingRequirePlugin = (): OptimizerPlugin => ({
   name: MISSING_MODULE_NAMESPACE,
   setup: (build) => {
@@ -146,8 +142,6 @@ export const createMissingRequirePlugin = (): OptimizerPlugin => ({
   },
 });
 
-// HACK: a browser has no Node, so Node modules and server SDKs in pre-bundled packages become
-// stand-ins.
 export const createNodeBuiltinPlugin = (polyfilledModules: Set<string>): OptimizerPlugin => ({
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {

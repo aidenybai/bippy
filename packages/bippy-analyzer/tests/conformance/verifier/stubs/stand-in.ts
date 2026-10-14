@@ -13,8 +13,6 @@ const EMPTY_ARRAY_METHODS = new Set([
   "values",
 ]);
 
-// HACK: callable, constructable, iterable empty value for objects too wide to sample; `then` and
-// `$$typeof` stay undefined so it is neither awaited nor rendered.
 export const STAND_IN: unknown = new Proxy(function standIn() {}, {
   apply: () => STAND_IN,
   construct: () => Object(STAND_IN),

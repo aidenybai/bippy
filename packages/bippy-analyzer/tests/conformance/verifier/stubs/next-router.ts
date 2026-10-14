@@ -1,4 +1,3 @@
-// HACK: next/router throws outside a mounted pages router.
 const events = {
   on: () => undefined,
   off: () => undefined,

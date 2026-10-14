@@ -43,7 +43,6 @@ export const getNextPolyfillAliases = (nextDirectory: string | null): Alias[] =>
   });
 };
 
-// HACK: named with `.shared-runtime` since Next 13.5.
 const resolveNextContextModule = (nextDirectory: string, name: string): string | null => {
   const fileName = [`${name}.shared-runtime`, name].find((candidate) =>
     existsSync(join(nextDirectory, "dist/shared/lib", `${candidate}.js`)),
@@ -51,8 +50,6 @@ const resolveNextContextModule = (nextDirectory: string, name: string): string |
   return fileName ? `next/dist/shared/lib/${fileName}` : null;
 };
 
-// HACK: packages importing `next/navigation` or `next/router` bypass the stubs, so provide Next's
-// own router contexts.
 export const createNextContextSpec = (nextDirectory: string | null): ProviderSpec | null => {
   if (!nextDirectory) return null;
   const [appRouterModule, hooksModule, routerModule] = NEXT_CONTEXT_MODULES.map((name) =>
@@ -81,7 +78,6 @@ export const createNextContextSpec = (nextDirectory: string | null): ProviderSpe
   };
 };
 
-// HACK: unoptimized, since the harness has no `/_next/image` route.
 export const getNextImageOptions = (nextDirectory: string | null): Record<string, unknown> => {
   const configFile = nextDirectory && join(nextDirectory, "dist/shared/lib/image-config.js");
   if (!configFile || !existsSync(configFile)) return {};
@@ -90,8 +86,6 @@ export const getNextImageOptions = (nextDirectory: string | null): Record<string
   return { __NEXT_IMAGE_OPTS: { ...imageConfigDefault, unoptimized: true } };
 };
 
-// HACK: `next/image` reads `{ src, width, height }` the way Next's bundler gives it, where Vite
-// gives only a URL.
 export const createNextImagePlugin = (): Plugin => ({
   name: "bippy-verify-next-image",
   enforce: "post",

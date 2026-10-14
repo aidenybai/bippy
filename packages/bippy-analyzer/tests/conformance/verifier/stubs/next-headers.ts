@@ -1,4 +1,3 @@
-// HACK: a mount has no request; values are awaitable because Next 15 made these async.
 const cookieStore = {
   get: () => undefined,
   getAll: () => [],

@@ -16,9 +16,6 @@ const CONTEXT_TAG_PATTERN = /(^|\.)(Provider|Consumer)$/;
 const WRAPPER_NAME_PATTERN = /^(?:Memo|ForwardRef|Lazy)\((.*)\)$/;
 const MAX_MATCH_STEPS = 200_000;
 const GENERIC_COMPONENT_NAMES = new Set(["Anonymous", "ForwardRef", "Memo", "Lazy"]);
-// HACK: esbuild renames a function that shadows its variable, like `Editor` in
-// `const Editor = forwardRef(function Editor() {})`, to `Editor2`, and Vite turns off
-// `keepNames` in development.
 const RENAMED_SUFFIX_PATTERN = /\d+$/;
 
 export const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
@@ -38,7 +35,6 @@ export const toExpected = (
       const { tag } = value;
       if (tag.kind === "DynamicTag") return [{ kind: "hole" }];
       if (TRANSPARENT_TAG_PATTERN.test(tag.name)) return value.children.flatMap(recurse);
-      // HACK: a library's `*.Provider` may be its own component rather than a context provider.
       if (CONTEXT_TAG_PATTERN.test(tag.name))
         return [
           {
@@ -108,7 +104,6 @@ interface MatchBudget {
 const matchOne = (expected: ExpectedShape, actual: Shape, budget: MatchBudget): boolean => {
   if (expected.kind === "text") return actual.kind === "text" && actual.text === expected.text;
   if (expected.kind === "component") {
-    // HACK: a library may export a host element string under a component's name.
     if (actual.kind === "element")
       return !expected.isKnown && actual.tag.toLowerCase() === expected.name.toLowerCase();
     if (actual.kind !== "component") return false;

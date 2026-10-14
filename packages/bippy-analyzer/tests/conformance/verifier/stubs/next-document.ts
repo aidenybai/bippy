@@ -1,7 +1,6 @@
 import { Component, Fragment, createElement } from "react";
 import type { ReactNode } from "react";
 
-// HACK: the real next/document pulls Next's server into the browser bundle.
 interface DocumentChildrenProps {
   children?: ReactNode;
 }

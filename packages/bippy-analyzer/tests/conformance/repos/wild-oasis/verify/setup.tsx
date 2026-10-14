@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 import { USER } from "./supabase";
 
-// HACK: mounts every component signed in, as the app's `ProtectedRoute` does once the user loads.
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

@@ -160,8 +160,6 @@ const isMutatingMethod = (target: object, key: string | symbol): boolean =>
   typeof key === "string" &&
   (target instanceof Date ? key.startsWith("set") : MUTATING_COLLECTION_METHODS.has(key));
 
-// HACK: React DOM's development build freezes every `style` object it renders, which isn't a
-// mutation.
 const isFreezing = (
   target: object,
   key: string | symbol,
@@ -357,8 +355,6 @@ const getChildren = (fiber: Fiber): Fiber[] => {
   return children;
 };
 
-// HACK: `memo(forwardRef(...))` mounts as a memo fiber around the forward ref fiber that holds the
-// hooks.
 const findMountedFiber = (): Fiber | null => {
   let fiber = traverseFiber(
     latestRoot?.current ?? null,
@@ -479,8 +475,6 @@ const trackRequest = <Result>(request: Promise<Result>): Promise<Result> => {
   pendingRequests++;
   return request.finally(() => pendingRequests--);
 };
-// HACK: external requests are blocked, so answer with JSON that has any field but `error` and
-// `errors`.
 const createStandInResponse = (): Response => {
   const response = new Response("{}", { headers: { "content-type": "application/json" } });
   Object.defineProperty(response, "json", {
@@ -516,15 +510,12 @@ const recordError = (error: unknown, errorInfo?: ErrorInfo): RecordedError => {
   };
 };
 
-// HACK: an app's own error boundary catches first, and React still reports it through
-// `onCaughtError` (19) or a global error event (18).
 const recordCaughtError = (error: unknown, errorInfo?: ErrorInfo): void => {
   caughtError ??= recordError(error, errorInfo);
 };
 
 window.addEventListener("error", (event) => recordCaughtError(event.error));
 
-// HACK: mocked data loads after a delay, so poll until requests finish and the component rendered.
 const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
   do await waitForSettleInterval();
@@ -597,7 +588,6 @@ const isMountedType = (type: unknown): boolean =>
     type === Reflect.get(Object(mountedType), "type") ||
     type === Reflect.get(Object(mountedType), "render"));
 
-// HACK: React records an element's owner only in development builds, as `_debugOwner`.
 const isRenderedByChild = (fiber: Fiber): boolean => {
   const owner: unknown = Reflect.get(fiber, "_debugOwner");
   const ownerType: unknown = owner && typeof owner === "object" ? Reflect.get(owner, "type") : null;
@@ -668,7 +658,6 @@ const isComponentType = (value: unknown): boolean =>
   typeof value === "function" ||
   (typeof value === "object" && value !== null && "$$typeof" in value);
 
-// HACK: React 18 renders a context itself as its consumer.
 const getComponentType = (value: unknown): unknown => {
   if (!isComponentType(value)) return Reflect.get(Object(value), "Root");
   const provider = Reflect.get(Object(value), "Provider");
@@ -683,8 +672,6 @@ const findPartName = (exportNames: string[], exportName: string): string | undef
     .filter((name) => name.endsWith(exportName))
     .sort((left, right) => left.length - right.length)[0];
 
-// HACK: a package may export the part an error names under a shorter or longer name, or only as
-// its `Root`.
 const loadWrapper = async ({ candidate }: Wrapper): Promise<LoadedWrapper | null> => {
   const isPackage = candidate.kind === "package";
   const query = new URLSearchParams(
@@ -719,7 +706,6 @@ const isAsyncFunction = (
 ): value is (props: Record<string, unknown>) => Promise<unknown> =>
   typeof value === "function" && value.constructor.name === "AsyncFunction";
 
-// HACK: react-router reports an app's own router only through this error.
 const NESTED_ROUTER_PATTERN = /cannot render a <Router> inside another <Router>/;
 
 const ASYNC_CLIENT_COMPONENT_PATTERN =
@@ -729,7 +715,6 @@ const isFunctionComponent = (value: unknown): value is FunctionComponent =>
   typeof value === "function" && !Reflect.get(Object(value.prototype), "isReactComponent");
 
 const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNode) => {
-  // HACK: what a server component rendered is whatever React accepts as children.
   const resolved = (): ReactNode => output as ReactNode;
   Object.defineProperty(resolved, "name", { value: Reflect.get(Object(type), "name") });
   const displayName: unknown = Reflect.get(Object(type), "displayName");
@@ -737,8 +722,6 @@ const createResolvedComponent = (type: unknown, output: unknown): (() => ReactNo
   return resolved;
 };
 
-// HACK: a client-only component throws outside React for want of hooks, so it renders normally
-// instead.
 const callServerComponent = async (
   type: FunctionComponent,
   props: Record<string, unknown>,
@@ -750,7 +733,6 @@ const callServerComponent = async (
   }
 };
 
-// HACK: resolves server components as a server would before the browser gets the tree.
 const resolveServerTree = async (node: unknown, isEveryComponent = false): Promise<unknown> => {
   if (Array.isArray(node))
     return Promise.all(node.map((item) => resolveServerTree(item, isEveryComponent)));
@@ -779,7 +761,6 @@ const resolveServerTree = async (node: unknown, isEveryComponent = false): Promi
   return cloneElement(node, Object.fromEntries(props));
 };
 
-// HACK: named by depth so React's component stack says which wrapper an error came from.
 const getDepthMarker = (depth: number): ComponentType<ChildrenProps> => {
   const cached = depthMarkers.get(depth);
   if (cached) return cached;
@@ -816,19 +797,12 @@ const runScenario = async (scenario: NonNullable<MountRequest["scenario"]>): Pro
 const importComponentModule = async (
   componentModule: MountRequest["module"],
 ): Promise<Record<string, unknown>> => {
-  // HACK: load a module's cycle importers first, as the app does, so a top-level read of it, like a
-  // route table, isn't in the temporal dead zone.
   for (const url of componentModule.importerUrls)
     await import(/* @vite-ignore */ new URL(url, location.origin).href).catch(() => undefined);
-  // HACK: Vite adds `?import` to a root-relative URL imported at runtime, which would load
-  // the component's file a second time beside its static importers, like a wrapper from
-  // the same file, each with its own contexts. A full URL is left alone.
   return import(/* @vite-ignore */ new URL(componentModule.url, location.origin).href);
 };
 
 const createMountElement = (type: unknown, mounted: MountedComponent): ReactElement => {
-  // HACK: the component and wrapper types come from dynamic imports, so React's element
-  // typing can't see them.
   let element = createElement(type as Parameters<typeof createElement>[0], mounted.props);
   for (let depth = mounted.wrappers.length; depth > 0; depth--) {
     const wrapper = mounted.wrappers[depth - 1];
@@ -929,11 +903,9 @@ const preventNavigation = (event: Event): void => {
 
 document.addEventListener("click", preventNavigation, true);
 document.addEventListener("submit", preventNavigation, true);
-// HACK: scripts navigate too, and leaving the page would unload the harness.
 navigation.addEventListener("navigate", (event) => {
   if (event.cancelable && !event.hashChange) event.preventDefault();
 });
-// HACK: going back can't be canceled, and the harness is the first page.
 history.back = () => {};
 history.go = () => {};
 

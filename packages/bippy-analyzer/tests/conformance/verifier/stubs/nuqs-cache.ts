@@ -1,5 +1,3 @@
-// HACK: nuqs keeps parsed params in React's server-only `cache`; until parsed, every key has its
-// parser's default.
 type SearchParamValue = string | string[] | undefined;
 
 interface Parser {

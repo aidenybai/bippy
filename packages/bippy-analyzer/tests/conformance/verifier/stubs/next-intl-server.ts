@@ -1,6 +1,5 @@
 import { STAND_IN } from "./stand-in";
 
-// HACK: next-intl/server needs a request; translations render as their keys.
 interface TranslationOptions {
   namespace?: string;
 }

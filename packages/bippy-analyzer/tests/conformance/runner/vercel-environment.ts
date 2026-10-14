@@ -114,7 +114,6 @@ const listFiles = (directory: string): string[] =>
     return statSync(path).isDirectory() ? listFiles(path) : [path];
   });
 
-// HACK: the network can drop a long wait while the sandbox command keeps running, so wait again.
 const waitForCommand = async (command: Command, attempt = 1): Promise<CommandFinished> => {
   try {
     return await command.wait();

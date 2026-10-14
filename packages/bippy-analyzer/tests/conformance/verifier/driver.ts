@@ -31,8 +31,6 @@ const PAGE_TIMEOUT_MS = 30_000;
 const PARENT_FAILURES = new Set<MountFailure>(["provider", "missing-data", "other"]);
 const REDUNDANT_PARENT_FAILURES = new Set<MountFailure>(["missing-data", "other"]);
 
-// HACK: a component that renders `<html>` replaces the harness document, leaving the page
-// unresponsive.
 const withTimeout = <Result>(promise: Promise<Result>): Promise<Result> =>
   Promise.race([
     promise,

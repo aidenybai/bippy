@@ -144,10 +144,6 @@ const save = (): void => {
   console.log("Saved src/react-compiler's edits to patches/react-compiler.patch");
 };
 
-/**
- * Moves to another upstream revision by cherry-picking the patch onto it. A hunk that no
- * longer applies is left with conflict markers in src/react-compiler to resolve before `--save`.
- */
 const upgrade = (target: string): void => {
   const patch = readPatch();
   const revision = getRevision(patch);

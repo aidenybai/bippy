@@ -25,8 +25,6 @@ interface CompiledComponent {
   fileContext: FileContext;
 }
 
-// HACK: the checker lowercases paths on case-insensitive file systems, so key by the declared file
-// name.
 const withContextFileNames = (
   analysis: ComponentAnalysis,
   fileNamesByPath: Map<string, string>,

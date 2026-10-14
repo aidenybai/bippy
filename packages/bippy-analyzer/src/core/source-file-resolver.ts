@@ -137,7 +137,6 @@ export class SourceFileResolver {
 
   getDeclaredDomain(loc: SourceLocation): Domain | null {
     if (loc === GeneratedSource) return null;
-    // HACK: Babel's identifier spans its type annotation, so fall back to the name alone.
     const nameLoc = loc.identifierName
       ? { ...loc, end: { ...loc.end, index: loc.start.index + loc.identifierName.length } }
       : loc;

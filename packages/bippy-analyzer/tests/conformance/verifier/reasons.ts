@@ -25,7 +25,6 @@ interface MountFailurePattern {
   pattern: RegExp;
 }
 
-// HACK: libraries report these failures only as error text, so they're classified by message.
 const MOUNT_FAILURE_PATTERNS: MountFailurePattern[] = [
   {
     failure: "server-component",
