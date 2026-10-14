@@ -44,12 +44,19 @@ export const withProject = <Result>(
       JSON.stringify({ extends: resolve(configPath), compilerOptions: { paths } }),
     );
   }
+  let isCallbackFinished = false;
   try {
     const project = api.updateSnapshot({ openProjects: [projectConfigPath] }).getProjects()[0];
     if (!project) throw new Error(`No TypeScript project found for ${configPath}`);
-    return callback(project);
+    const result = callback(project);
+    isCallbackFinished = true;
+    return result;
   } finally {
-    api.close();
+    try {
+      api.close();
+    } catch (closeError) {
+      if (isCallbackFinished) throw closeError;
+    }
     if (shimDirectory) rmSync(shimDirectory, { recursive: true, force: true });
   }
 };
