@@ -152,6 +152,48 @@ const runStep = async (
   }
 };
 
+const uploadSetupFiles = (sandbox: Sandbox, repo: RepoConfig): Promise<void> =>
+  sandbox.writeFiles([
+    {
+      path: `${SANDBOX_ROOT}/setup.sh`,
+      content: readFileSync(join(CONFORMANCE_DIRECTORY, "setup.sh")),
+      mode: 0o755,
+    },
+    { path: `${ANALYZER_DIRECTORY}/package.json`, content: getAnalyzerPackageJson() },
+    ...(repo.patchFile
+      ? [{ path: `${SANDBOX_ROOT}/custom.patch`, content: readFileSync(repo.patchFile) }]
+      : []),
+  ]);
+
+const installRepoAndBrowser = async (sandbox: Sandbox, repo: RepoConfig): Promise<void> => {
+  await runStep(sandbox, "setup", "bash", [`${SANDBOX_ROOT}/setup.sh`], {
+    env: getSetupEnvironment(
+      repo,
+      APP_DIRECTORY,
+      repo.patchFile ? `${SANDBOX_ROOT}/custom.patch` : null,
+    ),
+  });
+  await runStep(sandbox, "analyzer install", "npm", ["install", "--no-audit", "--no-fund"], {
+    cwd: ANALYZER_DIRECTORY,
+  });
+  await runStep(
+    sandbox,
+    "browser dependencies",
+    `${ANALYZER_DIRECTORY}/node_modules/.bin/playwright`,
+    ["install-deps", "chromium"],
+    { cwd: ANALYZER_DIRECTORY, sudo: true },
+  );
+  await runStep(
+    sandbox,
+    "browser install",
+    "node_modules/.bin/playwright",
+    ["install", "chromium"],
+    {
+      cwd: ANALYZER_DIRECTORY,
+    },
+  );
+};
+
 const prepareSnapshot = async (
   repo: RepoConfig,
   credentials: Credentials,
@@ -160,7 +202,6 @@ const prepareSnapshot = async (
   const key = getSnapshotKey(repo);
   const existing = readSnapshots()[repo.id];
   if (existing?.key === key) return existing.snapshotId;
-
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)} in a new sandbox`);
   const sandbox = await Sandbox.create({
     ...credentials,
@@ -168,46 +209,8 @@ const prepareSnapshot = async (
     timeout: SETUP_TIMEOUT_MS,
   });
   try {
-    await sandbox.writeFiles([
-      {
-        path: `${SANDBOX_ROOT}/setup.sh`,
-        content: readFileSync(join(CONFORMANCE_DIRECTORY, "setup.sh")),
-        mode: 0o755,
-      },
-      { path: `${ANALYZER_DIRECTORY}/package.json`, content: getAnalyzerPackageJson() },
-      ...(repo.patchFile
-        ? [{ path: `${SANDBOX_ROOT}/custom.patch`, content: readFileSync(repo.patchFile) }]
-        : []),
-    ]);
-    await runStep(sandbox, "setup", "bash", [`${SANDBOX_ROOT}/setup.sh`], {
-      env: getSetupEnvironment(
-        repo,
-        APP_DIRECTORY,
-        repo.patchFile ? `${SANDBOX_ROOT}/custom.patch` : null,
-      ),
-    });
-    await runStep(sandbox, "analyzer install", "npm", ["install", "--no-audit", "--no-fund"], {
-      cwd: ANALYZER_DIRECTORY,
-    });
-    await runStep(
-      sandbox,
-      "browser dependencies",
-      `${ANALYZER_DIRECTORY}/node_modules/.bin/playwright`,
-      ["install-deps", "chromium"],
-      {
-        cwd: ANALYZER_DIRECTORY,
-        sudo: true,
-      },
-    );
-    await runStep(
-      sandbox,
-      "browser install",
-      "node_modules/.bin/playwright",
-      ["install", "chromium"],
-      {
-        cwd: ANALYZER_DIRECTORY,
-      },
-    );
+    await uploadSetupFiles(sandbox, repo);
+    await installRepoAndBrowser(sandbox, repo);
     const snapshot = await sandbox.snapshot();
     writeSnapshot(repo.id, { key, snapshotId: snapshot.snapshotId });
     log(`saved snapshot for ${repo.id}`);
