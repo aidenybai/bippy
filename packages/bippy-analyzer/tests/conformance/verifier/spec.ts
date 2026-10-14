@@ -9,7 +9,7 @@ import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
 import { matchesExpected, normalizeShapes, toExpected } from "./match";
 import { formatCounterexamples, scoreComponent } from "./score";
-import type { Capture, MountRequest } from "./types";
+import type { Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
 import { CONDITION_SEPARATOR, UNCONDITIONAL_LABEL } from "../../../src/core/format";
@@ -20,7 +20,7 @@ interface VerifyProject extends ProjectHarness {
 
 interface MountOptions {
   props?: Record<string, unknown>;
-  scenario?: [name: string, ...args: unknown[]];
+  scenario?: Scenario;
 }
 
 interface ComponentFixture {
@@ -44,6 +44,14 @@ interface VerifyWorkerFixtures {
   project: VerifyProject;
 }
 
+interface FixtureContext {
+  page: Page;
+  project: VerifyProject;
+  session: Session;
+  props: Record<string, Sample>;
+  initialCapture: Capture;
+}
+
 const getStateLabel = (state: State): string =>
   state.conditions.join(CONDITION_SEPARATOR) || UNCONDITIONAL_LABEL;
 
@@ -65,6 +73,55 @@ const toSample = (value: unknown): Sample => {
   )
     return { kind: "Value", value };
   throw new Error(`Can't pass ${typeof value} as a prop`);
+};
+
+const createComponentFixture = ({
+  page,
+  project,
+  session,
+  props,
+  initialCapture,
+}: FixtureContext): ComponentFixture => {
+  const { name: componentName } = session.component.analysis;
+  const { report } = session.component;
+  let current = initialCapture;
+  let path: string[] = [];
+  return {
+    page,
+    click: async (label) => {
+      const actions = await listActionsInPage(page);
+      const action = actions.find(
+        (candidate) => candidate.kind === "click" && candidate.label === label,
+      );
+      if (!action)
+        throw new Error(
+          `Nothing clickable labelled "${label}" in ${componentName}: ${actions.map((candidate) => candidate.label).join(", ")}`,
+        );
+      const after = await performInPage(page, action.key);
+      if (!after) throw new Error(`Clicking "${label}" failed`);
+      path = [...path, action.key];
+      session.observations.push({ props, path, action, before: current, after });
+      current = after;
+    },
+    observe: async () => {
+      current = await page.evaluate(() => window.__verify.observe());
+      session.observations.push({ props, path, action: null, before: null, after: current });
+    },
+    expectState: (label) => {
+      const states = report.states.filter((state) => getStateLabel(state) === label);
+      expect(
+        states.length,
+        `${componentName} has no state labelled "${label}". Its states are:\n${report.states.map(getStateLabel).join("\n")}`,
+      ).toBeGreaterThan(0);
+      const shapes = normalizeShapes(current.shapes);
+      expect(
+        states.some((state) =>
+          matchesExpected(toExpected(state.render, project.knownComponents), shapes),
+        ),
+        `${componentName} isn't showing "${label}"`,
+      ).toBe(true);
+    },
+  };
 };
 
 export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>({
@@ -96,71 +153,37 @@ export const test = playwrightTest.extend<VerifyFixtures, VerifyWorkerFixtures>(
       const exportName = component?.analysis.exportName;
       if (!component || !exportName)
         throw new Error(`No exported component named ${componentName}`);
-      const { analysis, report } = component;
+      const { analysis } = component;
       const props = {
         ...getDefaultProps(analysis),
         ...Object.fromEntries(
           Object.entries(options.props ?? {}).map(([name, value]) => [name, toSample(value)]),
         ),
       };
-      const request: MountRequest = {
+      const baseRequest: MountRequest = {
         module: project.getComponentModule(analysis.file),
         exportName,
         props,
-        scenario: options.scenario
-          ? { name: options.scenario[0], args: options.scenario.slice(1) }
-          : null,
+        scenario: null,
         wrappers: [],
       };
-      ({ wrappers: request.wrappers } = await resolveWrappers(
-        page,
-        { ...request, scenario: null },
-        analysis,
-        project.projectIndex,
-      ));
+      const { wrappers } = await resolveWrappers(page, baseRequest, analysis, project.projectIndex);
       const session: Session = { component, observations: [] };
       sessions.push(session);
-      let current: Capture = await mountInPage(page, request);
-      expect(current.error, `${componentName} failed to render`).toBeNull();
-      session.observations.push({ props, path: [], action: null, before: null, after: current });
-      let path: string[] = [];
-
-      return {
-        page,
-        click: async (label) => {
-          const actions = await listActionsInPage(page);
-          const action = actions.find(
-            (candidate) => candidate.kind === "click" && candidate.label === label,
-          );
-          if (!action)
-            throw new Error(
-              `Nothing clickable labelled "${label}" in ${componentName}: ${actions.map((candidate) => candidate.label).join(", ")}`,
-            );
-          const after = await performInPage(page, action.key);
-          if (!after) throw new Error(`Clicking "${label}" failed`);
-          path = [...path, action.key];
-          session.observations.push({ props, path, action, before: current, after });
-          current = after;
-        },
-        observe: async () => {
-          current = await page.evaluate(() => window.__verify.observe());
-          session.observations.push({ props, path, action: null, before: null, after: current });
-        },
-        expectState: (label) => {
-          const states = report.states.filter((state) => getStateLabel(state) === label);
-          expect(
-            states.length,
-            `${componentName} has no state labelled "${label}". Its states are:\n${report.states.map(getStateLabel).join("\n")}`,
-          ).toBeGreaterThan(0);
-          const shapes = normalizeShapes(current.shapes);
-          expect(
-            states.some((state) =>
-              matchesExpected(toExpected(state.render, project.knownComponents), shapes),
-            ),
-            `${componentName} isn't showing "${label}"`,
-          ).toBe(true);
-        },
-      };
+      const initialCapture = await mountInPage(page, {
+        ...baseRequest,
+        scenario: options.scenario ?? null,
+        wrappers,
+      });
+      expect(initialCapture.error, `${componentName} failed to render`).toBeNull();
+      session.observations.push({
+        props,
+        path: [],
+        action: null,
+        before: null,
+        after: initialCapture,
+      });
+      return createComponentFixture({ page, project, session, props, initialCapture });
     });
     await page.close();
     for (const session of sessions) {

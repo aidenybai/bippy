@@ -3,14 +3,16 @@ import { test } from "../../../verifier/spec";
 test.use({ repo: "bulletproof-react" });
 
 test("lists discussions once they load", async ({ mountComponent }) => {
-  const list = await mountComponent("DiscussionsList", { scenario: ["discussion", "first"] });
+  const list = await mountComponent("DiscussionsList", {
+    scenario: { name: "discussion", args: ["first"] },
+  });
   list.expectState("!discussionsQuery.isLoading ∧ discussionsQuery.data?.data");
 });
 
 test("shows a discussion with its author", async ({ mountComponent }) => {
   const view = await mountComponent("DiscussionView", {
     props: { discussionId: "first" },
-    scenario: ["discussion", "first"],
+    scenario: { name: "discussion", args: ["first"] },
   });
   view.expectState(
     "!discussionQuery.isLoading ∧ discussionQuery.data?.data ∧ discussionQuery.data.data.author",
@@ -25,7 +27,7 @@ test("shows nothing for a missing discussion", async ({ mountComponent }) => {
 test("shows the empty comments state", async ({ mountComponent }) => {
   const comments = await mountComponent("CommentsList", {
     props: { discussionId: "first" },
-    scenario: ["discussion", "first"],
+    scenario: { name: "discussion", args: ["first"] },
   });
   comments.expectState(
     "!commentsQuery.isLoading ∧ !commentsQuery.data?.pages.flatMap(function)?.length",
@@ -35,7 +37,7 @@ test("shows the empty comments state", async ({ mountComponent }) => {
 test("pages through comments", async ({ mountComponent }) => {
   const comments = await mountComponent("CommentsList", {
     props: { discussionId: "first" },
-    scenario: ["discussion", "first", 12],
+    scenario: { name: "discussion", args: ["first", 12] },
   });
   comments.expectState(
     "!commentsQuery.isLoading ∧ commentsQuery.data?.pages.flatMap(function)?.length ∧ commentsQuery.hasNextPage ∧ !commentsQuery.isFetchingNextPage",
