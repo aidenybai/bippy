@@ -1183,13 +1183,12 @@ export class Interpreter {
   ): SymbolicValue {
     const receiver = this.#read(methodCall.receiver);
     const methodName =
-      this.#getCompilationTables().propertyNames.get(methodCall.property.identifier.id) ?? null;
+      this.#getCompilationTables().propertyNames.get(methodCall.property.identifier.id) ?? "";
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.#read(place));
     const [callback] = argumentValues;
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
-      methodName !== null &&
       ITERATION_METHODS.has(methodName) &&
       receiver.kind === "ArrayExpression" &&
       callback?.kind === "Function";
@@ -1197,13 +1196,9 @@ export class Interpreter {
       this.#callForEachItem(callback, receiver, methodCall.loc, walkState);
       return createUnknown("call", methodCall.loc);
     }
-    if (
-      methodName !== null &&
-      RENDERED_ITERATION_METHODS.has(methodName) &&
-      callback?.kind === "Function"
-    )
+    if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
       return this.#evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
-    if (methodName !== null && PROMISE_METHODS.has(methodName)) {
+    if (PROMISE_METHODS.has(methodName)) {
       this.#visitPromiseCallbacks(methodName, argumentValues, methodCall.loc, walkState);
       return createUnknown("async", methodCall.loc);
     }
