@@ -35,6 +35,15 @@ export const forEachPlainObject = (value: unknown, visitor: (object: object) => 
   visit(value, 0);
 };
 
+const snapshotContainer = (container: object, visitItem: (item: unknown) => unknown): object => {
+  if (container instanceof Date) return { date: container.getTime() };
+  if (container instanceof Map)
+    return { map: [...container].map(([key, item]) => [visitItem(key), visitItem(item)]) };
+  if (container instanceof Set) return { set: [...container].map(visitItem) };
+  if (Array.isArray(container)) return { array: container.map(visitItem) };
+  return { object: Object.entries(container).map(([key, item]) => [key, visitItem(item)]) };
+};
+
 export const snapshotValue = (value: unknown): string => {
   const ancestors = new Set<object>();
   let nodeCount = 0;
@@ -49,26 +58,7 @@ export const snapshotValue = (value: unknown): string => {
     nodeCount++;
     if (depth >= MAX_SNAPSHOT_DEPTH || nodeCount > MAX_SNAPSHOT_NODES) return TRUNCATED_VALUE;
     ancestors.add(current);
-    const snapshot =
-      current instanceof Date
-        ? { date: current.getTime() }
-        : current instanceof Map
-          ? {
-              map: [...current].map(([key, item]) => [
-                visit(key, depth + 1),
-                visit(item, depth + 1),
-              ]),
-            }
-          : current instanceof Set
-            ? { set: [...current].map((item) => visit(item, depth + 1)) }
-            : Array.isArray(current)
-              ? { array: current.map((item) => visit(item, depth + 1)) }
-              : {
-                  object: Object.entries(current).map(([key, item]) => [
-                    key,
-                    visit(item, depth + 1),
-                  ]),
-                };
+    const snapshot = snapshotContainer(current, (item) => visit(item, depth + 1));
     ancestors.delete(current);
     return snapshot;
   };
