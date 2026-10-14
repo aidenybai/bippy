@@ -183,38 +183,21 @@ const createModuleFunctionLoader = (
   };
 };
 
-export const compileFile = (
-  fileName: string,
-  code: string,
-  environment: PluginOptions["environment"] = {},
-): CompiledFile => {
-  const ast = parseFile(fileName, code);
-  if (!ast) return EMPTY_COMPILED_FILE;
+class CompiledFunctionCollector {
+  readonly #compiledByLocation = new Map<string, CompiledFunction>();
 
-  const compiledByLocation = new Map<string, CompiledFunction>();
-  const getCompiledFunction = (loc: types.SourceLocation): CompiledFunction => {
-    const locationKey = getLocationKey(loc);
-    const compiled = compiledByLocation.get(locationKey) ?? {
-      name: ANONYMOUS_NAME,
-      functionType: null,
-      loc,
-      hir: null,
-      errors: [],
-    };
-    compiledByLocation.set(locationKey, compiled);
-    return compiled;
-  };
-  const recordCompilerEvent = (_fileName: string | null, event: LoggerEvent): void => {
+  readonly recordEvent = (_fileName: string | null, event: LoggerEvent): void => {
     if (!("fnLoc" in event) || !event.fnLoc) return;
-    const compiled = getCompiledFunction(event.fnLoc);
+    const compiled = this.#getCompiledFunction(event.fnLoc);
     const errorReason = describeEvent(event);
     if (compiled.hir === null && errorReason && !errorReason.includes(STOP.toString()))
       compiled.errors.push(errorReason);
   };
-  const recordLowering: LoweringCapture = (hirFunction, hasErrors) => {
+
+  readonly recordLowering: LoweringCapture = (hirFunction, hasErrors) => {
     const { loc } = hirFunction;
     if (typeof loc === "symbol") return false;
-    const compiled = getCompiledFunction(loc);
+    const compiled = this.#getCompiledFunction(loc);
     compiled.functionType = hirFunction.fnType;
     if (hasErrors)
       compiled.errors.push(
@@ -223,11 +206,37 @@ export const compileFile = (
     else compiled.hir = hirFunction;
     return true;
   };
-  const pluginOptions = createPluginOptions(environment, {
-    logEvent: recordCompilerEvent,
-    debugLogIRs: createLoweringLogger(recordLowering),
-  });
 
+  getFunctions(namesByLocation: Map<string, string>): CompiledFunction[] {
+    for (const [locationKey, compiled] of this.#compiledByLocation) {
+      compiled.name = compiled.hir?.id ?? namesByLocation.get(locationKey) ?? ANONYMOUS_NAME;
+      compiled.functionType ??= guessFunctionTypeFromName(compiled.name);
+    }
+    return [...this.#compiledByLocation.values()].filter(
+      (compiled) => compiled.hir !== null || compiled.errors.length > 0,
+    );
+  }
+
+  #getCompiledFunction(loc: types.SourceLocation): CompiledFunction {
+    const locationKey = getLocationKey(loc);
+    const compiled = this.#compiledByLocation.get(locationKey) ?? {
+      name: ANONYMOUS_NAME,
+      functionType: null,
+      loc,
+      hir: null,
+      errors: [],
+    };
+    this.#compiledByLocation.set(locationKey, compiled);
+    return compiled;
+  }
+}
+
+const compileProgramFunctions = (
+  ast: types.File,
+  fileName: string,
+  code: string,
+  pluginOptions: ParsedPluginOptions,
+): ProgramFunctions => {
   const programFunctions: ProgramFunctions = {
     programPath: null,
     namesByLocation: new Map(),
@@ -250,16 +259,24 @@ export const compileFile = (
       if (isModuleScopeFunction(path)) programFunctions.moduleFunctionPaths.set(functionName, path);
     },
   });
-  for (const [locationKey, compiled] of compiledByLocation) {
-    compiled.name =
-      compiled.hir?.id ?? programFunctions.namesByLocation.get(locationKey) ?? ANONYMOUS_NAME;
-    compiled.functionType ??= guessFunctionTypeFromName(compiled.name);
-  }
+  return programFunctions;
+};
 
+export const compileFile = (
+  fileName: string,
+  code: string,
+  environment: PluginOptions["environment"] = {},
+): CompiledFile => {
+  const ast = parseFile(fileName, code);
+  if (!ast) return EMPTY_COMPILED_FILE;
+  const collector = new CompiledFunctionCollector();
+  const pluginOptions = createPluginOptions(environment, {
+    logEvent: collector.recordEvent,
+    debugLogIRs: createLoweringLogger(collector.recordLowering),
+  });
+  const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
   return {
-    functions: [...compiledByLocation.values()].filter(
-      (compiled) => compiled.hir !== null || compiled.errors.length > 0,
-    ),
+    functions: collector.getFunctions(programFunctions.namesByLocation),
     loadModuleFunction: createModuleFunctionLoader(fileName, code, pluginOptions, programFunctions),
   };
 };
