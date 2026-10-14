@@ -11,6 +11,40 @@ interface JsxElementParts {
   loc: SourceLocation;
 }
 
+const getJsxTag = (tag: SymbolicValue, elementParts: JsxElementParts): JsxTag => {
+  if (tag.kind === "Primitive" && typeof tag.value === "string")
+    return { kind: "BuiltinTag", name: tag.value };
+  if (tag.kind === "Global")
+    return {
+      kind: "Component",
+      name: tag.name,
+      declaration: elementParts.declaration,
+      isContext: elementParts.isContext,
+    };
+  return { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
+};
+
+const createFunctionProp = (name: string, value: SymbolicValue): JsxProp => ({
+  kind: "JsxAttribute",
+  name,
+  value,
+  handlerId: null,
+});
+
+const getRenderFunctionProps = (
+  tag: SymbolicValue,
+  jsxTag: JsxTag,
+  children: SymbolicValue[],
+): JsxProp[] => {
+  const renderPropChildren =
+    jsxTag.kind === "BuiltinTag" ? [] : children.filter((child) => child.kind === "Function");
+  const renderFunctions = tag.kind === "Function" ? [tag] : [];
+  return [
+    ...renderPropChildren.map((value) => createFunctionProp("children", value)),
+    ...renderFunctions.map((value) => createFunctionProp("render", value)),
+  ];
+};
+
 export const buildJsx = (
   tag: SymbolicValue,
   elementParts: JsxElementParts,
@@ -22,42 +56,12 @@ export const buildJsx = (
       consequent: buildJsx(tag.consequent, elementParts, renderedComponents),
       alternate: buildJsx(tag.alternate, elementParts, renderedComponents),
     };
-  const jsxTag: JsxTag =
-    tag.kind === "Primitive" && typeof tag.value === "string"
-      ? { kind: "BuiltinTag", name: tag.value }
-      : tag.kind === "Global"
-        ? {
-            kind: "Component",
-            name: tag.name,
-            declaration: elementParts.declaration,
-            isContext: elementParts.isContext,
-          }
-        : { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
+  const jsxTag = getJsxTag(tag, elementParts);
   if (jsxTag.kind === "Component") renderedComponents.add(jsxTag.name);
-  const renderPropChildren =
-    jsxTag.kind === "BuiltinTag"
-      ? []
-      : elementParts.children.filter((child) => child.kind === "Function");
-  const renderFunctions = tag.kind === "Function" ? [tag] : [];
-  const props: Array<JsxProp | JsxSpreadProp> = [
-    ...elementParts.props,
-    ...renderPropChildren.map((value): JsxProp => ({
-      kind: "JsxAttribute",
-      name: "children",
-      value,
-      handlerId: null,
-    })),
-    ...renderFunctions.map((value): JsxProp => ({
-      kind: "JsxAttribute",
-      name: "render",
-      value,
-      handlerId: null,
-    })),
-  ];
   return {
     kind: "JsxExpression",
     tag: jsxTag,
-    props,
+    props: [...elementParts.props, ...getRenderFunctionProps(tag, jsxTag, elementParts.children)],
     children: elementParts.children,
     loc: elementParts.loc,
   };
