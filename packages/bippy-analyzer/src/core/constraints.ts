@@ -142,7 +142,7 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
   candidate.weight < current.weight ||
   (candidate.weight === current.weight && candidate.isStrict && !current.isStrict);
 
-const areBoundsConsistent = (bounds: Bound[]): boolean => {
+const createDistanceMatrix = (bounds: Bound[]): Distance[][] => {
   const lengthBounds = bounds
     .flatMap((bound) => [bound.left, bound.right])
     .filter((atom) => atom?.path.at(-1) === LENGTH_FIELD)
@@ -172,9 +172,13 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
     const boundDistance = { weight: bound.maxDifference, isStrict: bound.isStrict };
     if (isShorter(boundDistance, row[columnIndex])) row[columnIndex] = boundDistance;
   }
-  for (let middle = 0; middle < atomKeys.length; middle++) {
-    for (let from = 0; from < atomKeys.length; from++) {
-      for (let to = 0; to < atomKeys.length; to++) {
+  return distances;
+};
+
+const relaxThroughEveryAtom = (distances: Distance[][]): void => {
+  for (let middle = 0; middle < distances.length; middle++) {
+    for (let from = 0; from < distances.length; from++) {
+      for (let to = 0; to < distances.length; to++) {
         const toMiddle = distances[from][middle];
         const fromMiddle = distances[middle][to];
         const throughMiddle = {
@@ -185,6 +189,11 @@ const areBoundsConsistent = (bounds: Bound[]): boolean => {
       }
     }
   }
+};
+
+const areBoundsConsistent = (bounds: Bound[]): boolean => {
+  const distances = createDistanceMatrix(bounds);
+  relaxThroughEveryAtom(distances);
   return distances.every((row, atomIndex) => {
     const cycleDistance = row[atomIndex];
     return !(cycleDistance.weight < 0 || (cycleDistance.weight === 0 && cycleDistance.isStrict));
@@ -370,22 +379,36 @@ export const assumeCondition = (
       constraints,
       (candidate) => getTruthiness(candidate) !== (isTrue ? "falsy" : "truthy"),
     );
-  if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator)) {
-    const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
-    const [placeSide, literalSide] = splitEquality(value);
-    if (
-      literalSide.kind === "Primitive" &&
-      placeSide.kind === "Binding" &&
-      getPossibleValues(placeSide, constraints)
-    ) {
-      const wantsMatch = isTrue !== isNegated;
-      return narrowPlace(placeSide, constraints, (candidate) =>
-        isEqualToLiteral(candidate, literalSide.value, value.operator)
-          ? wantsMatch
-          : !wantsMatch || canTypeEqualLiteral(candidate, literalSide.value),
-      );
-    }
-  }
+  if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
+    return assumeEquality(value, isTrue, constraints);
+  return assumeOpaqueCondition(value, isTrue, constraints);
+};
+
+const assumeEquality = (
+  value: BinaryExpressionValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => {
+  const [placeSide, literalSide] = splitEquality(value);
+  if (
+    literalSide.kind !== "Primitive" ||
+    placeSide.kind !== "Binding" ||
+    !getPossibleValues(placeSide, constraints)
+  )
+    return assumeOpaqueCondition(value, isTrue, constraints);
+  const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  return narrowPlace(placeSide, constraints, (candidate) =>
+    isEqualToLiteral(candidate, literalSide.value, value.operator)
+      ? wantsMatch
+      : !wantsMatch || canTypeEqualLiteral(candidate, literalSide.value),
+  );
+};
+
+const assumeOpaqueCondition = (
+  value: SymbolicValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => {
   if (hasUnknownPart(value)) return constraints;
   const assumed = cloneConstraints(constraints);
   assumed.assumptions.set(getValueKey(value), {
