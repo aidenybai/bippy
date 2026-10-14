@@ -1,5 +1,6 @@
 import type { AliasingEffect } from "../../react-compiler/Inference/AliasingEffects";
 import type {
+  HIRFunction,
   InstructionValue,
   Place,
   SourceLocation,
@@ -46,6 +47,20 @@ export const getIdentifierName = (place: Place): string | null =>
 
 export const getDeclarationLocation = (place: Place): SourceLocation =>
   place.identifier.loc === GeneratedSource ? place.loc : place.identifier.loc;
+
+const collectStoredPlaces = (hirFunction: HIRFunction): Place[] =>
+  [...hirFunction.body.blocks.values()].flatMap((block) =>
+    block.instructions.flatMap((instruction) => {
+      const { value } = instruction;
+      if (value.kind === "StoreContext") return [value.lvalue.place];
+      return isFunctionCreation(value) ? collectStoredPlaces(value.loweredFunc.func) : [];
+    }),
+  );
+
+export const getStoredContextPlaces = (hirFunction: HIRFunction): Place[] => {
+  const capturedIds = new Set(hirFunction.context.map((place) => place.identifier.id));
+  return collectStoredPlaces(hirFunction).filter((place) => capturedIds.has(place.identifier.id));
+};
 
 export const getPlaceOrSpread = (argument: Place | SpreadPattern): Place =>
   argument.kind === "Spread" ? argument.place : argument;

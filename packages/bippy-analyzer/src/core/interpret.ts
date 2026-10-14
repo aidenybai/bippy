@@ -89,6 +89,7 @@ import {
   getConditionallyMutatedPlace,
   getMutatedPlace,
   getPlaceOrSpread,
+  getStoredContextPlaces,
   isFunctionCreation,
 } from "./utils/hir";
 
@@ -896,11 +897,21 @@ export class Interpreter {
       this.#callBinding(callee, argumentValues, walkState);
     if (this.#handlerEffects || isMutatingCall) this.#passCallbacks(argumentValues, loc, walkState);
     if (this.#handlerEffects) return createUnknown("call", loc);
+    this.#forgetCallbackWrites(argumentValues, loc);
     if (this.#resolver.isReactElement(loc)) {
       this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
     }
     return this.#createCallResult(callSite);
+  }
+
+  #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
+    for (const callback of getPassedCallbacks(argumentValues)) {
+      if (callback.kind !== "Function") continue;
+      const hirFunction = this.#functions.get(callback.functionId);
+      for (const place of hirFunction ? getStoredContextPlaces(hirFunction) : [])
+        this.#write(place, createUnknown("callback-write", loc));
+    }
   }
 
   #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], walkState: WalkState): void {
