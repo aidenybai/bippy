@@ -7,7 +7,18 @@ import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR";
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
 import { isFunctionCreation } from "../../src/core/utils/hir";
-import type { AnalyzedComponent, Binding, ProjectAnalysis } from "../../src/core/types";
+import type {
+  AbstractValue,
+  AnalyzedComponent,
+  Binding,
+  BindingPlace,
+  ComponentAnalysis,
+  ProjectAnalysis,
+  StateReport,
+} from "../../src/core/types";
+import { createEmptyAnalysis } from "../../src/core/analyze-component";
+import { PlaceMap } from "../../src/core/utils/place";
+import type { Capture } from "../conformance/verifier/types";
 
 export const getFixtureConfig = (fixture: string): string =>
   resolve(import.meta.dirname, "../fixtures", fixture, "tsconfig.json");
@@ -30,6 +41,42 @@ export const createTestBinding = (overrides: Partial<Binding>): Binding => ({
   inputPlaces: [],
   lengthLimit: null,
   ...overrides,
+});
+
+export const createCapture = (overrides: Partial<Capture>): Capture => ({
+  shapes: [],
+  hookStates: [],
+  probes: [],
+  mutationHits: [],
+  mutatedOwners: [],
+  firstCommitShapes: null,
+  error: null,
+  errorDepth: null,
+  failure: null,
+  ...overrides,
+});
+
+export const createTestAnalysis = (name: string, bindings: Binding[]): ComponentAnalysis => ({
+  ...createEmptyAnalysis(
+    {
+      name,
+      exportName: name,
+      runtimeName: name,
+      file: `/${name}.tsx`,
+      declaration: `/${name}.tsx#${name}`,
+    },
+    GeneratedSource,
+    { kind: "Primitive", value: null },
+  ),
+  bindings,
+});
+
+export const createTestReport = (places: Array<[BindingPlace, AbstractValue[]]>): StateReport => ({
+  places: new PlaceMap(places),
+  states: [],
+  regions: [],
+  unreachableBranches: [],
+  isTruncated: false,
 });
 
 export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedComponent => {

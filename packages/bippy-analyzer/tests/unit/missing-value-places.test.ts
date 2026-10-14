@@ -1,58 +1,25 @@
 import { describe, expect, it } from "vite-plus/test";
-import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
-import { createEmptyAnalysis } from "../../src/core/analyze-component";
-import type { StateReport } from "../../src/core/types";
-import { PlaceMap } from "../../src/core/utils/place";
 import type { Observation } from "../conformance/verifier/driver";
 import { scoreComponent } from "../conformance/verifier/score";
-import { createTestBinding } from "./helpers";
+import { createCapture, createTestAnalysis, createTestBinding, createTestReport } from "./helpers";
 
 const conflict = createTestBinding({ id: 0, name: "conflict", hookKind: "useState" });
 
-const analysis = {
-  ...createEmptyAnalysis(
-    {
-      name: "Dialog",
-      exportName: "Dialog",
-      runtimeName: "Dialog",
-      file: "/dialog.tsx",
-      declaration: "/dialog.tsx#Dialog",
-    },
-    GeneratedSource,
-    { kind: "Primitive", value: null },
-  ),
-  bindings: [conflict],
-};
+const analysis = createTestAnalysis("Dialog", [conflict]);
 
-const report: StateReport = {
-  places: new PlaceMap([
-    [
-      { bindingId: conflict.id, path: ["conflictWith", "type"] },
-      [{ kind: "Literal", value: "fixed" }],
-    ],
-  ]),
-  states: [],
-  regions: [],
-  unreachableBranches: [],
-  isTruncated: false,
-};
+const report = createTestReport([
+  [
+    { bindingId: conflict.id, path: ["conflictWith", "type"] },
+    [{ kind: "Literal", value: "fixed" }],
+  ],
+]);
 
 const observeConflict = (conflictState: unknown): Observation => ({
   props: {},
   path: [],
   action: null,
   before: null,
-  after: {
-    shapes: [{ kind: "text", text: "dialog" }],
-    hookStates: [conflictState],
-    probes: [],
-    mutationHits: [],
-    mutatedOwners: [],
-    firstCommitShapes: null,
-    error: null,
-    errorDepth: null,
-    failure: null,
-  },
+  after: createCapture({ shapes: [{ kind: "text", text: "dialog" }], hookStates: [conflictState] }),
 });
 
 const getValueCounterexamples = (conflictState: unknown) =>

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Observation } from "../conformance/verifier/driver";
 import { scoreComponent } from "../conformance/verifier/score";
 import type { Capture, Shape } from "../conformance/verifier/types";
-import { analyzeFixture, getComponent } from "./helpers";
+import { analyzeFixture, createCapture, getComponent } from "./helpers";
 
 const renderKeyStatus = (status: string): Shape[] => [
   {
@@ -15,17 +15,7 @@ const renderKeyStatus = (status: string): Shape[] => [
   },
 ];
 
-const capture = (status: string): Capture => ({
-  shapes: renderKeyStatus(status),
-  hookStates: [],
-  probes: [],
-  mutationHits: [],
-  mutatedOwners: [],
-  firstCommitShapes: null,
-  error: null,
-  errorDepth: null,
-  failure: null,
-});
+const capture = (status: string): Capture => createCapture({ shapes: renderKeyStatus(status) });
 
 describe("async effect edges", () => {
   it("accepts a subscription update that lands after an action", () => {

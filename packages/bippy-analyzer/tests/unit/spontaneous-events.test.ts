@@ -2,21 +2,12 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Observation } from "../conformance/verifier/driver";
 import { scoreComponent } from "../conformance/verifier/score";
 import type { Capture, Shape } from "../conformance/verifier/types";
-import { analyzeFixture, getComponent } from "./helpers";
+import { analyzeFixture, createCapture, getComponent } from "./helpers";
 
 const IMAGE: Shape[] = [{ kind: "element", tag: "img", children: [] }];
 
-const capture = (shapes: Shape[], firstCommitShapes: Shape[] | null): Capture => ({
-  shapes,
-  hookStates: [],
-  probes: [],
-  mutationHits: [],
-  mutatedOwners: [],
-  firstCommitShapes,
-  error: null,
-  errorDepth: null,
-  failure: null,
-});
+const capture = (shapes: Shape[], firstCommitShapes: Shape[] | null): Capture =>
+  createCapture({ shapes, firstCommitShapes });
 
 describe("spontaneous events", () => {
   it("accepts an image error handler that runs right after mount", () => {
