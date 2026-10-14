@@ -1,3 +1,5 @@
+import { TRUNCATED_VALUE } from "./types";
+
 const MAX_SNAPSHOT_DEPTH = 6;
 const MAX_SNAPSHOT_NODES = 2000;
 
@@ -45,7 +47,7 @@ export const snapshotValue = (value: unknown): string => {
     if (!isPlainData(current)) return "[instance]";
     if (ancestors.has(current)) return "[cycle]";
     nodeCount++;
-    if (depth >= MAX_SNAPSHOT_DEPTH || nodeCount > MAX_SNAPSHOT_NODES) return "[truncated]";
+    if (depth >= MAX_SNAPSHOT_DEPTH || nodeCount > MAX_SNAPSHOT_NODES) return TRUNCATED_VALUE;
     ancestors.add(current);
     const snapshot =
       current instanceof Date

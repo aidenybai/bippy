@@ -55,7 +55,7 @@ const PARENT_NAME_PATTERNS = [
   /wrapped in a <([A-Z]\w*)/,
 ];
 
-export const getParentName = (message: string): string | null =>
+export const extractParentNameFromError = (message: string): string | null =>
   PARENT_NAME_PATTERNS.map((pattern) => pattern.exec(message)?.[1]).find(Boolean) ?? null;
 
 export class HarnessError extends Error {

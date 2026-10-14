@@ -139,6 +139,8 @@ type BranchOperator = "ternary" | "&&" | "||" | "??" | "optional" | "optional-ch
 
 type ValueBranchTerminal = Extract<Terminal, { kind: "ternary" | "logical" | "optional" }>;
 
+type PhiState = "resolved" | "unresolved";
+
 type TerminalStep = Outcome | { kind: "Next"; block: BlockId };
 
 const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
@@ -1260,15 +1262,15 @@ export class Interpreter {
     join: BlockId,
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
-    hasResolvedPhis = false,
+    joinPhiState: PhiState = "unresolved",
   ): Outcome {
     if (stops.has(join)) return outcome;
     const block = this.#getBlock(join);
     if (isFallthroughOnly(outcome, join)) {
-      if (!hasResolvedPhis)
+      if (joinPhiState === "unresolved")
         for (const phi of block.phis)
           this.#write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
-      return this.#walk(join, stops, null, walkState, true);
+      return this.#walk(join, stops, null, walkState, "resolved");
     }
     const resumeAtJoin = (arm: Outcome, guards: SymbolicValue[]): Outcome => {
       switch (arm.kind) {
@@ -1276,7 +1278,7 @@ export class Interpreter {
           return arm;
         case "Fallthrough":
           return arm.to === join
-            ? this.#walk(join, stops, arm.from, { ...walkState, guards }, hasResolvedPhis)
+            ? this.#walk(join, stops, arm.from, { ...walkState, guards }, joinPhiState)
             : arm;
         case "Split":
           return {
@@ -1332,7 +1334,7 @@ export class Interpreter {
             new Set([...stops, fallthrough]),
             from,
             { ...walkState, guards },
-            false,
+            "unresolved",
           );
     };
     const consequentOutcome = walkArm(consequent, true);
@@ -1372,7 +1374,7 @@ export class Interpreter {
       const caseOutcome: Outcome =
         switchCase.block === terminal.fallthrough
           ? { kind: "Fallthrough", from, to: terminal.fallthrough }
-          : this.#walk(switchCase.block, caseStops, from, walkState, false);
+          : this.#walk(switchCase.block, caseStops, from, walkState, "unresolved");
       if (switchCase.test === null) return caseOutcome;
       const caseTest = foldBinary("===", discriminant, this.#read(switchCase.test));
       if (caseTest.kind === "Primitive")
@@ -1406,7 +1408,7 @@ export class Interpreter {
         new Set([...stops, terminal.fallthrough]),
         null,
         walkState,
-        true,
+        "resolved",
       );
     } finally {
       this.#loopDepth--;
@@ -1425,7 +1427,7 @@ export class Interpreter {
         ? loopExit
         : fallthrough,
     );
-    return this.#continueAfter(exitOutcome, terminal.fallthrough, stops, walkState, true);
+    return this.#continueAfter(exitOutcome, terminal.fallthrough, stops, walkState, "resolved");
   }
 
   #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
@@ -1471,11 +1473,11 @@ export class Interpreter {
     stops: ReadonlySet<BlockId>,
     from: BlockId | null,
     walkState: WalkState,
-    hasResolvedPhis: boolean,
+    entryPhiState: PhiState,
   ): Outcome {
     let currentId = blockId;
     let previousId = from;
-    let isPhiResolved = hasResolvedPhis;
+    let isPhiResolved = entryPhiState === "resolved";
     let currentWalkState = walkState;
     while (true) {
       if (++this.#blockVisits > MAX_BLOCK_VISITS) {
@@ -1573,7 +1575,7 @@ export class Interpreter {
       new Set([...stops, terminal.fallthrough]),
       blockId,
       walkState,
-      false,
+      "unresolved",
     );
     return this.#continueAfter(testOutcome, terminal.fallthrough, stops, walkState);
   }
@@ -1586,7 +1588,7 @@ export class Interpreter {
   ): void {
     if (!this.#handlerEffects || catchBlock === null || this.#walkedCatches.has(catchBlock)) return;
     this.#walkedCatches.add(catchBlock);
-    this.#walk(catchBlock, stops, blockId, walkState, false);
+    this.#walk(catchBlock, stops, blockId, walkState, "unresolved");
   }
 
   #getOutcomeValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {
@@ -1656,7 +1658,7 @@ export class Interpreter {
         );
       });
       return this.#getOutcomeValue(
-        this.#walk(hirFunction.body.entry, NO_STOPS, null, walkState, false),
+        this.#walk(hirFunction.body.entry, NO_STOPS, null, walkState, "unresolved"),
         hirFunction.loc,
         walkState.guards,
       );
@@ -1721,8 +1723,7 @@ export class Interpreter {
       createFieldUpdate(binding, [
         { key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) },
       ]),
-      walkState.guards,
-      true,
+      getAsyncWalkState(walkState),
     );
   }
 
@@ -1742,8 +1743,7 @@ export class Interpreter {
         handlerEffects.addUpdate(
           binding,
           createUnknown("external", GeneratedSource),
-          walkState.guards,
-          true,
+          getAsyncWalkState(walkState),
         );
   }
 

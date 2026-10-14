@@ -2,7 +2,7 @@ import { sep } from "node:path";
 import type { ComponentAnalysis } from "../../../src/core/types";
 import { createDeclarationKey, parseDeclarationKey } from "../../../src/core/utils/declaration-key";
 import { getDefaultProps } from "./props";
-import { getParentName } from "./reasons";
+import { extractParentNameFromError } from "./reasons";
 import type { ExportedName, ProjectIndex, Wrapper, WrapperSource } from "./types";
 
 const SUBJECT_PATTERN = /^`?(\w+)`?/;
@@ -49,8 +49,8 @@ const createProjectWrapper = (
   return { name, source, candidate: { kind: "project", file, exportName, props } };
 };
 
-export const getNamedParent = (error: string, project: ProjectIndex): string | null => {
-  const named = getParentName(error)?.replace(CONTEXT_PROVIDER_SUFFIX, "");
+export const resolveNamedParent = (error: string, project: ProjectIndex): string | null => {
+  const named = extractParentNameFromError(error)?.replace(CONTEXT_PROVIDER_SUFFIX, "");
   if (!named) return null;
   const providerName = named.replace(CONTEXT_SUFFIX, "Provider");
   return !project.exports.has(named) && project.exports.has(providerName) ? providerName : named;
@@ -134,7 +134,7 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
 // HACK: a named parent the component's file can't reach is likely a library part its outermost
 // root renders, so that root goes first.
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
-  const namedParent = query.isNamingParent ? getNamedParent(query.error, query.project) : null;
+  const namedParent = query.isNamingParent ? resolveNamedParent(query.error, query.project) : null;
   const rootNames = getCompoundRootNames(query);
   const outerRoots = rootNames
     .slice(-1)

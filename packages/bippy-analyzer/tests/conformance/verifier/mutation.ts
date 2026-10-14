@@ -4,13 +4,13 @@ import { formatLine } from "../../../src/core/format";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
+import type { ComponentVerdict } from "./score";
 import type { Probe } from "./types";
 
-interface WarningScore {
-  coveredWarnings: number;
-  refutedWarnings: string[];
-  unwarnedMutations: string[];
-}
+interface WarningScore extends Pick<
+  ComponentVerdict,
+  "coveredWarningCount" | "refutedWarnings" | "unwarnedMutations"
+> {}
 
 interface ProbedWarning {
   warning: Warning;
@@ -107,7 +107,11 @@ export const scoreWarnings = (
   stateBindings: Binding[] | null,
 ): WarningScore => {
   const probedWarnings = getProbedWarnings(analysis, stateBindings);
-  const score: WarningScore = { coveredWarnings: 0, refutedWarnings: [], unwarnedMutations: [] };
+  const score: WarningScore = {
+    coveredWarningCount: 0,
+    refutedWarnings: [],
+    unwarnedMutations: [],
+  };
   for (const probed of probedWarnings) {
     if (!probed.probe) continue;
     const probeId = probed.probe.id;
@@ -120,7 +124,7 @@ export const scoreWarnings = (
     const isWitnessed = hits.some((hit) =>
       probed.warning.kind === "lost-update" ? hit.isLost : hit.isWritten,
     );
-    if (isWitnessed) score.coveredWarnings++;
+    if (isWitnessed) score.coveredWarningCount++;
     else score.refutedWarnings.push(formatWarning(probed.warning));
   }
   const unwarned = new Map<string, string>();

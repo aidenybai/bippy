@@ -27,7 +27,7 @@ interface RunOptions {
   verify: boolean;
 }
 
-interface VerifyOptions {
+interface VerifyCommandOptions {
   component?: string[];
   json: boolean;
   setup?: string;
@@ -85,74 +85,82 @@ const mapWithConcurrency = async <Item, Result>(
 };
 
 const isSetupSuspect = (summary: CollectSummary): boolean =>
-  summary.bindings > 0 && summary.unresolvedTypeBindings / summary.bindings > UNRESOLVED_TYPE_LIMIT;
+  summary.bindingCount > 0 &&
+  summary.unresolvedTypeBindingCount / summary.bindingCount > UNRESOLVED_TYPE_LIMIT;
 
-const formatTable = (results: RepoResult[]): string => {
-  const header = [
-    "repo",
-    "files",
-    "components",
-    "states",
-    "handlers",
-    "unreachable",
-    "untyped",
-    "bailouts",
-    "verified",
-    "unmountable",
-    "counterexamples",
-    "covered",
-    "time",
+const TABLE_HEADER = [
+  "repo",
+  "files",
+  "components",
+  "states",
+  "handlers",
+  "unreachable",
+  "untyped",
+  "bailouts",
+  "verified",
+  "unmountable",
+  "counterexamples",
+  "covered",
+  "time",
+];
+
+const formatResultRow = ({ id, summary }: RepoResult): string[] => {
+  if (!summary) return [id, "failed"];
+  const { verification } = summary;
+  const bailoutCount = sum(Object.values(summary.bailoutCountsByReason), (count) => count);
+  return [
+    id,
+    String(summary.fileCount),
+    String(summary.componentCount),
+    String(summary.stateCount),
+    String(summary.handlerCount),
+    String(summary.unreachableBranchCount),
+    String(summary.untypedBindingCount),
+    String(bailoutCount),
+    verification ? String(verification.verifiedCount) : "-",
+    verification ? String(verification.unmountableCount) : "-",
+    verification ? String(verification.counterexampleCount) : "-",
+    verification ? `${verification.coveredStateCount}/${verification.predictedStateCount}` : "-",
+    `${summary.durationMs + (verification?.durationMs ?? 0)} ms`,
   ];
-  const rows = results.map(({ id, summary }) => {
-    if (!summary) return [id, "failed"];
-    const bailoutCount = sum(Object.values(summary.bailouts), (count) => count);
-    return [
-      id,
-      String(summary.files),
-      String(summary.components),
-      String(summary.states),
-      String(summary.handlers),
-      String(summary.unreachableBranches),
-      String(summary.untypedBindings),
-      String(bailoutCount),
-      summary.verification ? String(summary.verification.verified) : "-",
-      summary.verification ? String(summary.verification.couldNotMount) : "-",
-      summary.verification ? String(summary.verification.counterexamples) : "-",
-      summary.verification
-        ? `${summary.verification.coveredStates}/${summary.verification.predictedStates}`
-        : "-",
-      `${summary.durationMs + (summary.verification?.durationMs ?? 0)} ms`,
-    ];
-  });
-  const widths = header.map((title, column) =>
-    Math.max(title.length, ...rows.map((row) => (row[column] ?? "").length)),
-  );
-  const formatRow = (row: string[]): string =>
-    row.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join("  ");
-  const failures = results.flatMap(({ id, error }) =>
+};
+
+const formatResultNotes = (results: RepoResult[]): string[] => {
+  const notes = results.flatMap(({ id, error }) =>
     error
       ? [picocolors.red(`${id}: ${error.split("\n").slice(0, ERROR_PREVIEW_LINES).join("\n  ")}`)]
       : [],
   );
   for (const { id, summary } of results) {
-    if (summary?.verification && summary.verification.couldNotMount > 0)
-      failures.push(
+    if (summary?.verification && summary.verification.unmountableCount > 0)
+      notes.push(
         picocolors.dim(
-          `${id}: couldn't mount ${formatMountFailures(summary.verification.mountFailures)}`,
+          `${id}: couldn't mount ${formatMountFailures(summary.verification.mountFailureCounts)}`,
         ),
       );
     if (summary && isSetupSuspect(summary)) {
-      failures.push(
+      notes.push(
         picocolors.yellow(
-          `${id}: ${summary.unresolvedTypeBindings} of ${summary.bindings} bindings have unresolved types. Check that the install ran in the right directory.`,
+          `${id}: ${summary.unresolvedTypeBindingCount} of ${summary.bindingCount} bindings have unresolved types. Check that the install ran in the right directory.`,
         ),
       );
     }
   }
+  return notes;
+};
+
+const formatTable = (results: RepoResult[]): string => {
+  const rows = results.map(formatResultRow);
+  const widths = TABLE_HEADER.map((title, column) =>
+    Math.max(title.length, ...rows.map((row) => (row[column] ?? "").length)),
+  );
+  const formatRow = (row: string[]): string =>
+    row.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join("  ");
+  const notes = formatResultNotes(results);
   return [
-    picocolors.dim(formatRow(header)),
+    picocolors.dim(formatRow(TABLE_HEADER)),
     ...rows.map(formatRow),
-    ...(failures.length > 0 ? ["", ...failures] : []),
+    ...(notes.length > 0 ? ["", ...notes] : []),
   ].join("\n");
 };
 
@@ -200,14 +208,16 @@ const formatVerdict = (verdict: ComponentVerdict): string => {
         : picocolors.green("0 counterexamples")
     }  ` +
       picocolors.dim(
-        `states ${verdict.coveredStates.length}/${verdict.predictedStates} covered · transitions ${verdict.coveredTransitions} · branch sides ${verdict.coveredBranchSides}/${verdict.branchSides} · ${verdict.warnings > 0 ? `warnings ${verdict.coveredWarnings}/${verdict.warnings} covered · ` : ""}${verdict.observations} observations`,
+        `states ${verdict.coveredStateIndices.length}/${verdict.predictedStateCount} covered · transitions ${verdict.coveredTransitionCount} · branch sides ${verdict.coveredBranchSideCount}/${verdict.branchSideCount} · ${verdict.warningCount > 0 ? `warnings ${verdict.coveredWarningCount}/${verdict.warningCount} covered · ` : ""}${verdict.observationCount} observations`,
       ),
   ];
   for (const claim of formatCounterexamples(verdict)) lines.push(picocolors.red(`  ✗ ${claim}`));
   for (const unwarned of verdict.unwarnedMutations)
     lines.push(picocolors.dim(`  · unwarned mutation: ${unwarned}`));
-  if (verdict.renderErrors > 0)
-    lines.push(picocolors.yellow(`  ${verdict.renderErrors} observations threw while rendering`));
+  if (verdict.renderErrorCount > 0)
+    lines.push(
+      picocolors.yellow(`  ${verdict.renderErrorCount} observations threw while rendering`),
+    );
   return lines.join("\n");
 };
 
@@ -236,7 +246,7 @@ program
   .option("-c, --component <names...>", "only verify these components")
   .option("--json", "print the verdicts as JSON", false)
   .option("-s, --setup <directory>", "a verify directory with setup.tsx and harness.json")
-  .action(async (tsconfig: string, options: VerifyOptions) => {
+  .action(async (tsconfig: string, options: VerifyCommandOptions) => {
     const report = await verifyProject(tsconfig, {
       componentNames: options.component,
       setupDirectory: options.setup ?? null,
@@ -252,7 +262,7 @@ program
     const summary = summarizeVerdicts(report.components, report.durationMs);
     console.log(
       picocolors.dim(
-        `\n${summary.verified} verified · ${summary.couldNotMount} couldn't mount${summary.couldNotMount > 0 ? ` (${formatMountFailures(summary.mountFailures)})` : ""} · ${summary.notExported} not exported · ${summary.counterexamples} counterexamples · states ${summary.coveredStates}/${summary.predictedStates} covered · warnings ${summary.coveredWarnings}/${summary.warnings} covered · ${summary.unwarnedMutations} unwarned mutations · ${summary.durationMs} ms`,
+        `\n${summary.verifiedCount} verified · ${summary.unmountableCount} couldn't mount${summary.unmountableCount > 0 ? ` (${formatMountFailures(summary.mountFailureCounts)})` : ""} · ${summary.notExportedCount} not exported · ${summary.counterexampleCount} counterexamples · states ${summary.coveredStateCount}/${summary.predictedStateCount} covered · warnings ${summary.coveredWarningCount}/${summary.warningCount} covered · ${summary.unwarnedMutationCount} unwarned mutations · ${summary.durationMs} ms`,
       ),
     );
   });

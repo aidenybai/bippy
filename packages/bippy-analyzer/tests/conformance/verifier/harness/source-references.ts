@@ -2,8 +2,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, join, sep } from "node:path";
 import type { ViteDevServer } from "vite";
 import { addExports, getFileImports, parseImports } from "../source-index";
-import type { ParsedImport } from "../source-index";
-import type { FileImports, SourceIndex } from "../types";
+import type { ExportedName, FileImports, PackageImport, SourceIndex } from "../types";
 import {
   PACKAGE_SPECIFIER_PATTERN,
   SOURCE_FILE_PATTERN,
@@ -11,19 +10,14 @@ import {
   hasPackageDirectory,
 } from "./packages";
 
-export interface ExportedValue {
-  file: string;
-  exportName: string;
-}
-
 export interface SourceReferences {
   processEnv: Set<string>;
   importMetaEnv: Set<string>;
   nextFonts: Set<string>;
   packageImports: Map<string, Set<string>>;
   exports: SourceIndex["exports"];
-  fileImports: Map<string, ParsedImport[]>;
-  reduxStore: ExportedValue | null;
+  fileImports: Map<string, PackageImport[]>;
+  reduxStore: ExportedName | null;
 }
 
 const ENV_REFERENCE_PATTERN = /\b(process\.env|import\.meta\.env)\.([A-Z_][A-Z0-9_]*)/g;
@@ -41,7 +35,7 @@ const listSourceFiles = (directory: string): string[] =>
     return SOURCE_FILE_PATTERN.test(entry.name) ? [path] : [];
   });
 
-const findReduxStore = (file: string, text: string): ExportedValue | null => {
+const findReduxStore = (file: string, text: string): ExportedName | null => {
   const name = STORE_DECLARATION_PATTERN.exec(text)?.[1];
   if (!name) return null;
   if (new RegExp(`export\\s+default\\s+${name}\\b`).test(text))

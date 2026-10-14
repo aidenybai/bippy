@@ -14,12 +14,12 @@ import type { RepoConfig } from "./repos";
 const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 const SETUP_ERROR_TAIL_LENGTH = 4000;
 
-const getSetupKey = (repo: RepoConfig): string => JSON.stringify(getSetupInputs(repo));
+const getLocalSetupKey = (repo: RepoConfig): string => JSON.stringify(getSetupInputs(repo));
 
 const prepare = (repo: RepoConfig, log: (line: string) => void): string => {
   const appDirectory = join(CACHE_DIRECTORY, repo.id);
   const markerFile = join(CACHE_DIRECTORY, `${repo.id}.ready`);
-  if (existsSync(markerFile) && readFileSync(markerFile, "utf8") === getSetupKey(repo))
+  if (existsSync(markerFile) && readFileSync(markerFile, "utf8") === getLocalSetupKey(repo))
     return appDirectory;
   mkdirSync(CACHE_DIRECTORY, { recursive: true });
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)}`);
@@ -32,7 +32,7 @@ const prepare = (repo: RepoConfig, log: (line: string) => void): string => {
     throw new Error(
       `setup failed for ${repo.id}:\n${result.stderr.slice(-SETUP_ERROR_TAIL_LENGTH)}`,
     );
-  writeFileSync(markerFile, getSetupKey(repo));
+  writeFileSync(markerFile, getLocalSetupKey(repo));
   return appDirectory;
 };
 

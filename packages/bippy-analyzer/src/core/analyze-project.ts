@@ -259,7 +259,7 @@ export const analyzeProject = (
           projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
             hirFunction: hir,
             resolver,
-            loadModuleFunction: compiled.compileModuleFunction,
+            loadModuleFunction: compiled.loadModuleFunction,
           });
       return [
         {

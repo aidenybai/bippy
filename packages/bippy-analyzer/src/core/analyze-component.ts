@@ -63,7 +63,7 @@ export const analyzeComponent = (
   }
   const interpreter = new Interpreter(
     fileContext.resolver,
-    fileContext.compiled.compileModuleFunction,
+    fileContext.compiled.loadModuleFunction,
     fileContext.loadProjectHook,
     fileContext.contextSetterFields,
     fileContext.actionsByStore,

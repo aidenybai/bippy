@@ -9,7 +9,7 @@ import type {
   Domain,
   BindingPlace,
 } from "./types";
-import { dedupeValues } from "./constraints";
+import { dedupeAbstractValues } from "./constraints";
 import { PlaceMap, getBindingPlace } from "./utils/place";
 
 export interface BindingOptions extends Partial<
@@ -95,7 +95,7 @@ export class BindingTable {
     this.unionMemberValues.set(place, unionMemberValues);
     this.placeDomains.set(place, {
       ...readDomain,
-      cases: dedupeValues([...readDomain.cases, ...unionMemberValues.flat()]),
+      cases: dedupeAbstractValues([...readDomain.cases, ...unionMemberValues.flat()]),
     });
   }
 }

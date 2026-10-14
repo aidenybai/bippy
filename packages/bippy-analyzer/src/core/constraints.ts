@@ -201,7 +201,10 @@ const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean
   return null;
 };
 
-const getPlaceValues = (value: SymbolicValue, constraints: Constraints): AbstractValue[] | null =>
+const getPossibleValues = (
+  value: SymbolicValue,
+  constraints: Constraints,
+): AbstractValue[] | null =>
   value.kind === "Binding" ? (constraints.possibleValues.get(getValuePlace(value)) ?? null) : null;
 
 const isBooleanExpression = (value: SymbolicValue): boolean =>
@@ -210,10 +213,10 @@ const isBooleanExpression = (value: SymbolicValue): boolean =>
 
 export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
   if (isBooleanExpression(value)) {
-    const outcome = evaluate(value, constraints);
+    const outcome = evaluateCondition(value, constraints);
     return outcome === null ? value : { kind: "Primitive", value: outcome };
   }
-  const placeValues = getPlaceValues(value, constraints);
+  const placeValues = getPossibleValues(value, constraints);
   const [onlyValue] = placeValues ?? [];
   return placeValues?.length === 1 && onlyValue?.kind === "Literal"
     ? { kind: "Primitive", value: onlyValue.value }
@@ -230,7 +233,7 @@ const evaluateEquality = (
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive") return null;
-  const placeValues = getPlaceValues(placeSide, constraints);
+  const placeValues = getPossibleValues(placeSide, constraints);
   if (!placeValues) return null;
   const matchCount = placeValues.filter((candidate) =>
     isEqualToLiteral(candidate, literalSide.value, value.operator),
@@ -251,17 +254,20 @@ const evaluateTruthiness = (placeValues: AbstractValue[]): boolean | null => {
   return null;
 };
 
-export const evaluate = (value: SymbolicValue, constraints: Constraints): boolean | null => {
+export const evaluateCondition = (
+  value: SymbolicValue,
+  constraints: Constraints,
+): boolean | null => {
   const assumption = constraints.assumptions.get(getValueKey(value));
   if (assumption) return assumption.outcome;
   switch (value.kind) {
     case "Binding": {
-      const placeValues = getPlaceValues(value, constraints);
+      const placeValues = getPossibleValues(value, constraints);
       return placeValues ? evaluateTruthiness(placeValues) : null;
     }
     case "UnaryExpression": {
       if (value.operator !== "!") return null;
-      const operand = evaluate(value.value, constraints);
+      const operand = evaluateCondition(value.value, constraints);
       return operand === null ? null : !operand;
     }
     case "BinaryExpression": {
@@ -270,16 +276,16 @@ export const evaluate = (value: SymbolicValue, constraints: Constraints): boolea
       return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, constraints) : null;
     }
     case "Conditional": {
-      const test = evaluate(getTestExpression(value), constraints);
+      const test = evaluateCondition(getTestExpression(value), constraints);
       if (test === null) return null;
-      return evaluate(test ? value.consequent : value.alternate, constraints);
+      return evaluateCondition(test ? value.consequent : value.alternate, constraints);
     }
     default:
       return getKnownTruthiness(value);
   }
 };
 
-const getValueKeys = (values: AbstractValue[]): Set<string> =>
+const getAbstractValueKeys = (values: AbstractValue[]): Set<string> =>
   new Set(values.map(formatAbstractValue));
 
 const narrowUnionMembers = (
@@ -289,8 +295,8 @@ const narrowUnionMembers = (
 ): Constraints | null => {
   const memberValues = constraints.unionMemberValues.get(place);
   if (!memberValues) return constraints;
-  const narrowedKeys = getValueKeys(narrowedValues);
-  const memberValueKeys = getValueKeys(memberValues.flat());
+  const narrowedKeys = getAbstractValueKeys(narrowedValues);
+  const memberValueKeys = getAbstractValueKeys(memberValues.flat());
   if ([...narrowedKeys].some((valueKey) => !memberValueKeys.has(valueKey))) return constraints;
   const allMembers = memberValues.map((_values, memberIndex) => memberIndex);
   const possibleMembers = (constraints.possibleMembers.get(place.bindingId) ?? allMembers).filter(
@@ -303,8 +309,8 @@ const narrowUnionMembers = (
     if (siblingPlace.bindingId !== place.bindingId || isSamePlace(siblingPlace, place)) continue;
     const siblingValues = constraints.possibleValues.get(siblingPlace);
     if (!siblingValues) continue;
-    const siblingValueKeys = getValueKeys(siblingMemberValues.flat());
-    const allowedKeys = getValueKeys(
+    const siblingValueKeys = getAbstractValueKeys(siblingMemberValues.flat());
+    const allowedKeys = getAbstractValueKeys(
       possibleMembers.flatMap((memberIndex) => siblingMemberValues[memberIndex] ?? []),
     );
     const narrowedSiblingValues = siblingValues.filter((value) => {
@@ -322,7 +328,7 @@ const narrowPlace = (
   constraints: Constraints,
   isKept: (value: AbstractValue) => boolean,
 ): Constraints | null => {
-  const placeValues = getPlaceValues(bindingValue, constraints);
+  const placeValues = getPossibleValues(bindingValue, constraints);
   if (!placeValues) return null;
   const narrowedValues = placeValues.filter(isKept);
   if (narrowedValues.length === 0) return null;
@@ -340,25 +346,25 @@ const hasUnknownPart = (value: SymbolicValue): boolean => {
   return hasUnknown;
 };
 
-export const assume = (
+export const assumeCondition = (
   value: SymbolicValue,
   outcome: boolean,
   constraints: Constraints,
 ): Constraints | null => {
-  const evaluated = evaluate(value, constraints);
+  const evaluated = evaluateCondition(value, constraints);
   if (evaluated !== null) return evaluated === outcome ? constraints : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
-    return assume(value.value, !outcome, constraints);
+    return assumeCondition(value.value, !outcome, constraints);
   if (
     value.kind === "Conditional" &&
     outcome &&
     value.alternate.kind === "Primitive" &&
     !value.alternate.value
   ) {
-    const withTest = assume(getTestExpression(value), true, constraints);
-    return withTest && assume(value.consequent, true, withTest);
+    const withTest = assumeCondition(getTestExpression(value), true, constraints);
+    return withTest && assumeCondition(value.consequent, true, withTest);
   }
-  if (value.kind === "Binding" && getPlaceValues(value, constraints))
+  if (value.kind === "Binding" && getPossibleValues(value, constraints))
     return narrowPlace(
       value,
       constraints,
@@ -370,7 +376,7 @@ export const assume = (
     if (
       literalSide.kind === "Primitive" &&
       placeSide.kind === "Binding" &&
-      getPlaceValues(placeSide, constraints)
+      getPossibleValues(placeSide, constraints)
     ) {
       const wantsMatch = outcome !== isNegated;
       return narrowPlace(placeSide, constraints, (candidate) =>
@@ -397,7 +403,7 @@ export const assume = (
 export const forgetBinding = (
   constraints: Constraints,
   bindingId: number,
-  keepsLength: boolean,
+  shouldKeepLength: boolean,
 ): void => {
   const lengthAtom = getLengthAtom(bindingId);
   const isLength = (atom: BindingPlace | null): boolean =>
@@ -406,15 +412,17 @@ export const forgetBinding = (
   for (const [assumptionKey, assumption] of constraints.assumptions) {
     const bindingPlaces = assumption.places.filter((place) => place.bindingId === bindingId);
     if (bindingPlaces.length === 0) continue;
-    if (keepsLength && bindingPlaces.every(isLength)) continue;
+    if (shouldKeepLength && bindingPlaces.every(isLength)) continue;
     constraints.assumptions.delete(assumptionKey);
   }
   constraints.bounds = constraints.bounds.filter((bound) => {
     const mentionsBinding = [bound.left, bound.right].some((atom) => atom?.bindingId === bindingId);
-    return !mentionsBinding || (keepsLength && (isLength(bound.left) || isLength(bound.right)));
+    return (
+      !mentionsBinding || (shouldKeepLength && (isLength(bound.left) || isLength(bound.right)))
+    );
   });
 };
 
-export const dedupeValues = (values: AbstractValue[]): AbstractValue[] => [
+export const dedupeAbstractValues = (values: AbstractValue[]): AbstractValue[] => [
   ...new Map(values.map((value) => [formatAbstractValue(value), value])).values(),
 ];

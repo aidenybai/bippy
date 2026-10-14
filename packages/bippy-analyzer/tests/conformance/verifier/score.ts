@@ -63,37 +63,37 @@ export interface ComponentVerdict {
   status: ComponentStatus;
   error: string | null;
   mountFailure: MountFailure | null;
-  observations: number;
-  renderErrors: number;
-  predictedStates: number;
-  coveredStates: number[];
+  observationCount: number;
+  renderErrorCount: number;
+  predictedStateCount: number;
+  coveredStateIndices: number[];
   stateCounterexamples: StateCounterexample[];
-  coveredTransitions: number;
+  coveredTransitionCount: number;
   transitionCounterexamples: TransitionCounterexample[];
-  branchSides: number;
-  coveredBranchSides: number;
-  unreachableClaims: number;
+  branchSideCount: number;
+  coveredBranchSideCount: number;
+  unreachableClaimCount: number;
   reachedUnreachableBranches: string[];
   valueCounterexamples: ValueCounterexample[];
-  warnings: number;
-  coveredWarnings: number;
+  warningCount: number;
+  coveredWarningCount: number;
   refutedWarnings: string[];
   unwarnedMutations: string[];
 }
 
 export interface VerificationSummary {
-  verified: number;
-  couldNotMount: number;
-  notExported: number;
-  counterexamples: number;
-  predictedStates: number;
-  coveredStates: number;
-  branchSides: number;
-  coveredBranchSides: number;
-  warnings: number;
-  coveredWarnings: number;
-  unwarnedMutations: number;
-  mountFailures: Partial<Record<MountFailure, number>>;
+  verifiedCount: number;
+  unmountableCount: number;
+  notExportedCount: number;
+  counterexampleCount: number;
+  predictedStateCount: number;
+  coveredStateCount: number;
+  branchSideCount: number;
+  coveredBranchSideCount: number;
+  warningCount: number;
+  coveredWarningCount: number;
+  unwarnedMutationCount: number;
+  mountFailureCounts: Partial<Record<MountFailure, number>>;
   durationMs: number;
 }
 
@@ -241,20 +241,20 @@ const createEmptyVerdict = (
   status: analysis.exportName ? "verified" : "not-exported",
   error: null,
   mountFailure: null,
-  observations: 0,
-  renderErrors: 0,
-  predictedStates: report.states.length,
-  coveredStates: [],
+  observationCount: 0,
+  renderErrorCount: 0,
+  predictedStateCount: report.states.length,
+  coveredStateIndices: [],
   stateCounterexamples: [],
-  coveredTransitions: 0,
+  coveredTransitionCount: 0,
   transitionCounterexamples: [],
-  branchSides: 0,
-  coveredBranchSides: 0,
-  unreachableClaims: report.unreachableBranches.length,
+  branchSideCount: 0,
+  coveredBranchSideCount: 0,
+  unreachableClaimCount: report.unreachableBranches.length,
   reachedUnreachableBranches: [],
   valueCounterexamples: [],
-  warnings: analysis.warnings.length,
-  coveredWarnings: 0,
+  warningCount: analysis.warnings.length,
+  coveredWarningCount: 0,
   refutedWarnings: [],
   unwarnedMutations: [],
 });
@@ -451,7 +451,7 @@ const scoreTransition = (
             (isUnchanged && (transition.isAsync || maybeTriggeredIds.has(transition.handlerId))),
         );
   });
-  if (isPredicted) context.verdict.coveredTransitions++;
+  if (isPredicted) context.verdict.coveredTransitionCount++;
   else if (!context.report.isTruncated) recordWrongEdge("unpredicted-target");
 };
 
@@ -516,7 +516,7 @@ const scoreObservation = (
   for (const probeHit of observation.after.probes)
     if (probeIds.has(probeHit.id)) coveredSides.add(`${probeHit.id}:${probeHit.outcome}`);
   if (observation.after.error) {
-    context.verdict.renderErrors++;
+    context.verdict.renderErrorCount++;
     return;
   }
   const afterMatches = scoreRender(
@@ -536,7 +536,10 @@ export const scoreComponent = (
   observations: Observation[],
   knownComponents: Map<string, string>,
 ): ComponentVerdict => {
-  const verdict = { ...createEmptyVerdict(analysis, report), observations: observations.length };
+  const verdict: ComponentVerdict = {
+    ...createEmptyVerdict(analysis, report),
+    observationCount: observations.length,
+  };
   if (!analysis.exportName) return verdict;
   const mountFailedVerdict = getMountFailedVerdict(verdict, observations);
   if (mountFailedVerdict) return mountFailedVerdict;
@@ -546,9 +549,9 @@ export const scoreComponent = (
   const coveredSides = new Set<string>();
   for (const observation of observations)
     scoreObservation(context, observation, probeIds, coveredSides);
-  verdict.coveredStates = [...context.coveredStates].sort((left, right) => left - right);
-  verdict.branchSides = probes.length * 2;
-  verdict.coveredBranchSides = coveredSides.size;
+  verdict.coveredStateIndices = [...context.coveredStates].sort((left, right) => left - right);
+  verdict.branchSideCount = probes.length * 2;
+  verdict.coveredBranchSideCount = coveredSides.size;
   verdict.reachedUnreachableBranches = getReachedUnreachableBranches(report, coveredSides);
   return { ...verdict, ...scoreWarnings(analysis, observations, context.stateBindings) };
 };
@@ -601,8 +604,10 @@ export const countCounterexamples = (verdict: ComponentVerdict): number =>
 export const sum = <Item>(items: Item[], getValue: (item: Item) => number): number =>
   items.reduce((total, item) => total + getValue(item), 0);
 
-export const formatMountFailures = (mountFailures: VerificationSummary["mountFailures"]): string =>
-  Object.entries(mountFailures)
+export const formatMountFailures = (
+  mountFailureCounts: VerificationSummary["mountFailureCounts"],
+): string =>
+  Object.entries(mountFailureCounts)
     .sort(([, left], [, right]) => (right ?? 0) - (left ?? 0))
     .map(([failure, count]) => `${failure} ${count}`)
     .join(", ");
@@ -611,26 +616,26 @@ export const summarizeVerdicts = (
   verdicts: ComponentVerdict[],
   durationMs: number,
 ): VerificationSummary => {
-  const verified = verdicts.filter((verdict) => verdict.status === "verified");
-  const mountFailed = verdicts.filter((verdict) => verdict.status === "mount-failed");
-  const mountFailures: Partial<Record<MountFailure, number>> = {};
-  for (const verdict of mountFailed) {
+  const verifiedVerdicts = verdicts.filter((verdict) => verdict.status === "verified");
+  const mountFailedVerdicts = verdicts.filter((verdict) => verdict.status === "mount-failed");
+  const mountFailureCounts: Partial<Record<MountFailure, number>> = {};
+  for (const verdict of mountFailedVerdicts) {
     const failure = verdict.mountFailure ?? "other";
-    mountFailures[failure] = (mountFailures[failure] ?? 0) + 1;
+    mountFailureCounts[failure] = (mountFailureCounts[failure] ?? 0) + 1;
   }
   return {
-    verified: verified.length,
-    couldNotMount: mountFailed.length,
-    notExported: verdicts.filter((verdict) => verdict.status === "not-exported").length,
-    counterexamples: sum(verified, countCounterexamples),
-    predictedStates: sum(verified, (verdict) => verdict.predictedStates),
-    coveredStates: sum(verified, (verdict) => verdict.coveredStates.length),
-    branchSides: sum(verified, (verdict) => verdict.branchSides),
-    coveredBranchSides: sum(verified, (verdict) => verdict.coveredBranchSides),
-    warnings: sum(verified, (verdict) => verdict.warnings),
-    coveredWarnings: sum(verified, (verdict) => verdict.coveredWarnings),
-    unwarnedMutations: sum(verified, (verdict) => verdict.unwarnedMutations.length),
-    mountFailures,
+    verifiedCount: verifiedVerdicts.length,
+    unmountableCount: mountFailedVerdicts.length,
+    notExportedCount: verdicts.filter((verdict) => verdict.status === "not-exported").length,
+    counterexampleCount: sum(verifiedVerdicts, countCounterexamples),
+    predictedStateCount: sum(verifiedVerdicts, (verdict) => verdict.predictedStateCount),
+    coveredStateCount: sum(verifiedVerdicts, (verdict) => verdict.coveredStateIndices.length),
+    branchSideCount: sum(verifiedVerdicts, (verdict) => verdict.branchSideCount),
+    coveredBranchSideCount: sum(verifiedVerdicts, (verdict) => verdict.coveredBranchSideCount),
+    warningCount: sum(verifiedVerdicts, (verdict) => verdict.warningCount),
+    coveredWarningCount: sum(verifiedVerdicts, (verdict) => verdict.coveredWarningCount),
+    unwarnedMutationCount: sum(verifiedVerdicts, (verdict) => verdict.unwarnedMutations.length),
+    mountFailureCounts,
     durationMs,
   };
 };

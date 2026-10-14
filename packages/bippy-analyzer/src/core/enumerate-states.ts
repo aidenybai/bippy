@@ -1,10 +1,10 @@
 import DisjointSet from "../react-compiler/Utils/DisjointSet";
 import type { Bound, Constraints } from "./constraints";
 import {
-  assume,
+  assumeCondition,
   cloneConstraints,
-  dedupeValues,
-  evaluate,
+  dedupeAbstractValues,
+  evaluateCondition,
   forgetBinding,
   getLengthAtom,
   resolveLiteral,
@@ -114,7 +114,9 @@ const getLiteralCases = (
 ): AbstractValue[] | null => {
   if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
   if (value.kind !== "Conditional") return null;
-  const decidedOutcome = constraints ? evaluate(getTestExpression(value), constraints) : null;
+  const decidedOutcome = constraints
+    ? evaluateCondition(getTestExpression(value), constraints)
+    : null;
   if (decidedOutcome !== null)
     return getLiteralCases(decidedOutcome ? value.consequent : value.alternate, constraints);
   const consequentCases = getLiteralCases(value.consequent, constraints);
@@ -125,7 +127,7 @@ const getLiteralCases = (
 const simplify = (value: SymbolicValue, constraints: Constraints): SymbolicValue =>
   mapSymbolicValue(value, (part) => {
     if (part.kind !== "Conditional") return part;
-    const decidedOutcome = evaluate(getTestExpression(part), constraints);
+    const decidedOutcome = evaluateCondition(getTestExpression(part), constraints);
     if (decidedOutcome === null) return part;
     return decidedOutcome ? part.consequent : part.alternate;
   });
@@ -182,7 +184,7 @@ const getReachableCases = (
   if (isUntypedState && updates.length > 0) return null;
   const initialCases = getFieldCases(binding.initial, path, binding, null);
   if (!Array.isArray(initialCases)) return typeCases;
-  let reachable = dedupeValues(initialCases);
+  let reachable = dedupeAbstractValues(initialCases);
   const place = getBindingPlace(binding, path);
   for (let round = 0; round < MAX_REACHABILITY_ROUNDS; round++) {
     const previousCount = reachable.length;
@@ -192,7 +194,7 @@ const getReachableCases = (
         getToggleCases(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
       if (!updateCases) return typeCases;
-      reachable = dedupeValues([...reachable, ...updateCases]);
+      reachable = dedupeAbstractValues([...reachable, ...updateCases]);
     }
     if (reachable.length === previousCount) return reachable;
   }
@@ -303,7 +305,10 @@ const applyUpdates = (
         getFieldCases(update.value, place.path, update.binding, constraints) ??
         getToggleCases(update.value, place, currentValues);
       if (fieldCases === "unchanged") continue;
-      updated.possibleValues.set(place, fieldCases ? dedupeValues(fieldCases) : reachableValues);
+      updated.possibleValues.set(
+        place,
+        fieldCases ? dedupeAbstractValues(fieldCases) : reachableValues,
+      );
     }
     forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
     updated.bounds.push(...getLengthBounds(update.value, update.binding));
@@ -402,9 +407,9 @@ class StateEnumerator {
     if (!this.#region.branchKeys.has(branchKey)) return [createLeaf(constraints, conditional)];
     const alternatives: Alternative[] = [];
     const test = getTestExpression(conditional);
-    const isDecided = evaluate(test, constraints) !== null;
+    const isDecided = evaluateCondition(test, constraints) !== null;
     for (const outcome of [true, false]) {
-      const withOutcome = assume(test, outcome, constraints);
+      const withOutcome = assumeCondition(test, outcome, constraints);
       if (!withOutcome) continue;
       this.#recordOutcome(branchKey, outcome);
       const simplifiedTest = simplify(test, constraints);

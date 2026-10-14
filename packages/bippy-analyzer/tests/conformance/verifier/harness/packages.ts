@@ -11,7 +11,7 @@ interface PackageManifest {
 export const SOURCE_FILE_PATTERN = /\.[cm]?[jt]sx?$/;
 export const IMAGE_FILE_PATTERN = /\.(?:png|jpe?g|gif|webp|avif|svg|ico)$/;
 export const PACKAGE_SPECIFIER_PATTERN = /^[^./\0]/;
-export const RELATIVE_SPECIFIER_PATTERN = /^\.{0,2}\//;
+export const PATH_SPECIFIER_PATTERN = /^\.{0,2}\//;
 
 export const isAppSourceModule = (id: string): boolean =>
   !id.includes("/node_modules/") && SOURCE_FILE_PATTERN.test(id.split("?")[0] ?? id);

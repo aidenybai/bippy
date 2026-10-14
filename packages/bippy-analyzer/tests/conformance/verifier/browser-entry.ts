@@ -215,7 +215,7 @@ instrument({
     const fiber = findMountedFiber();
     if (fiber && fiber !== lastCommittedFiber && didFiberRender(fiber)) renderCount++;
     lastCommittedFiber = fiber;
-    if (fiber && firstCommitShapes === null && !isTooLarge(fiber))
+    if (fiber && firstCommitShapes === null && !hasTooManyFibers(fiber))
       firstCommitShapes = getChildren(fiber).flatMap(toShapes);
     if (fiber) trackStates(fiber);
   },
@@ -285,7 +285,7 @@ const hydrate = (sample: Sample): unknown => {
   }
 };
 
-const toPlain = (value: unknown): unknown => {
+const toPlainData = (value: unknown): unknown => {
   let nodeCount = 0;
   const visit = (current: unknown, depth: number): unknown => {
     if (
@@ -326,7 +326,7 @@ const findMountedFiber = (): Fiber | null => {
   return fiber;
 };
 
-const isTooLarge = (fiber: Fiber): boolean => {
+const hasTooManyFibers = (fiber: Fiber): boolean => {
   let count = 0;
   const pending = [...getChildren(fiber)];
   for (let current = pending.pop(); current; current = pending.pop()) {
@@ -357,7 +357,7 @@ const toShapes = (fiber: Fiber): Shape[] => {
   return getChildren(fiber).flatMap(toShapes);
 };
 
-const readRawHookStates = (fiber: Fiber): unknown[] => {
+const getQueuedHookStates = (fiber: Fiber): unknown[] => {
   const values: unknown[] = [];
   for (
     let hook = fiber.memoizedState;
@@ -380,7 +380,7 @@ const getStateOwners = (states: unknown[]): Map<object, string> => {
 };
 
 const trackStates = (fiber: Fiber): Map<object, string> => {
-  const states = readRawHookStates(fiber);
+  const states = getQueuedHookStates(fiber);
   states.forEach((state, hookIndex) => {
     if (!isPlainData(state) || trackedStates.some((tracked) => tracked.target === state)) return;
     trackedStates.push({
@@ -423,8 +423,8 @@ const takeMutations = (fiber: Fiber): Pick<Capture, "mutationHits" | "mutatedOwn
   return { mutationHits: [...mutationHits.values()], mutatedOwners: [...mutatedOwners] };
 };
 
-const readHookStates = (fiber: Fiber): unknown[] =>
-  readRawHookStates(fiber).map((state) => toPlain(state));
+const getPlainHookStates = (fiber: Fiber): unknown[] =>
+  getQueuedHookStates(fiber).map((state) => toPlainData(state));
 
 const takeProbeHits = (): ProbeHit[] => {
   const hits = probeHits;
@@ -463,7 +463,8 @@ XMLHttpRequest.prototype.send = function send(...sendArguments) {
   originalSend.apply(this, sendArguments);
 };
 
-const wait = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+const waitForSettleInterval = (): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
 
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message;
@@ -491,7 +492,7 @@ window.addEventListener("error", (event) => recordCaughtError(event.error));
 // HACK: mocked data loads after a delay, so poll until requests finish and the component rendered.
 const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
-  do await wait();
+  do await waitForSettleInterval();
   while (
     (pendingRequests > 0 ||
       (mountedType !== null && !findMountedFiber() && !renderError && !caughtError)) &&
@@ -517,7 +518,7 @@ const createEmptyCapture = (
   failure,
 });
 
-const capture = (): Capture => {
+const captureMountedComponent = (): Capture => {
   const fiber = findMountedFiber();
   if (!fiber) {
     const error = getRecordedError();
@@ -525,7 +526,7 @@ const capture = (): Capture => {
       ? createEmptyCapture(error.message, error.depth)
       : createEmptyCapture("component did not render", null, "did-not-render");
   }
-  if (isTooLarge(fiber))
+  if (hasTooManyFibers(fiber))
     return createEmptyCapture(
       `component rendered more than ${MAX_CAPTURED_FIBERS} fibers`,
       null,
@@ -533,7 +534,7 @@ const capture = (): Capture => {
     );
   return {
     shapes: getChildren(fiber).flatMap(toShapes),
-    hookStates: readHookStates(fiber),
+    hookStates: getPlainHookStates(fiber),
     probes: takeProbeHits(),
     ...takeMutations(fiber),
     firstCommitShapes: null,
@@ -879,16 +880,16 @@ const mount = async (request: MountRequest): Promise<Capture> => {
   } catch (error) {
     return createEmptyCapture(recordError(error).message);
   }
-  return { ...capture(), firstCommitShapes };
+  return { ...captureMountedComponent(), firstCommitShapes };
 };
 
-const perform = async (key: string): Promise<Capture | null> => {
+const performAction = async (key: string): Promise<Capture | null> => {
   const action = collectActions().find((candidate) => candidate.key === key);
   if (!action) return null;
   if (action.kind === "click") action.element.click();
   else setInputValue(action.element, action.value);
   await settle();
-  return capture();
+  return captureMountedComponent();
 };
 
 const preventNavigation = (event: Event): void => {
@@ -910,10 +911,10 @@ history.go = () => {};
 window.__verify = {
   mount,
   actions: () => collectActions().map(({ element: _element, value: _value, ...action }) => action),
-  perform,
+  perform: performAction,
   observe: async () => {
     await settle();
-    return capture();
+    return captureMountedComponent();
   },
   canLoad: async (wrapper) => (await loadWrapper(wrapper)) !== null,
 };

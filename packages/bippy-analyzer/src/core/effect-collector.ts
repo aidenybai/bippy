@@ -10,6 +10,13 @@ export interface CollectedEffects {
   delegates: string[];
 }
 
+export interface UpdateCondition {
+  guards: SymbolicValue[];
+  isAsync: boolean;
+}
+
+const UNCONDITIONAL_UPDATE: UpdateCondition = { guards: [], isAsync: false };
+
 interface Mutation {
   binding: Binding;
   loc: SourceLocation;
@@ -51,24 +58,15 @@ export class EffectCollector {
     );
   }
 
-  addUpdate(
-    binding: Binding,
-    value: SymbolicValue,
-    guards: SymbolicValue[],
-    isAsync: boolean,
-  ): void {
-    this.#updates.push({ binding, value, guards, isAsync });
+  addUpdate(binding: Binding, value: SymbolicValue, condition: UpdateCondition): void {
+    this.#updates.push({ binding, value, guards: condition.guards, isAsync: condition.isAsync });
   }
 
   hasUpdate(binding: Binding): boolean {
     return this.#updates.some((update) => update.binding.id === binding.id);
   }
 
-  recordSetterCall(
-    binding: Binding,
-    nextValue: SymbolicValue,
-    context: Pick<StateUpdate, "guards" | "isAsync">,
-  ): void {
+  recordSetterCall(binding: Binding, nextValue: SymbolicValue, condition: UpdateCondition): void {
     const mutation = this.#mutationsByBinding.get(binding.id);
     if (mutation) {
       const isSameReference = isWholeBinding(nextValue, binding);
@@ -83,11 +81,10 @@ export class EffectCollector {
     const knownValue = this.forgetMutatedBindings(nextValue);
     this.addUpdate(
       binding,
-      context.isAsync && knownValue.kind !== "Primitive"
+      condition.isAsync && knownValue.kind !== "Primitive"
         ? createUnknown("async", GeneratedSource)
         : knownValue,
-      context.guards,
-      context.isAsync,
+      condition,
     );
   }
 
@@ -99,11 +96,11 @@ export class EffectCollector {
         `mutates ${binding.name} without setting it, so the change shows only on the next render`,
         loc,
       );
-      this.addUpdate(binding, createUnknown("mutated", GeneratedSource), [], false);
+      this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     }
     for (const binding of this.#possiblyMutatedBindings.values())
       if (!this.hasUpdate(binding))
-        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), [], false);
+        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     return { updates: this.#updates, delegates: this.#delegates };
   }
 

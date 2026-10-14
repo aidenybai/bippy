@@ -9,16 +9,16 @@ import type { VerificationSummary } from "../verifier/score";
 import { verifyProject } from "../verifier/verify";
 
 export interface CollectSummary {
-  files: number;
-  components: number;
-  states: number;
-  handlers: number;
-  unreachableBranches: number;
-  truncatedComponents: number;
-  bindings: number;
-  untypedBindings: number;
-  unresolvedTypeBindings: number;
-  bailouts: Partial<Record<BailoutReason, number>>;
+  fileCount: number;
+  componentCount: number;
+  stateCount: number;
+  handlerCount: number;
+  unreachableBranchCount: number;
+  truncatedComponentCount: number;
+  bindingCount: number;
+  untypedBindingCount: number;
+  unresolvedTypeBindingCount: number;
+  bailoutCountsByReason: Partial<Record<BailoutReason, number>>;
   durationMs: number;
   verification: VerificationSummary | null;
 }
@@ -29,23 +29,24 @@ const summarize = (
   durationMs: number,
   verification: VerificationSummary | null,
 ): CollectSummary => {
-  const bailouts: Partial<Record<BailoutReason, number>> = {};
+  const bailoutCountsByReason: Partial<Record<BailoutReason, number>> = {};
   for (const { analysis } of components)
-    for (const { reason } of analysis.bailouts) bailouts[reason] = (bailouts[reason] ?? 0) + 1;
+    for (const { reason } of analysis.bailouts)
+      bailoutCountsByReason[reason] = (bailoutCountsByReason[reason] ?? 0) + 1;
   const bindings = components.flatMap(({ analysis }) => analysis.bindings);
   return {
-    files: fileCount,
-    components: components.length,
-    states: sum(components, ({ report }) => report.states.length),
-    handlers: sum(components, ({ analysis }) => analysis.handlers.length),
-    unreachableBranches: sum(components, ({ report }) => report.unreachableBranches.length),
-    truncatedComponents: components.filter(({ report }) => report.isTruncated).length,
-    bindings: bindings.length,
-    untypedBindings: bindings.filter((binding) => binding.domain.kind === "Unknown").length,
-    unresolvedTypeBindings: bindings.filter(
+    fileCount,
+    componentCount: components.length,
+    stateCount: sum(components, ({ report }) => report.states.length),
+    handlerCount: sum(components, ({ analysis }) => analysis.handlers.length),
+    unreachableBranchCount: sum(components, ({ report }) => report.unreachableBranches.length),
+    truncatedComponentCount: components.filter(({ report }) => report.isTruncated).length,
+    bindingCount: bindings.length,
+    untypedBindingCount: bindings.filter((binding) => binding.domain.kind === "Unknown").length,
+    unresolvedTypeBindingCount: bindings.filter(
       (binding) => binding.domain.kind === "Unknown" && binding.domain.reason === "unresolved",
     ).length,
-    bailouts,
+    bailoutCountsByReason,
     durationMs,
     verification,
   };

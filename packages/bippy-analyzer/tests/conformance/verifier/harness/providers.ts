@@ -2,7 +2,7 @@ import { SETUP_PATH } from "../types";
 import { createNextContextSpec } from "./next";
 import { isInstalled } from "./packages";
 import type { HarnessSetup } from "./setup";
-import type { ExportedValue } from "./source-references";
+import type { ExportedName } from "../types";
 
 export interface ProviderSpec {
   packageName: string;
@@ -80,7 +80,7 @@ const PROVIDER_SPECS: ProviderSpec[] = [
   },
 ];
 
-const createReduxSpec = ({ file, exportName }: ExportedValue): ProviderSpec => ({
+const createReduxSpec = ({ file, exportName }: ExportedName): ProviderSpec => ({
   packageName: "react-redux",
   imports: [
     'import { Provider as ReduxProvider } from "react-redux";',
@@ -92,7 +92,7 @@ const createReduxSpec = ({ file, exportName }: ExportedValue): ProviderSpec => (
 export const getInstalledProviders = (
   appDirectory: string,
   nextDirectory: string | null,
-  reduxStore: ExportedValue | null,
+  reduxStore: ExportedName | null,
 ): ProviderSpec[] => {
   const installed = PROVIDER_SPECS.filter((spec) => isInstalled(appDirectory, spec.packageName));
   const nextContextSpec = createNextContextSpec(nextDirectory);

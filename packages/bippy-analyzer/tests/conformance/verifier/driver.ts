@@ -12,7 +12,7 @@ import type {
   Wrapper,
 } from "./types";
 import { getPropCombinations } from "./props";
-import { findSiblingParts, getErrorSubject, getNamedParent, proposeParents } from "./wrappers";
+import { findSiblingParts, getErrorSubject, resolveNamedParent, proposeParents } from "./wrappers";
 import type { ParentQuery } from "./wrappers";
 
 export interface Observation {
@@ -120,7 +120,7 @@ class WrapperSearch {
       throwingLayer === newestLayer &&
       isSameError &&
       newestWrapper?.candidate.kind === "project" &&
-      newestWrapper.name === getNamedParent(failedMount.error, this.#project)
+      newestWrapper.name === resolveNamedParent(failedMount.error, this.#project)
         ? newestWrapper.candidate
         : null;
     if (throwingNamedParent) {

@@ -9,13 +9,8 @@ const NAMED_IMPORTS_PATTERN = /\{([^}]*)\}/;
 const EXPORT_DECLARATION_PATTERN =
   /export\s+(default\s+)?(?:async\s+)?(?:const|let|var|function|class)\s+([A-Z]\w*)/g;
 const EXPORT_LIST_PATTERN = /export\s*\{([^}]*)\}/g;
-const RELATIVE_SPECIFIER_PATTERN = /^\.{1,2}\//;
+const RELATIVE_IMPORT_PATTERN = /^\.{1,2}\//;
 const SOURCE_FILE_SUFFIXES = ["", ".tsx", ".ts", ".jsx", ".js", "/index.tsx", "/index.ts"];
-
-export interface ParsedImport {
-  specifier: string;
-  names: string[];
-}
 
 const getImportedNames = (clause: string): string[] =>
   (NAMED_IMPORTS_PATTERN.exec(clause)?.[1]?.split(",") ?? []).flatMap((namedImport) => {
@@ -24,7 +19,7 @@ const getImportedNames = (clause: string): string[] =>
     return name ? [name] : [];
   });
 
-export const parseImports = (text: string): ParsedImport[] =>
+export const parseImports = (text: string): PackageImport[] =>
   [...text.matchAll(IMPORT_PATTERN), ...text.matchAll(REEXPORT_PATTERN)].flatMap(
     ([, typeOnly, clause = "", specifier = ""]) =>
       typeOnly ? [] : [{ specifier, names: getImportedNames(clause) }],
@@ -57,13 +52,13 @@ const resolveRelativeImport = (file: string, specifier: string): string | null =
 
 export const getFileImports = async (
   file: string,
-  imports: ParsedImport[],
+  imports: PackageImport[],
   resolveAlias: (specifier: string, importer: string) => Promise<string | null>,
 ): Promise<FileImports> => {
   const packages: PackageImport[] = [];
   const files: string[] = [];
   for (const { specifier, names } of imports) {
-    if (RELATIVE_SPECIFIER_PATTERN.test(specifier)) {
+    if (RELATIVE_IMPORT_PATTERN.test(specifier)) {
       const resolved = resolveRelativeImport(file, specifier);
       if (resolved) files.push(resolved);
       continue;

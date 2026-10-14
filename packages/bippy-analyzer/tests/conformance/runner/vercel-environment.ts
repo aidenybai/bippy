@@ -103,7 +103,7 @@ const getAnalyzerPackageJson = (): string => {
   return `${JSON.stringify({ name: "analyzer", private: true, type: "module", dependencies }, null, 2)}\n`;
 };
 
-const getSetupKey = (repo: RepoConfig): string =>
+const getSnapshotKey = (repo: RepoConfig): string =>
   createHash("sha256")
     .update(JSON.stringify([...getSetupInputs(repo), getAnalyzerPackageJson()]))
     .digest("hex");
@@ -157,7 +157,7 @@ const prepareSnapshot = async (
   credentials: Credentials,
   log: (line: string) => void,
 ): Promise<string> => {
-  const key = getSetupKey(repo);
+  const key = getSnapshotKey(repo);
   const existing = readSnapshots()[repo.id];
   if (existing?.key === key) return existing.snapshotId;
 

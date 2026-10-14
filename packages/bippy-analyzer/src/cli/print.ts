@@ -9,6 +9,8 @@ import type {
   ConditionalValue,
   Domain,
   JsxExpressionValue,
+  JsxProp,
+  JsxSpreadProp,
   StateUpdate,
   State,
   SymbolicValue,
@@ -18,7 +20,11 @@ import { forEachJsxElement } from "../core/utils/traverse";
 import { formatAbstractValue, formatLine, formatPlace, formatSymbolicValue } from "../core/format";
 import { getTestExpression } from "../core/utils/truthiness";
 import { getBindingPlace } from "../core/utils/place";
-import { isRenderingNothing, isRenderingNothingWhenFalse } from "../core/utils/checks";
+import {
+  isRenderingNothing,
+  isRenderingNothingWhenFalse,
+  isStateBinding,
+} from "../core/utils/checks";
 import { isEffectHandler } from "../core/collect-handlers";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
@@ -49,7 +55,7 @@ interface Note {
 }
 
 interface ComponentPrintContext extends PrintOptions {
-  effectLabelsByHandler: Map<string, string>;
+  effectSummariesByHandler: Map<string, string>;
   triggerLabelsByHandler: Map<string, string>;
   renderNodeBudget: RenderNodeBudget;
 }
@@ -80,6 +86,9 @@ const renderAsciiTree = (root: TreeNode): string[] => {
 
 const truncate = (text: string, width = MAX_LABEL_WIDTH): string =>
   text.length > width ? `${text.slice(0, width - 1)}…` : text;
+
+const getPropLabel = (prop: JsxProp | JsxSpreadProp): string =>
+  prop.kind === "JsxAttribute" ? prop.name : "{...}";
 
 const formatCases = (cases: AbstractValue[]): string => cases.map(formatAbstractValue).join(" | ");
 
@@ -133,9 +142,11 @@ const formatAttributes = (
   if (isCompact) return "";
   const { colors } = context;
   const attributes = node.props.flatMap((prop) => {
-    const name = prop.kind === "JsxAttribute" ? prop.name : "{...}";
+    const name = getPropLabel(prop);
     if (prop.handlerId)
-      return [colors.dim(`${name} ⇒ ${context.effectLabelsByHandler.get(prop.handlerId) ?? "?"}`)];
+      return [
+        colors.dim(`${name} ⇒ ${context.effectSummariesByHandler.get(prop.handlerId) ?? "?"}`),
+      ];
     if (!context.isShowingAttributes) return [];
     const valueText = truncate(formatSymbolicValue(prop.value), MAX_ATTRIBUTE_WIDTH);
     return [colors.dim(prop.kind === "JsxAttribute" ? `${name}=${valueText}` : `...${valueText}`)];
@@ -265,7 +276,7 @@ const formatUpdate = (update: StateUpdate): string => {
   return `${guardPrefix}${assignments.join(", ")}${asyncSuffix}`;
 };
 
-const formatTransitionEffect = (handler: Handler): string =>
+const formatHandlerEffects = (handler: Handler): string =>
   truncate(
     [
       ...handler.updates.map(formatUpdate),
@@ -299,7 +310,7 @@ const collectTriggerLabels = (
     for (const prop of element.props) {
       if (!prop.handlerId || triggerLabelsByHandler.has(prop.handlerId)) continue;
       const textContent = getTextContent(element);
-      const propName = prop.kind === "JsxAttribute" ? prop.name : "{...}";
+      const propName = getPropLabel(prop);
       triggerLabelsByHandler.set(
         prop.handlerId,
         textContent
@@ -309,7 +320,7 @@ const collectTriggerLabels = (
     }
   });
 
-const getEffectLabel = (handler: Handler): string => {
+const getEffectTriggerLabel = (handler: Handler): string => {
   const { trigger } = handler;
   if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
   return trigger.dependencies === "[]"
@@ -317,61 +328,69 @@ const getEffectLabel = (handler: Handler): string => {
     : `${trigger.hookKind}(${trigger.dependencies ?? "every render"})`;
 };
 
-const buildBindings = (component: AnalyzedComponent, options: PrintOptions): TreeNode => {
-  const { analysis, report } = component;
-  const { colors } = options;
-  const updates = analysis.handlers.flatMap((handler) => handler.updates);
-  const bindingNodes = analysis.bindings
-    .filter((binding) => binding.kind !== "item")
-    .map((binding) => {
-      const bindingSource =
-        binding.hookKind && binding.kind !== "state" && binding.kind !== "reducer"
-          ? `${binding.kind}:${binding.hookKind}`
-          : binding.kind;
-      const details: string[] = [];
-      if (binding.initial) details.push(`= ${formatSymbolicValue(binding.initial)}`);
-      const reachableValues = report.places.get(getBindingPlace(binding));
-      if (
-        reachableValues &&
-        binding.domain.kind === "Cases" &&
-        reachableValues.length < binding.domain.cases.length
-      ) {
-        details.push(colors.dim(`reachable ${formatCases(reachableValues)}`));
-      }
-      const invariant = getNumericInvariant(
-        binding,
-        updates.filter((update) => update.binding.id === binding.id),
-      );
-      if (invariant) details.push(colors.dim(invariant));
-      const fieldNodes = [...report.places]
-        .filter(([place]) => place.bindingId === binding.id && place.path.length > 0)
-        .map(([place, reachableFieldValues]) => {
-          const fieldDomain = analysis.placeDomains.get(place);
-          const isNarrowed =
-            fieldDomain?.kind === "Cases" && reachableFieldValues.length < fieldDomain.cases.length;
-          const reachableSuffix = isNarrowed
-            ? ` ${colors.dim(`reachable ${formatCases(reachableFieldValues)}`)}`
-            : "";
-          const domainText = fieldDomain ? formatDomain(fieldDomain) : "";
-          return createTreeNode(
-            truncate(`.${place.path.join(".")} ${domainText}${reachableSuffix}`),
-          );
-        });
-      const domainText =
-        binding.domain.kind === "Unknown"
-          ? colors.red(formatDomain(binding.domain))
-          : formatDomain(binding.domain);
-      const detailsSuffix = details.length > 0 ? ` ${details.join("  ")}` : "";
-      return createTreeNode(
-        truncate(
-          `${colors.bold(binding.name)} ${colors.dim(bindingSource)} ${domainText}${detailsSuffix}`,
-        ),
-        fieldNodes,
-      );
+const getReachableLabel = (
+  domain: Domain | undefined,
+  reachableValues: AbstractValue[],
+): string | null =>
+  domain?.kind === "Cases" && reachableValues.length < domain.cases.length
+    ? `reachable ${formatCases(reachableValues)}`
+    : null;
+
+const buildFieldNodes = (
+  component: AnalyzedComponent,
+  binding: Binding,
+  options: PrintOptions,
+): TreeNode[] =>
+  [...component.report.places]
+    .filter(([place]) => place.bindingId === binding.id && place.path.length > 0)
+    .map(([place, reachableValues]) => {
+      const fieldDomain = component.analysis.placeDomains.get(place);
+      const reachableLabel = getReachableLabel(fieldDomain, reachableValues);
+      const reachableSuffix = reachableLabel ? ` ${options.colors.dim(reachableLabel)}` : "";
+      const domainText = fieldDomain ? formatDomain(fieldDomain) : "";
+      return createTreeNode(truncate(`.${place.path.join(".")} ${domainText}${reachableSuffix}`));
     });
+
+const buildBindingNode = (
+  component: AnalyzedComponent,
+  binding: Binding,
+  options: PrintOptions,
+): TreeNode => {
+  const { colors } = options;
+  const bindingSource =
+    binding.hookKind && !isStateBinding(binding)
+      ? `${binding.kind}:${binding.hookKind}`
+      : binding.kind;
+  const details: string[] = [];
+  if (binding.initial) details.push(`= ${formatSymbolicValue(binding.initial)}`);
+  const reachableValues = component.report.places.get(getBindingPlace(binding));
+  const reachableLabel = reachableValues && getReachableLabel(binding.domain, reachableValues);
+  if (reachableLabel) details.push(colors.dim(reachableLabel));
+  const bindingUpdates = component.analysis.handlers
+    .flatMap((handler) => handler.updates)
+    .filter((update) => update.binding.id === binding.id);
+  const invariant = getNumericInvariant(binding, bindingUpdates);
+  if (invariant) details.push(colors.dim(invariant));
+  const domainText =
+    binding.domain.kind === "Unknown"
+      ? colors.red(formatDomain(binding.domain))
+      : formatDomain(binding.domain);
+  const detailsSuffix = details.length > 0 ? ` ${details.join("  ")}` : "";
   return createTreeNode(
-    colors.dim("data"),
-    bindingNodes.length > 0 ? bindingNodes : [createTreeNode(colors.dim("none"))],
+    truncate(
+      `${colors.bold(binding.name)} ${colors.dim(bindingSource)} ${domainText}${detailsSuffix}`,
+    ),
+    buildFieldNodes(component, binding, options),
+  );
+};
+
+const buildBindings = (component: AnalyzedComponent, options: PrintOptions): TreeNode => {
+  const bindingNodes = component.analysis.bindings
+    .filter((binding) => binding.kind !== "item")
+    .map((binding) => buildBindingNode(component, binding, options));
+  return createTreeNode(
+    options.colors.dim("data"),
+    bindingNodes.length > 0 ? bindingNodes : [createTreeNode(options.colors.dim("none"))],
   );
 };
 
@@ -469,14 +488,15 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   const triggerLabelsByHandler = new Map<string, string>();
   collectTriggerLabels(analysis.render, triggerLabelsByHandler);
   for (const handler of analysis.handlers) {
-    if (isEffectHandler(handler)) triggerLabelsByHandler.set(handler.id, getEffectLabel(handler));
+    if (isEffectHandler(handler))
+      triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
   }
   const context: ComponentPrintContext = {
     ...options,
     renderNodeBudget: { remaining: MAX_RENDER_NODES },
     triggerLabelsByHandler,
-    effectLabelsByHandler: new Map(
-      analysis.handlers.map((handler) => [handler.id, formatTransitionEffect(handler)]),
+    effectSummariesByHandler: new Map(
+      analysis.handlers.map((handler) => [handler.id, formatHandlerEffects(handler)]),
     ),
   };
   const { colors, views } = context;
@@ -485,7 +505,7 @@ export const formatComponent = (component: AnalyzedComponent, options: PrintOpti
   if (views.has("render")) {
     const effectNodes = analysis.handlers.filter(isEffectHandler).map((handler) => {
       const triggerLabel = triggerLabelsByHandler.get(handler.id);
-      const effectLabel = context.effectLabelsByHandler.get(handler.id);
+      const effectLabel = context.effectSummariesByHandler.get(handler.id);
       return createTreeNode(colors.dim(`${triggerLabel} ⇒ ${effectLabel}`));
     });
     sections.push(

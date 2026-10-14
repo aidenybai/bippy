@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import type { DepOptimizationConfig, Plugin } from "vite";
 import {
   PACKAGE_SPECIFIER_PATTERN,
-  RELATIVE_SPECIFIER_PATTERN,
+  PATH_SPECIFIER_PATTERN,
   isAppSourceModule,
   isRequirable,
 } from "./packages";
@@ -134,7 +134,7 @@ export const createMissingRequirePlugin = (): OptimizerPlugin => ({
     build.onResolve({ filter: /.*/ }, ({ path, importer, kind }) =>
       kind === "require-call" &&
       importer &&
-      !RELATIVE_SPECIFIER_PATTERN.test(path) &&
+      !PATH_SPECIFIER_PATTERN.test(path) &&
       !isRequirable(path, importer)
         ? { path, namespace: MISSING_MODULE_NAMESPACE }
         : undefined,

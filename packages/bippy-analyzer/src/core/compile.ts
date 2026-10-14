@@ -30,7 +30,7 @@ export interface CompiledFunction {
 
 export interface CompiledFile {
   functions: CompiledFunction[];
-  compileModuleFunction: ModuleFunctionLoader;
+  loadModuleFunction: ModuleFunctionLoader;
 }
 
 // HACK: later passes rewrite the HIR in place, so throw past the compiler to stop after STOP_PASS.
@@ -83,7 +83,7 @@ interface ProgramFunctions {
   moduleFunctionPaths: Map<string, BabelFunction>;
 }
 
-const EMPTY_COMPILED_FILE: CompiledFile = { functions: [], compileModuleFunction: () => null };
+const EMPTY_COMPILED_FILE: CompiledFile = { functions: [], loadModuleFunction: () => null };
 
 const isModuleScopeFunction = (path: NodePath<types.Function>): path is BabelFunction => {
   const isAtModuleScope =
@@ -130,14 +130,14 @@ const parseFile = (fileName: string, code: string) =>
     parserOpts: { plugins: /\.[cm]?ts$/.test(fileName) ? ["typescript"] : ["typescript", "jsx"] },
   });
 
-const createModuleFunctionCompiler = (
+const createModuleFunctionLoader = (
   fileName: string,
   code: string,
   pluginOptions: ParsedPluginOptions,
   { programPath, moduleFunctionPaths }: ProgramFunctions,
 ): ModuleFunctionLoader => {
   const moduleFunctionsByName = new Map<string, HIRFunction | null>();
-  const compileModuleFunction = (functionPath: BabelFunction): HIRFunction | null => {
+  const loadModuleFunction = (functionPath: BabelFunction): HIRFunction | null => {
     if (!programPath) return null;
     let hir: HIRFunction | null = null;
     const programContext = new ProgramContext({
@@ -176,7 +176,7 @@ const createModuleFunctionCompiler = (
       const functionPath = moduleFunctionPaths.get(functionName);
       moduleFunctionsByName.set(
         functionName,
-        functionPath ? compileModuleFunction(functionPath) : null,
+        functionPath ? loadModuleFunction(functionPath) : null,
       );
     }
     return moduleFunctionsByName.get(functionName) ?? null;
@@ -260,11 +260,6 @@ export const compileFile = (
     functions: [...compiledByLocation.values()].filter(
       (compiled) => compiled.hir !== null || compiled.errors.length > 0,
     ),
-    compileModuleFunction: createModuleFunctionCompiler(
-      fileName,
-      code,
-      pluginOptions,
-      programFunctions,
-    ),
+    loadModuleFunction: createModuleFunctionLoader(fileName, code, pluginOptions, programFunctions),
   };
 };
