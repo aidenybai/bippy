@@ -1,5 +1,6 @@
 import { availableParallelism, freemem } from "node:os";
 import { dirname, resolve } from "node:path";
+import { getHeapStatistics } from "node:v8";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../../src/core/analyze-project";
@@ -193,7 +194,10 @@ const getPageCount = (componentCount: number): number =>
     Math.min(
       MAX_PAGES,
       availableParallelism(),
-      Math.floor((freemem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
+      Math.floor(
+        (freemem() - RESERVED_MEMORY_BYTES - getHeapStatistics().total_available_size) /
+          PAGE_MEMORY_BYTES,
+      ),
       componentCount,
     ),
   );
