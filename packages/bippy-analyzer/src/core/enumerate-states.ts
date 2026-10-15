@@ -317,12 +317,8 @@ const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getVal
 const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
   prefix.every((guardKey, index) => guardKeys[index] === guardKey);
 
-const getConstraintsAfterUpdates = (
-  updates: StateUpdate[],
-  constraints: Constraints,
-  context: ReachabilityContext,
-): Constraints[] => {
-  if (updates.length === 0) return [constraints];
+const getUpdatePaths = (updates: StateUpdate[]): StateUpdate[][] => {
+  if (updates.length === 0) return [[]];
   const guardKeysByPath = new Map(
     updates.map((update) => {
       const guardKeys = getGuardKeys(update);
@@ -330,12 +326,7 @@ const getConstraintsAfterUpdates = (
     }),
   );
   return [...guardKeysByPath.values()].map((guardKeys) =>
-    applyUpdates(
-      updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
-      constraints,
-      context.reachableConstraints,
-      context.dependentsByBinding,
-    ),
+    updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
   );
 };
 
@@ -344,28 +335,46 @@ const getUpdatesBeforeLaterAsyncUpdates = (updates: StateUpdate[]): StateUpdate[
     update.isAsync && index < updates.length - 1 ? [updates.slice(0, index + 1)] : [],
   );
 
+const dedupeUpdateSequences = (handler: Handler, sequences: StateUpdate[][]): StateUpdate[][] => {
+  const indexByUpdate = new Map(handler.updates.map((update, index) => [update, index]));
+  return [
+    ...new Map(
+      sequences.map((sequence) => [
+        sequence.map((update) => indexByUpdate.get(update)).join(","),
+        sequence,
+      ]),
+    ).values(),
+  ];
+};
+
+const getHandlerUpdateSequences = (handler: Handler): StateUpdate[][] => {
+  const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
+  const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
+  return dedupeUpdateSequences(handler, [
+    ...(mayChangeNothing ? [[]] : []),
+    ...(synchronousUpdates.length < handler.updates.length
+      ? getUpdatePaths(synchronousUpdates)
+      : []),
+    ...getUpdatesBeforeLaterAsyncUpdates(handler.updates).flatMap(getUpdatePaths),
+    ...getUpdatePaths(handler.updates),
+  ]);
+};
+
 const getConstraintsAfterHandler = (
   handler: Handler,
   constraints: Constraints,
   context: ReachabilityContext,
-): Constraints[] => {
-  const afterEachPath = getConstraintsAfterUpdates(handler.updates, constraints, context);
-  const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
-  const beforeAsyncUpdates =
-    synchronousUpdates.length < handler.updates.length
-      ? getConstraintsAfterUpdates(synchronousUpdates, constraints, context)
-      : [];
-  const betweenAsyncUpdates = getUpdatesBeforeLaterAsyncUpdates(handler.updates).flatMap(
-    (updates) => getConstraintsAfterUpdates(updates, constraints, context),
+): Constraints[] =>
+  getHandlerUpdateSequences(handler).map((updates) =>
+    updates.length === 0
+      ? constraints
+      : applyUpdates(
+          updates,
+          constraints,
+          context.reachableConstraints,
+          context.dependentsByBinding,
+        ),
   );
-  const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
-  return [
-    ...(mayChangeNothing ? [constraints] : []),
-    ...beforeAsyncUpdates,
-    ...betweenAsyncUpdates,
-    ...afterEachPath,
-  ];
-};
 
 class StateEnumerator {
   readonly #branchOutcomes: BranchOutcomes;
