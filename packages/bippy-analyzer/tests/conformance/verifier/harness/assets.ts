@@ -6,7 +6,7 @@ import { IMAGE_FILE_PATTERN, stripQuery } from "./packages";
 const STYLESHEET_PATTERN = /\.(?:css|scss|sass|less|styl|pcss)(?:\?(?!.*\b(?:raw|url)\b)|$)/;
 const STYLESHEET_PREFIX = "\0bippy-verify-stylesheet:";
 const STYLESHEET_SOURCE =
-  "export default new Proxy({}, { get: (_, key) => (typeof key === 'string' ? key : undefined) });";
+  "export default new Proxy({}, { get: (target, key) => (typeof key === 'string' && !(key in target) ? key : Reflect.get(target, key)) });";
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
 const SVG_FILE_PATTERN = /\.svg$/;
 const SVG_COMPONENT_PREFIX = "\0bippy-verify-svg-component:";

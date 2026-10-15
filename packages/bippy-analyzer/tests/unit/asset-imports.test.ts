@@ -30,3 +30,14 @@ describe("html template imports", () => {
     expect(loadAsset(id ?? "")).toBe('export default "";');
   });
 });
+
+describe("stylesheet stand-ins", () => {
+  it("maps class names to themselves and still converts to a string", async () => {
+    const id = resolveAssetId("./button.module.css", "/app/src/button.tsx", false);
+    const source = loadAsset(id ?? "") ?? "";
+    const stylesheet: unknown = (await import(`data:text/javascript,${encodeURIComponent(source)}`))
+      .default;
+    expect(Reflect.get(Object(stylesheet), "primaryButton")).toBe("primaryButton");
+    expect(String(stylesheet)).toBe("[object Object]");
+  });
+});
