@@ -50,4 +50,14 @@ describe("updates that follow an action", () => {
     );
     expect(verdict.transitionCounterexamples).toEqual([]);
   });
+
+  it("accepts an element the click renders failing right away", () => {
+    const verdict = scoreClick(
+      "LazyImage",
+      "Load",
+      [element("button", [text("Load")])],
+      [element("a", [text("Image")])],
+    );
+    expect(verdict.transitionCounterexamples).toEqual([]);
+  });
 });

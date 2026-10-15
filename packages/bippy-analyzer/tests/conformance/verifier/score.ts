@@ -538,19 +538,28 @@ const getEarlierTriggeredIds = (context: ScoringContext, path: string[]): Set<st
     }),
   );
 
+const canReachInBackground = (
+  context: ScoringContext,
+  fromStates: number[],
+  handlerIds: Set<string>,
+  afterMatches: number[],
+): boolean =>
+  getTransitions(context, fromStates, handlerIds).some(
+    (transition) =>
+      (transition.isAsync || context.spontaneousIds.has(transition.handlerId)) &&
+      transition.targets.some((target) => afterMatches.includes(target)),
+  );
+
 const canBackgroundChange = (
   context: ScoringContext,
   edge: ObservedEdge,
   regionIndex: number,
 ): boolean =>
-  getTransitions(
+  canReachInBackground(
     context,
     getStatesInRegion(context, edge.beforeMatches, regionIndex),
     new Set([...context.backgroundHandlerIds, ...edge.earlierTriggeredIds]),
-  ).some(
-    (transition) =>
-      (transition.isAsync || context.spontaneousIds.has(transition.handlerId)) &&
-      transition.targets.some((target) => edge.afterMatches.includes(target)),
+    edge.afterMatches,
   );
 
 const isRegionEdgePredicted = (
@@ -575,6 +584,12 @@ const isRegionEdgePredicted = (
   return transitions.some(
     (transition) =>
       transition.targets.some((target) => edge.afterMatches.includes(target)) ||
+      canReachInBackground(
+        context,
+        transition.targets,
+        context.backgroundHandlerIds,
+        edge.afterMatches,
+      ) ||
       (isUnchanged && (transition.isAsync || edge.maybeTriggeredIds.has(transition.handlerId))),
   );
 };

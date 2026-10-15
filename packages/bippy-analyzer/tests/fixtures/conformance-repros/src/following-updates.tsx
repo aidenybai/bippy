@@ -27,3 +27,15 @@ export const HeightResult = () => {
     </div>
   );
 };
+
+export const LazyImage = ({ src }: { src: string }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasFailed, setHasFailed] = useState(false);
+  if (hasFailed) return <a href={src}>Image</a>;
+  if (isLoaded) return <img src={src} alt="" onError={() => setHasFailed(true)} />;
+  return (
+    <button type="button" onClick={() => setIsLoaded(true)}>
+      Load
+    </button>
+  );
+};
