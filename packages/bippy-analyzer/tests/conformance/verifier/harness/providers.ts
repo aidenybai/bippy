@@ -76,6 +76,15 @@ const PROVIDER_SPECS: ProviderSpec[] = [
     imports: 'import { FormProvider, useForm } from "react-hook-form";',
     wrap: (children) => `createElement(FormProvider, useForm(), ${children})`,
   },
+  {
+    packageName: "@mui/material",
+    modules: ["@mui/material/styles"],
+    imports: [
+      'import { ThemeProvider as MuiThemeProvider, createTheme as createMuiTheme } from "@mui/material/styles";',
+      "const MUI_THEME = createMuiTheme({ cssVariables: true });",
+    ].join("\n"),
+    wrap: (children) => `createElement(MuiThemeProvider, { theme: MUI_THEME }, ${children})`,
+  },
 ];
 
 const createReduxSpec = ({ file, exportName }: ExportedName): ProviderSpec => ({
