@@ -2,10 +2,51 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..0623e33 100644
+index 959fdf7..355a528 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
-@@ -315,6 +315,9 @@ function lowerStatement(
+@@ -275,20 +275,27 @@ function lowerStatement(
+       const value = lowerExpressionToTemporary(builder, stmt.get('argument'));
+       const handler = builder.resolveThrowHandler();
+       if (handler != null) {
+-        /*
+-         * NOTE: we could support this, but a `throw` inside try/catch is using exceptions
+-         * for control-flow and is generally considered an anti-pattern. we can likely
+-         * just not support this pattern, unless it really becomes necessary for some reason.
+-         */
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason:
+-              '(BuildHIR::lowerStatement) Support ThrowStatement inside of try/catch',
+-            category: ErrorCategory.Todo,
+-            loc: stmt.node.loc ?? null,
+-            suggestions: null,
+-          }),
++        const continuationBlock = builder.reserve('block');
++        builder.terminateWithContinuation(
++          {
++            kind: 'maybe-throw',
++            continuation: continuationBlock.id,
++            handler,
++            id: makeInstructionId(0),
++            loc: stmt.node.loc ?? GeneratedSource,
++            effects: null,
++          },
++          continuationBlock,
++        );
++        builder.terminate(
++          {
++            kind: 'unreachable',
++            id: makeInstructionId(0),
++            loc: stmt.node.loc ?? GeneratedSource,
++          },
++          'block',
+         );
++        return;
+       }
+       const terminal: ThrowTerminal = {
+         kind: 'throw',
+@@ -315,6 +322,9 @@ function lowerStatement(
            argument as NodePath<t.Expression>,
          );
        }
@@ -15,7 +56,7 @@ index 959fdf7..0623e33 100644
        const terminal: ReturnTerminal = {
          kind: 'return',
          returnVariant: 'Explicit',
-@@ -1348,10 +1351,16 @@ function lowerStatement(
+@@ -1348,10 +1358,16 @@ function lowerStatement(
        const continuationBlock = builder.reserve('block');
  
        const handlerPath = stmt.get('handler');
@@ -34,7 +75,7 @@ index 959fdf7..0623e33 100644
              category: ErrorCategory.Todo,
              loc: stmt.node.loc ?? null,
              suggestions: null,
-@@ -1359,51 +1368,32 @@ function lowerStatement(
+@@ -1359,51 +1375,32 @@ function lowerStatement(
          );
          return;
        }
@@ -100,7 +141,7 @@ index 959fdf7..0623e33 100644
            lowerAssignment(
              builder,
              handlerBinding.path.node.loc ?? GeneratedSource,
-@@ -1413,13 +1403,29 @@ function lowerStatement(
+@@ -1413,13 +1410,29 @@ function lowerStatement(
              'Assignment',
            );
          }
@@ -135,7 +176,7 @@ index 959fdf7..0623e33 100644
          };
        });
  
-@@ -1436,6 +1442,11 @@ function lowerStatement(
+@@ -1436,6 +1449,11 @@ function lowerStatement(
            loc: block.node.loc ?? GeneratedSource,
          };
        });
@@ -147,7 +188,7 @@ index 959fdf7..0623e33 100644
  
        builder.terminateWithContinuation(
          {
-@@ -1451,6 +1462,9 @@ function lowerStatement(
+@@ -1451,6 +1469,9 @@ function lowerStatement(
          continuationBlock,
        );
  
@@ -157,7 +198,7 @@ index 959fdf7..0623e33 100644
        return;
      }
      case 'WithStatement': {
-@@ -4531,6 +4545,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4552,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  

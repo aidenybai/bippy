@@ -14,21 +14,3 @@ export function DynamicImport() {
   };
   return <button onClick={load}>{ready ? "ready" : "load"}</button>;
 }
-
-// invoify contexts/InvoiceContext.tsx:334-353: throw inside try.
-// "(BuildHIR::lowerStatement) Support ThrowStatement inside of try/catch"
-export function TryFinally() {
-  const [isSaving, setIsSaving] = useState(false);
-  const save = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch("/api");
-      if (!response.ok) throw new Error("failed");
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  return <button onClick={save}>{isSaving ? "saving" : "save"}</button>;
-}
