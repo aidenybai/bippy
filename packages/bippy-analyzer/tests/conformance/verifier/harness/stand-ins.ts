@@ -60,6 +60,7 @@ const SERVER_ONLY_PREFIXES = [
   "next-auth/providers/",
   "node:",
 ];
+const TEST_RUNNER_PACKAGES = new Set(["vitest", "@jest/globals", "bun:test"]);
 const SERVER_ONLY_ADAPTER_PATTERN = /^@(?:next-)?auth\/.+-adapter$/;
 const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
 const MISSING_MODULE_NAMESPACE = "bippy-verify-missing-module";
@@ -71,6 +72,9 @@ const isServerOnlyPackage = (specifier: string): boolean =>
   SERVER_ONLY_PACKAGES.has(specifier) ||
   SERVER_ONLY_PREFIXES.some((prefix) => specifier.startsWith(prefix)) ||
   SERVER_ONLY_ADAPTER_PATTERN.test(specifier);
+
+const isStandInPackage = (specifier: string): boolean =>
+  isServerOnlyPackage(specifier) || TEST_RUNNER_PACKAGES.has(specifier);
 
 const isNodeOnlyModule = (
   specifier: string,
@@ -105,7 +109,7 @@ export const createStandInPlugin = (
   name: "bippy-verify-stand-ins",
   enforce: "pre",
   async resolveId(source, importer) {
-    if (isServerOnlyPackage(source)) return `${STAND_IN_MODULE_PREFIX}${source}`;
+    if (isStandInPackage(source)) return `${STAND_IN_MODULE_PREFIX}${source}`;
     if (!isNodeOnlyModule(source, importer, polyfilledModules)) return null;
     if (source.startsWith("node:")) return `${STAND_IN_MODULE_PREFIX}${source}`;
     const resolved = await this.resolve(source, importer, { skipSelf: true });
@@ -164,7 +168,7 @@ export const createNodeBuiltinPlugin = (polyfilledModules: Set<string>): Optimiz
   name: NODE_BUILTIN_NAMESPACE,
   setup: (build) => {
     build.onResolve({ filter: /.*/ }, ({ path, importer }) =>
-      isServerOnlyPackage(path) || isNodeOnlyModule(path, importer, polyfilledModules)
+      isStandInPackage(path) || isNodeOnlyModule(path, importer, polyfilledModules)
         ? { path, namespace: NODE_BUILTIN_NAMESPACE }
         : undefined,
     );
