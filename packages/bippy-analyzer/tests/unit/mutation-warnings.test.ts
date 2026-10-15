@@ -34,6 +34,10 @@ describe("mutation warnings", () => {
     },
   );
 
+  it("reports each place that mutates the same state", () => {
+    expect(getWarnings("TwoPushes")).toHaveLength(2);
+  });
+
   it("reports state mutated without being set", () => {
     expect(getWarnings("PushWithoutSet")).toMatchObject([
       { kind: "state-mutation", message: expect.stringContaining("without setting it") },

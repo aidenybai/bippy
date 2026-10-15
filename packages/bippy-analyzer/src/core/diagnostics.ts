@@ -15,7 +15,8 @@ export class Diagnostics {
 
   warn(kind: WarningKind, message: string, loc: SourceLocation, file: string): void {
     const isDuplicate = this.warnings.some(
-      (warning) => warning.kind === kind && warning.message === message,
+      (warning) =>
+        warning.kind === kind && warning.message === message && isSameLocation(warning.loc, loc),
     );
     if (!isDuplicate) this.warnings.push({ kind, message, loc, file });
   }

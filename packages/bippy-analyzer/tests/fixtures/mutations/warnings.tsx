@@ -103,3 +103,27 @@ export const SortPropsMember = (props: { items: string[] }) => {
   props.items.sort();
   return <p>{props.items.length}</p>;
 };
+
+export const TwoPushes = () => {
+  const [items, setItems] = useState<string[]>([]);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          items.push("first");
+          setItems([...items]);
+        }}
+      >
+        First
+      </button>
+      <button
+        onClick={() => {
+          items.push("second");
+          setItems([...items]);
+        }}
+      >
+        Second
+      </button>
+    </div>
+  );
+};
