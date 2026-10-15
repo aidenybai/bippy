@@ -4,6 +4,7 @@ import { createServer, loadEnv } from "vite";
 import type { Alias, DepOptimizationOptions, InlineConfig, Plugin, ViteDevServer } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { createAssetPlugin } from "./harness/assets";
+import { createLocalExportPlugin } from "./harness/local-exports";
 import {
   createNextImagePlugin,
   getNextImageOptions,
@@ -157,6 +158,7 @@ interface HarnessContext {
   references: SourceReferences;
   providers: ProviderSpec[];
   setup: HarnessSetup;
+  localNamesByFile: Map<string, string[]>;
 }
 
 const getEnvDefines = (context: HarnessContext): Record<string, string> => {
@@ -202,6 +204,7 @@ const createHarnessPlugins = (
     createProbePlugin(context.probes),
     ...(nextDirectory ? [createNextImagePlugin()] : []),
     createServerActionPlugin(),
+    createLocalExportPlugin(context.localNamesByFile),
     createCommonJsPlugin(),
     createRequirePlugin(),
     tsconfigPaths({ root: appDirectory }),
@@ -274,6 +277,7 @@ export const startHarness = async (
   probes: Probe[],
   componentFiles: string[],
   setup: HarnessSetup,
+  localNamesByFile: Map<string, string[]>,
 ): Promise<Harness> => {
   const nextDirectory = resolvePackageDirectory(appDirectory, "next");
   const references = collectSourceReferences(appDirectory);
@@ -286,6 +290,7 @@ export const startHarness = async (
     references,
     providers: getInstalledProviders(appDirectory, nextDirectory, references.reduxStore),
     setup,
+    localNamesByFile,
   };
   const server = await createServer(createHarnessConfig(context));
   await server.listen();

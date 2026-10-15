@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import type { AnalyzedComponent } from "../../../src/core/types";
-import { createDeclarationKey } from "../../../src/core/utils/declaration-key";
+import { createDeclarationKey, parseDeclarationKey } from "../../../src/core/utils/declaration-key";
 import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
 import { collectMutationProbes } from "./mutation";
@@ -12,6 +12,7 @@ import { collectProbes, createEmptyVerdict, scoreComponent } from "./score";
 import type { ComponentVerdict } from "./score";
 import { HarnessError, classifyMountError, getErrorMessage } from "./reasons";
 import { readHarnessSetup } from "./harness/setup";
+import { getTopLevelNames, toLocalExportName } from "./harness/local-exports";
 import { getCycleImporters } from "./source-index";
 import { startHarness } from "./server";
 import type { Harness } from "./server";
@@ -44,11 +45,33 @@ const getKnownComponents = (analyzed: AnalyzedComponent[]): Map<string, string> 
     ),
   );
 
+interface MountableComponents {
+  components: AnalyzedComponent[];
+  localNamesByFile: Map<string, string[]>;
+}
+
+const exposeLocalComponents = (components: AnalyzedComponent[]): MountableComponents => {
+  const topLevelNamesByFile = new Map<string, Set<string>>();
+  const localNamesByFile = new Map<string, string[]>();
+  const mountable = components.map((component) => {
+    const { analysis } = component;
+    if (analysis.exportName) return component;
+    const { name } = parseDeclarationKey(analysis.declaration);
+    const topLevelNames = topLevelNamesByFile.get(analysis.file) ?? getTopLevelNames(analysis.file);
+    topLevelNamesByFile.set(analysis.file, topLevelNames);
+    if (!topLevelNames.has(name)) return component;
+    localNamesByFile.set(analysis.file, [...(localNamesByFile.get(analysis.file) ?? []), name]);
+    return { ...component, analysis: { ...analysis, exportName: toLocalExportName(name) } };
+  });
+  return { components: mountable, localNamesByFile };
+};
+
 export const startProjectHarness = async (
   appDirectory: string,
   analyzed: AnalyzedComponent[],
   verifiedComponents: AnalyzedComponent[],
   setupDirectory: string | null,
+  localNamesByFile: Map<string, string[]> = new Map(),
 ): Promise<ProjectHarness> => {
   const exported = verifiedComponents.filter(({ analysis }) => analysis.exportName);
   const harness = await startHarness(
@@ -59,6 +82,7 @@ export const startProjectHarness = async (
     ]),
     [...new Set(exported.map(({ analysis }) => analysis.file))],
     readHarnessSetup(setupDirectory),
+    localNamesByFile,
   );
   const cycleImporters = getCycleImporters(harness.sourceIndex.imports);
   return {
@@ -265,14 +289,18 @@ export const verifyProject = async (
   const configPath = resolve(tsconfigPath);
   const analyzed = options.analyzed ?? analyzeProject(configPath).components;
   const componentNames = options.componentNames;
-  const components = componentNames
-    ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
-    : analyzed;
+  const mountable = exposeLocalComponents(
+    componentNames
+      ? analyzed.filter((component) => componentNames.includes(component.analysis.name))
+      : analyzed,
+  );
+  const { components } = mountable;
   const harness = await startProjectHarness(
     dirname(configPath),
     analyzed,
     components,
     options.setupDirectory ?? null,
+    mountable.localNamesByFile,
   );
   try {
     const verdicts = await verifyOnPages(harness, components, options);
