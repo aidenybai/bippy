@@ -13,4 +13,14 @@ describe("callback writes", () => {
     });
     expect(tests).not.toContain("0 > 0");
   });
+
+  it("forgets an array an opaque call's callback pushes into", () => {
+    const project = analyzeFixture("conformance-repros", "children-iteration");
+    const tags = getComponent(project, "SectionList").report.states.map((state) =>
+      state.render.kind === "JsxExpression" && state.render.tag.kind === "BuiltinTag"
+        ? state.render.tag.name
+        : null,
+    );
+    expect(tags).toEqual(expect.arrayContaining(["p", "div"]));
+  });
 });

@@ -58,9 +58,17 @@ const collectStoredPlaces = (hirFunction: HIRFunction): Place[] =>
     }),
   );
 
-export const getStoredContextPlaces = (hirFunction: HIRFunction): Place[] => {
+const collectMutatedPlaces = (hirFunction: HIRFunction): Place[] =>
+  (hirFunction.aliasingEffects ?? []).flatMap((effect) => {
+    const mutatedPlace = getMutatedPlace(effect);
+    return mutatedPlace ? [mutatedPlace] : [];
+  });
+
+export const getWrittenContextPlaces = (hirFunction: HIRFunction): Place[] => {
   const capturedIds = new Set(hirFunction.context.map((place) => place.identifier.id));
-  return collectStoredPlaces(hirFunction).filter((place) => capturedIds.has(place.identifier.id));
+  return [...collectStoredPlaces(hirFunction), ...collectMutatedPlaces(hirFunction)].filter(
+    (place) => capturedIds.has(place.identifier.id),
+  );
 };
 
 export const getPlaceOrSpread = (argument: Place | SpreadPattern): Place =>

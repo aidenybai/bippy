@@ -91,7 +91,7 @@ import {
   getConditionallyMutatedPlace,
   getMutatedPlace,
   getPlaceOrSpread,
-  getStoredContextPlaces,
+  getWrittenContextPlaces,
   isFunctionCreation,
 } from "./utils/hir";
 
@@ -975,7 +975,7 @@ export class Interpreter {
     for (const callback of getPassedCallbacks(argumentValues)) {
       if (callback.kind !== "Function") continue;
       const hirFunction = this.#functions.get(callback.functionId);
-      for (const place of hirFunction ? getStoredContextPlaces(hirFunction) : [])
+      for (const place of hirFunction ? getWrittenContextPlaces(hirFunction) : [])
         this.#write(place, createUnknown("callback-write", loc));
     }
   }
