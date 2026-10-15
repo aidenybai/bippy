@@ -115,18 +115,47 @@ export const createJsxInScriptPlugin = (): Plugin => ({
   },
 });
 
+const getAssignedExportNames = (statement: Rollup.ProgramNode["body"][number]): string[] => {
+  if (statement.type !== "ExpressionStatement") return [];
+  const { expression } = statement;
+  if (expression.type !== "AssignmentExpression") return [];
+  const { left } = expression;
+  if (left.type !== "MemberExpression" || left.computed || left.property.type !== "Identifier")
+    return [];
+  const { object } = left;
+  const isExportsObject =
+    (object.type === "Identifier" && object.name === "exports") ||
+    (object.type === "MemberExpression" &&
+      object.object.type === "Identifier" &&
+      object.object.name === "module" &&
+      object.property.type === "Identifier" &&
+      object.property.name === "exports");
+  return isExportsObject ? [left.property.name] : [];
+};
+
+export const wrapCommonJs = (code: string): string | null => {
+  if (!code.includes("exports")) return null;
+  const program = parseAst(code);
+  if (program.body.some(isModuleStatement)) return null;
+  const names = [...new Set(program.body.flatMap(getAssignedExportNames))].filter(
+    (name) => name !== "default",
+  );
+  if (!code.includes("module.exports") && names.length === 0) return null;
+  return [
+    "const module = { exports: {} };",
+    "const exports = module.exports;",
+    code,
+    "export default module.exports;",
+    ...names.map(
+      (name, index) =>
+        `const __bippyExport${index} = module.exports.${name};\nexport { __bippyExport${index} as ${name} };`,
+    ),
+  ].join("\n");
+};
+
 export const createCommonJsPlugin = (): Plugin => ({
   name: "bippy-verify-commonjs",
-  transform: (code, id) => {
-    if (!isAppSourceModule(id) || !code.includes("module.exports")) return null;
-    if (parseAst(code).body.some(isModuleStatement)) return null;
-    return [
-      "const module = { exports: {} };",
-      "const exports = module.exports;",
-      code,
-      "export default module.exports;",
-    ].join("\n");
-  },
+  transform: (code, id) => (isAppSourceModule(id) ? wrapCommonJs(code) : null),
 });
 
 export const createRequirePlugin = (): Plugin => ({
