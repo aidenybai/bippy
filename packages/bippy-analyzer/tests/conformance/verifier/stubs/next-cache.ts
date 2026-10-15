@@ -10,3 +10,4 @@ export const unstable_cacheLife = cacheLife;
 export const unstable_cacheTag = cacheTag;
 export const unstable_expirePath = revalidatePath;
 export const unstable_expireTag = revalidateTag;
+export const io = (): Promise<void> => Promise.resolve();

@@ -1,3 +1,5 @@
+const NEXT_CONTROL_FLOW_PATTERN = /^(?:redirect\(.*\)|notFound\(\))$/;
+
 const router = {
   push: () => undefined,
   replace: () => undefined,
@@ -22,3 +24,7 @@ export const notFound = (): never => {
   throw new Error("notFound()");
 };
 export const ReadonlyURLSearchParams = URLSearchParams;
+export const unstable_rethrow = (error: unknown): void => {
+  if (error instanceof Error && NEXT_CONTROL_FLOW_PATTERN.test(error.message)) throw error;
+};
+export const useServerInsertedHTML = (): undefined => undefined;
