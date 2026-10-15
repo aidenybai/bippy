@@ -16,6 +16,7 @@ import { createProvidersSource, getInstalledProviders } from "./harness/provider
 import type { ProviderSpec } from "./harness/providers";
 import type { HarnessSetup } from "./harness/setup";
 import { collectSourceReferences, indexSource } from "./harness/source-references";
+import { createTypeReexportPlugin } from "./harness/type-exports";
 import type { SourceReferences } from "./harness/source-references";
 import {
   createMissingModulePlugin,
@@ -204,6 +205,7 @@ const createHarnessPlugins = (
     createProbePlugin(context.probes),
     ...(nextDirectory ? [createNextImagePlugin()] : []),
     createServerActionPlugin(),
+    createTypeReexportPlugin(),
     createLocalExportPlugin(context.localNamesByFile),
     createCommonJsPlugin(),
     createRequirePlugin(),
