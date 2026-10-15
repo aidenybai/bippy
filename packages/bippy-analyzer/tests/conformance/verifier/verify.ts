@@ -1,4 +1,4 @@
-import { availableParallelism, totalmem } from "node:os";
+import { availableParallelism, freemem } from "node:os";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
@@ -100,7 +100,7 @@ const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
 const MAX_PAGES = 8;
 const PAGE_MEMORY_BYTES = 1.5 * 1024 ** 3;
-const RESERVED_MEMORY_BYTES = 5 * 1024 ** 3;
+const RESERVED_MEMORY_BYTES = 2 * 1024 ** 3;
 
 export const openPage = async (browser: Browser, url: string): Promise<Page> => {
   for (let attempt = 1; ; attempt++) {
@@ -193,7 +193,7 @@ const getPageCount = (componentCount: number): number =>
     Math.min(
       MAX_PAGES,
       availableParallelism(),
-      Math.floor((totalmem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
+      Math.floor((freemem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
       componentCount,
     ),
   );
