@@ -13,7 +13,12 @@ const EMPTY_ARRAY_METHODS = new Set([
   "values",
 ]);
 
+const STAND_IN_PROTOTYPE: object = new Proxy(Object.create(null), {
+  get: (_target, key) => Reflect.get(Object(STAND_IN), key),
+});
+
 export const STAND_IN: unknown = new Proxy(function standIn() {}, {
+  getPrototypeOf: () => STAND_IN_PROTOTYPE,
   apply: () => STAND_IN,
   construct: () => Object(STAND_IN),
   get: (target, key) => {
