@@ -25,8 +25,13 @@ class BufferShim {
   }
 }
 
+const processShim: object = Reflect.get(globalThis, "process") ?? { env: {} };
+if (typeof Reflect.get(processShim, "cwd") !== "function")
+  Reflect.set(processShim, "cwd", () => "/");
+
 Object.assign(globalThis, {
   global: globalThis,
+  process: processShim,
   __dirname: "/",
   __filename: "/index.js",
   Buffer: Reflect.get(globalThis, "Buffer") ?? BufferShim,
