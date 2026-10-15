@@ -124,6 +124,18 @@ const waitForCommand = async (command: Command, attempt = 1): Promise<CommandFin
   }
 };
 
+const MILLISECONDS_PER_MINUTE = 60_000;
+
+const runStage = async <Value>(stage: string, run: () => Promise<Value>): Promise<Value> => {
+  const startTime = Date.now();
+  try {
+    return await run();
+  } catch (error) {
+    const minutes = Math.round((Date.now() - startTime) / MILLISECONDS_PER_MINUTE);
+    throw new Error(`${stage} failed after ${minutes} min`, { cause: error });
+  }
+};
+
 interface StepOptions {
   cwd?: string;
   env?: Record<string, string>;
@@ -287,17 +299,19 @@ export const runVercel = async (
   log: LineLogger,
 ): Promise<CollectSummary> => {
   const credentials = getCredentials();
-  const snapshotId = await prepareSnapshot(repo, credentials, log);
-  const sandbox = await Sandbox.create({
-    ...credentials,
-    source: { type: "snapshot", snapshotId },
-    resources: SANDBOX_RESOURCES,
-    timeout: RUN_TIMEOUT_MS,
-  });
+  const snapshotId = await runStage("setup", () => prepareSnapshot(repo, credentials, log));
+  const sandbox = await runStage("sandbox creation", () =>
+    Sandbox.create({
+      ...credentials,
+      source: { type: "snapshot", snapshotId },
+      resources: SANDBOX_RESOURCES,
+      timeout: RUN_TIMEOUT_MS,
+    }),
+  );
   try {
-    await uploadAnalyzerSource(sandbox);
-    await runCollect(sandbox, repo, shouldVerify);
-    await downloadResults(sandbox, outputDirectory, shouldVerify);
+    await runStage("upload", () => uploadAnalyzerSource(sandbox));
+    await runStage("analysis", () => runCollect(sandbox, repo, shouldVerify));
+    await runStage("download", () => downloadResults(sandbox, outputDirectory, shouldVerify));
     return JSON.parse(readFileSync(join(outputDirectory, "summary.json"), "utf8"));
   } finally {
     await sandbox.stop().catch(() => undefined);

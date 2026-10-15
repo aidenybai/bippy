@@ -7,6 +7,13 @@ export const getErrorMessage = (error: unknown): string => {
   return typeof message === "string" ? message : String(error);
 };
 
+export const getErrorChain = (error: unknown): string => {
+  const cause: unknown = error instanceof Error ? error.cause : undefined;
+  return cause === undefined
+    ? getErrorMessage(error)
+    : `${getErrorMessage(error)}: ${getErrorChain(cause)}`;
+};
+
 export type MountFailure =
   | "server-component"
   | "env"
