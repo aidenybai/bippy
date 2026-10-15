@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { loadAsset, resolveAssetId } from "../conformance/verifier/harness/assets";
+import { loadAsset, resolveAssetId, toWorkerImport } from "../conformance/verifier/harness/assets";
 import { IMAGE_FILE_PATTERN } from "../conformance/verifier/harness/packages";
 
 describe("svg component imports", () => {
@@ -39,5 +39,17 @@ describe("stylesheet stand-ins", () => {
       .default;
     expect(Reflect.get(Object(stylesheet), "primaryButton")).toBe("primaryButton");
     expect(String(stylesheet)).toBe("[object Object]");
+  });
+});
+
+describe("worker-loader imports", () => {
+  it("loads a relative .worker file as a worker constructor", () => {
+    expect(toWorkerImport("./blurhash.worker.ts")).toBe("./blurhash.worker.ts?worker");
+  });
+
+  it("leaves other imports and already-queried workers alone", () => {
+    expect(toWorkerImport("./blurhash.ts")).toBeNull();
+    expect(toWorkerImport("./blurhash.worker.ts?worker")).toBeNull();
+    expect(toWorkerImport("blurhash-worker")).toBeNull();
   });
 });

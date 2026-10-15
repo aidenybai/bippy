@@ -19,6 +19,7 @@ const SVG_COMPONENT_SOURCE = [
   "}",
 ].join("\n");
 const MISSING_ASSET_PREFIX = "\0bippy-verify-missing-asset:";
+const WORKER_FILE_PATTERN = /^\.{1,2}\/.*\.worker\.[cm]?[jt]sx?$/;
 
 const DOT_SEGMENT_PATTERN = /(^|\/)\.\.?(?=\/)/g;
 
@@ -62,4 +63,16 @@ export const createAssetPlugin = (isSvgImportedAsComponent: boolean): Plugin => 
   enforce: "pre",
   resolveId: (source, importer) => resolveAssetId(source, importer, isSvgImportedAsComponent),
   load: loadAsset,
+});
+
+export const toWorkerImport = (source: string): string | null =>
+  WORKER_FILE_PATTERN.test(source) ? `${source}?worker` : null;
+
+export const createWorkerImportPlugin = (): Plugin => ({
+  name: "bippy-verify-worker-imports",
+  enforce: "pre",
+  async resolveId(source, importer) {
+    const workerSource = toWorkerImport(source);
+    return workerSource ? this.resolve(workerSource, importer, { skipSelf: true }) : null;
+  },
 });

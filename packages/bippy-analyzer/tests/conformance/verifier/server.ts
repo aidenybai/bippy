@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import { createServer, loadEnv } from "vite";
 import type { Alias, DepOptimizationOptions, InlineConfig, Plugin, ViteDevServer } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import { createAssetPlugin } from "./harness/assets";
+import { createAssetPlugin, createWorkerImportPlugin } from "./harness/assets";
 import { createLocalExportPlugin } from "./harness/local-exports";
 import {
   createNextImagePlugin,
@@ -201,6 +201,7 @@ const createHarnessPlugins = (
     createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
     createStandInPlugin(polyfilledModules, references.packageImports),
     createAssetPlugin(isDependencyDeclared(appDirectory, "@svgr/webpack")),
+    ...(isDependencyDeclared(appDirectory, "worker-loader") ? [createWorkerImportPlugin()] : []),
     createHarnessPlugin(appDirectory, context.providers, context.setup, context.appImporter),
     createMissingModulePlugin(),
     createProbePlugin(context.probes),
