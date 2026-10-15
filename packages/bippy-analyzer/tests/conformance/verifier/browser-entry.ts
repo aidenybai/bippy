@@ -1,4 +1,5 @@
 import "./stubs/node-globals";
+import "./stubs/tauri-globals";
 import {
   didFiberRender,
   getDisplayName,
