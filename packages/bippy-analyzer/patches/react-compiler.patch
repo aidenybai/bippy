@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..355a528 100644
+index 959fdf7..0ff3460 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,27 @@ function lowerStatement(
@@ -33,7 +33,7 @@ index 959fdf7..355a528 100644
 +            effects: null,
 +          },
 +          continuationBlock,
-+        );
+         );
 +        builder.terminate(
 +          {
 +            kind: 'unreachable',
@@ -41,7 +41,7 @@ index 959fdf7..355a528 100644
 +            loc: stmt.node.loc ?? GeneratedSource,
 +          },
 +          'block',
-         );
++        );
 +        return;
        }
        const terminal: ThrowTerminal = {
@@ -198,7 +198,17 @@ index 959fdf7..355a528 100644
        return;
      }
      case 'WithStatement': {
-@@ -4531,6 +4552,71 @@ function gatherCapturedContext(
+@@ -2791,6 +2812,9 @@ function lowerExpression(
+       );
+       return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
+     }
++    case 'Import': {
++      return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
++    }
+     default: {
+       builder.recordError(
+         new CompilerErrorDetail({
+@@ -4531,6 +4555,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  

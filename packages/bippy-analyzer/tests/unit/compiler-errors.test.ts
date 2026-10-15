@@ -4,7 +4,7 @@ import { analyzeFixture, getComponent } from "./helpers";
 describe("compiler errors", () => {
   const project = analyzeFixture("conformance-repros");
 
-  it.each([["DynamicImport", /Handle Import expressions/]])(
+  it.each([["BreakOutOfTry", /finalizer .* and an early exit/]])(
     "keeps %s as a compiler-error bailout with the compiler's reason",
     (name, reason) => {
       const [bailout] = getComponent(project, name).analysis.bailouts;
@@ -19,4 +19,8 @@ describe("compiler errors", () => {
       expect(getComponent(project, name).analysis.bailouts).toEqual([]);
     },
   );
+
+  it("lowers a dynamic import as a value it can't see into", () => {
+    expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
+  });
 });
