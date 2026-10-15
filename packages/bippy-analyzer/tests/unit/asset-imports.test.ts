@@ -22,3 +22,11 @@ describe("virtual asset ids", () => {
     expect(loadAsset(id ?? "")).toContain("new Proxy");
   });
 });
+
+describe("html template imports", () => {
+  it("serves a relative .html import as its text, as html-loader does", () => {
+    const id = resolveAssetId("./dialog.template.html", "/app/src/components/dialog.js", false);
+    expect(id).not.toBeNull();
+    expect(loadAsset(id ?? "")).toBe('export default "";');
+  });
+});

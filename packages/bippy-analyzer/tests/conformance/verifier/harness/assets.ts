@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { IMAGE_FILE_PATTERN, stripQuery } from "./packages";
@@ -10,6 +10,8 @@ const STYLESHEET_SOURCE =
 const SVG_COMPONENT_PATTERN = /\.svg\?react$/;
 const SVG_FILE_PATTERN = /\.svg$/;
 const SVG_COMPONENT_PREFIX = "\0bippy-verify-svg-component:";
+const HTML_TEMPLATE_PATTERN = /^\.{1,2}\/.*\.html$/;
+const HTML_TEMPLATE_PREFIX = "\0bippy-verify-html-template:";
 const SVG_COMPONENT_SOURCE = [
   'import { createElement } from "react";',
   "export default function SvgComponent({ title, titleId, ...props }) {",
@@ -31,6 +33,8 @@ export const resolveAssetId = (
   if (isSvgImportedAsComponent && SVG_FILE_PATTERN.test(source))
     return `${SVG_COMPONENT_PREFIX}${toVirtualPath(source)}.js`;
   const assetPath = stripQuery(source);
+  if (importer !== undefined && HTML_TEMPLATE_PATTERN.test(assetPath))
+    return `${HTML_TEMPLATE_PREFIX}${resolve(dirname(stripQuery(importer)), assetPath)}`;
   const isMissingImage =
     importer !== undefined &&
     assetPath.startsWith(".") &&
@@ -39,10 +43,15 @@ export const resolveAssetId = (
   return isMissingImage ? `${MISSING_ASSET_PREFIX}${assetPath}` : null;
 };
 
+const loadHtmlTemplate = (templatePath: string): string =>
+  `export default ${JSON.stringify(existsSync(templatePath) ? readFileSync(templatePath, "utf8") : "")};`;
+
 export const loadAsset = (id: string): string | null => {
   if (id.startsWith(STYLESHEET_PREFIX)) return STYLESHEET_SOURCE;
   if (SVG_COMPONENT_PATTERN.test(id) || id.startsWith(SVG_COMPONENT_PREFIX))
     return SVG_COMPONENT_SOURCE;
+  if (id.startsWith(HTML_TEMPLATE_PREFIX))
+    return loadHtmlTemplate(id.slice(HTML_TEMPLATE_PREFIX.length));
   if (id.startsWith(MISSING_ASSET_PREFIX))
     return `export default ${JSON.stringify(id.slice(MISSING_ASSET_PREFIX.length))};`;
   return null;
