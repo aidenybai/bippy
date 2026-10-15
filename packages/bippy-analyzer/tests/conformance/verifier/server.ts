@@ -50,6 +50,9 @@ interface HarnessIds {
 
 const HARNESS_PATH = "/__bippy_verify";
 const ENV_PLACEHOLDER = "https://example.com";
+const LIBRARY_ENV_DEFAULTS = {
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: `pk_test_${Buffer.from("clerk.example.com$").toString("base64")}`,
+};
 const PREBUNDLED_REACT_MODULES = [
   "react",
   "react-dom",
@@ -164,6 +167,7 @@ const getEnvDefines = (context: HarnessContext): Record<string, string> => {
     );
   const processEnv = {
     ...getPlaceholders(context.references.processEnv),
+    ...LIBRARY_ENV_DEFAULTS,
     ...loadedEnv,
     ...context.setup.env,
     NODE_ENV: "development",
