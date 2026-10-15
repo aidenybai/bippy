@@ -1,5 +1,5 @@
 import MagicString from "magic-string";
-import { parseAst } from "vite";
+import { parseAst, transformWithEsbuild } from "vite";
 import type { Plugin, Rollup } from "vite";
 import type { Probe } from "../types";
 import { isAppSourceModule, stripQuery } from "./packages";
@@ -11,6 +11,7 @@ interface RequireCall {
 }
 
 const SERVER_DIRECTIVE = "use server";
+const SCRIPT_FILE_PATTERN = /\.[cm]?js$/;
 
 const getExportNames = (program: Rollup.ProgramNode): string[] =>
   program.body.flatMap((statement) => {
@@ -99,6 +100,20 @@ const isModuleStatement = (statement: Rollup.ProgramNode["body"][number]): boole
   statement.type === "ExportNamedDeclaration" ||
   statement.type === "ExportDefaultDeclaration" ||
   statement.type === "ExportAllDeclaration";
+
+export const createJsxInScriptPlugin = (): Plugin => ({
+  name: "bippy-verify-jsx-in-script",
+  enforce: "pre",
+  transform: async (code, id) => {
+    if (!isAppSourceModule(id) || !SCRIPT_FILE_PATTERN.test(stripQuery(id))) return null;
+    const result = await transformWithEsbuild(code, stripQuery(id), {
+      loader: "jsx",
+      jsx: "automatic",
+      jsxDev: true,
+    });
+    return result.code;
+  },
+});
 
 export const createCommonJsPlugin = (): Plugin => ({
   name: "bippy-verify-commonjs",

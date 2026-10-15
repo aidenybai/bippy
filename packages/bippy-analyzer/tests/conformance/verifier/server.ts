@@ -30,6 +30,7 @@ import {
   createCommonJsPlugin,
   createProbePlugin,
   createRequirePlugin,
+  createJsxInScriptPlugin,
   createServerActionPlugin,
 } from "./harness/transforms";
 import { ENTRY_PATH, PROVIDERS_PATH, SETUP_PATH, WRAPPER_PATH } from "./types";
@@ -204,6 +205,7 @@ const createHarnessPlugins = (
     createMissingModulePlugin(),
     createProbePlugin(context.probes),
     ...(nextDirectory ? [createNextImagePlugin()] : []),
+    createJsxInScriptPlugin(),
     createServerActionPlugin(),
     createTypeReexportPlugin(),
     createLocalExportPlugin(context.localNamesByFile),
