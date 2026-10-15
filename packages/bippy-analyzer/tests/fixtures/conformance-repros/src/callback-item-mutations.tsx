@@ -45,3 +45,8 @@ export const CompleteCopiedTasks = () => {
     </button>
   );
 };
+
+export const SortedOptions = ({ options, query }: { options: string[]; query: string }) => {
+  const visibleOptions = query ? options.filter((option) => option.includes(query)) : options;
+  return <p>{visibleOptions.sort().join(", ")}</p>;
+};

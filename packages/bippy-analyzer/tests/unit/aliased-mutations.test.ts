@@ -40,3 +40,12 @@ describe("iteration callback mutations", () => {
     expect(getWarningKinds(getComponent(project, "CompleteCopiedTasks"))).toEqual([]);
   });
 });
+
+describe("conditional mutations", () => {
+  it("warns when a value that may be the prop itself is sorted in place", () => {
+    const project = analyzeFixture("conformance-repros", "callback-item-mutations");
+    expect(getComponent(project, "SortedOptions").analysis.warnings).toMatchObject([
+      { kind: "prop-mutation", message: "mutates prop options" },
+    ]);
+  });
+});

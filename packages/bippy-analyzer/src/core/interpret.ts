@@ -221,6 +221,12 @@ const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
 const isOwnedValue = (value: SymbolicValue): value is BindingValue =>
   value.kind === "Binding" && (value.binding.kind === "prop" || isStateBinding(value.binding));
 
+const getOwnedValues = (value: SymbolicValue): BindingValue[] => {
+  if (value.kind === "Conditional")
+    return [...getOwnedValues(value.consequent), ...getOwnedValues(value.alternate)];
+  return isOwnedValue(value) ? [value] : [];
+};
+
 const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null => {
   const [copiedValue] = array.spreads;
   return array.elements.length === 0 &&
@@ -643,10 +649,11 @@ export class Interpreter {
         continue;
       }
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
-      const ownedValue = isOwnedValue(mutatedValue)
-        ? mutatedValue
-        : this.#findAliasedOwnedValue(mutatedPlace);
-      if (ownedValue) this.#trackOwnedMutation(ownedValue, mutatedPlace.loc);
+      const ownedValues = getOwnedValues(mutatedValue);
+      const aliasedValue =
+        ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(mutatedPlace);
+      for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
+        this.#trackOwnedMutation(ownedValue, mutatedPlace.loc);
     }
   }
 
