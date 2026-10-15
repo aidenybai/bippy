@@ -339,6 +339,11 @@ const getConstraintsAfterUpdates = (
   );
 };
 
+const getUpdatesBeforeLaterAsyncUpdates = (updates: StateUpdate[]): StateUpdate[][] =>
+  updates.flatMap((update, index) =>
+    update.isAsync && index < updates.length - 1 ? [updates.slice(0, index + 1)] : [],
+  );
+
 const getConstraintsAfterHandler = (
   handler: Handler,
   constraints: Constraints,
@@ -350,8 +355,16 @@ const getConstraintsAfterHandler = (
     synchronousUpdates.length < handler.updates.length
       ? getConstraintsAfterUpdates(synchronousUpdates, constraints, context)
       : [];
+  const betweenAsyncUpdates = getUpdatesBeforeLaterAsyncUpdates(handler.updates).flatMap(
+    (updates) => getConstraintsAfterUpdates(updates, constraints, context),
+  );
   const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
-  return [...(mayChangeNothing ? [constraints] : []), ...beforeAsyncUpdates, ...afterEachPath];
+  return [
+    ...(mayChangeNothing ? [constraints] : []),
+    ...beforeAsyncUpdates,
+    ...betweenAsyncUpdates,
+    ...afterEachPath,
+  ];
 };
 
 class StateEnumerator {

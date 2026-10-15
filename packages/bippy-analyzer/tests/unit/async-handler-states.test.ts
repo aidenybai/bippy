@@ -12,4 +12,15 @@ describe("async handler states", () => {
     const idleTargets = idleState?.transitions.flatMap((transition) => transition.targets) ?? [];
     expect(idleTargets).toContain(loadingStateIndex);
   });
+
+  it("predicts the state between one async update and a later one", () => {
+    const project = analyzeFixture("conformance-repros", "copy-button");
+    const { report } = getComponent(project, "CopyButton");
+    const copiedStateIndex = report.states.findIndex((state) =>
+      state.conditions.includes("isCopied"),
+    );
+    const idleState = report.states.find((state) => state.conditions.includes("!isCopied"));
+    const idleTargets = idleState?.transitions.flatMap((transition) => transition.targets) ?? [];
+    expect(idleTargets).toContain(copiedStateIndex);
+  });
 });
