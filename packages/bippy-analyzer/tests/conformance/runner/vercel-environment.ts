@@ -38,6 +38,7 @@ const SANDBOX_RESOURCES = { vcpus: 8 };
 const ANALYZER_HEAP_MB = 8192;
 const OUTPUT_TAIL_LENGTH = 8000;
 const MAX_WAIT_ATTEMPTS = 5;
+const HELD_WAIT_MS = 60_000;
 const ANALYZER_SOURCE_DIRECTORIES = [
   "src",
   "tests/conformance/runner",
@@ -115,12 +116,18 @@ const listFiles = (directory: string): string[] =>
     return statSync(path).isDirectory() ? listFiles(path) : [path];
   });
 
-const waitForCommand = async (command: Command, attempt = 1): Promise<CommandFinished> => {
+const waitForCommand = async (
+  command: Command,
+  quickFailureCount = 0,
+): Promise<CommandFinished> => {
+  const startTime = Date.now();
   try {
     return await command.wait();
   } catch (error) {
-    if (attempt >= MAX_WAIT_ATTEMPTS) throw error;
-    return waitForCommand(command, attempt + 1);
+    const isQuickFailure = Date.now() - startTime < HELD_WAIT_MS;
+    const nextFailureCount = isQuickFailure ? quickFailureCount + 1 : 0;
+    if (nextFailureCount >= MAX_WAIT_ATTEMPTS) throw error;
+    return waitForCommand(command, nextFailureCount);
   }
 };
 
