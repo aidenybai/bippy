@@ -9,7 +9,7 @@ describe("rest props", () => {
       kind: "Object",
       fields: {
         name: { kind: "Value", value: "text" },
-        render: { kind: "Function", returns: { kind: "Value", value: "text" } },
+        render: { kind: "Function", returns: { kind: "Element" } },
       },
       isOpen: false,
     });

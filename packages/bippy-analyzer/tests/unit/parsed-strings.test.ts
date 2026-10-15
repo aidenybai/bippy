@@ -52,7 +52,7 @@ describe("samples of parsed strings", () => {
   it("mounts an array of nodes with an array, not a node", () => {
     expect(getBinding(getComponent(project, "Toolbar"), "actions").samples).toEqual([
       { kind: "Array", items: [] },
-      { kind: "Array", items: [{ kind: "Value", value: "text" }] },
+      { kind: "Array", items: [{ kind: "Element" }] },
     ]);
   });
 

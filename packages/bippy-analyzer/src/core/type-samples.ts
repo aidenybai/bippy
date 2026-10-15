@@ -125,7 +125,7 @@ export const getSamples = (
     return getStringSamples(name).slice(0, 1);
   if (isLibraryType(type, DOM_NODE_TYPE_PATTERN)) return [{ kind: "Undefined" }];
   if (isReactType(type, ELEMENT_TYPE_PATTERN)) return [{ kind: "Element" }];
-  if (isReactType(type, NODE_TYPE_PATTERN)) return [TEXT_SAMPLE];
+  if (isReactType(type, NODE_TYPE_PATTERN)) return [{ kind: "Element" }];
   if (type.isUnionType()) {
     const memberSamples = dedupeSamples(
       type.getTypes().flatMap((member) => getSamples(checker, member, depth, name)),
