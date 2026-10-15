@@ -7,7 +7,11 @@ const NEXT_FONT_MODULES = new Set(["next/font/google", "next/font/local"]);
 export const NEXT_NAVIGATION_STUB = join(STUB_DIRECTORY, "next-navigation.ts");
 export const NEXT_ROUTER_STUB = join(STUB_DIRECTORY, "next-router.ts");
 export const STAND_IN_SOURCE = join(STUB_DIRECTORY, "stand-in.ts");
-export const SERVER_ONLY_STUB = join(STUB_DIRECTORY, "server-only.ts");
+const SERVER_ONLY_STUB = join(STUB_DIRECTORY, "server-only.ts");
+export const PREBUNDLED_STUBS = new Map([
+  ["server-only", SERVER_ONLY_STUB],
+  ["next/font/local", join(STUB_DIRECTORY, "next-font-local.ts")],
+]);
 const NEXT_STUBS = new Map([
   ["next/navigation", NEXT_NAVIGATION_STUB],
   ["next/document", join(STUB_DIRECTORY, "next-document.ts")],

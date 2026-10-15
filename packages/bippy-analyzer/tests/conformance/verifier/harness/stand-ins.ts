@@ -8,7 +8,7 @@ import {
   isAppSourceModule,
   isRequirable,
 } from "./packages";
-import { SERVER_ONLY_STUB, STAND_IN_SOURCE } from "./stubs";
+import { PREBUNDLED_STUBS, STAND_IN_SOURCE } from "./stubs";
 
 type OptimizerPlugin = NonNullable<
   NonNullable<DepOptimizationConfig["esbuildOptions"]>["plugins"]
@@ -131,10 +131,13 @@ export const createMissingModulePlugin = (): Plugin => ({
   },
 });
 
-export const createServerOnlyPlugin = (): OptimizerPlugin => ({
-  name: "bippy-verify-server-only",
+export const createPrebundledStubPlugin = (): OptimizerPlugin => ({
+  name: "bippy-verify-prebundled-stubs",
   setup: (build) => {
-    build.onResolve({ filter: /^server-only$/ }, () => ({ path: SERVER_ONLY_STUB }));
+    build.onResolve({ filter: /^(?:server-only|next\/font\/local)$/ }, ({ path }) => {
+      const stubPath = PREBUNDLED_STUBS.get(path);
+      return stubPath ? { path: stubPath } : undefined;
+    });
   },
 });
 

@@ -20,7 +20,7 @@ import {
   createMissingModulePlugin,
   createMissingRequirePlugin,
   createNodeBuiltinPlugin,
-  createServerOnlyPlugin,
+  createPrebundledStubPlugin,
   createStandInPlugin,
 } from "./harness/stand-ins";
 import { createStubPlugin } from "./harness/stubs";
@@ -227,7 +227,7 @@ const createOptimizeDepsOptions = (
   ],
   esbuildOptions: {
     plugins: [
-      createServerOnlyPlugin(),
+      createPrebundledStubPlugin(),
       createMissingRequirePlugin(),
       createNodeBuiltinPlugin(polyfilledModules),
     ],
