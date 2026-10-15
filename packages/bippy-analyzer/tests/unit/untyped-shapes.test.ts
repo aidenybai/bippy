@@ -37,4 +37,13 @@ describe("shapes of untyped props", () => {
       kind: "Element",
     });
   });
+
+  it("mounts an untyped prop passed straight to a host element's style with an object", () => {
+    const band = getComponent(analyzeFixture("conformance-repros", "untyped-style"), "StyledBand");
+    expect(getBinding(band, "style").samples[0]).toEqual({
+      kind: "Object",
+      fields: {},
+      isOpen: false,
+    });
+  });
 });

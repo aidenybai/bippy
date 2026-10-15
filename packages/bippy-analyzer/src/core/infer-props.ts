@@ -42,6 +42,7 @@ const STRING_METHOD_NAMES = new Set([
 ]);
 const SHARED_MEMBER_NAMES = new Set(["at", "includes", "indexOf", "length", "slice"]);
 const INDEX_PATTERN = /^\d+$/;
+const STYLE_SAMPLE: Sample = { kind: "Object", fields: {}, isOpen: false };
 
 const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample => {
   const restPathsByField = new Map<string, string[][]>();
@@ -79,18 +80,45 @@ const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample =
   };
 };
 
+const getHostStyleBindingIds = (render: SymbolicValue): Set<number> => {
+  const bindingIds = new Set<number>();
+  forEachJsxElement(render, (element) => {
+    if (element.tag.kind !== "BuiltinTag") return;
+    for (const prop of element.props)
+      if (
+        prop.kind === "JsxAttribute" &&
+        prop.name === "style" &&
+        prop.value.kind === "Binding" &&
+        prop.value.path.length === 0
+      )
+        bindingIds.add(prop.value.binding.id);
+  });
+  return bindingIds;
+};
+
+const inferUntypedPropSample = (
+  binding: Binding,
+  readPaths: string[][] | undefined,
+  hostStyleBindingIds: Set<number>,
+): Sample | null => {
+  if (readPaths) return inferSampleFromReadPaths(binding.propName ?? binding.name, readPaths);
+  return hostStyleBindingIds.has(binding.id) ? STYLE_SAMPLE : null;
+};
+
 export const addSamplesFromReadPaths = (analysis: ComponentAnalysis): void => {
   const readPathsByBinding = new Map<number, string[][]>();
   for (const { bindingId, path } of analysis.placeDomains.places()) {
     if (path.length > 0) appendToGroup(readPathsByBinding, bindingId, path);
   }
+  const hostStyleBindingIds = getHostStyleBindingIds(analysis.render);
   for (const binding of analysis.bindings) {
-    const readPaths = readPathsByBinding.get(binding.id);
-    if (binding.kind !== "prop" || binding.domain.kind !== "Unknown" || !readPaths) continue;
-    binding.samples = [
-      inferSampleFromReadPaths(binding.propName ?? binding.name, readPaths),
-      ...binding.samples,
-    ];
+    if (binding.kind !== "prop" || binding.domain.kind !== "Unknown") continue;
+    const inferredSample = inferUntypedPropSample(
+      binding,
+      readPathsByBinding.get(binding.id),
+      hostStyleBindingIds,
+    );
+    if (inferredSample) binding.samples = [inferredSample, ...binding.samples];
   }
   for (const [contextKey, bindingId] of analysis.untypedContextBindingIds) {
     const readPaths = readPathsByBinding.get(bindingId);
