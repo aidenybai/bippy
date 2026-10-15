@@ -140,6 +140,8 @@ export const getSamples = (
     );
     return [{ kind: "Function", returns: returnSample ?? null }];
   }
+  if (checker.getSignaturesOfType(type, SignatureKind.Construct).length > 0)
+    return [{ kind: "Function", returns: null }];
   const collectionSamples = getCollectionSamples(checker, type, depth);
   if (collectionSamples) return collectionSamples;
   if (type.flags & (TypeFlags.Object | TypeFlags.Intersection))
