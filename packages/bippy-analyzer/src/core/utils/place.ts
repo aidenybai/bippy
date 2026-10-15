@@ -15,7 +15,9 @@ const formatPlaceKey = ({ bindingId, path }: BindingPlace): string =>
   [bindingId, ...path].join(".");
 
 export const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
-  getPlaceKey(left) === getPlaceKey(right);
+  left.bindingId === right.bindingId &&
+  left.path.length === right.path.length &&
+  left.path.every((segment, index) => right.path[index] === segment);
 
 export const isPlacePrefix = (prefix: BindingPlace, place: BindingPlace): boolean =>
   prefix.bindingId === place.bindingId &&
