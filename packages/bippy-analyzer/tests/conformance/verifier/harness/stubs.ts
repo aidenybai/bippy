@@ -7,13 +7,14 @@ const NEXT_FONT_MODULES = new Set(["next/font/google", "next/font/local"]);
 export const NEXT_NAVIGATION_STUB = join(STUB_DIRECTORY, "next-navigation.ts");
 export const NEXT_ROUTER_STUB = join(STUB_DIRECTORY, "next-router.ts");
 export const STAND_IN_SOURCE = join(STUB_DIRECTORY, "stand-in.ts");
+export const SERVER_ONLY_STUB = join(STUB_DIRECTORY, "server-only.ts");
 const NEXT_STUBS = new Map([
   ["next/navigation", NEXT_NAVIGATION_STUB],
   ["next/document", join(STUB_DIRECTORY, "next-document.ts")],
   ["next/router", NEXT_ROUTER_STUB],
   ["next/headers", join(STUB_DIRECTORY, "next-headers.ts")],
   ["next/cache", join(STUB_DIRECTORY, "next-cache.ts")],
-  ["server-only", join(STUB_DIRECTORY, "server-only.ts")],
+  ["server-only", SERVER_ONLY_STUB],
 ]);
 const T3_ENV_STUB = join(STUB_DIRECTORY, "t3-env.ts");
 const PACKAGE_STUBS = new Map([

@@ -7,7 +7,7 @@ import {
   isAppSourceModule,
   isRequirable,
 } from "./packages";
-import { STAND_IN_SOURCE } from "./stubs";
+import { SERVER_ONLY_STUB, STAND_IN_SOURCE } from "./stubs";
 
 type OptimizerPlugin = NonNullable<
   NonNullable<DepOptimizationConfig["esbuildOptions"]>["plugins"]
@@ -121,6 +121,13 @@ export const createMissingModulePlugin = (): Plugin => ({
       (await this.resolve(source, importer, { skipSelf: true })) ??
       `${STAND_IN_MODULE_PREFIX}${source}`
     );
+  },
+});
+
+export const createServerOnlyPlugin = (): OptimizerPlugin => ({
+  name: "bippy-verify-server-only",
+  setup: (build) => {
+    build.onResolve({ filter: /^server-only$/ }, () => ({ path: SERVER_ONLY_STUB }));
   },
 });
 

@@ -20,6 +20,7 @@ import {
   createMissingModulePlugin,
   createMissingRequirePlugin,
   createNodeBuiltinPlugin,
+  createServerOnlyPlugin,
   createStandInPlugin,
 } from "./harness/stand-ins";
 import { createStubPlugin } from "./harness/stubs";
@@ -221,7 +222,11 @@ const createOptimizeDepsOptions = (
     ...context.providers.flatMap((provider) => provider.modules ?? [provider.packageName]),
   ],
   esbuildOptions: {
-    plugins: [createMissingRequirePlugin(), createNodeBuiltinPlugin(polyfilledModules)],
+    plugins: [
+      createServerOnlyPlugin(),
+      createMissingRequirePlugin(),
+      createNodeBuiltinPlugin(polyfilledModules),
+    ],
     loader: { ".node": "empty" },
     ...(context.nextDirectory ? { define: { __dirname: '"/"' } } : {}),
   },
