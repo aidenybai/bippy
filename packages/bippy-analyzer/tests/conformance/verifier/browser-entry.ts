@@ -826,6 +826,9 @@ const createMountElement = (type: unknown, mounted: MountedComponent): ReactElem
   return element;
 };
 
+const getDocumentBody = (): HTMLElement =>
+  document.body ?? document.documentElement.appendChild(document.createElement("body"));
+
 const renderMounted = async (
   type: unknown,
   mounted: MountedComponent,
@@ -838,7 +841,7 @@ const renderMounted = async (
     [...getRDTHook().renderers.values()].flatMap((renderer) => renderer.currentDispatcherRef ?? []),
   );
   const container = document.createElement("div");
-  document.body.replaceChildren(container);
+  getDocumentBody().replaceChildren(container);
   mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
   const element = createMountElement(type, mounted);
   mountedRoot.render(
