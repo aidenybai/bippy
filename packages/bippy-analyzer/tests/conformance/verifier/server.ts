@@ -10,7 +10,7 @@ import {
   getNextPolyfillAliases,
   getPolyfilledModules,
 } from "./harness/next";
-import { resolvePackageDirectory } from "./harness/packages";
+import { isDependencyDeclared, resolvePackageDirectory } from "./harness/packages";
 import { createProvidersSource, getInstalledProviders } from "./harness/providers";
 import type { ProviderSpec } from "./harness/providers";
 import type { HarnessSetup } from "./harness/setup";
@@ -191,7 +191,7 @@ const createHarnessPlugins = (
   return [
     createStubPlugin(nextDirectory, context.appImporter, references.nextFonts),
     createStandInPlugin(polyfilledModules, references.packageImports),
-    createAssetPlugin(),
+    createAssetPlugin(isDependencyDeclared(appDirectory, "@svgr/webpack")),
     createHarnessPlugin(appDirectory, context.providers, context.setup, context.appImporter),
     createMissingModulePlugin(),
     createProbePlugin(context.probes),

@@ -33,14 +33,18 @@ export const isRequirable = (specifier: string, importer: string): boolean => {
   }
 };
 
-const isDeclared = (appDirectory: string, packageName: string): boolean => {
+export const isDependencyDeclared = (appDirectory: string, packageName: string): boolean => {
   const manifestPath = join(appDirectory, "package.json");
-  if (!existsSync(manifestPath)) return true;
+  if (!existsSync(manifestPath)) return false;
   const manifest: PackageManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   return [manifest.dependencies, manifest.devDependencies, manifest.peerDependencies].some(
     (dependencies) => dependencies !== undefined && packageName in dependencies,
   );
 };
+
+const isDeclared = (appDirectory: string, packageName: string): boolean =>
+  !existsSync(join(appDirectory, "package.json")) ||
+  isDependencyDeclared(appDirectory, packageName);
 
 const findUpwards = (
   startDirectory: string,
