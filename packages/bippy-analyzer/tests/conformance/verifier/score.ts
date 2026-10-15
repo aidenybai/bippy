@@ -120,6 +120,7 @@ const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "ca
 const MAX_RENDERED_LENGTH = 300;
 const MAX_PROPS_LENGTH = 160;
 const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
+const DEPENDENCY_NAME_PATTERN = /(?<![.\w$])[A-Za-z_$][\w$]*/g;
 const SPONTANEOUS_EVENTS = new Set([
   "onLoad",
   "onError",
@@ -150,8 +151,8 @@ const ORDERED_HOOK_KINDS = new Set<string>([
   "useContext",
 ]);
 
-const isSpontaneousHandler = (handler: Handler): boolean =>
-  handler.trigger.kind === "Event" && SPONTANEOUS_EVENTS.has(handler.trigger.event);
+const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
+  trigger.kind === "Event" ? SPONTANEOUS_EVENTS.has(trigger.event) : trigger.hookKind === "Custom";
 
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
@@ -475,6 +476,8 @@ const scoreValues = (context: ScoringContext, observation: Observation): void =>
   });
 };
 
+interface EdgeHandlerIds extends Pick<ObservedEdge, "triggeredIds" | "maybeTriggeredIds"> {}
+
 interface ObservedEdge {
   action: Action;
   path: string[];
@@ -485,18 +488,40 @@ interface ObservedEdge {
   earlierTriggeredIds: Set<string>;
 }
 
-const getTriggeredHandlerIds = (
-  context: ScoringContext,
-  action: Action,
-): Pick<ObservedEdge, "triggeredIds" | "maybeTriggeredIds"> => {
-  const triggeredIds = new Set<string>();
-  const maybeTriggeredIds = new Set<string>();
+const getDependencyNames = (dependencies: string): Set<string> =>
+  new Set(dependencies.match(DEPENDENCY_NAME_PATTERN) ?? []);
+
+const isRerunBy = (effect: Handler, updatedNames: Set<string>): boolean =>
+  effect.trigger.kind === "Effect" &&
+  (effect.trigger.dependencies === null ||
+    [...getDependencyNames(effect.trigger.dependencies)].some((name) => updatedNames.has(name)));
+
+const addFollowingEffects = (context: ScoringContext, edgeIds: EdgeHandlerIds): void => {
+  const updatedNames = new Set<string>();
+  for (let isGrowing = true; isGrowing;) {
+    isGrowing = false;
+    for (const handler of context.analysis.handlers) {
+      if (!edgeIds.triggeredIds.has(handler.id)) continue;
+      for (const update of handler.updates) updatedNames.add(update.binding.name);
+    }
+    for (const handler of context.analysis.handlers) {
+      if (edgeIds.triggeredIds.has(handler.id) || !isRerunBy(handler, updatedNames)) continue;
+      edgeIds.triggeredIds.add(handler.id);
+      edgeIds.maybeTriggeredIds.add(handler.id);
+      isGrowing = true;
+    }
+  }
+};
+
+const getTriggeredHandlerIds = (context: ScoringContext, action: Action): EdgeHandlerIds => {
+  const edgeIds: EdgeHandlerIds = { triggeredIds: new Set(), maybeTriggeredIds: new Set() };
   for (const handler of context.analysis.handlers) {
     const certainty = getHandlerCertainty(context.handlerTargets.get(handler.id) ?? [], action);
-    if (certainty) triggeredIds.add(handler.id);
-    if (certainty === "maybe") maybeTriggeredIds.add(handler.id);
+    if (certainty) edgeIds.triggeredIds.add(handler.id);
+    if (certainty === "maybe") edgeIds.maybeTriggeredIds.add(handler.id);
   }
-  return { triggeredIds, maybeTriggeredIds };
+  if (edgeIds.triggeredIds.size > 0) addFollowingEffects(context, edgeIds);
+  return edgeIds;
 };
 
 const canChildActionChange = (
