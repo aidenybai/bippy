@@ -15,8 +15,7 @@ export function DynamicImport() {
   return <button onClick={load}>{ready ? "ready" : "load"}</button>;
 }
 
-// invoify contexts/InvoiceContext.tsx:334-353: try/finally and throw inside try.
-// "(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause"
+// invoify contexts/InvoiceContext.tsx:334-353: throw inside try.
 // "(BuildHIR::lowerStatement) Support ThrowStatement inside of try/catch"
 export function TryFinally() {
   const [isSaving, setIsSaving] = useState(false);

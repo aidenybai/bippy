@@ -1,6 +1,84 @@
 Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d387180687b3f510300f42.
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
+diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
+index 959fdf7..4fd08a6 100644
+--- a/HIR/BuildHIR.ts
++++ b/HIR/BuildHIR.ts
+@@ -1359,15 +1359,20 @@ function lowerStatement(
+         );
+         return;
+       }
+-      if (hasNode(stmt.get('finalizer'))) {
++      const finalizerPath = stmt.get('finalizer');
++      if (
++        hasNode(finalizerPath) &&
++        (exitsEarly(stmt.get('block'), stmt) || exitsEarly(handlerPath, stmt))
++      ) {
+         builder.recordError(
+           new CompilerErrorDetail({
+-            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause`,
++            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause and an early exit`,
+             category: ErrorCategory.Todo,
+             loc: stmt.node.loc ?? null,
+             suggestions: null,
+           }),
+         );
++        return;
+       }
+ 
+       const handlerBindingPath = handlerPath.get('param');
+@@ -1451,6 +1456,9 @@ function lowerStatement(
+         continuationBlock,
+       );
+ 
++      if (hasNode(finalizerPath)) {
++        lowerStatement(builder, finalizerPath);
++      }
+       return;
+     }
+     case 'WithStatement': {
+@@ -4531,6 +4539,40 @@ function gatherCapturedContext(
+   return capturedIds;
+ }
+ 
++function exitsEarly(
++  path: NodePath<t.Statement | t.CatchClause>,
++  tryPath: NodePath<t.TryStatement>,
++): boolean {
++  let found = false;
++  const visitJump = (
++    jumpPath: NodePath<t.BreakStatement | t.ContinueStatement>,
++  ): void => {
++    const label = jumpPath.node.label;
++    const target = jumpPath.findParent(parent =>
++      label != null
++        ? parent.isLabeledStatement() && parent.node.label.name === label.name
++        : parent.isLoop() ||
++            (jumpPath.isBreakStatement() && parent.isSwitchStatement()),
++    );
++    if (target == null || !target.isDescendant(tryPath)) {
++      found = true;
++      jumpPath.stop();
++    }
++  };
++  path.traverse({
++    Function(innerPath) {
++      innerPath.skip();
++    },
++    ReturnStatement(innerPath) {
++      found = true;
++      innerPath.stop();
++    },
++    BreakStatement: visitJump,
++    ContinueStatement: visitJump,
++  });
++  return found;
++}
++
+ function notNull<T>(value: T | null): value is T {
+   return value !== null;
+ }
 diff --git a/HIR/Environment.ts b/HIR/Environment.ts
 index 9e908b2..fe500d6 100644
 --- a/HIR/Environment.ts
