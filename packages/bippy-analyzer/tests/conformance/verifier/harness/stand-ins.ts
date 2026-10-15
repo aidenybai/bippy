@@ -1,5 +1,6 @@
 import { builtinModules } from "node:module";
-import { dirname } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, isAbsolute, sep } from "node:path";
 import type { DepOptimizationConfig, Plugin } from "vite";
 import {
   PACKAGE_SPECIFIER_PATTERN,
@@ -84,6 +85,9 @@ const isNodeOnlyModule = (
   );
 };
 
+const isAppFile = (id: string): boolean =>
+  isAbsolute(id) && !id.includes(`${sep}node_modules${sep}`) && existsSync(id);
+
 const createStandInModuleSource = (names: Set<string>): string =>
   [
     `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
@@ -99,10 +103,13 @@ export const createStandInPlugin = (
 ): Plugin => ({
   name: "bippy-verify-stand-ins",
   enforce: "pre",
-  resolveId: (source, importer) =>
-    isServerOnlyPackage(source) || isNodeOnlyModule(source, importer, polyfilledModules)
-      ? `${STAND_IN_MODULE_PREFIX}${source}`
-      : null,
+  async resolveId(source, importer) {
+    if (isServerOnlyPackage(source)) return `${STAND_IN_MODULE_PREFIX}${source}`;
+    if (!isNodeOnlyModule(source, importer, polyfilledModules)) return null;
+    if (source.startsWith("node:")) return `${STAND_IN_MODULE_PREFIX}${source}`;
+    const resolved = await this.resolve(source, importer, { skipSelf: true });
+    return resolved && isAppFile(resolved.id) ? null : `${STAND_IN_MODULE_PREFIX}${source}`;
+  },
   load: (id) =>
     id.startsWith(STAND_IN_MODULE_PREFIX)
       ? createStandInModuleSource(
