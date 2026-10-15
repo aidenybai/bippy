@@ -14,3 +14,11 @@ describe("svg component imports", () => {
     expect(resolveAssetId("/icons/close.svg", "/app/components/modal.tsx", false)).toBeNull();
   });
 });
+
+describe("virtual asset ids", () => {
+  it("keeps parent directory segments out of a stylesheet stand-in's id", () => {
+    const id = resolveAssetId("../../css/docs-overview.css", "/app/src/components/a.jsx", false);
+    expect(id?.split("/")).not.toContain("..");
+    expect(loadAsset(id ?? "")).toContain("new Proxy");
+  });
+});

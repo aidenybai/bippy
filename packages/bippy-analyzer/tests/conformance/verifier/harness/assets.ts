@@ -18,14 +18,18 @@ const SVG_COMPONENT_SOURCE = [
 ].join("\n");
 const MISSING_ASSET_PREFIX = "\0bippy-verify-missing-asset:";
 
+const DOT_SEGMENT_PATTERN = /(^|\/)\.\.?(?=\/)/g;
+
+const toVirtualPath = (source: string): string => source.replace(DOT_SEGMENT_PATTERN, "$1_");
+
 export const resolveAssetId = (
   source: string,
   importer: string | undefined,
   isSvgImportedAsComponent: boolean,
 ): string | null => {
-  if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${source}.js`;
+  if (STYLESHEET_PATTERN.test(source)) return `${STYLESHEET_PREFIX}${toVirtualPath(source)}.js`;
   if (isSvgImportedAsComponent && SVG_FILE_PATTERN.test(source))
-    return `${SVG_COMPONENT_PREFIX}${source}.js`;
+    return `${SVG_COMPONENT_PREFIX}${toVirtualPath(source)}.js`;
   const assetPath = stripQuery(source);
   const isMissingImage =
     importer !== undefined &&
