@@ -65,6 +65,7 @@ const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
 const MISSING_MODULE_NAMESPACE = "bippy-verify-missing-module";
 const NODE_BUILTIN_NAMESPACE = "bippy-verify-node-builtin";
 const NODE_BUILTINS = new Set(builtinModules);
+const LAZY_IMPORT_KINDS = new Set(["require-call", "dynamic-import"]);
 
 const isServerOnlyPackage = (specifier: string): boolean =>
   SERVER_ONLY_PACKAGES.has(specifier) ||
@@ -141,25 +142,11 @@ export const createPrebundledStubPlugin = (): OptimizerPlugin => ({
   },
 });
 
-export const createMissingDynamicImportPlugin = (): OptimizerPlugin => ({
-  name: "bippy-verify-missing-dynamic-imports",
-  setup: (build) => {
-    build.onResolve({ filter: /.*/ }, ({ path, importer, kind }) =>
-      kind === "dynamic-import" &&
-      importer &&
-      !PATH_SPECIFIER_PATTERN.test(path) &&
-      !isRequirable(path, importer)
-        ? { path, external: true }
-        : undefined,
-    );
-  },
-});
-
-export const createMissingRequirePlugin = (): OptimizerPlugin => ({
+export const createMissingDependencyPlugin = (): OptimizerPlugin => ({
   name: MISSING_MODULE_NAMESPACE,
   setup: (build) => {
     build.onResolve({ filter: /.*/ }, ({ path, importer, kind }) =>
-      kind === "require-call" &&
+      LAZY_IMPORT_KINDS.has(kind) &&
       importer &&
       !PATH_SPECIFIER_PATTERN.test(path) &&
       !isRequirable(path, importer)

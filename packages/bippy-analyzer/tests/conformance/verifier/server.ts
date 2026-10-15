@@ -19,8 +19,7 @@ import { collectSourceReferences, indexSource } from "./harness/source-reference
 import type { SourceReferences } from "./harness/source-references";
 import {
   createMissingModulePlugin,
-  createMissingDynamicImportPlugin,
-  createMissingRequirePlugin,
+  createMissingDependencyPlugin,
   createNodeBuiltinPlugin,
   createPrebundledStubPlugin,
   createStandInPlugin,
@@ -232,8 +231,7 @@ const createOptimizeDepsOptions = (
   esbuildOptions: {
     plugins: [
       createPrebundledStubPlugin(),
-      createMissingDynamicImportPlugin(),
-      createMissingRequirePlugin(),
+      createMissingDependencyPlugin(),
       createNodeBuiltinPlugin(polyfilledModules),
     ],
     loader: { ".node": "empty" },
