@@ -1,4 +1,4 @@
-import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
+import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Symbol, Type } from "typescript/unstable/sync";
 import { isLibraryType, isReactType } from "./utils/typescript";
 import type { PrimitiveValue, Sample } from "./types";
@@ -23,8 +23,13 @@ export const dedupeSamples = (samples: Sample[]): Sample[] => [
   ...new Map(samples.map((sample) => [getSampleKey(sample), sample])).values(),
 ];
 
+const TRUNCATED_OBJECT_SAMPLE: Sample = { kind: "Object", fields: {}, isOpen: true };
+
+const isTruncatedOptionalField = (property: Symbol, sample: Sample): boolean =>
+  (property.flags & SymbolFlags.Optional) !== 0 && sample === TRUNCATED_OBJECT_SAMPLE;
+
 const getObjectSample = (checker: Checker, type: Type, depth: number): Sample => {
-  if (depth >= MAX_SAMPLE_DEPTH) return { kind: "Object", fields: {}, isOpen: true };
+  if (depth >= MAX_SAMPLE_DEPTH) return TRUNCATED_OBJECT_SAMPLE;
   const properties = checker
     .getPropertiesOfType(type)
     .filter((property) => !UNSAMPLED_FIELDS.has(property.name));
@@ -33,7 +38,8 @@ const getObjectSample = (checker: Checker, type: Type, depth: number): Sample =>
     const definedSample = getPropertySamples(checker, property, depth + 1).find(
       (sample) => sample.kind !== "Undefined",
     );
-    if (definedSample) fields[property.name] = definedSample;
+    if (definedSample && !isTruncatedOptionalField(property, definedSample))
+      fields[property.name] = definedSample;
   }
   return { kind: "Object", fields, isOpen: properties.length > MAX_SAMPLE_FIELDS };
 };
