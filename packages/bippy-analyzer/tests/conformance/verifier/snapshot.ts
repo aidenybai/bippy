@@ -16,6 +16,12 @@ export const isPlainData = (value: unknown): value is object => {
   );
 };
 
+export const isRefObject = (value: unknown): boolean =>
+  typeof value === "object" &&
+  value !== null &&
+  Object.keys(value).length === 1 &&
+  Object.hasOwn(value, "current");
+
 export const isPlainRecord = (value: object): boolean => {
   const prototype = Object.getPrototypeOf(value);
   return Array.isArray(value) || prototype === Object.prototype || prototype === null;
@@ -59,6 +65,7 @@ export const snapshotValue = (value: unknown): string => {
     if (typeof current === "number" && !Number.isFinite(current)) return String(current);
     if (current === null || typeof current !== "object") return current;
     if (!isPlainData(current)) return "[instance]";
+    if (isRefObject(current)) return "[ref]";
     if (ancestors.has(current)) return "[cycle]";
     nodeCount++;
     if (depth >= MAX_SNAPSHOT_DEPTH || nodeCount > MAX_SNAPSHOT_NODES) return TRUNCATED_VALUE;

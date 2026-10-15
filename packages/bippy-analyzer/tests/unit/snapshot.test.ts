@@ -71,3 +71,12 @@ describe("isPlainRecord", () => {
     expect(isPlainRecord(new Map())).toBe(false);
   });
 });
+
+describe("snapshots of refs", () => {
+  it("leaves out what React writes into refs held in state", () => {
+    const itemRefs = [{ current: null }, { current: null }];
+    const before = snapshotValue(itemRefs);
+    Reflect.set(itemRefs[0] ?? {}, "current", { tagName: "SPAN" });
+    expect(snapshotValue(itemRefs)).toBe(before);
+  });
+});

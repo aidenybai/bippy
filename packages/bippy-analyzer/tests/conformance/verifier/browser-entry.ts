@@ -19,7 +19,13 @@ import type { Root } from "react-dom/client";
 import type { Sample } from "../../../src/core/types";
 import { getErrorMessage } from "./reasons";
 import type { MountFailure } from "./reasons";
-import { forEachPlainObject, isPlainData, isPlainRecord, snapshotValue } from "./snapshot";
+import {
+  forEachPlainObject,
+  isPlainData,
+  isPlainRecord,
+  isRefObject,
+  snapshotValue,
+} from "./snapshot";
 import { STAND_IN } from "./stubs/stand-in";
 import { isLibraryHookQueue, isWrittenByLibrary, watchHookCallers } from "./write-origins";
 import {
@@ -159,12 +165,6 @@ const recordWrite = (target: object): void => {
   const owner = propOwners.get(target);
   if (owner && !isWrittenByLibrary()) propWrites.add(owner);
 };
-
-const isRefObject = (value: unknown): boolean =>
-  typeof value === "object" &&
-  value !== null &&
-  Object.keys(value).length === 1 &&
-  Object.hasOwn(value, "current");
 
 const isMutatingMethod = (target: object, key: string | symbol): boolean =>
   typeof key === "string" &&
