@@ -46,4 +46,16 @@ describe("shapes of untyped props", () => {
       isOpen: false,
     });
   });
+
+  it("mounts an untyped prop spread into a host element's style with an object", () => {
+    const band = getComponent(
+      analyzeFixture("conformance-repros", "untyped-style"),
+      "SpreadStyleBand",
+    );
+    expect(getBinding(band, "style").samples[0]).toEqual({
+      kind: "Object",
+      fields: {},
+      isOpen: false,
+    });
+  });
 });

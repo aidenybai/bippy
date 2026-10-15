@@ -80,18 +80,19 @@ const inferSampleFromReadPaths = (name: string, readPaths: string[][]): Sample =
   };
 };
 
+const getStyleSourceValues = (styleValue: SymbolicValue): SymbolicValue[] =>
+  styleValue.kind === "ObjectExpression" ? styleValue.spreads : [styleValue];
+
 const getHostStyleBindingIds = (render: SymbolicValue): Set<number> => {
   const bindingIds = new Set<number>();
   forEachJsxElement(render, (element) => {
     if (element.tag.kind !== "BuiltinTag") return;
-    for (const prop of element.props)
-      if (
-        prop.kind === "JsxAttribute" &&
-        prop.name === "style" &&
-        prop.value.kind === "Binding" &&
-        prop.value.path.length === 0
-      )
-        bindingIds.add(prop.value.binding.id);
+    for (const prop of element.props) {
+      if (prop.kind !== "JsxAttribute" || prop.name !== "style") continue;
+      for (const sourceValue of getStyleSourceValues(prop.value))
+        if (sourceValue.kind === "Binding" && sourceValue.path.length === 0)
+          bindingIds.add(sourceValue.binding.id);
+    }
   });
   return bindingIds;
 };
