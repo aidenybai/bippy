@@ -141,6 +141,20 @@ export const createPrebundledStubPlugin = (): OptimizerPlugin => ({
   },
 });
 
+export const createMissingDynamicImportPlugin = (): OptimizerPlugin => ({
+  name: "bippy-verify-missing-dynamic-imports",
+  setup: (build) => {
+    build.onResolve({ filter: /.*/ }, ({ path, importer, kind }) =>
+      kind === "dynamic-import" &&
+      importer &&
+      !PATH_SPECIFIER_PATTERN.test(path) &&
+      !isRequirable(path, importer)
+        ? { path, external: true }
+        : undefined,
+    );
+  },
+});
+
 export const createMissingRequirePlugin = (): OptimizerPlugin => ({
   name: MISSING_MODULE_NAMESPACE,
   setup: (build) => {
