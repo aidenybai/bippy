@@ -1,10 +1,10 @@
-const createPreloadResult = (): (() => void) =>
-  Object.assign(() => undefined, {
-    then: (onFulfilled?: (value: object) => unknown) => Promise.resolve(onFulfilled?.({})),
-    catch: () => Promise.resolve({}),
-    finally: (onFinally?: () => void) => Promise.resolve(onFinally?.()),
-  });
+const SUBSCRIPTION_PATTERN = /^on[A-Z]/;
+
+const createPreloadMethod = (name: string | symbol) =>
+  typeof name === "string" && SUBSCRIPTION_PATTERN.test(name)
+    ? () => () => undefined
+    : () => Promise.resolve({});
 
 Object.assign(window, {
-  electronAPI: new Proxy({}, { get: () => createPreloadResult }),
+  electronAPI: new Proxy({}, { get: (_target, name) => createPreloadMethod(name) }),
 });
