@@ -2,10 +2,20 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..9e8d717 100644
+index 959fdf7..0623e33 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
-@@ -1348,10 +1348,15 @@ function lowerStatement(
+@@ -315,6 +315,9 @@ function lowerStatement(
+           argument as NodePath<t.Expression>,
+         );
+       }
++      builder.lowerPendingFinalizers(finalizer => {
++        lowerStatement(builder, finalizer);
++      });
+       const terminal: ReturnTerminal = {
+         kind: 'return',
+         returnVariant: 'Explicit',
+@@ -1348,10 +1351,16 @@ function lowerStatement(
        const continuationBlock = builder.reserve('block');
  
        const handlerPath = stmt.get('handler');
@@ -13,8 +23,9 @@ index 959fdf7..9e8d717 100644
 +      const finalizerPath = stmt.get('finalizer');
 +      if (
 +        hasNode(finalizerPath) &&
-+        (exitsEarly(stmt.get('block'), stmt) ||
-+          (hasNode(handlerPath) && exitsEarly(handlerPath, stmt)))
++        (jumpsOutOf(stmt.get('block'), stmt) ||
++          (hasNode(handlerPath) && jumpsOutOf(handlerPath, stmt)) ||
++          exitsEarly(finalizerPath, stmt))
 +      ) {
          builder.recordError(
            new CompilerErrorDetail({
@@ -23,7 +34,7 @@ index 959fdf7..9e8d717 100644
              category: ErrorCategory.Todo,
              loc: stmt.node.loc ?? null,
              suggestions: null,
-@@ -1359,51 +1364,31 @@ function lowerStatement(
+@@ -1359,51 +1368,32 @@ function lowerStatement(
          );
          return;
        }
@@ -82,13 +93,14 @@ index 959fdf7..9e8d717 100644
          };
        }
  
++      const lowerClauses = (): {handler: BlockId; block: BlockId} => {
        const handler = builder.enter('catch', _blockId => {
 -        if (handlerBinding !== null) {
 +        if (handlerBinding !== null && handlerBinding.path !== null) {
            lowerAssignment(
              builder,
              handlerBinding.path.node.loc ?? GeneratedSource,
-@@ -1413,13 +1398,29 @@ function lowerStatement(
+@@ -1413,13 +1403,29 @@ function lowerStatement(
              'Assignment',
            );
          }
@@ -123,7 +135,19 @@ index 959fdf7..9e8d717 100644
          };
        });
  
-@@ -1451,6 +1452,9 @@ function lowerStatement(
+@@ -1436,6 +1442,11 @@ function lowerStatement(
+           loc: block.node.loc ?? GeneratedSource,
+         };
+       });
++      return {handler, block};
++      };
++      const {handler, block} = hasNode(finalizerPath)
++        ? builder.enterFinalizer(finalizerPath, lowerClauses)
++        : lowerClauses();
+ 
+       builder.terminateWithContinuation(
+         {
+@@ -1451,6 +1462,9 @@ function lowerStatement(
          continuationBlock,
        );
  
@@ -133,7 +157,7 @@ index 959fdf7..9e8d717 100644
        return;
      }
      case 'WithStatement': {
-@@ -4531,6 +4535,61 @@ function gatherCapturedContext(
+@@ -4531,6 +4545,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
@@ -158,9 +182,17 @@ index 959fdf7..9e8d717 100644
 +  return place;
 +}
 +
++function jumpsOutOf(
++  path: NodePath<t.Statement | t.CatchClause>,
++  tryPath: NodePath<t.TryStatement>,
++): boolean {
++  return exitsEarly(path, tryPath, {isReturnAnExit: false});
++}
++
 +function exitsEarly(
 +  path: NodePath<t.Statement | t.CatchClause>,
 +  tryPath: NodePath<t.TryStatement>,
++  {isReturnAnExit}: {isReturnAnExit: boolean} = {isReturnAnExit: true},
 +): boolean {
 +  let found = false;
 +  const visitJump = (
@@ -183,8 +215,10 @@ index 959fdf7..9e8d717 100644
 +      innerPath.skip();
 +    },
 +    ReturnStatement(innerPath) {
-+      found = true;
-+      innerPath.stop();
++      if (isReturnAnExit) {
++        found = true;
++        innerPath.stop();
++      }
 +    },
 +    BreakStatement: visitJump,
 +    ContinueStatement: visitJump,
@@ -328,6 +362,43 @@ index 9e908b2..fe500d6 100644
            shape.properties.get('*') ??
            (isHookName(property) ? this.#getCustomHookType() : null)
          );
+diff --git a/HIR/HIRBuilder.ts b/HIR/HIRBuilder.ts
+index 71874b0..3c01f4c 100644
+--- a/HIR/HIRBuilder.ts
++++ b/HIR/HIRBuilder.ts
+@@ -115,6 +115,7 @@ export default class HIRBuilder {
+   #bindings: Bindings;
+   #env: Environment;
+   #exceptionHandlerStack: Array<BlockId> = [];
++  #finalizerStack: Array<NodePath<t.BlockStatement>> = [];
+   /**
+    * Traversal context: counts the number of `fbt` tag parents
+    * of the current babel node.
+@@ -191,6 +192,24 @@ export default class HIRBuilder {
+     return handler ?? null;
+   }
+ 
++  enterFinalizer<T>(finalizer: NodePath<t.BlockStatement>, fn: () => T): T {
++    this.#finalizerStack.push(finalizer);
++    const result = fn();
++    this.#finalizerStack.pop();
++    return result;
++  }
++
++  lowerPendingFinalizers(
++    lower: (finalizer: NodePath<t.BlockStatement>) => void,
++  ): void {
++    const pending = this.#finalizerStack;
++    [...pending].reverse().forEach((finalizer, index) => {
++      this.#finalizerStack = pending.slice(0, pending.length - 1 - index);
++      lower(finalizer);
++    });
++    this.#finalizerStack = pending;
++  }
++
+   makeTemporary(loc: SourceLocation): Identifier {
+     const id = this.nextIdentifierId;
+     return makeTemporaryIdentifier(id, loc);
 diff --git a/TypeInference/InferTypes.ts b/TypeInference/InferTypes.ts
 index 5b6b059..119ec02 100644
 --- a/TypeInference/InferTypes.ts

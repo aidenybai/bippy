@@ -13,8 +13,8 @@ describe("compiler errors", () => {
     expect(bailout?.message).toMatch(reason);
   });
 
-  it.each(["SaveButton", "DownloadButton"])(
-    "lowers the finally clause of %s, whose try and catch blocks run to their end",
+  it.each(["SaveButton", "DownloadButton", "UploadButton"])(
+    "lowers the finally clause of %s before each way out of its try and catch blocks",
     (name) => {
       expect(getComponent(project, name).analysis.bailouts).toEqual([]);
     },

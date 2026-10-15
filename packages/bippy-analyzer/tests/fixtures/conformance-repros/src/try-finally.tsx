@@ -17,6 +17,28 @@ export const DownloadButton = () => {
   );
 };
 
+export const UploadButton = () => {
+  const [isBusy, setIsBusy] = useState(false);
+  const [count, setCount] = useState(0);
+  const upload = async () => {
+    setIsBusy(true);
+    try {
+      const response = await fetch("/api/upload", { method: "POST" });
+      if (!response.ok) return;
+      setCount((current) => current + 1);
+    } catch {
+      return;
+    } finally {
+      setIsBusy(false);
+    }
+  };
+  return (
+    <button onClick={upload} disabled={isBusy}>
+      {isBusy ? "uploading" : count}
+    </button>
+  );
+};
+
 export const SaveButton = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
