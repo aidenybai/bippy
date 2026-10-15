@@ -1,6 +1,5 @@
 import { availableParallelism, freemem } from "node:os";
 import { dirname, resolve } from "node:path";
-import { getHeapStatistics } from "node:v8";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import { analyzeProject } from "../../../src/core/analyze-project";
@@ -194,10 +193,7 @@ const getPageCount = (componentCount: number): number =>
     Math.min(
       MAX_PAGES,
       availableParallelism(),
-      Math.floor(
-        (freemem() - RESERVED_MEMORY_BYTES - getHeapStatistics().total_available_size) /
-          PAGE_MEMORY_BYTES,
-      ),
+      Math.floor((freemem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
       componentCount,
     ),
   );
@@ -261,10 +257,12 @@ const verifyOnPages = async (
   const browser = await chromium.launch();
   const verdicts: ComponentVerdict[] = [];
   let nextIndex = 0;
-  const verifyRemainingOnOnePage = async (): Promise<void> => {
+  const verifyRemainingOnOnePage = async (pageIndex: number): Promise<void> => {
     const harnessPage = await HarnessPage.open(browser, harness);
+    const shouldStop = (): boolean => pageIndex > 0 && freemem() < RESERVED_MEMORY_BYTES;
     try {
-      for (let index = nextIndex++; index < components.length; index = nextIndex++) {
+      while (nextIndex < components.length && !shouldStop()) {
+        const index = nextIndex++;
         const component = components[index];
         if (!component) continue;
         options.onStart?.(component.analysis.name);
@@ -278,7 +276,9 @@ const verifyOnPages = async (
   };
   try {
     const pageCount = getPageCount(components.length);
-    await Promise.all(Array.from({ length: pageCount }, verifyRemainingOnOnePage));
+    await Promise.all(
+      Array.from({ length: pageCount }, (_, pageIndex) => verifyRemainingOnOnePage(pageIndex)),
+    );
   } finally {
     await browser.close();
   }
