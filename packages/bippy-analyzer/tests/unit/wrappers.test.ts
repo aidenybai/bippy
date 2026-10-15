@@ -4,7 +4,7 @@ import type { ComponentAnalysis, Sample } from "../../src/core/types";
 import { parseExports } from "../conformance/verifier/source-index";
 import type { ExportedName, ProjectIndex } from "../conformance/verifier/types";
 import { createEmptyAnalysis } from "../../src/core/analyze-component";
-import { proposeParents } from "../conformance/verifier/wrappers";
+import { proposeParents, resolveNamedParent } from "../conformance/verifier/wrappers";
 import type { ParentQuery } from "../conformance/verifier/wrappers";
 
 const DRAWER_FILE = "/app/ui/drawer.tsx";
@@ -134,5 +134,19 @@ describe("parseExports", () => {
       { name: "Panel", exportName: "default" },
       { name: "Row", exportName: "Row" },
     ]);
+  });
+});
+
+describe("resolveNamedParent", () => {
+  it("finds a compound part an error names with a dot under its joined export name", () => {
+    const project = createProject({
+      QuestionnaireItem: [{ file: "/app/ui/questionnaire.tsx", exportName: "QuestionnaireItem" }],
+    });
+    expect(
+      resolveNamedParent(
+        "Questionnaire.Choices must be used within a Questionnaire.Item component.",
+        project,
+      ),
+    ).toBe("QuestionnaireItem");
   });
 });

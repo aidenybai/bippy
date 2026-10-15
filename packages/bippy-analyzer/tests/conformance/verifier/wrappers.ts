@@ -51,9 +51,9 @@ const createProjectWrapper = (
 
 export const resolveNamedParent = (error: string, project: ProjectIndex): string | null => {
   const named = extractParentNameFromError(error)?.replace(CONTEXT_PROVIDER_SUFFIX, "");
-  if (!named) return null;
-  const providerName = named.replace(CONTEXT_SUFFIX, "Provider");
-  return !project.exports.has(named) && project.exports.has(providerName) ? providerName : named;
+  if (!named || project.exports.has(named)) return named ?? null;
+  const candidates = [named.replace(CONTEXT_SUFFIX, "Provider"), named.replaceAll(".", "")];
+  return candidates.find((candidate) => project.exports.has(candidate)) ?? named;
 };
 
 const getReachableFiles = (query: ParentQuery): string[] => [
