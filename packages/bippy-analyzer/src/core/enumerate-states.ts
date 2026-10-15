@@ -582,7 +582,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     isTruncated ||= enumerated.isTruncated;
   });
   return {
-    places: new PlaceMap(reachableConstraints.possibleValues),
+    places: reachableConstraints.possibleValues.clone(),
     states,
     regions,
     unreachableBranches: isTruncated

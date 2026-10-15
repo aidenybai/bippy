@@ -56,7 +56,7 @@ export interface Constraints {
 }
 
 export const cloneConstraints = (constraints: Constraints): Constraints => ({
-  possibleValues: new PlaceMap(constraints.possibleValues),
+  possibleValues: constraints.possibleValues.clone(),
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
   invariants: constraints.invariants,

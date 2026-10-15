@@ -46,6 +46,12 @@ export class PlaceMap<Value> {
     return this;
   }
 
+  clone(): PlaceMap<Value> {
+    const copy = new PlaceMap<Value>();
+    for (const [key, entry] of this.#entries) copy.#entries.set(key, entry);
+    return copy;
+  }
+
   places(): BindingPlace[] {
     return [...this.#entries.values()].map(([place]) => place);
   }
