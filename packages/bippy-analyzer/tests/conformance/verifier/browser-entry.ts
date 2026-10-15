@@ -1,5 +1,6 @@
 import "./stubs/node-globals";
 import "./stubs/tauri-globals";
+import "./stubs/react-shims";
 import {
   didFiberRender,
   getDisplayName,
