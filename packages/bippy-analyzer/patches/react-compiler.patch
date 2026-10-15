@@ -2,33 +2,128 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..4fd08a6 100644
+index 959fdf7..9e8d717 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
-@@ -1359,15 +1359,20 @@ function lowerStatement(
-         );
-         return;
-       }
--      if (hasNode(stmt.get('finalizer'))) {
+@@ -1348,10 +1348,15 @@ function lowerStatement(
+       const continuationBlock = builder.reserve('block');
+ 
+       const handlerPath = stmt.get('handler');
+-      if (!hasNode(handlerPath)) {
 +      const finalizerPath = stmt.get('finalizer');
 +      if (
 +        hasNode(finalizerPath) &&
-+        (exitsEarly(stmt.get('block'), stmt) || exitsEarly(handlerPath, stmt))
++        (exitsEarly(stmt.get('block'), stmt) ||
++          (hasNode(handlerPath) && exitsEarly(handlerPath, stmt)))
 +      ) {
          builder.recordError(
            new CompilerErrorDetail({
--            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause`,
+-            reason: `(BuildHIR::lowerStatement) Handle TryStatement without a catch clause`,
 +            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause and an early exit`,
              category: ErrorCategory.Todo,
              loc: stmt.node.loc ?? null,
              suggestions: null,
-           }),
+@@ -1359,51 +1364,31 @@ function lowerStatement(
          );
-+        return;
+         return;
+       }
+-      if (hasNode(stmt.get('finalizer'))) {
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause`,
+-            category: ErrorCategory.Todo,
+-            loc: stmt.node.loc ?? null,
+-            suggestions: null,
+-          }),
+-        );
+-      }
+ 
+-      const handlerBindingPath = handlerPath.get('param');
++      const handlerBindingPath = hasNode(handlerPath)
++        ? handlerPath.get('param')
++        : null;
+       let handlerBinding: {
+         place: Place;
+-        path: NodePath<t.Identifier | t.ArrayPattern | t.ObjectPattern>;
++        path: NodePath<t.Identifier | t.ArrayPattern | t.ObjectPattern> | null;
+       } | null = null;
+-      if (hasNode(handlerBindingPath)) {
+-        const place: Place = {
+-          kind: 'Identifier',
+-          identifier: builder.makeTemporary(
++      if (handlerBindingPath !== null && hasNode(handlerBindingPath)) {
++        handlerBinding = {
++          path: handlerBindingPath,
++          place: lowerCatchBinding(
++            builder,
+             handlerBindingPath.node.loc ?? GeneratedSource,
+           ),
+-          effect: Effect.Unknown,
+-          reactive: false,
+-          loc: handlerBindingPath.node.loc ?? GeneratedSource,
+         };
+-        promoteTemporary(place.identifier);
+-        lowerValueToTemporary(builder, {
+-          kind: 'DeclareLocal',
+-          lvalue: {
+-            kind: InstructionKind.Catch,
+-            place: {...place},
+-          },
+-          type: null,
+-          loc: handlerBindingPath.node.loc ?? GeneratedSource,
+-        });
+-
++      } else if (!hasNode(handlerPath)) {
+         handlerBinding = {
+-          path: handlerBindingPath,
+-          place,
++          path: null,
++          place: lowerCatchBinding(builder, stmt.node.loc ?? GeneratedSource),
+         };
        }
  
-       const handlerBindingPath = handlerPath.get('param');
-@@ -1451,6 +1456,9 @@ function lowerStatement(
+       const handler = builder.enter('catch', _blockId => {
+-        if (handlerBinding !== null) {
++        if (handlerBinding !== null && handlerBinding.path !== null) {
+           lowerAssignment(
+             builder,
+             handlerBinding.path.node.loc ?? GeneratedSource,
+@@ -1413,13 +1398,29 @@ function lowerStatement(
+             'Assignment',
+           );
+         }
+-        lowerStatement(builder, handlerPath.get('body'));
++        if (hasNode(handlerPath)) {
++          lowerStatement(builder, handlerPath.get('body'));
++          return {
++            kind: 'goto',
++            block: continuationBlock.id,
++            variant: GotoVariant.Break,
++            id: makeInstructionId(0),
++            loc: handlerPath.node.loc ?? GeneratedSource,
++          };
++        }
++        CompilerError.invariant(
++          handlerBinding !== null && hasNode(finalizerPath),
++          {
++            reason: 'Expected a try statement without a catch clause to have a finalizer',
++            loc: stmt.node.loc ?? GeneratedSource,
++          },
++        );
++        lowerStatement(builder, finalizerPath);
+         return {
+-          kind: 'goto',
+-          block: continuationBlock.id,
+-          variant: GotoVariant.Break,
++          kind: 'throw',
++          value: {...handlerBinding.place},
+           id: makeInstructionId(0),
+-          loc: handlerPath.node.loc ?? GeneratedSource,
++          loc: finalizerPath.node.loc ?? GeneratedSource,
+         };
+       });
+ 
+@@ -1451,6 +1452,9 @@ function lowerStatement(
          continuationBlock,
        );
  
@@ -38,10 +133,31 @@ index 959fdf7..4fd08a6 100644
        return;
      }
      case 'WithStatement': {
-@@ -4531,6 +4539,40 @@ function gatherCapturedContext(
+@@ -4531,6 +4535,61 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
++function lowerCatchBinding(builder: HIRBuilder, loc: SourceLocation): Place {
++  const place: Place = {
++    kind: 'Identifier',
++    identifier: builder.makeTemporary(loc),
++    effect: Effect.Unknown,
++    reactive: false,
++    loc,
++  };
++  promoteTemporary(place.identifier);
++  lowerValueToTemporary(builder, {
++    kind: 'DeclareLocal',
++    lvalue: {
++      kind: InstructionKind.Catch,
++      place: {...place},
++    },
++    type: null,
++    loc,
++  });
++  return place;
++}
++
 +function exitsEarly(
 +  path: NodePath<t.Statement | t.CatchClause>,
 +  tryPath: NodePath<t.TryStatement>,

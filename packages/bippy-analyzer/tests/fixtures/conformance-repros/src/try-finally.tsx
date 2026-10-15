@@ -1,5 +1,22 @@
 import { useState } from "react";
 
+export const DownloadButton = () => {
+  const [isBusy, setIsBusy] = useState(false);
+  const download = async () => {
+    setIsBusy(true);
+    try {
+      await fetch("/api/download");
+    } finally {
+      setIsBusy(false);
+    }
+  };
+  return (
+    <button onClick={download} disabled={isBusy}>
+      {isBusy ? "downloading" : "download"}
+    </button>
+  );
+};
+
 export const SaveButton = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

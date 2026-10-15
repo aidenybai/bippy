@@ -13,7 +13,10 @@ describe("compiler errors", () => {
     expect(bailout?.message).toMatch(reason);
   });
 
-  it("lowers a finally clause whose try and catch blocks run to their end", () => {
-    expect(getComponent(project, "SaveButton").analysis.bailouts).toEqual([]);
-  });
+  it.each(["SaveButton", "DownloadButton"])(
+    "lowers the finally clause of %s, whose try and catch blocks run to their end",
+    (name) => {
+      expect(getComponent(project, name).analysis.bailouts).toEqual([]);
+    },
+  );
 });
