@@ -61,6 +61,8 @@ const SERVER_ONLY_PREFIXES = [
   "node:",
 ];
 const TEST_RUNNER_PACKAGES = new Set(["vitest", "@jest/globals", "bun:test"]);
+const GENERATED_RUNTIME_PACKAGES = new Set(["umi", "@umijs/max"]);
+const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
 const SERVER_ONLY_ADAPTER_PATTERN = /^@(?:next-)?auth\/.+-adapter$/;
 const STAND_IN_MODULE_PREFIX = "\0bippy-verify-stand-in:";
 const MISSING_MODULE_NAMESPACE = "bippy-verify-missing-module";
@@ -74,7 +76,9 @@ const isServerOnlyPackage = (specifier: string): boolean =>
   SERVER_ONLY_ADAPTER_PATTERN.test(specifier);
 
 const isStandInPackage = (specifier: string): boolean =>
-  isServerOnlyPackage(specifier) || TEST_RUNNER_PACKAGES.has(specifier);
+  isServerOnlyPackage(specifier) ||
+  TEST_RUNNER_PACKAGES.has(specifier) ||
+  GENERATED_RUNTIME_PACKAGES.has(specifier);
 
 const isNodeOnlyModule = (
   specifier: string,
@@ -98,7 +102,7 @@ const createStandInModuleSource = (names: Set<string>): string =>
     `import { STAND_IN } from ${JSON.stringify(STAND_IN_SOURCE)};`,
     "export default STAND_IN;",
     ...[...names]
-      .filter((name) => name !== "default")
+      .filter((name) => name !== "default" && IDENTIFIER_PATTERN.test(name))
       .map((name) => `export const ${name} = STAND_IN;`),
   ].join("\n");
 
