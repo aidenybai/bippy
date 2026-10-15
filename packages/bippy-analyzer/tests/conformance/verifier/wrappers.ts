@@ -101,20 +101,32 @@ const getCompoundRootNames = (query: ParentQuery): string[] =>
     .map(([candidate]) => candidate)
     .sort((left, right) => right.length - left.length);
 
-const findOwnExport = (name: string, source: WrapperSource, query: ParentQuery): Wrapper[] =>
+const findExportInFile = (
+  name: string,
+  source: WrapperSource,
+  file: string,
+  query: ParentQuery,
+): Wrapper[] =>
   (query.project.exports.get(name) ?? [])
-    .filter(({ file }) => file === query.file)
+    .filter((exported) => exported.file === file)
     .map((exported) => createProjectWrapper(name, source, exported, query));
 
-export const findSiblingParts = (query: ParentQuery): Wrapper[] => {
-  const rootName = getCompoundRootNames(query)[0] ?? query.name;
-  return [...query.project.exports.keys()]
+const findOwnExport = (name: string, source: WrapperSource, query: ParentQuery): Wrapper[] =>
+  findExportInFile(name, source, query.file, query);
+
+const findPartsOf = (rootName: string, file: string, query: ParentQuery): Wrapper[] =>
+  [...query.project.exports.keys()]
     .filter(
       (candidate) =>
         candidate !== rootName && candidate !== query.name && candidate.startsWith(rootName),
     )
-    .flatMap((candidate) => findOwnExport(candidate, "part", query));
-};
+    .flatMap((candidate) => findExportInFile(candidate, "part", file, query));
+
+export const findSiblingParts = (query: ParentQuery): Wrapper[] =>
+  findPartsOf(getCompoundRootNames(query)[0] ?? query.name, query.file, query);
+
+export const findRootParts = (root: Wrapper, query: ParentQuery): Wrapper[] =>
+  root.candidate.kind === "project" ? findPartsOf(root.name, root.candidate.file, query) : [];
 
 const findContextProviders = (query: ParentQuery): Wrapper[] => {
   const hookName = NULL_HOOK_PATTERN.exec(query.error)?.[1];
@@ -131,6 +143,25 @@ const findContextProviders = (query: ParentQuery): Wrapper[] => {
       .filter((exported) => exported.file === path)
       .map((exported) => createProjectWrapper(name, "context", exported, query));
   });
+};
+
+const findRenderedRoots = (query: ParentQuery): Wrapper[] => {
+  const reachableFiles = new Set(getReachableFiles(query));
+  const roots = new Map<string, Wrapper>();
+  for (const renderedName of query.analysis.renders) {
+    const renderedFiles = new Set(
+      (query.project.exports.get(renderedName) ?? [])
+        .map(({ file }) => file)
+        .filter((file) => reachableFiles.has(file)),
+    );
+    for (const [candidate, exported] of query.project.exports) {
+      if (candidate === renderedName || !renderedName.startsWith(candidate)) continue;
+      const ownExport = exported.find(({ file }) => renderedFiles.has(file));
+      if (ownExport && !roots.has(candidate))
+        roots.set(candidate, createProjectWrapper(candidate, "root", ownExport, query));
+    }
+  }
+  return [...roots.values()].sort((left, right) => left.name.length - right.name.length);
 };
 
 export const proposeParents = (query: ParentQuery): Wrapper[] => {
@@ -151,5 +182,10 @@ export const proposeParents = (query: ParentQuery): Wrapper[] => {
     namedParents.length > 0 && !isNamedReachable
       ? [...outerRoots, ...namedParents, ...innerRoots]
       : [...namedParents, ...innerRoots, ...outerRoots];
-  return [...ordered, ...findSiblingParts(query), ...findContextProviders(query)];
+  return [
+    ...ordered,
+    ...findSiblingParts(query),
+    ...findContextProviders(query),
+    ...findRenderedRoots(query),
+  ];
 };

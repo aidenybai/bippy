@@ -12,7 +12,7 @@ import type {
   Wrapper,
 } from "./types";
 import { getPropCombinations } from "./props";
-import { findSiblingParts, getErrorSubject, resolveNamedParent, proposeParents } from "./wrappers";
+import { findRootParts, getErrorSubject, resolveNamedParent, proposeParents } from "./wrappers";
 import type { ParentQuery } from "./wrappers";
 
 export interface Observation {
@@ -119,12 +119,8 @@ class WrapperSearch {
       (await this.#addNamedParent(newestLayer, failedMount))
     )
       return "retry";
-    if (
-      isSameError &&
-      throwingLayer === undefined &&
-      (await this.#addSiblingParts(newestLayer, failedMount))
-    )
-      return "retry";
+    const isRootShort = isSameError ? throwingLayer === undefined : throwingLayer === newestLayer;
+    if (isRootShort && (await this.#addRootParts(newestLayer, failedMount))) return "retry";
     if (
       throwingLayer &&
       throwingLayer !== newestLayer &&
@@ -152,10 +148,11 @@ class WrapperSearch {
     );
   }
 
-  async #addSiblingParts(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
-    if (getLayerWrapper(newestLayer)?.source !== "root") return false;
+  async #addRootParts(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
+    const root = getLayerWrapper(newestLayer);
+    if (root?.source !== "root") return false;
     return this.#tryAddLayer(
-      findSiblingParts(this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount)),
+      findRootParts(root, this.#getQuery(this.#analysis.name, this.#analysis.file, failedMount)),
       failedMount.error,
       this.#layers.indexOf(newestLayer) + 1,
     );

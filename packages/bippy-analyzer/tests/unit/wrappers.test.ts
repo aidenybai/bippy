@@ -4,7 +4,11 @@ import type { ComponentAnalysis, Sample } from "../../src/core/types";
 import { parseExports } from "../conformance/verifier/source-index";
 import type { ExportedName, ProjectIndex } from "../conformance/verifier/types";
 import { createEmptyAnalysis } from "../../src/core/analyze-component";
-import { proposeParents, resolveNamedParent } from "../conformance/verifier/wrappers";
+import {
+  findRootParts,
+  proposeParents,
+  resolveNamedParent,
+} from "../conformance/verifier/wrappers";
 import type { ParentQuery } from "../conformance/verifier/wrappers";
 
 const DRAWER_FILE = "/app/ui/drawer.tsx";
@@ -125,6 +129,59 @@ describe("proposeParents", () => {
     expect(proposal?.candidate.props).toEqual({
       value: { kind: "Object", fields: {}, isOpen: true },
     });
+  });
+
+  it("offers the compound root of a part the component renders from another file", () => {
+    const commandFile = "/app/ui/command.tsx";
+    const optionFile = "/app/filters/option-item.tsx";
+    const project: ProjectIndex = {
+      ...createProject({
+        Command: [{ file: commandFile, exportName: "Command" }],
+        CommandItem: [{ file: commandFile, exportName: "CommandItem" }],
+        OptionItem: [{ file: optionFile, exportName: "OptionItem" }],
+      }),
+      imports: new Map([[optionFile, { packages: [], files: [commandFile] }]]),
+    };
+    const analysis = {
+      ...createAnalysis("OptionItem", optionFile),
+      renders: ["Checkbox", "CommandItem"],
+    };
+    expect(
+      proposeParents(
+        createQuery({
+          name: "OptionItem",
+          file: optionFile,
+          error: "Cannot read properties of undefined (reading 'subscribe')",
+          isNamingParent: false,
+          analysis,
+          project,
+        }),
+      ),
+    ).toEqual([
+      {
+        name: "Command",
+        source: "root",
+        candidate: { kind: "project", file: commandFile, exportName: "Command", props: {} },
+      },
+    ]);
+  });
+});
+
+describe("findRootParts", () => {
+  it("offers the other parts exported beside a root, except the component itself", () => {
+    const commandFile = "/app/ui/command.tsx";
+    const project = createProject({
+      Command: [{ file: commandFile, exportName: "Command" }],
+      CommandList: [{ file: commandFile, exportName: "CommandList" }],
+      CommandItem: [{ file: commandFile, exportName: "CommandItem" }],
+      CommandShortcut: [{ file: "/app/ui/shortcut.tsx", exportName: "CommandShortcut" }],
+    });
+    const query = createQuery({ name: "CommandItem", file: commandFile, project });
+    const roots = proposeParents(query).slice(0, 1);
+    expect(roots.map((wrapper) => wrapper.name)).toEqual(["Command"]);
+    expect(
+      roots.flatMap((root) => findRootParts(root, query)).map((wrapper) => wrapper.name),
+    ).toEqual(["CommandList"]);
   });
 });
 
