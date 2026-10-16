@@ -28,6 +28,7 @@ import {
 import { createStubPlugin } from "./harness/stubs";
 import {
   createCommonJsPlugin,
+  createImportMetaUrlFilterPlugin,
   createProbePlugin,
   createRequirePlugin,
   createJsxInScriptPlugin,
@@ -212,6 +213,7 @@ const createHarnessPlugins = (
     createLocalExportPlugin(context.localNamesByFile),
     createCommonJsPlugin(),
     createRequirePlugin(),
+    createImportMetaUrlFilterPlugin(),
     tsconfigPaths({ root: appDirectory }),
   ];
 };

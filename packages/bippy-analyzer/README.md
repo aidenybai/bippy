@@ -64,7 +64,7 @@ Some modules can't run in a browser, so they load as stand-ins that answer any a
 - Modules the app imports but doesn't have, like an undeclared package or a file missing from the repo.
 - Requests to other origins.
 
-Stylesheets load empty, since fibers don't depend on them. `next/image` loads images unoptimized, and an SVG imported as a component, like `logo.svg?react`, renders an `<svg>`. Navigations a script starts are cancelled.
+Stylesheets load empty, since fibers don't depend on them. `next/image` loads images unoptimized, and an SVG imported as a component, like `logo.svg?react`, renders an `<svg>`. Navigations a script starts are cancelled. Vite looks for `new URL(..., import.meta.url)` in every module with a pattern that overflows V8 on a dependency chunk of a few megabytes, like monaco-editor's, so the harness runs that search only on modules that mention `import.meta.url`.
 
 An async server component is awaited in the page, along with those it renders, and mounted as what it returned. An app that renders its own router, like its `App`, mounts outside the harness's router.
 

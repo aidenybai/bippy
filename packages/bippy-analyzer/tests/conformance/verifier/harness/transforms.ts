@@ -208,3 +208,16 @@ export const createProbePlugin = (probes: Probe[]): Plugin => {
     },
   };
 };
+
+const IMPORT_META_URL_PLUGIN_NAMES = ["vite:asset-import-meta-url", "vite:worker-import-meta-url"];
+
+export const createImportMetaUrlFilterPlugin = (): Plugin => ({
+  name: "bippy-verify-import-meta-url-filter",
+  configResolved: (config) => {
+    for (const plugin of config.plugins) {
+      if (!IMPORT_META_URL_PLUGIN_NAMES.includes(plugin.name)) continue;
+      if (typeof plugin.transform !== "object") continue;
+      plugin.transform.filter = { ...plugin.transform.filter, code: "import.meta.url" };
+    }
+  },
+});
