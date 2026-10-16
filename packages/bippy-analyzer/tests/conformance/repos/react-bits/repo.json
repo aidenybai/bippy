@@ -2,6 +2,6 @@
   "repository": "https://github.com/DavidHDev/react-bits",
   "revision": "496968c4117e21278f13917201b7d615bc5e7450",
   "workingDirectory": ".",
-  "tsconfig": "tsconfig.json",
+  "tsconfig": "tsconfig.conformance.json",
   "install": "npm ci --ignore-scripts --no-audit --no-fund"
 }
