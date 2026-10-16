@@ -1,16 +1,16 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import picocolors from "picocolors";
-import type { CollectSummary } from "./collect";
 import { runLocal } from "./local-environment";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos";
+import { formatTable, hasFailure, readRepoResult } from "./results";
+import type { RepoResult } from "./results";
 import { execFileSync } from "node:child_process";
 import {
   countCounterexamples,
   formatCounterexamples,
   formatMountFailures,
-  sum,
   summarizeVerdicts,
 } from "../verifier/score";
 import type { ComponentVerdict } from "../verifier/score";
@@ -19,6 +19,7 @@ import { getErrorChain } from "../verifier/reasons";
 
 interface RunOptions {
   out: string;
+  runName: string;
   concurrency: number;
   verify: boolean;
 }
@@ -29,22 +30,14 @@ interface VerifyCommandOptions {
   setup?: string;
 }
 
-interface RepoResult {
-  id: string;
-  revision: string;
-  summary: CollectSummary | null;
-  error: string | null;
-}
-
-const UNRESOLVED_TYPE_LIMIT = 0.2;
-const ERROR_PREVIEW_LINES = 6;
-
-const parseConcurrency = (value: string): number => {
-  const concurrency = Number(value);
-  if (!Number.isInteger(concurrency) || concurrency < 1)
-    throw new InvalidArgumentError("Concurrency must be a positive integer.");
-  return concurrency;
+const parsePositiveInteger = (value: string): number => {
+  const integer = Number(value);
+  if (!Number.isInteger(integer) || integer < 1)
+    throw new InvalidArgumentError("Expected a positive integer.");
+  return integer;
 };
+
+const getRunName = (): string => new Date().toISOString().replace(/[:.]/g, "-");
 
 const mapWithConcurrency = async <Item, Result>(
   items: Item[],
@@ -60,89 +53,16 @@ const mapWithConcurrency = async <Item, Result>(
   return results;
 };
 
-const isSetupSuspect = (summary: CollectSummary): boolean =>
-  summary.bindingCount > 0 &&
-  summary.unresolvedTypeBindingCount / summary.bindingCount > UNRESOLVED_TYPE_LIMIT;
-
-const TABLE_HEADER = [
-  "repo",
-  "files",
-  "components",
-  "states",
-  "handlers",
-  "unreachable",
-  "untyped",
-  "bailouts",
-  "verified",
-  "unmountable",
-  "counterexamples",
-  "covered",
-  "time",
-];
-
-const formatResultRow = ({ id, summary }: RepoResult): string[] => {
-  if (!summary) return [id, "failed"];
-  const { verification } = summary;
-  const bailoutCount = sum(Object.values(summary.bailoutCountsByReason), (count) => count);
-  return [
-    id,
-    String(summary.fileCount),
-    String(summary.componentCount),
-    String(summary.stateCount),
-    String(summary.handlerCount),
-    String(summary.unreachableBranchCount),
-    String(summary.untypedBindingCount),
-    String(bailoutCount),
-    verification ? String(verification.verifiedCount) : "-",
-    verification ? String(verification.unmountableCount) : "-",
-    verification ? String(verification.counterexampleCount) : "-",
-    verification ? `${verification.coveredStateCount}/${verification.predictedStateCount}` : "-",
-    `${summary.durationMs + (verification?.durationMs ?? 0)} ms`,
-  ];
-};
-
-const formatResultNotes = (results: RepoResult[]): string[] => {
-  const notes = results.flatMap(({ id, error }) =>
-    error
-      ? [picocolors.red(`${id}: ${error.split("\n").slice(0, ERROR_PREVIEW_LINES).join("\n  ")}`)]
-      : [],
-  );
-  for (const { id, summary } of results) {
-    if (summary?.verification && summary.verification.unmountableCount > 0)
-      notes.push(
-        picocolors.dim(
-          `${id}: couldn't mount ${formatMountFailures(summary.verification.mountFailureCounts)}`,
-        ),
-      );
-    if (summary && isSetupSuspect(summary)) {
-      notes.push(
-        picocolors.yellow(
-          `${id}: ${summary.unresolvedTypeBindingCount} of ${summary.bindingCount} bindings have unresolved types. Check that the install ran in the right directory.`,
-        ),
-      );
-    }
-  }
-  return notes;
-};
-
-const formatTable = (results: RepoResult[]): string => {
-  const rows = results.map(formatResultRow);
-  const widths = TABLE_HEADER.map((title, column) =>
-    Math.max(title.length, ...rows.map((row) => (row[column] ?? "").length)),
-  );
-  const formatRow = (row: string[]): string =>
-    row.map((cell, column) => cell.padEnd(widths[column] ?? 0)).join("  ");
-  const notes = formatResultNotes(results);
-  return [
-    picocolors.dim(formatRow(TABLE_HEADER)),
-    ...rows.map(formatRow),
-    ...(notes.length > 0 ? ["", ...notes] : []),
-  ].join("\n");
+const writeResults = (runDirectory: string, results: RepoResult[]): void => {
+  mkdirSync(runDirectory, { recursive: true });
+  writeFileSync(join(runDirectory, "results.json"), `${JSON.stringify(results, null, 2)}\n`);
+  console.log(formatTable(results));
+  console.log(picocolors.dim(`\nresults in ${runDirectory}`));
+  if (results.some(hasFailure)) process.exitCode = 1;
 };
 
 const run = async (ids: string[], options: RunOptions): Promise<void> => {
-  const runId = new Date().toISOString().replace(/[:.]/g, "-");
-  const runDirectory = join(options.out, runId);
+  const runDirectory = join(options.out, options.runName);
   const log = (line: string): void => console.error(picocolors.dim(line));
   const results = await mapWithConcurrency(
     loadRepos(ids),
@@ -165,10 +85,17 @@ const run = async (ids: string[], options: RunOptions): Promise<void> => {
       }
     },
   );
-  mkdirSync(runDirectory, { recursive: true });
-  writeFileSync(join(runDirectory, "results.json"), `${JSON.stringify(results, null, 2)}\n`);
-  console.log(formatTable(results));
-  console.log(picocolors.dim(`\nresults in ${runDirectory}`));
+  writeResults(runDirectory, results);
+};
+
+const report = (directory: string, ids: string[]): void => {
+  const presentIds = readdirSync(directory)
+    .filter((entry) => statSync(join(directory, entry)).isDirectory())
+    .sort();
+  const results = loadRepos(ids.length > 0 ? ids : presentIds).map((repo) =>
+    readRepoResult(repo, join(directory, repo.id)),
+  );
+  writeResults(directory, results);
 };
 
 const formatVerdict = (verdict: ComponentVerdict): string => {
@@ -208,9 +135,21 @@ program
   .description("Analyze and verify the pinned repos, and collect the results.")
   .argument("[ids...]", "repos to run (default: all)")
   .option("-o, --out <dir>", "results directory", join(CONFORMANCE_DIRECTORY, "results"))
-  .option("-n, --concurrency <n>", "repos to run at once", parseConcurrency, 1)
+  .option(
+    "--run-name <name>",
+    "name of this run's folder (default: the current time)",
+    getRunName(),
+  )
+  .option("-n, --concurrency <n>", "repos to run at once", parsePositiveInteger, 1)
   .option("--no-verify", "skip mounting components in a browser to check the analyzer's claims")
   .action(run);
+
+program
+  .command("report")
+  .description("Collect a run folder's per-repo results into results.json and print the table.")
+  .argument("<directory>", "a run folder with one subfolder per repo")
+  .argument("[ids...]", "repos to report (default: every subfolder)")
+  .action(report);
 
 program
   .command("verify")
