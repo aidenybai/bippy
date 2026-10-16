@@ -98,6 +98,7 @@ export const startProjectHarness = async (
 
 const MAX_PAGE_ATTEMPTS = 3;
 const HARNESS_LOAD_TIMEOUT_MS = 60_000;
+const BROWSER_ARGUMENTS = ["--disable-webgl"];
 const MAX_PAGES = 8;
 const PAGE_MEMORY_BYTES = 1.5 * 1024 ** 3;
 const RESERVED_MEMORY_BYTES = 2 * 1024 ** 3;
@@ -254,7 +255,7 @@ const verifyOnPages = async (
   components: AnalyzedComponent[],
   options: VerifyOptions,
 ): Promise<ComponentVerdict[]> => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ args: BROWSER_ARGUMENTS });
   const verdicts: ComponentVerdict[] = [];
   let nextIndex = 0;
   const verifyRemainingOnOnePage = async (pageIndex: number): Promise<void> => {
