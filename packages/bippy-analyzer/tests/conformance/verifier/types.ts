@@ -30,7 +30,7 @@ export type Shape =
   | { kind: "component"; name: string }
   | { kind: "text"; text: string };
 
-export type ProbeMode = "truthy" | "nullish" | "mutation" | "handler";
+export type ProbeMode = "truthy" | "nullish" | "mutation" | "handler" | "callbacks";
 
 export interface Probe {
   id: string;

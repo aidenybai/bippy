@@ -19,7 +19,7 @@ export const collectHandlerProbes = (analysis: ComponentAnalysis): HandlerProbe[
           file: prop.file,
           start: prop.loc.start.index,
           end: prop.loc.end.index,
-          mode: "handler",
+          mode: element.tag.kind === "BuiltinTag" ? "handler" : "callbacks",
         },
         handlerId: prop.handlerId,
       });

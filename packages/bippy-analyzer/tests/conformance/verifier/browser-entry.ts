@@ -296,10 +296,18 @@ const isSpreadProps = (value: unknown): value is object => {
   return Array.isArray(value) || prototype === Object.prototype || prototype === null;
 };
 
-const isWrappableMember = (spread: object, key: string | symbol, member: unknown): boolean => {
+const isWrappableMember = (
+  spread: object,
+  key: string | symbol,
+  member: unknown,
+  isEveryCallbackAHandler: boolean,
+): boolean => {
   const isHandlerMember =
-    typeof key === "string" && EVENT_PROP_PATTERN.test(key) && isHandlerFunction(member);
-  const isItemMember = Array.isArray(spread) && isSpreadProps(member) && !Array.isArray(member);
+    isHandlerFunction(member) &&
+    (isEveryCallbackAHandler || (typeof key === "string" && EVENT_PROP_PATTERN.test(key)));
+  const isItemMember =
+    isSpreadProps(member) &&
+    (isEveryCallbackAHandler || (Array.isArray(spread) && !Array.isArray(member)));
   if (!isHandlerMember && !isItemMember) return false;
   const descriptor = Reflect.getOwnPropertyDescriptor(spread, key);
   return (
@@ -307,7 +315,11 @@ const isWrappableMember = (spread: object, key: string | symbol, member: unknown
   );
 };
 
-const createHandlerProxy = (id: string, target: object): object =>
+const createHandlerProxy = (
+  id: string,
+  target: object,
+  isEveryCallbackAHandler: boolean,
+): object =>
   isHandlerFunction(target)
     ? new Proxy(target, {
         apply: (handler, thisArgument, callArguments) =>
@@ -316,22 +328,25 @@ const createHandlerProxy = (id: string, target: object): object =>
     : new Proxy(target, {
         get: (spread, key, receiver) => {
           const member: unknown = Reflect.get(spread, key, receiver);
-          return isWrappableMember(spread, key, member) ? wrapHandler(id, member) : member;
+          return isWrappableMember(spread, key, member, isEveryCallbackAHandler)
+            ? wrapHandler(id, member, isEveryCallbackAHandler)
+            : member;
         },
       });
 
-const wrapHandler = (id: string, value: unknown): unknown => {
+const wrapHandler = (id: string, value: unknown, isEveryCallbackAHandler = false): unknown => {
   if (!isHandlerFunction(value) && !isSpreadProps(value)) return value;
   const proxies = handlerProxies.get(value) ?? new Map<string, object>();
   handlerProxies.set(value, proxies);
-  const proxy = proxies.get(id) ?? createHandlerProxy(id, value);
+  const proxy = proxies.get(id) ?? createHandlerProxy(id, value, isEveryCallbackAHandler);
   proxies.set(id, proxy);
   return proxy;
 };
 
 globalThis.__bippyProbe = (id, mode, value) => {
   if (mode === "mutation") return recordMutationProbe(id, value);
-  if (mode === "handler") return wrapHandler(id, value);
+  if (mode === "handler" || mode === "callbacks")
+    return wrapHandler(id, value, mode === "callbacks");
   probeHits.push({
     id,
     isTrueSide: mode === "nullish" ? value !== null && value !== undefined : Boolean(value),
