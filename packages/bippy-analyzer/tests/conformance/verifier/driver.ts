@@ -119,6 +119,7 @@ class WrapperSearch {
       (await this.#addNamedParent(newestLayer, failedMount))
     )
       return "retry";
+    if (this.#namesMissingParent(failedMount)) return "unchanged";
     const isRootShort = isSameError ? throwingLayer === undefined : throwingLayer === newestLayer;
     if (isRootShort && (await this.#addRootParts(newestLayer, failedMount))) return "retry";
     if (
@@ -131,6 +132,12 @@ class WrapperSearch {
       return "retry";
     }
     return this.#advanceNewestLayer(newestLayer, failedMount, isSameError);
+  }
+
+  #namesMissingParent(failedMount: FailedMount): boolean {
+    if (failedMount.failure !== "provider") return false;
+    const named = resolveNamedParent(failedMount.error, this.#project);
+    return named !== null && !this.wrappers.some((wrapper) => wrapper.name === named);
   }
 
   async #addNamedParent(newestLayer: Layer, failedMount: FailedMount): Promise<boolean> {
