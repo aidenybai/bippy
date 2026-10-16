@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join, relative } from "node:path";
 import { Sandbox } from "@vercel/sandbox";
 import type { Command, CommandFinished } from "@vercel/sandbox";
@@ -147,7 +155,16 @@ interface StepOptions {
   cwd?: string;
   env?: Record<string, string>;
   sudo?: boolean;
+  onOutput?: LineLogger;
 }
+
+const forwardOutput = async (command: Command, onOutput: LineLogger): Promise<void> => {
+  try {
+    for await (const line of command.logs()) onOutput(line.data);
+  } catch {
+    return;
+  }
+};
 
 const runStep = async (
   sandbox: Sandbox,
@@ -156,13 +173,16 @@ const runStep = async (
   commandArguments: string[],
   options: StepOptions = {},
 ): Promise<void> => {
+  const { onOutput, ...commandOptions } = options;
   const command = await sandbox.runCommand({
     cmd: commandName,
     args: commandArguments,
-    ...options,
+    ...commandOptions,
     detached: true,
   });
+  const forwarding = onOutput ? forwardOutput(command, onOutput) : Promise.resolve();
   const finishedCommand = await waitForCommand(command);
+  await forwarding;
   if (finishedCommand.exitCode !== 0) {
     const output = await finishedCommand.output("both");
     throw new Error(
@@ -260,6 +280,7 @@ const runCollect = async (
   sandbox: Sandbox,
   repo: RepoConfig,
   shouldVerify: boolean,
+  onOutput: LineLogger,
 ): Promise<void> => {
   const tsconfigPath = `${APP_DIRECTORY}/${repo.workingDirectory}/${repo.tsconfig}`;
   await runStep(
@@ -278,6 +299,7 @@ const runCollect = async (
     {
       cwd: ANALYZER_DIRECTORY,
       env: { NODE_OPTIONS: `--max-old-space-size=${ANALYZER_HEAP_MB}` },
+      onOutput,
     },
   );
 };
@@ -306,6 +328,9 @@ export const runVercel = async (
   log: LineLogger,
 ): Promise<CollectSummary> => {
   const credentials = getCredentials();
+  mkdirSync(outputDirectory, { recursive: true });
+  const sandboxLogPath = join(outputDirectory, "sandbox.log");
+  const appendSandboxLog: LineLogger = (text) => appendFileSync(sandboxLogPath, text);
   const snapshotId = await runStage("setup", () => prepareSnapshot(repo, credentials, log));
   const sandbox = await runStage("sandbox creation", () =>
     Sandbox.create({
@@ -317,7 +342,7 @@ export const runVercel = async (
   );
   try {
     await runStage("upload", () => uploadAnalyzerSource(sandbox));
-    await runStage("analysis", () => runCollect(sandbox, repo, shouldVerify));
+    await runStage("analysis", () => runCollect(sandbox, repo, shouldVerify, appendSandboxLog));
     await runStage("download", () => downloadResults(sandbox, outputDirectory, shouldVerify));
     return JSON.parse(readFileSync(join(outputDirectory, "summary.json"), "utf8"));
   } finally {

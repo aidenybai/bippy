@@ -7,6 +7,7 @@ import type { AnalyzedComponent, BailoutReason } from "../../../src/core/types";
 import { sum, summarizeVerdicts } from "../verifier/score";
 import type { VerificationSummary } from "../verifier/score";
 import { verifyProject } from "../verifier/verify";
+import type { LineLogger } from "./repos";
 
 export interface CollectSummary {
   fileCount: number;
@@ -57,6 +58,7 @@ export const collect = async (
   outputDirectory: string,
   shouldVerify: boolean,
   setupDirectory: string | null,
+  onProgress?: LineLogger,
 ): Promise<CollectSummary> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
@@ -67,7 +69,14 @@ export const collect = async (
   writeFileSync(join(outputDirectory, "analysis.json"), serializeProjectAnalysis(projectAnalysis));
   let verification: VerificationSummary | null = null;
   if (shouldVerify) {
-    const report = await verifyProject(configPath, { analyzed: components, setupDirectory });
+    const report = await verifyProject(configPath, {
+      analyzed: components,
+      setupDirectory,
+      onComponent: (verdict) =>
+        onProgress?.(
+          `${Math.round(performance.now() - startTime)} ms ${verdict.status} ${verdict.name}`,
+        ),
+    });
     writeFileSync(join(outputDirectory, "verify.json"), `${JSON.stringify(report, null, 2)}\n`);
     verification = summarizeVerdicts(report.verdicts, report.durationMs);
   }
@@ -88,6 +97,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         outputDirectory,
         process.argv.includes("--verify"),
         setupIndex === -1 ? null : (process.argv[setupIndex + 1] ?? null),
+        (line) => console.error(line),
       ),
     ),
   );
