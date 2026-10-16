@@ -44,6 +44,8 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `analyze-component.ts`      | Runs our passes on one component's HIR                                           |
 | `type-provider.ts`          | Types the compiler's HIR from the TS checker                                     |
 | `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept               |
+| `control-flow-walker.ts`    | Walks the HIR blocks: branches, switches, loops, phis and catch handlers         |
+| `walk-state.ts`             | The guards and async flag a walk carries                                         |
 | `binding-table.ts`          | The interpreter's bindings, one per declaration, and each place's domain         |
 | `function-registry.ts`      | Functions values refer to, the file each came from, and closure captures         |
 | `external-sources.ts`       | Hooks, contexts and stores: values that change from outside                      |
