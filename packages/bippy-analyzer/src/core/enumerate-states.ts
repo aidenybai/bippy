@@ -607,6 +607,22 @@ const withDecidedOutcomes = (
     ]),
   );
 
+const createTransitionContext = (
+  regionBranches: RegionBranches,
+  alternatives: Alternative[],
+  firstStateIndex: number,
+  context: EnumerationContext,
+): TransitionContext => ({
+  analysis: context.analysis,
+  reachableConstraints: context.reachableConstraints,
+  dependentsByBinding: context.dependentsByBinding,
+  targetEnumerator: new StateEnumerator(new Map(), regionBranches),
+  stateIndicesByKey: getStateIndicesByKey(alternatives),
+  targetIndicesByConstraints: new Map(),
+  firstStateIndex,
+  budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
+});
+
 const enumerateRegion = (
   regionBranches: RegionBranches,
   regionIndex: number,
@@ -616,16 +632,12 @@ const enumerateRegion = (
   const { analysis, effectIds } = context;
   const enumerator = new StateEnumerator(context.branchOutcomes, regionBranches);
   const alternatives = enumerator.enumerate(analysis.render, context.reachableConstraints);
-  const transitionContext: TransitionContext = {
-    analysis,
-    reachableConstraints: context.reachableConstraints,
-    dependentsByBinding: context.dependentsByBinding,
-    targetEnumerator: new StateEnumerator(new Map(), regionBranches),
-    stateIndicesByKey: getStateIndicesByKey(alternatives),
-    targetIndicesByConstraints: new Map(),
+  const transitionContext = createTransitionContext(
+    regionBranches,
+    alternatives,
     firstStateIndex,
-    budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
-  };
+    context,
+  );
   const regionHandlers = getRegionHandlers(analysis, regionBranches);
   const getTransitions = (alternative: Alternative): Transition[] => {
     const renderedHandlerIds = new Set([...effectIds, ...collectHandlerIds(alternative.render)]);
