@@ -51,7 +51,7 @@ const getTypeExportNames = (statement: types.Statement): string[] => {
   );
 };
 
-const parseBody = (code: string): types.Statement[] =>
+export const parseBody = (code: string): types.Statement[] =>
   parse(code, { sourceType: "module", plugins: PARSER_PLUGINS, errorRecovery: true }).program.body;
 
 const readTypeOnlyNames = (file: string): Set<string> => {
