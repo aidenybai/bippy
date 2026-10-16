@@ -446,12 +446,18 @@ const getTargetStateIndices = (
 class StateEnumerator {
   readonly #branchOutcomes: BranchOutcomes;
   readonly #region: RegionBranches;
+  readonly #shouldDescribeStates: boolean;
   readonly #alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
   #isTruncated = false;
 
-  constructor(branchOutcomes: BranchOutcomes, region: RegionBranches) {
+  constructor(
+    branchOutcomes: BranchOutcomes,
+    region: RegionBranches,
+    shouldDescribeStates: boolean,
+  ) {
     this.#branchOutcomes = branchOutcomes;
     this.#region = region;
+    this.#shouldDescribeStates = shouldDescribeStates;
   }
 
   get isTruncated(): boolean {
@@ -501,29 +507,36 @@ class StateEnumerator {
     if (!this.#region.branchKeys.has(branchKey)) return [createLeaf(constraints, conditional)];
     const alternatives: Alternative[] = [];
     const test = getTestExpression(conditional);
-    const isDecided = evaluateCondition(test, constraints) !== null;
     for (const isTrue of [true, false]) {
       const withOutcome = assumeCondition(test, isTrue, constraints);
       if (!withOutcome) continue;
       this.#recordOutcome(branchKey, isTrue);
-      const simplifiedTest = simplifyDecidedConditionals(test, constraints);
-      const conditionLabel = isTrue
-        ? formatSymbolicValue(simplifiedTest)
-        : formatNegated(simplifiedTest);
+      const conditionLabel = this.#getConditionLabel(test, isTrue, constraints);
       const arm = isTrue ? conditional.consequent : conditional.alternate;
       for (const alternative of this.enumerate(arm, withOutcome)) {
         if (!this.#hasRoomFor(alternatives.length)) break;
         alternatives.push({
           ...alternative,
-          fragments: [alternative.render],
-          conditions: isDecided
-            ? alternative.conditions
-            : [conditionLabel, ...alternative.conditions],
+          fragments: this.#shouldDescribeStates ? [alternative.render] : [],
+          conditions:
+            conditionLabel === null
+              ? alternative.conditions
+              : [conditionLabel, ...alternative.conditions],
           branches: new Set([...alternative.branches, `${branchKey}:${isTrue}`]),
         });
       }
     }
     return alternatives;
+  }
+
+  #getConditionLabel(
+    test: SymbolicValue,
+    isTrue: boolean,
+    constraints: Constraints,
+  ): string | null {
+    if (!this.#shouldDescribeStates || evaluateCondition(test, constraints) !== null) return null;
+    const simplifiedTest = simplifyDecidedConditionals(test, constraints);
+    return isTrue ? formatSymbolicValue(simplifiedTest) : formatNegated(simplifiedTest);
   }
 
   #enumerateChildren(element: JsxContainerValue, constraints: Constraints): Alternative[] {
@@ -538,7 +551,9 @@ class StateEnumerator {
           if (!this.#hasRoomFor(nextPartials.length)) break;
           nextPartials.push({
             constraints: childAlternative.constraints,
-            children: [...partial.children, childAlternative.render],
+            children: this.#shouldDescribeStates
+              ? [...partial.children, childAlternative.render]
+              : partial.children,
             fragments: [...partial.fragments, ...childAlternative.fragments],
             conditions: [...partial.conditions, ...childAlternative.conditions],
             branches: new Set([...partial.branches, ...childAlternative.branches]),
@@ -549,7 +564,7 @@ class StateEnumerator {
     }
     return partials.map((partial) => ({
       constraints: partial.constraints,
-      render: { ...element, children: partial.children },
+      render: this.#shouldDescribeStates ? { ...element, children: partial.children } : element,
       fragments: partial.fragments,
       conditions: partial.conditions,
       branches: partial.branches,
@@ -628,7 +643,7 @@ const createTransitionContext = (
   analysis: context.analysis,
   reachableConstraints: context.reachableConstraints,
   dependentsByBinding: context.dependentsByBinding,
-  targetEnumerator: new StateEnumerator(new Map(), regionBranches),
+  targetEnumerator: new StateEnumerator(new Map(), regionBranches, false),
   stateIndicesByKey: getStateIndicesByKey(alternatives),
   targetIndicesByConstraints: new Map(),
   updateSequencesByHandler: new Map(),
@@ -643,7 +658,7 @@ const enumerateRegion = (
   context: EnumerationContext,
 ): EnumeratedRegion => {
   const { analysis, effectIds } = context;
-  const enumerator = new StateEnumerator(context.branchOutcomes, regionBranches);
+  const enumerator = new StateEnumerator(context.branchOutcomes, regionBranches, true);
   const alternatives = enumerator.enumerate(analysis.render, context.reachableConstraints);
   const transitionContext = createTransitionContext(
     regionBranches,
