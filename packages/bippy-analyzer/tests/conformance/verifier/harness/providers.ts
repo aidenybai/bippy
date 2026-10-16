@@ -77,6 +77,14 @@ const PROVIDER_SPECS: ProviderSpec[] = [
     wrap: (children) => `createElement(FormProvider, useForm(), ${children})`,
   },
   {
+    packageName: "@chakra-ui/react",
+    imports: [
+      'import * as Chakra from "@chakra-ui/react";',
+      "const CHAKRA_PROPS = Chakra.defaultSystem ? { value: Chakra.defaultSystem } : {};",
+    ].join("\n"),
+    wrap: (children) => `createElement(Chakra.ChakraProvider, CHAKRA_PROPS, ${children})`,
+  },
+  {
     packageName: "@mui/material",
     modules: ["@mui/material/styles"],
     imports: [
