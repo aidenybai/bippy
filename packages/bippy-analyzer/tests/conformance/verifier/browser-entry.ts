@@ -290,6 +290,23 @@ const callHandler = (
   return Reflect.apply(handler, thisArgument, callArguments);
 };
 
+const isSpreadProps = (value: unknown): value is object => {
+  if (typeof value !== "object" || value === null || Object.isFrozen(value)) return false;
+  const prototype: unknown = Object.getPrototypeOf(value);
+  return Array.isArray(value) || prototype === Object.prototype || prototype === null;
+};
+
+const isWrappableMember = (spread: object, key: string | symbol, member: unknown): boolean => {
+  const isHandlerMember =
+    typeof key === "string" && EVENT_PROP_PATTERN.test(key) && isHandlerFunction(member);
+  const isItemMember = Array.isArray(spread) && isSpreadProps(member) && !Array.isArray(member);
+  if (!isHandlerMember && !isItemMember) return false;
+  const descriptor = Reflect.getOwnPropertyDescriptor(spread, key);
+  return (
+    descriptor === undefined || descriptor.configurable === true || descriptor.writable === true
+  );
+};
+
 const createHandlerProxy = (id: string, target: object): object =>
   isHandlerFunction(target)
     ? new Proxy(target, {
@@ -297,14 +314,14 @@ const createHandlerProxy = (id: string, target: object): object =>
           callHandler(id, handler, thisArgument, callArguments),
       })
     : new Proxy(target, {
-        get: (spread, key, receiver) => wrapHandler(id, Reflect.get(spread, key, receiver)),
+        get: (spread, key, receiver) => {
+          const member: unknown = Reflect.get(spread, key, receiver);
+          return isWrappableMember(spread, key, member) ? wrapHandler(id, member) : member;
+        },
       });
 
 const wrapHandler = (id: string, value: unknown): unknown => {
-  const isWrappable =
-    typeof value === "function" ||
-    (typeof value === "object" && value !== null && isPlainRecord(value));
-  if (!isWrappable) return value;
+  if (!isHandlerFunction(value) && !isSpreadProps(value)) return value;
   const proxies = handlerProxies.get(value) ?? new Map<string, object>();
   handlerProxies.set(value, proxies);
   const proxy = proxies.get(id) ?? createHandlerProxy(id, value);
