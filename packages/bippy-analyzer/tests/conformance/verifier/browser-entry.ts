@@ -117,7 +117,13 @@ interface MountedComponent {
 }
 
 const ANONYMOUS_NAME = "Anonymous";
-const OPEN_PARENT_PROPS = { open: true, defaultOpen: true, type: "single", collapsible: true };
+const OPEN_PARENT_PROPS = {
+  open: true,
+  defaultOpen: true,
+  isOpen: true,
+  type: "single",
+  collapsible: true,
+};
 const SETTLE_MS = 40;
 const MAX_CAPTURED_FIBERS = 10_000;
 const MAX_SETTLE_MS = 3000;
