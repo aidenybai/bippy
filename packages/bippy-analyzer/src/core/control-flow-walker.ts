@@ -228,27 +228,43 @@ export class ControlFlowWalker {
   ): Outcome {
     const caseStops = new Set([...stops, terminal.fallthrough]);
     const discriminant = this.#interpreter.read(terminal.test);
-    const buildCaseOutcome = (caseIndex: number): Outcome => {
+    const buildCaseOutcome = (caseIndex: number, guards: SymbolicValue[]): Outcome => {
       const switchCase = terminal.cases[caseIndex];
       if (!switchCase) return { kind: "Fallthrough", from, to: terminal.fallthrough };
+      const caseTestNode = switchCase.test;
+      const caseTest =
+        caseTestNode === null
+          ? null
+          : foldBinary("===", discriminant, this.#interpreter.read(caseTestNode));
+      const isSplit = caseTest !== null && caseTest.kind !== "Primitive";
       const caseOutcome: Outcome =
         switchCase.block === terminal.fallthrough
           ? { kind: "Fallthrough", from, to: terminal.fallthrough }
-          : this.walk(switchCase.block, caseStops, from, walkState, "unresolved");
-      if (switchCase.test === null) return caseOutcome;
-      const caseTest = foldBinary("===", discriminant, this.#interpreter.read(switchCase.test));
+          : this.walk(
+              switchCase.block,
+              caseStops,
+              from,
+              { ...walkState, guards: isSplit ? [...guards, caseTest] : guards },
+              "unresolved",
+            );
+      if (caseTestNode === null || caseTest === null) return caseOutcome;
       if (caseTest.kind === "Primitive")
-        return caseTest.value ? caseOutcome : buildCaseOutcome(caseIndex + 1);
+        return caseTest.value ? caseOutcome : buildCaseOutcome(caseIndex + 1, guards);
       return {
         kind: "Split",
         test: caseTest,
         testKind: "truthy",
-        branch: this.#interpreter.createBranch(terminal.id, switchCase.test.loc, "none"),
+        branch: this.#interpreter.createBranch(terminal.id, caseTestNode.loc, "none"),
         consequent: caseOutcome,
-        alternate: buildCaseOutcome(caseIndex + 1),
+        alternate: buildCaseOutcome(caseIndex + 1, [...guards, negate(caseTest)]),
       };
     };
-    return this.#continueAfter(buildCaseOutcome(0), terminal.fallthrough, stops, walkState);
+    return this.#continueAfter(
+      buildCaseOutcome(0, walkState.guards),
+      terminal.fallthrough,
+      stops,
+      walkState,
+    );
   }
 
   #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, walkState: WalkState): Outcome {
