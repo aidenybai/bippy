@@ -82,6 +82,7 @@ interface TransitionContext extends ReachabilityContext {
   targetEnumerator: StateEnumerator;
   stateIndicesByKey: Map<string, number[]>;
   targetIndicesByConstraints: Map<string, number[]>;
+  updateSequencesByHandler: Map<string, StateUpdate[][]>;
   firstStateIndex: number;
 }
 
@@ -413,13 +414,24 @@ const getCachedTargetIndices = (
   return targetIndices;
 };
 
+const getCachedUpdateSequences = (
+  handler: Handler,
+  context: TransitionContext,
+): StateUpdate[][] => {
+  const cachedSequences = context.updateSequencesByHandler.get(handler.id);
+  if (cachedSequences) return cachedSequences;
+  const sequences = getHandlerUpdateSequences(handler, context.budget);
+  context.updateSequencesByHandler.set(handler.id, sequences);
+  return sequences;
+};
+
 const getTargetStateIndices = (
   handler: Handler,
   constraints: Constraints,
   context: TransitionContext,
 ): Set<number> => {
   const targetIndices = new Set<number>();
-  for (const updates of getHandlerUpdateSequences(handler, context.budget)) {
+  for (const updates of getCachedUpdateSequences(handler, context)) {
     if (context.budget.remainingTargetEnumerations <= 0) {
       context.budget.isExhausted = true;
       break;
@@ -619,6 +631,7 @@ const createTransitionContext = (
   targetEnumerator: new StateEnumerator(new Map(), regionBranches),
   stateIndicesByKey: getStateIndicesByKey(alternatives),
   targetIndicesByConstraints: new Map(),
+  updateSequencesByHandler: new Map(),
   firstStateIndex,
   budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
 });
