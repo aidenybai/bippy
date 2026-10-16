@@ -1498,11 +1498,15 @@ export class Interpreter {
             name: attribute.name,
             value: this.read(attribute.place),
             handlerId: null,
+            loc: attribute.place.loc,
+            file: this.#resolver.fileName,
           }
         : {
             kind: "JsxSpreadAttribute",
             value: this.read(attribute.argument),
             handlerId: null,
+            loc: attribute.argument.loc,
+            file: this.#resolver.fileName,
           },
     );
   }
@@ -1537,6 +1541,7 @@ export class Interpreter {
         props,
         children: (element.children ?? []).map((child) => this.read(child)),
         loc: element.loc,
+        file: this.#resolver.fileName,
       },
       this.renderedComponents,
     );

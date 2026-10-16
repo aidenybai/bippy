@@ -164,7 +164,15 @@ describe("matchesExpected", () => {
     const label: SymbolicValue = {
       kind: "JsxExpression",
       tag: { kind: "BuiltinTag", name: "label" },
-      props: [{ kind: "JsxSpreadAttribute", value: binding("labelProps"), handlerId: null }],
+      props: [
+        {
+          kind: "JsxSpreadAttribute",
+          value: binding("labelProps"),
+          handlerId: null,
+          loc: GeneratedSource,
+          file: "",
+        },
+      ],
       children: [],
       loc: GeneratedSource,
     };

@@ -81,12 +81,16 @@ export interface JsxProp {
   name: string;
   value: SymbolicValue;
   handlerId: string | null;
+  loc: SourceLocation;
+  file: string;
 }
 
 export interface JsxSpreadProp {
   kind: "JsxSpreadAttribute";
   value: SymbolicValue;
   handlerId: string | null;
+  loc: SourceLocation;
+  file: string;
 }
 
 export type JsxTag =

@@ -1,5 +1,5 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
-import type { JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "./types";
+import type { FunctionValue, JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "./types";
 
 const DYNAMIC_TAG_NAME = "Dynamic";
 
@@ -10,6 +10,7 @@ interface JsxElementParts {
   props: Array<JsxProp | JsxSpreadProp>;
   children: SymbolicValue[];
   loc: SourceLocation;
+  file: string;
 }
 
 const getJsxTag = (tag: SymbolicValue, elementParts: JsxElementParts): JsxTag => {
@@ -26,24 +27,28 @@ const getJsxTag = (tag: SymbolicValue, elementParts: JsxElementParts): JsxTag =>
   return { kind: "DynamicTag", name: DYNAMIC_TAG_NAME };
 };
 
-const createFunctionProp = (name: string, value: SymbolicValue): JsxProp => ({
+const createFunctionProp = (name: string, value: FunctionValue, file: string): JsxProp => ({
   kind: "JsxAttribute",
   name,
   value,
   handlerId: null,
+  loc: value.loc,
+  file,
 });
 
 const getRenderFunctionProps = (
   tag: SymbolicValue,
   jsxTag: JsxTag,
-  children: SymbolicValue[],
+  elementParts: JsxElementParts,
 ): JsxProp[] => {
   const renderPropChildren =
-    jsxTag.kind === "BuiltinTag" ? [] : children.filter((child) => child.kind === "Function");
+    jsxTag.kind === "BuiltinTag"
+      ? []
+      : elementParts.children.filter((child): child is FunctionValue => child.kind === "Function");
   const renderFunctions = tag.kind === "Function" ? [tag] : [];
   return [
-    ...renderPropChildren.map((value) => createFunctionProp("children", value)),
-    ...renderFunctions.map((value) => createFunctionProp("render", value)),
+    ...renderPropChildren.map((value) => createFunctionProp("children", value, elementParts.file)),
+    ...renderFunctions.map((value) => createFunctionProp("render", value, elementParts.file)),
   ];
 };
 
@@ -63,7 +68,7 @@ export const buildJsx = (
   return {
     kind: "JsxExpression",
     tag: jsxTag,
-    props: [...elementParts.props, ...getRenderFunctionProps(tag, jsxTag, elementParts.children)],
+    props: [...elementParts.props, ...getRenderFunctionProps(tag, jsxTag, elementParts)],
     children: elementParts.children,
     loc: elementParts.loc,
   };

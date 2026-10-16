@@ -44,14 +44,16 @@ const isCallable = (value: SymbolicValue): boolean =>
 
 const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
-const getSpreadHandlers = (tag: JsxTag, value: SymbolicValue): SymbolicValue | null => {
-  if (value.kind !== "ObjectExpression") return null;
-  const properties = value.properties.filter((property) =>
+const getSpreadHandlers = (tag: JsxTag, prop: JsxSpreadProp): SymbolicValue | null => {
+  if (prop.value.kind !== "ObjectExpression") return null;
+  const properties = prop.value.properties.filter((property) =>
     isHandlerProp(tag, {
       kind: "JsxAttribute",
       name: property.key,
       value: property.value,
       handlerId: null,
+      loc: prop.loc,
+      file: prop.file,
     }),
   );
   return properties.length > 0 ? { kind: "ObjectExpression", properties, spreads: [] } : null;
@@ -159,7 +161,7 @@ class HandlerCollector {
       prop.handlerId = this.addHandler(trigger, prop.value, [], prop.value.loc);
       return;
     }
-    const spreadHandlers = getSpreadHandlers(element.tag, prop.value);
+    const spreadHandlers = getSpreadHandlers(element.tag, prop);
     const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
     if (spreadHandlers && spreadHandlerKey)
       prop.handlerId = this.#addEventHandler(
