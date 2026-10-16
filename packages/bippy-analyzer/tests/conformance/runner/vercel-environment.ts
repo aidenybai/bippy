@@ -8,7 +8,7 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { Sandbox } from "@vercel/sandbox";
 import type { Command, CommandFinished } from "@vercel/sandbox";
 import type { CollectSummary } from "./collect";
@@ -102,9 +102,17 @@ const writeSnapshot = (id: string, record: SnapshotRecord): void => {
   );
 };
 
+const findInstalledPackageJson = (name: string): string | null => {
+  for (let directory = PACKAGE_DIRECTORY; ; directory = dirname(directory)) {
+    const packageJsonPath = join(directory, "node_modules", name, "package.json");
+    if (existsSync(packageJsonPath)) return packageJsonPath;
+    if (dirname(directory) === directory) return null;
+  }
+};
+
 const getInstalledVersion = (name: string): string | null => {
-  const packageJsonPath = join(PACKAGE_DIRECTORY, "node_modules", name, "package.json");
-  if (!existsSync(packageJsonPath)) return null;
+  const packageJsonPath = findInstalledPackageJson(name);
+  if (packageJsonPath === null) return null;
   const version: unknown = Reflect.get(
     Object(JSON.parse(readFileSync(packageJsonPath, "utf8"))),
     "version",
