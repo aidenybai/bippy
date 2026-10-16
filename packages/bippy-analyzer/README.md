@@ -81,7 +81,7 @@ A component may throw for want of a parent, like "`DialogTitle` must be used wit
 
 A project parent mounts with the props its own analysis samples. A context provider mounts with a sample of the value the component reads.
 
-The new parent goes just outside whichever mounted component threw, read from React's component stack. A parent that doesn't fix the error, or doesn't render the component, gives way to the next. A parent that throws the same error itself is the right one, so it gets a parent of its own. An earlier parent that then throws for want of data is dropped, since an outer parent now provides what it stood in for.
+The new parent goes just outside whichever mounted component threw, read from React's component stack. A parent that doesn't fix the error, or doesn't render the component, gives way to the next. A parent that throws the same error itself is the right one, so it gets a parent of its own. A parent that throws a different error naming a parent the stack lacks, like a toast root needing its provider, gets that parent outside it. An earlier parent that then throws for want of data is dropped, since an outer parent now provides what it stood in for.
 
 ## Props
 
