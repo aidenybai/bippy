@@ -51,6 +51,14 @@ interface BranchTest {
   knownOutcome: boolean | null;
 }
 
+interface SwitchWalk {
+  terminal: SwitchTerminal;
+  from: BlockId;
+  caseStops: ReadonlySet<BlockId>;
+  discriminant: SymbolicValue;
+  walkState: WalkState;
+}
+
 const MAX_BLOCK_VISITS = 20_000;
 const MAX_WALK_DEPTH = 256;
 const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
@@ -226,45 +234,52 @@ export class ControlFlowWalker {
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
   ): Outcome {
-    const caseStops = new Set([...stops, terminal.fallthrough]);
-    const discriminant = this.#interpreter.read(terminal.test);
-    const buildCaseOutcome = (caseIndex: number, guards: SymbolicValue[]): Outcome => {
-      const switchCase = terminal.cases[caseIndex];
-      if (!switchCase) return { kind: "Fallthrough", from, to: terminal.fallthrough };
-      const caseTestNode = switchCase.test;
-      const caseTest =
-        caseTestNode === null
-          ? null
-          : foldBinary("===", discriminant, this.#interpreter.read(caseTestNode));
-      const isSplit = caseTest !== null && caseTest.kind !== "Primitive";
-      const caseOutcome: Outcome =
-        switchCase.block === terminal.fallthrough
-          ? { kind: "Fallthrough", from, to: terminal.fallthrough }
-          : this.walk(
-              switchCase.block,
-              caseStops,
-              from,
-              { ...walkState, guards: isSplit ? [...guards, caseTest] : guards },
-              "unresolved",
-            );
-      if (caseTestNode === null || caseTest === null) return caseOutcome;
-      if (caseTest.kind === "Primitive")
-        return caseTest.value ? caseOutcome : buildCaseOutcome(caseIndex + 1, guards);
-      return {
-        kind: "Split",
-        test: caseTest,
-        testKind: "truthy",
-        branch: this.#interpreter.createBranch(terminal.id, caseTestNode.loc, "none"),
-        consequent: caseOutcome,
-        alternate: buildCaseOutcome(caseIndex + 1, [...guards, negate(caseTest)]),
-      };
+    const switchWalk: SwitchWalk = {
+      terminal,
+      from,
+      caseStops: new Set([...stops, terminal.fallthrough]),
+      discriminant: this.#interpreter.read(terminal.test),
+      walkState,
     };
     return this.#continueAfter(
-      buildCaseOutcome(0, walkState.guards),
+      this.#walkSwitchCase(switchWalk, 0, walkState.guards),
       terminal.fallthrough,
       stops,
       walkState,
     );
+  }
+
+  #walkSwitchCase(switchWalk: SwitchWalk, caseIndex: number, guards: SymbolicValue[]): Outcome {
+    const { terminal, from, caseStops, discriminant, walkState } = switchWalk;
+    const switchCase = terminal.cases[caseIndex];
+    if (!switchCase) return { kind: "Fallthrough", from, to: terminal.fallthrough };
+    const caseTestNode = switchCase.test;
+    const caseTest =
+      caseTestNode === null
+        ? null
+        : foldBinary("===", discriminant, this.#interpreter.read(caseTestNode));
+    const isSplit = caseTest !== null && caseTest.kind !== "Primitive";
+    const caseOutcome: Outcome =
+      switchCase.block === terminal.fallthrough
+        ? { kind: "Fallthrough", from, to: terminal.fallthrough }
+        : this.walk(
+            switchCase.block,
+            caseStops,
+            from,
+            { ...walkState, guards: isSplit ? [...guards, caseTest] : guards },
+            "unresolved",
+          );
+    if (caseTestNode === null || caseTest === null) return caseOutcome;
+    if (caseTest.kind === "Primitive")
+      return caseTest.value ? caseOutcome : this.#walkSwitchCase(switchWalk, caseIndex + 1, guards);
+    return {
+      kind: "Split",
+      test: caseTest,
+      testKind: "truthy",
+      branch: this.#interpreter.createBranch(terminal.id, caseTestNode.loc, "none"),
+      consequent: caseOutcome,
+      alternate: this.#walkSwitchCase(switchWalk, caseIndex + 1, [...guards, negate(caseTest)]),
+    };
   }
 
   #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, walkState: WalkState): Outcome {
