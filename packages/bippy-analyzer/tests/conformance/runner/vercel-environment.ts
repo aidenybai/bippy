@@ -44,6 +44,7 @@ const SETUP_TIMEOUT_MS = 30 * 60 * 1000;
 const RUN_TIMEOUT_MS = 180 * 60 * 1000;
 const SANDBOX_RESOURCES = { vcpus: 8 };
 const ANALYZER_HEAP_MB = 8192;
+const COMPONENT_BUDGET_MS = 60_000;
 const OUTPUT_TAIL_LENGTH = 8000;
 const MAX_WAIT_ATTEMPTS = 5;
 const HELD_WAIT_MS = 60_000;
@@ -291,7 +292,7 @@ const runCollect = async (
       "tests/conformance/runner/collect.ts",
       tsconfigPath,
       OUTPUT_DIRECTORY,
-      ...(shouldVerify ? ["--verify"] : []),
+      ...(shouldVerify ? ["--verify", "--component-budget", String(COMPONENT_BUDGET_MS)] : []),
       ...(repo.setupDirectory
         ? ["--setup", `${ANALYZER_DIRECTORY}/${relative(PACKAGE_DIRECTORY, repo.setupDirectory)}`]
         : []),

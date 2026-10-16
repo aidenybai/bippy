@@ -268,6 +268,7 @@ const explorePropCombination = async (
   page: Page,
   request: MountRequest,
   initialCapture: Capture,
+  deadline: number,
 ): Promise<Observation[]> => {
   const { props } = request;
   const observations: Observation[] = [
@@ -277,12 +278,14 @@ const explorePropCombination = async (
   const seenCaptureKeys = new Set([getCaptureKey(initialCapture)]);
   const pendingPaths: string[][] = [[]];
   let actionCount = 0;
+  const hasBudget = (): boolean =>
+    actionCount < MAX_ACTIONS_PER_COMBINATION && performance.now() < deadline;
   for (const currentPath of pendingPaths) {
-    if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
+    if (!hasBudget()) break;
     if (currentPath.length >= MAX_ACTION_DEPTH) continue;
     if (currentPath.length > 0 && !(await replayPath(page, request, currentPath))) continue;
     for (const action of await listActionsInPage(page)) {
-      if (actionCount >= MAX_ACTIONS_PER_COMBINATION) break;
+      if (!hasBudget()) break;
       const before = await replayPath(page, request, currentPath);
       if (!before) continue;
       const after = await performInPage(page, action.key);
@@ -305,7 +308,9 @@ export const exploreComponent = async (
   analysis: ComponentAnalysis,
   module: ComponentModule,
   project: ProjectIndex,
+  budgetMs: number,
 ): Promise<Observation[]> => {
+  const deadline = performance.now() + budgetMs;
   const { exportName } = analysis;
   if (!exportName) return [];
   const propCombinations = getPropCombinations(analysis);
@@ -318,6 +323,7 @@ export const exploreComponent = async (
   );
   const observations: Observation[] = [];
   for (const props of propCombinations) {
+    if (observations.length > 0 && performance.now() >= deadline) break;
     const request: MountRequest = {
       module,
       exportName,
@@ -329,7 +335,7 @@ export const exploreComponent = async (
       resolved.mounted && props === propCombinations[0]
         ? resolved.mounted
         : await mountInPage(page, request);
-    observations.push(...(await explorePropCombination(page, request, initialCapture)));
+    observations.push(...(await explorePropCombination(page, request, initialCapture, deadline)));
   }
   return observations;
 };

@@ -59,6 +59,7 @@ export const collect = async (
   shouldVerify: boolean,
   setupDirectory: string | null,
   onProgress?: LineLogger,
+  componentBudgetMs?: number,
 ): Promise<CollectSummary> => {
   const startTime = performance.now();
   const configPath = resolve(tsconfigPath);
@@ -71,6 +72,7 @@ export const collect = async (
   if (shouldVerify) {
     const report = await verifyProject(configPath, {
       analyzed: components,
+      componentBudgetMs,
       setupDirectory,
       onStart: (componentName) =>
         onProgress?.(`${Math.round(performance.now() - startTime)} ms starting ${componentName}`),
@@ -90,8 +92,12 @@ export const collect = async (
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [tsconfigPath, outputDirectory] = process.argv.slice(2);
   if (!tsconfigPath || !outputDirectory)
-    throw new Error("Usage: collect.ts <tsconfig> <outputDirectory> [--verify] [--setup <dir>]");
+    throw new Error(
+      "Usage: collect.ts <tsconfig> <outputDirectory> [--verify] [--setup <dir>] [--component-budget <ms>]",
+    );
   const setupIndex = process.argv.indexOf("--setup");
+  const budgetIndex = process.argv.indexOf("--component-budget");
+  const budgetArgument = budgetIndex === -1 ? undefined : process.argv[budgetIndex + 1];
   console.log(
     JSON.stringify(
       await collect(
@@ -100,6 +106,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         process.argv.includes("--verify"),
         setupIndex === -1 ? null : (process.argv[setupIndex + 1] ?? null),
         (line) => console.error(line),
+        budgetArgument === undefined ? undefined : Number(budgetArgument),
       ),
     ),
   );

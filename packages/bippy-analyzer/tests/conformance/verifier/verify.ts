@@ -131,6 +131,7 @@ export const openPage = async (browser: Browser, url: string): Promise<Page> => 
 
 interface VerifyOptions {
   analyzed?: AnalyzedComponent[];
+  componentBudgetMs?: number;
   componentNames?: string[];
   onComponent?: (verdict: ComponentVerdict) => void;
   onStart?: (componentName: string) => void;
@@ -161,6 +162,7 @@ const verifyComponent = async (
   page: Page,
   component: AnalyzedComponent,
   harness: ProjectHarness,
+  budgetMs: number,
 ): Promise<ComponentVerification> => {
   try {
     const observations = component.analysis.exportName
@@ -169,6 +171,7 @@ const verifyComponent = async (
           component.analysis,
           harness.getComponentModule(component.analysis.file),
           harness.projectIndex,
+          budgetMs,
         )
       : [];
     return {
@@ -239,12 +242,13 @@ const verifyOnFreshPage = async (
   harnessPage: HarnessPage,
   component: AnalyzedComponent,
   harness: ProjectHarness,
+  budgetMs: number,
 ): Promise<ComponentVerdict> => {
   if (harnessPage.isStale) await harnessPage.reopen();
-  let verification = await verifyComponent(harnessPage.page, component, harness);
+  let verification = await verifyComponent(harnessPage.page, component, harness, budgetMs);
   if (harnessPage.isStale) {
     await harnessPage.reopen();
-    verification = await verifyComponent(harnessPage.page, component, harness);
+    verification = await verifyComponent(harnessPage.page, component, harness, budgetMs);
   }
   if (verification.isPageBroken) await harnessPage.reopen();
   return verification.verdict;
@@ -256,6 +260,7 @@ const verifyOnPages = async (
   options: VerifyOptions,
 ): Promise<ComponentVerdict[]> => {
   const browser = await chromium.launch({ args: BROWSER_ARGUMENTS });
+  const budgetMs = options.componentBudgetMs ?? Number.POSITIVE_INFINITY;
   const verdicts: ComponentVerdict[] = [];
   let nextIndex = 0;
   const verifyRemainingOnOnePage = async (pageIndex: number): Promise<void> => {
@@ -268,7 +273,7 @@ const verifyOnPages = async (
         const component = components[index];
         if (!component) continue;
         options.onStart?.(component.analysis.name);
-        const verdict = await verifyOnFreshPage(harnessPage, component, harness);
+        const verdict = await verifyOnFreshPage(harnessPage, component, harness, budgetMs);
         verdicts[index] = verdict;
         options.onComponent?.(verdict);
       }
