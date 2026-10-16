@@ -157,13 +157,15 @@ const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
 
 const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
 
-const isSameLabel = (text: string, label: string): boolean => {
-  const compactText = text.replace(/\s+/g, "");
-  const compactLabel = label.replace(/\s+/g, "");
-  return label.length < MAX_ACTION_LABEL_LENGTH
-    ? compactText === compactLabel
-    : compactText.startsWith(compactLabel);
-};
+const compactLabel = (label: string): string => label.replace(/\s+/g, "");
+
+const isSameLabel = (text: string, label: string): boolean =>
+  label.length < MAX_ACTION_LABEL_LENGTH
+    ? compactLabel(text) === compactLabel(label)
+    : compactLabel(text).startsWith(compactLabel(label));
+
+const containsLabel = (text: string, label: string): boolean =>
+  compactLabel(text).includes(compactLabel(label));
 
 const isSameTarget = (handlerTarget: HandlerTarget, actionTarget: ActionTarget): boolean =>
   handlerTarget.tag === actionTarget.tag &&
@@ -174,7 +176,7 @@ export const getTriggerCertainty = (
   action: Action,
 ): TriggerCertainty | null => {
   if (isComponentTag(handlerTarget.tag))
-    return handlerTarget.text === null || handlerTarget.text.includes(action.label)
+    return handlerTarget.text === null || containsLabel(handlerTarget.text, action.label)
       ? "maybe"
       : null;
   if (!DISPATCHED_EVENTS.has(handlerTarget.event) && handlerTarget.event !== ANY_EVENT)

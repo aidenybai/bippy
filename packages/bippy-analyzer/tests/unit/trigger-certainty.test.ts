@@ -43,6 +43,20 @@ describe("trigger certainty", () => {
     ).toBe("maybe");
   });
 
+  it("matches a component's text to a label the browser read without the spaces between spans", () => {
+    const clickOpenChat: Action = {
+      ...clickTidy,
+      key: "click:button:💬Open AI Chat",
+      label: "💬Open AI Chat",
+    };
+    expect(
+      getTriggerCertainty(
+        { tag: "Button", text: "💬 Open AI Chat", event: "onClick" },
+        clickOpenChat,
+      ),
+    ).toBe("maybe");
+  });
+
   it("uses the strongest match among every element sharing a handler", () => {
     const toggleMenu: Action = {
       ...clickTidy,
