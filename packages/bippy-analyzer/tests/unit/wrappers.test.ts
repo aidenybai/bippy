@@ -168,6 +168,29 @@ describe("proposeParents", () => {
 });
 
 describe("findRootParts", () => {
+  it("offers first the part named by the hook that came up empty", () => {
+    const comboboxFile = "/app/ui/combobox.tsx";
+    const project = createProject({
+      Combobox: [{ file: comboboxFile, exportName: "Combobox" }],
+      ComboboxInput: [{ file: comboboxFile, exportName: "ComboboxInput" }],
+      ComboboxChips: [{ file: comboboxFile, exportName: "ComboboxChips" }],
+      ComboboxChip: [{ file: comboboxFile, exportName: "ComboboxChip" }],
+    });
+    const query = createQuery({
+      name: "ComboboxChip",
+      file: comboboxFile,
+      error:
+        "Cannot destructure property 'setHighlightedChipIndex' of 'useComboboxChipsContext(...)' as it is undefined.",
+      isNamingParent: false,
+      project,
+    });
+    const roots = proposeParents(query).slice(0, 1);
+    expect(roots.map((wrapper) => wrapper.name)).toEqual(["Combobox"]);
+    expect(
+      roots.flatMap((root) => findRootParts(root, query)).map((wrapper) => wrapper.name),
+    ).toEqual(["ComboboxChips", "ComboboxInput"]);
+  });
+
   it("offers the other parts exported beside a root, except the component itself", () => {
     const commandFile = "/app/ui/command.tsx";
     const project = createProject({

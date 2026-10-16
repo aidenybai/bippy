@@ -101,6 +101,11 @@ const getCompoundRootNames = (query: ParentQuery): string[] =>
     .map(([candidate]) => candidate)
     .sort((left, right) => right.length - left.length);
 
+const getHookSubject = (error: string): string | null => {
+  const hookName = NULL_HOOK_PATTERN.exec(error)?.[1];
+  return hookName ? hookName.slice("use".length).replace(CONTEXT_SUFFIX, "") : null;
+};
+
 const findExportInFile = (
   name: string,
   source: WrapperSource,
@@ -114,13 +119,16 @@ const findExportInFile = (
 const findOwnExport = (name: string, source: WrapperSource, query: ParentQuery): Wrapper[] =>
   findExportInFile(name, source, query.file, query);
 
-const findPartsOf = (rootName: string, file: string, query: ParentQuery): Wrapper[] =>
-  [...query.project.exports.keys()]
+const findPartsOf = (rootName: string, file: string, query: ParentQuery): Wrapper[] => {
+  const hookSubject = getHookSubject(query.error);
+  return [...query.project.exports.keys()]
     .filter(
       (candidate) =>
         candidate !== rootName && candidate !== query.name && candidate.startsWith(rootName),
     )
+    .sort((left, right) => Number(right === hookSubject) - Number(left === hookSubject))
     .flatMap((candidate) => findExportInFile(candidate, "part", file, query));
+};
 
 export const findSiblingParts = (query: ParentQuery): Wrapper[] =>
   findPartsOf(getCompoundRootNames(query)[0] ?? query.name, query.file, query);
@@ -128,11 +136,18 @@ export const findSiblingParts = (query: ParentQuery): Wrapper[] =>
 export const findRootParts = (root: Wrapper, query: ParentQuery): Wrapper[] =>
   root.candidate.kind === "project" ? findPartsOf(root.name, root.candidate.file, query) : [];
 
+const findHookNamedParents = (query: ParentQuery): Wrapper[] => {
+  const subject = getHookSubject(query.error);
+  return subject
+    ? (query.project.exports.get(subject) ?? []).map((exported) =>
+        createProjectWrapper(subject, "named", exported, query),
+      )
+    : [];
+};
+
 const findContextProviders = (query: ParentQuery): Wrapper[] => {
-  const hookName = NULL_HOOK_PATTERN.exec(query.error)?.[1];
-  const hookContextName = hookName
-    ? `${hookName.slice("use".length).replace(CONTEXT_SUFFIX, "")}Context`
-    : null;
+  const hookSubject = getHookSubject(query.error);
+  const hookContextName = hookSubject ? `${hookSubject}Context` : null;
   const hookContextKeys = [...query.project.contextSamples.keys()].filter(
     (contextKey) =>
       hookContextName !== null && parseDeclarationKey(contextKey).name === hookContextName,
@@ -184,6 +199,7 @@ export const proposeParents = (query: ParentQuery): Wrapper[] => {
       : [...namedParents, ...innerRoots, ...outerRoots];
   return [
     ...ordered,
+    ...findHookNamedParents(query),
     ...findSiblingParts(query),
     ...findContextProviders(query),
     ...findRenderedRoots(query),
