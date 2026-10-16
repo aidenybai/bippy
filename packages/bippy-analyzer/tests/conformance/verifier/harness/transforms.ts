@@ -183,7 +183,10 @@ export const createRequirePlugin = (): Plugin => ({
 });
 
 export const createProbePlugin = (probes: Probe[]): Plugin => {
-  const probesByFile = Map.groupBy(probes, (probe) => probe.file);
+  const probesByFile = Map.groupBy(
+    new Map(probes.map((probe) => [probe.id, probe])).values(),
+    (probe) => probe.file,
+  );
   return {
     name: "bippy-verify-probes",
     enforce: "pre",

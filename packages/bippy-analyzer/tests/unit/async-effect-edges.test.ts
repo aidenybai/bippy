@@ -32,7 +32,6 @@ describe("async effect edges", () => {
           tag: "button",
           label: "Save",
           isInChild: false,
-          clickAncestors: [],
         },
         before: capture("No key"),
         after: capture("Has key"),

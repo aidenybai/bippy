@@ -30,7 +30,7 @@ export type Shape =
   | { kind: "component"; name: string }
   | { kind: "text"; text: string };
 
-export type ProbeMode = "truthy" | "nullish" | "mutation";
+export type ProbeMode = "truthy" | "nullish" | "mutation" | "handler";
 
 export interface Probe {
   id: string;
@@ -56,6 +56,7 @@ export interface Capture {
   shapes: Shape[];
   hookStates: unknown[];
   probes: ProbeHit[];
+  handlerHits: string[];
   mutationHits: MutationHit[];
   mutatedOwners: string[];
   firstCommitShapes: Shape[] | null;
@@ -64,16 +65,12 @@ export interface Capture {
   failure: MountFailure | null;
 }
 
-export interface ActionTarget {
-  tag: string;
-  label: string;
-}
-
-export interface Action extends ActionTarget {
+export interface Action {
   key: string;
   kind: "click" | "change";
+  tag: string;
+  label: string;
   isInChild: boolean;
-  clickAncestors: ActionTarget[];
 }
 
 export interface Scenario {

@@ -7,6 +7,7 @@ import type { AnalyzedComponent } from "../../../src/core/types";
 import { createDeclarationKey, parseDeclarationKey } from "../../../src/core/utils/declaration-key";
 import type { ComponentModule, ProjectIndex, SourceIndex } from "./types";
 import { exploreComponent } from "./driver";
+import { collectHandlerProbes } from "./handler-probes";
 import { collectMutationProbes } from "./mutation";
 import { collectProbes, createEmptyVerdict, scoreComponent } from "./score";
 import type { ComponentVerdict } from "./score";
@@ -79,6 +80,7 @@ export const startProjectHarness = async (
     exported.flatMap(({ analysis }) => [
       ...collectProbes(analysis),
       ...collectMutationProbes(analysis),
+      ...collectHandlerProbes(analysis).map(({ probe }) => probe),
     ]),
     [...new Set(exported.map(({ analysis }) => analysis.file))],
     readHarnessSetup(setupDirectory),

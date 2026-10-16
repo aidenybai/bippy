@@ -2,14 +2,15 @@ import { describe, expect, it } from "vite-plus/test";
 import type { Observation } from "../conformance/verifier/driver";
 import { scoreComponent } from "../conformance/verifier/score";
 import type { Action, Capture, Shape } from "../conformance/verifier/types";
-import { analyzeFixture, createCapture, getComponent } from "./helpers";
+import { analyzeFixture, createCapture, getComponent, getHandlerProbeId } from "./helpers";
 
 const element = (tag: string, children: Shape[]): Shape => ({ kind: "element", tag, children });
 
 const text = (value: string): Shape => ({ kind: "text", text: value });
 
-const capture = (error: string | null): Capture =>
+const capture = (error: string | null, handlerHits: string[] = []): Capture =>
   createCapture({
+    handlerHits,
     shapes: [
       element("div", [
         element("button", [text("Sign out")]),
@@ -26,13 +27,13 @@ const click = (label: string): Action => ({
   tag: "button",
   label,
   isInChild: false,
-  clickAncestors: [],
 });
 
 describe("late async updates", () => {
   it("accepts an async update from an earlier action landing on a later edge", () => {
     const project = analyzeFixture("conformance-repros", "late-async-update");
-    const { analysis, report } = getComponent(project, "SignOutPanel");
+    const component = getComponent(project, "SignOutPanel");
+    const { analysis, report } = component;
     const signOut = click("Sign out");
     const showAll = click("All");
     const observations: Observation[] = [
@@ -42,14 +43,14 @@ describe("late async updates", () => {
         path: [signOut.key],
         action: signOut,
         before: capture(null),
-        after: capture(null),
+        after: capture(null, [getHandlerProbeId(component, "async () =>")]),
       },
       {
         props: {},
         path: [signOut.key, showAll.key],
         action: showAll,
         before: capture(null),
-        after: capture("Sign out failed"),
+        after: capture("Sign out failed", [getHandlerProbeId(component, '() => setTab("all")')]),
       },
     ];
     const verdict = scoreComponent(analysis, report, observations, new Map());
@@ -58,7 +59,8 @@ describe("late async updates", () => {
 
   it("still rejects the update when no earlier action could have caused it", () => {
     const project = analyzeFixture("conformance-repros", "late-async-update");
-    const { analysis, report } = getComponent(project, "SignOutPanel");
+    const component = getComponent(project, "SignOutPanel");
+    const { analysis, report } = component;
     const showAll = click("All");
     const observations: Observation[] = [
       { props: {}, path: [], action: null, before: null, after: capture(null) },
@@ -67,7 +69,7 @@ describe("late async updates", () => {
         path: [showAll.key],
         action: showAll,
         before: capture(null),
-        after: capture("Sign out failed"),
+        after: capture("Sign out failed", [getHandlerProbeId(component, '() => setTab("all")')]),
       },
     ];
     const verdict = scoreComponent(analysis, report, observations, new Map());

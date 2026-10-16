@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { CompilerTypeProvider } from "../../src/core/type-provider";
 import { isProjectSourceFile } from "../../src/core/utils/is-project-source-file";
@@ -19,6 +20,7 @@ import type {
 } from "../../src/core/types";
 import { createEmptyAnalysis } from "../../src/core/analyze-component";
 import { PlaceMap } from "../../src/core/utils/place-map";
+import { collectHandlerProbes } from "../conformance/verifier/handler-probes";
 import type { Capture } from "../conformance/verifier/types";
 
 export const getFixtureConfig = (fixture: string): string =>
@@ -48,6 +50,7 @@ export const createCapture = (overrides: Partial<Capture>): Capture => ({
   shapes: [],
   hookStates: [],
   probes: [],
+  handlerHits: [],
   mutationHits: [],
   mutatedOwners: [],
   firstCommitShapes: null,
@@ -84,6 +87,18 @@ export const getComponent = (project: ProjectAnalysis, name: string): AnalyzedCo
   const component = project.components.find((candidate) => candidate.analysis.name === name);
   if (!component) throw new Error(`No component named ${name}`);
   return component;
+};
+
+export const getHandlerProbeId = (component: AnalyzedComponent, handlerSource: string): string => {
+  const matching = collectHandlerProbes(component.analysis).filter(({ probe }) =>
+    readFileSync(probe.file, "utf8").slice(probe.start, probe.end).startsWith(handlerSource),
+  );
+  const [handlerProbe] = matching;
+  if (!handlerProbe || matching.length > 1)
+    throw new Error(
+      `${matching.length} handlers start with ${handlerSource} in ${component.analysis.name}`,
+    );
+  return handlerProbe.probe.id;
 };
 
 export const getBinding = (component: AnalyzedComponent, name: string): Binding => {

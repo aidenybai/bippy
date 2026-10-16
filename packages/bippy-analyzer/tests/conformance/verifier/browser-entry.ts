@@ -27,7 +27,13 @@ import {
   snapshotValue,
 } from "./snapshot";
 import { STAND_IN } from "./stubs/stand-in";
-import { isLibraryHookQueue, isWrittenByLibrary, watchHookCallers } from "./write-origins";
+import {
+  isLibraryHookQueue,
+  isRendering,
+  isWrittenByLibrary,
+  markDispatchersIdle,
+  watchHookCallers,
+} from "./write-origins";
 import {
   MAX_ACTION_LABEL_LENGTH,
   PROVIDERS_PATH,
@@ -37,16 +43,7 @@ import {
   getPropOwner,
   getStateOwner,
 } from "./types";
-import type {
-  Action,
-  ActionTarget,
-  Capture,
-  MountRequest,
-  MutationHit,
-  ProbeHit,
-  Shape,
-  Wrapper,
-} from "./types";
+import type { Action, Capture, MountRequest, MutationHit, ProbeHit, Shape, Wrapper } from "./types";
 
 interface BoundaryProps {
   children: ReactNode;
@@ -98,6 +95,10 @@ interface FunctionComponent {
   (props: Record<string, unknown>): unknown;
 }
 
+interface HandlerFunction {
+  (...handlerArguments: unknown[]): unknown;
+}
+
 interface ServerRender {
   output: unknown;
 }
@@ -132,6 +133,7 @@ const MAX_PLAIN_NODES = 2000;
 const DEPTH_MARKER_PREFIX = "BippyVerifyDepth";
 const DEPTH_MARKER_PATTERN = new RegExp(`\\bat ${DEPTH_MARKER_PREFIX}(\\d+)\\b`);
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
+const EVENT_PROP_PATTERN = /^on[A-Z]/;
 const CHANGE_VALUES = ["text", ""];
 const MAX_SELECT_CHANGE_VALUES = 3;
 const MUTATING_COLLECTION_METHODS = new Set(["set", "add", "delete", "clear"]);
@@ -148,6 +150,7 @@ const MUTATING_ARRAY_METHODS = new Set([
 ]);
 
 let probeHits: ProbeHit[] = [];
+let handlerHits: string[] = [];
 let latestRoot: FiberRoot | null = null;
 let mountedType: unknown = null;
 let mountedRoot: Root | null = null;
@@ -166,6 +169,7 @@ const propOwners = new WeakMap<object, string>();
 const writeCounts = new WeakMap<object, number>();
 const writeTrackers = new WeakMap<object, object>();
 const trackedTargets = new WeakMap<object, object>();
+const handlerProxies = new WeakMap<object, Map<string, object>>();
 
 const recordWrite = (target: object): void => {
   writeCounts.set(target, (writeCounts.get(target) ?? 0) + 1);
@@ -257,8 +261,60 @@ const recordMutationProbe = (id: string, value: unknown): unknown => {
   return trackedTargets.has(value) ? value : trackWrites(target, false);
 };
 
+const wrapRenderedHandlers = (id: string, rendered: unknown): unknown => {
+  if (Array.isArray(rendered)) {
+    const items = rendered.map((item) => wrapRenderedHandlers(id, item));
+    return items.every((item, index) => item === rendered[index]) ? rendered : items;
+  }
+  if (!isValidElement<Record<string, unknown>>(rendered)) return rendered;
+  const props = Object.entries(rendered.props).map(([name, value]): [string, unknown] => [
+    name,
+    EVENT_PROP_PATTERN.test(name) ? wrapHandler(id, value) : wrapRenderedHandlers(id, value),
+  ]);
+  return props.every(([name, value]) => value === rendered.props[name])
+    ? rendered
+    : cloneElement(rendered, Object.fromEntries(props));
+};
+
+const isHandlerFunction = (value: unknown): value is HandlerFunction => typeof value === "function";
+
+const callHandler = (
+  id: string,
+  handler: HandlerFunction,
+  thisArgument: unknown,
+  callArguments: unknown[],
+): unknown => {
+  if (isRendering())
+    return wrapRenderedHandlers(id, Reflect.apply(handler, thisArgument, callArguments));
+  handlerHits.push(id);
+  return Reflect.apply(handler, thisArgument, callArguments);
+};
+
+const createHandlerProxy = (id: string, target: object): object =>
+  isHandlerFunction(target)
+    ? new Proxy(target, {
+        apply: (handler, thisArgument, callArguments) =>
+          callHandler(id, handler, thisArgument, callArguments),
+      })
+    : new Proxy(target, {
+        get: (spread, key, receiver) => wrapHandler(id, Reflect.get(spread, key, receiver)),
+      });
+
+const wrapHandler = (id: string, value: unknown): unknown => {
+  const isWrappable =
+    typeof value === "function" ||
+    (typeof value === "object" && value !== null && isPlainRecord(value));
+  if (!isWrappable) return value;
+  const proxies = handlerProxies.get(value) ?? new Map<string, object>();
+  handlerProxies.set(value, proxies);
+  const proxy = proxies.get(id) ?? createHandlerProxy(id, value);
+  proxies.set(id, proxy);
+  return proxy;
+};
+
 globalThis.__bippyProbe = (id, mode, value) => {
   if (mode === "mutation") return recordMutationProbe(id, value);
+  if (mode === "handler") return wrapHandler(id, value);
   probeHits.push({
     id,
     isTrueSide: mode === "nullish" ? value !== null && value !== undefined : Boolean(value),
@@ -488,6 +544,12 @@ const takeProbeHits = (): ProbeHit[] => {
   return hits;
 };
 
+const takeHandlerHits = (): string[] => {
+  const hits = [...new Set(handlerHits)];
+  handlerHits = [];
+  return hits;
+};
+
 const trackRequest = <Result>(request: Promise<Result>): Promise<Result> => {
   pendingRequests++;
   return request.finally(() => pendingRequests--);
@@ -553,6 +615,7 @@ const createEmptyCapture = (
   shapes: [],
   hookStates: [],
   probes: takeProbeHits(),
+  handlerHits: takeHandlerHits(),
   mutationHits: [],
   mutatedOwners: [],
   firstCommitShapes: null,
@@ -579,6 +642,7 @@ const captureMountedComponent = (): Capture => {
     shapes: getChildren(fiber).flatMap(toShapes),
     hookStates: getPlainHookStates(fiber),
     probes: takeProbeHits(),
+    handlerHits: takeHandlerHits(),
     ...takeMutations(fiber),
     firstCommitShapes: null,
     error: renderError?.message ?? null,
@@ -647,8 +711,7 @@ const collectActions = (): MountedAction[] => {
   const mountedFiber = findMountedFiber();
   const actions: MountedAction[] = [];
   const countsByBaseKey = new Map<string, number>();
-  const visit = (fiber: Fiber, clickAncestors: ActionTarget[]): void => {
-    let childClickAncestors = clickAncestors;
+  const visit = (fiber: Fiber): void => {
     if (isHostFiber(fiber) && fiber.stateNode instanceof HTMLElement) {
       const props: Record<string, unknown> = fiber.memoizedProps ?? {};
       const tag = String(fiber.type);
@@ -663,16 +726,13 @@ const collectActions = (): MountedAction[] => {
           tag,
           label,
           isInChild: isRenderedByChild(fiber),
-          clickAncestors,
           element: fiber.stateNode,
         });
       }
-      if (typeof props.onClick === "function")
-        childClickAncestors = [...clickAncestors, { tag, label }];
     }
-    for (const child of getChildren(fiber)) visit(child, childClickAncestors);
+    for (const child of getChildren(fiber)) visit(child);
   };
-  if (mountedFiber) for (const child of getChildren(mountedFiber)) visit(child, []);
+  if (mountedFiber) for (const child of getChildren(mountedFiber)) visit(child);
   return actions;
 };
 
@@ -860,6 +920,7 @@ const renderMounted = async (
   watchHookCallers(
     [...getRDTHook().renderers.values()].flatMap((renderer) => renderer.currentDispatcherRef ?? []),
   );
+  markDispatchersIdle();
   const container = document.createElement("div");
   getDocumentBody().replaceChildren(container);
   mountedRoot = createRoot(container, { onCaughtError: recordCaughtError });
@@ -925,6 +986,7 @@ const mount = async (request: MountRequest): Promise<Capture> => {
 const performAction = async (key: string): Promise<Capture | null> => {
   const action = collectActions().find((candidate) => candidate.key === key);
   if (!action) return null;
+  markDispatchersIdle();
   if (action.kind === "click") action.element.click();
   else setInputValue(action.element, action.value);
   await settle();

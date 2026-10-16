@@ -4,6 +4,11 @@ interface DispatcherHook {
   (...hookArguments: unknown[]): unknown;
 }
 
+interface WatchedDispatcherRef {
+  ref: object;
+  key: string;
+}
+
 const HARNESS_PATH_PATTERN = /\/conformance\/verifier\//;
 const LIBRARY_PATH_PATTERN = /\/node_modules\//;
 const STACK_FRAME_PATTERN = /^\s+at .*\bhttps?:\/\//;
@@ -14,7 +19,8 @@ const DISPATCHER_KEYS = ["H", "current"];
 const libraryQueueFunctions = new WeakSet<object>();
 const attributedQueueFunctions = new WeakSet<object>();
 const patchedDispatchers = new WeakSet<object>();
-const watchedDispatcherRefs = new WeakSet<object>();
+const watchedDispatcherRefs: WatchedDispatcherRef[] = [];
+const idleDispatchers = new Set<unknown>();
 
 const isHarnessFrame = (frame: string): boolean =>
   frame.includes(ENTRY_PATH) || HARNESS_PATH_PATTERN.test(frame);
@@ -68,10 +74,10 @@ const patchDispatcher = (dispatcher: unknown): void => {
 };
 
 const watchDispatcherRef = (dispatcherRef: object): void => {
-  if (watchedDispatcherRefs.has(dispatcherRef)) return;
-  watchedDispatcherRefs.add(dispatcherRef);
+  if (watchedDispatcherRefs.some((watched) => watched.ref === dispatcherRef)) return;
   const key = DISPATCHER_KEYS.find((candidate) => Object.hasOwn(dispatcherRef, candidate));
   if (!key) return;
+  watchedDispatcherRefs.push({ ref: dispatcherRef, key });
   let dispatcher: unknown = Reflect.get(dispatcherRef, key);
   Object.defineProperty(dispatcherRef, key, {
     configurable: true,
@@ -87,3 +93,10 @@ const watchDispatcherRef = (dispatcherRef: object): void => {
 export const watchHookCallers = (dispatcherRefs: object[]): void => {
   for (const dispatcherRef of dispatcherRefs) watchDispatcherRef(dispatcherRef);
 };
+
+export const markDispatchersIdle = (): void => {
+  for (const { ref, key } of watchedDispatcherRefs) idleDispatchers.add(Reflect.get(ref, key));
+};
+
+export const isRendering = (): boolean =>
+  watchedDispatcherRefs.some(({ ref, key }) => !idleDispatchers.has(Reflect.get(ref, key)));

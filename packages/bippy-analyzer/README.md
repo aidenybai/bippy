@@ -18,11 +18,11 @@ pnpm --filter bippy-analyzer conformance run --env vercel -n 8
 
 For each exported component, the verifier runs five steps.
 
-1. **Instrument.** A Vite dev server serves the app's own code. It adds a probe on every branch the analyzer modeled and every place a mutation warning points at.
+1. **Instrument.** A Vite dev server serves the app's own code. It adds a probe on every branch the analyzer modeled, every place a mutation warning points at, and every handler passed as a JSX prop, so the page reports which handlers each action ran.
 2. **Mount.** Playwright opens a page that loads bippy before React, then mounts the component. See [Mounting](#mounting).
 3. **Choose props** from each prop's type. See [Props](#props).
 4. **Explore.** The page clicks every enabled handler and types into every input, breadth-first, a few steps deep. It waits for requests to settle after each step, then reads the fiber tree, hook values and probes.
-5. **Score** each screen against the predicted states. Every state region must match. An action must move the regions it changes to predicted states and leave the rest alone. A child component's handler may change any hook or context value the component reads.
+5. **Score** each screen against the predicted states. Every state region must match. The handlers an action ran must move the regions they change to predicted states and leave the rest alone. A child component's handler may change any hook or context value the component reads.
 
 | Check       | Counterexample when                                                                                                                                        |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |

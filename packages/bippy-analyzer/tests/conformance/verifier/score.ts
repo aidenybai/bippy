@@ -1,4 +1,4 @@
-import { ANY_EVENT, isEffectHandler } from "../../../src/core/collect-handlers";
+import { isEffectHandler } from "../../../src/core/collect-handlers";
 import type {
   AbstractValue,
   BindingKind,
@@ -7,10 +7,8 @@ import type {
   Handler,
   Sample,
   StateReport,
-  SymbolicValue,
   Transition,
 } from "../../../src/core/types";
-import { forEachJsxElement } from "../../../src/core/utils/for-each-jsx-element";
 import { forEachRenderNode } from "../../../src/core/utils/for-each-render-node";
 import {
   formatAbstractValue,
@@ -23,19 +21,19 @@ import { getLocationKey } from "../../../src/core/utils/get-location-key";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
-import { MAX_ACTION_LABEL_LENGTH, TRUNCATED_VALUE } from "./types";
+import { TRUNCATED_VALUE } from "./types";
 import { appendToGroup } from "../../../src/core/utils/append-to-group";
-import type { Action, ActionTarget, Probe, Shape } from "./types";
+import type { Action, Capture, Probe, Shape } from "./types";
 import {
   explainMismatch,
   findClosest,
   formatShapes,
   matchesExpected,
   normalizeShapes,
-  normalizeText,
   toExpected,
 } from "./match";
 import type { ExpectedShape } from "./match";
+import { collectHandlerProbes } from "./handler-probes";
 import { scoreWarnings } from "./mutation";
 import { getCaptureFailure } from "./reasons";
 import type { MountFailure } from "./reasons";
@@ -106,21 +104,12 @@ export interface VerificationSummary {
   durationMs: number;
 }
 
-type TriggerCertainty = "sure" | "maybe";
-
-export interface HandlerTarget {
-  tag: string;
-  text: string | null;
-  event: string;
-}
-
 const FIRST_COMMIT = "first commit";
 const MISSING_PLACE = Symbol("missing place");
 const NON_HOOK_BINDING_KINDS = new Set<BindingKind>(["prop", "item", "call", "loop", "suspense"]);
 const EXTERNAL_DATA_BINDING_KINDS = new Set<BindingKind>(["hook", "context", "call", "suspense"]);
 const MAX_RENDERED_LENGTH = 300;
 const MAX_PROPS_LENGTH = 160;
-const DISPATCHED_EVENTS = new Set(["onClick", "onChange", "onInput", "onSubmit"]);
 const DEPENDENCY_NAME_PATTERN = /(?<![.\w$])[A-Za-z_$][\w$]*/g;
 const SPONTANEOUS_EVENTS = new Set([
   "onLoad",
@@ -155,54 +144,7 @@ const ORDERED_HOOK_KINDS = new Set<string>([
 const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
   trigger.kind === "Event" ? SPONTANEOUS_EVENTS.has(trigger.event) : trigger.hookKind === "Custom";
 
-const isComponentTag = (tag: string): boolean => /^[A-Z]/.test(tag) || tag.includes(".");
-
-const compactLabel = (label: string): string => label.replace(/\s+/g, "");
-
-const isSameLabel = (text: string, label: string): boolean =>
-  label.length < MAX_ACTION_LABEL_LENGTH
-    ? compactLabel(text) === compactLabel(label)
-    : compactLabel(text).startsWith(compactLabel(label));
-
-const containsLabel = (text: string, label: string): boolean =>
-  compactLabel(text).includes(compactLabel(label));
-
-const isSameTarget = (handlerTarget: HandlerTarget, actionTarget: ActionTarget): boolean =>
-  handlerTarget.tag === actionTarget.tag &&
-  (handlerTarget.text === null || isSameLabel(handlerTarget.text, actionTarget.label));
-
-export const getTriggerCertainty = (
-  handlerTarget: HandlerTarget,
-  action: Action,
-): TriggerCertainty | null => {
-  if (isComponentTag(handlerTarget.tag))
-    return handlerTarget.text === null || containsLabel(handlerTarget.text, action.label)
-      ? "maybe"
-      : null;
-  if (!DISPATCHED_EVENTS.has(handlerTarget.event) && handlerTarget.event !== ANY_EVENT)
-    return "maybe";
-  const eventName = action.kind === "click" ? "onClick" : "onChange";
-  if (handlerTarget.event !== eventName && handlerTarget.event !== ANY_EVENT) return null;
-  if (isSameTarget(handlerTarget, action))
-    return handlerTarget.text === null || action.label.length >= MAX_ACTION_LABEL_LENGTH
-      ? "maybe"
-      : "sure";
-  return action.kind === "click" &&
-    action.clickAncestors.some((ancestor) => isSameTarget(handlerTarget, ancestor))
-    ? "maybe"
-    : null;
-};
-
-export const getHandlerCertainty = (
-  handlerTargets: HandlerTarget[],
-  action: Action,
-): TriggerCertainty | null => {
-  const certainties = handlerTargets.map((handlerTarget) =>
-    getTriggerCertainty(handlerTarget, action),
-  );
-  if (certainties.includes("sure")) return "sure";
-  return certainties.includes("maybe") ? "maybe" : null;
-};
+const getPathKey = (path: string[]): string => JSON.stringify(path);
 
 const getProbeId = (file: string, loc: types.SourceLocation): string =>
   `${file}:${getLocationKey(loc)}`;
@@ -227,36 +169,11 @@ export const collectProbes = (analysis: ComponentAnalysis): Probe[] => {
   return [...probes.values()];
 };
 
-const getStaticText = (value: SymbolicValue): string | null => {
-  switch (value.kind) {
-    case "JSXText":
-      return value.value;
-    case "JsxExpression":
-    case "JsxFragment": {
-      const parts = value.children.map(getStaticText);
-      return parts.every((part) => part !== null) ? normalizeText(parts.join(" ")) : null;
-    }
-    case "Primitive":
-      if (typeof value.value === "string") return normalizeText(value.value);
-      return typeof value.value === "number" ? null : "";
-    default:
-      return null;
-  }
-};
-
-const collectHandlerTargets = (render: SymbolicValue): Map<string, HandlerTarget[]> => {
-  const handlerTargets = new Map<string, HandlerTarget[]>();
-  forEachJsxElement(render, (value) => {
-    for (const prop of value.props) {
-      if (!prop.handlerId) continue;
-      appendToGroup(handlerTargets, prop.handlerId, {
-        tag: value.tag.name,
-        text: getStaticText(value) || null,
-        event: prop.kind === "JsxAttribute" ? prop.name : ANY_EVENT,
-      });
-    }
-  });
-  return handlerTargets;
+const getHandlerIdsByProbeId = (analysis: ComponentAnalysis): Map<string, string[]> => {
+  const handlerIdsByProbeId = new Map<string, string[]>();
+  for (const { probe, handlerId } of collectHandlerProbes(analysis))
+    appendToGroup(handlerIdsByProbeId, probe.id, handlerId);
+  return handlerIdsByProbeId;
 };
 
 const getStateBindings = (
@@ -298,13 +215,13 @@ interface ScoringContext {
   report: StateReport;
   verdict: ComponentVerdict;
   expectedStates: ExpectedShape[][];
-  handlerTargets: Map<string, HandlerTarget[]>;
+  handlerIdsByProbeId: Map<string, string[]>;
   stateBindings: Binding[] | null;
   externalBindingIds: Set<number>;
   effectIds: Set<string>;
   backgroundHandlerIds: Set<string>;
   spontaneousIds: Set<string>;
-  actionsByKey: Map<string, Action>;
+  capturesByPathKey: Map<string, Capture>;
   coveredStates: Set<number>;
   matchedStatesCache: Map<string, number[]>;
 }
@@ -516,13 +433,13 @@ const addFollowingEffects = (context: ScoringContext, edgeIds: EdgeHandlerIds): 
   }
 };
 
-const getTriggeredHandlerIds = (context: ScoringContext, action: Action): EdgeHandlerIds => {
-  const edgeIds: EdgeHandlerIds = { triggeredIds: new Set(), maybeTriggeredIds: new Set() };
-  for (const handler of context.analysis.handlers) {
-    const certainty = getHandlerCertainty(context.handlerTargets.get(handler.id) ?? [], action);
-    if (certainty) edgeIds.triggeredIds.add(handler.id);
-    if (certainty === "maybe") edgeIds.maybeTriggeredIds.add(handler.id);
-  }
+const getTriggeredHandlerIds = (context: ScoringContext, after: Capture): EdgeHandlerIds => {
+  const edgeIds: EdgeHandlerIds = {
+    triggeredIds: new Set(
+      after.handlerHits.flatMap((probeId) => context.handlerIdsByProbeId.get(probeId) ?? []),
+    ),
+    maybeTriggeredIds: new Set(),
+  };
   if (edgeIds.triggeredIds.size > 0) addFollowingEffects(context, edgeIds);
   return edgeIds;
 };
@@ -535,9 +452,13 @@ const canChildActionChange = (
 
 const getEarlierTriggeredIds = (context: ScoringContext, path: string[]): Set<string> =>
   new Set(
-    path.slice(0, -1).flatMap((actionKey) => {
-      const earlierAction = context.actionsByKey.get(actionKey);
-      return earlierAction ? [...getTriggeredHandlerIds(context, earlierAction).triggeredIds] : [];
+    path.slice(0, -1).flatMap((_actionKey, actionIndex) => {
+      const earlierCapture = context.capturesByPathKey.get(
+        getPathKey(path.slice(0, actionIndex + 1)),
+      );
+      return earlierCapture
+        ? [...getTriggeredHandlerIds(context, earlierCapture).triggeredIds]
+        : [];
     }),
   );
 
@@ -626,7 +547,7 @@ const scoreTransition = (
     path: observation.path,
     beforeMatches,
     afterMatches,
-    ...getTriggeredHandlerIds(context, action),
+    ...getTriggeredHandlerIds(context, observation.after),
     earlierTriggeredIds: getEarlierTriggeredIds(context, observation.path),
   };
   const regions = getRegionIndices(context);
@@ -673,7 +594,7 @@ const createScoringContext = (
   report,
   verdict,
   expectedStates: report.states.map((state) => toExpected(state.render, knownComponents)),
-  handlerTargets: collectHandlerTargets(analysis.render),
+  handlerIdsByProbeId: getHandlerIdsByProbeId(analysis),
   stateBindings: getStateBindings(analysis, observations),
   externalBindingIds: new Set(
     analysis.bindings
@@ -689,9 +610,9 @@ const createScoringContext = (
   spontaneousIds: new Set(
     analysis.handlers.filter(isSpontaneousHandler).map((handler) => handler.id),
   ),
-  actionsByKey: new Map(
+  capturesByPathKey: new Map(
     observations.flatMap((observation) =>
-      observation.action ? [[observation.action.key, observation.action]] : [],
+      observation.action ? [[getPathKey(observation.path), observation.after]] : [],
     ),
   ),
   coveredStates: new Set(),
