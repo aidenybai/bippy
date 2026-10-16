@@ -5,6 +5,7 @@ import {
   dedupeAbstractValues,
   evaluateCondition,
   forgetBinding,
+  getConstraintsKey,
   getLengthAtom,
   resolveLiteral,
 } from "./constraints";
@@ -87,6 +88,15 @@ interface EnumeratedRegion {
 }
 
 const NO_BRANCHES: ReadonlySet<string> = new Set();
+const constraintsKeys = new WeakMap<Constraints, string>();
+
+const getCachedConstraintsKey = (constraints: Constraints): string => {
+  const cachedKey = constraintsKeys.get(constraints);
+  if (cachedKey !== undefined) return cachedKey;
+  const constraintsKey = getConstraintsKey(constraints);
+  constraintsKeys.set(constraints, constraintsKey);
+  return constraintsKey;
+};
 
 const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternative => ({
   constraints,
@@ -388,6 +398,7 @@ class StateEnumerator {
   readonly #branchOutcomes: BranchOutcomes;
   readonly #region: RegionBranches;
   readonly #alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
+  readonly #stateKeysCache = new WeakMap<SymbolicValue, Map<string, string[]>>();
   #isTruncated = false;
 
   constructor(branchOutcomes: BranchOutcomes, region: RegionBranches) {
@@ -410,6 +421,20 @@ class StateEnumerator {
     const alternatives = this.#enumerateUncached(value, constraints);
     alternativesByConstraints.set(constraints, alternatives);
     return alternatives;
+  }
+
+  enumerateStateKeys(value: SymbolicValue, constraints: Constraints): string[] {
+    let stateKeysByConstraints = this.#stateKeysCache.get(value);
+    if (!stateKeysByConstraints) {
+      stateKeysByConstraints = new Map();
+      this.#stateKeysCache.set(value, stateKeysByConstraints);
+    }
+    const constraintsKey = getCachedConstraintsKey(constraints);
+    const cachedStateKeys = stateKeysByConstraints.get(constraintsKey);
+    if (cachedStateKeys) return cachedStateKeys;
+    const stateKeys = this.enumerate(value, constraints).map(getStateKey);
+    stateKeysByConstraints.set(constraintsKey, stateKeys);
+    return stateKeys;
   }
 
   #enumerateUncached(value: SymbolicValue, constraints: Constraints): Alternative[] {
@@ -520,7 +545,7 @@ const getTransition = (
 ): Transition => {
   const targetKeys = new Set(
     getConstraintsAfterHandler(handler, alternative.constraints, context).flatMap((afterHandler) =>
-      context.targetEnumerator.enumerate(context.analysis.render, afterHandler).map(getStateKey),
+      context.targetEnumerator.enumerateStateKeys(context.analysis.render, afterHandler),
     ),
   );
   return {

@@ -73,6 +73,39 @@ export const getLengthAtom = (bindingId: number): BindingPlace => ({
 
 const getAtomKey = (atom: BindingPlace | null): string => (atom ? getPlaceKey(atom) : CONSTANT_KEY);
 
+const formatPlaceEntries = <Value>(
+  placeMap: PlaceMap<Value>,
+  formatValue: (value: Value) => string,
+): string =>
+  [...placeMap]
+    .map(([place, value]) => `${getPlaceKey(place)}=${formatValue(value)}`)
+    .sort()
+    .join(";");
+
+const formatAbstractValues = (values: AbstractValue[]): string =>
+  values.map((value) => `${value.kind}:${formatAbstractValue(value)}`).join("|");
+
+const formatBound = (bound: Bound): string =>
+  `${getAtomKey(bound.left)}-${getAtomKey(bound.right)}${bound.isStrict ? "<" : "<="}${bound.maxDifference}`;
+
+const formatAssumption = ([key, assumption]: [string, Assumption]): string =>
+  `${key}=${assumption.isTrue}:${assumption.places.map(getPlaceKey).join(",")}`;
+
+export const getConstraintsKey = (constraints: Constraints): string =>
+  [
+    formatPlaceEntries(constraints.possibleValues, formatAbstractValues),
+    [...constraints.assumptions].map(formatAssumption).sort().join(";"),
+    constraints.bounds.map(formatBound).sort().join(";"),
+    constraints.invariants.map(formatBound).sort().join(";"),
+    formatPlaceEntries(constraints.unionMemberValues, (members) =>
+      members.map(formatAbstractValues).join("/"),
+    ),
+    [...constraints.possibleMembers]
+      .map(([bindingId, members]) => `${bindingId}=${members.join(",")}`)
+      .sort()
+      .join(";"),
+  ].join("\n");
+
 const collectPlaces = (value: SymbolicValue): BindingPlace[] => {
   const places: BindingPlace[] = [];
   forEachSymbolicValue(value, (part) => {
