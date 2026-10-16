@@ -209,6 +209,9 @@ export const createProbePlugin = (probes: Probe[]): Plugin => {
   };
 };
 
+// HACK: Vite's asset and worker plugins filter code with /new\s+URL.+import\.meta\.url/s, which
+// overflows V8's regexp stack on a dependency chunk over about four million characters, like
+// monaco-editor's, so their filters are narrowed to the substring both patterns require.
 const IMPORT_META_URL_PLUGIN_NAMES = ["vite:asset-import-meta-url", "vite:worker-import-meta-url"];
 
 export const createImportMetaUrlFilterPlugin = (): Plugin => ({
