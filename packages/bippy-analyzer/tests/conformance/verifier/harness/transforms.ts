@@ -106,12 +106,12 @@ export const createJsxInScriptPlugin = (): Plugin => ({
   enforce: "pre",
   transform: async (code, id) => {
     if (!isAppSourceModule(id) || !SCRIPT_FILE_PATTERN.test(stripQuery(id))) return null;
-    const result = await transformWithEsbuild(code, stripQuery(id), {
+    const transformed = await transformWithEsbuild(code, stripQuery(id), {
       loader: "jsx",
       jsx: "automatic",
       jsxDev: true,
     });
-    return result.code;
+    return transformed.code;
   },
 });
 
