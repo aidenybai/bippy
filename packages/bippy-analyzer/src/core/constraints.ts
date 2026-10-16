@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type {
   AbstractValue,
   BinaryExpressionValue,
@@ -91,7 +92,7 @@ const formatBound = (bound: Bound): string =>
 const formatAssumption = ([key, assumption]: [string, Assumption]): string =>
   `${key}=${assumption.isTrue}:${assumption.places.map(getPlaceKey).join(",")}`;
 
-export const getConstraintsKey = (constraints: Constraints): string =>
+const serializeConstraints = (constraints: Constraints): string =>
   [
     formatPlaceEntries(constraints.possibleValues, formatAbstractValues),
     [...constraints.assumptions].map(formatAssumption).sort().join(";"),
@@ -105,6 +106,9 @@ export const getConstraintsKey = (constraints: Constraints): string =>
       .sort()
       .join(";"),
   ].join("\n");
+
+export const getConstraintsKey = (constraints: Constraints): string =>
+  createHash("sha256").update(serializeConstraints(constraints)).digest("base64");
 
 const collectPlaces = (value: SymbolicValue): BindingPlace[] => {
   const places: BindingPlace[] = [];

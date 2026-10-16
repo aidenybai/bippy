@@ -80,7 +80,8 @@ interface TransitionBudget {
 interface TransitionContext extends ReachabilityContext {
   budget: TransitionBudget;
   targetEnumerator: StateEnumerator;
-  regionStateKeys: string[];
+  stateIndicesByKey: Map<string, number[]>;
+  targetIndicesByConstraints: Map<string, number[]>;
   firstStateIndex: number;
 }
 
@@ -398,12 +399,26 @@ const getConstraintsAfterUpdates = (
     ? constraints
     : applyUpdates(updates, constraints, context.reachableConstraints, context.dependentsByBinding);
 
-const getTargetStateKeys = (
+const getCachedTargetIndices = (
+  afterHandler: Constraints,
+  context: TransitionContext,
+): number[] => {
+  const constraintsKey = getCachedConstraintsKey(afterHandler);
+  const cachedIndices = context.targetIndicesByConstraints.get(constraintsKey);
+  if (cachedIndices) return cachedIndices;
+  const targetIndices = context.targetEnumerator
+    .enumerate(context.analysis.render, afterHandler)
+    .flatMap((alternative) => context.stateIndicesByKey.get(getStateKey(alternative)) ?? []);
+  context.targetIndicesByConstraints.set(constraintsKey, targetIndices);
+  return targetIndices;
+};
+
+const getTargetStateIndices = (
   handler: Handler,
   constraints: Constraints,
   context: TransitionContext,
-): Set<string> => {
-  const targetKeys = new Set<string>();
+): Set<number> => {
+  const targetIndices = new Set<number>();
   for (const updates of getHandlerUpdateSequences(handler, context.budget)) {
     if (context.budget.remainingTargetEnumerations <= 0) {
       context.budget.isExhausted = true;
@@ -411,20 +426,15 @@ const getTargetStateKeys = (
     }
     context.budget.remainingTargetEnumerations--;
     const afterHandler = getConstraintsAfterUpdates(updates, constraints, context);
-    for (const stateKey of context.targetEnumerator.enumerateStateKeys(
-      context.analysis.render,
-      afterHandler,
-    ))
-      targetKeys.add(stateKey);
+    for (const index of getCachedTargetIndices(afterHandler, context)) targetIndices.add(index);
   }
-  return targetKeys;
+  return targetIndices;
 };
 
 class StateEnumerator {
   readonly #branchOutcomes: BranchOutcomes;
   readonly #region: RegionBranches;
   readonly #alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
-  readonly #stateKeysCache = new WeakMap<SymbolicValue, Map<string, string[]>>();
   #isTruncated = false;
 
   constructor(branchOutcomes: BranchOutcomes, region: RegionBranches) {
@@ -447,20 +457,6 @@ class StateEnumerator {
     const alternatives = this.#enumerateUncached(value, constraints);
     alternativesByConstraints.set(constraints, alternatives);
     return alternatives;
-  }
-
-  enumerateStateKeys(value: SymbolicValue, constraints: Constraints): string[] {
-    let stateKeysByConstraints = this.#stateKeysCache.get(value);
-    if (!stateKeysByConstraints) {
-      stateKeysByConstraints = new Map();
-      this.#stateKeysCache.set(value, stateKeysByConstraints);
-    }
-    const constraintsKey = getCachedConstraintsKey(constraints);
-    const cachedStateKeys = stateKeysByConstraints.get(constraintsKey);
-    if (cachedStateKeys) return cachedStateKeys;
-    const stateKeys = this.enumerate(value, constraints).map(getStateKey);
-    stateKeysByConstraints.set(constraintsKey, stateKeys);
-    return stateKeys;
   }
 
   #enumerateUncached(value: SymbolicValue, constraints: Constraints): Alternative[] {
@@ -569,14 +565,22 @@ const getTransition = (
   alternative: Alternative,
   context: TransitionContext,
 ): Transition => {
-  const targetKeys = getTargetStateKeys(handler, alternative.constraints, context);
+  const targetIndices = getTargetStateIndices(handler, alternative.constraints, context);
   return {
     handlerId: handler.id,
-    targets: context.regionStateKeys.flatMap((stateKey, regionStateIndex) =>
-      targetKeys.has(stateKey) ? [context.firstStateIndex + regionStateIndex] : [],
-    ),
+    targets: [...targetIndices]
+      .sort((left, right) => left - right)
+      .map((regionStateIndex) => context.firstStateIndex + regionStateIndex),
     isAsync: handler.updates.some((update) => update.isAsync),
   };
+};
+
+const getStateIndicesByKey = (alternatives: Alternative[]): Map<string, number[]> => {
+  const stateIndicesByKey = new Map<string, number[]>();
+  alternatives.forEach((alternative, regionStateIndex) =>
+    appendToGroup(stateIndicesByKey, getStateKey(alternative), regionStateIndex),
+  );
+  return stateIndicesByKey;
 };
 
 const createRegion = (
@@ -617,7 +621,8 @@ const enumerateRegion = (
     reachableConstraints: context.reachableConstraints,
     dependentsByBinding: context.dependentsByBinding,
     targetEnumerator: new StateEnumerator(new Map(), regionBranches),
-    regionStateKeys: alternatives.map(getStateKey),
+    stateIndicesByKey: getStateIndicesByKey(alternatives),
+    targetIndicesByConstraints: new Map(),
     firstStateIndex,
     budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
   };
