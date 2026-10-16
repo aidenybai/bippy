@@ -72,6 +72,8 @@ export const collect = async (
     const report = await verifyProject(configPath, {
       analyzed: components,
       setupDirectory,
+      onStart: (componentName) =>
+        onProgress?.(`${Math.round(performance.now() - startTime)} ms starting ${componentName}`),
       onComponent: (verdict) =>
         onProgress?.(
           `${Math.round(performance.now() - startTime)} ms ${verdict.status} ${verdict.name}`,
