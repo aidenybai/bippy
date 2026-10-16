@@ -5,14 +5,17 @@ Runs the analyzer and the verifier against pinned real-world repos and collects 
 ## Run
 
 ```sh
-pnpm --filter bippy-analyzer conformance run                        # every repo, on this machine
+pnpm --filter bippy-analyzer conformance run                        # every repo
 pnpm --filter bippy-analyzer conformance run invoify                # one repo
-pnpm --filter bippy-analyzer conformance run --env vercel -n 8      # Vercel Sandbox, 8 at a time
+pnpm --filter bippy-analyzer conformance run -n 4                   # four at a time
 ```
+
+Each repo is set up once under `.conformance/<id>` with `setup.sh`: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. Each component gets 60 seconds of exploration.
 
 Results go to `conformance/results/<run>/`:
 
 - `results.json`: every repo's summary, or the error if it failed.
+- `<repo>/error.txt`: why the repo failed, if it did.
 - `<repo>/analysis.json`: the analyzer output, the same as `analyze --json`.
 - `<repo>/verify.json`: the verdict for every component: covered states, counterexamples, and why a component couldn't mount.
 - `<repo>/summary.json`: counts of components, states, handlers, unreachable branches, untyped bindings and bailouts, plus the verification totals.
@@ -36,7 +39,7 @@ Create `repos/<id>/repo.json`:
 - Pin `revision` to a full commit SHA.
 - `install` runs from the repo root. If the app lives in a subfolder, `cd` into it first.
 - Use the repo's own lockfile and `--ignore-scripts`.
-- The sandbox image has `npm` but not `yarn`, so pin Yarn with `npx --yes yarn@1.22.22`.
+- Pin Yarn with `npx --yes yarn@1.22.22`, so the install doesn't depend on the machine's Yarn.
 - npm doesn't run `bun`'s install script, so for a Bun lockfile, run the binary its platform package ships, as `repos/next-shadcn-dashboard-starter/repo.json` does.
 - Build the workspace packages the app imports, like `npx --yes pnpm@9.5.0 --filter novel build`.
 
@@ -66,15 +69,6 @@ test("pages through comments", async ({ mountComponent }) => {
 ```
 
 `expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter bippy-analyzer conformance specs`, after a `conformance run` has set the repos up.
-
-## Environments
-
-Both environments run the same `setup.sh`: a shallow fetch of the pinned commit, the optional patch, then the install command.
-
-- **`local`** sets up each repo once under `.conformance/<id>` and reruns setup only when the commit, install command or patch changes.
-- **`vercel`** runs setup once in a Vercel Sandbox, installs the analyzer's dependencies and Chromium, and saves it as a snapshot. Later runs start from the snapshot, upload the current analyzer source and run it. A new snapshot is made when the setup inputs or the analyzer's dependencies change. Snapshot IDs are stored in `.conformance/vercel-snapshots.json`.
-
-The Vercel environment reads `VERCEL_TOKEN`, `VERCEL_TEAM_ID` and `VERCEL_PROJECT_ID` from the environment or from `packages/bippy-analyzer/.env.local`, which is gitignored.
 
 ## Checking a setup
 

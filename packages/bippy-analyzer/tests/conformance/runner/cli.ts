@@ -5,8 +5,6 @@ import picocolors from "picocolors";
 import type { CollectSummary } from "./collect";
 import { runLocal } from "./local-environment";
 import { CONFORMANCE_DIRECTORY, loadRepos } from "./repos";
-import type { LineLogger, RepoConfig } from "./repos";
-import { runVercel } from "./vercel-environment";
 import { execFileSync } from "node:child_process";
 import {
   countCounterexamples,
@@ -19,10 +17,7 @@ import type { ComponentVerdict } from "../verifier/score";
 import { verifyProject } from "../verifier/verify";
 import { getErrorChain } from "../verifier/reasons";
 
-type Environment = "local" | "vercel";
-
 interface RunOptions {
-  env: Environment;
   out: string;
   concurrency: number;
   verify: boolean;
@@ -41,18 +36,8 @@ interface RepoResult {
   error: string | null;
 }
 
-const ENVIRONMENTS: Environment[] = ["local", "vercel"];
 const UNRESOLVED_TYPE_LIMIT = 0.2;
 const ERROR_PREVIEW_LINES = 6;
-
-const parseEnvironment = (value: string): Environment => {
-  const environment = ENVIRONMENTS.find((candidate) => candidate === value);
-  if (!environment)
-    throw new InvalidArgumentError(
-      `Unknown environment: ${value}. Use ${ENVIRONMENTS.join(", ")}.`,
-    );
-  return environment;
-};
 
 const parseConcurrency = (value: string): number => {
   const concurrency = Number(value);
@@ -60,16 +45,6 @@ const parseConcurrency = (value: string): number => {
     throw new InvalidArgumentError("Concurrency must be a positive integer.");
   return concurrency;
 };
-
-const runRepo = (
-  repo: RepoConfig,
-  options: RunOptions,
-  outputDirectory: string,
-  log: LineLogger,
-): Promise<CollectSummary> =>
-  options.env === "vercel"
-    ? runVercel(repo, outputDirectory, options.verify, log)
-    : runLocal(repo, outputDirectory, options.verify, log);
 
 const mapWithConcurrency = async <Item, Result>(
   items: Item[],
@@ -175,11 +150,11 @@ const run = async (ids: string[], options: RunOptions): Promise<void> => {
     async (repo): Promise<RepoResult> => {
       const outputDirectory = join(runDirectory, repo.id);
       try {
-        log(`running ${repo.id} (${options.env})`);
+        log(`running ${repo.id}`);
         return {
           id: repo.id,
           revision: repo.revision,
-          summary: await runRepo(repo, options, outputDirectory, log),
+          summary: await runLocal(repo, outputDirectory, options.verify, log),
           error: null,
         };
       } catch (error) {
@@ -232,7 +207,6 @@ program
   .command("run")
   .description("Analyze and verify the pinned repos, and collect the results.")
   .argument("[ids...]", "repos to run (default: all)")
-  .option("-e, --env <env>", `where to run: ${ENVIRONMENTS.join(", ")}`, parseEnvironment, "local")
   .option("-o, --out <dir>", "results directory", join(CONFORMANCE_DIRECTORY, "results"))
   .option("-n, --concurrency <n>", "repos to run at once", parseConcurrency, 1)
   .option("--no-verify", "skip mounting components in a browser to check the analyzer's claims")

@@ -21,7 +21,6 @@
     "@babel/parser": "7.26.3",
     "@babel/traverse": "7.26.4",
     "@babel/types": "7.26.3",
-    "@vercel/sandbox": "^3.6.1",
     "bippy": "workspace:*",
     "commander": "^15.0.0",
     "diff": "^8.0.4",

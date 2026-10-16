@@ -11,7 +11,7 @@ Finds every state a React app can be in by reading its source, then checks that 
 ```sh
 pnpm --filter bippy-analyzer analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard
 pnpm --filter bippy-analyzer conformance verify tests/fixtures/symbolic-tree/tsconfig.json
-pnpm --filter bippy-analyzer conformance run --env vercel -n 8
+pnpm --filter bippy-analyzer conformance run -n 4
 ```
 
 ## How verification works

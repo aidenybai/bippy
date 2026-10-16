@@ -13,6 +13,7 @@ import type { LineLogger, RepoConfig } from "./repos";
 
 const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 const SETUP_ERROR_TAIL_LENGTH = 4000;
+const COMPONENT_BUDGET_MS = 60_000;
 
 const getLocalSetupKey = (repo: RepoConfig): string => JSON.stringify(getSetupInputs(repo));
 
@@ -48,5 +49,7 @@ export const runLocal = async (
     outputDirectory,
     shouldVerify,
     repo.setupDirectory,
+    (line) => log(`${repo.id}: ${line}`),
+    COMPONENT_BUDGET_MS,
   );
 };
