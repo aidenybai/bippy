@@ -627,11 +627,25 @@ const recordCaughtError = (error: unknown, errorInfo?: ErrorInfo): void => {
 
 window.addEventListener("error", (event) => recordCaughtError(event.error));
 
+const getLanes = (root: FiberRoot, key: string): number => {
+  const lanes: unknown = Reflect.get(root, key);
+  return typeof lanes === "number" ? lanes : 0;
+};
+
+const hasPendingReactWork = (): boolean => {
+  if (!latestRoot) return false;
+  const warmLanes = "warmLanes" in latestRoot ? getLanes(latestRoot, "warmLanes") : ~0;
+  const blockedLanes =
+    getLanes(latestRoot, "suspendedLanes") & ~getLanes(latestRoot, "pingedLanes") & warmLanes;
+  return (getLanes(latestRoot, "pendingLanes") & ~blockedLanes) !== 0;
+};
+
 const settle = async (): Promise<void> => {
   const deadline = performance.now() + MAX_SETTLE_MS;
   do await waitForSettleInterval();
   while (
     (pendingRequests > 0 ||
+      hasPendingReactWork() ||
       (mountedType !== null && !findMountedFiber() && !renderError && !caughtError)) &&
     performance.now() < deadline
   );
