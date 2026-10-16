@@ -5,17 +5,19 @@ import type {
   BindingPlace,
   SymbolicValue,
 } from "./types";
-import { canTypeEqualLiteral, isEqualToLiteral } from "./utils/checks";
+import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
+import { isEqualToLiteral } from "./utils/is-equal-to-literal";
 import { formatAbstractValue } from "./format";
-import { getValueKey } from "./utils/value-key";
-import { PlaceMap, getPlaceKey, getValuePlace, isSamePlace } from "./utils/place";
-import {
-  getKnownTruthiness,
-  getNegatedOperator,
-  getTestExpression,
-  getTruthiness,
-} from "./utils/truthiness";
-import { forEachSymbolicValue } from "./utils/traverse";
+import { getValueKey } from "./utils/get-value-key";
+import { PlaceMap } from "./utils/place-map";
+import { getPlaceKey } from "./utils/get-place-key";
+import { getValuePlace } from "./utils/get-value-place";
+import { isSamePlace } from "./utils/is-same-place";
+import { getKnownTruthiness } from "./utils/get-known-truthiness";
+import { getNegatedOperator } from "./utils/get-negated-operator";
+import { getTestExpression } from "./utils/get-test-expression";
+import { getTruthiness } from "./utils/get-truthiness";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";

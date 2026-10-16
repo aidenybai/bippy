@@ -1,6 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { appendToGroup } from "../../../src/core/utils/group";
+import { appendToGroup } from "../../../src/core/utils/append-to-group";
 import type {
   AliasResolver,
   ExportedName,

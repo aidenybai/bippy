@@ -1,7 +1,7 @@
-import { GeneratedSource } from "../../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
+import type { JsxTag, SymbolicValue, JsxProp, JsxSpreadProp } from "../types";
 import { assertExhaustive } from "../../react-compiler/Utils/utils";
-import type { JsxProp, JsxSpreadProp, JsxTag, SymbolicValue } from "../types";
 
 type KeyPart = string | number | boolean | null | KeyPart[];
 
@@ -12,6 +12,7 @@ const getTagPart = (tag: JsxTag): KeyPart =>
   tag.kind === "Component" ? [tag.kind, tag.name, tag.declaration] : [tag.kind, tag.name];
 
 const internedIds = new Map<string, number>();
+
 const keysByValue = new WeakMap<SymbolicValue, string>();
 
 const getPropPart = (prop: JsxProp | JsxSpreadProp): KeyPart =>

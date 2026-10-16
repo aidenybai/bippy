@@ -47,11 +47,18 @@ import type {
   WarningKind,
 } from "./types";
 import { formatPlace, formatSymbolicValue } from "./format";
-import { forEachJsxElement, forEachSymbolicValue } from "./utils/traverse";
+import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
-import { PlaceMap, getBindingPlace, getValuePlace } from "./utils/place";
-import { isExternalSource, isNullish, isNullishValue, isStateBinding } from "./utils/checks";
-import { getTestExpression, negate } from "./utils/truthiness";
+import { PlaceMap } from "./utils/place-map";
+import { getBindingPlace } from "./utils/get-binding-place";
+import { getValuePlace } from "./utils/get-value-place";
+import { isExternalSource } from "./utils/is-external-source";
+import { isNullish } from "./utils/is-nullish";
+import { isNullishValue } from "./utils/is-nullish-value";
+import { isStateBinding } from "./utils/is-state-binding";
+import { getTestExpression } from "./utils/get-test-expression";
+import { negate } from "./utils/negate";
 import {
   UNDEFINED_VALUE,
   createBindingValue,
@@ -85,15 +92,13 @@ import {
 } from "./control-flow";
 import type { BranchTerminal, LoopTerminal, Outcome, SwitchTerminal } from "./control-flow";
 import { eachTerminalSuccessor } from "../react-compiler/HIR/visitors";
-import {
-  getDeclarationLocation,
-  getIdentifierName,
-  getConditionallyMutatedPlace,
-  getMutatedPlace,
-  getPlaceOrSpread,
-  getWrittenContextPlaces,
-  isFunctionCreation,
-} from "./utils/hir";
+import { getDeclarationLocation } from "./utils/get-declaration-location";
+import { getIdentifierName } from "./utils/get-identifier-name";
+import { getConditionallyMutatedPlace } from "./utils/get-conditionally-mutated-place";
+import { getMutatedPlace } from "./utils/get-mutated-place";
+import { getPlaceOrSpread } from "./utils/get-place-or-spread";
+import { getWrittenContextPlaces } from "./utils/get-written-context-places";
+import { isFunctionCreation } from "./utils/is-function-creation";
 
 type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,

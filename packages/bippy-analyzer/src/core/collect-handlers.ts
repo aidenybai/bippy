@@ -13,9 +13,9 @@ import type {
   StateUpdate,
   SymbolicValue,
 } from "./types";
-import { forEachJsxElement } from "./utils/traverse";
-import { isExternalSource } from "./utils/checks";
-import { getValueKey } from "./utils/value-key";
+import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { isExternalSource } from "./utils/is-external-source";
+import { getValueKey } from "./utils/get-value-key";
 import { getPassedCallbacks } from "./symbolic-values";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;

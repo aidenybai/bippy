@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { forEachRenderNode } from "../../src/core/utils/traverse";
+import { forEachRenderNode } from "../../src/core/utils/for-each-render-node";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("project hooks", () => {

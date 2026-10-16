@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { Binding, SymbolicValue } from "../../src/core/types";
-import { getValueKey } from "../../src/core/utils/value-key";
+import { getValueKey } from "../../src/core/utils/get-value-key";
 import { createTestBinding } from "./helpers";
 
 const createBinding = (id: number): Binding =>

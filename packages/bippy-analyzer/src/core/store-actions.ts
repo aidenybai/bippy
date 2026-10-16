@@ -27,7 +27,7 @@ import {
   isVariableStatement,
 } from "typescript/unstable/ast/is";
 import type { StoreAssignment, StoreFieldValue, StoreActions } from "./types";
-import { skipParentheses } from "./utils/typescript";
+import { skipParentheses } from "./utils/skip-parentheses";
 import { createDeclarationKey } from "./utils/declaration-key";
 
 const STORE_MODULE_PATTERN = /^zustand(?:\/traditional)?$/;

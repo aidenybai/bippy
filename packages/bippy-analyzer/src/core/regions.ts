@@ -1,16 +1,14 @@
 import DisjointSet from "../react-compiler/Utils/DisjointSet";
 import type { Binding, BindingPlace, BindingValue, ConditionalValue, SymbolicValue } from "./types";
-import { forEachSymbolicValue } from "./utils/traverse";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { formatSymbolicValue } from "./format";
-import {
-  PlaceMap,
-  getBindingPlace,
-  getValuePlace,
-  isPlacePrefix,
-  isSamePlace,
-} from "./utils/place";
-import { getTestExpression } from "./utils/truthiness";
-import { isExternalSource } from "./utils/checks";
+import { PlaceMap } from "./utils/place-map";
+import { getBindingPlace } from "./utils/get-binding-place";
+import { getValuePlace } from "./utils/get-value-place";
+import { isPlacePrefix } from "./utils/is-place-prefix";
+import { isSamePlace } from "./utils/is-same-place";
+import { getTestExpression } from "./utils/get-test-expression";
+import { isExternalSource } from "./utils/is-external-source";
 import { getBranchKey } from "./control-flow";
 
 interface TestedPlace {

@@ -17,7 +17,7 @@ import type {
   SymbolicValue,
   Handler,
 } from "../core/types";
-import { forEachJsxElement } from "../core/utils/traverse";
+import { forEachJsxElement } from "../core/utils/for-each-jsx-element";
 import {
   CONDITION_SEPARATOR,
   UNCONDITIONAL_LABEL,
@@ -27,13 +27,11 @@ import {
   formatStateLabel,
   formatSymbolicValue,
 } from "../core/format";
-import { getTestExpression } from "../core/utils/truthiness";
-import { getBindingPlace } from "../core/utils/place";
-import {
-  isRenderingNothing,
-  isRenderingNothingWhenFalse,
-  isStateBinding,
-} from "../core/utils/checks";
+import { getTestExpression } from "../core/utils/get-test-expression";
+import { getBindingPlace } from "../core/utils/get-binding-place";
+import { isRenderingNothing } from "../core/utils/is-rendering-nothing";
+import { isRenderingNothingWhenFalse } from "../core/utils/is-rendering-nothing-when-false";
+import { isStateBinding } from "../core/utils/is-state-binding";
 import { getBindingUpdates, isEffectHandler } from "../core/collect-handlers";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;

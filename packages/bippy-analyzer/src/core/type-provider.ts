@@ -12,11 +12,9 @@ import {
   addFunction,
 } from "../react-compiler/HIR/ObjectShape";
 import type { ShapeRegistry } from "../react-compiler/HIR/ObjectShape";
-import {
-  LIBRARY_DECLARATION_PATTERN,
-  findNodeAtLocation,
-  getReactExportName,
-} from "./utils/typescript";
+import { LIBRARY_DECLARATION_PATTERN } from "./utils/library-declaration-pattern";
+import { findNodeAtLocation } from "./utils/find-node-at-location";
+import { getReactExportName } from "./utils/typescript";
 
 const MAX_CONVERSION_DEPTH = 3;
 const PRIMITIVE_FLAGS =

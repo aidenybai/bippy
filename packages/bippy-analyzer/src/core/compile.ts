@@ -14,7 +14,7 @@ import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
 import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { ModuleFunctionLoader } from "./function-registry";
-import { getLocationKey } from "./utils/hir";
+import { getLocationKey } from "./utils/get-location-key";
 
 type BabelFunction = NodePath<
   types.FunctionDeclaration | types.FunctionExpression | types.ArrowFunctionExpression

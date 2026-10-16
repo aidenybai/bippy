@@ -1,6 +1,6 @@
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionId, InstructionValue, SourceLocation } from "../react-compiler/HIR/HIR";
-import type { PlaceMap } from "./utils/place";
+import type { PlaceMap } from "./utils/place-map";
 
 export type PrimitiveValue = string | number | boolean | null | undefined;
 

@@ -3,10 +3,10 @@ import type { SourceFile } from "typescript/unstable/ast";
 import type { CompiledFile, CompiledFunction } from "./compile";
 import type { SourceFileResolver } from "./source-file-resolver";
 import { EQUALITY_OPERATORS } from "./constraints";
-import { forEachSymbolicValue } from "./utils/traverse";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";
-import { PlaceMap } from "./utils/place";
+import { PlaceMap } from "./utils/place-map";
 import { createDeclarationKey } from "./utils/declaration-key";
 import type { ProjectHookLoader } from "./interpret";
 import type {

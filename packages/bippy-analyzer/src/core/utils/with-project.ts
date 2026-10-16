@@ -1,15 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve, sep } from "node:path";
 import { API } from "typescript/unstable/sync";
+import { resolve, join, dirname } from "node:path";
 import type { Project } from "typescript/unstable/sync";
-
-const SOURCE_FILE_PATTERN = /\.[jt]sx?$/;
-
-export const isProjectSourceFile = (fileName: string): boolean =>
-  !fileName.includes(`${sep}node_modules${sep}`) &&
-  !fileName.endsWith(".d.ts") &&
-  SOURCE_FILE_PATTERN.test(fileName);
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const isPathMap = (value: unknown): value is Record<string, string[]> =>
   typeof value === "object" &&

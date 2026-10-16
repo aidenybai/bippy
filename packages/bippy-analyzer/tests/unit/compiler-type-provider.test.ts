@@ -1,6 +1,7 @@
 import { SymbolFlags } from "typescript/unstable/sync";
 import { beforeAll, describe, expect, it } from "vite-plus/test";
-import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project";
+import { isProjectSourceFile } from "../../src/core/utils/is-project-source-file";
+import { withProject } from "../../src/core/utils/with-project";
 import type { MutableCollection } from "../../src/react-compiler/HIR/Environment";
 import { Effect, ValueKind } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Type } from "../../src/react-compiler/HIR/HIR";

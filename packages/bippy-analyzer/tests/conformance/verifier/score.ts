@@ -10,20 +10,21 @@ import type {
   SymbolicValue,
   Transition,
 } from "../../../src/core/types";
-import { forEachJsxElement, forEachRenderNode } from "../../../src/core/utils/traverse";
+import { forEachJsxElement } from "../../../src/core/utils/for-each-jsx-element";
+import { forEachRenderNode } from "../../../src/core/utils/for-each-render-node";
 import {
   formatAbstractValue,
   formatLine,
   formatPlace,
   formatStateLabel,
 } from "../../../src/core/format";
-import { isStateBinding } from "../../../src/core/utils/checks";
-import { getLocationKey } from "../../../src/core/utils/hir";
+import { isStateBinding } from "../../../src/core/utils/is-state-binding";
+import { getLocationKey } from "../../../src/core/utils/get-location-key";
 import type { types } from "@babel/core";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
 import { MAX_ACTION_LABEL_LENGTH, TRUNCATED_VALUE } from "./types";
-import { appendToGroup } from "../../../src/core/utils/group";
+import { appendToGroup } from "../../../src/core/utils/append-to-group";
 import type { Action, ActionTarget, Probe, Shape } from "./types";
 import {
   explainMismatch,

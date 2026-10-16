@@ -9,9 +9,9 @@ import type {
   Sample,
   SymbolicValue,
 } from "./types";
-import { forEachJsxElement } from "./utils/traverse";
-import { appendToGroup } from "./utils/group";
-import { getBindingPlace } from "./utils/place";
+import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { appendToGroup } from "./utils/append-to-group";
+import { getBindingPlace } from "./utils/get-binding-place";
 
 const ARRAY_METHOD_NAMES = new Set([
   "every",

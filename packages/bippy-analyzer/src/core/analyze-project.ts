@@ -15,8 +15,10 @@ import type {
 } from "./types";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
-import { collectDisplayNames, collectExportNames } from "./utils/typescript";
-import { isProjectSourceFile, withProject } from "./utils/with-project";
+import { collectDisplayNames } from "./utils/collect-display-names";
+import { collectExportNames } from "./utils/collect-export-names";
+import { isProjectSourceFile } from "./utils/is-project-source-file";
+import { withProject } from "./utils/with-project";
 import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-key";
 

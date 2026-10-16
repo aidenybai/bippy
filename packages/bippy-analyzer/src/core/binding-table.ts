@@ -10,7 +10,8 @@ import type {
   BindingPlace,
 } from "./types";
 import { dedupeAbstractValues } from "./constraints";
-import { PlaceMap, getBindingPlace } from "./utils/place";
+import { PlaceMap } from "./utils/place-map";
+import { getBindingPlace } from "./utils/get-binding-place";
 import { createBindingValue } from "./symbolic-values";
 
 export interface BindingOptions extends Partial<

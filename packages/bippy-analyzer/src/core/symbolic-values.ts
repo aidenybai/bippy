@@ -8,8 +8,9 @@ import type {
   TestKind,
   UnaryOperator,
 } from "./types";
-import { isNullish } from "./utils/checks";
-import { getKnownTruthiness, negate } from "./utils/truthiness";
+import { isNullish } from "./utils/is-nullish";
+import { getKnownTruthiness } from "./utils/get-known-truthiness";
+import { negate } from "./utils/negate";
 
 const MAX_OPTIONS_NESTING = 3;
 

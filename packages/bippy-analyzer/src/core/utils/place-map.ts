@@ -1,28 +1,8 @@
-import type { Binding, BindingValue, BindingPlace } from "../types";
-
-export const getPlaceKey = ({ bindingId, path }: BindingPlace): string =>
-  JSON.stringify([bindingId, ...path]);
-
-export const getBindingPlace = (binding: Binding, path: string[] = []): BindingPlace => ({
-  bindingId: binding.id,
-  path,
-});
-
-export const getValuePlace = (value: BindingValue): BindingPlace =>
-  getBindingPlace(value.binding, value.path);
+import type { BindingPlace } from "../types";
+import { getPlaceKey } from "./get-place-key";
 
 const formatPlaceKey = ({ bindingId, path }: BindingPlace): string =>
   [bindingId, ...path].join(".");
-
-export const isSamePlace = (left: BindingPlace, right: BindingPlace): boolean =>
-  left.bindingId === right.bindingId &&
-  left.path.length === right.path.length &&
-  left.path.every((segment, index) => right.path[index] === segment);
-
-export const isPlacePrefix = (prefix: BindingPlace, place: BindingPlace): boolean =>
-  prefix.bindingId === place.bindingId &&
-  prefix.path.length <= place.path.length &&
-  prefix.path.every((segment, index) => place.path[index] === segment);
 
 export class PlaceMap<Value> {
   readonly #entries = new Map<string, [BindingPlace, Value]>();

@@ -1,8 +1,8 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { Binding, StateUpdate, SymbolicValue, WarningKind } from "./types";
-import { isWholeBinding } from "./utils/checks";
-import { mapSymbolicValue } from "./utils/traverse";
+import { isWholeBinding } from "./utils/is-whole-binding";
+import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { createUnknown } from "./symbolic-values";
 
 export interface CollectedEffects {

@@ -1,8 +1,9 @@
 import type { BlockId, Terminal } from "../react-compiler/HIR/HIR";
 import type { Branch, ConditionalValue, SymbolicValue, TestKind } from "./types";
-import { getTestExpression, negate } from "./utils/truthiness";
-import { getValueKey } from "./utils/value-key";
-import { getLocationKey } from "./utils/hir";
+import { getTestExpression } from "./utils/get-test-expression";
+import { negate } from "./utils/negate";
+import { getValueKey } from "./utils/get-value-key";
+import { getLocationKey } from "./utils/get-location-key";
 
 interface ReturnOutcome {
   kind: "Return";

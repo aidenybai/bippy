@@ -8,7 +8,7 @@ import type {
   PrimitiveValue,
   SymbolicValue,
 } from "./types";
-import { getNegatedOperator } from "./utils/truthiness";
+import { getNegatedOperator } from "./utils/get-negated-operator";
 
 const BINARY_PRECEDENCE = new Map<string, number>([
   ["??", 1],

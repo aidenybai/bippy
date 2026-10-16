@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vite-plus/test";
 import type { ProjectAnalysis, SymbolicValue } from "../../src/core/types";
-import { isRenderingNothing } from "../../src/core/utils/checks";
+import { isRenderingNothing } from "../../src/core/utils/is-rendering-nothing";
 import { analyzeFixture, getComponent } from "./helpers";
 
 let project: ProjectAnalysis;

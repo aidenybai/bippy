@@ -1,9 +1,11 @@
 import type { ConditionalValue, SymbolicValue, UnreachableBranch } from "./types";
-import { forEachRenderNode, forEachSymbolicValue } from "./utils/traverse";
+import { forEachRenderNode } from "./utils/for-each-render-node";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { formatNegated, formatSymbolicValue } from "./format";
-import { getValueKey } from "./utils/value-key";
-import { getTestExpression, negate } from "./utils/truthiness";
-import { isRenderingNothingWhenFalse } from "./utils/checks";
+import { getValueKey } from "./utils/get-value-key";
+import { getTestExpression } from "./utils/get-test-expression";
+import { negate } from "./utils/negate";
+import { isRenderingNothingWhenFalse } from "./utils/is-rendering-nothing-when-false";
 import { getBranchKey } from "./control-flow";
 
 export interface BranchOutcomes extends Map<string, Set<boolean>> {}

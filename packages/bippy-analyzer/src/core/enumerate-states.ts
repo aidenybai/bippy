@@ -24,13 +24,21 @@ import type {
   Handler,
   StateUpdate,
 } from "./types";
-import { forEachJsxElement, forEachSymbolicValue, mapSymbolicValue } from "./utils/traverse";
+import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { formatNegated, formatSymbolicValue } from "./format";
-import { appendToGroup } from "./utils/group";
-import { getValueKey } from "./utils/value-key";
-import { PlaceMap, getBindingPlace, getValuePlace, isSamePlace } from "./utils/place";
-import { getTestExpression, getTruthiness } from "./utils/truthiness";
-import { isNullish, isStateBinding, isWholeBinding } from "./utils/checks";
+import { appendToGroup } from "./utils/append-to-group";
+import { getValueKey } from "./utils/get-value-key";
+import { PlaceMap } from "./utils/place-map";
+import { getBindingPlace } from "./utils/get-binding-place";
+import { getValuePlace } from "./utils/get-value-place";
+import { isSamePlace } from "./utils/is-same-place";
+import { getTestExpression } from "./utils/get-test-expression";
+import { getTruthiness } from "./utils/get-truthiness";
+import { isNullish } from "./utils/is-nullish";
+import { isStateBinding } from "./utils/is-state-binding";
+import { isWholeBinding } from "./utils/is-whole-binding";
 import { getBindingUpdates, isEffectHandler } from "./collect-handlers";
 import { findRegions } from "./regions";
 import { getBranchKey } from "./control-flow";

@@ -1,12 +1,13 @@
 import { resolve } from "node:path";
 import { CompilerTypeProvider } from "../../src/core/type-provider";
-import { isProjectSourceFile, withProject } from "../../src/core/utils/with-project";
+import { isProjectSourceFile } from "../../src/core/utils/is-project-source-file";
+import { withProject } from "../../src/core/utils/with-project";
 import { compileFile } from "../../src/core/compile";
 import { analyzeProject } from "../../src/core/analyze-project";
 import { GeneratedSource } from "../../src/react-compiler/HIR/HIR";
 import type { HIRFunction, Instruction, Type } from "../../src/react-compiler/HIR/HIR";
 import { eachInstructionLValue } from "../../src/react-compiler/HIR/visitors";
-import { isFunctionCreation } from "../../src/core/utils/hir";
+import { isFunctionCreation } from "../../src/core/utils/is-function-creation";
 import type {
   AbstractValue,
   AnalyzedComponent,
@@ -17,7 +18,7 @@ import type {
   StateReport,
 } from "../../src/core/types";
 import { createEmptyAnalysis } from "../../src/core/analyze-component";
-import { PlaceMap } from "../../src/core/utils/place";
+import { PlaceMap } from "../../src/core/utils/place-map";
 import type { Capture } from "../conformance/verifier/types";
 
 export const getFixtureConfig = (fixture: string): string =>

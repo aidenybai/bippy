@@ -1,5 +1,5 @@
 import type { ProjectAnalysis } from "./types";
-import { PlaceMap } from "./utils/place";
+import { PlaceMap } from "./utils/place-map";
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
 

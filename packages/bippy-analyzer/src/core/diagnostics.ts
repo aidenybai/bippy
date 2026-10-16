@@ -1,6 +1,6 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Bailout, BailoutReason, Warning, WarningKind } from "./types";
-import { isSameLocation } from "./utils/hir";
+import { isSameLocation } from "./utils/is-same-location";
 
 export class Diagnostics {
   readonly bailouts: Bailout[] = [];

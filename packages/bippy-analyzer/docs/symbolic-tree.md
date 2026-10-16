@@ -66,7 +66,7 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds            |
 | `format.ts`, `serialize.ts` | Printing and JSON output                                                         |
 | `types.ts`                  | The data passed between stages                                                   |
-| `utils/`                    | Small helpers: places, keys, HIR, predicates, truthiness, traversal, groups, TS  |
+| `utils/`                    | One helper per file: places, keys, HIR, predicates, truthiness, traversal, TS    |
 
 The browser verifier lives in `tests/conformance/verifier`, next to the repos it runs on.
 

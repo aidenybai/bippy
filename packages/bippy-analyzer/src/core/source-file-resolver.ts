@@ -1,13 +1,9 @@
 import type { Node, SourceFile } from "typescript/unstable/ast";
-import {
-  findNodeAtLocation,
-  getUnionMembers,
-  getContextKey,
-  getDeclarationKey,
-  getReactExportName,
-  isReactElementType,
-  isReactType,
-} from "./utils/typescript";
+import { findNodeAtLocation } from "./utils/find-node-at-location";
+import { getUnionMembers } from "./utils/get-union-members";
+import { getContextKey } from "./utils/get-context-key";
+import { getDeclarationKey, getReactExportName, isReactType } from "./utils/typescript";
+import { isReactElementType } from "./utils/is-react-element-type";
 import {
   isBindingElement,
   isCallExpression,
@@ -21,7 +17,7 @@ import {
 import { SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
-import { getLocationKey } from "./utils/hir";
+import { getLocationKey } from "./utils/get-location-key";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { AbstractValue, Domain, Sample } from "./types";
 import {

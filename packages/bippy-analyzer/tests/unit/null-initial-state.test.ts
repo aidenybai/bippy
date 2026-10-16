@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { getBindingPlace } from "../../src/core/utils/place";
+import { getBindingPlace } from "../../src/core/utils/get-binding-place";
 import { analyzeFixture, getBinding, getComponent } from "./helpers";
 
 describe("null initial state", () => {

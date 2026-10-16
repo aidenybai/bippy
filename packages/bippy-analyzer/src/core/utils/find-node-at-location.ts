@@ -1,0 +1,23 @@
+import type { SourceFile, Node } from "typescript/unstable/ast";
+import { getRangeKey } from "./get-range-key";
+import { getLocationKey } from "./get-location-key";
+import type { SourceLocation } from "../../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../../react-compiler/HIR/HIR";
+
+const nodesByRangeCache = new WeakMap<SourceFile, Map<string, Node>>();
+
+const getNodesByRange = (sourceFile: SourceFile): Map<string, Node> => {
+  const cachedNodes = nodesByRangeCache.get(sourceFile);
+  if (cachedNodes) return cachedNodes;
+  const nodesByRange = new Map<string, Node>();
+  const visit = (node: Node): void => {
+    nodesByRange.set(getRangeKey(node.getStart(sourceFile), node.getEnd()), node);
+    node.forEachChild(visit);
+  };
+  sourceFile.forEachChild(visit);
+  nodesByRangeCache.set(sourceFile, nodesByRange);
+  return nodesByRange;
+};
+
+export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
+  loc === GeneratedSource ? null : (getNodesByRange(sourceFile).get(getLocationKey(loc)) ?? null);
