@@ -48,6 +48,8 @@ import { collectUnreachableBranches } from "./unreachable-branches";
 import type { BranchOutcomes } from "./unreachable-branches";
 
 const MAX_ALTERNATIVES = 256;
+const MAX_UPDATE_SEQUENCES = 256;
+const MAX_TARGET_ENUMERATIONS = 262_144;
 const MAX_REACHABILITY_ROUNDS = 8;
 
 interface Alternative {
@@ -70,7 +72,13 @@ interface ReachabilityContext {
   dependentsByBinding: Map<number, number[]>;
 }
 
+interface TransitionBudget {
+  remainingTargetEnumerations: number;
+  isExhausted: boolean;
+}
+
 interface TransitionContext extends ReachabilityContext {
+  budget: TransitionBudget;
   targetEnumerator: StateEnumerator;
   regionStateKeys: string[];
   firstStateIndex: number;
@@ -365,10 +373,10 @@ const dedupeUpdateSequences = (handler: Handler, sequences: StateUpdate[][]): St
   ];
 };
 
-const getHandlerUpdateSequences = (handler: Handler): StateUpdate[][] => {
+const getHandlerUpdateSequences = (handler: Handler, budget: TransitionBudget): StateUpdate[][] => {
   const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
   const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
-  return dedupeUpdateSequences(handler, [
+  const sequences = dedupeUpdateSequences(handler, [
     ...(mayChangeNothing ? [[]] : []),
     ...(synchronousUpdates.length < handler.updates.length
       ? getUpdatePaths(synchronousUpdates)
@@ -376,23 +384,41 @@ const getHandlerUpdateSequences = (handler: Handler): StateUpdate[][] => {
     ...getUpdatesBeforeLaterAsyncUpdates(handler.updates).flatMap(getUpdatePaths),
     ...getUpdatePaths(handler.updates),
   ]);
+  if (sequences.length <= MAX_UPDATE_SEQUENCES) return sequences;
+  budget.isExhausted = true;
+  return sequences.slice(0, MAX_UPDATE_SEQUENCES);
 };
 
-const getConstraintsAfterHandler = (
-  handler: Handler,
+const getConstraintsAfterUpdates = (
+  updates: StateUpdate[],
   constraints: Constraints,
   context: ReachabilityContext,
-): Constraints[] =>
-  getHandlerUpdateSequences(handler).map((updates) =>
-    updates.length === 0
-      ? constraints
-      : applyUpdates(
-          updates,
-          constraints,
-          context.reachableConstraints,
-          context.dependentsByBinding,
-        ),
-  );
+): Constraints =>
+  updates.length === 0
+    ? constraints
+    : applyUpdates(updates, constraints, context.reachableConstraints, context.dependentsByBinding);
+
+const getTargetStateKeys = (
+  handler: Handler,
+  constraints: Constraints,
+  context: TransitionContext,
+): Set<string> => {
+  const targetKeys = new Set<string>();
+  for (const updates of getHandlerUpdateSequences(handler, context.budget)) {
+    if (context.budget.remainingTargetEnumerations <= 0) {
+      context.budget.isExhausted = true;
+      break;
+    }
+    context.budget.remainingTargetEnumerations--;
+    const afterHandler = getConstraintsAfterUpdates(updates, constraints, context);
+    for (const stateKey of context.targetEnumerator.enumerateStateKeys(
+      context.analysis.render,
+      afterHandler,
+    ))
+      targetKeys.add(stateKey);
+  }
+  return targetKeys;
+};
 
 class StateEnumerator {
   readonly #branchOutcomes: BranchOutcomes;
@@ -543,11 +569,7 @@ const getTransition = (
   alternative: Alternative,
   context: TransitionContext,
 ): Transition => {
-  const targetKeys = new Set(
-    getConstraintsAfterHandler(handler, alternative.constraints, context).flatMap((afterHandler) =>
-      context.targetEnumerator.enumerateStateKeys(context.analysis.render, afterHandler),
-    ),
-  );
+  const targetKeys = getTargetStateKeys(handler, alternative.constraints, context);
   return {
     handlerId: handler.id,
     targets: context.regionStateKeys.flatMap((stateKey, regionStateIndex) =>
@@ -597,6 +619,7 @@ const enumerateRegion = (
     targetEnumerator: new StateEnumerator(new Map(), regionBranches),
     regionStateKeys: alternatives.map(getStateKey),
     firstStateIndex,
+    budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
   };
   const regionHandlers = getRegionHandlers(analysis, regionBranches);
   const getTransitions = (alternative: Alternative): Transition[] => {
@@ -614,7 +637,10 @@ const enumerateRegion = (
       transitions: getTransitions(alternative),
     })),
     region: createRegion(regionBranches, firstStateIndex, alternatives.length),
-    isTruncated: enumerator.isTruncated || transitionContext.targetEnumerator.isTruncated,
+    isTruncated:
+      enumerator.isTruncated ||
+      transitionContext.targetEnumerator.isTruncated ||
+      transitionContext.budget.isExhausted,
   };
 };
 
