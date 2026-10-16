@@ -48,9 +48,9 @@ export const withProject = <Result>(
   try {
     const project = api.updateSnapshot({ openProjects: [projectConfigPath] }).getProjects()[0];
     if (!project) throw new Error(`No TypeScript project found for ${configPath}`);
-    const result = callback(project);
+    const callbackResult = callback(project);
     api.close();
-    return result;
+    return callbackResult;
   } catch (error) {
     closeAfterFailure(api);
     throw error;

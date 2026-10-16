@@ -263,8 +263,10 @@ const recordMutationProbe = (id: string, value: unknown): unknown => {
 
 const wrapRenderedHandlers = (id: string, rendered: unknown): unknown => {
   if (Array.isArray(rendered)) {
-    const items = rendered.map((item) => wrapRenderedHandlers(id, item));
-    return items.every((item, index) => item === rendered[index]) ? rendered : items;
+    const wrappedItems = rendered.map((renderedItem) => wrapRenderedHandlers(id, renderedItem));
+    return wrappedItems.every((wrappedItem, index) => wrappedItem === rendered[index])
+      ? rendered
+      : wrappedItems;
   }
   if (!isValidElement<Record<string, unknown>>(rendered)) return rendered;
   const props = Object.entries(rendered.props).map(([name, value]): [string, unknown] => [
