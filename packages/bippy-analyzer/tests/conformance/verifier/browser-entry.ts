@@ -133,6 +133,7 @@ const DEPTH_MARKER_PREFIX = "BippyVerifyDepth";
 const DEPTH_MARKER_PATTERN = new RegExp(`\\bat ${DEPTH_MARKER_PREFIX}(\\d+)\\b`);
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
 const CHANGE_VALUES = ["text", ""];
+const MAX_SELECT_CHANGE_VALUES = 3;
 const MUTATING_COLLECTION_METHODS = new Set(["set", "add", "delete", "clear"]);
 const MUTATING_ARRAY_METHODS = new Set([
   "copyWithin",
@@ -612,7 +613,19 @@ const isRenderedByChild = (fiber: Fiber): boolean => {
 
 interface ActionCandidate extends Pick<MountedAction, "kind" | "value"> {}
 
-const getActionCandidates = (props: Record<string, unknown>, tag: string): ActionCandidate[] => {
+const getChangeValues = (element: HTMLElement): string[] =>
+  element instanceof HTMLSelectElement
+    ? [...new Set([...element.options].map((option) => option.value))].slice(
+        0,
+        MAX_SELECT_CHANGE_VALUES,
+      )
+    : CHANGE_VALUES;
+
+const getActionCandidates = (
+  props: Record<string, unknown>,
+  tag: string,
+  element: HTMLElement,
+): ActionCandidate[] => {
   const candidates: ActionCandidate[] = [];
   if (typeof props.onClick === "function" && props.disabled !== true)
     candidates.push({ kind: "click", value: "" });
@@ -620,7 +633,8 @@ const getActionCandidates = (props: Record<string, unknown>, tag: string): Actio
     INPUT_TAGS.has(tag) &&
     props.type !== "file" &&
     (typeof props.onChange === "function" || typeof props.onInput === "function");
-  if (isEditable) for (const value of CHANGE_VALUES) candidates.push({ kind: "change", value });
+  if (isEditable)
+    for (const value of getChangeValues(element)) candidates.push({ kind: "change", value });
   return candidates;
 };
 
@@ -639,7 +653,7 @@ const collectActions = (): MountedAction[] => {
       const props: Record<string, unknown> = fiber.memoizedProps ?? {};
       const tag = String(fiber.type);
       const label = getLabel(fiber.stateNode);
-      for (const candidate of getActionCandidates(props, tag)) {
+      for (const candidate of getActionCandidates(props, tag, fiber.stateNode)) {
         const baseKey = getActionBaseKey(candidate, tag, label);
         const duplicateCount = countsByBaseKey.get(baseKey) ?? 0;
         countsByBaseKey.set(baseKey, duplicateCount + 1);
