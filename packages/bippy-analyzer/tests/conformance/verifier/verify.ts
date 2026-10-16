@@ -1,4 +1,4 @@
-import { availableParallelism, freemem } from "node:os";
+import { availableParallelism } from "node:os";
 import { dirname, resolve } from "node:path";
 import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
@@ -193,7 +193,7 @@ const getPageCount = (componentCount: number): number =>
     Math.min(
       MAX_PAGES,
       availableParallelism(),
-      Math.floor((freemem() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
+      Math.floor((process.availableMemory() - RESERVED_MEMORY_BYTES) / PAGE_MEMORY_BYTES),
       componentCount,
     ),
   );
@@ -259,7 +259,8 @@ const verifyOnPages = async (
   let nextIndex = 0;
   const verifyRemainingOnOnePage = async (pageIndex: number): Promise<void> => {
     const harnessPage = await HarnessPage.open(browser, harness);
-    const shouldStop = (): boolean => pageIndex > 0 && freemem() < RESERVED_MEMORY_BYTES;
+    const shouldStop = (): boolean =>
+      pageIndex > 0 && process.availableMemory() < RESERVED_MEMORY_BYTES;
     try {
       while (nextIndex < components.length && !shouldStop()) {
         const index = nextIndex++;
