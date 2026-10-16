@@ -102,6 +102,16 @@ const writeSnapshot = (id: string, record: SnapshotRecord): void => {
   );
 };
 
+const getInstalledVersion = (name: string): string | null => {
+  const packageJsonPath = join(PACKAGE_DIRECTORY, "node_modules", name, "package.json");
+  if (!existsSync(packageJsonPath)) return null;
+  const version: unknown = Reflect.get(
+    Object(JSON.parse(readFileSync(packageJsonPath, "utf8"))),
+    "version",
+  );
+  return typeof version === "string" ? version : null;
+};
+
 const getAnalyzerPackageJson = (): string => {
   const packageJson = JSON.parse(readFileSync(join(PACKAGE_DIRECTORY, "package.json"), "utf8"));
   const versions: Record<string, string> = {
@@ -109,7 +119,10 @@ const getAnalyzerPackageJson = (): string => {
     ...packageJson.dependencies,
   };
   const dependencies = Object.fromEntries(
-    ANALYZER_DEPENDENCIES.map((name) => [name, versions[name] ?? "latest"]),
+    ANALYZER_DEPENDENCIES.map((name) => [
+      name,
+      getInstalledVersion(name) ?? versions[name] ?? "latest",
+    ]),
   );
   return `${JSON.stringify({ name: "analyzer", private: true, type: "module", dependencies }, null, 2)}\n`;
 };
