@@ -1,43 +1,16 @@
 import { dirname, resolve } from "node:path";
-import { Command, InvalidArgumentError, Option } from "commander";
-import picocolors from "picocolors";
+import { Command, InvalidArgumentError } from "commander";
 import { analyzeProject } from "../core/analyze-project";
 import { serializeProjectAnalysis } from "../core/serialize";
-import {
-  ALL_VIEWS,
-  DEFAULT_MAX_STATES,
-  DEFAULT_RENDER_DEPTH,
-  formatComponent,
-  formatHierarchy,
-} from "./print";
-import type { View } from "./print";
+import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import type { AnalyzedComponent } from "../core/types";
 
 interface AnalyzeCliOptions {
   component?: string[];
   file?: string;
-  view: View[];
-  hierarchy: boolean;
-  depth: number;
   states: number;
-  attributes: boolean;
   json: boolean;
-  color: boolean;
 }
-
-const isView = (value: string): value is View => ALL_VIEWS.some((view) => view === value);
-
-const parseViews = (value: string): View[] => {
-  if (value === "all") return [...ALL_VIEWS];
-  const views = value.split(",").map((view) => view.trim());
-  const invalidViews = views.filter((view) => !isView(view));
-  if (invalidViews.length > 0) {
-    throw new InvalidArgumentError(
-      `Unknown view: ${invalidViews.join(", ")}. Use ${ALL_VIEWS.join(", ")} or all.`,
-    );
-  }
-  return views.filter(isView);
-};
 
 const parsePositiveInteger = (value: string): number => {
   const integer = Number(value);
@@ -77,58 +50,30 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const components = componentNames
     ? allComponents.filter(({ analysis }) => componentNames.includes(analysis.name))
     : allComponents;
-
   if (options.json) {
     console.log(serializeProjectAnalysis({ components, fileCount }));
     return;
   }
-
-  const colors = picocolors.createColors(options.color && picocolors.isColorSupported);
-  const printOptions = {
-    views: new Set(options.view),
-    colors,
-    rootDirectory: dirname(configPath),
-    maxDepth: options.depth,
-    maxStates: options.states,
-    isShowingAttributes: options.attributes,
-  };
-
-  if (options.hierarchy) console.log(`${formatHierarchy(components, printOptions)}\n`);
-  if (!options.hierarchy || options.component) {
-    for (const component of components)
-      console.log(`${formatComponent(component, printOptions)}\n`);
-  }
-
+  const mermaidOptions = { rootDirectory: dirname(configPath), maxStates: options.states };
+  console.log(components.map((component) => formatMermaid(component, mermaidOptions)).join("\n\n"));
   const elapsedMs = Math.round(performance.now() - startTime);
-  for (const line of formatTotals(components, fileCount, elapsedMs)) console.log(colors.dim(line));
+  for (const line of formatTotals(components, fileCount, elapsedMs)) console.error(line);
 };
 
 new Command()
   .name("analyze")
-  .description("List every state each React component can be in, from source, without running it.")
+  .description(
+    "List every state each React component can be in, from source, without running it, as Mermaid state diagrams.",
+  )
   .argument("[tsconfig]", "path to the project's tsconfig.json", "tsconfig.json")
   .option("-c, --component <names...>", "only show these components")
   .option("-f, --file <filter>", "only analyze files whose path contains this text")
-  .addOption(
-    new Option("-v, --view <views>", `sections to show: ${ALL_VIEWS.join(", ")}`)
-      .argParser(parseViews)
-      .default(ALL_VIEWS, "all"),
-  )
-  .option("-H, --hierarchy", "show the component tree (parent → child)", false)
-  .option(
-    "-d, --depth <n>",
-    "maximum render tree depth",
-    parsePositiveInteger,
-    DEFAULT_RENDER_DEPTH,
-  )
   .option(
     "-s, --states <n>",
-    "maximum states listed per region",
+    "maximum states drawn per region",
     parsePositiveInteger,
     DEFAULT_MAX_STATES,
   )
-  .option("-a, --attributes", "show every JSX attribute, not only event handlers", false)
-  .option("--json", "print the analyses as JSON", false)
-  .option("--no-color", "disable colors")
+  .option("--json", "print the analyses as JSON instead", false)
   .action(runAnalyze)
   .parse();

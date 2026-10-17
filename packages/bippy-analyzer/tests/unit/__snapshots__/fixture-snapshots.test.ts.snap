@@ -1,0 +1,453 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`fixture analysis > App keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: App src/counter.tsx:9
+---
+stateDiagram-v2
+  direction LR
+  S1: isLoading · #lt;Loading#gt;
+  S2: !isLoading · #lt;Button#gt; {count}"
+`;
+
+exports[`fixture analysis > Button keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Button src/counter.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {children}
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Card keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Card src/chains.tsx:13
+---
+stateDiagram-v2
+  direction LR
+  S1: note · #lt;div#gt; #lt;p#gt; {note}
+  S2: !note · #lt;div#gt;"
+`;
+
+exports[`fixture analysis > ClickStats keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ClickStats src/mutation.tsx:41
+---
+stateDiagram-v2
+  direction LR
+  S1: stats.clicks #gt; 0 · #lt;button#gt; {"Clicked"}
+  S2: stats.clicks #lt;= 0 · #lt;button#gt; {"Not clicked"}
+  S1 --> S2: #lt;button#gt; onClick
+  S2 --> S1: #lt;button#gt; onClick
+  state "warnings" as warnings {
+    warnings1: state-mutation L46 mutates stats without setting it, so the change shows only on the next render
+  }"
+`;
+
+exports[`fixture analysis > Composer keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Composer src/guards.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: isSent · #lt;p#gt; "Sent"
+  S2: !isSent · #lt;div#gt; #lt;input#gt; #lt;button#gt; "Send"
+  [*] --> S2
+  S2 --> S1: "Send""
+`;
+
+exports[`fixture analysis > Countdown keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Countdown src/loops.tsx:39
+---
+stateDiagram-v2
+  direction LR
+  S1: steps === 0 · #lt;p#gt; {"Done"}
+  S2: steps !== 0 · #lt;p#gt; {"Counted"}"
+`;
+
+exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Dashboard src/dashboard.tsx:25
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "loading" · #lt;Spinner#gt;
+  S2: status !== "loading" ∧ !user · #lt;SignIn#gt;
+  S3: status !== "loading" ∧ user ∧ items.length #gt; 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;List#gt; #lt;button#gt; {count}
+  S4: status !== "loading" ∧ user ∧ items.length #lt;= 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;Empty#gt; #lt;button#gt; {count}
+  S3 --> S4: on mount (async)
+  S4 --> S3: on mount (async)"
+`;
+
+exports[`fixture analysis > Deck keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Deck src/possible-mutation.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: cards.length === 0 · #lt;div#gt; #lt;p#gt; "Empty" #lt;button#gt; "Shuffle " {count}
+  S2: cards.length !== 0 · #lt;div#gt; #lt;p#gt; "Cards" #lt;button#gt; "Shuffle " {count}
+  S1 --> S2: "Shuffle" {count}
+  S2 --> S1: "Shuffle" {count}"
+`;
+
+exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: EditButton src/access.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: !hasPermission(role, "edit") · #lt;p#gt; "Read only"
+  S2: hasPermission(role, "edit") ∧ isEditing · #lt;button#gt; "Save"
+  S3: hasPermission(role, "edit") ∧ !isEditing · #lt;button#gt; "Edit"
+  S2 --> S3: "Save"
+  S3 --> S2: "Edit""
+`;
+
+exports[`fixture analysis > Empty keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Empty src/dashboard.tsx:16
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; "No items"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Feed keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Feed src/chains.tsx:17
+---
+stateDiagram-v2
+  direction LR
+  S1: !pages?.flatMap(function)?.length · #lt;p#gt; "Nothing yet"
+  S2: pages?.flatMap(function)?.length · #lt;p#gt; {pages?.flatMap(function).length} " items""
+`;
+
+exports[`fixture analysis > FilterLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FilterLabel src/literals.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt; #lt;p#gt; {filter} #lt;button#gt; "Active" #lt;button#gt; "Done"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > FirstMatch keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FirstMatch src/loops.tsx:27
+---
+stateDiagram-v2
+  direction LR
+  S1: found === null · #lt;p#gt; "No match"
+  S2: found !== null · #lt;p#gt; "Found " {found}"
+`;
+
+exports[`fixture analysis > Inbox keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Inbox src/literals.tsx:17
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;section#gt; #lt;em#gt; "Empty"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > List keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: List src/dashboard.tsx:17
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ items
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Loading keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Loading src/counter.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; "Loading…"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > LoopList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: LoopList src/loops.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  state "LoopList" as regions {
+    %% hasLong
+    S1: hasLong · #lt;p#gt; "Long"
+    S2: !hasLong · ∅
+    --
+    %% isSelected
+    S3: isSelected · {"Selected"}
+    S4: !isSelected · {"Select"}
+    [*] --> S4
+    S4 --> S3: #lt;button#gt; onClick
+  }"
+`;
+
+exports[`fixture analysis > Page keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Page src/plain.jsx:13
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;Toggle#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Panels keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Panels src/chains.tsx:23
+---
+stateDiagram-v2
+  direction LR
+  state "Panels" as regions {
+    %% isOpen
+    S1: isOpen · #lt;p#gt; "More details"
+    S2: !isOpen · ∅
+    [*] --> S2
+    S1 --> S2: "Details"
+    S2 --> S1: "Details"
+    --
+    %% isDark
+    S3: isDark · #lt;span#gt; "Dark"
+    S4: !isDark · #lt;span#gt; "Light"
+    [*] --> S4
+    S3 --> S4: "Theme"
+    S4 --> S3: "Theme"
+  }"
+`;
+
+exports[`fixture analysis > ProfileCard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ProfileCard src/query.tsx:10
+---
+stateDiagram-v2
+  direction LR
+  S1: query.isPending · #lt;p#gt; "Loading"
+  S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error: " {query.error.message}
+  S3: !query.isPending ∧ !query.isError ∧ query.data.isAdmin · #lt;div#gt; {query.data.name} #lt;span#gt; "Admin"
+  S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}"
+`;
+
+exports[`fixture analysis > ProfileStatus keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ProfileStatus src/query.tsx:22
+---
+stateDiagram-v2
+  direction LR
+  S1: useQuery().isPending · #lt;div#gt; #lt;p#gt; "Loading"
+  S2: !useQuery().isPending ∧ useQuery().isError ∧ useQuery().data · #lt;div#gt; #lt;p#gt; "Error" #lt;p#gt; {useQuery().data.name}
+  S3: !useQuery().isPending ∧ useQuery().isError ∧ !useQuery().data · #lt;div#gt; #lt;p#gt; "Error"
+  S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}"
+`;
+
+exports[`fixture analysis > RoleBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: RoleBadge src/literals.tsx:30
+---
+stateDiagram-v2
+  direction LR
+  S1: role === "admin" · #lt;strong#gt; "Admin"
+  S2: role !== "admin" · #lt;span#gt; "Member""
+`;
+
+exports[`fixture analysis > SearchList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SearchList src/search.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: items.length === 0 · #lt;div#gt; #lt;input#gt; #lt;p#gt; "No items"
+  S2: items.length !== 0 ∧ items.filter(function).length #gt; 0 · #lt;div#gt; #lt;input#gt; #lt;ul#gt; ↻ items.filter(function)
+  S3: items.length !== 0 ∧ items.filter(function).length #lt;= 0 · #lt;div#gt; #lt;input#gt;
+  S2 --> S3: #lt;input#gt; onChange
+  S3 --> S2: #lt;input#gt; onChange"
+`;
+
+exports[`fixture analysis > ShareButton keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ShareButton src/share-dialog.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: !dialog.isOpen · #lt;button#gt; "Share"
+  S2: dialog.isOpen · #lt;p#gt; {dialog.type}
+  [*] --> S1
+  S1 --> S2: "Share""
+`;
+
+exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SignIn src/dashboard.tsx:15
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;a#gt; "Sign in"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > SortedList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SortedList src/mutation.tsx:30
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ items
+  [*] --> S1
+  state "warnings" as warnings {
+    warnings1: prop-mutation L31 mutates prop items
+  }"
+`;
+
+exports[`fixture analysis > Spinner keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Spinner src/dashboard.tsx:14
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > StatusBanner keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StatusBanner src/literals.tsx:22
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; "Fine"
+  [*] --> S1
+  state "unreachable branches" as unreachable {
+    unreachable1: never status === "error" L24
+  }"
+`;
+
+exports[`fixture analysis > TagEditor keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TagEditor src/local-mutations.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: tags.length === 0 · #lt;div#gt; {[#lt;h2 /#gt;]} #lt;p#gt; "No tags" #lt;button#gt; "Add"
+  S2: tags.length !== 0 · #lt;div#gt; {[#lt;h2 /#gt;]} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
+  S1 --> S2: "Add""
+`;
+
+exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TagList src/mutation.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: tags.length === 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;p#gt; "No tags"
+  S2: tags.length !== 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;ul#gt; ↻ tags
+  S1 --> S2: "Push"
+  S1 --> S2: "Copy"
+  S2 --> S1: "Push"
+  S2 --> S1: "Copy"
+  state "warnings" as warnings {
+    warnings1: lost-update L6 sets tags to the array or object it mutated, so React skips the update
+    warnings2: state-mutation L10 mutates tags in place before setting it
+  }"
+`;
+
+exports[`fixture analysis > TitleCard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TitleCard src/literals.tsx:27
+---
+stateDiagram-v2
+  direction LR
+  S1: title === "" · #lt;p#gt; "Untitled"
+  S2: title !== "" · #lt;h1#gt; {title}"
+`;
+
+exports[`fixture analysis > TodoApp keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TodoApp src/todo.tsx:11
+---
+stateDiagram-v2
+  direction LR
+  state "TodoApp" as regions {
+    %% todos.length
+    S1: todos.length === 0 · #lt;p#gt; "Nothing to do"
+    S2: todos.length !== 0 · ∅
+    S1 --> S2: "Add"
+    --
+    %% isEditing
+    S3: isEditing · #lt;button#gt; "Save"
+    S4: !isEditing · #lt;button#gt; "Edit"
+    [*] --> S4
+    S3 --> S4: "Save"
+    S4 --> S3: "Edit"
+  }"
+`;
+
+exports[`fixture analysis > Toggle keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Toggle src/plain.jsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: isOpen · #lt;div#gt; #lt;button#gt; {"More"} #lt;p#gt; "Details"
+  S2: !isOpen · #lt;div#gt; #lt;button#gt; {"More"}
+  [*] --> S2
+  S1 --> S2: {label}
+  S2 --> S1: {label}"
+`;
+
+exports[`fixture analysis > Toolbar keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Toolbar src/groups.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  state "Toolbar" as regions {
+    %% role, hasPermission(role, "edit")
+    S1: role === "admin" ∧ hasPermission(role, "edit") · #lt;span#gt; "Admin" #lt;button#gt; "Edit"
+    S2: role === "admin" ∧ !hasPermission(role, "edit") · #lt;span#gt; "Admin" #lt;span#gt; "Read only"
+    S3: role !== "admin" ∧ hasPermission(role, "edit") · #lt;button#gt; "Edit"
+    S4: role !== "admin" ∧ !hasPermission(role, "edit") · #lt;span#gt; "Read only"
+    --
+    %% status.isSaving, status.error
+    S5: status.isSaving ∧ status.error · #lt;span#gt; "Saving" #lt;p#gt; {status.error}
+    S6: status.isSaving ∧ !status.error · #lt;span#gt; "Saving"
+    S7: !status.isSaving ∧ status.error · #lt;p#gt; {status.error}
+    S8: !status.isSaving ∧ !status.error · ∅
+    --
+    %% isHelpOpen
+    S9: isHelpOpen · #lt;p#gt; "Press E to edit"
+    S10: !isHelpOpen · ∅
+    [*] --> S10
+    S9 --> S10: "Help"
+    S10 --> S9: "Help"
+  }"
+`;
+
+exports[`fixture analysis > Wizard keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Wizard src/reducer.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: state.step === "done" · #lt;p#gt; "Thanks!"
+  S2: state.step !== "done" ∧ state.step === "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Next"
+  S3: state.step !== "done" ∧ state.step !== "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Back" #lt;button#gt; "Next"
+  [*] --> S2
+  S2 --> S3: "Next"
+  S3 --> S2: "Back"
+  S3 --> S1: "Next"
+  state "unreachable branches" as unreachable {
+    unreachable1: never state.hasError L26
+  }"
+`;

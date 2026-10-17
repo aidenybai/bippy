@@ -1,38 +1,31 @@
 # Symbolic tree
 
-Reads a React project with the TypeScript 7 checker and prints, for each component, its data, render tree and states. It never runs the code.
+Reads a React project with the TypeScript 7 checker and prints, for each component, a Mermaid state diagram of its states and transitions. It never runs the code.
 
 ## Run
 
 ```sh
 pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json              # every component
 pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one component
-pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -H           # component tree
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
 ```
 
 Run these from `packages/bippy-analyzer`.
 
-The default output is a tree per component with three sections: data (props, state, hook results), render (the JSX tree, with each handler's effect inline as `onClick ⇒ …`), and states (each reachable state, what it shows, and which button leads where). Bailouts are added when there are any. Run `--help` for all options.
+The output is one Mermaid `stateDiagram-v2` per component, which GitHub and most markdown viewers render when it is pasted into a `mermaid` code block. Each state is labelled with the conditions that select it and what it renders, each transition with the button or effect that causes it, and `[*]` points at the state the component first renders when its initial state values decide that. A component with several independent regions draws them as concurrent regions, and a region with more states than are drawn ends in a `more` state that the hidden transitions lead to. Unreachable branches, warnings and bailouts are listed in their own boxes. The counts go to stderr. With `--json`, the full analysis is printed instead. Run `--help` for all options.
 
-| Option                       | Effect                                                                           |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `-c, --component <names...>` | Show only these components                                                       |
-| `-f, --file <filter>`        | Show only files whose path contains this text                                    |
-| `-v, --view <views>`         | Pick sections: `data`, `render`, `states`, `warnings`, `bailouts` (default: all) |
-| `-H, --hierarchy`            | Show the parent-to-child component tree with state counts                        |
-| `-d, --depth <n>`            | Cut the render tree off at this depth                                            |
-| `-s, --states <n>`           | List at most this many states per region (default: 32)                           |
-| `-a, --attributes`           | Show every JSX attribute, not only event handlers                                |
-| `--json`                     | Print the analyses as JSON                                                       |
+| Option                       | Effect                                                 |
+| ---------------------------- | ------------------------------------------------------ |
+| `-c, --component <names...>` | Show only these components                             |
+| `-f, --file <filter>`        | Show only files whose path contains this text          |
+| `-s, --states <n>`           | Draw at most this many states per region (default: 32) |
+| `--json`                     | Print the analyses as JSON instead                     |
 
-Render tree symbols:
+Labels use a few symbols:
 
-- `◆` a branch
-- `✓` and `✗` its two sides
-- `↻` a list
-- `onClick ⇒ count = count + 1` a handler and what it does to state
-- `"Next" → S3` in a state, the button that leads to another state
+- `∧` joins the conditions a state needs
+- `◆` a branch another region decides, `↻` a list
+- `· ∅` the state renders nothing
 
 ## What it does
 
@@ -140,30 +133,22 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
 
 `tests/fixtures/symbolic-tree/src/reducer.tsx`:
 
-```text
-Wizard src/reducer.tsx:21
-├─ data
-│  └─ state reducer WizardState = { step: "details", hasError: false }
-│     ├─ .step "details" | "done" | "payment"
-│     └─ .hasError false | true reachable false
-├─ render
-│  └─ ◆ state.step === "done"
-│     ├─ ✓ <p> "Thanks!"
-│     └─ ✗ <form>
-│        ├─ ◆ state.hasError
-│        │  └─ ✓ <p> "Something went wrong"
-│        ├─ ◆ state.step === "payment"
-│        │  └─ ✓ <button onClick ⇒ state.step = "details"> "Back"
-│        └─ <button onClick ⇒ state.step = …> "Next"
-└─ states (3)
-   ├─ S1 state.step === "done"
-   ├─ S2 state.step !== "done" ∧ state.step === "details"
-   │  └─ "Next" → S3
-   ├─ S3 state.step !== "done" ∧ state.step !== "details"
-   │  ├─ "Back" → S2
-   │  └─ "Next" → S1
-   └─ unreachable branches
-      └─ never state.hasError L26
+```mermaid
+---
+title: Wizard src/reducer.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: state.step === "done" · #lt;p#gt; "Thanks!"
+  S2: state.step !== "done" ∧ state.step === "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Next"
+  S3: state.step !== "done" ∧ state.step !== "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Back" #lt;button#gt; "Next"
+  [*] --> S2
+  S2 --> S3: "Next"
+  S3 --> S2: "Back"
+  S3 --> S1: "Next"
+  state "unreachable branches" as unreachable {
+    unreachable1: never state.hasError L26
+  }
 ```
 
 The error alert can never show, because nothing dispatches `fail`.
