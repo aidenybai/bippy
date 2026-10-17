@@ -16,6 +16,7 @@ describe("a region with more states than are listed", () => {
   it("lists the state the component first renders", () => {
     expect(conditions).toContainEqual(["!isPanelOpen"]);
     expect(conditions).toContainEqual(["isPanelOpen", ...FLAGS.map((flag) => `!flags.${flag}`)]);
+    expect(report.regions.map((region) => region.firstRenderState)).toEqual([1, 2]);
   });
 
   it("lists both outcomes of every branch, nearest the first render first", () => {

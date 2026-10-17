@@ -287,6 +287,7 @@ export interface Region {
   placeNames: string[];
   bindingIds: number[];
   states: number[];
+  firstRenderState: number | null;
   isTruncated: boolean;
 }
 

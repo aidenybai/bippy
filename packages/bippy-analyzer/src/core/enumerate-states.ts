@@ -59,6 +59,7 @@ interface Alternative {
   conditions: string[];
   branches: ReadonlySet<string>;
   distanceFromFirstRender: number;
+  hasUndecidedBranch: boolean;
 }
 
 interface FirstRenderOutcomes {
@@ -121,6 +122,7 @@ const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternativ
   conditions: [],
   branches: NO_BRANCHES,
   distanceFromFirstRender: 0,
+  hasUndecidedBranch: false,
 });
 
 const getStateKey = (alternative: Alternative): string =>
@@ -567,6 +569,7 @@ class StateEnumerator {
               : [conditionLabel, ...alternative.conditions],
           branches: new Set([...alternative.branches, `${branchKey}:${isTrue}`]),
           distanceFromFirstRender: alternative.distanceFromFirstRender + (isFirstRenderArm ? 0 : 1),
+          hasUndecidedBranch: alternative.hasUndecidedBranch || firstRenderOutcome === null,
         });
     }
     return this.#keepNearestFirstRender(alternatives);
@@ -590,6 +593,7 @@ class StateEnumerator {
       conditions: [],
       branches: NO_BRANCHES,
       distanceFromFirstRender: 0,
+      hasUndecidedBranch: false,
     };
     const partials =
       this.#combineChildrenInOrder(element.children, emptyPartial) ??
@@ -601,6 +605,7 @@ class StateEnumerator {
       conditions: partial.conditions,
       branches: partial.branches,
       distanceFromFirstRender: partial.distanceFromFirstRender,
+      hasUndecidedBranch: partial.hasUndecidedBranch,
     }));
   }
 
@@ -615,6 +620,7 @@ class StateEnumerator {
       branches: new Set([...partial.branches, ...childAlternative.branches]),
       distanceFromFirstRender:
         partial.distanceFromFirstRender + childAlternative.distanceFromFirstRender,
+      hasUndecidedBranch: partial.hasUndecidedBranch || childAlternative.hasUndecidedBranch,
     };
   }
 
@@ -726,20 +732,26 @@ const getStateIndicesByKey = (alternatives: Alternative[]): Map<string, number[]
   return stateIndicesByKey;
 };
 
+const isFirstRender = (alternative: Alternative): boolean =>
+  alternative.distanceFromFirstRender === 0 && !alternative.hasUndecidedBranch;
+
 const createRegion = (
   regionBranches: RegionBranches,
   firstStateIndex: number,
-  stateCount: number,
+  alternatives: Alternative[],
   isTruncated: boolean,
-): Region => ({
-  placeNames: regionBranches.placeNames,
-  bindingIds: [...regionBranches.bindingIds],
-  states: Array.from(
-    { length: stateCount },
-    (_state, regionStateIndex) => firstStateIndex + regionStateIndex,
-  ),
-  isTruncated,
-});
+): Region => {
+  const firstRenderIndex = alternatives.findIndex(isFirstRender);
+  return {
+    placeNames: regionBranches.placeNames,
+    bindingIds: [...regionBranches.bindingIds],
+    states: alternatives.map(
+      (_alternative, regionStateIndex) => firstStateIndex + regionStateIndex,
+    ),
+    firstRenderState: firstRenderIndex === -1 ? null : firstStateIndex + firstRenderIndex,
+    isTruncated,
+  };
+};
 
 const withDecidedOutcomes = (
   branchOutcomes: BranchOutcomes,
@@ -810,7 +822,7 @@ const enumerateRegion = (
     transitionContext.budget.isExhausted;
   return {
     states,
-    region: createRegion(regionBranches, firstStateIndex, states.length, isTruncated),
+    region: createRegion(regionBranches, firstStateIndex, alternatives, isTruncated),
   };
 };
 
