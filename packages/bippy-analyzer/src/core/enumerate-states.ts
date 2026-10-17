@@ -58,6 +58,12 @@ interface Alternative {
   fragments: SymbolicValue[];
   conditions: string[];
   branches: ReadonlySet<string>;
+  distanceFromFirstRender: number;
+}
+
+interface FirstRenderOutcomes {
+  constraints: Constraints;
+  outcomesByBranchKey: Map<string, boolean | null>;
 }
 
 interface PartialChildren extends Omit<Alternative, "render"> {
@@ -89,6 +95,7 @@ interface TransitionContext extends ReachabilityContext {
 interface EnumerationContext extends ReachabilityContext {
   branchOutcomes: BranchOutcomes;
   effectIds: Set<string>;
+  firstRender: FirstRenderOutcomes;
 }
 
 interface EnumeratedRegion {
@@ -114,6 +121,7 @@ const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternativ
   fragments: [],
   conditions: [],
   branches: NO_BRANCHES,
+  distanceFromFirstRender: 0,
 });
 
 const getStateKey = (alternative: Alternative): string =>
@@ -261,6 +269,33 @@ const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
     unionMemberValues: analysis.unionMemberValues,
     possibleMembers: new Map(),
   };
+};
+
+const createFirstRenderConstraints = (
+  analysis: ComponentAnalysis,
+  reachableConstraints: Constraints,
+): Constraints => {
+  const possibleValues = reachableConstraints.possibleValues.clone();
+  const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
+  for (const [place] of analysis.placeDomains) {
+    const binding = bindingsById.get(place.bindingId);
+    if (!binding || !isStateBinding(binding)) continue;
+    const initialCases = getFieldCases(binding.initial, place.path, binding, null);
+    if (Array.isArray(initialCases)) possibleValues.set(place, dedupeAbstractValues(initialCases));
+  }
+  return { ...reachableConstraints, possibleValues };
+};
+
+const getFirstRenderOutcome = (
+  firstRender: FirstRenderOutcomes,
+  branchKey: string,
+  test: SymbolicValue,
+): boolean | null => {
+  const cachedOutcome = firstRender.outcomesByBranchKey.get(branchKey);
+  if (cachedOutcome !== undefined) return cachedOutcome;
+  const outcome = evaluateCondition(test, firstRender.constraints);
+  firstRender.outcomesByBranchKey.set(branchKey, outcome);
+  return outcome;
 };
 
 const isLengthPreserving = (value: SymbolicValue, binding: Binding): boolean => {
@@ -446,6 +481,7 @@ const getTargetStateIndices = (
 class StateEnumerator {
   readonly #branchOutcomes: BranchOutcomes;
   readonly #region: RegionBranches;
+  readonly #firstRender: FirstRenderOutcomes;
   readonly #shouldDescribeStates: boolean;
   readonly #alternativesCache = new WeakMap<SymbolicValue, WeakMap<Constraints, Alternative[]>>();
   #isTruncated = false;
@@ -453,10 +489,12 @@ class StateEnumerator {
   constructor(
     branchOutcomes: BranchOutcomes,
     region: RegionBranches,
+    firstRender: FirstRenderOutcomes,
     shouldDescribeStates: boolean,
   ) {
     this.#branchOutcomes = branchOutcomes;
     this.#region = region;
+    this.#firstRender = firstRender;
     this.#shouldDescribeStates = shouldDescribeStates;
   }
 
@@ -489,10 +527,12 @@ class StateEnumerator {
     }
   }
 
-  #hasRoomFor(alternativeCount: number): boolean {
-    if (alternativeCount < MAX_ALTERNATIVES) return true;
+  #keepNearestFirstRender(alternatives: Alternative[]): Alternative[] {
+    if (alternatives.length <= MAX_ALTERNATIVES) return alternatives;
     this.#isTruncated = true;
-    return false;
+    return [...alternatives]
+      .sort((left, right) => left.distanceFromFirstRender - right.distanceFromFirstRender)
+      .slice(0, MAX_ALTERNATIVES);
   }
 
   #recordOutcome(branchKey: string, isTrue: boolean): void {
@@ -505,16 +545,20 @@ class StateEnumerator {
   #enumerateBranch(conditional: ConditionalValue, constraints: Constraints): Alternative[] {
     const branchKey = getBranchKey(conditional.branch);
     if (!this.#region.branchKeys.has(branchKey)) return [createLeaf(constraints, conditional)];
-    const alternatives: Alternative[] = [];
     const test = getTestExpression(conditional);
+    const firstRenderOutcome = getFirstRenderOutcome(this.#firstRender, branchKey, test);
+    const alternatives: Alternative[] = [];
+    let feasibleArmCount = 0;
     for (const isTrue of [true, false]) {
       const withOutcome = assumeCondition(test, isTrue, constraints);
       if (!withOutcome) continue;
       this.#recordOutcome(branchKey, isTrue);
+      const isFirstRenderArm =
+        firstRenderOutcome === null ? feasibleArmCount === 0 : isTrue === firstRenderOutcome;
+      feasibleArmCount++;
       const conditionLabel = this.#getConditionLabel(test, isTrue, constraints);
       const arm = isTrue ? conditional.consequent : conditional.alternate;
-      for (const alternative of this.enumerate(arm, withOutcome)) {
-        if (!this.#hasRoomFor(alternatives.length)) break;
+      for (const alternative of this.enumerate(arm, withOutcome))
         alternatives.push({
           ...alternative,
           fragments: this.#shouldDescribeStates ? [alternative.render] : [],
@@ -523,10 +567,10 @@ class StateEnumerator {
               ? alternative.conditions
               : [conditionLabel, ...alternative.conditions],
           branches: new Set([...alternative.branches, `${branchKey}:${isTrue}`]),
+          distanceFromFirstRender: alternative.distanceFromFirstRender + (isFirstRenderArm ? 0 : 1),
         });
-      }
     }
-    return alternatives;
+    return this.#keepNearestFirstRender(alternatives);
   }
 
   #getConditionLabel(
@@ -540,35 +584,108 @@ class StateEnumerator {
   }
 
   #enumerateChildren(element: JsxContainerValue, constraints: Constraints): Alternative[] {
-    let partials: PartialChildren[] = [
-      { constraints, children: [], fragments: [], conditions: [], branches: NO_BRANCHES },
-    ];
-    for (const child of element.children) {
-      const nextPartials: PartialChildren[] = [];
-      for (const partial of partials) {
-        if (!this.#hasRoomFor(nextPartials.length)) break;
-        for (const childAlternative of this.enumerate(child, partial.constraints)) {
-          if (!this.#hasRoomFor(nextPartials.length)) break;
-          nextPartials.push({
-            constraints: childAlternative.constraints,
-            children: this.#shouldDescribeStates
-              ? [...partial.children, childAlternative.render]
-              : partial.children,
-            fragments: [...partial.fragments, ...childAlternative.fragments],
-            conditions: [...partial.conditions, ...childAlternative.conditions],
-            branches: new Set([...partial.branches, ...childAlternative.branches]),
-          });
-        }
-      }
-      partials = nextPartials;
-    }
+    const emptyPartial: PartialChildren = {
+      constraints,
+      children: [],
+      fragments: [],
+      conditions: [],
+      branches: NO_BRANCHES,
+      distanceFromFirstRender: 0,
+    };
+    const partials =
+      this.#combineChildrenInOrder(element.children, emptyPartial) ??
+      this.#combineChildrenNearestFirstRender(element.children, emptyPartial);
     return partials.map((partial) => ({
       constraints: partial.constraints,
       render: this.#shouldDescribeStates ? { ...element, children: partial.children } : element,
       fragments: partial.fragments,
       conditions: partial.conditions,
       branches: partial.branches,
+      distanceFromFirstRender: partial.distanceFromFirstRender,
     }));
+  }
+
+  #extendPartial(partial: PartialChildren, childAlternative: Alternative): PartialChildren {
+    return {
+      constraints: childAlternative.constraints,
+      children: this.#shouldDescribeStates
+        ? [...partial.children, childAlternative.render]
+        : partial.children,
+      fragments: [...partial.fragments, ...childAlternative.fragments],
+      conditions: [...partial.conditions, ...childAlternative.conditions],
+      branches: new Set([...partial.branches, ...childAlternative.branches]),
+      distanceFromFirstRender:
+        partial.distanceFromFirstRender + childAlternative.distanceFromFirstRender,
+    };
+  }
+
+  #combineChildrenInOrder(
+    children: SymbolicValue[],
+    emptyPartial: PartialChildren,
+  ): PartialChildren[] | null {
+    let partials = [emptyPartial];
+    for (const child of children) {
+      const nextPartials: PartialChildren[] = [];
+      for (const partial of partials)
+        for (const childAlternative of this.enumerate(child, partial.constraints)) {
+          if (nextPartials.length >= MAX_ALTERNATIVES) {
+            this.#isTruncated = true;
+            return null;
+          }
+          nextPartials.push(this.#extendPartial(partial, childAlternative));
+        }
+      partials = nextPartials;
+    }
+    return partials;
+  }
+
+  #combineChildrenNearestFirstRender(
+    children: SymbolicValue[],
+    emptyPartial: PartialChildren,
+  ): PartialChildren[] {
+    const selected: PartialChildren[] = [];
+    for (let distance = 0; selected.length < MAX_ALTERNATIVES; distance++) {
+      const hasFartherCombinations = this.#collectAtDistance(
+        children,
+        0,
+        emptyPartial,
+        distance,
+        selected,
+      );
+      if (!hasFartherCombinations) break;
+    }
+    return selected;
+  }
+
+  #collectAtDistance(
+    children: SymbolicValue[],
+    childIndex: number,
+    partial: PartialChildren,
+    remainingDistance: number,
+    selected: PartialChildren[],
+  ): boolean {
+    const child = children[childIndex];
+    if (!child) {
+      if (remainingDistance === 0) selected.push(partial);
+      return false;
+    }
+    let hasFartherCombinations = false;
+    for (const childAlternative of this.enumerate(child, partial.constraints)) {
+      if (selected.length >= MAX_ALTERNATIVES) break;
+      if (childAlternative.distanceFromFirstRender > remainingDistance) {
+        hasFartherCombinations = true;
+        continue;
+      }
+      const isFarther = this.#collectAtDistance(
+        children,
+        childIndex + 1,
+        this.#extendPartial(partial, childAlternative),
+        remainingDistance - childAlternative.distanceFromFirstRender,
+        selected,
+      );
+      hasFartherCombinations ||= isFarther;
+    }
+    return hasFartherCombinations;
   }
 }
 
@@ -643,13 +760,19 @@ const createTransitionContext = (
   analysis: context.analysis,
   reachableConstraints: context.reachableConstraints,
   dependentsByBinding: context.dependentsByBinding,
-  targetEnumerator: new StateEnumerator(new Map(), regionBranches, false),
+  targetEnumerator: new StateEnumerator(new Map(), regionBranches, context.firstRender, false),
   stateIndicesByKey: getStateIndicesByKey(alternatives),
   targetIndicesByConstraints: new Map(),
   updateSequencesByHandler: new Map(),
   firstStateIndex,
   budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
 });
+
+const createRegionEnumerator = (
+  regionBranches: RegionBranches,
+  context: EnumerationContext,
+): StateEnumerator =>
+  new StateEnumerator(context.branchOutcomes, regionBranches, context.firstRender, true);
 
 const enumerateRegion = (
   regionBranches: RegionBranches,
@@ -658,7 +781,7 @@ const enumerateRegion = (
   context: EnumerationContext,
 ): EnumeratedRegion => {
   const { analysis, effectIds } = context;
-  const enumerator = new StateEnumerator(context.branchOutcomes, regionBranches, true);
+  const enumerator = createRegionEnumerator(regionBranches, context);
   const alternatives = enumerator.enumerate(analysis.render, context.reachableConstraints);
   const transitionContext = createTransitionContext(
     regionBranches,
@@ -697,6 +820,10 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     dependentsByBinding: getDependentsByBinding(analysis.bindings),
     branchOutcomes: new Map(),
     effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),
+    firstRender: {
+      constraints: createFirstRenderConstraints(analysis, reachableConstraints),
+      outcomesByBranchKey: new Map(),
+    },
   };
   const states: State[] = [];
   const regions: Region[] = [];

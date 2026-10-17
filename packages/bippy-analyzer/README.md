@@ -33,7 +33,7 @@ For each exported component, the verifier runs five steps.
 | Unreachable | A branch side the analyzer called unreachable ran.                                                                                                         |
 | Mutation    | A warned mutation never wrote to its state or prop, or a lost update re-rendered.                                                                          |
 
-Each counterexample says what differed, like `expected <p> "Saved", found <p> "Error"`. A component whose states were truncated can't be refuted by a screen it doesn't predict.
+Each counterexample says what differed, like `expected <p> "Saved", found <p> "Error"`. A region with more than 256 states lists the 256 nearest the component's first render and is marked truncated. A truncated component can't be refuted by a screen it doesn't predict.
 
 A component that **couldn't mount** isn't a counterexample. Its failure is classified, such as `provider`, `env`, `module`, `missing-data`, `server-component`, `too-large` or `unresponsive`, so the next harness fix is clear.
 
