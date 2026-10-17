@@ -10,7 +10,7 @@ pnpm --filter bippy-analyzer conformance run invoify                # one repo
 pnpm --filter bippy-analyzer conformance run -n 4                   # four at a time
 ```
 
-Each repo is set up once under `.conformance/<id>` with `setup.sh`: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. Each component gets 60 seconds of exploration.
+Each repo is set up once under `.conformance/<id>`, or under `BIPPY_CONFORMANCE_CACHE` when that is set, with `setup.sh`: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. It runs without the `npm_` and `COREPACK_` variables pnpm sets for scripts, so the app's own package manager sees a clean environment. Set `BIPPY_CONFORMANCE_CACHE` to a folder outside this repository when an app's package manager walks up and finds bippy's root `package.json`, as Yarn 1 does. Each component gets 60 seconds of exploration.
 
 Results go to `conformance/results/<run>/`, where `<run>` is the start time unless `--run-name` sets it:
 

@@ -14,8 +14,16 @@ import type { LineLogger, RepoConfig } from "./repos";
 const SETUP_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 const SETUP_ERROR_TAIL_LENGTH = 4000;
 const COMPONENT_BUDGET_MS = 60_000;
+const PACKAGE_MANAGER_ENVIRONMENT_PREFIXES = ["npm_", "COREPACK_"];
 
 const getLocalSetupKey = (repo: RepoConfig): string => JSON.stringify(getSetupInputs(repo));
+
+const withoutPackageManagerEnvironment = (environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv =>
+  Object.fromEntries(
+    Object.entries(environment).filter(
+      ([name]) => !PACKAGE_MANAGER_ENVIRONMENT_PREFIXES.some((prefix) => name.startsWith(prefix)),
+    ),
+  );
 
 const prepare = (repo: RepoConfig, log: LineLogger): string => {
   const appDirectory = join(CACHE_DIRECTORY, repo.id);
@@ -25,7 +33,10 @@ const prepare = (repo: RepoConfig, log: LineLogger): string => {
   mkdirSync(CACHE_DIRECTORY, { recursive: true });
   log(`setting up ${repo.id}@${repo.revision.slice(0, 12)}`);
   const setupProcess = spawnSync("bash", [join(CONFORMANCE_DIRECTORY, "setup.sh")], {
-    env: { ...process.env, ...getSetupEnvironment(repo, appDirectory, repo.patchFile) },
+    env: {
+      ...withoutPackageManagerEnvironment(process.env),
+      ...getSetupEnvironment(repo, appDirectory, repo.patchFile),
+    },
     encoding: "utf8",
     maxBuffer: SETUP_OUTPUT_BUFFER_BYTES,
   });

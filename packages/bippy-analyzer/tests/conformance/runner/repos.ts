@@ -23,7 +23,8 @@ const REPO_FILE_SCHEMA = z.object({
 
 export const CONFORMANCE_DIRECTORY = join(import.meta.dirname, "..");
 export const PACKAGE_DIRECTORY = join(CONFORMANCE_DIRECTORY, "../..");
-export const CACHE_DIRECTORY = join(PACKAGE_DIRECTORY, ".conformance");
+export const CACHE_DIRECTORY =
+  process.env.BIPPY_CONFORMANCE_CACHE ?? join(PACKAGE_DIRECTORY, ".conformance");
 const REPOS_DIRECTORY = join(CONFORMANCE_DIRECTORY, "repos");
 
 export const loadRepos = (ids: string[]): RepoConfig[] => {
