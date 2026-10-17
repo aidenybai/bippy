@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/moinulmoin/chadnext",
+  "revision": "1a1f25a6de88453bd3c80efa8c3f61f9c159661c",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.8.0 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

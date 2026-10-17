@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/xxtomm/spell-ui",
+  "revision": "a6441b7742b47d99932a8d687e895100bdf736be",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.5.2 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/steven-tey/novel",
+  "revision": "fa95098e66476c466faebb8211baa5869c101a9c",
+  "workingDirectory": "apps/web",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.5.0 install --frozen-lockfile --ignore-scripts && npx --yes pnpm@9.5.0 --filter novel build"
+}

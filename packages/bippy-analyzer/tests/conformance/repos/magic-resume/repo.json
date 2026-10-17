@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/JOYCEQL/magic-resume",
+  "revision": "48cafbb704341b08cff90686b56c81c26dbbf378",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.3.0 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

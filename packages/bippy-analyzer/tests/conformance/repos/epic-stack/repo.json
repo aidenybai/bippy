@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/epicweb-dev/epic-stack",
+  "revision": "64ca647630e15f71e6782b622ab0112c4b428f1f",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund --allow-remote=all"
+}

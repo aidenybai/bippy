@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/webadderallorg/Recordly",
+  "revision": "52a913569afa0229c5a3c116f0c93b828ededb84",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

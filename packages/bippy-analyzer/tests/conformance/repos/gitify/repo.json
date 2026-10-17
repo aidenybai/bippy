@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/gitify-app/gitify",
+  "revision": "c9737b6676bcce4daffbb4be1b990b175e90cb37",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@12.10.1 install --frozen-lockfile --ignore-scripts"
+}

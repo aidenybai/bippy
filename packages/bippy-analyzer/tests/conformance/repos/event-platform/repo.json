@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/adrianhajdin/event_platform",
+  "revision": "fa7a715be4612ad8e17049a8b2ef2ac20ecbf88b",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

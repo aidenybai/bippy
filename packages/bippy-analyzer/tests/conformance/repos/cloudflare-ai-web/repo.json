@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Jazee6/cloudflare-ai-web",
+  "revision": "50d49147225010eff862053604c453d34910bd5b",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "BUN_DIR=$(mktemp -d) && npm install --no-save --no-audit --no-fund --prefix \"$BUN_DIR\" bun@1.3.0 && \"$(ls -d \"$BUN_DIR\"/node_modules/@oven/bun-*/bin/bun | head -1)\" install --frozen-lockfile --ignore-scripts"
+}

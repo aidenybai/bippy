@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/NextJSTemplates/play-nextjs",
+  "revision": "f0a5c55ef1d6198c41ac6354595adadc4c41b924",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

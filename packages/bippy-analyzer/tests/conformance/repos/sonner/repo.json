@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/emilkowalski/sonner",
+  "revision": "8e4662b39255120b62138312058f5d77c0139a5e",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --filter sonner"
+}

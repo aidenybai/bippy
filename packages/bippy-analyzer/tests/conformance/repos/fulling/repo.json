@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/FullAgent/fulling",
+  "revision": "f48efced082a7de3517816267481c04e058672cb",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

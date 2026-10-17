@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/umami-software/umami",
+  "revision": "ec0ff50388c264ed8ce46f00967e92f7e71476ae",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@12.3.4 install --frozen-lockfile --ignore-scripts --filter umami"
+}

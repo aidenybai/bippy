@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/spliit-app/spliit",
+  "revision": "5dac4119f0441cb945756f8c92911de6f312a1a3",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

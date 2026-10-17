@@ -1,0 +1,130 @@
+name: Analyzer Conformance
+
+on:
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: Repo ids to run, separated by spaces. Empty runs every repo.
+        default: ""
+  pull_request:
+    paths:
+      - packages/bippy-analyzer/src/**
+      - packages/bippy-analyzer/patches/**
+      - packages/bippy-analyzer/tests/conformance/**
+      - packages/bippy/src/**
+      - pnpm-lock.yaml
+      - .github/workflows/analyzer-conformance.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RESULTS: packages/bippy-analyzer/tests/conformance/results/ci
+
+jobs:
+  repos:
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.list.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        env:
+          REPOS: ${{ inputs.repos }}
+        run: |
+          ids=${REPOS:-$(ls packages/bippy-analyzer/tests/conformance/repos)}
+          echo "ids=$(echo $ids | tr ' ' '\n' | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  repo:
+    name: ${{ matrix.id }}
+    needs: repos
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ${{ fromJSON(needs.repos.outputs.ids) }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: key
+        run: echo "value=conformance-${{ matrix.id }}-${{ hashFiles('packages/bippy-analyzer/src/**', 'packages/bippy-analyzer/patches/**', 'packages/bippy-analyzer/scripts/build-react-compiler.ts', 'packages/bippy-analyzer/tests/conformance/runner/**', 'packages/bippy-analyzer/tests/conformance/verifier/**', 'packages/bippy-analyzer/tests/conformance/setup.sh', 'packages/bippy/src/**', 'pnpm-lock.yaml', '.github/workflows/analyzer-conformance.yml') }}-${{ hashFiles(format('packages/bippy-analyzer/tests/conformance/repos/{0}/**', matrix.id)) }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        id: result
+        with:
+          path: ${{ env.RESULTS }}/${{ matrix.id }}
+          key: ${{ steps.key.outputs.value }}
+      - if: steps.result.outputs.cache-hit != 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.result.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - if: steps.result.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: packages/bippy-analyzer/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
+      - if: steps.result.outputs.cache-hit != 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: steps.result.outputs.cache-hit != 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.result.outputs.cache-hit != 'true'
+        run: pnpm --filter bippy-analyzer exec playwright install --with-deps chromium
+      - if: steps.result.outputs.cache-hit != 'true'
+        run: pnpm -s --filter bippy-analyzer conformance run ${{ matrix.id }} --run-name ci
+        env:
+          BIPPY_CONFORMANCE_CACHE: ${{ runner.temp }}/conformance
+          NODE_OPTIONS: --max-old-space-size=8192
+          NO_COLOR: 1
+      - if: steps.result.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.RESULTS }}/${{ matrix.id }}
+          key: ${{ steps.key.outputs.value }}
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-${{ matrix.id }}
+          path: ${{ env.RESULTS }}
+          retention-days: 14
+
+  report:
+    needs: repo
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+      - uses: actions/cache@v4
+        with:
+          path: packages/bippy-analyzer/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: conformance-*
+          path: ${{ env.RESULTS }}
+          merge-multiple: true
+      - run: pnpm -s --filter bippy-analyzer conformance report tests/conformance/results/ci ${{ inputs.repos }} | tee table.txt
+        env:
+          NO_COLOR: 1
+      - if: ${{ !cancelled() }}
+        run: printf '```\n%s\n```\n' "$(cat table.txt)" >> "$GITHUB_STEP_SUMMARY"
+      - if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-results
+          path: ${{ env.RESULTS }}/results.json
+          retention-days: 90

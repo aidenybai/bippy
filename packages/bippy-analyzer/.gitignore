@@ -1,0 +1,5 @@
+.conformance/
+tests/conformance/results/
+.env*
+test-results/
+src/react-compiler/

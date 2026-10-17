@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/adrianhajdin/social_media_app",
+  "revision": "9fa032dd198c92aa498db82d248c0d93f28ebf5c",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

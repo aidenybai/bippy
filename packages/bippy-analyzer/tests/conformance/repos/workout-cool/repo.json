@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Snouzy/workout-cool",
+  "revision": "3e65987f4f11bb86483ff9dfc82b831b9a94cb6d",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

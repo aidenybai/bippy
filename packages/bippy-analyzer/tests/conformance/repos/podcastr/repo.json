@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/adrianhajdin/podcastr",
+  "revision": "e4b647350223c45e2ebee356112158545d61473e",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

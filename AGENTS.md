@@ -1,4 +1,4 @@
-Bippy hacks into React internals. `packages/bippy` is the library. `packages/bippy/tests` holds its unit tests (`unit`), React conformance tests (`conformance`), Playwright and Detox tests (`e2e`), and the framework fixtures and playgrounds they run against (`fixtures`). `packages/website` is a demo.
+Bippy hacks into React internals. `packages/bippy` is the library. `packages/bippy/tests` holds its unit tests (`unit`), React conformance tests (`conformance`), Playwright and Detox tests (`e2e`), and the framework fixtures and playgrounds they run against (`fixtures`). `packages/bippy-analyzer` finds the states a React app can be in from its source and checks them in a browser, with tests laid out the same way. `packages/website` is a demo.
 
 When implementing anything in this project, clone `facebook/react` locally and search its source to understand the relevant React internals. Do not rely on memory or assumptions.
 

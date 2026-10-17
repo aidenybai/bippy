@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/al1abb/invoify",
+  "revision": "3859b3cbae28ca4ec559db5ef87e41b798740340",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

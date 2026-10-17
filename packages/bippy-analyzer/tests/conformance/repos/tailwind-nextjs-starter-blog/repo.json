@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/timlrx/tailwind-nextjs-starter-blog",
+  "revision": "b45bef66b40c63b6f57c15ee8cd090682238df4c",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "YARN_ENABLE_SCRIPTS=0 npx --yes corepack@0.34.0 yarn@3.6.1 install --immutable"
+}

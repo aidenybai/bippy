@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/shadcnstudio/shadcn-studio",
+  "revision": "72a20331970218848103184b61e1efa9d0e08dea",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

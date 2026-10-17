@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Georgegriff/react-dnd-kit-tailwind-shadcn-ui",
+  "revision": "3e1dbb0b872125191d5f9c3686060f64d304b99e",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

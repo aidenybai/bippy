@@ -1,0 +1,586 @@
+Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d387180687b3f510300f42.
+Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
+
+diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
+index 959fdf7..0ff3460 100644
+--- a/HIR/BuildHIR.ts
++++ b/HIR/BuildHIR.ts
+@@ -275,20 +275,27 @@ function lowerStatement(
+       const value = lowerExpressionToTemporary(builder, stmt.get('argument'));
+       const handler = builder.resolveThrowHandler();
+       if (handler != null) {
+-        /*
+-         * NOTE: we could support this, but a `throw` inside try/catch is using exceptions
+-         * for control-flow and is generally considered an anti-pattern. we can likely
+-         * just not support this pattern, unless it really becomes necessary for some reason.
+-         */
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason:
+-              '(BuildHIR::lowerStatement) Support ThrowStatement inside of try/catch',
+-            category: ErrorCategory.Todo,
+-            loc: stmt.node.loc ?? null,
+-            suggestions: null,
+-          }),
++        const continuationBlock = builder.reserve('block');
++        builder.terminateWithContinuation(
++          {
++            kind: 'maybe-throw',
++            continuation: continuationBlock.id,
++            handler,
++            id: makeInstructionId(0),
++            loc: stmt.node.loc ?? GeneratedSource,
++            effects: null,
++          },
++          continuationBlock,
+         );
++        builder.terminate(
++          {
++            kind: 'unreachable',
++            id: makeInstructionId(0),
++            loc: stmt.node.loc ?? GeneratedSource,
++          },
++          'block',
++        );
++        return;
+       }
+       const terminal: ThrowTerminal = {
+         kind: 'throw',
+@@ -315,6 +322,9 @@ function lowerStatement(
+           argument as NodePath<t.Expression>,
+         );
+       }
++      builder.lowerPendingFinalizers(finalizer => {
++        lowerStatement(builder, finalizer);
++      });
+       const terminal: ReturnTerminal = {
+         kind: 'return',
+         returnVariant: 'Explicit',
+@@ -1348,10 +1358,16 @@ function lowerStatement(
+       const continuationBlock = builder.reserve('block');
+ 
+       const handlerPath = stmt.get('handler');
+-      if (!hasNode(handlerPath)) {
++      const finalizerPath = stmt.get('finalizer');
++      if (
++        hasNode(finalizerPath) &&
++        (jumpsOutOf(stmt.get('block'), stmt) ||
++          (hasNode(handlerPath) && jumpsOutOf(handlerPath, stmt)) ||
++          exitsEarly(finalizerPath, stmt))
++      ) {
+         builder.recordError(
+           new CompilerErrorDetail({
+-            reason: `(BuildHIR::lowerStatement) Handle TryStatement without a catch clause`,
++            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause and an early exit`,
+             category: ErrorCategory.Todo,
+             loc: stmt.node.loc ?? null,
+             suggestions: null,
+@@ -1359,51 +1375,32 @@ function lowerStatement(
+         );
+         return;
+       }
+-      if (hasNode(stmt.get('finalizer'))) {
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason: `(BuildHIR::lowerStatement) Handle TryStatement with a finalizer ('finally') clause`,
+-            category: ErrorCategory.Todo,
+-            loc: stmt.node.loc ?? null,
+-            suggestions: null,
+-          }),
+-        );
+-      }
+ 
+-      const handlerBindingPath = handlerPath.get('param');
++      const handlerBindingPath = hasNode(handlerPath)
++        ? handlerPath.get('param')
++        : null;
+       let handlerBinding: {
+         place: Place;
+-        path: NodePath<t.Identifier | t.ArrayPattern | t.ObjectPattern>;
++        path: NodePath<t.Identifier | t.ArrayPattern | t.ObjectPattern> | null;
+       } | null = null;
+-      if (hasNode(handlerBindingPath)) {
+-        const place: Place = {
+-          kind: 'Identifier',
+-          identifier: builder.makeTemporary(
++      if (handlerBindingPath !== null && hasNode(handlerBindingPath)) {
++        handlerBinding = {
++          path: handlerBindingPath,
++          place: lowerCatchBinding(
++            builder,
+             handlerBindingPath.node.loc ?? GeneratedSource,
+           ),
+-          effect: Effect.Unknown,
+-          reactive: false,
+-          loc: handlerBindingPath.node.loc ?? GeneratedSource,
+         };
+-        promoteTemporary(place.identifier);
+-        lowerValueToTemporary(builder, {
+-          kind: 'DeclareLocal',
+-          lvalue: {
+-            kind: InstructionKind.Catch,
+-            place: {...place},
+-          },
+-          type: null,
+-          loc: handlerBindingPath.node.loc ?? GeneratedSource,
+-        });
+-
++      } else if (!hasNode(handlerPath)) {
+         handlerBinding = {
+-          path: handlerBindingPath,
+-          place,
++          path: null,
++          place: lowerCatchBinding(builder, stmt.node.loc ?? GeneratedSource),
+         };
+       }
+ 
++      const lowerClauses = (): {handler: BlockId; block: BlockId} => {
+       const handler = builder.enter('catch', _blockId => {
+-        if (handlerBinding !== null) {
++        if (handlerBinding !== null && handlerBinding.path !== null) {
+           lowerAssignment(
+             builder,
+             handlerBinding.path.node.loc ?? GeneratedSource,
+@@ -1413,13 +1410,29 @@ function lowerStatement(
+             'Assignment',
+           );
+         }
+-        lowerStatement(builder, handlerPath.get('body'));
++        if (hasNode(handlerPath)) {
++          lowerStatement(builder, handlerPath.get('body'));
++          return {
++            kind: 'goto',
++            block: continuationBlock.id,
++            variant: GotoVariant.Break,
++            id: makeInstructionId(0),
++            loc: handlerPath.node.loc ?? GeneratedSource,
++          };
++        }
++        CompilerError.invariant(
++          handlerBinding !== null && hasNode(finalizerPath),
++          {
++            reason: 'Expected a try statement without a catch clause to have a finalizer',
++            loc: stmt.node.loc ?? GeneratedSource,
++          },
++        );
++        lowerStatement(builder, finalizerPath);
+         return {
+-          kind: 'goto',
+-          block: continuationBlock.id,
+-          variant: GotoVariant.Break,
++          kind: 'throw',
++          value: {...handlerBinding.place},
+           id: makeInstructionId(0),
+-          loc: handlerPath.node.loc ?? GeneratedSource,
++          loc: finalizerPath.node.loc ?? GeneratedSource,
+         };
+       });
+ 
+@@ -1436,6 +1449,11 @@ function lowerStatement(
+           loc: block.node.loc ?? GeneratedSource,
+         };
+       });
++      return {handler, block};
++      };
++      const {handler, block} = hasNode(finalizerPath)
++        ? builder.enterFinalizer(finalizerPath, lowerClauses)
++        : lowerClauses();
+ 
+       builder.terminateWithContinuation(
+         {
+@@ -1451,6 +1469,9 @@ function lowerStatement(
+         continuationBlock,
+       );
+ 
++      if (hasNode(finalizerPath)) {
++        lowerStatement(builder, finalizerPath);
++      }
+       return;
+     }
+     case 'WithStatement': {
+@@ -2791,6 +2812,9 @@ function lowerExpression(
+       );
+       return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
+     }
++    case 'Import': {
++      return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
++    }
+     default: {
+       builder.recordError(
+         new CompilerErrorDetail({
+@@ -4531,6 +4555,71 @@ function gatherCapturedContext(
+   return capturedIds;
+ }
+ 
++function lowerCatchBinding(builder: HIRBuilder, loc: SourceLocation): Place {
++  const place: Place = {
++    kind: 'Identifier',
++    identifier: builder.makeTemporary(loc),
++    effect: Effect.Unknown,
++    reactive: false,
++    loc,
++  };
++  promoteTemporary(place.identifier);
++  lowerValueToTemporary(builder, {
++    kind: 'DeclareLocal',
++    lvalue: {
++      kind: InstructionKind.Catch,
++      place: {...place},
++    },
++    type: null,
++    loc,
++  });
++  return place;
++}
++
++function jumpsOutOf(
++  path: NodePath<t.Statement | t.CatchClause>,
++  tryPath: NodePath<t.TryStatement>,
++): boolean {
++  return exitsEarly(path, tryPath, {isReturnAnExit: false});
++}
++
++function exitsEarly(
++  path: NodePath<t.Statement | t.CatchClause>,
++  tryPath: NodePath<t.TryStatement>,
++  {isReturnAnExit}: {isReturnAnExit: boolean} = {isReturnAnExit: true},
++): boolean {
++  let found = false;
++  const visitJump = (
++    jumpPath: NodePath<t.BreakStatement | t.ContinueStatement>,
++  ): void => {
++    const label = jumpPath.node.label;
++    const target = jumpPath.findParent(parent =>
++      label != null
++        ? parent.isLabeledStatement() && parent.node.label.name === label.name
++        : parent.isLoop() ||
++            (jumpPath.isBreakStatement() && parent.isSwitchStatement()),
++    );
++    if (target == null || !target.isDescendant(tryPath)) {
++      found = true;
++      jumpPath.stop();
++    }
++  };
++  path.traverse({
++    Function(innerPath) {
++      innerPath.skip();
++    },
++    ReturnStatement(innerPath) {
++      if (isReturnAnExit) {
++        found = true;
++        innerPath.stop();
++      }
++    },
++    BreakStatement: visitJump,
++    ContinueStatement: visitJump,
++  });
++  return found;
++}
++
+ function notNull<T>(value: T | null): value is T {
+   return value !== null;
+ }
+diff --git a/HIR/Environment.ts b/HIR/Environment.ts
+index 9e908b2..fe500d6 100644
+--- a/HIR/Environment.ts
++++ b/HIR/Environment.ts
+@@ -51,11 +51,15 @@ import {
+   makeScopeId,
+ } from './HIR';
+ import {
++  BuiltInArrayId,
++  BuiltInMapId,
+   BuiltInMixedReadonlyId,
++  BuiltInSetId,
+   DefaultMutatingHook,
+   DefaultNonmutatingHook,
+   FunctionSignature,
+   ShapeRegistry,
++  addFunction,
+   addHook,
+ } from './ObjectShape';
+ import {Scope as BabelScope, NodePath} from '@babel/traverse';
+@@ -153,6 +157,12 @@ export const EnvironmentConfigSchema = z.object({
+    */
+   moduleTypeProvider: z.nullable(z.any()).default(null),
+ 
++  /**
++   * bippy-analyzer: a {@link TypeProvider} for the types the TypeScript checker
++   * gives values the compiler can't type itself.
++   */
++  typeProvider: z.nullable(z.any()).default(null),
++
+   /**
+    * A list of functions which the application compiles as macros, where
+    * the compiler must ensure they are not compiled to rename the macro or separate the
+@@ -529,7 +539,26 @@ export function printFunctionType(type: ReactFunctionType): string {
+   }
+ }
+ 
++/**
++ * bippy-analyzer: types the compiler can't infer itself, read from the
++ * TypeScript checker.
++ */
++export interface TypeProvider {
++  getReactExportName(loc: SourceLocation): string | null;
++  getType(loc: SourceLocation, shapes: ShapeRegistry): BuiltInType | null;
++  isMutatingMethod(collection: MutableCollection, method: string): boolean;
++}
++
++export type MutableCollection = 'Array' | 'Map' | 'Set';
++
++const MUTABLE_COLLECTION_SHAPES = new Map<string, MutableCollection>([
++  [BuiltInArrayId, 'Array'],
++  [BuiltInMapId, 'Map'],
++  [BuiltInSetId, 'Set'],
++]);
++
+ export class Environment {
++  #mutatingMethodType: BuiltInType | null = null;
+   #globals: GlobalRegistry;
+   #shapes: ShapeRegistry;
+   #moduleTypes: Map<string, Global | null> = new Map();
+@@ -834,9 +863,64 @@ export class Environment {
+     return moduleType;
+   }
+ 
++  /**
++   * bippy-analyzer: resolves React's exports through aliases and re-exports
++   * with the TypeScript checker, and falls back to TypeScript's type.
++   */
+   getGlobalDeclaration(
+     binding: NonLocalBinding,
+     loc: SourceLocation,
++  ): Global | null {
++    const typeProvider: TypeProvider | null = this.config.typeProvider;
++    const reactExportName = typeProvider?.getReactExportName(loc) ?? null;
++    if (reactExportName !== null) {
++      return (
++        this.#globals.get(reactExportName) ??
++        (isHookName(reactExportName) ? this.#getCustomHookType() : null)
++      );
++    }
++    return (
++      this.#getUntypedGlobalDeclaration(binding, loc) ??
++      this.getTypeScriptType(loc)
++    );
++  }
++
++  /**
++   * bippy-analyzer: the type the TypeScript checker gives the expression at
++   * `loc`, for values the compiler's own inference leaves untyped.
++   */
++  getTypeScriptType(loc: SourceLocation): BuiltInType | null {
++    const typeProvider: TypeProvider | null = this.config.typeProvider;
++    return typeProvider?.getType(loc, this.#shapes) ?? null;
++  }
++
++  /**
++   * bippy-analyzer: a collection method the compiler's shapes don't list, which
++   * TypeScript declares on `Array` but not `ReadonlyArray` (likewise `Map`,
++   * `Set`), mutates its receiver.
++   */
++  #getMutatingMethodType(
++    shapeId: string,
++    method: string,
++  ): BuiltInType | null {
++    const typeProvider: TypeProvider | null = this.config.typeProvider;
++    const collection = MUTABLE_COLLECTION_SHAPES.get(shapeId);
++    if (!collection || !typeProvider?.isMutatingMethod(collection, method)) {
++      return null;
++    }
++    this.#mutatingMethodType ??= addFunction(this.#shapes, [], {
++      positionalParams: [],
++      restParam: Effect.Capture,
++      returnType: {kind: 'Poly'},
++      calleeEffect: Effect.Store,
++      returnValueKind: ValueKind.Mutable,
++    });
++    return this.#mutatingMethodType;
++  }
++
++  #getUntypedGlobalDeclaration(
++    binding: NonLocalBinding,
++    loc: SourceLocation,
+   ): Global | null {
+     switch (binding.kind) {
+       case 'ModuleLocal': {
+@@ -997,6 +1081,7 @@ export class Environment {
+       if (typeof property === 'string') {
+         return (
+           shape.properties.get(property) ??
++          this.#getMutatingMethodType(shapeId, property) ??
+           shape.properties.get('*') ??
+           (isHookName(property) ? this.#getCustomHookType() : null)
+         );
+diff --git a/HIR/HIRBuilder.ts b/HIR/HIRBuilder.ts
+index 71874b0..3c01f4c 100644
+--- a/HIR/HIRBuilder.ts
++++ b/HIR/HIRBuilder.ts
+@@ -115,6 +115,7 @@ export default class HIRBuilder {
+   #bindings: Bindings;
+   #env: Environment;
+   #exceptionHandlerStack: Array<BlockId> = [];
++  #finalizerStack: Array<NodePath<t.BlockStatement>> = [];
+   /**
+    * Traversal context: counts the number of `fbt` tag parents
+    * of the current babel node.
+@@ -191,6 +192,24 @@ export default class HIRBuilder {
+     return handler ?? null;
+   }
+ 
++  enterFinalizer<T>(finalizer: NodePath<t.BlockStatement>, fn: () => T): T {
++    this.#finalizerStack.push(finalizer);
++    const result = fn();
++    this.#finalizerStack.pop();
++    return result;
++  }
++
++  lowerPendingFinalizers(
++    lower: (finalizer: NodePath<t.BlockStatement>) => void,
++  ): void {
++    const pending = this.#finalizerStack;
++    [...pending].reverse().forEach((finalizer, index) => {
++      this.#finalizerStack = pending.slice(0, pending.length - 1 - index);
++      lower(finalizer);
++    });
++    this.#finalizerStack = pending;
++  }
++
+   makeTemporary(loc: SourceLocation): Identifier {
+     const id = this.nextIdentifierId;
+     return makeTemporaryIdentifier(id, loc);
+diff --git a/TypeInference/InferTypes.ts b/TypeInference/InferTypes.ts
+index 5b6b059..119ec02 100644
+--- a/TypeInference/InferTypes.ts
++++ b/TypeInference/InferTypes.ts
+@@ -17,7 +17,9 @@ import {
+   InstructionKind,
+   makePropertyLiteral,
+   makeType,
++  Place,
+   PropType,
++  SourceLocation,
+   Type,
+   typeEquals,
+   TypeId,
+@@ -66,9 +68,92 @@ export function inferTypes(func: HIRFunction): void {
+   for (const e of generate(func)) {
+     unifier.unify(e.left, e.right);
+   }
++  unifyRemainingTypeScriptTypes(func, unifier);
+   apply(func, unifier);
+ }
+ 
++/**
++ * bippy-analyzer: `StartMemoize`/`FinishMemoize` share the location of the
++ * `useMemo` call they mark, but aren't its value.
++ */
++function isMemoMarker(instr: Instruction): boolean {
++  return (
++    instr.value.kind === 'StartMemoize' || instr.value.kind === 'FinishMemoize'
++  );
++}
++
++function getTypeScriptLocation(
++  identifier: Identifier,
++  loc: SourceLocation,
++): SourceLocation {
++  return identifier.name !== null && identifier.loc !== GeneratedSource
++    ? identifier.loc
++    : loc;
++}
++
++/**
++ * bippy-analyzer: the type TypeScript gives a value, as an equation that
++ * follows the compiler's own. Unification keeps the first concrete type, so the
++ * compiler's types win and TypeScript only fills what it leaves open. Emitting
++ * these in program order types receivers like `form.tags` before
++ * `form.tags.push` is resolved against them. Functions are left to
++ * `unifyRemainingTypeScriptTypes` so methods keep the compiler's signatures.
++ */
++function* generateTypeScriptEquations(
++  env: Environment,
++  places: Iterable<Place>,
++  loc: SourceLocation,
++): Generator<TypeEquation, void, undefined> {
++  for (const place of places) {
++    const type = env.getTypeScriptType(
++      getTypeScriptLocation(place.identifier, loc),
++    );
++    if (type && type.kind !== 'Function') {
++      yield equation(place.identifier.type, type);
++    }
++  }
++}
++
++/**
++ * bippy-analyzer: gives every value still untyped after unification, functions
++ * included, the type TypeScript gives it.
++ */
++function unifyRemainingTypeScriptTypes(
++  func: HIRFunction,
++  unifier: Unifier,
++): void {
++  const unifyUntyped = (identifier: Identifier, loc: SourceLocation): void => {
++    if (unifier.get(identifier.type).kind !== 'Type') {
++      return;
++    }
++    const type = func.env.getTypeScriptType(
++      getTypeScriptLocation(identifier, loc),
++    );
++    if (type) {
++      unifier.unify(identifier.type, type);
++    }
++  };
++  for (const param of func.params) {
++    const place = param.kind === 'Identifier' ? param : param.place;
++    unifyUntyped(place.identifier, place.loc);
++  }
++  for (const [_, block] of func.body.blocks) {
++    for (const instr of block.instructions) {
++      if (!isMemoMarker(instr)) {
++        for (const lvalue of eachInstructionLValue(instr)) {
++          unifyUntyped(lvalue.identifier, instr.loc);
++        }
++      }
++      if (
++        instr.value.kind === 'FunctionExpression' ||
++        instr.value.kind === 'ObjectMethod'
++      ) {
++        unifyRemainingTypeScriptTypes(instr.value.loweredFunc.func, unifier);
++      }
++    }
++  }
++}
++
+ function apply(func: HIRFunction, unifier: Unifier): void {
+   for (const [_, block] of func.body.blocks) {
+     for (const phi of block.phis) {
+@@ -127,6 +212,12 @@ function* generate(
+     }
+   }
+ 
++  yield* generateTypeScriptEquations(
++    func.env,
++    func.params.map(param => (param.kind === 'Identifier' ? param : param.place)),
++    func.loc,
++  );
++
+   const names = new Map();
+   const returnTypes: Array<Type> = [];
+   for (const [_, block] of func.body.blocks) {
+@@ -139,6 +230,13 @@ function* generate(
+ 
+     for (const instr of block.instructions) {
+       yield* generateInstructionTypes(func.env, names, instr);
++      if (!isMemoMarker(instr)) {
++        yield* generateTypeScriptEquations(
++          func.env,
++          eachInstructionLValue(instr),
++          instr.loc,
++        );
++      }
+     }
+     const terminal = block.terminal;
+     if (terminal.kind === 'return') {

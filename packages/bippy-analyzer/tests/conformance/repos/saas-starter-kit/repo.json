@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/boxyhq/saas-starter-kit",
+  "revision": "abc9b686823cbfb4973c79bc36fea37a3244be6c",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

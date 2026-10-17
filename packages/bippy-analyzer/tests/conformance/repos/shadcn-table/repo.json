@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/sadmann7/shadcn-table",
+  "revision": "a88b9520d47305d0bd769d2f51bcc74f83874427",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@12.6.0 install --frozen-lockfile --ignore-scripts"
+}

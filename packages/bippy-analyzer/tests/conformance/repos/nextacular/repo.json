@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/nextacular/nextacular",
+  "revision": "06bee752a0423faa2ba0217ea2fedd719a52bda9",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

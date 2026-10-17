@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/vercel/ai-chatbot",
+  "revision": "c2f8235e1f3ea903ad8b7f61447c4f74164b5c58",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.32.1 install --frozen-lockfile --ignore-scripts"
+}
