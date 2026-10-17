@@ -277,9 +277,26 @@ const getStatesInRegion = (
     (stateIndex) => context.report.states[stateIndex]?.regionIndex === regionIndex,
   );
 
+const isRegionMatched = (
+  context: ScoringContext,
+  matchedStates: number[],
+  regionIndex: number,
+): boolean => getStatesInRegion(context, matchedStates, regionIndex).length > 0;
+
 const isEveryRegionMatched = (context: ScoringContext, matchedStates: number[]): boolean =>
-  getRegionIndices(context).every(
-    (regionIndex) => getStatesInRegion(context, matchedStates, regionIndex).length > 0,
+  getRegionIndices(context).every((regionIndex) =>
+    isRegionMatched(context, matchedStates, regionIndex),
+  );
+
+const getRegionsMatchedOnBothSides = (
+  context: ScoringContext,
+  beforeStates: number[],
+  afterStates: number[],
+): number[] =>
+  getRegionIndices(context).filter(
+    (regionIndex) =>
+      isRegionMatched(context, beforeStates, regionIndex) &&
+      isRegionMatched(context, afterStates, regionIndex),
   );
 
 const isRegionUnchanged = (
@@ -324,38 +341,34 @@ const scoreRender = (
   props: Record<string, Sample>,
   path: string[],
   shapes: Shape[],
-): number[] | null => {
+): number[] => {
   const matchedStates = getMatchedStates(context, shapes);
-  if (isEveryRegionMatched(context, matchedStates)) {
-    for (const stateIndex of matchedStates) context.coveredStates.add(stateIndex);
+  for (const stateIndex of matchedStates) context.coveredStates.add(stateIndex);
+  if (isEveryRegionMatched(context, matchedStates) || context.report.isTruncated)
     return matchedStates;
-  }
-  if (!context.report.isTruncated) {
-    const normalized = normalizeShapes(shapes);
-    const closestState = findClosest(context.expectedStates, normalized);
-    context.verdict.stateCounterexamples.push({
-      props,
-      path,
-      rendered: formatShapes(normalized).slice(0, MAX_RENDERED_LENGTH),
-      closestState,
-      reason: explainMismatch(context.expectedStates[closestState] ?? [], normalized),
-    });
-  }
-  return null;
+  const normalized = normalizeShapes(shapes);
+  const closestState = findClosest(context.expectedStates, normalized);
+  context.verdict.stateCounterexamples.push({
+    props,
+    path,
+    rendered: formatShapes(normalized).slice(0, MAX_RENDERED_LENGTH),
+    closestState,
+    reason: explainMismatch(context.expectedStates[closestState] ?? [], normalized),
+  });
+  return matchedStates;
 };
 
 const scoreFirstCommit = (
   context: ScoringContext,
   observation: Observation,
-  settledMatches: number[] | null,
+  settledMatches: number[],
 ): void => {
   const { firstCommitShapes } = observation.after;
   if (observation.action || !firstCommitShapes) return;
   const firstMatches = scoreRender(context, observation.props, [FIRST_COMMIT], firstCommitShapes);
-  if (!firstMatches || !settledMatches || context.externalBindingIds.size > 0) return;
-  const isUnexplained = getRegionIndices(context).some(
+  if (context.externalBindingIds.size > 0) return;
+  const isUnexplained = getRegionsMatchedOnBothSides(context, firstMatches, settledMatches).some(
     (regionIndex) =>
-      getStatesInRegion(context, settledMatches, regionIndex).length > 0 &&
       !isRegionUnchanged(context, firstMatches, settledMatches, regionIndex) &&
       !getTransitions(
         context,
@@ -541,7 +554,8 @@ const scoreTransition = (
   const { action, before } = observation;
   if (!action || !before || before.error) return;
   const beforeMatches = getMatchedStates(context, before.shapes);
-  if (!isEveryRegionMatched(context, beforeMatches)) return;
+  const regions = getRegionsMatchedOnBothSides(context, beforeMatches, afterMatches);
+  if (regions.length === 0) return;
   const edge: ObservedEdge = {
     action,
     path: observation.path,
@@ -550,7 +564,6 @@ const scoreTransition = (
     ...getTriggeredHandlerIds(context, observation.after),
     earlierTriggeredIds: getEarlierTriggeredIds(context, observation.path),
   };
-  const regions = getRegionIndices(context);
   if (edge.triggeredIds.size === 0) {
     const isExplained = regions.every(
       (regionIndex) =>
@@ -655,7 +668,7 @@ const scoreObservation = (
   );
   scoreFirstCommit(context, observation, afterMatches);
   scoreValues(context, observation);
-  if (afterMatches) scoreTransition(context, observation, afterMatches);
+  scoreTransition(context, observation, afterMatches);
 };
 
 export const scoreComponent = (
