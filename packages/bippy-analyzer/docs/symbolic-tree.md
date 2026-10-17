@@ -22,6 +22,7 @@ The default output is a tree per component with three sections: data (props, sta
 | `-v, --view <views>`         | Pick sections: `data`, `render`, `states`, `warnings`, `bailouts` (default: all) |
 | `-H, --hierarchy`            | Show the parent-to-child component tree with state counts                        |
 | `-d, --depth <n>`            | Cut the render tree off at this depth                                            |
+| `-s, --states <n>`           | List at most this many states per region (default: 32)                           |
 | `-a, --attributes`           | Show every JSX attribute, not only event handlers                                |
 | `--json`                     | Print the analyses as JSON                                                       |
 

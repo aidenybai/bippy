@@ -1,7 +1,12 @@
 import { dirname } from "node:path";
 import picocolors from "picocolors";
 import { describe, expect, it } from "vite-plus/test";
-import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent } from "../../src/cli/print";
+import {
+  ALL_VIEWS,
+  DEFAULT_MAX_STATES,
+  DEFAULT_RENDER_DEPTH,
+  formatComponent,
+} from "../../src/cli/print";
 import { analyzeProject } from "../../src/core/analyze-project";
 import { getFixtureConfig } from "./helpers";
 
@@ -14,6 +19,7 @@ describe("fixture analysis", () => {
     colors: picocolors.createColors(false),
     rootDirectory: dirname(FIXTURE_CONFIG),
     maxDepth: DEFAULT_RENDER_DEPTH,
+    maxStates: DEFAULT_MAX_STATES,
     isShowingAttributes: false,
   };
 

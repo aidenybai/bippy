@@ -300,12 +300,12 @@ exports[`fixture analysis > LoopList keeps its states, transitions and unreachab
 │           ├─ ✓ {"Selected"}
 │           └─ ✗ {"Select"}
 └─ states (4 in 2 regions, 4 combinations)
-   ├─ hasLong
+   ├─ hasLong · 2 states
    │  ├─ S1 hasLong
    │  │  └─ <p> "Long"
    │  └─ S2 !hasLong
    │     └─ ∅
-   └─ isSelected
+   └─ isSelected · 2 states
       ├─ S3 isSelected
       │  └─ {"Selected"}
       └─ S4 !isSelected
@@ -339,14 +339,14 @@ exports[`fixture analysis > Panels keeps its states, transitions and unreachable
 │        ├─ ✓ <span> "Dark"
 │        └─ ✗ <span> "Light"
 └─ states (4 in 2 regions, 4 combinations)
-   ├─ isOpen
+   ├─ isOpen · 2 states
    │  ├─ S1 isOpen
    │  │  ├─ <p> "More details"
    │  │  └─ "Details" → S2
    │  └─ S2 !isOpen
    │     ├─ ∅
    │     └─ "Details" → S1
-   └─ isDark
+   └─ isDark · 2 states
       ├─ S3 isDark
       │  ├─ <span> "Dark"
       │  └─ "Theme" → S4
@@ -612,13 +612,13 @@ exports[`fixture analysis > TodoApp keeps its states, transitions and unreachabl
 │        ├─ ✓ <button onClick ⇒ isEditing = false> "Save"
 │        └─ ✗ <button onClick ⇒ isEditing = true> "Edit"
 └─ states (4 in 2 regions, 4 combinations)
-   ├─ todos.length
+   ├─ todos.length · 2 states
    │  ├─ S1 todos.length === 0
    │  │  ├─ <p> "Nothing to do"
    │  │  └─ "Add" → S2
    │  └─ S2 todos.length !== 0
    │     └─ ∅
-   └─ isEditing
+   └─ isEditing · 2 states
       ├─ S3 isEditing
       │  ├─ <button> "Save"
       │  └─ "Save" → S4
@@ -671,7 +671,7 @@ exports[`fixture analysis > Toolbar keeps its states, transitions and unreachabl
 │     └─ ◆ isHelpOpen
 │        └─ ✓ <p> "Press E to edit"
 └─ states (10 in 3 regions, 32 combinations)
-   ├─ role, hasPermission(role, "edit")
+   ├─ role, hasPermission(role, "edit") · 4 states
    │  ├─ S1 role === "admin" ∧ hasPermission(role, "edit")
    │  │  └─ <span> "Admin" <button> "Edit"
    │  ├─ S2 role === "admin" ∧ !hasPermission(role, "edit")
@@ -680,7 +680,7 @@ exports[`fixture analysis > Toolbar keeps its states, transitions and unreachabl
    │  │  └─ <button> "Edit"
    │  └─ S4 role !== "admin" ∧ !hasPermission(role, "edit")
    │     └─ <span> "Read only"
-   ├─ status.isSaving, status.error
+   ├─ status.isSaving, status.error · 4 states
    │  ├─ S5 status.isSaving ∧ status.error
    │  │  └─ <span> "Saving" <p> {status.error}
    │  ├─ S6 status.isSaving ∧ !status.error
@@ -689,7 +689,7 @@ exports[`fixture analysis > Toolbar keeps its states, transitions and unreachabl
    │  │  └─ <p> {status.error}
    │  └─ S8 !status.isSaving ∧ !status.error
    │     └─ ∅
-   └─ isHelpOpen
+   └─ isHelpOpen · 2 states
       ├─ S9 isHelpOpen
       │  ├─ <p> "Press E to edit"
       │  └─ "Help" → S10

@@ -3,7 +3,13 @@ import { Command, InvalidArgumentError, Option } from "commander";
 import picocolors from "picocolors";
 import { analyzeProject } from "../core/analyze-project";
 import { serializeProjectAnalysis } from "../core/serialize";
-import { ALL_VIEWS, DEFAULT_RENDER_DEPTH, formatComponent, formatHierarchy } from "./print";
+import {
+  ALL_VIEWS,
+  DEFAULT_MAX_STATES,
+  DEFAULT_RENDER_DEPTH,
+  formatComponent,
+  formatHierarchy,
+} from "./print";
 import type { View } from "./print";
 import type { AnalyzedComponent } from "../core/types";
 
@@ -13,6 +19,7 @@ interface AnalyzeCliOptions {
   view: View[];
   hierarchy: boolean;
   depth: number;
+  states: number;
   attributes: boolean;
   json: boolean;
   color: boolean;
@@ -32,11 +39,11 @@ const parseViews = (value: string): View[] => {
   return views.filter(isView);
 };
 
-const parseDepth = (value: string): number => {
-  const depth = Number(value);
-  if (!Number.isInteger(depth) || depth < 1)
-    throw new InvalidArgumentError("Depth must be a positive integer.");
-  return depth;
+const parsePositiveInteger = (value: string): number => {
+  const integer = Number(value);
+  if (!Number.isInteger(integer) || integer < 1)
+    throw new InvalidArgumentError("Expected a positive integer.");
+  return integer;
 };
 
 const formatBailoutCounts = (reasons: string[]): string[] => {
@@ -82,6 +89,7 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
     colors,
     rootDirectory: dirname(configPath),
     maxDepth: options.depth,
+    maxStates: options.states,
     isShowingAttributes: options.attributes,
   };
 
@@ -107,7 +115,18 @@ new Command()
       .default(ALL_VIEWS, "all"),
   )
   .option("-H, --hierarchy", "show the component tree (parent → child)", false)
-  .option("-d, --depth <n>", "maximum render tree depth", parseDepth, DEFAULT_RENDER_DEPTH)
+  .option(
+    "-d, --depth <n>",
+    "maximum render tree depth",
+    parsePositiveInteger,
+    DEFAULT_RENDER_DEPTH,
+  )
+  .option(
+    "-s, --states <n>",
+    "maximum states listed per region",
+    parsePositiveInteger,
+    DEFAULT_MAX_STATES,
+  )
   .option("-a, --attributes", "show every JSX attribute, not only event handlers", false)
   .option("--json", "print the analyses as JSON", false)
   .option("--no-color", "disable colors")

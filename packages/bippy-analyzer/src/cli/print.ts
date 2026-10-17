@@ -11,6 +11,7 @@ import type {
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
+  Region,
   StateUpdate,
   State,
   StateReport,
@@ -35,6 +36,7 @@ import { isStateBinding } from "../core/utils/is-state-binding";
 import { getBindingUpdates, isEffectHandler } from "../core/collect-handlers";
 export const ALL_VIEWS = ["data", "render", "states", "warnings", "bailouts"] as const;
 export const DEFAULT_RENDER_DEPTH = 12;
+export const DEFAULT_MAX_STATES = 32;
 
 export type View = (typeof ALL_VIEWS)[number];
 
@@ -48,6 +50,7 @@ export interface PrintOptions {
   colors: ReturnType<typeof picocolors.createColors>;
   rootDirectory: string;
   maxDepth: number;
+  maxStates: number;
   isShowingAttributes: boolean;
 }
 
@@ -72,6 +75,12 @@ const MAX_RENDER_NODES = 400;
 const MAX_EFFECT_WIDTH = 70;
 const MAX_ATTRIBUTE_WIDTH = 30;
 const MAX_TRIGGER_TEXT_WIDTH = 24;
+const MAX_LISTED_TARGETS = 4;
+const MAX_REGION_PLACES = 5;
+const ESCAPE = String.fromCharCode(27);
+const ANSI_CODE_PATTERN = new RegExp(`${ESCAPE}\\[[\\d;]*m`);
+const ANSI_CODE_SPLIT_PATTERN = new RegExp(`(${ESCAPE}\\[[\\d;]*m)`);
+const ANSI_RESET = `${ESCAPE}[0m`;
 
 const createTreeNode = (label: string, children: TreeNode[] = []): TreeNode => ({
   label,
@@ -91,8 +100,27 @@ const renderAsciiTree = (root: TreeNode): string[] => {
   return lines;
 };
 
-const truncate = (text: string, width = MAX_LABEL_WIDTH): string =>
-  text.length > width ? `${text.slice(0, width - 1)}…` : text;
+const getVisibleLength = (text: string): number =>
+  text
+    .split(ANSI_CODE_SPLIT_PATTERN)
+    .reduce((length, part) => (ANSI_CODE_PATTERN.test(part) ? length : length + part.length), 0);
+
+const truncate = (text: string, width = MAX_LABEL_WIDTH): string => {
+  if (getVisibleLength(text) <= width) return text;
+  let kept = "";
+  let keptLength = 0;
+  for (const part of text.split(ANSI_CODE_SPLIT_PATTERN)) {
+    if (ANSI_CODE_PATTERN.test(part)) {
+      kept += part;
+      continue;
+    }
+    const room = width - 1 - keptLength;
+    kept += part.slice(0, room);
+    keptLength += Math.min(part.length, room);
+    if (part.length >= room) break;
+  }
+  return `${kept}${ANSI_CODE_PATTERN.test(kept) ? ANSI_RESET : ""}…`;
+};
 
 const getPropLabel = (prop: JsxProp | JsxSpreadProp): string =>
   prop.kind === "JsxAttribute" ? prop.name : "{...}";
@@ -411,6 +439,28 @@ const buildDataSection = (component: AnalyzedComponent, options: PrintOptions): 
   );
 };
 
+const formatStateRange = (first: number, last: number): string =>
+  first === last ? formatStateLabel(first) : `${formatStateLabel(first)}–${formatStateLabel(last)}`;
+
+const formatStateTargets = (targets: number[], { colors }: PrintOptions): string => {
+  const ranges: string[] = [];
+  let rangeStart = targets[0] ?? 0;
+  let rangeEnd = rangeStart;
+  for (const target of targets.slice(1)) {
+    if (target === rangeEnd + 1) {
+      rangeEnd = target;
+      continue;
+    }
+    ranges.push(formatStateRange(rangeStart, rangeEnd));
+    rangeStart = target;
+    rangeEnd = target;
+  }
+  ranges.push(formatStateRange(rangeStart, rangeEnd));
+  const countSuffix =
+    targets.length > MAX_LISTED_TARGETS ? colors.dim(` (${targets.length} states)`) : "";
+  return `${ranges.join(" | ")}${countSuffix}`;
+};
+
 const buildState = (
   state: State,
   stateIndex: number,
@@ -430,16 +480,14 @@ const buildState = (
     : formatCompact(state.render, context);
   const details = [createTreeNode(truncate(rendered || colors.dim("∅")))];
   for (const transition of state.transitions) {
-    const targetLabels = transition.targets
-      .filter((targetIndex) => targetIndex !== stateIndex)
-      .map(formatStateLabel);
-    if (targetLabels.length === 0) continue;
+    const targets = transition.targets.filter((targetIndex) => targetIndex !== stateIndex);
+    if (targets.length === 0) continue;
     const triggerLabel =
       context.triggerLabelsByHandler.get(transition.handlerId) ?? transition.handlerId;
     const asyncSuffix = transition.isAsync ? colors.dim(" (async)") : "";
     details.push(
       createTreeNode(
-        `${triggerLabel} ${colors.dim("→")} ${targetLabels.join(" | ")}${asyncSuffix}`,
+        `${triggerLabel} ${colors.dim("→")} ${formatStateTargets(targets, context)}${asyncSuffix}`,
       ),
     );
   }
@@ -449,16 +497,45 @@ const buildState = (
   );
 };
 
+const buildRegionStateNodes = (
+  report: StateReport,
+  stateIndices: number[],
+  hasRegions: boolean,
+  context: ComponentPrintContext,
+): TreeNode[] => {
+  const nodes = stateIndices.slice(0, context.maxStates).flatMap((stateIndex) => {
+    const state = report.states[stateIndex];
+    return state ? [buildState(state, stateIndex, hasRegions, context)] : [];
+  });
+  const hiddenCount = stateIndices.length - nodes.length;
+  if (hiddenCount > 0)
+    nodes.push(
+      createTreeNode(
+        context.colors.dim(`… ${hiddenCount} more states (-s ${stateIndices.length} shows them)`),
+      ),
+    );
+  return nodes;
+};
+
+const formatRegionTitle = (region: Region, { colors }: PrintOptions): string => {
+  const placeNames = region.placeNames.slice(0, MAX_REGION_PLACES).join(colors.dim(", "));
+  const morePlaces =
+    region.placeNames.length > MAX_REGION_PLACES
+      ? colors.dim(` … ${region.placeNames.length} places`)
+      : "";
+  const stateCount = `${region.states.length}${region.isTruncated ? "+" : ""}`;
+  return `${placeNames || colors.dim("other")}${morePlaces} ${colors.dim(`· ${stateCount} states`)}`;
+};
+
 const buildStateNodes = (report: StateReport, context: ComponentPrintContext): TreeNode[] => {
-  if (report.regions.length <= 1)
-    return report.states.map((state, stateIndex) => buildState(state, stateIndex, false, context));
+  if (report.regions.length <= 1) {
+    const stateIndices = report.states.map((_state, stateIndex) => stateIndex);
+    return buildRegionStateNodes(report, stateIndices, false, context);
+  }
   return report.regions.map((region) =>
     createTreeNode(
-      truncate(region.placeNames.join(context.colors.dim(", ")) || context.colors.dim("other")),
-      region.states.map((stateIndex) => {
-        const state = report.states[stateIndex];
-        return state ? buildState(state, stateIndex, true, context) : createTreeNode("");
-      }),
+      formatRegionTitle(region, context),
+      buildRegionStateNodes(report, region.states, true, context),
     ),
   );
 };
@@ -474,14 +551,21 @@ const buildUnreachableNode = (report: StateReport, { colors }: PrintOptions): Tr
   );
 
 const getStatesTitle = (report: StateReport): string => {
-  const truncatedSuffix = report.isTruncated ? "+, truncated" : "";
-  const stateCountLabel = `${report.states.length}${truncatedSuffix}`;
-  if (report.regions.length <= 1) return `states (${stateCountLabel})`;
+  const moreSuffix = report.isTruncated ? "+" : "";
+  const listedLabel = `${report.states.length}${moreSuffix}`;
+  if (report.regions.length <= 1)
+    return `states (${listedLabel}${report.isTruncated ? ", truncated" : ""})`;
+  const truncatedCount = report.regions.filter((region) => region.isTruncated).length;
   const combinationCount = report.regions.reduce(
     (product, region) => product * region.states.length,
     1,
   );
-  return `states (${stateCountLabel} in ${report.regions.length} regions, ${combinationCount} combinations)`;
+  const parts = [
+    `${listedLabel} in ${report.regions.length} regions`,
+    ...(truncatedCount > 0 ? [`${truncatedCount} truncated`] : []),
+    `${combinationCount}${moreSuffix} combinations`,
+  ];
+  return `states (${parts.join(", ")})`;
 };
 
 const buildStatesSection = (

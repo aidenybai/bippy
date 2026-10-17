@@ -101,7 +101,6 @@ interface EnumerationContext extends ReachabilityContext {
 interface EnumeratedRegion {
   states: State[];
   region: Region;
-  isTruncated: boolean;
 }
 
 const NO_BRANCHES: ReadonlySet<string> = new Set();
@@ -731,6 +730,7 @@ const createRegion = (
   regionBranches: RegionBranches,
   firstStateIndex: number,
   stateCount: number,
+  isTruncated: boolean,
 ): Region => ({
   placeNames: regionBranches.placeNames,
   bindingIds: [...regionBranches.bindingIds],
@@ -738,6 +738,7 @@ const createRegion = (
     { length: stateCount },
     (_state, regionStateIndex) => firstStateIndex + regionStateIndex,
   ),
+  isTruncated,
 });
 
 const withDecidedOutcomes = (
@@ -796,19 +797,20 @@ const enumerateRegion = (
       .filter((handler) => renderedHandlerIds.has(handler.id))
       .map((handler) => getTransition(handler, alternative, transitionContext));
   };
+  const states = alternatives.map((alternative) => ({
+    regionIndex,
+    conditions: alternative.conditions,
+    render: alternative.render,
+    fragments: alternative.fragments,
+    transitions: getTransitions(alternative),
+  }));
+  const isTruncated =
+    enumerator.isTruncated ||
+    transitionContext.targetEnumerator.isTruncated ||
+    transitionContext.budget.isExhausted;
   return {
-    states: alternatives.map((alternative) => ({
-      regionIndex,
-      conditions: alternative.conditions,
-      render: alternative.render,
-      fragments: alternative.fragments,
-      transitions: getTransitions(alternative),
-    })),
-    region: createRegion(regionBranches, firstStateIndex, alternatives.length),
-    isTruncated:
-      enumerator.isTruncated ||
-      transitionContext.targetEnumerator.isTruncated ||
-      transitionContext.budget.isExhausted,
+    states,
+    region: createRegion(regionBranches, firstStateIndex, states.length, isTruncated),
   };
 };
 
@@ -832,7 +834,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     const enumerated = enumerateRegion(regionBranches, regionIndex, states.length, context);
     states.push(...enumerated.states);
     regions.push(enumerated.region);
-    isTruncated ||= enumerated.isTruncated;
+    isTruncated ||= enumerated.region.isTruncated;
   });
   return {
     places: reachableConstraints.possibleValues.clone(),
