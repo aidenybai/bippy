@@ -1,4 +1,4 @@
-name: Conformance
+name: Analyzer Conformance
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
       - packages/bippy-analyzer/tests/conformance/**
       - packages/bippy/src/**
       - pnpm-lock.yaml
-      - .github/workflows/conformance.yml
+      - .github/workflows/analyzer-conformance.yml
 
 permissions:
   contents: read
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: key
-        run: echo "value=conformance-${{ matrix.id }}-${{ hashFiles('packages/bippy-analyzer/src/**', 'packages/bippy-analyzer/patches/**', 'packages/bippy-analyzer/scripts/build-react-compiler.ts', 'packages/bippy-analyzer/tests/conformance/runner/**', 'packages/bippy-analyzer/tests/conformance/verifier/**', 'packages/bippy-analyzer/tests/conformance/setup.sh', 'packages/bippy/src/**', 'pnpm-lock.yaml', '.github/workflows/conformance.yml') }}-${{ hashFiles(format('packages/bippy-analyzer/tests/conformance/repos/{0}/**', matrix.id)) }}" >> "$GITHUB_OUTPUT"
+        run: echo "value=conformance-${{ matrix.id }}-${{ hashFiles('packages/bippy-analyzer/src/**', 'packages/bippy-analyzer/patches/**', 'packages/bippy-analyzer/scripts/build-react-compiler.ts', 'packages/bippy-analyzer/tests/conformance/runner/**', 'packages/bippy-analyzer/tests/conformance/verifier/**', 'packages/bippy-analyzer/tests/conformance/setup.sh', 'packages/bippy/src/**', 'pnpm-lock.yaml', '.github/workflows/analyzer-conformance.yml') }}-${{ hashFiles(format('packages/bippy-analyzer/tests/conformance/repos/{0}/**', matrix.id)) }}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
         id: result
         with:

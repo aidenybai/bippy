@@ -72,7 +72,7 @@ test("pages through comments", async ({ mountComponent }) => {
 
 ## GitHub Actions
 
-`.github/workflows/conformance.yml` runs the corpus on pull requests that touch the analyzer, the verifier, the repos or the lockfile, and on demand from the Actions tab, where a list of repo ids limits the run. It starts one job per repo, so the corpus takes as long as its slowest repo, about two hours for shadcn-ui.
+The Analyzer Conformance workflow (`.github/workflows/analyzer-conformance.yml`) runs the corpus on pull requests that touch the analyzer, the verifier, the repos or the lockfile, and on demand from the Actions tab, where a list of repo ids limits the run. It starts one job per repo, so the corpus takes as long as its slowest repo, about two hours for shadcn-ui.
 
 A repo's result depends only on the analyzer and verifier source, `setup.sh`, bippy's source, the lockfile, the workflow and the repo's own folder. The job hashes those into a cache key and restores the result when it already exists, so a change to one repo reruns one repo and a change to the docs reruns nothing. A fresh result is cached only when the repo passed.
 
