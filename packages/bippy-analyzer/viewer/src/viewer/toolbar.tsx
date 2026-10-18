@@ -2,10 +2,9 @@ import { useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useViewer, type ViewMode } from "./context";
+import { isViewMode } from "../lib/view-mode";
+import { useViewer } from "./context";
 import { ThemeToggle } from "./theme-toggle";
-
-const isViewMode = (value: unknown): value is ViewMode => value === "code" || value === "json";
 
 const ModeTabs = () => {
   const { mode, setMode } = useViewer();
@@ -13,6 +12,7 @@ const ModeTabs = () => {
     <Tabs value={mode} onValueChange={(value) => isViewMode(value) && setMode(value)}>
       <TabsList aria-label="View">
         <TabsTrigger value="code">Code</TabsTrigger>
+        <TabsTrigger value="diagram">Diagram</TabsTrigger>
         <TabsTrigger value="json">JSON</TabsTrigger>
       </TabsList>
     </Tabs>

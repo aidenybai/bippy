@@ -10,6 +10,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { describeNode } from "../lib/describe";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
+import { DiagramPane } from "./diagram-pane";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
@@ -19,7 +20,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
   const { mode } = useViewer();
   const [isLegendOpen, setLegendOpen] = useState(true);
   return (
-    <SidebarProvider open={isLegendOpen && mode === "code"} onOpenChange={setLegendOpen}>
+    <SidebarProvider open={isLegendOpen && mode !== "json"} onOpenChange={setLegendOpen}>
       <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
         {children}
       </div>
@@ -61,7 +62,7 @@ const Message = ({ children }: { children: ReactNode }) => (
   <p className="px-4 py-4 text-muted-foreground sm:px-5">{children}</p>
 );
 
-const CodePane = () => {
+const LoadedPane = ({ children }: { children: ReactNode }) => {
   const { view, viewError, isViewLoading } = useViewer();
   if (viewError)
     return (
@@ -70,7 +71,7 @@ const CodePane = () => {
       </pre>
     );
   if (isViewLoading || !view) return <Spinner className="h-full" />;
-  return <SourcePane />;
+  return children;
 };
 
 const Source = () => {
@@ -81,7 +82,14 @@ const Source = () => {
   return (
     <>
       <div hidden={mode !== "code"} className="h-full min-h-0">
-        <CodePane />
+        <LoadedPane>
+          <SourcePane />
+        </LoadedPane>
+      </div>
+      <div hidden={mode !== "diagram"} className="h-full min-h-0">
+        <LoadedPane>
+          <DiagramPane />
+        </LoadedPane>
       </div>
       {hasOpenedJson && (
         <div hidden={mode !== "json"} className="h-full min-h-0">

@@ -12,8 +12,7 @@ import { getColorByNodeId } from "../lib/colors";
 import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "../lib/graph";
 import type { GraphNode, ViewComponent, ViewFile } from "../model";
 import { useHoverStore } from "../store/hover";
-
-export type ViewMode = "code" | "json";
+import { isViewMode, type ViewMode } from "../lib/view-mode";
 
 export interface ViewerState {
   file: string | null;
@@ -31,14 +30,16 @@ const ViewerContext = createContext<ViewerState | null>(null);
 
 const readFile = (): string | null => new URLSearchParams(window.location.search).get("file");
 
-const readMode = (): ViewMode =>
-  new URLSearchParams(window.location.search).get("view") === "json" ? "json" : "code";
+const readMode = (): ViewMode => {
+  const value = new URLSearchParams(window.location.search).get("view");
+  return isViewMode(value) ? value : "code";
+};
 
 const writeLocation = (file: string | null, mode: ViewMode): void => {
   const url = new URL(window.location.href);
   if (file) url.searchParams.set("file", file);
   else url.searchParams.delete("file");
-  if (mode === "json") url.searchParams.set("view", mode);
+  if (mode !== "code") url.searchParams.set("view", mode);
   else url.searchParams.delete("view");
   window.history.replaceState(null, "", url);
 };
