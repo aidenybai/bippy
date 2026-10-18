@@ -19,6 +19,7 @@ interface TriggerSite {
 }
 
 interface GraphInput {
+  idPrefix: string;
   source: string;
   componentLoc: ViewLocation | null;
   bindings: ViewBinding[];
@@ -95,7 +96,7 @@ const addBindingNodes = (
 ): void => {
   for (const binding of input.bindings) {
     if (!binding.loc) continue;
-    const bindingNodeId = `binding:${binding.id}`;
+    const bindingNodeId = `${input.idPrefix}binding:${binding.id}`;
     nodes.push({
       id: bindingNodeId,
       kind: "binding",
@@ -106,9 +107,9 @@ const addBindingNodes = (
     const setterName = setters.get(binding.id);
     references.forEach((reference, index) => {
       if (contains(binding.loc, reference.loc)) return;
-      if (reference.name === setterName && reference.isCall) {
+      if (reference.name === setterName) {
         const handler = findEnclosingHandler(input.handlers, reference.loc);
-        const id = `write:${binding.id}:${index}`;
+        const id = `${input.idPrefix}write:${binding.id}:${index}`;
         nodes.push({
           id,
           kind: "write",
@@ -118,12 +119,12 @@ const addBindingNodes = (
           handlerId: handler?.id,
         });
         edges.push({ from: id, to: bindingNodeId, kind: "writes" });
-        if (handler) edges.push({ from: `handler:${handler.id}`, to: id, kind: "writes" });
+        if (handler) edges.push({ from: `${input.idPrefix}handler:${handler.id}`, to: id, kind: "writes" });
         return;
       }
       if (reference.name !== binding.name || reference.isCall) return;
       const handler = findEnclosingHandler(input.handlers, reference.loc);
-      const id = `read:${binding.id}:${index}`;
+      const id = `${input.idPrefix}read:${binding.id}:${index}`;
       nodes.push({
         id,
         kind: "read",
@@ -151,11 +152,14 @@ const refineTriggerLocations = (ast: t.File, triggers: TriggerSite[]): TriggerSi
   return refined;
 };
 
+const getEventName = (propName: string): string =>
+  propName.startsWith("on") ? propName.slice(2).toLowerCase() : propName;
+
 const addHandlerNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[]): void => {
   for (const handler of input.handlers) {
     if (!handler.loc) continue;
     nodes.push({
-      id: `handler:${handler.id}`,
+      id: `${input.idPrefix}handler:${handler.id}`,
       kind: "handler",
       label: handler.label,
       loc: handler.loc,
@@ -163,22 +167,22 @@ const addHandlerNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge
     });
   }
   for (const trigger of input.triggers) {
-    const id = `trigger:${trigger.handlerId}:${trigger.loc.start.index}`;
+    const id = `${input.idPrefix}trigger:${trigger.handlerId}:${trigger.loc.start.index}`;
     nodes.push({
       id,
       kind: "trigger",
-      label: trigger.name,
+      label: getEventName(trigger.name),
       loc: trigger.loc,
       handlerId: trigger.handlerId,
     });
-    edges.push({ from: id, to: `handler:${trigger.handlerId}`, kind: "triggers" });
+    edges.push({ from: id, to: `${input.idPrefix}handler:${trigger.handlerId}`, kind: "triggers" });
   }
 };
 
 const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[]): void => {
   for (const branch of input.branches) {
     if (!branch.loc) continue;
-    const branchNodeId = `branch:${branch.id}`;
+    const branchNodeId = `${input.idPrefix}branch:${branch.id}`;
     nodes.push({
       id: branchNodeId,
       kind: "branch",
@@ -187,11 +191,11 @@ const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[
       branchId: branch.id,
     });
     for (const bindingId of branch.readsBindingIds)
-      edges.push({ from: `binding:${bindingId}`, to: branchNodeId, kind: "decides" });
+      edges.push({ from: `${input.idPrefix}binding:${bindingId}`, to: branchNodeId, kind: "decides" });
     for (const arm of ["consequent", "alternate"] as const) {
       const loc = branch[arm];
       if (!loc) continue;
-      const id = `arm:${branch.id}:${arm}`;
+      const id = `${input.idPrefix}arm:${branch.id}:${arm}`;
       nodes.push({
         id,
         kind: "arm",
@@ -203,6 +207,44 @@ const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[
       edges.push({ from: branchNodeId, to: id, kind: arm === "consequent" ? "shows" : "hides" });
     }
   }
+};
+
+interface ComponentSite {
+  name: string;
+  startIndex: number;
+}
+
+const getDeclaredName = (node: t.Node): t.Identifier | null => {
+  if (node.type === "FunctionDeclaration" && node.id) return node.id;
+  if (node.type === "VariableDeclarator" && node.id.type === "Identifier") return node.id;
+  return null;
+};
+
+export const buildStructureGraph = (source: string, components: ComponentSite[]): CodeGraph => {
+  const ast = parse(source, { sourceType: "module", plugins: ["typescript", "jsx"], errorRecovery: true });
+  const names = new Set(components.map((component) => component.name));
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  let renderCount = 0;
+  traverse(ast, {
+    enter(path) {
+      const id = getDeclaredName(path.node);
+      const loc = id && toLocation(id);
+      if (!id || !loc || !names.has(id.name)) return;
+      if (nodes.some((node) => node.id === `component:${id.name}`)) return;
+      nodes.push({ id: `component:${id.name}`, kind: "component", label: id.name, loc });
+    },
+    JSXOpeningElement(path) {
+      const { name } = path.node;
+      const loc = name.type === "JSXIdentifier" && names.has(name.name) ? toLocation(name) : null;
+      if (!loc || name.type !== "JSXIdentifier") return;
+      const id = `render:${name.name}:${renderCount++}`;
+      nodes.push({ id, kind: "render", label: name.name, loc });
+      edges.push({ from: id, to: `component:${name.name}`, kind: "renders" });
+    },
+  });
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  return { nodes, edges: edges.filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to)) };
 };
 
 export const buildCodeGraph = (input: GraphInput): CodeGraph => {

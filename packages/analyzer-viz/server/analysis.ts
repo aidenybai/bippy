@@ -13,7 +13,8 @@ import { collectTriggerLabels } from "../../bippy-analyzer/src/cli/trigger-label
 import { simplifyConditions } from "../../bippy-analyzer/src/cli/simplify-conditions";
 import { createSourceReader } from "../../bippy-analyzer/src/cli/source-text";
 import { forEachJsxElement } from "../../bippy-analyzer/src/core/utils/for-each-jsx-element";
-import { buildCodeGraph } from "./graph";
+import { buildCodeGraph, buildStructureGraph } from "./graph";
+import { getBindingPlace } from "../../bippy-analyzer/src/core/utils/get-binding-place";
 import { GeneratedSource } from "../../bippy-analyzer/src/react-compiler/HIR/HIR";
 import type {
   AnalyzedComponent,
@@ -27,6 +28,8 @@ import type {
   SymbolicValue,
 } from "../../bippy-analyzer/src/core/types";
 import type {
+  CodeGraph,
+  ComponentSummary,
   ViewBinding,
   ViewBranch,
   ViewComponent,
@@ -101,12 +104,20 @@ const formatDomain = (domain: Domain): string => {
   }
 };
 
-const toViewBinding = (binding: Binding): ViewBinding => ({
+const getReachableLabel = (component: AnalyzedComponent, binding: Binding): string | null => {
+  const reachable = component.report.places.get(getBindingPlace(binding));
+  if (!reachable || binding.domain.kind !== "Cases") return null;
+  if (reachable.length >= binding.domain.cases.length) return null;
+  return reachable.map(formatAbstractValue).join(" | ");
+};
+
+const toViewBinding = (component: AnalyzedComponent, binding: Binding): ViewBinding => ({
   id: binding.id,
   name: binding.name,
   kind: binding.hookKind ? `${binding.kind}:${binding.hookKind}` : binding.kind,
   domain: formatDomain(binding.domain),
   initial: binding.initial ? formatSymbolicValue(binding.initial) : null,
+  reachable: getReachableLabel(component, binding),
   loc: toViewLocation(binding.loc),
 });
 
@@ -119,7 +130,22 @@ const getRestOfLine = (loc: ViewLocation | null): ViewLocation | null =>
 const getArmLocation = (arm: SymbolicValue, testLoc: ViewLocation | null): ViewLocation | null =>
   getValueLocation(arm) ?? (isRenderingNothing(arm) ? null : getRestOfLine(testLoc));
 
-const toViewBranch = (conditional: ConditionalValue, id: number): ViewBranch => {
+const getNeverArm = (
+  component: AnalyzedComponent,
+  conditional: ConditionalValue,
+): "consequent" | "alternate" | null => {
+  const unreachable = component.report.unreachableBranches.find(
+    (candidate) => candidate.branch.loc === conditional.branch.loc,
+  );
+  if (!unreachable) return null;
+  return unreachable.isTrueSide ? "consequent" : "alternate";
+};
+
+const toViewBranch = (
+  component: AnalyzedComponent,
+  conditional: ConditionalValue,
+  id: number,
+): ViewBranch => {
   const test = getTestExpression(conditional);
   const loc = toViewLocation(conditional.branch.loc);
   return {
@@ -130,13 +156,14 @@ const toViewBranch = (conditional: ConditionalValue, id: number): ViewBranch => 
     consequent: getArmLocation(conditional.consequent, loc),
     alternate: getArmLocation(conditional.alternate, loc),
     readsBindingIds: collectBindingIds(test),
+    never: getNeverArm(component, conditional),
   };
 };
 
-const collectBranches = (render: SymbolicValue): ViewBranch[] => {
+const collectBranches = (component: AnalyzedComponent): ViewBranch[] => {
   const branches: ViewBranch[] = [];
-  forEachRenderNode(render, (node) => {
-    if (node.kind === "Conditional") branches.push(toViewBranch(node, branches.length));
+  forEachRenderNode(component.analysis.render, (node) => {
+    if (node.kind === "Conditional") branches.push(toViewBranch(component, node, branches.length));
   });
   return branches;
 };
@@ -181,17 +208,69 @@ const collectTriggerSites = (
   return sites;
 };
 
-const toViewComponent = (component: AnalyzedComponent): ViewComponent => {
+const buildComponentGraph = (component: AnalyzedComponent, source: string): CodeGraph => {
+  const { analysis } = component;
+  const triggerLabels = collectTriggerLabels(component, createSourceReader());
+  return buildCodeGraph({
+    idPrefix: `${analysis.name}/`,
+    source,
+    componentLoc: toViewLocation(analysis.loc),
+    bindings: analysis.bindings
+      .filter((binding) => binding.kind !== "item")
+      .map((binding) => toViewBinding(component, binding)),
+    branches: collectBranches(component),
+    handlers: analysis.handlers.map((handler) =>
+      toViewHandler(handler, triggerLabels.get(handler.id) ?? handler.id),
+    ),
+    triggers: collectTriggerSites(component),
+  });
+};
+
+const buildFileGraph = (component: AnalyzedComponent, siblings: AnalyzedComponent[]): CodeGraph => {
+  const source = readFileSync(component.analysis.file, "utf8");
+  const members = [component, ...siblings];
+  const graphs = [
+    ...members.map((member) => buildComponentGraph(member, source)),
+    buildStructureGraph(
+      source,
+      members.map((member) => ({
+        name: member.analysis.name,
+        startIndex: member.analysis.loc === GeneratedSource ? 0 : member.analysis.loc.start.index,
+      })),
+    ),
+  ];
+  return {
+    nodes: graphs.flatMap((graph) => graph.nodes),
+    edges: graphs.flatMap((graph) => graph.edges),
+  };
+};
+
+const toComponentSummary = (component: AnalyzedComponent): ComponentSummary => ({
+  name: component.analysis.name,
+  file: component.analysis.file,
+  line: component.analysis.loc === GeneratedSource ? null : component.analysis.loc.start.line,
+  stateCount: component.report.states.length,
+  handlerCount: component.analysis.handlers.length,
+});
+
+const toViewComponent = (
+  component: AnalyzedComponent,
+  siblings: AnalyzedComponent[],
+  all: AnalyzedComponent[],
+): ViewComponent => {
   const { analysis, report } = component;
   const triggerLabels = collectTriggerLabels(component, createSourceReader());
   const source = readFileSync(analysis.file, "utf8");
-  const bindings = analysis.bindings.filter((binding) => binding.kind !== "item").map(toViewBinding);
-  const branches = collectBranches(analysis.render);
+  const bindings = analysis.bindings
+      .filter((binding) => binding.kind !== "item")
+      .map((binding) => toViewBinding(component, binding));
+  const branches = collectBranches(component);
   const handlers = analysis.handlers.map((handler) =>
     toViewHandler(handler, triggerLabels.get(handler.id) ?? handler.id),
   );
   const componentLoc = toViewLocation(analysis.loc);
   return {
+    components: all.map(toComponentSummary),
     name: analysis.name,
     file: analysis.file,
     loc: componentLoc,
@@ -199,14 +278,7 @@ const toViewComponent = (component: AnalyzedComponent): ViewComponent => {
     bindings,
     branches,
     handlers,
-    graph: buildCodeGraph({
-      source,
-      componentLoc,
-      bindings,
-      branches,
-      handlers,
-      triggers: collectTriggerSites(component),
-    }),
+    graph: buildFileGraph(component, siblings),
     states: report.states.map((state, index) => ({
       index,
       regionIndex: state.regionIndex,
@@ -233,5 +305,9 @@ export const getViewModel = (
   const analysis = analysesByProject.get(key) ?? analyzeProject(tsconfig, fileFilter);
   analysesByProject.set(key, analysis);
   const component = analysis.components.find(({ analysis }) => analysis.name === componentName);
-  return component ? toViewComponent(component) : null;
+  if (!component) return null;
+  const siblings = analysis.components.filter(
+    (candidate) => candidate !== component && candidate.analysis.file === component.analysis.file,
+  );
+  return toViewComponent(component, siblings, analysis.components);
 };

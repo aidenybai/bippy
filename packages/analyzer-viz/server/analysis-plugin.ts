@@ -7,8 +7,8 @@ const DEFAULT_TSCONFIG = resolve(
   packageDirectory,
   "../../bippy-analyzer/tests/fixtures/symbolic-tree/tsconfig.json",
 );
-const DEFAULT_COMPONENT = "App";
-const DEFAULT_FILE = "counter";
+const DEFAULT_COMPONENT = "Dashboard";
+const DEFAULT_FILE = "dashboard";
 
 interface AnalysisModule {
   getViewModel: (tsconfig: string, component: string, file: string | null) => unknown;

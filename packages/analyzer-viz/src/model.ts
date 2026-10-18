@@ -15,6 +15,7 @@ export interface ViewBinding {
   kind: string;
   domain: string;
   initial: string | null;
+  reachable: string | null;
   loc: ViewLocation | null;
 }
 
@@ -26,6 +27,7 @@ export interface ViewBranch {
   consequent: ViewLocation | null;
   alternate: ViewLocation | null;
   readsBindingIds: number[];
+  never: "consequent" | "alternate" | null;
 }
 
 export interface ViewUpdate {
@@ -63,7 +65,16 @@ export interface ViewRegion {
   isTruncated: boolean;
 }
 
-export type GraphNodeKind = "handler" | "trigger" | "binding" | "write" | "read" | "branch" | "arm";
+export type GraphNodeKind =
+  | "handler"
+  | "trigger"
+  | "binding"
+  | "write"
+  | "read"
+  | "branch"
+  | "arm"
+  | "component"
+  | "render";
 
 export interface GraphNode {
   id: string;
@@ -76,7 +87,14 @@ export interface GraphNode {
   arm?: "consequent" | "alternate";
 }
 
-export type GraphEdgeKind = "triggers" | "writes" | "reads" | "decides" | "shows" | "hides";
+export type GraphEdgeKind =
+  | "triggers"
+  | "writes"
+  | "reads"
+  | "decides"
+  | "shows"
+  | "hides"
+  | "renders";
 
 export interface GraphEdge {
   from: string;
@@ -89,7 +107,16 @@ export interface CodeGraph {
   edges: GraphEdge[];
 }
 
+export interface ComponentSummary {
+  name: string;
+  file: string;
+  line: number | null;
+  stateCount: number;
+  handlerCount: number;
+}
+
 export interface ViewComponent {
+  components: ComponentSummary[];
   name: string;
   file: string;
   loc: ViewLocation | null;

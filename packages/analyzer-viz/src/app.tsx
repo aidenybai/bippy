@@ -6,32 +6,51 @@ import { Separator } from "@/components/ui/separator";
 import { CodeView } from "./code-view";
 import type { ViewComponent, ViewState } from "./model";
 
-const getAnalysisUrl = (): string => {
+const getQuery = (): URLSearchParams => new URLSearchParams(window.location.search);
+
+interface ComponentKey {
+  name: string;
+  file: string;
+}
+
+const getAnalysisUrl = (key: ComponentKey | null): string => {
   const url = new URL("/api/analysis", window.location.origin);
-  for (const key of ["tsconfig", "component", "file"]) {
-    const value = new URLSearchParams(window.location.search).get(key);
-    if (value) url.searchParams.set(key, value);
-  }
+  const tsconfig = getQuery().get("tsconfig");
+  if (tsconfig) url.searchParams.set("tsconfig", tsconfig);
+  const file = key?.file ?? getQuery().get("file");
+  if (file) url.searchParams.set("file", file);
+  if (key) url.searchParams.set("component", key.name);
   return url.toString();
 };
 
-const useComponent = (): { component: ViewComponent | null; error: string | null } => {
+const useComponent = (
+  key: ComponentKey | null,
+): { component: ViewComponent | null; error: string | null } => {
   const [component, setComponent] = useState<ViewComponent | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    fetch(getAnalysisUrl())
+    let isCurrent = true;
+    fetch(getAnalysisUrl(key))
       .then(async (response) => {
         if (!response.ok) throw new Error(await response.text());
         return (await response.json()) as ViewComponent | null;
       })
       .then((result) => {
+        if (!isCurrent) return;
         if (!result) setError("Component not found");
         else setComponent(result);
       })
-      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
-  }, []);
+      .catch((cause: unknown) => {
+        if (isCurrent) setError(cause instanceof Error ? cause.message : String(cause));
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [key?.name, key?.file]);
   return { component, error };
 };
+
+const getShortFile = (file: string): string => file.split("/").slice(-2).join("/");
 
 interface StateListProps {
   component: ViewComponent;
@@ -45,7 +64,7 @@ const StateList = ({ component, selected, onSelect, onPreview }: StateListProps)
     {component.regions.map((region, regionIndex) => (
       <section key={regionIndex} className="grid gap-2">
         <h2 className="text-xs font-medium text-muted-foreground">
-          {region.placeNames.join(", ") || "other"}
+          states of {region.placeNames.join(", ") || "other"}
         </h2>
         <div className="grid gap-1">
           {region.states.map((stateIndex) => {
@@ -89,41 +108,49 @@ interface HandlerListProps {
 const HandlerList = ({ component, hoveredNodeId, onHover }: HandlerListProps) => (
   <section className="grid gap-2">
     <h2 className="text-xs font-medium text-muted-foreground">what can happen</h2>
-    <div className="grid gap-3">
-      {component.handlers.map((handler) => (
-        <div
-          key={handler.id}
-          className={`grid gap-1 font-mono text-xs ${hoveredNodeId && hoveredNodeId !== `handler:${handler.id}` ? "opacity-40" : ""}`}
-          onMouseEnter={() => onHover(`handler:${handler.id}`)}
-          onMouseLeave={() => onHover(null)}
-        >
-          <div className="flex items-center gap-2">
-            <Badge variant={handler.kind === "effect" ? "outline" : "default"}>
-              {handler.kind === "effect" ? "effect" : "click"}
-            </Badge>
-            <span>{handler.label}</span>
+    <div className="grid gap-2">
+      {component.handlers.map((handler) => {
+        const nodeId = `${component.name}/handler:${handler.id}`;
+        return (
+          <div
+            key={handler.id}
+            className={`grid gap-0.5 font-mono text-xs ${hoveredNodeId && hoveredNodeId !== nodeId ? "opacity-40" : ""}`}
+            onMouseEnter={() => onHover(nodeId)}
+            onMouseLeave={() => onHover(null)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">
+                {handler.kind === "effect" ? "effect" : "event"}
+              </span>
+              <span>{handler.label}</span>
+            </div>
+            {handler.updates.map((update, index) => (
+              <span key={index} className="text-muted-foreground">
+                sets {update.text}
+                {update.isAsync ? " (async)" : ""}
+              </span>
+            ))}
           </div>
-          {handler.updates.map((update, index) => (
-            <span key={index} className="text-muted-foreground">
-              ⇒ {update.text}
-              {update.isAsync ? " (async)" : ""}
-            </span>
-          ))}
-        </div>
-      ))}
+        );
+      })}
     </div>
   </section>
 );
 
 export const App = () => {
-  const { component, error } = useComponent();
+  const [componentKey, setComponentKey] = useState<ComponentKey | null>(() => {
+    const name = getQuery().get("component");
+    return name ? { name, file: getQuery().get("file") ?? "" } : null;
+  });
+  const { component, error } = useComponent(componentKey);
   const [selected, setSelected] = useState<ViewState | null>(null);
   const [previewed, setPreviewed] = useState<ViewState | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
   if (error) return <pre className="p-4 text-sm text-destructive">{error}</pre>;
   if (!component) return <p className="p-4 text-sm text-muted-foreground">Analyzing…</p>;
   return (
-    <div className="grid h-screen grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid h-screen grid-cols-[minmax(0,1fr)_380px]">
       <CodeView
         component={component}
         selectedState={previewed ?? selected}
@@ -134,9 +161,7 @@ export const App = () => {
         <aside className="grid gap-5 p-4">
           <div>
             <h1 className="text-sm font-semibold">{component.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {component.file.split("/").slice(-3).join("/")}
-            </p>
+            <p className="text-xs text-muted-foreground">{getShortFile(component.file)}</p>
           </div>
           <Separator />
           <StateList
