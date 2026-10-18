@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
-import { getArmStates, getDomainValues, type DiagramRow } from "../lib/diagram";
+import { getArmStates, type DiagramRow } from "../lib/diagram";
 import {
   getBindingNodeId,
   getConditionNodeId,
@@ -11,6 +11,7 @@ import {
 } from "../lib/lookup";
 import type { ViewBinding, ViewBranch, ViewComponent, ViewHandler, ViewState } from "../model";
 import { Chip } from "./chip";
+import { Domain } from "./domain";
 
 const Row = ({ children }: { children: ReactNode }) => (
   <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{children}</div>
@@ -47,9 +48,10 @@ const BindingRow = ({ binding, component }: { binding: ViewBinding; component: V
     <Row>
       <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
       <span className="text-faint">∈</span>
-      {getDomainValues(binding).map((value) => (
-        <ValuePill key={value} value={value} isInitial={value === binding.initial} />
-      ))}
+      <Domain
+        binding={binding}
+        renderValue={(value) => <ValuePill value={value} isInitial={value === binding.initial} />}
+      />
       {binding.reachable && (
         <span className="text-muted-foreground">· only {binding.reachable}</span>
       )}
@@ -69,7 +71,7 @@ const HandlerRow = ({ handler, component }: { handler: ViewHandler; component: V
       {handler.updates.map((update) => (
         <span
           key={`${update.guard}:${update.assignments.join(",")}`}
-          className="rounded-sm bg-muted px-1.5 py-px"
+          className="rounded-sm bg-muted px-1.5 py-px wrap-anywhere"
         >
           {update.guard !== null && (
             <span className="text-muted-foreground">if {update.guard}: </span>

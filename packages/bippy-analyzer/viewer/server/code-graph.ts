@@ -182,7 +182,25 @@ const addHandlerNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge
   }
 };
 
-const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[]): void => {
+const getConditionAnchor = (
+  branch: ViewBranch,
+  references: Reference[],
+  bindings: ViewBinding[],
+): ViewLocation | undefined => {
+  const names = new Set(
+    bindings.filter((binding) => branch.readsBindingIds.includes(binding.id)).map((b) => b.name),
+  );
+  return references
+    .filter((reference) => names.has(reference.name) && contains(branch.loc, reference.loc))
+    .sort((a, b) => a.loc.start.index - b.loc.start.index)[0]?.loc;
+};
+
+const addBranchNodes = (
+  input: GraphInput,
+  references: Reference[],
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+): void => {
   for (const branch of input.branches) {
     if (!branch.loc) continue;
     const branchNodeId = `${input.idPrefix}branch:${branch.id}`;
@@ -191,6 +209,7 @@ const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[
       kind: "branch",
       label: branch.test,
       loc: branch.loc,
+      anchor: getConditionAnchor(branch, references, input.bindings),
       branchId: branch.id,
     });
     for (const bindingId of branch.readsBindingIds)
@@ -229,14 +248,9 @@ export const buildCodeGraph = (input: GraphInput): CodeGraph => {
     nodes,
     edges,
   );
-  addBindingNodes(
-    input,
-    collectReferences(ast, input.componentLoc),
-    getSetterNames(ast, input.bindings),
-    nodes,
-    edges,
-  );
-  addBranchNodes(input, nodes, edges);
+  const references = collectReferences(ast, input.componentLoc);
+  addBindingNodes(input, references, getSetterNames(ast, input.bindings), nodes, edges);
+  addBranchNodes(input, references, nodes, edges);
   const nodeIds = new Set(nodes.map((node) => node.id));
   return { nodes, edges: edges.filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to)) };
 };

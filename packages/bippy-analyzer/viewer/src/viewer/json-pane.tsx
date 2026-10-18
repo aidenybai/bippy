@@ -16,8 +16,8 @@ const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
 };
 
 export const JsonPane = () => {
-  const { file } = useViewer();
-  const json = useAnalyzerJson(file);
+  const { view } = useViewer();
+  const json = useAnalyzerJson(view?.file ?? null);
   const isHighlighterReady = useHighlighter() !== null;
   const { theme } = useResolvedTheme();
   const options = useMemo<FileOptions<undefined, undefined>>(

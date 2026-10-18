@@ -12,6 +12,7 @@ import {
 } from "../lib/lookup";
 import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "../model";
 import { Chip } from "./chip";
+import { Domain } from "./domain";
 import { useLegendComponent } from "./legend";
 
 const Cell = ({ children, className }: { children: ReactNode; className?: string }) => (
@@ -29,9 +30,19 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
         <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
       </Cell>
       <Cell>
-        <Code>
-          {binding.initial !== null ? `${binding.domain} = ${binding.initial}` : binding.domain}
-        </Code>
+        <span className="wrap-anywhere">
+          <Domain
+            binding={binding}
+            renderValue={(value) => <Code>{value}</Code>}
+            separator={<span className="text-faint"> | </span>}
+          />
+          {binding.initial !== null && (
+            <span>
+              <span className="text-faint"> = </span>
+              <Code>{binding.initial}</Code>
+            </span>
+          )}
+        </span>
         {binding.reachable && (
           <span className="text-muted-foreground"> · only {binding.reachable}</span>
         )}
@@ -118,7 +129,7 @@ export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
           </Chip>
           {transitions.length > 0 && <Transitions transitions={transitions} />}
         </div>
-        <div className="grid gap-1.5 rounded-md bg-muted px-3 py-2 font-mono">
+        <div className="grid gap-1.5 rounded-md bg-muted px-3 py-2 font-mono wrap-anywhere">
           {handler.updates.map((update) => (
             <Update key={`${update.guard}:${update.assignments.join(",")}`} update={update} />
           ))}

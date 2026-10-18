@@ -27,7 +27,7 @@ const ComponentDiagram = ({ view, component }: { view: ViewFile; component: View
       <CodeLine text={getSourceLine(view, start.line)} />
       <div className="ml-3 grid gap-2 border-l pl-4">
         {rows.map((row) => (
-          <DiagramRowView key={`${row.kind}:${row.line}`} row={row} component={component} />
+          <DiagramRowView key={row.key} row={row} component={component} />
         ))}
         <StateGraph component={component} />
       </div>

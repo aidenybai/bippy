@@ -32,7 +32,7 @@ export const TooltipContent = ({
       <TooltipPrimitive.Popup
         data-slot="tooltip-content"
         className={cn(
-          "z-50 inline-flex w-fit max-w-xs items-center rounded-[5px] bg-background px-1.5 py-px text-[12px]/[18px] text-text-2 shadow-card",
+          "z-50 block w-fit max-w-xs rounded-[5px] bg-background px-1.5 py-px text-[12px]/[18px] text-text-2 wrap-anywhere shadow-card",
           className,
         )}
         {...props}

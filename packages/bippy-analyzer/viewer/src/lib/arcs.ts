@@ -35,7 +35,9 @@ export const placeArcs = (
   isWanted: (edge: GraphEdge) => boolean,
 ): PlacedArc[] => {
   const boxes = new Map<string, Box>();
-  for (const token of tokens) if (!token.isMultiLine) boxes.set(token.node.id, token.box);
+  for (const token of tokens)
+    if (token.anchorBox) boxes.set(token.node.id, token.anchorBox);
+    else if (!token.isMultiLine) boxes.set(token.node.id, token.box);
   const arcs = view.components
     .flatMap((component) => component.graph.edges)
     .filter(isWanted)

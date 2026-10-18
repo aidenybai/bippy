@@ -69,6 +69,7 @@ export interface GraphNode {
   kind: GraphNodeKind;
   label: string;
   loc: ViewLocation;
+  anchor?: ViewLocation;
   handlerId?: string;
   bindingId?: number;
   branchId?: number;

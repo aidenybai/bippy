@@ -5,6 +5,7 @@ import type { GraphNode } from "../model";
 export interface PlacedToken {
   node: GraphNode;
   box: Box;
+  anchorBox: Box | null;
   isMultiLine: boolean;
 }
 
@@ -24,7 +25,8 @@ const measure = (wrapper: HTMLElement, nodes: GraphNode[]): TokenLayout => {
     tokens: nodes.flatMap((node) => {
       const isMultiLine = node.loc.start.line !== node.loc.end.line;
       const box = isMultiLine ? getLinesBox(lookup, node.loc) : getLocationBox(lookup, node.loc);
-      return box && box.height > 0 ? [{ node, box, isMultiLine }] : [];
+      const anchorBox = node.anchor ? getLocationBox(lookup, node.anchor) : null;
+      return box && box.height > 0 ? [{ node, box, anchorBox, isMultiLine }] : [];
     }),
     width: wrapper.clientWidth,
     height: wrapper.clientHeight,

@@ -10,13 +10,14 @@ import {
 import { useView } from "../hooks/queries";
 import { getColorByNodeId } from "../lib/colors";
 import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "../lib/graph";
+import { readLocation, writeLocation, type Source } from "../lib/source";
+import type { ViewMode } from "../lib/view-mode";
 import type { GraphNode, ViewComponent, ViewFile } from "../model";
 import { useHoverStore } from "../store/hover";
-import { isViewMode, type ViewMode } from "../lib/view-mode";
 
 export interface ViewerState {
-  file: string | null;
-  openFile: (file: string) => void;
+  source: Source | null;
+  open: (source: Source | null) => void;
   mode: ViewMode;
   setMode: (mode: ViewMode) => void;
   view: ViewFile | null;
@@ -28,26 +29,10 @@ export interface ViewerState {
 
 const ViewerContext = createContext<ViewerState | null>(null);
 
-const readFile = (): string | null => new URLSearchParams(window.location.search).get("file");
-
-const readMode = (): ViewMode => {
-  const value = new URLSearchParams(window.location.search).get("view");
-  return isViewMode(value) ? value : "code";
-};
-
-const writeLocation = (file: string | null, mode: ViewMode): void => {
-  const url = new URL(window.location.href);
-  if (file) url.searchParams.set("file", file);
-  else url.searchParams.delete("file");
-  if (mode !== "code") url.searchParams.set("view", mode);
-  else url.searchParams.delete("view");
-  window.history.replaceState(null, "", url);
-};
-
 export const ViewerProvider = ({ children }: { children: ReactNode }) => {
-  const [file, setFile] = useState<string | null>(readFile);
-  const [mode, setMode] = useState<ViewMode>(readMode);
-  const viewQuery = useView(file);
+  const [location, setLocation] = useState(readLocation);
+  const { source, mode } = location;
+  const viewQuery = useView(source);
   const view = viewQuery.data ?? null;
   const setIndex = useHoverStore((state) => state.setIndex);
   const index = useMemo(() => (view ? buildGraphIndex(view) : null), [view]);
@@ -55,13 +40,20 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     () => (view ? getColorByNodeId(view) : new Map<string, string>()),
     [view],
   );
-  useEffect(() => writeLocation(file, mode), [file, mode]);
+  useEffect(() => writeLocation(location), [location]);
   useEffect(() => setIndex(index), [index, setIndex]);
-  const openFile = useCallback((nextFile: string) => setFile(nextFile), []);
+  const open = useCallback(
+    (next: Source | null) => setLocation((current) => ({ ...current, source: next })),
+    [],
+  );
+  const setMode = useCallback(
+    (next: ViewMode) => setLocation((current) => ({ ...current, mode: next })),
+    [],
+  );
   const value = useMemo<ViewerState>(
     () => ({
-      file,
-      openFile,
+      source,
+      open,
       mode,
       setMode,
       view,
@@ -70,7 +62,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       index,
       colorByNodeId,
     }),
-    [file, openFile, mode, view, viewQuery.error, viewQuery.isLoading, index, colorByNodeId],
+    [source, open, mode, setMode, view, viewQuery.error, viewQuery.isLoading, index, colorByNodeId],
   );
   return <ViewerContext value={value}>{children}</ViewerContext>;
 };

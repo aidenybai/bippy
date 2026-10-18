@@ -8,6 +8,11 @@ export interface GraphIndex {
 
 export const getComponentName = (nodeId: string): string => nodeId.slice(0, nodeId.indexOf("/"));
 
+export const hasLegendContent = (view: ViewFile): boolean =>
+  view.components.some(
+    (component) => component.bindings.length > 0 || component.handlers.length > 0,
+  );
+
 export const getDefaultComponent = (view: ViewFile): ViewComponent | null =>
   [...view.components].sort((a, b) => b.states.length - a.states.length)[0] ?? null;
 

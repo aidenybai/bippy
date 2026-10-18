@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
 import { describeNode } from "../lib/describe";
+import { hasLegendContent } from "../lib/graph";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
 import { JsonPane } from "./json-pane";
@@ -18,11 +19,12 @@ import { Start } from "./start";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
-  const { file, mode } = useViewer();
+  const { view, mode } = useViewer();
   const [isLegendOpen, setLegendOpen] = useState(true);
+  const hasLegend = view !== null && hasLegendContent(view);
   return (
     <SidebarProvider
-      open={isLegendOpen && file !== null && mode !== "json"}
+      open={isLegendOpen && hasLegend && mode !== "json"}
       onOpenChange={setLegendOpen}
     >
       <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
@@ -75,10 +77,10 @@ const LoadedPane = ({ children }: { children: ReactNode }) => {
 };
 
 const Source = () => {
-  const { file, mode } = useViewer();
+  const { source, mode } = useViewer();
   const [hasOpenedJson, setHasOpenedJson] = useState(mode === "json");
   if (mode === "json" && !hasOpenedJson) setHasOpenedJson(true);
-  if (!file) return <Start />;
+  if (source === null) return <Start />;
   return (
     <>
       <div hidden={mode !== "code"} className="h-full min-h-0">

@@ -22,11 +22,19 @@ const formatUpdate = (update: ViewUpdate): string =>
     update.isAsync ? " async" : ""
   }`;
 
+const DOMAIN_PREVIEW = 8;
+
+const summarizeDomain = (domain: string): string => {
+  const values = domain.split(" | ");
+  if (values.length <= DOMAIN_PREVIEW + 1) return domain;
+  return `${values.slice(0, DOMAIN_PREVIEW).join(" | ")} … +${values.length - DOMAIN_PREVIEW}`;
+};
+
 const describeBinding = (component: ViewComponent, binding: ViewBinding): string => {
   const setters = component.handlers.filter((handler) =>
     handler.updates.some((update) => update.bindingId === binding.id),
   ).length;
-  const parts = [`${binding.name}: ${binding.domain}`];
+  const parts = [`${binding.name}: ${summarizeDomain(binding.domain)}`];
   if (binding.reachable) parts.push(`only ${binding.reachable}`);
   parts.push(setters === 0 ? "never set" : `set by ${setters} action${setters === 1 ? "" : "s"}`);
   return parts.join(" · ");

@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin, ViteDevServer } from "vite";
 import type { ViewFile } from "../src/model";
 import { listExamples } from "./examples";
+import { savePaste } from "./paste";
 
 const serverDirectory = fileURLToPath(new URL(".", import.meta.url));
 
@@ -53,6 +54,26 @@ const handleAnalysis = async (
   sendJson(response, getViewFile(resolve(file)));
 };
 
+const readBody = async (request: IncomingMessage): Promise<string> => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
+};
+
+const isPasteRequest = (value: unknown): value is { code: string } =>
+  typeof value === "object" && value !== null && "code" in value && typeof value.code === "string";
+
+const handlePaste = async (
+  server: ViteDevServer,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> => {
+  const body: unknown = JSON.parse(await readBody(request));
+  if (!isPasteRequest(body)) return sendError(response, 400, "Expected { code }");
+  const { getViewFile } = await loadViewModel(server);
+  sendJson(response, getViewFile(savePaste(body.code)));
+};
+
 const handle = async (
   server: ViteDevServer,
   request: IncomingMessage,
@@ -63,6 +84,8 @@ const handle = async (
     return handleAnalysis(server, url, response);
   if (url.pathname === "/api/examples" && request.method === "GET")
     return sendJson(response, listExamples());
+  if (url.pathname === "/api/paste" && request.method === "POST")
+    return handlePaste(server, request, response);
   sendError(response, 404, `No route ${request.method} ${url.pathname}`);
 };
 

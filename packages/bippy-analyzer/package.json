@@ -55,6 +55,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.32.0",
+    "lz-string": "^1.5.0",
     "mermaid": "^12.2.0",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",

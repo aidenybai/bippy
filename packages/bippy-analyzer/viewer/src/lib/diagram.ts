@@ -9,18 +9,36 @@ import type {
 } from "../model";
 
 export type DiagramRow =
-  | { kind: "binding"; line: number; binding: ViewBinding }
-  | { kind: "handler"; line: number; handler: ViewHandler }
-  | { kind: "branch"; line: number; branch: ViewBranch };
+  | { kind: "binding"; key: string; line: number; binding: ViewBinding }
+  | { kind: "handler"; key: string; line: number; handler: ViewHandler }
+  | { kind: "branch"; key: string; line: number; branch: ViewBranch };
 
 export const getDiagramRows = (component: ViewComponent): DiagramRow[] => {
   const rows: DiagramRow[] = [];
   for (const binding of component.bindings)
-    if (binding.loc) rows.push({ kind: "binding", line: binding.loc.start.line, binding });
+    if (binding.loc)
+      rows.push({
+        kind: "binding",
+        key: `binding:${binding.id}`,
+        line: binding.loc.start.line,
+        binding,
+      });
   for (const handler of component.handlers)
-    if (handler.loc) rows.push({ kind: "handler", line: handler.loc.start.line, handler });
+    if (handler.loc)
+      rows.push({
+        kind: "handler",
+        key: `handler:${handler.id}`,
+        line: handler.loc.start.line,
+        handler,
+      });
   for (const branch of component.branches)
-    if (branch.loc) rows.push({ kind: "branch", line: branch.loc.start.line, branch });
+    if (branch.loc)
+      rows.push({
+        kind: "branch",
+        key: `branch:${branch.id}`,
+        line: branch.loc.start.line,
+        branch,
+      });
   return rows.sort((a, b) => a.line - b.line);
 };
 

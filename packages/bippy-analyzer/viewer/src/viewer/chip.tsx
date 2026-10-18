@@ -19,7 +19,7 @@ const ColoredChip = ({ nodeIds, color, children }: ChipProps & { color: string }
   return (
     <span
       data-seg={nodeIds.join(" ")}
-      className="rounded-sm px-[5px] py-px font-mono text-foreground transition-opacity duration-150"
+      className="rounded-sm px-[5px] py-px font-mono text-foreground wrap-anywhere transition-opacity duration-150"
       style={{
         background: color,
         boxShadow: isHovered ? `0 0 0 1.5px ${getSolidColor(color)}` : undefined,
