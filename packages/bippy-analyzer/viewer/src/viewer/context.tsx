@@ -8,7 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { useView } from "../hooks/queries";
-import { findNode, getColorByNodeId, getComponentName, getDefaultComponent } from "../lib/analysis";
+import {
+  findNode,
+  getCausalNodeIds,
+  getColorByNodeId,
+  getComponentName,
+  getDefaultComponent,
+} from "../lib/analysis";
 import type { GraphNode, ViewComponent, ViewFile } from "../model";
 
 export interface ViewerState {
@@ -22,6 +28,7 @@ export interface ViewerState {
   colorByNodeId: Map<string, string>;
   hoveredNodeId: string | null;
   hoveredNode: GraphNode | null;
+  causalNodeIds: Set<string> | null;
   hover: (nodeId: string | null) => void;
 }
 
@@ -80,6 +87,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     () => (view ? findNode(view, hoveredNodeId) : null),
     [view, hoveredNodeId],
   );
+  const causalNodeIds = useMemo(
+    () => (view && hoveredNodeId !== null ? getCausalNodeIds(view, hoveredNodeId) : null),
+    [view, hoveredNodeId],
+  );
   const value = useMemo<ViewerState>(
     () => ({
       file,
@@ -92,6 +103,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       colorByNodeId,
       hoveredNodeId,
       hoveredNode,
+      causalNodeIds,
       hover,
     }),
     [
@@ -105,6 +117,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       colorByNodeId,
       hoveredNodeId,
       hoveredNode,
+      causalNodeIds,
       hover,
     ],
   );
@@ -134,13 +147,10 @@ export const useNodeColor = (nodeId: string | undefined): string | undefined => 
   return nodeId ? colorByNodeId.get(nodeId) : undefined;
 };
 
-export const useIsDimmed = (nodeId: string | undefined): boolean => {
-  const { colorByNodeId, hoveredNodeId } = useViewer();
-  if (!hoveredNodeId || !nodeId) return false;
-  return (
-    getComponentName(hoveredNodeId) !== getComponentName(nodeId) ||
-    colorByNodeId.get(hoveredNodeId) !== colorByNodeId.get(nodeId)
-  );
+export const useIsDimmed = (nodeIds: string[]): boolean => {
+  const { causalNodeIds } = useViewer();
+  if (causalNodeIds === null || nodeIds.length === 0) return false;
+  return !nodeIds.some((nodeId) => causalNodeIds.has(nodeId));
 };
 
 export const useIsInactive = (nodeId: string): boolean => {

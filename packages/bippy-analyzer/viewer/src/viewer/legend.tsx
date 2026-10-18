@@ -22,7 +22,7 @@ const Chip = ({ nodeIds, children }: ChipProps) => {
   const { hoveredNodeId, hover } = useViewer();
   const [first] = nodeIds;
   const color = useNodeColor(first);
-  const isDimmed = useIsDimmed(first);
+  const isDimmed = useIsDimmed(nodeIds);
   if (!first || !color) return <span>{children}</span>;
   const isHovered = hoveredNodeId !== null && nodeIds.includes(hoveredNodeId);
   return (

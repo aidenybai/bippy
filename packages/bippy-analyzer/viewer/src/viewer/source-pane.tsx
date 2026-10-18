@@ -49,7 +49,7 @@ interface TokenMarkProps extends PlacedToken {
 const TokenMark = ({ node, box, isMultiLine, onEnter }: TokenMarkProps) => {
   const { hoveredNodeId, hover } = useViewer();
   const color = useNodeColor(node.id) ?? "transparent";
-  const isDimmed = useIsDimmed(node.id);
+  const isDimmed = useIsDimmed([node.id]);
   const isInactive = useIsInactive(node.id);
   const isHovered = node.id === hoveredNodeId;
   return (
@@ -83,17 +83,18 @@ interface ArcProps {
 }
 
 const Arc = ({ edge, from, to, marginX }: ArcProps) => {
-  const { hoveredNodeId, colorByNodeId } = useViewer();
+  const { causalNodeIds, colorByNodeId } = useViewer();
   const isInactive = useIsInactive(edge.from);
   const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0, 0, 0, 0.3)";
-  const isActive = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
-  const isMuted = (hoveredNodeId !== null && !isActive) || isInactive;
+  const isActive =
+    causalNodeIds !== null && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to);
+  const isMuted = (causalNodeIds !== null && !isActive) || isInactive;
   return (
     <path
       d={getArcPath(from, to, marginX)}
       fill="none"
-      stroke={isActive ? "var(--foreground)" : getSolidColor(color)}
-      strokeWidth={isActive ? 2 : 1}
+      stroke={getSolidColor(color)}
+      strokeWidth={isActive ? 1.75 : 1}
       strokeDasharray={edge.kind === "writes" ? "4 3" : undefined}
       opacity={isMuted ? 0.12 : isActive ? 1 : 0.7}
       markerEnd="url(#arc-head)"
@@ -169,7 +170,7 @@ const TokenTooltip = ({ anchor }: { anchor: Anchor | null }) => {
 export const SourcePane = () => {
   const view = useLoadedView();
   const isHighlighterReady = useHighlighter();
-  const { colorByNodeId } = useViewer();
+  const { colorByNodeId, causalNodeIds } = useViewer();
   const activateAtPointer = useActivateAtPointer();
   const [anchor, setAnchor] = useState<Anchor | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -204,14 +205,13 @@ export const SourcePane = () => {
         .filter((edge) => {
           const from = boxes.get(edge.from);
           const to = boxes.get(edge.to);
+          if (from === undefined || to === undefined || from.y === to.y) return false;
+          if (ARC_EDGE_KINDS.has(edge.kind)) return true;
           return (
-            ARC_EDGE_KINDS.has(edge.kind) &&
-            from !== undefined &&
-            to !== undefined &&
-            from.y !== to.y
+            causalNodeIds !== null && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to)
           );
         }),
-    [view, boxes],
+    [view, boxes, causalNodeIds],
   );
 
   return (
