@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
-import { File, type FileOptions } from "@pierre/diffs/react";
+import { File, type FileEditChangeHandler, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
@@ -9,6 +9,7 @@ import { isRestingArc, placeArcs } from "../lib/arcs";
 import { describeNode } from "../lib/describe";
 import { getComponentAtLine } from "../lib/graph";
 import { getLineFromEvent } from "../lib/positions";
+import { useEditorStore, useIsEditing } from "../store/editor";
 import { useHoverStore } from "../store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
@@ -80,12 +81,40 @@ const TokenTooltip = () => {
   );
 };
 
+const Overlay = ({ layout }: { layout: TokenLayout }) => {
+  const { colorByNodeId } = useViewer();
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      width={layout.width}
+      height={layout.height}
+    >
+      <ArcHead />
+      {layout.tokens.map((token) => (
+        <TokenMark
+          key={token.node.id}
+          {...token}
+          color={colorByNodeId.get(token.node.id) ?? "transparent"}
+        />
+      ))}
+      <RestingArcs layout={layout} />
+      <CausalArcs layout={layout} />
+    </svg>
+  );
+};
+
 export const SourcePane = () => {
   const view = useLoadedView();
   const isHighlighterReady = useHighlighter() !== null;
   const { colorByNodeId } = useViewer();
   const { theme } = useResolvedTheme();
   const activateAtPointer = useActivateAtPointer();
+  const isEditing = useIsEditing();
+  const setDraft = useEditorStore((state) => state.setDraft);
+  const onEditChange = useCallback<FileEditChangeHandler<undefined, undefined>>(
+    (event) => setDraft(event.editor.getText()),
+    [setDraft],
+  );
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
@@ -113,26 +142,18 @@ export const SourcePane = () => {
         className="relative min-w-0 py-1 pr-8 text-[13px]/[19px]"
       >
         {isHighlighterReady ? (
-          <File file={file} options={options} disableWorkerPool />
+          <File
+            file={file}
+            options={options}
+            disableWorkerPool
+            edit={isEditing}
+            onEditChange={onEditChange}
+            onEditComplete={() => "reject"}
+          />
         ) : (
           <Spinner className="h-40" />
         )}
-        <svg
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          width={layout.width}
-          height={layout.height}
-        >
-          <ArcHead />
-          {layout.tokens.map((token) => (
-            <TokenMark
-              key={token.node.id}
-              {...token}
-              color={colorByNodeId.get(token.node.id) ?? "transparent"}
-            />
-          ))}
-          <RestingArcs layout={layout} />
-          <CausalArcs layout={layout} />
-        </svg>
+        {!isEditing && <Overlay layout={layout} />}
         <TokenTooltip />
       </div>
     </div>

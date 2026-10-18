@@ -1,4 +1,10 @@
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import type { ViewFile } from "../model";
 
 const request = async (path: string, params: Record<string, string>): Promise<Response> => {
@@ -14,6 +20,32 @@ const fetchJson = async <Value>(path: string, params: Record<string, string>): P
 
 const fetchText = async (path: string, params: Record<string, string>): Promise<string> =>
   (await request(path, params)).text();
+
+const postJson = async <Value>(path: string, body: unknown): Promise<Value> => {
+  const response = await fetch(new URL(path, window.location.origin), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json();
+};
+
+interface SaveInput {
+  file: string;
+  source: string;
+}
+
+export const useSaveFile = (): UseMutationResult<ViewFile, Error, SaveInput> => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SaveInput) => postJson<ViewFile>("/api/file", input),
+    onSuccess: (view, { file }) => {
+      queryClient.setQueryData(["view", file], view);
+      queryClient.invalidateQueries({ queryKey: ["analyzer-json", file] });
+    },
+  });
+};
 
 export const useAnalyzerJson = (file: string | null): UseQueryResult<string> =>
   useQuery({

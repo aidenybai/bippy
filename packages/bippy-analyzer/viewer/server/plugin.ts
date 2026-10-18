@@ -9,13 +9,14 @@ const serverDirectory = fileURLToPath(new URL(".", import.meta.url));
 interface ViewModelModule {
   getViewFile: (file: string) => ViewFile;
   getAnalyzerJson: (file: string) => string;
+  saveFile: (file: string, source: string) => ViewFile;
 }
 
+const hasFunction = (module: object, name: string): boolean =>
+  typeof Reflect.get(module, name) === "function";
+
 const isViewModelModule = (module: object): module is ViewModelModule =>
-  "getViewFile" in module &&
-  typeof module.getViewFile === "function" &&
-  "getAnalyzerJson" in module &&
-  typeof module.getAnalyzerJson === "function";
+  ["getViewFile", "getAnalyzerJson", "saveFile"].every((name) => hasFunction(module, name));
 
 const loadViewModel = async (server: ViteDevServer): Promise<ViewModelModule> => {
   const module = await server.ssrLoadModule(resolve(serverDirectory, "view-model.ts"));
@@ -39,19 +40,60 @@ const sendError = (response: ServerResponse, status: number, error: unknown): vo
   response.end(error instanceof Error ? (error.stack ?? error.message) : String(error));
 };
 
-const handle = async (
+const readBody = async (request: IncomingMessage): Promise<string> => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of request) chunks.push(Buffer.from(chunk));
+  return Buffer.concat(chunks).toString("utf8");
+};
+
+interface SaveRequest {
+  file: string;
+  source: string;
+}
+
+const isSaveRequest = (value: unknown): value is SaveRequest =>
+  typeof value === "object" &&
+  value !== null &&
+  "file" in value &&
+  typeof value.file === "string" &&
+  "source" in value &&
+  typeof value.source === "string";
+
+const handleAnalysis = async (
   server: ViteDevServer,
-  request: IncomingMessage,
+  url: URL,
   response: ServerResponse,
 ): Promise<void> => {
-  const url = new URL(request.url ?? "/", "http://localhost");
-  if (url.pathname !== "/api/analysis") return sendError(response, 404, `No route ${url.pathname}`);
   const file = url.searchParams.get("file");
   if (!file) return sendError(response, 400, "Missing file");
   const { getViewFile, getAnalyzerJson } = await loadViewModel(server);
   if (url.searchParams.get("format") === "json")
     return sendText(response, getAnalyzerJson(resolve(file)));
   sendJson(response, getViewFile(resolve(file)));
+};
+
+const handleSave = async (
+  server: ViteDevServer,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> => {
+  const body: unknown = JSON.parse(await readBody(request));
+  if (!isSaveRequest(body)) return sendError(response, 400, "Expected { file, source }");
+  const { saveFile } = await loadViewModel(server);
+  sendJson(response, saveFile(resolve(body.file), body.source));
+};
+
+const handle = async (
+  server: ViteDevServer,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> => {
+  const url = new URL(request.url ?? "/", "http://localhost");
+  if (url.pathname === "/api/analysis" && request.method === "GET")
+    return handleAnalysis(server, url, response);
+  if (url.pathname === "/api/file" && request.method === "POST")
+    return handleSave(server, request, response);
+  sendError(response, 404, `No route ${request.method} ${url.pathname}`);
 };
 
 export const viewerPlugin = (): Plugin => ({

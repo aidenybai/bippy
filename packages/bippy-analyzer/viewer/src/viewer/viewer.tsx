@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import {
   Sidebar,
   SidebarContent,
@@ -37,11 +38,21 @@ interface PanesProps {
   legend: ReactNode;
 }
 
+const Crash = ({ error }: { error: unknown }) => (
+  <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
+    {error instanceof Error ? (error.stack ?? error.message) : String(error)}
+  </pre>
+);
+
 const Panes = ({ source, legend }: PanesProps) => (
   <SidebarLayout>
-    <SidebarInset>{source}</SidebarInset>
+    <SidebarInset>
+      <ErrorBoundary FallbackComponent={Crash}>{source}</ErrorBoundary>
+    </SidebarInset>
     <Sidebar side="right" title="Legend">
-      <SidebarContent>{legend}</SidebarContent>
+      <SidebarContent>
+        <ErrorBoundary FallbackComponent={Crash}>{legend}</ErrorBoundary>
+      </SidebarContent>
     </Sidebar>
   </SidebarLayout>
 );
