@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { CODE_THEME, useHighlighter } from "../hooks/use-highlighter";
 import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
-import { PALETTE, getComponentAtLine, getSolidColor } from "../lib/analysis";
+import { getComponentAtLine, getSolidColor } from "../lib/analysis";
 import { describeNode } from "../lib/describe";
 import { getLineFromEvent, type Box } from "../lib/positions";
 import type { GraphEdge } from "../model";
@@ -10,27 +10,19 @@ import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { useIsDimmed, useIsInactive, useLoadedView, useNodeColor, useViewer } from "./context";
 
 const ARC_EDGE_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
-const LANE_MARGIN = 72;
-const LANE_GAP = 6;
-const CORNER = 4;
+const MIN_BOW = 16;
 
-const getUnderline = (box: Box): { x: number; y: number } => ({
-  x: box.x + box.width + 2,
-  y: box.y + box.height - 1.5,
+const getAnchor = (box: Box, side: "top" | "bottom"): { x: number; y: number } => ({
+  x: box.x + box.width / 2,
+  y: side === "top" ? box.y : box.y + box.height,
 });
 
-const getArcPath = (from: Box, to: Box, laneX: number): string => {
-  const start = getUnderline(from);
-  const end = getUnderline(to);
-  const direction = end.y > start.y ? 1 : -1;
-  return [
-    `M ${start.x} ${start.y}`,
-    `H ${laneX - CORNER}`,
-    `Q ${laneX} ${start.y} ${laneX} ${start.y + direction * CORNER}`,
-    `V ${end.y - direction * CORNER}`,
-    `Q ${laneX} ${end.y} ${laneX - CORNER} ${end.y}`,
-    `H ${end.x + 6}`,
-  ].join(" ");
+const getArcPath = (from: Box, to: Box): string => {
+  const isGoingDown = to.y > from.y;
+  const start = getAnchor(from, isGoingDown ? "bottom" : "top");
+  const end = getAnchor(to, isGoingDown ? "top" : "bottom");
+  const bow = Math.max(MIN_BOW, Math.abs(end.y - start.y) / 2) * (isGoingDown ? 1 : -1);
+  return `M ${start.x} ${start.y} C ${start.x} ${start.y + bow}, ${end.x} ${end.y - bow}, ${end.x} ${end.y}`;
 };
 
 interface TokenVisibility {
@@ -87,26 +79,23 @@ interface ArcProps {
   edge: GraphEdge;
   from: Box;
   to: Box;
-  laneBaseX: number;
 }
 
-const Arc = ({ edge, from, to, laneBaseX }: ArcProps) => {
+const Arc = ({ edge, from, to }: ArcProps) => {
   const { causalNodeIds, colorByNodeId } = useViewer();
   const isInactive = useIsInactive(edge.from);
   const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0, 0, 0, 0.3)";
-  const lane = Math.max(PALETTE.indexOf(color), 0) * 2 + (edge.kind === "writes" ? 1 : 0);
-  const laneX = laneBaseX + lane * LANE_GAP;
   const isActive =
     causalNodeIds !== null && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to);
   const isMuted = (causalNodeIds !== null && !isActive) || isInactive;
   return (
     <path
-      d={getArcPath(from, to, laneX)}
+      d={getArcPath(from, to)}
       fill="none"
       stroke={getSolidColor(color)}
       strokeWidth={isActive ? 1.75 : 1}
       strokeDasharray={edge.kind === "writes" ? "4 3" : undefined}
-      opacity={isMuted ? 0.12 : isActive ? 1 : 0.7}
+      opacity={isMuted ? 0.1 : isActive ? 1 : 0.55}
       markerEnd="url(#arc-head)"
     />
   );
@@ -214,7 +203,7 @@ export const SourcePane = () => {
       <div
         ref={wrapperRef}
         onMouseMove={activateAtPointer}
-        className="relative min-w-0 py-1 pr-24 text-[13px]/[19px]"
+        className="relative min-w-0 py-1 pr-8 text-[13px]/[19px]"
       >
         {isHighlighterReady && <File file={file} options={options} disableWorkerPool />}
         <svg
@@ -232,7 +221,6 @@ export const SourcePane = () => {
               edge={edge}
               from={boxes.get(edge.from)!}
               to={boxes.get(edge.to)!}
-              laneBaseX={layout.width - LANE_MARGIN}
             />
           ))}
         </svg>
