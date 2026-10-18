@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Code } from "@/components/ui/code";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   getBindingNodeId,
@@ -78,10 +79,13 @@ const BindingRow = ({ binding }: { binding: ViewBinding }) => {
       <Cell className={KEY_CELL}>
         <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
       </Cell>
-      <Cell className="font-mono">
-        {binding.domain}
-        {binding.initial !== null ? ` = ${binding.initial}` : ""}
-        {binding.reachable ? ` · only ${binding.reachable}` : ""}
+      <Cell>
+        <Code>
+          {binding.initial !== null ? `${binding.domain} = ${binding.initial}` : binding.domain}
+        </Code>
+        {binding.reachable && (
+          <span className="text-muted-foreground"> · only {binding.reachable}</span>
+        )}
       </Cell>
     </TableRow>
   );
@@ -97,7 +101,9 @@ const Conditions = ({ state }: { state: ViewState }) => {
         return (
           <span key={condition} className="flex items-center gap-1">
             {index > 0 && <span className="text-faint">∧</span>}
-            <Chip nodeIds={nodeId ? [nodeId] : []}>{condition}</Chip>
+            <Chip nodeIds={nodeId ? [nodeId] : []}>
+              <Code>{condition}</Code>
+            </Chip>
           </span>
         );
       })}
@@ -115,7 +121,9 @@ const StateRow = ({ state }: { state: ViewState }) => {
       <Cell>
         <Conditions state={state} />
         <div className="mt-1 font-mono">
-          <Chip nodeIds={getStateArmNodeIds(component, state)}>{state.render || "∅"}</Chip>
+          <Chip nodeIds={getStateArmNodeIds(component, state)}>
+            <Code>{state.render || "∅"}</Code>
+          </Chip>
         </div>
       </Cell>
     </TableRow>
@@ -124,10 +132,14 @@ const StateRow = ({ state }: { state: ViewState }) => {
 
 const Update = ({ update }: { update: ViewUpdate }) => (
   <div className="grid">
-    {update.guard !== null && <span className="text-muted-foreground">if {update.guard}</span>}
+    {update.guard !== null && (
+      <span className="text-muted-foreground">
+        if <Code>{update.guard}</Code>
+      </span>
+    )}
     {update.assignments.map((assignment) => (
       <span key={assignment}>
-        {assignment}
+        <Code>{assignment}</Code>
         {update.isAsync && <span className="text-muted-foreground"> async</span>}
       </span>
     ))}
@@ -142,7 +154,9 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
     <TableRow>
       <Cell className="grid gap-2 py-3">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <Chip nodeIds={nodeId ? [nodeId] : []}>{handler.label}</Chip>
+          <Chip nodeIds={nodeId ? [nodeId] : []}>
+            <Code>{handler.label}</Code>
+          </Chip>
           {transitions.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {transitions.map((transition) => (

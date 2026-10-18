@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
-import { preloadHighlighter } from "@pierre/diffs";
 import { File, type FileOptions } from "@pierre/diffs/react";
-import { useQuery } from "@tanstack/react-query";
+import { CODE_THEME, useHighlighter } from "../hooks/use-highlighter";
 import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
 import { PALETTE, getComponentAtLine, getSolidColor } from "../lib/analysis";
 import { describeNode } from "../lib/describe";
@@ -129,29 +128,13 @@ const ArcHead = () => (
   </defs>
 );
 
-const THEME = "github-light";
-
 const FILE_OPTIONS: FileOptions<undefined, undefined> = {
-  theme: THEME,
+  theme: CODE_THEME,
   overflow: "wrap",
   disableFileHeader: true,
   disableErrorHandling: true,
   preferredHighlighter: "shiki-js",
 };
-
-const useHighlighter = (): boolean =>
-  useQuery({
-    queryKey: ["highlighter", THEME],
-    queryFn: async () => {
-      await preloadHighlighter({
-        themes: [THEME],
-        langs: ["tsx", "ts", "jsx", "js"],
-        preferredHighlighter: "shiki-js",
-      });
-      return true;
-    },
-    staleTime: Infinity,
-  }).isSuccess;
 
 const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
   const view = useLoadedView();
@@ -181,7 +164,7 @@ const TokenTooltip = ({ anchor }: { anchor: Anchor | null }) => {
 
 export const SourcePane = () => {
   const view = useLoadedView();
-  const isHighlighterReady = useHighlighter();
+  const isHighlighterReady = useHighlighter() !== null;
   const { colorByNodeId, causalNodeIds } = useViewer();
   const activateAtPointer = useActivateAtPointer();
   const [anchor, setAnchor] = useState<Anchor | null>(null);
