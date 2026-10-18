@@ -38,7 +38,7 @@ const Status = () => {
       {activeComponent && (
         <span>
           {activeComponent.name} · {activeComponent.states.length} states ·{" "}
-          {activeComponent.handlers.length} handlers
+          {activeComponent.handlers.length} actions
         </span>
       )}
       {hoveredNode && (

@@ -139,7 +139,7 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
 };
 
 const Empty = ({ name }: { name: string }) => (
-  <p className="p-3 text-sm text-muted-foreground">{name} has no state.</p>
+  <p className="p-3 text-sm text-muted-foreground">{name} has no state variables or actions.</p>
 );
 
 export const Legend = () => {
@@ -149,7 +149,7 @@ export const Legend = () => {
   return (
     <div className="grid content-start gap-5 overflow-auto p-3 text-[13px]">
       <h1 className="px-2 font-mono text-sm font-medium">{component.name}</h1>
-      <Section title="Data">
+      <Section title="State variables">
         {component.bindings.map((binding) => (
           <BindingRow key={binding.id} binding={binding} />
         ))}
@@ -167,7 +167,7 @@ export const Legend = () => {
           })}
         </Section>
       ))}
-      <Section title="What can happen">
+      <Section title="Actions">
         {component.handlers.map((handler) => (
           <HandlerRow key={handler.id} handler={handler} />
         ))}
