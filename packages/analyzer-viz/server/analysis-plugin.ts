@@ -5,10 +5,10 @@ import type { Plugin } from "vite";
 const packageDirectory = fileURLToPath(new URL(".", import.meta.url));
 const DEFAULT_TSCONFIG = resolve(
   packageDirectory,
-  "../../bippy-analyzer/.conformance/prompts-chat/tsconfig.json",
+  "../../bippy-analyzer/tests/fixtures/symbolic-tree/tsconfig.json",
 );
-const DEFAULT_COMPONENT = "TextToVideoDemo";
-const DEFAULT_FILE = "media-demos";
+const DEFAULT_COMPONENT = "App";
+const DEFAULT_FILE = "counter";
 
 interface AnalysisModule {
   getViewModel: (tsconfig: string, component: string, file: string | null) => unknown;

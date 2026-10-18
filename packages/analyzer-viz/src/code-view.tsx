@@ -74,11 +74,14 @@ const useHighlightedSource = (source: string): string => {
   return html;
 };
 
+const MAX_WHOLE_FILE_LINES = 60;
+
 const getComponentSource = (
   component: ViewComponent
 ): { source: string; lineOffset: number } => {
   const lines = component.source.split("\n");
-  if (!component.loc) return { source: component.source, lineOffset: 0 };
+  if (!component.loc || lines.length <= MAX_WHOLE_FILE_LINES)
+    return { source: component.source, lineOffset: 0 };
   const firstLine = component.loc.start.line;
   return {
     source: lines.slice(firstLine - 1, component.loc.end.line).join("\n"),
