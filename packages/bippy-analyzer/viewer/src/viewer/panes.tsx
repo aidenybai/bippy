@@ -11,7 +11,7 @@ const Divider = ({ onResize }: { onResize: (deltaX: number) => void }) => (
   <div
     role="separator"
     aria-orientation="vertical"
-    className="w-1 cursor-col-resize touch-none select-none bg-border transition-colors hover:bg-foreground/40"
+    className="w-px cursor-col-resize touch-none select-none bg-border transition-colors duration-150 hover:bg-faint active:bg-foreground"
     onPointerDown={(event: PointerEvent<HTMLDivElement>) =>
       event.currentTarget.setPointerCapture(event.pointerId)
     }

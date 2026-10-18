@@ -6,6 +6,7 @@ import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
 import { getComponentAtLine, getSolidColor } from "../lib/analysis";
 import { getLineFromEvent, type Box } from "../lib/positions";
 import type { GraphEdge } from "../model";
+import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { useIsDimmed, useIsInactive, useLoadedView, useNodeColor, useViewer } from "./context";
 
 const ARC_EDGE_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
@@ -36,7 +37,16 @@ const getTokenOpacity = ({ isDimmed, isInactive, isMultiLine }: TokenVisibility)
   return isMultiLine ? 0.5 : 1;
 };
 
-const TokenMark = ({ node, box, isMultiLine }: PlacedToken) => {
+interface Anchor {
+  nodeId: string;
+  element: Element;
+}
+
+interface TokenMarkProps extends PlacedToken {
+  onEnter: (anchor: Anchor) => void;
+}
+
+const TokenMark = ({ node, box, isMultiLine, onEnter }: TokenMarkProps) => {
   const { hoveredNodeId, hover } = useViewer();
   const color = useNodeColor(node.id) ?? "transparent";
   const isDimmed = useIsDimmed(node.id);
@@ -56,11 +66,12 @@ const TokenMark = ({ node, box, isMultiLine }: PlacedToken) => {
       strokeWidth={2}
       opacity={getTokenOpacity({ isDimmed, isInactive, isMultiLine })}
       style={{ mixBlendMode: "multiply" }}
-      onMouseEnter={() => hover(node.id)}
+      onMouseEnter={(event) => {
+        hover(node.id);
+        onEnter({ nodeId: node.id, element: event.currentTarget });
+      }}
       onMouseLeave={() => hover(null)}
-    >
-      <title>{node.label}</title>
-    </rect>
+    />
   );
 };
 
@@ -143,11 +154,24 @@ const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
   );
 };
 
+const TokenTooltip = ({ anchor }: { anchor: Anchor | null }) => {
+  const { hoveredNode } = useViewer();
+  const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
+  return (
+    <Tooltip open={isOpen}>
+      <TooltipContent anchor={anchor?.element} className="font-mono text-[12px]">
+        {hoveredNode?.label}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 export const SourcePane = () => {
   const view = useLoadedView();
   const isHighlighterReady = useHighlighter();
   const { colorByNodeId } = useViewer();
   const activateAtPointer = useActivateAtPointer();
+  const [anchor, setAnchor] = useState<Anchor | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
@@ -205,7 +229,7 @@ export const SourcePane = () => {
         >
           <ArcHead />
           {layout.tokens.map((token) => (
-            <TokenMark key={token.node.id} {...token} />
+            <TokenMark key={token.node.id} {...token} onEnter={setAnchor} />
           ))}
           {arcs.map((edge) => (
             <Arc
@@ -217,6 +241,7 @@ export const SourcePane = () => {
             />
           ))}
         </svg>
+        <TokenTooltip anchor={anchor} />
       </div>
     </div>
   );

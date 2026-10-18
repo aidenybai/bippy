@@ -12,13 +12,18 @@ const Root = ({ children }: { children: ReactNode }) => (
 );
 
 const Message = ({ children }: { children: ReactNode }) => (
-  <p className="p-4 text-sm text-muted-foreground">{children}</p>
+  <p className="px-5 py-4 text-muted-foreground">{children}</p>
 );
 
 const Source = () => {
   const { file, view, viewError, isViewLoading } = useViewer();
   if (!file) return <Message>Enter a file path above.</Message>;
-  if (viewError) return <pre className="p-4 text-sm text-destructive">{viewError}</pre>;
+  if (viewError)
+    return (
+      <pre className="overflow-auto px-5 py-4 font-mono text-[12.5px]/[19px] whitespace-pre-wrap text-destructive">
+        {viewError}
+      </pre>
+    );
   if (isViewLoading || !view) return <Message>Loading…</Message>;
   return <SourcePane />;
 };
@@ -31,7 +36,7 @@ const LegendPane = () => {
 const Status = () => {
   const { hoveredNode, activeComponent } = useViewer();
   return (
-    <div className="flex h-8 items-center gap-3 border-t px-3 text-xs text-muted-foreground">
+    <div className="flex h-8 items-center gap-4 border-t px-3 text-xs text-muted-foreground tabular-nums">
       {activeComponent && (
         <span>
           {activeComponent.name} · {activeComponent.states.length} states ·{" "}

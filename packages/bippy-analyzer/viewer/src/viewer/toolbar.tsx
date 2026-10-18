@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Input } from "@/components/ui/input";
 import { useViewer } from "./context";
 
 export const Toolbar = () => {
@@ -10,15 +11,16 @@ export const Toolbar = () => {
     if (path) openFile(path);
   };
   return (
-    <form onSubmit={submit} className="flex h-11 items-center border-b px-3">
-      <input
+    <form onSubmit={submit} className="flex h-11 items-center gap-3 border-b px-3">
+      <span className="text-xs text-muted-foreground">File</span>
+      <Input
         id="file-path"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         aria-label="Path to a component file"
         placeholder="Path to a component file, then Enter"
         spellCheck={false}
-        className="h-7 min-w-0 flex-1 rounded-md border bg-background px-2 font-mono text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex-1 font-mono text-[12.5px]"
       />
     </form>
   );
