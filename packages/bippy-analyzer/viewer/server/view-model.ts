@@ -186,12 +186,25 @@ const toViewUpdate = (update: StateUpdate): ViewUpdate => ({
   isAsync: update.isAsync,
 });
 
+const getUpdateKey = (update: ViewUpdate): string =>
+  `${update.bindingId}:${update.guard ?? ""}:${update.assignments.join(",")}:${update.isAsync}`;
+
+const dedupeUpdates = (updates: ViewUpdate[]): ViewUpdate[] => {
+  const seen = new Set<string>();
+  return updates.filter((update) => {
+    const key = getUpdateKey(update);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 const toViewHandler = (handler: Handler, label: string): ViewHandler => ({
   id: handler.id,
   label,
   kind: handler.trigger.kind === "Event" ? "event" : "effect",
   loc: toViewLocation(handler.loc),
-  updates: handler.updates.map(toViewUpdate),
+  updates: dedupeUpdates(handler.updates.map(toViewUpdate)),
 });
 
 interface TriggerSite {

@@ -154,8 +154,8 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
           )}
         </div>
         <div className="grid gap-1.5 rounded-md bg-muted px-3 py-2 font-mono">
-          {handler.updates.map((update, index) => (
-            <Update key={`${update.bindingId}-${index}`} update={update} />
+          {handler.updates.map((update) => (
+            <Update key={`${update.guard}:${update.assignments.join(",")}`} update={update} />
           ))}
         </div>
       </Cell>
