@@ -1,7 +1,22 @@
 import { useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useViewer, type ViewMode } from "./context";
 import { ThemeToggle } from "./theme-toggle";
-import { useViewer } from "./context";
+
+const isViewMode = (value: unknown): value is ViewMode => value === "code" || value === "json";
+
+const ModeTabs = () => {
+  const { mode, setMode } = useViewer();
+  return (
+    <Tabs value={mode} onValueChange={(value) => isViewMode(value) && setMode(value)}>
+      <TabsList aria-label="View">
+        <TabsTrigger value="code">Code</TabsTrigger>
+        <TabsTrigger value="json">JSON</TabsTrigger>
+      </TabsList>
+    </Tabs>
+  );
+};
 
 export const Toolbar = () => {
   const { file, openFile } = useViewer();
@@ -12,8 +27,8 @@ export const Toolbar = () => {
     if (path) openFile(path);
   };
   return (
-    <form onSubmit={submit} className="flex h-11 items-center gap-3 border-b px-3">
-      <span className="text-muted-foreground">File</span>
+    <form onSubmit={submit} className="flex h-11 items-center gap-2 border-b px-3 sm:gap-3">
+      <span className="hidden text-muted-foreground sm:inline">File</span>
       <Input
         id="file-path"
         value={draft}
@@ -23,6 +38,7 @@ export const Toolbar = () => {
         spellCheck={false}
         className="flex-1 font-mono"
       />
+      <ModeTabs />
       <ThemeToggle />
     </form>
   );

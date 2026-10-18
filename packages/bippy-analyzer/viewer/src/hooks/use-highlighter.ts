@@ -1,6 +1,6 @@
 import { getSharedHighlighter, type DiffsHighlighter } from "@pierre/diffs";
 import { useQuery } from "@tanstack/react-query";
-import type { Theme } from "./use-theme";
+import type { Theme } from "./use-resolved-theme";
 
 export const CODE_THEMES = { light: "github-light", dark: "github-dark-default" } as const;
 
@@ -14,7 +14,7 @@ export const useHighlighter = (): DiffsHighlighter | null =>
     queryFn: () =>
       getSharedHighlighter({
         themes: [CODE_THEMES.light, CODE_THEMES.dark],
-        langs: ["tsx", "ts", "jsx", "js"],
+        langs: ["tsx", "ts", "jsx", "js", "json"],
         preferredHighlighter: "shiki-js",
       }),
     staleTime: Infinity,

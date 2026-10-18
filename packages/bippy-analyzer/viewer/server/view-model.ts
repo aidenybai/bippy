@@ -33,7 +33,7 @@ import type {
   ViewLocation,
   ViewUpdate,
 } from "../src/model";
-import { loadAnalyzerOutput, type AnalyzerJsonComponent } from "./analyzer-json";
+import { loadAnalyzerOutput, loadAnalyzerText, type AnalyzerJsonComponent } from "./analyzer-json";
 import { buildCodeGraph } from "./code-graph";
 
 const toViewLocation = (loc: SourceLocation): ViewLocation | null =>
@@ -299,6 +299,9 @@ const findTsconfig = (file: string): string => {
     directory = parent;
   }
 };
+
+export const getAnalyzerJson = (file: string): string =>
+  loadAnalyzerText({ tsconfig: findTsconfig(file), fileFilter: file });
 
 export const getViewFile = (file: string): ViewFile => {
   const tsconfig = findTsconfig(file);

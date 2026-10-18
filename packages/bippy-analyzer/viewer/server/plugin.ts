@@ -8,11 +8,29 @@ const serverDirectory = fileURLToPath(new URL(".", import.meta.url));
 
 interface ViewModelModule {
   getViewFile: (file: string) => ViewFile;
+  getAnalyzerJson: (file: string) => string;
 }
+
+const isViewModelModule = (module: object): module is ViewModelModule =>
+  "getViewFile" in module &&
+  typeof module.getViewFile === "function" &&
+  "getAnalyzerJson" in module &&
+  typeof module.getAnalyzerJson === "function";
+
+const loadViewModel = async (server: ViteDevServer): Promise<ViewModelModule> => {
+  const module = await server.ssrLoadModule(resolve(serverDirectory, "view-model.ts"));
+  if (!isViewModelModule(module)) throw new Error("view-model.ts does not export getViewFile");
+  return module;
+};
 
 const sendJson = (response: ServerResponse, value: unknown): void => {
   response.setHeader("content-type", "application/json");
   response.end(JSON.stringify(value));
+};
+
+const sendText = (response: ServerResponse, text: string): void => {
+  response.setHeader("content-type", "text/plain; charset=utf-8");
+  response.end(text);
 };
 
 const sendError = (response: ServerResponse, status: number, error: unknown): void => {
@@ -30,10 +48,10 @@ const handle = async (
   if (url.pathname !== "/api/analysis") return sendError(response, 404, `No route ${url.pathname}`);
   const file = url.searchParams.get("file");
   if (!file) return sendError(response, 400, "Missing file");
-  const module = (await server.ssrLoadModule(
-    resolve(serverDirectory, "view-model.ts"),
-  )) as ViewModelModule;
-  sendJson(response, module.getViewFile(resolve(file)));
+  const { getViewFile, getAnalyzerJson } = await loadViewModel(server);
+  if (url.searchParams.get("format") === "json")
+    return sendText(response, getAnalyzerJson(resolve(file)));
+  sendJson(response, getViewFile(resolve(file)));
 };
 
 export const viewerPlugin = (): Plugin => ({

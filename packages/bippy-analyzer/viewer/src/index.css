@@ -33,6 +33,15 @@
   --shadow-card: var(--card-shadow);
   --shadow-focus: var(--card-shadow), 0 0 0 3px var(--well-2);
   --ease-out-soft: cubic-bezier(0.22, 0.75, 0.2, 1);
+  --animate-spinner-line: spinner-line 1s linear infinite;
+  @keyframes spinner-line {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.15;
+    }
+  }
 }
 
 :root {
@@ -70,11 +79,13 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply font-sans text-[13px]/[19px] font-[450] tracking-[-0.01em] antialiased;
+    @apply font-sans text-[13px]/[19px] font-normal tracking-[-0.01em] antialiased;
     text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior: none;
   }
   ::selection {
     background: var(--well-2);

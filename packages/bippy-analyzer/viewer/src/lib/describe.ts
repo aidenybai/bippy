@@ -8,7 +8,8 @@ import type {
   ViewState,
   ViewUpdate,
 } from "../model";
-import { getComponentName, getTransitions } from "./analysis";
+import { getComponentName } from "./graph";
+import { getTransitions } from "./lookup";
 import { getArmOutcome } from "./states";
 
 const formatStateList = (states: ViewState[]): string =>

@@ -15,6 +15,7 @@ export interface AnalyzerSource {
   fileFilter: string | null;
 }
 
+const textsBySource = new Map<string, string>();
 const outputsBySource = new Map<string, AnalyzerJsonComponent[]>();
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -57,14 +58,20 @@ export const deserializeAnalyzerOutput = (text: string): AnalyzerJsonComponent[]
 const getSourceKey = (source: AnalyzerSource): string =>
   `${source.tsconfig}:${source.fileFilter ?? ""}`;
 
-const readAnalyzerOutput = (source: AnalyzerSource): string =>
-  serializeProjectAnalysis(analyzeProject(source.tsconfig, source.fileFilter));
+export const loadAnalyzerText = (source: AnalyzerSource): string => {
+  const key = getSourceKey(source);
+  const cached = textsBySource.get(key);
+  if (cached !== undefined) return cached;
+  const text = serializeProjectAnalysis(analyzeProject(source.tsconfig, source.fileFilter));
+  textsBySource.set(key, text);
+  return text;
+};
 
 export const loadAnalyzerOutput = (source: AnalyzerSource): AnalyzerJsonComponent[] => {
   const key = getSourceKey(source);
   const cached = outputsBySource.get(key);
   if (cached) return cached;
-  const components = deserializeAnalyzerOutput(readAnalyzerOutput(source));
+  const components = deserializeAnalyzerOutput(loadAnalyzerText(source));
   outputsBySource.set(key, components);
   return components;
 };
