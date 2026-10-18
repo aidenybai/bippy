@@ -31,16 +31,9 @@ const useComponent = (): { component: ViewComponent | null; error: string | null
 };
 
 const Toolbar = ({ component }: { component: ViewComponent }) => (
-  <div className="grid h-8 grid-cols-[minmax(0,1fr)_420px] items-center border-b px-3 text-xs">
-    <div className="flex items-center gap-2">
-      <span className="font-semibold">{component.name}</span>
-      <span className="text-muted-foreground">
-        {component.file.split("/").slice(-2).join("/")}
-      </span>
-    </div>
-    <span className="text-muted-foreground">
-      {component.states.length} states · {component.handlers.length} handlers
-    </span>
+  <div className="flex h-9 items-center gap-2 border-b px-3 text-xs">
+    <span className="font-semibold">{component.name}</span>
+    <span className="text-muted-foreground">{component.file.split("/").slice(-2).join("/")}</span>
   </div>
 );
 
@@ -61,7 +54,7 @@ export const App = () => {
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)_auto]">
       <Toolbar component={component} />
       <div className="grid grid-cols-[minmax(0,1fr)_420px] overflow-hidden">
-        <div className="overflow-auto border-r">
+        <div className="overflow-y-auto overflow-x-hidden border-r">
           <CodePane
             component={component}
             colorByNodeId={colorByNodeId}
@@ -78,13 +71,15 @@ export const App = () => {
           />
         </div>
       </div>
-      <div className="grid h-8 grid-cols-[minmax(0,1fr)_420px] items-center border-t px-3 text-xs text-muted-foreground">
-        <span>
-          {hoveredNode
-            ? `Line ${hoveredNode.loc.start.line}, Offset ${hoveredNode.loc.start.column}`
-            : `${component.source.split("\n").length} lines`}
-        </span>
-        <span>{hoveredNode ? hoveredNode.label : ""}</span>
+      <div className="flex h-8 items-center gap-3 border-t px-3 text-xs text-muted-foreground">
+        {hoveredNode && (
+          <>
+            <span>
+              Line {hoveredNode.loc.start.line}, Offset {hoveredNode.loc.start.column}
+            </span>
+            <span>{hoveredNode.label}</span>
+          </>
+        )}
       </div>
     </div>
   );

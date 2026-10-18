@@ -11,121 +11,42 @@ export const PALETTE = [
 
 export const getSolidColor = (color: string): string => color.replace(" 0.3)", " 1)");
 
-export interface Segment {
-  text: string;
-  nodeId?: string;
-}
-
-export interface AnalysisLine {
-  indent: number;
-  segments: Segment[];
-  armNodeIds?: string[];
-}
-
 const getNode = (component: ViewComponent, suffix: string): GraphNode | undefined =>
   component.graph.nodes.find((node) => node.id === `${component.name}/${suffix}`);
 
-const getBranchNode = (component: ViewComponent, condition: string): GraphNode | undefined => {
+export const getBindingNodeId = (component: ViewComponent, bindingId: number): string | undefined =>
+  getNode(component, `binding:${bindingId}`)?.id;
+
+export const getConditionNodeId = (component: ViewComponent, condition: string): string | undefined => {
   const branch = component.branches.find(
     (candidate) => candidate.test === condition || candidate.negated === condition,
   );
-  return branch ? getNode(component, `branch:${branch.id}`) : undefined;
+  return branch ? getNode(component, `branch:${branch.id}`)?.id : undefined;
 };
 
-const getLiveArmNodes = (component: ViewComponent, state: ViewState): GraphNode[] =>
+export const getStateArmNodeIds = (component: ViewComponent, state: ViewState): string[] =>
   component.branches.flatMap((branch) => {
     const arm = getArmOutcome(branch, state);
     const node = arm && getNode(component, `arm:${branch.id}:${arm}`);
-    return node ? [node] : [];
+    return node ? [node.id] : [];
   });
 
-const getHandlerNode = (component: ViewComponent, handlerId: string): GraphNode | undefined =>
+export const getHandlerNodeId = (component: ViewComponent, handlerId: string): string | undefined =>
   component.graph.nodes.find(
     (node) =>
       node.handlerId === handlerId &&
       node.id.startsWith(`${component.name}/`) &&
       (node.kind === "trigger" || node.kind === "handler"),
-  );
+  )?.id;
 
-const formatTransitions = (component: ViewComponent, handlerId: string): string => {
-  const moves = component.states.flatMap((state) =>
+export const getTransitions = (component: ViewComponent, handlerId: string): string[] =>
+  component.states.flatMap((state) =>
     state.transitions
       .filter((transition) => transition.handlerId === handlerId)
       .flatMap((transition) => transition.targets)
       .filter((target) => target !== state.index)
       .map((target) => `S${state.index + 1} → S${target + 1}`),
   );
-  return moves.join("  ");
-};
-
-const getDataLines = (component: ViewComponent): AnalysisLine[] => [
-  { indent: 0, segments: [{ text: "data" }] },
-  ...component.bindings.map((binding) => ({
-    indent: 1,
-    segments: [
-      { text: binding.name, nodeId: getNode(component, `binding:${binding.id}`)?.id },
-      { text: `  ${binding.domain}${binding.initial !== null ? ` = ${binding.initial}` : ""}` },
-      ...(binding.reachable ? [{ text: `  only ${binding.reachable}` }] : []),
-    ],
-  })),
-];
-
-const getConditionSegments = (component: ViewComponent, state: ViewState): Segment[] =>
-  state.label === "always"
-    ? [{ text: "always" }]
-    : state.label.split(" ∧ ").flatMap((condition, index) => [
-        ...(index > 0 ? [{ text: " ∧ " }] : []),
-        { text: condition, nodeId: getBranchNode(component, condition)?.id },
-      ]);
-
-const getStateLines = (component: ViewComponent): AnalysisLine[] =>
-  component.regions.flatMap((region, regionIndex) => [
-    {
-      indent: 0,
-      segments: [
-        { text: component.regions.length > 1 ? `states of ${region.placeNames.join(", ")}` : "states" },
-      ],
-    },
-    ...region.states.flatMap((stateIndex) => {
-      const state = component.states[stateIndex];
-      if (!state) return [];
-      const arms = getLiveArmNodes(component, state);
-      return [
-        {
-          indent: 1,
-          segments: [{ text: `S${stateIndex + 1}  ` }, ...getConditionSegments(component, state)],
-        },
-        {
-          indent: 2,
-          segments: [{ text: state.render || "∅", nodeId: arms[0]?.id }],
-          armNodeIds: arms.map((arm) => arm.id),
-        },
-      ];
-    }),
-    ...(regionIndex < component.regions.length - 1 ? [{ indent: 0, segments: [{ text: "" }] }] : []),
-  ]);
-
-const getHandlerLines = (component: ViewComponent): AnalysisLine[] => [
-  { indent: 0, segments: [{ text: "what can happen" }] },
-  ...component.handlers.map((handler) => ({
-    indent: 1,
-    segments: [
-      { text: handler.label, nodeId: getHandlerNode(component, handler.id)?.id },
-      {
-        text: `  ${handler.updates.map((update) => `sets ${update.text}${update.isAsync ? " (async)" : ""}`).join(", ")}`,
-      },
-      { text: `  ${formatTransitions(component, handler.id)}` },
-    ],
-  })),
-];
-
-export const getAnalysisLines = (component: ViewComponent): AnalysisLine[] => [
-  ...getDataLines(component),
-  { indent: 0, segments: [{ text: "" }] },
-  ...getStateLines(component),
-  { indent: 0, segments: [{ text: "" }] },
-  ...getHandlerLines(component),
-];
 
 export const getColorByNodeId = (component: ViewComponent): Map<string, string> => {
   const colorByBinding = new Map<number, string>();

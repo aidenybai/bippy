@@ -47,10 +47,10 @@ const getRightEdge = (box: Box): { x: number; y: number } => ({
   y: box.y + box.height / 2,
 });
 
-const getArrowPath = (from: Box, to: Box): string => {
+const getArrowPath = (from: Box, to: Box, marginX: number): string => {
   const start = getRightEdge(from);
   const end = getRightEdge(to);
-  const controlX = Math.max(start.x, end.x) + BULGE + Math.abs(end.y - start.y) / 6;
+  const controlX = Math.max(marginX, Math.max(start.x, end.x) + BULGE);
   return `M ${start.x} ${start.y} C ${controlX} ${start.y}, ${controlX} ${end.y}, ${end.x + 6} ${end.y}`;
 };
 
@@ -84,17 +84,17 @@ export const CodePane = ({ component, colorByNodeId, hoveredNodeId, onHover }: C
       boxes.has(edge.to) &&
       boxes.get(edge.from)!.y !== boxes.get(edge.to)!.y,
   );
-  const width = containerRef.current?.scrollWidth ?? 0;
-  const height = containerRef.current?.scrollHeight ?? 0;
+  const width = containerRef.current?.clientWidth ?? 0;
+  const height = containerRef.current?.clientHeight ?? 0;
 
   return (
     <div
       ref={containerRef}
-      className="relative w-max min-w-full px-2 py-1 pr-40 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-[21px] [&_.line]:inline-block [&_.line]:min-w-full"
+      className="relative min-w-0 py-1 pr-24 pl-4 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-[21px] [&_pre]:whitespace-pre-wrap [&_pre]:break-words"
     >
       <div dangerouslySetInnerHTML={{ __html: html }} />
       <svg
-        className="pointer-events-none absolute inset-0 overflow-visible"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
         width={width}
         height={height}
       >
@@ -143,7 +143,7 @@ export const CodePane = ({ component, colorByNodeId, hoveredNodeId, onHover }: C
           return (
             <path
               key={`${edge.from}-${edge.to}`}
-              d={getArrowPath(boxes.get(edge.from)!, boxes.get(edge.to)!)}
+              d={getArrowPath(boxes.get(edge.from)!, boxes.get(edge.to)!, width - 40)}
               fill="none"
               stroke={isActive ? "var(--foreground)" : getSolidColor(color)}
               strokeWidth={isActive ? 2 : 1}
