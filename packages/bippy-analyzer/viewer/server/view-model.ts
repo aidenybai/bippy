@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
   formatAbstractValue,
@@ -33,12 +33,7 @@ import type {
   ViewLocation,
   ViewUpdate,
 } from "../src/model";
-import {
-  forgetAnalyzerOutput,
-  loadAnalyzerOutput,
-  loadAnalyzerText,
-  type AnalyzerJsonComponent,
-} from "./analyzer-json";
+import { loadAnalyzerOutput, loadAnalyzerText, type AnalyzerJsonComponent } from "./analyzer-json";
 import { buildCodeGraph } from "./code-graph";
 
 const toViewLocation = (loc: SourceLocation): ViewLocation | null =>
@@ -303,13 +298,6 @@ const findTsconfig = (file: string): string => {
     if (parent === directory) throw new Error(`No tsconfig.json above ${file}`);
     directory = parent;
   }
-};
-
-export const saveFile = (file: string, source: string): ViewFile => {
-  if (!existsSync(file)) throw new Error(`${file} does not exist`);
-  writeFileSync(file, source);
-  forgetAnalyzerOutput({ tsconfig: findTsconfig(file), fileFilter: file });
-  return getViewFile(file);
 };
 
 export const getAnalyzerJson = (file: string): string =>

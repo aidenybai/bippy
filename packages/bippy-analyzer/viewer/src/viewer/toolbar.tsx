@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useViewer, type ViewMode } from "./context";
-import { EditControls } from "./edit-controls";
 import { ThemeToggle } from "./theme-toggle";
 
 const isViewMode = (value: unknown): value is ViewMode => value === "code" || value === "json";
@@ -42,7 +41,6 @@ export const Toolbar = () => {
         spellCheck={false}
         className="flex-1 font-mono"
       />
-      <EditControls />
       <ModeTabs />
       <SidebarTrigger disabled={mode === "json"} />
       <ThemeToggle />

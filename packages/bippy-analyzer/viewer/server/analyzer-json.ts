@@ -67,12 +67,6 @@ export const loadAnalyzerText = (source: AnalyzerSource): string => {
   return text;
 };
 
-export const forgetAnalyzerOutput = (source: AnalyzerSource): void => {
-  const key = getSourceKey(source);
-  textsBySource.delete(key);
-  outputsBySource.delete(key);
-};
-
 export const loadAnalyzerOutput = (source: AnalyzerSource): AnalyzerJsonComponent[] => {
   const key = getSourceKey(source);
   const cached = outputsBySource.get(key);

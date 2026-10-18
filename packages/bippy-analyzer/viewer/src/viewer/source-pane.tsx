@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
-import { File, type FileEditChangeHandler, type FileOptions } from "@pierre/diffs/react";
+import { File, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
@@ -9,7 +9,6 @@ import { isRestingArc, placeArcs } from "../lib/arcs";
 import { describeNode } from "../lib/describe";
 import { getComponentAtLine } from "../lib/graph";
 import { getLineFromEvent, type Box } from "../lib/positions";
-import { useEditorStore, useHasDraft } from "../store/editor";
 import { useHoverStore, type TokenAnchor } from "../store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
@@ -141,14 +140,7 @@ export const SourcePane = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const hasDraft = useHasDraft();
-  const generation = useEditorStore((state) => state.generation);
-  const setDraft = useEditorStore((state) => state.setDraft);
   const leave = useHoverStore((state) => state.leave);
-  const onEditChange = useCallback<FileEditChangeHandler<undefined, undefined>>(
-    (event) => setDraft(event.editor.getText()),
-    [setDraft],
-  );
   const options = useMemo<FileOptions<undefined, undefined>>(
     () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
     [theme, onPostRender],
@@ -170,24 +162,16 @@ export const SourcePane = () => {
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
       <div
         ref={wrapperRef}
-        onMouseMove={hasDraft ? undefined : trackPointer}
+        onMouseMove={trackPointer}
         onMouseLeave={leave}
         className="relative min-w-0 py-1 pr-8 text-[13px]/[19px]"
       >
         {isHighlighterReady ? (
-          <File
-            key={`${view.file}:${generation}`}
-            file={file}
-            options={options}
-            disableWorkerPool
-            edit
-            onEditChange={onEditChange}
-            onEditComplete={() => "reject"}
-          />
+          <File file={file} options={options} disableWorkerPool />
         ) : (
           <Spinner className="h-40" />
         )}
-        {!hasDraft && <Overlay layout={layout} />}
+        <Overlay layout={layout} />
         <TokenTooltip />
       </div>
     </div>

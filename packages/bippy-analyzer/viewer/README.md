@@ -8,7 +8,7 @@ pnpm --filter bippy-analyzer viewer
 
 Open http://localhost:3200/, paste the path of a component file into the box at the top and press Enter. The viewer finds the nearest `tsconfig.json` above the file, analyzes that file and draws every component in it. The legend on the right follows the component under the pointer: hover a line or a token and it switches, and it stays on the last one you touched. It starts on the component with the most states. The query string carries the file as `?file=<path>` and the view as `?view=json`.
 
-The code is editable in place with Pierre's editor. Typing hides the marks, and Save or Cmd+S writes the file to disk and analyzes it again; Discard restores it. The JSON tab shows the analyzer's own output for the file. The legend is a sidebar that collapses with its toolbar button or Cmd+B and opens as a sheet on phones; in JSON mode it stays collapsed.
+The JSON tab shows the analyzer's own output for the file. The legend is a sidebar that collapses with its toolbar button or Cmd+B and opens as a sheet on phones; in JSON mode it stays collapsed.
 
 Every state variable gets a color. In the source, its declaration, the calls that set it, the conditions that read it and the handlers that set it share that color. A dashed arrow curves from each setter call up to the declaration, and a solid arrow from the declaration down to each condition that reads it. Hovering anything lights its whole causal chain and dims the rest. The right side uses MDP terms: the state variables, the states with their conditions and what they render, and the actions, each with the variables it sets and the transitions `S1 → S2` it causes, in the same colors. Hovering anything on either side isolates that variable.
 
