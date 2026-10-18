@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { describeNode } from "../lib/describe";
 import { ViewerProvider, useViewer } from "./context";
 import { Legend } from "./legend";
 import { Panes } from "./panes";
@@ -34,7 +35,7 @@ const LegendPane = () => {
 };
 
 const Status = () => {
-  const { hoveredNode, activeComponent } = useViewer();
+  const { hoveredNode, activeComponent, view } = useViewer();
   return (
     <div className="flex h-8 items-center gap-4 border-t px-3 text-muted-foreground tabular-nums">
       {activeComponent && (
@@ -48,7 +49,7 @@ const Status = () => {
           <span>
             Line {hoveredNode.loc.start.line}, Offset {hoveredNode.loc.start.column}
           </span>
-          <span>{hoveredNode.label}</span>
+          <span>{view && describeNode(view, hoveredNode)}</span>
         </>
       )}
     </div>

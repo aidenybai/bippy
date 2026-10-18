@@ -3,26 +3,35 @@ import { preloadHighlighter } from "@pierre/diffs";
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
-import { getComponentAtLine, getSolidColor } from "../lib/analysis";
+import { PALETTE, getComponentAtLine, getSolidColor } from "../lib/analysis";
+import { describeNode } from "../lib/describe";
 import { getLineFromEvent, type Box } from "../lib/positions";
 import type { GraphEdge } from "../model";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { useIsDimmed, useIsInactive, useLoadedView, useNodeColor, useViewer } from "./context";
 
 const ARC_EDGE_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
-const ARC_BULGE = 40;
-const ARC_MARGIN = 40;
+const LANE_MARGIN = 72;
+const LANE_GAP = 6;
+const CORNER = 4;
 
-const getRightEdge = (box: Box): { x: number; y: number } => ({
+const getUnderline = (box: Box): { x: number; y: number } => ({
   x: box.x + box.width + 2,
-  y: box.y + box.height / 2,
+  y: box.y + box.height - 1.5,
 });
 
-const getArcPath = (from: Box, to: Box, marginX: number): string => {
-  const start = getRightEdge(from);
-  const end = getRightEdge(to);
-  const controlX = Math.max(marginX, Math.max(start.x, end.x) + ARC_BULGE);
-  return `M ${start.x} ${start.y} C ${controlX} ${start.y}, ${controlX} ${end.y}, ${end.x + 6} ${end.y}`;
+const getArcPath = (from: Box, to: Box, laneX: number): string => {
+  const start = getUnderline(from);
+  const end = getUnderline(to);
+  const direction = end.y > start.y ? 1 : -1;
+  return [
+    `M ${start.x} ${start.y}`,
+    `H ${laneX - CORNER}`,
+    `Q ${laneX} ${start.y} ${laneX} ${start.y + direction * CORNER}`,
+    `V ${end.y - direction * CORNER}`,
+    `Q ${laneX} ${end.y} ${laneX - CORNER} ${end.y}`,
+    `H ${end.x + 6}`,
+  ].join(" ");
 };
 
 interface TokenVisibility {
@@ -79,19 +88,21 @@ interface ArcProps {
   edge: GraphEdge;
   from: Box;
   to: Box;
-  marginX: number;
+  laneBaseX: number;
 }
 
-const Arc = ({ edge, from, to, marginX }: ArcProps) => {
+const Arc = ({ edge, from, to, laneBaseX }: ArcProps) => {
   const { causalNodeIds, colorByNodeId } = useViewer();
   const isInactive = useIsInactive(edge.from);
   const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0, 0, 0, 0.3)";
+  const lane = Math.max(PALETTE.indexOf(color), 0) * 2 + (edge.kind === "writes" ? 1 : 0);
+  const laneX = laneBaseX + lane * LANE_GAP;
   const isActive =
     causalNodeIds !== null && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to);
   const isMuted = (causalNodeIds !== null && !isActive) || isInactive;
   return (
     <path
-      d={getArcPath(from, to, marginX)}
+      d={getArcPath(from, to, laneX)}
       fill="none"
       stroke={getSolidColor(color)}
       strokeWidth={isActive ? 1.75 : 1}
@@ -157,11 +168,12 @@ const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
 
 const TokenTooltip = ({ anchor }: { anchor: Anchor | null }) => {
   const { hoveredNode } = useViewer();
+  const view = useLoadedView();
   const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
   return (
     <Tooltip open={isOpen}>
       <TooltipContent anchor={anchor?.element} className="font-mono">
-        {hoveredNode?.label}
+        {hoveredNode && describeNode(view, hoveredNode)}
       </TooltipContent>
     </Tooltip>
   );
@@ -237,7 +249,7 @@ export const SourcePane = () => {
               edge={edge}
               from={boxes.get(edge.from)!}
               to={boxes.get(edge.to)!}
-              marginX={layout.width - ARC_MARGIN}
+              laneBaseX={layout.width - LANE_MARGIN}
             />
           ))}
         </svg>
