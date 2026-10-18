@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import type { Browser, Page } from "playwright";
 import { formatMermaid } from "../../src/cli/mermaid";
+import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "../../src/cli/render-tree";
 import { analyzeProject } from "../../src/core/analyze-project";
 import { getFixtureConfig } from "./helpers";
 
@@ -43,14 +44,18 @@ describe("mermaid output", () => {
   });
 
   it.each(FIXTURES)(
-    "parses as a state diagram for every component in %s",
+    "parses as a render tree and a state diagram for every component in %s",
     async (fixture) => {
       const config = getFixtureConfig(fixture);
       const { components } = analyzeProject(config);
-      const options = { rootDirectory: dirname(config), maxStates: SMALL_DIAGRAM_STATES };
+      const rootDirectory = dirname(config);
       for (const component of components) {
-        const diagram = formatMermaid(component, options);
-        expect.soft(await parseInBrowser(page, diagram), diagram).toBeNull();
+        const diagrams = [
+          formatRenderTree(component, { rootDirectory, maxDepth: DEFAULT_RENDER_DEPTH }),
+          formatMermaid(component, { rootDirectory, maxStates: SMALL_DIAGRAM_STATES }),
+        ];
+        for (const diagram of diagrams)
+          expect.soft(await parseInBrowser(page, diagram), diagram).toBeNull();
       }
     },
     120_000,

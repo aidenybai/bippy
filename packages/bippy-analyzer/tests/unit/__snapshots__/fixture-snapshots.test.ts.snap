@@ -1,5 +1,22 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`fixture analysis > App keeps its render tree and handlers 1`] = `
+"---
+title: App src/counter.tsx:9
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["App"]
+  n2{"isLoading"}
+  n1 --> n2
+  n3["#lt;Loading#gt;"]
+  n2 -->|✓| n3
+  n4["#lt;Button#gt; {count}"]
+  n2 -->|✗| n4
+  n5(["onClick ⇒ count = count + 1"]):::event
+  n4 -.-> n5"
+`;
+
 exports[`fixture analysis > App keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: App src/counter.tsx:9
@@ -8,6 +25,19 @@ stateDiagram-v2
   direction LR
   S1: isLoading · #lt;Loading#gt;
   S2: !isLoading · #lt;Button#gt; {count}"
+`;
+
+exports[`fixture analysis > Button keeps its render tree and handlers 1`] = `
+"---
+title: Button src/counter.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Button"]
+  n2["#lt;button#gt; {children}"]
+  n1 --> n2
+  n3(["onClick ⇒ calls onClick"]):::event
+  n2 -.-> n3"
 `;
 
 exports[`fixture analysis > Button keeps its states, transitions and unreachable branches 1`] = `
@@ -20,6 +50,21 @@ stateDiagram-v2
   [*] --> S1"
 `;
 
+exports[`fixture analysis > Card keeps its render tree and handlers 1`] = `
+"---
+title: Card src/chains.tsx:13
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Card"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"note"}
+  n2 --> n3
+  n4["#lt;p#gt; {note}"]
+  n3 -->|✓| n4"
+`;
+
 exports[`fixture analysis > Card keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Card src/chains.tsx:13
@@ -28,6 +73,25 @@ stateDiagram-v2
   direction LR
   S1: note · #lt;div#gt; #lt;p#gt; {note}
   S2: !note · #lt;div#gt;"
+`;
+
+exports[`fixture analysis > ClickStats keeps its render tree and handlers 1`] = `
+"---
+title: ClickStats src/mutation.tsx:41
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ClickStats"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ stats = Unknown(mutated)"]):::event
+  n2 -.-> n3
+  n4{"stats.clicks #gt; 0"}
+  n2 --> n4
+  n5["{#quot;Clicked#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;Not clicked#quot;}"]
+  n4 -->|✗| n6"
 `;
 
 exports[`fixture analysis > ClickStats keeps its states, transitions and unreachable branches 1`] = `
@@ -45,6 +109,29 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
+"---
+title: Composer src/guards.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Composer"]
+  n2{"isSent"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Sent#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;div#gt;"]
+  n2 -->|✗| n4
+  n5["#lt;input#gt;"]
+  n4 --> n5
+  n6(["onChange ⇒ draft = Unknown(member)"]):::event
+  n5 -.-> n6
+  n7["#lt;button#gt; #quot;Send#quot;"]
+  n4 --> n7
+  n8(["onClick ⇒ if draft: isSent = true"]):::event
+  n7 -.-> n8"
+`;
+
 exports[`fixture analysis > Composer keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Composer src/guards.tsx:3
@@ -57,6 +144,23 @@ stateDiagram-v2
   S2 --> S1: "Send""
 `;
 
+exports[`fixture analysis > Countdown keeps its render tree and handlers 1`] = `
+"---
+title: Countdown src/loops.tsx:39
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Countdown"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"steps === 0"}
+  n2 --> n3
+  n4["{#quot;Done#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;Counted#quot;}"]
+  n3 -->|✗| n5"
+`;
+
 exports[`fixture analysis > Countdown keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Countdown src/loops.tsx:39
@@ -65,6 +169,39 @@ stateDiagram-v2
   direction LR
   S1: steps === 0 · #lt;p#gt; {"Done"}
   S2: steps !== 0 · #lt;p#gt; {"Counted"}"
+`;
+
+exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
+"---
+title: Dashboard src/dashboard.tsx:25
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Dashboard"]
+  n2{"status === #quot;loading#quot;"}
+  n1 --> n2
+  n3["#lt;Spinner#gt;"]
+  n2 -->|✓| n3
+  n4{"!user"}
+  n2 -->|✗| n4
+  n5["#lt;SignIn#gt;"]
+  n4 -->|✓| n5
+  n6["#lt;main#gt;"]
+  n4 -->|✗| n6
+  n7["#lt;h1#gt; {user.name}"]
+  n6 --> n7
+  n8{"items.length #gt; 0"}
+  n6 --> n8
+  n9["#lt;List#gt;"]
+  n8 -->|✓| n9
+  n10["#lt;Empty#gt;"]
+  n8 -->|✗| n10
+  n11["#lt;button#gt; {count}"]
+  n6 --> n11
+  n12(["onClick ⇒ count = count + 1"]):::event
+  n11 -.-> n12
+  n13(["on mount ⇒ if !Unknown(rejected): items = Unknown(async) (async)"]):::event
+  n1 -.-> n13"
 `;
 
 exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
@@ -81,6 +218,31 @@ stateDiagram-v2
   S4 --> S3: on mount (async)"
 `;
 
+exports[`fixture analysis > Deck keeps its render tree and handlers 1`] = `
+"---
+title: Deck src/possible-mutation.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Deck"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"cards.length === 0"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Empty#quot;"]
+  n3 -->|✓| n4
+  n5["#lt;p#gt; #quot;Cards#quot;"]
+  n3 -->|✗| n5
+  n6["#lt;button#gt;"]
+  n2 --> n6
+  n7(["onClick ⇒ count = count + 1 · cards = Unknown(mutated)"]):::event
+  n6 -.-> n7
+  n8["#quot;Shuffle #quot;"]
+  n6 --> n8
+  n9["{count}"]
+  n6 --> n9"
+`;
+
 exports[`fixture analysis > Deck keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Deck src/possible-mutation.tsx:5
@@ -91,6 +253,29 @@ stateDiagram-v2
   S2: cards.length !== 0 · #lt;div#gt; #lt;p#gt; "Cards" #lt;button#gt; "Shuffle " {count}
   S1 --> S2: "Shuffle"
   S2 --> S1: "Shuffle""
+`;
+
+exports[`fixture analysis > EditButton keeps its render tree and handlers 1`] = `
+"---
+title: EditButton src/access.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["EditButton"]
+  n2{"!hasPermission(role, #quot;edit#quot;)"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Read only#quot;"]
+  n2 -->|✓| n3
+  n4{"isEditing"}
+  n2 -->|✗| n4
+  n5["#lt;button#gt; #quot;Save#quot;"]
+  n4 -->|✓| n5
+  n6(["onClick ⇒ isEditing = false"]):::event
+  n5 -.-> n6
+  n7["#lt;button#gt; #quot;Edit#quot;"]
+  n4 -->|✗| n7
+  n8(["onClick ⇒ isEditing = true"]):::event
+  n7 -.-> n8"
 `;
 
 exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
@@ -106,6 +291,17 @@ stateDiagram-v2
   S3 --> S2: "Edit""
 `;
 
+exports[`fixture analysis > Empty keeps its render tree and handlers 1`] = `
+"---
+title: Empty src/dashboard.tsx:16
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Empty"]
+  n2["#lt;p#gt; #quot;No items#quot;"]
+  n1 --> n2"
+`;
+
 exports[`fixture analysis > Empty keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Empty src/dashboard.tsx:16
@@ -114,6 +310,25 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;p#gt; "No items"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
+"---
+title: Feed src/chains.tsx:17
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Feed"]
+  n2{"!pages?.flatMap(function)?.length"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Nothing yet#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;p#gt;"]
+  n2 -->|✗| n4
+  n5["{pages?.flatMap(function).length}"]
+  n4 --> n5
+  n6["#quot; items#quot;"]
+  n4 --> n6"
 `;
 
 exports[`fixture analysis > Feed keeps its states, transitions and unreachable branches 1`] = `
@@ -126,6 +341,27 @@ stateDiagram-v2
   S2: pages?.flatMap(function)?.length · #lt;p#gt; {pages?.flatMap(function).length} " items""
 `;
 
+exports[`fixture analysis > FilterLabel keeps its render tree and handlers 1`] = `
+"---
+title: FilterLabel src/literals.tsx:6
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FilterLabel"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;p#gt; {filter}"]
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Active#quot;"]
+  n2 --> n4
+  n5(["onClick ⇒ filter = #quot;active#quot;"]):::event
+  n4 -.-> n5
+  n6["#lt;button#gt; #quot;Done#quot;"]
+  n2 --> n6
+  n7(["onClick ⇒ filter = #quot;done#quot;"]):::event
+  n6 -.-> n7"
+`;
+
 exports[`fixture analysis > FilterLabel keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: FilterLabel src/literals.tsx:6
@@ -134,6 +370,25 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;div#gt; #lt;p#gt; {filter} #lt;button#gt; "Active" #lt;button#gt; "Done"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > FirstMatch keeps its render tree and handlers 1`] = `
+"---
+title: FirstMatch src/loops.tsx:27
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FirstMatch"]
+  n2{"found === null"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;No match#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;p#gt;"]
+  n2 -->|✗| n4
+  n5["#quot;Found #quot;"]
+  n4 --> n5
+  n6["{found}"]
+  n4 --> n6"
 `;
 
 exports[`fixture analysis > FirstMatch keeps its states, transitions and unreachable branches 1`] = `
@@ -146,6 +401,19 @@ stateDiagram-v2
   S2: found !== null · #lt;p#gt; "Found " {found}"
 `;
 
+exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
+"---
+title: Inbox src/literals.tsx:17
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Inbox"]
+  n2["#lt;section#gt;"]
+  n1 --> n2
+  n3["#lt;em#gt; #quot;Empty#quot;"]
+  n2 --> n3"
+`;
+
 exports[`fixture analysis > Inbox keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Inbox src/literals.tsx:17
@@ -154,6 +422,21 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;section#gt; #lt;em#gt; "Empty"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > List keeps its render tree and handlers 1`] = `
+"---
+title: List src/dashboard.tsx:17
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["List"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of items"]]
+  n2 --> n3
+  n4["#lt;li#gt; {item.title}"]
+  n3 --> n4"
 `;
 
 exports[`fixture analysis > List keeps its states, transitions and unreachable branches 1`] = `
@@ -166,6 +449,17 @@ stateDiagram-v2
   [*] --> S1"
 `;
 
+exports[`fixture analysis > Loading keeps its render tree and handlers 1`] = `
+"---
+title: Loading src/counter.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Loading"]
+  n2["#lt;p#gt; #quot;Loading…#quot;"]
+  n1 --> n2"
+`;
+
 exports[`fixture analysis > Loading keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Loading src/counter.tsx:3
@@ -174,6 +468,33 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;p#gt; "Loading…"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > LoopList keeps its render tree and handlers 1`] = `
+"---
+title: LoopList src/loops.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["LoopList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;ul#gt; {[...Unknown(mutation).map(…)]}"]
+  n2 --> n3
+  n4{"hasLong"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;Long#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;button#gt;"]
+  n2 --> n6
+  n7(["onClick ⇒ if Unknown(IteratorNext) && Unknown(IteratorNext): isSelected = true"]):::event
+  n6 -.-> n7
+  n8{"isSelected"}
+  n6 --> n8
+  n9["{#quot;Selected#quot;}"]
+  n8 -->|✓| n9
+  n10["{#quot;Select#quot;}"]
+  n8 -->|✗| n10"
 `;
 
 exports[`fixture analysis > LoopList keeps its states, transitions and unreachable branches 1`] = `
@@ -195,6 +516,17 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
+"---
+title: Page src/plain.jsx:13
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Page"]
+  n2["#lt;Toggle#gt;"]
+  n1 --> n2"
+`;
+
 exports[`fixture analysis > Page keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Page src/plain.jsx:13
@@ -203,6 +535,35 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;Toggle#gt;
   [*] --> S1"
+`;
+
+exports[`fixture analysis > Panels keeps its render tree and handlers 1`] = `
+"---
+title: Panels src/chains.tsx:23
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Panels"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Details#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ isOpen = !isOpen"]):::event
+  n3 -.-> n4
+  n5{"isOpen"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;More details#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;button#gt; #quot;Theme#quot;"]
+  n2 --> n7
+  n8(["onClick ⇒ isDark = !isDark"]):::event
+  n7 -.-> n8
+  n9{"isDark"}
+  n2 --> n9
+  n10["#lt;span#gt; #quot;Dark#quot;"]
+  n9 -->|✓| n10
+  n11["#lt;span#gt; #quot;Light#quot;"]
+  n9 -->|✗| n11"
 `;
 
 exports[`fixture analysis > Panels keeps its states, transitions and unreachable branches 1`] = `
@@ -228,6 +589,35 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > ProfileCard keeps its render tree and handlers 1`] = `
+"---
+title: ProfileCard src/query.tsx:10
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ProfileCard"]
+  n2{"query.isPending"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Loading#quot;"]
+  n2 -->|✓| n3
+  n4{"query.isError"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt;"]
+  n4 -->|✓| n5
+  n6["#quot;Error: #quot;"]
+  n5 --> n6
+  n7["{query.error.message}"]
+  n5 --> n7
+  n8["#lt;div#gt;"]
+  n4 -->|✗| n8
+  n9["{query.data.name}"]
+  n8 --> n9
+  n10{"query.data.isAdmin"}
+  n8 --> n10
+  n11["#lt;span#gt; #quot;Admin#quot;"]
+  n10 -->|✓| n11"
+`;
+
 exports[`fixture analysis > ProfileCard keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: ProfileCard src/query.tsx:10
@@ -238,6 +628,29 @@ stateDiagram-v2
   S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error: " {query.error.message}
   S3: !query.isPending ∧ !query.isError ∧ query.data.isAdmin · #lt;div#gt; {query.data.name} #lt;span#gt; "Admin"
   S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}"
+`;
+
+exports[`fixture analysis > ProfileStatus keeps its render tree and handlers 1`] = `
+"---
+title: ProfileStatus src/query.tsx:22
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ProfileStatus"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"useQuery().isPending"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Loading#quot;"]
+  n3 -->|✓| n4
+  n5{"useQuery().isError"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Error#quot;"]
+  n5 -->|✓| n6
+  n7{"useQuery().data"}
+  n2 --> n7
+  n8["#lt;p#gt; {useQuery().data.name}"]
+  n7 -->|✓| n8"
 `;
 
 exports[`fixture analysis > ProfileStatus keeps its states, transitions and unreachable branches 1`] = `
@@ -252,6 +665,21 @@ stateDiagram-v2
   S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}"
 `;
 
+exports[`fixture analysis > RoleBadge keeps its render tree and handlers 1`] = `
+"---
+title: RoleBadge src/literals.tsx:30
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["RoleBadge"]
+  n2{"role === #quot;admin#quot;"}
+  n1 --> n2
+  n3["#lt;strong#gt; #quot;Admin#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;span#gt; #quot;Member#quot;"]
+  n2 -->|✗| n4"
+`;
+
 exports[`fixture analysis > RoleBadge keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: RoleBadge src/literals.tsx:30
@@ -260,6 +688,33 @@ stateDiagram-v2
   direction LR
   S1: role === "admin" · #lt;strong#gt; "Admin"
   S2: role !== "admin" · #lt;span#gt; "Member""
+`;
+
+exports[`fixture analysis > SearchList keeps its render tree and handlers 1`] = `
+"---
+title: SearchList src/search.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SearchList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ query = Unknown(member)"]):::event
+  n3 -.-> n4
+  n5{"items.length === 0"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;No items#quot;"]
+  n5 -->|✓| n6
+  n7{"items.filter(function).length #gt; 0"}
+  n2 --> n7
+  n8["#lt;ul#gt;"]
+  n7 -->|✓| n8
+  n9[["↻ each of items.filter(function)"]]
+  n8 --> n9
+  n10["#lt;li#gt; {match}"]
+  n9 --> n10"
 `;
 
 exports[`fixture analysis > SearchList keeps its states, transitions and unreachable branches 1`] = `
@@ -275,6 +730,23 @@ stateDiagram-v2
   S3 --> S2: setQuery(event.target.value)"
 `;
 
+exports[`fixture analysis > ShareButton keeps its render tree and handlers 1`] = `
+"---
+title: ShareButton src/share-dialog.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ShareButton"]
+  n2{"!dialog.isOpen"}
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Share#quot;"]
+  n2 -->|✓| n3
+  n4(["onClick ⇒ dialog.isOpen = true, dialog.type = #quot;share#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;p#gt; {dialog.type}"]
+  n2 -->|✗| n5"
+`;
+
 exports[`fixture analysis > ShareButton keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: ShareButton src/share-dialog.tsx:5
@@ -287,6 +759,17 @@ stateDiagram-v2
   S1 --> S2: "Share""
 `;
 
+exports[`fixture analysis > SignIn keeps its render tree and handlers 1`] = `
+"---
+title: SignIn src/dashboard.tsx:15
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SignIn"]
+  n2["#lt;a#gt; #quot;Sign in#quot;"]
+  n1 --> n2"
+`;
+
 exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: SignIn src/dashboard.tsx:15
@@ -295,6 +778,21 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;a#gt; "Sign in"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > SortedList keeps its render tree and handlers 1`] = `
+"---
+title: SortedList src/mutation.tsx:30
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SortedList"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of items"]]
+  n2 --> n3
+  n4["#lt;li#gt; {item}"]
+  n3 --> n4"
 `;
 
 exports[`fixture analysis > SortedList keeps its states, transitions and unreachable branches 1`] = `
@@ -310,6 +808,17 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > Spinner keeps its render tree and handlers 1`] = `
+"---
+title: Spinner src/dashboard.tsx:14
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Spinner"]
+  n2["#lt;div#gt;"]
+  n1 --> n2"
+`;
+
 exports[`fixture analysis > Spinner keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Spinner src/dashboard.tsx:14
@@ -318,6 +827,21 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;div#gt;
   [*] --> S1"
+`;
+
+exports[`fixture analysis > StatusBanner keeps its render tree and handlers 1`] = `
+"---
+title: StatusBanner src/literals.tsx:22
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StatusBanner"]
+  n2{"status === #quot;error#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Error#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;p#gt; #quot;Fine#quot;"]
+  n2 -->|✗| n4"
 `;
 
 exports[`fixture analysis > StatusBanner keeps its states, transitions and unreachable branches 1`] = `
@@ -333,6 +857,29 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > TagEditor keeps its render tree and handlers 1`] = `
+"---
+title: TagEditor src/local-mutations.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TagEditor"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["{[#lt;h2 /#gt;]}"]
+  n2 --> n3
+  n4{"tags.length === 0"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;No tags#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt; #quot;Some tags#quot;"]
+  n4 -->|✗| n6
+  n7["#lt;button#gt; #quot;Add#quot;"]
+  n2 --> n7
+  n8(["onClick ⇒ tags = [...tags, #quot;tag#quot;]"]):::event
+  n7 -.-> n8"
+`;
+
 exports[`fixture analysis > TagEditor keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: TagEditor src/local-mutations.tsx:3
@@ -342,6 +889,35 @@ stateDiagram-v2
   S1: tags.length === 0 · #lt;div#gt; {[#lt;h2 /#gt;]} #lt;p#gt; "No tags" #lt;button#gt; "Add"
   S2: tags.length !== 0 · #lt;div#gt; {[#lt;h2 /#gt;]} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
   S1 --> S2: "Add""
+`;
+
+exports[`fixture analysis > TagList keeps its render tree and handlers 1`] = `
+"---
+title: TagList src/mutation.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TagList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Push#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ tags = Unknown(mutated)"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Copy#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ tags = [...Unknown(mutated)]"]):::event
+  n5 -.-> n6
+  n7{"tags.length === 0"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;No tags#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;ul#gt;"]
+  n7 -->|✗| n9
+  n10[["↻ each of tags"]]
+  n9 --> n10
+  n11["#lt;li#gt; {tag}"]
+  n10 --> n11"
 `;
 
 exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
@@ -362,6 +938,21 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > TitleCard keeps its render tree and handlers 1`] = `
+"---
+title: TitleCard src/literals.tsx:27
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TitleCard"]
+  n2{"title === #quot;#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Untitled#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;h1#gt; {title}"]
+  n2 -->|✗| n4"
+`;
+
 exports[`fixture analysis > TitleCard keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: TitleCard src/literals.tsx:27
@@ -370,6 +961,67 @@ stateDiagram-v2
   direction LR
   S1: title === "" · #lt;p#gt; "Untitled"
   S2: title !== "" · #lt;h1#gt; {title}"
+`;
+
+exports[`fixture analysis > TodoApp keeps its render tree and handlers 1`] = `
+"---
+title: TodoApp src/todo.tsx:11
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TodoApp"]
+  n2["#lt;section#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ draft = Unknown(member)"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Add#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ if Unknown(call): todos = [...todos, { id: Unknown(call), text: draft…"]):::event
+  n5 -.-> n6
+  n7{"todos.length === 0"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Nothing to do#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;ul#gt;"]
+  n2 --> n9
+  n10[["↻ each of todos.filter(function)"]]
+  n9 --> n10
+  n11["#lt;li#gt;"]
+  n10 --> n11
+  n12(["onClick ⇒ todos = todos.map(…)"]):::event
+  n11 -.-> n12
+  n13{"todo.isDone"}
+  n11 --> n13
+  n14["#lt;s#gt; {todo.text}"]
+  n13 -->|✓| n14
+  n15["{todo.text}"]
+  n13 -->|✗| n15
+  n16["#lt;footer#gt;"]
+  n2 --> n16
+  n17["#lt;button#gt; #quot;All#quot;"]
+  n16 --> n17
+  n18(["onClick ⇒ filter = #quot;all#quot;"]):::event
+  n17 -.-> n18
+  n19["#lt;button#gt; #quot;Active#quot;"]
+  n16 --> n19
+  n20(["onClick ⇒ filter = #quot;active#quot;"]):::event
+  n19 -.-> n20
+  n21["#lt;button#gt; #quot;Done#quot;"]
+  n16 --> n21
+  n22(["onClick ⇒ filter = #quot;done#quot;"]):::event
+  n21 -.-> n22
+  n23{"isEditing"}
+  n2 --> n23
+  n24["#lt;button#gt; #quot;Save#quot;"]
+  n23 -->|✓| n24
+  n25(["onClick ⇒ isEditing = false"]):::event
+  n24 -.-> n25
+  n26["#lt;button#gt; #quot;Edit#quot;"]
+  n23 -->|✗| n26
+  n27(["onClick ⇒ isEditing = true"]):::event
+  n26 -.-> n27"
 `;
 
 exports[`fixture analysis > TodoApp keeps its states, transitions and unreachable branches 1`] = `
@@ -393,6 +1045,25 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > Toggle keeps its render tree and handlers 1`] = `
+"---
+title: Toggle src/plain.jsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Toggle"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; {label}"]
+  n2 --> n3
+  n4(["onClick ⇒ isOpen = !isOpen"]):::event
+  n3 -.-> n4
+  n5{"isOpen"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Details#quot;"]
+  n5 -->|✓| n6"
+`;
+
 exports[`fixture analysis > Toggle keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: Toggle src/plain.jsx:3
@@ -404,6 +1075,43 @@ stateDiagram-v2
   [*] --> S2
   S1 --> S2: setIsOpen(!isOpen)
   S2 --> S1: setIsOpen(!isOpen)"
+`;
+
+exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
+"---
+title: Toolbar src/groups.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Toolbar"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"role === #quot;admin#quot;"}
+  n2 --> n3
+  n4["#lt;span#gt; #quot;Admin#quot;"]
+  n3 -->|✓| n4
+  n5{"hasPermission(role, #quot;edit#quot;)"}
+  n2 --> n5
+  n6["#lt;button#gt; #quot;Edit#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;span#gt; #quot;Read only#quot;"]
+  n5 -->|✗| n7
+  n8{"status.isSaving"}
+  n2 --> n8
+  n9["#lt;span#gt; #quot;Saving#quot;"]
+  n8 -->|✓| n9
+  n10{"status.error"}
+  n2 --> n10
+  n11["#lt;p#gt; {status.error}"]
+  n10 -->|✓| n11
+  n12["#lt;button#gt; #quot;Help#quot;"]
+  n2 --> n12
+  n13(["onClick ⇒ isHelpOpen = !isHelpOpen"]):::event
+  n12 -.-> n13
+  n14{"isHelpOpen"}
+  n2 --> n14
+  n15["#lt;p#gt; #quot;Press E to edit#quot;"]
+  n14 -->|✓| n15"
 `;
 
 exports[`fixture analysis > Toolbar keeps its states, transitions and unreachable branches 1`] = `
@@ -432,6 +1140,41 @@ stateDiagram-v2
     S9 --> S10: "Help"
     S10 --> S9: "Help"
   }"
+`;
+
+exports[`fixture analysis > Wizard keeps its render tree and handlers 1`] = `
+"---
+title: Wizard src/reducer.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Wizard"]
+  n2{"state.step === #quot;done#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Thanks!#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;form#gt;"]
+  n2 -->|✗| n4
+  n5{"state.hasError"}
+  n4 --> n5
+  n6["#lt;p#gt; #quot;Something went wrong#quot;"]
+  n5 -->|✓| n6
+  n7{"state.step === #quot;details#quot;"}
+  n4 --> n7
+  n8["#lt;input#gt;"]
+  n7 -->|✓| n8
+  n9["#lt;input#gt;"]
+  n7 -->|✗| n9
+  n10{"state.step === #quot;payment#quot;"}
+  n4 --> n10
+  n11["#lt;button#gt; #quot;Back#quot;"]
+  n10 -->|✓| n11
+  n12(["onClick ⇒ state.step = #quot;details#quot;"]):::event
+  n11 -.-> n12
+  n13["#lt;button#gt; #quot;Next#quot;"]
+  n4 --> n13
+  n14(["onClick ⇒ state.step = state.step === #quot;details#quot; ? #quot;payment#quot; : #quot;done#quot;, state.has…"]):::event
+  n13 -.-> n14"
 `;
 
 exports[`fixture analysis > Wizard keeps its states, transitions and unreachable branches 1`] = `

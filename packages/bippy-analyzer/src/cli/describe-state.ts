@@ -17,7 +17,7 @@ const DESCRIPTION_SEPARATOR = " · ";
 const MAX_RENDER_WIDTH = 100;
 const MAX_UNKNOWN_WIDTH = 40;
 
-const describeUnknown = (node: UnknownValue, describer: StateDescriber): string => {
+export const describeUnknown = (node: UnknownValue, describer: StateDescriber): string => {
   const source = describer.sourceReader.read(describer.file, node.loc);
   return `⚠ ${source ? truncate(source, MAX_UNKNOWN_WIDTH) : `Unknown(${node.reason})`}`;
 };

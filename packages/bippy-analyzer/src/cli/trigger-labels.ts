@@ -61,7 +61,7 @@ const getEventTriggerLabel = (
   return `<${element.tag.name}> ${prop.kind === "JsxAttribute" ? prop.name : "{...}"}`;
 };
 
-const getEffectTriggerLabel = (handler: Handler): string => {
+export const getEffectTriggerLabel = (handler: Handler): string => {
   const { trigger } = handler;
   if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
   return trigger.dependencies === "[]"

@@ -2,7 +2,7 @@
 
 Finds every state a React app can be in by reading its source, then checks that answer against real renders. See [GOAL.md](GOAL.md) for why.
 
-- **Analyzer** (`src/core`, on the React Compiler's own source in `src/react-compiler`) reads a project with the TypeScript 7 checker, without running it. For each component it prints a Mermaid state diagram of its states and the actions between them, or the full analysis as JSON. See [docs/symbolic-tree.md](docs/symbolic-tree.md).
+- **Analyzer** (`src/core`, on the React Compiler's own source in `src/react-compiler`) reads a project with the TypeScript 7 checker, without running it. For each component it prints a Mermaid flowchart of everything it can render and a Mermaid state diagram of its states and the actions between them, or the full analysis as JSON. See [docs/symbolic-tree.md](docs/symbolic-tree.md).
 - **Verifier** (`tests/conformance/verifier`) checks those claims in a real browser.
 - **Conformance** (`tests/conformance`) runs both on pinned open-source repos. See [tests/conformance/README.md](tests/conformance/README.md).
 

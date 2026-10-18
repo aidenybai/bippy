@@ -3,11 +3,13 @@ import { Command, InvalidArgumentError } from "commander";
 import { analyzeProject } from "../core/analyze-project";
 import { serializeProjectAnalysis } from "../core/serialize";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
+import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
 import type { AnalyzedComponent } from "../core/types";
 
 interface AnalyzeCliOptions {
   component?: string[];
   file?: string;
+  depth: number;
   states: number;
   json: boolean;
 }
@@ -54,8 +56,12 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
     console.log(serializeProjectAnalysis({ components, fileCount }));
     return;
   }
-  const mermaidOptions = { rootDirectory: dirname(configPath), maxStates: options.states };
-  console.log(components.map((component) => formatMermaid(component, mermaidOptions)).join("\n\n"));
+  const rootDirectory = dirname(configPath);
+  const diagrams = components.flatMap((component) => [
+    formatRenderTree(component, { rootDirectory, maxDepth: options.depth }),
+    formatMermaid(component, { rootDirectory, maxStates: options.states }),
+  ]);
+  console.log(diagrams.join("\n\n"));
   const elapsedMs = Math.round(performance.now() - startTime);
   for (const line of formatTotals(components, fileCount, elapsedMs)) console.error(line);
 };
@@ -63,11 +69,17 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
 new Command()
   .name("analyze")
   .description(
-    "List every state each React component can be in, from source, without running it, as Mermaid state diagrams.",
+    "Draw what each React component can render and every state it can be in, from source, without running it, as Mermaid diagrams.",
   )
   .argument("[tsconfig]", "path to the project's tsconfig.json", "tsconfig.json")
   .option("-c, --component <names...>", "only show these components")
   .option("-f, --file <filter>", "only analyze files whose path contains this text")
+  .option(
+    "-d, --depth <n>",
+    "maximum render tree depth",
+    parsePositiveInteger,
+    DEFAULT_RENDER_DEPTH,
+  )
   .option(
     "-s, --states <n>",
     "maximum states drawn per region",
