@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "paths": {
+      "bippy": ["../../bippy/src/index.ts"],
+      "@babel/types": ["../node_modules/@babel/types"],
+      "@babel/traverse": ["../node_modules/@types/babel__traverse"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "server", "vite.config.ts"],
+  "exclude": []
+}

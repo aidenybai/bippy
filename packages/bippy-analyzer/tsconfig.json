@@ -18,5 +18,5 @@
     "noUnusedParameters": false
   },
   "include": ["src", "scripts", "tests/unit", "tests/conformance", "vite.config.ts"],
-  "exclude": ["tests/conformance/repos/*/verify/*.tsx", "tests/conformance/results"]
+  "exclude": ["tests/conformance/repos/*/verify/*.tsx", "tests/conformance/results", "viewer"]
 }
