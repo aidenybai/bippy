@@ -55,6 +55,7 @@ export interface ViewState {
   regionIndex: number;
   conditions: string[];
   label: string;
+  render: string;
   transitions: ViewTransition[];
 }
 

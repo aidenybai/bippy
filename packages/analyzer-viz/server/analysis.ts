@@ -11,6 +11,7 @@ import { forEachRenderNode } from "../../bippy-analyzer/src/core/utils/for-each-
 import { isRenderingNothing } from "../../bippy-analyzer/src/core/utils/is-rendering-nothing";
 import { collectTriggerLabels } from "../../bippy-analyzer/src/cli/trigger-labels";
 import { simplifyConditions } from "../../bippy-analyzer/src/cli/simplify-conditions";
+import { describeState } from "../../bippy-analyzer/src/cli/describe-state";
 import { createSourceReader } from "../../bippy-analyzer/src/cli/source-text";
 import { forEachJsxElement } from "../../bippy-analyzer/src/core/utils/for-each-jsx-element";
 import { buildCodeGraph, buildStructureGraph } from "./graph";
@@ -279,13 +280,21 @@ const toViewComponent = (
     branches,
     handlers,
     graph: buildFileGraph(component, siblings),
-    states: report.states.map((state, index) => ({
-      index,
-      regionIndex: state.regionIndex,
-      conditions: state.conditions,
-      label: simplifyConditions(state.conditions).join(" ∧ ") || "always",
-      transitions: state.transitions,
-    })),
+    states: report.states.map((state, index) => {
+      const label = simplifyConditions(state.conditions).join(" ∧ ") || "always";
+      const described = describeState(state, report.regions.length > 1, {
+        file: analysis.file,
+        sourceReader: createSourceReader(),
+      });
+      return {
+        index,
+        regionIndex: state.regionIndex,
+        conditions: state.conditions,
+        label,
+        render: described.slice(label.length + 3),
+        transitions: state.transitions,
+      };
+    }),
     regions: report.regions.map((region) => ({
       placeNames: region.placeNames,
       states: region.states,

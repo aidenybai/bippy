@@ -1,183 +1,188 @@
-import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { CodeView } from "./code-view";
-import type { ViewComponent, ViewState } from "./model";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { AnalysisPane } from "./analysis-pane";
+import { CodePane } from "./code-pane";
+import { getAnalysisLines, getColorForLine, getSolidColor } from "./mapping";
+import type { ViewComponent } from "./model";
+
+const MARGIN = 64;
 
 const getQuery = (): URLSearchParams => new URLSearchParams(window.location.search);
 
-interface ComponentKey {
-  name: string;
-  file: string;
-}
-
-const getAnalysisUrl = (key: ComponentKey | null): string => {
+const getAnalysisUrl = (): string => {
   const url = new URL("/api/analysis", window.location.origin);
-  const tsconfig = getQuery().get("tsconfig");
-  if (tsconfig) url.searchParams.set("tsconfig", tsconfig);
-  const file = key?.file ?? getQuery().get("file");
-  if (file) url.searchParams.set("file", file);
-  if (key) url.searchParams.set("component", key.name);
+  for (const key of ["tsconfig", "file", "component"]) {
+    const value = getQuery().get(key);
+    if (value) url.searchParams.set(key, value);
+  }
   return url.toString();
 };
 
-const useComponent = (
-  key: ComponentKey | null,
-): { component: ViewComponent | null; error: string | null } => {
+const useComponent = (): { component: ViewComponent | null; error: string | null } => {
   const [component, setComponent] = useState<ViewComponent | null>(null);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    let isCurrent = true;
-    fetch(getAnalysisUrl(key))
+    fetch(getAnalysisUrl())
       .then(async (response) => {
         if (!response.ok) throw new Error(await response.text());
         return (await response.json()) as ViewComponent | null;
       })
-      .then((result) => {
-        if (!isCurrent) return;
-        if (!result) setError("Component not found");
-        else setComponent(result);
-      })
-      .catch((cause: unknown) => {
-        if (isCurrent) setError(cause instanceof Error ? cause.message : String(cause));
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [key?.name, key?.file]);
+      .then((result) => (result ? setComponent(result) : setError("Component not found")))
+      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : String(cause)));
+  }, []);
   return { component, error };
 };
 
-const getShortFile = (file: string): string => file.split("/").slice(-2).join("/");
+const getColorByNodeId = (component: ViewComponent): Map<string, string> => {
+  const colors = new Map<string, string>();
+  for (const line of getAnalysisLines(component))
+    for (const segment of line.segments) {
+      const nodeIds = segment.nodeId ? (line.armNodeIds?.length ? line.armNodeIds : [segment.nodeId]) : [];
+      for (const nodeId of nodeIds) {
+        const node = component.graph.nodes.find((candidate) => candidate.id === nodeId);
+        if (node) colors.set(nodeId, getColorForLine(node.loc.start.line));
+      }
+    }
+  return colors;
+};
 
-interface StateListProps {
-  component: ViewComponent;
-  selected: ViewState | null;
-  onSelect: (state: ViewState | null) => void;
-  onPreview: (state: ViewState | null) => void;
+interface Arrow {
+  nodeId: string;
+  color: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
 }
 
-const StateList = ({ component, selected, onSelect, onPreview }: StateListProps) => (
-  <>
-    {component.regions.map((region, regionIndex) => (
-      <section key={regionIndex} className="grid gap-2">
-        <h2 className="text-xs font-medium text-muted-foreground">
-          states of {region.placeNames.join(", ") || "other"}
-        </h2>
-        <div className="grid gap-1">
-          {region.states.map((stateIndex) => {
-            const state = component.states[stateIndex];
-            if (!state) return null;
-            const isSelected = selected?.index === stateIndex;
-            return (
-              <Button
-                key={stateIndex}
-                variant={isSelected ? "secondary" : "ghost"}
-                className="h-auto justify-start py-1.5 text-left font-mono text-xs whitespace-normal"
-                onClick={() => onSelect(isSelected ? null : state)}
-                onMouseEnter={() => onPreview(state)}
-                onMouseLeave={() => onPreview(null)}
-              >
-                <span className="text-muted-foreground">S{stateIndex + 1}</span>
-                <span>{state.label}</span>
-                {region.firstRenderState === stateIndex && (
-                  <Badge variant="outline" className="ml-auto">
-                    first render
-                  </Badge>
-                )}
-              </Button>
-            );
-          })}
-          {region.isTruncated && (
-            <p className="text-xs text-muted-foreground">… more states not listed</p>
-          )}
-        </div>
-      </section>
-    ))}
-  </>
-);
+const getArrowPath = ({ x1, y1, x2, y2 }: Arrow): string =>
+  `M ${x1} ${y1} C ${(x1 + 2 * x2) / 3 + MARGIN / 2} ${y1}, ${(x1 * 2 + x2) / 3 - MARGIN / 2} ${y2}, ${x2} ${y2}`;
 
-interface HandlerListProps {
-  component: ViewComponent;
-  hoveredNodeId: string | null;
-  onHover: (nodeId: string | null) => void;
-}
+const collectArrows = (main: HTMLElement, colorByNodeId: Map<string, string>): Arrow[] => {
+  const origin = main.getBoundingClientRect();
+  const leftRects = new Map<string, DOMRect>();
+  for (const element of main.querySelectorAll<SVGRectElement>("[data-node]"))
+    leftRects.set(element.dataset.node ?? "", element.getBoundingClientRect());
+  const arrows: Arrow[] = [];
+  for (const element of main.querySelectorAll<HTMLElement>("[data-seg]")) {
+    const right = element.getBoundingClientRect();
+    for (const nodeId of (element.dataset.seg ?? "").split(" ")) {
+      const left = leftRects.get(nodeId);
+      if (!left) continue;
+      arrows.push({
+        nodeId,
+        color: colorByNodeId.get(nodeId) ?? "rgba(0,0,0,0.3)",
+        x1: left.right - origin.left + 2,
+        y1: left.top + left.height / 2 - origin.top,
+        x2: right.left - origin.left - 6,
+        y2: right.top + right.height / 2 - origin.top,
+      });
+    }
+  }
+  return arrows;
+};
 
-const HandlerList = ({ component, hoveredNodeId, onHover }: HandlerListProps) => (
-  <section className="grid gap-2">
-    <h2 className="text-xs font-medium text-muted-foreground">what can happen</h2>
-    <div className="grid gap-2">
-      {component.handlers.map((handler) => {
-        const nodeId = `${component.name}/handler:${handler.id}`;
-        return (
-          <div
-            key={handler.id}
-            className={`grid gap-0.5 font-mono text-xs ${hoveredNodeId && hoveredNodeId !== nodeId ? "opacity-40" : ""}`}
-            onMouseEnter={() => onHover(nodeId)}
-            onMouseLeave={() => onHover(null)}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">
-                {handler.kind === "effect" ? "effect" : "event"}
-              </span>
-              <span>{handler.label}</span>
-            </div>
-            {handler.updates.map((update, index) => (
-              <span key={index} className="text-muted-foreground">
-                sets {update.text}
-                {update.isAsync ? " (async)" : ""}
-              </span>
-            ))}
-          </div>
-        );
-      })}
+const Toolbar = ({ component }: { component: ViewComponent }) => (
+  <div className="grid h-8 grid-cols-2 items-center border-b px-3 text-xs">
+    <div className="flex items-center gap-2">
+      <span className="font-semibold">Source</span>
+      <span className="text-muted-foreground">{component.file.split("/").slice(-2).join("/")}</span>
     </div>
-  </section>
+    <div className="flex items-center gap-2">
+      <span className="font-semibold">Analysis</span>
+      <span className="text-muted-foreground">
+        {component.name} · {component.states.length} states · {component.handlers.length} handlers
+      </span>
+    </div>
+  </div>
 );
 
 export const App = () => {
-  const [componentKey, setComponentKey] = useState<ComponentKey | null>(() => {
-    const name = getQuery().get("component");
-    return name ? { name, file: getQuery().get("file") ?? "" } : null;
-  });
-  const { component, error } = useComponent(componentKey);
-  const [selected, setSelected] = useState<ViewState | null>(null);
-  const [previewed, setPreviewed] = useState<ViewState | null>(null);
+  const { component, error } = useComponent();
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [tick, setTick] = useState(0);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const colorByNodeId = useMemo(
+    () => (component ? getColorByNodeId(component) : new Map<string, string>()),
+    [component],
+  );
+  const bump = useCallback(() => setTick((value) => value + 1), []);
+
+  useLayoutEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    setArrows(collectArrows(main, colorByNodeId));
+  }, [tick, colorByNodeId, component]);
+
+  useEffect(() => {
+    window.addEventListener("resize", bump);
+    return () => window.removeEventListener("resize", bump);
+  }, [bump]);
 
   if (error) return <pre className="p-4 text-sm text-destructive">{error}</pre>;
   if (!component) return <p className="p-4 text-sm text-muted-foreground">Analyzing…</p>;
+
+  const hoveredNode = component.graph.nodes.find((node) => node.id === hoveredNodeId);
+  const visibleArrows = hoveredNodeId
+    ? arrows.filter((arrow) => arrow.nodeId === hoveredNodeId)
+    : arrows;
+
   return (
-    <div className="grid h-screen grid-cols-[minmax(0,1fr)_380px]">
-      <CodeView
-        component={component}
-        selectedState={previewed ?? selected}
-        hoveredNodeId={hoveredNodeId}
-        onHoverNode={setHoveredNodeId}
-      />
-      <ScrollArea className="h-screen border-l">
-        <aside className="grid gap-5 p-4">
-          <div>
-            <h1 className="text-sm font-semibold">{component.name}</h1>
-            <p className="text-xs text-muted-foreground">{getShortFile(component.file)}</p>
-          </div>
-          <Separator />
-          <StateList
+    <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)_auto]">
+      <Toolbar component={component} />
+      <div ref={mainRef} className="relative grid grid-cols-2 overflow-hidden">
+        <div className="overflow-auto border-r" onScroll={bump}>
+          <CodePane
             component={component}
-            selected={selected}
-            onSelect={setSelected}
-            onPreview={setPreviewed}
+            colorByNodeId={colorByNodeId}
+            hoveredNodeId={hoveredNodeId}
+            onHover={setHoveredNodeId}
+            onMeasure={bump}
           />
-          <Separator />
-          <HandlerList
+        </div>
+        <div className="overflow-auto py-1" onScroll={bump}>
+          <AnalysisPane
             component={component}
+            colorByNodeId={colorByNodeId}
             hoveredNodeId={hoveredNodeId}
             onHover={setHoveredNodeId}
           />
-        </aside>
-      </ScrollArea>
+        </div>
+        <svg className="pointer-events-none absolute inset-0 h-full w-full">
+          <defs>
+            <marker
+              id="head"
+              viewBox="0 0 10 10"
+              refX="10"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+            </marker>
+          </defs>
+          {visibleArrows.map((arrow, index) => (
+            <path
+              key={`${arrow.nodeId}-${index}`}
+              d={getArrowPath(arrow)}
+              fill="none"
+              stroke={hoveredNodeId ? "var(--foreground)" : getSolidColor(arrow.color)}
+              strokeWidth={hoveredNodeId ? 2 : 1}
+              opacity={hoveredNodeId ? 1 : 0.55}
+              markerEnd="url(#head)"
+            />
+          ))}
+        </svg>
+      </div>
+      <div className="grid h-8 grid-cols-2 items-center border-t px-3 text-xs text-muted-foreground">
+        <span>
+          {hoveredNode
+            ? `Line ${hoveredNode.loc.start.line}, Offset ${hoveredNode.loc.start.column}`
+            : `${component.source.split("\n").length} lines`}
+        </span>
+        <span>{hoveredNode ? hoveredNode.label : `${arrows.length} mappings`}</span>
+      </div>
     </div>
   );
 };
