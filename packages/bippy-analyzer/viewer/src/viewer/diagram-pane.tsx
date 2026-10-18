@@ -47,7 +47,10 @@ export const DiagramPane = () => {
       ?.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [focusRequest]);
   return (
-    <div ref={paneRef} className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
+    <div
+      ref={paneRef}
+      className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]"
+    >
       <div className="grid gap-6 px-4 py-3 sm:px-5">
         {view.components.map((component) => (
           <ComponentDiagram key={component.name} view={view} component={component} />

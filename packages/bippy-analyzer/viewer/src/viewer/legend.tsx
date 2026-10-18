@@ -137,7 +137,7 @@ const Root = ({ children }: { children: ReactNode }) => {
     <div
       ref={listRef}
       {...pointerHandlers}
-      className="grid h-full content-start gap-5 overflow-auto overscroll-none px-4 py-4 sm:px-5"
+      className="grid h-full content-start gap-5 overflow-auto overscroll-none px-4 py-4 [scrollbar-gutter:stable] sm:px-5"
     >
       {view.components.map((component) => (
         <ComponentPanel

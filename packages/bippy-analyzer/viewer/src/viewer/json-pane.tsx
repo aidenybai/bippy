@@ -37,7 +37,7 @@ export const JsonPane = () => {
   if (!isHighlighterReady || json.data === undefined) return <Spinner className="h-full" />;
   return (
     <Virtualizer
-      className="h-full overflow-y-auto overflow-x-hidden overscroll-none"
+      className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]"
       contentClassName="min-w-0 py-1 pr-4 text-[13px]/[19px]"
     >
       <File file={contents} options={options} disableWorkerPool />

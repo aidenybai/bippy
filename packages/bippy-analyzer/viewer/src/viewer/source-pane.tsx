@@ -178,7 +178,7 @@ export const SourcePane = () => {
   const trackPointer = usePointerTracking(wrapperRef, layout);
   useFocusScroll(wrapperRef);
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
+    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
       <div
         ref={wrapperRef}
         onMouseMove={trackPointer}

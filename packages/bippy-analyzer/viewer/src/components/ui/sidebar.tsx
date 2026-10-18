@@ -25,6 +25,7 @@ interface SidebarStyle extends CSSProperties {
 
 interface SidebarContextValue {
   state: "expanded" | "collapsed";
+  isAnimated: boolean;
   open: boolean;
   setOpen: (open: boolean) => void;
   openMobile: boolean;
@@ -50,11 +51,18 @@ interface SidebarProviderProps {
 export const SidebarProvider = ({ open, onOpenChange, children }: SidebarProviderProps) => {
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = useState(false);
+  const [isAnimated, setAnimated] = useState(false);
   const setOpen = onOpenChange;
-  const toggleSidebar = useCallback(
-    () => (isMobile ? setOpenMobile((current) => !current) : setOpen(!open)),
-    [isMobile, open, setOpen],
-  );
+  const toggleSidebar = useCallback(() => {
+    setAnimated(true);
+    if (isMobile) setOpenMobile((current) => !current);
+    else setOpen(!open);
+  }, [isMobile, open, setOpen]);
+  useEffect(() => {
+    if (!isAnimated) return;
+    const timer = window.setTimeout(() => setAnimated(false), 250);
+    return () => window.clearTimeout(timer);
+  }, [isAnimated]);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
@@ -68,6 +76,7 @@ export const SidebarProvider = ({ open, onOpenChange, children }: SidebarProvide
   const value = useMemo<SidebarContextValue>(
     () => ({
       state: open ? "expanded" : "collapsed",
+      isAnimated,
       open,
       setOpen,
       openMobile,
@@ -75,7 +84,7 @@ export const SidebarProvider = ({ open, onOpenChange, children }: SidebarProvide
       isMobile,
       toggleSidebar,
     }),
-    [open, setOpen, openMobile, isMobile, toggleSidebar],
+    [open, isAnimated, setOpen, openMobile, isMobile, toggleSidebar],
   );
   return <SidebarContext value={value}>{children}</SidebarContext>;
 };
@@ -128,7 +137,7 @@ export const Sidebar = ({
   children,
   ...props
 }: SidebarProps) => {
-  const { isMobile, state } = useSidebar();
+  const { isMobile, state, isAnimated } = useSidebar();
   if (isMobile)
     return (
       <MobileSidebar side={side} title={title}>
@@ -140,18 +149,19 @@ export const Sidebar = ({
       className="group peer hidden text-foreground md:block"
       data-state={state}
       data-collapsible={state === "collapsed" ? "offcanvas" : ""}
+      data-animated={isAnimated || undefined}
       data-side={side}
       data-slot="sidebar"
     >
       <div
         data-slot="sidebar-gap"
-        className="relative h-full w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-out group-data-[collapsible=offcanvas]:w-0"
+        className="relative h-full w-(--sidebar-width) bg-transparent duration-200 ease-out group-data-animated:transition-[width] group-data-[collapsible=offcanvas]:w-0"
       />
       <div
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
-          "absolute inset-y-0 z-10 hidden h-full w-(--sidebar-width) transition-[left,right] duration-200 ease-out md:flex",
+          "absolute inset-y-0 z-10 hidden h-full w-(--sidebar-width) duration-200 ease-out group-data-animated:transition-[left,right] md:flex",
           "data-[side=left]:left-0 data-[side=left]:border-r data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]",
           "data-[side=right]:right-0 data-[side=right]:border-l data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
           className,
@@ -199,7 +209,10 @@ export const SidebarInset = ({ className, ...props }: ComponentProps<"main">) =>
 export const SidebarContent = ({ className, ...props }: ComponentProps<"div">) => (
   <div
     data-slot="sidebar-content"
-    className={cn("flex min-h-0 flex-1 flex-col overflow-auto overscroll-none", className)}
+    className={cn(
+      "flex min-h-0 flex-1 flex-col overflow-auto overscroll-none [scrollbar-gutter:stable]",
+      className,
+    )}
     {...props}
   />
 );

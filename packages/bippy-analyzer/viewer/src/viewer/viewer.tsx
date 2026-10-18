@@ -19,9 +19,9 @@ import { Start } from "./start";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
-  const { view, mode } = useViewer();
+  const { source, view, mode } = useViewer();
   const [isLegendOpen, setLegendOpen] = useState(true);
-  const hasLegend = view !== null && hasLegendContent(view);
+  const hasLegend = source !== null && (view === null || hasLegendContent(view));
   return (
     <SidebarProvider
       open={isLegendOpen && hasLegend && mode !== "json"}

@@ -49,7 +49,7 @@ export const Start = () => {
   usePasteAnywhere(openCode);
   return (
     <div
-      className="grid h-full place-items-center overflow-y-auto overscroll-none p-6"
+      className="grid h-full place-items-center overflow-y-auto overscroll-none p-6 [scrollbar-gutter:stable]"
       onDragOver={(event) => {
         event.preventDefault();
         setDragging(true);
