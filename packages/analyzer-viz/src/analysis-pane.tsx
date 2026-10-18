@@ -81,7 +81,9 @@ export const AnalysisPane = (props: AnalysisPaneProps) => {
       {component.regions.map((region, regionIndex) => (
         <Section
           key={regionIndex}
-          title={component.regions.length > 1 ? `States of ${region.placeNames.join(", ")}` : "States"}
+          title={
+            component.regions.length > 1 ? `States of ${region.placeNames.join(", ")}` : "States"
+          }
         >
           {region.states.map((stateIndex) => {
             const state = component.states[stateIndex];

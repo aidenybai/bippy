@@ -34,11 +34,17 @@ const useHighlightedSource = (source: string): string => {
   return html;
 };
 
-const measure = (container: HTMLElement, component: ViewComponent, nodeIds: Set<string>): Placed[] =>
+const measure = (
+  container: HTMLElement,
+  component: ViewComponent,
+  nodeIds: Set<string>,
+): Placed[] =>
   component.graph.nodes.flatMap((node) => {
     if (!nodeIds.has(node.id)) return [];
     const isMultiLine = node.loc.start.line !== node.loc.end.line;
-    const box = isMultiLine ? getLinesBox(container, node.loc) : getLocationBox(container, node.loc);
+    const box = isMultiLine
+      ? getLinesBox(container, node.loc)
+      : getLocationBox(container, node.loc);
     return box && box.height > 0 ? [{ node, box, isMultiLine }] : [];
   });
 
@@ -141,7 +147,8 @@ export const CodePane = ({ component, colorByNodeId, hoveredNodeId, onHover }: C
         {edges.map((edge) => {
           const isActive = isEdgeTouching(edge, hoveredNodeId);
           const isMuted = hoveredNodeId !== null && !isActive;
-          const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0,0,0,0.3)";
+          const color =
+            colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0,0,0,0.3)";
           return (
             <path
               key={`${edge.from}-${edge.to}`}

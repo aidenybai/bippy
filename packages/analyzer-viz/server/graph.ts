@@ -84,8 +84,9 @@ const collectReferences = (ast: t.File, componentLoc: ViewLocation | null): Refe
 const findEnclosingHandler = (handlers: ViewHandler[], loc: ViewLocation): ViewHandler | null =>
   handlers
     .filter((handler) => handler.loc && contains(handler.loc, loc))
-    .sort((a, b) => a.loc!.end.index - a.loc!.start.index - (b.loc!.end.index - b.loc!.start.index))[0] ??
-  null;
+    .sort(
+      (a, b) => a.loc!.end.index - a.loc!.start.index - (b.loc!.end.index - b.loc!.start.index),
+    )[0] ?? null;
 
 const addBindingNodes = (
   input: GraphInput,
@@ -119,7 +120,8 @@ const addBindingNodes = (
           handlerId: handler?.id,
         });
         edges.push({ from: id, to: bindingNodeId, kind: "writes" });
-        if (handler) edges.push({ from: `${input.idPrefix}handler:${handler.id}`, to: id, kind: "writes" });
+        if (handler)
+          edges.push({ from: `${input.idPrefix}handler:${handler.id}`, to: id, kind: "writes" });
         return;
       }
       if (reference.name !== binding.name || reference.isCall) return;
@@ -146,7 +148,8 @@ const refineTriggerLocations = (ast: t.File, triggers: TriggerSite[]): TriggerSi
       const nameLoc = toLocation(path.node.name);
       if (!valueLoc || !nameLoc) return;
       for (const trigger of refined)
-        if (contains(valueLoc, trigger.loc) || contains(trigger.loc, valueLoc)) trigger.loc = nameLoc;
+        if (contains(valueLoc, trigger.loc) || contains(trigger.loc, valueLoc))
+          trigger.loc = nameLoc;
     },
   });
   return refined;
@@ -191,7 +194,11 @@ const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[
       branchId: branch.id,
     });
     for (const bindingId of branch.readsBindingIds)
-      edges.push({ from: `${input.idPrefix}binding:${bindingId}`, to: branchNodeId, kind: "decides" });
+      edges.push({
+        from: `${input.idPrefix}binding:${bindingId}`,
+        to: branchNodeId,
+        kind: "decides",
+      });
     for (const arm of ["consequent", "alternate"] as const) {
       const loc = branch[arm];
       if (!loc) continue;
@@ -221,7 +228,11 @@ const getDeclaredName = (node: t.Node): t.Identifier | null => {
 };
 
 export const buildStructureGraph = (source: string, components: ComponentSite[]): CodeGraph => {
-  const ast = parse(source, { sourceType: "module", plugins: ["typescript", "jsx"], errorRecovery: true });
+  const ast = parse(source, {
+    sourceType: "module",
+    plugins: ["typescript", "jsx"],
+    errorRecovery: true,
+  });
   const names = new Set(components.map((component) => component.name));
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
@@ -255,7 +266,11 @@ export const buildCodeGraph = (input: GraphInput): CodeGraph => {
   });
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
-  addHandlerNodes({ ...input, triggers: refineTriggerLocations(ast, input.triggers) }, nodes, edges);
+  addHandlerNodes(
+    { ...input, triggers: refineTriggerLocations(ast, input.triggers) },
+    nodes,
+    edges,
+  );
   addBindingNodes(
     input,
     collectReferences(ast, input.componentLoc),

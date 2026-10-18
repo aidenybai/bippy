@@ -17,7 +17,10 @@ const getNode = (component: ViewComponent, suffix: string): GraphNode | undefine
 export const getBindingNodeId = (component: ViewComponent, bindingId: number): string | undefined =>
   getNode(component, `binding:${bindingId}`)?.id;
 
-export const getConditionNodeId = (component: ViewComponent, condition: string): string | undefined => {
+export const getConditionNodeId = (
+  component: ViewComponent,
+  condition: string,
+): string | undefined => {
   const branch = component.branches.find(
     (candidate) => candidate.test === condition || candidate.negated === condition,
   );
@@ -60,7 +63,9 @@ export const getColorByNodeId = (component: ViewComponent): Map<string, string> 
   }
   const colorByHandler = new Map<string, string>();
   for (const handler of component.handlers) {
-    const color = handler.updates.map((update) => colorByBinding.get(update.bindingId)).find(Boolean);
+    const color = handler.updates
+      .map((update) => colorByBinding.get(update.bindingId))
+      .find(Boolean);
     if (color) colorByHandler.set(handler.id, color);
   }
   const colors = new Map<string, string>();
