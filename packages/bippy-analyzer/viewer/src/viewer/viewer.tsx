@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ViewerProvider, useViewer } from "./context";
 import { Legend } from "./legend";
+import { Panes } from "./panes";
 import { SourcePane } from "./source-pane";
 import { Toolbar } from "./toolbar";
 
@@ -8,10 +9,6 @@ const Root = ({ children }: { children: ReactNode }) => (
   <ViewerProvider>
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)_auto]">{children}</div>
   </ViewerProvider>
-);
-
-const Panes = ({ children }: { children: ReactNode }) => (
-  <div className="grid grid-cols-[minmax(0,1fr)_420px] overflow-hidden">{children}</div>
 );
 
 const Message = ({ children }: { children: ReactNode }) => (

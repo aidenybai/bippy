@@ -41,12 +41,22 @@ const Chip = ({ nodeIds, children }: ChipProps) => {
   );
 };
 
-const Section = ({ title, children }: { title: string; children: ReactNode }) => (
+interface SectionProps {
+  title: string;
+  count: number;
+  children: ReactNode;
+}
+
+const Section = ({ title, count, children }: SectionProps) => (
   <section className="grid gap-1">
     <h2 className="px-2 text-xs font-medium text-muted-foreground">{title}</h2>
-    <Table>
-      <TableBody>{children}</TableBody>
-    </Table>
+    {count === 0 ? (
+      <p className="px-2 py-1 text-muted-foreground">None</p>
+    ) : (
+      <Table>
+        <TableBody>{children}</TableBody>
+      </Table>
+    )}
   </section>
 );
 
@@ -138,18 +148,12 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
   );
 };
 
-const Empty = ({ name }: { name: string }) => (
-  <p className="p-3 text-sm text-muted-foreground">{name} has no state variables or actions.</p>
-);
-
 export const Legend = () => {
   const component = useLoadedComponent();
-  if (component.bindings.length === 0 && component.handlers.length === 0)
-    return <Empty name={component.name} />;
   return (
     <div className="grid content-start gap-5 overflow-auto p-3 text-[13px]">
       <h1 className="px-2 font-mono text-sm font-medium">{component.name}</h1>
-      <Section title="State variables">
+      <Section title="State variables" count={component.bindings.length}>
         {component.bindings.map((binding) => (
           <BindingRow key={binding.id} binding={binding} />
         ))}
@@ -160,6 +164,7 @@ export const Legend = () => {
           title={
             component.regions.length > 1 ? `States of ${region.placeNames.join(", ")}` : "States"
           }
+          count={region.states.length}
         >
           {region.states.map((stateIndex) => {
             const state = component.states[stateIndex];
@@ -167,7 +172,7 @@ export const Legend = () => {
           })}
         </Section>
       ))}
-      <Section title="Actions">
+      <Section title="Actions" count={component.handlers.length}>
         {component.handlers.map((handler) => (
           <HandlerRow key={handler.id} handler={handler} />
         ))}

@@ -191,7 +191,7 @@ export const SourcePane = () => {
   );
 
   return (
-    <div className="overflow-y-auto overflow-x-hidden border-r">
+    <div className="overflow-y-auto overflow-x-hidden">
       <div
         ref={wrapperRef}
         onMouseMove={activateAtPointer}
