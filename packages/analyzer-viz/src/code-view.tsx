@@ -2,7 +2,12 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { codeToHtml } from "shiki";
 import { DiagramCanvas, DiagramEdge } from "diagram";
 import { getLinesBox, getLocationBox, type Box } from "./code-positions";
-import type { ViewComponent, ViewHandler, ViewLocation, ViewState } from "./model";
+import type {
+  ViewComponent,
+  ViewHandler,
+  ViewLocation,
+  ViewState,
+} from "./model";
 import { getArmMarks, getHandlersFromState, type ArmMark } from "./state-model";
 
 interface CodeViewProps {
@@ -21,7 +26,29 @@ interface Overlay {
   bindings: Array<{ id: number; name: string; box: Box }>;
 }
 
-const GUTTER_WIDTH = 76;
+const GUTTER_WIDTH = 128;
+const PILL_WIDTH = 48;
+const UPDATE_LANE_X = 58;
+const READ_LANE_X = 98;
+const LANE_GAP = 7;
+const EDGE_END_X = GUTTER_WIDTH - 6;
+
+const getLaneEdge = (
+  fromY: number,
+  toY: number,
+  laneX: number
+): {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  waypoints: { x: number; y: number }[];
+} => ({
+  from: { x: PILL_WIDTH + 4, y: fromY },
+  to: { x: EDGE_END_X, y: toY },
+  waypoints: [
+    { x: laneX, y: fromY },
+    { x: laneX, y: toY },
+  ],
+});
 
 const ARM_FILLS: Record<ArmMark["status"], string> = {
   live: "color-mix(in oklab, var(--primary) 10%, transparent)",
@@ -35,9 +62,11 @@ const useHighlightedSource = (source: string): string => {
   const [html, setHtml] = useState("");
   useEffect(() => {
     let isCurrent = true;
-    codeToHtml(source, { lang: "tsx", theme: "github-light" }).then((result) => {
-      if (isCurrent) setHtml(result);
-    });
+    codeToHtml(source, { lang: "tsx", theme: "github-light" }).then(
+      (result) => {
+        if (isCurrent) setHtml(result);
+      }
+    );
     return () => {
       isCurrent = false;
     };
@@ -45,7 +74,9 @@ const useHighlightedSource = (source: string): string => {
   return html;
 };
 
-const getComponentSource = (component: ViewComponent): { source: string; lineOffset: number } => {
+const getComponentSource = (
+  component: ViewComponent
+): { source: string; lineOffset: number } => {
   const lines = component.source.split("\n");
   if (!component.loc) return { source: component.source, lineOffset: 0 };
   const firstLine = component.loc.start.line;
@@ -55,7 +86,10 @@ const getComponentSource = (component: ViewComponent): { source: string; lineOff
   };
 };
 
-const shiftLocation = (loc: ViewLocation, lineOffset: number): ViewLocation => ({
+const shiftLocation = (
+  loc: ViewLocation,
+  lineOffset: number
+): ViewLocation => ({
   start: { ...loc.start, line: loc.start.line - lineOffset },
   end: { ...loc.end, line: loc.end.line - lineOffset },
 });
@@ -64,7 +98,7 @@ const measureOverlay = (
   container: HTMLElement,
   component: ViewComponent,
   selectedState: ViewState | null,
-  lineOffset: number,
+  lineOffset: number
 ): Overlay => {
   const spanBox = (loc: ViewLocation | null): Box | null =>
     loc && getLocationBox(container, shiftLocation(loc, lineOffset));
@@ -99,10 +133,7 @@ const measureOverlay = (
   };
 };
 
-const getEdgeEnd = (box: Box): { x: number; y: number } => ({
-  x: Math.min(box.x - 4, GUTTER_WIDTH + 8),
-  y: box.y + box.height / 2,
-});
+const getMiddleY = (box: Box): number => box.y + box.height / 2;
 
 interface HandlerMarkerProps {
   handler: ViewHandler;
@@ -132,7 +163,7 @@ const HandlerMarker = ({
       className="pointer-events-auto cursor-pointer"
       x={4}
       y={box.y + 3}
-      width={GUTTER_WIDTH - 8}
+      width={PILL_WIDTH}
       height={box.height - 6}
       rx={4}
       fill={isActive ? "var(--primary)" : "var(--background)"}
@@ -140,43 +171,53 @@ const HandlerMarker = ({
     />
     <text
       className="pointer-events-none font-mono text-[10px]"
-      x={GUTTER_WIDTH / 2}
+      x={4 + PILL_WIDTH / 2}
       y={box.y + box.height / 2 + 3.5}
       textAnchor="middle"
-      style={{ fill: isActive ? "var(--primary-foreground)" : "var(--foreground)" }}
+      style={{
+        fill: isActive ? "var(--primary-foreground)" : "var(--foreground)",
+      }}
     >
       {handler.kind === "effect" ? "effect" : "click"}
     </text>
-    {handler.updates.map((update, index) => {
-      const target = bindingBoxes.get(update.bindingId);
-      if (!target) return null;
-      return (
-        <DiagramEdge
-          key={index}
-          from={{ x: GUTTER_WIDTH - 2, y: box.y + box.height / 2 }}
-          to={getEdgeEnd(target)}
-          kind="update"
-          shape="curve"
-          side="left"
-          bend={36}
-          directed
-        />
-      );
-    })}
-    {isActive &&
-      handler.updates.flatMap((update, updateIndex) =>
-        (testBoxesByBinding.get(update.bindingId) ?? []).map((testBox, index) => (
+    {[...new Set(handler.updates.map((update) => update.bindingId))].map(
+      (bindingId, index) => {
+        const target = bindingBoxes.get(bindingId);
+        if (!target) return null;
+        return (
           <DiagramEdge
-            key={`${updateIndex}-${index}`}
-            from={getEdgeEnd(bindingBoxes.get(update.bindingId) ?? testBox)}
-            to={getEdgeEnd(testBox)}
-            kind="data"
-            shape="curve"
-            side="left"
-            bend={32}
+            key={bindingId}
+            {...getLaneEdge(
+              getMiddleY(box),
+              getMiddleY(target),
+              UPDATE_LANE_X + index * LANE_GAP
+            )}
+            kind="update"
             directed
           />
-        )),
+        );
+      }
+    )}
+    {isActive &&
+      [...new Set(handler.updates.map((update) => update.bindingId))].flatMap(
+        (bindingId, index) => {
+          const source = bindingBoxes.get(bindingId);
+          if (!source) return [];
+          return (testBoxesByBinding.get(bindingId) ?? []).map(
+            (testBox, testIndex) => (
+              <DiagramEdge
+                key={`${bindingId}-${testIndex}`}
+                {...getLaneEdge(
+                  getMiddleY(source),
+                  getMiddleY(testBox),
+                  READ_LANE_X + index * LANE_GAP
+                )}
+                kind="data"
+                directed
+              />
+            )
+          );
+        }
       )}
   </g>
 );
@@ -195,20 +236,33 @@ export const CodeView = ({
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container || !html) return;
-    setOverlay(measureOverlay(container, component, selectedState, lineOffset));
+    const measure = (): void =>
+      setOverlay(
+        measureOverlay(container, component, selectedState, lineOffset)
+      );
+    measure();
+    document.fonts.ready.then(measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, [html, component, selectedState, lineOffset]);
 
   const visibleHandlerIds =
     selectedState && !activeHandlerId
       ? getHandlersFromState(component, selectedState)
       : new Set(component.handlers.map((handler) => handler.id));
-  const bindingBoxes = new Map(overlay?.bindings.map((binding) => [binding.id, binding.box]));
+  const bindingBoxes = new Map(
+    overlay?.bindings.map((binding) => [binding.id, binding.box])
+  );
   const testBoxesByBinding = new Map<number, Box[]>();
   for (const branch of component.branches)
     for (const bindingId of branch.readsBindingIds) {
       const box = overlay?.tests.find((test) => test.id === branch.id)?.box;
       if (box)
-        testBoxesByBinding.set(bindingId, [...(testBoxesByBinding.get(bindingId) ?? []), box]);
+        testBoxesByBinding.set(bindingId, [
+          ...(testBoxesByBinding.get(bindingId) ?? []),
+          box,
+        ]);
     }
 
   return (
