@@ -55,9 +55,16 @@ export const getLineFromEvent = (event: Event): number | null => {
 
 export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLookup => {
   const root: ParentNode = host.shadowRoot ?? host;
+  const lines = new Map<number, Element | null>();
   return {
     origin: origin.getBoundingClientRect(),
-    getLine: (line) => root.querySelector(`[data-line="${line}"]`),
+    getLine: (line) => {
+      const cached = lines.get(line);
+      if (cached !== undefined) return cached;
+      const element = root.querySelector(`[data-line="${line}"]`);
+      lines.set(line, element);
+      return element;
+    },
   };
 };
 

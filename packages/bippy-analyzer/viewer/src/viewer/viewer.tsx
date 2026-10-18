@@ -1,17 +1,34 @@
-import type { ReactNode } from "react";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { useState, type ReactNode } from "react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarInset,
+  SidebarLayout,
+  SidebarProvider,
+} from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { describeNode } from "../lib/describe";
-import { ViewerProvider, useViewer } from "./context";
+import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
 import { Toolbar } from "./toolbar";
 
+const Shell = ({ children }: { children: ReactNode }) => {
+  const { mode } = useViewer();
+  const [isLegendOpen, setLegendOpen] = useState(true);
+  return (
+    <SidebarProvider open={isLegendOpen && mode === "code"} onOpenChange={setLegendOpen}>
+      <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">
+        {children}
+      </div>
+    </SidebarProvider>
+  );
+};
+
 const Root = ({ children }: { children: ReactNode }) => (
   <ViewerProvider>
-    <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto] overscroll-none">{children}</div>
+    <Shell>{children}</Shell>
   </ViewerProvider>
 );
 
@@ -20,33 +37,21 @@ interface PanesProps {
   legend: ReactNode;
 }
 
-const Panes = ({ source, legend }: PanesProps) => {
-  const isMobile = useIsMobile();
-  return (
-    <ResizablePanelGroup
-      key={isMobile ? "vertical" : "horizontal"}
-      orientation={isMobile ? "vertical" : "horizontal"}
-      className="min-h-0"
-    >
-      <ResizablePanel defaultSize={isMobile ? "55" : "70"} minSize={isMobile ? 160 : 320}>
-        {source}
-      </ResizablePanel>
-      <ResizableHandle />
-      <ResizablePanel defaultSize={isMobile ? "45" : "30"} minSize={isMobile ? 120 : 240}>
-        {legend}
-      </ResizablePanel>
-    </ResizablePanelGroup>
-  );
-};
+const Panes = ({ source, legend }: PanesProps) => (
+  <SidebarLayout>
+    <SidebarInset>{source}</SidebarInset>
+    <Sidebar side="right" title="Legend">
+      <SidebarContent>{legend}</SidebarContent>
+    </Sidebar>
+  </SidebarLayout>
+);
 
 const Message = ({ children }: { children: ReactNode }) => (
   <p className="px-4 py-4 text-muted-foreground sm:px-5">{children}</p>
 );
 
-const Source = () => {
-  const { file, mode, view, viewError, isViewLoading } = useViewer();
-  if (!file) return <Message>Enter a file path above.</Message>;
-  if (mode === "json") return <JsonPane />;
+const CodePane = () => {
+  const { view, viewError, isViewLoading } = useViewer();
   if (viewError)
     return (
       <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
@@ -57,13 +62,34 @@ const Source = () => {
   return <SourcePane />;
 };
 
+const Source = () => {
+  const { file, mode } = useViewer();
+  const [hasOpenedJson, setHasOpenedJson] = useState(mode === "json");
+  if (mode === "json" && !hasOpenedJson) setHasOpenedJson(true);
+  if (!file) return <Message>Enter a file path above.</Message>;
+  return (
+    <>
+      <div hidden={mode !== "code"} className="h-full min-h-0">
+        <CodePane />
+      </div>
+      {hasOpenedJson && (
+        <div hidden={mode !== "json"} className="h-full min-h-0">
+          <JsonPane />
+        </div>
+      )}
+    </>
+  );
+};
+
 const LegendPane = ({ children }: { children: ReactNode }) => {
-  const { activeComponent } = useViewer();
+  const activeComponent = useActiveComponent();
   return activeComponent ? <Legend>{children}</Legend> : null;
 };
 
 const Status = () => {
-  const { hoveredNode, activeComponent, view } = useViewer();
+  const { view } = useViewer();
+  const activeComponent = useActiveComponent();
+  const hoveredNode = useHoveredNode();
   return (
     <div className="flex h-8 items-center gap-4 overflow-hidden border-t px-3 whitespace-nowrap text-muted-foreground tabular-nums">
       {activeComponent && (

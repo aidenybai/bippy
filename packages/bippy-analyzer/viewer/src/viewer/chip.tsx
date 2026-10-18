@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { getSolidColor } from "../lib/colors";
+import { useHoverStore, useIsDimmed } from "../store/hover";
 import { useViewer } from "./context";
 
 interface ChipProps {
@@ -7,12 +8,14 @@ interface ChipProps {
   children: ReactNode;
 }
 
-export const Chip = ({ nodeIds, children }: ChipProps) => {
-  const { hoveredNodeId, hover, colorByNodeId, isDimmedNode } = useViewer();
+const ColoredChip = ({ nodeIds, color, children }: ChipProps & { color: string }) => {
   const [first] = nodeIds;
-  const color = first ? colorByNodeId.get(first) : undefined;
-  if (!first || !color) return <span>{children}</span>;
-  const isHovered = hoveredNodeId !== null && nodeIds.includes(hoveredNodeId);
+  const hover = useHoverStore((state) => state.hover);
+  const leave = useHoverStore((state) => state.leave);
+  const isHovered = useHoverStore(
+    (state) => state.hoveredNodeId !== null && nodeIds.includes(state.hoveredNodeId),
+  );
+  const isDimmed = useIsDimmed(nodeIds);
   return (
     <span
       data-seg={nodeIds.join(" ")}
@@ -20,12 +23,24 @@ export const Chip = ({ nodeIds, children }: ChipProps) => {
       style={{
         background: color,
         boxShadow: isHovered ? `0 0 0 1.5px ${getSolidColor(color)}` : undefined,
-        opacity: isDimmedNode(nodeIds) ? 0.35 : 1,
+        opacity: isDimmed ? 0.35 : 1,
       }}
-      onMouseEnter={() => hover(first)}
-      onMouseLeave={() => hover(null)}
+      onMouseEnter={() => first !== undefined && hover(first)}
+      onMouseLeave={leave}
     >
       {children}
     </span>
+  );
+};
+
+export const Chip = ({ nodeIds, children }: ChipProps) => {
+  const { colorByNodeId } = useViewer();
+  const [first] = nodeIds;
+  const color = first !== undefined ? colorByNodeId.get(first) : undefined;
+  if (color === undefined) return <span>{children}</span>;
+  return (
+    <ColoredChip nodeIds={nodeIds} color={color}>
+      {children}
+    </ColoredChip>
   );
 };

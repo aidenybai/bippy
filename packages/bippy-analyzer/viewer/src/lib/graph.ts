@@ -1,4 +1,10 @@
-import type { GraphEdge, GraphNode, ViewComponent, ViewFile } from "../model";
+import type { GraphNode, ViewComponent, ViewFile } from "../model";
+
+export interface GraphIndex {
+  nodes: Map<string, GraphNode>;
+  forward: Map<string, string[]>;
+  backward: Map<string, string[]>;
+}
 
 export const getComponentName = (nodeId: string): string => nodeId.slice(0, nodeId.indexOf("/"));
 
@@ -10,40 +16,37 @@ export const getComponentAtLine = (view: ViewFile, line: number): ViewComponent 
     ({ loc }) => loc !== null && loc.start.line <= line && line <= loc.end.line,
   ) ?? null;
 
-export const findComponent = (view: ViewFile, nodeId: string): ViewComponent | null =>
-  view.components.find((component) => component.name === getComponentName(nodeId)) ?? null;
-
-export const findNode = (view: ViewFile, nodeId: string | null): GraphNode | null => {
-  if (nodeId === null) return null;
-  for (const component of view.components) {
-    const node = component.graph.nodes.find((candidate) => candidate.id === nodeId);
-    if (node) return node;
-  }
-  return null;
+const push = (map: Map<string, string[]>, key: string, value: string): void => {
+  const list = map.get(key);
+  if (list) list.push(value);
+  else map.set(key, [value]);
 };
 
-const walkEdges = (
-  edges: GraphEdge[],
-  start: string,
-  next: (edge: GraphEdge) => [string, string],
-): string[] => {
-  const seen = new Set([start]);
+export const buildGraphIndex = (view: ViewFile): GraphIndex => {
+  const index: GraphIndex = { nodes: new Map(), forward: new Map(), backward: new Map() };
+  for (const component of view.components) {
+    for (const node of component.graph.nodes) index.nodes.set(node.id, node);
+    for (const edge of component.graph.edges) {
+      push(index.forward, edge.from, edge.to);
+      push(index.backward, edge.to, edge.from);
+    }
+  }
+  return index;
+};
+
+const walk = (adjacency: Map<string, string[]>, start: string, seen: Set<string>): void => {
   const queue = [start];
   for (const nodeId of queue)
-    for (const edge of edges) {
-      const [from, to] = next(edge);
-      if (from === nodeId && !seen.has(to)) {
-        seen.add(to);
-        queue.push(to);
+    for (const next of adjacency.get(nodeId) ?? [])
+      if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
       }
-    }
-  return [...seen];
 };
 
-export const getCausalNodeIds = (view: ViewFile, nodeId: string): Set<string> => {
-  const edges = findComponent(view, nodeId)?.graph.edges ?? [];
-  return new Set([
-    ...walkEdges(edges, nodeId, (edge) => [edge.from, edge.to]),
-    ...walkEdges(edges, nodeId, (edge) => [edge.to, edge.from]),
-  ]);
+export const getCausalNodeIds = (index: GraphIndex, nodeId: string): Set<string> => {
+  const seen = new Set([nodeId]);
+  walk(index.forward, nodeId, seen);
+  walk(index.backward, nodeId, seen);
+  return seen;
 };

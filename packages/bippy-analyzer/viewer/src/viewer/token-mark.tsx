@@ -1,12 +1,7 @@
 import { useResolvedTheme } from "../hooks/use-resolved-theme";
 import type { PlacedToken } from "../hooks/use-token-boxes";
 import { getSolidColor } from "../lib/colors";
-import { useViewer } from "./context";
-
-export interface TokenAnchor {
-  nodeId: string;
-  element: Element;
-}
+import { useHoverStore, useIsDimmed, useIsHovered, useIsInactive } from "../store/hover";
 
 interface TokenVisibility {
   isDimmed: boolean;
@@ -21,16 +16,17 @@ const getTokenOpacity = ({ isDimmed, isInactive, isMultiLine }: TokenVisibility)
 };
 
 interface TokenMarkProps extends PlacedToken {
-  onEnter: (anchor: TokenAnchor) => void;
+  color: string;
 }
 
-export const TokenMark = ({ node, box, isMultiLine, onEnter }: TokenMarkProps) => {
-  const { hoveredNodeId, hover, colorByNodeId, isDimmedNode, isInactiveNode } = useViewer();
+export const TokenMark = ({ node, box, isMultiLine, color }: TokenMarkProps) => {
   const { theme } = useResolvedTheme();
-  const color = colorByNodeId.get(node.id) ?? "transparent";
+  const hover = useHoverStore((state) => state.hover);
+  const leave = useHoverStore((state) => state.leave);
+  const isHovered = useIsHovered(node.id);
   const opacity = getTokenOpacity({
-    isDimmed: isDimmedNode([node.id]),
-    isInactive: isInactiveNode(node.id),
+    isDimmed: useIsDimmed([node.id]),
+    isInactive: useIsInactive(node.id),
     isMultiLine,
   });
   return (
@@ -43,15 +39,12 @@ export const TokenMark = ({ node, box, isMultiLine, onEnter }: TokenMarkProps) =
       height={box.height - 2}
       rx={isMultiLine ? 1.5 : 2}
       fill={isMultiLine ? getSolidColor(color) : color}
-      stroke={node.id === hoveredNodeId ? getSolidColor(color) : "none"}
+      stroke={isHovered ? getSolidColor(color) : "none"}
       strokeWidth={2}
       opacity={opacity}
       style={{ mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
-      onMouseEnter={(event) => {
-        hover(node.id);
-        onEnter({ nodeId: node.id, element: event.currentTarget });
-      }}
-      onMouseLeave={() => hover(null)}
+      onMouseEnter={(event) => hover(node.id, { nodeId: node.id, element: event.currentTarget })}
+      onMouseLeave={leave}
     />
   );
 };

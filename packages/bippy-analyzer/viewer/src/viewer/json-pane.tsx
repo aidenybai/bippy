@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { File, type FileOptions } from "@pierre/diffs/react";
+import { File, Virtualizer, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { useAnalyzerJson } from "../hooks/queries";
 import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
@@ -36,10 +36,11 @@ export const JsonPane = () => {
     );
   if (!isHighlighterReady || json.data === undefined) return <Spinner className="h-full" />;
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
-      <div className="min-w-0 py-1 pr-4 text-[13px]/[19px]">
-        <File file={contents} options={options} disableWorkerPool />
-      </div>
-    </div>
+    <Virtualizer
+      className="h-full overflow-y-auto overflow-x-hidden overscroll-none"
+      contentClassName="min-w-0 py-1 pr-4 text-[13px]/[19px]"
+    >
+      <File file={contents} options={options} disableWorkerPool />
+    </Virtualizer>
   );
 };

@@ -5,15 +5,14 @@ import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
 import { useResolvedTheme } from "../hooks/use-resolved-theme";
 import { useTokenBoxes, type TokenLayout } from "../hooks/use-token-boxes";
+import { isRestingArc, placeArcs } from "../lib/arcs";
 import { describeNode } from "../lib/describe";
 import { getComponentAtLine } from "../lib/graph";
-import { getLineFromEvent, type Box } from "../lib/positions";
-import type { GraphEdge } from "../model";
-import { Arc, ArcHead, type PlacedArc } from "./arc";
-import { useLoadedView, useViewer } from "./context";
-import { TokenMark, type TokenAnchor } from "./token-mark";
-
-const RESTING_ARC_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
+import { getLineFromEvent } from "../lib/positions";
+import { useHoverStore } from "../store/hover";
+import { Arc, ArcHead } from "./arc";
+import { useHoveredNode, useLoadedView, useViewer } from "./context";
+import { TokenMark } from "./token-mark";
 
 const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   overflow: "wrap",
@@ -26,7 +25,7 @@ const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
 
 const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
   const view = useLoadedView();
-  const { activate } = useViewer();
+  const activate = useHoverStore((state) => state.activate);
   return useCallback(
     (event: MouseEvent) => {
       const line = getLineFromEvent(event.nativeEvent);
@@ -37,28 +36,40 @@ const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
   );
 };
 
-const useArcs = (layout: TokenLayout): PlacedArc[] => {
+const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
   const view = useLoadedView();
-  const { causalNodeIds } = useViewer();
-  return useMemo(() => {
-    const boxes = new Map<string, Box>();
-    for (const token of layout.tokens) if (!token.isMultiLine) boxes.set(token.node.id, token.box);
-    const isCausal = (edge: GraphEdge): boolean =>
-      causalNodeIds !== null && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to);
-    return view.components
-      .flatMap((component) => component.graph.edges)
-      .filter((edge) => RESTING_ARC_KINDS.has(edge.kind) || isCausal(edge))
-      .flatMap((edge) => {
-        const from = boxes.get(edge.from);
-        const to = boxes.get(edge.to);
-        return from && to && from.y !== to.y ? [{ edge, from, to }] : [];
-      });
-  }, [view, layout, causalNodeIds]);
+  const { colorByNodeId } = useViewer();
+  const arcs = useMemo(
+    () => placeArcs(view, layout.tokens, colorByNodeId, isRestingArc),
+    [view, layout, colorByNodeId],
+  );
+  return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
 };
 
-const TokenTooltip = ({ anchor }: { anchor: TokenAnchor | null }) => {
-  const { hoveredNode } = useViewer();
+const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
   const view = useLoadedView();
+  const { colorByNodeId } = useViewer();
+  const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
+  const arcs = useMemo(
+    () =>
+      causalNodeIds === null
+        ? []
+        : placeArcs(
+            view,
+            layout.tokens,
+            colorByNodeId,
+            (edge) =>
+              !isRestingArc(edge) && causalNodeIds.has(edge.from) && causalNodeIds.has(edge.to),
+          ),
+    [view, layout, colorByNodeId, causalNodeIds],
+  );
+  return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
+};
+
+const TokenTooltip = () => {
+  const view = useLoadedView();
+  const hoveredNode = useHoveredNode();
+  const anchor = useHoverStore((state) => state.anchor);
   const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
   return (
     <Tooltip open={isOpen}>
@@ -75,7 +86,6 @@ export const SourcePane = () => {
   const { colorByNodeId } = useViewer();
   const { theme } = useResolvedTheme();
   const activateAtPointer = useActivateAtPointer();
-  const [anchor, setAnchor] = useState<TokenAnchor | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
@@ -95,7 +105,6 @@ export const SourcePane = () => {
     [view, colorByNodeId],
   );
   const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
-  const arcs = useArcs(layout);
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
       <div
@@ -115,13 +124,16 @@ export const SourcePane = () => {
         >
           <ArcHead />
           {layout.tokens.map((token) => (
-            <TokenMark key={token.node.id} {...token} onEnter={setAnchor} />
+            <TokenMark
+              key={token.node.id}
+              {...token}
+              color={colorByNodeId.get(token.node.id) ?? "transparent"}
+            />
           ))}
-          {arcs.map((arc) => (
-            <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />
-          ))}
+          <RestingArcs layout={layout} />
+          <CausalArcs layout={layout} />
         </svg>
-        <TokenTooltip anchor={anchor} />
+        <TokenTooltip />
       </div>
     </div>
   );

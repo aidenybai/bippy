@@ -99,6 +99,25 @@
     scrollbar-width: thin;
     scrollbar-color: var(--well-2) transparent;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button,
+  input,
+  [role="tab"],
+  [role="separator"] {
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      transition-duration: 0.01ms !important;
+    }
+    [data-slot="spinner"] svg rect {
+      animation-duration: 2.4s;
+    }
+  }
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;

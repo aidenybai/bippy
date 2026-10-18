@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useViewer, type ViewMode } from "./context";
 import { ThemeToggle } from "./theme-toggle";
@@ -19,7 +20,7 @@ const ModeTabs = () => {
 };
 
 export const Toolbar = () => {
-  const { file, openFile } = useViewer();
+  const { file, openFile, mode } = useViewer();
   const [draft, setDraft] = useState(file ?? "");
   const submit = (event: FormEvent): void => {
     event.preventDefault();
@@ -31,14 +32,17 @@ export const Toolbar = () => {
       <span className="hidden text-muted-foreground sm:inline">File</span>
       <Input
         id="file-path"
+        name="file"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         aria-label="Path to a component file"
-        placeholder="Path to a component file, then Enter"
+        placeholder="/path/to/Component.tsx…"
+        autoComplete="off"
         spellCheck={false}
         className="flex-1 font-mono"
       />
       <ModeTabs />
+      <SidebarTrigger disabled={mode === "json"} />
       <ThemeToggle />
     </form>
   );

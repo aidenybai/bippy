@@ -9,8 +9,9 @@ import {
 } from "react";
 import { useView } from "../hooks/queries";
 import { getColorByNodeId } from "../lib/colors";
-import { findNode, getCausalNodeIds, getComponentName, getDefaultComponent } from "../lib/graph";
+import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "../lib/graph";
 import type { GraphNode, ViewComponent, ViewFile } from "../model";
+import { useHoverStore } from "../store/hover";
 
 export type ViewMode = "code" | "json";
 
@@ -22,15 +23,8 @@ export interface ViewerState {
   view: ViewFile | null;
   viewError: string | null;
   isViewLoading: boolean;
-  activeComponent: ViewComponent | null;
-  activate: (name: string) => void;
+  index: GraphIndex | null;
   colorByNodeId: Map<string, string>;
-  hoveredNodeId: string | null;
-  hoveredNode: GraphNode | null;
-  causalNodeIds: Set<string> | null;
-  hover: (nodeId: string | null) => void;
-  isDimmedNode: (nodeIds: string[]) => boolean;
-  isInactiveNode: (nodeId: string) => boolean;
 }
 
 const ViewerContext = createContext<ViewerState | null>(null);
@@ -49,67 +43,20 @@ const writeLocation = (file: string | null, mode: ViewMode): void => {
   window.history.replaceState(null, "", url);
 };
 
-const useActiveComponent = (
-  view: ViewFile | null,
-): [ViewComponent | null, (name: string | null) => void] => {
-  const [activeName, setActiveName] = useState<string | null>(null);
-  const activeComponent = useMemo(() => {
-    if (!view) return null;
-    return (
-      view.components.find((component) => component.name === activeName) ??
-      getDefaultComponent(view)
-    );
-  }, [view, activeName]);
-  return [activeComponent, setActiveName];
-};
-
-interface HoverState {
-  hoveredNodeId: string | null;
-  hoveredNode: GraphNode | null;
-  causalNodeIds: Set<string> | null;
-  setHoveredNodeId: (nodeId: string | null) => void;
-}
-
-const useHover = (view: ViewFile | null): HoverState => {
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-  const hoveredNode = useMemo(
-    () => (view ? findNode(view, hoveredNodeId) : null),
-    [view, hoveredNodeId],
-  );
-  const causalNodeIds = useMemo(
-    () => (view && hoveredNodeId !== null ? getCausalNodeIds(view, hoveredNodeId) : null),
-    [view, hoveredNodeId],
-  );
-  return { hoveredNodeId, hoveredNode, causalNodeIds, setHoveredNodeId };
-};
-
 export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const [file, setFile] = useState<string | null>(readFile);
   const [mode, setMode] = useState<ViewMode>(readMode);
   const viewQuery = useView(file);
   const view = viewQuery.data ?? null;
-  const [activeComponent, setActiveName] = useActiveComponent(view);
-  const { hoveredNodeId, hoveredNode, causalNodeIds, setHoveredNodeId } = useHover(view);
-  useEffect(() => writeLocation(file, mode), [file, mode]);
-  const openFile = useCallback(
-    (nextFile: string) => {
-      setFile(nextFile);
-      setActiveName(null);
-      setHoveredNodeId(null);
-    },
-    [setActiveName, setHoveredNodeId],
-  );
-  const hover = useCallback(
-    (nodeId: string | null) => {
-      setHoveredNodeId(nodeId);
-      if (nodeId !== null) setActiveName(getComponentName(nodeId));
-    },
-    [setActiveName, setHoveredNodeId],
-  );
+  const setIndex = useHoverStore((state) => state.setIndex);
+  const index = useMemo(() => (view ? buildGraphIndex(view) : null), [view]);
   const colorByNodeId = useMemo(
     () => (view ? getColorByNodeId(view) : new Map<string, string>()),
     [view],
   );
+  useEffect(() => writeLocation(file, mode), [file, mode]);
+  useEffect(() => setIndex(index), [index, setIndex]);
+  const openFile = useCallback((nextFile: string) => setFile(nextFile), []);
   const value = useMemo<ViewerState>(
     () => ({
       file,
@@ -119,35 +66,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       view,
       viewError: viewQuery.error?.message ?? null,
       isViewLoading: viewQuery.isLoading,
-      activeComponent,
-      activate: setActiveName,
+      index,
       colorByNodeId,
-      hoveredNodeId,
-      hoveredNode,
-      causalNodeIds,
-      hover,
-      isDimmedNode: (nodeIds) =>
-        causalNodeIds !== null &&
-        nodeIds.length > 0 &&
-        !nodeIds.some((nodeId) => causalNodeIds.has(nodeId)),
-      isInactiveNode: (nodeId) =>
-        activeComponent !== null && getComponentName(nodeId) !== activeComponent.name,
     }),
-    [
-      file,
-      openFile,
-      mode,
-      view,
-      viewQuery.error,
-      viewQuery.isLoading,
-      activeComponent,
-      setActiveName,
-      colorByNodeId,
-      hoveredNodeId,
-      hoveredNode,
-      causalNodeIds,
-      hover,
-    ],
+    [file, openFile, mode, view, viewQuery.error, viewQuery.isLoading, index, colorByNodeId],
   );
   return <ViewerContext value={value}>{children}</ViewerContext>;
 };
@@ -164,8 +86,26 @@ export const useLoadedView = (): ViewFile => {
   return view;
 };
 
+export const useActiveComponent = (): ViewComponent | null => {
+  const { view } = useViewer();
+  const activeName = useHoverStore((state) => state.activeName);
+  return useMemo(() => {
+    if (!view) return null;
+    return (
+      view.components.find((component) => component.name === activeName) ??
+      getDefaultComponent(view)
+    );
+  }, [view, activeName]);
+};
+
 export const useLoadedComponent = (): ViewComponent => {
-  const { activeComponent } = useViewer();
-  if (!activeComponent) throw new Error("useLoadedComponent needs an active component");
-  return activeComponent;
+  const component = useActiveComponent();
+  if (!component) throw new Error("useLoadedComponent needs an active component");
+  return component;
+};
+
+export const useHoveredNode = (): GraphNode | null => {
+  const { index } = useViewer();
+  const hoveredNodeId = useHoverStore((state) => state.hoveredNodeId);
+  return hoveredNodeId !== null ? (index?.nodes.get(hoveredNodeId) ?? null) : null;
 };
