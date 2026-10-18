@@ -1,5 +1,5 @@
 import type { ViewComponent } from "./model";
-import { getAnalysisLines, getColorForLine, getSolidColor } from "./mapping";
+import { getAnalysisLines, getSolidColor } from "./mapping";
 
 interface AnalysisPaneProps {
   component: ViewComponent;
@@ -26,10 +26,11 @@ export const AnalysisPane = ({ component, colorByNodeId, hoveredNodeId, onHover 
                 data-seg={nodeIds.join(" ") || undefined}
                 className={segment.nodeId ? "rounded-[2px] px-0.5 -mx-0.5" : line.indent === 0 ? "text-muted-foreground" : ""}
                 style={
-                  segment.nodeId
+                  segment.nodeId && color
                     ? {
-                        background: color ?? getColorForLine(lineIndex),
-                        outline: isHovered ? `2px solid ${getSolidColor(color ?? getColorForLine(lineIndex))}` : undefined,
+                        background: color,
+                        outline: isHovered ? `2px solid ${getSolidColor(color)}` : undefined,
+                        opacity: hoveredNodeId && !isHovered && colorByNodeId.get(hoveredNodeId) !== color ? 0.35 : 1,
                       }
                     : undefined
                 }
