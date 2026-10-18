@@ -73,7 +73,9 @@ export const CodePane = ({ component, colorByNodeId, hoveredNodeId, onHover }: C
     return () => observer.disconnect();
   }, [html, component, colorByNodeId]);
 
-  const boxes = new Map(placed.map((item) => [item.node.id, item.box]));
+  const boxes = new Map(
+    placed.filter((item) => !item.isMultiLine).map((item) => [item.node.id, item.box]),
+  );
   const hoveredColor = hoveredNodeId ? colorByNodeId.get(hoveredNodeId) : undefined;
   const isDimmed = (nodeId: string): boolean =>
     hoveredNodeId !== null && colorByNodeId.get(nodeId) !== hoveredColor;
@@ -90,7 +92,7 @@ export const CodePane = ({ component, colorByNodeId, hoveredNodeId, onHover }: C
   return (
     <div
       ref={containerRef}
-      className="relative min-w-0 py-1 pr-24 pl-4 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-[21px] [&_pre]:whitespace-pre-wrap [&_pre]:break-words"
+      className="relative min-w-0 py-1 pr-24 pl-4 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:font-mono [&_pre]:text-[13px] [&_pre]:leading-[19px] [&_pre]:whitespace-pre-wrap [&_pre]:break-words"
     >
       <div dangerouslySetInnerHTML={{ __html: html }} />
       <svg

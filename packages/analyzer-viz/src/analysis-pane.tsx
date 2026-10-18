@@ -58,18 +58,18 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 export const AnalysisPane = (props: AnalysisPaneProps) => {
   const { component } = props;
   return (
-    <div className="grid gap-5 p-3 text-xs">
+    <div className="grid gap-5 p-3 text-[13px]">
       <Section title="Data">
         {component.bindings.map((binding) => {
           const nodeId = getBindingNodeId(component, binding.id);
           return (
             <TableRow key={binding.id}>
-              <TableCell className="py-1.5 whitespace-normal">
+              <TableCell className="py-1 whitespace-normal">
                 <Chip {...props} nodeIds={nodeId ? [nodeId] : []}>
                   {binding.name}
                 </Chip>
               </TableCell>
-              <TableCell className="py-1.5 font-mono whitespace-normal text-muted-foreground">
+              <TableCell className="py-1 font-mono whitespace-normal text-muted-foreground">
                 {binding.domain}
                 {binding.initial !== null ? ` = ${binding.initial}` : ""}
                 {binding.reachable ? ` · only ${binding.reachable}` : ""}
@@ -89,10 +89,10 @@ export const AnalysisPane = (props: AnalysisPaneProps) => {
             const armNodeIds = getStateArmNodeIds(component, state);
             return (
               <TableRow key={stateIndex}>
-                <TableCell className="w-10 py-1.5 align-top whitespace-normal">
+                <TableCell className="w-10 py-1 align-top whitespace-normal">
                   <Badge variant="outline">S{stateIndex + 1}</Badge>
                 </TableCell>
-                <TableCell className="py-1.5 whitespace-normal">
+                <TableCell className="py-1 whitespace-normal">
                   <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
                     {state.label === "always"
                       ? "always"
@@ -125,12 +125,12 @@ export const AnalysisPane = (props: AnalysisPaneProps) => {
           const transitions = getTransitions(component, handler.id);
           return (
             <TableRow key={handler.id}>
-              <TableCell className="py-1.5 align-top whitespace-normal">
+              <TableCell className="py-1 align-top whitespace-normal">
                 <Chip {...props} nodeIds={nodeId ? [nodeId] : []}>
                   {handler.label}
                 </Chip>
               </TableCell>
-              <TableCell className="py-1.5 whitespace-normal">
+              <TableCell className="py-1 whitespace-normal">
                 <div className="grid gap-1 font-mono text-muted-foreground">
                   {handler.updates.map((update, index) => (
                     <span key={index}>
