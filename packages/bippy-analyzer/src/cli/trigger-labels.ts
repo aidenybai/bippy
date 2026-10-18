@@ -70,7 +70,7 @@ export const getEffectTriggerLabel = (handler: Handler): string => {
 };
 
 export const collectTriggerLabels = (
-  component: AnalyzedComponent,
+  component: Pick<AnalyzedComponent, "analysis">,
   sourceReader: SourceReader,
 ): Map<string, string> => {
   const { analysis } = component;

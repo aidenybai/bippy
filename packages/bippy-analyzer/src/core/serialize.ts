@@ -32,7 +32,7 @@ export const serializeProjectAnalysis = (analysis: ProjectAnalysis): string => {
       if (sharedId !== undefined) return { $ref: sharedId };
       idsBySharedObject.set(value, nextId);
       return Array.isArray(jsonValue)
-        ? { $id: nextId++, items: jsonValue }
+        ? { $id: nextId++, items: [...jsonValue] }
         : { $id: nextId++, ...jsonValue };
     },
     2,
