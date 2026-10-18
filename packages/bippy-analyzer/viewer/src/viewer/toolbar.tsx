@@ -19,8 +19,8 @@ const ModeTabs = () => {
   );
 };
 
-export const Toolbar = () => {
-  const { file, openFile, mode } = useViewer();
+const FileInput = ({ file }: { file: string | null }) => {
+  const { openFile } = useViewer();
   const [draft, setDraft] = useState(file ?? "");
   const submit = (event: FormEvent): void => {
     event.preventDefault();
@@ -28,7 +28,7 @@ export const Toolbar = () => {
     if (path) openFile(path);
   };
   return (
-    <form onSubmit={submit} className="flex h-11 items-center gap-2 border-b px-3 sm:gap-3">
+    <form onSubmit={submit} className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
       <span className="hidden text-muted-foreground sm:inline">File</span>
       <Input
         id="file-path"
@@ -41,9 +41,22 @@ export const Toolbar = () => {
         spellCheck={false}
         className="flex-1 font-mono"
       />
-      <ModeTabs />
-      <SidebarTrigger disabled={mode === "json"} />
-      <ThemeToggle />
     </form>
+  );
+};
+
+export const Toolbar = () => {
+  const { file, mode } = useViewer();
+  return (
+    <div className="flex h-11 items-center gap-2 border-b px-3 sm:gap-3">
+      <FileInput key={file ?? ""} file={file} />
+      {file !== null && (
+        <>
+          <ModeTabs />
+          <SidebarTrigger disabled={mode === "json"} />
+        </>
+      )}
+      <ThemeToggle />
+    </div>
   );
 };

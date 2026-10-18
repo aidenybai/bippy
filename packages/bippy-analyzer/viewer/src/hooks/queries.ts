@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import type { ViewFile } from "../model";
+import type { Example, ViewFile } from "../model";
 
 const request = async (path: string, params: Record<string, string>): Promise<Response> => {
   const url = new URL(path, window.location.origin);
@@ -14,6 +14,13 @@ const fetchJson = async <Value>(path: string, params: Record<string, string>): P
 
 const fetchText = async (path: string, params: Record<string, string>): Promise<string> =>
   (await request(path, params)).text();
+
+export const useExamples = (): UseQueryResult<Example[]> =>
+  useQuery({
+    queryKey: ["examples"],
+    queryFn: () => fetchJson<Example[]>("/api/examples", {}),
+    staleTime: Infinity,
+  });
 
 export const useAnalyzerJson = (file: string | null): UseQueryResult<string> =>
   useQuery({

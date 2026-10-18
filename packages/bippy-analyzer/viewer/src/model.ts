@@ -99,6 +99,13 @@ export interface ViewComponent {
   graph: CodeGraph;
 }
 
+export interface Example {
+  file: string;
+  name: string;
+  folder: string;
+  lines: number;
+}
+
 export interface ViewFile {
   file: string;
   tsconfig: string;

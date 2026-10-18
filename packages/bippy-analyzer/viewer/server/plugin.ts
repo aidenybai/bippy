@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Plugin, ViteDevServer } from "vite";
 import type { ViewFile } from "../src/model";
+import { listExamples } from "./examples";
 
 const serverDirectory = fileURLToPath(new URL(".", import.meta.url));
 
@@ -60,6 +61,8 @@ const handle = async (
   const url = new URL(request.url ?? "/", "http://localhost");
   if (url.pathname === "/api/analysis" && request.method === "GET")
     return handleAnalysis(server, url, response);
+  if (url.pathname === "/api/examples" && request.method === "GET")
+    return sendJson(response, listExamples());
   sendError(response, 404, `No route ${request.method} ${url.pathname}`);
 };
 
