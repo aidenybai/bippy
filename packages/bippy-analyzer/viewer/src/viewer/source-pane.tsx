@@ -1,16 +1,16 @@
-import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
 import { File, type FileEditChangeHandler, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
 import { useResolvedTheme } from "../hooks/use-resolved-theme";
-import { useTokenBoxes, type TokenLayout } from "../hooks/use-token-boxes";
+import { useTokenBoxes, type PlacedToken, type TokenLayout } from "../hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "../lib/arcs";
 import { describeNode } from "../lib/describe";
 import { getComponentAtLine } from "../lib/graph";
-import { getLineFromEvent } from "../lib/positions";
-import { useEditorStore, useIsEditing } from "../store/editor";
-import { useHoverStore } from "../store/hover";
+import { getLineFromEvent, type Box } from "../lib/positions";
+import { useEditorStore, useHasDraft } from "../store/editor";
+import { useHoverStore, type TokenAnchor } from "../store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
 import { TokenMark } from "./token-mark";
@@ -24,16 +24,46 @@ const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   preferredHighlighter: "shiki-js",
 };
 
-const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
+const contains = (box: Box, x: number, y: number): boolean =>
+  x >= box.x - 2 && x <= box.x + box.width + 2 && y >= box.y && y <= box.y + box.height;
+
+const findTokenAt = (tokens: PlacedToken[], x: number, y: number): PlacedToken | null =>
+  tokens.find((token) => !token.isMultiLine && contains(token.box, x, y)) ?? null;
+
+const createAnchor = (token: PlacedToken, wrapper: HTMLElement): TokenAnchor => ({
+  nodeId: token.node.id,
+  getBoundingClientRect: () => {
+    const origin = wrapper.getBoundingClientRect();
+    const { box } = token;
+    return new DOMRect(origin.left + box.x, origin.top + box.y, box.width, box.height);
+  },
+});
+
+const usePointerTracking = (
+  wrapperRef: RefObject<HTMLDivElement | null>,
+  layout: TokenLayout,
+): ((event: MouseEvent) => void) => {
   const view = useLoadedView();
   const activate = useHoverStore((state) => state.activate);
+  const hover = useHoverStore((state) => state.hover);
+  const leave = useHoverStore((state) => state.leave);
   return useCallback(
     (event: MouseEvent) => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const origin = wrapper.getBoundingClientRect();
+      const token = findTokenAt(
+        layout.tokens,
+        event.clientX - origin.left,
+        event.clientY - origin.top,
+      );
+      if (token) hover(token.node.id, createAnchor(token, wrapper));
+      else leave();
       const line = getLineFromEvent(event.nativeEvent);
       const component = line === null ? null : getComponentAtLine(view, line);
       if (component) activate(component.name);
     },
-    [view, activate],
+    [wrapperRef, layout, view, activate, hover, leave],
   );
 };
 
@@ -74,7 +104,7 @@ const TokenTooltip = () => {
   const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
   return (
     <Tooltip open={isOpen}>
-      <TooltipContent anchor={anchor?.element} className="font-mono">
+      <TooltipContent anchor={anchor} className="font-mono">
         {hoveredNode && describeNode(view, hoveredNode)}
       </TooltipContent>
     </Tooltip>
@@ -108,16 +138,17 @@ export const SourcePane = () => {
   const isHighlighterReady = useHighlighter() !== null;
   const { colorByNodeId } = useViewer();
   const { theme } = useResolvedTheme();
-  const activateAtPointer = useActivateAtPointer();
-  const isEditing = useIsEditing();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [renderCount, setRenderCount] = useState(0);
+  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
+  const hasDraft = useHasDraft();
+  const generation = useEditorStore((state) => state.generation);
   const setDraft = useEditorStore((state) => state.setDraft);
+  const leave = useHoverStore((state) => state.leave);
   const onEditChange = useCallback<FileEditChangeHandler<undefined, undefined>>(
     (event) => setDraft(event.editor.getText()),
     [setDraft],
   );
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [renderCount, setRenderCount] = useState(0);
-  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
   const options = useMemo<FileOptions<undefined, undefined>>(
     () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
     [theme, onPostRender],
@@ -134,26 +165,29 @@ export const SourcePane = () => {
     [view, colorByNodeId],
   );
   const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
+  const trackPointer = usePointerTracking(wrapperRef, layout);
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
       <div
         ref={wrapperRef}
-        onMouseMove={activateAtPointer}
+        onMouseMove={hasDraft ? undefined : trackPointer}
+        onMouseLeave={leave}
         className="relative min-w-0 py-1 pr-8 text-[13px]/[19px]"
       >
         {isHighlighterReady ? (
           <File
+            key={`${view.file}:${generation}`}
             file={file}
             options={options}
             disableWorkerPool
-            edit={isEditing}
+            edit
             onEditChange={onEditChange}
             onEditComplete={() => "reject"}
           />
         ) : (
           <Spinner className="h-40" />
         )}
-        {!isEditing && <Overlay layout={layout} />}
+        {!hasDraft && <Overlay layout={layout} />}
         <TokenTooltip />
       </div>
     </div>

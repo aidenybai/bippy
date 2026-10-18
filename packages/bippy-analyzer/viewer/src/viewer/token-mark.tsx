@@ -1,7 +1,7 @@
 import { useResolvedTheme } from "../hooks/use-resolved-theme";
 import type { PlacedToken } from "../hooks/use-token-boxes";
 import { getSolidColor } from "../lib/colors";
-import { useHoverStore, useIsDimmed, useIsHovered, useIsInactive } from "../store/hover";
+import { useIsDimmed, useIsHovered, useIsInactive } from "../store/hover";
 
 interface TokenVisibility {
   isDimmed: boolean;
@@ -21,8 +21,6 @@ interface TokenMarkProps extends PlacedToken {
 
 export const TokenMark = ({ node, box, isMultiLine, color }: TokenMarkProps) => {
   const { theme } = useResolvedTheme();
-  const hover = useHoverStore((state) => state.hover);
-  const leave = useHoverStore((state) => state.leave);
   const isHovered = useIsHovered(node.id);
   const opacity = getTokenOpacity({
     isDimmed: useIsDimmed([node.id]),
@@ -32,7 +30,6 @@ export const TokenMark = ({ node, box, isMultiLine, color }: TokenMarkProps) => 
   return (
     <rect
       data-node={node.id}
-      className="pointer-events-auto cursor-default"
       x={isMultiLine ? box.x - 8 : box.x - 2}
       y={box.y + 1}
       width={isMultiLine ? 3 : box.width + 4}
@@ -43,8 +40,6 @@ export const TokenMark = ({ node, box, isMultiLine, color }: TokenMarkProps) => 
       strokeWidth={2}
       opacity={opacity}
       style={{ mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
-      onMouseEnter={(event) => hover(node.id, { nodeId: node.id, element: event.currentTarget })}
-      onMouseLeave={leave}
     />
   );
 };

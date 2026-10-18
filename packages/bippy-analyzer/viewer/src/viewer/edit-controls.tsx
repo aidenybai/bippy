@@ -1,19 +1,18 @@
 import { useEffect } from "react";
-import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useSaveFile } from "../hooks/queries";
-import { useEditorStore, useHasDraft, useIsEditing } from "../store/editor";
+import { useEditorStore, useHasDraft } from "../store/editor";
 import { useViewer } from "./context";
 
 const useSaveDraft = (): (() => void) => {
   const { file } = useViewer();
   const save = useSaveFile();
-  const stopEditing = useEditorStore((state) => state.stopEditing);
+  const settle = useEditorStore((state) => state.settle);
   return () => {
     const { draft } = useEditorStore.getState();
     if (file === null || draft === null || save.isPending) return;
-    save.mutate({ file, source: draft }, { onSuccess: stopEditing });
+    save.mutate({ file, source: draft }, { onSuccess: settle });
   };
 };
 
@@ -31,9 +30,8 @@ const SaveShortcut = ({ onSave }: { onSave: () => void }) => {
   return null;
 };
 
-const EditingControls = () => {
-  const stopEditing = useEditorStore((state) => state.stopEditing);
-  const hasDraft = useHasDraft();
+const DraftControls = () => {
+  const discard = useEditorStore((state) => state.discard);
   const save = useSaveFile();
   const saveDraft = useSaveDraft();
   return (
@@ -44,10 +42,10 @@ const EditingControls = () => {
           {save.error.message.split("\n")[0]}
         </span>
       )}
-      <Button variant="ghost" onClick={stopEditing} disabled={save.isPending}>
-        Cancel
+      <Button variant="ghost" onClick={discard} disabled={save.isPending}>
+        Discard
       </Button>
-      <Button onClick={saveDraft} disabled={!hasDraft || save.isPending}>
+      <Button onClick={saveDraft} disabled={save.isPending}>
         {save.isPending ? <Spinner className="size-3.5" /> : null}
         Save
       </Button>
@@ -56,14 +54,6 @@ const EditingControls = () => {
 };
 
 export const EditControls = () => {
-  const { file, view, mode } = useViewer();
-  const isEditing = useIsEditing();
-  const startEditing = useEditorStore((state) => state.startEditing);
-  if (file === null || view === null || mode !== "code") return null;
-  if (isEditing) return <EditingControls />;
-  return (
-    <Button variant="ghost" size="icon" onClick={startEditing} aria-label="Edit code" title="Edit">
-      <Pencil />
-    </Button>
-  );
+  const hasDraft = useHasDraft();
+  return hasDraft ? <DraftControls /> : null;
 };

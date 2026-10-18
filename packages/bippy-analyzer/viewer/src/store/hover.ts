@@ -3,7 +3,7 @@ import { getCausalNodeIds, getComponentName, type GraphIndex } from "../lib/grap
 
 export interface TokenAnchor {
   nodeId: string;
-  element: Element;
+  getBoundingClientRect: () => DOMRect;
 }
 
 interface HoverState {
@@ -30,7 +30,8 @@ export const useHoverStore = create<HoverState>((set, get) => ({
     if (get().activeName !== activeName) set({ activeName });
   },
   hover: (nodeId, anchor) => {
-    const { index } = get();
+    const { index, hoveredNodeId } = get();
+    if (hoveredNodeId === nodeId) return;
     set({
       hoveredNodeId: nodeId,
       activeName: getComponentName(nodeId),
@@ -38,7 +39,10 @@ export const useHoverStore = create<HoverState>((set, get) => ({
       anchor: anchor ?? null,
     });
   },
-  leave: () => set({ hoveredNodeId: null, causalNodeIds: null, anchor: null }),
+  leave: () => {
+    if (get().hoveredNodeId !== null)
+      set({ hoveredNodeId: null, causalNodeIds: null, anchor: null });
+  },
 }));
 
 export const useIsHovered = (nodeId: string): boolean =>

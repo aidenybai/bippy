@@ -1,21 +1,19 @@
 import { create } from "zustand";
 
 interface EditorState {
-  isEditing: boolean;
   draft: string | null;
-  startEditing: () => void;
-  stopEditing: () => void;
+  generation: number;
   setDraft: (draft: string) => void;
+  discard: () => void;
+  settle: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
-  isEditing: false,
   draft: null,
-  startEditing: () => set({ isEditing: true, draft: null }),
-  stopEditing: () => set({ isEditing: false, draft: null }),
+  generation: 0,
   setDraft: (draft) => set({ draft }),
+  discard: () => set((state) => ({ draft: null, generation: state.generation + 1 })),
+  settle: () => set({ draft: null }),
 }));
-
-export const useIsEditing = (): boolean => useEditorStore((state) => state.isEditing);
 
 export const useHasDraft = (): boolean => useEditorStore((state) => state.draft !== null);
