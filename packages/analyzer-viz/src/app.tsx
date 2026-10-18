@@ -37,9 +37,10 @@ interface StateListProps {
   component: ViewComponent;
   selected: ViewState | null;
   onSelect: (state: ViewState | null) => void;
+  onPreview: (state: ViewState | null) => void;
 }
 
-const StateList = ({ component, selected, onSelect }: StateListProps) => (
+const StateList = ({ component, selected, onSelect, onPreview }: StateListProps) => (
   <>
     {component.regions.map((region, regionIndex) => (
       <section key={regionIndex} className="grid gap-2">
@@ -57,6 +58,8 @@ const StateList = ({ component, selected, onSelect }: StateListProps) => (
                 variant={isSelected ? "secondary" : "ghost"}
                 className="h-auto justify-start py-1.5 text-left font-mono text-xs whitespace-normal"
                 onClick={() => onSelect(isSelected ? null : state)}
+                onMouseEnter={() => onPreview(state)}
+                onMouseLeave={() => onPreview(null)}
               >
                 <span className="text-muted-foreground">S{stateIndex + 1}</span>
                 <span>{state.label}</span>
@@ -79,19 +82,19 @@ const StateList = ({ component, selected, onSelect }: StateListProps) => (
 
 interface HandlerListProps {
   component: ViewComponent;
-  activeHandlerId: string | null;
-  onHover: (handlerId: string | null) => void;
+  hoveredNodeId: string | null;
+  onHover: (nodeId: string | null) => void;
 }
 
-const HandlerList = ({ component, activeHandlerId, onHover }: HandlerListProps) => (
+const HandlerList = ({ component, hoveredNodeId, onHover }: HandlerListProps) => (
   <section className="grid gap-2">
     <h2 className="text-xs font-medium text-muted-foreground">what can happen</h2>
     <div className="grid gap-3">
       {component.handlers.map((handler) => (
         <div
           key={handler.id}
-          className={`grid gap-1 font-mono text-xs ${activeHandlerId && activeHandlerId !== handler.id ? "opacity-40" : ""}`}
-          onMouseEnter={() => onHover(handler.id)}
+          className={`grid gap-1 font-mono text-xs ${hoveredNodeId && hoveredNodeId !== `handler:${handler.id}` ? "opacity-40" : ""}`}
+          onMouseEnter={() => onHover(`handler:${handler.id}`)}
           onMouseLeave={() => onHover(null)}
         >
           <div className="flex items-center gap-2">
@@ -115,16 +118,17 @@ const HandlerList = ({ component, activeHandlerId, onHover }: HandlerListProps) 
 export const App = () => {
   const { component, error } = useComponent();
   const [selected, setSelected] = useState<ViewState | null>(null);
-  const [activeHandlerId, setActiveHandlerId] = useState<string | null>(null);
+  const [previewed, setPreviewed] = useState<ViewState | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   if (error) return <pre className="p-4 text-sm text-destructive">{error}</pre>;
   if (!component) return <p className="p-4 text-sm text-muted-foreground">Analyzing…</p>;
   return (
     <div className="grid h-screen grid-cols-[minmax(0,1fr)_360px]">
       <CodeView
         component={component}
-        selectedState={selected}
-        activeHandlerId={activeHandlerId}
-        onHoverHandler={setActiveHandlerId}
+        selectedState={previewed ?? selected}
+        hoveredNodeId={hoveredNodeId}
+        onHoverNode={setHoveredNodeId}
       />
       <ScrollArea className="h-screen border-l">
         <aside className="grid gap-5 p-4">
@@ -135,12 +139,17 @@ export const App = () => {
             </p>
           </div>
           <Separator />
-          <StateList component={component} selected={selected} onSelect={setSelected} />
+          <StateList
+            component={component}
+            selected={selected}
+            onSelect={setSelected}
+            onPreview={setPreviewed}
+          />
           <Separator />
           <HandlerList
             component={component}
-            activeHandlerId={activeHandlerId}
-            onHover={setActiveHandlerId}
+            hoveredNodeId={hoveredNodeId}
+            onHover={setHoveredNodeId}
           />
         </aside>
       </ScrollArea>

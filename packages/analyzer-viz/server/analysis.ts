@@ -12,6 +12,8 @@ import { isRenderingNothing } from "../../bippy-analyzer/src/core/utils/is-rende
 import { collectTriggerLabels } from "../../bippy-analyzer/src/cli/trigger-labels";
 import { simplifyConditions } from "../../bippy-analyzer/src/cli/simplify-conditions";
 import { createSourceReader } from "../../bippy-analyzer/src/cli/source-text";
+import { forEachJsxElement } from "../../bippy-analyzer/src/core/utils/for-each-jsx-element";
+import { buildCodeGraph } from "./graph";
 import { GeneratedSource } from "../../bippy-analyzer/src/react-compiler/HIR/HIR";
 import type {
   AnalyzedComponent,
@@ -165,19 +167,46 @@ const toViewHandler = (handler: Handler, label: string): ViewHandler => ({
   })),
 });
 
+const collectTriggerSites = (
+  component: AnalyzedComponent,
+): Array<{ handlerId: string; loc: ViewLocation; name: string }> => {
+  const sites: Array<{ handlerId: string; loc: ViewLocation; name: string }> = [];
+  forEachJsxElement(component.analysis.render, (element) => {
+    for (const prop of element.props) {
+      const loc = prop.handlerId && prop.file === component.analysis.file && toViewLocation(prop.loc);
+      if (loc && prop.handlerId)
+        sites.push({ handlerId: prop.handlerId, loc, name: prop.kind === "JsxAttribute" ? prop.name : "{...}" });
+    }
+  });
+  return sites;
+};
+
 const toViewComponent = (component: AnalyzedComponent): ViewComponent => {
   const { analysis, report } = component;
   const triggerLabels = collectTriggerLabels(component, createSourceReader());
+  const source = readFileSync(analysis.file, "utf8");
+  const bindings = analysis.bindings.filter((binding) => binding.kind !== "item").map(toViewBinding);
+  const branches = collectBranches(analysis.render);
+  const handlers = analysis.handlers.map((handler) =>
+    toViewHandler(handler, triggerLabels.get(handler.id) ?? handler.id),
+  );
+  const componentLoc = toViewLocation(analysis.loc);
   return {
     name: analysis.name,
     file: analysis.file,
-    loc: toViewLocation(analysis.loc),
-    source: readFileSync(analysis.file, "utf8"),
-    bindings: analysis.bindings.filter((binding) => binding.kind !== "item").map(toViewBinding),
-    branches: collectBranches(analysis.render),
-    handlers: analysis.handlers.map((handler) =>
-      toViewHandler(handler, triggerLabels.get(handler.id) ?? handler.id),
-    ),
+    loc: componentLoc,
+    source,
+    bindings,
+    branches,
+    handlers,
+    graph: buildCodeGraph({
+      source,
+      componentLoc,
+      bindings,
+      branches,
+      handlers,
+      triggers: collectTriggerSites(component),
+    }),
     states: report.states.map((state, index) => ({
       index,
       regionIndex: state.regionIndex,

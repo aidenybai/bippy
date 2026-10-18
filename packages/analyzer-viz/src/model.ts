@@ -63,6 +63,32 @@ export interface ViewRegion {
   isTruncated: boolean;
 }
 
+export type GraphNodeKind = "handler" | "trigger" | "binding" | "write" | "read" | "branch" | "arm";
+
+export interface GraphNode {
+  id: string;
+  kind: GraphNodeKind;
+  label: string;
+  loc: ViewLocation;
+  handlerId?: string;
+  bindingId?: number;
+  branchId?: number;
+  arm?: "consequent" | "alternate";
+}
+
+export type GraphEdgeKind = "triggers" | "writes" | "reads" | "decides" | "shows" | "hides";
+
+export interface GraphEdge {
+  from: string;
+  to: string;
+  kind: GraphEdgeKind;
+}
+
+export interface CodeGraph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
 export interface ViewComponent {
   name: string;
   file: string;
@@ -73,5 +99,6 @@ export interface ViewComponent {
   handlers: ViewHandler[];
   states: ViewState[];
   regions: ViewRegion[];
+  graph: CodeGraph;
   isTruncated: boolean;
 }

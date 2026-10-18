@@ -1,0 +1,227 @@
+import { parse } from "@babel/parser";
+import traverseModule from "@babel/traverse";
+import type { NodePath } from "@babel/traverse";
+import type * as t from "@babel/types";
+import type {
+  CodeGraph,
+  GraphEdge,
+  GraphNode,
+  ViewBinding,
+  ViewBranch,
+  ViewHandler,
+  ViewLocation,
+} from "../src/model";
+
+interface TriggerSite {
+  handlerId: string;
+  loc: ViewLocation;
+  name: string;
+}
+
+interface GraphInput {
+  source: string;
+  componentLoc: ViewLocation | null;
+  bindings: ViewBinding[];
+  branches: ViewBranch[];
+  handlers: ViewHandler[];
+  triggers: TriggerSite[];
+}
+
+interface Reference {
+  name: string;
+  loc: ViewLocation;
+  isCall: boolean;
+}
+
+const traverse: typeof traverseModule =
+  "default" in traverseModule
+    ? (traverseModule as unknown as { default: typeof traverseModule }).default
+    : traverseModule;
+
+const toLocation = (node: t.Node): ViewLocation | null =>
+  node.loc
+    ? {
+        start: { line: node.loc.start.line, column: node.loc.start.column, index: node.start ?? 0 },
+        end: { line: node.loc.end.line, column: node.loc.end.column, index: node.end ?? 0 },
+      }
+    : null;
+
+const contains = (outer: ViewLocation | null, inner: ViewLocation): boolean =>
+  outer !== null && outer.start.index <= inner.start.index && inner.end.index <= outer.end.index;
+
+const getSetterNames = (ast: t.File, bindings: ViewBinding[]): Map<number, string> => {
+  const setters = new Map<number, string>();
+  traverse(ast, {
+    VariableDeclarator(path) {
+      const { id } = path.node;
+      if (id.type !== "ArrayPattern" || id.elements.length < 2) return;
+      const [stateId, setterId] = id.elements;
+      if (stateId?.type !== "Identifier" || setterId?.type !== "Identifier") return;
+      const loc = toLocation(path.node);
+      const binding = bindings.find(
+        (candidate) =>
+          candidate.name === stateId.name && candidate.loc && loc && contains(loc, candidate.loc),
+      );
+      if (binding) setters.set(binding.id, setterId.name);
+    },
+  });
+  return setters;
+};
+
+const collectReferences = (ast: t.File, componentLoc: ViewLocation | null): Reference[] => {
+  const references: Reference[] = [];
+  const visit = (path: NodePath<t.Identifier | t.JSXIdentifier>): void => {
+    const loc = toLocation(path.node);
+    if (!loc || !contains(componentLoc, loc) || !path.isReferencedIdentifier()) return;
+    const isCall = path.parentPath?.isCallExpression() && path.parentPath.node.callee === path.node;
+    references.push({ name: path.node.name, loc, isCall: Boolean(isCall) });
+  };
+  traverse(ast, { Identifier: visit, JSXIdentifier: visit });
+  return references;
+};
+
+const findEnclosingHandler = (handlers: ViewHandler[], loc: ViewLocation): ViewHandler | null =>
+  handlers
+    .filter((handler) => handler.loc && contains(handler.loc, loc))
+    .sort((a, b) => a.loc!.end.index - a.loc!.start.index - (b.loc!.end.index - b.loc!.start.index))[0] ??
+  null;
+
+const addBindingNodes = (
+  input: GraphInput,
+  references: Reference[],
+  setters: Map<number, string>,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+): void => {
+  for (const binding of input.bindings) {
+    if (!binding.loc) continue;
+    const bindingNodeId = `binding:${binding.id}`;
+    nodes.push({
+      id: bindingNodeId,
+      kind: "binding",
+      label: `${binding.name} · ${binding.domain}`,
+      loc: binding.loc,
+      bindingId: binding.id,
+    });
+    const setterName = setters.get(binding.id);
+    references.forEach((reference, index) => {
+      if (contains(binding.loc, reference.loc)) return;
+      if (reference.name === setterName && reference.isCall) {
+        const handler = findEnclosingHandler(input.handlers, reference.loc);
+        const id = `write:${binding.id}:${index}`;
+        nodes.push({
+          id,
+          kind: "write",
+          label: `writes ${binding.name}`,
+          loc: reference.loc,
+          bindingId: binding.id,
+          handlerId: handler?.id,
+        });
+        edges.push({ from: id, to: bindingNodeId, kind: "writes" });
+        if (handler) edges.push({ from: `handler:${handler.id}`, to: id, kind: "writes" });
+        return;
+      }
+      if (reference.name !== binding.name || reference.isCall) return;
+      const handler = findEnclosingHandler(input.handlers, reference.loc);
+      const id = `read:${binding.id}:${index}`;
+      nodes.push({
+        id,
+        kind: "read",
+        label: handler ? `${binding.name} read by ${handler.label}` : `${binding.name} on screen`,
+        loc: reference.loc,
+        bindingId: binding.id,
+        handlerId: handler?.id,
+      });
+      edges.push({ from: bindingNodeId, to: id, kind: "reads" });
+    });
+  }
+};
+
+const refineTriggerLocations = (ast: t.File, triggers: TriggerSite[]): TriggerSite[] => {
+  const refined = triggers.map((trigger) => ({ ...trigger }));
+  traverse(ast, {
+    JSXAttribute(path) {
+      const valueLoc = path.node.value && toLocation(path.node.value);
+      const nameLoc = toLocation(path.node.name);
+      if (!valueLoc || !nameLoc) return;
+      for (const trigger of refined)
+        if (contains(valueLoc, trigger.loc) || contains(trigger.loc, valueLoc)) trigger.loc = nameLoc;
+    },
+  });
+  return refined;
+};
+
+const addHandlerNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[]): void => {
+  for (const handler of input.handlers) {
+    if (!handler.loc) continue;
+    nodes.push({
+      id: `handler:${handler.id}`,
+      kind: "handler",
+      label: handler.label,
+      loc: handler.loc,
+      handlerId: handler.id,
+    });
+  }
+  for (const trigger of input.triggers) {
+    const id = `trigger:${trigger.handlerId}:${trigger.loc.start.index}`;
+    nodes.push({
+      id,
+      kind: "trigger",
+      label: trigger.name,
+      loc: trigger.loc,
+      handlerId: trigger.handlerId,
+    });
+    edges.push({ from: id, to: `handler:${trigger.handlerId}`, kind: "triggers" });
+  }
+};
+
+const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[]): void => {
+  for (const branch of input.branches) {
+    if (!branch.loc) continue;
+    const branchNodeId = `branch:${branch.id}`;
+    nodes.push({
+      id: branchNodeId,
+      kind: "branch",
+      label: branch.test,
+      loc: branch.loc,
+      branchId: branch.id,
+    });
+    for (const bindingId of branch.readsBindingIds)
+      edges.push({ from: `binding:${bindingId}`, to: branchNodeId, kind: "decides" });
+    for (const arm of ["consequent", "alternate"] as const) {
+      const loc = branch[arm];
+      if (!loc) continue;
+      const id = `arm:${branch.id}:${arm}`;
+      nodes.push({
+        id,
+        kind: "arm",
+        label: arm === "consequent" ? `when ${branch.test}` : `when ${branch.negated}`,
+        loc,
+        branchId: branch.id,
+        arm,
+      });
+      edges.push({ from: branchNodeId, to: id, kind: arm === "consequent" ? "shows" : "hides" });
+    }
+  }
+};
+
+export const buildCodeGraph = (input: GraphInput): CodeGraph => {
+  const ast = parse(input.source, {
+    sourceType: "module",
+    plugins: ["typescript", "jsx"],
+    errorRecovery: true,
+  });
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  addHandlerNodes({ ...input, triggers: refineTriggerLocations(ast, input.triggers) }, nodes, edges);
+  addBindingNodes(
+    input,
+    collectReferences(ast, input.componentLoc),
+    getSetterNames(ast, input.bindings),
+    nodes,
+    edges,
+  );
+  addBranchNodes(input, nodes, edges);
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  return { nodes, edges: edges.filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to)) };
+};

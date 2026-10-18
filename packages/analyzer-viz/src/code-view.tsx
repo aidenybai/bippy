@@ -1,54 +1,33 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { codeToHtml } from "shiki";
 import { DiagramCanvas, DiagramEdge } from "diagram";
 import { getLinesBox, getLocationBox, type Box } from "./code-positions";
-import type {
-  ViewComponent,
-  ViewHandler,
-  ViewLocation,
-  ViewState,
-} from "./model";
-import { getArmMarks, getHandlersFromState, type ArmMark } from "./state-model";
+import { getRelatedNodeIds, getRoleLabel, indexGraph } from "./hover-model";
+import type { GraphNode, ViewComponent, ViewLocation, ViewState } from "./model";
+import { getArmMarks, type ArmMark } from "./state-model";
 
 interface CodeViewProps {
   component: ViewComponent;
   selectedState: ViewState | null;
-  activeHandlerId: string | null;
-  onHoverHandler: (handlerId: string | null) => void;
+  hoveredNodeId: string | null;
+  onHoverNode: (nodeId: string | null) => void;
+}
+
+interface PlacedNode {
+  node: GraphNode;
+  box: Box;
+  isMultiLine: boolean;
 }
 
 interface Overlay {
   width: number;
   height: number;
   arms: Array<ArmMark & { box: Box; isSingleLine: boolean }>;
-  tests: Array<{ id: number; test: string; box: Box }>;
-  handlers: Array<{ handler: ViewHandler; box: Box }>;
-  bindings: Array<{ id: number; name: string; box: Box }>;
+  placed: PlacedNode[];
 }
 
-const GUTTER_WIDTH = 128;
-const PILL_WIDTH = 48;
-const UPDATE_LANE_X = 58;
-const READ_LANE_X = 98;
-const LANE_GAP = 7;
-const EDGE_END_X = GUTTER_WIDTH - 6;
-
-const getLaneEdge = (
-  fromY: number,
-  toY: number,
-  laneX: number
-): {
-  from: { x: number; y: number };
-  to: { x: number; y: number };
-  waypoints: { x: number; y: number }[];
-} => ({
-  from: { x: PILL_WIDTH + 4, y: fromY },
-  to: { x: EDGE_END_X, y: toY },
-  waypoints: [
-    { x: laneX, y: fromY },
-    { x: laneX, y: toY },
-  ],
-});
+const MAX_WHOLE_FILE_LINES = 60;
+const GUTTER_WIDTH = 16;
 
 const ARM_FILLS: Record<ArmMark["status"], string> = {
   live: "color-mix(in oklab, var(--primary) 10%, transparent)",
@@ -58,15 +37,33 @@ const ARM_FILLS: Record<ArmMark["status"], string> = {
   unchanged: "transparent",
 };
 
+const NODE_FILLS: Record<GraphNode["kind"], string> = {
+  trigger: "color-mix(in oklab, var(--primary) 16%, transparent)",
+  handler: "transparent",
+  write: "color-mix(in oklab, var(--destructive) 16%, transparent)",
+  binding: "color-mix(in oklab, var(--primary) 12%, transparent)",
+  read: "color-mix(in oklab, var(--primary) 12%, transparent)",
+  branch: "color-mix(in oklab, var(--foreground) 10%, transparent)",
+  arm: "color-mix(in oklab, var(--primary) 8%, transparent)",
+};
+
+const HIT_ORDER: GraphNode["kind"][] = [
+  "handler",
+  "arm",
+  "trigger",
+  "branch",
+  "write",
+  "read",
+  "binding",
+];
+
 const useHighlightedSource = (source: string): string => {
   const [html, setHtml] = useState("");
   useEffect(() => {
     let isCurrent = true;
-    codeToHtml(source, { lang: "tsx", theme: "github-light" }).then(
-      (result) => {
-        if (isCurrent) setHtml(result);
-      }
-    );
+    codeToHtml(source, { lang: "tsx", theme: "github-light" }).then((result) => {
+      if (isCurrent) setHtml(result);
+    });
     return () => {
       isCurrent = false;
     };
@@ -74,11 +71,7 @@ const useHighlightedSource = (source: string): string => {
   return html;
 };
 
-const MAX_WHOLE_FILE_LINES = 60;
-
-const getComponentSource = (
-  component: ViewComponent
-): { source: string; lineOffset: number } => {
+const getComponentSource = (component: ViewComponent): { source: string; lineOffset: number } => {
   const lines = component.source.split("\n");
   if (!component.loc || lines.length <= MAX_WHOLE_FILE_LINES)
     return { source: component.source, lineOffset: 0 };
@@ -89,10 +82,7 @@ const getComponentSource = (
   };
 };
 
-const shiftLocation = (
-  loc: ViewLocation,
-  lineOffset: number
-): ViewLocation => ({
+const shiftLocation = (loc: ViewLocation, lineOffset: number): ViewLocation => ({
   start: { ...loc.start, line: loc.start.line - lineOffset },
   end: { ...loc.end, line: loc.end.line - lineOffset },
 });
@@ -101,7 +91,7 @@ const measureOverlay = (
   container: HTMLElement,
   component: ViewComponent,
   selectedState: ViewState | null,
-  lineOffset: number
+  lineOffset: number,
 ): Overlay => {
   const spanBox = (loc: ViewLocation | null): Box | null =>
     loc && getLocationBox(container, shiftLocation(loc, lineOffset));
@@ -114,135 +104,121 @@ const measureOverlay = (
     const box = isSingleLine ? spanBox(loc) : linesBox(loc);
     return box ? [{ ...mark, box, isSingleLine }] : [];
   });
-  const tests = component.branches.flatMap((branch) => {
-    const box = spanBox(branch.loc);
-    return box ? [{ id: branch.id, test: branch.test, box }] : [];
+  const placed = component.graph.nodes.flatMap((node) => {
+    const isMultiLine = node.loc.start.line !== node.loc.end.line;
+    const box = isMultiLine ? linesBox(node.loc) : spanBox(node.loc);
+    return box ? [{ node, box, isMultiLine }] : [];
   });
-  const handlers = component.handlers.flatMap((handler) => {
-    const box = spanBox(handler.loc);
-    return box ? [{ handler, box }] : [];
-  });
-  const bindings = component.bindings.flatMap((binding) => {
-    const box = spanBox(binding.loc);
-    return box ? [{ id: binding.id, name: binding.name, box }] : [];
-  });
-  return {
-    width: container.scrollWidth,
-    height: container.scrollHeight,
-    arms,
-    tests,
-    handlers,
-    bindings,
-  };
+  return { width: container.scrollWidth, height: container.scrollHeight, arms, placed };
 };
 
-const getMiddleY = (box: Box): number => box.y + box.height / 2;
+const getArea = (box: Box): number => box.width * box.height;
 
-interface HandlerMarkerProps {
-  handler: ViewHandler;
-  box: Box;
-  isActive: boolean;
-  isVisible: boolean;
-  bindingBoxes: Map<number, Box>;
-  testBoxesByBinding: Map<number, Box[]>;
-  onHover: (handlerId: string | null) => void;
+const sortForHitTesting = (placed: PlacedNode[]): PlacedNode[] =>
+  [...placed].sort(
+    (a, b) =>
+      getArea(b.box) - getArea(a.box) ||
+      HIT_ORDER.indexOf(a.node.kind) - HIT_ORDER.indexOf(b.node.kind),
+  );
+
+const getAnchor = (box: Box, side: "left" | "right"): { x: number; y: number } => ({
+  x: side === "left" ? box.x : box.x + box.width,
+  y: box.y + box.height / 2,
+});
+
+interface RelationArrowsProps {
+  component: ViewComponent;
+  related: Set<string>;
+  boxes: Map<string, Box>;
 }
 
-const HandlerMarker = ({
-  handler,
-  box,
-  isActive,
-  isVisible,
-  bindingBoxes,
-  testBoxesByBinding,
-  onHover,
-}: HandlerMarkerProps) => (
-  <g
-    opacity={isVisible ? 1 : 0.15}
-    onMouseEnter={() => onHover(handler.id)}
-    onMouseLeave={() => onHover(null)}
-  >
-    <rect
-      className="pointer-events-auto cursor-pointer"
-      x={4}
-      y={box.y + 3}
-      width={PILL_WIDTH}
-      height={box.height - 6}
-      rx={4}
-      fill={isActive ? "var(--primary)" : "var(--background)"}
-      stroke="var(--border)"
-    />
-    <text
-      className="pointer-events-none font-mono text-[10px]"
-      x={4 + PILL_WIDTH / 2}
-      y={box.y + box.height / 2 + 3.5}
-      textAnchor="middle"
-      style={{
-        fill: isActive ? "var(--primary-foreground)" : "var(--foreground)",
-      }}
-    >
-      {handler.kind === "effect" ? "effect" : "click"}
-    </text>
-    {[...new Set(handler.updates.map((update) => update.bindingId))].map(
-      (bindingId, index) => {
-        const target = bindingBoxes.get(bindingId);
-        if (!target) return null;
-        return (
-          <DiagramEdge
-            key={bindingId}
-            {...getLaneEdge(
-              getMiddleY(box),
-              getMiddleY(target),
-              UPDATE_LANE_X + index * LANE_GAP
-            )}
-            kind="update"
-            directed
-          />
-        );
-      }
-    )}
-    {isActive &&
-      [...new Set(handler.updates.map((update) => update.bindingId))].flatMap(
-        (bindingId, index) => {
-          const source = bindingBoxes.get(bindingId);
-          if (!source) return [];
-          return (testBoxesByBinding.get(bindingId) ?? []).map(
-            (testBox, testIndex) => (
-              <DiagramEdge
-                key={`${bindingId}-${testIndex}`}
-                {...getLaneEdge(
-                  getMiddleY(source),
-                  getMiddleY(testBox),
-                  READ_LANE_X + index * LANE_GAP
-                )}
-                kind="data"
-                directed
-              />
-            )
-          );
-        }
-      )}
-  </g>
-);
+const RelationArrows = ({ component, related, boxes }: RelationArrowsProps) =>
+  component.graph.edges
+    .filter((edge) => related.has(edge.from) && related.has(edge.to))
+    .map((edge) => {
+      const from = boxes.get(edge.from);
+      const to = boxes.get(edge.to);
+      if (!from || !to || edge.kind === "triggers") return null;
+      const isForward = from.x + from.width <= to.x || from.y !== to.y;
+      const start = getAnchor(from, isForward ? "right" : "left");
+      const end = getAnchor(to, isForward ? "left" : "right");
+      return (
+        <DiagramEdge
+          key={`${edge.from}-${edge.to}`}
+          from={{ ...start, y: start.y - 6 }}
+          to={{ ...end, y: end.y - 6 }}
+          kind="portal"
+          bend={Math.min(16, 8 + Math.abs(end.x - start.x) / 60)}
+          directed
+          opacity={0.7}
+        />
+      );
+    });
+
+interface NodeLabelProps {
+  node: GraphNode;
+  box: Box;
+}
+
+const getLabelWidth = (node: GraphNode): number => getRoleLabel(node).length * 5.8 + 8;
+
+const layoutLabels = (placed: PlacedNode[]): PlacedNode[] => {
+  const isSameBox = (a: Box, b: Box): boolean => a.x === b.x && a.y === b.y && a.width === b.width;
+  const sorted = placed
+    .filter(({ node }) => node.kind !== "handler")
+    .filter(
+      ({ node, box }) =>
+        node.kind !== "read" ||
+        !placed.some((other) => other.node.kind === "branch" && isSameBox(other.box, box)),
+    )
+    .sort((a, b) => a.box.y - b.box.y || a.box.x - b.box.x);
+  let previous: PlacedNode | null = null;
+  return sorted.map((item) => {
+    const minX =
+      previous && previous.box.y === item.box.y
+        ? previous.box.x + getLabelWidth(previous.node) + 4
+        : 0;
+    const laid = { ...item, box: { ...item.box, x: Math.max(item.box.x, minX) } };
+    previous = laid;
+    return laid;
+  });
+};
+
+const NodeLabel = ({ node, box }: NodeLabelProps) => {
+  const text = getRoleLabel(node);
+  const width = getLabelWidth(node);
+  return (
+    <g pointerEvents="none">
+      <rect x={box.x} y={box.y - 13} width={width} height={12} rx={3} fill="var(--foreground)" opacity={0.9} />
+      <text
+        x={box.x + 4}
+        y={box.y - 4}
+        className="font-sans text-[9px] font-medium"
+        style={{ fill: "var(--background)" }}
+      >
+        {text}
+      </text>
+    </g>
+  );
+};
 
 export const CodeView = ({
   component,
   selectedState,
-  activeHandlerId,
-  onHoverHandler,
+  hoveredNodeId,
+  onHoverNode,
 }: CodeViewProps) => {
   const { source, lineOffset } = getComponentSource(component);
   const html = useHighlightedSource(source);
   const containerRef = useRef<HTMLDivElement>(null);
   const [overlay, setOverlay] = useState<Overlay | null>(null);
+  const index = useMemo(() => indexGraph(component.graph), [component.graph]);
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container || !html) return;
     const measure = (): void =>
-      setOverlay(
-        measureOverlay(container, component, selectedState, lineOffset)
-      );
+      setOverlay(measureOverlay(container, component, selectedState, lineOffset));
     measure();
     document.fonts.ready.then(measure);
     const observer = new ResizeObserver(measure);
@@ -250,29 +226,15 @@ export const CodeView = ({
     return () => observer.disconnect();
   }, [html, component, selectedState, lineOffset]);
 
-  const visibleHandlerIds =
-    selectedState && !activeHandlerId
-      ? getHandlersFromState(component, selectedState)
-      : new Set(component.handlers.map((handler) => handler.id));
-  const bindingBoxes = new Map(
-    overlay?.bindings.map((binding) => [binding.id, binding.box])
-  );
-  const testBoxesByBinding = new Map<number, Box[]>();
-  for (const branch of component.branches)
-    for (const bindingId of branch.readsBindingIds) {
-      const box = overlay?.tests.find((test) => test.id === branch.id)?.box;
-      if (box)
-        testBoxesByBinding.set(bindingId, [
-          ...(testBoxesByBinding.get(bindingId) ?? []),
-          box,
-        ]);
-    }
+  const related = hoveredNodeId ? getRelatedNodeIds(index, hoveredNodeId) : new Set<string>();
+  const boxes = new Map(overlay?.placed.map((placed) => [placed.node.id, placed.box]));
+  const relatedPlaced = overlay?.placed.filter((placed) => related.has(placed.node.id)) ?? [];
 
   return (
     <div className="overflow-auto">
       <div
         className="relative min-w-full w-max py-4 pr-6 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-5 [&_.line]:inline-block [&_.line]:min-w-full"
-        style={{ paddingLeft: GUTTER_WIDTH + 4 }}
+        style={{ paddingLeft: GUTTER_WIDTH }}
         ref={containerRef}
       >
         <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -294,30 +256,41 @@ export const CodeView = ({
                 fill={ARM_FILLS[arm.status]}
               />
             ))}
-            {overlay.tests.map((test) => (
+            {relatedPlaced.map(({ node, box, isMultiLine }) => (
               <rect
-                key={test.id}
-                x={test.box.x}
-                y={test.box.y + test.box.height - 2}
-                width={test.box.width}
-                height={2}
-                fill="var(--foreground)"
-                opacity={0.5}
-              >
-                <title>{test.test}</title>
-              </rect>
-            ))}
-            {overlay.handlers.map(({ handler, box }) => (
-              <HandlerMarker
-                key={handler.id}
-                handler={handler}
-                box={box}
-                isActive={activeHandlerId === handler.id}
-                isVisible={visibleHandlerIds.has(handler.id)}
-                bindingBoxes={bindingBoxes}
-                testBoxesByBinding={testBoxesByBinding}
-                onHover={onHoverHandler}
+                key={node.id}
+                x={box.x - 2}
+                y={box.y}
+                width={box.width + 4}
+                height={box.height}
+                rx={3}
+                fill={NODE_FILLS[node.kind]}
+                stroke={
+                  node.id === hoveredNodeId ? "var(--ring)" : isMultiLine ? "var(--border)" : "none"
+                }
+                strokeWidth={node.id === hoveredNodeId ? 1.5 : 1}
               />
+            ))}
+            {hoveredNodeId && (
+              <RelationArrows component={component} related={related} boxes={boxes} />
+            )}
+            {layoutLabels(relatedPlaced).map(({ node, box }) => (
+              <NodeLabel key={`${node.id}-label`} node={node} box={box} />
+            ))}
+            {sortForHitTesting(overlay.placed).map(({ node, box }) => (
+              <rect
+                key={`${node.id}-hit`}
+                className="pointer-events-auto cursor-default"
+                x={box.x - 2}
+                y={box.y}
+                width={box.width + 4}
+                height={box.height}
+                fill="transparent"
+                onMouseEnter={() => onHoverNode(node.id)}
+                onMouseLeave={() => onHoverNode(null)}
+              >
+                <title>{`${getRoleLabel(node)} · ${node.label}`}</title>
+              </rect>
             ))}
           </DiagramCanvas>
         )}
