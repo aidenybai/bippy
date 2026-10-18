@@ -10,7 +10,7 @@ import {
   getTransitions,
 } from "../lib/analysis";
 import type { ViewBinding, ViewHandler, ViewState } from "../model";
-import { useIsDimmed, useLoadedView, useNodeColor, useViewer } from "./context";
+import { useIsDimmed, useLoadedComponent, useNodeColor, useViewer } from "./context";
 
 interface ChipProps {
   nodeIds: string[];
@@ -55,7 +55,7 @@ const Cell = ({ children, className = "" }: { children: ReactNode; className?: s
 );
 
 const BindingRow = ({ binding }: { binding: ViewBinding }) => {
-  const component = useLoadedView();
+  const component = useLoadedComponent();
   const nodeId = getBindingNodeId(component, binding.id);
   return (
     <TableRow>
@@ -72,7 +72,7 @@ const BindingRow = ({ binding }: { binding: ViewBinding }) => {
 };
 
 const Conditions = ({ state }: { state: ViewState }) => {
-  const component = useLoadedView();
+  const component = useLoadedComponent();
   if (state.label === "always") return <span>always</span>;
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -90,7 +90,7 @@ const Conditions = ({ state }: { state: ViewState }) => {
 };
 
 const StateRow = ({ state }: { state: ViewState }) => {
-  const component = useLoadedView();
+  const component = useLoadedComponent();
   return (
     <TableRow>
       <Cell className="w-10 align-top">
@@ -107,7 +107,7 @@ const StateRow = ({ state }: { state: ViewState }) => {
 };
 
 const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
-  const component = useLoadedView();
+  const component = useLoadedComponent();
   const nodeId = getHandlerNodeId(component, handler.id);
   const transitions = getTransitions(component, handler.id);
   return (
@@ -138,10 +138,17 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
   );
 };
 
+const Empty = ({ name }: { name: string }) => (
+  <p className="p-3 text-sm text-muted-foreground">{name} has no state.</p>
+);
+
 export const Legend = () => {
-  const component = useLoadedView();
+  const component = useLoadedComponent();
+  if (component.bindings.length === 0 && component.handlers.length === 0)
+    return <Empty name={component.name} />;
   return (
-    <div className="grid gap-5 overflow-auto p-3 text-[13px]">
+    <div className="grid content-start gap-5 overflow-auto p-3 text-[13px]">
+      <h1 className="px-2 font-mono text-sm font-medium">{component.name}</h1>
       <Section title="Data">
         {component.bindings.map((binding) => (
           <BindingRow key={binding.id} binding={binding} />

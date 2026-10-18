@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { analyzeProject, serializeProjectAnalysis } from "../../src/index";
 import type { AbstractValue, ComponentAnalysis, StateReport } from "../../src/index";
 
@@ -11,9 +10,10 @@ export interface AnalyzerJsonComponent {
   report: AnalyzerJsonReport;
 }
 
-export type AnalyzerSource =
-  | { kind: "project"; tsconfig: string; fileFilter: string | null }
-  | { kind: "json"; path: string };
+export interface AnalyzerSource {
+  tsconfig: string;
+  fileFilter: string | null;
+}
 
 const outputsBySource = new Map<string, AnalyzerJsonComponent[]>();
 
@@ -55,14 +55,10 @@ export const deserializeAnalyzerOutput = (text: string): AnalyzerJsonComponent[]
 };
 
 const getSourceKey = (source: AnalyzerSource): string =>
-  source.kind === "json"
-    ? `json:${source.path}`
-    : `project:${source.tsconfig}:${source.fileFilter ?? ""}`;
+  `${source.tsconfig}:${source.fileFilter ?? ""}`;
 
 const readAnalyzerOutput = (source: AnalyzerSource): string =>
-  source.kind === "json"
-    ? readFileSync(source.path, "utf8")
-    : serializeProjectAnalysis(analyzeProject(source.tsconfig, source.fileFilter));
+  serializeProjectAnalysis(analyzeProject(source.tsconfig, source.fileFilter));
 
 export const loadAnalyzerOutput = (source: AnalyzerSource): AnalyzerJsonComponent[] => {
   const key = getSourceKey(source);

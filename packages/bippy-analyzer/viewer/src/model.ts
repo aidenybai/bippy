@@ -66,16 +66,7 @@ export interface ViewRegion {
   isTruncated: boolean;
 }
 
-export type GraphNodeKind =
-  | "handler"
-  | "trigger"
-  | "binding"
-  | "write"
-  | "read"
-  | "branch"
-  | "arm"
-  | "component"
-  | "render";
+export type GraphNodeKind = "handler" | "trigger" | "binding" | "write" | "read" | "branch" | "arm";
 
 export interface GraphNode {
   id: string;
@@ -88,14 +79,7 @@ export interface GraphNode {
   arm?: "consequent" | "alternate";
 }
 
-export type GraphEdgeKind =
-  | "triggers"
-  | "writes"
-  | "reads"
-  | "decides"
-  | "shows"
-  | "hides"
-  | "renders";
+export type GraphEdgeKind = "triggers" | "writes" | "reads" | "decides" | "shows" | "hides";
 
 export interface GraphEdge {
   from: string;
@@ -108,26 +92,9 @@ export interface CodeGraph {
   edges: GraphEdge[];
 }
 
-export interface FileInfo {
-  file: string;
-  tsconfig: string;
-  components: ComponentSummary[];
-}
-
-export interface ComponentSummary {
-  name: string;
-  file: string;
-  line: number | null;
-  stateCount: number;
-  handlerCount: number;
-}
-
 export interface ViewComponent {
-  components: ComponentSummary[];
   name: string;
-  file: string;
   loc: ViewLocation | null;
-  source: string;
   bindings: ViewBinding[];
   branches: ViewBranch[];
   handlers: ViewHandler[];
@@ -135,4 +102,11 @@ export interface ViewComponent {
   regions: ViewRegion[];
   graph: CodeGraph;
   isTruncated: boolean;
+}
+
+export interface ViewFile {
+  file: string;
+  tsconfig: string;
+  source: string;
+  components: ViewComponent[];
 }

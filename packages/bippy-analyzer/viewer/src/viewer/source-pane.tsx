@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
 import { preloadHighlighter } from "@pierre/diffs";
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
-import { getSolidColor } from "../lib/analysis";
-import type { Box } from "../lib/positions";
+import { getComponentAtLine, getSolidColor } from "../lib/analysis";
+import { getLineFromEvent, type Box } from "../lib/positions";
 import type { GraphEdge } from "../model";
-import { useIsDimmed, useLoadedView, useNodeColor, useViewer } from "./context";
+import { useIsDimmed, useIsInactive, useLoadedView, useNodeColor, useViewer } from "./context";
 
 const ARC_EDGE_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
 const ARC_BULGE = 40;
@@ -24,10 +24,23 @@ const getArcPath = (from: Box, to: Box, marginX: number): string => {
   return `M ${start.x} ${start.y} C ${controlX} ${start.y}, ${controlX} ${end.y}, ${end.x + 6} ${end.y}`;
 };
 
+interface TokenVisibility {
+  isDimmed: boolean;
+  isInactive: boolean;
+  isMultiLine: boolean;
+}
+
+const getTokenOpacity = ({ isDimmed, isInactive, isMultiLine }: TokenVisibility): number => {
+  if (isDimmed) return 0.25;
+  if (isInactive) return 0.4;
+  return isMultiLine ? 0.5 : 1;
+};
+
 const TokenMark = ({ node, box, isMultiLine }: PlacedToken) => {
   const { hoveredNodeId, hover } = useViewer();
   const color = useNodeColor(node.id) ?? "transparent";
   const isDimmed = useIsDimmed(node.id);
+  const isInactive = useIsInactive(node.id);
   const isHovered = node.id === hoveredNodeId;
   return (
     <rect
@@ -41,7 +54,7 @@ const TokenMark = ({ node, box, isMultiLine }: PlacedToken) => {
       fill={isMultiLine ? getSolidColor(color) : color}
       stroke={isHovered ? getSolidColor(color) : "none"}
       strokeWidth={2}
-      opacity={isDimmed ? 0.25 : isMultiLine ? 0.5 : 1}
+      opacity={getTokenOpacity({ isDimmed, isInactive, isMultiLine })}
       style={{ mixBlendMode: "multiply" }}
       onMouseEnter={() => hover(node.id)}
       onMouseLeave={() => hover(null)}
@@ -60,9 +73,10 @@ interface ArcProps {
 
 const Arc = ({ edge, from, to, marginX }: ArcProps) => {
   const { hoveredNodeId, colorByNodeId } = useViewer();
+  const isInactive = useIsInactive(edge.from);
   const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0, 0, 0, 0.3)";
   const isActive = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
-  const isMuted = hoveredNodeId !== null && !isActive;
+  const isMuted = (hoveredNodeId !== null && !isActive) || isInactive;
   return (
     <path
       d={getArcPath(from, to, marginX)}
@@ -116,10 +130,24 @@ const useHighlighter = (): boolean =>
     staleTime: Infinity,
   }).isSuccess;
 
+const useActivateAtPointer = (): ((event: MouseEvent) => void) => {
+  const view = useLoadedView();
+  const { activate } = useViewer();
+  return useCallback(
+    (event: MouseEvent) => {
+      const line = getLineFromEvent(event.nativeEvent);
+      const component = line === null ? null : getComponentAtLine(view, line);
+      if (component) activate(component.name);
+    },
+    [view, activate],
+  );
+};
+
 export const SourcePane = () => {
   const view = useLoadedView();
   const isHighlighterReady = useHighlighter();
   const { colorByNodeId } = useViewer();
+  const activateAtPointer = useActivateAtPointer();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
@@ -129,7 +157,10 @@ export const SourcePane = () => {
     [view],
   );
   const coloredNodes = useMemo(
-    () => view.graph.nodes.filter((node) => colorByNodeId.has(node.id)),
+    () =>
+      view.components
+        .flatMap((component) => component.graph.nodes)
+        .filter((node) => colorByNodeId.has(node.id)),
     [view, colorByNodeId],
   );
   const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
@@ -144,19 +175,28 @@ export const SourcePane = () => {
   );
   const arcs = useMemo(
     () =>
-      view.graph.edges.filter((edge) => {
-        const from = boxes.get(edge.from);
-        const to = boxes.get(edge.to);
-        return (
-          ARC_EDGE_KINDS.has(edge.kind) && from !== undefined && to !== undefined && from.y !== to.y
-        );
-      }),
+      view.components
+        .flatMap((component) => component.graph.edges)
+        .filter((edge) => {
+          const from = boxes.get(edge.from);
+          const to = boxes.get(edge.to);
+          return (
+            ARC_EDGE_KINDS.has(edge.kind) &&
+            from !== undefined &&
+            to !== undefined &&
+            from.y !== to.y
+          );
+        }),
     [view, boxes],
   );
 
   return (
     <div className="overflow-y-auto overflow-x-hidden border-r">
-      <div ref={wrapperRef} className="relative min-w-0 py-1 pr-24 text-[13px]/[19px]">
+      <div
+        ref={wrapperRef}
+        onMouseMove={activateAtPointer}
+        className="relative min-w-0 py-1 pr-24 text-[13px]/[19px]"
+      >
         {isHighlighterReady && <File file={file} options={options} disableWorkerPool />}
         <svg
           className="pointer-events-none absolute inset-0 overflow-hidden"

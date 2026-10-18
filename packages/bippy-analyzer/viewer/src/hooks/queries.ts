@@ -1,5 +1,5 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import type { FileInfo, ViewComponent } from "../model";
+import type { ViewFile } from "../model";
 
 const fetchJson = async <Value>(path: string, params: Record<string, string>): Promise<Value> => {
   const url = new URL(path, window.location.origin);
@@ -9,27 +9,10 @@ const fetchJson = async <Value>(path: string, params: Record<string, string>): P
   return response.json();
 };
 
-export const useFileInfo = (file: string | null): UseQueryResult<FileInfo> =>
+export const useView = (file: string | null): UseQueryResult<ViewFile> =>
   useQuery({
-    queryKey: ["file", file],
-    queryFn: () => fetchJson<FileInfo>("/api/file", { file: file ?? "" }),
+    queryKey: ["view", file],
+    queryFn: () => fetchJson<ViewFile>("/api/analysis", { file: file ?? "" }),
     enabled: file !== null,
-    staleTime: Infinity,
-  });
-
-export interface ViewKey {
-  file: string;
-  component: string;
-}
-
-export const useView = (key: ViewKey | null): UseQueryResult<ViewComponent> =>
-  useQuery({
-    queryKey: ["view", key],
-    queryFn: async () => {
-      const view = await fetchJson<ViewComponent | null>("/api/analysis", { ...key });
-      if (!view) throw new Error(`${key?.component} is not in ${key?.file}`);
-      return view;
-    },
-    enabled: key !== null,
     staleTime: Infinity,
   });

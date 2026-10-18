@@ -1,4 +1,4 @@
-import type { GraphNode, ViewComponent, ViewState } from "../model";
+import type { GraphNode, ViewComponent, ViewFile, ViewState } from "../model";
 import { getArmOutcome } from "./states";
 
 export const PALETTE = [
@@ -10,6 +10,25 @@ export const PALETTE = [
 ];
 
 export const getSolidColor = (color: string): string => color.replace(" 0.3)", " 1)");
+
+export const getComponentName = (nodeId: string): string => nodeId.slice(0, nodeId.indexOf("/"));
+
+export const getDefaultComponent = (view: ViewFile): ViewComponent | null =>
+  [...view.components].sort((a, b) => b.states.length - a.states.length)[0] ?? null;
+
+export const getComponentAtLine = (view: ViewFile, line: number): ViewComponent | null =>
+  view.components.find(
+    ({ loc }) => loc !== null && loc.start.line <= line && line <= loc.end.line,
+  ) ?? null;
+
+export const findNode = (view: ViewFile, nodeId: string | null): GraphNode | null => {
+  if (nodeId === null) return null;
+  for (const component of view.components) {
+    const node = component.graph.nodes.find((candidate) => candidate.id === nodeId);
+    if (node) return node;
+  }
+  return null;
+};
 
 const getNode = (component: ViewComponent, suffix: string): GraphNode | undefined =>
   component.graph.nodes.find((node) => node.id === `${component.name}/${suffix}`);
@@ -36,10 +55,7 @@ export const getStateArmNodeIds = (component: ViewComponent, state: ViewState): 
 
 export const getHandlerNodeId = (component: ViewComponent, handlerId: string): string | undefined =>
   component.graph.nodes.find(
-    (node) =>
-      node.handlerId === handlerId &&
-      node.id.startsWith(`${component.name}/`) &&
-      (node.kind === "trigger" || node.kind === "handler"),
+    (node) => node.handlerId === handlerId && (node.kind === "trigger" || node.kind === "handler"),
   )?.id;
 
 export const getTransitions = (component: ViewComponent, handlerId: string): string[] =>
@@ -51,7 +67,19 @@ export const getTransitions = (component: ViewComponent, handlerId: string): str
       .map((target) => `S${state.index + 1} → S${target + 1}`),
   );
 
-export const getColorByNodeId = (component: ViewComponent): Map<string, string> => {
+const getNodeColor = (
+  node: GraphNode,
+  colorByBinding: Map<number, string>,
+  colorByBranch: Map<number, string>,
+  colorByHandler: Map<string, string>,
+): string | undefined => {
+  if (node.bindingId !== undefined) return colorByBinding.get(node.bindingId);
+  if (node.branchId !== undefined) return colorByBranch.get(node.branchId);
+  if (node.handlerId !== undefined) return colorByHandler.get(node.handlerId);
+  return undefined;
+};
+
+const addComponentColors = (component: ViewComponent, colors: Map<string, string>): void => {
   const colorByBinding = new Map<number, string>();
   component.bindings.forEach((binding, index) =>
     colorByBinding.set(binding.id, PALETTE[index % PALETTE.length]!),
@@ -68,18 +96,14 @@ export const getColorByNodeId = (component: ViewComponent): Map<string, string> 
       .find(Boolean);
     if (color) colorByHandler.set(handler.id, color);
   }
-  const colors = new Map<string, string>();
   for (const node of component.graph.nodes) {
-    if (!node.id.startsWith(`${component.name}/`)) continue;
-    const color =
-      node.bindingId !== undefined
-        ? colorByBinding.get(node.bindingId)
-        : node.branchId !== undefined
-          ? colorByBranch.get(node.branchId)
-          : node.handlerId !== undefined
-            ? colorByHandler.get(node.handlerId)
-            : undefined;
+    const color = getNodeColor(node, colorByBinding, colorByBranch, colorByHandler);
     if (color) colors.set(node.id, color);
   }
+};
+
+export const getColorByNodeId = (view: ViewFile): Map<string, string> => {
+  const colors = new Map<string, string>();
+  for (const component of view.components) addComponentColors(component, colors);
   return colors;
 };

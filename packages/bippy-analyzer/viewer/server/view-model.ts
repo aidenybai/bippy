@@ -25,20 +25,15 @@ import type {
 } from "../../src/core/types";
 import type {
   CodeGraph,
-  ComponentSummary,
-  FileInfo,
   ViewBinding,
   ViewBranch,
   ViewComponent,
+  ViewFile,
   ViewHandler,
   ViewLocation,
 } from "../src/model";
-import {
-  loadAnalyzerOutput,
-  type AnalyzerJsonComponent,
-  type AnalyzerSource,
-} from "./analyzer-json";
-import { buildCodeGraph, buildStructureGraph } from "./code-graph";
+import { loadAnalyzerOutput, type AnalyzerJsonComponent } from "./analyzer-json";
+import { buildCodeGraph } from "./code-graph";
 
 const toViewLocation = (loc: SourceLocation): ViewLocation | null =>
   typeof loc !== "object"
@@ -246,36 +241,6 @@ const buildComponentGraph = (component: AnalyzerJsonComponent, source: string): 
     triggers: collectTriggerSites(component),
   });
 
-const buildFileGraph = (
-  component: AnalyzerJsonComponent,
-  siblings: AnalyzerJsonComponent[],
-  source: string,
-): CodeGraph => {
-  const members = [component, ...siblings];
-  const graphs = [
-    ...members.map((member) => buildComponentGraph(member, source)),
-    buildStructureGraph(
-      source,
-      members.map((member) => ({
-        name: member.analysis.name,
-        startIndex: toViewLocation(member.analysis.loc)?.start.index ?? 0,
-      })),
-    ),
-  ];
-  return {
-    nodes: graphs.flatMap((graph) => graph.nodes),
-    edges: graphs.flatMap((graph) => graph.edges),
-  };
-};
-
-const toComponentSummary = (component: AnalyzerJsonComponent): ComponentSummary => ({
-  name: component.analysis.name,
-  file: component.analysis.file,
-  line: toViewLocation(component.analysis.loc)?.start.line ?? null,
-  stateCount: component.report.states.length,
-  handlerCount: component.analysis.handlers.length,
-});
-
 const getViewStates = (component: AnalyzerJsonComponent): ViewComponent["states"] => {
   const { analysis, report } = component;
   const describer = { file: analysis.file, sourceReader: createSourceReader() };
@@ -293,23 +258,15 @@ const getViewStates = (component: AnalyzerJsonComponent): ViewComponent["states"
   });
 };
 
-const toViewComponent = (
-  component: AnalyzerJsonComponent,
-  siblings: AnalyzerJsonComponent[],
-  all: AnalyzerJsonComponent[],
-): ViewComponent => {
+const toViewComponent = (component: AnalyzerJsonComponent, source: string): ViewComponent => {
   const { analysis, report } = component;
-  const source = readFileSync(analysis.file, "utf8");
   return {
-    components: all.map(toComponentSummary),
     name: analysis.name,
-    file: analysis.file,
     loc: toViewLocation(analysis.loc),
-    source,
     bindings: getViewBindings(component),
     branches: collectBranches(component),
     handlers: getViewHandlers(component),
-    graph: buildFileGraph(component, siblings, source),
+    graph: buildComponentGraph(component, source),
     states: getViewStates(component),
     regions: report.regions.map((region) => ({
       placeNames: region.placeNames,
@@ -332,32 +289,16 @@ const findTsconfig = (file: string): string => {
   }
 };
 
-export const getFileSource = (file: string): Extract<AnalyzerSource, { kind: "project" }> => ({
-  kind: "project",
-  tsconfig: findTsconfig(file),
-  fileFilter: file,
-});
-
-export const getFileComponents = (file: string): FileInfo => {
-  const source = getFileSource(file);
-  const components = loadAnalyzerOutput(source).filter(
+export const getViewFile = (file: string): ViewFile => {
+  const tsconfig = findTsconfig(file);
+  const components = loadAnalyzerOutput({ tsconfig, fileFilter: file }).filter(
     (component) => component.analysis.file === file,
   );
-  return { file, tsconfig: source.tsconfig, components: components.map(toComponentSummary) };
-};
-
-export const getViewModel = (
-  source: AnalyzerSource,
-  componentName: string,
-  file: string | null,
-): ViewComponent | null => {
-  const components = loadAnalyzerOutput(source);
-  const component = components.find(
-    ({ analysis }) => analysis.name === componentName && (file === null || analysis.file === file),
-  );
-  if (!component) return null;
-  const siblings = components.filter(
-    (candidate) => candidate !== component && candidate.analysis.file === component.analysis.file,
-  );
-  return toViewComponent(component, siblings, components);
+  const source = readFileSync(file, "utf8");
+  return {
+    file,
+    tsconfig,
+    source,
+    components: components.map((component) => toViewComponent(component, source)),
+  };
 };

@@ -19,25 +19,26 @@ const Message = ({ children }: { children: ReactNode }) => (
 );
 
 const Source = () => {
-  const { selection, view, viewError, isViewLoading } = useViewer();
-  if (!selection.file) return <Message>Enter a file path above.</Message>;
+  const { file, view, viewError, isViewLoading } = useViewer();
+  if (!file) return <Message>Enter a file path above.</Message>;
   if (viewError) return <pre className="p-4 text-sm text-destructive">{viewError}</pre>;
   if (isViewLoading || !view) return <Message>Loading…</Message>;
   return <SourcePane />;
 };
 
 const LegendPane = () => {
-  const { view } = useViewer();
-  return view ? <Legend /> : <div />;
+  const { activeComponent } = useViewer();
+  return activeComponent ? <Legend /> : <div />;
 };
 
 const Status = () => {
-  const { hoveredNode, view } = useViewer();
+  const { hoveredNode, activeComponent } = useViewer();
   return (
     <div className="flex h-8 items-center gap-3 border-t px-3 text-xs text-muted-foreground">
-      {view && (
+      {activeComponent && (
         <span>
-          {view.states.length} states · {view.handlers.length} handlers
+          {activeComponent.name} · {activeComponent.states.length} states ·{" "}
+          {activeComponent.handlers.length} handlers
         </span>
       )}
       {hoveredNode && (

@@ -44,6 +44,15 @@ const toBox = (rect: DOMRect, origin: DOMRect): Box => ({
   height: rect.height,
 });
 
+export const getLineFromEvent = (event: Event): number | null => {
+  for (const target of event.composedPath()) {
+    if (!(target instanceof Element)) continue;
+    const line = target.getAttribute("data-line");
+    if (line !== null) return Number(line);
+  }
+  return null;
+};
+
 export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLookup => {
   const root: ParentNode = host.shadowRoot ?? host;
   return {

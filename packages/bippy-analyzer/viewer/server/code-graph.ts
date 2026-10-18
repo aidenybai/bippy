@@ -216,48 +216,6 @@ const addBranchNodes = (input: GraphInput, nodes: GraphNode[], edges: GraphEdge[
   }
 };
 
-interface ComponentSite {
-  name: string;
-  startIndex: number;
-}
-
-const getDeclaredName = (node: t.Node): t.Identifier | null => {
-  if (node.type === "FunctionDeclaration" && node.id) return node.id;
-  if (node.type === "VariableDeclarator" && node.id.type === "Identifier") return node.id;
-  return null;
-};
-
-export const buildStructureGraph = (source: string, components: ComponentSite[]): CodeGraph => {
-  const ast = parse(source, {
-    sourceType: "module",
-    plugins: ["typescript", "jsx"],
-    errorRecovery: true,
-  });
-  const names = new Set(components.map((component) => component.name));
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
-  let renderCount = 0;
-  traverse(ast, {
-    enter(path) {
-      const id = getDeclaredName(path.node);
-      const loc = id && toLocation(id);
-      if (!id || !loc || !names.has(id.name)) return;
-      if (nodes.some((node) => node.id === `component:${id.name}`)) return;
-      nodes.push({ id: `component:${id.name}`, kind: "component", label: id.name, loc });
-    },
-    JSXOpeningElement(path) {
-      const { name } = path.node;
-      const loc = name.type === "JSXIdentifier" && names.has(name.name) ? toLocation(name) : null;
-      if (!loc || name.type !== "JSXIdentifier") return;
-      const id = `render:${name.name}:${renderCount++}`;
-      nodes.push({ id, kind: "render", label: name.name, loc });
-      edges.push({ from: id, to: `component:${name.name}`, kind: "renders" });
-    },
-  });
-  const nodeIds = new Set(nodes.map((node) => node.id));
-  return { nodes, edges: edges.filter((edge) => nodeIds.has(edge.from) && nodeIds.has(edge.to)) };
-};
-
 export const buildCodeGraph = (input: GraphInput): CodeGraph => {
   const ast = parse(input.source, {
     sourceType: "module",
