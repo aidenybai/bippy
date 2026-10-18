@@ -12,7 +12,7 @@ pnpm analyze path/to/app/tsconfig.json -f features/ --json
 
 Run these from `packages/bippy-analyzer`.
 
-The output is one Mermaid `stateDiagram-v2` per component, which GitHub and most markdown viewers render when it is pasted into a `mermaid` code block. Each state is labelled with the conditions that select it and what it renders, each transition with the button or effect that causes it, and `[*]` points at the state the component first renders when its initial state values decide that. A component with several independent regions draws them as concurrent regions, and a region with more states than are drawn ends in a `more` state that the hidden transitions lead to. Unreachable branches, warnings and bailouts are listed in their own boxes. The counts go to stderr. With `--json`, the full analysis is printed instead. Run `--help` for all options.
+The output is one Mermaid `stateDiagram-v2` per component, which GitHub and most markdown viewers render when it is pasted into a `mermaid` code block. Each state is labelled with the conditions that select it and what it renders, each transition with the button text, the handler or the effect that causes it, and `[*]` points at the state the component first renders when its initial state values decide that. A condition shows only what decides the state, so the branch `step !== 0 ∧ step !== 1 ∧ step === 2` reads `step === 2`. A handler that leads from every state in a region to every other is drawn once, as a `from any state` box with an arrow to each state. A component with several independent regions draws them as concurrent regions, and a region with more states than are drawn ends in a `more` state that the hidden transitions lead to. Unreachable branches, warnings and bailouts are listed in their own boxes. The counts go to stderr. With `--json`, the full analysis is printed instead. Run `--help` for all options.
 
 | Option                       | Effect                                                 |
 | ---------------------------- | ------------------------------------------------------ |
@@ -23,8 +23,9 @@ The output is one Mermaid `stateDiagram-v2` per component, which GitHub and most
 
 Labels use a few symbols:
 
-- `∧` joins the conditions a state needs
+- `∧` joins the conditions a state needs, `∉ {…}` a place that is none of these values
 - `◆` a branch another region decides, `↻` a list
+- `⚠` an expression the analyzer couldn't evaluate, shown as written
 - `· ∅` the state renders nothing
 
 ## What it does

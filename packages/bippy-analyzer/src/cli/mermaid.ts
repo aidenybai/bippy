@@ -1,26 +1,10 @@
 import { relative } from "node:path";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
-import type {
-  AnalyzedComponent,
-  Handler,
-  JsxProp,
-  JsxSpreadProp,
-  Region,
-  State,
-  StateReport,
-  SymbolicValue,
-} from "../core/types";
-import { forEachJsxElement } from "../core/utils/for-each-jsx-element";
-import {
-  CONDITION_SEPARATOR,
-  UNCONDITIONAL_LABEL,
-  formatLine,
-  formatStateLabel,
-  formatSymbolicValue,
-} from "../core/format";
-import { getTestExpression } from "../core/utils/get-test-expression";
-import { isRenderingNothing } from "../core/utils/is-rendering-nothing";
-import { isEffectHandler } from "../core/collect-handlers";
+import type { AnalyzedComponent, Region, StateReport } from "../core/types";
+import { formatLine, formatStateLabel } from "../core/format";
+import { describeState, type StateDescriber } from "./describe-state";
+import { createSourceReader } from "./source-text";
+import { collectTriggerLabels } from "./trigger-labels";
 
 export const DEFAULT_MAX_STATES = 32;
 
@@ -33,115 +17,29 @@ interface DiagramContext {
   report: StateReport;
   triggerLabelsByHandler: Map<string, string>;
   listedStates: Set<number>;
+  describer: StateDescriber;
 }
+
+interface RegionEdges extends Map<string, Map<number, Set<number>>> {}
 
 const INDENT = "  ";
 const REGION_SEPARATOR = "--";
-const DESCRIPTION_SEPARATOR = " · ";
-const MAX_RENDER_WIDTH = 100;
-const MAX_TRIGGER_TEXT_WIDTH = 24;
+const MIN_FAN_OUT_STATES = 3;
 
 const escapeText = (text: string): string =>
   text.replaceAll(";", ",").replaceAll("::", "∷").replaceAll("<", "#lt;").replaceAll(">", "#gt;");
-
-const truncate = (text: string, width: number): string =>
-  text.length > width ? `${text.slice(0, width - 1)}…` : text;
 
 const indent = (line: string): string => `${INDENT}${line}`;
 
 const getMoreId = (regionIndex: number): string => `more${regionIndex + 1}`;
 
-const getPropLabel = (prop: JsxProp | JsxSpreadProp): string =>
-  prop.kind === "JsxAttribute" ? prop.name : "{...}";
+const getHubId = (regionIndex: number, hubIndex: number): string =>
+  `any${regionIndex + 1}_${hubIndex + 1}`;
 
-const getTextContent = (value: SymbolicValue): string => {
-  switch (value.kind) {
-    case "JSXText":
-      return value.value.trim() && JSON.stringify(value.value.trim());
-    case "JsxExpression":
-    case "JsxFragment":
-      return value.children.map(getTextContent).filter(Boolean).join(" ");
-    case "Conditional":
-    case "ArrayMap":
-      return "";
-    default:
-      if (value.kind === "Primitive" && typeof value.value === "string")
-        return JSON.stringify(value.value);
-      return isRenderingNothing(value) ? "" : `{${formatSymbolicValue(value)}}`;
-  }
-};
-
-const getEffectTriggerLabel = (handler: Handler): string => {
-  const { trigger } = handler;
-  if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
-  return trigger.dependencies === "[]"
-    ? "on mount"
-    : `${trigger.hookKind}(${trigger.dependencies ?? "every render"})`;
-};
-
-const collectTriggerLabels = (component: AnalyzedComponent): Map<string, string> => {
-  const { analysis } = component;
-  const triggerLabelsByHandler = new Map<string, string>();
-  forEachJsxElement(analysis.render, (element) => {
-    for (const prop of element.props) {
-      if (!prop.handlerId || triggerLabelsByHandler.has(prop.handlerId)) continue;
-      const textContent = getTextContent(element);
-      triggerLabelsByHandler.set(
-        prop.handlerId,
-        textContent
-          ? truncate(textContent, MAX_TRIGGER_TEXT_WIDTH)
-          : `<${element.tag.name}> ${getPropLabel(prop)}`,
-      );
-    }
-  });
-  for (const handler of analysis.handlers.filter(isEffectHandler))
-    triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
-  return triggerLabelsByHandler;
-};
-
-const getCompactLabel = (node: SymbolicValue): string | null => {
-  switch (node.kind) {
-    case "JsxExpression":
-      return `<${node.tag.name}>`;
-    case "JsxFragment":
-      return null;
-    case "JSXText":
-      return JSON.stringify(node.value);
-    case "ArrayMap":
-      return `↻ ${formatSymbolicValue(node.array)}`;
-    case "Conditional":
-      return `◆ ${formatSymbolicValue(getTestExpression(node))}`;
-    case "Unknown":
-      return `⚠ Unknown(${node.reason})`;
-    default:
-      return `{${formatSymbolicValue(node)}}`;
-  }
-};
-
-const formatCompactRender = (value: SymbolicValue): string => {
-  const parts: string[] = [];
-  let printedLength = 0;
-  const visit = (node: SymbolicValue): void => {
-    if (printedLength > MAX_RENDER_WIDTH || isRenderingNothing(node)) return;
-    const label = getCompactLabel(node);
-    if (label) {
-      parts.push(label);
-      printedLength += label.length + 1;
-    }
-    if (node.kind === "JsxExpression" || node.kind === "JsxFragment") node.children.forEach(visit);
-  };
-  visit(value);
-  return truncate(parts.join(" "), MAX_RENDER_WIDTH);
-};
-
-const describeState = (state: State, hasRegions: boolean): string => {
-  const conditions =
-    state.conditions.length > 0 ? state.conditions.join(CONDITION_SEPARATOR) : UNCONDITIONAL_LABEL;
-  const rendered = hasRegions
-    ? state.fragments.map(formatCompactRender).filter(Boolean).join(" ")
-    : formatCompactRender(state.render);
-  return escapeText(`${conditions}${DESCRIPTION_SEPARATOR}${rendered || "∅"}`);
-};
+const getTransitionLabel = (handlerId: string, isAsync: boolean, context: DiagramContext): string =>
+  escapeText(
+    `${context.triggerLabelsByHandler.get(handlerId) ?? handlerId}${isAsync ? " (async)" : ""}`,
+  );
 
 const getMoreLabel = (region: Region, listedCount: number): string | null => {
   const hiddenCount = region.states.length - listedCount;
@@ -150,27 +48,57 @@ const getMoreLabel = (region: Region, listedCount: number): string | null => {
   return region.isTruncated ? "… more states not listed" : null;
 };
 
-const formatTransitionLines = (
-  stateIndex: number,
+const collectRegionEdges = (listed: number[], context: DiagramContext): RegionEdges => {
+  const edges: RegionEdges = new Map();
+  for (const stateIndex of listed) {
+    for (const transition of context.report.states[stateIndex]?.transitions ?? []) {
+      const label = getTransitionLabel(transition.handlerId, transition.isAsync, context);
+      const sources = edges.get(label) ?? new Map<number, Set<number>>();
+      const targets = sources.get(stateIndex) ?? new Set<number>();
+      for (const target of transition.targets) if (target !== stateIndex) targets.add(target);
+      sources.set(stateIndex, targets);
+      edges.set(label, sources);
+    }
+  }
+  return edges;
+};
+
+const isCompleteFanOut = (sources: Map<number, Set<number>>, listed: number[]): boolean =>
+  listed.length >= MIN_FAN_OUT_STATES &&
+  listed.every((source) =>
+    listed.every((target) => target === source || sources.get(source)?.has(target)),
+  );
+
+const getFanOutLabels = (edges: RegionEdges, listed: number[]): string[] =>
+  [...edges].filter(([, sources]) => isCompleteFanOut(sources, listed)).map(([label]) => label);
+
+const formatFanOutLines = (labels: string[], listed: number[], regionIndex: number): string[] =>
+  labels.flatMap((label, hubIndex) => {
+    const hubId = getHubId(regionIndex, hubIndex);
+    return [
+      `${hubId}: ${label} · from any state`,
+      ...listed.map((stateIndex) => `${hubId} --> ${formatStateLabel(stateIndex)}`),
+    ];
+  });
+
+const formatEdgeLines = (
+  edges: RegionEdges,
+  fanOutLabels: Set<string>,
   regionIndex: number,
   context: DiagramContext,
 ): string[] => {
-  const state = context.report.states[stateIndex];
-  if (!state) return [];
-  const lines = new Set<string>();
-  for (const transition of state.transitions) {
-    const triggerLabel =
-      context.triggerLabelsByHandler.get(transition.handlerId) ?? transition.handlerId;
-    const label = escapeText(`${triggerLabel}${transition.isAsync ? " (async)" : ""}`);
-    const targets = transition.targets.filter((target) => target !== stateIndex);
-    for (const target of targets) {
-      const targetId = context.listedStates.has(target)
-        ? formatStateLabel(target)
-        : getMoreId(regionIndex);
-      lines.add(`${formatStateLabel(stateIndex)} --> ${targetId}: ${label}`);
+  const lines: string[] = [];
+  for (const [label, sources] of edges) {
+    for (const [source, targets] of sources) {
+      for (const target of targets) {
+        const isListed = context.listedStates.has(target);
+        if (isListed && fanOutLabels.has(label)) continue;
+        const targetId = isListed ? formatStateLabel(target) : getMoreId(regionIndex);
+        lines.push(`${formatStateLabel(source)} --> ${targetId}: ${label}`);
+      }
     }
   }
-  return [...lines];
+  return [...new Set(lines)];
 };
 
 const formatRegionLines = (
@@ -183,14 +111,18 @@ const formatRegionLines = (
   const lines = hasRegions ? [`%% ${region.placeNames.join(", ")}`] : [];
   for (const stateIndex of listed) {
     const state = context.report.states[stateIndex];
-    if (state) lines.push(`${formatStateLabel(stateIndex)}: ${describeState(state, hasRegions)}`);
+    if (!state) continue;
+    const description = escapeText(describeState(state, hasRegions, context.describer));
+    lines.push(`${formatStateLabel(stateIndex)}: ${description}`);
   }
   const moreLabel = getMoreLabel(region, listed.length);
   if (moreLabel) lines.push(`${getMoreId(regionIndex)}: ${moreLabel}`);
   if (region.firstRenderState !== null && context.listedStates.has(region.firstRenderState))
     lines.push(`[*] --> ${formatStateLabel(region.firstRenderState)}`);
-  for (const stateIndex of listed)
-    lines.push(...formatTransitionLines(stateIndex, regionIndex, context));
+  const edges = collectRegionEdges(listed, context);
+  const fanOutLabels = getFanOutLabels(edges, listed);
+  lines.push(...formatFanOutLines(fanOutLabels, listed, regionIndex));
+  lines.push(...formatEdgeLines(edges, new Set(fanOutLabels), regionIndex, context));
   return lines;
 };
 
@@ -251,13 +183,17 @@ const formatStateLines = (component: AnalyzedComponent, context: DiagramContext)
 const createDiagramContext = (
   component: AnalyzedComponent,
   options: MermaidOptions,
-): DiagramContext => ({
-  report: component.report,
-  triggerLabelsByHandler: collectTriggerLabels(component),
-  listedStates: new Set(
-    component.report.regions.flatMap((region) => region.states.slice(0, options.maxStates)),
-  ),
-});
+): DiagramContext => {
+  const sourceReader = createSourceReader();
+  return {
+    report: component.report,
+    triggerLabelsByHandler: collectTriggerLabels(component, sourceReader),
+    listedStates: new Set(
+      component.report.regions.flatMap((region) => region.states.slice(0, options.maxStates)),
+    ),
+    describer: { file: component.analysis.file, sourceReader },
+  };
+};
 
 export const formatMermaid = (component: AnalyzedComponent, options: MermaidOptions): string => {
   const { analysis } = component;

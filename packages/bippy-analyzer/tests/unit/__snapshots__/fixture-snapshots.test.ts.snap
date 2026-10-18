@@ -89,8 +89,8 @@ stateDiagram-v2
   direction LR
   S1: cards.length === 0 · #lt;div#gt; #lt;p#gt; "Empty" #lt;button#gt; "Shuffle " {count}
   S2: cards.length !== 0 · #lt;div#gt; #lt;p#gt; "Cards" #lt;button#gt; "Shuffle " {count}
-  S1 --> S2: "Shuffle" {count}
-  S2 --> S1: "Shuffle" {count}"
+  S1 --> S2: "Shuffle"
+  S2 --> S1: "Shuffle""
 `;
 
 exports[`fixture analysis > EditButton keeps its states, transitions and unreachable branches 1`] = `
@@ -191,7 +191,7 @@ stateDiagram-v2
     S3: isSelected · {"Selected"}
     S4: !isSelected · {"Select"}
     [*] --> S4
-    S4 --> S3: #lt;button#gt; onClick
+    S4 --> S3: selectAll
   }"
 `;
 
@@ -271,8 +271,8 @@ stateDiagram-v2
   S1: items.length === 0 · #lt;div#gt; #lt;input#gt; #lt;p#gt; "No items"
   S2: items.length !== 0 ∧ items.filter(function).length #gt; 0 · #lt;div#gt; #lt;input#gt; #lt;ul#gt; ↻ items.filter(function)
   S3: items.length !== 0 ∧ items.filter(function).length #lt;= 0 · #lt;div#gt; #lt;input#gt;
-  S2 --> S3: #lt;input#gt; onChange
-  S3 --> S2: #lt;input#gt; onChange"
+  S2 --> S3: setQuery(event.target.value)
+  S3 --> S2: setQuery(event.target.value)"
 `;
 
 exports[`fixture analysis > ShareButton keeps its states, transitions and unreachable branches 1`] = `
@@ -353,8 +353,8 @@ stateDiagram-v2
   S1: tags.length === 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;p#gt; "No tags"
   S2: tags.length !== 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;ul#gt; ↻ tags
   S1 --> S2: "Push"
-  S1 --> S2: "Copy"
   S2 --> S1: "Push"
+  S1 --> S2: "Copy"
   S2 --> S1: "Copy"
   state "warnings" as warnings {
     warnings1: lost-update L6 sets tags to the array or object it mutated, so React skips the update
@@ -402,8 +402,8 @@ stateDiagram-v2
   S1: isOpen · #lt;div#gt; #lt;button#gt; {"More"} #lt;p#gt; "Details"
   S2: !isOpen · #lt;div#gt; #lt;button#gt; {"More"}
   [*] --> S2
-  S1 --> S2: {label}
-  S2 --> S1: {label}"
+  S1 --> S2: setIsOpen(!isOpen)
+  S2 --> S1: setIsOpen(!isOpen)"
 `;
 
 exports[`fixture analysis > Toolbar keeps its states, transitions and unreachable branches 1`] = `
@@ -441,12 +441,12 @@ title: Wizard src/reducer.tsx:21
 stateDiagram-v2
   direction LR
   S1: state.step === "done" · #lt;p#gt; "Thanks!"
-  S2: state.step !== "done" ∧ state.step === "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Next"
-  S3: state.step !== "done" ∧ state.step !== "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Back" #lt;button#gt; "Next"
+  S2: state.step === "details" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Next"
+  S3: state.step ∉ {"done", "details"} · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Back" #lt;button#gt; "Next"
   [*] --> S2
   S2 --> S3: "Next"
-  S3 --> S2: "Back"
   S3 --> S1: "Next"
+  S3 --> S2: "Back"
   state "unreachable branches" as unreachable {
     unreachable1: never state.hasError L26
   }"
