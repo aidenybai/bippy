@@ -187,8 +187,9 @@ const getConditionAnchor = (
   references: Reference[],
   bindings: ViewBinding[],
 ): ViewLocation | undefined => {
+  const readIds = new Set(branch.readsBindingIds);
   const names = new Set(
-    bindings.filter((binding) => branch.readsBindingIds.includes(binding.id)).map((b) => b.name),
+    bindings.filter((binding) => readIds.has(binding.id)).map((binding) => binding.name),
   );
   return references
     .filter((reference) => names.has(reference.name) && contains(branch.loc, reference.loc))
