@@ -7,14 +7,6 @@ export const Sheet = (props: SheetPrimitive.Root.Props) => (
   <SheetPrimitive.Root data-slot="sheet" {...props} />
 );
 
-export const SheetTrigger = (props: SheetPrimitive.Trigger.Props) => (
-  <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
-);
-
-export const SheetClose = (props: SheetPrimitive.Close.Props) => (
-  <SheetPrimitive.Close data-slot="sheet-close" {...props} />
-);
-
 const SheetOverlay = ({ className, ...props }: SheetPrimitive.Backdrop.Props) => (
   <SheetPrimitive.Backdrop
     data-slot="sheet-overlay"
@@ -28,14 +20,12 @@ const SheetOverlay = ({ className, ...props }: SheetPrimitive.Backdrop.Props) =>
 
 type SheetContentProps = SheetPrimitive.Popup.Props & {
   side?: "left" | "right";
-  showCloseButton?: boolean;
 };
 
 export const SheetContent = ({
   className,
   children,
   side = "right",
-  showCloseButton = true,
   ...props
 }: SheetContentProps) => (
   <SheetPrimitive.Portal>
@@ -50,15 +40,13 @@ export const SheetContent = ({
       {...props}
     >
       {children}
-      {showCloseButton && (
-        <SheetPrimitive.Close
-          data-slot="sheet-close"
-          render={<Button variant="ghost" size="icon" className="absolute top-2 right-2" />}
-        >
-          <X />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
-      )}
+      <SheetPrimitive.Close
+        data-slot="sheet-close"
+        render={<Button variant="ghost" size="icon" className="absolute top-2 right-2" />}
+      >
+        <X />
+        <span className="sr-only">Close</span>
+      </SheetPrimitive.Close>
     </SheetPrimitive.Popup>
   </SheetPrimitive.Portal>
 );

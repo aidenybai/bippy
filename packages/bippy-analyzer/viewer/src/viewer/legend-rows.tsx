@@ -12,7 +12,7 @@ import {
 } from "../lib/lookup";
 import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "../model";
 import { Chip } from "./chip";
-import { useLoadedComponent } from "./context";
+import { useLegendComponent } from "./legend";
 
 const Cell = ({ children, className }: { children: ReactNode; className?: string }) => (
   <TableCell className={cn("wrap-anywhere whitespace-normal", className)}>{children}</TableCell>
@@ -21,7 +21,7 @@ const Cell = ({ children, className }: { children: ReactNode; className?: string
 const KEY_CELL = "w-0 wrap-normal whitespace-nowrap";
 
 export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
-  const component = useLoadedComponent();
+  const component = useLegendComponent();
   const nodeId = getBindingNodeId(component, binding.id);
   return (
     <TableRow>
@@ -41,7 +41,7 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
 };
 
 const Conditions = ({ state }: { state: ViewState }) => {
-  const component = useLoadedComponent();
+  const component = useLegendComponent();
   if (state.label === "always") return <span className="text-foreground">always</span>;
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -61,7 +61,7 @@ const Conditions = ({ state }: { state: ViewState }) => {
 };
 
 export const StateRow = ({ state }: { state: ViewState }) => {
-  const component = useLoadedComponent();
+  const component = useLegendComponent();
   return (
     <TableRow>
       <Cell className={KEY_CELL}>
@@ -106,7 +106,7 @@ const Transitions = ({ transitions }: { transitions: string[] }) => (
 );
 
 export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
-  const component = useLoadedComponent();
+  const component = useLegendComponent();
   const nodeId = getHandlerNodeId(component, handler.id);
   const transitions = getTransitions(component, handler.id);
   return (

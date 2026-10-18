@@ -111,7 +111,6 @@ const getReachableLabel = (component: AnalyzerJsonComponent, binding: Binding): 
 const toViewBinding = (component: AnalyzerJsonComponent, binding: Binding): ViewBinding => ({
   id: binding.id,
   name: binding.name,
-  kind: binding.hookKind ? `${binding.kind}:${binding.hookKind}` : binding.kind,
   domain: formatDomain(binding.domain),
   initial: binding.initial ? formatSymbolicValue(binding.initial) : null,
   reachable: getReachableLabel(component, binding),
@@ -202,7 +201,6 @@ const dedupeUpdates = (updates: ViewUpdate[]): ViewUpdate[] => {
 const toViewHandler = (handler: Handler, label: string): ViewHandler => ({
   id: handler.id,
   label,
-  kind: handler.trigger.kind === "Event" ? "event" : "effect",
   loc: toViewLocation(handler.loc),
   updates: dedupeUpdates(handler.updates.map(toViewUpdate)),
 });
@@ -260,7 +258,6 @@ const getViewStates = (component: AnalyzerJsonComponent): ViewComponent["states"
     const described = describeState(state, report.regions.length > 1, describer);
     return {
       index,
-      regionIndex: state.regionIndex,
       conditions: state.conditions,
       label,
       render: described.slice(label.length + 3),
@@ -282,10 +279,7 @@ const toViewComponent = (component: AnalyzerJsonComponent, source: string): View
     regions: report.regions.map((region) => ({
       placeNames: region.placeNames,
       states: region.states,
-      firstRenderState: region.firstRenderState,
-      isTruncated: region.isTruncated,
     })),
-    isTruncated: report.isTruncated,
   };
 };
 

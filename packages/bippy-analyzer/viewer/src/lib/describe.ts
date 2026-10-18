@@ -9,8 +9,7 @@ import type {
   ViewUpdate,
 } from "../model";
 import { getComponentName } from "./graph";
-import { getTransitions } from "./lookup";
-import { getArmOutcome } from "./states";
+import { getTransitions, getArmOutcome } from "./lookup";
 
 const formatStateList = (states: ViewState[]): string =>
   states.map((state) => `S${state.index + 1}`).join(", ");

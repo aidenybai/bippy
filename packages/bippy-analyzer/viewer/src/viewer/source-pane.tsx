@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useRef, useState, type MouseEvent, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type RefObject,
+} from "react";
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
@@ -8,7 +16,7 @@ import { useTokenBoxes, type PlacedToken, type TokenLayout } from "../hooks/use-
 import { isRestingArc, placeArcs } from "../lib/arcs";
 import { describeNode } from "../lib/describe";
 import { getComponentAtLine } from "../lib/graph";
-import { getLineFromEvent, type Box } from "../lib/positions";
+import { getLineFromEvent, scrollToLine, type Box } from "../lib/positions";
 import { useHoverStore, type TokenAnchor } from "../store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
@@ -64,6 +72,16 @@ const usePointerTracking = (
     },
     [wrapperRef, layout, view, activate, hover, leave],
   );
+};
+
+const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
+  const view = useLoadedView();
+  const focusRequest = useHoverStore((state) => state.focusRequest);
+  useEffect(() => {
+    const host = wrapperRef.current?.querySelector<HTMLElement>("diffs-container");
+    const component = view.components.find((candidate) => candidate.name === focusRequest?.name);
+    if (host && component?.loc) scrollToLine(host, component.loc.start.line);
+  }, [wrapperRef, view, focusRequest]);
 };
 
 const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
@@ -158,6 +176,7 @@ export const SourcePane = () => {
   );
   const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
   const trackPointer = usePointerTracking(wrapperRef, layout);
+  useFocusScroll(wrapperRef);
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
       <div

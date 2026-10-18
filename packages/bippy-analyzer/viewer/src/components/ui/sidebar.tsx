@@ -15,8 +15,6 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state";
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "26rem";
 const SIDEBAR_WIDTH_MOBILE = "20rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
@@ -43,40 +41,16 @@ export const useSidebar = (): SidebarContextValue => {
   return context;
 };
 
-const readCookie = (): boolean | null => {
-  const match = document.cookie.match(new RegExp(`(?:^|; )${SIDEBAR_COOKIE_NAME}=(true|false)`));
-  return match ? match[1] === "true" : null;
-};
-
-const writeCookie = (open: boolean): void => {
-  document.cookie = `${SIDEBAR_COOKIE_NAME}=${open}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-};
-
 interface SidebarProviderProps {
-  defaultOpen?: boolean;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   children: ReactNode;
 }
 
-export const SidebarProvider = ({
-  defaultOpen = true,
-  open: openProp,
-  onOpenChange,
-  children,
-}: SidebarProviderProps) => {
+export const SidebarProvider = ({ open, onOpenChange, children }: SidebarProviderProps) => {
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = useState(false);
-  const [openState, setOpenState] = useState(() => readCookie() ?? defaultOpen);
-  const open = openProp ?? openState;
-  const setOpen = useCallback(
-    (value: boolean) => {
-      if (onOpenChange) onOpenChange(value);
-      else setOpenState(value);
-      writeCookie(value);
-    },
-    [onOpenChange],
-  );
+  const setOpen = onOpenChange;
   const toggleSidebar = useCallback(
     () => (isMobile ? setOpenMobile((current) => !current) : setOpen(!open)),
     [isMobile, open, setOpen],
@@ -228,10 +202,4 @@ export const SidebarContent = ({ className, ...props }: ComponentProps<"div">) =
     className={cn("flex min-h-0 flex-1 flex-col overflow-auto overscroll-none", className)}
     {...props}
   />
-);
-
-export const SidebarHeader = ({ children }: { children: ReactNode }) => (
-  <div data-slot="sidebar-header" className="flex h-11 shrink-0 items-center border-b px-4">
-    {children}
-  </div>
 );

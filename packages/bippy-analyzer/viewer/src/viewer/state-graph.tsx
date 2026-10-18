@@ -1,94 +1,183 @@
 import { useMemo } from "react";
+import dagre from "@dagrejs/dagre";
+import { Badge } from "@/components/ui/badge";
+import { Code } from "@/components/ui/code";
 import { getSolidColor } from "../lib/colors";
 import { getStateTransitions, type StateTransition } from "../lib/diagram";
 import { getHandlerNodeId } from "../lib/lookup";
-import type { ViewComponent } from "../model";
+import type { ViewComponent, ViewHandler, ViewState } from "../model";
 import { useHoverStore } from "../store/hover";
+import { Chip } from "./chip";
 import { useViewer } from "./context";
 
-const NODE_GAP = 84;
-const NODE_RADIUS = 14;
-const PADDING = 24;
-const BASELINE = 72;
+const NODE_WIDTH = 220;
+const LINE_HEIGHT = 20;
+const NODE_PADDING = 16;
+const LABEL_HEIGHT = 22;
+const CHAR_WIDTH = 7.2;
 
-const getNodeX = (index: number): number => PADDING + NODE_RADIUS + index * NODE_GAP;
+interface Point {
+  x: number;
+  y: number;
+}
 
-const getArcPath = ({ from, to }: StateTransition): string => {
-  const x1 = getNodeX(from);
-  const x2 = getNodeX(to);
-  const lift = Math.min(56, 14 + Math.abs(to - from) * 14);
-  const isForward = to > from;
-  const y = isForward ? BASELINE - NODE_RADIUS : BASELINE + NODE_RADIUS;
-  const control = isForward ? y - lift : y + lift;
-  return `M ${x1} ${y} C ${x1} ${control}, ${x2} ${control}, ${x2} ${y}`;
+interface LaidOutNode {
+  state: ViewState;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface LaidOutEdge {
+  transition: StateTransition;
+  handler: ViewHandler | undefined;
+  points: Point[];
+  label: Point;
+}
+
+interface Layout {
+  width: number;
+  height: number;
+  nodes: LaidOutNode[];
+  edges: LaidOutEdge[];
+}
+
+const getConditions = (state: ViewState): string[] =>
+  state.label === "always" ? [] : state.label.split(" ∧ ");
+
+const getNodeHeight = (state: ViewState): number =>
+  NODE_PADDING + LINE_HEIGHT * (1 + getConditions(state).length + (state.render ? 1 : 0));
+
+const layoutGraph = (component: ViewComponent): Layout => {
+  const graph = new dagre.graphlib.Graph({ multigraph: true });
+  graph.setGraph({ rankdir: "LR", nodesep: 24, ranksep: 56, marginx: 8, marginy: 8 });
+  graph.setDefaultEdgeLabel(() => ({}));
+  for (const state of component.states)
+    graph.setNode(String(state.index), { width: NODE_WIDTH, height: getNodeHeight(state) });
+  const transitions = getStateTransitions(component);
+  transitions.forEach((transition, order) => {
+    const handler = component.handlers.find((candidate) => candidate.id === transition.handlerId);
+    const labelWidth = (handler?.label.length ?? 4) * CHAR_WIDTH + 12;
+    graph.setEdge(
+      String(transition.from),
+      String(transition.to),
+      { width: labelWidth, height: LABEL_HEIGHT, labelpos: "c" },
+      String(order),
+    );
+  });
+  dagre.layout(graph);
+  const size = graph.graph();
+  return {
+    width: size.width ?? 0,
+    height: size.height ?? 0,
+    nodes: component.states.map((state) => ({ state, ...graph.node(String(state.index)) })),
+    edges: transitions.map((transition, order) => {
+      const edge = graph.edge(String(transition.from), String(transition.to), String(order));
+      const handler = component.handlers.find((candidate) => candidate.id === transition.handlerId);
+      return { transition, handler, points: edge.points, label: { x: edge.x, y: edge.y } };
+    }),
+  };
 };
 
-const TransitionArc = ({
-  transition,
-  component,
-}: {
-  transition: StateTransition;
-  component: ViewComponent;
-}) => {
-  const { colorByNodeId, index } = useViewer();
-  const nodeId = getHandlerNodeId(component, transition.handlerId);
-  const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
-  const isMuted = useHoverStore((state) => {
+const toPath = (points: Point[]): string =>
+  points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+
+const useIsOtherActionHovered = (handlerId: string): boolean => {
+  const { index } = useViewer();
+  return useHoverStore((state) => {
     if (state.hoveredNodeId === null) return false;
     const hovered = index?.nodes.get(state.hoveredNodeId);
-    return hovered?.handlerId !== transition.handlerId;
+    return hovered?.handlerId !== undefined && hovered.handlerId !== handlerId;
   });
+};
+
+const Edge = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
+  const { colorByNodeId } = useViewer();
+  const nodeId = getHandlerNodeId(component, edge.transition.handlerId);
+  const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
+  const isMuted = useIsOtherActionHovered(edge.transition.handlerId);
   return (
     <path
-      d={getArcPath(transition)}
+      d={toPath(edge.points)}
       fill="none"
       stroke={color ? getSolidColor(color) : "var(--faint)"}
       strokeWidth={1.25}
-      strokeDasharray={transition.isAsync ? "4 3" : undefined}
-      opacity={isMuted ? 0.15 : 0.8}
+      strokeDasharray={edge.transition.isAsync ? "4 3" : undefined}
+      opacity={isMuted ? 0.15 : 0.85}
       markerEnd="url(#state-arrow)"
     />
   );
 };
 
+const EdgeLabel = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
+  const nodeId = getHandlerNodeId(component, edge.transition.handlerId);
+  if (!edge.handler) return null;
+  return (
+    <div
+      className="absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
+      style={{ left: edge.label.x, top: edge.label.y }}
+    >
+      <Chip nodeIds={nodeId ? [nodeId] : []}>
+        <Code>{edge.handler.label}</Code>
+      </Chip>
+    </div>
+  );
+};
+
+const StateNode = ({ node }: { node: LaidOutNode }) => (
+  <div
+    className="absolute grid content-start gap-0.5 rounded-md border bg-background px-2 py-1.5 shadow-card"
+    style={{ left: node.x - node.width / 2, top: node.y - node.height / 2, width: node.width }}
+  >
+    <Badge variant="outline" className="w-fit">
+      S{node.state.index + 1}
+    </Badge>
+    {getConditions(node.state).map((condition) => (
+      <Code key={condition} className="truncate">
+        {condition}
+      </Code>
+    ))}
+    {node.state.render && (
+      <Code className="truncate text-muted-foreground">{node.state.render}</Code>
+    )}
+  </div>
+);
+
 export const StateGraph = ({ component }: { component: ViewComponent }) => {
-  const transitions = useMemo(() => getStateTransitions(component), [component]);
-  const width = PADDING * 2 + NODE_RADIUS * 2 + Math.max(0, component.states.length - 1) * NODE_GAP;
+  const layout = useMemo(() => layoutGraph(component), [component]);
   if (component.states.length < 2) return null;
   return (
-    <svg width={width} height={BASELINE * 2} className="shrink-0" aria-hidden="true">
-      <defs>
-        <marker
-          id="state-arrow"
-          viewBox="0 0 10 10"
-          refX="9"
-          refY="5"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto"
-        >
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
-        </marker>
-      </defs>
-      {transitions.map((transition) => (
-        <TransitionArc
-          key={`${transition.handlerId}:${transition.from}:${transition.to}`}
-          transition={transition}
-          component={component}
-        />
-      ))}
-      {component.states.map((state) => (
-        <g key={state.index} transform={`translate(${getNodeX(state.index)} ${BASELINE})`}>
-          <circle r={NODE_RADIUS} fill="var(--well)" stroke="var(--rule)" />
-          <text
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="fill-foreground font-mono text-[11px]"
+    <div className="relative" style={{ width: layout.width, height: layout.height }}>
+      <svg
+        className="absolute inset-0"
+        width={layout.width}
+        height={layout.height}
+        aria-hidden="true"
+      >
+        <defs>
+          <marker
+            id="state-arrow"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto"
           >
-            S{state.index + 1}
-          </text>
-        </g>
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+          </marker>
+        </defs>
+        {layout.edges.map((edge, order) => (
+          <Edge key={order} edge={edge} component={component} />
+        ))}
+      </svg>
+      {layout.nodes.map((node) => (
+        <StateNode key={node.state.index} node={node} />
       ))}
-    </svg>
+      {layout.edges.map((edge, order) => (
+        <EdgeLabel key={order} edge={edge} component={component} />
+      ))}
+    </div>
   );
 };

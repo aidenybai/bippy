@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Code } from "@/components/ui/code";
 import { getDiagramRows, getSourceLine } from "../lib/diagram";
 import type { ViewComponent, ViewFile } from "../model";
@@ -7,13 +7,8 @@ import { useLoadedView } from "./context";
 import { DiagramRowView } from "./diagram-rows";
 import { StateGraph } from "./state-graph";
 
-const CodeLine = ({ line, text }: { line: number; text: string }) => (
-  <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-baseline gap-3">
-    <span className="text-right font-mono text-muted-foreground tabular-nums select-none">
-      {line}
-    </span>
-    <Code className="wrap-anywhere whitespace-pre-wrap">{text}</Code>
-  </div>
+const CodeLine = ({ text }: { text: string }) => (
+  <Code className="wrap-anywhere whitespace-pre-wrap">{text}</Code>
 );
 
 const ComponentDiagram = ({ view, component }: { view: ViewFile; component: ViewComponent }) => {
@@ -24,27 +19,36 @@ const ComponentDiagram = ({ view, component }: { view: ViewFile; component: View
   const { start, end } = component.loc;
   return (
     <section
+      data-component={component.name}
       className="grid gap-1.5 transition-opacity duration-150"
       style={{ opacity: isInactive ? 0.45 : 1 }}
       onMouseEnter={() => activate(component.name)}
     >
-      <CodeLine line={start.line} text={getSourceLine(view, start.line)} />
-      <div className="grid gap-1.5 border-l pl-3 ml-[3.75rem]">
+      <CodeLine text={getSourceLine(view, start.line)} />
+      <div className="ml-3 grid gap-2 border-l pl-4">
         {rows.map((row) => (
           <DiagramRowView key={`${row.kind}:${row.line}`} row={row} component={component} />
         ))}
         <StateGraph component={component} />
       </div>
-      {end.line !== start.line && <CodeLine line={end.line} text={getSourceLine(view, end.line)} />}
+      {end.line !== start.line && <CodeLine text={getSourceLine(view, end.line)} />}
     </section>
   );
 };
 
 export const DiagramPane = () => {
   const view = useLoadedView();
+  const paneRef = useRef<HTMLDivElement>(null);
+  const focusRequest = useHoverStore((state) => state.focusRequest);
+  useEffect(() => {
+    if (focusRequest === null) return;
+    paneRef.current
+      ?.querySelector(`[data-component="${CSS.escape(focusRequest.name)}"]`)
+      ?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [focusRequest]);
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
-      <div className="grid gap-6 px-2 py-3 pr-6">
+    <div ref={paneRef} className="h-full overflow-y-auto overflow-x-hidden overscroll-none">
+      <div className="grid gap-6 px-4 py-3 sm:px-5">
         {view.components.map((component) => (
           <ComponentDiagram key={component.name} view={view} component={component} />
         ))}

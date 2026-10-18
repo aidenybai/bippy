@@ -8,7 +8,6 @@ export const App = () => (
       source={<Viewer.Source />}
       legend={
         <Viewer.Legend>
-          <Legend.Title />
           <Legend.Variables />
           <Legend.States />
           <Legend.Actions />

@@ -6,14 +6,21 @@ export interface TokenAnchor {
   getBoundingClientRect: () => DOMRect;
 }
 
+export interface FocusRequest {
+  name: string;
+  id: number;
+}
+
 interface HoverState {
   index: GraphIndex | null;
   activeName: string | null;
+  focusRequest: FocusRequest | null;
   hoveredNodeId: string | null;
   causalNodeIds: Set<string> | null;
   anchor: TokenAnchor | null;
   setIndex: (index: GraphIndex | null) => void;
   activate: (name: string | null) => void;
+  focus: (name: string) => void;
   hover: (nodeId: string, anchor?: TokenAnchor) => void;
   leave: () => void;
 }
@@ -21,6 +28,7 @@ interface HoverState {
 export const useHoverStore = create<HoverState>((set, get) => ({
   index: null,
   activeName: null,
+  focusRequest: null,
   hoveredNodeId: null,
   causalNodeIds: null,
   anchor: null,
@@ -29,6 +37,11 @@ export const useHoverStore = create<HoverState>((set, get) => ({
   activate: (activeName) => {
     if (get().activeName !== activeName) set({ activeName });
   },
+  focus: (name) =>
+    set((state) => ({
+      activeName: name,
+      focusRequest: { name, id: (state.focusRequest?.id ?? 0) + 1 },
+    })),
   hover: (nodeId, anchor) => {
     const { index, hoveredNodeId } = get();
     if (hoveredNodeId === nodeId) return;

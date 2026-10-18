@@ -12,7 +12,6 @@ export interface ViewLocation {
 export interface ViewBinding {
   id: number;
   name: string;
-  kind: string;
   domain: string;
   initial: string | null;
   reachable: string | null;
@@ -40,7 +39,6 @@ export interface ViewUpdate {
 export interface ViewHandler {
   id: string;
   label: string;
-  kind: "event" | "effect";
   loc: ViewLocation | null;
   updates: ViewUpdate[];
 }
@@ -53,7 +51,6 @@ export interface ViewTransition {
 
 export interface ViewState {
   index: number;
-  regionIndex: number;
   conditions: string[];
   label: string;
   render: string;
@@ -63,8 +60,6 @@ export interface ViewState {
 export interface ViewRegion {
   placeNames: string[];
   states: number[];
-  firstRenderState: number | null;
-  isTruncated: boolean;
 }
 
 export type GraphNodeKind = "handler" | "trigger" | "binding" | "write" | "read" | "branch" | "arm";
@@ -102,7 +97,6 @@ export interface ViewComponent {
   states: ViewState[];
   regions: ViewRegion[];
   graph: CodeGraph;
-  isTruncated: boolean;
 }
 
 export interface ViewFile {

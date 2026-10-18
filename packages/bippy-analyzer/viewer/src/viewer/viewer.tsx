@@ -101,8 +101,8 @@ const Source = () => {
 };
 
 const LegendPane = ({ children }: { children: ReactNode }) => {
-  const activeComponent = useActiveComponent();
-  return activeComponent ? <Legend>{children}</Legend> : null;
+  const { view } = useViewer();
+  return view ? <Legend>{children}</Legend> : null;
 };
 
 const Status = () => {

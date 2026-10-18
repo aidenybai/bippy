@@ -1,3 +1,4 @@
+import { getArmOutcome } from "./lookup";
 import type {
   ViewBinding,
   ViewBranch,
@@ -6,7 +7,6 @@ import type {
   ViewHandler,
   ViewState,
 } from "../model";
-import { getArmOutcome } from "./states";
 
 export type DiagramRow =
   | { kind: "binding"; line: number; binding: ViewBinding }

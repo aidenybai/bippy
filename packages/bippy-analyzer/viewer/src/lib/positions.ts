@@ -53,6 +53,13 @@ export const getLineFromEvent = (event: Event): number | null => {
   return null;
 };
 
+export const scrollToLine = (host: HTMLElement, line: number): void => {
+  const root: ParentNode = host.shadowRoot ?? host;
+  root
+    .querySelector(`[data-line="${line}"]`)
+    ?.scrollIntoView({ block: "start", behavior: "smooth" });
+};
+
 export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLookup => {
   const root: ParentNode = host.shadowRoot ?? host;
   const lines = new Map<number, Element | null>();

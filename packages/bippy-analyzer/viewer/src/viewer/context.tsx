@@ -99,12 +99,6 @@ export const useActiveComponent = (): ViewComponent | null => {
   }, [view, activeName]);
 };
 
-export const useLoadedComponent = (): ViewComponent => {
-  const component = useActiveComponent();
-  if (!component) throw new Error("useLoadedComponent needs an active component");
-  return component;
-};
-
 export const useHoveredNode = (): GraphNode | null => {
   const { index } = useViewer();
   const hoveredNodeId = useHoverStore((state) => state.hoveredNodeId);

@@ -1,5 +1,12 @@
-import type { GraphNode, ViewComponent, ViewState } from "../model";
-import { getArmOutcome } from "./states";
+import type { GraphNode, ViewBranch, ViewComponent, ViewState } from "../model";
+
+export type Arm = "consequent" | "alternate";
+
+export const getArmOutcome = (branch: ViewBranch, state: ViewState): Arm | null => {
+  if (state.conditions.includes(branch.test)) return "consequent";
+  if (state.conditions.includes(branch.negated)) return "alternate";
+  return null;
+};
 
 const getNode = (component: ViewComponent, suffix: string): GraphNode | undefined =>
   component.graph.nodes.find((node) => node.id === `${component.name}/${suffix}`);

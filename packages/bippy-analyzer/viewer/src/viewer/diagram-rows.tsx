@@ -12,13 +12,8 @@ import {
 import type { ViewBinding, ViewBranch, ViewComponent, ViewHandler, ViewState } from "../model";
 import { Chip } from "./chip";
 
-const Row = ({ line, children }: { line: number; children: ReactNode }) => (
-  <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-baseline gap-3">
-    <span className="text-right font-mono text-muted-foreground tabular-nums select-none">
-      {line}
-    </span>
-    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{children}</div>
-  </div>
+const Row = ({ children }: { children: ReactNode }) => (
+  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{children}</div>
 );
 
 const Arrow = () => <ArrowRight className="size-3.5 shrink-0 text-faint" aria-hidden="true" />;
@@ -46,18 +41,10 @@ const ValuePill = ({ value, isInitial }: { value: string; isInitial: boolean }) 
   </span>
 );
 
-const BindingRow = ({
-  line,
-  binding,
-  component,
-}: {
-  line: number;
-  binding: ViewBinding;
-  component: ViewComponent;
-}) => {
+const BindingRow = ({ binding, component }: { binding: ViewBinding; component: ViewComponent }) => {
   const nodeId = getBindingNodeId(component, binding.id);
   return (
-    <Row line={line}>
+    <Row>
       <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
       <span className="text-faint">∈</span>
       {getDomainValues(binding).map((value) => (
@@ -70,19 +57,11 @@ const BindingRow = ({
   );
 };
 
-const HandlerRow = ({
-  line,
-  handler,
-  component,
-}: {
-  line: number;
-  handler: ViewHandler;
-  component: ViewComponent;
-}) => {
+const HandlerRow = ({ handler, component }: { handler: ViewHandler; component: ViewComponent }) => {
   const nodeId = getHandlerNodeId(component, handler.id);
   const transitions = getTransitions(component, handler.id);
   return (
-    <Row line={line}>
+    <Row>
       <Chip nodeIds={nodeId ? [nodeId] : []}>
         <Code>{handler.label}</Code>
       </Chip>
@@ -109,18 +88,10 @@ const HandlerRow = ({
   );
 };
 
-const BranchRow = ({
-  line,
-  branch,
-  component,
-}: {
-  line: number;
-  branch: ViewBranch;
-  component: ViewComponent;
-}) => {
+const BranchRow = ({ branch, component }: { branch: ViewBranch; component: ViewComponent }) => {
   const nodeId = getConditionNodeId(component, branch.test);
   return (
-    <Row line={line}>
+    <Row>
       <Chip nodeIds={nodeId ? [nodeId] : []}>
         <Code>{branch.test}</Code>
       </Chip>
@@ -145,10 +116,10 @@ export const DiagramRowView = ({
 }) => {
   switch (row.kind) {
     case "binding":
-      return <BindingRow line={row.line} binding={row.binding} component={component} />;
+      return <BindingRow binding={row.binding} component={component} />;
     case "handler":
-      return <HandlerRow line={row.line} handler={row.handler} component={component} />;
+      return <HandlerRow handler={row.handler} component={component} />;
     case "branch":
-      return <BranchRow line={row.line} branch={row.branch} component={component} />;
+      return <BranchRow branch={row.branch} component={component} />;
   }
 };

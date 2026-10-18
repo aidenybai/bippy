@@ -1,16 +1,8 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { cn } from "@/lib/utils";
 
-export const TooltipProvider = ({ delay = 0, ...props }: TooltipPrimitive.Provider.Props) => (
-  <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />
-);
-
 export const Tooltip = (props: TooltipPrimitive.Root.Props) => (
   <TooltipPrimitive.Root data-slot="tooltip" {...props} />
-);
-
-export const TooltipTrigger = (props: TooltipPrimitive.Trigger.Props) => (
-  <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 );
 
 type TooltipContentProps = TooltipPrimitive.Popup.Props &

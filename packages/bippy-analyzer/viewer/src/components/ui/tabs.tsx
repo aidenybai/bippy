@@ -23,11 +23,3 @@ export const TabsTrigger = ({ className, ...props }: TabsPrimitive.Tab.Props) =>
     {...props}
   />
 );
-
-export const TabsContent = ({ className, ...props }: TabsPrimitive.Panel.Props) => (
-  <TabsPrimitive.Panel
-    data-slot="tabs-content"
-    className={cn("outline-none", className)}
-    {...props}
-  />
-);
