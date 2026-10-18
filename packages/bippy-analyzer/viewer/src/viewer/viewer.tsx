@@ -1,33 +1,45 @@
 import type { ReactNode } from "react";
-import type { ViewComponent } from "../model";
 import { ViewerProvider, useViewer } from "./context";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
+import { Toolbar } from "./toolbar";
 
-const Root = ({ component, children }: { component: ViewComponent; children: ReactNode }) => (
-  <ViewerProvider component={component}>
+const Root = ({ children }: { children: ReactNode }) => (
+  <ViewerProvider>
     <div className="grid h-screen grid-rows-[auto_minmax(0,1fr)_auto]">{children}</div>
   </ViewerProvider>
 );
-
-const Toolbar = () => {
-  const { component } = useViewer();
-  return (
-    <div className="flex h-9 items-center gap-2 border-b px-3 text-xs">
-      <span className="font-semibold">{component.name}</span>
-      <span className="text-muted-foreground">{component.file.split("/").slice(-2).join("/")}</span>
-    </div>
-  );
-};
 
 const Panes = ({ children }: { children: ReactNode }) => (
   <div className="grid grid-cols-[minmax(0,1fr)_420px] overflow-hidden">{children}</div>
 );
 
+const Message = ({ children }: { children: ReactNode }) => (
+  <p className="p-4 text-sm text-muted-foreground">{children}</p>
+);
+
+const Source = () => {
+  const { selection, view, viewError, isViewLoading } = useViewer();
+  if (!selection.file) return <Message>Enter a file path above.</Message>;
+  if (viewError) return <pre className="p-4 text-sm text-destructive">{viewError}</pre>;
+  if (isViewLoading || !view) return <Message>Loading…</Message>;
+  return <SourcePane />;
+};
+
+const LegendPane = () => {
+  const { view } = useViewer();
+  return view ? <Legend /> : <div />;
+};
+
 const Status = () => {
-  const { hoveredNode } = useViewer();
+  const { hoveredNode, view } = useViewer();
   return (
     <div className="flex h-8 items-center gap-3 border-t px-3 text-xs text-muted-foreground">
+      {view && (
+        <span>
+          {view.states.length} states · {view.handlers.length} handlers
+        </span>
+      )}
       {hoveredNode && (
         <>
           <span>
@@ -40,4 +52,10 @@ const Status = () => {
   );
 };
 
-export const Viewer = Object.assign(Root, { Toolbar, Panes, Source: SourcePane, Legend, Status });
+export const Viewer = Object.assign(Root, {
+  Toolbar,
+  Panes,
+  Source,
+  Legend: LegendPane,
+  Status,
+});

@@ -108,6 +108,12 @@ export interface CodeGraph {
   edges: GraphEdge[];
 }
 
+export interface FileInfo {
+  file: string;
+  tsconfig: string;
+  components: ComponentSummary[];
+}
+
 export interface ComponentSummary {
   name: string;
   file: string;

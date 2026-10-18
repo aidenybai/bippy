@@ -1,10 +1,12 @@
-import { useMemo, useRef } from "react";
-import { useHighlightedCode } from "../hooks/use-highlighted-code";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { preloadHighlighter } from "@pierre/diffs";
+import { File, type FileOptions } from "@pierre/diffs/react";
+import { useQuery } from "@tanstack/react-query";
 import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
 import { getSolidColor } from "../lib/analysis";
 import type { Box } from "../lib/positions";
 import type { GraphEdge } from "../model";
-import { useIsDimmed, useNodeColor, useViewer } from "./context";
+import { useIsDimmed, useLoadedView, useNodeColor, useViewer } from "./context";
 
 const ARC_EDGE_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);
 const ARC_BULGE = 40;
@@ -57,8 +59,8 @@ interface ArcProps {
 }
 
 const Arc = ({ edge, from, to, marginX }: ArcProps) => {
-  const { hoveredNodeId } = useViewer();
-  const color = useNodeColor(edge.to) ?? useNodeColor(edge.from) ?? "rgba(0, 0, 0, 0.3)";
+  const { hoveredNodeId, colorByNodeId } = useViewer();
+  const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from) ?? "rgba(0, 0, 0, 0.3)";
   const isActive = hoveredNodeId === edge.from || hoveredNodeId === edge.to;
   const isMuted = hoveredNodeId !== null && !isActive;
   return (
@@ -90,15 +92,47 @@ const ArcHead = () => (
   </defs>
 );
 
+const THEME = "github-light";
+
+const FILE_OPTIONS: FileOptions<undefined, undefined> = {
+  theme: THEME,
+  overflow: "wrap",
+  disableFileHeader: true,
+  disableErrorHandling: true,
+  preferredHighlighter: "shiki-js",
+};
+
+const useHighlighter = (): boolean =>
+  useQuery({
+    queryKey: ["highlighter", THEME],
+    queryFn: async () => {
+      await preloadHighlighter({
+        themes: [THEME],
+        langs: ["tsx", "ts", "jsx", "js"],
+        preferredHighlighter: "shiki-js",
+      });
+      return true;
+    },
+    staleTime: Infinity,
+  }).isSuccess;
+
 export const SourcePane = () => {
-  const { component, colorByNodeId } = useViewer();
-  const code = useHighlightedCode(component.source);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const coloredNodes = useMemo(
-    () => component.graph.nodes.filter((node) => colorByNodeId.has(node.id)),
-    [component, colorByNodeId],
+  const view = useLoadedView();
+  const isHighlighterReady = useHighlighter();
+  const { colorByNodeId } = useViewer();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [renderCount, setRenderCount] = useState(0);
+  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
+  const options = useMemo(() => ({ ...FILE_OPTIONS, onPostRender }), [onPostRender]);
+  const file = useMemo(
+    () => ({ name: view.file.split("/").at(-1) ?? view.file, contents: view.source }),
+    [view],
   );
-  const layout = useTokenBoxes(containerRef, coloredNodes, code !== null);
+  const coloredNodes = useMemo(
+    () => view.graph.nodes.filter((node) => colorByNodeId.has(node.id)),
+    [view, colorByNodeId],
+  );
+  const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
   const boxes = useMemo(
     () =>
       new Map(
@@ -110,23 +144,20 @@ export const SourcePane = () => {
   );
   const arcs = useMemo(
     () =>
-      component.graph.edges.filter((edge) => {
+      view.graph.edges.filter((edge) => {
         const from = boxes.get(edge.from);
         const to = boxes.get(edge.to);
         return (
           ARC_EDGE_KINDS.has(edge.kind) && from !== undefined && to !== undefined && from.y !== to.y
         );
       }),
-    [component, boxes],
+    [view, boxes],
   );
 
   return (
     <div className="overflow-y-auto overflow-x-hidden border-r">
-      <div
-        ref={containerRef}
-        className="relative min-w-0 py-1 pr-24 pl-4 [&_pre]:m-0 [&_pre]:bg-transparent! [&_pre]:font-mono [&_pre]:text-[13px] [&_pre]:leading-[19px] [&_pre]:break-words [&_pre]:whitespace-pre-wrap"
-      >
-        {code}
+      <div ref={wrapperRef} className="relative min-w-0 py-1 pr-24 text-[13px]/[19px]">
+        {isHighlighterReady && <File file={file} options={options} disableWorkerPool />}
         <svg
           className="pointer-events-none absolute inset-0 overflow-hidden"
           width={layout.width}

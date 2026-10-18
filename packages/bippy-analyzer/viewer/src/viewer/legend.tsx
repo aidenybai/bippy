@@ -10,7 +10,7 @@ import {
   getTransitions,
 } from "../lib/analysis";
 import type { ViewBinding, ViewHandler, ViewState } from "../model";
-import { useIsDimmed, useNodeColor, useViewer } from "./context";
+import { useIsDimmed, useLoadedView, useNodeColor, useViewer } from "./context";
 
 interface ChipProps {
   nodeIds: string[];
@@ -51,11 +51,11 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 );
 
 const Cell = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
-  <TableCell className={`py-1 whitespace-normal ${className}`}>{children}</TableCell>
+  <TableCell className={`py-1 break-all whitespace-normal ${className}`}>{children}</TableCell>
 );
 
 const BindingRow = ({ binding }: { binding: ViewBinding }) => {
-  const { component } = useViewer();
+  const component = useLoadedView();
   const nodeId = getBindingNodeId(component, binding.id);
   return (
     <TableRow>
@@ -72,7 +72,7 @@ const BindingRow = ({ binding }: { binding: ViewBinding }) => {
 };
 
 const Conditions = ({ state }: { state: ViewState }) => {
-  const { component } = useViewer();
+  const component = useLoadedView();
   if (state.label === "always") return <span>always</span>;
   return (
     <div className="flex flex-wrap items-center gap-1">
@@ -90,7 +90,7 @@ const Conditions = ({ state }: { state: ViewState }) => {
 };
 
 const StateRow = ({ state }: { state: ViewState }) => {
-  const { component } = useViewer();
+  const component = useLoadedView();
   return (
     <TableRow>
       <Cell className="w-10 align-top">
@@ -107,7 +107,7 @@ const StateRow = ({ state }: { state: ViewState }) => {
 };
 
 const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
-  const { component } = useViewer();
+  const component = useLoadedView();
   const nodeId = getHandlerNodeId(component, handler.id);
   const transitions = getTransitions(component, handler.id);
   return (
@@ -117,8 +117,8 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
       </Cell>
       <Cell>
         <div className="grid gap-1 font-mono text-muted-foreground">
-          {handler.updates.map((update) => (
-            <span key={update.text}>
+          {handler.updates.map((update, index) => (
+            <span key={`${index}-${update.text}`}>
               sets {update.text}
               {update.isAsync ? " (async)" : ""}
             </span>
@@ -139,7 +139,7 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
 };
 
 export const Legend = () => {
-  const { component } = useViewer();
+  const component = useLoadedView();
   return (
     <div className="grid gap-5 overflow-auto p-3 text-[13px]">
       <Section title="Data">

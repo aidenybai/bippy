@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import {
   formatAbstractValue,
   formatNegated,
@@ -25,6 +26,7 @@ import type {
 import type {
   CodeGraph,
   ComponentSummary,
+  FileInfo,
   ViewBinding,
   ViewBranch,
   ViewComponent,
@@ -319,12 +321,40 @@ const toViewComponent = (
   };
 };
 
+const findTsconfig = (file: string): string => {
+  let directory = dirname(file);
+  while (true) {
+    const candidate = join(directory, "tsconfig.json");
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(directory);
+    if (parent === directory) throw new Error(`No tsconfig.json above ${file}`);
+    directory = parent;
+  }
+};
+
+export const getFileSource = (file: string): Extract<AnalyzerSource, { kind: "project" }> => ({
+  kind: "project",
+  tsconfig: findTsconfig(file),
+  fileFilter: file,
+});
+
+export const getFileComponents = (file: string): FileInfo => {
+  const source = getFileSource(file);
+  const components = loadAnalyzerOutput(source).filter(
+    (component) => component.analysis.file === file,
+  );
+  return { file, tsconfig: source.tsconfig, components: components.map(toComponentSummary) };
+};
+
 export const getViewModel = (
   source: AnalyzerSource,
   componentName: string,
+  file: string | null,
 ): ViewComponent | null => {
   const components = loadAnalyzerOutput(source);
-  const component = components.find(({ analysis }) => analysis.name === componentName);
+  const component = components.find(
+    ({ analysis }) => analysis.name === componentName && (file === null || analysis.file === file),
+  );
   if (!component) return null;
   const siblings = components.filter(
     (candidate) => candidate !== component && candidate.analysis.file === component.analysis.file,

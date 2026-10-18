@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
-import { getLinesBox, getLocationBox, type Box } from "../lib/positions";
+import { createLineLookup, getLinesBox, getLocationBox, type Box } from "../lib/positions";
 import type { GraphNode } from "../model";
 
 export interface PlacedToken {
@@ -16,33 +16,36 @@ export interface TokenLayout {
 
 const EMPTY_LAYOUT: TokenLayout = { tokens: [], width: 0, height: 0 };
 
-const measure = (container: HTMLElement, nodes: GraphNode[]): TokenLayout => ({
-  tokens: nodes.flatMap((node) => {
-    const isMultiLine = node.loc.start.line !== node.loc.end.line;
-    const box = isMultiLine
-      ? getLinesBox(container, node.loc)
-      : getLocationBox(container, node.loc);
-    return box && box.height > 0 ? [{ node, box, isMultiLine }] : [];
-  }),
-  width: container.clientWidth,
-  height: container.clientHeight,
-});
+const measure = (wrapper: HTMLElement, nodes: GraphNode[]): TokenLayout => {
+  const host = wrapper.querySelector<HTMLElement>("diffs-container");
+  if (!host) return EMPTY_LAYOUT;
+  const lookup = createLineLookup(host, wrapper);
+  return {
+    tokens: nodes.flatMap((node) => {
+      const isMultiLine = node.loc.start.line !== node.loc.end.line;
+      const box = isMultiLine ? getLinesBox(lookup, node.loc) : getLocationBox(lookup, node.loc);
+      return box && box.height > 0 ? [{ node, box, isMultiLine }] : [];
+    }),
+    width: wrapper.clientWidth,
+    height: wrapper.clientHeight,
+  };
+};
 
 export const useTokenBoxes = (
-  containerRef: RefObject<HTMLElement | null>,
+  wrapperRef: RefObject<HTMLElement | null>,
   nodes: GraphNode[],
-  isReady: boolean,
+  renderCount: number,
 ): TokenLayout => {
   const [layout, setLayout] = useState<TokenLayout>(EMPTY_LAYOUT);
   useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container || !isReady) return;
-    const update = (): void => setLayout(measure(container, nodes));
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const update = (): void => setLayout(measure(wrapper, nodes));
     update();
     document.fonts.ready.then(update);
     const observer = new ResizeObserver(update);
-    observer.observe(container);
+    observer.observe(wrapper);
     return () => observer.disconnect();
-  }, [containerRef, nodes, isReady]);
+  }, [wrapperRef, nodes, renderCount]);
   return layout;
 };

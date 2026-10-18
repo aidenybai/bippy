@@ -7,6 +7,11 @@ export interface Box {
   height: number;
 }
 
+export interface LineLookup {
+  origin: DOMRect;
+  getLine: (line: number) => Element | null;
+}
+
 const getTextNodes = (element: Element): Text[] => {
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
@@ -39,41 +44,48 @@ const toBox = (rect: DOMRect, origin: DOMRect): Box => ({
   height: rect.height,
 });
 
-export const getLineBox = (container: HTMLElement, line: number): Box | null => {
-  const element = container.querySelectorAll(".line")[line - 1];
-  if (!element) return null;
-  return toBox(element.getBoundingClientRect(), container.getBoundingClientRect());
+export const createLineLookup = (host: HTMLElement, origin: HTMLElement): LineLookup => {
+  const root: ParentNode = host.shadowRoot ?? host;
+  return {
+    origin: origin.getBoundingClientRect(),
+    getLine: (line) => root.querySelector(`[data-line="${line}"]`),
+  };
 };
 
-export const getSpanBox = (
-  container: HTMLElement,
+const getLineBox = (lookup: LineLookup, line: number): Box | null => {
+  const element = lookup.getLine(line);
+  return element ? toBox(element.getBoundingClientRect(), lookup.origin) : null;
+};
+
+const getSpanBox = (
+  lookup: LineLookup,
   line: number,
   startColumn: number,
   endColumn: number,
 ): Box | null => {
-  const element = container.querySelectorAll(".line")[line - 1];
+  const element = lookup.getLine(line);
   if (!element) return null;
   const nodes = getTextNodes(element);
-  if (nodes.length === 0) return getLineBox(container, line);
+  if (nodes.length === 0) return getLineBox(lookup, line);
   const range = document.createRange();
   setRangePoint(range, nodes, startColumn, false);
   setRangePoint(range, nodes, endColumn, true);
-  return toBox(range.getBoundingClientRect(), container.getBoundingClientRect());
+  return toBox(range.getBoundingClientRect(), lookup.origin);
 };
 
-export const getLocationBox = (container: HTMLElement, loc: ViewLocation): Box | null => {
+export const getLocationBox = (lookup: LineLookup, loc: ViewLocation): Box | null => {
   const isSingleLine = loc.start.line === loc.end.line;
   return getSpanBox(
-    container,
+    lookup,
     loc.start.line,
     loc.start.column,
     isSingleLine ? loc.end.column : Number.MAX_SAFE_INTEGER,
   );
 };
 
-export const getLinesBox = (container: HTMLElement, loc: ViewLocation): Box | null => {
-  const first = getLineBox(container, loc.start.line);
-  const last = getLineBox(container, loc.end.line);
+export const getLinesBox = (lookup: LineLookup, loc: ViewLocation): Box | null => {
+  const first = getLineBox(lookup, loc.start.line);
+  const last = getLineBox(lookup, loc.end.line);
   if (!first || !last) return null;
-  return { x: 0, y: first.y, width: container.scrollWidth, height: last.y + last.height - first.y };
+  return { x: first.x, y: first.y, width: first.width, height: last.y + last.height - first.y };
 };
