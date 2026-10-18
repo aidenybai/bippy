@@ -121,7 +121,8 @@ const ArcHead = () => (
 
 const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   overflow: "wrap",
-  unsafeCSS: "pre, code { background: transparent !important; }",
+  unsafeCSS:
+    ":host { background-color: transparent; --diffs-bg: transparent; } [data-gutter], [data-column-number] { background: transparent; }",
   disableFileHeader: true,
   disableErrorHandling: true,
   preferredHighlighter: "shiki-js",

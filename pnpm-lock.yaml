@@ -343,6 +343,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      lucide-react:
+        specifier: ^1.32.0
+        version: 1.32.0(react@19.3.0)
       mermaid:
         specifier: ^12.2.0
         version: 12.2.0

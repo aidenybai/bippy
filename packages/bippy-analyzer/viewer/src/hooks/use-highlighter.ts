@@ -2,7 +2,7 @@ import { getSharedHighlighter, type DiffsHighlighter } from "@pierre/diffs";
 import { useQuery } from "@tanstack/react-query";
 import type { Theme } from "./use-theme";
 
-export const CODE_THEMES = { light: "github-light", dark: "github-dark" } as const;
+export const CODE_THEMES = { light: "github-light", dark: "github-dark-default" } as const;
 
 export type CodeTheme = (typeof CODE_THEMES)[Theme];
 
