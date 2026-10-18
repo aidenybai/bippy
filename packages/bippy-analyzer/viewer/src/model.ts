@@ -32,7 +32,8 @@ export interface ViewBranch {
 
 export interface ViewUpdate {
   bindingId: number;
-  text: string;
+  guard: string | null;
+  assignments: string[];
   isAsync: boolean;
 }
 

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export const Table = ({ className, ...props }: ComponentProps<"table">) => (
   <table
     data-slot="table"
-    className={cn("w-full border-collapse text-[13px]/[19px] tabular-nums", className)}
+    className={cn("w-full border-collapse tabular-nums", className)}
     {...props}
   />
 );
@@ -29,7 +29,7 @@ export const TableHead = ({ className, ...props }: ComponentProps<"th">) => (
   <th
     data-slot="table-head"
     className={cn(
-      "pr-4 pb-2 text-left align-top text-xs/[18px] font-normal whitespace-nowrap text-muted-foreground last:pr-0",
+      "pr-4 pb-2 text-left align-top font-normal whitespace-nowrap text-muted-foreground last:pr-0",
       className,
     )}
     {...props}

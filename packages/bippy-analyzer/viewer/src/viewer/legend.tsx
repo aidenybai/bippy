@@ -10,7 +10,7 @@ import {
   getStateArmNodeIds,
   getTransitions,
 } from "../lib/analysis";
-import type { ViewBinding, ViewHandler, ViewState } from "../model";
+import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "../model";
 import { useIsDimmed, useLoadedComponent, useNodeColor, useViewer } from "./context";
 
 interface ChipProps {
@@ -28,7 +28,7 @@ const Chip = ({ nodeIds, children }: ChipProps) => {
   return (
     <span
       data-seg={nodeIds.join(" ")}
-      className="rounded-sm px-[5px] py-px font-mono text-[12.5px] text-foreground transition-opacity duration-150"
+      className="rounded-sm px-[5px] py-px font-mono text-foreground transition-opacity duration-150"
       style={{
         background: color,
         boxShadow: isHovered ? `0 0 0 1.5px ${getSolidColor(color)}` : undefined,
@@ -49,12 +49,15 @@ interface SectionProps {
 }
 
 const Section = ({ title, count, children }: SectionProps) => (
-  <section className="grid gap-1.5">
-    <h2 className="text-xs/[18px] text-muted-foreground">{title}</h2>
+  <section className="grid gap-2">
+    <header className="flex items-center gap-3">
+      <h2 className="font-medium text-text-2">{title}</h2>
+      <span className="h-px flex-1 bg-border" />
+    </header>
     {count === 0 ? (
       <p className="text-faint">None</p>
     ) : (
-      <Table>
+      <Table className="[&>tbody>tr:first-child]:border-t-0 [&>tbody>tr:last-child]:border-b-0">
         <TableBody>{children}</TableBody>
       </Table>
     )}
@@ -62,10 +65,10 @@ const Section = ({ title, count, children }: SectionProps) => (
 );
 
 const Cell = ({ children, className }: { children: ReactNode; className?: string }) => (
-  <TableCell className={cn("break-all whitespace-normal", className)}>{children}</TableCell>
+  <TableCell className={cn("wrap-anywhere whitespace-normal", className)}>{children}</TableCell>
 );
 
-const KEY_CELL = "w-0 break-normal whitespace-nowrap";
+const KEY_CELL = "w-0 wrap-normal whitespace-nowrap";
 
 const BindingRow = ({ binding }: { binding: ViewBinding }) => {
   const component = useLoadedComponent();
@@ -75,7 +78,7 @@ const BindingRow = ({ binding }: { binding: ViewBinding }) => {
       <Cell className={KEY_CELL}>
         <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
       </Cell>
-      <Cell className="font-mono text-[12.5px]">
+      <Cell className="font-mono">
         {binding.domain}
         {binding.initial !== null ? ` = ${binding.initial}` : ""}
         {binding.reachable ? ` · only ${binding.reachable}` : ""}
@@ -111,7 +114,7 @@ const StateRow = ({ state }: { state: ViewState }) => {
       </Cell>
       <Cell>
         <Conditions state={state} />
-        <div className="mt-1 font-mono text-[12.5px]">
+        <div className="mt-1 font-mono">
           <Chip nodeIds={getStateArmNodeIds(component, state)}>{state.render || "∅"}</Chip>
         </div>
       </Cell>
@@ -119,23 +122,27 @@ const StateRow = ({ state }: { state: ViewState }) => {
   );
 };
 
+const Update = ({ update }: { update: ViewUpdate }) => (
+  <div className="grid">
+    {update.guard !== null && <span className="text-muted-foreground">if {update.guard}</span>}
+    {update.assignments.map((assignment) => (
+      <span key={assignment}>
+        {assignment}
+        {update.isAsync && <span className="text-muted-foreground"> async</span>}
+      </span>
+    ))}
+  </div>
+);
+
 const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
   const component = useLoadedComponent();
   const nodeId = getHandlerNodeId(component, handler.id);
   const transitions = getTransitions(component, handler.id);
   return (
     <TableRow>
-      <Cell className={KEY_CELL}>
-        <Chip nodeIds={nodeId ? [nodeId] : []}>{handler.label}</Chip>
-      </Cell>
-      <Cell>
-        <div className="grid gap-1 font-mono text-[12.5px]">
-          {handler.updates.map((update, index) => (
-            <span key={`${index}-${update.text}`}>
-              sets {update.text}
-              {update.isAsync ? " (async)" : ""}
-            </span>
-          ))}
+      <Cell className="grid gap-2 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <Chip nodeIds={nodeId ? [nodeId] : []}>{handler.label}</Chip>
           {transitions.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {transitions.map((transition) => (
@@ -146,6 +153,11 @@ const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
             </div>
           )}
         </div>
+        <div className="grid gap-1.5 rounded-md bg-muted px-3 py-2 font-mono">
+          {handler.updates.map((update, index) => (
+            <Update key={`${update.bindingId}-${index}`} update={update} />
+          ))}
+        </div>
       </Cell>
     </TableRow>
   );
@@ -155,7 +167,7 @@ export const Legend = () => {
   const component = useLoadedComponent();
   return (
     <div className="grid content-start gap-6 overflow-auto px-5 py-4">
-      <h1 className="font-medium text-foreground">{component.name}</h1>
+      <h1 className="font-medium text-text-2">{component.name}</h1>
       <Section title="State variables" count={component.bindings.length}>
         {component.bindings.map((binding) => (
           <BindingRow key={binding.id} binding={binding} />

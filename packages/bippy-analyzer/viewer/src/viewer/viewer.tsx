@@ -20,7 +20,7 @@ const Source = () => {
   if (!file) return <Message>Enter a file path above.</Message>;
   if (viewError)
     return (
-      <pre className="overflow-auto px-5 py-4 font-mono text-[12.5px]/[19px] whitespace-pre-wrap text-destructive">
+      <pre className="overflow-auto px-5 py-4 font-mono whitespace-pre-wrap text-destructive">
         {viewError}
       </pre>
     );
@@ -36,7 +36,7 @@ const LegendPane = () => {
 const Status = () => {
   const { hoveredNode, activeComponent } = useViewer();
   return (
-    <div className="flex h-8 items-center gap-4 border-t px-3 text-xs text-muted-foreground tabular-nums">
+    <div className="flex h-8 items-center gap-4 border-t px-3 text-muted-foreground tabular-nums">
       {activeComponent && (
         <span>
           {activeComponent.name} · {activeComponent.states.length} states ·{" "}

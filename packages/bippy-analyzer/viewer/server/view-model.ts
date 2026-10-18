@@ -31,6 +31,7 @@ import type {
   ViewFile,
   ViewHandler,
   ViewLocation,
+  ViewUpdate,
 } from "../src/model";
 import { loadAnalyzerOutput, type AnalyzerJsonComponent } from "./analyzer-json";
 import { buildCodeGraph } from "./code-graph";
@@ -170,30 +171,27 @@ const collectBranches = (component: AnalyzerJsonComponent): ViewBranch[] => {
   return branches;
 };
 
-const formatUpdate = (update: StateUpdate): string => {
-  const { binding, value } = update;
-  const assignments =
-    value.kind === "ObjectExpression"
-      ? value.properties.map(
-          (property) =>
-            `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
-        )
-      : [`${binding.name} = ${formatSymbolicValue(value)}`];
-  const guardPrefix =
-    update.guards.length > 0 ? `if ${update.guards.map(formatSymbolicValue).join(" && ")}: ` : "";
-  return `${guardPrefix}${assignments.join(", ")}`;
-};
+const formatAssignments = ({ binding, value }: StateUpdate): string[] =>
+  value.kind === "ObjectExpression"
+    ? value.properties.map(
+        (property) =>
+          `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
+      )
+    : [`${binding.name} = ${formatSymbolicValue(value)}`];
+
+const toViewUpdate = (update: StateUpdate): ViewUpdate => ({
+  bindingId: update.binding.id,
+  guard: update.guards.length > 0 ? update.guards.map(formatSymbolicValue).join(" && ") : null,
+  assignments: formatAssignments(update),
+  isAsync: update.isAsync,
+});
 
 const toViewHandler = (handler: Handler, label: string): ViewHandler => ({
   id: handler.id,
   label,
   kind: handler.trigger.kind === "Event" ? "event" : "effect",
   loc: toViewLocation(handler.loc),
-  updates: handler.updates.map((update) => ({
-    bindingId: update.binding.id,
-    text: formatUpdate(update),
-    isAsync: update.isAsync,
-  })),
+  updates: handler.updates.map(toViewUpdate),
 });
 
 interface TriggerSite {

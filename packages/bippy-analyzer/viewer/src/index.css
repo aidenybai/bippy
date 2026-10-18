@@ -55,7 +55,7 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply font-sans text-[14px]/[20.5px] font-[450] tracking-[-0.01em] antialiased;
+    @apply font-sans text-[13px]/[19px] font-[450] tracking-[-0.01em] antialiased;
     text-rendering: optimizeLegibility;
   }
   body {

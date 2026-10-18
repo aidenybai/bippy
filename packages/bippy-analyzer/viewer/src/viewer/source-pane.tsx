@@ -159,7 +159,7 @@ const TokenTooltip = ({ anchor }: { anchor: Anchor | null }) => {
   const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
   return (
     <Tooltip open={isOpen}>
-      <TooltipContent anchor={anchor?.element} className="font-mono text-[12px]">
+      <TooltipContent anchor={anchor?.element} className="font-mono">
         {hoveredNode?.label}
       </TooltipContent>
     </Tooltip>

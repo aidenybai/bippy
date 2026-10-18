@@ -12,7 +12,7 @@ export const Toolbar = () => {
   };
   return (
     <form onSubmit={submit} className="flex h-11 items-center gap-3 border-b px-3">
-      <span className="text-xs text-muted-foreground">File</span>
+      <span className="text-muted-foreground">File</span>
       <Input
         id="file-path"
         value={draft}
@@ -20,7 +20,7 @@ export const Toolbar = () => {
         aria-label="Path to a component file"
         placeholder="Path to a component file, then Enter"
         spellCheck={false}
-        className="flex-1 font-mono text-[12.5px]"
+        className="flex-1 font-mono"
       />
     </form>
   );
