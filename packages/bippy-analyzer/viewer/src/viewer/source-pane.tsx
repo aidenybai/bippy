@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type MouseEvent } from "react";
 import { File, type FileOptions } from "@pierre/diffs/react";
-import { CODE_THEME, useHighlighter } from "../hooks/use-highlighter";
+import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
+import { useTheme } from "../hooks/use-theme";
 import { useTokenBoxes, type PlacedToken } from "../hooks/use-token-boxes";
 import { getComponentAtLine, getSolidColor } from "../lib/analysis";
 import { describeNode } from "../lib/describe";
@@ -48,6 +49,7 @@ interface TokenMarkProps extends PlacedToken {
 
 const TokenMark = ({ node, box, isMultiLine, onEnter }: TokenMarkProps) => {
   const { hoveredNodeId, hover } = useViewer();
+  const { theme } = useTheme();
   const color = useNodeColor(node.id) ?? "transparent";
   const isDimmed = useIsDimmed([node.id]);
   const isInactive = useIsInactive(node.id);
@@ -65,7 +67,7 @@ const TokenMark = ({ node, box, isMultiLine, onEnter }: TokenMarkProps) => {
       stroke={isHovered ? getSolidColor(color) : "none"}
       strokeWidth={2}
       opacity={getTokenOpacity({ isDimmed, isInactive, isMultiLine })}
-      style={{ mixBlendMode: "multiply" }}
+      style={{ mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
       onMouseEnter={(event) => {
         hover(node.id);
         onEnter({ nodeId: node.id, element: event.currentTarget });
@@ -117,9 +119,9 @@ const ArcHead = () => (
   </defs>
 );
 
-const FILE_OPTIONS: FileOptions<undefined, undefined> = {
-  theme: CODE_THEME,
+const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   overflow: "wrap",
+  unsafeCSS: "pre, code { background: transparent !important; }",
   disableFileHeader: true,
   disableErrorHandling: true,
   preferredHighlighter: "shiki-js",
@@ -160,7 +162,11 @@ export const SourcePane = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const options = useMemo(() => ({ ...FILE_OPTIONS, onPostRender }), [onPostRender]);
+  const { theme } = useTheme();
+  const options = useMemo<FileOptions<undefined, undefined>>(
+    () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
+    [theme, onPostRender],
+  );
   const file = useMemo(
     () => ({ name: view.file.split("/").at(-1) ?? view.file, contents: view.source }),
     [view],

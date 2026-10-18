@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "./theme-toggle";
 import { useViewer } from "./context";
 
 export const Toolbar = () => {
@@ -22,6 +23,7 @@ export const Toolbar = () => {
         spellCheck={false}
         className="flex-1 font-mono"
       />
+      <ThemeToggle />
     </form>
   );
 };

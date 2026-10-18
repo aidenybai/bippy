@@ -31,7 +31,7 @@
   --radius-lg: 8px;
   --radius-xl: 12px;
   --shadow-card: var(--card-shadow);
-  --shadow-focus: var(--card-shadow), 0 0 0 3px rgb(28 25 23 / 0.06);
+  --shadow-focus: var(--card-shadow), 0 0 0 3px var(--well-2);
   --ease-out-soft: cubic-bezier(0.22, 0.75, 0.2, 1);
 }
 
@@ -48,6 +48,21 @@
   --card-shadow:
     0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 2px 0 rgb(0 0 0 / 0.04), 0 2px 8px -2px rgb(0 0 0 / 0.06);
   color-scheme: light;
+}
+
+:root.dark {
+  --ground: #121211;
+  --ink: #e7e5e4;
+  --text-2: #b4aea8;
+  --muted: #847e78;
+  --faint: #5c5752;
+  --rule: #272523;
+  --well: #1c1b1a;
+  --well-2: #2a2826;
+  --alarm: #e5695a;
+  --card-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.08), 0 1px 2px 0 rgb(0 0 0 / 0.4), 0 2px 8px -2px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
 }
 
 @layer base {

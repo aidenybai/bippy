@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
-import { CODE_THEME, useHighlighter } from "@/hooks/use-highlighter";
+import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
+import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 
 interface CodeProps extends Omit<ComponentProps<"code">, "children"> {
@@ -8,7 +9,9 @@ interface CodeProps extends Omit<ComponentProps<"code">, "children"> {
 
 export const Code = ({ children, className, ...props }: CodeProps) => {
   const highlighter = useHighlighter();
-  const tokens = highlighter?.codeToTokensBase(children, { lang: "tsx", theme: CODE_THEME }) ?? [];
+  const { theme } = useTheme();
+  const tokens =
+    highlighter?.codeToTokensBase(children, { lang: "tsx", theme: getCodeTheme(theme) }) ?? [];
   return (
     <code data-slot="code" className={cn("font-mono", className)} {...props}>
       {tokens.length === 0
