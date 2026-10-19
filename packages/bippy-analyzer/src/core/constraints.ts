@@ -485,7 +485,9 @@ const assumeUncached = (
     return assumeMemoized(value.value, !isTrue, constraints, memo);
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
-    return assumeTruthiness(value, isTrue, constraints);
+    return assumeByNarrowing(value, isTrue, value, constraints, (candidate) =>
+      narrowTruthiness(candidate, isTrue),
+    );
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
     return assumeEquality(value, isTrue, constraints);
   return assumeOpaqueCondition(value, isTrue, constraints);
@@ -510,19 +512,19 @@ const assumeEquality = (
   )
     return assumeOpaqueCondition(value, isTrue, constraints);
   const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
-  return narrowPlace(placeSide, constraints, (candidate) =>
+  return assumeByNarrowing(value, isTrue, placeSide, constraints, (candidate) =>
     narrowEquality(candidate, literalSide.value, value.operator, wantsMatch),
   );
 };
 
-const assumeTruthiness = (
-  value: BindingValue,
+const assumeByNarrowing = (
+  value: SymbolicValue,
   isTrue: boolean,
+  bindingValue: BindingValue,
   constraints: Constraints,
+  narrowValue: (candidate: AbstractValue) => AbstractValue[],
 ): Constraints | null => {
-  const narrowed = narrowPlace(value, constraints, (candidate) =>
-    narrowTruthiness(candidate, isTrue),
-  );
+  const narrowed = narrowPlace(bindingValue, constraints, narrowValue);
   if (!narrowed || evaluateCondition(value, narrowed) !== null) return narrowed;
   return assumeOpaqueCondition(value, isTrue, narrowed);
 };
