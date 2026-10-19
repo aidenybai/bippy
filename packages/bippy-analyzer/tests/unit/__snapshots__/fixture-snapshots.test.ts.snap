@@ -697,6 +697,37 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > HintField keeps its render tree and handlers 1`] = `
+"---
+title: HintField src/narrowed-strings.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["HintField"]
+  n2["#lt;label#gt;"]
+  n1 --> n2
+  n3{"!hint"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Add a hint#quot;"]
+  n3 -->|✓| n4
+  n5{"hint"}
+  n2 --> n5
+  n6["#lt;small#gt; {hint}"]
+  n5 -->|✓| n6
+  n7["#lt;small#gt; #quot;No hint yet#quot;"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > HintField keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: HintField src/narrowed-strings.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  S1: !hint · #lt;label#gt; #lt;p#gt; "Add a hint" #lt;small#gt; "No hint yet"
+  S2: hint · #lt;label#gt; #lt;small#gt; {hint}"
+`;
+
 exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
 "---
 title: Inbox src/literals.tsx:17
@@ -2136,6 +2167,36 @@ stateDiagram-v2
   state "claims" as claims {
     claims1: holds isOpen stays within false | true L4
   }"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its render tree and handlers 1`] = `
+"---
+title: ToneBadge src/narrowed-strings.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneBadge"]
+  n2["#lt;span#gt;"]
+  n1 --> n2
+  n3{"tone === #quot;info#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; #quot;Info#quot;"]
+  n3 -->|✓| n4
+  n5{"tone === #quot;warning#quot;"}
+  n2 --> n5
+  n6["#lt;i#gt; #quot;Warning#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneBadge src/narrowed-strings.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: tone === "info" · #lt;span#gt; #lt;b#gt; "Info"
+  S2: tone === "warning" · #lt;span#gt; #lt;i#gt; "Warning"
+  S3: tone ∉ {"info", "warning"} · #lt;span#gt;"
 `;
 
 exports[`fixture analysis > ToneLabel keeps its render tree and handlers 1`] = `

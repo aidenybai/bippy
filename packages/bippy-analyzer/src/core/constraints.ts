@@ -2,9 +2,11 @@ import { createHash } from "node:crypto";
 import type {
   AbstractValue,
   BinaryExpressionValue,
+  BinaryOperator,
   BindingValue,
   BindingPlace,
   ConditionalValue,
+  PrimitiveValue,
   SymbolicValue,
 } from "./types";
 import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
@@ -375,11 +377,11 @@ const narrowUnionMembers = (
 const narrowPlace = (
   bindingValue: BindingValue,
   constraints: Constraints,
-  isKept: (value: AbstractValue) => boolean,
+  narrowValue: (value: AbstractValue) => AbstractValue[],
 ): Constraints | null => {
   const placeValues = getPossibleValues(bindingValue, constraints);
   if (!placeValues) return null;
-  const narrowedValues = placeValues.filter(isKept);
+  const narrowedValues = dedupeAbstractValues(placeValues.flatMap(narrowValue));
   if (narrowedValues.length === 0) return null;
   const narrowed = cloneConstraints(constraints);
   const place = getValuePlace(bindingValue);
@@ -483,11 +485,7 @@ const assumeUncached = (
     return assumeMemoized(value.value, !isTrue, constraints, memo);
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
-    return narrowPlace(
-      value,
-      constraints,
-      (candidate) => getTruthiness(candidate) !== (isTrue ? "falsy" : "truthy"),
-    );
+    return assumeTruthiness(value, isTrue, constraints);
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
     return assumeEquality(value, isTrue, constraints);
   return assumeOpaqueCondition(value, isTrue, constraints);
@@ -513,10 +511,41 @@ const assumeEquality = (
     return assumeOpaqueCondition(value, isTrue, constraints);
   const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
   return narrowPlace(placeSide, constraints, (candidate) =>
-    isEqualToLiteral(candidate, literalSide.value, value.operator)
-      ? wantsMatch
-      : !wantsMatch || canTypeEqualLiteral(candidate, literalSide.value),
+    narrowEquality(candidate, literalSide.value, value.operator, wantsMatch),
   );
+};
+
+const assumeTruthiness = (
+  value: BindingValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => {
+  const narrowed = narrowPlace(value, constraints, (candidate) =>
+    narrowTruthiness(candidate, isTrue),
+  );
+  if (!narrowed || evaluateCondition(value, narrowed) !== null) return narrowed;
+  return assumeOpaqueCondition(value, isTrue, narrowed);
+};
+
+const narrowTruthiness = (value: AbstractValue, isTruthy: boolean): AbstractValue[] => {
+  const truthiness = getTruthiness(value);
+  if (truthiness !== "either") return truthiness === (isTruthy ? "truthy" : "falsy") ? [value] : [];
+  if (!isTruthy && value.kind === "Type" && value.primitive === "string")
+    return [{ kind: "Literal", value: "" }];
+  return [value];
+};
+
+const narrowEquality = (
+  value: AbstractValue,
+  literal: PrimitiveValue,
+  operator: BinaryOperator,
+  wantsMatch: boolean,
+): AbstractValue[] => {
+  if (isEqualToLiteral(value, literal, operator)) return wantsMatch ? [value] : [];
+  if (!canTypeEqualLiteral(value, literal)) return wantsMatch ? [] : [value];
+  if (wantsMatch && value.kind === "Type" && value.primitive === typeof literal)
+    return [{ kind: "Literal", value: literal }];
+  return [value];
 };
 
 const assumeOpaqueCondition = (
