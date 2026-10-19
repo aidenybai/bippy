@@ -26,11 +26,11 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
   const nodeId = getBindingNodeId(component, binding.id);
   return (
     <TableRow>
-      <Cell className={KEY_CELL}>
-        <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
-      </Cell>
-      <Cell>
-        <span className="wrap-anywhere">
+      <Cell className="grid gap-1">
+        <span className="w-fit">
+          <Chip nodeIds={nodeId ? [nodeId] : []}>{binding.name}</Chip>
+        </span>
+        <span className="wrap-anywhere pl-1">
           <Domain
             binding={binding}
             renderValue={(value) => <Code>{value}</Code>}
@@ -42,10 +42,10 @@ export const BindingRow = ({ binding }: { binding: ViewBinding }) => {
               <Code>{binding.initial}</Code>
             </span>
           )}
+          {binding.reachable && (
+            <span className="text-muted-foreground"> · only {binding.reachable}</span>
+          )}
         </span>
-        {binding.reachable && (
-          <span className="text-muted-foreground"> · only {binding.reachable}</span>
-        )}
       </Cell>
     </TableRow>
   );
