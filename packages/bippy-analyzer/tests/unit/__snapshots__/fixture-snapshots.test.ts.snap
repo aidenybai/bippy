@@ -325,13 +325,13 @@ title: Feed src/chains.tsx:17
 flowchart TD
   classDef event stroke-dasharray: 4 2
   n1["Feed"]
-  n2{"!pages?.flatMap(function)?.length"}
+  n2{"!(pages?.map(…) != null ? Unknown(member) : undefined)"}
   n1 --> n2
   n3["#lt;p#gt; #quot;Nothing yet#quot;"]
   n2 -->|✓| n3
   n4["#lt;p#gt;"]
   n2 -->|✗| n4
-  n5["{pages?.flatMap(function).length}"]
+  n5["⚠ items.length"]
   n4 --> n5
   n6["#quot; items#quot;"]
   n4 --> n6"
@@ -343,8 +343,8 @@ title: Feed src/chains.tsx:17
 ---
 stateDiagram-v2
   direction LR
-  S1: !pages?.flatMap(function)?.length · #lt;p#gt; "Nothing yet"
-  S2: pages?.flatMap(function)?.length · #lt;p#gt; {pages?.flatMap(function).length} " items""
+  S1: !(pages?.map(…) != null ? Unknown(member) : undefined) · #lt;p#gt; "Nothing yet"
+  S2: pages?.map(…) != null ? Unknown(member) : undefined · #lt;p#gt; ⚠ items.length " items""
 `;
 
 exports[`fixture analysis > FilterLabel keeps its render tree and handlers 1`] = `
@@ -676,6 +676,54 @@ stateDiagram-v2
   state "claims" as claims {
     claims1: holds isOpen stays within false | true L24
     claims2: holds isDark stays within false | true L25
+  }"
+`;
+
+exports[`fixture analysis > Picker keeps its render tree and handlers 1`] = `
+"---
+title: Picker src/mapped-rows.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Picker"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3{"data != null"}
+  n2 --> n3
+  n4[["↻ each of data.rows"]]
+  n3 -->|✓| n4
+  n5["#lt;li#gt;"]
+  n4 --> n5
+  n6["#lt;button#gt; {row.id}"]
+  n5 --> n6
+  n7(["onClick ⇒ selected = row.id"]):::event
+  n6 -.-> n7
+  n8{"selected"}
+  n2 --> n8
+  n9["#lt;p#gt; {selected}"]
+  n8 -->|✓| n9"
+`;
+
+exports[`fixture analysis > Picker keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Picker src/mapped-rows.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  state "Picker" as regions {
+    %% data
+    S1: data != null · ↻ data.rows
+    S2: data == null · ∅
+    --
+    %% selected
+    S3: selected · #lt;p#gt; {selected}
+    S4: !selected · {selected}
+    [*] --> S4
+    S3 --> S4: setSelected(row.id)
+    S4 --> S3: setSelected(row.id)
+  }
+  state "claims" as claims {
+    claims1: holds selected stays within null | string L8
   }"
 `;
 
