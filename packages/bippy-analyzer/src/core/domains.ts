@@ -1,6 +1,7 @@
 import { TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { AbstractValue, Domain, PrimitiveTypeName } from "./types";
+import { getUnionMembers } from "./utils/get-union-members";
 
 export const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
 
@@ -27,12 +28,15 @@ export const getDomainOfType = (checker: Checker, type: Type | undefined): Domai
   if (type.flags & TypeFlags.Any) return { kind: "Unknown", reason: "any" };
   if (type.flags & TypeFlags.Unknown) return { kind: "Unknown", reason: "unknown" };
   if (type.flags & TypeFlags.Never) return { kind: "Unknown", reason: "never" };
-  if (type.isUnionType())
+  if (type.isUnionType()) {
+    const members = getUnionMembers(type);
+    if (!members) return { kind: "Unknown", reason: "unresolved" };
     return {
       kind: "Cases",
-      cases: type.getTypes().map((member) => getAbstractValue(checker, member)),
+      cases: members.map((member) => getAbstractValue(checker, member)),
       origin: "type",
     };
+  }
   if (type.isLiteralType() || type.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
     return { kind: "Cases", cases: [getAbstractValue(checker, type)], origin: "type" };
   }
