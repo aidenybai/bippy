@@ -1,4 +1,13 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type RefObject,
+} from "react";
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
@@ -10,6 +19,7 @@ import { describeNode } from "@/lib/describe";
 import { getComponentAtLine } from "@/lib/graph";
 import { getLineFromEvent, scrollToLine, type Box } from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
+import type { GraphNode } from "@/model";
 import { useHoverStore, type TokenAnchor } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
@@ -43,16 +53,15 @@ const createAnchor = (token: PlacedToken, wrapper: HTMLElement): TokenAnchor => 
 const usePointerTracking = (
   wrapperRef: RefObject<HTMLDivElement | null>,
   layout: TokenLayout,
-): void => {
+): ((event: MouseEvent) => void) => {
   const view = useLoadedView();
   const activate = useHoverStore((state) => state.activate);
   const hover = useHoverStore((state) => state.hover);
   const leave = useHoverStore((state) => state.leave);
-  useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
-    const track = (event: MouseEvent): void => {
-      if (event.buttons !== 0) return;
+  return useCallback(
+    (event: MouseEvent) => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper || event.buttons !== 0) return;
       const origin = wrapper.getBoundingClientRect();
       const token = findTokenAt(
         layout.tokens,
@@ -61,17 +70,24 @@ const usePointerTracking = (
       );
       if (token) hover(token.node.id, createAnchor(token, wrapper));
       else leave();
-      const line = getLineFromEvent(event);
+      const line = getLineFromEvent(event.nativeEvent);
       const component = line === null ? null : getComponentAtLine(view, line);
       if (component) activate(component.name);
-    };
-    wrapper.addEventListener("mousemove", track);
-    wrapper.addEventListener("mouseleave", leave);
-    return () => {
-      wrapper.removeEventListener("mousemove", track);
-      wrapper.removeEventListener("mouseleave", leave);
-    };
-  }, [wrapperRef, layout, view, activate, hover, leave]);
+    },
+    [wrapperRef, layout, view, activate, hover, leave],
+  );
+};
+
+const useColoredNodes = (): GraphNode[] => {
+  const view = useLoadedView();
+  const { colorByNodeId } = useViewer();
+  return useMemo(
+    () =>
+      view.components
+        .flatMap((component) => component.graph.nodes)
+        .filter((node) => colorByNodeId.has(node.id)),
+    [view, colorByNodeId],
+  );
 };
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
@@ -128,24 +144,8 @@ const TokenTooltip = () => {
   );
 };
 
-interface OverlayProps {
-  wrapperRef: RefObject<HTMLDivElement | null>;
-  renderCount: number;
-}
-
-const Overlay = ({ wrapperRef, renderCount }: OverlayProps) => {
-  const view = useLoadedView();
+const Overlay = ({ layout }: { layout: TokenLayout }) => {
   const { colorByNodeId } = useViewer();
-  const coloredNodes = useMemo(
-    () =>
-      view.components
-        .flatMap((component) => component.graph.nodes)
-        .filter((node) => colorByNodeId.has(node.id)),
-    [view, colorByNodeId],
-  );
-  const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
-  usePointerTracking(wrapperRef, layout);
-  useFocusScroll(wrapperRef);
   return (
     <>
       <svg
@@ -169,25 +169,38 @@ const Overlay = ({ wrapperRef, renderCount }: OverlayProps) => {
   );
 };
 
-const CodeView = () => {
-  const view = useLoadedView();
-  useHighlighter();
+const useFileOptions = (onPostRender: () => void): FileOptions<undefined, undefined> => {
   const { theme } = useResolvedTheme();
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [renderCount, setRenderCount] = useState(0);
-  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const options = useMemo<FileOptions<undefined, undefined>>(
+  return useMemo(
     () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
     [theme, onPostRender],
   );
+};
+
+const CodeView = () => {
+  const view = useLoadedView();
+  useHighlighter();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [renderCount, setRenderCount] = useState(0);
+  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
+  const options = useFileOptions(onPostRender);
   const file = useMemo(
     () => ({ name: getFileTitle(view.file), contents: view.source }),
     [view.file, view.source],
   );
+  const layout = useTokenBoxes(wrapperRef, useColoredNodes(), renderCount);
+  const trackPointer = usePointerTracking(wrapperRef, layout);
+  const leave = useHoverStore((state) => state.leave);
+  useFocusScroll(wrapperRef);
   return (
-    <div ref={wrapperRef} className="relative min-h-full min-w-0 py-1 pr-8 text-[13px]/[19px]">
+    <div
+      ref={wrapperRef}
+      className="relative min-h-full min-w-0 py-1 pr-8 text-[13px]/[19px]"
+      onMouseMove={trackPointer}
+      onMouseLeave={leave}
+    >
       <File file={file} options={options} disableWorkerPool />
-      <Overlay wrapperRef={wrapperRef} renderCount={renderCount} />
+      <Overlay layout={layout} />
     </div>
   );
 };
