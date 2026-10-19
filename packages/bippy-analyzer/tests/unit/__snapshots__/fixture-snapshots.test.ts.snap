@@ -542,6 +542,31 @@ stateDiagram-v2
   S2: found !== null · #lt;p#gt; "Found " {found}"
 `;
 
+exports[`fixture analysis > FromLength keeps its render tree and handlers 1`] = `
+"---
+title: FromLength src/rows-from-length.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FromLength"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of { length: count }"]]
+  n2 --> n3
+  n4["#lt;li#gt; {index}"]
+  n3 --> n4"
+`;
+
+exports[`fixture analysis > FromLength keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FromLength src/rows-from-length.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ { length: count }
+  [*] --> S1"
+`;
+
 exports[`fixture analysis > Gallery keeps its render tree and handlers 1`] = `
 "---
 title: Gallery src/linked.tsx:31
@@ -1424,6 +1449,31 @@ title: Spinner src/dashboard.tsx:14
 stateDiagram-v2
   direction LR
   S1: always · #lt;div#gt;
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > SpreadArray keeps its render tree and handlers 1`] = `
+"---
+title: SpreadArray src/rows-from-length.tsx:9
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SpreadArray"]
+  n2["#lt;ul#gt;"]
+  n1 --> n2
+  n3[["↻ each of [...Array(count)]"]]
+  n2 --> n3
+  n4["#lt;li#gt; {index}"]
+  n3 --> n4"
+`;
+
+exports[`fixture analysis > SpreadArray keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SpreadArray src/rows-from-length.tsx:9
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;ul#gt; ↻ [...Array(count)]
   [*] --> S1"
 `;
 

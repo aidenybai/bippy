@@ -12,7 +12,9 @@ import type { ProjectHookLoader } from "./interpret";
 import type {
   Bailout,
   Binding,
+  Claim,
   ComponentAnalysis,
+  Handler,
   ContextSetterFields,
   StoreActions,
   SymbolicValue,
@@ -101,9 +103,29 @@ const createCompilerErrorAnalysis = (
   };
 };
 
-const getUntypedBailouts = (bindings: Binding[]): Bailout[] =>
+const getReadBindingIds = (
+  render: SymbolicValue,
+  handlers: Handler[],
+  claims: Claim[],
+  bindings: Binding[],
+): Set<number> => {
+  const readIds = new Set<number>();
+  const visit = (value: SymbolicValue): void =>
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind === "Binding") readIds.add(part.binding.id);
+    });
+  visit(render);
+  for (const handler of handlers)
+    for (const update of handler.updates) [update.value, ...update.guards].forEach(visit);
+  for (const claim of claims) [claim.subject, ...claim.guards].forEach(visit);
+  for (const binding of bindings)
+    for (const place of binding.inputPlaces) readIds.add(place.bindingId);
+  return readIds;
+};
+
+const getUntypedBailouts = (bindings: Binding[], readIds: Set<number>): Bailout[] =>
   bindings.flatMap((binding): Bailout[] =>
-    binding.domain.kind === "Unknown"
+    binding.domain.kind === "Unknown" && readIds.has(binding.id)
       ? [{ reason: `untyped-${binding.kind}`, message: binding.name, loc: binding.loc }]
       : [],
   );
@@ -128,6 +150,7 @@ export const analyzeComponent = (
   addComparedSamples(render);
   const handlers = collectHandlers(render, interpreter);
   const { bindings, placeDomains, unionMemberValues } = interpreter.bindingTable;
+  const readIds = getReadBindingIds(render, handlers, interpreter.claims, bindings);
   return {
     ...identity,
     loc: hir.loc,
@@ -144,7 +167,7 @@ export const analyzeComponent = (
     handlers,
     renders: [...interpreter.renderedComponents],
     claims: interpreter.claims,
-    bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings)],
+    bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings, readIds)],
     warnings: interpreter.diagnostics.warnings,
   };
 };
