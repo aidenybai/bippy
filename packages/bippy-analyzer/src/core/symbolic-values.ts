@@ -1,5 +1,6 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type {
+  PrimitiveValue,
   BinaryOperator,
   Binding,
   BindingValue,
@@ -10,6 +11,7 @@ import type {
 } from "./types";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
+import { isObjectValue } from "./utils/is-object-value";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { negate } from "./utils/negate";
 
@@ -57,6 +59,18 @@ const getKnownMembership = (key: SymbolicValue, object: SymbolicValue): boolean 
   return object.spreads.length === 0 && !(name in Object.prototype) ? false : null;
 };
 
+const foldObjectComparison = (
+  operator: BinaryOperator,
+  primitive: PrimitiveValue,
+): SymbolicValue | null => {
+  const isLooseNullish = isNullish(primitive);
+  if (operator === "===" || (operator === "==" && isLooseNullish))
+    return { kind: "Primitive", value: false };
+  if (operator === "!==" || (operator === "!=" && isLooseNullish))
+    return { kind: "Primitive", value: true };
+  return null;
+};
+
 export const foldBinary = (
   operator: BinaryOperator,
   left: SymbolicValue,
@@ -64,6 +78,12 @@ export const foldBinary = (
 ): SymbolicValue => {
   const membership = operator === "in" ? getKnownMembership(left, right) : null;
   if (membership !== null) return { kind: "Primitive", value: membership };
+  const comparedPrimitive = isObjectValue(left) ? right : isObjectValue(right) ? left : null;
+  const foldedComparison =
+    comparedPrimitive?.kind === "Primitive"
+      ? foldObjectComparison(operator, comparedPrimitive.value)
+      : null;
+  if (foldedComparison) return foldedComparison;
   if (left.kind !== "Primitive" || right.kind !== "Primitive")
     return { kind: "BinaryExpression", operator, left, right };
   const leftValue = left.value;
