@@ -1,13 +1,4 @@
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MouseEvent,
-  type RefObject,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
@@ -52,15 +43,16 @@ const createAnchor = (token: PlacedToken, wrapper: HTMLElement): TokenAnchor => 
 const usePointerTracking = (
   wrapperRef: RefObject<HTMLDivElement | null>,
   layout: TokenLayout,
-): ((event: MouseEvent) => void) => {
+): void => {
   const view = useLoadedView();
   const activate = useHoverStore((state) => state.activate);
   const hover = useHoverStore((state) => state.hover);
   const leave = useHoverStore((state) => state.leave);
-  return useCallback(
-    (event: MouseEvent) => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper) return;
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const track = (event: MouseEvent): void => {
+      if (event.buttons !== 0) return;
       const origin = wrapper.getBoundingClientRect();
       const token = findTokenAt(
         layout.tokens,
@@ -69,12 +61,17 @@ const usePointerTracking = (
       );
       if (token) hover(token.node.id, createAnchor(token, wrapper));
       else leave();
-      const line = getLineFromEvent(event.nativeEvent);
+      const line = getLineFromEvent(event);
       const component = line === null ? null : getComponentAtLine(view, line);
       if (component) activate(component.name);
-    },
-    [wrapperRef, layout, view, activate, hover, leave],
-  );
+    };
+    wrapper.addEventListener("mousemove", track);
+    wrapper.addEventListener("mouseleave", leave);
+    return () => {
+      wrapper.removeEventListener("mousemove", track);
+      wrapper.removeEventListener("mouseleave", leave);
+    };
+  }, [wrapperRef, layout, view, activate, hover, leave]);
 };
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
@@ -147,12 +144,10 @@ const Overlay = ({ wrapperRef, renderCount }: OverlayProps) => {
     [view, colorByNodeId],
   );
   const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
-  const trackPointer = usePointerTracking(wrapperRef, layout);
-  const leave = useHoverStore((state) => state.leave);
+  usePointerTracking(wrapperRef, layout);
   useFocusScroll(wrapperRef);
   return (
     <>
-      <div className="absolute inset-0" onMouseMove={trackPointer} onMouseLeave={leave} />
       <svg
         className="pointer-events-none absolute inset-0 overflow-hidden"
         width={layout.width}
