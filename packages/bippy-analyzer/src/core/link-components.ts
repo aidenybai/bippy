@@ -1,4 +1,4 @@
-import { enumerateInstance } from "./instance-states";
+import { enumerateInstance, getInstanceKey } from "./instance-states";
 import type {
   ComponentAnalysis,
   ComponentInstance,
@@ -70,6 +70,30 @@ const collectLinks = (analyses: ComponentAnalysis[], loadReport: ReportLoader): 
   });
 };
 
+const isSameShape = (instance: StateReport, own: StateReport): boolean =>
+  instance.states.length === own.states.length &&
+  instance.unreachableBranches.length === own.unreachableBranches.length &&
+  instance.claimOutcomes.every(
+    (outcome, index) => outcome.verdict === own.claimOutcomes[index]?.verdict,
+  );
+
+const createInstanceLoader = (
+  loadReport: ReportLoader,
+): ((child: ComponentAnalysis, link: ComponentLink) => StateReport | null) => {
+  const reportsByKey = new Map<string, StateReport | null>();
+  return (child, link) => {
+    const own = loadReport(child);
+    const key = getInstanceKey(child, link, own);
+    if (key === null) return null;
+    const cached = reportsByKey.get(key);
+    if (cached !== undefined) return cached;
+    const report = enumerateInstance(child, link, own);
+    const shared = report && isSameShape(report, own) ? own : report;
+    reportsByKey.set(key, shared);
+    return shared;
+  };
+};
+
 export const linkComponents = (
   analyses: ComponentAnalysis[],
   loadReport: ReportLoader,
@@ -81,10 +105,11 @@ export const linkComponents = (
     analyses.map((analysis) => [analysis.declaration, analysis]),
   );
   const instancesByChild = new Map<string, ComponentInstance[]>();
+  const loadInstance = createInstanceLoader(loadReport);
   for (const link of collectLinks(analyses, loadReport)) {
     linked.get(link.parent)?.links.push(link);
     const child = analysesByDeclaration.get(link.child);
-    const report = child ? enumerateInstance(child, link) : null;
+    const report = child ? loadInstance(child, link) : null;
     if (report) appendToGroup(instancesByChild, link.child, { link, report });
   }
   for (const [child, instances] of instancesByChild) {

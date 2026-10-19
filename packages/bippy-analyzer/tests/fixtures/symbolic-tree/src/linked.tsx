@@ -27,3 +27,10 @@ export const Loader = () => {
     </div>
   );
 };
+
+export const Gallery = () => (
+  <div>
+    <StatusBadge status="done" count={1} />
+    <StatusBadge status="done" count={1} />
+  </div>
+);
