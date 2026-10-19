@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..efaddbe 100644
+index 959fdf7..d230f3b 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,27 @@ function lowerStatement(
@@ -881,7 +881,21 @@ index 959fdf7..efaddbe 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4531,6 +4449,71 @@ function gatherCapturedContext(
+@@ -4515,9 +4433,10 @@ function gatherCapturedContext(
+          * AssignmentExpression if it's an Identifier. Work around it by explicitly
+          * visiting it.
+          */
+-        const left = path.get('left');
+-        if (left.isIdentifier()) {
+-          handleMaybeDependency(left);
++        for (const identifier of Object.values(
++          path.get('left').getBindingIdentifierPaths(),
++        )) {
++          handleMaybeDependency(identifier);
+         }
+         return;
+       } else if (path.isJSXElement()) {
+@@ -4531,6 +4450,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
