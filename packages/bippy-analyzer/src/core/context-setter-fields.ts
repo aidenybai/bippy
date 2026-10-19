@@ -23,9 +23,11 @@ export const collectContextSetterFields = (analyses: ComponentAnalysis[]): Conte
       if (stateProperty) setterFields.set(property.key, stateProperty.key);
     }
     const existingSetterFields = setterFieldsByContext.get(contextKey);
-    if (existingSetterFields && !isSameSetterFields(existingSetterFields, setterFields))
+    if (existingSetterFields && !isSameSetterFields(existingSetterFields, setterFields)) {
       conflictingContextKeys.add(contextKey);
-    else setterFieldsByContext.set(contextKey, setterFields);
+      continue;
+    }
+    setterFieldsByContext.set(contextKey, setterFields);
   }
   for (const [contextKey, setterFields] of setterFieldsByContext)
     if (conflictingContextKeys.has(contextKey) || setterFields.size === 0)

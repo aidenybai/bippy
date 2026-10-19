@@ -153,9 +153,15 @@ class HandlerCollector {
 
   collectElementHandlers(element: JsxExpressionValue): void {
     for (const prop of element.props) {
-      if (prop.kind === "JsxSpreadAttribute") this.#collectSpreadHandlers(element, prop);
-      else if (isRefCallback(prop)) this.#collectRefCallback(prop);
-      else if (isHandlerProp(element.tag, prop)) this.#collectEventHandler(element, prop);
+      if (prop.kind === "JsxSpreadAttribute") {
+        this.#collectSpreadHandlers(element, prop);
+        continue;
+      }
+      if (isRefCallback(prop)) {
+        this.#collectRefCallback(prop);
+        continue;
+      }
+      if (isHandlerProp(element.tag, prop)) this.#collectEventHandler(element, prop);
     }
   }
 
