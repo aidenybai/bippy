@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..0ff3460 100644
+index 959fdf7..52d9569 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,27 @@ function lowerStatement(
@@ -33,7 +33,7 @@ index 959fdf7..0ff3460 100644
 +            effects: null,
 +          },
 +          continuationBlock,
-         );
++        );
 +        builder.terminate(
 +          {
 +            kind: 'unreachable',
@@ -41,7 +41,7 @@ index 959fdf7..0ff3460 100644
 +            loc: stmt.node.loc ?? GeneratedSource,
 +          },
 +          'block',
-+        );
+         );
 +        return;
        }
        const terminal: ThrowTerminal = {
@@ -198,7 +198,30 @@ index 959fdf7..0ff3460 100644
        return;
      }
      case 'WithStatement': {
-@@ -2791,6 +2812,9 @@ function lowerExpression(
+@@ -2762,10 +2783,20 @@ function lowerExpression(
+         loc: expr.node.loc ?? GeneratedSource,
+       };
+     }
+-    case 'TSInstantiationExpression':
++    case 'TSInstantiationExpression': {
++      let expr = exprPath as NodePath<t.TSInstantiationExpression>;
++      return lowerExpression(builder, expr.get('expression'));
++    }
+     case 'TSNonNullExpression': {
+       let expr = exprPath as NodePath<t.TSNonNullExpression>;
+-      return lowerExpression(builder, expr.get('expression'));
++      return {
++        kind: 'TypeCastExpression',
++        value: lowerExpressionToTemporary(builder, expr.get('expression')),
++        typeAnnotation: null,
++        typeAnnotationKind: 'non-null',
++        type: makeType(),
++        loc: exprLoc,
++      };
+     }
+     case 'MetaProperty': {
+       let expr = exprPath as NodePath<t.MetaProperty>;
+@@ -2791,6 +2822,9 @@ function lowerExpression(
        );
        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
      }
@@ -208,7 +231,7 @@ index 959fdf7..0ff3460 100644
      default: {
        builder.recordError(
          new CompilerErrorDetail({
-@@ -4531,6 +4555,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4565,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
@@ -280,6 +303,21 @@ index 959fdf7..0ff3460 100644
  function notNull<T>(value: T | null): value is T {
    return value !== null;
  }
+diff --git a/HIR/DebugPrintHIR.ts b/HIR/DebugPrintHIR.ts
+index abc0d49..ae1f0bc 100644
+--- a/HIR/DebugPrintHIR.ts
++++ b/HIR/DebugPrintHIR.ts
+@@ -356,7 +356,9 @@ export class DebugPrinter {
+         this.indent();
+         this.formatPlaceField('value', instrValue.value);
+         this.line(`type: ${this.formatType(instrValue.type)}`);
+-        this.line(`typeAnnotation: ${instrValue.typeAnnotation.type}`);
++        this.line(
++          `typeAnnotation: ${instrValue.typeAnnotation === null ? 'none' : instrValue.typeAnnotation.type}`,
++        );
+         this.line(`typeAnnotationKind: "${instrValue.typeAnnotationKind}"`);
+         this.line(`loc: ${this.formatLoc(instrValue.loc)}`);
+         this.dedent();
 diff --git a/HIR/Environment.ts b/HIR/Environment.ts
 index 9e908b2..fe500d6 100644
 --- a/HIR/Environment.ts
@@ -413,6 +451,21 @@ index 9e908b2..fe500d6 100644
            shape.properties.get('*') ??
            (isHookName(property) ? this.#getCustomHookType() : null)
          );
+diff --git a/HIR/HIR.ts b/HIR/HIR.ts
+index e7d3b4f..90c352f 100644
+--- a/HIR/HIR.ts
++++ b/HIR/HIR.ts
+@@ -977,6 +977,10 @@ export type InstructionValue =
+           typeAnnotation: t.TSType;
+           typeAnnotationKind: 'as' | 'satisfies';
+         }
++      | {
++          typeAnnotation: null;
++          typeAnnotationKind: 'non-null';
++        }
+     ))
+   | JsxExpression
+   | {
 diff --git a/HIR/HIRBuilder.ts b/HIR/HIRBuilder.ts
 index 71874b0..3c01f4c 100644
 --- a/HIR/HIRBuilder.ts
@@ -450,6 +503,23 @@ index 71874b0..3c01f4c 100644
    makeTemporary(loc: SourceLocation): Identifier {
      const id = this.nextIdentifierId;
      return makeTemporaryIdentifier(id, loc);
+diff --git a/ReactiveScopes/CodegenReactiveFunction.ts b/ReactiveScopes/CodegenReactiveFunction.ts
+index 942c852..90526dc 100644
+--- a/ReactiveScopes/CodegenReactiveFunction.ts
++++ b/ReactiveScopes/CodegenReactiveFunction.ts
+@@ -1918,7 +1918,11 @@ function codegenInstructionValue(
+       break;
+     }
+     case 'TypeCastExpression': {
+-      if (t.isTSType(instrValue.typeAnnotation)) {
++      if (instrValue.typeAnnotationKind === 'non-null') {
++        value = t.tsNonNullExpression(
++          codegenPlaceToExpression(cx, instrValue.value),
++        );
++      } else if (t.isTSType(instrValue.typeAnnotation)) {
+         if (instrValue.typeAnnotationKind === 'satisfies') {
+           value = t.tsSatisfiesExpression(
+             codegenPlaceToExpression(cx, instrValue.value),
 diff --git a/TypeInference/InferTypes.ts b/TypeInference/InferTypes.ts
 index 5b6b059..119ec02 100644
 --- a/TypeInference/InferTypes.ts

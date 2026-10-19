@@ -249,13 +249,13 @@ const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean
   return null;
 };
 
-const getPossibleValues = (
+export const getPossibleValues = (
   value: SymbolicValue,
   constraints: Constraints,
 ): AbstractValue[] | null =>
   value.kind === "Binding" ? (constraints.possibleValues.get(getValuePlace(value)) ?? null) : null;
 
-const isBooleanExpression = (value: SymbolicValue): boolean =>
+export const isBooleanExpression = (value: SymbolicValue): boolean =>
   (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
   (value.kind === "UnaryExpression" && value.operator === "!");
 
@@ -386,7 +386,7 @@ const narrowPlace = (
   return narrowUnionMembers(narrowed, place, narrowedValues);
 };
 
-const hasUnknownPart = (value: SymbolicValue): boolean => {
+export const hasUnknownPart = (value: SymbolicValue): boolean => {
   let hasUnknown = false;
   forEachSymbolicValue(value, (part) => {
     if (part.kind === "Unknown") hasUnknown = true;

@@ -141,7 +141,10 @@ stateDiagram-v2
   S1: isSent · #lt;p#gt; "Sent"
   S2: !isSent · #lt;div#gt; #lt;input#gt; #lt;button#gt; "Send"
   [*] --> S2
-  S2 --> S1: "Send""
+  S2 --> S1: "Send"
+  state "claims" as claims {
+    claims1: holds isSent stays within false | true L5
+  }"
 `;
 
 exports[`fixture analysis > Countdown keeps its render tree and handlers 1`] = `
@@ -288,7 +291,10 @@ stateDiagram-v2
   S2: hasPermission(role, "edit") ∧ isEditing · #lt;button#gt; "Save"
   S3: hasPermission(role, "edit") ∧ !isEditing · #lt;button#gt; "Edit"
   S2 --> S3: "Save"
-  S3 --> S2: "Edit""
+  S3 --> S2: "Edit"
+  state "claims" as claims {
+    claims1: holds isEditing stays within false | true L6
+  }"
 `;
 
 exports[`fixture analysis > Empty keeps its render tree and handlers 1`] = `
@@ -369,7 +375,10 @@ title: FilterLabel src/literals.tsx:6
 stateDiagram-v2
   direction LR
   S1: always · #lt;div#gt; #lt;p#gt; {filter} #lt;button#gt; "Active" #lt;button#gt; "Done"
-  [*] --> S1"
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds filter stays within "active" | "all" | "done" L7
+  }"
 `;
 
 exports[`fixture analysis > FirstMatch keeps its render tree and handlers 1`] = `
@@ -544,6 +553,9 @@ stateDiagram-v2
     S4: !isSelected · {"Select"}
     [*] --> S4
     S4 --> S3: selectAll
+  }
+  state "claims" as claims {
+    claims1: holds isSelected stays within false | true L4
   }"
 `;
 
@@ -617,6 +629,64 @@ stateDiagram-v2
     [*] --> S4
     S3 --> S4: "Theme"
     S4 --> S3: "Theme"
+  }
+  state "claims" as claims {
+    claims1: holds isOpen stays within false | true L24
+    claims2: holds isDark stays within false | true L25
+  }"
+`;
+
+exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
+"---
+title: Profile src/claims.tsx:10
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Profile"]
+  n2{"status === #quot;saving#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt;"]
+  n2 -->|✓| n3
+  n4["#quot;Saving #quot;"]
+  n3 --> n4
+  n5["{user.name}"]
+  n3 --> n5
+  n6["#lt;div#gt;"]
+  n2 -->|✗| n6
+  n7["#lt;p#gt; {step}"]
+  n6 --> n7
+  n8["#lt;button#gt; #quot;Save#quot;"]
+  n6 --> n8
+  n9(["onClick ⇒ status = user.name ? #quot;saving#quot; : #quot;idle#quot;"]):::event
+  n8 -.-> n9
+  n10["#lt;button#gt; #quot;Next#quot;"]
+  n6 --> n10
+  n11(["onClick ⇒ step = #quot;b#quot;"]):::event
+  n10 -.-> n11
+  n12["#lt;button#gt; #quot;Finish#quot;"]
+  n6 --> n12
+  n13(["onClick ⇒ status = #quot;done#quot;"]):::event
+  n12 -.-> n13"
+`;
+
+exports[`fixture analysis > Profile keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Profile src/claims.tsx:10
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "saving" · #lt;p#gt; "Saving " {user.name}
+  S2: status !== "saving" · #lt;div#gt; #lt;p#gt; {step} #lt;button#gt; "Save" #lt;button#gt; "Next" #lt;button#gt; "Finish"
+  [*] --> S2
+  S2 --> S1: "Save"
+  state "claims" as claims {
+    claims1: unproven invariant(mode === "view" || user !== null) L13 · mode = "edit", user = null
+    claims2: unproven user as User L14 in S1 after "Save" · user = null
+    claims3: holds step as "a" | "b" L17
+    claims4: unproven user! L18 · user = null
+    claims5: broken "done" as "idle" | "saving" L20 · "done" = "done"
+    claims6: broken status stays within "idle" | "saving" L11 in S2 · set to "done"
+    claims7: holds step stays within "a" | "b" | "c" L12
   }"
 `;
 
@@ -924,6 +994,9 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;p#gt; "Fine"
   [*] --> S1
+  state "claims" as claims {
+    claims1: holds status stays within "error" | "ok" L23
+  }
   state "unreachable branches" as unreachable {
     unreachable1: never status === "error" L24
   }"
@@ -1114,6 +1187,10 @@ stateDiagram-v2
     [*] --> S4
     S3 --> S4: "Save"
     S4 --> S3: "Edit"
+  }
+  state "claims" as claims {
+    claims1: holds filter stays within "active" | "all" | "done" L14
+    claims2: holds isEditing stays within false | true L15
   }"
 `;
 
@@ -1146,7 +1223,10 @@ stateDiagram-v2
   S2: !isOpen · #lt;div#gt; #lt;button#gt; {"More"}
   [*] --> S2
   S1 --> S2: setIsOpen(!isOpen)
-  S2 --> S1: setIsOpen(!isOpen)"
+  S2 --> S1: setIsOpen(!isOpen)
+  state "claims" as claims {
+    claims1: holds isOpen stays within false | true L4
+  }"
 `;
 
 exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
@@ -1211,6 +1291,9 @@ stateDiagram-v2
     [*] --> S10
     S9 --> S10: "Help"
     S10 --> S9: "Help"
+  }
+  state "claims" as claims {
+    claims1: holds isHelpOpen stays within false | true L14
   }"
 `;
 

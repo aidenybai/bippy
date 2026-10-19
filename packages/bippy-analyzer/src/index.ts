@@ -7,6 +7,8 @@ export type {
   AnalyzedComponent,
   Bailout,
   Binding,
+  Claim,
+  ClaimOutcome,
   ComponentAnalysis,
   ComponentInstance,
   ComponentLink,

@@ -1,4 +1,6 @@
 import type { Bound, Constraints } from "./constraints";
+import { evaluateClaims } from "./claims";
+import { getFieldCases } from "./field-cases";
 import {
   assumeCondition,
   cloneConstraints,
@@ -71,8 +73,6 @@ interface PartialChildren extends Omit<Alternative, "render"> {
   children: SymbolicValue[];
 }
 
-type FieldCases = AbstractValue[] | "unchanged" | null;
-
 interface ReachabilityContext {
   analysis: ComponentAnalysis;
   reachableConstraints: Constraints;
@@ -101,6 +101,7 @@ interface EnumerationContext extends ReachabilityContext {
 
 interface EnumeratedRegion {
   states: State[];
+  constraints: Constraints[];
   region: Region;
 }
 
@@ -128,22 +129,6 @@ const createLeaf = (constraints: Constraints, render: SymbolicValue): Alternativ
 const getStateKey = (alternative: Alternative): string =>
   [...alternative.branches].sort().join("|");
 
-const getLiteralCases = (
-  value: SymbolicValue,
-  constraints: Constraints | null,
-): AbstractValue[] | null => {
-  if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
-  if (value.kind !== "Conditional") return null;
-  const decidedOutcome = constraints
-    ? evaluateCondition(getTestExpression(value), constraints)
-    : null;
-  if (decidedOutcome !== null)
-    return getLiteralCases(decidedOutcome ? value.consequent : value.alternate, constraints);
-  const consequentCases = getLiteralCases(value.consequent, constraints);
-  const alternateCases = getLiteralCases(value.alternate, constraints);
-  return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
-};
-
 const simplifyDecidedConditionals = (
   value: SymbolicValue,
   constraints: Constraints,
@@ -154,23 +139,6 @@ const simplifyDecidedConditionals = (
     if (decidedOutcome === null) return part;
     return decidedOutcome ? part.consequent : part.alternate;
   });
-
-const getFieldCases = (
-  value: SymbolicValue | null,
-  path: string[],
-  binding: Binding,
-  constraints: Constraints | null,
-): FieldCases => {
-  if (!value) return null;
-  if (path.length === 0) return getLiteralCases(value, constraints);
-  if (isWholeBinding(value, binding)) return "unchanged";
-  if (value.kind !== "ObjectExpression") return null;
-  const [field, ...restPath] = path;
-  const assignedProperty = value.properties.findLast((property) => property.key === field);
-  if (assignedProperty)
-    return getFieldCases(assignedProperty.value, restPath, binding, constraints);
-  return value.spreads.some((spread) => isWholeBinding(spread, binding)) ? "unchanged" : null;
-};
 
 const getToggleCases = (
   value: SymbolicValue,
@@ -816,12 +784,14 @@ const enumerateRegion = (
     fragments: alternative.fragments,
     transitions: getTransitions(alternative),
   }));
+  const constraints = alternatives.map((alternative) => alternative.constraints);
   const isTruncated =
     enumerator.isTruncated ||
     transitionContext.targetEnumerator.isTruncated ||
     transitionContext.budget.isExhausted;
   return {
     states,
+    constraints,
     region: createRegion(regionBranches, firstStateIndex, alternatives, isTruncated),
   };
 };
@@ -841,10 +811,12 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   };
   const states: State[] = [];
   const regions: Region[] = [];
+  const constraintsByState: Constraints[] = [];
   let isTruncated = false;
   findRegions(analysis.render, analysis.bindings).forEach((regionBranches, regionIndex) => {
     const enumerated = enumerateRegion(regionBranches, regionIndex, states.length, context);
     states.push(...enumerated.states);
+    constraintsByState.push(...enumerated.constraints);
     regions.push(enumerated.region);
     isTruncated ||= enumerated.region.isTruncated;
   });
@@ -858,6 +830,13 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
           analysis.render,
           withDecidedOutcomes(context.branchOutcomes, analysis.decidedBranchOutcomes),
         ),
+    claimOutcomes: evaluateClaims(
+      analysis,
+      states,
+      regions,
+      constraintsByState,
+      reachableConstraints,
+    ),
     isTruncated,
   };
 };

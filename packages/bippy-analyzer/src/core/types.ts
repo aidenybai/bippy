@@ -267,8 +267,32 @@ export interface ComponentAnalysis {
   render: SymbolicValue;
   handlers: Handler[];
   renders: string[];
+  claims: Claim[];
   bailouts: Bailout[];
   warnings: Warning[];
+}
+
+export type ClaimKind = "cast" | "non-null" | "invariant" | "state";
+
+export interface Claim {
+  kind: ClaimKind;
+  subject: SymbolicValue;
+  cases: AbstractValue[] | null;
+  test: SymbolicValue | null;
+  guards: SymbolicValue[];
+  description: string;
+  loc: SourceLocation;
+  file: string;
+}
+
+export type ClaimVerdict = "holds" | "broken" | "unproven";
+
+export interface ClaimOutcome {
+  claim: Claim;
+  verdict: ClaimVerdict;
+  stateIndex: number | null;
+  path: string[];
+  reason: string | null;
 }
 
 export interface Transition {
@@ -304,6 +328,7 @@ export interface StateReport {
   states: State[];
   regions: Region[];
   unreachableBranches: UnreachableBranch[];
+  claimOutcomes: ClaimOutcome[];
   isTruncated: boolean;
 }
 

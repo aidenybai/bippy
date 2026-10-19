@@ -1,6 +1,6 @@
 import { relative } from "node:path";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
-import type { AnalyzedComponent, Region, StateReport } from "../core/types";
+import type { AnalyzedComponent, ClaimOutcome, Region, StateReport } from "../core/types";
 import { formatLine, formatStateLabel } from "../core/format";
 import { describeState, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "./source-text";
@@ -135,9 +135,25 @@ const formatGroupLines = (title: string, id: string, entries: string[]): string[
         "}",
       ];
 
-const formatClaimLines = (component: AnalyzedComponent): string[] => {
+const formatClaimOutcome = (outcome: ClaimOutcome, context: DiagramContext): string => {
+  const { claim } = outcome;
+  const where = outcome.stateIndex === null ? "" : ` in S${outcome.stateIndex + 1}`;
+  const path =
+    outcome.path.length === 0
+      ? ""
+      : ` after ${outcome.path.map((handlerId) => context.triggerLabelsByHandler.get(handlerId) ?? handlerId).join(", ")}`;
+  const reason = outcome.reason === null ? "" : ` · ${outcome.reason}`;
+  return `${outcome.verdict} ${claim.description} ${formatLine(claim.loc)}${where}${path}${reason}`.trim();
+};
+
+const formatClaimLines = (component: AnalyzedComponent, context: DiagramContext): string[] => {
   const { analysis, report } = component;
   return [
+    ...formatGroupLines(
+      "claims",
+      "claims",
+      report.claimOutcomes.map((outcome) => formatClaimOutcome(outcome, context)),
+    ),
     ...formatGroupLines(
       "unreachable branches",
       "unreachable",
@@ -207,6 +223,6 @@ export const formatMermaid = (component: AnalyzedComponent, options: MermaidOpti
     "stateDiagram-v2",
     indent("direction LR"),
     ...formatStateLines(component, context).map(indent),
-    ...formatClaimLines(component).map(indent),
+    ...formatClaimLines(component, context).map(indent),
   ].join("\n");
 };
