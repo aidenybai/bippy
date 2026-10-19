@@ -27,7 +27,7 @@ import type {
   Handler,
   StateUpdate,
 } from "./types";
-import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { collectHandlerIds } from "./utils/collect-handler-ids";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { formatNegated, formatSymbolicValue } from "./format";
@@ -661,14 +661,6 @@ class StateEnumerator {
     return hasFartherCombinations;
   }
 }
-
-const collectHandlerIds = (render: SymbolicValue): Set<string> => {
-  const handlerIds = new Set<string>();
-  forEachJsxElement(render, (element) => {
-    for (const prop of element.props) if (prop.handlerId) handlerIds.add(prop.handlerId);
-  });
-  return handlerIds;
-};
 
 const getRegionHandlers = (analysis: ComponentAnalysis, region: RegionBranches): Handler[] =>
   region.hasUnknownTest
