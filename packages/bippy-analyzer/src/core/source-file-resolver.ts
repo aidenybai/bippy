@@ -172,7 +172,8 @@ export class SourceFileResolver {
     return (
       bindingElement !== undefined &&
       isBindingElement(bindingElement) &&
-      bindingElement.initializer !== undefined
+      bindingElement.initializer !== undefined &&
+      bindingElement.initializer !== node
     );
   }
 
