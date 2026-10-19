@@ -1,31 +1,35 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-const CODE_WIDTHS = ["42%", "18%", "0%", "56%", "71%", "63%", "34%", "77%", "49%", "26%", "12%"];
-const SECTIONS = ["variables", "states", "actions"];
+const MAX_LINES = 200;
 
-export const CodeSkeleton = () => (
-  <div className="grid gap-[7px] py-1.5 pr-8 pl-16" aria-busy="true">
-    {CODE_WIDTHS.map((width) => (
-      <Skeleton key={width} className="h-3" style={{ width }} />
-    ))}
-  </div>
-);
+interface CodeSkeletonProps {
+  source: string;
+}
 
-export const LegendSkeleton = () => (
-  <div className="grid content-start gap-5 px-4 py-4 sm:px-5" aria-busy="true">
-    <div className="flex items-center gap-2">
-      <Skeleton className="size-3.5" />
-      <Skeleton className="h-3.5 w-24" />
-      <Skeleton className="ml-auto h-3.5 w-28" />
-    </div>
-    <div className="grid gap-5 pl-5">
-      {SECTIONS.map((section) => (
-        <div key={section} className="grid gap-2">
-          <Skeleton className="h-3.5 w-20" />
-          <Skeleton className="h-9 w-full" />
-          <Skeleton className="h-9 w-full" />
+interface SkeletonLine {
+  offset: number;
+  line: string;
+}
+
+const toLines = (source: string): SkeletonLine[] => {
+  const lines: SkeletonLine[] = [];
+  let offset = 0;
+  for (const line of source.split("\n").slice(0, MAX_LINES)) {
+    lines.push({ offset, line });
+    offset += line.length + 1;
+  }
+  return lines;
+};
+
+export const CodeSkeleton = ({ source }: CodeSkeletonProps) => {
+  const lines = toLines(source);
+  return (
+    <div className="grid pt-[11px] pr-8 pl-[49px] font-mono text-[13px]" aria-busy="true">
+      {lines.map(({ offset, line }) => (
+        <div key={offset} className="h-5 pt-1">
+          {line.trim() !== "" && <Skeleton className="h-3" style={{ width: `${line.length}ch` }} />}
         </div>
       ))}
     </div>
-  </div>
-);
+  );
+};

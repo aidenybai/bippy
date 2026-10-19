@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { File, Virtualizer, type FileOptions } from "@pierre/diffs/react";
-import { useAnalyzerJson } from "@/hooks/queries";
 import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
+import { useIsClient } from "@/hooks/use-is-client";
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import { useViewer } from "./context";
 import { CodeSkeleton } from "./skeletons";
@@ -15,26 +15,14 @@ const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   preferredHighlighter: "shiki-js",
 };
 
-export const JsonPane = () => {
-  const { view } = useViewer();
-  const json = useAnalyzerJson(view?.file ?? null);
-  const isHighlighterReady = useHighlighter() !== null;
+const JsonView = ({ json }: { json: string }) => {
+  useHighlighter();
   const { theme } = useResolvedTheme();
   const options = useMemo<FileOptions<undefined, undefined>>(
     () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme) }),
     [theme],
   );
-  const contents = useMemo(
-    () => ({ name: "analysis.json", contents: json.data ?? "" }),
-    [json.data],
-  );
-  if (json.error)
-    return (
-      <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
-        {json.error.message}
-      </pre>
-    );
-  if (!isHighlighterReady || json.data === undefined) return <CodeSkeleton />;
+  const contents = useMemo(() => ({ name: "analysis.json", contents: json }), [json]);
   return (
     <Virtualizer
       className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]"
@@ -42,5 +30,22 @@ export const JsonPane = () => {
     >
       <File file={contents} options={options} disableWorkerPool />
     </Virtualizer>
+  );
+};
+
+export const JsonPane = () => {
+  const { json } = useViewer();
+  const isClient = useIsClient();
+  if (json === null) return null;
+  const skeleton = (
+    <div className="h-full overflow-hidden">
+      <CodeSkeleton source={json} />
+    </div>
+  );
+  if (!isClient) return skeleton;
+  return (
+    <Suspense fallback={skeleton}>
+      <JsonView json={json} />
+    </Suspense>
   );
 };

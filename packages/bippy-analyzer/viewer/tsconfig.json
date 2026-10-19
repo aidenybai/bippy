@@ -19,9 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@babel/types": ["../node_modules/@babel/types"],
-      "@babel/traverse": ["../node_modules/@types/babel__traverse"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["next-env.d.ts", "src", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],

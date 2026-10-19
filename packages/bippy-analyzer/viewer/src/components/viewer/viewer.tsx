@@ -9,21 +9,20 @@ import {
 } from "@/components/ui/sidebar";
 import { describeNode } from "@/lib/describe";
 import { hasLegendContent } from "@/lib/graph";
-import type { Example } from "@/model";
+import type { ViewMode } from "@/lib/view-mode";
+import type { Example, ViewFile } from "@/model";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
 import { Examples } from "./examples";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
-import { ErrorText, LoadedPane } from "./loaded-pane";
-import { LegendSkeleton } from "./skeletons";
 import { SourcePane } from "./source-pane";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
-  const { file, view, mode } = useViewer();
+  const { view, mode } = useViewer();
   const [isLegendOpen, setLegendOpen] = useState(true);
-  const hasLegend = file !== null && (view === null || hasLegendContent(view));
+  const hasLegend = view !== null && hasLegendContent(view);
   return (
     <SidebarProvider
       open={isLegendOpen && hasLegend && mode !== "json"}
@@ -38,11 +37,15 @@ const Shell = ({ children }: { children: ReactNode }) => {
 
 interface RootProps {
   examples: Example[];
+  name: string | null;
+  mode: ViewMode;
+  view: ViewFile | null;
+  json: string | null;
   children: ReactNode;
 }
 
-const Root = ({ examples, children }: RootProps) => (
-  <ViewerProvider examples={examples}>
+const Root = ({ children, ...props }: RootProps) => (
+  <ViewerProvider {...props}>
     <Shell>{children}</Shell>
   </ViewerProvider>
 );
@@ -53,7 +56,9 @@ interface PanesProps {
 }
 
 const Crash = ({ error }: { error: unknown }) => (
-  <ErrorText>{error instanceof Error ? (error.stack ?? error.message) : String(error)}</ErrorText>
+  <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
+    {error instanceof Error ? (error.stack ?? error.message) : String(error)}
+  </pre>
 );
 
 const Panes = ({ source, legend }: PanesProps) => (
@@ -69,43 +74,24 @@ const Panes = ({ source, legend }: PanesProps) => (
   </SidebarLayout>
 );
 
-const FilePanes = () => {
-  const { view, mode } = useViewer();
-  const [hasOpenedJson, setHasOpenedJson] = useState(mode === "json");
-  if (mode === "json" && !hasOpenedJson) setHasOpenedJson(true);
-  return (
-    <>
-      <div hidden={mode !== "code"} className="h-full min-h-0">
-        <SourcePane />
-      </div>
-      <div hidden={mode !== "diagram"} className="h-full min-h-0">
-        <LoadedPane>{view && <DiagramPane />}</LoadedPane>
-      </div>
-      {hasOpenedJson && (
-        <div hidden={mode !== "json"} className="h-full min-h-0">
-          <JsonPane />
-        </div>
-      )}
-    </>
-  );
-};
-
 const Source = () => {
-  const { file } = useViewer();
-  return file === null ? <Examples /> : <FilePanes />;
+  const { view, mode } = useViewer();
+  if (view === null) return <Examples />;
+  if (mode === "diagram") return <DiagramPane />;
+  if (mode === "json") return <JsonPane />;
+  return <SourcePane />;
 };
 
 const LegendPane = ({ children }: { children: ReactNode }) => {
-  const { view, isViewLoading } = useViewer();
-  if (view) return <Legend>{children}</Legend>;
-  return isViewLoading ? <LegendSkeleton /> : null;
+  const { view } = useViewer();
+  return view ? <Legend>{children}</Legend> : null;
 };
 
 const Status = () => {
-  const { file, view } = useViewer();
+  const { view } = useViewer();
   const activeComponent = useActiveComponent();
   const hoveredNode = useHoveredNode();
-  if (file === null) return null;
+  if (view === null) return null;
   return (
     <div className="flex h-8 items-center gap-4 overflow-hidden border-t px-3 whitespace-nowrap text-muted-foreground tabular-nums">
       {activeComponent && (
@@ -119,7 +105,7 @@ const Status = () => {
           <span className="hidden shrink-0 sm:inline">
             Line {hoveredNode.loc.start.line}, Offset {hoveredNode.loc.start.column}
           </span>
-          <span className="truncate">{view && describeNode(view, hoveredNode)}</span>
+          <span className="truncate">{describeNode(view, hoveredNode)}</span>
         </>
       )}
     </div>

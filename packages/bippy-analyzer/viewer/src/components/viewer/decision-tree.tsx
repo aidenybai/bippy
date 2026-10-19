@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import dagre from "@dagrejs/dagre";
+import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import { getSolidColor } from "@/lib/colors";
@@ -32,6 +32,7 @@ interface LaidOutNode {
 interface LaidOutEdge {
   id: string;
   points: Point[];
+  path?: string;
   label: Point;
   answer?: "yes" | "no";
   transition?: StateTransition;
@@ -62,11 +63,15 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
   treeEdges.forEach((edge, order) =>
     graph.setEdge(edge.from, edge.to, { width: 12, height: 16, labelpos: "c" }, `t${order}`),
   );
-  const transitions = getStateTransitions(component, region.states);
+  const allTransitions = getStateTransitions(component, region.states);
+  const transitions = allTransitions.filter((transition) => transition.from !== transition.to);
+  const loops = allTransitions.filter((transition) => transition.from === transition.to);
   const handlersById = new Map(component.handlers.map((handler) => [handler.id, handler]));
+  const labelWidth = (handler: ViewHandler | undefined): number =>
+    (handler?.label.length ?? 4) * CHAR_WIDTH + 12;
   transitions.forEach((transition, order) => {
     const handler = handlersById.get(transition.handlerId);
-    const width = (handler?.label.length ?? 4) * CHAR_WIDTH + 12;
+    const width = labelWidth(handler);
     graph.setEdge(
       `leaf:${transition.from}`,
       `leaf:${transition.to}`,
@@ -80,11 +85,13 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
     const edge = graph.edge(from, to, name);
     return { points: edge.points, label: { x: edge.x, y: edge.y } };
   };
+  const loopEdges = layoutLoops(loops, graph, handlersById, labelWidth);
   return {
-    width: size.width ?? 0,
+    width: Math.max(size.width ?? 0, ...loopEdges.map((edge) => edge.right)),
     height: size.height ?? 0,
     nodes: nodes.map((node) => ({ node, ...graph.node(node.id) })),
     edges: [
+      ...loopEdges,
       ...treeEdges.map((edge, order) => ({
         id: `t${order}`,
         answer: edge.answer,
@@ -100,6 +107,41 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
   };
 };
 
+const LOOP_BULGE = 30;
+const LOOP_STEP = 16;
+
+type LoopEdge = LaidOutEdge & { right: number };
+
+const layoutLoops = (
+  loops: StateTransition[],
+  graph: graphlib.Graph,
+  handlersById: Map<string, ViewHandler>,
+  labelWidth: (handler: ViewHandler | undefined) => number,
+): LoopEdge[] => {
+  const perLeaf = new Map<number, number>();
+  for (const loop of loops) perLeaf.set(loop.from, (perLeaf.get(loop.from) ?? 0) + 1);
+  const seen = new Map<number, number>();
+  return loops.map((loop, order) => {
+    const node = graph.node(`leaf:${loop.from}`);
+    const slot = seen.get(loop.from) ?? 0;
+    seen.set(loop.from, slot + 1);
+    const count = perLeaf.get(loop.from) ?? 1;
+    const y = node.y + (slot - (count - 1) / 2) * LOOP_STEP;
+    const right = node.x + node.width / 2;
+    const handler = handlersById.get(loop.handlerId);
+    const width = labelWidth(handler);
+    return {
+      id: `l${order}`,
+      points: [],
+      path: `M ${right} ${y - 6} C ${right + LOOP_BULGE} ${y - 18}, ${right + LOOP_BULGE} ${y + 18}, ${right} ${y + 6}`,
+      label: { x: right + LOOP_BULGE + width / 2, y },
+      transition: loop,
+      handler,
+      right: right + LOOP_BULGE + width + 8,
+    };
+  });
+};
+
 const toPath = (points: Point[]): string =>
   points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
 
@@ -110,7 +152,7 @@ const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewCompo
   const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
   return (
     <path
-      d={toPath(edge.points)}
+      d={edge.path ?? toPath(edge.points)}
       fill="none"
       stroke={color ? getSolidColor(color) : "var(--faint)"}
       strokeWidth={edge.transition ? 1.25 : 1}

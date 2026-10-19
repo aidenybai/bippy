@@ -47,3 +47,8 @@ export const getTransitions = (component: ViewComponent, handlerId: string): str
 
 export const getUpdateKey = (update: ViewUpdate): string =>
   `${update.bindingId}:${update.guard ?? ""}:${update.assignments.join(",")}:${update.isAsync}`;
+
+export const getStateNodeIds = (component: ViewComponent, state: ViewState): string[] => [
+  ...state.conditions.flatMap((condition) => getConditionNodeId(component, condition) ?? []),
+  ...getStateArmNodeIds(component, state),
+];

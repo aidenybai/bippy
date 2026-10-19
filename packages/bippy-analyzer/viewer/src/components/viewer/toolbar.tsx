@@ -1,54 +1,56 @@
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { analyzerJsonQuery } from "@/hooks/queries";
 import { hasLegendContent } from "@/lib/graph";
+import { getRouteHref } from "@/lib/route";
 import { getFileTitle } from "@/lib/source";
-import { isViewMode } from "@/lib/view-mode";
+import { VIEW_MODES, isViewMode } from "@/lib/view-mode";
 import { useViewer } from "./context";
 import { ThemeToggle } from "./theme-toggle";
 
+const usePrefetchModes = (name: string | null): void => {
+  const router = useRouter();
+  useEffect(() => {
+    if (name === null) return;
+    for (const mode of VIEW_MODES) router.prefetch(getRouteHref(name, mode));
+  }, [router, name]);
+};
+
 const ModeTabs = () => {
-  const { file, mode, setMode } = useViewer();
-  const queryClient = useQueryClient();
-  const prefetchJson = (): void => {
-    if (file !== null) void queryClient.prefetchQuery(analyzerJsonQuery(file));
-  };
+  const { name, mode, setMode } = useViewer();
+  usePrefetchModes(name);
   return (
     <Tabs value={mode} onValueChange={(value) => isViewMode(value) && setMode(value)}>
       <TabsList aria-label="View">
         <TabsTrigger value="code">Code</TabsTrigger>
         <TabsTrigger value="diagram">Diagram</TabsTrigger>
-        <TabsTrigger value="json" onMouseEnter={prefetchJson} onFocus={prefetchJson}>
-          JSON
-        </TabsTrigger>
+        <TabsTrigger value="json">JSON</TabsTrigger>
       </TabsList>
     </Tabs>
   );
 };
 
 const Title = () => {
-  const { file, open, view } = useViewer();
-  if (file === null) return <span className="font-medium text-foreground">bippy analyzer</span>;
+  const { view } = useViewer();
+  if (view === null) return <span className="font-medium text-foreground">bippy analyzer</span>;
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
+      <Link
+        href="/"
         aria-label="Examples"
         title="Examples"
-        onClick={() => open(null)}
+        className={buttonVariants({ variant: "ghost", size: "icon" })}
       >
         <ArrowLeft />
-      </Button>
-      <span className="truncate font-mono text-foreground">{getFileTitle(file)}</span>
-      {view && (
-        <span className="hidden text-muted-foreground tabular-nums sm:inline">
-          {view.components.length} components
-        </span>
-      )}
+      </Link>
+      <span className="truncate font-mono text-foreground">{getFileTitle(view.file)}</span>
+      <span className="hidden text-muted-foreground tabular-nums sm:inline">
+        {view.components.length} components
+      </span>
     </>
   );
 };

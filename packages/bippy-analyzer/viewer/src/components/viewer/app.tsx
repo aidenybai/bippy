@@ -1,9 +1,18 @@
-import type { Example } from "@/model";
+import type { ViewMode } from "@/lib/view-mode";
+import type { Example, ViewFile } from "@/model";
 import { Legend } from "./legend";
 import { Viewer } from "./viewer";
 
-export const App = ({ examples }: { examples: Example[] }) => (
-  <Viewer examples={examples}>
+export interface AppProps {
+  examples: Example[];
+  name: string | null;
+  mode: ViewMode;
+  view: ViewFile | null;
+  json: string | null;
+}
+
+export const App = (props: AppProps) => (
+  <Viewer {...props}>
     <Viewer.Toolbar />
     <Viewer.Panes
       source={<Viewer.Source />}

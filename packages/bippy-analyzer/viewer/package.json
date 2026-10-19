@@ -4,21 +4,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack --port 3200",
+    "generate": "tsx --tsconfig generate/tsconfig.json generate/generate.ts",
+    "predev": "pnpm generate",
+    "dev": "next dev --port 3200",
     "build": "next build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p generate/tsconfig.json"
   },
   "dependencies": {
-    "@babel/parser": "7.26.3",
-    "@babel/traverse": "7.26.4",
     "@base-ui/react": "1.6.0",
     "@dagrejs/dagre": "^3.1.1",
     "@fontsource-variable/inter": "^5.3.0",
     "@pierre/diffs": "1.5.2",
-    "@tanstack/react-query": "^5.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "hono": "^4.13.13",
     "lucide-react": "^1.32.0",
     "next": "16.4.2",
     "next-themes": "^0.4.6",
@@ -31,6 +29,8 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@babel/parser": "7.26.3",
+    "@babel/traverse": "7.26.4",
     "@tailwindcss/postcss": "4.3.3",
     "@types/babel__traverse": "^7.18.2",
     "@types/node": "^24.0.0",

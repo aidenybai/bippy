@@ -25,7 +25,7 @@ export const getStateTransitions = (
     .flatMap((state) =>
       state.transitions.flatMap((transition) =>
         transition.targets
-          .filter((target) => target !== state.index && region.has(target))
+          .filter((target) => region.has(target))
           .map((target) => ({
             handlerId: transition.handlerId,
             from: state.index,

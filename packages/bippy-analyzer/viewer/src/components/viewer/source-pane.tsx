@@ -1,4 +1,5 @@
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -10,6 +11,7 @@ import {
 import { File, type FileOptions } from "@pierre/diffs/react";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
+import { useIsClient } from "@/hooks/use-is-client";
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import { useTokenBoxes, type PlacedToken, type TokenLayout } from "@/hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "@/lib/arcs";
@@ -20,7 +22,6 @@ import { getFileTitle } from "@/lib/source";
 import { useHoverStore, type TokenAnchor } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
-import { LoadedPane } from "./loaded-pane";
 import { CodeSkeleton } from "./skeletons";
 import { TokenMark } from "./token-mark";
 
@@ -175,6 +176,7 @@ const Overlay = ({ wrapperRef, renderCount }: OverlayProps) => {
 
 const CodeView = () => {
   const view = useLoadedView();
+  useHighlighter();
   const { theme } = useResolvedTheme();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
@@ -196,10 +198,12 @@ const CodeView = () => {
 };
 
 export const SourcePane = () => {
-  const isHighlighterReady = useHighlighter() !== null;
+  const view = useLoadedView();
+  const isClient = useIsClient();
+  const skeleton = <CodeSkeleton source={view.source} />;
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
-      <LoadedPane>{isHighlighterReady ? <CodeView /> : <CodeSkeleton />}</LoadedPane>
+      {isClient ? <Suspense fallback={skeleton}>{<CodeView />}</Suspense> : skeleton}
     </div>
   );
 };

@@ -1,21 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
-import { useView } from "@/hooks/queries";
+import { useRouter } from "next/navigation";
 import { getColorByNodeId } from "@/lib/colors";
 import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
-import { useLocation, writeLocation } from "@/lib/source";
+import { getRouteHref } from "@/lib/route";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, GraphNode, ViewComponent, ViewFile } from "@/model";
 import { useHoverStore } from "@/store/hover";
 
 export interface ViewerState {
   examples: Example[];
-  file: string | null;
-  open: (file: string | null) => void;
+  name: string | null;
   mode: ViewMode;
-  setMode: (mode: ViewMode) => void;
   view: ViewFile | null;
-  viewError: string | null;
-  isViewLoading: boolean;
+  json: string | null;
+  open: (name: string | null) => void;
+  setMode: (mode: ViewMode) => void;
   index: GraphIndex | null;
   colorByNodeId: Map<string, string>;
 }
@@ -24,14 +23,22 @@ const ViewerContext = createContext<ViewerState | null>(null);
 
 interface ViewerProviderProps {
   examples: Example[];
+  name: string | null;
+  mode: ViewMode;
+  view: ViewFile | null;
+  json: string | null;
   children: ReactNode;
 }
 
-export const ViewerProvider = ({ examples, children }: ViewerProviderProps) => {
-  const location = useLocation();
-  const { file, mode } = location;
-  const viewQuery = useView(file);
-  const view = viewQuery.data ?? null;
+export const ViewerProvider = ({
+  examples,
+  name,
+  mode,
+  view,
+  json,
+  children,
+}: ViewerProviderProps) => {
+  const router = useRouter();
   const setIndex = useHoverStore((state) => state.setIndex);
   const index = useMemo(() => (view ? buildGraphIndex(view) : null), [view]);
   const colorByNodeId = useMemo(
@@ -39,36 +46,14 @@ export const ViewerProvider = ({ examples, children }: ViewerProviderProps) => {
     [view],
   );
   useEffect(() => setIndex(index), [index, setIndex]);
-  const open = useCallback(
-    (next: string | null) => writeLocation({ file: next, mode: "code" }),
-    [],
+  const open = useCallback((next: string | null) => router.push(getRouteHref(next)), [router]);
+  const setMode = useCallback(
+    (next: ViewMode) => router.replace(getRouteHref(name, next)),
+    [router, name],
   );
-  const setMode = useCallback((next: ViewMode) => writeLocation({ file, mode: next }), [file]);
   const value = useMemo<ViewerState>(
-    () => ({
-      examples,
-      file,
-      open,
-      mode,
-      setMode,
-      view,
-      viewError: viewQuery.error?.message ?? null,
-      isViewLoading: viewQuery.isLoading,
-      index,
-      colorByNodeId,
-    }),
-    [
-      examples,
-      file,
-      open,
-      mode,
-      setMode,
-      view,
-      viewQuery.error,
-      viewQuery.isLoading,
-      index,
-      colorByNodeId,
-    ],
+    () => ({ examples, name, mode, view, json, open, setMode, index, colorByNodeId }),
+    [examples, name, mode, view, json, open, setMode, index, colorByNodeId],
   );
   return <ViewerContext value={value}>{children}</ViewerContext>;
 };

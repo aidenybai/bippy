@@ -337,12 +337,6 @@ importers:
 
   packages/bippy-analyzer/viewer:
     dependencies:
-      '@babel/parser':
-        specifier: 7.26.3
-        version: 7.26.3
-      '@babel/traverse':
-        specifier: 7.26.4
-        version: 7.26.4
       '@base-ui/react':
         specifier: 1.6.0
         version: 1.6.0(@date-fns/tz@1.5.0)(@types/react@19.3.0)(date-fns@4.4.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -355,18 +349,12 @@ importers:
       '@pierre/diffs':
         specifier: 1.5.2
         version: 1.5.2(@shikijs/themes@4.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.101.4(react@19.3.0)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      hono:
-        specifier: ^4.13.13
-        version: 4.13.13
       lucide-react:
         specifier: ^1.32.0
         version: 1.32.0(react@19.3.0)
@@ -398,6 +386,12 @@ importers:
         specifier: ^5.0.15
         version: 5.0.15(@types/react@19.3.0)(immer@11.1.18)(react@19.3.0)(use-sync-external-store@1.6.0(react@19.3.0))
     devDependencies:
+      '@babel/parser':
+        specifier: 7.26.3
+        version: 7.26.3
+      '@babel/traverse':
+        specifier: 7.26.4
+        version: 7.26.4
       '@tailwindcss/postcss':
         specifier: 4.3.3
         version: 4.3.3
