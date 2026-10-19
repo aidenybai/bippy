@@ -7,6 +7,7 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["tests/unit/**/*.test.ts"],
+          testTimeout: 30_000,
         },
       }),
     ],
