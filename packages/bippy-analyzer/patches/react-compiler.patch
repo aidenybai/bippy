@@ -1117,7 +1117,7 @@ index e7d3b4f..90c352f 100644
    | JsxExpression
    | {
 diff --git a/HIR/HIRBuilder.ts b/HIR/HIRBuilder.ts
-index 71874b0..3c01f4c 100644
+index 71874b0..4e0ab07 100644
 --- a/HIR/HIRBuilder.ts
 +++ b/HIR/HIRBuilder.ts
 @@ -115,6 +115,7 @@ export default class HIRBuilder {
@@ -1153,6 +1153,20 @@ index 71874b0..3c01f4c 100644
    makeTemporary(loc: SourceLocation): Identifier {
      const id = this.nextIdentifierId;
      return makeTemporaryIdentifier(id, loc);
+@@ -200,7 +219,12 @@ export default class HIRBuilder {
+     path: NodePath<t.Identifier | t.JSXIdentifier>,
+   ): Binding | null {
+     const originalName = path.node.name;
+-    const binding = path.scope.getBinding(originalName);
++    const isFunctionDeclarationName =
++      path.key === 'id' && path.parentPath?.isFunctionDeclaration() === true;
++    const scope = isFunctionDeclarationName
++      ? (path.scope.parent ?? path.scope)
++      : path.scope;
++    const binding = scope.getBinding(originalName);
+     if (binding == null) {
+       return null;
+     }
 diff --git a/ReactiveScopes/CodegenReactiveFunction.ts b/ReactiveScopes/CodegenReactiveFunction.ts
 index 942c852..90526dc 100644
 --- a/ReactiveScopes/CodegenReactiveFunction.ts

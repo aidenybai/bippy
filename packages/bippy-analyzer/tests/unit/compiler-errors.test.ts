@@ -33,6 +33,15 @@ describe("compiler errors", () => {
     expect(describeStates(name)).toEqual(describeStates(spelledOutName));
   });
 
+  it.each(["ThemeCycler", "PageSizePicker"])(
+    "binds the function %s declares, not the local or parameter of the same name inside it",
+    (name) => {
+      const { analysis, report } = getComponent(project, name);
+      expect(analysis.bailouts).toEqual([]);
+      expect(report.states).toHaveLength(2);
+    },
+  );
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
