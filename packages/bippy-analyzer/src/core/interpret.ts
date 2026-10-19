@@ -232,6 +232,7 @@ export class Interpreter {
   );
   readonly renderedComponents = new Set<string>();
   readonly #claims: Claim[] = [];
+  readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
   #wholePropsSample: Sample | null = null;
   #restPropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
@@ -946,7 +947,14 @@ export class Interpreter {
       this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
     }
-    return this.#createCallResult(callSite);
+    const result = this.#createCallResult(callSite);
+    const callbacks = getPassedCallbacks(argumentValues);
+    if (callbacks.length > 0) this.#wrappedCallbacks.set(result, callbacks);
+    return result;
+  }
+
+  getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
+    return this.#wrappedCallbacks.get(value) ?? null;
   }
 
   #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
