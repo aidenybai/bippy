@@ -37,16 +37,18 @@ export class ClaimRecorder {
     walkState: WalkState,
   ): SymbolicValue {
     const castValue = this.#interpreter.read(typeCast.value);
-    const sourceDomain = this.#interpreter.resolver.getDomain(typeCast.value.loc);
+    const { resolver } = this.#interpreter;
+    const sourceDomain = resolver.getDomain(typeCast.value.loc);
+    const declaredSourceDomain = resolver.getTypeDomain(typeCast.value.loc);
     if (typeCast.typeAnnotationKind === "non-null") {
-      if (hasNullishCase(sourceDomain))
+      if (hasNullishCase(declaredSourceDomain))
         this.record(createNonNullClaim(castValue, typeCast.loc, walkState.guards));
       return castValue;
     }
-    const targetDomain = this.#interpreter.resolver.getDomain(typeCast.loc);
+    const targetDomain = resolver.getDomain(typeCast.loc);
     const claim = createCastClaim(
       castValue,
-      sourceDomain,
+      declaredSourceDomain,
       targetDomain,
       typeCast.loc,
       walkState.guards,

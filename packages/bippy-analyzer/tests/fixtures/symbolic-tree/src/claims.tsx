@@ -73,3 +73,18 @@ export const ResourceDetails = ({ renderExtra }: { renderExtra?: (user: User) =>
   const extra = renderExtra ? renderExtra(user!) : null;
   return user === null ? <p>Loading {extra}</p> : <p>{extra}</p>;
 };
+
+interface Option {
+  label: string;
+  icon?: string;
+}
+
+export const OptionRow = ({ options, index }: { options: Option[]; index: number }) => {
+  const option = options[index] as Option;
+  return (
+    <li>
+      {option.icon ? <i>{option.icon}</i> : null}
+      {option.label}
+    </li>
+  );
+};

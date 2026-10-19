@@ -135,6 +135,10 @@ export class SourceFileResolver {
       : getDomainOfType(this.#checker, type);
   }
 
+  getTypeDomain(loc: SourceLocation): Domain {
+    return getDomainOfType(this.#checker, this.#getType(loc));
+  }
+
   getDeclaredDomain(loc: SourceLocation): Domain | null {
     if (loc === GeneratedSource) return null;
     const nameLoc = loc.identifierName
