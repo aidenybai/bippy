@@ -1250,6 +1250,46 @@ stateDiagram-v2
   S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}"
 `;
 
+exports[`fixture analysis > PublishResult keeps its render tree and handlers 1`] = `
+"---
+title: PublishResult src/and-guards.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PublishResult"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; {step}"]
+  n2 --> n3
+  n4(["onClick ⇒ if isReady: step = #quot;done#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Publish#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ success.authorName = #quot;Ada#quot;"]):::event
+  n5 -.-> n6
+  n7{"success"}
+  n2 --> n7
+  n8["#lt;p#gt; {success.authorName}"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > PublishResult keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PublishResult src/and-guards.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: success · #lt;div#gt; #lt;button#gt; {step} #lt;button#gt; "Publish" #lt;p#gt; {success.authorName}
+  S2: !success · #lt;div#gt; #lt;button#gt; {step} #lt;button#gt; "Publish"
+  [*] --> S2
+  S1 --> S2: "Publish"
+  S2 --> S1: "Publish"
+  state "claims" as claims {
+    claims1: holds success! L10
+    claims2: holds step stays within "done" | "form" L9
+  }"
+`;
+
 exports[`fixture analysis > ResourceDetails keeps its render tree and handlers 1`] = `
 "---
 title: ResourceDetails src/claims.tsx:71

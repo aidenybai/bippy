@@ -186,9 +186,16 @@ export class ControlFlowWalker {
     const branchTest = getBranchTest(operator, this.#interpreter.read(terminal.test));
     const testGuard = getTestExpression(branchTest);
     const armStops = new Set([...stops, fallthrough]);
-    const consequentOutcome = this.#walkArm(consequent, from, armStops, walkState, testGuard);
-    const alternateOutcome = this.#walkArm(alternate, from, armStops, walkState, negate(testGuard));
     const isSwapped = operator === "&&";
+    const consequentGuard = isSwapped ? negate(testGuard) : testGuard;
+    const consequentOutcome = this.#walkArm(consequent, from, armStops, walkState, consequentGuard);
+    const alternateOutcome = this.#walkArm(
+      alternate,
+      from,
+      armStops,
+      walkState,
+      negate(consequentGuard),
+    );
     const probe = this.#interpreter.resolver.isExpression(terminal.test.loc)
       ? branchTest.testKind
       : "none";
