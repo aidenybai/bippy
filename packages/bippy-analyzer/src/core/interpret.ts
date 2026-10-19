@@ -59,6 +59,7 @@ import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
 import { getTestExpression } from "./utils/get-test-expression";
 import { coerceBooleanCall } from "./utils/coerce-boolean-call";
+import { getMutatedParameters } from "./utils/get-mutated-parameters";
 import { negate } from "./utils/negate";
 import {
   UNDEFINED_VALUE,
@@ -630,6 +631,7 @@ export class Interpreter {
 
   #callOpaqueValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues, loc } = callSite;
+    this.#trackProjectCallMutations(callSite);
     const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
     if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
       this.#callBinding(callee, argumentValues, walkState);
@@ -650,6 +652,15 @@ export class Interpreter {
     const callbacks = getPassedCallbacks(argumentValues);
     if (callbacks.length > 0) this.#wrappedCallbacks.set(result, callbacks);
     return result;
+  }
+
+  #trackProjectCallMutations(callSite: CallSite): void {
+    const helper = this.#findProjectFunction(callSite.calleePlace);
+    if (!helper) return;
+    for (const index of getMutatedParameters(helper.hirFunction)) {
+      const argumentPlace = callSite.argumentPlaces[index];
+      if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
+    }
   }
 
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {

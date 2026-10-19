@@ -101,6 +101,56 @@ stateDiagram-v2
   S2: !note · #lt;div#gt;"
 `;
 
+exports[`fixture analysis > CardEditor keeps its render tree and handlers 1`] = `
+"---
+title: CardEditor src/mutating-helpers.tsx:14
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CardEditor"]
+  n2["#lt;button#gt; {describeOptions(options)}"]
+  n1 --> n2
+  n3(["onClick ⇒ options = Unknown(mutated)"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > CardEditor keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CardEditor src/mutating-helpers.tsx:14
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {describeOptions(options)}
+  [*] --> S1
+  state "warnings" as warnings {
+    warnings1: state-mutation L16 mutates options without setting it, so the change shows only on the next render
+  }"
+`;
+
+exports[`fixture analysis > CardGrid keeps its render tree and handlers 1`] = `
+"---
+title: CardGrid src/mutating-helpers.tsx:9
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CardGrid"]
+  n2["#lt;p#gt; {describeOptions(options)}"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > CardGrid keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CardGrid src/mutating-helpers.tsx:9
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; {describeOptions(options)}
+  [*] --> S1
+  state "warnings" as warnings {
+    warnings1: prop-mutation L10 mutates prop options
+  }"
+`;
+
 exports[`fixture analysis > ClickStats keeps its render tree and handlers 1`] = `
 "---
 title: ClickStats src/mutation.tsx:41

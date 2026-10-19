@@ -37,59 +37,60 @@ Labels use a few symbols:
 
 The pipeline runs the React Compiler's own front end, then our passes. Read `src/core` in this order:
 
-| File                        | Stage                                                                             |
-| --------------------------- | --------------------------------------------------------------------------------- |
-| `analyze-project.ts`        | Opens the TS project, compiles each file, runs each component, then lists states  |
-| `compile.ts`                | Runs the React Compiler on a file and keeps each function's HIR                   |
-| `analyze-component.ts`      | Runs our passes on one component's HIR                                            |
-| `type-provider.ts`          | Types the compiler's HIR from the TS checker                                      |
-| `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept                |
-| `control-flow-walker.ts`    | Walks the HIR blocks: branches, switches, loops, phis and catch handlers          |
-| `destructurer.ts`           | Binds what a destructuring takes from props, a hook result or a literal           |
-| `mutation-tracker.ts`       | Which mutations in an instruction touch props, state or a literal being built     |
-| `callback-passer.ts`        | Callbacks handed to effects, promises and calls the analysis can't see into       |
-| `array-iteration.ts`        | Rows mapped from an array and callbacks run per item                              |
-| `claim-recorder.ts`         | Records a cast, a non-null assertion or an invariant call as a claim              |
-| `pattern-matcher.ts`        | Turns a ts-pattern match chain into branches on its subject                       |
-| `walk-state.ts`             | The guards and async flag a walk carries                                          |
-| `binding-table.ts`          | The interpreter's bindings, one per declaration, and each place's domain          |
-| `function-registry.ts`      | Functions values refer to, the file each came from, and closure captures          |
-| `external-sources.ts`       | Hooks, contexts and stores: values that change from outside                       |
-| `effect-collector.ts`       | The updates and mutations one handler or effect makes                             |
-| `build-jsx.ts`              | The element each JSX tag renders                                                  |
-| `diagnostics.ts`            | Bailouts and warnings, each reported once                                         |
-| `symbolic-values.ts`        | Builds and folds the values the interpreter produces                              |
-| `control-flow.ts`           | Branch outcomes and the conditionals they merge into                              |
-| `source-file-resolver.ts`   | Reads types, names and source text at a compiler location                         |
-| `domains.ts`                | Turns a TS type into the values it can take                                       |
-| `type-samples.ts`           | Turns a TS type into sample values to mount props with                            |
-| `infer-props.ts`            | Samples untyped props from what they read and what callers pass                   |
-| `link-components.ts`        | Records what each parent passes to each child it renders                          |
-| `value-domains.ts`          | Turns a parent-side value into the finite set of values it can take               |
-| `instance-states.ts`        | Lists a child's states again with its props narrowed to one parent's values       |
-| `claim-sites.ts`            | Builds a claim from a cast, a non-null assertion or an invariant call             |
-| `claims.ts`                 | Checks each claim in every state where its code runs                              |
-| `claim-states.ts`           | Which states a claim is checked in: where its handler renders and its values vary |
-| `claim-guards.ts`           | Narrows a state by the `if` guards that lead to a claim or an update              |
-| `claim-cases.ts`            | Whether a value is in, out of or maybe in a set of cases                          |
-| `claim-path.ts`             | The shortest path of actions from the first render to a state                     |
-| `state-claims.ts`           | Checks that every update keeps a typed state within its type                      |
-| `claim-values.ts`           | The values a claim's subject or an update can take, split at each condition       |
-| `field-cases.ts`            | Reads the literal values an update or initial value can take                      |
-| `context-setter-fields.ts`  | Which context fields set which state, across the providers that supply them       |
-| `store-actions.ts`          | What each zustand store action sets                                               |
-| `string-samples.ts`         | Strings a component may parse, picked by name                                     |
-| `collect-handlers.ts`       | What each event handler and effect updates                                        |
-| `regions.ts`                | Groups branches that test the same data into regions                              |
-| `enumerate-states.ts`       | Lists each region's states and transitions                                        |
-| `reachable-constraints.ts`  | The values every binding can reach, from its initial value and every update       |
-| `state-enumerator.ts`       | Walks the render tree under a region's constraints and lists its alternatives     |
-| `transitions.ts`            | Which states a handler's updates lead to, with its update sequences cached        |
-| `unreachable-branches.ts`   | Reports branch sides no state reaches                                             |
-| `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds             |
-| `format.ts`, `serialize.ts` | Printing and JSON output                                                          |
-| `types.ts`                  | The data passed between stages                                                    |
-| `utils/`                    | One helper per file: places, keys, HIR, predicates, truthiness, traversal, TS     |
+| File                              | Stage                                                                             |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `analyze-project.ts`              | Opens the TS project, compiles each file, runs each component, then lists states  |
+| `compile.ts`                      | Runs the React Compiler on a file and keeps each function's HIR                   |
+| `analyze-component.ts`            | Runs our passes on one component's HIR                                            |
+| `type-provider.ts`                | Types the compiler's HIR from the TS checker                                      |
+| `interpret.ts`                    | Runs the HIR symbolically: the render tree, with every branch kept                |
+| `control-flow-walker.ts`          | Walks the HIR blocks: branches, switches, loops, phis and catch handlers          |
+| `destructurer.ts`                 | Binds what a destructuring takes from props, a hook result or a literal           |
+| `mutation-tracker.ts`             | Which mutations in an instruction touch props, state or a literal being built     |
+| `utils/get-mutated-parameters.ts` | Which parameters a function writes into                                           |
+| `callback-passer.ts`              | Callbacks handed to effects, promises and calls the analysis can't see into       |
+| `array-iteration.ts`              | Rows mapped from an array and callbacks run per item                              |
+| `claim-recorder.ts`               | Records a cast, a non-null assertion or an invariant call as a claim              |
+| `pattern-matcher.ts`              | Turns a ts-pattern match chain into branches on its subject                       |
+| `walk-state.ts`                   | The guards and async flag a walk carries                                          |
+| `binding-table.ts`                | The interpreter's bindings, one per declaration, and each place's domain          |
+| `function-registry.ts`            | Functions values refer to, the file each came from, and closure captures          |
+| `external-sources.ts`             | Hooks, contexts and stores: values that change from outside                       |
+| `effect-collector.ts`             | The updates and mutations one handler or effect makes                             |
+| `build-jsx.ts`                    | The element each JSX tag renders                                                  |
+| `diagnostics.ts`                  | Bailouts and warnings, each reported once                                         |
+| `symbolic-values.ts`              | Builds and folds the values the interpreter produces                              |
+| `control-flow.ts`                 | Branch outcomes and the conditionals they merge into                              |
+| `source-file-resolver.ts`         | Reads types, names and source text at a compiler location                         |
+| `domains.ts`                      | Turns a TS type into the values it can take                                       |
+| `type-samples.ts`                 | Turns a TS type into sample values to mount props with                            |
+| `infer-props.ts`                  | Samples untyped props from what they read and what callers pass                   |
+| `link-components.ts`              | Records what each parent passes to each child it renders                          |
+| `value-domains.ts`                | Turns a parent-side value into the finite set of values it can take               |
+| `instance-states.ts`              | Lists a child's states again with its props narrowed to one parent's values       |
+| `claim-sites.ts`                  | Builds a claim from a cast, a non-null assertion or an invariant call             |
+| `claims.ts`                       | Checks each claim in every state where its code runs                              |
+| `claim-states.ts`                 | Which states a claim is checked in: where its handler renders and its values vary |
+| `claim-guards.ts`                 | Narrows a state by the `if` guards that lead to a claim or an update              |
+| `claim-cases.ts`                  | Whether a value is in, out of or maybe in a set of cases                          |
+| `claim-path.ts`                   | The shortest path of actions from the first render to a state                     |
+| `state-claims.ts`                 | Checks that every update keeps a typed state within its type                      |
+| `claim-values.ts`                 | The values a claim's subject or an update can take, split at each condition       |
+| `field-cases.ts`                  | Reads the literal values an update or initial value can take                      |
+| `context-setter-fields.ts`        | Which context fields set which state, across the providers that supply them       |
+| `store-actions.ts`                | What each zustand store action sets                                               |
+| `string-samples.ts`               | Strings a component may parse, picked by name                                     |
+| `collect-handlers.ts`             | What each event handler and effect updates                                        |
+| `regions.ts`                      | Groups branches that test the same data into regions                              |
+| `enumerate-states.ts`             | Lists each region's states and transitions                                        |
+| `reachable-constraints.ts`        | The values every binding can reach, from its initial value and every update       |
+| `state-enumerator.ts`             | Walks the render tree under a region's constraints and lists its alternatives     |
+| `transitions.ts`                  | Which states a handler's updates lead to, with its update sequences cached        |
+| `unreachable-branches.ts`         | Reports branch sides no state reaches                                             |
+| `constraints.ts`                  | What a path assumes: possible values, branch outcomes, numeric bounds             |
+| `format.ts`, `serialize.ts`       | Printing and JSON output                                                          |
+| `types.ts`                        | The data passed between stages                                                    |
+| `utils/`                          | One helper per file: places, keys, HIR, predicates, truthiness, traversal, TS     |
 
 The browser verifier lives in `tests/conformance/verifier`, next to the repos it runs on.
 
@@ -116,6 +117,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - without `strictNullChecks`, an optional property and a call's result may be `undefined`, which their types leave out
    - a `useState()` with no initial value is typed `undefined`, though a handler may set it to anything
 8. Collects handlers from event handlers and effects, and from code that may call the component's functions later:
+
    - setters and functions passed to child components under any prop name, including render props, function children and components declared inside the component, along with the handlers in the JSX they return, and JSX passed in any prop
    - a function passed as `action` on a `<form>`, or as `formAction` on a `<button>` or `<input>`, which React 19 runs on submit with the form data, and the action a `useActionState` returns, which runs its function like a reducer over the previous state and the form data, with `isPending` typed as a boolean
    - functions passed to hooks and calls it can't see into, directly or in an options object, like `useMutation({ onSuccess })`, and functions stored on objects, like `recognition.onresult`, which run as effects with unknown arguments. When such a call's result is itself passed as an event handler, like `onSubmit={form.handleSubmit(onSubmit)}`, the functions it received run as that element's handler instead
@@ -123,6 +125,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - `createPortal(children, container)` renders its children in place
 
    What each handler does:
+
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed, and a call to a function a condition chooses, like `isDocument ? setDraggedDocument : setDraggedFolder`, may be either
    - a helper that returns JSX, like `getFileIcon(path)`, is followed into whichever file of the project declares it, so its branches become the component's
@@ -154,6 +157,8 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
 | `state-mutation`  | A handler mutates state in place, before copying it or without setting it.                                               |
 | `render-mutation` | State is mutated during render.                                                                                          |
 | `prop-mutation`   | A prop is mutated, like `items.sort()` on an array prop. A write through `.current` of a prop typed as a ref is not one. |
+
+A call to a function the project declares counts as a mutation of each argument the function writes into, directly or through a local it loads, stores or destructures the parameter into. `setCardData(items, cardOptions)` where `setCardData` sets `options.shape` mutates the `cardOptions` prop. A call the analysis can't see into, like a library's, is not counted, since the compiler only says it might mutate.
 
 ## The React Compiler source
 
