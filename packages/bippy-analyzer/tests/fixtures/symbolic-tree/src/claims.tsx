@@ -65,3 +65,11 @@ export const OpaqueCallback = ({ user }: { user: User | null }) => (
     ))}
   </div>
 );
+
+declare const useResource: () => [User | null, Error | null];
+
+export const ResourceDetails = ({ renderExtra }: { renderExtra?: (user: User) => string }) => {
+  const [user] = useResource();
+  const extra = renderExtra ? renderExtra(user!) : null;
+  return user === null ? <p>Loading {extra}</p> : <p>{extra}</p>;
+};

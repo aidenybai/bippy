@@ -87,7 +87,8 @@ const describeFailure = (test: SymbolicValue, failing: Constraints): string | nu
 
 const checkCondition = (test: SymbolicValue, constraints: Constraints): Check => {
   const outcome = evaluateCondition(test, constraints);
-  if (outcome !== null) return { outcome, witness: null };
+  if (outcome === false) return { outcome, witness: describeFailure(test, constraints) };
+  if (outcome === true) return { outcome, witness: null };
   const failing = assumeFalse(test, constraints);
   if (!failing) return { outcome: true, witness: null };
   return { outcome: null, witness: describeFailure(test, failing) };

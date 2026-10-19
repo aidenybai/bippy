@@ -113,6 +113,16 @@ describe("claims", () => {
     });
   });
 
+  it("names the value that breaks a claim the solver refutes outright", () => {
+    const details = project.components.find(
+      (component) => component.analysis.name === "ResourceDetails",
+    );
+    const assertion = details?.report.claimOutcomes.find(
+      (outcome) => outcome.claim.kind === "non-null",
+    );
+    expect(assertion).toMatchObject({ verdict: "broken", reason: "user = null" });
+  });
+
   it("breaks a state's type when a handler sets a value outside it", () => {
     expect(find('status stays within "idle" | "saving"')).toMatchObject({
       verdict: "broken",
