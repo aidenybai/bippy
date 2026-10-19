@@ -34,6 +34,13 @@ jobs:
           path: packages/bippy-analyzer/src/react-compiler
           key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
+      - if: matrix.task == 'test'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: matrix.task == 'test'
+        run: pnpm --filter bippy-analyzer exec playwright install --with-deps chromium
       - run: pnpm run ${{ matrix.task }}
       - if: matrix.task == 'build'
         run: |
