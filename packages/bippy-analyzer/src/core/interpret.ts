@@ -1532,9 +1532,13 @@ export class Interpreter {
     return isCheckable;
   }
 
-  #claim(claim: Omit<Claim, "file">): void {
+  #claim(claim: Omit<Claim, "file" | "isInHandler">): void {
     if (this.#isCheckable(claim.subject))
-      this.#claims.push({ ...claim, file: this.#resolver.fileName });
+      this.#claims.push({
+        ...claim,
+        file: this.#resolver.fileName,
+        isInHandler: this.#handlerEffects !== null,
+      });
   }
 
   #claimInvariant(callSite: CallSite, target: CallTarget, walkState: WalkState): void {

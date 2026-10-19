@@ -135,6 +135,40 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > Coalesced keeps its render tree and handlers 1`] = `
+"---
+title: Coalesced src/claims.tsx:50
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Coalesced"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"checked"}
+  n2 --> n3
+  n4["{#quot;on#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;off#quot;}"]
+  n3 -->|✗| n5
+  n6(["useEffect([serverChecked]) ⇒ checked = flags?.some(function) != null ? flags?.s…"]):::event
+  n1 -.-> n6"
+`;
+
+exports[`fixture analysis > Coalesced keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Coalesced src/claims.tsx:50
+---
+stateDiagram-v2
+  direction LR
+  S1: checked · #lt;p#gt; {"on"}
+  S2: !checked · #lt;p#gt; {"off"}
+  S1 --> S2: useEffect([serverChecked])
+  S2 --> S1: useEffect([serverChecked])
+  state "claims" as claims {
+    claims1: holds checked stays within false | true L52
+  }"
+`;
+
 exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
 "---
 title: Composer src/guards.tsx:3
@@ -344,6 +378,30 @@ stateDiagram-v2
   [*] --> S1"
 `;
 
+exports[`fixture analysis > EmptyObjectCast keeps its render tree and handlers 1`] = `
+"---
+title: EmptyObjectCast src/claims.tsx:59
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["EmptyObjectCast"]
+  n2["#lt;p#gt; ⚠ raw"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > EmptyObjectCast keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: EmptyObjectCast src/claims.tsx:59
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; ⚠ raw
+  [*] --> S1
+  state "claims" as claims {
+    claims1: unproven raw as "a" | "b" L59 · raw = undefined | {}
+  }"
+`;
+
 exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
 "---
 title: Feed src/chains.tsx:17
@@ -482,6 +540,90 @@ stateDiagram-v2
   direction LR
   S1: found === null · #lt;p#gt; "No match"
   S2: found !== null · #lt;p#gt; "Found " {found}"
+`;
+
+exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
+"---
+title: GuardedCast src/claims.tsx:25
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["GuardedCast"]
+  n2["#lt;button#gt; {status}"]
+  n1 --> n2
+  n3(["onClick ⇒ if next: status = Unknown(cast)"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > GuardedCast keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: GuardedCast src/claims.tsx:25
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {status}
+  [*] --> S1
+  state "claims" as claims {
+    claims1: unproven next as "idle" | "saving" L29 in S1 · next = string
+    claims2: unproven status stays within "idle" | "saving" L26 in S1 · set through a cast
+  }"
+`;
+
+exports[`fixture analysis > GuardedWrite keeps its render tree and handlers 1`] = `
+"---
+title: GuardedWrite src/claims.tsx:40
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["GuardedWrite"]
+  n2["#lt;button#gt; {status}"]
+  n1 --> n2
+  n3(["onClick ⇒ if next: status = next"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > GuardedWrite keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: GuardedWrite src/claims.tsx:40
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {status}
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds status stays within "idle" | "saving" L41
+  }"
+`;
+
+exports[`fixture analysis > HiddenHandler keeps its render tree and handlers 1`] = `
+"---
+title: HiddenHandler src/claims.tsx:34
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["HiddenHandler"]
+  n2{"kind === #quot;c#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;c#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;button#gt; {picked}"]
+  n2 -->|✗| n4
+  n5(["onClick ⇒ picked = kind"]):::event
+  n4 -.-> n5"
+`;
+
+exports[`fixture analysis > HiddenHandler keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: HiddenHandler src/claims.tsx:34
+---
+stateDiagram-v2
+  direction LR
+  S1: kind === "c" · #lt;p#gt; "c"
+  S2: kind !== "c" · #lt;button#gt; {picked}
+  state "claims" as claims {
+    claims1: holds kind as "a" | "b" L37
+    claims2: holds picked stays within "a" | "b" L35
+  }"
 `;
 
 exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
@@ -699,6 +841,40 @@ stateDiagram-v2
   S3 --> S2: "Save""
 `;
 
+exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `
+"---
+title: OpaqueCallback src/claims.tsx:61
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["OpaqueCallback"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"user?.name"}
+  n2 --> n3
+  n4["#lt;i#gt; #quot;named#quot;"]
+  n3 -->|✓| n4
+  n5["⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…"]
+  n2 --> n5"
+`;
+
+exports[`fixture analysis > OpaqueCallback keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: OpaqueCallback src/claims.tsx:61
+---
+stateDiagram-v2
+  direction LR
+  S1: user?.name · #lt;div#gt; #lt;i#gt; "named" ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  S2: !(user?.name) ∧ user != null · #lt;div#gt; {user.name} ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  S3: !(user?.name) ∧ user == null · #lt;div#gt; ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  state "claims" as claims {
+    claims1: unproven user! L65 · user = null
+  }
+  state "bailouts" as bailouts {
+    bailouts1: unknown-call L64 call returns JSX the analysis can't see into
+  }"
+`;
+
 exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
 "---
 title: Page src/plain.jsx:13
@@ -871,8 +1047,8 @@ stateDiagram-v2
     claims1: unproven invariant(mode === "view" || user !== null) L13 · mode = "edit", user = null
     claims2: unproven user as User L14 in S1 after "Save" · user = null
     claims3: holds step as "a" | "b" L17
-    claims4: unproven user! L18 · user = null
-    claims5: broken "done" as "idle" | "saving" L20 · "done" = "done"
+    claims4: unproven user! L18 in S2 · user = null
+    claims5: broken "done" as "idle" | "saving" L20 in S2 · "done" = "done"
     claims6: broken status stays within "idle" | "saving" L11 in S2 · set to "done"
     claims7: holds step stays within "a" | "b" | "c" L12
   }"

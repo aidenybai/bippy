@@ -1,4 +1,4 @@
-import { describeCases } from "./claims";
+import { describeCases } from "./claim-cases";
 import { formatSymbolicValue } from "./format";
 import type { AbstractValue, Claim, Domain, SourceLocation, SymbolicValue } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
@@ -17,7 +17,7 @@ export const describeCondition = (value: SymbolicValue): string => {
   return formatSymbolicValue(value);
 };
 
-type ClaimSite = Omit<Claim, "file">;
+type ClaimSite = Omit<Claim, "file" | "isInHandler">;
 
 const isNullishCase = (value: AbstractValue): boolean =>
   value.kind === "Literal" && isNullish(value.value);
