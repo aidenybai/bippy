@@ -27,7 +27,5 @@ export const parseFileRoute = (segments: string[]): FileRoute | null => {
   return { file: fileSegments.map(decodeURIComponent).join("/"), mode };
 };
 
-export const getRouteHref = (name: string | null, mode: ViewMode = "code"): string => {
-  if (name === null) return "/";
-  return mode === "code" ? `/${name}` : `/${name}/${mode}`;
-};
+export const getRouteHref = (name: string, mode: ViewMode = "code"): string =>
+  mode === "code" ? `/${name}` : `/${name}/${mode}`;

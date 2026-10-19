@@ -15,7 +15,6 @@ import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { useUiStore } from "@/store/ui";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
-import { Examples } from "./examples";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
@@ -26,7 +25,7 @@ const Shell = ({ children }: { children: ReactNode }) => {
   const isLegendOpen = useUiStore((state) => state.isLegendOpen);
   const setLegendOpen = useUiStore((state) => state.setLegendOpen);
   useHighlighterWarmup();
-  const hasLegend = view !== null && hasLegendContent(view);
+  const hasLegend = hasLegendContent(view);
   return (
     <SidebarProvider
       open={isLegendOpen && hasLegend && mode !== "json"}
@@ -41,9 +40,9 @@ const Shell = ({ children }: { children: ReactNode }) => {
 
 interface RootProps {
   examples: Example[];
-  name: string | null;
+  name: string;
   mode: ViewMode;
-  view: ViewFile | null;
+  view: ViewFile;
   json: string | null;
   children: ReactNode;
 }
@@ -79,23 +78,18 @@ const Panes = ({ source, legend }: PanesProps) => (
 );
 
 const Source = () => {
-  const { view, mode } = useViewer();
-  if (view === null) return <Examples />;
+  const { mode } = useViewer();
   if (mode === "diagram") return <DiagramPane />;
   if (mode === "json") return <JsonPane />;
   return <SourcePane />;
 };
 
-const LegendPane = ({ children }: { children: ReactNode }) => {
-  const { view } = useViewer();
-  return view ? <Legend>{children}</Legend> : null;
-};
+const LegendPane = ({ children }: { children: ReactNode }) => <Legend>{children}</Legend>;
 
 const Status = () => {
   const { view } = useViewer();
   const activeComponent = useActiveComponent();
   const hoveredNode = useHoveredNode();
-  if (view === null) return null;
   return (
     <div className="flex h-8 items-center gap-4 overflow-hidden border-t px-3 whitespace-nowrap text-muted-foreground tabular-nums">
       {activeComponent && (

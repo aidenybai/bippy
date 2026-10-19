@@ -23,7 +23,7 @@ import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
 import { useHoverStore, type TokenAnchor } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
-import { useHoveredNode, useLoadedView, useViewer } from "./context";
+import { useHoveredNode, useViewer } from "./context";
 import { TokenMark } from "./token-mark";
 
 const contains = (box: Box, x: number, y: number): boolean =>
@@ -45,7 +45,7 @@ const usePointerTracking = (
   wrapperRef: RefObject<HTMLDivElement | null>,
   layout: TokenLayout,
 ): ((event: MouseEvent) => void) => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const activate = useHoverStore((state) => state.activate);
   const hover = useHoverStore((state) => state.hover);
   const leave = useHoverStore((state) => state.leave);
@@ -70,7 +70,7 @@ const usePointerTracking = (
 };
 
 const useColoredNodes = (): GraphNode[] => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const { colorByNodeId } = useViewer();
   return useMemo(
     () =>
@@ -82,7 +82,7 @@ const useColoredNodes = (): GraphNode[] => {
 };
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const focusRequest = useHoverStore((state) => state.focusRequest);
   useEffect(() => {
     const host = wrapperRef.current?.querySelector<HTMLElement>("diffs-container");
@@ -92,7 +92,7 @@ const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
 };
 
 const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const { colorByNodeId } = useViewer();
   const arcs = useMemo(
     () => placeArcs(view, layout.tokens, colorByNodeId, isRestingArc),
@@ -102,7 +102,7 @@ const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
 };
 
 const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const { colorByNodeId } = useViewer();
   const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
   const arcs = useMemo(
@@ -122,7 +122,7 @@ const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
 };
 
 const TokenTooltip = () => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const hoveredNode = useHoveredNode();
   const anchor = useHoverStore((state) => state.anchor);
   const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
@@ -161,7 +161,7 @@ const Overlay = ({ layout }: { layout: TokenLayout }) => {
 };
 
 const CodeView = () => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   useHighlighter();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);

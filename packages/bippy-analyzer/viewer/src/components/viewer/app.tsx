@@ -5,9 +5,9 @@ import { Viewer } from "./viewer";
 
 export interface AppProps {
   examples: Example[];
-  name: string | null;
+  name: string;
   mode: ViewMode;
-  view: ViewFile | null;
+  view: ViewFile;
   json: string | null;
 }
 

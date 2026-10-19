@@ -1,21 +1,27 @@
 import { useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button-variants";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { hasLegendContent } from "@/lib/graph";
 import { getRouteHref } from "@/lib/route";
 import { getFileTitle } from "@/lib/source";
+import { cn } from "@/lib/utils";
 import { VIEW_MODES, isViewMode } from "@/lib/view-mode";
 import { useViewer } from "./context";
 import { ThemeToggle } from "./theme-toggle";
 
-const usePrefetchModes = (name: string | null): void => {
+const usePrefetchModes = (name: string): void => {
   const router = useRouter();
   useEffect(() => {
-    if (name === null) return;
     for (const mode of VIEW_MODES) router.prefetch(getRouteHref(name, mode));
   }, [router, name]);
 };
@@ -35,19 +41,30 @@ const ModeTabs = () => {
 };
 
 const Title = () => {
-  const { view } = useViewer();
-  if (view === null) return <span className="font-medium text-foreground">bippy analyzer</span>;
+  const { examples, name, mode, view } = useViewer();
   return (
     <>
-      <Link
-        href="/"
-        aria-label="Examples"
-        title="Examples"
-        className={buttonVariants({ variant: "ghost", size: "icon" })}
-      >
-        <ArrowLeft />
-      </Link>
-      <span className="truncate font-mono text-foreground">{getFileTitle(view.file)}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={cn(buttonVariants({ variant: "ghost" }), "min-w-0 font-mono text-foreground")}
+        >
+          <span className="truncate">{getFileTitle(view.file)}</span>
+          <ChevronDown className="text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {examples.map((example) => (
+            <DropdownMenuLinkItem
+              key={example.name}
+              render={<Link href={getRouteHref(example.name, mode)} />}
+              aria-current={example.name === name ? "page" : undefined}
+              className="font-mono"
+            >
+              <span className="flex-1">{getFileTitle(example.file)}</span>
+              {example.name === name && <Check />}
+            </DropdownMenuLinkItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <span className="hidden text-muted-foreground tabular-nums sm:inline">
         {view.components.length} components
       </span>
@@ -57,13 +74,13 @@ const Title = () => {
 
 export const Toolbar = () => {
   const { view, mode } = useViewer();
-  const hasLegend = view !== null && hasLegendContent(view);
+  const hasLegend = hasLegendContent(view);
   return (
     <div className="flex h-11 items-center gap-2 border-b px-3 sm:gap-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Title />
       </div>
-      {view !== null && <ModeTabs />}
+      <ModeTabs />
       {hasLegend && <SidebarTrigger disabled={mode === "json"} />}
       <ThemeToggle />
     </div>

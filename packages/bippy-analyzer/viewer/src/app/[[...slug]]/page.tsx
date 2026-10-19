@@ -23,17 +23,12 @@ const Page = async ({ params }: PageProps) => {
   const { slug } = await params;
   const route = parseRoute(slug, demoNames);
   if (!route) notFound();
-  const view = route.name === null ? null : (demos.views[route.name] ?? null);
-  const json =
-    route.mode === "json" && route.name !== null ? (demos.json[route.name] ?? null) : null;
+  const name = route.name ?? demos.examples[0]?.name;
+  const view = name === undefined ? undefined : demos.views[name];
+  if (name === undefined || view === undefined) notFound();
+  const json = route.mode === "json" ? (demos.json[name] ?? null) : null;
   return (
-    <ClientApp
-      examples={demos.examples}
-      name={route.name}
-      mode={route.mode}
-      view={view}
-      json={json}
-    />
+    <ClientApp examples={demos.examples} name={name} mode={route.mode} view={view} json={json} />
   );
 };
 

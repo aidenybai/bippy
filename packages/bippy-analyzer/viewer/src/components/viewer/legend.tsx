@@ -12,7 +12,7 @@ import { Table, TableBody } from "@/components/ui/table";
 import type { ViewComponent } from "@/model";
 import { useHoverStore } from "@/store/hover";
 import { useIsPanelChosen, useIsPanelOpen, useUiStore } from "@/store/ui";
-import { useActiveComponent, useLoadedView } from "./context";
+import { useActiveComponent, useViewer } from "./context";
 import { BindingRow, HandlerRow, StateRow } from "./legend-rows";
 
 const ComponentContext = createContext<ViewComponent | null>(null);
@@ -146,7 +146,7 @@ const useKeepActiveOpen = (activeName: string | null): void => {
 };
 
 const Root = ({ children }: { children: ReactNode }) => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const activeComponent = useActiveComponent();
   const activeName = activeComponent?.name ?? null;
   useKeepActiveOpen(activeName);

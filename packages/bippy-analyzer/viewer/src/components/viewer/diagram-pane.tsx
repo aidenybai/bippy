@@ -3,7 +3,7 @@ import { Code } from "@/components/ui/code";
 import { getSourceLine } from "@/lib/diagram";
 import type { ViewComponent, ViewFile } from "@/model";
 import { useHoverStore } from "@/store/hover";
-import { useLoadedView } from "./context";
+import { useViewer } from "./context";
 import { DecisionTree } from "./decision-tree";
 
 const CodeLine = ({ text }: { text: string }) => (
@@ -39,7 +39,7 @@ const ComponentDiagram = ({ view, component }: { view: ViewFile; component: View
 };
 
 export const DiagramPane = () => {
-  const view = useLoadedView();
+  const { view } = useViewer();
   const paneRef = useRef<HTMLDivElement>(null);
   const focusRequest = useHoverStore((state) => state.focusRequest);
   useEffect(() => {
