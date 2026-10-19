@@ -81,7 +81,6 @@
   }
   ::selection {
     background: var(--well-2);
-    color: var(--ink);
   }
   code,
   kbd {
