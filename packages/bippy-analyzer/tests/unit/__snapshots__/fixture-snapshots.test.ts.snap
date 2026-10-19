@@ -2040,6 +2040,43 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > UploadForm keeps its render tree and handlers 1`] = `
+"---
+title: UploadForm src/catch-after-await.tsx:25
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["UploadForm"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Upload#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ step = #quot;uploading#quot; · if !Unknown(throws): step = #quot;processing#quot; (async)…"]):::event
+  n3 -.-> n4
+  n5["#lt;p#gt; {step}"]
+  n2 --> n5
+  n6{"error"}
+  n2 --> n6
+  n7["#lt;p#gt; {error}"]
+  n6 -->|✓| n7"
+`;
+
+exports[`fixture analysis > UploadForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: UploadForm src/catch-after-await.tsx:25
+---
+stateDiagram-v2
+  direction LR
+  S1: error · #lt;div#gt; #lt;button#gt; "Upload" #lt;p#gt; {step} #lt;p#gt; {"Failed"}
+  S2: !error · #lt;div#gt; #lt;button#gt; "Upload" #lt;p#gt; {step}
+  [*] --> S2
+  S2 --> S1: "Upload" (async)
+  state "claims" as claims {
+    claims1: holds step stays within "done" | "idle" | "processing" | "uploading" L26
+    claims2: holds error stays within null | string L27
+  }"
+`;
+
 exports[`fixture analysis > WarningFilter keeps its render tree and handlers 1`] = `
 "---
 title: WarningFilter src/callback-arguments.tsx:16

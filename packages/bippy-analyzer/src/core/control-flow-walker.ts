@@ -81,13 +81,28 @@ const getBranchOperator = (terminal: ValueBranchTerminal): BranchOperator => {
   return terminal.kind;
 };
 
+interface ThrowPoint {
+  walkState: WalkState;
+  test: SymbolicValue;
+}
+
+interface FunctionScope {
+  walkedCatches: Set<BlockId>;
+  throwPointsByTry: ThrowPoint[][];
+}
+
+export const createFunctionScope = (): FunctionScope => ({
+  walkedCatches: new Set(),
+  throwPointsByTry: [],
+});
+
 export class ControlFlowWalker {
   readonly #interpreter: Interpreter;
   #blockVisits = 0;
   #walkDepth = 0;
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
-  #walkedCatches = new Set<BlockId>();
+  #functionScope = createFunctionScope();
   readonly #throwingCatches = new Set<BlockId>();
   #awaitCount = 0;
 
@@ -107,12 +122,12 @@ export class ControlFlowWalker {
     this.#blockVisits = blockVisits;
   }
 
-  get walkedCatches(): Set<BlockId> {
-    return this.#walkedCatches;
+  get functionScope(): FunctionScope {
+    return this.#functionScope;
   }
 
-  set walkedCatches(walkedCatches: Set<BlockId>) {
-    this.#walkedCatches = walkedCatches;
+  set functionScope(functionScope: FunctionScope) {
+    this.#functionScope = functionScope;
   }
 
   #resolvePhi(phi: Phi, outcome: Outcome, guards: SymbolicValue[]): SymbolicValue {
@@ -417,10 +432,8 @@ export class ControlFlowWalker {
         this.#resolveBlockPhis(block, previousId, currentWalkState.guards);
       for (const instruction of block.instructions) {
         this.#interpreter.evaluateInstruction(instruction, currentWalkState);
-        if (instruction.value.kind === "Await") {
-          this.#awaitCount++;
-          currentWalkState = getAsyncWalkState(currentWalkState);
-        }
+        if (instruction.value.kind === "Await")
+          currentWalkState = this.#passAwait(currentWalkState, instruction.loc);
       }
       const step = this.#walkTerminal(block.terminal, currentId, stops, currentWalkState);
       if (step.kind !== "Next") return step;
@@ -513,9 +526,10 @@ export class ControlFlowWalker {
   ): TerminalStep {
     const { handler, continuation } = terminal;
     if (this.#interpreter.handlerEffects && handler !== null) this.#throwingCatches.add(handler);
-    if (this.#interpreter.handlerEffects || handler === null || this.#walkedCatches.has(handler))
+    const { walkedCatches } = this.#functionScope;
+    if (this.#interpreter.handlerEffects || handler === null || walkedCatches.has(handler))
       return { kind: "Next", block: continuation };
-    this.#walkedCatches.add(handler);
+    walkedCatches.add(handler);
     const throwTest = createUnknown("throws", terminal.loc);
     return {
       kind: "Split",
@@ -527,6 +541,16 @@ export class ControlFlowWalker {
     };
   }
 
+  #passAwait(walkState: WalkState, loc: SourceLocation): WalkState {
+    this.#awaitCount++;
+    const asyncWalkState = getAsyncWalkState(walkState);
+    const throwPoints = this.#functionScope.throwPointsByTry.at(-1);
+    if (!throwPoints) return asyncWalkState;
+    const test = createUnknown("throws", loc);
+    throwPoints.push({ walkState: asyncWalkState, test });
+    return { ...asyncWalkState, guards: [...asyncWalkState.guards, negate(test)] };
+  }
+
   #walkTryInHandler(
     terminal: TryTerminal,
     blockId: BlockId,
@@ -536,21 +560,32 @@ export class ControlFlowWalker {
     const { block, handler, fallthrough } = terminal;
     const bodyStops = new Set([...stops, fallthrough]);
     const awaitCountBefore = this.#awaitCount;
+    const throwPoints: ThrowPoint[] = [];
+    this.#functionScope.throwPointsByTry.push(throwPoints);
     const bodyOutcome = this.walk(block, bodyStops, blockId, walkState, "unresolved");
+    this.#functionScope.throwPointsByTry.pop();
     const afterWalkState =
       this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
     if (!this.#throwingCatches.delete(handler))
       return this.#continueAfter(bodyOutcome, fallthrough, stops, afterWalkState);
-    const throwTest = createUnknown("throws", terminal.loc);
-    const catchOutcome = this.#walkArm(handler, blockId, bodyStops, afterWalkState, throwTest);
-    const outcome: Outcome = {
-      kind: "Split",
-      test: throwTest,
-      testKind: "truthy",
-      branch: this.#interpreter.createBranch(terminal.id, terminal.loc, "none"),
-      consequent: catchOutcome,
-      alternate: bodyOutcome,
-    };
+    if (throwPoints.length === 0)
+      throwPoints.push({ walkState: afterWalkState, test: createUnknown("throws", terminal.loc) });
+    const branch = this.#interpreter.createBranch(terminal.id, terminal.loc, "none");
+    const catchArms = throwPoints.map(({ walkState: throwWalkState, test }) => ({
+      test,
+      outcome: this.#walkArm(handler, blockId, bodyStops, throwWalkState, test),
+    }));
+    const outcome = catchArms.reduceRight<Outcome>(
+      (alternate, { test, outcome: consequent }) => ({
+        kind: "Split",
+        test,
+        testKind: "truthy",
+        branch,
+        consequent,
+        alternate,
+      }),
+      bodyOutcome,
+    );
     return this.#continueAfter(outcome, fallthrough, stops, afterWalkState);
   }
 
