@@ -1180,6 +1180,46 @@ stateDiagram-v2
   S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}"
 `;
 
+exports[`fixture analysis > ResourceDetails keeps its render tree and handlers 1`] = `
+"---
+title: ResourceDetails src/claims.tsx:71
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ResourceDetails"]
+  n2{"user === null"}
+  n1 --> n2
+  n3["#lt;p#gt;"]
+  n2 -->|✓| n3
+  n4["#quot;Loading #quot;"]
+  n3 --> n4
+  n5{"renderExtra"}
+  n3 --> n5
+  n6["{renderExtra(user)}"]
+  n5 -->|✓| n6
+  n7["#lt;p#gt;"]
+  n2 -->|✗| n7
+  n8{"renderExtra"}
+  n7 --> n8
+  n9["{renderExtra(user)}"]
+  n8 -->|✓| n9"
+`;
+
+exports[`fixture analysis > ResourceDetails keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ResourceDetails src/claims.tsx:71
+---
+stateDiagram-v2
+  direction LR
+  S1: user === null ∧ renderExtra · #lt;p#gt; "Loading " {renderExtra(user)}
+  S2: user === null ∧ !renderExtra · #lt;p#gt; "Loading "
+  S3: user !== null ∧ renderExtra · #lt;p#gt; {renderExtra(user)}
+  S4: user !== null ∧ !renderExtra · #lt;p#gt;
+  state "claims" as claims {
+    claims1: broken user! L73 in S1 · user = null
+  }"
+`;
+
 exports[`fixture analysis > RetryForm keeps its render tree and handlers 1`] = `
 "---
 title: RetryForm src/catch-after-await.tsx:7
