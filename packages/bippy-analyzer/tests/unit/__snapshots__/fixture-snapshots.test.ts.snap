@@ -848,10 +848,7 @@ title: Greeting src/option-defaults.tsx:21
 stateDiagram-v2
   direction LR
   S1: auth.user · #lt;div#gt; #lt;p#gt; {auth.user.name}
-  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out"
-  state "claims" as claims {
-    claims1: holds invariant(auth.user) L17 · never reached
-  }"
+  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out""
 `;
 
 exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `

@@ -213,27 +213,25 @@ export class ControlFlowWalker {
     const armStops = new Set([...stops, fallthrough]);
     const isSwapped = operator === "&&";
     const consequentGuard = isSwapped ? negate(testGuard) : testGuard;
-    const consequentOutcome = this.#walkArm(consequent, from, armStops, walkState, consequentGuard);
-    const alternateOutcome = this.#walkArm(
-      alternate,
-      from,
-      armStops,
-      walkState,
-      negate(consequentGuard),
-    );
     const probe = this.#interpreter.resolver.isExpression(terminal.test.loc)
       ? branchTest.testKind
       : "none";
     const branch = this.#interpreter.createBranch(terminal.id, terminal.test.loc, probe);
+    const walkConsequent = () =>
+      this.#walkArm(consequent, from, armStops, walkState, consequentGuard);
+    const walkAlternate = () =>
+      this.#walkArm(alternate, from, armStops, walkState, negate(consequentGuard));
     if (branchTest.knownOutcome !== null) {
       this.#recordDecidedBranch(branch, branchTest.knownOutcome);
       return this.#continueAfter(
-        branchTest.knownOutcome !== isSwapped ? consequentOutcome : alternateOutcome,
+        branchTest.knownOutcome !== isSwapped ? walkConsequent() : walkAlternate(),
         fallthrough,
         stops,
         walkState,
       );
     }
+    const consequentOutcome = walkConsequent();
+    const alternateOutcome = walkAlternate();
     const splitOutcome: Outcome = {
       kind: "Split",
       test: branchTest.test,

@@ -4,9 +4,9 @@ import { analyzeFixture, getComponent } from "./helpers";
 describe("comparing an object with a primitive", () => {
   const project = analyzeFixture("symbolic-tree", "option-defaults.tsx");
 
-  it("folds a defaulted option, so an invariant behind it never runs", () => {
+  it("folds a defaulted option, so an invariant behind it is never walked", () => {
     const { report } = getComponent(project, "Greeting");
-    expect(report.claimOutcomes).toMatchObject([{ verdict: "holds", reason: "never reached" }]);
+    expect(report.claimOutcomes).toEqual([]);
     expect(report.states).toHaveLength(2);
   });
 
