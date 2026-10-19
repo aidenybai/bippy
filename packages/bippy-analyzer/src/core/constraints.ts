@@ -28,6 +28,7 @@ const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
 export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
+const STRICT_EQUALITY_OPERATORS = new Set(["===", "!=="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 
 export interface Bound {
@@ -501,13 +502,15 @@ const assumeEquality = (
   constraints: Constraints,
 ): Constraints | null => {
   const [placeSide, literalSide] = splitEquality(value);
-  if (
-    literalSide.kind !== "Primitive" ||
-    placeSide.kind !== "Binding" ||
-    !getPossibleValues(placeSide, constraints)
-  )
+  if (literalSide.kind !== "Primitive" || placeSide.kind !== "Binding")
     return assumeOpaqueCondition(value, isTrue, constraints);
   const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  if (!getPossibleValues(placeSide, constraints)) {
+    const assumed = assumeOpaqueCondition(value, isTrue, constraints);
+    return assumed && wantsMatch && STRICT_EQUALITY_OPERATORS.has(value.operator)
+      ? withExactValue(assumed, placeSide, literalSide.value)
+      : assumed;
+  }
   return assumeByNarrowing(value, isTrue, placeSide, constraints, (candidate) =>
     narrowEquality(candidate, literalSide.value, value.operator, wantsMatch),
   );
@@ -523,6 +526,16 @@ const assumeByNarrowing = (
   const narrowed = narrowPlace(bindingValue, constraints, narrowValue);
   if (!narrowed || evaluateCondition(value, narrowed) !== null) return narrowed;
   return assumeOpaqueCondition(value, isTrue, narrowed);
+};
+
+const withExactValue = (
+  constraints: Constraints,
+  bindingValue: BindingValue,
+  literal: PrimitiveValue,
+): Constraints => {
+  const assumed = cloneConstraints(constraints);
+  assumed.possibleValues.set(getValuePlace(bindingValue), [{ kind: "Literal", value: literal }]);
+  return assumed;
 };
 
 const narrowTruthiness = (value: AbstractValue, isTruthy: boolean): AbstractValue[] => {
