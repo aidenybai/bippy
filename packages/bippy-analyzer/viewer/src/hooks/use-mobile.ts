@@ -10,4 +10,7 @@ const subscribe = (onChange: () => void): (() => void) => {
 
 const getSnapshot = (): boolean => window.matchMedia(MOBILE_QUERY).matches;
 
-export const useIsMobile = (): boolean => useSyncExternalStore(subscribe, getSnapshot);
+const getServerSnapshot = (): boolean => false;
+
+export const useIsMobile = (): boolean =>
+  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

@@ -33,6 +33,7 @@ import type {
   ViewLocation,
   ViewUpdate,
 } from "@/model";
+import { getUpdateKey } from "@/lib/lookup";
 import { loadAnalyzerOutput, loadAnalyzerText, type AnalyzerJsonComponent } from "./analyzer-json";
 import { buildCodeGraph } from "./code-graph";
 
@@ -184,9 +185,6 @@ const toViewUpdate = (update: StateUpdate): ViewUpdate => ({
   assignments: formatAssignments(update),
   isAsync: update.isAsync,
 });
-
-const getUpdateKey = (update: ViewUpdate): string =>
-  `${update.bindingId}:${update.guard ?? ""}:${update.assignments.join(",")}:${update.isAsync}`;
 
 const dedupeUpdates = (updates: ViewUpdate[]): ViewUpdate[] => {
   const seen = new Set<string>();

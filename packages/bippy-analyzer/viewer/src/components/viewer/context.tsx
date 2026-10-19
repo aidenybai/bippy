@@ -1,28 +1,16 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useView } from "@/hooks/queries";
 import { getColorByNodeId } from "@/lib/colors";
 import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
-import { readLocation, writeLocation, type Source } from "@/lib/source";
+import { useLocation, writeLocation } from "@/lib/source";
 import type { ViewMode } from "@/lib/view-mode";
-import type { GraphNode, ViewComponent, ViewFile } from "@/model";
+import type { Example, GraphNode, ViewComponent, ViewFile } from "@/model";
 import { useHoverStore } from "@/store/hover";
 
-export interface OpenOptions {
-  keepEditor?: boolean;
-}
-
 export interface ViewerState {
-  source: Source | null;
-  open: (source: Source | null, options?: OpenOptions) => void;
-  editorSession: number;
+  examples: Example[];
+  file: string | null;
+  open: (file: string | null) => void;
   mode: ViewMode;
   setMode: (mode: ViewMode) => void;
   view: ViewFile | null;
@@ -34,11 +22,15 @@ export interface ViewerState {
 
 const ViewerContext = createContext<ViewerState | null>(null);
 
-export const ViewerProvider = ({ children }: { children: ReactNode }) => {
-  const [location, setLocation] = useState(readLocation);
-  const [editorSession, setEditorSession] = useState(0);
-  const { source, mode } = location;
-  const viewQuery = useView(source);
+interface ViewerProviderProps {
+  examples: Example[];
+  children: ReactNode;
+}
+
+export const ViewerProvider = ({ examples, children }: ViewerProviderProps) => {
+  const location = useLocation();
+  const { file, mode } = location;
+  const viewQuery = useView(file);
   const view = viewQuery.data ?? null;
   const setIndex = useHoverStore((state) => state.setIndex);
   const index = useMemo(() => (view ? buildGraphIndex(view) : null), [view]);
@@ -46,21 +38,17 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     () => (view ? getColorByNodeId(view) : new Map<string, string>()),
     [view],
   );
-  useEffect(() => writeLocation(location), [location]);
   useEffect(() => setIndex(index), [index, setIndex]);
-  const open = useCallback((next: Source | null, options?: OpenOptions) => {
-    setLocation((current) => ({ ...current, source: next }));
-    if (!options?.keepEditor) setEditorSession((session) => session + 1);
-  }, []);
-  const setMode = useCallback(
-    (next: ViewMode) => setLocation((current) => ({ ...current, mode: next })),
+  const open = useCallback(
+    (next: string | null) => writeLocation({ file: next, mode: "code" }),
     [],
   );
+  const setMode = useCallback((next: ViewMode) => writeLocation({ file, mode: next }), [file]);
   const value = useMemo<ViewerState>(
     () => ({
-      source,
+      examples,
+      file,
       open,
-      editorSession,
       mode,
       setMode,
       view,
@@ -70,9 +58,9 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       colorByNodeId,
     }),
     [
-      source,
+      examples,
+      file,
       open,
-      editorSession,
       mode,
       setMode,
       view,

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Code } from "@/components/ui/code";
 import { getSourceLine } from "@/lib/diagram";
 import type { ViewComponent, ViewFile } from "@/model";
-import { useHoverStore, useIsInactive } from "@/store/hover";
+import { useHoverStore } from "@/store/hover";
 import { useLoadedView } from "./context";
 import { DecisionTree } from "./decision-tree";
 
@@ -12,14 +12,12 @@ const CodeLine = ({ text }: { text: string }) => (
 
 const ComponentDiagram = ({ view, component }: { view: ViewFile; component: ViewComponent }) => {
   const activate = useHoverStore((state) => state.activate);
-  const isInactive = useIsInactive(`${component.name}/`);
   if (!component.loc) return null;
   const { start, end } = component.loc;
   return (
     <section
       data-component={component.name}
-      className="grid gap-1.5 transition-opacity duration-150"
-      style={{ opacity: isInactive ? 0.45 : 1 }}
+      className="grid gap-1.5"
       onMouseEnter={() => activate(component.name)}
     >
       <CodeLine text={getSourceLine(view, start.line)} />

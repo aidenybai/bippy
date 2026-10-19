@@ -1,5 +1,8 @@
+import { listExamples } from "@/server/examples";
 import { ClientApp } from "./client-app";
 
-const Page = () => <ClientApp />;
+export const dynamic = "force-dynamic";
+
+const Page = () => <ClientApp examples={listExamples()} />;
 
 export default Page;

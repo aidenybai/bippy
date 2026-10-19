@@ -7,8 +7,7 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
-import { File, type FileEditChangeHandler, type FileOptions } from "@pierre/diffs/react";
-import { Spinner } from "@/components/ui/spinner";
+import { File, type FileOptions } from "@pierre/diffs/react";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
@@ -17,13 +16,13 @@ import { isRestingArc, placeArcs } from "@/lib/arcs";
 import { describeNode } from "@/lib/describe";
 import { getComponentAtLine } from "@/lib/graph";
 import { getLineFromEvent, scrollToLine, type Box } from "@/lib/positions";
+import { getFileTitle } from "@/lib/source";
 import { useHoverStore, type TokenAnchor } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
-import { EmptyHint } from "./empty-hint";
+import { LoadedPane } from "./loaded-pane";
+import { CodeSkeleton } from "./skeletons";
 import { TokenMark } from "./token-mark";
-
-const ANALYZE_DELAY = 600;
 
 const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   overflow: "wrap",
@@ -174,62 +173,33 @@ const Overlay = ({ wrapperRef, renderCount }: OverlayProps) => {
   );
 };
 
-const useLiveAnalysis = (draft: string, isTyping: boolean): void => {
-  const { open } = useViewer();
-  useEffect(() => {
-    if (!isTyping) return;
-    const timer = window.setTimeout(() => {
-      const code = draft.trim();
-      open(code ? { kind: "code", code } : null, { keepEditor: true });
-    }, ANALYZE_DELAY);
-    return () => window.clearTimeout(timer);
-  }, [draft, isTyping, open]);
-};
-
-const Editor = ({ initial }: { initial: string }) => {
-  const { view } = useViewer();
+const CodeView = () => {
+  const view = useLoadedView();
   const { theme } = useResolvedTheme();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [renderCount, setRenderCount] = useState(0);
-  const [draft, setDraft] = useState(initial);
-  const [isTyping, setTyping] = useState(false);
   const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const onEditChange = useCallback<FileEditChangeHandler<undefined, undefined>>((event) => {
-    setDraft(event.editor.getText());
-    setTyping(true);
-  }, []);
-  useLiveAnalysis(draft, isTyping);
-  const isCurrent = view !== null && view.source === draft;
-  if (isTyping && isCurrent) setTyping(false);
   const options = useMemo<FileOptions<undefined, undefined>>(
     () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
     [theme, onPostRender],
   );
-  const file = useMemo(() => ({ name: "component.tsx", contents: initial }), [initial]);
+  const file = useMemo(
+    () => ({ name: getFileTitle(view.file), contents: view.source }),
+    [view.file, view.source],
+  );
   return (
     <div ref={wrapperRef} className="relative min-h-full min-w-0 py-1 pr-8 text-[13px]/[19px]">
-      <File file={file} options={options} disableWorkerPool edit onEditChange={onEditChange} />
-      {draft.trim() === "" && <EmptyHint />}
-      {isCurrent && <Overlay wrapperRef={wrapperRef} renderCount={renderCount} />}
+      <File file={file} options={options} disableWorkerPool />
+      <Overlay wrapperRef={wrapperRef} renderCount={renderCount} />
     </div>
   );
 };
 
 export const SourcePane = () => {
-  const { source, view, editorSession, isViewLoading } = useViewer();
   const isHighlighterReady = useHighlighter() !== null;
-  const initial = source?.kind === "code" ? source.code : (view?.source ?? null);
-  const isWaiting = !isHighlighterReady || (source?.kind === "file" && isViewLoading);
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
-      {isWaiting ? (
-        <Spinner className="h-full" />
-      ) : (
-        <Editor
-          key={`${editorSession}:${initial === null ? "" : "loaded"}`}
-          initial={initial ?? ""}
-        />
-      )}
+      <LoadedPane>{isHighlighterReady ? <CodeView /> : <CodeSkeleton />}</LoadedPane>
     </div>
   );
 };

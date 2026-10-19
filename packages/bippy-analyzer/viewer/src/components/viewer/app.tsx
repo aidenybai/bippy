@@ -1,8 +1,9 @@
+import type { Example } from "@/model";
 import { Legend } from "./legend";
 import { Viewer } from "./viewer";
 
-export const App = () => (
-  <Viewer>
+export const App = ({ examples }: { examples: Example[] }) => (
+  <Viewer examples={examples}>
     <Viewer.Toolbar />
     <Viewer.Panes
       source={<Viewer.Source />}

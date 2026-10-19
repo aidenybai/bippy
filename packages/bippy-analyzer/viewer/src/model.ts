@@ -103,8 +103,7 @@ export interface ViewComponent {
 export interface Example {
   file: string;
   name: string;
-  folder: string;
-  lines: number;
+  summary: string;
 }
 
 export interface ViewFile {

@@ -7,20 +7,23 @@ import {
   SidebarLayout,
   SidebarProvider,
 } from "@/components/ui/sidebar";
-import { Spinner } from "@/components/ui/spinner";
 import { describeNode } from "@/lib/describe";
 import { hasLegendContent } from "@/lib/graph";
+import type { Example } from "@/model";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
+import { Examples } from "./examples";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
+import { ErrorText, LoadedPane } from "./loaded-pane";
+import { LegendSkeleton } from "./skeletons";
 import { SourcePane } from "./source-pane";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
-  const { source, view, mode } = useViewer();
+  const { file, view, mode } = useViewer();
   const [isLegendOpen, setLegendOpen] = useState(true);
-  const hasLegend = source !== null && (view === null || hasLegendContent(view));
+  const hasLegend = file !== null && (view === null || hasLegendContent(view));
   return (
     <SidebarProvider
       open={isLegendOpen && hasLegend && mode !== "json"}
@@ -33,8 +36,13 @@ const Shell = ({ children }: { children: ReactNode }) => {
   );
 };
 
-const Root = ({ children }: { children: ReactNode }) => (
-  <ViewerProvider>
+interface RootProps {
+  examples: Example[];
+  children: ReactNode;
+}
+
+const Root = ({ examples, children }: RootProps) => (
+  <ViewerProvider examples={examples}>
     <Shell>{children}</Shell>
   </ViewerProvider>
 );
@@ -45,9 +53,7 @@ interface PanesProps {
 }
 
 const Crash = ({ error }: { error: unknown }) => (
-  <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
-    {error instanceof Error ? (error.stack ?? error.message) : String(error)}
-  </pre>
+  <ErrorText>{error instanceof Error ? (error.stack ?? error.message) : String(error)}</ErrorText>
 );
 
 const Panes = ({ source, legend }: PanesProps) => (
@@ -63,19 +69,7 @@ const Panes = ({ source, legend }: PanesProps) => (
   </SidebarLayout>
 );
 
-const LoadedPane = ({ children }: { children: ReactNode }) => {
-  const { view, viewError, isViewLoading } = useViewer();
-  if (viewError)
-    return (
-      <pre className="h-full overflow-auto px-4 py-4 font-mono whitespace-pre-wrap text-destructive sm:px-5">
-        {viewError}
-      </pre>
-    );
-  if (isViewLoading || !view) return <Spinner className="h-full" />;
-  return children;
-};
-
-const Source = () => {
+const FilePanes = () => {
   const { view, mode } = useViewer();
   const [hasOpenedJson, setHasOpenedJson] = useState(mode === "json");
   if (mode === "json" && !hasOpenedJson) setHasOpenedJson(true);
@@ -96,15 +90,22 @@ const Source = () => {
   );
 };
 
+const Source = () => {
+  const { file } = useViewer();
+  return file === null ? <Examples /> : <FilePanes />;
+};
+
 const LegendPane = ({ children }: { children: ReactNode }) => {
-  const { view } = useViewer();
-  return view ? <Legend>{children}</Legend> : null;
+  const { view, isViewLoading } = useViewer();
+  if (view) return <Legend>{children}</Legend>;
+  return isViewLoading ? <LegendSkeleton /> : null;
 };
 
 const Status = () => {
-  const { view } = useViewer();
+  const { file, view } = useViewer();
   const activeComponent = useActiveComponent();
   const hoveredNode = useHoveredNode();
+  if (file === null) return null;
   return (
     <div className="flex h-8 items-center gap-4 overflow-hidden border-t px-3 whitespace-nowrap text-muted-foreground tabular-nums">
       {activeComponent && (

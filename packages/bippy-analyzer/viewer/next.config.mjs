@@ -1,9 +1,7 @@
-/** @type {import("next").NextConfig} */
 const nextConfig = {
+  agentRules: false,
   devIndicators: false,
-  experimental: {
-    reactCompiler: true,
-  },
+  reactCompiler: true,
   allowedDevOrigins: ["macmini.tail5e921d.ts.net", "100.111.151.66"],
 };
 

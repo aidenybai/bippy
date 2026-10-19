@@ -5,17 +5,18 @@ import { useViewer } from "./context";
 
 interface ChipProps {
   nodeIds: string[];
+  canDim?: boolean;
   children: ReactNode;
 }
 
-const ColoredChip = ({ nodeIds, color, children }: ChipProps & { color: string }) => {
+const ColoredChip = ({ nodeIds, canDim, color, children }: ChipProps & { color: string }) => {
   const [first] = nodeIds;
   const hover = useHoverStore((state) => state.hover);
   const leave = useHoverStore((state) => state.leave);
   const isHovered = useHoverStore(
     (state) => state.hoveredNodeId !== null && nodeIds.includes(state.hoveredNodeId),
   );
-  const isDimmed = useIsDimmed(nodeIds);
+  const isDimmed = useIsDimmed(nodeIds) && canDim;
   return (
     <span
       data-seg={nodeIds.join(" ")}
@@ -33,13 +34,13 @@ const ColoredChip = ({ nodeIds, color, children }: ChipProps & { color: string }
   );
 };
 
-export const Chip = ({ nodeIds, children }: ChipProps) => {
+export const Chip = ({ nodeIds, canDim = true, children }: ChipProps) => {
   const { colorByNodeId } = useViewer();
   const [first] = nodeIds;
   const color = first !== undefined ? colorByNodeId.get(first) : undefined;
   if (color === undefined) return <span>{children}</span>;
   return (
-    <ColoredChip nodeIds={nodeIds} color={color}>
+    <ColoredChip nodeIds={nodeIds} canDim={canDim} color={color}>
       {children}
     </ColoredChip>
   );

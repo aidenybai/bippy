@@ -4,7 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "strict": true,
     "noEmit": true,
     "allowJs": true,
@@ -24,6 +24,6 @@
       "@babel/traverse": ["../node_modules/@types/babel__traverse"]
     }
   },
-  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
   "exclude": ["node_modules", ".next"]
 }

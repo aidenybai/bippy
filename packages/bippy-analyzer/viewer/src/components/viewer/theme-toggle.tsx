@@ -3,17 +3,17 @@ import { Button } from "@/components/ui/button";
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 
 export const ThemeToggle = () => {
-  const { theme, toggleTheme } = useResolvedTheme();
-  const isDark = theme === "dark";
+  const { toggleTheme } = useResolvedTheme();
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Light mode" : "Dark mode"}
+      aria-label="Toggle theme"
+      title="Toggle theme"
     >
-      {isDark ? <Sun /> : <Moon />}
+      <Sun className="hidden dark:block" />
+      <Moon className="dark:hidden" />
     </Button>
   );
 };

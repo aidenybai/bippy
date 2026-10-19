@@ -1,9 +1,10 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme inline {
-  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --color-background: var(--ground);
   --color-foreground: var(--ink);
@@ -33,15 +34,6 @@
   --shadow-card: var(--card-shadow);
   --shadow-focus: var(--card-shadow), 0 0 0 3px var(--well-2);
   --ease-out-soft: cubic-bezier(0.22, 0.75, 0.2, 1);
-  --animate-spinner-line: spinner-line 1s linear infinite;
-  @keyframes spinner-line {
-    0% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0.15;
-    }
-  }
 }
 
 :root {
@@ -113,9 +105,6 @@
     ::before,
     ::after {
       transition-duration: 0.01ms !important;
-    }
-    [data-slot="spinner"] svg rect {
-      animation-duration: 2.4s;
     }
   }
   ::-webkit-scrollbar {

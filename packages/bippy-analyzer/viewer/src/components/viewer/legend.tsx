@@ -65,7 +65,7 @@ const ComponentPanel = ({
     onOpenChange={onOpenChange}
     data-component={component.name}
     data-active={isActive || undefined}
-    className="grid gap-4 border-l-2 border-transparent pl-3 -ml-3 transition-colors duration-150 data-active:border-foreground/60"
+    className="grid scroll-mt-4 gap-4 border-l-2 border-transparent pl-3 -ml-3 transition-colors duration-150 data-active:border-foreground/60"
   >
     <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md text-left">
       <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-90" />
@@ -110,16 +110,23 @@ const usePanelChoices = (): [PanelChoices, (name: string, open: boolean) => void
 const isPanelOpen = (choices: PanelChoices, name: string, activeName: string | null): boolean =>
   !choices.closed.has(name) && (choices.opened.has(name) || name === activeName);
 
+const isTopVisible = (element: Element, container: Element): boolean => {
+  const box = element.getBoundingClientRect();
+  const bounds = container.getBoundingClientRect();
+  return box.top >= bounds.top && box.top < bounds.bottom;
+};
+
 const useScrollActiveIntoView = (
   listRef: RefObject<HTMLDivElement | null>,
   activeName: string | null,
 ): { onMouseEnter: () => void; onMouseLeave: () => void } => {
   const isPointerInside = useRef(false);
   useEffect(() => {
-    if (activeName === null || isPointerInside.current) return;
-    listRef.current
-      ?.querySelector(`[data-component="${CSS.escape(activeName)}"]`)
-      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const list = listRef.current;
+    if (activeName === null || isPointerInside.current || !list) return;
+    const panel = list.querySelector(`[data-component="${CSS.escape(activeName)}"]`);
+    if (panel && !isTopVisible(panel, list))
+      panel.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [listRef, activeName]);
   return {
     onMouseEnter: () => {

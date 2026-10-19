@@ -1,4 +1,4 @@
-import type { GraphNode, ViewBranch, ViewComponent, ViewState } from "@/model";
+import type { GraphNode, ViewBranch, ViewComponent, ViewState, ViewUpdate } from "@/model";
 
 export type Arm = "consequent" | "alternate";
 
@@ -44,3 +44,6 @@ export const getTransitions = (component: ViewComponent, handlerId: string): str
       .filter((target) => target !== state.index)
       .map((target) => `S${state.index + 1} → S${target + 1}`),
   );
+
+export const getUpdateKey = (update: ViewUpdate): string =>
+  `${update.bindingId}:${update.guard ?? ""}:${update.assignments.join(",")}:${update.isAsync}`;

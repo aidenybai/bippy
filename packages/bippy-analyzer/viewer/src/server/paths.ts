@@ -1,16 +1,16 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { z } from "zod";
 
 const PACKAGE_NAME = "bippy-analyzer";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+const packageSchema = z.object({ name: z.string() });
 
 const readPackageName = (directory: string): string | null => {
   const file = join(directory, "package.json");
   if (!existsSync(file)) return null;
-  const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
-  return isRecord(parsed) && typeof parsed.name === "string" ? parsed.name : null;
+  const parsed = packageSchema.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  return parsed.success ? parsed.data.name : null;
 };
 
 const findPackageRoot = (): string => {
@@ -26,4 +26,3 @@ const findPackageRoot = (): string => {
 export const packageRoot = findPackageRoot();
 export const viewerRoot = resolve(packageRoot, "viewer");
 export const fixturesDirectory = resolve(packageRoot, "tests/fixtures");
-export const scratchDirectory = resolve(viewerRoot, "scratch");

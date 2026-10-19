@@ -9,6 +9,7 @@ import {
   getHandlerNodeId,
   getStateArmNodeIds,
   getTransitions,
+  getUpdateKey,
 } from "@/lib/lookup";
 import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "@/model";
 import { Chip } from "./chip";
@@ -131,7 +132,7 @@ export const HandlerRow = ({ handler }: { handler: ViewHandler }) => {
         </div>
         <div className="grid gap-1.5 rounded-md bg-muted px-3 py-2 font-mono wrap-anywhere">
           {handler.updates.map((update) => (
-            <Update key={`${update.guard}:${update.assignments.join(",")}`} update={update} />
+            <Update key={getUpdateKey(update)} update={update} />
           ))}
         </div>
       </Cell>

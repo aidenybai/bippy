@@ -7,7 +7,6 @@ import { getStateTransitions, type StateTransition } from "@/lib/diagram";
 import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
 import { buildDecisionTree, collectEdges, collectNodes, type TreeNode } from "@/lib/tree";
 import type { ViewComponent, ViewHandler, ViewRegion } from "@/model";
-import { useHoverStore } from "@/store/hover";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
 
@@ -104,21 +103,11 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
 const toPath = (points: Point[]): string =>
   points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
 
-const useIsOtherActionHovered = (handlerId: string | undefined): boolean => {
-  const { index } = useViewer();
-  return useHoverStore((state) => {
-    if (handlerId === undefined || state.hoveredNodeId === null) return false;
-    const hovered = index?.nodes.get(state.hoveredNodeId);
-    return hovered?.handlerId !== undefined && hovered.handlerId !== handlerId;
-  });
-};
-
 const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewComponent }) => {
   const { colorByNodeId } = useViewer();
   const handlerId = edge.transition?.handlerId;
   const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
   const color = nodeId ? colorByNodeId.get(nodeId) : undefined;
-  const isMuted = useIsOtherActionHovered(handlerId);
   return (
     <path
       d={toPath(edge.points)}
@@ -126,7 +115,7 @@ const EdgePath = ({ edge, component }: { edge: LaidOutEdge; component: ViewCompo
       stroke={color ? getSolidColor(color) : "var(--faint)"}
       strokeWidth={edge.transition ? 1.25 : 1}
       strokeDasharray={edge.transition?.isAsync ? "4 3" : undefined}
-      opacity={isMuted ? 0.15 : edge.transition ? 0.85 : 1}
+      opacity={edge.transition ? 0.85 : 1}
       markerEnd="url(#tree-arrow)"
     />
   );
@@ -141,7 +130,7 @@ const EdgeLabel = ({ edge, component }: { edge: LaidOutEdge; component: ViewComp
       style={{ left: edge.label.x, top: edge.label.y }}
     >
       {edge.handler ? (
-        <Chip nodeIds={nodeId ? [nodeId] : []}>
+        <Chip nodeIds={nodeId ? [nodeId] : []} canDim={false}>
           <Code>{edge.handler.label}</Code>
         </Chip>
       ) : (
@@ -158,7 +147,7 @@ const NodeView = ({ laid, component }: { laid: LaidOutNode; component: ViewCompo
     const nodeId = node.branch ? getConditionNodeId(component, node.branch.test) : undefined;
     return (
       <div className="absolute flex justify-center overflow-hidden" style={style}>
-        <Chip nodeIds={nodeId ? [nodeId] : []}>
+        <Chip nodeIds={nodeId ? [nodeId] : []} canDim={false}>
           <Code className="block max-w-full truncate">{node.condition}</Code>
         </Chip>
       </div>

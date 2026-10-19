@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { File, Virtualizer, type FileOptions } from "@pierre/diffs/react";
-import { Spinner } from "@/components/ui/spinner";
 import { useAnalyzerJson } from "@/hooks/queries";
 import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import { useViewer } from "./context";
+import { CodeSkeleton } from "./skeletons";
 
 const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   overflow: "wrap",
@@ -34,7 +34,7 @@ export const JsonPane = () => {
         {json.error.message}
       </pre>
     );
-  if (!isHighlighterReady || json.data === undefined) return <Spinner className="h-full" />;
+  if (!isHighlighterReady || json.data === undefined) return <CodeSkeleton />;
   return (
     <Virtualizer
       className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]"

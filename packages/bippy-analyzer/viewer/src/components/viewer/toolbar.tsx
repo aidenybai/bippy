@@ -1,35 +1,49 @@
 import { ArrowLeft } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { analyzerJsonQuery } from "@/hooks/queries";
 import { hasLegendContent } from "@/lib/graph";
-import { getSourceTitle } from "@/lib/source";
+import { getFileTitle } from "@/lib/source";
 import { isViewMode } from "@/lib/view-mode";
 import { useViewer } from "./context";
 import { ThemeToggle } from "./theme-toggle";
 
 const ModeTabs = () => {
-  const { mode, setMode } = useViewer();
+  const { file, mode, setMode } = useViewer();
+  const queryClient = useQueryClient();
+  const prefetchJson = (): void => {
+    if (file !== null) void queryClient.prefetchQuery(analyzerJsonQuery(file));
+  };
   return (
     <Tabs value={mode} onValueChange={(value) => isViewMode(value) && setMode(value)}>
       <TabsList aria-label="View">
         <TabsTrigger value="code">Code</TabsTrigger>
         <TabsTrigger value="diagram">Diagram</TabsTrigger>
-        <TabsTrigger value="json">JSON</TabsTrigger>
+        <TabsTrigger value="json" onMouseEnter={prefetchJson} onFocus={prefetchJson}>
+          JSON
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   );
 };
 
 const Title = () => {
-  const { source, open, view } = useViewer();
-  if (source === null) return <span className="font-medium text-foreground">bippy analyzer</span>;
+  const { file, open, view } = useViewer();
+  if (file === null) return <span className="font-medium text-foreground">bippy analyzer</span>;
   return (
     <>
-      <Button variant="ghost" size="icon" aria-label="New" title="New" onClick={() => open(null)}>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Examples"
+        title="Examples"
+        onClick={() => open(null)}
+      >
         <ArrowLeft />
       </Button>
-      <span className="truncate font-mono text-foreground">{getSourceTitle(source)}</span>
+      <span className="truncate font-mono text-foreground">{getFileTitle(file)}</span>
       {view && (
         <span className="hidden text-muted-foreground tabular-nums sm:inline">
           {view.components.length} components
@@ -40,7 +54,7 @@ const Title = () => {
 };
 
 export const Toolbar = () => {
-  const { source, view, mode } = useViewer();
+  const { view, mode } = useViewer();
   const hasLegend = view !== null && hasLegendContent(view);
   return (
     <div className="flex h-11 items-center gap-2 border-b px-3 sm:gap-3">

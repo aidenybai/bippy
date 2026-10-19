@@ -4,4 +4,3 @@ src/react-compiler/
 test-results/
 tests/conformance/results/
 viewer/.next/
-viewer/scratch/

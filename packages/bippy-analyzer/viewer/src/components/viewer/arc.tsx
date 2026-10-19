@@ -3,8 +3,9 @@ import type { Box } from "@/lib/positions";
 import type { GraphEdge } from "@/model";
 import { useHasHover, useIsCausalEdge, useIsInactive } from "@/store/hover";
 
-const SIDE_GAP = 12;
+const SIDE_GAP = 24;
 const SIDE_BULGE = 28;
+const STEM = 8;
 const MAX_BOW = 60;
 
 export interface PlacedArc {
@@ -25,23 +26,25 @@ const getSlotX = (box: Box, slot: number): number => box.x + box.width * slot;
 
 const getSidePath = (from: Box, to: Box): string => {
   const start: Point = { x: from.x + from.width + 2, y: from.y + from.height / 2 };
-  const end: Point = { x: to.x + to.width + 8, y: to.y + to.height / 2 };
-  const bulge = Math.max(start.x, end.x) + SIDE_BULGE;
-  return `M ${start.x} ${start.y} C ${bulge} ${start.y}, ${bulge} ${end.y}, ${end.x} ${end.y}`;
+  const tip: Point = { x: to.x + to.width + 6, y: to.y + to.height / 2 };
+  const base: Point = { x: tip.x + STEM, y: tip.y };
+  const bulge = Math.max(start.x, base.x) + SIDE_BULGE;
+  return `M ${start.x} ${start.y} C ${bulge} ${start.y}, ${bulge} ${base.y}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`;
 };
 
 const getVerticalPath = (arc: PlacedArc): string => {
-  const isGoingDown = arc.to.y > arc.from.y;
+  const direction = arc.to.y > arc.from.y ? 1 : -1;
   const start: Point = {
     x: getSlotX(arc.from, arc.fromSlot),
-    y: isGoingDown ? arc.from.y + arc.from.height : arc.from.y,
+    y: direction === 1 ? arc.from.y + arc.from.height : arc.from.y,
   };
-  const end: Point = {
+  const tip: Point = {
     x: getSlotX(arc.to, arc.toSlot),
-    y: isGoingDown ? arc.to.y : arc.to.y + arc.to.height,
+    y: direction === 1 ? arc.to.y : arc.to.y + arc.to.height,
   };
-  const bow = Math.min(MAX_BOW, Math.abs(end.y - start.y) / 2) * (isGoingDown ? 1 : -1);
-  return `M ${start.x} ${start.y} C ${start.x} ${start.y + bow}, ${end.x} ${end.y - bow}, ${end.x} ${end.y}`;
+  const base: Point = { x: tip.x, y: tip.y - STEM * direction };
+  const bow = Math.min(MAX_BOW, Math.abs(base.y - start.y) / 2) * direction;
+  return `M ${start.x} ${start.y} C ${start.x} ${start.y + bow}, ${base.x} ${base.y - bow}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`;
 };
 
 const getArcPath = (arc: PlacedArc): string => {
@@ -79,6 +82,7 @@ export const ArcHead = () => (
       refY="5"
       markerWidth="7"
       markerHeight="7"
+      markerUnits="userSpaceOnUse"
       orient="auto"
     >
       <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />

@@ -5,9 +5,6 @@ import { ask } from "@/server/analyzer-client";
 
 export const dynamic = "force-dynamic";
 
-const isPasteRequest = (value: unknown): value is { code: string } =>
-  typeof value === "object" && value !== null && "code" in value && typeof value.code === "string";
-
 const app = new Hono().basePath("/api");
 
 app.onError((error, context) =>
@@ -24,11 +21,4 @@ app.get("/analysis", async (context) => {
 
 app.get("/examples", async () => Response.json(await ask({ kind: "examples" })));
 
-app.post("/paste", async (context) => {
-  const body: unknown = await context.req.json();
-  if (!isPasteRequest(body)) return context.text("Expected { code }", 400);
-  return Response.json(await ask({ kind: "paste", code: body.code }));
-});
-
 export const GET = handle(app);
-export const POST = handle(app);
