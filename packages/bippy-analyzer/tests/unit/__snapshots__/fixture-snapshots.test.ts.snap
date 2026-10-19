@@ -27,6 +27,32 @@ stateDiagram-v2
   S2: !isLoading · #lt;Button#gt; {count}"
 `;
 
+exports[`fixture analysis > Box keeps its render tree and handlers 1`] = `
+"---
+title: Box src/ref-props.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Box"]
+  n2["#lt;button#gt; {count}"]
+  n1 --> n2
+  n3(["onClick ⇒ count = count + 1"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Box keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Box src/ref-props.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {count}
+  [*] --> S1
+  state "warnings" as warnings {
+    warnings1: prop-mutation L24 mutates prop box
+  }"
+`;
+
 exports[`fixture analysis > Button keeps its render tree and handlers 1`] = `
 "---
 title: Button src/counter.tsx:5
@@ -430,6 +456,29 @@ title: Inbox src/literals.tsx:17
 stateDiagram-v2
   direction LR
   S1: always · #lt;section#gt; #lt;em#gt; "Empty"
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > Latest keeps its render tree and handlers 1`] = `
+"---
+title: Latest src/ref-props.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Latest"]
+  n2["#lt;button#gt; {count}"]
+  n1 --> n2
+  n3(["onClick ⇒ count = count + 1"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Latest keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Latest src/ref-props.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;button#gt; {count}
   [*] --> S1"
 `;
 
@@ -956,6 +1005,40 @@ stateDiagram-v2
   S3: items.length !== 0 ∧ items.filter(function).length #lt;= 0 · #lt;div#gt; #lt;input#gt;
   S2 --> S3: setQuery(event.target.value)
   S3 --> S2: setQuery(event.target.value)"
+`;
+
+exports[`fixture analysis > Seen keeps its render tree and handlers 1`] = `
+"---
+title: Seen src/ref-props.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Seen"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ shown = true · calls seen.current.add"]):::event
+  n2 -.-> n3
+  n4{"shown"}
+  n2 --> n4
+  n5["{#quot;shown#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;show#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > Seen keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Seen src/ref-props.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  S1: shown · #lt;button#gt; {"shown"}
+  S2: !shown · #lt;button#gt; {"show"}
+  [*] --> S2
+  S2 --> S1: show
+  state "claims" as claims {
+    claims1: holds shown stays within false | true L13
+  }"
 `;
 
 exports[`fixture analysis > ShareButton keeps its render tree and handlers 1`] = `
