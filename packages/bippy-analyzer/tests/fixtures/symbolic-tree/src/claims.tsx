@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { whenTrue } from "when-lib";
 import invariant from "invariant";
 
 interface User {
@@ -44,8 +45,6 @@ export const GuardedWrite = ({ next }: { next: Status | undefined }) => {
   };
   return <button onClick={apply}>{status}</button>;
 };
-
-declare const whenTrue: (flag: boolean, run: () => ReactNode) => ReactNode;
 
 export const Coalesced = ({ flags }: { flags: { ok: boolean }[] | undefined }) => {
   const serverChecked = flags?.some((flag) => flag.ok) ?? false;
