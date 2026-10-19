@@ -7,13 +7,13 @@ import type {
   InstructionValue,
   ObjectPropertyKey,
   Place,
-  SpreadPattern,
   SourceLocation,
 } from "../react-compiler/HIR/HIR";
 import { GeneratedSource, getHookKind } from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "./source-file-resolver";
+import { ArrayIteration, ITERATION_METHODS, RENDERED_ITERATION_METHODS } from "./array-iteration";
 import { CallbackPasser } from "./callback-passer";
 import { ClaimRecorder } from "./claim-recorder";
 import { ControlFlowWalker } from "./control-flow-walker";
@@ -23,7 +23,6 @@ import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_WALK_STATE, getAsyncWalkState } from "./walk-state";
 import type { WalkState } from "./walk-state";
 import type {
-  ArrayExpressionValue,
   Binding,
   Claim,
   BindingKind,
@@ -138,8 +137,6 @@ const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInse
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SHORTENING_METHODS = new Set(["filter", "slice"]);
 const LENGTH_PRESERVING_METHODS = new Set(["toReversed", "toSorted", "with"]);
-const RENDERED_ITERATION_METHODS = new Set(["map", "flatMap"]);
-const ITERATION_METHODS = new Set(["forEach", "map", "filter", "some", "every", "find", "flatMap"]);
 
 const SUSPENDED_DOMAIN: Domain = {
   kind: "Cases",
@@ -187,6 +184,7 @@ export class Interpreter {
   readonly destructurer = new Destructurer(this);
   readonly claimRecorder = new ClaimRecorder(this);
   readonly callbacks = new CallbackPasser(this);
+  readonly iteration = new ArrayIteration(this);
   readonly bindingTable = new BindingTable();
   readonly externalSources: ExternalSources;
   readonly diagnostics = new Diagnostics();
@@ -828,23 +826,23 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
-    const methodName = this.#getPropertyName(methodCall.property) ?? "";
+    const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName))
-      this.#visitItemCallback(methodName, callback, methodCall, walkState);
+      this.iteration.visitItemCallback(methodName, callback, methodCall, walkState);
     const isIteratingLiteral =
       this.#handlerEffects !== null &&
       ITERATION_METHODS.has(methodName) &&
       receiver.kind === "ArrayExpression" &&
       callback?.kind === "Function";
     if (isIteratingLiteral) {
-      this.#callForEachItem(callback, receiver, methodCall.loc, walkState);
+      this.iteration.callForEachItem(callback, receiver, methodCall.loc, walkState);
       return createUnknown("call", methodCall.loc);
     }
     if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
-      return this.#evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
+      return this.iteration.evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
     if (PROMISE_METHODS.has(methodName)) {
       this.callbacks.visitPromiseCallbacks(methodName, argumentValues, methodCall.loc, walkState);
       return createUnknown("async", methodCall.loc);
@@ -859,75 +857,6 @@ export class Interpreter {
       },
       walkState,
     );
-  }
-
-  #visitItemCallback(
-    methodName: string,
-    callback: SymbolicValue | undefined,
-    methodCall: InstructionValueOfKind<"MethodCall">,
-    walkState: WalkState,
-  ): void {
-    if (callback?.kind !== "Function") return;
-    const [itemParameter] = this.#functions.get(callback.functionId)?.params ?? [];
-    if (itemParameter?.kind === "Identifier")
-      this.getCompilationTables().aliasSources.set(
-        itemParameter.identifier.id,
-        methodCall.receiver,
-      );
-    if (!this.#handlerEffects && methodName === "forEach")
-      this.callFunction(
-        callback,
-        this.callbacks.getUnknownArguments(callback),
-        methodCall.loc,
-        walkState,
-      );
-  }
-
-  #callForEachItem(
-    callback: FunctionValue,
-    array: ArrayExpressionValue,
-    loc: SourceLocation,
-    walkState: WalkState,
-  ): void {
-    const items = [...array.elements, ...array.spreads.map(() => createUnknown("item", loc))];
-    items.forEach((item, itemIndex) =>
-      this.callFunction(
-        callback,
-        [item, { kind: "Primitive", value: itemIndex }, array],
-        loc,
-        walkState,
-      ),
-    );
-  }
-
-  #evaluateArrayMap(
-    array: SymbolicValue,
-    callback: FunctionValue,
-    loc: SourceLocation,
-    walkState: WalkState,
-  ): SymbolicValue {
-    const [itemParameter, indexParameter] = this.#functions.get(callback.functionId)?.params ?? [];
-    const item = this.#createItemValue(itemParameter, "item", loc);
-    const index = this.#createItemValue(indexParameter, "index", loc);
-    return {
-      kind: "ArrayMap",
-      array,
-      item: this.callFunction(callback, [item, index, array], loc, walkState),
-      loc,
-    };
-  }
-
-  #createItemValue(
-    parameter: Place | SpreadPattern | undefined,
-    fallbackName: string,
-    loc: SourceLocation,
-  ): SymbolicValue {
-    const place = parameter ? getPlaceOrSpread(parameter) : null;
-    return place
-      ? createBindingValue(
-          this.createBinding(getIdentifierName(place) ?? fallbackName, "item", place.loc),
-        )
-      : createUnknown(fallbackName, loc);
   }
 
   evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
@@ -1098,7 +1027,7 @@ export class Interpreter {
   ): SymbolicValue {
     const argumentPlaces = call.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
-    const mapped = this.#evaluateLoadedArrayMap(call, argumentValues, walkState);
+    const mapped = this.iteration.evaluateLoadedArrayMap(call, argumentValues, walkState);
     if (mapped) return mapped;
     return this.#evaluateCall(
       {
@@ -1112,11 +1041,11 @@ export class Interpreter {
     );
   }
 
-  #getPropertyName(place: Place): string | null {
+  getPropertyName(place: Place): string | null {
     return this.getCompilationTables().propertyNames.get(place.identifier.id) ?? null;
   }
 
-  #getPropertyObject(place: Place): Place | undefined {
+  getPropertyObject(place: Place): Place | undefined {
     return this.getCompilationTables().propertyObjects.get(place.identifier.id);
   }
 
@@ -1139,25 +1068,6 @@ export class Interpreter {
     const object = tables.propertyObjects.get(from.identifier.id);
     if (name !== undefined) tables.propertyNames.set(to.identifier.id, name);
     if (object) tables.propertyObjects.set(to.identifier.id, object);
-  }
-
-  #evaluateLoadedArrayMap(
-    call: InstructionValueOfKind<"CallExpression">,
-    argumentValues: SymbolicValue[],
-    walkState: WalkState,
-  ): SymbolicValue | null {
-    const methodName = this.#getPropertyName(call.callee);
-    const receiverPlace = this.#getPropertyObject(call.callee);
-    const [callback] = argumentValues;
-    const isRenderedMap =
-      this.#handlerEffects === null &&
-      methodName !== null &&
-      RENDERED_ITERATION_METHODS.has(methodName) &&
-      receiverPlace !== undefined &&
-      callback?.kind === "Function";
-    return isRenderedMap
-      ? this.#evaluateArrayMap(this.read(receiverPlace), callback, call.loc, walkState)
-      : null;
   }
 
   #readJsxProps(element: InstructionValueOfKind<"JsxExpression">): Array<JsxProp | JsxSpreadProp> {
