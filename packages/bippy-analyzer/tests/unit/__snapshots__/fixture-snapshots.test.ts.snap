@@ -1180,6 +1180,41 @@ stateDiagram-v2
   S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}"
 `;
 
+exports[`fixture analysis > RetryForm keeps its render tree and handlers 1`] = `
+"---
+title: RetryForm src/catch-after-await.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["RetryForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["action ⇒ error = null · if Unknown(throws): error = #quot;Failed#quot; (async)"]):::event
+  n2 -.-> n3
+  n4["#lt;button#gt; #quot;Save#quot;"]
+  n2 --> n4
+  n5{"error"}
+  n2 --> n5
+  n6["#lt;p#gt; {error}"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > RetryForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: RetryForm src/catch-after-await.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: error · #lt;form#gt; #lt;button#gt; "Save" #lt;p#gt; {"Failed"}
+  S2: !error · #lt;form#gt; #lt;button#gt; "Save"
+  [*] --> S2
+  S1 --> S2: "Save" (async)
+  S2 --> S1: "Save" (async)
+  state "claims" as claims {
+    claims1: holds error stays within null | string L8
+  }"
+`;
+
 exports[`fixture analysis > RoleBadge keeps its render tree and handlers 1`] = `
 "---
 title: RoleBadge src/literals.tsx:30
@@ -1214,7 +1249,7 @@ flowchart TD
   n1["SaveForm"]
   n2["#lt;form#gt;"]
   n1 --> n2
-  n3(["action ⇒ loading = true · loading = false · loading = false (async)"]):::event
+  n3(["action ⇒ loading = true · if Unknown(throws): loading = false (async) · if !Un…"]):::event
   n2 -.-> n3
   n4{"loading"}
   n2 --> n4
@@ -1222,7 +1257,7 @@ flowchart TD
   n4 -->|✓| n5
   n6["#lt;button#gt; #quot;Save#quot;"]
   n4 -->|✗| n6
-  n7(["formAction ⇒ loading = true · loading = false · loading = false (async)"]):::event
+  n7(["formAction ⇒ loading = true · if Unknown(throws): loading = false (async) · if …"]):::event
   n6 -.-> n7"
 `;
 
@@ -1236,6 +1271,7 @@ stateDiagram-v2
   S2: !loading · #lt;form#gt; #lt;button#gt; "Save"
   [*] --> S2
   S1 --> S2: submit (async)
+  S2 --> S1: submit (async)
   state "claims" as claims {
     claims1: holds loading stays within false | true L8
   }"
