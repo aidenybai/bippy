@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useRef,
-  useState,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -12,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Table, TableBody } from "@/components/ui/table";
 import type { ViewComponent } from "@/model";
 import { useHoverStore } from "@/store/hover";
+import { useIsPanelChosen, useIsPanelOpen, useUiStore } from "@/store/ui";
 import { useActiveComponent, useLoadedView } from "./context";
 import { BindingRow, HandlerRow, StateRow } from "./legend-rows";
 
@@ -84,32 +84,6 @@ const ComponentPanel = ({
   </Collapsible>
 );
 
-interface PanelChoices {
-  opened: Set<string>;
-  closed: Set<string>;
-}
-
-const usePanelChoices = (): [PanelChoices, (name: string, open: boolean) => void] => {
-  const [choices, setChoices] = useState<PanelChoices>({ opened: new Set(), closed: new Set() });
-  const choose = (name: string, open: boolean): void =>
-    setChoices((current) => {
-      const opened = new Set(current.opened);
-      const closed = new Set(current.closed);
-      if (open) {
-        opened.add(name);
-        closed.delete(name);
-      } else {
-        closed.add(name);
-        opened.delete(name);
-      }
-      return { opened, closed };
-    });
-  return [choices, choose];
-};
-
-const isPanelOpen = (choices: PanelChoices, name: string, activeName: string | null): boolean =>
-  !choices.closed.has(name) && (choices.opened.has(name) || name === activeName);
-
 const isTopVisible = (element: Element, container: Element): boolean => {
   const box = element.getBoundingClientRect();
   const bounds = container.getBoundingClientRect();
@@ -138,15 +112,44 @@ const useScrollActiveIntoView = (
   };
 };
 
+interface LegendPanelProps {
+  component: ViewComponent;
+  activeName: string | null;
+  children: ReactNode;
+}
+
+const LegendPanel = ({ component, activeName, children }: LegendPanelProps) => {
+  const focus = useHoverStore((state) => state.focus);
+  const choosePanel = useUiStore((state) => state.choosePanel);
+  const isOpen = useIsPanelOpen(component.name, activeName);
+  return (
+    <ComponentPanel
+      component={component}
+      isOpen={isOpen}
+      isActive={component.name === activeName}
+      onOpenChange={(open) => {
+        choosePanel(component.name, open);
+        if (open) focus(component.name);
+      }}
+    >
+      {children}
+    </ComponentPanel>
+  );
+};
+
+const useKeepActiveOpen = (activeName: string | null): void => {
+  const choosePanel = useUiStore((state) => state.choosePanel);
+  const isChosen = useIsPanelChosen(activeName ?? "");
+  useEffect(() => {
+    if (activeName !== null && !isChosen) choosePanel(activeName, true);
+  }, [activeName, isChosen, choosePanel]);
+};
+
 const Root = ({ children }: { children: ReactNode }) => {
   const view = useLoadedView();
   const activeComponent = useActiveComponent();
-  const focus = useHoverStore((state) => state.focus);
   const activeName = activeComponent?.name ?? null;
-  const [choices, choose] = usePanelChoices();
-  const isActiveUnchosen =
-    activeName !== null && !choices.opened.has(activeName) && !choices.closed.has(activeName);
-  if (isActiveUnchosen) choose(activeName, true);
+  useKeepActiveOpen(activeName);
   const listRef = useRef<HTMLDivElement>(null);
   const pointerHandlers = useScrollActiveIntoView(listRef, activeName);
   return (
@@ -156,18 +159,9 @@ const Root = ({ children }: { children: ReactNode }) => {
       className="grid h-full content-start gap-5 overflow-auto overscroll-none px-4 py-4 [scrollbar-gutter:stable] sm:px-5"
     >
       {view.components.map((component) => (
-        <ComponentPanel
-          key={component.name}
-          component={component}
-          isOpen={isPanelOpen(choices, component.name, activeName)}
-          isActive={component.name === activeName}
-          onOpenChange={(open) => {
-            choose(component.name, open);
-            if (open) focus(component.name);
-          }}
-        >
+        <LegendPanel key={component.name} component={component} activeName={activeName}>
           {children}
-        </ComponentPanel>
+        </LegendPanel>
       ))}
     </div>
   );

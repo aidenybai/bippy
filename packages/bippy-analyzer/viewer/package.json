@@ -8,8 +8,7 @@
     "predev": "pnpm generate",
     "dev": "next dev --port 3200",
     "build": "next build",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p generate/tsconfig.json",
-    "open": "tsx --tsconfig generate/tsconfig.json generate/open.ts"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p generate/tsconfig.json"
   },
   "dependencies": {
     "@base-ui/react": "1.6.0",

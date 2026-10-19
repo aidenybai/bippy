@@ -5,4 +5,3 @@ test-results/
 tests/conformance/results/
 viewer/.next/
 viewer/.vercel/
-viewer/src/generated/local.json

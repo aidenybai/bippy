@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import {
   Sidebar,
@@ -12,6 +12,7 @@ import { hasLegendContent } from "@/lib/graph";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
+import { useUiStore } from "@/store/ui";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
 import { Examples } from "./examples";
@@ -22,7 +23,8 @@ import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
   const { view, mode } = useViewer();
-  const [isLegendOpen, setLegendOpen] = useState(true);
+  const isLegendOpen = useUiStore((state) => state.isLegendOpen);
+  const setLegendOpen = useUiStore((state) => state.setLegendOpen);
   useHighlighterWarmup();
   const hasLegend = view !== null && hasLegendContent(view);
   return (
