@@ -98,12 +98,20 @@ const assumeFalse = (test: SymbolicValue, constraints: Constraints): Constraints
   return assumeCondition(test, false, constraints);
 };
 
+const describeFailure = (test: SymbolicValue, failing: Constraints): string | null => {
+  const witness = describeWitness(test, failing);
+  if (witness !== null) return witness;
+  return test.kind === "BinaryExpression" && test.operator === "!="
+    ? `${formatSymbolicValue(test.left)} = ${formatSymbolicValue(test.right)}`
+    : null;
+};
+
 const checkCondition = (test: SymbolicValue, constraints: Constraints): Check => {
   const outcome = evaluateCondition(test, constraints);
   if (outcome !== null) return { outcome, witness: null };
   const failing = assumeFalse(test, constraints);
   if (!failing) return { outcome: true, witness: null };
-  return { outcome: null, witness: describeWitness(test, failing) };
+  return { outcome: null, witness: describeFailure(test, failing) };
 };
 
 const checkClaim = (claim: Claim, constraints: Constraints): Check | null => {
@@ -206,6 +214,14 @@ const createStateClaim = (
   file: analysis.file,
 });
 
+const hasCastPart = (value: SymbolicValue): boolean => {
+  let isCast = false;
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Unknown" && part.reason === "cast") isCast = true;
+  });
+  return isCast;
+};
+
 const isPrimitiveDomain = (cases: AbstractValue[]): boolean =>
   cases.every((value) => value.kind === "Literal" || value.primitive !== null);
 
@@ -233,7 +249,7 @@ const checkUpdate = (
       ? null
       : { verdict: "unproven", reason: `may be set to ${describeCases(outside)}` };
   }
-  return { verdict: "unproven", reason: `set from ${formatSymbolicValue(update.value)}` };
+  return hasCastPart(update.value) ? { verdict: "unproven", reason: "set through a cast" } : null;
 };
 
 const findHandlerState = (states: State[], handlerId: string): number | null => {

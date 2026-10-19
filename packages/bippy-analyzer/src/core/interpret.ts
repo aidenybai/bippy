@@ -1473,6 +1473,7 @@ export class Interpreter {
     let isCheckable = true;
     forEachSymbolicValue(value, (part) => {
       if (part.kind !== "Binding") return;
+      if (part.binding.kind === "ref") isCheckable = false;
       const domain =
         this.bindingTable.placeDomains.get(getValuePlace(part)) ??
         (part.path.length === 0 ? part.binding.domain : undefined);
