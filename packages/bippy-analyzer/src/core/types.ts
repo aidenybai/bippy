@@ -307,9 +307,31 @@ export interface StateReport {
   isTruncated: boolean;
 }
 
+export interface PropLink {
+  name: string;
+  value: SymbolicValue;
+  domain: Domain;
+}
+
+export interface ComponentLink {
+  parent: string;
+  child: string;
+  loc: SourceLocation;
+  file: string;
+  props: PropLink[];
+  isComplete: boolean;
+}
+
+export interface ComponentInstance {
+  link: ComponentLink;
+  report: StateReport;
+}
+
 export interface AnalyzedComponent {
   analysis: ComponentAnalysis;
   report: StateReport;
+  links: ComponentLink[];
+  instances: ComponentInstance[];
 }
 
 export interface ProjectAnalysis {

@@ -58,6 +58,9 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `domains.ts`                | Turns a TS type into the values it can take                                      |
 | `type-samples.ts`           | Turns a TS type into sample values to mount props with                           |
 | `infer-props.ts`            | Samples untyped props from what they read and what callers pass                  |
+| `link-components.ts`        | Records what each parent passes to each child it renders                         |
+| `value-domains.ts`          | Turns a parent-side value into the finite set of values it can take              |
+| `instance-states.ts`        | Lists a child's states again with its props narrowed to one parent's values      |
 | `context-setter-fields.ts`  | Which context fields set which state, across the providers that supply them      |
 | `store-actions.ts`          | What each zustand store action sets                                              |
 | `string-samples.ts`         | Strings a component may parse, picked by name                                    |
@@ -119,7 +122,8 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - The fields of a value typed as a union of objects vary together. Once `query.isPending` is false, `query.isError` and `query.data` take only what the remaining members of React Query's result give them. A field's values come from every member, even where TypeScript narrowed the read.
    - State values are limited to the initial value plus every value a handler can set. A state initialized from an untyped value cast to a type, like `useState(cell.getValue() as boolean)`, can hold anything, since the cast only asserts the type.
 10. For each state and each handler that changes its region, finds which states of the region can come next. A handler that doesn't touch a region leaves it as it is. It also reports branches that can never render. A branch whose value renders only under a test it wasn't computed under, like a ternary kept in a variable and shown behind `&&`, still runs without that test, so it is never reported.
-11. Reports warnings from the compiler's mutation effects:
+11. Links parents to children. For every `<Child prop={…}>` in a parent's render whose component is in the project, it records what the parent passes under each prop name: a literal, the possible values of a parent binding, both arms of a conditional, `true` and `false` for a negation or comparison, and `object`, `array`, `element` or `function` for the rest. Where that gives a finite set and the element has no spread, it lists the child's states again with those props narrowed to it, as an instance of the child under that parent. The child's own report stays as its types allow, so other callers are still covered.
+12. Reports warnings from the compiler's mutation effects:
 
 | Warning           | When                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------- |
@@ -162,7 +166,7 @@ The error alert can never show, because nothing dispatches `fail`.
 ## Known gaps
 
 - **Context values come from their type.** A provider's setters are paired with the fields they set, and zustand actions with the fields they assign. Other values keep their declared type, since a component may render under any provider and the verifier mounts it with any value the type allows.
-- **No parent-child linking.** Each component is verified on its own with any props its type allows, so narrowing props to what its parents pass would be wrong for other callers. Props are narrowed from call sites only when the type is `any`.
+- **Linking stops at one level and at finite values.** An instance narrows a child's props to what one parent can pass, but the parent's own props are taken as their types allow, so a value handed down two levels is only as precise as the middle component's type. An object or array prop stays opaque, and a prop a spread may set is not narrowed. The verifier still mounts each component on its own with any props its type allows, so instances are not verified yet.
 - **Library calls are opaque.** Their code isn't in the project, so a call's result is known only from its return type and, for array methods, its length.
 - **Loops run once.** A value a loop carries can take any value its type allows after the loop, even when every iteration sets the same one.
 - **Class components are skipped.** The React Compiler finds and lowers only function components and hooks, so a class has no HIR to interpret.

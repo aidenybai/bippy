@@ -5,6 +5,7 @@ import { SourceFileResolver } from "./source-file-resolver";
 import type { ProjectHook } from "./interpret";
 import { collectStoreActions } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
+import { linkComponents, type ReportLoader } from "./link-components";
 import { addSamplesFromReadPaths, inferPropsFromCallSites } from "./infer-props";
 import { collectContextSetterFields } from "./context-setter-fields";
 import type {
@@ -12,6 +13,7 @@ import type {
   ContextSetterFields,
   StoreActions,
   ProjectAnalysis,
+  StateReport,
 } from "./types";
 import { analyzeComponent } from "./analyze-component";
 import type { FileContext } from "./analyze-component";
@@ -106,6 +108,17 @@ const analyzeComponents = (fileContexts: FileContext[]): ComponentAnalysis[] => 
   return analyses;
 };
 
+const createReportLoader = (): ReportLoader => {
+  const reports = new Map<ComponentAnalysis, StateReport>();
+  return (analysis) => {
+    const cached = reports.get(analysis);
+    if (cached) return cached;
+    const report = enumerateStates(analysis);
+    reports.set(analysis, report);
+    return report;
+  };
+};
+
 export const analyzeProject = (
   configPath: string,
   fileFilter: string | null = null,
@@ -119,9 +132,17 @@ export const analyzeProject = (
         fileContext.sourceFile.fileName,
       ]),
     );
-    const components = analyzeComponents(fileContexts)
+    const analyses = analyzeComponents(fileContexts).map((analysis) =>
+      withContextFileNames(analysis, fileNamesByPath),
+    );
+    const loadReport = createReportLoader();
+    const linked = linkComponents(analyses, loadReport);
+    const components = analyses
       .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
-      .map((analysis) => withContextFileNames(analysis, fileNamesByPath))
-      .map((analysis) => ({ analysis, report: enumerateStates(analysis) }));
+      .map((analysis) => ({
+        analysis,
+        report: loadReport(analysis),
+        ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
+      }));
     return { components, fileCount: fileNames.length };
   });

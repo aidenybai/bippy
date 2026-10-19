@@ -449,6 +449,37 @@ stateDiagram-v2
   [*] --> S1"
 `;
 
+exports[`fixture analysis > Loader keeps its render tree and handlers 1`] = `
+"---
+title: Loader src/linked.tsx:15
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Loader"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;StatusBadge#gt;"]
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Start#quot;"]
+  n2 --> n4
+  n5(["onClick ⇒ status = #quot;loading#quot; · count = count + 1"]):::event
+  n4 -.-> n5
+  n6["#lt;button#gt; #quot;Finish#quot;"]
+  n2 --> n6
+  n7(["onClick ⇒ status = #quot;done#quot;"]):::event
+  n6 -.-> n7"
+`;
+
+exports[`fixture analysis > Loader keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Loader src/linked.tsx:15
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;div#gt; #lt;StatusBadge#gt; #lt;button#gt; "Start" #lt;button#gt; "Finish"
+  [*] --> S1"
+`;
+
 exports[`fixture analysis > Loading keeps its render tree and handlers 1`] = `
 "---
 title: Loading src/counter.tsx:3
@@ -827,6 +858,47 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;div#gt;
   [*] --> S1"
+`;
+
+exports[`fixture analysis > StatusBadge keeps its render tree and handlers 1`] = `
+"---
+title: StatusBadge src/linked.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StatusBadge"]
+  n2{"status === #quot;error#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Failed#quot;"]
+  n2 -->|✓| n3
+  n4{"status === #quot;loading#quot;"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt; #quot;Loading…#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt;"]
+  n4 -->|✗| n6
+  n7{"status === #quot;done#quot;"}
+  n6 --> n7
+  n8["{#quot;Done#quot;}"]
+  n7 -->|✓| n8
+  n9["{#quot;Idle#quot;}"]
+  n7 -->|✗| n9
+  n10["#quot; #quot;"]
+  n6 --> n10
+  n11["{count}"]
+  n6 --> n11"
+`;
+
+exports[`fixture analysis > StatusBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StatusBadge src/linked.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "error" · #lt;p#gt; "Failed"
+  S2: status === "loading" · #lt;p#gt; "Loading…"
+  S3: status === "done" · #lt;p#gt; {"Done"} " " {count}
+  S4: status ∉ {"error", "loading", "done"} · #lt;p#gt; {"Idle"} " " {count}"
 `;
 
 exports[`fixture analysis > StatusBanner keeps its render tree and handlers 1`] = `
