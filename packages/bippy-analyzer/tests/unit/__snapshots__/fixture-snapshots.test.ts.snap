@@ -1404,7 +1404,7 @@ flowchart TD
   n2 -->|✓| n3
   n4["#lt;form#gt;"]
   n2 -->|✗| n4
-  n5(["onSubmit ⇒ if Unknown(member): status = #quot;sent#quot;"]):::event
+  n5(["onSubmit ⇒ form = Unknown(external) (async) · if Unknown(member): status = #quot;sen…"]):::event
   n4 -.-> n5
   n6["#lt;input#gt;"]
   n4 --> n6
@@ -1433,7 +1433,7 @@ stateDiagram-v2
   S1: status === "sent" · #lt;p#gt; "Check your inbox"
   S2: status !== "sent" · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Send"
   [*] --> S2
-  S2 --> S1: "Send"
+  S2 --> S1: "Send" (async)
   state "claims" as claims {
     claims1: holds status stays within "editing" | "sent" L9
   }"
@@ -1694,6 +1694,46 @@ stateDiagram-v2
   }
   state "claims" as claims {
     claims1: holds user! L31
+  }"
+`;
+
+exports[`fixture analysis > Subscribe keeps its render tree and handlers 1`] = `
+"---
+title: Subscribe src/submit-wrapper.tsx:23
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Subscribe"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["onSubmit ⇒ useForm() = Unknown(external) (async) · isSubscribed = true · calls …"]):::event
+  n2 -.-> n3
+  n4["#lt;input#gt;"]
+  n2 --> n4
+  n5(["{...} ⇒ useForm() = Unknown(external) (async) · calls useForm()"]):::event
+  n4 -.-> n5
+  n6{"useForm().formState.errors.email"}
+  n2 --> n6
+  n7["#lt;p#gt; {useForm().formState.errors.email.message}"]
+  n6 -->|✓| n7
+  n8["#lt;button#gt; #quot;Subscribe#quot;"]
+  n2 --> n8"
+`;
+
+exports[`fixture analysis > Subscribe keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Subscribe src/submit-wrapper.tsx:23
+---
+stateDiagram-v2
+  direction LR
+  S1: useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;p#gt; {useForm().formState.errors.email.message} #lt;button#gt; "Subscribe"
+  S2: !useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Subscribe"
+  S1 --> S2: "Subscribe" (async)
+  S2 --> S1: "Subscribe" (async)
+  S1 --> S2: #lt;input#gt; {...} (async)
+  S2 --> S1: #lt;input#gt; {...} (async)
+  state "claims" as claims {
+    claims1: holds isSubscribed stays within false | true L24
   }"
 `;
 
