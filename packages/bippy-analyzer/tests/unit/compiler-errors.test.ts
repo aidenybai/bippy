@@ -83,6 +83,10 @@ describe("compiler errors", () => {
     },
   );
 
+  it("lowers a BigInt literal as a value it can't see into", () => {
+    expect(getComponent(project, "CartTotal").analysis.bailouts).toEqual([]);
+  });
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
