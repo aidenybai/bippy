@@ -13,7 +13,7 @@ import { useViewer } from "./context";
 const LEAF_WIDTH = 220;
 const LEAF_HEIGHT = 56;
 const BRANCH_HEIGHT = 24;
-const CHAR_WIDTH = 7.2;
+const CHAR_WIDTH = 7.7;
 const LABEL_HEIGHT = 22;
 
 interface Point {
@@ -34,6 +34,7 @@ interface LaidOutEdge {
   points: Point[];
   path?: string;
   label: Point;
+  labelAlign?: "center" | "start";
   answer?: "yes" | "no";
   transition?: StateTransition;
   handler?: ViewHandler;
@@ -107,8 +108,9 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
   };
 };
 
-const LOOP_BULGE = 30;
-const LOOP_STEP = 16;
+const LOOP_BULGE = 24;
+const LOOP_STEP = 10;
+const LOOP_REACH = 8;
 
 type LoopEdge = LaidOutEdge & { right: number };
 
@@ -126,18 +128,20 @@ const layoutLoops = (
     const slot = seen.get(loop.from) ?? 0;
     seen.set(loop.from, slot + 1);
     const count = perLeaf.get(loop.from) ?? 1;
-    const y = node.y + (slot - (count - 1) / 2) * LOOP_STEP;
     const right = node.x + node.width / 2;
+    const reach = LOOP_REACH + slot * 4;
+    const bulge = LOOP_BULGE + slot * LOOP_STEP;
+    const labelX = right + LOOP_BULGE + (count - 1) * LOOP_STEP + 10;
     const handler = handlersById.get(loop.handlerId);
-    const width = labelWidth(handler);
     return {
       id: `l${order}`,
       points: [],
-      path: `M ${right} ${y - 6} C ${right + LOOP_BULGE} ${y - 18}, ${right + LOOP_BULGE} ${y + 18}, ${right} ${y + 6}`,
-      label: { x: right + LOOP_BULGE + width / 2, y },
+      path: `M ${right} ${node.y - reach} C ${right + bulge} ${node.y - reach - 14}, ${right + bulge} ${node.y + reach + 14}, ${right} ${node.y + reach}`,
+      label: { x: labelX, y: node.y + (slot - (count - 1) / 2) * LABEL_HEIGHT },
+      labelAlign: "start",
       transition: loop,
       handler,
-      right: right + LOOP_BULGE + width + 8,
+      right: labelX + labelWidth(handler) + 8,
     };
   });
 };
@@ -168,7 +172,11 @@ const EdgeLabel = ({ edge, component }: { edge: LaidOutEdge; component: ViewComp
   const nodeId = handlerId !== undefined ? getHandlerNodeId(component, handlerId) : undefined;
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
+      className={
+        edge.labelAlign === "start"
+          ? "absolute -translate-y-1/2 bg-background px-0.5 whitespace-nowrap"
+          : "absolute -translate-x-1/2 -translate-y-1/2 bg-background px-0.5"
+      }
       style={{ left: edge.label.x, top: edge.label.y }}
     >
       {edge.handler ? (
