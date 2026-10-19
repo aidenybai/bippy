@@ -128,6 +128,7 @@ interface CallSite {
 interface CompilationTables {
   values: Map<IdentifierId, SymbolicValue>;
   propertyNames: Map<IdentifierId, string>;
+  propertyObjects: Map<IdentifierId, Place>;
   branchOperators: Map<BlockId, BranchOperator>;
   aliasSources: Map<IdentifierId, Place>;
 }
@@ -363,6 +364,7 @@ export class Interpreter {
     const compilationTables = this.#tablesByEnvironment.get(env) ?? {
       values: new Map(),
       propertyNames: new Map(),
+      propertyObjects: new Map(),
       branchOperators: new Map(),
       aliasSources: new Map(),
     };
@@ -1234,8 +1236,7 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
-    const methodName =
-      this.getCompilationTables().propertyNames.get(methodCall.property.identifier.id) ?? "";
+    const methodName = this.#getPropertyName(methodCall.property) ?? "";
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const [callback] = argumentValues;
@@ -1334,11 +1335,7 @@ export class Interpreter {
 
   evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
     const { value } = instruction;
-    if (value.kind === "PropertyLoad")
-      this.getCompilationTables().propertyNames.set(
-        instruction.lvalue.identifier.id,
-        String(value.property),
-      );
+    this.#recordLoadedProperty(instruction);
     this.#recordAliasSources(instruction);
     this.#trackMutations(instruction, walkState);
     const instructionResult = this.#evaluateInstructionValue(instruction, walkState);
@@ -1573,16 +1570,67 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const argumentPlaces = call.args.map(getPlaceOrSpread);
+    const argumentValues = argumentPlaces.map((place) => this.read(place));
+    const mapped = this.#evaluateLoadedArrayMap(call, argumentValues, walkState);
+    if (mapped) return mapped;
     return this.#evaluateCall(
       {
         callee: this.read(call.callee),
         calleePlace: call.callee,
-        argumentValues: argumentPlaces.map((place) => this.read(place)),
+        argumentValues,
         argumentPlaces,
         loc: call.loc,
       },
       walkState,
     );
+  }
+
+  #getPropertyName(place: Place): string | null {
+    return this.getCompilationTables().propertyNames.get(place.identifier.id) ?? null;
+  }
+
+  #getPropertyObject(place: Place): Place | undefined {
+    return this.getCompilationTables().propertyObjects.get(place.identifier.id);
+  }
+
+  #recordLoadedProperty(instruction: Instruction): void {
+    const { value } = instruction;
+    const tables = this.getCompilationTables();
+    if (value.kind === "PropertyLoad") {
+      tables.propertyNames.set(instruction.lvalue.identifier.id, String(value.property));
+      tables.propertyObjects.set(instruction.lvalue.identifier.id, value.object);
+      return;
+    }
+    const [from, to] =
+      value.kind === "StoreLocal"
+        ? [value.value, value.lvalue.place]
+        : value.kind === "LoadLocal"
+          ? [value.place, instruction.lvalue]
+          : [null, null];
+    if (!from || !to) return;
+    const name = tables.propertyNames.get(from.identifier.id);
+    const object = tables.propertyObjects.get(from.identifier.id);
+    if (name !== undefined) tables.propertyNames.set(to.identifier.id, name);
+    if (object) tables.propertyObjects.set(to.identifier.id, object);
+  }
+
+  #evaluateLoadedArrayMap(
+    call: InstructionValueOfKind<"CallExpression">,
+    argumentValues: SymbolicValue[],
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const methodName = this.#getPropertyName(call.callee);
+    const receiverPlace = this.#getPropertyObject(call.callee);
+    const [callback] = argumentValues;
+    const isRenderedMap =
+      this.#handlerEffects === null &&
+      methodName !== null &&
+      RENDERED_ITERATION_METHODS.has(methodName) &&
+      receiverPlace !== undefined &&
+      callback?.kind === "Function";
+    return isRenderedMap
+      ? this.#evaluateArrayMap(this.read(receiverPlace), callback, call.loc, walkState)
+      : null;
   }
 
   #readJsxProps(element: InstructionValueOfKind<"JsxExpression">): Array<JsxProp | JsxSpreadProp> {
