@@ -15,7 +15,6 @@ import { DiagramPane } from "./diagram-pane";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
-import { Start } from "./start";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
@@ -77,21 +76,16 @@ const LoadedPane = ({ children }: { children: ReactNode }) => {
 };
 
 const Source = () => {
-  const { source, mode } = useViewer();
+  const { view, mode } = useViewer();
   const [hasOpenedJson, setHasOpenedJson] = useState(mode === "json");
   if (mode === "json" && !hasOpenedJson) setHasOpenedJson(true);
-  if (source === null) return <Start />;
   return (
     <>
       <div hidden={mode !== "code"} className="h-full min-h-0">
-        <LoadedPane>
-          <SourcePane />
-        </LoadedPane>
+        <SourcePane />
       </div>
       <div hidden={mode !== "diagram"} className="h-full min-h-0">
-        <LoadedPane>
-          <DiagramPane />
-        </LoadedPane>
+        <LoadedPane>{view && <DiagramPane />}</LoadedPane>
       </div>
       {hasOpenedJson && (
         <div hidden={mode !== "json"} className="h-full min-h-0">

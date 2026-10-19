@@ -15,9 +15,14 @@ import type { ViewMode } from "../lib/view-mode";
 import type { GraphNode, ViewComponent, ViewFile } from "../model";
 import { useHoverStore } from "../store/hover";
 
+export interface OpenOptions {
+  keepEditor?: boolean;
+}
+
 export interface ViewerState {
   source: Source | null;
-  open: (source: Source | null) => void;
+  open: (source: Source | null, options?: OpenOptions) => void;
+  editorSession: number;
   mode: ViewMode;
   setMode: (mode: ViewMode) => void;
   view: ViewFile | null;
@@ -31,6 +36,7 @@ const ViewerContext = createContext<ViewerState | null>(null);
 
 export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   const [location, setLocation] = useState(readLocation);
+  const [editorSession, setEditorSession] = useState(0);
   const { source, mode } = location;
   const viewQuery = useView(source);
   const view = viewQuery.data ?? null;
@@ -42,10 +48,10 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
   );
   useEffect(() => writeLocation(location), [location]);
   useEffect(() => setIndex(index), [index, setIndex]);
-  const open = useCallback(
-    (next: Source | null) => setLocation((current) => ({ ...current, source: next })),
-    [],
-  );
+  const open = useCallback((next: Source | null, options?: OpenOptions) => {
+    setLocation((current) => ({ ...current, source: next }));
+    if (!options?.keepEditor) setEditorSession((session) => session + 1);
+  }, []);
   const setMode = useCallback(
     (next: ViewMode) => setLocation((current) => ({ ...current, mode: next })),
     [],
@@ -54,6 +60,7 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       source,
       open,
+      editorSession,
       mode,
       setMode,
       view,
@@ -62,7 +69,18 @@ export const ViewerProvider = ({ children }: { children: ReactNode }) => {
       index,
       colorByNodeId,
     }),
-    [source, open, mode, setMode, view, viewQuery.error, viewQuery.isLoading, index, colorByNodeId],
+    [
+      source,
+      open,
+      editorSession,
+      mode,
+      setMode,
+      view,
+      viewQuery.error,
+      viewQuery.isLoading,
+      index,
+      colorByNodeId,
+    ],
   );
   return <ViewerContext value={value}>{children}</ViewerContext>;
 };

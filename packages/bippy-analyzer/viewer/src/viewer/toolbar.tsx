@@ -26,7 +26,7 @@ const Title = () => {
   if (source === null) return <span className="font-medium text-foreground">bippy analyzer</span>;
   return (
     <>
-      <Button variant="ghost" size="icon" aria-label="Back to start" onClick={() => open(null)}>
+      <Button variant="ghost" size="icon" aria-label="New" title="New" onClick={() => open(null)}>
         <ArrowLeft />
       </Button>
       <span className="truncate font-mono text-foreground">{getSourceTitle(source)}</span>
@@ -47,7 +47,7 @@ export const Toolbar = () => {
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <Title />
       </div>
-      {source !== null && <ModeTabs />}
+      {view !== null && <ModeTabs />}
       {hasLegend && <SidebarTrigger disabled={mode === "json"} />}
       <ThemeToggle />
     </div>

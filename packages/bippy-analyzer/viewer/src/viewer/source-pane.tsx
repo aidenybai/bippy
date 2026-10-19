@@ -7,7 +7,7 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
-import { File, type FileOptions } from "@pierre/diffs/react";
+import { File, type FileEditChangeHandler, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
@@ -20,7 +20,10 @@ import { getLineFromEvent, scrollToLine, type Box } from "../lib/positions";
 import { useHoverStore, type TokenAnchor } from "../store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
+import { EmptyHint } from "./empty-hint";
 import { TokenMark } from "./token-mark";
+
+const ANALYZE_DELAY = 600;
 
 const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
   overflow: "wrap",
@@ -128,45 +131,14 @@ const TokenTooltip = () => {
   );
 };
 
-const Overlay = ({ layout }: { layout: TokenLayout }) => {
-  const { colorByNodeId } = useViewer();
-  return (
-    <svg
-      className="pointer-events-none absolute inset-0 overflow-hidden"
-      width={layout.width}
-      height={layout.height}
-    >
-      <ArcHead />
-      {layout.tokens.map((token) => (
-        <TokenMark
-          key={token.node.id}
-          {...token}
-          color={colorByNodeId.get(token.node.id) ?? "transparent"}
-        />
-      ))}
-      <RestingArcs layout={layout} />
-      <CausalArcs layout={layout} />
-    </svg>
-  );
-};
+interface OverlayProps {
+  wrapperRef: RefObject<HTMLDivElement | null>;
+  renderCount: number;
+}
 
-export const SourcePane = () => {
+const Overlay = ({ wrapperRef, renderCount }: OverlayProps) => {
   const view = useLoadedView();
-  const isHighlighterReady = useHighlighter() !== null;
   const { colorByNodeId } = useViewer();
-  const { theme } = useResolvedTheme();
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const [renderCount, setRenderCount] = useState(0);
-  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
-  const leave = useHoverStore((state) => state.leave);
-  const options = useMemo<FileOptions<undefined, undefined>>(
-    () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
-    [theme, onPostRender],
-  );
-  const file = useMemo(
-    () => ({ name: view.file.split("/").at(-1) ?? view.file, contents: view.source }),
-    [view],
-  );
   const coloredNodes = useMemo(
     () =>
       view.components
@@ -176,23 +148,88 @@ export const SourcePane = () => {
   );
   const layout = useTokenBoxes(wrapperRef, coloredNodes, renderCount);
   const trackPointer = usePointerTracking(wrapperRef, layout);
+  const leave = useHoverStore((state) => state.leave);
   useFocusScroll(wrapperRef);
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
-      <div
-        ref={wrapperRef}
-        onMouseMove={trackPointer}
-        onMouseLeave={leave}
-        className="relative min-w-0 py-1 pr-8 text-[13px]/[19px]"
+    <>
+      <div className="absolute inset-0" onMouseMove={trackPointer} onMouseLeave={leave} />
+      <svg
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        width={layout.width}
+        height={layout.height}
       >
-        {isHighlighterReady ? (
-          <File file={file} options={options} disableWorkerPool />
-        ) : (
-          <Spinner className="h-40" />
-        )}
-        <Overlay layout={layout} />
-        <TokenTooltip />
-      </div>
+        <ArcHead />
+        {layout.tokens.map((token) => (
+          <TokenMark
+            key={token.node.id}
+            {...token}
+            color={colorByNodeId.get(token.node.id) ?? "transparent"}
+          />
+        ))}
+        <RestingArcs layout={layout} />
+        <CausalArcs layout={layout} />
+      </svg>
+      <TokenTooltip />
+    </>
+  );
+};
+
+const useLiveAnalysis = (draft: string, isTyping: boolean): void => {
+  const { open } = useViewer();
+  useEffect(() => {
+    if (!isTyping) return;
+    const timer = window.setTimeout(() => {
+      const code = draft.trim();
+      open(code ? { kind: "code", code } : null, { keepEditor: true });
+    }, ANALYZE_DELAY);
+    return () => window.clearTimeout(timer);
+  }, [draft, isTyping, open]);
+};
+
+const Editor = ({ initial }: { initial: string }) => {
+  const { view } = useViewer();
+  const { theme } = useResolvedTheme();
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [renderCount, setRenderCount] = useState(0);
+  const [draft, setDraft] = useState(initial);
+  const [isTyping, setTyping] = useState(false);
+  const onPostRender = useCallback(() => setRenderCount((count) => count + 1), []);
+  const onEditChange = useCallback<FileEditChangeHandler<undefined, undefined>>((event) => {
+    setDraft(event.editor.getText());
+    setTyping(true);
+  }, []);
+  useLiveAnalysis(draft, isTyping);
+  const isCurrent = view !== null && view.source === draft;
+  if (isTyping && isCurrent) setTyping(false);
+  const options = useMemo<FileOptions<undefined, undefined>>(
+    () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
+    [theme, onPostRender],
+  );
+  const file = useMemo(() => ({ name: "component.tsx", contents: initial }), [initial]);
+  return (
+    <div ref={wrapperRef} className="relative min-h-full min-w-0 py-1 pr-8 text-[13px]/[19px]">
+      <File file={file} options={options} disableWorkerPool edit onEditChange={onEditChange} />
+      {draft.trim() === "" && <EmptyHint />}
+      {isCurrent && <Overlay wrapperRef={wrapperRef} renderCount={renderCount} />}
+    </div>
+  );
+};
+
+export const SourcePane = () => {
+  const { source, view, editorSession, isViewLoading } = useViewer();
+  const isHighlighterReady = useHighlighter() !== null;
+  const initial = source?.kind === "code" ? source.code : (view?.source ?? null);
+  const isWaiting = !isHighlighterReady || (source?.kind === "file" && isViewLoading);
+  return (
+    <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
+      {isWaiting ? (
+        <Spinner className="h-full" />
+      ) : (
+        <Editor
+          key={`${editorSession}:${initial === null ? "" : "loaded"}`}
+          initial={initial ?? ""}
+        />
+      )}
     </div>
   );
 };
