@@ -214,11 +214,13 @@ class CompiledFunctionCollector {
     if (typeof loc === "symbol") return false;
     const compiled = this.#getCompiledFunction(loc);
     compiled.functionType = hirFunction.fnType;
-    if (hasErrors)
-      compiled.errors.push(
-        ...hirFunction.env.aggregateErrors().details.map((detail) => detail.reason),
-      );
-    else compiled.hir = hirFunction;
+    if (!hasErrors) {
+      compiled.hir = hirFunction;
+      return true;
+    }
+    compiled.errors.push(
+      ...hirFunction.env.aggregateErrors().details.map((detail) => detail.reason),
+    );
     return true;
   };
 

@@ -106,8 +106,11 @@ export class Destructurer {
   destructure(instruction: InstructionValueOfKind<"Destructure">): void {
     const { pattern } = instruction.lvalue;
     const value = this.#interpreter.read(instruction.value);
-    if (pattern.kind === "ArrayPattern") this.#destructureArray(pattern, value, instruction.loc);
-    else this.#destructureObject(pattern, value);
+    if (pattern.kind === "ObjectPattern") {
+      this.#destructureObject(pattern, value);
+      return;
+    }
+    this.#destructureArray(pattern, value, instruction.loc);
   }
 
   #destructureArray(pattern: ArrayPattern, value: SymbolicValue, loc: SourceLocation): void {

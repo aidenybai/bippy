@@ -4,6 +4,9 @@ export const appendToGroup = <Key, Value>(
   value: Value,
 ): void => {
   const group = groups.get(key);
-  if (group) group.push(value);
-  else groups.set(key, [value]);
+  if (group) {
+    group.push(value);
+    return;
+  }
+  groups.set(key, [value]);
 };

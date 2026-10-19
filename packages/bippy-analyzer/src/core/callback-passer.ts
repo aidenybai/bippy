@@ -75,8 +75,11 @@ export class CallbackPasser {
   }
 
   passCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation, walkState: WalkState): void {
-    if (!this.#interpreter.handlerEffects) this.addDeferredCallbacks(argumentValues, loc);
-    else for (const argument of argumentValues) this.#visitArgument(argument, walkState);
+    if (!this.#interpreter.handlerEffects) {
+      this.addDeferredCallbacks(argumentValues, loc);
+      return;
+    }
+    for (const argument of argumentValues) this.#visitArgument(argument, walkState);
   }
 
   addEffectCall(

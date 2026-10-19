@@ -45,6 +45,11 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `type-provider.ts`          | Types the compiler's HIR from the TS checker                                      |
 | `interpret.ts`              | Runs the HIR symbolically: the render tree, with every branch kept                |
 | `control-flow-walker.ts`    | Walks the HIR blocks: branches, switches, loops, phis and catch handlers          |
+| `destructurer.ts`           | Binds what a destructuring takes from props, a hook result or a literal           |
+| `mutation-tracker.ts`       | Which mutations in an instruction touch props, state or a literal being built     |
+| `callback-passer.ts`        | Callbacks handed to effects, promises and calls the analysis can't see into       |
+| `array-iteration.ts`        | Rows mapped from an array and callbacks run per item                              |
+| `claim-recorder.ts`         | Records a cast, a non-null assertion or an invariant call as a claim              |
 | `walk-state.ts`             | The guards and async flag a walk carries                                          |
 | `binding-table.ts`          | The interpreter's bindings, one per declaration, and each place's domain          |
 | `function-registry.ts`      | Functions values refer to, the file each came from, and closure captures          |
@@ -75,6 +80,9 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `collect-handlers.ts`       | What each event handler and effect updates                                        |
 | `regions.ts`                | Groups branches that test the same data into regions                              |
 | `enumerate-states.ts`       | Lists each region's states and transitions                                        |
+| `reachable-constraints.ts`  | The values every binding can reach, from its initial value and every update       |
+| `state-enumerator.ts`       | Walks the render tree under a region's constraints and lists its alternatives     |
+| `transitions.ts`            | Which states a handler's updates lead to, with its update sequences cached        |
 | `unreachable-branches.ts`   | Reports branch sides no state reaches                                             |
 | `constraints.ts`            | What a path assumes: possible values, branch outcomes, numeric bounds             |
 | `format.ts`, `serialize.ts` | Printing and JSON output                                                          |

@@ -116,9 +116,13 @@ export class MutationTracker {
         `mutates prop ${formatPlace(binding, ownedValue.path)}`,
         loc,
       );
-    } else if (this.#interpreter.handlerEffects)
+      return;
+    }
+    if (this.#interpreter.handlerEffects) {
       this.#interpreter.handlerEffects.addMutation(binding, loc);
-    else this.#interpreter.warn("render-mutation", `mutates ${binding.name} during render`, loc);
+      return;
+    }
+    this.#interpreter.warn("render-mutation", `mutates ${binding.name} during render`, loc);
   }
 
   recordAliasSources(instruction: Instruction): void {
