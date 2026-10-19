@@ -19,6 +19,15 @@ import { getValueKey } from "./utils/get-value-key";
 import { getPassedCallbacks } from "./symbolic-values";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
+const FORM_ACTION_PROPS = new Map([
+  ["form", "action"],
+  ["button", "formAction"],
+  ["input", "formAction"],
+]);
+const FORM_ACTION_EVENTS = new Map([
+  ["action", "submit"],
+  ["formAction", "click"],
+]);
 
 export const ANY_EVENT = "*";
 
@@ -35,9 +44,15 @@ export const getBindingUpdates = (handlers: Handler[], binding: Binding): StateU
     .flatMap((handler) => handler.updates)
     .filter((update) => update.binding.id === binding.id);
 
+const isFormActionProp = (tag: JsxTag, prop: JsxProp): boolean =>
+  tag.kind === "BuiltinTag" && FORM_ACTION_PROPS.get(tag.name) === prop.name;
+
 export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
   EVENT_HANDLER_PATTERN.test(prop.name) ||
+  isFormActionProp(tag, prop) ||
   (tag.kind !== "BuiltinTag" && getPassedCallbacks([prop.value]).length > 0);
+
+const getTriggerEvent = (prop: JsxProp): string => FORM_ACTION_EVENTS.get(prop.name) ?? prop.name;
 
 const isCallable = (value: SymbolicValue): boolean =>
   value.kind === "Setter" || value.kind === "Function";
@@ -65,6 +80,8 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
       return `function:${value.functionId}`;
     case "Setter":
       return `setter:${value.binding.id}`;
+    case "Dispatch":
+      return `dispatch:${value.binding.id}`;
     case "ArrayExpression":
       return `array:${value.elements.map(getHandlerKey).join(",")}`;
     case "ObjectExpression":
@@ -89,7 +106,8 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
 
 const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
   if (value.kind === "Function") return value.loc;
-  if (value.kind === "Setter" || value.kind === "Binding") return value.binding.loc;
+  if (value.kind === "Setter" || value.kind === "Dispatch" || value.kind === "Binding")
+    return value.binding.loc;
   if (value.kind === "Conditional") {
     const consequentLocation = getHandlerLocation(value.consequent);
     return consequentLocation === GeneratedSource
@@ -189,7 +207,7 @@ class HandlerCollector {
     if (handlerKey === null) return;
     prop.handlerId = this.#addEventHandler(
       handlerKey,
-      { kind: "Event", tag: element.tag.name, event: prop.name },
+      { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
       prop.value,
       getHandlerLocation(prop.value),
     );

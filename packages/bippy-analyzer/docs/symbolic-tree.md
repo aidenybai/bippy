@@ -102,6 +102,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - a `useState()` with no initial value is typed `undefined`, though a handler may set it to anything
 8. Collects handlers from event handlers and effects, and from code that may call the component's functions later:
    - setters and functions passed to child components under any prop name, including render props, function children and components declared inside the component, along with the handlers in the JSX they return, and JSX passed in any prop
+   - a function passed as `action` on a `<form>`, or as `formAction` on a `<button>` or `<input>`, which React 19 runs on submit with the form data, and the action a `useActionState` returns, which runs its function like a reducer over the previous state and the form data, with `isPending` typed as a boolean
    - functions passed to hooks and calls it can't see into, directly or in an options object, like `useMutation({ onSuccess })` or `form.handleSubmit(onSubmit)`, and functions stored on objects, like `recognition.onresult`, which run as effects with unknown arguments
    - ref callbacks, which run when React attaches the element
    - `createPortal(children, container)` renders its children in place

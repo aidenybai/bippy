@@ -152,7 +152,8 @@ export interface ProjectHookLoader {
 
 const MAX_INLINE_DEPTH = 4;
 const MAX_ALIAS_CHAIN_LENGTH = 32;
-const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic", "useActionState"]);
+const STATE_HOOKS = new Set<HookKind>(["useState", "useOptimistic"]);
+const REDUCER_HOOKS = new Set<HookKind>(["useReducer", "useActionState"]);
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
 const SHORTENING_METHODS = new Set(["filter", "slice"]);
@@ -405,8 +406,8 @@ export class Interpreter {
     const [statePlace] = itemPlaces;
     if (STATE_HOOKS.has(value.hookKind) && statePlace)
       return this.#destructureState(value, statePlace);
-    if (value.hookKind === "useReducer" && statePlace)
-      return this.#destructureReducer(value, statePlace, loc);
+    if (REDUCER_HOOKS.has(value.hookKind) && statePlace)
+      return this.#destructureReducer(value, statePlace, itemPlaces[2] ?? null, loc);
     return itemPlaces.map((place) => (place ? this.#bindHookResult(place, value) : null));
   }
 
@@ -430,8 +431,9 @@ export class Interpreter {
   #destructureReducer(
     hook: HookResultValue,
     statePlace: Place,
+    pendingPlace: Place | null,
     loc: SourceLocation,
-  ): SymbolicValue[] {
+  ): Array<SymbolicValue | null> {
     const [reducerArgument, initialArgument] = hook.argumentValues;
     const binding = this.createBinding(
       getIdentifierName(statePlace) ?? "state",
@@ -442,7 +444,21 @@ export class Interpreter {
     const reducer = reducerArgument
       ? this.#resolveModuleFunction(reducerArgument)
       : createUnknown("reducer", loc);
-    return [createBindingValue(binding), { kind: "Dispatch", binding, reducer }];
+    const pending = pendingPlace
+      ? this.createBinding(
+          getIdentifierName(pendingPlace) ?? "isPending",
+          "hook",
+          pendingPlace.loc,
+          {
+            hookKind: hook.hookKind,
+          },
+        )
+      : null;
+    return [
+      createBindingValue(binding),
+      { kind: "Dispatch", binding, reducer },
+      pending ? createBindingValue(pending) : null,
+    ];
   }
 
   #evaluateDestructure(destructure: InstructionValueOfKind<"Destructure">): void {
@@ -1694,6 +1710,8 @@ export class Interpreter {
     }
     if (callback.kind === "Setter")
       this.#handlerEffects?.recordSetterCall(callback.binding, EVENT_ARGUMENT, walkState);
+    if (callback.kind === "Dispatch")
+      this.#applyDispatch(callback, argumentValues[0], callback.binding.loc, walkState);
     if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return;
     visitedFunctionIds.add(callback.functionId);
