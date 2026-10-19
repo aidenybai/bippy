@@ -3,7 +3,7 @@ import { assertExhaustive } from "../../react-compiler/Utils/utils";
 
 export const canTypeEqualLiteral = (value: AbstractValue, literal: PrimitiveValue): boolean => {
   if (value.kind === "Literal") return false;
-  if (value.text === "any" || value.text === "unknown") return true;
+  if (value.text === "any" || value.text === "unknown" || value.text === "{}") return true;
   switch (value.primitive) {
     case "string":
       return typeof literal === "string";

@@ -280,6 +280,7 @@ export interface Claim {
   cases: AbstractValue[] | null;
   test: SymbolicValue | null;
   guards: SymbolicValue[];
+  isInHandler: boolean;
   description: string;
   loc: SourceLocation;
   file: string;

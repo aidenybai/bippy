@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import invariant from "invariant";
 
 interface User {
@@ -21,3 +21,48 @@ export const Profile = ({ user, mode }: { user: User | null; mode: "view" | "edi
     </div>
   );
 };
+
+export const GuardedCast = ({ next }: { next: string | null }) => {
+  const [status, setStatus] = useState<Status>("idle");
+  const apply = () => {
+    if (!next) return;
+    setStatus(next as Status);
+  };
+  return <button onClick={apply}>{status}</button>;
+};
+
+export const HiddenHandler = ({ kind }: { kind: "a" | "b" | "c" }) => {
+  const [picked, setPicked] = useState<"a" | "b">("a");
+  if (kind === "c") return <p>c</p>;
+  return <button onClick={() => setPicked(kind as "a" | "b")}>{picked}</button>;
+};
+
+export const GuardedWrite = ({ next }: { next: Status | undefined }) => {
+  const [status, setStatus] = useState<Status>("idle");
+  const apply = () => {
+    if (next) setStatus(next);
+  };
+  return <button onClick={apply}>{status}</button>;
+};
+
+declare const whenTrue: (flag: boolean, run: () => ReactNode) => ReactNode;
+
+export const Coalesced = ({ flags }: { flags: { ok: boolean }[] | undefined }) => {
+  const serverChecked = flags?.some((flag) => flag.ok) ?? false;
+  const [checked, setChecked] = useState(serverChecked);
+  useEffect(() => {
+    setChecked(serverChecked);
+  }, [serverChecked]);
+  return <p>{checked ? "on" : "off"}</p>;
+};
+
+export const EmptyObjectCast = ({ raw }: { raw: {} | undefined }) => <p>{raw as "a" | "b"}</p>;
+
+export const OpaqueCallback = ({ user }: { user: User | null }) => (
+  <div>
+    {user?.name && <i>named</i>}
+    {whenTrue(Boolean(user?.name), () => (
+      <b>{user!.name}</b>
+    ))}
+  </div>
+);

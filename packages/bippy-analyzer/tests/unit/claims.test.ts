@@ -40,7 +40,7 @@ describe("claims", () => {
     expect(find("user!")).toMatchObject({
       verdict: "unproven",
       reason: "user = null",
-      stateIndex: null,
+      stateIndex: 1,
     });
   });
 
@@ -56,6 +56,60 @@ describe("claims", () => {
       verdict: "unproven",
       stateIndex: null,
       reason: 'mode = "edit", user = null',
+    });
+  });
+
+  it("narrows a claim by the guard before it", () => {
+    const guarded = project.components.find(
+      (component) => component.analysis.name === "GuardedCast",
+    );
+    const cast = guarded?.report.claimOutcomes.find((outcome) => outcome.claim.kind === "cast");
+    expect(cast).toMatchObject({ verdict: "unproven", reason: "next = string" });
+  });
+
+  it("checks a claim in a handler only where the handler renders", () => {
+    const hidden = project.components.find(
+      (component) => component.analysis.name === "HiddenHandler",
+    );
+    const cast = hidden?.report.claimOutcomes.find((outcome) => outcome.claim.kind === "cast");
+    expect(cast).toMatchObject({ verdict: "holds" });
+  });
+
+  it("lets a guard keep a typed state within its type", () => {
+    const guarded = project.components.find(
+      (component) => component.analysis.name === "GuardedWrite",
+    );
+    const state = guarded?.report.claimOutcomes.find((outcome) => outcome.claim.kind === "state");
+    expect(state).toMatchObject({ verdict: "holds" });
+  });
+
+  it("drops the nullish side of a coalesced update", () => {
+    const coalesced = project.components.find(
+      (component) => component.analysis.name === "Coalesced",
+    );
+    const state = coalesced?.report.claimOutcomes.find((outcome) => outcome.claim.kind === "state");
+    expect(state).toMatchObject({ verdict: "holds" });
+  });
+
+  it("treats the empty object type as a value that may equal a literal", () => {
+    const empty = project.components.find(
+      (component) => component.analysis.name === "EmptyObjectCast",
+    );
+    const cast = empty?.report.claimOutcomes.find((outcome) => outcome.claim.kind === "cast");
+    expect(cast).toMatchObject({ verdict: "unproven", reason: "raw = undefined | {}" });
+  });
+
+  it("checks a claim in a callback it cannot place against every reachable value", () => {
+    const opaque = project.components.find(
+      (component) => component.analysis.name === "OpaqueCallback",
+    );
+    const assertion = opaque?.report.claimOutcomes.find(
+      (outcome) => outcome.claim.kind === "non-null",
+    );
+    expect(assertion).toMatchObject({
+      verdict: "unproven",
+      stateIndex: null,
+      reason: "user = null",
     });
   });
 
