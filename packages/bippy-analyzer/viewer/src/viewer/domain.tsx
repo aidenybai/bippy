@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { getDomainValues } from "../lib/diagram";
+import { getDomainValues, shortenType } from "../lib/diagram";
 import type { ViewBinding } from "../model";
 
 const PREVIEW_COUNT = 6;
@@ -11,8 +11,6 @@ interface DomainProps {
   renderValue: (value: string) => ReactNode;
   separator?: ReactNode;
 }
-
-export const shortenType = (value: string): string => value.replace(/<[\s\S]*>$/, "<…>");
 
 const MoreButton = ({
   hidden,

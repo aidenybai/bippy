@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Code } from "@/components/ui/code";
-import { getDiagramRows, getSourceLine } from "../lib/diagram";
+import { getSourceLine } from "../lib/diagram";
 import type { ViewComponent, ViewFile } from "../model";
 import { useHoverStore, useIsInactive } from "../store/hover";
 import { useLoadedView } from "./context";
-import { DiagramRowView } from "./diagram-rows";
-import { StateGraph } from "./state-graph";
+import { DecisionTree } from "./decision-tree";
 
 const CodeLine = ({ text }: { text: string }) => (
   <Code className="wrap-anywhere whitespace-pre-wrap">{text}</Code>
 );
 
 const ComponentDiagram = ({ view, component }: { view: ViewFile; component: ViewComponent }) => {
-  const rows = useMemo(() => getDiagramRows(component), [component]);
   const activate = useHoverStore((state) => state.activate);
   const isInactive = useIsInactive(`${component.name}/`);
   if (!component.loc) return null;
@@ -26,10 +24,16 @@ const ComponentDiagram = ({ view, component }: { view: ViewFile; component: View
     >
       <CodeLine text={getSourceLine(view, start.line)} />
       <div className="ml-3 grid gap-2 border-l pl-4">
-        {rows.map((row) => (
-          <DiagramRowView key={row.key} row={row} component={component} />
+        {component.regions.map((region, index) => (
+          <div key={region.placeNames.join(",") || index} className="grid gap-2">
+            {component.regions.length > 1 && (
+              <span className="text-muted-foreground">
+                States of {region.placeNames.join(", ")}
+              </span>
+            )}
+            <DecisionTree component={component} region={region} />
+          </div>
         ))}
-        <StateGraph component={component} />
       </div>
       {end.line !== start.line && <CodeLine text={getSourceLine(view, end.line)} />}
     </section>
