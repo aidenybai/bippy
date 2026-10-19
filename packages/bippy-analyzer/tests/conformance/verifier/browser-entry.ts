@@ -133,6 +133,7 @@ const MAX_PLAIN_NODES = 2000;
 const DEPTH_MARKER_PREFIX = "BippyVerifyDepth";
 const DEPTH_MARKER_PATTERN = new RegExp(`\\bat ${DEPTH_MARKER_PREFIX}(\\d+)\\b`);
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
+const FORM_ACTION_TAGS = new Set(["button", "input"]);
 const EVENT_PROP_PATTERN = /^on[A-Z]/;
 const CHANGE_VALUES = ["text", ""];
 const MAX_SELECT_CHANGE_VALUES = 3;
@@ -733,14 +734,22 @@ const getChangeValues = (element: HTMLElement): string[] =>
       )
     : CHANGE_VALUES;
 
+const isClickable = (props: Record<string, unknown>, tag: string): boolean =>
+  props.disabled !== true &&
+  (typeof props.onClick === "function" ||
+    (FORM_ACTION_TAGS.has(tag) && typeof props.formAction === "function"));
+
+const isSubmittable = (props: Record<string, unknown>, tag: string): boolean =>
+  tag === "form" && (typeof props.onSubmit === "function" || typeof props.action === "function");
+
 const getActionCandidates = (
   props: Record<string, unknown>,
   tag: string,
   element: HTMLElement,
 ): ActionCandidate[] => {
   const candidates: ActionCandidate[] = [];
-  if (typeof props.onClick === "function" && props.disabled !== true)
-    candidates.push({ kind: "click", value: "" });
+  if (isClickable(props, tag)) candidates.push({ kind: "click", value: "" });
+  if (isSubmittable(props, tag)) candidates.push({ kind: "submit", value: "" });
   const isEditable =
     INPUT_TAGS.has(tag) &&
     props.type !== "file" &&
@@ -1036,19 +1045,25 @@ const performAction = async (key: string): Promise<Capture | null> => {
   if (!action) return null;
   markDispatchersIdle();
   if (action.kind === "click") action.element.click();
+  else if (action.kind === "submit") submitForm(action.element);
   else setInputValue(action.element, action.value);
   await settle();
   return captureMountedComponent();
 };
 
-const preventNavigation = (event: Event): void => {
-  const target = event.target;
-  if (event.type === "submit" || (target instanceof Element && target.closest("a[href]")))
-    event.preventDefault();
+const submitForm = (element: HTMLElement): void => {
+  if (element instanceof HTMLFormElement) element.requestSubmit();
 };
 
-document.addEventListener("click", preventNavigation, true);
-document.addEventListener("submit", preventNavigation, true);
+const preventLinkNavigation = (event: Event): void => {
+  const target = event.target;
+  if (target instanceof Element && target.closest("a[href]")) event.preventDefault();
+};
+
+const preventSubmitNavigation = (event: Event): void => event.preventDefault();
+
+document.addEventListener("click", preventLinkNavigation, true);
+window.addEventListener("submit", preventSubmitNavigation);
 navigation.addEventListener("navigate", (event) => {
   if (event.cancelable && !event.hashChange) event.preventDefault();
 });
