@@ -1499,6 +1499,91 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > StatusView keeps its render tree and handlers 1`] = `
+"---
+title: StatusView src/pattern-match.tsx:10
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StatusView"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"status === #quot;idle#quot;"}
+  n2 --> n3
+  n4["#lt;button#gt; #quot;Start#quot;"]
+  n3 -->|✓| n4
+  n5(["onClick ⇒ status = #quot;loading#quot;"]):::event
+  n4 -.-> n5
+  n6{"status === #quot;loading#quot;"}
+  n3 -->|✗| n6
+  n7["#lt;button#gt; #quot;Finish#quot;"]
+  n6 -->|✓| n7
+  n8(["onClick ⇒ status = #quot;done#quot;"]):::event
+  n7 -.-> n8
+  n9["#lt;p#gt; #quot;Done#quot;"]
+  n6 -->|✗| n9"
+`;
+
+exports[`fixture analysis > StatusView keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StatusView src/pattern-match.tsx:10
+---
+stateDiagram-v2
+  direction LR
+  S1: status === "idle" · #lt;div#gt; #lt;button#gt; "Start"
+  S2: status === "loading" · #lt;div#gt; #lt;button#gt; "Finish"
+  S3: status ∉ {"idle", "loading"} · #lt;div#gt; #lt;p#gt; "Done"
+  [*] --> S1
+  S1 --> S2: "Start"
+  S2 --> S3: "Finish"
+  state "claims" as claims {
+    claims1: holds status stays within "done" | "idle" | "loading" L11
+  }"
+`;
+
+exports[`fixture analysis > StepView keeps its render tree and handlers 1`] = `
+"---
+title: StepView src/pattern-match.tsx:24
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["StepView"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"step === #quot;panel#quot;"}
+  n2 --> n3
+  n4["#lt;aside#gt; #quot;panel#quot;"]
+  n3 -->|✓| n4
+  n5["#lt;ul#gt;"]
+  n3 -->|✗| n5
+  n6{"!!user"}
+  n2 --> n6
+  n7["#lt;b#gt; {user.name}"]
+  n6 -->|✓| n7
+  n8["#lt;i#gt; #quot;anonymous#quot;"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > StepView keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: StepView src/pattern-match.tsx:24
+---
+stateDiagram-v2
+  direction LR
+  state "StepView" as regions {
+    %% step
+    S1: step === "panel" · #lt;aside#gt; "panel"
+    S2: step !== "panel" · #lt;ul#gt;
+    --
+    %% user
+    S3: !!user · #lt;b#gt; {user.name}
+    S4: !user · #lt;i#gt; "anonymous"
+  }
+  state "claims" as claims {
+    claims1: holds user! L31
+  }"
+`;
+
 exports[`fixture analysis > TagEditor keeps its render tree and handlers 1`] = `
 "---
 title: TagEditor src/local-mutations.tsx:3

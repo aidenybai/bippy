@@ -50,6 +50,7 @@ The pipeline runs the React Compiler's own front end, then our passes. Read `src
 | `callback-passer.ts`        | Callbacks handed to effects, promises and calls the analysis can't see into       |
 | `array-iteration.ts`        | Rows mapped from an array and callbacks run per item                              |
 | `claim-recorder.ts`         | Records a cast, a non-null assertion or an invariant call as a claim              |
+| `pattern-matcher.ts`        | Turns a ts-pattern match chain into branches on its subject                       |
 | `walk-state.ts`             | The guards and async flag a walk carries                                          |
 | `binding-table.ts`          | The interpreter's bindings, one per declaration, and each place's domain          |
 | `function-registry.ts`      | Functions values refer to, the file each came from, and closure captures          |
@@ -124,6 +125,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed, and a call to a function a condition chooses, like `isDocument ? setDraggedDocument : setDraggedFolder`, may be either
    - a helper that returns JSX, like `getFileIcon(path)`, is followed into whichever file of the project declares it, so its branches become the component's
+   - a ts-pattern `match(subject)` chain: each `.with(pattern, handler)` is a branch, a literal pattern tests `subject === literal`, `true` and `false` test the subject's truthiness, an object pattern tests each field, and `P.*` or `.when()` patterns are unknown tests; `.otherwise(handler)` is the final else and the last arm of `.exhaustive()` is unconditional. `Boolean(x)` is read as `!!x`, so `match(Boolean(user)).with(true, () => user!.name)` narrows `user` in that arm
    - `catch` blocks run too, as what a handler tries may throw
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
    - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it. It may not happen, since a consumer can render without its provider.

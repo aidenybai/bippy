@@ -19,6 +19,7 @@ import { ClaimRecorder } from "./claim-recorder";
 import { ControlFlowWalker } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
 import { MutationTracker } from "./mutation-tracker";
+import { PatternMatcher } from "./pattern-matcher";
 import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_WALK_STATE, getAsyncWalkState } from "./walk-state";
 import type { WalkState } from "./walk-state";
@@ -57,6 +58,7 @@ import { isExternalSource } from "./utils/is-external-source";
 import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
 import { getTestExpression } from "./utils/get-test-expression";
+import { coerceBooleanCall } from "./utils/coerce-boolean-call";
 import { negate } from "./utils/negate";
 import {
   UNDEFINED_VALUE,
@@ -185,6 +187,7 @@ export class Interpreter {
   readonly claimRecorder = new ClaimRecorder(this);
   readonly callbacks = new CallbackPasser(this);
   readonly iteration = new ArrayIteration(this);
+  readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
   readonly externalSources: ExternalSources;
   readonly diagnostics = new Diagnostics();
@@ -543,6 +546,11 @@ export class Interpreter {
   }
 
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
+    const { callee, argumentValues } = callSite;
+    const modeled =
+      this.patterns.start(callee, argumentValues, callSite.loc) ??
+      coerceBooleanCall(callee, argumentValues);
+    if (modeled) return modeled;
     this.#recordWholeProps(callSite);
     const target = this.#getCallTarget(callSite);
     this.claimRecorder.recordInvariant(
@@ -823,12 +831,19 @@ export class Interpreter {
 
   #evaluateMethodCall(
     methodCall: InstructionValueOfKind<"MethodCall">,
+    instructionId: InstructionId,
     walkState: WalkState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
+    const matched = this.patterns.continue(receiver, methodName, argumentValues, {
+      loc: methodCall.loc,
+      instructionId,
+      walkState,
+    });
+    if (matched) return matched;
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName))
       this.iteration.visitItemCallback(methodName, callback, methodCall, walkState);
@@ -916,7 +931,7 @@ export class Interpreter {
       case "CallExpression":
         return this.#evaluateCallExpression(value, walkState);
       case "MethodCall":
-        return this.#evaluateMethodCall(value, walkState);
+        return this.#evaluateMethodCall(value, instruction.id, walkState);
       case "JsxExpression":
         return this.#evaluateJsxElement(value, instruction.id);
       case "JsxFragment":
