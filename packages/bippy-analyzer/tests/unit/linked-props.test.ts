@@ -34,12 +34,21 @@ describe("props linked from a parent", () => {
   });
 
   it("narrows the child's states to what the parent can pass", () => {
-    expect(badge?.instances).toHaveLength(1);
+    expect(badge?.instances).toHaveLength(3);
     const [instance] = badge?.instances ?? [];
     expect(instance?.link).toBe(loader?.links[0]);
     expect(instance?.report.states).toHaveLength(3);
     expect(instance?.report.unreachableBranches.map((branch) => branch.description)).toEqual([
       expect.stringContaining('status === "error"'),
     ]);
+  });
+
+  it("shares one instance between links that pass the same values", () => {
+    const gallery = find("Gallery");
+    const [, first, second] = badge?.instances ?? [];
+    expect(first?.link).toBe(gallery?.links[0]);
+    expect(second?.link).toBe(gallery?.links[1]);
+    expect(first?.report).toBe(second?.report);
+    expect(first?.report.states).toHaveLength(1);
   });
 });

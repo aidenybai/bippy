@@ -293,7 +293,11 @@ const findTsconfig = (file: string): string => {
 };
 
 export const getAnalyzerJson = (file: string): string =>
-  loadAnalyzerText({ tsconfig: findTsconfig(file), fileFilter: file });
+  JSON.stringify(
+    JSON.parse(loadAnalyzerText({ tsconfig: findTsconfig(file), fileFilter: file })),
+    null,
+    2,
+  );
 
 export const getViewFile = (file: string): ViewFile => {
   const tsconfig = findTsconfig(file);
