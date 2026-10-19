@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..19b4b92 100644
+index 959fdf7..3b74381 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,28 @@ function lowerStatement(
@@ -829,7 +829,7 @@ index 959fdf7..19b4b92 100644
 +        return right;
 +      },
 +    );
-+  }
+   }
 +  builder.recordError(
 +    new CompilerErrorDetail({
 +      reason: `(BuildHIR::lowerExpression) Expected Identifier or MemberExpression, got ${left.type} lval in AssignmentExpression`,
@@ -855,7 +855,7 @@ index 959fdf7..19b4b92 100644
 +      value: {...value},
 +      loc,
 +    };
-   }
++  }
 +  return {
 +    kind: 'ComputedStore',
 +    object: {...object},
@@ -875,7 +875,25 @@ index 959fdf7..19b4b92 100644
    } else if (exprPath.isJSXText()) {
      let text: string | null;
      if (builder.fbtDepth > 0) {
-@@ -4314,14 +4242,7 @@ function lowerAssignment(
+@@ -4206,17 +4134,6 @@ function lowerAssignment(
+             );
+             continue;
+           }
+-          if (property.node.computed) {
+-            builder.recordError(
+-              new CompilerErrorDetail({
+-                reason: `(BuildHIR::lowerAssignment) Handle computed properties in ObjectPattern`,
+-                category: ErrorCategory.Todo,
+-                loc: property.node.loc ?? null,
+-                suggestions: null,
+-              }),
+-            );
+-            continue;
+-          }
+           const loweredKey = lowerObjectPropertyKey(builder, property);
+           if (!loweredKey) {
+             continue;
+@@ -4314,14 +4231,7 @@ function lowerAssignment(
        const continuationBlock = builder.reserve(builder.currentBlockKind());
  
        const consequent = builder.enter('value', () => {
@@ -891,7 +909,7 @@ index 959fdf7..19b4b92 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4515,9 +4436,10 @@ function gatherCapturedContext(
+@@ -4515,9 +4425,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -905,7 +923,7 @@ index 959fdf7..19b4b92 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4453,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4442,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
@@ -1217,10 +1235,58 @@ index 71874b0..8e0c34c 100644
      }
  
 diff --git a/HIR/visitors.ts b/HIR/visitors.ts
-index 6c88847..5abdf47 100644
+index 6c88847..f600f45 100644
 --- a/HIR/visitors.ts
 +++ b/HIR/visitors.ts
-@@ -920,6 +920,7 @@ export function mapTerminalSuccessors(
+@@ -134,6 +134,7 @@ export function* eachInstructionValueOperand(
+     }
+     case 'Destructure': {
+       yield instrValue.value;
++      yield* eachPatternComputedKey(instrValue.lvalue.pattern);
+       break;
+     }
+     case 'PropertyLoad': {
+@@ -335,6 +336,31 @@ export function doesPatternContainSpreadElement(pattern: Pattern): boolean {
+   return false;
+ }
+ 
++function* eachPatternComputedKey(pattern: Pattern): Iterable<Place> {
++  if (pattern.kind !== 'ObjectPattern') {
++    return;
++  }
++  for (const property of pattern.properties) {
++    if (property.kind === 'ObjectProperty' && property.key.kind === 'computed') {
++      yield property.key.name;
++    }
++  }
++}
++
++function mapPatternComputedKeys(
++  pattern: Pattern,
++  fn: (place: Place) => Place,
++): void {
++  if (pattern.kind !== 'ObjectPattern') {
++    return;
++  }
++  for (const property of pattern.properties) {
++    if (property.kind === 'ObjectProperty' && property.key.kind === 'computed') {
++      property.key.name = fn(property.key.name);
++    }
++  }
++}
++
+ export function* eachPatternOperand(pattern: Pattern): Iterable<Place> {
+   switch (pattern.kind) {
+     case 'ArrayPattern': {
+@@ -519,6 +545,7 @@ export function mapInstructionValueOperands(
+     }
+     case 'Destructure': {
+       instrValue.value = fn(instrValue.value);
++      mapPatternComputedKeys(instrValue.lvalue.pattern, fn);
+       break;
+     }
+     case 'NewExpression':
+@@ -920,6 +947,7 @@ export function mapTerminalSuccessors(
        const handler = terminal.handler !== null ? fn(terminal.handler) : null;
        return {
          kind: 'maybe-throw',
@@ -1228,7 +1294,7 @@ index 6c88847..5abdf47 100644
          continuation,
          handler,
          id: makeInstructionId(0),
-@@ -1153,7 +1154,12 @@ export function mapTerminalOperands(
+@@ -1153,7 +1181,12 @@ export function mapTerminalOperands(
        }
        break;
      }
@@ -1242,7 +1308,7 @@ index 6c88847..5abdf47 100644
      case 'sequence':
      case 'label':
      case 'optional':
-@@ -1212,7 +1218,12 @@ export function* eachTerminalOperand(terminal: Terminal): Iterable<Place> {
+@@ -1212,7 +1245,12 @@ export function* eachTerminalOperand(terminal: Terminal): Iterable<Place> {
        }
        break;
      }
