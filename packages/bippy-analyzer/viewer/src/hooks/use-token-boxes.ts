@@ -1,10 +1,18 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
-import { createLineLookup, getLinesBox, getLocationBox, type Box } from "@/lib/positions";
+import {
+  createLineLookup,
+  getBoundingBox,
+  getLinesBox,
+  getLocationBox,
+  getLocationRows,
+  type Box,
+} from "@/lib/positions";
 import type { GraphNode } from "@/model";
 
 export interface PlacedToken {
   node: GraphNode;
   box: Box;
+  rows: Box[];
   anchorBox: Box | null;
   isMultiLine: boolean;
 }
@@ -24,9 +32,10 @@ const measure = (wrapper: HTMLElement, nodes: GraphNode[]): TokenLayout => {
   return {
     tokens: nodes.flatMap((node) => {
       const isMultiLine = node.loc.start.line !== node.loc.end.line;
-      const box = isMultiLine ? getLinesBox(lookup, node.loc) : getLocationBox(lookup, node.loc);
+      const rows = isMultiLine ? [] : getLocationRows(lookup, node.loc);
+      const box = isMultiLine ? getLinesBox(lookup, node.loc) : getBoundingBox(rows);
       const anchorBox = node.anchor ? getLocationBox(lookup, node.anchor) : null;
-      return box && box.height > 0 ? [{ node, box, anchorBox, isMultiLine }] : [];
+      return box && box.height > 0 ? [{ node, box, rows, anchorBox, isMultiLine }] : [];
     }),
     width: wrapper.clientWidth,
     height: wrapper.clientHeight,

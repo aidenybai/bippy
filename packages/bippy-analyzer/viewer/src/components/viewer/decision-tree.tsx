@@ -244,36 +244,38 @@ export const DecisionTree = ({ component, region }: DecisionTreeProps) => {
   const layout = useMemo(() => layoutTree(component, region), [component, region]);
   if (!layout) return null;
   return (
-    <div className="relative" style={{ width: layout.width, height: layout.height }}>
-      <svg
-        className="absolute inset-0"
-        width={layout.width}
-        height={layout.height}
-        aria-hidden="true"
-      >
-        <defs>
-          <marker
-            id="tree-arrow"
-            viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
-            markerWidth="6"
-            markerHeight="6"
-            orient="auto"
-          >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
-          </marker>
-        </defs>
-        {layout.edges.map((edge) => (
-          <EdgePath key={edge.id} edge={edge} component={component} />
+    <div className="-mx-2 overflow-x-auto overscroll-x-contain px-2 py-2 -my-2">
+      <div className="relative" style={{ width: layout.width, height: layout.height }}>
+        <svg
+          className="absolute inset-0"
+          width={layout.width}
+          height={layout.height}
+          aria-hidden="true"
+        >
+          <defs>
+            <marker
+              id="tree-arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+            </marker>
+          </defs>
+          {layout.edges.map((edge) => (
+            <EdgePath key={edge.id} edge={edge} component={component} />
+          ))}
+        </svg>
+        {layout.nodes.map((laid) => (
+          <NodeView key={laid.node.id} laid={laid} component={component} />
         ))}
-      </svg>
-      {layout.nodes.map((laid) => (
-        <NodeView key={laid.node.id} laid={laid} component={component} />
-      ))}
-      {layout.edges.map((edge) => (
-        <EdgeLabel key={edge.id} edge={edge} component={component} />
-      ))}
+        {layout.edges.map((edge) => (
+          <EdgeLabel key={edge.id} edge={edge} component={component} />
+        ))}
+      </div>
     </div>
   );
 };

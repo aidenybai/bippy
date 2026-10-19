@@ -1,6 +1,7 @@
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import type { PlacedToken } from "@/hooks/use-token-boxes";
 import { getSolidColor } from "@/lib/colors";
+import type { Box } from "@/lib/positions";
 import { useIsDimmed, useIsHovered, useIsInactive } from "@/store/hover";
 
 interface TokenVisibility {
@@ -15,21 +16,20 @@ const getTokenOpacity = ({ isDimmed, isInactive, isMultiLine }: TokenVisibility)
   return isMultiLine ? 0.5 : 1;
 };
 
-interface TokenMarkProps extends PlacedToken {
+interface MarkRectProps {
+  nodeId: string;
+  box: Box;
+  isMultiLine: boolean;
+  isHovered: boolean;
   color: string;
+  opacity: number;
 }
 
-export const TokenMark = ({ node, box, isMultiLine, color }: TokenMarkProps) => {
+const MarkRect = ({ nodeId, box, isMultiLine, isHovered, color, opacity }: MarkRectProps) => {
   const { theme } = useResolvedTheme();
-  const isHovered = useIsHovered(node.id);
-  const opacity = getTokenOpacity({
-    isDimmed: useIsDimmed([node.id]),
-    isInactive: useIsInactive(node.id),
-    isMultiLine,
-  });
   return (
     <rect
-      data-node={node.id}
+      data-node={nodeId}
       x={isMultiLine ? box.x - 8 : box.x - 2}
       y={box.y + 1}
       width={isMultiLine ? 3 : box.width + 4}
@@ -42,4 +42,28 @@ export const TokenMark = ({ node, box, isMultiLine, color }: TokenMarkProps) => 
       style={{ mixBlendMode: theme === "dark" ? "screen" : "multiply" }}
     />
   );
+};
+
+interface TokenMarkProps extends PlacedToken {
+  color: string;
+}
+
+export const TokenMark = ({ node, box, rows, isMultiLine, color }: TokenMarkProps) => {
+  const isHovered = useIsHovered(node.id);
+  const opacity = getTokenOpacity({
+    isDimmed: useIsDimmed([node.id]),
+    isInactive: useIsInactive(node.id),
+    isMultiLine,
+  });
+  return (isMultiLine ? [box] : rows).map((row) => (
+    <MarkRect
+      key={`${row.x}-${row.y}`}
+      nodeId={node.id}
+      box={row}
+      isMultiLine={isMultiLine}
+      isHovered={isHovered}
+      color={color}
+      opacity={opacity}
+    />
+  ));
 };

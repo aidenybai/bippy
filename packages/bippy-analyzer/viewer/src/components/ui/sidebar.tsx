@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_WIDTH = "26rem";
-const SIDEBAR_WIDTH_MOBILE = "20rem";
+const SIDEBAR_WIDTH_MOBILE = "24rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 interface SidebarStyle extends CSSProperties {
@@ -122,9 +122,11 @@ const MobileSidebar = ({ side, title, children }: SidebarProps) => {
         className="w-(--sidebar-width) p-0"
         style={style}
       >
-        <SheetTitle className="sr-only">{title}</SheetTitle>
+        <div className="flex h-11 shrink-0 items-center border-b px-4">
+          <SheetTitle>{title}</SheetTitle>
+        </div>
         <SheetDescription className="sr-only">Shows the {title}.</SheetDescription>
-        <div className="flex h-full w-full flex-col">{children}</div>
+        <div className="flex min-h-0 w-full flex-1 flex-col">{children}</div>
       </SheetContent>
     </Sheet>
   );
@@ -171,15 +173,16 @@ export const Sidebar = ({ side = "right", title = "Sidebar", ...props }: Sidebar
 };
 
 export const SidebarTrigger = ({ className, onClick, ...props }: ComponentProps<typeof Button>) => {
-  const { toggleSidebar, open } = useSidebar();
+  const { toggleSidebar, open, openMobile, isMobile } = useSidebar();
+  const isOpen = isMobile ? openMobile : open;
   return (
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      aria-label={open ? "Hide sidebar" : "Show sidebar"}
-      aria-pressed={open}
+      aria-label={isOpen ? "Hide sidebar" : "Show sidebar"}
+      aria-pressed={isOpen}
       className={className}
       onClick={(event) => {
         onClick?.(event);
