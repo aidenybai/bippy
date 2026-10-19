@@ -1,3 +1,4 @@
+import { getModuleType } from "./utils/get-module-type";
 import { parseSync, traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
 import { compileFn } from "../react-compiler/Entrypoint/Pipeline";
@@ -121,7 +122,7 @@ const createPluginOptions = (
     panicThreshold: "none",
     flowSuppressions: false,
     eslintSuppressionRules: [],
-    environment,
+    environment: { ...environment, moduleTypeProvider: getModuleType },
     logger,
   });
 
