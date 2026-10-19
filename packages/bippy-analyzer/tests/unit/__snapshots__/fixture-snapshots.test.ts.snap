@@ -402,6 +402,27 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > FabRow keeps its render tree and handlers 1`] = `
+"---
+title: FabRow src/or-conditions.tsx:6
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FabRow"]
+  n2["#lt;p#gt; {value}"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > FabRow keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FabRow src/or-conditions.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; {value}
+  [*] --> S1"
+`;
+
 exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
 "---
 title: Feed src/chains.tsx:17
@@ -697,6 +718,55 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;section#gt; #lt;em#gt; "Empty"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > KindSwitch keeps its render tree and handlers 1`] = `
+"---
+title: KindSwitch src/or-conditions.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["KindSwitch"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;FAB#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ kind = #quot;fab#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Extended#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ kind = #quot;extendedFab#quot;"]):::event
+  n5 -.-> n6
+  n7{"kind === #quot;fab#quot; ? kind === #quot;fab#quot; : kind === #quot;extendedFab#quot;"}
+  n2 --> n7
+  n8["#lt;FabRow#gt;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;Chip#quot;"]
+  n7 -->|✗| n9
+  n10{"kind !== #quot;chip#quot; ? !(kind === #quot;fab#quot; ? kind === #quot;fab#quot; : kind === #quot;extendedFab#quot;) :…"}
+  n2 --> n10
+  n11["#lt;p#gt; #quot;Unreachable#quot;"]
+  n10 -->|✓| n11"
+`;
+
+exports[`fixture analysis > KindSwitch keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: KindSwitch src/or-conditions.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: kind === "fab" ? kind === "fab" : kind === "extendedFab" · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;FabRow#gt;
+  S2: !(kind === "fab" ? kind === "fab" : kind === "extendedFab") · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;p#gt; "Chip"
+  [*] --> S2
+  S2 --> S1: "FAB"
+  S2 --> S1: "Extended"
+  state "claims" as claims {
+    claims1: holds kind as "extendedFab" | "fab" L15
+    claims2: holds kind stays within "chip" | "extendedFab" | "fab" L9
+  }
+  state "unreachable branches" as unreachable {
+    unreachable1: never kind !== "chip" ? !(kind === "fab" ? kind === "fab" : kind === "extendedFab") : kind !== "chip" L16
+  }"
 `;
 
 exports[`fixture analysis > Latest keeps its render tree and handlers 1`] = `

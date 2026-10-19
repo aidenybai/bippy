@@ -4,6 +4,7 @@ import type {
   BinaryExpressionValue,
   BindingValue,
   BindingPlace,
+  ConditionalValue,
   SymbolicValue,
 } from "./types";
 import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
@@ -394,6 +395,56 @@ export const hasUnknownPart = (value: SymbolicValue): boolean => {
   return hasUnknown;
 };
 
+const joinPlaceValues = (
+  left: PlaceMap<AbstractValue[]>,
+  right: PlaceMap<AbstractValue[]>,
+): PlaceMap<AbstractValue[]> =>
+  new PlaceMap(
+    [...left].flatMap(([place, leftValues]): Array<[BindingPlace, AbstractValue[]]> => {
+      const rightValues = right.get(place);
+      return rightValues ? [[place, dedupeAbstractValues([...leftValues, ...rightValues])]] : [];
+    }),
+  );
+
+const joinConstraints = (left: Constraints, right: Constraints): Constraints => {
+  const rightBoundKeys = new Set(right.bounds.map(formatBound));
+  return {
+    possibleValues: joinPlaceValues(left.possibleValues, right.possibleValues),
+    assumptions: new Map(
+      [...left.assumptions].filter(
+        ([key, assumption]) => right.assumptions.get(key)?.isTrue === assumption.isTrue,
+      ),
+    ),
+    bounds: left.bounds.filter((bound) => rightBoundKeys.has(formatBound(bound))),
+    invariants: left.invariants,
+    unionMemberValues: left.unionMemberValues,
+    possibleMembers: new Map(
+      [...left.possibleMembers].flatMap(([bindingId, members]): Array<[number, number[]]> => {
+        const rightMembers = right.possibleMembers.get(bindingId);
+        return rightMembers ? [[bindingId, [...new Set([...members, ...rightMembers])]]] : [];
+      }),
+    ),
+  };
+};
+
+const assumeConditional = (
+  value: ConditionalValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => {
+  const test = getTestExpression(value);
+  const whenTrue = assumeCondition(test, true, constraints);
+  const whenFalse = assumeCondition(test, false, constraints);
+  const consequent = whenTrue && assumeCondition(value.consequent, isTrue, whenTrue);
+  const alternate = whenFalse && assumeCondition(value.alternate, isTrue, whenFalse);
+  const joined =
+    consequent && alternate ? joinConstraints(consequent, alternate) : (consequent ?? alternate);
+  if (!joined) return null;
+  const assumed = cloneConstraints(joined);
+  assumed.assumptions.set(getValueKey(value), { isTrue, places: collectPlaces(value) });
+  return assumed;
+};
+
 export const assumeCondition = (
   value: SymbolicValue,
   isTrue: boolean,
@@ -403,15 +454,7 @@ export const assumeCondition = (
   if (evaluated !== null) return evaluated === isTrue ? constraints : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return assumeCondition(value.value, !isTrue, constraints);
-  if (
-    value.kind === "Conditional" &&
-    isTrue &&
-    value.alternate.kind === "Primitive" &&
-    !value.alternate.value
-  ) {
-    const withTest = assumeCondition(getTestExpression(value), true, constraints);
-    return withTest && assumeCondition(value.consequent, true, withTest);
-  }
+  if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
     return narrowPlace(
       value,
