@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..3b74381 100644
+index 959fdf7..9d844f4 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,28 @@ function lowerStatement(
@@ -875,7 +875,18 @@ index 959fdf7..3b74381 100644
    } else if (exprPath.isJSXText()) {
      let text: string | null;
      if (builder.fbtDepth > 0) {
-@@ -4206,17 +4134,6 @@ function lowerAssignment(
+@@ -4135,6 +4063,10 @@ function lowerAssignment(
+             property.isRestElement() ||
+             (property.isObjectProperty() &&
+               (!property.get('value').isIdentifier() ||
++                getStoreKind(
++                  builder,
++                  property.get('value') as NodePath<t.Identifier>,
++                ) !== 'StoreLocal' ||
+                 builder.resolveIdentifier(
+                   property.get('value') as NodePath<t.Identifier>,
+                 ).kind !== 'Identifier')),
+@@ -4206,17 +4138,6 @@ function lowerAssignment(
              );
              continue;
            }
@@ -893,7 +904,7 @@ index 959fdf7..3b74381 100644
            const loweredKey = lowerObjectPropertyKey(builder, property);
            if (!loweredKey) {
              continue;
-@@ -4314,14 +4231,7 @@ function lowerAssignment(
+@@ -4314,14 +4235,7 @@ function lowerAssignment(
        const continuationBlock = builder.reserve(builder.currentBlockKind());
  
        const consequent = builder.enter('value', () => {
@@ -909,7 +920,7 @@ index 959fdf7..3b74381 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4515,9 +4425,10 @@ function gatherCapturedContext(
+@@ -4515,9 +4429,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -923,7 +934,7 @@ index 959fdf7..3b74381 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4442,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4446,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  

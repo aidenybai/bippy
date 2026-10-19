@@ -75,6 +75,15 @@ describe("compiler errors", () => {
     ]);
   });
 
+  it("reassigns a destructured field that a closure captures", () => {
+    const { analysis } = getComponent(project, "CaptionLayout");
+    expect(analysis.bailouts).toEqual([]);
+    expect(analysis.handlers[0]?.updates.map((update) => update.binding.name)).toEqual([
+      "lines",
+      "nextLineId",
+    ]);
+  });
+
   it("lowers a computed key in a destructuring pattern", () => {
     const { analysis } = getComponent(project, "SelectedTags");
     expect(analysis.bailouts).toEqual([]);
