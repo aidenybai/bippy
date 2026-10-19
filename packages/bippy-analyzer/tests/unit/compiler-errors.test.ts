@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { formatSymbolicValue } from "../../src/core/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("compiler errors", () => {
@@ -19,6 +20,18 @@ describe("compiler errors", () => {
       expect(getComponent(project, name).analysis.bailouts).toEqual([]);
     },
   );
+
+  it.each([
+    ["DraftTitle", "DraftTitleSpelledOut"],
+    ["SeenCounter", "SeenCounterSpelledOut"],
+  ])("lowers the logical assignments in %s as %s spells them out", (name, spelledOutName) => {
+    const describeStates = (componentName: string) => {
+      const { analysis, report } = getComponent(project, componentName);
+      expect(analysis.bailouts).toEqual([]);
+      return report.states.map((state) => [state.conditions, formatSymbolicValue(state.render)]);
+    };
+    expect(describeStates(name)).toEqual(describeStates(spelledOutName));
+  });
 
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
