@@ -413,9 +413,30 @@ flowchart TD
   n1 --> n2"
 `;
 
+exports[`fixture analysis > FabRow keeps its render tree and handlers 2`] = `
+"---
+title: FabRow src/type-predicates.tsx:10
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FabRow"]
+  n2["#lt;p#gt; {value}"]
+  n1 --> n2"
+`;
+
 exports[`fixture analysis > FabRow keeps its states, transitions and unreachable branches 1`] = `
 "---
 title: FabRow src/or-conditions.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; {value}
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > FabRow keeps its states, transitions and unreachable branches 2`] = `
+"---
+title: FabRow src/type-predicates.tsx:10
 ---
 stateDiagram-v2
   direction LR
@@ -1069,6 +1090,48 @@ stateDiagram-v2
   state "claims" as claims {
     claims1: holds isOpen stays within false | true L24
     claims2: holds isDark stays within false | true L25
+  }"
+`;
+
+exports[`fixture analysis > PartInspector keeps its render tree and handlers 1`] = `
+"---
+title: PartInspector src/type-predicates.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PartInspector"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;Make FAB#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ kind = #quot;fab#quot;"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; #quot;Make chip#quot;"]
+  n2 --> n5
+  n6(["onClick ⇒ kind = #quot;chip#quot;"]):::event
+  n5 -.-> n6
+  n7{"kind === #quot;extendedFab#quot; ? kind === #quot;extendedFab#quot; : kind === #quot;fab#quot;"}
+  n2 --> n7
+  n8["#lt;FabRow#gt;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;Not a FAB#quot;"]
+  n7 -->|✗| n9"
+`;
+
+exports[`fixture analysis > PartInspector keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PartInspector src/type-predicates.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  S1: kind === "fab" · #lt;div#gt; #lt;button#gt; "Make FAB" #lt;button#gt; "Make chip" #lt;FabRow#gt;
+  S2: kind !== "fab" · #lt;div#gt; #lt;button#gt; "Make FAB" #lt;button#gt; "Make chip" #lt;p#gt; "Not a FAB"
+  [*] --> S2
+  S2 --> S1: "Make FAB"
+  S1 --> S2: "Make chip"
+  state "claims" as claims {
+    claims1: holds kind as "extendedFab" | "fab" L19
+    claims2: holds kind stays within "button" | "chip" | "extendedFab" | "fab" L13
   }"
 `;
 

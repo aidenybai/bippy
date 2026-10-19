@@ -14,12 +14,17 @@ import {
   isPropertyAccessExpression,
   isStringLiteral,
 } from "typescript/unstable/ast/is";
-import { SymbolFlags, TypeFlags } from "typescript/unstable/sync";
+import { SymbolFlags, TypeFlags, TypePredicateKind } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { getLocationKey } from "./utils/get-location-key";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { AbstractValue, Domain, Sample } from "./types";
+
+interface PredicateCases {
+  parameterIndex: number;
+  cases: AbstractValue[];
+}
 import {
   UNDEFINED_CASE,
   getAbstractValue,
@@ -129,6 +134,18 @@ export class SourceFileResolver {
     return this.#isIndexedRead(loc) || this.#isOptionalRead(loc) || this.#isDefaultedBinding(loc)
       ? getDomainWithUndefined(this.#checker, type)
       : getDomainOfType(this.#checker, type);
+  }
+
+  getPredicateCases(loc: SourceLocation): PredicateCases | null {
+    const node = this.#findNode(loc);
+    if (!node || !isCallExpression(node)) return null;
+    const signature = this.#checker.getResolvedSignature(node);
+    const predicate = signature && this.#checker.getTypePredicateOfSignature(signature);
+    if (predicate?.kind !== TypePredicateKind.Identifier || !predicate.type) return null;
+    const domain = getDomainOfType(this.#checker, predicate.type);
+    return domain.kind === "Cases" && domain.cases.every((value) => value.kind === "Literal")
+      ? { parameterIndex: predicate.parameterIndex, cases: domain.cases }
+      : null;
   }
 
   getDeclaredDomain(loc: SourceLocation): Domain | null {

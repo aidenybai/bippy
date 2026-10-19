@@ -59,6 +59,7 @@ import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
 import { getTestExpression } from "./utils/get-test-expression";
 import { coerceBooleanCall } from "./utils/coerce-boolean-call";
+import { createMembershipTest } from "./utils/create-membership-test";
 import { negate } from "./utils/negate";
 import {
   UNDEFINED_VALUE,
@@ -106,6 +107,7 @@ interface CallSite {
   argumentValues: SymbolicValue[];
   argumentPlaces: Place[];
   loc: SourceLocation;
+  instructionId: InstructionId;
 }
 
 interface CompilationTables {
@@ -485,6 +487,17 @@ export class Interpreter {
     this.#getUpdateCollector().recordSetterCall(dispatch.binding, nextValue, walkState);
   }
 
+  #evaluateTypePredicate(callSite: CallSite): SymbolicValue | null {
+    const predicate = this.#resolver.getPredicateCases(callSite.loc);
+    const subject = predicate ? callSite.argumentValues[predicate.parameterIndex] : undefined;
+    if (!predicate || !subject) return null;
+    return createMembershipTest(
+      subject,
+      predicate.cases,
+      this.createBranch(callSite.instructionId, callSite.loc, "truthy"),
+    );
+  }
+
   #recordWholeProps(callSite: CallSite): void {
     const propsIndex = callSite.argumentValues.findIndex((argument) => argument.kind === "Props");
     const propsPlace = callSite.argumentPlaces[propsIndex];
@@ -550,6 +563,7 @@ export class Interpreter {
     const modeled =
       this.patterns.start(callee, argumentValues, callSite.loc) ??
       coerceBooleanCall(callee, argumentValues) ??
+      this.#evaluateTypePredicate(callSite) ??
       this.iteration.evaluateArrayFrom(callee, argumentValues, callSite.loc, walkState);
     if (modeled) return modeled;
     this.#recordWholeProps(callSite);
@@ -870,6 +884,7 @@ export class Interpreter {
         argumentValues,
         argumentPlaces,
         loc: methodCall.loc,
+        instructionId,
       },
       walkState,
     );
@@ -930,7 +945,7 @@ export class Interpreter {
       case "ObjectMethod":
         return this.#createClosure(value.loweredFunc.func);
       case "CallExpression":
-        return this.#evaluateCallExpression(value, walkState);
+        return this.#evaluateCallExpression(value, instruction.id, walkState);
       case "MethodCall":
         return this.#evaluateMethodCall(value, instruction.id, walkState);
       case "JsxExpression":
@@ -1039,6 +1054,7 @@ export class Interpreter {
 
   #evaluateCallExpression(
     call: InstructionValueOfKind<"CallExpression">,
+    instructionId: InstructionId,
     walkState: WalkState,
   ): SymbolicValue {
     const argumentPlaces = call.args.map(getPlaceOrSpread);
@@ -1052,6 +1068,7 @@ export class Interpreter {
         argumentValues,
         argumentPlaces,
         loc: call.loc,
+        instructionId,
       },
       walkState,
     );
