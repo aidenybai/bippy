@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Code } from "@/components/ui/code";
-import { getSourceLine } from "../lib/diagram";
-import type { ViewComponent, ViewFile } from "../model";
-import { useHoverStore, useIsInactive } from "../store/hover";
+import { getSourceLine } from "@/lib/diagram";
+import type { ViewComponent, ViewFile } from "@/model";
+import { useHoverStore, useIsInactive } from "@/store/hover";
 import { useLoadedView } from "./context";
 import { DecisionTree } from "./decision-tree";
 
@@ -24,8 +24,8 @@ const ComponentDiagram = ({ view, component }: { view: ViewFile; component: View
     >
       <CodeLine text={getSourceLine(view, start.line)} />
       <div className="ml-3 grid gap-2 border-l pl-4">
-        {component.regions.map((region, index) => (
-          <div key={region.placeNames.join(",") || index} className="grid gap-2">
+        {component.regions.map((region) => (
+          <div key={region.states.join(",")} className="grid gap-2">
             {component.regions.length > 1 && (
               <span className="text-muted-foreground">
                 States of {region.placeNames.join(", ")}

@@ -5,15 +5,15 @@ import {
   formatNegated,
   formatPlace,
   formatSymbolicValue,
-} from "../../src/core/format";
-import { getTestExpression } from "../../src/core/utils/get-test-expression";
-import { forEachRenderNode } from "../../src/core/utils/for-each-render-node";
-import { forEachJsxElement } from "../../src/core/utils/for-each-jsx-element";
-import { isRenderingNothing } from "../../src/core/utils/is-rendering-nothing";
-import { collectTriggerLabels } from "../../src/cli/trigger-labels";
-import { simplifyConditions } from "../../src/cli/simplify-conditions";
-import { describeState } from "../../src/cli/describe-state";
-import { createSourceReader } from "../../src/cli/source-text";
+} from "../../../src/core/format";
+import { getTestExpression } from "../../../src/core/utils/get-test-expression";
+import { forEachRenderNode } from "../../../src/core/utils/for-each-render-node";
+import { forEachJsxElement } from "../../../src/core/utils/for-each-jsx-element";
+import { isRenderingNothing } from "../../../src/core/utils/is-rendering-nothing";
+import { collectTriggerLabels } from "../../../src/cli/trigger-labels";
+import { simplifyConditions } from "../../../src/cli/simplify-conditions";
+import { describeState } from "../../../src/cli/describe-state";
+import { createSourceReader } from "../../../src/cli/source-text";
 import type {
   Binding,
   ConditionalValue,
@@ -22,7 +22,7 @@ import type {
   SourceLocation,
   StateUpdate,
   SymbolicValue,
-} from "../../src/core/types";
+} from "../../../src/core/types";
 import type {
   CodeGraph,
   ViewBinding,
@@ -32,7 +32,7 @@ import type {
   ViewHandler,
   ViewLocation,
   ViewUpdate,
-} from "../src/model";
+} from "@/model";
 import { loadAnalyzerOutput, loadAnalyzerText, type AnalyzerJsonComponent } from "./analyzer-json";
 import { buildCodeGraph } from "./code-graph";
 

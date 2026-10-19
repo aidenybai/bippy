@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import dagre from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
-import { getSolidColor } from "../lib/colors";
-import { getStateTransitions, type StateTransition } from "../lib/diagram";
-import { getConditionNodeId, getHandlerNodeId } from "../lib/lookup";
-import { buildDecisionTree, collectEdges, collectNodes, type TreeNode } from "../lib/tree";
-import type { ViewComponent, ViewHandler, ViewRegion } from "../model";
-import { useHoverStore } from "../store/hover";
+import { getSolidColor } from "@/lib/colors";
+import { getStateTransitions, type StateTransition } from "@/lib/diagram";
+import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
+import { buildDecisionTree, collectEdges, collectNodes, type TreeNode } from "@/lib/tree";
+import type { ViewComponent, ViewHandler, ViewRegion } from "@/model";
+import { useHoverStore } from "@/store/hover";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
 
@@ -64,8 +64,9 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
     graph.setEdge(edge.from, edge.to, { width: 12, height: 16, labelpos: "c" }, `t${order}`),
   );
   const transitions = getStateTransitions(component, region.states);
+  const handlersById = new Map(component.handlers.map((handler) => [handler.id, handler]));
   transitions.forEach((transition, order) => {
-    const handler = component.handlers.find((candidate) => candidate.id === transition.handlerId);
+    const handler = handlersById.get(transition.handlerId);
     const width = (handler?.label.length ?? 4) * CHAR_WIDTH + 12;
     graph.setEdge(
       `leaf:${transition.from}`,
@@ -93,7 +94,7 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
       ...transitions.map((transition, order) => ({
         id: `a${order}`,
         transition,
-        handler: component.handlers.find((candidate) => candidate.id === transition.handlerId),
+        handler: handlersById.get(transition.handlerId),
         ...read(`leaf:${transition.from}`, `leaf:${transition.to}`, `a${order}`),
       })),
     ],
@@ -156,9 +157,9 @@ const NodeView = ({ laid, component }: { laid: LaidOutNode; component: ViewCompo
   if (node.kind === "branch") {
     const nodeId = node.branch ? getConditionNodeId(component, node.branch.test) : undefined;
     return (
-      <div className="absolute flex justify-center" style={style}>
+      <div className="absolute flex justify-center overflow-hidden" style={style}>
         <Chip nodeIds={nodeId ? [nodeId] : []}>
-          <Code className="truncate">{node.condition}</Code>
+          <Code className="block max-w-full truncate">{node.condition}</Code>
         </Chip>
       </div>
     );

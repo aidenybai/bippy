@@ -1,7 +1,7 @@
-import { getSolidColor } from "../lib/colors";
-import type { Box } from "../lib/positions";
-import type { GraphEdge } from "../model";
-import { useHasHover, useIsCausalEdge, useIsInactive } from "../store/hover";
+import { getSolidColor } from "@/lib/colors";
+import type { Box } from "@/lib/positions";
+import type { GraphEdge } from "@/model";
+import { useHasHover, useIsCausalEdge, useIsInactive } from "@/store/hover";
 
 const SIDE_GAP = 12;
 const SIDE_BULGE = 28;

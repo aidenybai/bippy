@@ -1,7 +1,7 @@
-import { useResolvedTheme } from "../hooks/use-resolved-theme";
-import type { PlacedToken } from "../hooks/use-token-boxes";
-import { getSolidColor } from "../lib/colors";
-import { useIsDimmed, useIsHovered, useIsInactive } from "../store/hover";
+import { useResolvedTheme } from "@/hooks/use-resolved-theme";
+import type { PlacedToken } from "@/hooks/use-token-boxes";
+import { getSolidColor } from "@/lib/colors";
+import { useIsDimmed, useIsHovered, useIsInactive } from "@/store/hover";
 
 interface TokenVisibility {
   isDimmed: boolean;

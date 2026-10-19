@@ -9,8 +9,8 @@ import {
   getHandlerNodeId,
   getStateArmNodeIds,
   getTransitions,
-} from "../lib/lookup";
-import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "../model";
+} from "@/lib/lookup";
+import type { ViewBinding, ViewHandler, ViewState, ViewUpdate } from "@/model";
 import { Chip } from "./chip";
 import { Domain } from "./domain";
 import { useLegendComponent } from "./legend";

@@ -1,14 +1,29 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "jsx": "react-jsx",
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "bippy": ["../../bippy/src/index.ts"],
+      "@/*": ["./src/*"],
       "@babel/types": ["../node_modules/@babel/types"],
-      "@babel/traverse": ["../node_modules/@types/babel__traverse"],
-      "@/*": ["./src/*"]
+      "@babel/traverse": ["../node_modules/@types/babel__traverse"]
     }
   },
-  "include": ["src", "server", "vite.config.ts"],
-  "exclude": []
+  "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
 }

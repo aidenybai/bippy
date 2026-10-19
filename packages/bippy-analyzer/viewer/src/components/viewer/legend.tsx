@@ -10,8 +10,8 @@ import {
 import { ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody } from "@/components/ui/table";
-import type { ViewComponent } from "../model";
-import { useHoverStore } from "../store/hover";
+import type { ViewComponent } from "@/model";
+import { useHoverStore } from "@/store/hover";
 import { useActiveComponent, useLoadedView } from "./context";
 import { BindingRow, HandlerRow, StateRow } from "./legend-rows";
 
@@ -84,25 +84,31 @@ const ComponentPanel = ({
   </Collapsible>
 );
 
-const useOpenNames = (
-  activeName: string | null,
-): [Set<string>, (name: string, open: boolean) => void] => {
-  const [openNames, setOpenNames] = useState(() => new Set(activeName ? [activeName] : []));
-  useEffect(() => {
-    if (activeName !== null)
-      setOpenNames((current) =>
-        current.has(activeName) ? current : new Set([...current, activeName]),
-      );
-  }, [activeName]);
-  const setOpen = (name: string, open: boolean): void =>
-    setOpenNames((current) => {
-      const next = new Set(current);
-      if (open) next.add(name);
-      else next.delete(name);
-      return next;
+interface PanelChoices {
+  opened: Set<string>;
+  closed: Set<string>;
+}
+
+const usePanelChoices = (): [PanelChoices, (name: string, open: boolean) => void] => {
+  const [choices, setChoices] = useState<PanelChoices>({ opened: new Set(), closed: new Set() });
+  const choose = (name: string, open: boolean): void =>
+    setChoices((current) => {
+      const opened = new Set(current.opened);
+      const closed = new Set(current.closed);
+      if (open) {
+        opened.add(name);
+        closed.delete(name);
+      } else {
+        closed.add(name);
+        opened.delete(name);
+      }
+      return { opened, closed };
     });
-  return [openNames, setOpen];
+  return [choices, choose];
 };
+
+const isPanelOpen = (choices: PanelChoices, name: string, activeName: string | null): boolean =>
+  !choices.closed.has(name) && (choices.opened.has(name) || name === activeName);
 
 const useScrollActiveIntoView = (
   listRef: RefObject<HTMLDivElement | null>,
@@ -130,7 +136,10 @@ const Root = ({ children }: { children: ReactNode }) => {
   const activeComponent = useActiveComponent();
   const focus = useHoverStore((state) => state.focus);
   const activeName = activeComponent?.name ?? null;
-  const [openNames, setOpen] = useOpenNames(activeName);
+  const [choices, choose] = usePanelChoices();
+  const isActiveUnchosen =
+    activeName !== null && !choices.opened.has(activeName) && !choices.closed.has(activeName);
+  if (isActiveUnchosen) choose(activeName, true);
   const listRef = useRef<HTMLDivElement>(null);
   const pointerHandlers = useScrollActiveIntoView(listRef, activeName);
   return (
@@ -143,10 +152,10 @@ const Root = ({ children }: { children: ReactNode }) => {
         <ComponentPanel
           key={component.name}
           component={component}
-          isOpen={openNames.has(component.name)}
+          isOpen={isPanelOpen(choices, component.name, activeName)}
           isActive={component.name === activeName}
           onOpenChange={(open) => {
-            setOpen(component.name, open);
+            choose(component.name, open);
             if (open) focus(component.name);
           }}
         >
@@ -171,9 +180,9 @@ const Variables = () => {
 const States = () => {
   const component = useLegendComponent();
   const hasRegions = component.regions.length > 1;
-  return component.regions.map((region, regionIndex) => (
+  return component.regions.map((region) => (
     <Section
-      key={region.placeNames.join(",") || regionIndex}
+      key={region.states.join(",")}
       title={hasRegions ? `States of ${region.placeNames.join(", ")}` : "States"}
       count={region.states.length}
     >

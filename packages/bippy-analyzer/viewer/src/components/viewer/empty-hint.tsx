@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useExamples } from "../hooks/queries";
+import { useExamples } from "@/hooks/queries";
 import { useViewer } from "./context";
 
 const EXAMPLE_FOLDER = "symbolic-tree";

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { File, Virtualizer, type FileOptions } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
-import { useAnalyzerJson } from "../hooks/queries";
-import { getCodeTheme, useHighlighter } from "../hooks/use-highlighter";
-import { useResolvedTheme } from "../hooks/use-resolved-theme";
+import { useAnalyzerJson } from "@/hooks/queries";
+import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
+import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import { useViewer } from "./context";
 
 const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {

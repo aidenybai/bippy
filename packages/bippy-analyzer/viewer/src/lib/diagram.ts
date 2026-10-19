@@ -1,4 +1,4 @@
-import type { ViewBinding, ViewComponent, ViewFile } from "../model";
+import type { ViewBinding, ViewComponent, ViewFile } from "@/model";
 
 export const getSourceLine = (view: ViewFile, line: number): string =>
   view.source.split("\n")[line - 1]?.trim() ?? "";
@@ -18,13 +18,14 @@ export interface StateTransition {
 export const getStateTransitions = (
   component: ViewComponent,
   stateIndexes: number[],
-): StateTransition[] =>
-  stateIndexes
+): StateTransition[] => {
+  const region = new Set(stateIndexes);
+  return stateIndexes
     .flatMap((index) => component.states[index] ?? [])
     .flatMap((state) =>
       state.transitions.flatMap((transition) =>
         transition.targets
-          .filter((target) => target !== state.index && stateIndexes.includes(target))
+          .filter((target) => target !== state.index && region.has(target))
           .map((target) => ({
             handlerId: transition.handlerId,
             from: state.index,
@@ -33,3 +34,4 @@ export const getStateTransitions = (
           })),
       ),
     );
+};

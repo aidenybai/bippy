@@ -1,4 +1,4 @@
-import type { GraphNode, ViewComponent, ViewFile } from "../model";
+import type { GraphNode, ViewComponent, ViewFile } from "@/model";
 
 export const PALETTE = [
   "rgba(25, 133, 255, 0.3)",

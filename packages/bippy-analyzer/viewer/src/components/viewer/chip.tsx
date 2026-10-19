@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { getSolidColor } from "../lib/colors";
-import { useHoverStore, useIsDimmed } from "../store/hover";
+import { getSolidColor } from "@/lib/colors";
+import { useHoverStore, useIsDimmed } from "@/store/hover";
 import { useViewer } from "./context";
 
 interface ChipProps {

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
-import { createLineLookup, getLinesBox, getLocationBox, type Box } from "../lib/positions";
-import type { GraphNode } from "../model";
+import { createLineLookup, getLinesBox, getLocationBox, type Box } from "@/lib/positions";
+import type { GraphNode } from "@/model";
 
 export interface PlacedToken {
   node: GraphNode;

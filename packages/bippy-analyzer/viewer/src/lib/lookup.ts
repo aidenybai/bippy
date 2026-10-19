@@ -1,4 +1,4 @@
-import type { GraphNode, ViewBranch, ViewComponent, ViewState } from "../model";
+import type { GraphNode, ViewBranch, ViewComponent, ViewState } from "@/model";
 
 export type Arm = "consequent" | "alternate";
 

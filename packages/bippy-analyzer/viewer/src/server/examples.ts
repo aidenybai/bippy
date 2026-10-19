@@ -1,12 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { basename, dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import type { Example } from "../src/model";
-
-const fixturesDirectory = resolve(
-  fileURLToPath(new URL(".", import.meta.url)),
-  "../../tests/fixtures",
-);
+import { basename, dirname, join, relative } from "node:path";
+import type { Example } from "@/model";
+import { fixturesDirectory } from "./paths";
 
 const isComponentFile = (path: string): boolean =>
   path.endsWith(".tsx") && !path.endsWith(".d.tsx") && !path.includes("node_modules");

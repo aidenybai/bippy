@@ -1,6 +1,6 @@
-import type { PlacedToken } from "../hooks/use-token-boxes";
-import type { GraphEdge, ViewFile } from "../model";
-import type { PlacedArc } from "../viewer/arc";
+import type { PlacedToken } from "@/hooks/use-token-boxes";
+import type { GraphEdge, ViewFile } from "@/model";
+import type { PlacedArc } from "@/components/viewer/arc";
 import type { Box } from "./positions";
 
 const RESTING_ARC_KINDS = new Set<GraphEdge["kind"]>(["writes", "decides"]);

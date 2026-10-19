@@ -1,4 +1,4 @@
-import type { ViewLocation } from "../model";
+import type { ViewLocation } from "@/model";
 
 export interface Box {
   x: number;

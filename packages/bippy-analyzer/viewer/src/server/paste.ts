@@ -1,9 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const scratchDirectory = resolve(fileURLToPath(new URL(".", import.meta.url)), "../scratch");
+import { join } from "node:path";
+import { scratchDirectory } from "./paths";
 
 const TSCONFIG = {
   compilerOptions: {

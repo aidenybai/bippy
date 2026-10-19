@@ -8,8 +8,8 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
-import { describeNode } from "../lib/describe";
-import { hasLegendContent } from "../lib/graph";
+import { describeNode } from "@/lib/describe";
+import { hasLegendContent } from "@/lib/graph";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
 import { JsonPane } from "./json-pane";

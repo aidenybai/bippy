@@ -10,7 +10,7 @@ import type {
   ViewBranch,
   ViewHandler,
   ViewLocation,
-} from "../src/model";
+} from "@/model";
 
 interface TriggerSite {
   handlerId: string;

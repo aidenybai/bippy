@@ -1,4 +1,4 @@
-import type { GraphNode, ViewComponent, ViewFile } from "../model";
+import type { GraphNode, ViewComponent, ViewFile } from "@/model";
 
 export interface GraphIndex {
   nodes: Map<string, GraphNode>;

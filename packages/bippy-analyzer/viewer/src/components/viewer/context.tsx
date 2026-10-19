@@ -7,13 +7,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useView } from "../hooks/queries";
-import { getColorByNodeId } from "../lib/colors";
-import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "../lib/graph";
-import { readLocation, writeLocation, type Source } from "../lib/source";
-import type { ViewMode } from "../lib/view-mode";
-import type { GraphNode, ViewComponent, ViewFile } from "../model";
-import { useHoverStore } from "../store/hover";
+import { useView } from "@/hooks/queries";
+import { getColorByNodeId } from "@/lib/colors";
+import { buildGraphIndex, getDefaultComponent, type GraphIndex } from "@/lib/graph";
+import { readLocation, writeLocation, type Source } from "@/lib/source";
+import type { ViewMode } from "@/lib/view-mode";
+import type { GraphNode, ViewComponent, ViewFile } from "@/model";
+import { useHoverStore } from "@/store/hover";
 
 export interface OpenOptions {
   keepEditor?: boolean;

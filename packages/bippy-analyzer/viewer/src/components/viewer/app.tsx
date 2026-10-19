@@ -1,5 +1,5 @@
-import { Legend } from "./viewer/legend";
-import { Viewer } from "./viewer/viewer";
+import { Legend } from "./legend";
+import { Viewer } from "./viewer";
 
 export const App = () => (
   <Viewer>

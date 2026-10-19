@@ -7,7 +7,7 @@ import type {
   ViewLocation,
   ViewState,
   ViewUpdate,
-} from "../model";
+} from "@/model";
 import { getComponentName } from "./graph";
 import { getTransitions, getArmOutcome } from "./lookup";
 

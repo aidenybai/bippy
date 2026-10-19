@@ -1,6 +1,6 @@
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
-import { getSourceKey, type Source } from "../lib/source";
-import type { Example, ViewFile } from "../model";
+import { getSourceKey, type Source } from "@/lib/source";
+import type { Example, ViewFile } from "@/model";
 
 const request = async (path: string, params: Record<string, string>): Promise<Response> => {
   const url = new URL(path, window.location.origin);

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getCausalNodeIds, getComponentName, type GraphIndex } from "../lib/graph";
+import { getCausalNodeIds, getComponentName, type GraphIndex } from "@/lib/graph";
 
 export interface TokenAnchor {
   nodeId: string;

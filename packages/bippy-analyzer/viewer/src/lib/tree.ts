@@ -1,4 +1,4 @@
-import type { ViewBranch, ViewComponent, ViewRegion, ViewState } from "../model";
+import type { ViewBranch, ViewComponent, ViewRegion, ViewState } from "@/model";
 
 export interface BranchNode {
   kind: "branch";

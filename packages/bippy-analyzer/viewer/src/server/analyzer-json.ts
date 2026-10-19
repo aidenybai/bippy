@@ -1,5 +1,5 @@
-import { analyzeProject, serializeProjectAnalysis } from "../../src/index";
-import type { AbstractValue, ComponentAnalysis, StateReport } from "../../src/index";
+import { analyzeProject, serializeProjectAnalysis } from "../../../src/index";
+import type { AbstractValue, ComponentAnalysis, StateReport } from "../../../src/index";
 
 export interface AnalyzerJsonReport extends Omit<StateReport, "places"> {
   places: Record<string, AbstractValue[]>;

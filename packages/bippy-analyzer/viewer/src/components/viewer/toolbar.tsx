@@ -2,9 +2,9 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { hasLegendContent } from "../lib/graph";
-import { getSourceTitle } from "../lib/source";
-import { isViewMode } from "../lib/view-mode";
+import { hasLegendContent } from "@/lib/graph";
+import { getSourceTitle } from "@/lib/source";
+import { isViewMode } from "@/lib/view-mode";
 import { useViewer } from "./context";
 import { ThemeToggle } from "./theme-toggle";
 
