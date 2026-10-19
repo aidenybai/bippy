@@ -169,6 +169,48 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > ColumnLayout keeps its render tree and handlers 1`] = `
+"---
+title: ColumnLayout src/conditional-comparisons.tsx:13
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ColumnLayout"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ isWide = !isWide"]):::event
+  n2 -.-> n3
+  n4{"(isWide ? width : 0) #gt; 600"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;Two columns#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt; #quot;One column#quot;"]
+  n4 -->|✗| n6
+  n7{"(isWide ? width : 0) #gt; 600 ? !isWide : (isWide ? width : 0) #gt; 600"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Unreachable#quot;"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > ColumnLayout keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ColumnLayout src/conditional-comparisons.tsx:13
+---
+stateDiagram-v2
+  direction LR
+  S1: (isWide ? width : 0) #gt; 600 · #lt;div#gt; #lt;p#gt; "Two columns"
+  S2: (isWide ? width : 0) #lt;= 600 · #lt;div#gt; #lt;p#gt; "One column"
+  [*] --> S2
+  S1 --> S2: setIsWide(!isWide)
+  S2 --> S1: setIsWide(!isWide)
+  state "claims" as claims {
+    claims1: holds isWide stays within false | true L14
+  }
+  state "unreachable branches" as unreachable {
+    unreachable1: never (isWide ? width : 0) #gt; 600 ? !isWide : (isWide ? width : 0) #gt; 600 L19
+  }"
+`;
+
 exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
 "---
 title: Composer src/guards.tsx:3
@@ -1859,6 +1901,43 @@ stateDiagram-v2
   state "warnings" as warnings {
     warnings1: lost-update L6 sets tags to the array or object it mutated, so React skips the update
     warnings2: state-mutation L10 mutates tags in place before setting it
+  }"
+`;
+
+exports[`fixture analysis > TitleButton keeps its render tree and handlers 1`] = `
+"---
+title: TitleButton src/conditional-comparisons.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["TitleButton"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ title = #quot;Draft#quot;"]):::event
+  n2 -.-> n3
+  n4{"(title != null ? title : #quot;Untitled#quot;) === #quot;Untitled#quot;"}
+  n2 --> n4
+  n5["{#quot;Name this draft#quot;}"]
+  n4 -->|✓| n5
+  n6{"title != null"}
+  n4 -->|✗| n6
+  n7["{title}"]
+  n6 -->|✓| n7
+  n8["{#quot;Untitled#quot;}"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > TitleButton keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: TitleButton src/conditional-comparisons.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: (title != null ? title : "Untitled") === "Untitled" · #lt;button#gt; {"Name this draft"}
+  S2: (title != null ? title : "Untitled") !== "Untitled" · #lt;button#gt; {title}
+  S1 --> S2: setTitle("Draft")
+  state "claims" as claims {
+    claims1: holds title stays within undefined | string L4
   }"
 `;
 

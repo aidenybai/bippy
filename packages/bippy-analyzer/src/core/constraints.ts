@@ -20,6 +20,7 @@ import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { foldBinary } from "./symbolic-values";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
@@ -272,6 +273,33 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
     : value;
 };
 
+const getDistributedComparison = (value: BinaryExpressionValue): ConditionalValue | null => {
+  if (!BOOLEAN_OPERATORS.has(value.operator)) return null;
+  const { operator, left, right } = value;
+  if (left.kind === "Conditional")
+    return {
+      ...left,
+      consequent: foldBinary(operator, left.consequent, right),
+      alternate: foldBinary(operator, left.alternate, right),
+    };
+  if (right.kind === "Conditional")
+    return {
+      ...right,
+      consequent: foldBinary(operator, left, right.consequent),
+      alternate: foldBinary(operator, left, right.alternate),
+    };
+  return null;
+};
+
+const distributedComparisons = new WeakMap<BinaryExpressionValue, ConditionalValue | null>();
+
+const distributeComparison = (value: BinaryExpressionValue): ConditionalValue | null => {
+  if (distributedComparisons.has(value)) return distributedComparisons.get(value) ?? null;
+  const distributed = getDistributedComparison(value);
+  distributedComparisons.set(value, distributed);
+  return distributed;
+};
+
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
@@ -320,6 +348,8 @@ export const evaluateCondition = (
       return operand === null ? null : !operand;
     }
     case "BinaryExpression": {
+      const distributed = distributeComparison(value);
+      if (distributed) return evaluateCondition(distributed, constraints);
       const bounded = evaluateBounds(value, constraints);
       if (bounded !== null) return bounded;
       return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, constraints) : null;
@@ -481,6 +511,8 @@ const assumeUncached = (
   if (evaluated !== null) return evaluated === isTrue ? constraints : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return assumeMemoized(value.value, !isTrue, constraints, memo);
+  const distributed = value.kind === "BinaryExpression" ? distributeComparison(value) : null;
+  if (distributed) return assumeConditional(distributed, isTrue, constraints, memo);
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
     return narrowPlace(

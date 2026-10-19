@@ -4,6 +4,7 @@ import type {
   Binding,
   BindingValue,
   ConditionalValue,
+  PrimitiveValue,
   SymbolicValue,
   TestKind,
   UnaryOperator,
@@ -49,6 +50,39 @@ export const createBindingValue = (binding: Binding, path: string[] = []): Bindi
   path,
 });
 
+const compare = <Value extends number | string>(
+  operator: BinaryOperator,
+  left: Value,
+  right: Value,
+): boolean | null => {
+  switch (operator) {
+    case "<":
+      return left < right;
+    case "<=":
+      return left <= right;
+    case ">":
+      return left > right;
+    case ">=":
+      return left >= right;
+    default:
+      return null;
+  }
+};
+
+const foldRelation = (
+  operator: BinaryOperator,
+  left: PrimitiveValue,
+  right: PrimitiveValue,
+): SymbolicValue | null => {
+  const outcome =
+    typeof left === "number" && typeof right === "number"
+      ? compare(operator, left, right)
+      : typeof left === "string" && typeof right === "string"
+        ? compare(operator, left, right)
+        : null;
+  return outcome === null ? null : { kind: "Primitive", value: outcome };
+};
+
 export const foldBinary = (
   operator: BinaryOperator,
   left: SymbolicValue,
@@ -70,7 +104,14 @@ export const foldBinary = (
       // oxlint-disable-next-line eqeqeq -- Folds JavaScript loose equality as written.
       return { kind: "Primitive", value: leftValue != rightValue };
     default:
-      return { kind: "BinaryExpression", operator, left, right };
+      return (
+        foldRelation(operator, leftValue, rightValue) ?? {
+          kind: "BinaryExpression",
+          operator,
+          left,
+          right,
+        }
+      );
   }
 };
 
