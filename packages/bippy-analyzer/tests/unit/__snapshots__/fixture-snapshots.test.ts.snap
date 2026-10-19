@@ -486,7 +486,10 @@ title: Loader src/linked.tsx:15
 stateDiagram-v2
   direction LR
   S1: always · #lt;div#gt; #lt;StatusBadge#gt; #lt;button#gt; "Start" #lt;button#gt; "Finish"
-  [*] --> S1"
+  [*] --> S1
+  state "claims" as claims {
+    claims1: holds status stays within "done" | "idle" | "loading" L16
+  }"
 `;
 
 exports[`fixture analysis > Loading keeps its render tree and handlers 1`] = `
