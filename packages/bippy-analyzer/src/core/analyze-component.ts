@@ -84,6 +84,7 @@ export const createEmptyAnalysis = (
   render,
   handlers: [],
   renders: [],
+  claims: [],
   bailouts: [],
   warnings: [],
 });
@@ -140,6 +141,7 @@ export const analyzeComponent = (
     render,
     handlers,
     renders: [...interpreter.renderedComponents],
+    claims: interpreter.claims,
     bailouts: [...interpreter.diagnostics.bailouts, ...getUntypedBailouts(bindings)],
     warnings: interpreter.diagnostics.warnings,
   };

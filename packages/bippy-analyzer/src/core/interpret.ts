@@ -24,6 +24,7 @@ import type { WalkState } from "./walk-state";
 import type {
   ArrayExpressionValue,
   Binding,
+  Claim,
   BindingKind,
   BindingPlace,
   BindingValue,
@@ -47,6 +48,14 @@ import type {
   WarningKind,
 } from "./types";
 import { formatPlace, formatSymbolicValue } from "./format";
+import {
+  CLAIM_FUNCTIONS,
+  createCastClaim,
+  createNonNullClaim,
+  describeCondition,
+  hasNullishCase,
+} from "./claim-sites";
+import { hasUnknownPart } from "./constraints";
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
@@ -221,6 +230,7 @@ export class Interpreter {
     this.#warn(kind, message, loc),
   );
   readonly renderedComponents = new Set<string>();
+  readonly #claims: Claim[] = [];
   #wholePropsSample: Sample | null = null;
   #restPropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
@@ -248,6 +258,10 @@ export class Interpreter {
 
   get handlerEffects(): EffectCollector | null {
     return this.#handlerEffects;
+  }
+
+  get claims(): Claim[] {
+    return this.#claims;
   }
 
   get wholePropsSample(): Sample | null {
@@ -844,6 +858,7 @@ export class Interpreter {
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
     this.#recordWholeProps(callSite);
     const target = this.#getCallTarget(callSite);
+    this.#claimInvariant(callSite, target, walkState);
     switch (target.kind) {
       case "Portal":
         return target.children;
@@ -1346,7 +1361,7 @@ export class Interpreter {
       case "UnaryExpression":
         return foldUnary(value.operator, this.read(value.value));
       case "TypeCastExpression":
-        return this.#evaluateTypeCast(value);
+        return this.#evaluateTypeCast(value, walkState);
       case "ObjectExpression":
         return this.#evaluateObjectLiteral(value);
       case "ArrayExpression":
@@ -1425,15 +1440,70 @@ export class Interpreter {
     );
   }
 
-  #evaluateTypeCast(typeCast: InstructionValueOfKind<"TypeCastExpression">): SymbolicValue {
+  #evaluateTypeCast(
+    typeCast: InstructionValueOfKind<"TypeCastExpression">,
+    walkState: WalkState,
+  ): SymbolicValue {
     const castValue = this.read(typeCast.value);
     const sourceDomain = this.#resolver.getDomain(typeCast.value.loc);
+    if (typeCast.typeAnnotationKind === "non-null") {
+      if (hasNullishCase(sourceDomain))
+        this.#claim(createNonNullClaim(castValue, typeCast.loc, walkState.guards));
+      return castValue;
+    }
+    const targetDomain = this.#resolver.getDomain(typeCast.loc);
+    const claim = createCastClaim(
+      castValue,
+      sourceDomain,
+      targetDomain,
+      typeCast.loc,
+      walkState.guards,
+    );
+    if (claim) this.#claim(claim);
     const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
     const isNarrowingCast =
       castValue.kind !== "Primitive" &&
       !isLiteralDomain(sourceDomain) &&
-      isLiteralDomain(this.#resolver.getDomain(typeCast.loc));
+      isLiteralDomain(targetDomain);
     return isUntypedCast || isNarrowingCast ? createUnknown("cast", typeCast.value.loc) : castValue;
+  }
+
+  #isCheckable(value: SymbolicValue): boolean {
+    if (hasUnknownPart(value)) return false;
+    let isCheckable = true;
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind !== "Binding") return;
+      const domain =
+        this.bindingTable.placeDomains.get(getValuePlace(part)) ??
+        (part.path.length === 0 ? part.binding.domain : undefined);
+      if (domain?.kind !== "Cases") isCheckable = false;
+    });
+    return isCheckable;
+  }
+
+  #claim(claim: Omit<Claim, "file">): void {
+    if (this.#isCheckable(claim.subject))
+      this.#claims.push({ ...claim, file: this.#resolver.fileName });
+  }
+
+  #claimInvariant(callSite: CallSite, target: CallTarget, walkState: WalkState): void {
+    const name =
+      callSite.callee.kind === "Global"
+        ? callSite.callee.name
+        : target.kind === "ModuleFunction"
+          ? target.hirFunction.id
+          : null;
+    const [test] = callSite.argumentValues;
+    if (name === null || !CLAIM_FUNCTIONS.has(name) || test === undefined) return;
+    this.#claim({
+      kind: "invariant",
+      subject: test,
+      cases: null,
+      test,
+      guards: walkState.guards,
+      description: `${name}(${describeCondition(test)})`,
+      loc: callSite.loc,
+    });
   }
 
   #evaluateObjectLiteral(objectLiteral: InstructionValueOfKind<"ObjectExpression">): SymbolicValue {

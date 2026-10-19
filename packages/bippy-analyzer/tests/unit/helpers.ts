@@ -80,6 +80,7 @@ export const createTestReport = (places: Array<[BindingPlace, AbstractValue[]]>)
   states: [],
   regions: [],
   unreachableBranches: [],
+  claimOutcomes: [],
   isTruncated: false,
 });
 
