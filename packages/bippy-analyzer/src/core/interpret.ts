@@ -1225,10 +1225,14 @@ export class Interpreter {
     if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return;
     visitedFunctionIds.add(callback.functionId);
     const hirFunction = this.#functions.get(callback.functionId);
-    if (hirFunction)
-      this.#runRenderedHandlers(
-        this.#evaluateFunction(hirFunction, argumentValues, walkState, callback.functionId),
-        visitedFunctionIds,
-      );
+    if (!hirFunction) return;
+    const externalArguments = hirFunction.params.map(
+      (_parameter, index) =>
+        argumentValues[index] ?? createUnknown("callback-argument", callback.loc),
+    );
+    this.#runRenderedHandlers(
+      this.#evaluateFunction(hirFunction, externalArguments, walkState, callback.functionId),
+      visitedFunctionIds,
+    );
   }
 }
