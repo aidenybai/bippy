@@ -33,7 +33,8 @@ const Section = ({ title, count, children }: SectionProps) => (
   <section className="grid gap-2">
     <header className="flex items-center gap-3">
       <h3 className="font-medium text-text-2">{title}</h3>
-      {count > 0 && <span className="ml-auto text-muted-foreground tabular-nums">{count}</span>}
+      <span className="h-px flex-1 bg-border" />
+      {count > 0 && <span className="text-muted-foreground tabular-nums">{count}</span>}
     </header>
     {count === 0 ? (
       <p className="text-faint">None</p>
@@ -65,7 +66,7 @@ const ComponentPanel = ({
     onOpenChange={onOpenChange}
     data-component={component.name}
     data-active={isActive || undefined}
-    className="grid scroll-mt-4 gap-4 border-l-2 border-l-transparent py-4 pl-3 -ml-3 transition-colors first:pt-0 last:pb-0 duration-150 data-active:border-l-foreground/60"
+    className="grid scroll-mt-4 gap-4 border-l-2 border-transparent pl-3 -ml-3 transition-colors duration-150 data-active:border-foreground/60"
   >
     <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md text-left">
       <ChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[panel-open]:rotate-90" />
@@ -153,7 +154,7 @@ const Root = ({ children }: { children: ReactNode }) => {
     <div
       ref={listRef}
       {...pointerHandlers}
-      className="grid h-full content-start divide-y divide-foreground/25 overflow-auto overscroll-none px-4 py-4 [scrollbar-gutter:stable] sm:px-5"
+      className="grid h-full content-start gap-5 overflow-auto overscroll-none px-4 py-4 [scrollbar-gutter:stable] sm:px-5"
     >
       {view.components.map((component) => (
         <LegendPanel key={component.name} component={component} activeName={activeName}>
