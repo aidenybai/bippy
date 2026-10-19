@@ -1,14 +1,10 @@
 import { classify, describeCases } from "./claim-cases";
+import { getSymbolicValues } from "./claim-values";
 import { createClaimContext, type ClaimContext } from "./claim-context";
 import { assumeGuards } from "./claim-guards";
 import { findClaimPath } from "./claim-path";
 import { getClaimStates } from "./claim-states";
-import {
-  assumeCondition,
-  evaluateCondition,
-  getPossibleValues,
-  type Constraints,
-} from "./constraints";
+import { assumeCondition, evaluateCondition, type Constraints } from "./constraints";
 import { formatSymbolicValue } from "./format";
 import { checkStateClaims } from "./state-claims";
 import type {
@@ -36,16 +32,8 @@ interface StateCheck {
   check: Check;
 }
 
-const getSubjectValues = (
-  subject: SymbolicValue,
-  constraints: Constraints,
-): AbstractValue[] | null =>
-  subject.kind === "Primitive"
-    ? [{ kind: "Literal", value: subject.value }]
-    : getPossibleValues(subject, constraints);
-
 const checkMembership = (claim: Claim, cases: AbstractValue[], constraints: Constraints): Check => {
-  const values = getSubjectValues(claim.subject, constraints);
+  const values = getSymbolicValues(claim.subject, constraints);
   if (!values) return { outcome: null, witness: null };
   const memberships = values.map((value) => classify(value, cases));
   if (memberships.every((membership) => membership === "in"))

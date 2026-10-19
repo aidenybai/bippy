@@ -103,6 +103,10 @@ export class SourceFileResolver {
     this.#isStrictNullChecks = isStrictNullChecks;
   }
 
+  get isStrictNullChecks(): boolean {
+    return this.#isStrictNullChecks;
+  }
+
   get fileName(): string {
     return this.#sourceFile.fileName;
   }

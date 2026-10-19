@@ -14,3 +14,17 @@ describe("projects without strictNullChecks", () => {
     expect(getComponent(project, "ThemeLabel").report.unreachableBranches).toEqual([]);
   });
 });
+
+describe("claims without strictNullChecks", () => {
+  const { report } = getComponent(analyzeFixture("loose", "orientation.tsx"), "ReplayFrame");
+
+  it("let a typed state be null, since every type holds null and undefined", () => {
+    const state = report.claimOutcomes.find((outcome) => outcome.claim.kind === "state");
+    expect(state).toMatchObject({ verdict: "holds" });
+  });
+
+  it("let a cast hold null for the same reason", () => {
+    const cast = report.claimOutcomes.find((outcome) => outcome.claim.kind === "cast");
+    expect(cast).toMatchObject({ verdict: "holds" });
+  });
+});
