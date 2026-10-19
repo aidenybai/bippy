@@ -150,7 +150,7 @@ flowchart TD
   n3 -->|✓| n4
   n5["{#quot;off#quot;}"]
   n3 -->|✗| n5
-  n6(["useEffect([serverChecked]) ⇒ checked = flags?.some(function) != null ? flags?.s…"]):::event
+  n6(["useEffect([serverChecked]) ⇒ checked = flags?.some(function) ?? false"]):::event
   n1 -.-> n6"
 `;
 
@@ -421,6 +421,44 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;p#gt; {value}
   [*] --> S1"
+`;
+
+exports[`fixture analysis > FeatureBadge keeps its render tree and handlers 1`] = `
+"---
+title: FeatureBadge src/logical-chains.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FeatureBadge"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"isEnabled(#quot;search#quot;) || isEnabled(#quot;sync#quot;) || isEnabled(#quot;share#quot;)"}
+  n2 --> n3
+  n4["{#quot;Features on#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;Features off#quot;}"]
+  n3 -->|✗| n5
+  n6{"isEnabled(#quot;sync#quot;) && isEnabled(#quot;offline#quot;)"}
+  n2 --> n6
+  n7["{#quot;Full sync#quot;}"]
+  n6 -->|✓| n7"
+`;
+
+exports[`fixture analysis > FeatureBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FeatureBadge src/logical-chains.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  state "FeatureBadge" as regions {
+    %% isEnabled("search"), isEnabled("sync"), isEnabled("share")
+    S1: isEnabled("search") || isEnabled("sync") || isEnabled("share") · {"Features on"}
+    S2: !(isEnabled("search") || isEnabled("sync") || isEnabled("share")) · {"Features off"}
+    --
+    %% isEnabled("sync"), isEnabled("offline")
+    S3: isEnabled("sync") && isEnabled("offline") · {"Full sync"}
+    S4: !(isEnabled("sync") && isEnabled("offline")) · ∅
+  }"
 `;
 
 exports[`fixture analysis > Feed keeps its render tree and handlers 1`] = `
@@ -737,13 +775,13 @@ flowchart TD
   n2 --> n5
   n6(["onClick ⇒ kind = #quot;extendedFab#quot;"]):::event
   n5 -.-> n6
-  n7{"kind === #quot;fab#quot; ? kind === #quot;fab#quot; : kind === #quot;extendedFab#quot;"}
+  n7{"kind === #quot;fab#quot; || kind === #quot;extendedFab#quot;"}
   n2 --> n7
   n8["#lt;FabRow#gt;"]
   n7 -->|✓| n8
   n9["#lt;p#gt; #quot;Chip#quot;"]
   n7 -->|✗| n9
-  n10{"kind !== #quot;chip#quot; ? !(kind === #quot;fab#quot; ? kind === #quot;fab#quot; : kind === #quot;extendedFab#quot;) :…"}
+  n10{"kind !== #quot;chip#quot; && !(kind === #quot;fab#quot; || kind === #quot;extendedFab#quot;)"}
   n2 --> n10
   n11["#lt;p#gt; #quot;Unreachable#quot;"]
   n10 -->|✓| n11"
@@ -755,8 +793,8 @@ title: KindSwitch src/or-conditions.tsx:8
 ---
 stateDiagram-v2
   direction LR
-  S1: kind === "fab" ? kind === "fab" : kind === "extendedFab" · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;FabRow#gt;
-  S2: !(kind === "fab" ? kind === "fab" : kind === "extendedFab") · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;p#gt; "Chip"
+  S1: kind === "fab" || kind === "extendedFab" · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;FabRow#gt;
+  S2: !(kind === "fab" || kind === "extendedFab") · #lt;div#gt; #lt;button#gt; "FAB" #lt;button#gt; "Extended" #lt;p#gt; "Chip"
   [*] --> S2
   S2 --> S1: "FAB"
   S2 --> S1: "Extended"
@@ -765,7 +803,7 @@ stateDiagram-v2
     claims2: holds kind stays within "chip" | "extendedFab" | "fab" L9
   }
   state "unreachable branches" as unreachable {
-    unreachable1: never kind !== "chip" ? !(kind === "fab" ? kind === "fab" : kind === "extendedFab") : kind !== "chip" L16
+    unreachable1: never kind !== "chip" && !(kind === "fab" || kind === "extendedFab") L16
   }"
 `;
 
@@ -1444,7 +1482,7 @@ flowchart TD
   n2 --> n5
   n6(["onClick ⇒ count = count + 1"]):::event
   n5 -.-> n6
-  n7{"isFocused ? Unknown(member) : isFocused"}
+  n7{"isFocused && Unknown(member)"}
   n2 --> n7
   n8["#lt;ul#gt;"]
   n7 -->|✓| n8"
@@ -1456,8 +1494,8 @@ title: SearchPanel src/or-conditions.tsx:23
 ---
 stateDiagram-v2
   direction LR
-  S1: isFocused ? Unknown(member) : isFocused · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count} #lt;ul#gt;
-  S2: !(isFocused ? Unknown(member) : isFocused) · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count}
+  S1: isFocused && Unknown(member) · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count} #lt;ul#gt;
+  S2: !(isFocused && Unknown(member)) · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count}
   [*] --> S2
   S1 --> S2: setIsFocused(true)
   S2 --> S1: setIsFocused(true)
