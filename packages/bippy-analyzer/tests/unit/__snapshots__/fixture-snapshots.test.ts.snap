@@ -1670,6 +1670,29 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > Switch keeps its render tree and handlers 1`] = `
+"---
+title: Switch src/callback-arguments.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Switch"]
+  n2["#lt;input#gt;"]
+  n1 --> n2
+  n3(["onChange ⇒ calls onChange"]):::event
+  n2 -.-> n3"
+`;
+
+exports[`fixture analysis > Switch keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Switch src/callback-arguments.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;input#gt;
+  [*] --> S1"
+`;
+
 exports[`fixture analysis > TagEditor keeps its render tree and handlers 1`] = `
 "---
 title: TagEditor src/local-mutations.tsx:3
@@ -1962,6 +1985,43 @@ stateDiagram-v2
   }
   state "claims" as claims {
     claims1: holds isHelpOpen stays within false | true L14
+  }"
+`;
+
+exports[`fixture analysis > WarningFilter keeps its render tree and handlers 1`] = `
+"---
+title: WarningFilter src/callback-arguments.tsx:16
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["WarningFilter"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;Switch#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ isChecked = Unknown(callback-argument)"]):::event
+  n3 -.-> n4
+  n5{"isChecked"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Warnings only#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;p#gt; #quot;All events#quot;"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > WarningFilter keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: WarningFilter src/callback-arguments.tsx:16
+---
+stateDiagram-v2
+  direction LR
+  S1: isChecked · #lt;div#gt; #lt;Switch#gt; #lt;p#gt; "Warnings only"
+  S2: !isChecked · #lt;div#gt; #lt;Switch#gt; #lt;p#gt; "All events"
+  [*] --> S2
+  S1 --> S2: (_event, checked) =#gt; setIsChecked(check…
+  S2 --> S1: (_event, checked) =#gt; setIsChecked(check…
+  state "claims" as claims {
+    claims1: holds isChecked stays within false | true L17
   }"
 `;
 
