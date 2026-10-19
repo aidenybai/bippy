@@ -17,4 +17,14 @@ describe("assuming an || or && condition", () => {
       expect.stringContaining('kind !== "chip"'),
     ]);
   });
+
+  it("forgets a condition with an unknown part when anything updates", () => {
+    const panel = getComponent(analyzeFixture("symbolic-tree", "or-conditions.tsx"), "SearchPanel");
+    const [open] = panel.report.states;
+    const click = panel.analysis.handlers.find(
+      (handler) => handler.trigger.kind === "Event" && handler.trigger.event === "onClick",
+    );
+    const edge = open?.transitions.find((transition) => transition.handlerId === click?.id);
+    expect(edge?.targets).toEqual([0, 1]);
+  });
 });

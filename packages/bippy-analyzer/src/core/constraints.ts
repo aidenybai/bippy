@@ -439,7 +439,7 @@ const assumeConditional = (
   const alternate = whenFalse && assumeCondition(value.alternate, isTrue, whenFalse);
   const joined =
     consequent && alternate ? joinConstraints(consequent, alternate) : (consequent ?? alternate);
-  if (!joined) return null;
+  if (!joined || hasUnknownPart(value)) return joined;
   const assumed = cloneConstraints(joined);
   assumed.assumptions.set(getValueKey(value), { isTrue, places: collectPlaces(value) });
   return assumed;

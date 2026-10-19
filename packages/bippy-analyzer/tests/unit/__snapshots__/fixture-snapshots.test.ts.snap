@@ -1387,6 +1387,47 @@ stateDiagram-v2
   S3 --> S2: setQuery(event.target.value)"
 `;
 
+exports[`fixture analysis > SearchPanel keeps its render tree and handlers 1`] = `
+"---
+title: SearchPanel src/or-conditions.tsx:23
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SearchPanel"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onFocus ⇒ isFocused = true"]):::event
+  n3 -.-> n4
+  n5["#lt;button#gt; {count}"]
+  n2 --> n5
+  n6(["onClick ⇒ count = count + 1"]):::event
+  n5 -.-> n6
+  n7{"isFocused ? Unknown(member) : isFocused"}
+  n2 --> n7
+  n8["#lt;ul#gt;"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > SearchPanel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SearchPanel src/or-conditions.tsx:23
+---
+stateDiagram-v2
+  direction LR
+  S1: isFocused ? Unknown(member) : isFocused · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count} #lt;ul#gt;
+  S2: !(isFocused ? Unknown(member) : isFocused) · #lt;div#gt; #lt;input#gt; #lt;button#gt; {count}
+  [*] --> S2
+  S1 --> S2: setIsFocused(true)
+  S2 --> S1: setIsFocused(true)
+  S1 --> S2: setCount(count + 1)
+  S2 --> S1: setCount(count + 1)
+  state "claims" as claims {
+    claims1: holds isFocused stays within false | true L25
+  }"
+`;
+
 exports[`fixture analysis > Seen keeps its render tree and handlers 1`] = `
 "---
 title: Seen src/ref-props.tsx:12

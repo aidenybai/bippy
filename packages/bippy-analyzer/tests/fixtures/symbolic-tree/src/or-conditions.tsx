@@ -17,3 +17,19 @@ export const KindSwitch = () => {
     </div>
   );
 };
+
+declare const readSearch: () => any;
+
+export const SearchPanel = () => {
+  const search = readSearch();
+  const [isFocused, setIsFocused] = useState(false);
+  const [count, setCount] = useState(0);
+  const isOpen = isFocused && search.enoughChars;
+  return (
+    <div>
+      <input onFocus={() => setIsFocused(true)} />
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+      {isOpen ? <ul /> : null}
+    </div>
+  );
+};
