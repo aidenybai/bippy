@@ -234,6 +234,57 @@ stateDiagram-v2
   S2: steps !== 0 · #lt;p#gt; {"Counted"}"
 `;
 
+exports[`fixture analysis > CountedList keeps its render tree and handlers 1`] = `
+"---
+title: CountedList src/counted-lists.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CountedList"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"items.length #gt; 0"}
+  n2 --> n3
+  n4["#lt;ul#gt;"]
+  n3 -->|✓| n4
+  n5[["↻ each of items"]]
+  n4 --> n5
+  n6["#lt;li#gt; {item}"]
+  n5 --> n6
+  n7{"items.length"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Has items#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;Empty#quot;"]
+  n7 -->|✗| n9
+  n10{"count #gt; 0"}
+  n2 --> n10
+  n11["#lt;b#gt; {count}"]
+  n10 -->|✓| n11
+  n12{"!count"}
+  n2 --> n12
+  n13["#lt;i#gt; #quot;None#quot;"]
+  n12 -->|✓| n13"
+`;
+
+exports[`fixture analysis > CountedList keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CountedList src/counted-lists.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  state "CountedList" as regions {
+    %% items.length
+    S1: items.length #gt; 0 · #lt;ul#gt; ↻ items #lt;p#gt; "Has items"
+    S2: items.length #lt;= 0 · #lt;p#gt; "Empty"
+    --
+    %% count
+    S3: count #gt; 0 · #lt;b#gt; {count}
+    S4: count #lt;= 0 ∧ !count · #lt;i#gt; "None"
+    S5: count #lt;= 0 ∧ count · ∅
+  }"
+`;
+
 exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
 "---
 title: Dashboard src/dashboard.tsx:25

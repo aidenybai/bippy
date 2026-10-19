@@ -249,6 +249,28 @@ const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean
   return null;
 };
 
+const compareWithZero = (
+  value: BindingValue,
+  operator: "<" | ">",
+  constraints: Constraints,
+): boolean | null =>
+  evaluateBounds(
+    { kind: "BinaryExpression", operator, left: value, right: { kind: "Primitive", value: 0 } },
+    constraints,
+  );
+
+const evaluateNonZero = (value: BindingValue, constraints: Constraints): boolean | null => {
+  const place = getValuePlace(value);
+  const isBounded = [...constraints.invariants, ...constraints.bounds].some((bound) =>
+    [bound.left, bound.right].some((atom) => atom !== null && isSamePlace(atom, place)),
+  );
+  if (!isBounded) return null;
+  const isPositive = compareWithZero(value, ">", constraints);
+  const isNegative = compareWithZero(value, "<", constraints);
+  if (isPositive || isNegative) return true;
+  return isPositive === false && isNegative === false ? false : null;
+};
+
 export const getPossibleValues = (
   value: SymbolicValue,
   constraints: Constraints,
@@ -311,7 +333,9 @@ export const evaluateCondition = (
   switch (value.kind) {
     case "Binding": {
       const placeValues = getPossibleValues(value, constraints);
-      return placeValues ? evaluateTruthiness(placeValues) : null;
+      return (
+        (placeValues && evaluateTruthiness(placeValues)) ?? evaluateNonZero(value, constraints)
+      );
     }
     case "UnaryExpression": {
       if (value.operator !== "!") return null;
