@@ -67,6 +67,18 @@ describe("updates that follow an action", () => {
     expect(verdict.transitionCounterexamples).toEqual([]);
   });
 
+  it("runs an effect the click re-runs from where the click leaves the component", () => {
+    const buttons = [element("button", [text("Record")]), element("button", [text("Stop")])];
+    const verdict = scoreClick(
+      "ShortcutRecorder",
+      "Stop",
+      "() => setIsRecording(false)",
+      [element("div", [...buttons, element("p", [text("Recording, rejected")])])],
+      [element("div", buttons)],
+    );
+    expect(verdict.transitionCounterexamples).toEqual([]);
+  });
+
   it("accepts an element the click renders failing right away", () => {
     const verdict = scoreClick(
       "LazyImage",
