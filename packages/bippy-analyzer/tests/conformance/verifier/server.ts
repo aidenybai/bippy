@@ -67,6 +67,7 @@ const PREBUNDLED_REACT_MODULES = [
 const HARNESS_HTML = `<!doctype html><html><head><meta charset="utf-8"></head><body><script type="module" src="${ENTRY_PATH}"></script></body></html>`;
 const ENTRY_SOURCE = join(import.meta.dirname, "browser-entry.ts");
 const BIPPY_SOURCE = join(import.meta.dirname, "../../../../bippy/src/index.ts");
+const BROWSER_DIRECTORY = join(import.meta.dirname, "browser/");
 
 const createHarnessIds = (appDirectory: string): HarnessIds => ({
   entry: join(appDirectory, ENTRY_PATH),
@@ -84,7 +85,8 @@ const resolveHarnessModule = (
   ids: HarnessIds,
 ): string | null => {
   if (source === ENTRY_PATH || source === ids.entry) return ids.entry;
-  if (source === "bippy" && importer === ids.entry) return BIPPY_SOURCE;
+  if (source === "bippy" && (importer === ids.entry || importer?.startsWith(BROWSER_DIRECTORY)))
+    return BIPPY_SOURCE;
   if (importer === ids.entry && source.startsWith("./"))
     return join(import.meta.dirname, `${source.replace(/\.js$/, "")}.ts`);
   if (source === PROVIDERS_PATH || source === ids.providers) return ids.providers;
