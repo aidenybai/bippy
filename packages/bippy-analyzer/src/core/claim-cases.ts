@@ -26,6 +26,16 @@ export const classify = (value: AbstractValue, cases: AbstractValue[]): Membersh
   return mayEqual ? "maybe" : "out";
 };
 
+const NULLISH_CASES: AbstractValue[] = [
+  { kind: "Literal", value: null },
+  { kind: "Literal", value: undefined },
+];
+
+export const withNullishCases = (cases: AbstractValue[]): AbstractValue[] => [
+  ...cases,
+  ...NULLISH_CASES.filter((nullish) => classify(nullish, cases) !== "in"),
+];
+
 export const isPrimitiveDomain = (cases: AbstractValue[]): boolean =>
   cases.every((value) => value.kind === "Literal" || value.primitive !== null);
 

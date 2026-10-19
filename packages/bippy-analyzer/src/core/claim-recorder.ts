@@ -6,10 +6,13 @@ import {
   describeCondition,
   hasNullishCase,
 } from "./claim-sites";
+import { withNullishCases } from "./claim-cases";
 import { hasUnknownPart } from "./constraints";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown } from "./symbolic-values";
 import type { Claim, Domain, SymbolicValue } from "./types";
+
+type ClaimSite = Omit<Claim, "file" | "isInHandler">;
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getValuePlace } from "./utils/get-value-place";
 import type { WalkState } from "./walk-state";
@@ -48,13 +51,18 @@ export class ClaimRecorder {
       typeCast.loc,
       walkState.guards,
     );
-    if (claim) this.record(claim);
+    if (claim) this.record(this.#widenForNonStrictNulls(claim));
     const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
     const isNarrowingCast =
       castValue.kind !== "Primitive" &&
       !isLiteralDomain(sourceDomain) &&
       isLiteralDomain(targetDomain);
     return isUntypedCast || isNarrowingCast ? createUnknown("cast", typeCast.value.loc) : castValue;
+  }
+
+  #widenForNonStrictNulls(claim: ClaimSite): ClaimSite {
+    if (this.#interpreter.resolver.isStrictNullChecks || !claim.cases) return claim;
+    return { ...claim, cases: withNullishCases(claim.cases) };
   }
 
   #isCheckable(value: SymbolicValue): boolean {
@@ -71,7 +79,7 @@ export class ClaimRecorder {
     return isCheckable;
   }
 
-  record(claim: Omit<Claim, "file" | "isInHandler">): void {
+  record(claim: ClaimSite): void {
     if (this.#isCheckable(claim.subject))
       this.#claims.push({
         ...claim,

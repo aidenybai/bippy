@@ -256,6 +256,7 @@ export interface ComponentAnalysis {
   declaration: string;
   loc: SourceLocation;
   isAsync: boolean;
+  isStrictNullChecks: boolean;
   bindings: Binding[];
   wholePropsSample: Sample | null;
   decidedBranchOutcomes: Map<string, boolean[]>;

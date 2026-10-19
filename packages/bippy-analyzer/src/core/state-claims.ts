@@ -1,30 +1,26 @@
-import { classify, describeCases, isBooleanDomain, isPrimitiveDomain } from "./claim-cases";
+import {
+  classify,
+  describeCases,
+  isBooleanDomain,
+  isPrimitiveDomain,
+  withNullishCases,
+} from "./claim-cases";
 import type { ClaimContext } from "./claim-context";
 import { assumeGuards } from "./claim-guards";
+import { getSymbolicValues } from "./claim-values";
 import { findClaimPath } from "./claim-path";
 import { getHandlerStates } from "./claim-states";
-import {
-  assumeCondition,
-  dedupeAbstractValues,
-  evaluateCondition,
-  getPossibleValues,
-  hasUnknownPart,
-  isBooleanExpression,
-  type Constraints,
-} from "./constraints";
+import { isBooleanExpression, type Constraints } from "./constraints";
 import type {
   AbstractValue,
   Binding,
   Claim,
   ClaimOutcome,
-  ConditionalValue,
   Handler,
   StateUpdate,
   SymbolicValue,
 } from "./types";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
-import { getTestExpression } from "./utils/get-test-expression";
-import { getValueKey } from "./utils/get-value-key";
 import { isStateBinding } from "./utils/is-state-binding";
 
 type Problem = Pick<ClaimOutcome, "verdict" | "reason">;
@@ -63,43 +59,6 @@ const isLiteralValue = (value: SymbolicValue): boolean =>
     isLiteralValue(value.consequent) &&
     isLiteralValue(value.alternate));
 
-const getSideValues = (
-  value: SymbolicValue,
-  constraints: Constraints | null,
-): AbstractValue[] | null => (constraints ? getUpdateValues(value, constraints) : []);
-
-const isNullish = (value: AbstractValue): boolean =>
-  value.kind === "Literal"
-    ? value.value === null || value.value === undefined
-    : value.text === "undefined" || value.text === "null";
-
-const isCoalescing = (value: ConditionalValue): boolean =>
-  value.testKind === "nullish" && getValueKey(value.test) === getValueKey(value.consequent);
-
-const getBranchValues = (
-  value: ConditionalValue,
-  constraints: Constraints,
-): AbstractValue[] | null => {
-  const test = getTestExpression(value);
-  const decided = evaluateCondition(test, constraints);
-  if (decided !== null)
-    return getUpdateValues(decided ? value.consequent : value.alternate, constraints);
-  const consequent = getSideValues(value.consequent, assumeCondition(test, true, constraints));
-  const alternate = getSideValues(value.alternate, assumeCondition(test, false, constraints));
-  if (!consequent || !alternate) return null;
-  const kept = isCoalescing(value) ? consequent.filter((item) => !isNullish(item)) : consequent;
-  return dedupeAbstractValues([...kept, ...alternate]);
-};
-
-const getUpdateValues = (
-  value: SymbolicValue,
-  constraints: Constraints,
-): AbstractValue[] | null => {
-  if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
-  if (value.kind === "Conditional") return getBranchValues(value, constraints);
-  return hasUnknownPart(value) ? null : getPossibleValues(value, constraints);
-};
-
 const checkUpdate = (
   cases: AbstractValue[],
   update: StateUpdate,
@@ -108,7 +67,7 @@ const checkUpdate = (
   const narrowed = assumeGuards(update.guards, constraints);
   if (!narrowed) return null;
   if (isBooleanDomain(cases) && isBooleanExpression(update.value)) return null;
-  const values = getUpdateValues(update.value, narrowed);
+  const values = getSymbolicValues(update.value, narrowed);
   if (!values)
     return hasCastPart(update.value) ? { verdict: "unproven", reason: "set through a cast" } : null;
   const outside = values.filter((value) => classify(value, cases) !== "in");
@@ -161,6 +120,14 @@ export const checkStateClaims = (context: ClaimContext): ClaimOutcome[] =>
     isStateBinding(binding) &&
     binding.domain.kind === "Cases" &&
     isPrimitiveDomain(binding.domain.cases)
-      ? [checkStateClaim(binding, binding.domain.cases, context)]
+      ? [
+          checkStateClaim(
+            binding,
+            context.analysis.isStrictNullChecks
+              ? binding.domain.cases
+              : withNullishCases(binding.domain.cases),
+            context,
+          ),
+        ]
       : [],
   );
