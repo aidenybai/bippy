@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..b0a6fa6 100644
+index 959fdf7..7f9ebaf 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,28 @@ function lowerStatement(
@@ -66,6 +66,15 @@ index 959fdf7..b0a6fa6 100644
        /**
         * Hoistable identifier bindings defined for this precise block
         * scope (excluding bindings from parent or child block scopes).
+@@ -384,7 +395,7 @@ function lowerStatement(
+ 
+       for (const [, binding] of Object.entries(stmt.scope.bindings)) {
+         // refs to params are always valid / never need to be hoisted
+-        if (binding.kind !== 'param') {
++        if (binding.kind !== 'param' && !binding.path.isCatchClause()) {
+           hoistableIdentifiers.add(binding.identifier);
+         }
+       }
 @@ -862,7 +873,7 @@ function lowerStatement(
          });
          let test: Place | null = null;
