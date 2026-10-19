@@ -1,14 +1,12 @@
 import { notFound } from "next/navigation";
 import { VIEW_MODES } from "@/lib/view-mode";
 import { parseRoute } from "@/lib/route";
-import { demoNames, demos } from "@/server/demos";
+import { getDemos } from "@/server/demos";
 import { ClientApp } from "../client-app";
-
-export const dynamicParams = false;
 
 export const generateStaticParams = () => [
   { slug: [] },
-  ...demos.examples.flatMap((example) =>
+  ...getDemos().examples.flatMap((example) =>
     VIEW_MODES.map((mode) => ({
       slug: mode === "code" ? [example.name] : [example.name, mode],
     })),
@@ -21,7 +19,8 @@ interface PageProps {
 
 const Page = async ({ params }: PageProps) => {
   const { slug } = await params;
-  const route = parseRoute(slug, demoNames);
+  const demos = getDemos();
+  const route = parseRoute(slug, new Set(demos.examples.map((example) => example.name)));
   if (!route) notFound();
   const view = route.name === null ? null : (demos.views[route.name] ?? null);
   const json =

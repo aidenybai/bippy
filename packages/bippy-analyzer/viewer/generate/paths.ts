@@ -25,4 +25,3 @@ const findPackageRoot = (): string => {
 
 export const packageRoot = findPackageRoot();
 export const viewerRoot = resolve(packageRoot, "viewer");
-export const fixturesDirectory = resolve(packageRoot, "tests/fixtures");
