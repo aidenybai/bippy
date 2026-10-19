@@ -36,6 +36,8 @@ type ValueBranchTerminal = Extract<Terminal, { kind: "ternary" | "logical" | "op
 
 type MaybeThrowTerminal = Extract<Terminal, { kind: "maybe-throw" }>;
 
+type TryTerminal = Extract<Terminal, { kind: "try" }>;
+
 type PhiState = "resolved" | "unresolved";
 
 interface NextStep {
@@ -86,6 +88,8 @@ export class ControlFlowWalker {
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
   #walkedCatches = new Set<BlockId>();
+  readonly #throwingCatches = new Set<BlockId>();
+  #awaitCount = 0;
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -413,8 +417,10 @@ export class ControlFlowWalker {
         this.#resolveBlockPhis(block, previousId, currentWalkState.guards);
       for (const instruction of block.instructions) {
         this.#interpreter.evaluateInstruction(instruction, currentWalkState);
-        if (instruction.value.kind === "Await")
+        if (instruction.value.kind === "Await") {
+          this.#awaitCount++;
           currentWalkState = getAsyncWalkState(currentWalkState);
+        }
       }
       const step = this.#walkTerminal(block.terminal, currentId, stops, currentWalkState);
       if (step.kind !== "Next") return step;
@@ -458,9 +464,12 @@ export class ControlFlowWalker {
       case "logical":
       case "optional":
         return this.#walkValueBranch(terminal, blockId, stops, walkState);
+      case "try":
+        return this.#interpreter.handlerEffects
+          ? this.#walkTryInHandler(terminal, blockId, stops, walkState)
+          : { kind: "Next", block: terminal.block };
       case "label":
       case "sequence":
-      case "try":
       case "scope":
       case "pruned-scope":
         return { kind: "Next", block: terminal.block };
@@ -503,10 +512,9 @@ export class ControlFlowWalker {
     walkState: WalkState,
   ): TerminalStep {
     const { handler, continuation } = terminal;
-    if (this.#interpreter.handlerEffects || handler === null || this.#walkedCatches.has(handler)) {
-      this.#walkCatchOnce(handler, blockId, stops, walkState);
+    if (this.#interpreter.handlerEffects && handler !== null) this.#throwingCatches.add(handler);
+    if (this.#interpreter.handlerEffects || handler === null || this.#walkedCatches.has(handler))
       return { kind: "Next", block: continuation };
-    }
     this.#walkedCatches.add(handler);
     const throwTest = createUnknown("throws", terminal.loc);
     return {
@@ -519,20 +527,31 @@ export class ControlFlowWalker {
     };
   }
 
-  #walkCatchOnce(
-    catchBlock: BlockId | null,
+  #walkTryInHandler(
+    terminal: TryTerminal,
     blockId: BlockId,
     stops: ReadonlySet<BlockId>,
     walkState: WalkState,
-  ): void {
-    if (
-      !this.#interpreter.handlerEffects ||
-      catchBlock === null ||
-      this.#walkedCatches.has(catchBlock)
-    )
-      return;
-    this.#walkedCatches.add(catchBlock);
-    this.walk(catchBlock, stops, blockId, walkState, "unresolved");
+  ): Outcome {
+    const { block, handler, fallthrough } = terminal;
+    const bodyStops = new Set([...stops, fallthrough]);
+    const awaitCountBefore = this.#awaitCount;
+    const bodyOutcome = this.walk(block, bodyStops, blockId, walkState, "unresolved");
+    const afterWalkState =
+      this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
+    if (!this.#throwingCatches.delete(handler))
+      return this.#continueAfter(bodyOutcome, fallthrough, stops, afterWalkState);
+    const throwTest = createUnknown("throws", terminal.loc);
+    const catchOutcome = this.#walkArm(handler, blockId, bodyStops, afterWalkState, throwTest);
+    const outcome: Outcome = {
+      kind: "Split",
+      test: throwTest,
+      testKind: "truthy",
+      branch: this.#interpreter.createBranch(terminal.id, terminal.loc, "none"),
+      consequent: catchOutcome,
+      alternate: bodyOutcome,
+    };
+    return this.#continueAfter(outcome, fallthrough, stops, afterWalkState);
   }
 
   getOutcomeValue(outcome: Outcome, loc: SourceLocation, guards: SymbolicValue[]): SymbolicValue {

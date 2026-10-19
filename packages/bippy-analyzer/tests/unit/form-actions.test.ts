@@ -11,7 +11,7 @@ describe("form actions", () => {
     expect(handler?.trigger).toEqual({ kind: "Event", tag: "form", event: "submit" });
     expect(handler?.updates.map((update) => [update.binding.name, update.isAsync])).toEqual([
       ["loading", false],
-      ["loading", false],
+      ["loading", true],
       ["loading", true],
     ]);
     expect(report.states).toHaveLength(2);
