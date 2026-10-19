@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..9d844f4 100644
+index 959fdf7..04d3b12 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,28 @@ function lowerStatement(
@@ -34,7 +34,7 @@ index 959fdf7..9d844f4 100644
 +            effects: null,
 +          },
 +          continuationBlock,
-+        );
+         );
 +        builder.terminate(
 +          {
 +            kind: 'unreachable',
@@ -42,7 +42,7 @@ index 959fdf7..9d844f4 100644
 +            loc: stmt.node.loc ?? GeneratedSource,
 +          },
 +          'block',
-         );
++        );
 +        return;
        }
        const terminal: ThrowTerminal = {
@@ -57,6 +57,15 @@ index 959fdf7..9d844f4 100644
        const terminal: ReturnTerminal = {
          kind: 'return',
          returnVariant: 'Explicit',
+@@ -375,7 +386,7 @@ function lowerStatement(
+     }
+     case 'BlockStatement': {
+       const stmt = stmtPath as NodePath<t.BlockStatement>;
+-      const statements = stmt.get('body');
++      const statements = hoistFunctionsAfterExit(stmt.get('body'));
+       /**
+        * Hoistable identifier bindings defined for this precise block
+        * scope (excluding bindings from parent or child block scopes).
 @@ -862,7 +873,7 @@ function lowerStatement(
          });
          let test: Place | null = null;
@@ -829,7 +838,7 @@ index 959fdf7..9d844f4 100644
 +        return right;
 +      },
 +    );
-   }
++  }
 +  builder.recordError(
 +    new CompilerErrorDetail({
 +      reason: `(BuildHIR::lowerExpression) Expected Identifier or MemberExpression, got ${left.type} lval in AssignmentExpression`,
@@ -855,7 +864,7 @@ index 959fdf7..9d844f4 100644
 +      value: {...value},
 +      loc,
 +    };
-+  }
+   }
 +  return {
 +    kind: 'ComputedStore',
 +    object: {...object},
@@ -866,7 +875,32 @@ index 959fdf7..9d844f4 100644
  }
  
  function lowerArguments(
-@@ -3517,6 +3443,8 @@ function lowerJsxElement(
+@@ -3492,6 +3418,24 @@ function lowerJsxMemberExpression(
+   });
+ }
+ 
++function hoistFunctionsAfterExit(
++  statements: Array<NodePath<t.Statement>>,
++): Array<NodePath<t.Statement>> {
++  const exitIndex = statements.findIndex(
++    statement => statement.isReturnStatement() || statement.isThrowStatement(),
++  );
++  if (exitIndex === -1) {
++    return statements;
++  }
++  const unreachable = statements.slice(exitIndex + 1);
++  return [
++    ...statements.slice(0, exitIndex),
++    ...unreachable.filter(statement => statement.isFunctionDeclaration()),
++    statements[exitIndex],
++    ...unreachable.filter(statement => !statement.isFunctionDeclaration()),
++  ];
++}
++
+ function lowerJsxElement(
+   builder: HIRBuilder,
+   exprPath: NodePath<
+@@ -3517,6 +3461,8 @@ function lowerJsxElement(
        });
        return lowerExpressionToTemporary(builder, expression);
      }
@@ -875,7 +909,7 @@ index 959fdf7..9d844f4 100644
    } else if (exprPath.isJSXText()) {
      let text: string | null;
      if (builder.fbtDepth > 0) {
-@@ -4135,6 +4063,10 @@ function lowerAssignment(
+@@ -4135,6 +4081,10 @@ function lowerAssignment(
              property.isRestElement() ||
              (property.isObjectProperty() &&
                (!property.get('value').isIdentifier() ||
@@ -886,7 +920,7 @@ index 959fdf7..9d844f4 100644
                  builder.resolveIdentifier(
                    property.get('value') as NodePath<t.Identifier>,
                  ).kind !== 'Identifier')),
-@@ -4206,17 +4138,6 @@ function lowerAssignment(
+@@ -4206,17 +4156,6 @@ function lowerAssignment(
              );
              continue;
            }
@@ -904,7 +938,7 @@ index 959fdf7..9d844f4 100644
            const loweredKey = lowerObjectPropertyKey(builder, property);
            if (!loweredKey) {
              continue;
-@@ -4314,14 +4235,7 @@ function lowerAssignment(
+@@ -4314,14 +4253,7 @@ function lowerAssignment(
        const continuationBlock = builder.reserve(builder.currentBlockKind());
  
        const consequent = builder.enter('value', () => {
@@ -920,7 +954,7 @@ index 959fdf7..9d844f4 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4515,9 +4429,10 @@ function gatherCapturedContext(
+@@ -4515,9 +4447,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -934,7 +968,7 @@ index 959fdf7..9d844f4 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4446,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4464,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
