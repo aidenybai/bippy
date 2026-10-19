@@ -80,31 +80,62 @@ const getLineBox = (lookup: LineLookup, line: number): Box | null => {
   return element ? toBox(element.getBoundingClientRect(), lookup.origin) : null;
 };
 
-const getSpanBox = (
+const mergeRows = (rects: DOMRect[], origin: DOMRect): Box[] => {
+  const rows = new Map<number, DOMRect[]>();
+  for (const rect of rects)
+    if (rect.width > 0)
+      rows.set(Math.round(rect.top), [...(rows.get(Math.round(rect.top)) ?? []), rect]);
+  return [...rows.values()].map((group) => {
+    const left = Math.min(...group.map((rect) => rect.left));
+    const top = Math.min(...group.map((rect) => rect.top));
+    const right = Math.max(...group.map((rect) => rect.right));
+    const bottom = Math.max(...group.map((rect) => rect.bottom));
+    return {
+      x: left - origin.left,
+      y: top - origin.top,
+      width: right - left,
+      height: bottom - top,
+    };
+  });
+};
+
+export const getBoundingBox = (rows: Box[]): Box | null => {
+  if (rows.length === 0) return null;
+  const x = Math.min(...rows.map((row) => row.x));
+  const y = Math.min(...rows.map((row) => row.y));
+  const right = Math.max(...rows.map((row) => row.x + row.width));
+  const bottom = Math.max(...rows.map((row) => row.y + row.height));
+  return { x, y, width: right - x, height: bottom - y };
+};
+
+const getSpanRows = (
   lookup: LineLookup,
   line: number,
   startColumn: number,
   endColumn: number,
-): Box | null => {
+): Box[] => {
   const element = lookup.getLine(line);
-  if (!element) return null;
+  if (!element) return [];
   const nodes = getTextNodes(element);
-  if (nodes.length === 0) return getLineBox(lookup, line);
+  if (nodes.length === 0) return [toBox(element.getBoundingClientRect(), lookup.origin)];
   const range = document.createRange();
   setRangePoint(range, nodes, startColumn, false);
   setRangePoint(range, nodes, endColumn, true);
-  return toBox(range.getBoundingClientRect(), lookup.origin);
+  return mergeRows([...range.getClientRects()], lookup.origin);
 };
 
-export const getLocationBox = (lookup: LineLookup, loc: ViewLocation): Box | null => {
+export const getLocationRows = (lookup: LineLookup, loc: ViewLocation): Box[] => {
   const isSingleLine = loc.start.line === loc.end.line;
-  return getSpanBox(
+  return getSpanRows(
     lookup,
     loc.start.line,
     loc.start.column,
     isSingleLine ? loc.end.column : Number.MAX_SAFE_INTEGER,
   );
 };
+
+export const getLocationBox = (lookup: LineLookup, loc: ViewLocation): Box | null =>
+  getBoundingBox(getLocationRows(lookup, loc));
 
 export const getLinesBox = (lookup: LineLookup, loc: ViewLocation): Box | null => {
   const first = getLineBox(lookup, loc.start.line);

@@ -8,7 +8,7 @@ export type CodeFileOptions = FileOptions<undefined, undefined>;
 const FILE_OPTIONS: Omit<CodeFileOptions, "theme"> = {
   overflow: "wrap",
   unsafeCSS:
-    ":host { background-color: transparent; --diffs-bg: transparent; } [data-gutter], [data-column-number] { background: transparent; }",
+    ":host { background-color: transparent; --diffs-bg: transparent; --diffs-font-family: var(--font-mono); } [data-gutter], [data-column-number] { background: transparent; }",
   disableFileHeader: true,
   disableErrorHandling: true,
   preferredHighlighter: "shiki-js",

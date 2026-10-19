@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { GeistMono } from "geist/font/mono";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
@@ -23,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 const RootLayout = ({ children }: { children: ReactNode }) => (
-  <html lang="en" className={inter.variable} suppressHydrationWarning>
+  <html lang="en" className={`${inter.variable} ${GeistMono.variable}`} suppressHydrationWarning>
     <body>
       <ThemeProvider
         attribute="class"

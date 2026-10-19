@@ -18,8 +18,8 @@ const ExampleRow = ({ example }: { example: Example }) => (
 export const Examples = () => {
   const { examples } = useViewer();
   return (
-    <div className="grid h-full place-content-center overflow-y-auto overscroll-none px-4 py-8 sm:px-5">
-      <ul className="-mx-3 grid w-full max-w-md gap-1">
+    <div className="grid h-full grid-cols-[minmax(0,28rem)] content-center justify-center overflow-y-auto overscroll-none px-4 py-8 sm:px-5">
+      <ul className="-mx-3 grid gap-1">
         {examples.map((example) => (
           <ExampleRow key={example.name} example={example} />
         ))}

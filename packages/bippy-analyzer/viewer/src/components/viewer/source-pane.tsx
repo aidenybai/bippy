@@ -30,7 +30,7 @@ const contains = (box: Box, x: number, y: number): boolean =>
   x >= box.x - 2 && x <= box.x + box.width + 2 && y >= box.y && y <= box.y + box.height;
 
 const findTokenAt = (tokens: PlacedToken[], x: number, y: number): PlacedToken | null =>
-  tokens.find((token) => !token.isMultiLine && contains(token.box, x, y)) ?? null;
+  tokens.find((token) => token.rows.some((row) => contains(row, x, y))) ?? null;
 
 const createAnchor = (token: PlacedToken, wrapper: HTMLElement): TokenAnchor => ({
   nodeId: token.node.id,
@@ -178,7 +178,7 @@ const CodeView = () => {
   return (
     <div
       ref={wrapperRef}
-      className="relative min-h-full min-w-0 py-1 pr-8 text-[13px]/[19px]"
+      className="relative min-h-full min-w-0 py-1 pr-4 text-[13px]/[19px] sm:pr-8"
       onMouseMove={trackPointer}
       onMouseLeave={leave}
     >
