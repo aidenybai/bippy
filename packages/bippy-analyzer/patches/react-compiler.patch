@@ -1167,6 +1167,48 @@ index 71874b0..4e0ab07 100644
      if (binding == null) {
        return null;
      }
+diff --git a/Optimization/PruneMaybeThrows.ts b/Optimization/PruneMaybeThrows.ts
+index 6d31646..f3a3930 100644
+--- a/Optimization/PruneMaybeThrows.ts
++++ b/Optimization/PruneMaybeThrows.ts
+@@ -5,10 +5,8 @@
+  * LICENSE file in the root directory of this source tree.
+  */
+ 
+-import {CompilerError} from '..';
+ import {
+   BlockId,
+-  GeneratedSource,
+   HIRFunction,
+   Instruction,
+   assertConsistentIdentifiers,
+@@ -22,7 +20,6 @@ import {
+   removeUnnecessaryTryCatch,
+   removeUnreachableForUpdates,
+ } from '../HIR/HIRBuilder';
+-import {printPlace} from '../HIR/PrintHIR';
+ 
+ /**
+  * This pass updates `maybe-throw` terminals for blocks that can provably *never* throw,
+@@ -55,15 +52,10 @@ export function pruneMaybeThrows(fn: HIRFunction): void {
+         for (const [predecessor, operand] of phi.operands) {
+           if (!block.preds.has(predecessor)) {
+             const mappedTerminal = terminalMapping.get(predecessor);
+-            CompilerError.invariant(mappedTerminal != null, {
+-              reason: `Expected non-existing phi operand's predecessor to have been mapped to a new terminal`,
+-              description: `Could not find mapping for predecessor bb${predecessor} in block bb${
+-                block.id
+-              } for phi ${printPlace(phi.place)}`,
+-              loc: GeneratedSource,
+-            });
+             phi.operands.delete(predecessor);
+-            phi.operands.set(mappedTerminal, operand);
++            if (mappedTerminal != null && block.preds.has(mappedTerminal)) {
++              phi.operands.set(mappedTerminal, operand);
++            }
+           }
+         }
+       }
 diff --git a/ReactiveScopes/CodegenReactiveFunction.ts b/ReactiveScopes/CodegenReactiveFunction.ts
 index 942c852..90526dc 100644
 --- a/ReactiveScopes/CodegenReactiveFunction.ts
