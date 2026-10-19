@@ -87,6 +87,12 @@
   kbd {
     @apply font-mono;
   }
+  [data-slot="code"] > span {
+    color: var(--shiki-light);
+  }
+  .dark [data-slot="code"] > span {
+    color: var(--shiki-dark);
+  }
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--well-2) transparent;
