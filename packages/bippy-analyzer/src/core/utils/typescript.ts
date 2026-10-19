@@ -21,7 +21,7 @@ export const isReactType = (type: Type, namePattern: RegExp): boolean =>
 export const isLibraryType = (type: Type, namePattern: RegExp): boolean =>
   isDeclaredType(type, namePattern, LIBRARY_DECLARATION_PATTERN);
 
-const resolveSymbol = (checker: Checker, node: Node): Symbol | null => {
+export const resolveSymbol = (checker: Checker, node: Node): Symbol | null => {
   const nameNode = isPropertyAccessExpression(node) ? node.name : node;
   if (!isIdentifier(nameNode)) return null;
   const symbol = checker.getSymbolAtLocation(nameNode);

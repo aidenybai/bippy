@@ -1,5 +1,6 @@
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import { findNodeAtLocation } from "./utils/find-node-at-location";
+import { getLiteralElements } from "./utils/get-literal-elements";
 import { getUnionMembers } from "./utils/get-union-members";
 import { getContextKey } from "./utils/get-context-key";
 import { getDeclarationKey, getReactExportName, isReactType } from "./utils/typescript";
@@ -134,6 +135,11 @@ export class SourceFileResolver {
     return this.#isIndexedRead(loc) || this.#isOptionalRead(loc) || this.#isDefaultedBinding(loc)
       ? getDomainWithUndefined(this.#checker, type)
       : getDomainOfType(this.#checker, type);
+  }
+
+  getLiteralElements(loc: SourceLocation): Array<string | number> | null {
+    const node = this.#findNode(loc);
+    return node ? getLiteralElements(this.#checker, node) : null;
   }
 
   getPredicateCases(loc: SourceLocation): PredicateCases | null {

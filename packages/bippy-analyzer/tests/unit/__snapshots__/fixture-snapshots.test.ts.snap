@@ -27,6 +27,39 @@ stateDiagram-v2
   S2: !isLoading · #lt;Button#gt; {count}"
 `;
 
+exports[`fixture analysis > AppMenu keeps its render tree and handlers 1`] = `
+"---
+title: AppMenu src/type-predicates.tsx:31
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["AppMenu"]
+  n2["#lt;nav#gt;"]
+  n1 --> n2
+  n3{"(app === #quot;claude#quot; ? app === #quot;claude#quot; : app === #quot;codex#quot;) ? app : null"}
+  n2 --> n3
+  n4["#lt;UsageLink#gt;"]
+  n3 -->|✓| n4
+  n5{"app === #quot;claude#quot; ? app === #quot;claude#quot; : app === #quot;openclaw#quot;"}
+  n2 --> n5
+  n6["#lt;b#gt; #quot;Pinned#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > AppMenu keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: AppMenu src/type-predicates.tsx:31
+---
+stateDiagram-v2
+  direction LR
+  S1: (app === "claude" ? app === "claude" : app === "codex") ? app : null ∧ app === "claude" ? app === "claude" : app === "openclaw" · #lt;nav#gt; #lt;UsageLink#gt; #lt;b#gt; "Pinned"
+  S2: (app === "claude" ? app === "claude" : app === "codex") ? app : null ∧ !(app === "claude" ? app === "claude" : app === "openclaw") · #lt;nav#gt; #lt;UsageLink#gt;
+  S3: !((app === "claude" ? app === "claude" : app === "codex") ? app : null) · #lt;nav#gt; #lt;b#gt; "Pinned"
+  state "claims" as claims {
+    claims1: holds app as "claude" | "codex" L32
+  }"
+`;
+
 exports[`fixture analysis > Box keeps its render tree and handlers 1`] = `
 "---
 title: Box src/ref-props.tsx:21
@@ -2137,6 +2170,27 @@ stateDiagram-v2
   state "claims" as claims {
     claims1: holds isHelpOpen stays within false | true L14
   }"
+`;
+
+exports[`fixture analysis > UsageLink keeps its render tree and handlers 1`] = `
+"---
+title: UsageLink src/type-predicates.tsx:29
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["UsageLink"]
+  n2["#lt;a#gt; {app}"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > UsageLink keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: UsageLink src/type-predicates.tsx:29
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;a#gt; {app}
+  [*] --> S1"
 `;
 
 exports[`fixture analysis > Wizard keeps its render tree and handlers 1`] = `

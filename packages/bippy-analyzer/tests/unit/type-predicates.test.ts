@@ -18,4 +18,11 @@ describe("a call to a type predicate over literals", () => {
       ['kind !== "fab"'],
     ]);
   });
+
+  it("reads includes on a constant list of literals as the same membership test", () => {
+    const menu = getComponent(analyzeFixture("symbolic-tree", "type-predicates.tsx"), "AppMenu");
+    const cast = menu.report.claimOutcomes.find((outcome) => outcome.claim.kind === "cast");
+    expect(cast).toMatchObject({ verdict: "holds" });
+    expect(menu.analysis.bailouts).toEqual([]);
+  });
 });

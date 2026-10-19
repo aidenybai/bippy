@@ -24,6 +24,7 @@ import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_WALK_STATE, getAsyncWalkState } from "./walk-state";
 import type { WalkState } from "./walk-state";
 import type {
+  AbstractValue,
   Binding,
   Claim,
   BindingKind,
@@ -487,6 +488,38 @@ export class Interpreter {
     this.#getUpdateCollector().recordSetterCall(dispatch.binding, nextValue, walkState);
   }
 
+  #getIncludedLiterals(receiver: SymbolicValue, receiverPlace: Place): AbstractValue[] | null {
+    const isLiteralArray =
+      receiver.kind === "ArrayExpression" &&
+      receiver.spreads.length === 0 &&
+      receiver.elements.every((element) => element.kind === "Primitive");
+    if (isLiteralArray)
+      return receiver.elements.flatMap((element): AbstractValue[] =>
+        element.kind === "Primitive" ? [{ kind: "Literal", value: element.value }] : [],
+      );
+    const literals = this.#resolver.getLiteralElements(receiverPlace.loc);
+    return literals && literals.map((value): AbstractValue => ({ kind: "Literal", value }));
+  }
+
+  #evaluateLiteralIncludes(
+    receiver: SymbolicValue,
+    methodName: string,
+    argumentValues: SymbolicValue[],
+    methodCall: InstructionValueOfKind<"MethodCall">,
+    instructionId: InstructionId,
+  ): SymbolicValue | null {
+    const [subject] = argumentValues;
+    if (methodName !== "includes" || !subject || argumentValues.length !== 1) return null;
+    const literals = this.#getIncludedLiterals(receiver, methodCall.receiver);
+    return literals && literals.length > 0
+      ? createMembershipTest(
+          subject,
+          literals,
+          this.createBranch(instructionId, methodCall.loc, "truthy"),
+        )
+      : null;
+  }
+
   #evaluateTypePredicate(callSite: CallSite): SymbolicValue | null {
     const predicate = this.#resolver.getPredicateCases(callSite.loc);
     const subject = predicate ? callSite.argumentValues[predicate.parameterIndex] : undefined;
@@ -853,11 +886,19 @@ export class Interpreter {
     const methodName = this.getPropertyName(methodCall.property) ?? "";
     const argumentPlaces = methodCall.args.map(getPlaceOrSpread);
     const argumentValues = argumentPlaces.map((place) => this.read(place));
-    const matched = this.patterns.continue(receiver, methodName, argumentValues, {
-      loc: methodCall.loc,
-      instructionId,
-      walkState,
-    });
+    const matched =
+      this.patterns.continue(receiver, methodName, argumentValues, {
+        loc: methodCall.loc,
+        instructionId,
+        walkState,
+      }) ??
+      this.#evaluateLiteralIncludes(
+        receiver,
+        methodName,
+        argumentValues,
+        methodCall,
+        instructionId,
+      );
     if (matched) return matched;
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName))

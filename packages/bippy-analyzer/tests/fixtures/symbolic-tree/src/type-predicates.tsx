@@ -20,3 +20,21 @@ export const PartInspector = () => {
     </div>
   );
 };
+
+type App = "claude" | "codex" | "openclaw";
+type KnownApp = "claude" | "codex";
+
+const KNOWN_APPS: ReadonlyArray<App> = ["claude", "codex"];
+
+const UsageLink = ({ app }: { app: KnownApp }) => <a href={`/usage/${app}`}>{app}</a>;
+
+export const AppMenu = ({ app }: { app: App }) => {
+  const known = KNOWN_APPS.includes(app) ? (app as KnownApp) : null;
+  const isPinned = ["claude", "openclaw"].includes(app);
+  return (
+    <nav>
+      {known ? <UsageLink app={known} /> : null}
+      {isPinned ? <b>Pinned</b> : null}
+    </nav>
+  );
+};
