@@ -8,7 +8,7 @@ import { collectHandlers } from "./collect-handlers";
 import { Interpreter } from "./interpret";
 import { PlaceMap } from "./utils/place-map";
 import { createDeclarationKey } from "./utils/declaration-key";
-import type { ProjectHookLoader } from "./interpret";
+import type { ProjectLoaders } from "./interpret";
 import type {
   Bailout,
   Binding,
@@ -29,8 +29,7 @@ export interface FileContext {
   sourceFile: SourceFile;
   resolver: SourceFileResolver;
   compiled: CompiledFile;
-  loadProjectHook: ProjectHookLoader;
-  loadProjectFunction: ProjectHookLoader;
+  projectLoaders: ProjectLoaders;
   actionsByStore: Map<string, StoreActions>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
@@ -142,8 +141,7 @@ export const analyzeComponent = (
   const interpreter = new Interpreter(
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
-    fileContext.loadProjectHook,
-    fileContext.loadProjectFunction,
+    fileContext.projectLoaders,
     contextSetterFields,
     fileContext.actionsByStore,
   );

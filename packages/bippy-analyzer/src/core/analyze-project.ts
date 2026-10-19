@@ -2,7 +2,9 @@ import { compileFile } from "./compile";
 import type { CompiledFunction } from "./compile";
 import { CompilerTypeProvider } from "./type-provider";
 import { SourceFileResolver } from "./source-file-resolver";
-import type { ProjectHook } from "./interpret";
+import type { ProjectHook, ProjectLoaders } from "./interpret";
+import type { ModuleFunctionLoader } from "./function-registry";
+import { getMutatedParameters } from "./utils/get-mutated-parameters";
 import { collectStoreActions } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
 import { linkComponents, type ReportLoader } from "./link-components";
@@ -48,6 +50,8 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
   const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
+  const lowerersByPath = new Map<string, ModuleFunctionLoader>();
+  const mutatedParametersByDeclaration = new Map<string, Set<number>>();
   const actionsByStore = new Map<string, StoreActions>();
   const loadProjectHook = (declarationKey: string): ProjectHook | null =>
     projectHooksByDeclaration.get(declarationKey) ?? null;
@@ -62,6 +66,23 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
       projectFunctionsByDeclaration.set(declarationKey, lowerProjectFunction(declarationKey));
     return projectFunctionsByDeclaration.get(declarationKey) ?? null;
   };
+  const summarizeMutatedParameters = (declarationKey: string): Set<number> => {
+    const { path, name } = parseDeclarationKey(declarationKey);
+    const hirFunction = lowerersByPath.get(path)?.(name);
+    return hirFunction ? getMutatedParameters(hirFunction) : new Set();
+  };
+  const loadMutatedParameters = (declarationKey: string): Set<number> => {
+    const cached = mutatedParametersByDeclaration.get(declarationKey);
+    if (cached) return cached;
+    const mutated = summarizeMutatedParameters(declarationKey);
+    mutatedParametersByDeclaration.set(declarationKey, mutated);
+    return mutated;
+  };
+  const projectLoaders: ProjectLoaders = {
+    loadProjectHook,
+    loadProjectFunction,
+    loadMutatedParameters,
+  };
   return fileNames.flatMap((fileName): FileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
@@ -75,6 +96,7 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
       resolver,
       loadModuleFunction: compiled.loadModuleFunction,
     });
+    lowerersByPath.set(sourceFile.path, compiled.lowerModuleFunction);
     for (const { functionType, hir, name } of compiled.functions)
       if (functionType === "Hook" && hir)
         projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
@@ -87,8 +109,7 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
         sourceFile,
         resolver,
         compiled,
-        loadProjectHook,
-        loadProjectFunction,
+        projectLoaders,
         actionsByStore,
         exportNames: collectExportNames(sourceFile),
         displayNames: collectDisplayNames(sourceFile),

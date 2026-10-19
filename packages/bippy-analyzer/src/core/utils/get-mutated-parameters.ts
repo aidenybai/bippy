@@ -3,8 +3,6 @@ import { eachPatternOperand } from "../../react-compiler/HIR/visitors";
 import { getMutatedPlace } from "./get-mutated-place";
 import { getPlaceOrSpread } from "./get-place-or-spread";
 
-const mutatedParametersByFunction = new WeakMap<HIRFunction, Set<number>>();
-
 const getDerivation = (instruction: Instruction): [Place, Place[]] | null => {
   const { value, lvalue } = instruction;
   switch (value.kind) {
@@ -22,7 +20,7 @@ const getDerivation = (instruction: Instruction): [Place, Place[]] | null => {
   }
 };
 
-const collectMutatedParameters = (hirFunction: HIRFunction): Set<number> => {
+export const getMutatedParameters = (hirFunction: HIRFunction): Set<number> => {
   const parameterIndexById = new Map<IdentifierId, number>(
     hirFunction.params.map((parameter, index) => [
       getPlaceOrSpread(parameter).identifier.id,
@@ -43,13 +41,5 @@ const collectMutatedParameters = (hirFunction: HIRFunction): Set<number> => {
         if (mutatedIndex !== undefined && mutatedIndex !== null) mutated.add(mutatedIndex);
       }
     }
-  return mutated;
-};
-
-export const getMutatedParameters = (hirFunction: HIRFunction): Set<number> => {
-  const cached = mutatedParametersByFunction.get(hirFunction);
-  if (cached) return cached;
-  const mutated = collectMutatedParameters(hirFunction);
-  mutatedParametersByFunction.set(hirFunction, mutated);
   return mutated;
 };

@@ -59,7 +59,6 @@ import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
 import { getTestExpression } from "./utils/get-test-expression";
 import { coerceBooleanCall } from "./utils/coerce-boolean-call";
-import { getMutatedParameters } from "./utils/get-mutated-parameters";
 import { negate } from "./utils/negate";
 import {
   UNDEFINED_VALUE,
@@ -135,6 +134,12 @@ export interface ProjectHookLoader {
   (declarationKey: string): ProjectHook | null;
 }
 
+export interface ProjectLoaders {
+  loadProjectHook: ProjectHookLoader;
+  loadProjectFunction: ProjectHookLoader;
+  loadMutatedParameters: (declarationKey: string) => Set<number>;
+}
+
 const MAX_INLINE_DEPTH = 4;
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
@@ -178,8 +183,7 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
 
 export class Interpreter {
   #resolver: SourceFileResolver;
-  readonly #loadProjectHook: ProjectHookLoader;
-  readonly #loadProjectFunction: ProjectHookLoader;
+  readonly #projectLoaders: ProjectLoaders;
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -208,15 +212,13 @@ export class Interpreter {
   constructor(
     resolver: SourceFileResolver,
     loadModuleFunction: ModuleFunctionLoader,
-    loadProjectHook: ProjectHookLoader,
-    loadProjectFunction: ProjectHookLoader,
+    projectLoaders: ProjectLoaders,
     contextSetterFields: ContextSetterFields,
     actionsByStore: Map<string, StoreActions>,
   ) {
     this.#resolver = resolver;
     this.#functions.addModule(resolver, loadModuleFunction);
-    this.#loadProjectHook = loadProjectHook;
-    this.#loadProjectFunction = loadProjectFunction;
+    this.#projectLoaders = projectLoaders;
     this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
   }
 
@@ -547,12 +549,12 @@ export class Interpreter {
 
   #findProjectFunction(calleePlace: Place): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
-    return declarationKey ? this.#loadProjectFunction(declarationKey) : null;
+    return declarationKey ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
   }
 
   #findProjectHook(calleePlace: Place): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
-    return declarationKey ? this.#loadProjectHook(declarationKey) : null;
+    return declarationKey ? this.#projectLoaders.loadProjectHook(declarationKey) : null;
   }
 
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
@@ -655,9 +657,9 @@ export class Interpreter {
   }
 
   #trackProjectCallMutations(callSite: CallSite): void {
-    const helper = this.#findProjectFunction(callSite.calleePlace);
-    if (!helper) return;
-    for (const index of getMutatedParameters(helper.hirFunction)) {
+    const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
+    if (!declarationKey) return;
+    for (const index of this.#projectLoaders.loadMutatedParameters(declarationKey)) {
       const argumentPlace = callSite.argumentPlaces[index];
       if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
     }

@@ -31,6 +31,7 @@ export interface CompiledFunction {
 export interface CompiledFile {
   functions: CompiledFunction[];
   loadModuleFunction: ModuleFunctionLoader;
+  lowerModuleFunction: ModuleFunctionLoader;
 }
 
 const STOP = Symbol("stop");
@@ -82,7 +83,11 @@ interface ProgramFunctions {
   moduleFunctionPaths: Map<string, BabelFunction>;
 }
 
-const EMPTY_COMPILED_FILE: CompiledFile = { functions: [], loadModuleFunction: () => null };
+const EMPTY_COMPILED_FILE: CompiledFile = {
+  functions: [],
+  loadModuleFunction: () => null,
+  lowerModuleFunction: () => null,
+};
 
 const isModuleLevel = (path: NodePath | null): boolean =>
   path !== null &&
@@ -177,23 +182,25 @@ const lowerModuleFunction = (
   return hir;
 };
 
-const createModuleFunctionLoader = (
-  fileName: string,
-  code: string,
-  pluginOptions: ParsedPluginOptions,
-  { programPath, moduleFunctionPaths }: ProgramFunctions,
-): ModuleFunctionLoader => {
+const createModuleFunctionLowerer =
+  (
+    fileName: string,
+    code: string,
+    pluginOptions: ParsedPluginOptions,
+    { programPath, moduleFunctionPaths }: ProgramFunctions,
+  ): ModuleFunctionLoader =>
+  (functionName) => {
+    const functionPath = moduleFunctionPaths.get(functionName);
+    return functionPath && programPath
+      ? lowerModuleFunction(functionPath, programPath, pluginOptions, fileName, code)
+      : null;
+  };
+
+const createModuleFunctionLoader = (lower: ModuleFunctionLoader): ModuleFunctionLoader => {
   const moduleFunctionsByName = new Map<string, HIRFunction | null>();
   return (functionName) => {
-    if (!moduleFunctionsByName.has(functionName)) {
-      const functionPath = moduleFunctionPaths.get(functionName);
-      moduleFunctionsByName.set(
-        functionName,
-        functionPath && programPath
-          ? lowerModuleFunction(functionPath, programPath, pluginOptions, fileName, code)
-          : null,
-      );
-    }
+    if (!moduleFunctionsByName.has(functionName))
+      moduleFunctionsByName.set(functionName, lower(functionName));
     return moduleFunctionsByName.get(functionName) ?? null;
   };
 };
@@ -292,8 +299,10 @@ export const compileFile = (
     debugLogIRs: createLoweringLogger(collector.recordLowering),
   });
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
+  const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
   return {
     functions: collector.getFunctions(programFunctions.namesByLocation),
-    loadModuleFunction: createModuleFunctionLoader(fileName, code, pluginOptions, programFunctions),
+    loadModuleFunction: createModuleFunctionLoader(lower),
+    lowerModuleFunction: lower,
   };
 };
