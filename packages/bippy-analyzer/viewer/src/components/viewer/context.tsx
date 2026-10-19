@@ -7,13 +7,12 @@ import type { ViewMode } from "@/lib/view-mode";
 import type { Example, GraphNode, ViewComponent, ViewFile } from "@/model";
 import { useHoverStore } from "@/store/hover";
 
-export interface ViewerState {
+interface ViewerState {
   examples: Example[];
   name: string | null;
   mode: ViewMode;
   view: ViewFile | null;
   json: string | null;
-  open: (name: string | null) => void;
   setMode: (mode: ViewMode) => void;
   index: GraphIndex | null;
   colorByNodeId: Map<string, string>;
@@ -46,14 +45,13 @@ export const ViewerProvider = ({
     [view],
   );
   useEffect(() => setIndex(index), [index, setIndex]);
-  const open = useCallback((next: string | null) => router.push(getRouteHref(next)), [router]);
   const setMode = useCallback(
     (next: ViewMode) => router.replace(getRouteHref(name, next)),
     [router, name],
   );
   const value = useMemo<ViewerState>(
-    () => ({ examples, name, mode, view, json, open, setMode, index, colorByNodeId }),
-    [examples, name, mode, view, json, open, setMode, index, colorByNodeId],
+    () => ({ examples, name, mode, view, json, setMode, index, colorByNodeId }),
+    [examples, name, mode, view, json, setMode, index, colorByNodeId],
   );
   return <ViewerContext value={value}>{children}</ViewerContext>;
 };

@@ -1,6 +1,6 @@
 import { isViewMode, type ViewMode } from "./view-mode";
 
-export interface Route {
+interface Route {
   name: string | null;
   mode: ViewMode;
 }

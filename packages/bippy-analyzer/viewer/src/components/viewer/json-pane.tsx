@@ -1,27 +1,14 @@
 import { Suspense, useMemo } from "react";
-import { File, Virtualizer, type FileOptions } from "@pierre/diffs/react";
-import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
+import { File, Virtualizer } from "@pierre/diffs/react";
+import { Spinner } from "@/components/ui/spinner";
+import { useFileOptions } from "@/hooks/use-file-options";
+import { useHighlighter } from "@/hooks/use-highlighter";
 import { useIsClient } from "@/hooks/use-is-client";
-import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import { useViewer } from "./context";
-import { CodeSkeleton } from "./skeletons";
-
-const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
-  overflow: "wrap",
-  unsafeCSS:
-    ":host { background-color: transparent; --diffs-bg: transparent; } [data-gutter], [data-column-number] { background: transparent; }",
-  disableFileHeader: true,
-  disableErrorHandling: true,
-  preferredHighlighter: "shiki-js",
-};
 
 const JsonView = ({ json }: { json: string }) => {
   useHighlighter();
-  const { theme } = useResolvedTheme();
-  const options = useMemo<FileOptions<undefined, undefined>>(
-    () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme) }),
-    [theme],
-  );
+  const options = useFileOptions();
   const contents = useMemo(() => ({ name: "analysis.json", contents: json }), [json]);
   return (
     <Virtualizer
@@ -37,14 +24,10 @@ export const JsonPane = () => {
   const { json } = useViewer();
   const isClient = useIsClient();
   if (json === null) return null;
-  const skeleton = (
-    <div className="h-full overflow-hidden">
-      <CodeSkeleton source={json} />
-    </div>
-  );
-  if (!isClient) return skeleton;
+  const spinner = <Spinner className="h-full" />;
+  if (!isClient) return spinner;
   return (
-    <Suspense fallback={skeleton}>
+    <Suspense fallback={spinner}>
       <JsonView json={json} />
     </Suspense>
   );

@@ -1,6 +1,6 @@
 import type { ViewBranch, ViewComponent, ViewRegion, ViewState } from "@/model";
 
-export interface BranchNode {
+interface BranchNode {
   kind: "branch";
   id: string;
   branch: ViewBranch | null;
@@ -9,7 +9,7 @@ export interface BranchNode {
   no: TreeNode | null;
 }
 
-export interface LeafNode {
+interface LeafNode {
   kind: "leaf";
   id: string;
   state: ViewState;

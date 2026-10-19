@@ -11,6 +11,7 @@ import { describeNode } from "@/lib/describe";
 import { hasLegendContent } from "@/lib/graph";
 import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
+import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { DiagramPane } from "./diagram-pane";
 import { Examples } from "./examples";
@@ -22,6 +23,7 @@ import { Toolbar } from "./toolbar";
 const Shell = ({ children }: { children: ReactNode }) => {
   const { view, mode } = useViewer();
   const [isLegendOpen, setLegendOpen] = useState(true);
+  useHighlighterWarmup();
   const hasLegend = view !== null && hasLegendContent(view);
   return (
     <SidebarProvider

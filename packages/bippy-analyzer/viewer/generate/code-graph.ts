@@ -88,6 +88,53 @@ const findEnclosingHandler = (handlers: ViewHandler[], loc: ViewLocation): ViewH
       (a, b) => a.loc!.end.index - a.loc!.start.index - (b.loc!.end.index - b.loc!.start.index),
     )[0] ?? null;
 
+interface GraphSink {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+const addWriteNode = (
+  input: GraphInput,
+  binding: ViewBinding,
+  reference: Reference,
+  index: number,
+  sink: GraphSink,
+): void => {
+  const handler = findEnclosingHandler(input.handlers, reference.loc);
+  const id = `${input.idPrefix}write:${binding.id}:${index}`;
+  sink.nodes.push({
+    id,
+    kind: "write",
+    label: `writes ${binding.name}`,
+    loc: reference.loc,
+    bindingId: binding.id,
+    handlerId: handler?.id,
+  });
+  sink.edges.push({ from: id, to: `${input.idPrefix}binding:${binding.id}`, kind: "writes" });
+  if (handler)
+    sink.edges.push({ from: `${input.idPrefix}handler:${handler.id}`, to: id, kind: "writes" });
+};
+
+const addReadNode = (
+  input: GraphInput,
+  binding: ViewBinding,
+  reference: Reference,
+  index: number,
+  sink: GraphSink,
+): void => {
+  const handler = findEnclosingHandler(input.handlers, reference.loc);
+  const id = `${input.idPrefix}read:${binding.id}:${index}`;
+  sink.nodes.push({
+    id,
+    kind: "read",
+    label: handler ? `${binding.name} read by ${handler.label}` : `${binding.name} on screen`,
+    loc: reference.loc,
+    bindingId: binding.id,
+    handlerId: handler?.id,
+  });
+  sink.edges.push({ from: `${input.idPrefix}binding:${binding.id}`, to: id, kind: "reads" });
+};
+
 const addBindingNodes = (
   input: GraphInput,
   references: Reference[],
@@ -95,47 +142,23 @@ const addBindingNodes = (
   nodes: GraphNode[],
   edges: GraphEdge[],
 ): void => {
+  const sink = { nodes, edges };
   for (const binding of input.bindings) {
-    if (!binding.loc) continue;
-    const bindingNodeId = `${input.idPrefix}binding:${binding.id}`;
+    const { loc } = binding;
+    if (!loc) continue;
     nodes.push({
-      id: bindingNodeId,
+      id: `${input.idPrefix}binding:${binding.id}`,
       kind: "binding",
       label: `${binding.name} · ${binding.domain}`,
-      loc: binding.loc,
+      loc,
       bindingId: binding.id,
     });
     const setterName = setters.get(binding.id);
     references.forEach((reference, index) => {
-      if (contains(binding.loc, reference.loc)) return;
-      if (reference.name === setterName) {
-        const handler = findEnclosingHandler(input.handlers, reference.loc);
-        const id = `${input.idPrefix}write:${binding.id}:${index}`;
-        nodes.push({
-          id,
-          kind: "write",
-          label: `writes ${binding.name}`,
-          loc: reference.loc,
-          bindingId: binding.id,
-          handlerId: handler?.id,
-        });
-        edges.push({ from: id, to: bindingNodeId, kind: "writes" });
-        if (handler)
-          edges.push({ from: `${input.idPrefix}handler:${handler.id}`, to: id, kind: "writes" });
-        return;
-      }
-      if (reference.name !== binding.name || reference.isCall) return;
-      const handler = findEnclosingHandler(input.handlers, reference.loc);
-      const id = `${input.idPrefix}read:${binding.id}:${index}`;
-      nodes.push({
-        id,
-        kind: "read",
-        label: handler ? `${binding.name} read by ${handler.label}` : `${binding.name} on screen`,
-        loc: reference.loc,
-        bindingId: binding.id,
-        handlerId: handler?.id,
-      });
-      edges.push({ from: bindingNodeId, to: id, kind: "reads" });
+      if (contains(loc, reference.loc)) return;
+      if (reference.name === setterName) addWriteNode(input, binding, reference, index, sink);
+      else if (reference.name === binding.name && !reference.isCall)
+        addReadNode(input, binding, reference, index, sink);
     });
   }
 };

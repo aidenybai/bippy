@@ -7,7 +7,7 @@ export interface Box {
   height: number;
 }
 
-export interface LineLookup {
+interface LineLookup {
   origin: DOMRect;
   getLine: (line: number) => Element | null;
 }

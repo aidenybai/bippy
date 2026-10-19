@@ -8,11 +8,12 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
-import { File, type FileOptions } from "@pierre/diffs/react";
+import { File } from "@pierre/diffs/react";
+import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
-import { getCodeTheme, useHighlighter } from "@/hooks/use-highlighter";
+import { useFileOptions } from "@/hooks/use-file-options";
+import { useHighlighter } from "@/hooks/use-highlighter";
 import { useIsClient } from "@/hooks/use-is-client";
-import { useResolvedTheme } from "@/hooks/use-resolved-theme";
 import { useTokenBoxes, type PlacedToken, type TokenLayout } from "@/hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "@/lib/arcs";
 import { describeNode } from "@/lib/describe";
@@ -23,17 +24,7 @@ import type { GraphNode } from "@/model";
 import { useHoverStore, type TokenAnchor } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useLoadedView, useViewer } from "./context";
-import { CodeSkeleton } from "./skeletons";
 import { TokenMark } from "./token-mark";
-
-const FILE_OPTIONS: Omit<FileOptions<undefined, undefined>, "theme"> = {
-  overflow: "wrap",
-  unsafeCSS:
-    ":host { background-color: transparent; --diffs-bg: transparent; } [data-gutter], [data-column-number] { background: transparent; }",
-  disableFileHeader: true,
-  disableErrorHandling: true,
-  preferredHighlighter: "shiki-js",
-};
 
 const contains = (box: Box, x: number, y: number): boolean =>
   x >= box.x - 2 && x <= box.x + box.width + 2 && y >= box.y && y <= box.y + box.height;
@@ -169,14 +160,6 @@ const Overlay = ({ layout }: { layout: TokenLayout }) => {
   );
 };
 
-const useFileOptions = (onPostRender: () => void): FileOptions<undefined, undefined> => {
-  const { theme } = useResolvedTheme();
-  return useMemo(
-    () => ({ ...FILE_OPTIONS, theme: getCodeTheme(theme), onPostRender }),
-    [theme, onPostRender],
-  );
-};
-
 const CodeView = () => {
   const view = useLoadedView();
   useHighlighter();
@@ -206,12 +189,11 @@ const CodeView = () => {
 };
 
 export const SourcePane = () => {
-  const view = useLoadedView();
   const isClient = useIsClient();
-  const skeleton = <CodeSkeleton source={view.source} />;
+  const spinner = <Spinner className="h-full" />;
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden overscroll-none [scrollbar-gutter:stable]">
-      {isClient ? <Suspense fallback={skeleton}>{<CodeView />}</Suspense> : skeleton}
+      {isClient ? <Suspense fallback={spinner}>{<CodeView />}</Suspense> : spinner}
     </div>
   );
 };

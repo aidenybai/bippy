@@ -1,6 +1,6 @@
 import type { GraphNode, ViewBranch, ViewComponent, ViewState, ViewUpdate } from "@/model";
 
-export type Arm = "consequent" | "alternate";
+type Arm = "consequent" | "alternate";
 
 export const getArmOutcome = (branch: ViewBranch, state: ViewState): Arm | null => {
   if (state.conditions.includes(branch.test)) return "consequent";

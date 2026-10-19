@@ -5,7 +5,13 @@ import { Code } from "@/components/ui/code";
 import { getSolidColor } from "@/lib/colors";
 import { getStateTransitions, type StateTransition } from "@/lib/diagram";
 import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
-import { buildDecisionTree, collectEdges, collectNodes, type TreeNode } from "@/lib/tree";
+import {
+  buildDecisionTree,
+  collectEdges,
+  collectNodes,
+  type TreeEdge,
+  type TreeNode,
+} from "@/lib/tree";
 import type { ViewComponent, ViewHandler, ViewRegion } from "@/model";
 import { Chip } from "./chip";
 import { useViewer } from "./context";
@@ -52,27 +58,27 @@ const getNodeSize = (node: TreeNode): { width: number; height: number } =>
     ? { width: LEAF_WIDTH, height: LEAF_HEIGHT }
     : { width: Math.min(320, node.condition.length * CHAR_WIDTH + 20), height: BRANCH_HEIGHT };
 
-const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null => {
-  const root = buildDecisionTree(component, region);
-  if (!root) return null;
+const getLabelWidth = (handler: ViewHandler | undefined): number =>
+  (handler?.label.length ?? 4) * CHAR_WIDTH + 12;
+
+const createGraph = (nodes: TreeNode[], treeEdges: TreeEdge[]): graphlib.Graph => {
   const graph = new dagre.graphlib.Graph({ multigraph: true });
   graph.setGraph({ rankdir: "TB", nodesep: 28, ranksep: 36, marginx: 8, marginy: 8 });
   graph.setDefaultEdgeLabel(() => ({}));
-  const nodes = collectNodes(root);
   for (const node of nodes) graph.setNode(node.id, getNodeSize(node));
-  const treeEdges = collectEdges(root);
   treeEdges.forEach((edge, order) =>
     graph.setEdge(edge.from, edge.to, { width: 12, height: 16, labelpos: "c" }, `t${order}`),
   );
-  const allTransitions = getStateTransitions(component, region.states);
-  const transitions = allTransitions.filter((transition) => transition.from !== transition.to);
-  const loops = allTransitions.filter((transition) => transition.from === transition.to);
-  const handlersById = new Map(component.handlers.map((handler) => [handler.id, handler]));
-  const labelWidth = (handler: ViewHandler | undefined): number =>
-    (handler?.label.length ?? 4) * CHAR_WIDTH + 12;
+  return graph;
+};
+
+const addTransitionEdges = (
+  graph: graphlib.Graph,
+  transitions: StateTransition[],
+  handlersById: Map<string, ViewHandler>,
+): void => {
   transitions.forEach((transition, order) => {
-    const handler = handlersById.get(transition.handlerId);
-    const width = labelWidth(handler);
+    const width = getLabelWidth(handlersById.get(transition.handlerId));
     graph.setEdge(
       `leaf:${transition.from}`,
       `leaf:${transition.to}`,
@@ -80,13 +86,27 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
       `a${order}`,
     );
   });
+};
+
+const readEdge = (graph: graphlib.Graph, from: string, to: string, name: string) => {
+  const edge = graph.edge(from, to, name);
+  return { points: edge.points, label: { x: edge.x, y: edge.y } };
+};
+
+const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null => {
+  const root = buildDecisionTree(component, region);
+  if (!root) return null;
+  const nodes = collectNodes(root);
+  const treeEdges = collectEdges(root);
+  const graph = createGraph(nodes, treeEdges);
+  const allTransitions = getStateTransitions(component, region.states);
+  const transitions = allTransitions.filter((transition) => transition.from !== transition.to);
+  const loops = allTransitions.filter((transition) => transition.from === transition.to);
+  const handlersById = new Map(component.handlers.map((handler) => [handler.id, handler]));
+  addTransitionEdges(graph, transitions, handlersById);
   dagre.layout(graph);
   const size = graph.graph();
-  const read = (from: string, to: string, name: string): { points: Point[]; label: Point } => {
-    const edge = graph.edge(from, to, name);
-    return { points: edge.points, label: { x: edge.x, y: edge.y } };
-  };
-  const loopEdges = layoutLoops(loops, graph, handlersById, labelWidth);
+  const loopEdges = layoutLoops(loops, graph, handlersById);
   return {
     width: Math.max(size.width ?? 0, ...loopEdges.map((edge) => edge.right)),
     height: size.height ?? 0,
@@ -96,13 +116,13 @@ const layoutTree = (component: ViewComponent, region: ViewRegion): Layout | null
       ...treeEdges.map((edge, order) => ({
         id: `t${order}`,
         answer: edge.answer,
-        ...read(edge.from, edge.to, `t${order}`),
+        ...readEdge(graph, edge.from, edge.to, `t${order}`),
       })),
       ...transitions.map((transition, order) => ({
         id: `a${order}`,
         transition,
         handler: handlersById.get(transition.handlerId),
-        ...read(`leaf:${transition.from}`, `leaf:${transition.to}`, `a${order}`),
+        ...readEdge(graph, `leaf:${transition.from}`, `leaf:${transition.to}`, `a${order}`),
       })),
     ],
   };
@@ -118,7 +138,6 @@ const layoutLoops = (
   loops: StateTransition[],
   graph: graphlib.Graph,
   handlersById: Map<string, ViewHandler>,
-  labelWidth: (handler: ViewHandler | undefined) => number,
 ): LoopEdge[] => {
   const perLeaf = new Map<number, number>();
   for (const loop of loops) perLeaf.set(loop.from, (perLeaf.get(loop.from) ?? 0) + 1);
@@ -141,7 +160,7 @@ const layoutLoops = (
       labelAlign: "start",
       transition: loop,
       handler,
-      right: labelX + labelWidth(handler) + 8,
+      right: labelX + getLabelWidth(handler) + 8,
     };
   });
 };

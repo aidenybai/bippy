@@ -6,7 +6,7 @@ export interface TokenAnchor {
   getBoundingClientRect: () => DOMRect;
 }
 
-export interface FocusRequest {
+interface FocusRequest {
   name: string;
   id: number;
 }

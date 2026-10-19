@@ -36,7 +36,7 @@ interface SidebarContextValue {
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
-export const useSidebar = (): SidebarContextValue => {
+const useSidebar = (): SidebarContextValue => {
   const context = useContext(SidebarContext);
   if (!context) throw new Error("useSidebar must be used within a SidebarProvider.");
   return context;
@@ -130,20 +130,8 @@ const MobileSidebar = ({ side, title, children }: SidebarProps) => {
   );
 };
 
-export const Sidebar = ({
-  side = "right",
-  title = "Sidebar",
-  className,
-  children,
-  ...props
-}: SidebarProps) => {
-  const { isMobile, state, isAnimated } = useSidebar();
-  if (isMobile)
-    return (
-      <MobileSidebar side={side} title={title}>
-        {children}
-      </MobileSidebar>
-    );
+const DesktopSidebar = ({ side, className, children, ...props }: SidebarProps) => {
+  const { state, isAnimated } = useSidebar();
   return (
     <div
       className="group peer hidden text-foreground md:block"
@@ -174,6 +162,12 @@ export const Sidebar = ({
       </div>
     </div>
   );
+};
+
+export const Sidebar = ({ side = "right", title = "Sidebar", ...props }: SidebarProps) => {
+  const { isMobile } = useSidebar();
+  if (isMobile) return <MobileSidebar side={side} title={title} {...props} />;
+  return <DesktopSidebar side={side} title={title} {...props} />;
 };
 
 export const SidebarTrigger = ({ className, onClick, ...props }: ComponentProps<typeof Button>) => {

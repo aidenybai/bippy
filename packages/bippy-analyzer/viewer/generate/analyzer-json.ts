@@ -1,7 +1,7 @@
 import { analyzeProject, serializeProjectAnalysis } from "../../src/index";
 import type { AbstractValue, ComponentAnalysis, StateReport } from "../../src/index";
 
-export interface AnalyzerJsonReport extends Omit<StateReport, "places"> {
+interface AnalyzerJsonReport extends Omit<StateReport, "places"> {
   places: Record<string, AbstractValue[]>;
 }
 
@@ -10,7 +10,7 @@ export interface AnalyzerJsonComponent {
   report: AnalyzerJsonReport;
 }
 
-export interface AnalyzerSource {
+interface AnalyzerSource {
   tsconfig: string;
   fileFilter: string | null;
 }
@@ -49,7 +49,7 @@ const assertComponents: (value: unknown) => asserts value is AnalyzerJsonCompone
       throw new Error("Analyzer output has a malformed component");
 };
 
-export const deserializeAnalyzerOutput = (text: string): AnalyzerJsonComponent[] => {
+const deserializeAnalyzerOutput = (text: string): AnalyzerJsonComponent[] => {
   const components = resolveReferences(JSON.parse(text));
   assertComponents(components);
   return components;
