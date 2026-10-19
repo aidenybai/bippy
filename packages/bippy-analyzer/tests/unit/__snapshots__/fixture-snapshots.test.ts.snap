@@ -373,6 +373,54 @@ stateDiagram-v2
   S2: pages?.map(…) != null ? Unknown(member) : undefined · #lt;p#gt; ⚠ items.length " items""
 `;
 
+exports[`fixture analysis > FileRow keeps its render tree and handlers 1`] = `
+"---
+title: FileRow src/helpers.tsx:6
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FileRow"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ opened = opened + 1"]):::event
+  n2 -.-> n3
+  n4{"path.endsWith(#quot;.ts#quot;)"}
+  n2 --> n4
+  n5["#lt;span#gt; #quot;TS#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;span#gt; #quot;File#quot;"]
+  n4 -->|✗| n6
+  n7["#quot; #quot;"]
+  n2 --> n7
+  n8["{path}"]
+  n2 --> n8
+  n9["#quot; #quot;"]
+  n2 --> n9
+  n10{"opened #gt; 0"}
+  n2 --> n10
+  n11["#lt;b#gt; {opened}"]
+  n10 -->|✓| n11"
+`;
+
+exports[`fixture analysis > FileRow keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FileRow src/helpers.tsx:6
+---
+stateDiagram-v2
+  direction LR
+  state "FileRow" as regions {
+    %% path.endsWith(".ts")
+    S1: path.endsWith(".ts") · #lt;span#gt; "TS"
+    S2: !path.endsWith(".ts") · #lt;span#gt; "File"
+    --
+    %% opened
+    S3: opened #gt; 0 · #lt;b#gt; {opened}
+    S4: opened #lt;= 0 · ∅
+    S3 --> S4: setOpened(opened + 1)
+    S4 --> S3: setOpened(opened + 1)
+  }"
+`;
+
 exports[`fixture analysis > FilterLabel keeps its render tree and handlers 1`] = `
 "---
 title: FilterLabel src/literals.tsx:6

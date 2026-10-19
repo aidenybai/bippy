@@ -84,11 +84,15 @@ interface ProgramFunctions {
 
 const EMPTY_COMPILED_FILE: CompiledFile = { functions: [], loadModuleFunction: () => null };
 
+const isModuleLevel = (path: NodePath | null): boolean =>
+  path !== null &&
+  (path.isProgram() || (path.isExportNamedDeclaration() && isModuleLevel(path.parentPath)));
+
 const isModuleScopeFunction = (path: NodePath<types.Function>): path is BabelFunction => {
   const isAtModuleScope =
-    path.parentPath.isProgram() ||
+    isModuleLevel(path.parentPath) ||
     (path.parentPath.isVariableDeclarator() &&
-      Boolean(path.parentPath.parentPath.parentPath?.isProgram()));
+      isModuleLevel(path.parentPath.parentPath.parentPath));
   return (
     isAtModuleScope &&
     (path.isFunctionDeclaration() ||

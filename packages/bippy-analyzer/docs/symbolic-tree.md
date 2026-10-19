@@ -110,6 +110,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    What each handler does:
    - `setX(...)`, `setX(prev => ...)`, and `dispatch(action)` evaluated through the reducer
    - calls to local and module functions are followed, and a call to a function a condition chooses, like `isDocument ? setDraggedDocument : setDraggedFolder`, may be either
+   - a helper that returns JSX, like `getFileIcon(path)`, is followed into whichever file of the project declares it, so its branches become the component's
    - `catch` blocks run too, as what a handler tries may throw
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
    - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it. It may not happen, since a consumer can render without its provider.

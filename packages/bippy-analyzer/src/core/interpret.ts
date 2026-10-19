@@ -229,6 +229,7 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
 export class Interpreter {
   #resolver: SourceFileResolver;
   readonly #loadProjectHook: ProjectHookLoader;
+  readonly #loadProjectFunction: ProjectHookLoader;
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -255,12 +256,14 @@ export class Interpreter {
     resolver: SourceFileResolver,
     loadModuleFunction: ModuleFunctionLoader,
     loadProjectHook: ProjectHookLoader,
+    loadProjectFunction: ProjectHookLoader,
     contextSetterFields: ContextSetterFields,
     actionsByStore: Map<string, StoreActions>,
   ) {
     this.#resolver = resolver;
     this.#functions.addModule(resolver, loadModuleFunction);
     this.#loadProjectHook = loadProjectHook;
+    this.#loadProjectFunction = loadProjectFunction;
     this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
   }
 
@@ -885,6 +888,11 @@ export class Interpreter {
       : createBindingValue(storeBinding);
   }
 
+  #findProjectFunction(calleePlace: Place): ProjectHook | null {
+    const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
+    return declarationKey ? this.#loadProjectFunction(declarationKey) : null;
+  }
+
   #findProjectHook(calleePlace: Place): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
     return declarationKey ? this.#loadProjectHook(declarationKey) : null;
@@ -962,6 +970,11 @@ export class Interpreter {
     if (this.#handlerEffects) return createUnknown("call", loc);
     this.#forgetCallbackWrites(argumentValues, loc);
     if (this.#resolver.isReactElement(loc)) {
+      const helper = this.#findProjectFunction(callSite.calleePlace);
+      if (helper && this.#inlineDepth < MAX_INLINE_DEPTH) {
+        this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
+        return this.#inlineFunction(helper.hirFunction, callSite, walkState);
+      }
       this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
       return createUnknown("call", loc);
     }

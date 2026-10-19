@@ -46,9 +46,22 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
   const { strict, strictNullChecks } = project.compilerOptions;
   const isStrictNullChecks = strictNullChecks ?? strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
+  const projectFunctionsByDeclaration = new Map<string, ProjectHook | null>();
+  const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const actionsByStore = new Map<string, StoreActions>();
   const loadProjectHook = (declarationKey: string): ProjectHook | null =>
     projectHooksByDeclaration.get(declarationKey) ?? null;
+  const lowerProjectFunction = (declarationKey: string): ProjectHook | null => {
+    const { path, name } = parseDeclarationKey(declarationKey);
+    const loader = loadersByPath.get(path);
+    const hirFunction = loader?.loadModuleFunction(name) ?? null;
+    return loader && hirFunction ? { ...loader, hirFunction } : null;
+  };
+  const loadProjectFunction = (declarationKey: string): ProjectHook | null => {
+    if (!projectFunctionsByDeclaration.has(declarationKey))
+      projectFunctionsByDeclaration.set(declarationKey, lowerProjectFunction(declarationKey));
+    return projectFunctionsByDeclaration.get(declarationKey) ?? null;
+  };
   return fileNames.flatMap((fileName): FileContext[] => {
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
@@ -58,6 +71,10 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
     });
     for (const [storeKey, actions] of collectStoreActions(sourceFile))
       actionsByStore.set(storeKey, actions);
+    loadersByPath.set(sourceFile.path, {
+      resolver,
+      loadModuleFunction: compiled.loadModuleFunction,
+    });
     for (const { functionType, hir, name } of compiled.functions)
       if (functionType === "Hook" && hir)
         projectHooksByDeclaration.set(createDeclarationKey(sourceFile.path, name), {
@@ -71,6 +88,7 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
         resolver,
         compiled,
         loadProjectHook,
+        loadProjectFunction,
         actionsByStore,
         exportNames: collectExportNames(sourceFile),
         displayNames: collectDisplayNames(sourceFile),

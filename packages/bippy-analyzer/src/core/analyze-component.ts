@@ -28,6 +28,7 @@ export interface FileContext {
   resolver: SourceFileResolver;
   compiled: CompiledFile;
   loadProjectHook: ProjectHookLoader;
+  loadProjectFunction: ProjectHookLoader;
   actionsByStore: Map<string, StoreActions>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
@@ -119,6 +120,7 @@ export const analyzeComponent = (
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
     fileContext.loadProjectHook,
+    fileContext.loadProjectFunction,
     contextSetterFields,
     fileContext.actionsByStore,
   );
