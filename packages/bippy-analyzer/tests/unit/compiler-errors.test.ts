@@ -74,4 +74,11 @@ describe("compiler errors", () => {
       ["!Unknown(throws)", "searchTitles(query, 20).length !== 0"],
     ]);
   });
+
+  it("lowers a spread child as the array it spreads", () => {
+    const { analysis, report } = getComponent(project, "ThemePicker");
+    expect(analysis.bailouts).toEqual([]);
+    expect(report.states).toHaveLength(1);
+    expect(analysis.handlers).toHaveLength(1);
+  });
 });
