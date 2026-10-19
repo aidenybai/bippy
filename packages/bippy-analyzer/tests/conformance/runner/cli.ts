@@ -12,8 +12,8 @@ import {
   formatCounterexamples,
   formatMountFailures,
   summarizeVerdicts,
-} from "../verifier/score";
-import type { ComponentVerdict } from "../verifier/score";
+} from "../verifier/verdict-report";
+import type { ComponentVerdict } from "../verifier/verdicts";
 import { verifyProject } from "../verifier/verify";
 import { getErrorChain } from "../verifier/reasons";
 
