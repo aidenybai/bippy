@@ -67,7 +67,7 @@ export interface Capture {
 
 export interface Action {
   key: string;
-  kind: "click" | "change" | "submit";
+  kind: "click" | "change" | "submit" | "keydown" | "focus" | "blur" | "hover" | "unhover";
   tag: string;
   label: string;
   isInChild: boolean;

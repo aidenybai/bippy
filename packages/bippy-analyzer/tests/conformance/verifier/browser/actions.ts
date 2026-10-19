@@ -14,9 +14,19 @@ interface MountedAction extends Action {
 
 interface ActionCandidate extends Pick<MountedAction, "kind" | "value"> {}
 
+interface DomAction {
+  kind: Action["kind"];
+  isCandidate: (props: Record<string, unknown>, tag: string) => boolean;
+  getValues: (element: HTMLElement) => string[];
+  hasValue: boolean;
+  perform: (element: HTMLElement, value: string) => void;
+}
+
 const INPUT_TAGS = new Set(["input", "textarea", "select"]);
 const FORM_ACTION_TAGS = new Set(["button", "input"]);
 const CHANGE_VALUES = ["text", ""];
+const KEYS = ["Enter", "Escape"];
+const NO_VALUES = [""];
 const MAX_SELECT_CHANGE_VALUES = 3;
 
 const getLabel = (element: HTMLElement): string =>
@@ -39,33 +49,112 @@ const getChangeValues = (element: HTMLElement): string[] =>
       )
     : CHANGE_VALUES;
 
-const isClickable = (props: Record<string, unknown>, tag: string): boolean =>
-  props.disabled !== true &&
-  (typeof props.onClick === "function" ||
-    (FORM_ACTION_TAGS.has(tag) && typeof props.formAction === "function"));
+const hasHandler = (props: Record<string, unknown>, names: string[]): boolean =>
+  names.some((name) => typeof props[name] === "function");
 
-const isSubmittable = (props: Record<string, unknown>, tag: string): boolean =>
-  tag === "form" && (typeof props.onSubmit === "function" || typeof props.action === "function");
+const setInputValue = (element: HTMLElement, value: string): void => {
+  const prototype = Object.getPrototypeOf(element);
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
+  setter?.call(element, value);
+  element.dispatchEvent(new Event("input", { bubbles: true }));
+  element.dispatchEvent(new Event("change", { bubbles: true }));
+};
+
+const dispatchAll = (element: HTMLElement, events: Event[]): void => {
+  for (const event of events) element.dispatchEvent(event);
+};
+
+const DOM_ACTIONS: DomAction[] = [
+  {
+    kind: "click",
+    isCandidate: (props, tag) =>
+      props.disabled !== true &&
+      (hasHandler(props, ["onClick"]) ||
+        (FORM_ACTION_TAGS.has(tag) && hasHandler(props, ["formAction"]))),
+    getValues: () => NO_VALUES,
+    hasValue: false,
+    perform: (element) => element.click(),
+  },
+  {
+    kind: "submit",
+    isCandidate: (props, tag) => tag === "form" && hasHandler(props, ["onSubmit", "action"]),
+    getValues: () => NO_VALUES,
+    hasValue: false,
+    perform: (element) => {
+      if (element instanceof HTMLFormElement) element.requestSubmit();
+    },
+  },
+  {
+    kind: "change",
+    isCandidate: (props, tag) =>
+      INPUT_TAGS.has(tag) && props.type !== "file" && hasHandler(props, ["onChange", "onInput"]),
+    getValues: getChangeValues,
+    hasValue: true,
+    perform: setInputValue,
+  },
+  {
+    kind: "keydown",
+    isCandidate: (props) => hasHandler(props, ["onKeyDown"]),
+    getValues: () => KEYS,
+    hasValue: true,
+    perform: (element, key) =>
+      dispatchAll(element, [
+        new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+      ]),
+  },
+  {
+    kind: "focus",
+    isCandidate: (props) => hasHandler(props, ["onFocus"]),
+    getValues: () => NO_VALUES,
+    hasValue: false,
+    perform: (element) => dispatchAll(element, [new FocusEvent("focusin", { bubbles: true })]),
+  },
+  {
+    kind: "blur",
+    isCandidate: (props) => hasHandler(props, ["onBlur"]),
+    getValues: () => NO_VALUES,
+    hasValue: false,
+    perform: (element) => dispatchAll(element, [new FocusEvent("focusout", { bubbles: true })]),
+  },
+  {
+    kind: "hover",
+    isCandidate: (props) => hasHandler(props, ["onMouseEnter", "onPointerEnter"]),
+    getValues: () => NO_VALUES,
+    hasValue: false,
+    perform: (element) =>
+      dispatchAll(element, [
+        new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }),
+        new MouseEvent("mouseover", { bubbles: true }),
+      ]),
+  },
+  {
+    kind: "unhover",
+    isCandidate: (props) => hasHandler(props, ["onMouseLeave", "onPointerLeave"]),
+    getValues: () => NO_VALUES,
+    hasValue: false,
+    perform: (element) =>
+      dispatchAll(element, [
+        new PointerEvent("pointerout", { bubbles: true, pointerType: "mouse" }),
+        new MouseEvent("mouseout", { bubbles: true }),
+      ]),
+  },
+];
+
+const DOM_ACTIONS_BY_KIND = new Map(DOM_ACTIONS.map((domAction) => [domAction.kind, domAction]));
 
 const getActionCandidates = (
   props: Record<string, unknown>,
   tag: string,
   element: HTMLElement,
-): ActionCandidate[] => {
-  const candidates: ActionCandidate[] = [];
-  if (isClickable(props, tag)) candidates.push({ kind: "click", value: "" });
-  if (isSubmittable(props, tag)) candidates.push({ kind: "submit", value: "" });
-  const isEditable =
-    INPUT_TAGS.has(tag) &&
-    props.type !== "file" &&
-    (typeof props.onChange === "function" || typeof props.onInput === "function");
-  if (isEditable)
-    for (const value of getChangeValues(element)) candidates.push({ kind: "change", value });
-  return candidates;
-};
+): ActionCandidate[] =>
+  DOM_ACTIONS.filter((domAction) => domAction.isCandidate(props, tag)).flatMap((domAction) =>
+    domAction.getValues(element).map((value) => ({ kind: domAction.kind, value })),
+  );
 
 const getActionBaseKey = (candidate: ActionCandidate, tag: string, label: string): string => {
-  const valueSuffix = candidate.kind === "change" ? `=${candidate.value}` : "";
+  const valueSuffix = DOM_ACTIONS_BY_KIND.get(candidate.kind)?.hasValue
+    ? `=${candidate.value}`
+    : "";
   return `${candidate.kind}:${tag}:${label}${valueSuffix}`;
 };
 
@@ -98,25 +187,11 @@ export const collectActions = (): MountedAction[] => {
   return actions;
 };
 
-const setInputValue = (element: HTMLElement, value: string): void => {
-  const prototype = Object.getPrototypeOf(element);
-  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
-  setter?.call(element, value);
-  element.dispatchEvent(new Event("input", { bubbles: true }));
-  element.dispatchEvent(new Event("change", { bubbles: true }));
-};
-
-const submitForm = (element: HTMLElement): void => {
-  if (element instanceof HTMLFormElement) element.requestSubmit();
-};
-
 export const performAction = async (key: string): Promise<Capture | null> => {
   const action = collectActions().find((candidate) => candidate.key === key);
   if (!action) return null;
   markDispatchersIdle();
-  if (action.kind === "click") action.element.click();
-  else if (action.kind === "submit") submitForm(action.element);
-  else setInputValue(action.element, action.value);
+  DOM_ACTIONS_BY_KIND.get(action.kind)?.perform(action.element, action.value);
   await settle();
   return captureMountedComponent();
 };
