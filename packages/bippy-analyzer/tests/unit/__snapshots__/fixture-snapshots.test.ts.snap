@@ -335,11 +335,11 @@ flowchart TD
   n4 --> n5
   n6(["onClick ⇒ isOpen = false"]):::event
   n5 -.-> n6
-  n7{"#t4 === undefined"}
+  n7{"icon === undefined"}
   n5 --> n7
   n8["#lt;span#gt; #quot;×#quot;"]
   n7 -->|✓| n8
-  n9["{#t4}"]
+  n9["{icon}"]
   n7 -->|✗| n9"
 `;
 
@@ -350,8 +350,8 @@ title: Dialog src/expression-defaults.tsx:7
 stateDiagram-v2
   direction LR
   S1: !isOpen · ∅
-  S2: isOpen ∧ #t4 === undefined · #lt;div#gt; #lt;button#gt; #lt;span#gt; "×"
-  S3: isOpen ∧ #t4 !== undefined · #lt;div#gt; #lt;button#gt; {#t4}
+  S2: isOpen ∧ icon === undefined · #lt;div#gt; #lt;button#gt; #lt;span#gt; "×"
+  S3: isOpen ∧ icon !== undefined · #lt;div#gt; #lt;button#gt; {icon}
   S2 --> S1: setIsOpen(false)
   S3 --> S1: setIsOpen(false)
   state "claims" as claims {
@@ -2063,7 +2063,7 @@ title: ToneLabel src/literal-constants.tsx:21
 flowchart TD
   classDef event stroke-dasharray: 4 2
   n1["ToneLabel"]
-  n2{"(#t1 === undefined ? #quot;calm#quot; : #t1) === #quot;loud#quot;"}
+  n2{"(tone === undefined ? #quot;calm#quot; : tone) === #quot;loud#quot;"}
   n1 --> n2
   n3["#lt;strong#gt; #quot;Loud#quot;"]
   n2 -->|✓| n3
@@ -2077,8 +2077,8 @@ title: ToneLabel src/literal-constants.tsx:21
 ---
 stateDiagram-v2
   direction LR
-  S1: (#t1 === undefined ? "calm" : #t1) === "loud" · #lt;strong#gt; "Loud"
-  S2: (#t1 === undefined ? "calm" : #t1) !== "loud" · #lt;span#gt; "Calm""
+  S1: (tone === undefined ? "calm" : tone) === "loud" · #lt;strong#gt; "Loud"
+  S2: (tone === undefined ? "calm" : tone) !== "loud" · #lt;span#gt; "Calm""
 `;
 
 exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
