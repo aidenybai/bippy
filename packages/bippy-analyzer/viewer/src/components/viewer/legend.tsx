@@ -34,6 +34,7 @@ const Section = ({ title, count, children }: SectionProps) => (
     <header className="flex items-center gap-3">
       <h3 className="font-medium text-text-2">{title}</h3>
       <span className="h-px flex-1 bg-border" />
+      {count > 0 && <span className="text-muted-foreground tabular-nums">{count}</span>}
     </header>
     {count === 0 ? (
       <p className="text-faint">None</p>
@@ -72,9 +73,6 @@ const ComponentPanel = ({
       <h2 className={isActive ? "font-medium text-foreground" : "font-medium text-text-2"}>
         {component.name}
       </h2>
-      <span className="ml-auto text-muted-foreground tabular-nums">
-        {component.states.length} states · {component.handlers.length} actions
-      </span>
     </CollapsibleTrigger>
     <CollapsibleContent>
       <ComponentContext value={component}>
