@@ -190,6 +190,15 @@ const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
 const isOwnedValue = (value: SymbolicValue): value is BindingValue =>
   value.kind === "Binding" && (value.binding.kind === "prop" || isStateBinding(value.binding));
 
+const REF_TYPE_PATTERN = /\b(?:Mutable)?RefObject\b|\bForwardedRef\b|\bRef</;
+const REF_CURRENT = "current";
+
+const isRefWrite = (ownedValue: BindingValue, storedProperty: string | null): boolean => {
+  const { domain } = ownedValue.binding;
+  const writesCurrent = ownedValue.path[0] === REF_CURRENT || storedProperty === REF_CURRENT;
+  return writesCurrent && domain.kind === "Opaque" && REF_TYPE_PATTERN.test(domain.typeText);
+};
+
 const getOwnedValues = (value: SymbolicValue): BindingValue[] => {
   if (value.kind === "Conditional")
     return [...getOwnedValues(value.consequent), ...getOwnedValues(value.alternate)];
@@ -629,16 +638,23 @@ export class Interpreter {
       const ownedValues = getOwnedValues(mutatedValue);
       const aliasedValue =
         ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(mutatedPlace);
+      const storedProperty =
+        instruction.value.kind === "PropertyStore" ? String(instruction.value.property) : null;
       for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
-        this.#trackOwnedMutation(ownedValue, mutatedPlace.loc);
+        this.#trackOwnedMutation(ownedValue, mutatedPlace.loc, storedProperty);
     }
   }
 
-  #trackOwnedMutation(ownedValue: BindingValue, loc: SourceLocation): void {
+  #trackOwnedMutation(
+    ownedValue: BindingValue,
+    loc: SourceLocation,
+    storedProperty: string | null,
+  ): void {
     const { binding } = ownedValue;
-    if (binding.kind === "prop")
+    if (binding.kind === "prop") {
+      if (isRefWrite(ownedValue, storedProperty)) return;
       this.#warn("prop-mutation", `mutates prop ${formatPlace(binding, ownedValue.path)}`, loc);
-    else if (this.#handlerEffects) this.#handlerEffects.addMutation(binding, loc);
+    } else if (this.#handlerEffects) this.#handlerEffects.addMutation(binding, loc);
     else this.#warn("render-mutation", `mutates ${binding.name} during render`, loc);
   }
 

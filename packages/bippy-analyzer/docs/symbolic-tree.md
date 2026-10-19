@@ -130,12 +130,12 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
 12. Checks the claims the code makes. A claim is something the author asserts that TypeScript takes on faith: `x as T` where `T` leaves out values `x` may hold, `x!`, `invariant(cond)` or `assert(cond)`, and the type argument of a `useState` or `useReducer`. Each is checked in every state where its code runs, under that state's conditions and the handler's guards. A cast to literals or a typed state is a membership test against the possible values; a non-null assertion or an invariant is a condition evaluated with the same solver as the branches. The verdict is `holds` when every state proves it, `broken` when some state refutes it, with the state and the shortest path of actions from the first render, and `unproven` when a state leaves it open, with the values that would break it, like `mode = "edit", user = null`. A claim whose values are opaque, such as `ref.current!`, is not recorded. The verifier does not check claims yet.
 13. Reports warnings from the compiler's mutation effects:
 
-| Warning           | When                                                                               |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| `lost-update`     | A handler mutates state, then sets it to the same array or object. React skips it. |
-| `state-mutation`  | A handler mutates state in place, before copying it or without setting it.         |
-| `render-mutation` | State is mutated during render.                                                    |
-| `prop-mutation`   | A prop is mutated, like `items.sort()` on an array prop.                           |
+| Warning           | When                                                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `lost-update`     | A handler mutates state, then sets it to the same array or object. React skips it.                                       |
+| `state-mutation`  | A handler mutates state in place, before copying it or without setting it.                                               |
+| `render-mutation` | State is mutated during render.                                                                                          |
+| `prop-mutation`   | A prop is mutated, like `items.sort()` on an array prop. A write through `.current` of a prop typed as a ref is not one. |
 
 ## The React Compiler source
 
