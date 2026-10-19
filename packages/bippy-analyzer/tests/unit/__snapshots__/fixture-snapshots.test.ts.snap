@@ -137,7 +137,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Coalesced keeps its render tree and handlers 1`] = `
 "---
-title: Coalesced src/claims.tsx:50
+title: Coalesced src/claims.tsx:49
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -156,7 +156,7 @@ flowchart TD
 
 exports[`fixture analysis > Coalesced keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: Coalesced src/claims.tsx:50
+title: Coalesced src/claims.tsx:49
 ---
 stateDiagram-v2
   direction LR
@@ -165,7 +165,7 @@ stateDiagram-v2
   S1 --> S2: useEffect([serverChecked])
   S2 --> S1: useEffect([serverChecked])
   state "claims" as claims {
-    claims1: holds checked stays within false | true L52
+    claims1: holds checked stays within false | true L51
   }"
 `;
 
@@ -380,7 +380,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > EmptyObjectCast keeps its render tree and handlers 1`] = `
 "---
-title: EmptyObjectCast src/claims.tsx:59
+title: EmptyObjectCast src/claims.tsx:58
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -391,14 +391,14 @@ flowchart TD
 
 exports[`fixture analysis > EmptyObjectCast keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: EmptyObjectCast src/claims.tsx:59
+title: EmptyObjectCast src/claims.tsx:58
 ---
 stateDiagram-v2
   direction LR
   S1: always · #lt;p#gt; ⚠ raw
   [*] --> S1
   state "claims" as claims {
-    claims1: unproven raw as "a" | "b" L59 · raw = undefined | {}
+    claims1: unproven raw as "a" | "b" L58 · raw = undefined | {}
   }"
 `;
 
@@ -569,7 +569,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
 "---
-title: GuardedCast src/claims.tsx:25
+title: GuardedCast src/claims.tsx:26
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -582,21 +582,21 @@ flowchart TD
 
 exports[`fixture analysis > GuardedCast keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: GuardedCast src/claims.tsx:25
+title: GuardedCast src/claims.tsx:26
 ---
 stateDiagram-v2
   direction LR
   S1: always · #lt;button#gt; {status}
   [*] --> S1
   state "claims" as claims {
-    claims1: unproven next as "idle" | "saving" L29 in S1 · next = string
-    claims2: unproven status stays within "idle" | "saving" L26 in S1 · set through a cast
+    claims1: unproven next as "idle" | "saving" L30 in S1 · next = string
+    claims2: unproven status stays within "idle" | "saving" L27 in S1 · set through a cast
   }"
 `;
 
 exports[`fixture analysis > GuardedWrite keeps its render tree and handlers 1`] = `
 "---
-title: GuardedWrite src/claims.tsx:40
+title: GuardedWrite src/claims.tsx:41
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -609,20 +609,20 @@ flowchart TD
 
 exports[`fixture analysis > GuardedWrite keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: GuardedWrite src/claims.tsx:40
+title: GuardedWrite src/claims.tsx:41
 ---
 stateDiagram-v2
   direction LR
   S1: always · #lt;button#gt; {status}
   [*] --> S1
   state "claims" as claims {
-    claims1: holds status stays within "idle" | "saving" L41
+    claims1: holds status stays within "idle" | "saving" L42
   }"
 `;
 
 exports[`fixture analysis > HiddenHandler keeps its render tree and handlers 1`] = `
 "---
-title: HiddenHandler src/claims.tsx:34
+title: HiddenHandler src/claims.tsx:35
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -639,15 +639,15 @@ flowchart TD
 
 exports[`fixture analysis > HiddenHandler keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: HiddenHandler src/claims.tsx:34
+title: HiddenHandler src/claims.tsx:35
 ---
 stateDiagram-v2
   direction LR
   S1: kind === "c" · #lt;p#gt; "c"
   S2: kind !== "c" · #lt;button#gt; {picked}
   state "claims" as claims {
-    claims1: holds kind as "a" | "b" L37
-    claims2: holds picked stays within "a" | "b" L35
+    claims1: holds kind as "a" | "b" L38
+    claims2: holds picked stays within "a" | "b" L36
   }"
 `;
 
@@ -868,7 +868,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `
 "---
-title: OpaqueCallback src/claims.tsx:61
+title: OpaqueCallback src/claims.tsx:60
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -885,7 +885,7 @@ flowchart TD
 
 exports[`fixture analysis > OpaqueCallback keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: OpaqueCallback src/claims.tsx:61
+title: OpaqueCallback src/claims.tsx:60
 ---
 stateDiagram-v2
   direction LR
@@ -893,10 +893,10 @@ stateDiagram-v2
   S2: !(user?.name) ∧ user != null · #lt;div#gt; {user.name} ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
   S3: !(user?.name) ∧ user == null · #lt;div#gt; ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
   state "claims" as claims {
-    claims1: unproven user! L65 · user = null
+    claims1: unproven user! L64 · user = null
   }
   state "bailouts" as bailouts {
-    bailouts1: unknown-call L64 call returns JSX the analysis can't see into
+    bailouts1: unknown-call L63 call returns JSX the analysis can't see into
   }"
 `;
 
@@ -1027,7 +1027,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
 "---
-title: Profile src/claims.tsx:10
+title: Profile src/claims.tsx:11
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -1060,7 +1060,7 @@ flowchart TD
 
 exports[`fixture analysis > Profile keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: Profile src/claims.tsx:10
+title: Profile src/claims.tsx:11
 ---
 stateDiagram-v2
   direction LR
@@ -1069,13 +1069,13 @@ stateDiagram-v2
   [*] --> S2
   S2 --> S1: "Save"
   state "claims" as claims {
-    claims1: unproven invariant(mode === "view" || user !== null) L13 · mode = "edit", user = null
-    claims2: unproven user as User L14 in S1 after "Save" · user = null
-    claims3: holds step as "a" | "b" L17
-    claims4: unproven user! L18 in S2 · user = null
-    claims5: broken "done" as "idle" | "saving" L20 in S2 · "done" = "done"
-    claims6: broken status stays within "idle" | "saving" L11 in S2 · set to "done"
-    claims7: holds step stays within "a" | "b" | "c" L12
+    claims1: unproven invariant(mode === "view" || user !== null) L14 · mode = "edit", user = null
+    claims2: unproven user as User L15 in S1 after "Save" · user = null
+    claims3: holds step as "a" | "b" L18
+    claims4: unproven user! L19 in S2 · user = null
+    claims5: broken "done" as "idle" | "saving" L21 in S2 · "done" = "done"
+    claims6: broken status stays within "idle" | "saving" L12 in S2 · set to "done"
+    claims7: holds step stays within "a" | "b" | "c" L13
   }"
 `;
 
