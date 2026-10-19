@@ -75,6 +75,19 @@ describe("compiler errors", () => {
     ]);
   });
 
+  it("assigns through a type cast on the left of an assignment", () => {
+    const { analysis, report } = getComponent(project, "SettingsForm");
+    expect(analysis.bailouts).toEqual([]);
+    expect(analysis.handlers.map((handler) => handler.updates[0]?.binding.name)).toEqual([
+      "settings",
+      "settings",
+    ]);
+    expect(report.states.map((state) => state.conditions)).toEqual([
+      ["!settings.title"],
+      ["settings.title"],
+    ]);
+  });
+
   it("lowers function declarations after the return they're used in", () => {
     const { analysis, report } = getComponent(project, "Stepper");
     expect(analysis.bailouts).toEqual([]);
