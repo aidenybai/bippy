@@ -24,6 +24,7 @@ import { isNullish } from "./utils/is-nullish";
 import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
+import { getTypeofNames } from "./utils/get-typeof-names";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 
 const CONSTANT_KEY = "#";
@@ -316,11 +317,46 @@ const distributeComparison = (value: SymbolicValue): ConditionalValue | null => 
   return null;
 };
 
+interface TypeofTest {
+  operand: SymbolicValue;
+  typeName: string;
+}
+
+const getTypeofTest = (value: BinaryExpressionValue): TypeofTest | null => {
+  const [operandSide, literalSide] = splitEquality(value);
+  if (operandSide.kind !== "UnaryExpression" || operandSide.operator !== "typeof") return null;
+  if (literalSide.kind !== "Primitive" || typeof literalSide.value !== "string") return null;
+  return { operand: operandSide.value, typeName: literalSide.value };
+};
+
+const canHaveTypeof = (value: AbstractValue, typeName: string, wantsMatch: boolean): boolean => {
+  const typeofNames = getTypeofNames(value);
+  if (!typeofNames) return true;
+  return wantsMatch
+    ? typeofNames.has(typeName)
+    : typeofNames.size > 1 || !typeofNames.has(typeName);
+};
+
+const evaluateTypeof = (
+  { operand, typeName }: TypeofTest,
+  isNegated: boolean,
+  constraints: Constraints,
+): boolean | null => {
+  const placeValues = getPossibleValues(operand, constraints);
+  if (!placeValues) return null;
+  if (placeValues.every((candidate) => !canHaveTypeof(candidate, typeName, false)))
+    return !isNegated;
+  if (placeValues.every((candidate) => !canHaveTypeof(candidate, typeName, true))) return isNegated;
+  return null;
+};
+
 const evaluateEquality = (
   value: BinaryExpressionValue,
   constraints: Constraints,
 ): boolean | null => {
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  const typeofTest = getTypeofTest(value);
+  if (typeofTest) return evaluateTypeof(typeofTest, isNegated, constraints);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive") return null;
   if (
@@ -604,6 +640,8 @@ const assumeEquality = (
   isTrue: boolean,
   constraints: Constraints,
 ): Constraints | null => {
+  const typeofTest = getTypeofTest(value);
+  if (typeofTest) return assumeTypeof(value, typeofTest, isTrue, constraints);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive" || placeSide.kind !== "Binding")
     return assumeOpaqueCondition(value, isTrue, constraints);
@@ -639,6 +677,20 @@ const withExactValue = (
   const assumed = cloneConstraints(constraints);
   assumed.possibleValues.set(getValuePlace(bindingValue), [{ kind: "Literal", value: literal }]);
   return assumed;
+};
+
+const assumeTypeof = (
+  value: BinaryExpressionValue,
+  { operand, typeName }: TypeofTest,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => {
+  if (operand.kind !== "Binding" || !getPossibleValues(operand, constraints))
+    return assumeOpaqueCondition(value, isTrue, constraints);
+  const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  return assumeByNarrowing(value, isTrue, operand, constraints, (candidate) =>
+    canHaveTypeof(candidate, typeName, wantsMatch) ? [candidate] : [],
+  );
 };
 
 const narrowTruthiness = (value: AbstractValue, isTruthy: boolean): AbstractValue[] => {
