@@ -95,7 +95,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
 
 1. Loads the project with `typescript/unstable/sync` (TypeScript 7).
 2. Parses each file with Babel and runs the React Compiler on it in `infer` mode, so it finds components by the compiler's own rules: a capitalized function that returns JSX or calls a hook, or one wrapped in `memo` or `forwardRef`.
-3. Keeps each component's HIR right after `inferReactivePlaces` and stops the compiler there. A function the compiler can't lower becomes a `compiler-error` bailout.
+3. Keeps each component's HIR right after `inferReactivePlaces` and stops the compiler there. A function the compiler can't lower becomes a `compiler-error` bailout. The patch also lowers any default value, like `icon = <Icon />` or `label = theme.closeLabel`, and any `case` test, which the compiler refuses when it can't prove reordering them is unobservable; the analysis doesn't reorder anything.
 4. Types the HIR with the compiler's `inferTypes`, backed by the checker through our patch:
    - React hooks and APIs resolve through the checker, which follows aliases and re-exports to React's declarations.
    - Values the compiler leaves untyped take their TypeScript type: primitives, arrays, `Map`, `Set`, readonly collections and function signatures. A second round lets methods like `items.push` resolve to the compiler's own signatures once `items` is known to be an array.

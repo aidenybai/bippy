@@ -318,6 +318,47 @@ stateDiagram-v2
   S2 --> S1: "Shuffle""
 `;
 
+exports[`fixture analysis > Dialog keeps its render tree and handlers 1`] = `
+"---
+title: Dialog src/expression-defaults.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Dialog"]
+  n2{"!isOpen"}
+  n1 --> n2
+  n3["∅"]
+  n2 -->|✓| n3
+  n4["#lt;div#gt;"]
+  n2 -->|✗| n4
+  n5["#lt;button#gt;"]
+  n4 --> n5
+  n6(["onClick ⇒ isOpen = false"]):::event
+  n5 -.-> n6
+  n7{"#t4 === undefined"}
+  n5 --> n7
+  n8["#lt;span#gt; #quot;×#quot;"]
+  n7 -->|✓| n8
+  n9["{#t4}"]
+  n7 -->|✗| n9"
+`;
+
+exports[`fixture analysis > Dialog keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Dialog src/expression-defaults.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: !isOpen · ∅
+  S2: isOpen ∧ #t4 === undefined · #lt;div#gt; #lt;button#gt; #lt;span#gt; "×"
+  S3: isOpen ∧ #t4 !== undefined · #lt;div#gt; #lt;button#gt; {#t4}
+  S2 --> S1: setIsOpen(false)
+  S3 --> S1: setIsOpen(false)
+  state "claims" as claims {
+    claims1: holds isOpen stays within false | true L18
+  }"
+`;
+
 exports[`fixture analysis > EditButton keeps its render tree and handlers 1`] = `
 "---
 title: EditButton src/access.tsx:5
@@ -1481,6 +1522,23 @@ stateDiagram-v2
 
 exports[`fixture analysis > SizeLabel keeps its render tree and handlers 1`] = `
 "---
+title: SizeLabel src/expression-defaults.tsx:29
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SizeLabel"]
+  n2{"size === sizes.small"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Small#quot;"]
+  n2 -->|✓| n3
+  n4{"size === sizes.large"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt; #quot;Large#quot;"]
+  n4 -->|✓| n5"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its render tree and handlers 2`] = `
+"---
 title: SizeLabel src/literal-constants.tsx:12
 ---
 flowchart TD
@@ -1497,6 +1555,17 @@ flowchart TD
 `;
 
 exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SizeLabel src/expression-defaults.tsx:29
+---
+stateDiagram-v2
+  direction LR
+  S1: size === sizes.small · #lt;p#gt; "Small"
+  S2: size === sizes.large · #lt;p#gt; "Large"
+  S3: size ∉ {sizes.small, sizes.large} · ∅"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 2`] = `
 "---
 title: SizeLabel src/literal-constants.tsx:12
 ---
