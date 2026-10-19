@@ -4,7 +4,7 @@ import { formatLine } from "../../../src/core/format";
 import { GeneratedSource } from "../../../src/react-compiler/HIR/HIR";
 import type { SourceLocation } from "../../../src/react-compiler/HIR/HIR";
 import type { Observation } from "./driver";
-import type { ComponentVerdict } from "./score";
+import type { ComponentVerdict } from "./verdicts";
 import { getPropOwner, getStateOwner, parseOwner } from "./types";
 import type { Probe } from "./types";
 

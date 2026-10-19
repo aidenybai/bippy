@@ -3,8 +3,8 @@ import { join, resolve } from "node:path";
 import { analyzeProject } from "../../../src/core/analyze-project";
 import { serializeProjectAnalysis } from "../../../src/core/serialize";
 import type { AnalyzedComponent, BailoutReason } from "../../../src/core/types";
-import { sum, summarizeVerdicts } from "../verifier/score";
-import type { VerificationSummary } from "../verifier/score";
+import { sum, summarizeVerdicts } from "../verifier/verdict-report";
+import type { VerificationSummary } from "../verifier/verdicts";
 import { verifyProject } from "../verifier/verify";
 import type { LineLogger } from "./repos";
 

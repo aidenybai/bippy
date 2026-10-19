@@ -3,7 +3,7 @@ import { join } from "node:path";
 import picocolors from "picocolors";
 import type { CollectSummary } from "./collect";
 import type { RepoConfig } from "./repos";
-import { formatMountFailures, sum } from "../verifier/score";
+import { formatMountFailures, sum } from "../verifier/verdict-report";
 
 export interface RepoResult {
   id: string;

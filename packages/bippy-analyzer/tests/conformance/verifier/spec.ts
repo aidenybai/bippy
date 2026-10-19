@@ -8,7 +8,8 @@ import { listActionsInPage, mountInPage, performInPage, resolveWrappers } from "
 import { getDefaultProps } from "./props";
 import type { Observation } from "./driver";
 import { matchesExpected, normalizeShapes, toExpected } from "./match";
-import { formatCounterexamples, scoreComponent } from "./score";
+import { scoreComponent } from "./score";
+import { formatCounterexamples } from "./verdict-report";
 import type { Action, Capture, MountRequest, Scenario } from "./types";
 import { openPage, startProjectHarness } from "./verify";
 import type { ProjectHarness } from "./verify";
