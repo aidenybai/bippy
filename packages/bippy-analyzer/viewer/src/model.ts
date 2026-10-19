@@ -99,7 +99,7 @@ const viewFileSchema = z.object({
   components: z.array(viewComponentSchema),
 });
 
-const exampleSchema = z.object({ file: z.string(), name: z.string(), summary: z.string() });
+const exampleSchema = z.object({ file: z.string(), name: z.string() });
 
 export const demosSchema = z.object({
   examples: z.array(exampleSchema),

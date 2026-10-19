@@ -7,10 +7,9 @@ const ExampleRow = ({ example }: { example: Example }) => (
   <li>
     <Link
       href={getRouteHref(example.name)}
-      className="grid w-full gap-0.5 rounded-md px-3 py-2 text-left outline-none transition-colors duration-150 hover:bg-muted focus-visible:shadow-focus"
+      className="block w-full rounded-md px-3 py-2 text-left font-mono text-foreground outline-none transition-colors duration-150 hover:bg-muted focus-visible:shadow-focus"
     >
-      <span className="font-mono text-foreground">{example.name}</span>
-      <span className="text-muted-foreground">{example.summary}</span>
+      {example.name}
     </Link>
   </li>
 );
