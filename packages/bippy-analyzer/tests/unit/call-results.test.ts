@@ -47,13 +47,16 @@ describe("typed call results", () => {
     expect(name.analysis.bailouts).toEqual([]);
   });
 
-  it.each(["Badge", "Icon"])("bails out on a call returning JSX in %s", (componentName) => {
+  it.each([
+    ["Badge", "span"],
+    ["Icon", "i"],
+  ])("follows a project helper returning JSX in %s", (componentName, tag) => {
     const component = getComponent(project, componentName);
     expect(component.analysis.bindings).toEqual([]);
     expect(component.analysis.render).toMatchObject({
-      children: [{ kind: "Unknown", reason: "call" }],
+      children: [{ kind: "JsxExpression", tag: { kind: "BuiltinTag", name: tag } }],
     });
-    expect(component.analysis.bailouts.map((bailout) => bailout.reason)).toEqual(["unknown-call"]);
+    expect(component.analysis.bailouts).toEqual([]);
   });
 
   it("doesn't bind calls made in handlers", () => {
