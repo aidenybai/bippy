@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..52d9569 100644
+index 959fdf7..efaddbe 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,27 @@ function lowerStatement(
@@ -56,6 +56,15 @@ index 959fdf7..52d9569 100644
        const terminal: ReturnTerminal = {
          kind: 'return',
          returnVariant: 'Explicit',
+@@ -862,7 +872,7 @@ function lowerStatement(
+         });
+         let test: Place | null = null;
+         if (hasNode(testExpr)) {
+-          test = lowerReorderableExpression(builder, testExpr);
++          test = lowerExpressionToTemporary(builder, testExpr);
+         }
+         cases.push({
+           test,
 @@ -1348,10 +1358,16 @@ function lowerStatement(
        const continuationBlock = builder.reserve('block');
  
@@ -198,7 +207,238 @@ index 959fdf7..52d9569 100644
        return;
      }
      case 'WithStatement': {
-@@ -2762,10 +2783,20 @@ function lowerExpression(
+@@ -1818,27 +1839,12 @@ function lowerExpression(
+         );
+         return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
+       }
+-      if (calleePath.isMemberExpression()) {
+-        const memberExpr = lowerMemberExpression(builder, calleePath);
+-        const propertyPlace = lowerValueToTemporary(builder, memberExpr.value);
+-        const args = lowerArguments(builder, expr.get('arguments'));
+-        return {
+-          kind: 'MethodCall',
+-          receiver: memberExpr.object,
+-          property: {...propertyPlace},
+-          args,
+-          loc: exprLoc,
+-        };
+-      } else {
+-        const callee = lowerExpressionToTemporary(builder, calleePath);
+-        const args = lowerArguments(builder, expr.get('arguments'));
+-        return {
+-          kind: 'CallExpression',
+-          callee,
+-          args,
+-          loc: exprLoc,
+-        };
+-      }
++      return lowerCall(
++        builder,
++        calleePath,
++        () => lowerArguments(builder, expr.get('arguments')),
++        exprLoc,
++      );
+     }
+     case 'BinaryExpression': {
+       const expr = exprPath as NodePath<t.BinaryExpression>;
+@@ -2002,83 +2008,14 @@ function lowerExpression(
+     }
+     case 'LogicalExpression': {
+       const expr = exprPath as NodePath<t.LogicalExpression>;
+-      const exprLoc = expr.node.loc ?? GeneratedSource;
+-      const continuationBlock = builder.reserve(builder.currentBlockKind());
+-      const testBlock = builder.reserve('value');
+-      const place = buildTemporaryPlace(builder, exprLoc);
+-      const leftPlace = buildTemporaryPlace(
++      return lowerLogical(
+         builder,
++        expr.node.operator,
++        expr.node.loc ?? GeneratedSource,
+         expr.get('left').node.loc ?? GeneratedSource,
++        () => lowerExpressionToTemporary(builder, expr.get('left')),
++        () => lowerExpressionToTemporary(builder, expr.get('right')),
+       );
+-      const consequent = builder.enter('value', () => {
+-        lowerValueToTemporary(builder, {
+-          kind: 'StoreLocal',
+-          lvalue: {kind: InstructionKind.Const, place: {...place}},
+-          value: {...leftPlace},
+-          type: null,
+-          loc: leftPlace.loc,
+-        });
+-        return {
+-          kind: 'goto',
+-          block: continuationBlock.id,
+-          variant: GotoVariant.Break,
+-          id: makeInstructionId(0),
+-          loc: leftPlace.loc,
+-        };
+-      });
+-      const alternate = builder.enter('value', () => {
+-        const right = lowerExpressionToTemporary(builder, expr.get('right'));
+-        lowerValueToTemporary(builder, {
+-          kind: 'StoreLocal',
+-          lvalue: {kind: InstructionKind.Const, place: {...place}},
+-          value: {...right},
+-          type: null,
+-          loc: right.loc,
+-        });
+-        return {
+-          kind: 'goto',
+-          block: continuationBlock.id,
+-          variant: GotoVariant.Break,
+-          id: makeInstructionId(0),
+-          loc: right.loc,
+-        };
+-      });
+-      builder.terminateWithContinuation(
+-        {
+-          kind: 'logical',
+-          fallthrough: continuationBlock.id,
+-          id: makeInstructionId(0),
+-          test: testBlock.id,
+-          operator: expr.node.operator,
+-          loc: exprLoc,
+-        },
+-        testBlock,
+-      );
+-      const leftValue = lowerExpressionToTemporary(builder, expr.get('left'));
+-      builder.push({
+-        id: makeInstructionId(0),
+-        lvalue: {...leftPlace},
+-        value: {
+-          kind: 'LoadLocal',
+-          place: leftValue,
+-          loc: exprLoc,
+-        },
+-        effects: null,
+-        loc: exprLoc,
+-      });
+-      builder.terminateWithContinuation(
+-        {
+-          kind: 'branch',
+-          test: {...leftPlace},
+-          consequent,
+-          alternate,
+-          fallthrough: continuationBlock.id,
+-          id: makeInstructionId(0),
+-          loc: exprLoc,
+-        },
+-        continuationBlock,
+-      );
+-      return {kind: 'LoadLocal', place, loc: place.loc};
+     }
+     case 'AssignmentExpression': {
+       const expr = exprPath as NodePath<t.AssignmentExpression>;
+@@ -2115,6 +2052,11 @@ function lowerExpression(
+         }
+       }
+ 
++      const logicalOperator = LOGICAL_ASSIGNMENT_OPERATORS.get(operator);
++      if (logicalOperator != null) {
++        return lowerLogicalAssignment(builder, expr, logicalOperator, exprLoc);
++      }
++
+       const operators: {
+         [key: string]: Exclude<t.BinaryExpression['operator'], '|>'>;
+       } = {
+@@ -2215,23 +2157,12 @@ function lowerExpression(
+           });
+ 
+           // Save the result back to the property
+-          if (typeof property === 'string' || typeof property === 'number') {
+-            return {
+-              kind: 'PropertyStore',
+-              object: {...object},
+-              property: makePropertyLiteral(property),
+-              value: {...newValuePlace},
+-              loc: leftExpr.node.loc ?? GeneratedSource,
+-            };
+-          } else {
+-            return {
+-              kind: 'ComputedStore',
+-              object: {...object},
+-              property: {...property},
+-              value: {...newValuePlace},
+-              loc: leftExpr.node.loc ?? GeneratedSource,
+-            };
+-          }
++          return lowerPropertyStore(
++            object,
++            property,
++            newValuePlace,
++            leftExpr.node.loc ?? GeneratedSource,
++          );
+         }
+         default: {
+           builder.recordError(
+@@ -2450,43 +2381,29 @@ function lowerExpression(
+     }
+     case 'TaggedTemplateExpression': {
+       const expr = exprPath as NodePath<t.TaggedTemplateExpression>;
+-      if (expr.get('quasi').get('expressions').length !== 0) {
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason:
+-              '(BuildHIR::lowerExpression) Handle tagged template with interpolations',
+-            category: ErrorCategory.Todo,
+-            loc: exprPath.node.loc ?? null,
+-            suggestions: null,
+-          }),
+-        );
+-        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
+-      }
+-      CompilerError.invariant(expr.get('quasi').get('quasis').length == 1, {
+-        reason:
+-          "there should be only one quasi as we don't support interpolations yet",
+-        loc: expr.node.loc ?? GeneratedSource,
+-      });
+-      const value = expr.get('quasi').get('quasis').at(0)!.node.value;
+-      if (value.raw !== value.cooked) {
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason:
+-              '(BuildHIR::lowerExpression) Handle tagged template where cooked value is different from raw value',
+-            category: ErrorCategory.Todo,
+-            loc: exprPath.node.loc ?? null,
+-            suggestions: null,
++      const quasi = expr.get('quasi');
++      return lowerCall(
++        builder,
++        expr.get('tag'),
++        () => [
++          lowerValueToTemporary(builder, {
++            kind: 'ArrayExpression',
++            elements: quasi.get('quasis').map(element =>
++              lowerValueToTemporary(builder, {
++                kind: 'Primitive',
++                value: element.node.value.cooked ?? undefined,
++                loc: element.node.loc ?? GeneratedSource,
++              }),
++            ),
++            loc: quasi.node.loc ?? GeneratedSource,
+           }),
+-        );
+-        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
+-      }
+-
+-      return {
+-        kind: 'TaggedTemplateExpression',
+-        tag: lowerExpressionToTemporary(builder, expr.get('tag')),
+-        value,
+-        loc: exprLoc,
+-      };
++          ...lowerArguments(
++            builder,
++            quasi.get('expressions') as Array<NodePath<t.Expression>>,
++          ),
++        ],
++        exprLoc,
++      );
+     }
+     case 'TemplateLiteral': {
+       const expr = exprPath as NodePath<t.TemplateLiteral>;
+@@ -2762,10 +2679,20 @@ function lowerExpression(
          loc: expr.node.loc ?? GeneratedSource,
        };
      }
@@ -221,7 +461,7 @@ index 959fdf7..52d9569 100644
      }
      case 'MetaProperty': {
        let expr = exprPath as NodePath<t.MetaProperty>;
-@@ -2791,6 +2822,9 @@ function lowerExpression(
+@@ -2791,6 +2718,9 @@ function lowerExpression(
        );
        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
      }
@@ -231,7 +471,417 @@ index 959fdf7..52d9569 100644
      default: {
        builder.recordError(
          new CompilerErrorDetail({
-@@ -4531,6 +4565,71 @@ function gatherCapturedContext(
+@@ -3084,207 +3014,202 @@ function lowerOptionalCallExpression(
+  *  - primitives
+  *  - arrays/objects whose values are also safely reorderable.
+  */
+-function lowerReorderableExpression(
++function lowerCall(
+   builder: HIRBuilder,
+-  expr: NodePath<t.Expression>,
+-): Place {
+-  if (!isReorderableExpression(builder, expr, true)) {
+-    builder.recordError(
+-      new CompilerErrorDetail({
+-        reason: `(BuildHIR::node.lowerReorderableExpression) Expression type \`${expr.type}\` cannot be safely reordered`,
+-        category: ErrorCategory.Todo,
+-        loc: expr.node.loc ?? null,
+-        suggestions: null,
+-      }),
+-    );
++  calleePath: NodePath<t.Expression>,
++  lowerArgs: () => Array<Place | SpreadPattern>,
++  loc: SourceLocation,
++): InstructionValue {
++  if (calleePath.isMemberExpression()) {
++    const memberExpr = lowerMemberExpression(builder, calleePath);
++    const propertyPlace = lowerValueToTemporary(builder, memberExpr.value);
++    return {
++      kind: 'MethodCall',
++      receiver: memberExpr.object,
++      property: {...propertyPlace},
++      args: lowerArgs(),
++      loc,
++    };
+   }
+-  return lowerExpressionToTemporary(builder, expr);
++  const callee = lowerExpressionToTemporary(builder, calleePath);
++  return {kind: 'CallExpression', callee, args: lowerArgs(), loc};
+ }
+ 
+-function isReorderableExpression(
++function lowerLogical(
+   builder: HIRBuilder,
+-  expr: NodePath<t.Expression>,
+-  allowLocalIdentifiers: boolean,
+-): boolean {
+-  switch (expr.node.type) {
+-    case 'Identifier': {
+-      const binding = builder.resolveIdentifier(expr as NodePath<t.Identifier>);
+-      if (binding.kind === 'Identifier') {
+-        return allowLocalIdentifiers;
+-      } else {
+-        // global, definitely safe
+-        return true;
+-      }
+-    }
+-    case 'TSInstantiationExpression': {
+-      const innerExpr = (expr as NodePath<t.TSInstantiationExpression>).get(
+-        'expression',
+-      ) as NodePath<t.Expression>;
+-      return isReorderableExpression(builder, innerExpr, allowLocalIdentifiers);
+-    }
+-    case 'RegExpLiteral':
+-    case 'StringLiteral':
+-    case 'NumericLiteral':
+-    case 'NullLiteral':
+-    case 'BooleanLiteral':
+-    case 'BigIntLiteral': {
+-      return true;
+-    }
+-    case 'UnaryExpression': {
+-      const unary = expr as NodePath<t.UnaryExpression>;
+-      switch (expr.node.operator) {
+-        case '!':
+-        case '+':
+-        case '-': {
+-          return isReorderableExpression(
+-            builder,
+-            unary.get('argument'),
+-            allowLocalIdentifiers,
+-          );
+-        }
+-        default: {
+-          return false;
+-        }
+-      }
+-    }
+-    case 'TSAsExpression':
+-    case 'TSNonNullExpression':
+-    case 'TypeCastExpression': {
+-      return isReorderableExpression(
+-        builder,
+-        (expr as NodePath<t.TypeCastExpression>).get('expression'),
+-        allowLocalIdentifiers,
+-      );
+-    }
+-    case 'LogicalExpression': {
+-      const logical = expr as NodePath<t.LogicalExpression>;
+-      return (
+-        isReorderableExpression(
+-          builder,
+-          logical.get('left'),
+-          allowLocalIdentifiers,
+-        ) &&
+-        isReorderableExpression(
+-          builder,
+-          logical.get('right'),
+-          allowLocalIdentifiers,
+-        )
+-      );
+-    }
+-    case 'ConditionalExpression': {
+-      const conditional = expr as NodePath<t.ConditionalExpression>;
+-      return (
+-        isReorderableExpression(
+-          builder,
+-          conditional.get('test'),
+-          allowLocalIdentifiers,
+-        ) &&
+-        isReorderableExpression(
+-          builder,
+-          conditional.get('consequent'),
+-          allowLocalIdentifiers,
+-        ) &&
+-        isReorderableExpression(
++  operator: t.LogicalExpression['operator'],
++  loc: SourceLocation,
++  leftLoc: SourceLocation,
++  lowerLeft: () => Place,
++  lowerRight: () => Place,
++): InstructionValue {
++  const continuationBlock = builder.reserve(builder.currentBlockKind());
++  const testBlock = builder.reserve('value');
++  const place = buildTemporaryPlace(builder, loc);
++  const leftPlace = buildTemporaryPlace(builder, leftLoc);
++  const consequent = builder.enter('value', () => {
++    lowerValueToTemporary(builder, {
++      kind: 'StoreLocal',
++      lvalue: {kind: InstructionKind.Const, place: {...place}},
++      value: {...leftPlace},
++      type: null,
++      loc: leftPlace.loc,
++    });
++    return {
++      kind: 'goto',
++      block: continuationBlock.id,
++      variant: GotoVariant.Break,
++      id: makeInstructionId(0),
++      loc: leftPlace.loc,
++    };
++  });
++  const alternate = builder.enter('value', () => {
++    const right = lowerRight();
++    lowerValueToTemporary(builder, {
++      kind: 'StoreLocal',
++      lvalue: {kind: InstructionKind.Const, place: {...place}},
++      value: {...right},
++      type: null,
++      loc: right.loc,
++    });
++    return {
++      kind: 'goto',
++      block: continuationBlock.id,
++      variant: GotoVariant.Break,
++      id: makeInstructionId(0),
++      loc: right.loc,
++    };
++  });
++  builder.terminateWithContinuation(
++    {
++      kind: 'logical',
++      fallthrough: continuationBlock.id,
++      id: makeInstructionId(0),
++      test: testBlock.id,
++      operator,
++      loc,
++    },
++    testBlock,
++  );
++  const leftValue = lowerLeft();
++  builder.push({
++    id: makeInstructionId(0),
++    lvalue: {...leftPlace},
++    value: {
++      kind: 'LoadLocal',
++      place: leftValue,
++      loc,
++    },
++    effects: null,
++    loc,
++  });
++  builder.terminateWithContinuation(
++    {
++      kind: 'branch',
++      test: {...leftPlace},
++      consequent,
++      alternate,
++      fallthrough: continuationBlock.id,
++      id: makeInstructionId(0),
++      loc,
++    },
++    continuationBlock,
++  );
++  return {kind: 'LoadLocal', place, loc: place.loc};
++}
++
++const LOGICAL_ASSIGNMENT_OPERATORS = new Map<
++  t.AssignmentExpression['operator'],
++  t.LogicalExpression['operator']
++>([
++  ['&&=', '&&'],
++  ['||=', '||'],
++  ['??=', '??'],
++]);
++
++function lowerLogicalAssignment(
++  builder: HIRBuilder,
++  expr: NodePath<t.AssignmentExpression>,
++  operator: t.LogicalExpression['operator'],
++  loc: SourceLocation,
++): InstructionValue {
++  const left = expr.get('left');
++  const leftLoc = left.node.loc ?? GeneratedSource;
++  if (left.isMemberExpression()) {
++    const {object, property, value} = lowerMemberExpression(builder, left);
++    return lowerLogical(
++      builder,
++      operator,
++      loc,
++      leftLoc,
++      () => lowerValueToTemporary(builder, value),
++      () => {
++        const right = lowerExpressionToTemporary(builder, expr.get('right'));
++        lowerValueToTemporary(
+           builder,
+-          conditional.get('alternate'),
+-          allowLocalIdentifiers,
+-        )
+-      );
+-    }
+-    case 'ArrayExpression': {
+-      return (expr as NodePath<t.ArrayExpression>)
+-        .get('elements')
+-        .every(
+-          element =>
+-            element.isExpression() &&
+-            isReorderableExpression(builder, element, allowLocalIdentifiers),
++          lowerPropertyStore(object, property, right, leftLoc),
+         );
+-    }
+-    case 'ObjectExpression': {
+-      return (expr as NodePath<t.ObjectExpression>)
+-        .get('properties')
+-        .every(property => {
+-          if (!property.isObjectProperty() || property.node.computed) {
+-            return false;
+-          }
+-          const value = property.get('value');
+-          return (
+-            value.isExpression() &&
+-            isReorderableExpression(builder, value, allowLocalIdentifiers)
+-          );
+-        });
+-    }
+-    case 'MemberExpression': {
+-      /*
+-       * A common pattern is switch statements where the case test values are properties of a global,
+-       * eg `case ProductOptions.Option: { ... }`
+-       * We therefore allow expressions where the innermost object is a global identifier, and reject
+-       * all other member expressions (for now).
+-       */
+-      const test = expr as NodePath<t.MemberExpression>;
+-      let innerObject: NodePath<t.Expression> = test;
+-      while (innerObject.isMemberExpression()) {
+-        innerObject = innerObject.get('object');
+-      }
+-      if (
+-        innerObject.isIdentifier() &&
+-        builder.resolveIdentifier(innerObject).kind !== 'Identifier'
+-      ) {
+-        // This is a property/computed load from a global, that's safe to reorder
+-        return true;
+-      } else {
+-        return false;
+-      }
+-    }
+-    case 'ArrowFunctionExpression': {
+-      const fn = expr as NodePath<t.ArrowFunctionExpression>;
+-      const body = fn.get('body');
+-      if (body.node.type === 'BlockStatement') {
+-        return body.node.body.length === 0;
+-      } else {
+-        // For TypeScript
+-        invariant(body.isExpression(), 'Expected an expression');
+-        return isReorderableExpression(
++        return right;
++      },
++    );
++  }
++  if (left.isIdentifier()) {
++    return lowerLogical(
++      builder,
++      operator,
++      loc,
++      leftLoc,
++      () => lowerExpressionToTemporary(builder, left),
++      () => {
++        const right = lowerExpressionToTemporary(builder, expr.get('right'));
++        lowerValueToTemporary(
+           builder,
+-          body,
+-          /* disallow local identifiers in the body */ false,
++          lowerAssignment(
++            builder,
++            leftLoc,
++            InstructionKind.Reassign,
++            left,
++            right,
++            'Assignment',
++          ),
+         );
+-      }
+-    }
+-    case 'CallExpression': {
+-      const call = expr as NodePath<t.CallExpression>;
+-      const callee = call.get('callee');
+-      return (
+-        callee.isExpression() &&
+-        isReorderableExpression(builder, callee, allowLocalIdentifiers) &&
+-        call
+-          .get('arguments')
+-          .every(
+-            arg =>
+-              arg.isExpression() &&
+-              isReorderableExpression(builder, arg, allowLocalIdentifiers),
+-          )
+-      );
+-    }
+-    case 'NewExpression': {
+-      const newExpr = expr as NodePath<t.NewExpression>;
+-      const callee = newExpr.get('callee');
+-      return (
+-        callee.isExpression() &&
+-        isReorderableExpression(builder, callee, allowLocalIdentifiers) &&
+-        newExpr
+-          .get('arguments')
+-          .every(
+-            arg =>
+-              arg.isExpression() &&
+-              isReorderableExpression(builder, arg, allowLocalIdentifiers),
+-          )
+-      );
+-    }
+-    default: {
+-      return false;
+-    }
++        return right;
++      },
++    );
++  }
++  builder.recordError(
++    new CompilerErrorDetail({
++      reason: `(BuildHIR::lowerExpression) Expected Identifier or MemberExpression, got ${left.type} lval in AssignmentExpression`,
++      category: ErrorCategory.Todo,
++      loc: left.node.loc ?? null,
++      suggestions: null,
++    }),
++  );
++  return {kind: 'UnsupportedNode', node: expr.node, loc};
++}
++
++function lowerPropertyStore(
++  object: Place,
++  property: string | number | Place,
++  value: Place,
++  loc: SourceLocation,
++): InstructionValue {
++  if (typeof property === 'string' || typeof property === 'number') {
++    return {
++      kind: 'PropertyStore',
++      object: {...object},
++      property: makePropertyLiteral(property),
++      value: {...value},
++      loc,
++    };
+   }
++  return {
++    kind: 'ComputedStore',
++    object: {...object},
++    property: {...property},
++    value: {...value},
++    loc,
++  };
+ }
+ 
+ function lowerArguments(
+@@ -4314,14 +4239,7 @@ function lowerAssignment(
+       const continuationBlock = builder.reserve(builder.currentBlockKind());
+ 
+       const consequent = builder.enter('value', () => {
+-        /*
+-         * Because we reorder evaluation, we restrict the allowed default values to those where
+-         * evaluation order is unobservable
+-         */
+-        const defaultValue = lowerReorderableExpression(
+-          builder,
+-          lvalue.get('right'),
+-        );
++        const defaultValue = lowerExpressionToTemporary(builder, lvalue.get('right'));
+         lowerValueToTemporary(builder, {
+           kind: 'StoreLocal',
+           lvalue: {kind: InstructionKind.Const, place: {...temp}},
+@@ -4531,6 +4449,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
