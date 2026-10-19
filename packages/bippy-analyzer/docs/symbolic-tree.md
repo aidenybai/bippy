@@ -105,7 +105,7 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - the project's own custom hooks, run inline as part of the component, across files, so their state is the component's state and the functions they return are known
    - zustand stores: every selector of one store reads a field of one value
    - other hooks, typed from their return type
-   - `.map` items, including a `.map` reached through an optional chain like `data?.rows.map(…)`
+   - `.map` items, including a `.map` reached through an optional chain like `data?.rows.map(…)`, and the rows of `Array.from(arrayLike, callback)`. A binding that stays untyped is an `untyped-item`, `untyped-prop` or similar bailout only when the render, a handler or a claim reads it; the unused `_` of `[...Array(n)].map((_, index) => …)` is not
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
    - values a loop carries, like a flag a `for` body sets, typed as declared. The body runs once with them, so the setters and pushes inside it count, and a value a `break` leaves with is kept.
    - a `push` or property store on a local array or object, applied as is when it always runs. One that may not run, or runs in a loop, widens the value to cover both.

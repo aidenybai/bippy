@@ -63,6 +63,22 @@ export class ArrayIteration {
     );
   }
 
+  evaluateArrayFrom(
+    callee: SymbolicValue,
+    argumentValues: SymbolicValue[],
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const [arrayLike, callback] = argumentValues;
+    const isRenderedArrayFrom =
+      this.#interpreter.handlerEffects === null &&
+      callee.kind === "Global" &&
+      callee.name === "Array.from" &&
+      callee.module === null;
+    if (!isRenderedArrayFrom || !arrayLike || callback?.kind !== "Function") return null;
+    return this.evaluateArrayMap(arrayLike, callback, loc, walkState);
+  }
+
   evaluateArrayMap(
     array: SymbolicValue,
     callback: FunctionValue,

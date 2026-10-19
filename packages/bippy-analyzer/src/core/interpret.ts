@@ -549,7 +549,8 @@ export class Interpreter {
     const { callee, argumentValues } = callSite;
     const modeled =
       this.patterns.start(callee, argumentValues, callSite.loc) ??
-      coerceBooleanCall(callee, argumentValues);
+      coerceBooleanCall(callee, argumentValues) ??
+      this.iteration.evaluateArrayFrom(callee, argumentValues, callSite.loc, walkState);
     if (modeled) return modeled;
     this.#recordWholeProps(callSite);
     const target = this.#getCallTarget(callSite);
