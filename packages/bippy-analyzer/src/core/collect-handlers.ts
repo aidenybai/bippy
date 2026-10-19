@@ -203,26 +203,53 @@ class HandlerCollector {
   }
 
   #collectEventHandler(element: JsxExpressionValue, prop: JsxProp): void {
-    const handlerKey = getHandlerKey(prop.value);
+    const callback = this.#unwrapCallback(prop.value);
+    const handlerKey = getHandlerKey(callback);
     if (handlerKey === null) return;
     prop.handlerId = this.#addEventHandler(
       handlerKey,
       { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
-      prop.value,
-      getHandlerLocation(prop.value),
+      callback,
+      getHandlerLocation(callback),
     );
+  }
+
+  #unwrapCallback(value: SymbolicValue): SymbolicValue {
+    const wrapped = this.#interpreter.getWrappedCallbacks(value);
+    if (!wrapped) return value;
+    const [single] = wrapped;
+    return wrapped.length === 1 && single
+      ? single
+      : { kind: "ArrayExpression", elements: wrapped, spreads: [] };
   }
 }
 
+const collectWrappedCallbacks = (
+  render: SymbolicValue,
+  interpreter: Interpreter,
+): Set<SymbolicValue> => {
+  const wrapped = new Set<SymbolicValue>();
+  forEachJsxElement(render, (element) => {
+    for (const prop of element.props) {
+      if (prop.kind !== "JsxAttribute" || !isHandlerProp(element.tag, prop)) continue;
+      for (const callback of interpreter.getWrappedCallbacks(prop.value) ?? [])
+        wrapped.add(callback);
+    }
+  });
+  return wrapped;
+};
+
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const collector = new HandlerCollector(interpreter);
+  const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
   for (const effectCall of interpreter.effectCalls)
-    collector.addHandler(
-      { kind: "Effect", hookKind: effectCall.hookKind, dependencies: effectCall.dependencies },
-      effectCall.callback,
-      effectCall.callbackArguments,
-      effectCall.loc,
-    );
+    if (!wrappedCallbacks.has(effectCall.callback))
+      collector.addHandler(
+        { kind: "Effect", hookKind: effectCall.hookKind, dependencies: effectCall.dependencies },
+        effectCall.callback,
+        effectCall.callbackArguments,
+        effectCall.loc,
+      );
   collector.addCollectedHandler(
     { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
     interpreter.finishRenderPhaseEffects(),
