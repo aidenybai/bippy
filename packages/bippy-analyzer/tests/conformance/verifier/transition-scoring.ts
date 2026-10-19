@@ -73,6 +73,21 @@ interface ObservedEdge {
   earlierTriggeredIds: Set<string>;
 }
 
+const getEdgeTargets = (
+  context: ScoringContext,
+  fromStates: number[],
+  edge: EdgeHandlerIds,
+): Set<number> => {
+  const reached = new Set(getTargetStates(context, fromStates, edge.triggeredIds));
+  for (let frontier = [...reached]; frontier.length > 0;) {
+    frontier = getTargetStates(context, frontier, edge.maybeTriggeredIds).filter(
+      (stateIndex) => !reached.has(stateIndex),
+    );
+    for (const stateIndex of frontier) reached.add(stateIndex);
+  }
+  return reached;
+};
+
 const getDependencyNames = (dependencies: string): Set<string> =>
   new Set(dependencies.match(DEPENDENCY_NAME_PATTERN) ?? []);
 
@@ -164,15 +179,13 @@ const isRegionEdgePredicted = (
     edge.afterMatches,
     regionIndex,
   );
-  const transitions = getTransitions(
-    context,
-    getStatesInRegion(context, edge.beforeMatches, regionIndex),
-    edge.triggeredIds,
-  );
+  const fromStates = getStatesInRegion(context, edge.beforeMatches, regionIndex);
+  const transitions = getTransitions(context, fromStates, edge.triggeredIds);
   if (transitions.length === 0) return isUnchanged;
+  const targets = getEdgeTargets(context, fromStates, edge);
+  if (edge.afterMatches.some((stateIndex) => targets.has(stateIndex))) return true;
   return transitions.some(
     (transition) =>
-      transition.targets.some((target) => edge.afterMatches.includes(target)) ||
       canReachInBackground(
         context,
         transition.targets,
@@ -193,7 +206,7 @@ const recordWrongEdge = (
     action: edge.action.key,
     fromStates: edge.beforeMatches,
     toStates: edge.afterMatches,
-    predictedStates: getTargetStates(context, edge.beforeMatches, edge.triggeredIds),
+    predictedStates: [...getEdgeTargets(context, edge.beforeMatches, edge)],
     reason,
   });
 };

@@ -39,3 +39,32 @@ export const LazyImage = ({ src }: { src: string }) => {
     </button>
   );
 };
+
+export const ShortcutRecorder = () => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [rejected, setRejected] = useState("");
+  useEffect(() => {
+    if (!isRecording) setRejected("");
+  }, [isRecording]);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          setIsRecording(true);
+          setRejected("Escape");
+        }}
+      >
+        Record
+      </button>
+      <button type="button" onClick={() => setIsRecording(false)}>
+        Stop
+      </button>
+      {isRecording ? (
+        <p>{rejected ? "Recording, rejected" : "Recording"}</p>
+      ) : rejected ? (
+        <p>Rejected</p>
+      ) : null}
+    </div>
+  );
+};
