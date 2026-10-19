@@ -1439,6 +1439,33 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > SizeLabel keeps its render tree and handlers 1`] = `
+"---
+title: SizeLabel src/literal-constants.tsx:12
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SizeLabel"]
+  n2{"size === #quot;sm#quot;"}
+  n1 --> n2
+  n3["#lt;p#gt; #quot;Small#quot;"]
+  n2 -->|✓| n3
+  n4{"size === #quot;lg#quot;"}
+  n2 -->|✗| n4
+  n5["#lt;p#gt; #quot;Large#quot;"]
+  n4 -->|✓| n5"
+`;
+
+exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SizeLabel src/literal-constants.tsx:12
+---
+stateDiagram-v2
+  direction LR
+  S1: size === "sm" · #lt;p#gt; "Small"
+  S2: size !== "sm" · #lt;p#gt; "Large""
+`;
+
 exports[`fixture analysis > SortedList keeps its render tree and handlers 1`] = `
 "---
 title: SortedList src/mutation.tsx:30
@@ -1895,6 +1922,31 @@ stateDiagram-v2
   state "claims" as claims {
     claims1: holds isOpen stays within false | true L4
   }"
+`;
+
+exports[`fixture analysis > ToneLabel keeps its render tree and handlers 1`] = `
+"---
+title: ToneLabel src/literal-constants.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneLabel"]
+  n2{"(#t1 === undefined ? #quot;calm#quot; : #t1) === #quot;loud#quot;"}
+  n1 --> n2
+  n3["#lt;strong#gt; #quot;Loud#quot;"]
+  n2 -->|✓| n3
+  n4["#lt;span#gt; #quot;Calm#quot;"]
+  n2 -->|✗| n4"
+`;
+
+exports[`fixture analysis > ToneLabel keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneLabel src/literal-constants.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: (#t1 === undefined ? "calm" : #t1) === "loud" · #lt;strong#gt; "Loud"
+  S2: (#t1 === undefined ? "calm" : #t1) !== "loud" · #lt;span#gt; "Calm""
 `;
 
 exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `

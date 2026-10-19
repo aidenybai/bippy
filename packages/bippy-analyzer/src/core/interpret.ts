@@ -355,6 +355,15 @@ export class Interpreter {
     return this.bindingTable.getPropBinding(this.#resolver, propName, localName, loc);
   }
 
+  #foldLiteralType(value: SymbolicValue, loc: SourceLocation): SymbolicValue {
+    if (value.kind !== "Global") return value;
+    const domain = this.#resolver.getDomain(loc);
+    const [onlyCase] = domain.kind === "Cases" ? domain.cases : [];
+    return domain.kind === "Cases" && domain.cases.length === 1 && onlyCase?.kind === "Literal"
+      ? { kind: "Primitive", value: onlyCase.value }
+      : value;
+  }
+
   evaluatePropertyLoad(
     object: SymbolicValue,
     property: string,
@@ -907,11 +916,10 @@ export class Interpreter {
         this.destructurer.destructure(value);
         return this.read(value.value);
       case "LoadGlobal":
-        return getGlobalValue(value);
+        return this.#foldLiteralType(getGlobalValue(value), value.loc);
       case "PropertyLoad":
-        return this.evaluatePropertyLoad(
-          this.read(value.object),
-          String(value.property),
+        return this.#foldLiteralType(
+          this.evaluatePropertyLoad(this.read(value.object), String(value.property), value.loc),
           value.loc,
         );
       case "ComputedLoad":
