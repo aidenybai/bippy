@@ -562,6 +562,46 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > NameForm keeps its render tree and handlers 1`] = `
+"---
+title: NameForm src/form-actions.tsx:29
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["NameForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["action ⇒ name = typeof Unknown(call) === #quot;string#quot; ? Unknown(call) : name"]):::event
+  n2 -.-> n3
+  n4{"isPending"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;Saving…#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;p#gt;"]
+  n4 -->|✗| n6
+  n7{"name === #quot;#quot;"}
+  n6 --> n7
+  n8["{#quot;No name yet#quot;}"]
+  n7 -->|✓| n8
+  n9["{name}"]
+  n7 -->|✗| n9
+  n10["#lt;button#gt; #quot;Save#quot;"]
+  n2 --> n10"
+`;
+
+exports[`fixture analysis > NameForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: NameForm src/form-actions.tsx:29
+---
+stateDiagram-v2
+  direction LR
+  S1: isPending · #lt;form#gt; #lt;p#gt; "Saving…" #lt;button#gt; "Save"
+  S2: !isPending ∧ name === "" · #lt;form#gt; #lt;p#gt; {"No name yet"} #lt;button#gt; "Save"
+  S3: !isPending ∧ name !== "" · #lt;form#gt; #lt;p#gt; {name} #lt;button#gt; "Save"
+  S2 --> S3: "Save"
+  S3 --> S2: "Save""
+`;
+
 exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
 "---
 title: Page src/plain.jsx:13
@@ -792,6 +832,42 @@ stateDiagram-v2
   direction LR
   S1: role === "admin" · #lt;strong#gt; "Admin"
   S2: role !== "admin" · #lt;span#gt; "Member""
+`;
+
+exports[`fixture analysis > SaveForm keeps its render tree and handlers 1`] = `
+"---
+title: SaveForm src/form-actions.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SaveForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3(["action ⇒ loading = true · loading = false · loading = false (async)"]):::event
+  n2 -.-> n3
+  n4{"loading"}
+  n2 --> n4
+  n5["#lt;p#gt; #quot;Saving…#quot;"]
+  n4 -->|✓| n5
+  n6["#lt;button#gt; #quot;Save#quot;"]
+  n4 -->|✗| n6
+  n7(["formAction ⇒ loading = true · loading = false · loading = false (async)"]):::event
+  n6 -.-> n7"
+`;
+
+exports[`fixture analysis > SaveForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SaveForm src/form-actions.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: loading · #lt;form#gt; #lt;p#gt; "Saving…"
+  S2: !loading · #lt;form#gt; #lt;button#gt; "Save"
+  [*] --> S2
+  S1 --> S2: submit (async)
+  state "claims" as claims {
+    claims1: holds loading stays within false | true L8
+  }"
 `;
 
 exports[`fixture analysis > SearchList keeps its render tree and handlers 1`] = `
