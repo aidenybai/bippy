@@ -1,6 +1,7 @@
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import { findNodeAtLocation } from "./utils/find-node-at-location";
 import { getUnionMembers } from "./utils/get-union-members";
+import { getCollectionName, getInterfaceMemberNames } from "./utils/lib-collections";
 import { getContextKey } from "./utils/get-context-key";
 import { getDeclarationKey, getReactExportName, isReactType } from "./utils/typescript";
 import { isReactElementType } from "./utils/is-react-element-type";
@@ -16,6 +17,7 @@ import {
 } from "typescript/unstable/ast/is";
 import { SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
+import type { MutableCollection } from "../react-compiler/HIR/Environment";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { getLocationKey } from "./utils/get-location-key";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
@@ -29,72 +31,11 @@ import {
 import { getPropertySamples, getSamples } from "./type-samples";
 
 const CONTEXT_TYPE_PATTERN = /^Context$/;
-const NON_MUTATING_ARRAY_METHODS = new Set([
-  "at",
-  "concat",
-  "entries",
-  "every",
-  "filter",
-  "find",
-  "findIndex",
-  "findLast",
-  "findLastIndex",
-  "flat",
-  "flatMap",
-  "forEach",
-  "includes",
-  "indexOf",
-  "join",
-  "keys",
-  "lastIndexOf",
-  "map",
-  "reduce",
-  "reduceRight",
-  "slice",
-  "some",
-  "toReversed",
-  "toSorted",
-  "toSpliced",
-  "values",
-  "with",
-]);
-const NON_MUTATING_STRING_METHODS = new Set([
-  "at",
-  "charAt",
-  "charCodeAt",
-  "codePointAt",
-  "concat",
-  "endsWith",
-  "includes",
-  "indexOf",
-  "lastIndexOf",
-  "localeCompare",
-  "match",
-  "matchAll",
-  "normalize",
-  "padEnd",
-  "padStart",
-  "repeat",
-  "replace",
-  "replaceAll",
-  "search",
-  "slice",
-  "split",
-  "startsWith",
-  "substring",
-  "toLocaleLowerCase",
-  "toLocaleUpperCase",
-  "toLowerCase",
-  "toUpperCase",
-  "trim",
-  "trimEnd",
-  "trimStart",
-]);
-
 export class SourceFileResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
   readonly #typesByLocation = new Map<string, Type | undefined>();
+  readonly #readonlyMethodsByCollection = new Map<MutableCollection, Set<string>>();
   readonly #isStrictNullChecks: boolean;
 
   constructor(checker: Checker, sourceFile: SourceFile, isStrictNullChecks: boolean) {
@@ -269,13 +210,23 @@ export class SourceFileResolver {
     );
     return (
       definedMembers.length > 0 &&
-      definedMembers.every((member) =>
-        member.flags & TypeFlags.StringLike
-          ? NON_MUTATING_STRING_METHODS.has(methodName)
-          : (this.#checker.isArrayType(member) || member.isTupleType()) &&
-            NON_MUTATING_ARRAY_METHODS.has(methodName),
+      definedMembers.every(
+        (member) =>
+          Boolean(member.flags & TypeFlags.StringLike) ||
+          this.#isReadonlyMethod(member, methodName),
       )
     );
+  }
+
+  #isReadonlyMethod(type: Type, methodName: string): boolean {
+    const collection = getCollectionName(this.#checker, type);
+    if (!collection) return false;
+    const cachedMethods = this.#readonlyMethodsByCollection.get(collection);
+    const readonlyMethods =
+      cachedMethods ??
+      new Set(getInterfaceMemberNames(this.#checker, this.#sourceFile, `Readonly${collection}`));
+    this.#readonlyMethodsByCollection.set(collection, readonlyMethods);
+    return readonlyMethods.has(methodName);
   }
 
   getRequiredSample(loc: SourceLocation): Sample | null {
