@@ -6,29 +6,32 @@ import { ClientApp } from "../client-app";
 
 export const dynamicParams = false;
 
-export const generateStaticParams = () => [
-  { slug: [] },
-  ...demos.examples.flatMap((example) =>
+export const generateStaticParams = () =>
+  demos.examples.flatMap((example) =>
     VIEW_MODES.map((mode) => ({
       slug: mode === "code" ? [example.name] : [example.name, mode],
     })),
-  ),
-];
+  );
 
 interface PageProps {
-  params: Promise<{ slug?: string[] }>;
+  params: Promise<{ slug: string[] }>;
 }
 
 const Page = async ({ params }: PageProps) => {
   const { slug } = await params;
   const route = parseRoute(slug, demoNames);
   if (!route) notFound();
-  const name = route.name ?? demos.examples[0]?.name;
-  const view = name === undefined ? undefined : demos.views[name];
-  if (name === undefined || view === undefined) notFound();
-  const json = route.mode === "json" ? (demos.json[name] ?? null) : null;
+  const view = demos.views[route.name];
+  if (!view) notFound();
+  const json = route.mode === "json" ? (demos.json[route.name] ?? null) : null;
   return (
-    <ClientApp examples={demos.examples} name={name} mode={route.mode} view={view} json={json} />
+    <ClientApp
+      examples={demos.examples}
+      name={route.name}
+      mode={route.mode}
+      view={view}
+      json={json}
+    />
   );
 };
 
