@@ -11,7 +11,9 @@ export const StartPage = ({ examples }: StartPageProps) => (
   <StartShell className="my-auto">
     <header className="flex flex-col gap-1">
       <h1 className="text-base font-semibold tracking-tight">bippy analyzer</h1>
-      <p className="text-muted-foreground">bippy analyzer is a static analyzer for React state.</p>
+      <p className="text-muted-foreground">
+        bippy analyzer is a static analyzer for React components.
+      </p>
     </header>
     <ul className="flex flex-col gap-1">
       {examples.map((example) => (
