@@ -19,3 +19,15 @@ export const SignIn = () => {
     </form>
   );
 };
+
+export const Subscribe = () => {
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const { register, handleSubmit, formState } = useForm<Values>();
+  return (
+    <form onSubmit={handleSubmit(() => setIsSubscribed(true))}>
+      <input {...register("email")} />
+      {formState.errors.email ? <p>{formState.errors.email.message}</p> : null}
+      <button disabled={isSubscribed}>Subscribe</button>
+    </form>
+  );
+};

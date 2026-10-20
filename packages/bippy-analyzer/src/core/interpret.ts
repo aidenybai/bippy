@@ -648,7 +648,9 @@ export class Interpreter {
     }
     const result = this.#createCallResult(callSite);
     const callbacks = getPassedCallbacks(argumentValues);
-    if (callbacks.length > 0) this.#wrappedCallbacks.set(result, callbacks);
+    const isExternalWrapper = callee.kind === "Binding" && isExternalSource(callee.binding);
+    if (callbacks.length > 0)
+      this.#wrappedCallbacks.set(result, isExternalWrapper ? [callee, ...callbacks] : callbacks);
     return result;
   }
 
