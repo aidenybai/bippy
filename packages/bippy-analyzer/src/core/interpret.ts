@@ -1059,18 +1059,47 @@ export class Interpreter {
   }
 
   #evaluateObjectLiteral(objectLiteral: InstructionValueOfKind<"ObjectExpression">): SymbolicValue {
-    const properties: ObjectExpressionValue["properties"] = [];
+    let properties: ObjectExpressionValue["properties"] = [];
     const spreads: SymbolicValue[] = [];
+    const define = (defined: ObjectExpressionValue["properties"]): void => {
+      const keys = new Set(defined.map((property) => property.key));
+      properties = [...properties.filter((property) => !keys.has(property.key)), ...defined];
+    };
     for (const property of objectLiteral.properties) {
       if (property.kind === "Spread") {
-        spreads.push(this.read(property.place));
+        const spread = this.read(property.place);
+        const fields = this.#getSpreadFields(spread, property.place.loc);
+        if (fields) {
+          define(fields);
+          continue;
+        }
+        const overridden = createUnknown("spread", property.place.loc);
+        properties = properties.map((known) => ({ ...known, value: overridden }));
+        spreads.push(spread);
         continue;
       }
       const key = this.#getPropertyKey(property.key);
       if (key === null) return createUnknown("computed-key", objectLiteral.loc);
-      properties.push({ key, value: this.read(property.place) });
+      define([{ key, value: this.read(property.place) }]);
     }
     return { kind: "ObjectExpression", properties, spreads };
+  }
+
+  #getSpreadFields(
+    spread: SymbolicValue,
+    loc: SourceLocation,
+  ): ObjectExpressionValue["properties"] | null {
+    if (spread.kind === "ObjectExpression")
+      return spread.spreads.length === 0 ? spread.properties : null;
+    if (spread.kind !== "Binding") return null;
+    const domains = this.#resolver.getPropertyDomains(loc);
+    return (
+      domains &&
+      domains.map(([key, domain]) => ({
+        key,
+        value: this.bindingTable.readFieldOfDomain(spread.binding, [...spread.path, key], domain),
+      }))
+    );
   }
 
   #getPropertyKey(key: ObjectPropertyKey): string | null {

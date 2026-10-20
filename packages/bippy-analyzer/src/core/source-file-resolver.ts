@@ -15,7 +15,7 @@ import {
   isPropertyAccessExpression,
   isStringLiteral,
 } from "typescript/unstable/ast/is";
-import { SymbolFlags, TypeFlags } from "typescript/unstable/sync";
+import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
 import type { MutableCollection } from "../react-compiler/HIR/Environment";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
@@ -130,6 +130,23 @@ export class SourceFileResolver {
         ? node.argumentExpression.text
         : null;
     return propertyName === null || !this.#checker.getPropertyOfType(objectType, propertyName);
+  }
+
+  getPropertyDomains(loc: SourceLocation): Array<[string, Domain]> | null {
+    const type = this.#getType(loc);
+    if (
+      !type ||
+      !(type.flags & TypeFlags.Object) ||
+      this.#checker.getIndexInfosOfType(type).length > 0 ||
+      this.#checker.getSignaturesOfType(type, SignatureKind.Call).length > 0
+    )
+      return null;
+    return this.#checker
+      .getPropertiesOfType(type)
+      .map((property) => [
+        property.name,
+        getDomainOfType(this.#checker, this.#checker.getTypeOfSymbol(property)),
+      ]);
   }
 
   getUnionMemberValues(loc: SourceLocation, field: string): AbstractValue[][] | null {

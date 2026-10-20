@@ -12,6 +12,7 @@ import { formatPlace, formatSymbolicValue } from "../core/format";
 import { getTestExpression } from "../core/utils/get-test-expression";
 import { isRenderingNothing } from "../core/utils/is-rendering-nothing";
 import { isRenderingNothingWhenFalse } from "../core/utils/is-rendering-nothing-when-false";
+import { isUnchangedField } from "../core/utils/is-unchanged-field";
 import { isEffectHandler } from "../core/collect-handlers";
 import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "./source-text";
@@ -76,10 +77,12 @@ const formatUpdate = (update: StateUpdate): string => {
   const { binding, value } = update;
   const assignments =
     value.kind === "ObjectExpression"
-      ? value.properties.map(
-          (property) =>
-            `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
-        )
+      ? value.properties
+          .filter((property) => !isUnchangedField(property.value, binding, [property.key]))
+          .map(
+            (property) =>
+              `${formatPlace(binding, [property.key])} = ${formatSymbolicValue(property.value)}`,
+          )
       : [`${binding.name} = ${formatSymbolicValue(value)}`];
   const guardPrefix =
     update.guards.length > 0 ? `if ${update.guards.map(formatSymbolicValue).join(" && ")}: ` : "";

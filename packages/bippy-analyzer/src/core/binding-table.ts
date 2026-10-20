@@ -88,6 +88,12 @@ export class BindingTable {
     return createBindingValue(binding, path);
   }
 
+  readFieldOfDomain(binding: Binding, path: string[], domain: Domain): BindingValue {
+    const place = getBindingPlace(binding, path);
+    if (!this.placeDomains.has(place)) this.#addFieldDomain(binding, place, domain);
+    return createBindingValue(binding, path);
+  }
+
   #addFieldDomain(binding: Binding, place: BindingPlace, readDomain: Domain): void {
     const [field] = place.path;
     const unionMemberValues =
