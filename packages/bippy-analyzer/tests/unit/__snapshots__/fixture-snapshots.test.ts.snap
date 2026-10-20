@@ -219,6 +219,37 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > CommandInput keeps its render tree and handlers 1`] = `
+"---
+title: CommandInput src/compared-strings.tsx:16
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CommandInput"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;input#gt;"]
+  n2 --> n3
+  n4(["onChange ⇒ command = Unknown(member)"]):::event
+  n3 -.-> n4
+  n5{"command === #quot;help#quot;"}
+  n2 --> n5
+  n6["#lt;p#gt; #quot;Type a command#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > CommandInput keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CommandInput src/compared-strings.tsx:16
+---
+stateDiagram-v2
+  direction LR
+  S1: command === "help" · #lt;div#gt; #lt;input#gt; #lt;p#gt; "Type a command"
+  S2: command !== "help" · #lt;div#gt; #lt;input#gt;
+  S1 --> S2: setCommand(event.target.value)
+  S2 --> S1: setCommand(event.target.value)"
+`;
+
 exports[`fixture analysis > Composer keeps its render tree and handlers 1`] = `
 "---
 title: Composer src/guards.tsx:3
@@ -1170,6 +1201,47 @@ stateDiagram-v2
   S3: !isPending ∧ name !== "" · #lt;form#gt; #lt;p#gt; {name} #lt;button#gt; "Save"
   S2 --> S3: "Save"
   S3 --> S2: "Save""
+`;
+
+exports[`fixture analysis > NavLinks keeps its render tree and handlers 1`] = `
+"---
+title: NavLinks src/compared-strings.tsx:5
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["NavLinks"]
+  n2["#lt;nav#gt;"]
+  n1 --> n2
+  n3{"pathname === #quot;/#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; #quot;Home#quot;"]
+  n3 -->|✓| n4
+  n5["#lt;a#gt; #quot;Home#quot;"]
+  n3 -->|✗| n5
+  n6{"pathname === #quot;/blog#quot;"}
+  n2 --> n6
+  n7["#lt;b#gt; #quot;Blog#quot;"]
+  n6 -->|✓| n7
+  n8["#lt;a#gt; #quot;Blog#quot;"]
+  n6 -->|✗| n8
+  n9{"pathname === #quot;/about#quot;"}
+  n2 --> n9
+  n10["#lt;b#gt; #quot;About#quot;"]
+  n9 -->|✓| n10
+  n11["#lt;a#gt; #quot;About#quot;"]
+  n9 -->|✗| n11"
+`;
+
+exports[`fixture analysis > NavLinks keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: NavLinks src/compared-strings.tsx:5
+---
+stateDiagram-v2
+  direction LR
+  S1: pathname === "/" · #lt;nav#gt; #lt;b#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
+  S2: pathname === "/blog" · #lt;nav#gt; #lt;a#gt; "Home" #lt;b#gt; "Blog" #lt;a#gt; "About"
+  S3: pathname === "/about" · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;b#gt; "About"
+  S4: pathname ∉ {"/", "/blog", "/about"} · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About""
 `;
 
 exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `

@@ -55,8 +55,23 @@ const applyUpdates = (
     for (const [place, reachableValues] of reachableConstraints.possibleValues)
       if (dependentIds.has(place.bindingId)) updated.possibleValues.set(place, reachableValues);
     for (const dependentId of dependentIds) forgetBinding(updated, dependentId, false);
+    forgetUntrackedValues(
+      updated,
+      new Set([update.binding.id, ...dependentIds]),
+      reachableConstraints,
+    );
   }
   return updated;
+};
+
+const forgetUntrackedValues = (
+  constraints: Constraints,
+  bindingIds: Set<number>,
+  reachableConstraints: Constraints,
+): void => {
+  for (const place of constraints.possibleValues.places())
+    if (bindingIds.has(place.bindingId) && !reachableConstraints.possibleValues.has(place))
+      constraints.possibleValues.delete(place);
 };
 
 const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getValueKey);
