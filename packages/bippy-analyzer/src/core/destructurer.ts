@@ -14,6 +14,18 @@ const REDUCER_HOOKS = new Set<HookKind>(["useReducer", "useActionState"]);
 
 const ASSERTED_DOMAIN: Domain = { kind: "Unknown", reason: "cast" };
 
+interface StateSlot {
+  name: string;
+  loc: SourceLocation;
+  domain: Domain | null;
+}
+
+const getHoleStateName = (setterPlace: Place | null): string => {
+  const setterName = setterPlace && getIdentifierName(setterPlace);
+  const named = setterName && /^set([A-Z].*)$/.exec(setterName);
+  return named ? named[1].charAt(0).toLowerCase() + named[1].slice(1) : "state";
+};
+
 export class Destructurer {
   readonly #interpreter: Interpreter;
   #restPropsSample: Sample | null = null;
@@ -45,44 +57,45 @@ export class Destructurer {
     if (value.kind === "ArrayExpression" && value.spreads.length === 0)
       return itemPlaces.map((_itemPlace, index) => value.elements[index] ?? UNDEFINED_VALUE);
     if (value.kind !== "HookResult") return itemPlaces.map(() => null);
-    const [statePlace] = itemPlaces;
-    if (STATE_HOOKS.has(value.hookKind) && statePlace)
-      return this.#destructureState(value, statePlace);
-    if (REDUCER_HOOKS.has(value.hookKind) && statePlace)
-      return this.#destructureReducer(value, statePlace, itemPlaces[2] ?? null, loc);
+    const [statePlace, setterPlace] = itemPlaces;
+    const slot: StateSlot | null = statePlace
+      ? { name: getIdentifierName(statePlace) ?? "state", loc: statePlace.loc, domain: null }
+      : setterPlace && {
+          name: getHoleStateName(setterPlace),
+          loc: value.loc,
+          domain: this.#interpreter.resolver.getTupleElementDomain(value.loc, 0),
+        };
+    if (STATE_HOOKS.has(value.hookKind) && slot) return this.#destructureState(value, slot);
+    if (REDUCER_HOOKS.has(value.hookKind) && slot)
+      return this.#destructureReducer(value, slot, itemPlaces[2] ?? null, loc);
     return itemPlaces.map((place) => (place ? this.bindHookResult(place, value) : null));
   }
 
-  #destructureState(hook: HookResultValue, statePlace: Place): SymbolicValue[] {
+  #destructureState(hook: HookResultValue, slot: StateSlot): SymbolicValue[] {
     const [initialArgument] = hook.argumentValues;
     const initial = initialArgument && initialArgument.kind !== "Function" ? initialArgument : null;
     const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
-    const binding = this.#interpreter.createBinding(
-      getIdentifierName(statePlace) ?? "state",
-      "state",
-      statePlace.loc,
-      {
-        hookKind: hook.hookKind,
-        initial,
-        ...(isAsserted && { domain: ASSERTED_DOMAIN }),
-      },
-    );
+    const binding = this.#interpreter.createBinding(slot.name, "state", slot.loc, {
+      hookKind: hook.hookKind,
+      initial,
+      ...(slot.domain && { domain: slot.domain }),
+      ...(isAsserted && { domain: ASSERTED_DOMAIN }),
+    });
     return [createBindingValue(binding), { kind: "Setter", binding }];
   }
 
   #destructureReducer(
     hook: HookResultValue,
-    statePlace: Place,
+    slot: StateSlot,
     pendingPlace: Place | null,
     loc: SourceLocation,
   ): Array<SymbolicValue | null> {
     const [reducerArgument, initialArgument] = hook.argumentValues;
-    const binding = this.#interpreter.createBinding(
-      getIdentifierName(statePlace) ?? "state",
-      "reducer",
-      statePlace.loc,
-      { hookKind: hook.hookKind, initial: initialArgument ?? null },
-    );
+    const binding = this.#interpreter.createBinding(slot.name, "reducer", slot.loc, {
+      hookKind: hook.hookKind,
+      initial: initialArgument ?? null,
+      ...(slot.domain && { domain: slot.domain }),
+    });
     const reducer = reducerArgument
       ? this.#interpreter.resolveModuleFunction(reducerArgument)
       : createUnknown("reducer", loc);
