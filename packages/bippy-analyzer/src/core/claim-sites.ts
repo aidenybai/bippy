@@ -1,3 +1,4 @@
+import { foldBinary } from "./symbolic-values";
 import { describeCases } from "./claim-cases";
 import { formatSymbolicValue } from "./format";
 import type { AbstractValue, Claim, Domain, SourceLocation, SymbolicValue } from "./types";
@@ -25,12 +26,8 @@ const isNullishCase = (value: AbstractValue): boolean =>
 export const hasNullishCase = (domain: Domain): boolean =>
   domain.kind === "Cases" && domain.cases.some(isNullishCase);
 
-const createNotNullishTest = (subject: SymbolicValue): SymbolicValue => ({
-  kind: "BinaryExpression",
-  operator: "!=",
-  left: subject,
-  right: { kind: "Primitive", value: null },
-});
+const createNotNullishTest = (subject: SymbolicValue): SymbolicValue =>
+  foldBinary("!=", subject, { kind: "Primitive", value: null });
 
 export const createNonNullClaim = (
   subject: SymbolicValue,
