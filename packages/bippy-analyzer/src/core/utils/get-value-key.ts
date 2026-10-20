@@ -34,8 +34,6 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
       return [
         value.kind,
         value.testKind,
-        value.branch.file,
-        getLocationPart(value.branch.loc),
         getValueKey(value.test),
         getValueKey(value.consequent),
         getValueKey(value.alternate),
