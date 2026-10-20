@@ -1,4 +1,4 @@
-import { evaluateCondition, type Constraints } from "./constraints";
+import { evaluateCondition, getPossibleValues, type Constraints } from "./constraints";
 import type { AbstractValue, Binding, SymbolicValue } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isWholeBinding } from "./utils/is-whole-binding";
@@ -10,6 +10,7 @@ export const getLiteralCases = (
   constraints: Constraints | null,
 ): AbstractValue[] | null => {
   if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
+  if (value.kind === "Binding") return constraints && getPossibleValues(value, constraints);
   if (value.kind !== "Conditional") return null;
   const decidedOutcome = constraints
     ? evaluateCondition(getTestExpression(value), constraints)
