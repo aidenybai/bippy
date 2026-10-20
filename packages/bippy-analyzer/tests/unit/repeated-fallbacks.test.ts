@@ -7,8 +7,8 @@ describe("repeated conditionals", () => {
   it("reads the same || written twice as one value", () => {
     const { report } = getComponent(project, "Byline");
     expect(report.states.map((state) => state.conditions)).toEqual([
-      ["author ? author : editor"],
-      ["!(author ? author : editor)"],
+      ["author || editor"],
+      ["!(author || editor)"],
     ]);
   });
 });
