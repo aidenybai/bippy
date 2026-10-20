@@ -15,6 +15,7 @@ import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isSamePlace } from "./utils/is-same-place";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
+import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
@@ -25,7 +26,6 @@ const LENGTH_FIELD = "length";
 export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
-const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
 export interface Bound {
   left: BindingPlace | null;
@@ -254,10 +254,6 @@ export const getPossibleValues = (
   constraints: Constraints,
 ): AbstractValue[] | null =>
   value.kind === "Binding" ? (constraints.possibleValues.get(getValuePlace(value)) ?? null) : null;
-
-export const isBooleanExpression = (value: SymbolicValue): boolean =>
-  (value.kind === "BinaryExpression" && BOOLEAN_OPERATORS.has(value.operator)) ||
-  (value.kind === "UnaryExpression" && value.operator === "!");
 
 export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
   if (isBooleanExpression(value)) {

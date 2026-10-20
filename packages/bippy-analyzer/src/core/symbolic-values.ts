@@ -8,6 +8,7 @@ import type {
   TestKind,
   UnaryOperator,
 } from "./types";
+import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { negate } from "./utils/negate";
@@ -79,10 +80,13 @@ export const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolea
   return test.kind === "Primitive" ? !isNullish(test.value) : null;
 };
 
+const isNegatedNonBoolean = (value: SymbolicValue): boolean =>
+  value.kind === "UnaryExpression" && value.operator === "!" && !isBooleanExpression(value.value);
+
 export const foldUnary = (operator: UnaryOperator, value: SymbolicValue): SymbolicValue => {
   if (operator === "!" && value.kind === "Primitive")
     return { kind: "Primitive", value: !value.value };
-  if (operator === "!") return negate(value);
+  if (operator === "!" && !isNegatedNonBoolean(value)) return negate(value);
   return { kind: "UnaryExpression", operator, value };
 };
 
