@@ -697,6 +697,37 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > HintField keeps its render tree and handlers 1`] = `
+"---
+title: HintField src/narrowed-strings.tsx:1
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["HintField"]
+  n2["#lt;label#gt;"]
+  n1 --> n2
+  n3{"!hint"}
+  n2 --> n3
+  n4["#lt;p#gt; #quot;Add a hint#quot;"]
+  n3 -->|✓| n4
+  n5{"hint"}
+  n2 --> n5
+  n6["#lt;small#gt; {hint}"]
+  n5 -->|✓| n6
+  n7["#lt;small#gt; #quot;No hint yet#quot;"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > HintField keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: HintField src/narrowed-strings.tsx:1
+---
+stateDiagram-v2
+  direction LR
+  S1: !hint · #lt;label#gt; #lt;p#gt; "Add a hint" #lt;small#gt; "No hint yet"
+  S2: hint · #lt;label#gt; #lt;small#gt; {hint}"
+`;
+
 exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
 "---
 title: Inbox src/literals.tsx:17
@@ -2136,6 +2167,85 @@ stateDiagram-v2
   state "claims" as claims {
     claims1: holds isOpen stays within false | true L4
   }"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its render tree and handlers 1`] = `
+"---
+title: ToneBadge src/narrowed-strings.tsx:8
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneBadge"]
+  n2["#lt;span#gt;"]
+  n1 --> n2
+  n3{"tone === #quot;info#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; #quot;Info#quot;"]
+  n3 -->|✓| n4
+  n5{"tone === #quot;warning#quot;"}
+  n2 --> n5
+  n6["#lt;i#gt; #quot;Warning#quot;"]
+  n5 -->|✓| n6"
+`;
+
+exports[`fixture analysis > ToneBadge keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneBadge src/narrowed-strings.tsx:8
+---
+stateDiagram-v2
+  direction LR
+  S1: tone === "info" · #lt;span#gt; #lt;b#gt; "Info"
+  S2: tone === "warning" · #lt;span#gt; #lt;i#gt; "Warning"
+  S3: tone ∉ {"info", "warning"} · #lt;span#gt;"
+`;
+
+exports[`fixture analysis > ToneCounter keeps its render tree and handlers 1`] = `
+"---
+title: ToneCounter src/unchanged-props.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ToneCounter"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"tone === #quot;info#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt;"]
+  n3 -->|✓| n4
+  n5{"count #gt; 0"}
+  n4 --> n5
+  n6["{#quot;Info again#quot;}"]
+  n5 -->|✓| n6
+  n7["{#quot;Info#quot;}"]
+  n5 -->|✗| n7
+  n8["#lt;i#gt;"]
+  n3 -->|✗| n8
+  n9{"count #gt; 0"}
+  n8 --> n9
+  n10["{#quot;Other again#quot;}"]
+  n9 -->|✓| n10
+  n11["{#quot;Other#quot;}"]
+  n9 -->|✗| n11
+  n12["#lt;button#gt; {count}"]
+  n2 --> n12
+  n13(["onClick ⇒ count = count + 1"]):::event
+  n12 -.-> n13"
+`;
+
+exports[`fixture analysis > ToneCounter keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ToneCounter src/unchanged-props.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: tone === "info" ∧ count #gt; 0 · #lt;div#gt; #lt;b#gt; {"Info again"} #lt;button#gt; {count}
+  S2: tone === "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;b#gt; {"Info"} #lt;button#gt; {count}
+  S3: tone !== "info" ∧ count #gt; 0 · #lt;div#gt; #lt;i#gt; {"Other again"} #lt;button#gt; {count}
+  S4: tone !== "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;i#gt; {"Other"} #lt;button#gt; {count}
+  S1 --> S2: setCount(count + 1)
+  S2 --> S1: setCount(count + 1)
+  S3 --> S4: setCount(count + 1)
+  S4 --> S3: setCount(count + 1)"
 `;
 
 exports[`fixture analysis > ToneLabel keeps its render tree and handlers 1`] = `
