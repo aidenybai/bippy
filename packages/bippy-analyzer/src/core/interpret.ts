@@ -202,7 +202,7 @@ export class Interpreter {
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
-  #inlineDepth = 0;
+  readonly #inlinedFunctions = new Set<HIRFunction>();
 
   constructor(
     resolver: SourceFileResolver,
@@ -284,7 +284,7 @@ export class Interpreter {
   }
 
   #createClosure(hirFunction: HIRFunction): FunctionValue {
-    const isInlined = this.#inlineDepth > 0;
+    const isInlined = this.#inlinedFunctions.size > 0;
     const closure = this.#registerFunction(hirFunction, isInlined);
     if (isInlined)
       this.#functions.setCapturedValues(
@@ -430,12 +430,17 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const hirFunction = this.#functions.get(callee.functionId);
-    if (!hirFunction || this.#inlineDepth >= MAX_INLINE_DEPTH) return createUnknown("call", loc);
-    this.#inlineDepth++;
+    if (
+      !hirFunction ||
+      this.#inlinedFunctions.size >= MAX_INLINE_DEPTH ||
+      this.#inlinedFunctions.has(hirFunction)
+    )
+      return createUnknown("call", loc);
+    this.#inlinedFunctions.add(hirFunction);
     try {
       return this.#evaluateFunction(hirFunction, argumentValues, walkState, callee.functionId);
     } finally {
-      this.#inlineDepth--;
+      this.#inlinedFunctions.delete(hirFunction);
     }
   }
 
@@ -508,7 +513,7 @@ export class Interpreter {
     if (hookKind === "Custom") {
       const projectHook = this.#findProjectHook(callSite.calleePlace);
       if (projectHook)
-        return this.#inlineDepth < MAX_INLINE_DEPTH
+        return this.#inlinedFunctions.size < MAX_INLINE_DEPTH
           ? { kind: "ProjectHook", projectHook }
           : { kind: "Hook", hookKind };
       const storeKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
@@ -639,7 +644,7 @@ export class Interpreter {
     this.#forgetCallbackWrites(argumentValues, loc);
     if (this.#resolver.isReactElement(loc)) {
       const helper = this.#findProjectFunction(callSite.calleePlace);
-      if (helper && this.#inlineDepth < MAX_INLINE_DEPTH) {
+      if (helper && this.#inlinedFunctions.size < MAX_INLINE_DEPTH) {
         this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
         return this.#inlineFunction(helper.hirFunction, callSite, walkState);
       }
