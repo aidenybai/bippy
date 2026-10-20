@@ -456,6 +456,17 @@ const assumeConditional = (
   return assumed;
 };
 
+const assumeDecidedArm = (
+  value: ConditionalValue,
+  isTrue: boolean,
+  constraints: Constraints,
+  memo: AssumptionMemo,
+): Constraints | null => {
+  const test = evaluateCondition(getTestExpression(value), constraints);
+  if (test === null) return constraints;
+  return assumeMemoized(test ? value.consequent : value.alternate, isTrue, constraints, memo);
+};
+
 const assumeMemoized = (
   value: SymbolicValue,
   isTrue: boolean,
@@ -478,7 +489,12 @@ const assumeUncached = (
   memo: AssumptionMemo,
 ): Constraints | null => {
   const evaluated = evaluateCondition(value, constraints);
-  if (evaluated !== null) return evaluated === isTrue ? constraints : null;
+  if (evaluated !== null) {
+    if (evaluated !== isTrue) return null;
+    return value.kind === "Conditional"
+      ? assumeDecidedArm(value, isTrue, constraints, memo)
+      : constraints;
+  }
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return assumeMemoized(value.value, !isTrue, constraints, memo);
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
