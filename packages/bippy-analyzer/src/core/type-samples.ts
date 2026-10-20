@@ -115,6 +115,20 @@ const getCollectionSamples = (checker: Checker, type: Type, depth: number): Samp
   return null;
 };
 
+const getBrandedSamples = (
+  checker: Checker,
+  members: readonly Type[],
+  depth: number,
+  name: string | null,
+): Sample[] | null => {
+  for (const member of members) {
+    const samples =
+      getPrimitiveSamples(checker, member, name) ?? getCollectionSamples(checker, member, depth);
+    if (samples) return samples;
+  }
+  return null;
+};
+
 export const getSamples = (
   checker: Checker,
   type: Type | undefined,
@@ -137,6 +151,10 @@ export const getSamples = (
   }
   const primitiveSamples = getPrimitiveSamples(checker, type, name);
   if (primitiveSamples) return primitiveSamples;
+  const brandedSamples = type.isIntersectionType()
+    ? getBrandedSamples(checker, type.getTypes() ?? [], depth, name)
+    : null;
+  if (brandedSamples) return brandedSamples;
   const [signature] = checker.getSignaturesOfType(type, SignatureKind.Call);
   if (signature) {
     const returnSample = getFirstSample(

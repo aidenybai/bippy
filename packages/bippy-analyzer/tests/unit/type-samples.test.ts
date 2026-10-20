@@ -22,4 +22,13 @@ describe("type samples", () => {
     expect(folderSample).toMatchObject({ kind: "Object", isOpen: false });
     expect(depth).toBeLessThan(5);
   });
+
+  it("samples a branded string or map as the value it brands", () => {
+    const shapeSummary = getComponent(
+      analyzeFixture("conformance-repros", "branded-props"),
+      "ShapeSummary",
+    );
+    expect(getBinding(shapeSummary, "ownerId").samples[0]).toMatchObject({ kind: "Value" });
+    expect(getBinding(shapeSummary, "shapes").samples[0]).toMatchObject({ kind: "Map" });
+  });
 });
