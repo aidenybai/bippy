@@ -1,10 +1,10 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type {
-  PrimitiveValue,
   BinaryOperator,
   Binding,
   BindingValue,
   ConditionalValue,
+  PrimitiveValue,
   SymbolicValue,
   TestKind,
   UnaryOperator,
@@ -71,6 +71,27 @@ const foldObjectComparison = (
   return null;
 };
 
+const isOrdered = (value: PrimitiveValue): value is number | string =>
+  typeof value === "number" || typeof value === "string";
+
+const foldOrder = (
+  operator: "<" | "<=" | ">" | ">=",
+  left: PrimitiveValue,
+  right: PrimitiveValue,
+): SymbolicValue | null => {
+  if (!isOrdered(left) || !isOrdered(right) || typeof left !== typeof right) return null;
+  switch (operator) {
+    case "<":
+      return { kind: "Primitive", value: left < right };
+    case "<=":
+      return { kind: "Primitive", value: left <= right };
+    case ">":
+      return { kind: "Primitive", value: left > right };
+    case ">=":
+      return { kind: "Primitive", value: left >= right };
+  }
+};
+
 export const foldBinary = (
   operator: BinaryOperator,
   left: SymbolicValue,
@@ -99,6 +120,18 @@ export const foldBinary = (
     case "!=":
       // oxlint-disable-next-line eqeqeq -- Folds JavaScript loose equality as written.
       return { kind: "Primitive", value: leftValue != rightValue };
+    case "<":
+    case "<=":
+    case ">":
+    case ">=":
+      return (
+        foldOrder(operator, leftValue, rightValue) ?? {
+          kind: "BinaryExpression",
+          operator,
+          left,
+          right,
+        }
+      );
     default:
       return { kind: "BinaryExpression", operator, left, right };
   }
