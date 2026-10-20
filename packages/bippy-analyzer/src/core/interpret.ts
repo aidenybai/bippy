@@ -486,8 +486,8 @@ export class Interpreter {
     return moduleFunction ? this.#registerFunction(moduleFunction) : value;
   }
 
-  warn(kind: WarningKind, message: string, loc: SourceLocation): void {
-    this.diagnostics.warn(kind, message, loc, this.#resolver.fileName);
+  warn(kind: WarningKind, message: string, loc: SourceLocation, prop: string | null = null): void {
+    this.diagnostics.warn(kind, message, loc, this.#resolver.fileName, prop);
   }
 
   #getSetterNextValue(

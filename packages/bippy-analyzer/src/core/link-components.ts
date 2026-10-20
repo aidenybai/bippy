@@ -1,14 +1,19 @@
 import { enumerateInstance, getInstanceKey } from "./instance-states";
+import { formatPlace } from "./format";
 import type {
+  BindingValue,
   ComponentAnalysis,
   ComponentInstance,
   ComponentLink,
   JsxExpressionValue,
   PropLink,
   StateReport,
+  SymbolicValue,
+  Warning,
 } from "./types";
 import { appendToGroup } from "./utils/append-to-group";
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { isSameLocation } from "./utils/is-same-location";
 import { getValueDomain, type Places } from "./value-domains";
 
 export interface Linked {
@@ -70,6 +75,69 @@ const collectLinks = (analyses: ComponentAnalysis[], loadReport: ReportLoader): 
   });
 };
 
+const forEachPassedBinding = (value: SymbolicValue, visit: (value: BindingValue) => void): void => {
+  if (value.kind === "Binding") visit(value);
+  if (value.kind === "Conditional") {
+    forEachPassedBinding(value.consequent, visit);
+    forEachPassedBinding(value.alternate, visit);
+  }
+};
+
+const addWarning = (analysis: ComponentAnalysis, warning: Warning): boolean => {
+  const isDuplicate = analysis.warnings.some(
+    (existing) =>
+      existing.kind === warning.kind &&
+      existing.message === warning.message &&
+      existing.file === warning.file &&
+      isSameLocation(existing.loc, warning.loc),
+  );
+  if (!isDuplicate) analysis.warnings.push(warning);
+  return !isDuplicate;
+};
+
+const propagatePropMutation = (
+  parent: ComponentAnalysis,
+  child: ComponentAnalysis,
+  propLink: PropLink,
+  warning: Warning,
+): boolean => {
+  let isAdded = false;
+  forEachPassedBinding(propLink.value, ({ binding, path }) => {
+    if (binding.kind !== "state" && binding.kind !== "prop") return;
+    const isProp = binding.kind === "prop";
+    const place = formatPlace(binding, path);
+    isAdded =
+      addWarning(parent, {
+        kind: isProp ? "prop-mutation" : "state-mutation",
+        message: `mutates ${isProp ? "prop " : ""}${place} through ${child.name}`,
+        loc: warning.loc,
+        file: warning.file,
+        prop: isProp ? binding.propName : null,
+      }) || isAdded;
+  });
+  return isAdded;
+};
+
+const propagatePropMutations = (
+  analysesByDeclaration: Map<string, ComponentAnalysis>,
+  links: ComponentLink[],
+): void => {
+  let isChanged = true;
+  while (isChanged) {
+    isChanged = false;
+    for (const link of links) {
+      const parent = analysesByDeclaration.get(link.parent);
+      const child = analysesByDeclaration.get(link.child);
+      if (!parent || !child) continue;
+      for (const warning of child.warnings) {
+        if (warning.kind !== "prop-mutation" || warning.prop === null) continue;
+        const propLink = link.props.find((prop) => prop.name === warning.prop);
+        if (propLink && propagatePropMutation(parent, child, propLink, warning)) isChanged = true;
+      }
+    }
+  }
+};
+
 const isSameShape = (instance: StateReport, own: StateReport): boolean =>
   instance.states.length === own.states.length &&
   instance.unreachableBranches.length === own.unreachableBranches.length &&
@@ -106,7 +174,9 @@ export const linkComponents = (
   );
   const instancesByChild = new Map<string, ComponentInstance[]>();
   const loadInstance = createInstanceLoader(loadReport);
-  for (const link of collectLinks(analyses, loadReport)) {
+  const links = collectLinks(analyses, loadReport);
+  propagatePropMutations(analysesByDeclaration, links);
+  for (const link of links) {
     linked.get(link.parent)?.links.push(link);
     const child = analysesByDeclaration.get(link.child);
     const report = child ? loadInstance(child, link) : null;

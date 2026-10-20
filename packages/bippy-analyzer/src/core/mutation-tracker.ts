@@ -127,6 +127,7 @@ export class MutationTracker {
         "prop-mutation",
         `mutates prop ${formatPlace(binding, ownedValue.path)}`,
         loc,
+        binding.propName,
       );
       return;
     }
