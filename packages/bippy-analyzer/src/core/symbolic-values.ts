@@ -28,6 +28,8 @@ export const START_TRANSITION_VALUE: SymbolicValue = {
 export const isStartTransition = (value: SymbolicValue): boolean =>
   value.kind === "Global" && value.module === "react" && value.name === "startTransition";
 
+export const ONE_VALUE: SymbolicValue = { kind: "Primitive", value: 1 };
+
 export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
     if (
