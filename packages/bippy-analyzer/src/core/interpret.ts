@@ -262,7 +262,11 @@ export class Interpreter {
     return this.#renderPhaseEffects.finish();
   }
 
-  collectEffects(callback: SymbolicValue, argumentValues: SymbolicValue[]): CollectedEffects {
+  collectEffects(
+    callback: SymbolicValue,
+    argumentValues: SymbolicValue[],
+    renderGuards: SymbolicValue[] = [],
+  ): CollectedEffects {
     const previousEffects = this.#handlerEffects;
     const previousBlockVisits = this.walker.blockVisits;
     const handlerEffects = new EffectCollector((kind, message, loc) =>
@@ -273,7 +277,10 @@ export class Interpreter {
     try {
       const callbacks = getContainedValues(callback);
       for (const handlerCallback of callbacks)
-        this.#runCallback(handlerCallback, argumentValues, new Set());
+        this.#runCallback(handlerCallback, argumentValues, new Set(), {
+          ...ROOT_WALK_STATE,
+          renderGuards,
+        });
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
