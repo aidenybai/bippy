@@ -10,7 +10,8 @@ import { assumeGuards } from "./claim-guards";
 import { getSymbolicValues } from "./claim-values";
 import { findClaimPath } from "./claim-path";
 import { getHandlerStates } from "./claim-states";
-import { isBooleanExpression, type Constraints } from "./constraints";
+import type { Constraints } from "./constraints";
+import { isBooleanExpression } from "./utils/is-boolean-expression";
 import type {
   AbstractValue,
   Binding,
