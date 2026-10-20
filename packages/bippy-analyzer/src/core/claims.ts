@@ -1,7 +1,7 @@
 import { classify, describeCases } from "./claim-cases";
 import { getSymbolicValues } from "./claim-values";
 import { createClaimContext, type ClaimContext } from "./claim-context";
-import { assumeGuards } from "./claim-guards";
+import { assumeGuards, hasOpaqueGuardOn } from "./claim-guards";
 import { findClaimPath } from "./claim-path";
 import { getClaimStates } from "./claim-states";
 import { assumeCondition, evaluateCondition, type Constraints } from "./constraints";
@@ -94,12 +94,19 @@ const checkCondition = (test: SymbolicValue, constraints: Constraints): Check =>
   return { outcome: null, witness: describeFailure(test, failing) };
 };
 
-const checkClaim = (claim: Claim, constraints: Constraints): Check | null => {
-  const narrowed = assumeGuards(claim.guards, constraints);
-  if (!narrowed) return null;
+const checkNarrowedClaim = (claim: Claim, narrowed: Constraints): Check => {
   if (claim.cases) return checkMembership(claim, claim.cases, narrowed);
   if (claim.test) return checkCondition(claim.test, narrowed);
   return { outcome: null, witness: null };
+};
+
+const checkClaim = (claim: Claim, constraints: Constraints): Check | null => {
+  const narrowed = assumeGuards(claim.guards, constraints);
+  if (!narrowed) return null;
+  const check = checkNarrowedClaim(claim, narrowed);
+  return check.outcome === false && hasOpaqueGuardOn(claim.subject, claim.guards)
+    ? { ...check, outcome: null }
+    : check;
 };
 
 const toOutcome = (claim: Claim, checks: StateCheck[], context: ClaimContext): ClaimOutcome => {
