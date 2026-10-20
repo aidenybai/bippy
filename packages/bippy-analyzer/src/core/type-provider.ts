@@ -1,5 +1,5 @@
 import type { SourceFile } from "typescript/unstable/ast";
-import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
+import { SignatureKind, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Signature, Type } from "typescript/unstable/sync";
 import type { MutableCollection, TypeProvider } from "../react-compiler/HIR/Environment";
 import { Effect, ValueKind, makeType } from "../react-compiler/HIR/HIR";
@@ -12,7 +12,7 @@ import {
   addFunction,
 } from "../react-compiler/HIR/ObjectShape";
 import type { ShapeRegistry } from "../react-compiler/HIR/ObjectShape";
-import { LIBRARY_DECLARATION_PATTERN } from "./utils/library-declaration-pattern";
+import { getCollectionName, getInterfaceMemberNames } from "./utils/lib-collections";
 import { findNodeAtLocation } from "./utils/find-node-at-location";
 import { getReactExportName } from "./utils/typescript";
 
@@ -34,13 +34,11 @@ interface Collection {
   mutatingMethod: string;
 }
 
-const ARRAY_COLLECTION: Collection = { shapeId: BuiltInArrayId, mutatingMethod: "push" };
-const LIB_COLLECTIONS = new Map<string, Collection>([
-  ["Map", { shapeId: BuiltInMapId, mutatingMethod: "set" }],
-  ["ReadonlyMap", { shapeId: BuiltInMapId, mutatingMethod: "set" }],
-  ["Set", { shapeId: BuiltInSetId, mutatingMethod: "add" }],
-  ["ReadonlySet", { shapeId: BuiltInSetId, mutatingMethod: "add" }],
-]);
+const COLLECTIONS: Record<MutableCollection, Collection> = {
+  Array: { shapeId: BuiltInArrayId, mutatingMethod: "push" },
+  Map: { shapeId: BuiltInMapId, mutatingMethod: "set" },
+  Set: { shapeId: BuiltInSetId, mutatingMethod: "add" },
+};
 
 const isPrimitiveType = (type: Type): boolean =>
   Boolean(type.flags & PRIMITIVE_FLAGS) ||
@@ -64,19 +62,16 @@ export class CompilerTypeProvider implements TypeProvider {
   isMutatingMethod(collection: MutableCollection, method: string): boolean {
     const cachedMethods = this.#mutatingMethodsByCollection.get(collection);
     if (cachedMethods) return cachedMethods.has(method);
-    const readonlyMethods = new Set(this.#getMemberNames(`Readonly${collection}`));
+    const readonlyMethods = new Set(
+      getInterfaceMemberNames(this.#checker, this.#sourceFile, `Readonly${collection}`),
+    );
     const mutatingMethods = new Set(
-      this.#getMemberNames(collection).filter((memberName) => !readonlyMethods.has(memberName)),
+      getInterfaceMemberNames(this.#checker, this.#sourceFile, collection).filter(
+        (memberName) => !readonlyMethods.has(memberName),
+      ),
     );
     this.#mutatingMethodsByCollection.set(collection, mutatingMethods);
     return mutatingMethods.has(method);
-  }
-
-  #getMemberNames(interfaceName: string): string[] {
-    const symbol = this.#checker.resolveName(interfaceName, SymbolFlags.Type, this.#sourceFile);
-    if (!symbol) return [];
-    const type = this.#checker.getDeclaredTypeOfSymbol(symbol);
-    return this.#checker.getPropertiesOfType(type).map((property) => property.name);
   }
 
   getType(loc: SourceLocation, shapes: ShapeRegistry): BuiltInType | null {
@@ -133,16 +128,8 @@ export class CompilerTypeProvider implements TypeProvider {
   }
 
   #getCollectionType(type: Type): BuiltInType | null {
-    const symbol = type.getSymbol();
-    const isLibCollection = symbol?.declarations.some((declaration) =>
-      LIBRARY_DECLARATION_PATTERN.test(declaration.path),
-    );
-    const collection =
-      this.#checker.isArrayType(type) || this.#checker.isTupleType(type)
-        ? ARRAY_COLLECTION
-        : isLibCollection
-          ? LIB_COLLECTIONS.get(symbol?.name ?? "")
-          : undefined;
+    const collectionName = getCollectionName(this.#checker, type);
+    const collection = collectionName ? COLLECTIONS[collectionName] : undefined;
     if (!collection) return null;
     return {
       kind: "Object",
