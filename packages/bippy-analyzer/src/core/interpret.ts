@@ -16,7 +16,7 @@ import type { SourceFileResolver } from "./source-file-resolver";
 import { ArrayIteration, ITERATION_METHODS, RENDERED_ITERATION_METHODS } from "./array-iteration";
 import { CallbackPasser } from "./callback-passer";
 import { ClaimRecorder } from "./claim-recorder";
-import { ControlFlowWalker } from "./control-flow-walker";
+import { ControlFlowWalker, createFunctionScope } from "./control-flow-walker";
 import { Destructurer } from "./destructurer";
 import { MutationTracker } from "./mutation-tracker";
 import { PatternMatcher } from "./pattern-matcher";
@@ -1168,8 +1168,8 @@ export class Interpreter {
   ): SymbolicValue {
     const previousFunction = this.#currentFunction;
     const previousResolver = this.#resolver;
-    const previousWalkedCatches = this.walker.walkedCatches;
-    this.walker.walkedCatches = new Set();
+    const previousFunctionScope = this.walker.functionScope;
+    this.walker.functionScope = createFunctionScope();
     this.#currentFunction = hirFunction;
     this.#resolver = this.#functions.getResolver(hirFunction) ?? previousResolver;
     const restoreLiveValues = this.#applyCapturedValues(functionId);
@@ -1196,7 +1196,7 @@ export class Interpreter {
       restoreLiveValues();
       this.#currentFunction = previousFunction;
       this.#resolver = previousResolver;
-      this.walker.walkedCatches = previousWalkedCatches;
+      this.walker.functionScope = previousFunctionScope;
     }
   }
 

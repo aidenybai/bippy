@@ -21,3 +21,26 @@ export const RetryForm = () => {
     </form>
   );
 };
+
+export const UploadForm = () => {
+  const [step, setStep] = useState<"idle" | "uploading" | "processing" | "done">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const upload = async () => {
+    try {
+      setStep("uploading");
+      await save();
+      setStep("processing");
+      await save();
+      setStep("done");
+    } catch {
+      setError("Failed");
+    }
+  };
+  return (
+    <div>
+      <button onClick={upload}>Upload</button>
+      <p>{step}</p>
+      {error ? <p>{error}</p> : null}
+    </div>
+  );
+};

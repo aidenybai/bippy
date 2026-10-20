@@ -28,4 +28,24 @@ describe("a catch after an await in a handler", () => {
       [[0, 1]],
     ]);
   });
+
+  it("skips the rest of the try body when the await before it throws", () => {
+    const upload = getComponent(
+      analyzeFixture("symbolic-tree", "catch-after-await.tsx"),
+      "UploadForm",
+    );
+    const [handler] = upload.analysis.handlers;
+    expect(
+      handler?.updates.map((update) => [
+        formatSymbolicValue(update.value),
+        update.guards.map(formatSymbolicValue),
+      ]),
+    ).toEqual([
+      ['"uploading"', []],
+      ['"processing"', ["!Unknown(throws)"]],
+      ['"done"', ["!Unknown(throws)", "!Unknown(throws)"]],
+      ['"Failed"', ["Unknown(throws)"]],
+      ['"Failed"', ["!Unknown(throws)", "Unknown(throws)"]],
+    ]);
+  });
 });
