@@ -114,11 +114,14 @@ const addFollowingEffects = (context: ScoringContext, edgeIds: EdgeHandlerIds): 
 };
 
 const getTriggeredHandlerIds = (context: ScoringContext, after: Capture): EdgeHandlerIds => {
+  const handlerIdsByHit = after.handlerHits.map(
+    (probeId) => context.handlerIdsByProbeId.get(probeId) ?? [],
+  );
   const edgeIds: EdgeHandlerIds = {
-    triggeredIds: new Set(
-      after.handlerHits.flatMap((probeId) => context.handlerIdsByProbeId.get(probeId) ?? []),
+    triggeredIds: new Set(handlerIdsByHit.flat()),
+    maybeTriggeredIds: new Set(
+      handlerIdsByHit.filter((handlerIds) => handlerIds.length > 1).flat(),
     ),
-    maybeTriggeredIds: new Set(),
   };
   if (edgeIds.triggeredIds.size > 0) addFollowingEffects(context, edgeIds);
   return edgeIds;
