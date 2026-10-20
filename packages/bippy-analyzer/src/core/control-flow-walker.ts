@@ -559,6 +559,7 @@ export class ControlFlowWalker {
 
   #passAwait(walkState: WalkState, loc: SourceLocation): WalkState {
     this.#awaitCount++;
+    this.#interpreter.cells.passAwait();
     const asyncWalkState = getAsyncWalkState(walkState);
     const throwPoints = this.#functionScope.throwPointsByTry.at(-1);
     if (!throwPoints) return asyncWalkState;
