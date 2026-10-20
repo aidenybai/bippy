@@ -22,5 +22,11 @@ const getNodesByRange = (sourceFile: SourceFile): Map<string, Node> => {
   return nodesByRange;
 };
 
-export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null =>
-  loc === GeneratedSource ? null : (getNodesByRange(sourceFile).get(getLocationKey(loc)) ?? null);
+export const findNodeAtLocation = (sourceFile: SourceFile, loc: SourceLocation): Node | null => {
+  if (loc === GeneratedSource) return null;
+  const nodesByRange = getNodesByRange(sourceFile);
+  const node = nodesByRange.get(getLocationKey(loc));
+  if (node || !loc.identifierName) return node ?? null;
+  const nameEnd = loc.start.index + loc.identifierName.length;
+  return nodesByRange.get(getRangeKey(loc.start.index, nameEnd)) ?? null;
+};
