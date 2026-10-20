@@ -69,6 +69,7 @@ import {
   foldUnary,
   getContainedValues,
   getPassedCallbacks,
+  isStartTransition,
 } from "./symbolic-values";
 import { BindingTable } from "./binding-table";
 import type { BindingOptions } from "./binding-table";
@@ -124,6 +125,7 @@ type CallTarget =
   | { kind: "Store"; storeKey: string; storeActions: StoreActions }
   | { kind: "Hook"; hookKind: HookKind }
   | { kind: "ModuleFunction"; hirFunction: HIRFunction }
+  | { kind: "Transition" }
   | { kind: "Value" };
 
 export interface ProjectHook {
@@ -551,8 +553,11 @@ export class Interpreter {
 
   #getCallTarget(callSite: CallSite): CallTarget {
     const [firstArgument] = callSite.argumentValues;
-    if (this.#resolver.getReactExportName(callSite.loc) === "createPortal" && firstArgument)
+    const reactExportName = this.#resolver.getReactExportName(callSite.loc);
+    if (reactExportName === "createPortal" && firstArgument)
       return { kind: "Portal", children: firstArgument };
+    if (reactExportName === "startTransition" || isStartTransition(callSite.callee))
+      return { kind: "Transition" };
     const hookKind = getHookKind(this.getCurrentFunction().env, callSite.calleePlace.identifier);
     if (hookKind === "Custom") {
       const projectHook = this.#findProjectHook(callSite.calleePlace);
@@ -634,6 +639,8 @@ export class Interpreter {
         return this.#evaluateHookCall(target.hookKind, callSite, walkState);
       case "ModuleFunction":
         return this.#inlineFunction(target.hirFunction, callSite, walkState);
+      case "Transition":
+        return this.#startTransition(callSite, walkState);
       case "Value":
         return this.#callValue(callSite, walkState);
       default:
@@ -652,6 +659,12 @@ export class Interpreter {
       callSite.loc,
       walkState,
     );
+  }
+
+  #startTransition(callSite: CallSite, walkState: WalkState): SymbolicValue {
+    const [scope] = callSite.argumentValues;
+    if (scope) this.#callValue({ ...callSite, callee: scope, argumentValues: [] }, walkState);
+    return UNDEFINED_VALUE;
   }
 
   #callValue(callSite: CallSite, walkState: WalkState): SymbolicValue {

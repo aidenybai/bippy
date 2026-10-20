@@ -19,6 +19,15 @@ const MAX_OPTIONS_NESTING = 3;
 
 export const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
 
+export const START_TRANSITION_VALUE: SymbolicValue = {
+  kind: "Global",
+  name: "startTransition",
+  module: "react",
+};
+
+export const isStartTransition = (value: SymbolicValue): boolean =>
+  value.kind === "Global" && value.module === "react" && value.name === "startTransition";
+
 export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
     if (value.kind === "Function" || value.kind === "Setter") return [value];
