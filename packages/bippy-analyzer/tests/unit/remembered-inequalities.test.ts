@@ -13,4 +13,12 @@ describe("remembered inequalities", () => {
       ["!isOpen"],
     ]);
   });
+
+  it("decides an inequality from the equality assumed before it", () => {
+    const { report } = getComponent(project, "StatusBadge");
+    expect(report.states.map((state) => state.conditions)).toEqual([
+      ['status === "active"'],
+      ['status !== "active"'],
+    ]);
+  });
 });

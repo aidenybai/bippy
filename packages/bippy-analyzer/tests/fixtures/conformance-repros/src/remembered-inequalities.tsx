@@ -10,3 +10,10 @@ export const LayoutBadge = ({ layout }: { layout: string }) => {
     </div>
   );
 };
+
+export const StatusBadge = ({ status }: { status: string }) => (
+  <div>
+    {status === "active" && <b>Active</b>}
+    {status !== "active" && <i>Inactive</i>}
+  </div>
+);
