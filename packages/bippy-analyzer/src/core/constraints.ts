@@ -5,6 +5,7 @@ import type {
   BindingValue,
   BindingPlace,
   ConditionalValue,
+  PrimitiveValue,
   SymbolicValue,
 } from "./types";
 import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
@@ -25,6 +26,7 @@ const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
 export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
+const STRICT_EQUALITY_OPERATORS = new Set(["===", "!=="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 const BOOLEAN_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 
@@ -46,6 +48,7 @@ interface Distance {
 }
 
 interface Assumption {
+  value: SymbolicValue;
   isTrue: boolean;
   places: BindingPlace[];
 }
@@ -275,6 +278,24 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
+const evaluateAssumedEquality = (
+  placeSide: SymbolicValue,
+  literal: PrimitiveValue,
+  constraints: Constraints,
+): boolean | null => {
+  const placeKey = getValueKey(placeSide);
+  for (const { value, isTrue } of constraints.assumptions.values()) {
+    if (value.kind !== "BinaryExpression" || !STRICT_EQUALITY_OPERATORS.has(value.operator))
+      continue;
+    const [assumedSide, assumedLiteral] = splitEquality(value);
+    if (assumedLiteral.kind !== "Primitive" || getValueKey(assumedSide) !== placeKey) continue;
+    const isEqual = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
+    if (assumedLiteral.value === literal) return isEqual;
+    if (isEqual) return false;
+  }
+  return null;
+};
+
 const evaluateEquality = (
   value: BinaryExpressionValue,
   constraints: Constraints,
@@ -282,6 +303,10 @@ const evaluateEquality = (
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive") return null;
+  if (STRICT_EQUALITY_OPERATORS.has(value.operator)) {
+    const assumed = evaluateAssumedEquality(placeSide, literalSide.value, constraints);
+    if (assumed !== null) return assumed !== isNegated;
+  }
   const placeValues = getPossibleValues(placeSide, constraints);
   if (!placeValues) return null;
   const matchCount = placeValues.filter((candidate) =>
@@ -452,7 +477,7 @@ const assumeConditional = (
     consequent && alternate ? joinConstraints(consequent, alternate) : (consequent ?? alternate);
   if (!joined || hasUnknownPart(value)) return joined;
   const assumed = cloneConstraints(joined);
-  assumed.assumptions.set(getValueKey(value), { isTrue, places: collectPlaces(value) });
+  assumed.assumptions.set(getValueKey(value), { value, isTrue, places: collectPlaces(value) });
   return assumed;
 };
 
@@ -483,13 +508,17 @@ const assumeUncached = (
     return assumeMemoized(value.value, !isTrue, constraints, memo);
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
-    return narrowPlace(
+    return rememberUndecided(
       value,
-      constraints,
-      (candidate) => getTruthiness(candidate) !== (isTrue ? "falsy" : "truthy"),
+      isTrue,
+      narrowPlace(
+        value,
+        constraints,
+        (candidate) => getTruthiness(candidate) !== (isTrue ? "falsy" : "truthy"),
+      ),
     );
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
-    return assumeEquality(value, isTrue, constraints);
+    return rememberUndecided(value, isTrue, assumeEquality(value, isTrue, constraints));
   return assumeOpaqueCondition(value, isTrue, constraints);
 };
 
@@ -519,6 +548,15 @@ const assumeEquality = (
   );
 };
 
+const rememberUndecided = (
+  value: SymbolicValue,
+  isTrue: boolean,
+  narrowed: Constraints | null,
+): Constraints | null =>
+  narrowed && evaluateCondition(value, narrowed) === null
+    ? assumeOpaqueCondition(value, isTrue, narrowed)
+    : narrowed;
+
 const assumeOpaqueCondition = (
   value: SymbolicValue,
   isTrue: boolean,
@@ -527,6 +565,7 @@ const assumeOpaqueCondition = (
   if (hasUnknownPart(value)) return constraints;
   const assumed = cloneConstraints(constraints);
   assumed.assumptions.set(getValueKey(value), {
+    value,
     isTrue,
     places: collectPlaces(value),
   });
