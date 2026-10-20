@@ -14,22 +14,13 @@ import {
 import type { ShapeRegistry } from "../react-compiler/HIR/ObjectShape";
 import { getCollectionName, getInterfaceMemberNames } from "./utils/lib-collections";
 import { findNodeAtLocation } from "./utils/find-node-at-location";
+import { isPrimitiveType } from "./utils/is-primitive-type";
 import { getReactExportName } from "./utils/typescript";
 import { getTypeAtLocation } from "./utils/get-type-at-location";
 import { getTypeArguments } from "./utils/get-type-arguments";
 import { getUnionMembers } from "./utils/get-union-members";
 
 const MAX_CONVERSION_DEPTH = 3;
-const PRIMITIVE_FLAGS =
-  TypeFlags.StringLike |
-  TypeFlags.NumberLike |
-  TypeFlags.BigIntLike |
-  TypeFlags.BooleanLike |
-  TypeFlags.EnumLike |
-  TypeFlags.ESSymbolLike |
-  TypeFlags.Null |
-  TypeFlags.Undefined |
-  TypeFlags.Void;
 const NULLISH_FLAGS = TypeFlags.Null | TypeFlags.Undefined | TypeFlags.Void;
 
 interface Collection {
@@ -42,10 +33,6 @@ const COLLECTIONS: Record<MutableCollection, Collection> = {
   Map: { shapeId: BuiltInMapId, mutatingMethod: "set" },
   Set: { shapeId: BuiltInSetId, mutatingMethod: "add" },
 };
-
-const isPrimitiveType = (type: Type): boolean =>
-  Boolean(type.flags & PRIMITIVE_FLAGS) ||
-  (type.isUnionType() && (getUnionMembers(type)?.every(isPrimitiveType) ?? false));
 
 export class CompilerTypeProvider implements TypeProvider {
   readonly #checker: Checker;
