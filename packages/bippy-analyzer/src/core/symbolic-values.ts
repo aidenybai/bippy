@@ -50,11 +50,20 @@ export const createBindingValue = (binding: Binding, path: string[] = []): Bindi
   path,
 });
 
+const getKnownMembership = (key: SymbolicValue, object: SymbolicValue): boolean | null => {
+  if (key.kind !== "Primitive" || object.kind !== "ObjectExpression") return null;
+  const name = String(key.value);
+  if (object.properties.some((property) => property.key === name)) return true;
+  return object.spreads.length === 0 && !(name in Object.prototype) ? false : null;
+};
+
 export const foldBinary = (
   operator: BinaryOperator,
   left: SymbolicValue,
   right: SymbolicValue,
 ): SymbolicValue => {
+  const membership = operator === "in" ? getKnownMembership(left, right) : null;
+  if (membership !== null) return { kind: "Primitive", value: membership };
   if (left.kind !== "Primitive" || right.kind !== "Primitive")
     return { kind: "BinaryExpression", operator, left, right };
   const leftValue = left.value;
