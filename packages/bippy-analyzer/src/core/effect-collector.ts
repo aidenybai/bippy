@@ -2,6 +2,7 @@ import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { Binding, StateUpdate, SymbolicValue, WarningKind } from "./types";
 import { isWholeBinding } from "./utils/is-whole-binding";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { createUnknown } from "./symbolic-values";
 
@@ -16,6 +17,16 @@ export interface UpdateCondition {
 }
 
 const UNCONDITIONAL_UPDATE: UpdateCondition = { guards: [], isAsync: false };
+
+const LITERAL_KINDS = new Set(["Primitive", "ObjectExpression", "ArrayExpression"]);
+
+const isLiteral = (value: SymbolicValue): boolean => {
+  let isLiteral = true;
+  forEachSymbolicValue(value, (part) => {
+    if (!LITERAL_KINDS.has(part.kind)) isLiteral = false;
+  });
+  return isLiteral;
+};
 
 interface Mutation {
   binding: Binding;
@@ -81,7 +92,7 @@ export class EffectCollector {
     const knownValue = this.forgetMutatedBindings(nextValue);
     this.addUpdate(
       binding,
-      condition.isAsync && knownValue.kind !== "Primitive"
+      condition.isAsync && !isLiteral(knownValue)
         ? createUnknown("async", GeneratedSource)
         : knownValue,
       condition,
