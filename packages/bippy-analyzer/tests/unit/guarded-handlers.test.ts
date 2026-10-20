@@ -21,6 +21,14 @@ describe("guarded handlers", () => {
     expect(getAssertion("ConfirmLink", "modal.onConfirm!")).toMatchObject({ verdict: "holds" });
   });
 
+  it("proves a claim the condition on a mapped element guards", () => {
+    expect(getAssertion("MappedConfirms", "modal.onConfirm!")).toMatchObject({ verdict: "holds" });
+  });
+
+  it("proves a claim an early return in a map callback guards", () => {
+    expect(getAssertion("MappedReturns", "modal.onConfirm!")).toMatchObject({ verdict: "holds" });
+  });
+
   it("breaks a claim when an unguarded element shares the handler", () => {
     expect(getAssertion("SharedConfirm", "modal.onConfirm!")).toMatchObject({
       verdict: "broken",

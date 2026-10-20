@@ -72,3 +72,29 @@ export const SharedConfirm = ({ modal }: { modal: Modal }) => {
     </footer>
   );
 };
+
+export const MappedConfirms = ({ modals }: { modals: Modal[] }) => (
+  <ul>
+    {modals.map(
+      (modal) =>
+        modal.onConfirm && (
+          <li key={modal.title}>
+            <button onClick={() => modal.onConfirm!()}>{modal.title}</button>
+          </li>
+        ),
+    )}
+  </ul>
+);
+
+export const MappedReturns = ({ modals }: { modals: Modal[] }) => (
+  <ul>
+    {modals.map((modal) => {
+      if (!modal.onConfirm) return null;
+      return (
+        <li key={modal.title}>
+          <button onClick={() => modal.onConfirm!()}>{modal.title}</button>
+        </li>
+      );
+    })}
+  </ul>
+);
