@@ -9,6 +9,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { getNegatedOperator } from "./utils/get-negated-operator";
+import { getValueKey } from "./utils/get-value-key";
 
 const BINARY_PRECEDENCE = new Map<string, number>([
   ["??", 1],
@@ -51,10 +52,25 @@ const formatPrimitive = (value: PrimitiveValue): string =>
 export const formatAbstractValue = (value: AbstractValue): string =>
   value.kind === "Literal" ? formatPrimitive(value.value) : value.text;
 
+const getLogicalOperator = (value: ConditionalValue): "||" | "&&" | "??" | null => {
+  const testKey = getValueKey(value.test);
+  if (getValueKey(value.consequent) === testKey) return value.testKind === "nullish" ? "??" : "||";
+  if (value.testKind === "truthy" && getValueKey(value.alternate) === testKey) return "&&";
+  return null;
+};
+
 const getPrecedence = (value: SymbolicValue): number => {
   if (value.kind === "BinaryExpression") return BINARY_PRECEDENCE.get(value.operator) ?? 0;
-  if (value.kind === "Conditional") return formatOptionalChain(value) ? ATOMIC_PRECEDENCE : 0;
-  return ATOMIC_PRECEDENCE;
+  if (value.kind !== "Conditional") return ATOMIC_PRECEDENCE;
+  if (formatOptionalChain(value)) return ATOMIC_PRECEDENCE;
+  const logicalOperator = getLogicalOperator(value);
+  return logicalOperator ? (BINARY_PRECEDENCE.get(logicalOperator) ?? 0) : 0;
+};
+
+const formatLogical = (value: ConditionalValue, operator: "||" | "&&" | "??"): string => {
+  const precedence = BINARY_PRECEDENCE.get(operator) ?? 0;
+  const right = operator === "&&" ? value.consequent : value.alternate;
+  return `${formatWithPrecedence(value.test, precedence)} ${operator} ${formatWithPrecedence(right, precedence + 1)}`;
 };
 
 const formatWithPrecedence = (value: SymbolicValue, minimumPrecedence: number): string => {
@@ -97,6 +113,8 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
     case "Conditional": {
       const optionalChain = formatOptionalChain(value);
       if (optionalChain) return optionalChain;
+      const logicalOperator = getLogicalOperator(value);
+      if (logicalOperator) return formatLogical(value, logicalOperator);
       const test =
         value.testKind === "nullish"
           ? `${formatWithPrecedence(value.test, COMPARED_OPERAND_PRECEDENCE)} != null`
