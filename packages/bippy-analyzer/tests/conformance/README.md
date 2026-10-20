@@ -10,7 +10,7 @@ pnpm --filter bippy-analyzer conformance run invoify                # one repo
 pnpm --filter bippy-analyzer conformance run -n 4                   # four at a time
 ```
 
-Each repo is set up once under `.conformance/<id>`, or under `BIPPY_CONFORMANCE_CACHE` when that is set, with `setup.sh`: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. It runs without the `npm_` and `COREPACK_` variables pnpm sets for scripts, so the app's own package manager sees a clean environment. Set `BIPPY_CONFORMANCE_CACHE` to a folder outside this repository when an app's package manager walks up and finds bippy's root `package.json`, as Yarn 1 does. Each component gets 60 seconds of exploration.
+Each repo is set up once under `.conformance/<id>`, or under `BIPPY_CONFORMANCE_CACHE` when that is set: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. It runs without the `npm_` and `COREPACK_` variables pnpm sets for scripts, so the app's own package manager sees a clean environment. Set `BIPPY_CONFORMANCE_CACHE` to a folder outside this repository when an app's package manager walks up and finds bippy's root `package.json`, as Yarn 1 does. Each component gets 60 seconds of exploration.
 
 Results go to `conformance/results/<run>/`, where `<run>` is the start time unless `--run-name` sets it:
 
@@ -43,7 +43,7 @@ Create `repos/<id>/repo.json`:
 - npm doesn't run `bun`'s install script, so for a Bun lockfile, run the binary its platform package ships, as `repos/next-shadcn-dashboard-starter/repo.json` does.
 - Build the workspace packages the app imports, like `npx --yes pnpm@9.5.0 --filter novel build`.
 
-If the repo needs changes before it installs or type-checks, add them as `repos/<id>/custom.patch`. `setup.sh` applies the patch after checkout.
+If the repo needs changes before it installs or type-checks, add them as `repos/<id>/custom.patch`. Setup applies the patch after checkout.
 
 ## Verify setup and specs
 
@@ -74,7 +74,7 @@ test("pages through comments", async ({ mountComponent }) => {
 
 The Analyzer Conformance workflow (`.github/workflows/analyzer-conformance.yml`) runs the corpus on pull requests that touch the analyzer, the verifier, the repos or the lockfile, and on demand from the Actions tab, where a list of repo ids limits the run. It starts one job per repo, so the corpus takes as long as its slowest repo, about two hours for shadcn-ui.
 
-A repo's result depends only on the analyzer and verifier source, `setup.sh`, bippy's source, the lockfile, the workflow and the repo's own folder. The job hashes those into a cache key and restores the result when it already exists, so a change to one repo reruns one repo and a change to the docs reruns nothing. A fresh result is cached only when the repo passed.
+A repo's result depends only on the analyzer, runner and verifier source, bippy's source, the lockfile, the workflow and the repo's own folder. The job hashes those into a cache key and restores the result when it already exists, so a change to one repo reruns one repo and a change to the docs reruns nothing. A fresh result is cached only when the repo passed.
 
 Every job uploads its folder as an artifact. The `report` job merges them, prints the table into the job summary, uploads `results.json` and fails if any repo failed or has a counterexample. The same command works on a folder of downloaded artifacts:
 
