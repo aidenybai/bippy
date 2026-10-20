@@ -52,4 +52,14 @@ describe("compiler errors", () => {
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
+
+  it("keeps a try whose catch is empty once a step in it can no longer throw", () => {
+    const { analysis, report } = getComponent(project, "SearchResults");
+    expect(analysis.bailouts).toEqual([]);
+    expect(report.states.map((state) => state.conditions)).toEqual([
+      ["Unknown(throws)"],
+      ["!Unknown(throws)", "searchTitles(query, 20).length === 0"],
+      ["!Unknown(throws)", "searchTitles(query, 20).length !== 0"],
+    ]);
+  });
 });
