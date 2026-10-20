@@ -9,6 +9,7 @@ import { formatSymbolicValue } from "./format";
 import { checkStateClaims } from "./state-claims";
 import type {
   AbstractValue,
+  BindingPlace,
   Claim,
   ClaimOutcome,
   ComponentAnalysis,
@@ -21,6 +22,7 @@ import { getPlaceKey } from "./utils/get-place-key";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
+import { isPlacePrefix } from "./utils/is-place-prefix";
 
 interface Check {
   outcome: boolean | null;
@@ -94,12 +96,37 @@ const checkCondition = (test: SymbolicValue, constraints: Constraints): Check =>
   return { outcome: null, witness: describeFailure(test, failing) };
 };
 
+const getCallInputs = (guards: SymbolicValue[]): BindingPlace[] =>
+  guards.flatMap((guard) => {
+    const inputs: BindingPlace[] = [];
+    forEachSymbolicValue(guard, (part) => {
+      if (part.kind === "Binding" && part.binding.kind === "call")
+        inputs.push(...part.binding.inputPlaces);
+    });
+    return inputs;
+  });
+
+const isGuardedByCall = (claim: Claim): boolean => {
+  const inputs = getCallInputs(claim.guards);
+  let isGuarded = false;
+  forEachSymbolicValue(claim.subject, (part) => {
+    if (part.kind !== "Binding") return;
+    const place = getValuePlace(part);
+    if (inputs.some((input) => isPlacePrefix(input, place) || isPlacePrefix(place, input)))
+      isGuarded = true;
+  });
+  return isGuarded;
+};
+
 const checkClaim = (claim: Claim, constraints: Constraints): Check | null => {
   const narrowed = assumeGuards(claim.guards, constraints);
   if (!narrowed) return null;
-  if (claim.cases) return checkMembership(claim, claim.cases, narrowed);
-  if (claim.test) return checkCondition(claim.test, narrowed);
-  return { outcome: null, witness: null };
+  const check = claim.cases
+    ? checkMembership(claim, claim.cases, narrowed)
+    : claim.test
+      ? checkCondition(claim.test, narrowed)
+      : { outcome: null, witness: null };
+  return check.outcome === false && isGuardedByCall(claim) ? { ...check, outcome: null } : check;
 };
 
 const toOutcome = (claim: Claim, checks: StateCheck[], context: ClaimContext): ClaimOutcome => {
