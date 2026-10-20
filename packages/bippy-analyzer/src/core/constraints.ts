@@ -13,6 +13,7 @@ import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
 import { isEqualToLiteral } from "./utils/is-equal-to-literal";
 import { formatAbstractValue } from "./format";
 import { getValueKey } from "./utils/get-value-key";
+import { isPlacePrefix } from "./utils/is-place-prefix";
 import { PlaceMap } from "./utils/place-map";
 import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
@@ -53,6 +54,7 @@ interface Distance {
 }
 
 interface Assumption {
+  value: SymbolicValue;
   isTrue: boolean;
   places: BindingPlace[];
   hasUnknown: boolean;
@@ -366,6 +368,14 @@ const evaluateEquality = (
     differsInTruthiness(placeSide, literalSide.value, constraints)
   )
     return isNegated;
+  if (placeSide.kind === "Primitive")
+    return getKnownTruthiness(foldBinary(value.operator, placeSide, literalSide));
+  if (placeSide.kind === "Conditional") {
+    const test = evaluateCondition(getTestExpression(placeSide), constraints);
+    if (test === null) return null;
+    const arm = test ? placeSide.consequent : placeSide.alternate;
+    return evaluateEquality({ ...value, left: arm, right: literalSide }, constraints);
+  }
   const placeValues = getPossibleValues(placeSide, constraints);
   if (!placeValues) return null;
   const matchCount = placeValues.filter((candidate) =>
@@ -516,6 +526,7 @@ const hasNullishAncestor = (place: BindingPlace, possibleValues: PlaceMap<Abstra
   });
 
 const createAssumption = (value: SymbolicValue, isTrue: boolean): Assumption => ({
+  value,
   isTrue,
   places: collectPlaces(value),
   hasUnknown: hasUnknownPart(value),
@@ -642,11 +653,41 @@ const assumeUncached = (
   return assumeOpaqueCondition(value, isTrue, constraints);
 };
 
+const touchesPlaces = (assumption: Assumption, places: BindingPlace[]): boolean =>
+  assumption.places.some((place) =>
+    places.some((other) => isPlacePrefix(place, other) || isPlacePrefix(other, place)),
+  );
+
+const holdsWithoutItself = (
+  assumptionKey: string,
+  assumption: Assumption,
+  constraints: Constraints,
+): boolean => {
+  const assumptions = new Map(constraints.assumptions);
+  assumptions.delete(assumptionKey);
+  const outcome = evaluateCondition(assumption.value, { ...constraints, assumptions });
+  return outcome === null || outcome === assumption.isTrue;
+};
+
+const keepsEarlierAssumptions = (value: SymbolicValue, constraints: Constraints): boolean => {
+  const places = collectPlaces(value);
+  for (const [assumptionKey, assumption] of constraints.assumptions)
+    if (
+      touchesPlaces(assumption, places) &&
+      !holdsWithoutItself(assumptionKey, assumption, constraints)
+    )
+      return false;
+  return true;
+};
+
 export const assumeCondition = (
   value: SymbolicValue,
   isTrue: boolean,
   constraints: Constraints,
-): Constraints | null => assumeMemoized(value, isTrue, constraints, new Map());
+): Constraints | null => {
+  const assumed = assumeMemoized(value, isTrue, constraints, new Map());
+  return assumed && keepsEarlierAssumptions(value, assumed) ? assumed : null;
+};
 
 const assumeEquality = (
   value: BinaryExpressionValue,
