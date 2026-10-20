@@ -53,6 +53,7 @@ import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
+import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isExternalSource } from "./utils/is-external-source";
 import { isNullish } from "./utils/is-nullish";
@@ -163,6 +164,16 @@ const createFieldUpdate = (
   properties,
   spreads: [createBindingValue(binding)],
 });
+
+const getLiteralEntries = (
+  value: SymbolicValue,
+): Array<[string | number, SymbolicValue]> | null => {
+  if (value.kind === "ArrayExpression" && value.spreads.length === 0)
+    return value.elements.map((element, index) => [index, element]);
+  if (value.kind === "ObjectExpression" && value.spreads.length === 0)
+    return value.properties.map((property) => [property.key, property.value]);
+  return null;
+};
 
 const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
   callSite.callee.kind === "Global"
@@ -943,7 +954,7 @@ export class Interpreter {
           value.loc,
         );
       case "ComputedLoad":
-        return this.#evaluateComputedLoad(value);
+        return this.#evaluateComputedLoad(value, instruction.id, walkState);
       case "BinaryExpression":
         return foldBinary(value.operator, this.read(value.left), this.read(value.right));
       case "UnaryExpression":
@@ -1013,8 +1024,27 @@ export class Interpreter {
     return localValue;
   }
 
-  #evaluateComputedLoad(computedLoad: InstructionValueOfKind<"ComputedLoad">): SymbolicValue {
+  #evaluateComputedLoad(
+    computedLoad: InstructionValueOfKind<"ComputedLoad">,
+    instructionId: InstructionId,
+    walkState: WalkState,
+  ): SymbolicValue {
     const propertyKey = this.read(computedLoad.property);
+    const object = this.read(computedLoad.object);
+    const entries = propertyKey.kind === "Primitive" ? null : getLiteralEntries(object);
+    if (entries)
+      return entries.reduceRight<SymbolicValue>(
+        (rest, [key, entry]) => ({
+          kind: "Conditional",
+          test: foldBinary("===", propertyKey, { kind: "Primitive", value: key }),
+          testKind: "truthy",
+          consequent: entry,
+          alternate: rest,
+          branch: this.createBranch(instructionId, computedLoad.loc, "none"),
+          guardKeys: walkState.guards.map(getValueKey),
+        }),
+        UNDEFINED_VALUE,
+      );
     if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
       return this.#createDerivedValue(
         [this.read(computedLoad.object), propertyKey],
