@@ -4,6 +4,7 @@ import type {
   BinaryExpressionValue,
   BindingValue,
   BindingPlace,
+  ConditionalValue,
   SymbolicValue,
 } from "./types";
 import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
@@ -394,24 +395,93 @@ export const hasUnknownPart = (value: SymbolicValue): boolean => {
   return hasUnknown;
 };
 
-export const assumeCondition = (
+const joinPlaceValues = (
+  left: PlaceMap<AbstractValue[]>,
+  right: PlaceMap<AbstractValue[]>,
+): PlaceMap<AbstractValue[]> =>
+  new PlaceMap(
+    [...left].flatMap(([place, leftValues]): Array<[BindingPlace, AbstractValue[]]> => {
+      const rightValues = right.get(place);
+      if (!rightValues) return [];
+      return [
+        [
+          place,
+          rightValues === leftValues
+            ? leftValues
+            : dedupeAbstractValues([...leftValues, ...rightValues]),
+        ],
+      ];
+    }),
+  );
+
+const joinConstraints = (left: Constraints, right: Constraints): Constraints => {
+  const rightBoundKeys = new Set(right.bounds.map(formatBound));
+  return {
+    possibleValues: joinPlaceValues(left.possibleValues, right.possibleValues),
+    assumptions: new Map(
+      [...left.assumptions].filter(
+        ([key, assumption]) => right.assumptions.get(key)?.isTrue === assumption.isTrue,
+      ),
+    ),
+    bounds: left.bounds.filter((bound) => rightBoundKeys.has(formatBound(bound))),
+    invariants: left.invariants,
+    unionMemberValues: left.unionMemberValues,
+    possibleMembers: new Map(
+      [...left.possibleMembers].flatMap(([bindingId, members]): Array<[number, number[]]> => {
+        const rightMembers = right.possibleMembers.get(bindingId);
+        return rightMembers ? [[bindingId, [...new Set([...members, ...rightMembers])]]] : [];
+      }),
+    ),
+  };
+};
+
+type AssumptionMemo = Map<Constraints, Map<string, Constraints | null>>;
+
+const assumeConditional = (
+  value: ConditionalValue,
+  isTrue: boolean,
+  constraints: Constraints,
+  memo: AssumptionMemo,
+): Constraints | null => {
+  const test = getTestExpression(value);
+  const whenTrue = assumeMemoized(test, true, constraints, memo);
+  const whenFalse = assumeMemoized(test, false, constraints, memo);
+  const consequent = whenTrue && assumeMemoized(value.consequent, isTrue, whenTrue, memo);
+  const alternate = whenFalse && assumeMemoized(value.alternate, isTrue, whenFalse, memo);
+  const joined =
+    consequent && alternate ? joinConstraints(consequent, alternate) : (consequent ?? alternate);
+  if (!joined || hasUnknownPart(value)) return joined;
+  const assumed = cloneConstraints(joined);
+  assumed.assumptions.set(getValueKey(value), { isTrue, places: collectPlaces(value) });
+  return assumed;
+};
+
+const assumeMemoized = (
   value: SymbolicValue,
   isTrue: boolean,
   constraints: Constraints,
+  memo: AssumptionMemo,
+): Constraints | null => {
+  const assumedByKey = memo.get(constraints) ?? new Map<string, Constraints | null>();
+  memo.set(constraints, assumedByKey);
+  const assumptionKey = `${isTrue}:${getValueKey(value)}`;
+  if (assumedByKey.has(assumptionKey)) return assumedByKey.get(assumptionKey) ?? null;
+  const assumed = assumeUncached(value, isTrue, constraints, memo);
+  assumedByKey.set(assumptionKey, assumed);
+  return assumed;
+};
+
+const assumeUncached = (
+  value: SymbolicValue,
+  isTrue: boolean,
+  constraints: Constraints,
+  memo: AssumptionMemo,
 ): Constraints | null => {
   const evaluated = evaluateCondition(value, constraints);
   if (evaluated !== null) return evaluated === isTrue ? constraints : null;
   if (value.kind === "UnaryExpression" && value.operator === "!")
-    return assumeCondition(value.value, !isTrue, constraints);
-  if (
-    value.kind === "Conditional" &&
-    isTrue &&
-    value.alternate.kind === "Primitive" &&
-    !value.alternate.value
-  ) {
-    const withTest = assumeCondition(getTestExpression(value), true, constraints);
-    return withTest && assumeCondition(value.consequent, true, withTest);
-  }
+    return assumeMemoized(value.value, !isTrue, constraints, memo);
+  if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
     return narrowPlace(
       value,
@@ -422,6 +492,12 @@ export const assumeCondition = (
     return assumeEquality(value, isTrue, constraints);
   return assumeOpaqueCondition(value, isTrue, constraints);
 };
+
+export const assumeCondition = (
+  value: SymbolicValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => assumeMemoized(value, isTrue, constraints, new Map());
 
 const assumeEquality = (
   value: BinaryExpressionValue,
