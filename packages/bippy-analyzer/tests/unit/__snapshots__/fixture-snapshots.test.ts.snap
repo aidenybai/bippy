@@ -1430,6 +1430,43 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > PlanForm keeps its render tree and handlers 1`] = `
+"---
+title: PlanForm src/watched-form.tsx:7
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PlanForm"]
+  n2["#lt;form#gt;"]
+  n1 --> n2
+  n3["#lt;select#gt;"]
+  n2 --> n3
+  n4(["{...} ⇒ useForm() = Unknown(external) (async) · calls useForm()"]):::event
+  n3 -.-> n4
+  n5["#lt;option#gt; #quot;Free#quot;"]
+  n3 --> n5
+  n6["#lt;option#gt; #quot;Pro#quot;"]
+  n3 --> n6
+  n7{"watch(#quot;plan#quot;) === #quot;pro#quot;"}
+  n2 --> n7
+  n8["#lt;p#gt; #quot;Billed monthly#quot;"]
+  n7 -->|✓| n8
+  n9["#lt;p#gt; #quot;No charge#quot;"]
+  n7 -->|✗| n9"
+`;
+
+exports[`fixture analysis > PlanForm keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PlanForm src/watched-form.tsx:7
+---
+stateDiagram-v2
+  direction LR
+  S1: watch("plan") === "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "Billed monthly"
+  S2: watch("plan") !== "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "No charge"
+  S1 --> S2: "Free" "Pro" (async)
+  S2 --> S1: "Free" "Pro" (async)"
+`;
+
 exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
 "---
 title: Profile src/claims.tsx:11
