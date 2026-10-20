@@ -131,17 +131,23 @@ const createPluginOptions = (
     logger,
   });
 
-const parseFile = (fileName: string, code: string): types.File | null =>
-  parseSync(code, {
-    filename: fileName,
-    babelrc: false,
-    configFile: false,
-    parserOpts: {
-      plugins: /\.[cm]?ts$/.test(fileName)
-        ? ["typescript", "decorators-legacy"]
-        : ["typescript", "jsx", "decorators-legacy"],
-    },
-  });
+const parseFile = (fileName: string, code: string): types.File | null => {
+  try {
+    return parseSync(code, {
+      filename: fileName,
+      babelrc: false,
+      configFile: false,
+      parserOpts: {
+        plugins: /\.[cm]?ts$/.test(fileName)
+          ? ["typescript", "decorators-legacy"]
+          : ["typescript", "jsx", "decorators-legacy"],
+      },
+    });
+  } catch (error) {
+    if (error instanceof SyntaxError) return null;
+    throw error;
+  }
+};
 
 const lowerModuleFunction = (
   functionPath: BabelFunction,
