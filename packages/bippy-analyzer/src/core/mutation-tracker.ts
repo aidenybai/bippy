@@ -93,14 +93,26 @@ export class MutationTracker {
         continue;
       }
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
-      const ownedValues = getOwnedValues(mutatedValue);
-      const aliasedValue =
-        ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(mutatedPlace);
       const storedProperty =
         instruction.value.kind === "PropertyStore" ? String(instruction.value.property) : null;
-      for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
-        this.#trackOwnedMutation(ownedValue, mutatedPlace.loc, storedProperty);
+      this.#trackOwnedValues(mutatedPlace, mutatedValue, mutatedPlace.loc, storedProperty);
     }
+  }
+
+  trackArgument(place: Place, loc: SourceLocation): void {
+    this.#trackOwnedValues(place, this.#interpreter.read(place), loc, null);
+  }
+
+  #trackOwnedValues(
+    place: Place,
+    value: SymbolicValue,
+    loc: SourceLocation,
+    storedProperty: string | null,
+  ): void {
+    const ownedValues = getOwnedValues(value);
+    const aliasedValue = ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(place);
+    for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
+      this.#trackOwnedMutation(ownedValue, loc, storedProperty);
   }
 
   #trackOwnedMutation(
