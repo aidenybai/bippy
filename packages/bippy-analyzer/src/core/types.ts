@@ -148,7 +148,7 @@ export type SymbolicValue =
   | { kind: "JSXText"; value: string }
   | { kind: "Function"; functionId: number; loc: SourceLocation }
   | { kind: "Setter"; binding: Binding }
-  | { kind: "Dispatch"; binding: Binding; reducer: SymbolicValue }
+  | { kind: "Dispatch"; binding: Binding; reducer: SymbolicValue; pending: Binding | null }
   | { kind: "Props" }
   | {
       kind: "HookResult";

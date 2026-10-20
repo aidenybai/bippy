@@ -98,7 +98,7 @@ export class Destructurer {
       : null;
     return [
       createBindingValue(binding),
-      { kind: "Dispatch", binding, reducer },
+      { kind: "Dispatch", binding, reducer, pending },
       pending ? createBindingValue(pending) : null,
     ];
   }

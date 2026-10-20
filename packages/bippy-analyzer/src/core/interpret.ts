@@ -500,7 +500,9 @@ export class Interpreter {
     loc: SourceLocation,
     walkState: WalkState,
   ): void {
-    const { reducer } = dispatch;
+    const { reducer, pending } = dispatch;
+    const isAsyncAction =
+      reducer.kind === "Function" && (this.#functions.get(reducer.functionId)?.async ?? false);
     const nextValue =
       reducer.kind === "Function"
         ? this.callFunction(
@@ -510,7 +512,13 @@ export class Interpreter {
             walkState,
           )
         : createUnknown("dispatch", loc);
-    this.#getUpdateCollector().recordSetterCall(dispatch.binding, nextValue, walkState);
+    const collector = this.#getUpdateCollector();
+    const settledWalkState = isAsyncAction ? getAsyncWalkState(walkState) : walkState;
+    if (pending && isAsyncAction)
+      collector.recordSetterCall(pending, { kind: "Primitive", value: true }, walkState);
+    collector.recordSetterCall(dispatch.binding, nextValue, settledWalkState);
+    if (pending && isAsyncAction)
+      collector.recordSetterCall(pending, { kind: "Primitive", value: false }, settledWalkState);
   }
 
   #recordWholeProps(callSite: CallSite): void {
