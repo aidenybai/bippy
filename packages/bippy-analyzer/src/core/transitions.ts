@@ -4,6 +4,7 @@ import {
   dedupeAbstractValues,
   evaluateCondition,
   forgetBinding,
+  forgetUnknownAssumptions,
 } from "./constraints";
 import type { Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
@@ -67,6 +68,7 @@ const applyUpdates = (
       reachableConstraints,
     );
   }
+  if (updates.length > 0) forgetUnknownAssumptions(updated);
   return updated;
 };
 

@@ -15,3 +15,25 @@ export function QueryStatus({ query }: { query: Query }) {
   if (status.isError) return <p>Error</p>;
   return <p>Done</p>;
 }
+
+export const TrimmedInput = ({ input }: { input?: string }) => {
+  const count = (input as string).trim().length;
+  const hasInput = count > 0;
+  return (
+    <div>
+      {hasInput && <b>search</b>}
+      {!hasInput && <i>trending</i>}
+    </div>
+  );
+};
+
+export const FallbackLength = ({ input }: { input?: string }) => {
+  const count = (input ?? "x").length;
+  const hasInput = count > 0;
+  return (
+    <div>
+      {hasInput && <b>search</b>}
+      {!hasInput && <i>trending</i>}
+    </div>
+  );
+};
