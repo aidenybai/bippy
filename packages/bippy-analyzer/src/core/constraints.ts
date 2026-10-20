@@ -324,12 +324,22 @@ const evaluateTruthiness = (placeValues: AbstractValue[]): boolean | null => {
   return null;
 };
 
+const getEqualityCounterpart = (value: SymbolicValue): BinaryExpressionValue | null => {
+  if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return null;
+  const operator = getNegatedOperator(value.operator);
+  return operator ? { ...value, operator } : null;
+};
+
 export const evaluateCondition = (
   value: SymbolicValue,
   constraints: Constraints,
 ): boolean | null => {
   const assumption = constraints.assumptions.get(getValueKey(value));
   if (assumption) return assumption.isTrue;
+  const counterpart = getEqualityCounterpart(value);
+  const counterpartAssumption =
+    counterpart && constraints.assumptions.get(getValueKey(counterpart));
+  if (counterpartAssumption) return !counterpartAssumption.isTrue;
   switch (value.kind) {
     case "Binding": {
       const placeValues = getPossibleValues(value, constraints);
