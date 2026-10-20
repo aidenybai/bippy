@@ -11,10 +11,7 @@ export const StartPage = ({ examples }: StartPageProps) => (
   <StartShell className="my-auto">
     <header className="flex flex-col gap-1">
       <h1 className="text-base font-semibold tracking-tight">bippy analyzer</h1>
-      <p className="text-muted-foreground">
-        Reads a React component without running it and maps every state it can render, the actions
-        that move between them and the assumptions its code makes.
-      </p>
+      <p className="text-muted-foreground">See every state your React component can be in.</p>
     </header>
     <ul className="flex flex-col gap-1">
       {examples.map((example) => (
