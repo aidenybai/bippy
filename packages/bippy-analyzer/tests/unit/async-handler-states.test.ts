@@ -23,4 +23,15 @@ describe("async handler states", () => {
     const idleTargets = idleState?.transitions.flatMap((transition) => transition.targets) ?? [];
     expect(idleTargets).toContain(copiedStateIndex);
   });
+
+  it("predicts the state before a loop that awaits", () => {
+    const project = analyzeFixture("conformance-repros", "upload-queue");
+    const { report } = getComponent(project, "UploadQueue");
+    const uploadingStateIndex = report.states.findIndex((state) =>
+      state.conditions.includes('status === "uploading"'),
+    );
+    const idleState = report.states.find((state) => state.conditions.includes('status !== "done"'));
+    const idleTargets = idleState?.transitions.flatMap((transition) => transition.targets) ?? [];
+    expect(idleTargets).toContain(uploadingStateIndex);
+  });
 });

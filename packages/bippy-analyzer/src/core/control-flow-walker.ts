@@ -310,6 +310,7 @@ export class ControlFlowWalker {
         this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
     }
     const [loopEntry = terminal.fallthrough] = loopHeaders;
+    const awaitCountBefore = this.#awaitCount;
     this.#loopDepth++;
     let bodyOutcome: Outcome;
     try {
@@ -337,7 +338,15 @@ export class ControlFlowWalker {
         ? loopExit
         : fallthrough,
     );
-    return this.#continueAfter(exitOutcome, terminal.fallthrough, stops, walkState, "resolved");
+    const afterWalkState =
+      this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
+    return this.#continueAfter(
+      exitOutcome,
+      terminal.fallthrough,
+      stops,
+      afterWalkState,
+      "resolved",
+    );
   }
 
   #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
