@@ -76,6 +76,10 @@ export class SourceFileResolver {
       : getDomainOfType(this.#checker, type);
   }
 
+  getTypeDomain(loc: SourceLocation): Domain {
+    return getDomainOfType(this.#checker, this.#getType(loc));
+  }
+
   getDeclaredDomain(loc: SourceLocation): Domain | null {
     const node = this.#findNode(loc);
     const symbol = node && isIdentifier(node) ? this.#checker.getSymbolAtLocation(node) : undefined;

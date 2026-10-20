@@ -123,6 +123,11 @@ describe("claims", () => {
     expect(assertion).toMatchObject({ verdict: "broken", reason: "user = null" });
   });
 
+  it("judges a cast by the type the author cast from, not by an index the analysis widens", () => {
+    const row = project.components.find((component) => component.analysis.name === "OptionRow");
+    expect(row?.analysis.claims).toEqual([]);
+  });
+
   it("breaks a state's type when a handler sets a value outside it", () => {
     expect(find('status stays within "idle" | "saving"')).toMatchObject({
       verdict: "broken",

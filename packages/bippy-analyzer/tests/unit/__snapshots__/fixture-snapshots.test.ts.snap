@@ -1206,6 +1206,33 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > OptionRow keeps its render tree and handlers 1`] = `
+"---
+title: OptionRow src/claims.tsx:82
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["OptionRow"]
+  n2["#lt;li#gt;"]
+  n1 --> n2
+  n3{"options[index].icon"}
+  n2 --> n3
+  n4["#lt;i#gt; {options[index].icon}"]
+  n3 -->|✓| n4
+  n5["{options[index].label}"]
+  n2 --> n5"
+`;
+
+exports[`fixture analysis > OptionRow keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: OptionRow src/claims.tsx:82
+---
+stateDiagram-v2
+  direction LR
+  S1: options[index].icon · #lt;li#gt; #lt;i#gt; {options[index].icon} {options[index].label}
+  S2: !options[index].icon · #lt;li#gt; {options[index].label}"
+`;
+
 exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
 "---
 title: Page src/plain.jsx:13
