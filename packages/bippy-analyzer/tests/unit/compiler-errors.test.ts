@@ -42,6 +42,13 @@ describe("compiler errors", () => {
     },
   );
 
+  it.each(["TileCount", "CursorTrail"])(
+    "captures the variables %s's nested function reassigns by destructuring",
+    (name) => {
+      expect(getComponent(project, name).analysis.bailouts).toEqual([]);
+    },
+  );
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
