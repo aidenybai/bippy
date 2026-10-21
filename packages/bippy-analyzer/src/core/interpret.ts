@@ -142,6 +142,8 @@ export interface ProjectLoaders {
   loadMutatedParameters: (declarationKey: string) => Set<number>;
 }
 
+const BOUND_CALLEES = new Set(["Function", "Setter", "Dispatch", "Bound"]);
+
 const MAX_INLINE_DEPTH = 4;
 const EFFECT_HOOKS = new Set<HookKind>(["useEffect", "useLayoutEffect", "useInsertionEffect"]);
 const PROMISE_METHODS = new Set(["then", "catch", "finally"]);
@@ -672,6 +674,15 @@ export class Interpreter {
       case "Dispatch":
         this.#applyDispatch(callee, firstArgument, callSite.loc, walkState);
         return UNDEFINED_VALUE;
+      case "Bound":
+        return this.#evaluateCall(
+          {
+            ...callSite,
+            callee: callee.callee,
+            argumentValues: [...callee.argumentValues, ...callSite.argumentValues],
+          },
+          walkState,
+        );
       default:
         return this.#callOpaqueValue(callSite, walkState);
     }
@@ -960,6 +971,13 @@ export class Interpreter {
       this.callbacks.visitPromiseCallbacks(methodName, argumentValues, methodCall.loc, walkState);
       return createUnknown("async", methodCall.loc);
     }
+    if (methodName === "bind" && BOUND_CALLEES.has(receiver.kind))
+      return {
+        kind: "Bound",
+        callee: receiver,
+        argumentValues: argumentValues.slice(1),
+        loc: methodCall.loc,
+      };
     return this.#evaluateCall(
       {
         callee: this.read(methodCall.property),
@@ -1386,8 +1404,21 @@ export class Interpreter {
       this.#runCallback(callback.alternate, argumentValues, visitedFunctionIds, alternateWalkState);
       return;
     }
+    if (callback.kind === "Bound") {
+      this.#runCallback(
+        callback.callee,
+        [...callback.argumentValues, ...argumentValues],
+        visitedFunctionIds,
+        walkState,
+      );
+      return;
+    }
     if (callback.kind === "Setter")
-      this.#handlerEffects?.recordSetterCall(callback.binding, EVENT_ARGUMENT, walkState);
+      this.#handlerEffects?.recordSetterCall(
+        callback.binding,
+        argumentValues[0] ?? EVENT_ARGUMENT,
+        walkState,
+      );
     if (callback.kind === "Dispatch")
       this.#applyDispatch(callback, argumentValues[0], callback.binding.loc, walkState);
     if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);

@@ -69,6 +69,7 @@ export const getValueDomain = (value: SymbolicValue, places: Places): Domain => 
     case "Function":
     case "Setter":
     case "Dispatch":
+    case "Bound":
       return { kind: "Opaque", typeText: "function" };
     default:
       return UNRESOLVED;

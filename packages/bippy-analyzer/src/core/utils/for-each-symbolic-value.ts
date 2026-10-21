@@ -20,6 +20,8 @@ const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
       return value.children;
     case "HookResult":
       return value.argumentValues;
+    case "Bound":
+      return [value.callee, ...value.argumentValues];
     default:
       return [];
   }

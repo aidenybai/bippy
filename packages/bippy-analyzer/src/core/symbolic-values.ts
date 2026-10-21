@@ -21,7 +21,8 @@ export const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefi
 
 export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
-    if (value.kind === "Function" || value.kind === "Setter") return [value];
+    if (value.kind === "Function" || value.kind === "Setter" || value.kind === "Bound")
+      return [value];
     if (value.kind === "Conditional")
       return getPassedCallbacks([value.consequent, value.alternate], depth);
     if (depth >= MAX_OPTIONS_NESTING) return [];
