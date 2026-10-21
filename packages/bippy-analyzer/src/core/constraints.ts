@@ -6,6 +6,7 @@ import type {
   BindingValue,
   BindingPlace,
   ConditionalValue,
+  DerivedString,
   PrimitiveValue,
   SymbolicValue,
 } from "./types";
@@ -27,6 +28,7 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
 import { getTypeofNames } from "./utils/get-typeof-names";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { applyStringMethod } from "./utils/string-methods";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
@@ -295,11 +297,33 @@ const evaluateNonZero = (value: BindingValue, constraints: Constraints): boolean
   return isPositive === false && isNegative === false ? false : null;
 };
 
+const getDerivedValues = (
+  derived: DerivedString,
+  constraints: Constraints,
+): AbstractValue[] | null => {
+  const receiverValues = getPossibleValues(derived.receiver, constraints);
+  if (!receiverValues) return null;
+  const results: AbstractValue[] = [];
+  for (const receiverValue of receiverValues) {
+    if (receiverValue.kind !== "Literal" || typeof receiverValue.value !== "string") return null;
+    results.push({
+      kind: "Literal",
+      value: applyStringMethod(derived.method, receiverValue.value, derived.argumentValues),
+    });
+  }
+  return dedupeAbstractValues(results);
+};
+
 export const getPossibleValues = (
   value: SymbolicValue,
   constraints: Constraints,
-): AbstractValue[] | null =>
-  value.kind === "Binding" ? (constraints.possibleValues.get(getValuePlace(value)) ?? null) : null;
+): AbstractValue[] | null => {
+  if (value.kind !== "Binding") return null;
+  const { derived } = value.binding;
+  const derivedValues =
+    derived && value.path.length === 0 ? getDerivedValues(derived, constraints) : null;
+  return derivedValues ?? constraints.possibleValues.get(getValuePlace(value)) ?? null;
+};
 
 export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
   if (isBooleanExpression(value)) {

@@ -32,6 +32,7 @@ import type {
   Branch,
   Claim,
   ContextSetterFields,
+  DerivedString,
   DispatchValue,
   Domain,
   FunctionValue,
@@ -57,6 +58,7 @@ import { getBindingPlace } from "./utils/get-binding-place";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
+import { applyStringMethod, isStringMethod } from "./utils/string-methods";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isExternalSource } from "./utils/is-external-source";
@@ -1056,7 +1058,7 @@ export class Interpreter {
     return [callSite.callee, ...callSite.argumentValues].map(getValueKey).join(",");
   }
 
-  #createCallResult(callSite: CallSite): SymbolicValue {
+  #createCallResult(callSite: CallSite, derived: DerivedString | null = null): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
     const inputPlaces = new PlaceMap<true>();
@@ -1064,7 +1066,7 @@ export class Interpreter {
     const receiverPlace = this.#getReceiverPlace(callSite.callee);
     const lengthLimit = this.#getLengthLimit(callSite, receiverPlace);
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
-    if (!lengthLimit && inputPlaces.size === 0 && !hasFiniteResult)
+    if (!lengthLimit && !derived && inputPlaces.size === 0 && !hasFiniteResult)
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
@@ -1073,6 +1075,7 @@ export class Interpreter {
         inputPlaces: inputPlaces.places(),
         lengthLimit,
         identityKey: this.#getRepeatableCallKey(callSite),
+        derived,
       }),
     );
   }
@@ -1201,16 +1204,36 @@ export class Interpreter {
         argumentValues: argumentValues.slice(1),
         loc: methodCall.loc,
       };
-    return this.#evaluateCall(
-      {
-        callee: this.read(methodCall.property),
-        calleePlace: methodCall.property,
-        argumentValues,
-        argumentPlaces,
-        loc: methodCall.loc,
-      },
-      walkState,
+    const callSite: CallSite = {
+      callee: this.read(methodCall.property),
+      calleePlace: methodCall.property,
+      argumentValues,
+      argumentPlaces,
+      loc: methodCall.loc,
+    };
+    return (
+      this.#evaluateStringMethod(receiver, methodName, callSite) ??
+      this.#evaluateCall(callSite, walkState)
     );
+  }
+
+  #evaluateStringMethod(
+    receiver: SymbolicValue,
+    methodName: string,
+    callSite: CallSite,
+  ): SymbolicValue | null {
+    if (!isStringMethod(methodName)) return null;
+    const argumentValues = callSite.argumentValues.flatMap((argument) =>
+      argument.kind === "Primitive" ? [argument.value] : [],
+    );
+    if (argumentValues.length !== callSite.argumentValues.length) return null;
+    if (receiver.kind === "Primitive" && typeof receiver.value === "string")
+      return {
+        kind: "Primitive",
+        value: applyStringMethod(methodName, receiver.value, argumentValues),
+      };
+    if (receiver.kind !== "Binding") return null;
+    return this.#createCallResult(callSite, { method: methodName, receiver, argumentValues });
   }
 
   evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
