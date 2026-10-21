@@ -660,12 +660,20 @@ export class Interpreter {
     switch (callee.kind) {
       case "Function":
         return this.callFunction(callee, callSite.argumentValues, callSite.loc, walkState);
-      case "Conditional":
+      case "Conditional": {
+        const test = getTestExpression(callee);
         return {
           ...callee,
-          consequent: this.#evaluateCall({ ...callSite, callee: callee.consequent }, walkState),
-          alternate: this.#evaluateCall({ ...callSite, callee: callee.alternate }, walkState),
+          consequent: this.#evaluateCall(
+            { ...callSite, callee: callee.consequent },
+            { ...walkState, guards: [...walkState.guards, test] },
+          ),
+          alternate: this.#evaluateCall(
+            { ...callSite, callee: callee.alternate },
+            { ...walkState, guards: [...walkState.guards, negate(test)] },
+          ),
         };
+      }
       case "Setter":
         this.#applySetter(callee, firstArgument, walkState);
         return UNDEFINED_VALUE;
