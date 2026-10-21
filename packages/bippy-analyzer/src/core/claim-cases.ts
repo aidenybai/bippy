@@ -13,7 +13,7 @@ const includesLiteral = (cases: AbstractValue[], value: LiteralValue["value"]): 
   cases.some((candidate) =>
     candidate.kind === "Literal"
       ? candidate.value === value
-      : canTypeEqualLiteral(candidate, value),
+      : canTypeEqualLiteral(candidate, value, "==="),
   );
 
 export const classify = (value: AbstractValue, cases: AbstractValue[]): Membership => {
@@ -21,7 +21,8 @@ export const classify = (value: AbstractValue, cases: AbstractValue[]): Membersh
   if (cases.some((candidate) => candidate.kind === "Type" && candidate.text === value.text))
     return "in";
   const mayEqual = cases.some(
-    (candidate) => candidate.kind === "Literal" && canTypeEqualLiteral(value, candidate.value),
+    (candidate) =>
+      candidate.kind === "Literal" && canTypeEqualLiteral(value, candidate.value, "==="),
   );
   return mayEqual ? "maybe" : "out";
 };

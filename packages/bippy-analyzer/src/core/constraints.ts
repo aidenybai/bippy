@@ -334,7 +334,7 @@ const evaluateEquality = (
     isEqualToLiteral(candidate, literalSide.value, value.operator),
   ).length;
   const canAnyEqual = placeValues.some((candidate) =>
-    canTypeEqualLiteral(candidate, literalSide.value),
+    canTypeEqualLiteral(candidate, literalSide.value, value.operator),
   );
   if (matchCount === placeValues.length) return !isNegated;
   if (matchCount === 0 && !canAnyEqual) return isNegated;
@@ -656,7 +656,7 @@ const narrowEquality = (
   wantsMatch: boolean,
 ): AbstractValue[] => {
   if (isEqualToLiteral(value, literal, operator)) return wantsMatch ? [value] : [];
-  if (!canTypeEqualLiteral(value, literal)) return wantsMatch ? [] : [value];
+  if (!canTypeEqualLiteral(value, literal, operator)) return wantsMatch ? [] : [value];
   if (wantsMatch && value.kind === "Type" && value.primitive === typeof literal)
     return [{ kind: "Literal", value: literal }];
   return [value];
