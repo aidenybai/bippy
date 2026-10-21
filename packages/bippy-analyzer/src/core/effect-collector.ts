@@ -1,6 +1,6 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
-import type { Binding, StateUpdate, SymbolicValue, WarningKind } from "./types";
+import type { Binding, Claim, StateUpdate, SymbolicValue, WarningKind } from "./types";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
@@ -10,6 +10,7 @@ export interface CollectedEffects {
   updates: StateUpdate[];
   delegates: string[];
   pendingMutations: Binding[];
+  claims: Claim[];
 }
 
 export interface UpdateCondition {
@@ -58,6 +59,7 @@ interface WarnCallback {
 export class EffectCollector {
   readonly #updates: StateUpdate[] = [];
   readonly #delegates: string[] = [];
+  readonly #claims: Claim[] = [];
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #warn: WarnCallback;
@@ -95,6 +97,10 @@ export class EffectCollector {
 
   addDelegate(delegateName: string): void {
     this.#delegates.push(delegateName);
+  }
+
+  addClaim(claim: Claim): void {
+    this.#claims.push(claim);
   }
 
   forgetMutatedBindings(value: SymbolicValue): SymbolicValue {
@@ -165,7 +171,12 @@ export class EffectCollector {
     for (const binding of this.#possiblyMutatedBindings.values())
       if (!this.hasUpdate(binding))
         this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
-    return { updates: this.#updates, delegates: this.#delegates, pendingMutations };
+    return {
+      updates: this.#updates,
+      delegates: this.#delegates,
+      pendingMutations,
+      claims: this.#claims,
+    };
   }
 
   #isMutated(binding: Binding): boolean {

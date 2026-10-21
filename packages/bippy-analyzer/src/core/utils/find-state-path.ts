@@ -1,6 +1,6 @@
-import type { Region, State } from "./types";
+import type { Region, State } from "../types";
 
-export const findClaimPath = (states: State[], regions: Region[], target: number): string[] => {
+export const findStatePath = (states: State[], regions: Region[], target: number): string[] => {
   const region = regions.find((candidate) => candidate.states.includes(target));
   const start = region?.firstRenderState ?? null;
   if (start === null) return [];

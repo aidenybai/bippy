@@ -1,6 +1,8 @@
 import { TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Type } from "typescript/unstable/sync";
-import type { AbstractValue, Domain, PrimitiveTypeName } from "./types";
+import type { AbstractValue, Domain, PrimitiveTypeName, PrimitiveValue } from "./types";
+import { formatAbstractValue } from "./format";
+import { canTypeEqualLiteral } from "./utils/can-type-equal-literal";
 import { getUnionMembers } from "./utils/get-union-members";
 
 export const UNDEFINED_CASE: AbstractValue = { kind: "Literal", value: undefined };
@@ -57,3 +59,42 @@ export const getDomainWithUndefined = (checker: Checker, type: Type | undefined)
     };
   return domain;
 };
+
+export type Membership = "in" | "out" | "maybe";
+
+export const describeCases = (cases: AbstractValue[]): string =>
+  cases.map(formatAbstractValue).join(" | ");
+
+const includesLiteral = (cases: AbstractValue[], value: PrimitiveValue): boolean =>
+  cases.some((candidate) =>
+    candidate.kind === "Literal"
+      ? candidate.value === value
+      : canTypeEqualLiteral(candidate, value, "==="),
+  );
+
+export const classify = (value: AbstractValue, cases: AbstractValue[]): Membership => {
+  if (value.kind === "Literal") return includesLiteral(cases, value.value) ? "in" : "out";
+  if (cases.some((candidate) => candidate.kind === "Type" && candidate.text === value.text))
+    return "in";
+  const mayEqual = cases.some(
+    (candidate) =>
+      candidate.kind === "Literal" && canTypeEqualLiteral(value, candidate.value, "==="),
+  );
+  return mayEqual ? "maybe" : "out";
+};
+
+const NULLISH_CASES: AbstractValue[] = [
+  { kind: "Literal", value: null },
+  { kind: "Literal", value: undefined },
+];
+
+export const withNullishCases = (cases: AbstractValue[]): AbstractValue[] => [
+  ...cases,
+  ...NULLISH_CASES.filter((nullish) => classify(nullish, cases) !== "in"),
+];
+
+export const isPrimitiveDomain = (cases: AbstractValue[]): boolean =>
+  cases.every((value) => value.kind === "Literal" || value.primitive !== null);
+
+export const isBooleanDomain = (cases: AbstractValue[]): boolean =>
+  cases.every((value) => value.kind === "Literal" && typeof value.value === "boolean");

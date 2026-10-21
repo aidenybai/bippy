@@ -1,24 +1,80 @@
-import type { SourceLocation } from "../react-compiler/HIR/HIR";
-import {
-  CLAIM_FUNCTIONS,
-  createCastClaim,
-  createNonNullClaim,
-  describeCondition,
-  hasNullishCase,
-} from "./claim-sites";
-import { withNullishCases } from "./claim-cases";
 import { hasUnknownPart } from "./constraints";
+import { describeCases, withNullishCases } from "./domains";
+import { formatSymbolicValue } from "./format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { createUnknown } from "./symbolic-values";
-import type { Claim, Domain, SymbolicValue } from "./types";
-
-type ClaimSite = Omit<Claim, "file" | "isInHandler">;
+import { createUnknown, foldBinary } from "./symbolic-values";
+import type { Claim, Domain, SourceLocation, SymbolicValue } from "./types";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { getTestExpression } from "./utils/get-test-expression";
+import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
+import { isNullishCase } from "./utils/is-nullish-case";
 import { getClaimGuards, type WalkState } from "./walk-state";
+
+const CLAIM_FUNCTIONS = new Set(["invariant", "assert", "console.assert"]);
+
+const describeCondition = (value: SymbolicValue): string => {
+  if (value.kind !== "Conditional") return formatSymbolicValue(value);
+  const test = getTestExpression(value);
+  if (getValueKey(value.consequent) === getValueKey(test))
+    return `${describeCondition(test)} || ${describeCondition(value.alternate)}`;
+  if (getValueKey(value.alternate) === getValueKey(test))
+    return `${describeCondition(test)} && ${describeCondition(value.consequent)}`;
+  return formatSymbolicValue(value);
+};
+
+const hasNullishCase = (domain: Domain): boolean =>
+  domain.kind === "Cases" && domain.cases.some(isNullishCase);
 
 const isLiteralDomain = (domain: Domain): boolean =>
   domain.kind === "Cases" && domain.cases.every((value) => value.kind === "Literal");
+
+const describeDomain = (domain: Domain): string | null => {
+  if (domain.kind === "Cases") return describeCases(domain.cases);
+  return domain.kind === "Opaque" ? domain.typeText : null;
+};
+
+const createNotNullishTest = (subject: SymbolicValue): SymbolicValue =>
+  foldBinary("!=", subject, { kind: "Primitive", value: null });
+
+const createNonNullClaim = (
+  subject: SymbolicValue,
+  loc: SourceLocation,
+  guards: SymbolicValue[],
+): Claim => ({
+  kind: "non-null",
+  subject,
+  cases: null,
+  test: createNotNullishTest(subject),
+  guards,
+  description: `${formatSymbolicValue(subject)}!`,
+  loc,
+});
+
+const createCastClaim = (
+  subject: SymbolicValue,
+  source: Domain,
+  target: Domain,
+  loc: SourceLocation,
+  guards: SymbolicValue[],
+): Claim | null => {
+  const targetText = describeDomain(target);
+  if (targetText === null) return null;
+  const description = `${formatSymbolicValue(subject)} as ${targetText}`;
+  if (target.kind === "Cases" && target.cases.every((value) => value.kind === "Literal"))
+    return { kind: "cast", subject, cases: target.cases, test: null, guards, description, loc };
+  if (hasNullishCase(source) && !hasNullishCase(target))
+    return {
+      kind: "cast",
+      subject,
+      cases: null,
+      test: createNotNullishTest(subject),
+      guards,
+      description,
+      loc,
+    };
+  return null;
+};
 
 export class ClaimRecorder {
   readonly #interpreter: Interpreter;
@@ -62,34 +118,6 @@ export class ClaimRecorder {
     return isUntypedCast || isNarrowingCast ? createUnknown("cast", typeCast.value.loc) : castValue;
   }
 
-  #widenForNonStrictNulls(claim: ClaimSite): ClaimSite {
-    if (this.#interpreter.resolver.isStrictNullChecks || !claim.cases) return claim;
-    return { ...claim, cases: withNullishCases(claim.cases) };
-  }
-
-  #isCheckable(value: SymbolicValue): boolean {
-    if (hasUnknownPart(value)) return false;
-    let isCheckable = true;
-    forEachSymbolicValue(value, (part) => {
-      if (part.kind !== "Binding") return;
-      if (part.binding.kind === "ref") isCheckable = false;
-      const domain =
-        this.#interpreter.bindingTable.placeDomains.get(getValuePlace(part)) ??
-        (part.path.length === 0 ? part.binding.domain : undefined);
-      if (domain?.kind !== "Cases" && domain?.kind !== "Opaque") isCheckable = false;
-    });
-    return isCheckable;
-  }
-
-  record(claim: ClaimSite): void {
-    if (claim.kind === "invariant" || this.#isCheckable(claim.subject))
-      this.#claims.push({
-        ...claim,
-        file: this.#interpreter.resolver.fileName,
-        isInHandler: this.#interpreter.handlerEffects !== null,
-      });
-  }
-
   recordInvariant(
     name: string | null,
     argumentValues: SymbolicValue[],
@@ -107,5 +135,34 @@ export class ClaimRecorder {
       description: `${name}(${describeCondition(test)})`,
       loc,
     });
+  }
+
+  record(claim: Claim): void {
+    if (claim.kind !== "invariant" && !this.#isCheckable(claim.subject)) return;
+    const handlerEffects = this.#interpreter.handlerEffects;
+    if (handlerEffects) {
+      handlerEffects.addClaim(claim);
+      return;
+    }
+    this.#claims.push(claim);
+  }
+
+  #widenForNonStrictNulls(claim: Claim): Claim {
+    if (this.#interpreter.resolver.isStrictNullChecks || !claim.cases) return claim;
+    return { ...claim, cases: withNullishCases(claim.cases) };
+  }
+
+  #isCheckable(value: SymbolicValue): boolean {
+    if (hasUnknownPart(value)) return false;
+    let isCheckable = true;
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind !== "Binding") return;
+      if (part.binding.kind === "ref") isCheckable = false;
+      const domain =
+        this.#interpreter.bindingTable.placeDomains.get(getValuePlace(part)) ??
+        (part.path.length === 0 ? part.binding.domain : undefined);
+      if (domain?.kind !== "Cases" && domain?.kind !== "Opaque") isCheckable = false;
+    });
+    return isCheckable;
   }
 }

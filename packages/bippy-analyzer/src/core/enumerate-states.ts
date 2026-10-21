@@ -38,6 +38,7 @@ export interface EnumerationContext extends ReachabilityContext {
 interface EnumeratedRegion {
   states: State[];
   constraints: Constraints[];
+  renderedHandlerIds: Set<string>[];
   region: Region;
 }
 
@@ -140,19 +141,22 @@ const enumerateRegion = (
     context,
   );
   const regionHandlers = getRegionHandlers(analysis, regionBranches, context.renderUpdates);
-  const getTransitions = (alternative: Alternative): Transition[] => {
+  const renderedHandlerIds = alternatives.map((alternative) =>
+    collectHandlerIds(alternative.render, alternative.constraints),
+  );
+  const getTransitions = (alternative: Alternative, index: number): Transition[] => {
     const runnableEffectIds = analysis.handlers
       .filter(
         (handler) =>
           effectIds.has(handler.id) && (!isMountOnlyEffect(handler) || isFirstRender(alternative)),
       )
       .map((handler) => handler.id);
-    const renderedHandlerIds = new Set([
+    const runnableHandlerIds = new Set([
       ...runnableEffectIds,
-      ...collectHandlerIds(alternative.render, alternative.constraints),
+      ...(renderedHandlerIds[index] ?? []),
     ]);
     return regionHandlers
-      .filter((handler) => renderedHandlerIds.has(handler.id))
+      .filter((handler) => runnableHandlerIds.has(handler.id))
       .map((handler) =>
         getTransition(
           handler,
@@ -163,18 +167,19 @@ const enumerateRegion = (
         ),
       );
   };
-  const states = alternatives.map((alternative) => ({
+  const states = alternatives.map((alternative, index) => ({
     regionIndex,
     conditions: alternative.conditions,
     render: alternative.render,
     fragments: alternative.fragments,
-    transitions: getTransitions(alternative),
+    transitions: getTransitions(alternative, index),
   }));
   const constraints = alternatives.map((alternative) => alternative.constraints);
   const isTruncated = enumerator.isTruncated || transitionContext.budget.isExhausted;
   return {
     states,
     constraints,
+    renderedHandlerIds,
     region: createRegion(regionBranches, firstStateIndex, alternatives, isTruncated),
   };
 };
@@ -211,11 +216,13 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const states: State[] = [];
   const regions: Region[] = [];
   const constraintsByState: Constraints[] = [];
+  const renderedHandlerIds: Set<string>[] = [];
   let isTruncated = false;
   findRegions(analysis.render, analysis.bindings).forEach((regionBranches, regionIndex) => {
     const enumerated = enumerateRegion(regionBranches, regionIndex, states.length, context);
     states.push(...enumerated.states);
     constraintsByState.push(...enumerated.constraints);
+    renderedHandlerIds.push(...enumerated.renderedHandlerIds);
     regions.push(enumerated.region);
     isTruncated ||= enumerated.region.isTruncated;
   });
@@ -235,6 +242,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
       regions,
       constraintsByState,
       reachableConstraints,
+      renderedHandlerIds,
     ),
     isTruncated,
   };
