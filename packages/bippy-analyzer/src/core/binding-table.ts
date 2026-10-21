@@ -21,6 +21,7 @@ export interface BindingOptions extends Partial<
   >
 > {
   identityKey?: string;
+  scope?: string;
 }
 
 export class BindingTable {
@@ -43,12 +44,17 @@ export class BindingTable {
   ): Binding {
     const position =
       options.identityKey ?? (loc === GeneratedSource ? "generated" : loc.start.index);
-    const declarationKey = `${kind}:${name}:${resolver.fileName}:${position}`;
+    const scope = options.scope ?? "";
+    const declarationKey = `${kind}:${name}:${resolver.fileName}:${position}:${scope}`;
     const existingBinding = this.#bindingsByKey.get(declarationKey);
     if (existingBinding) return existingBinding;
+    const sourceName = resolver.getSourceName(loc) ?? name;
+    const sameNamed = [...this.#bindingsByKey.values()].filter(
+      (candidate) => candidate.kind === kind && candidate.name.split("#")[0] === sourceName,
+    ).length;
     const binding: Binding = {
       id: this.#bindingsByKey.size,
-      name: resolver.getSourceName(loc) ?? name,
+      name: scope && sameNamed > 0 ? `${sourceName}#${sameNamed + 1}` : sourceName,
       kind,
       hookKind: options.hookKind ?? null,
       propName: options.propName ?? null,

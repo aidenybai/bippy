@@ -305,6 +305,7 @@ export class Interpreter {
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #frameClosureIds: number[][] = [];
+  readonly #bindingScopes: string[] = [];
 
   constructor(
     resolver: SourceFileResolver,
@@ -483,13 +484,19 @@ export class Interpreter {
     loc: SourceLocation,
     options: InterpreterBindingOptions = {},
   ): Binding {
-    return this.bindingTable.createBinding(
-      options.resolver ?? this.#resolver,
-      name,
-      kind,
-      loc,
-      options,
-    );
+    return this.bindingTable.createBinding(options.resolver ?? this.#resolver, name, kind, loc, {
+      scope: this.#bindingScopes.join(">"),
+      ...options,
+    });
+  }
+
+  withBindingScope<Result>(scope: string, run: () => Result): Result {
+    this.#bindingScopes.push(scope);
+    try {
+      return run();
+    } finally {
+      this.#bindingScopes.pop();
+    }
   }
 
   readField(binding: Binding, path: string[], loc: SourceLocation): BindingValue {
@@ -778,13 +785,17 @@ export class Interpreter {
     switch (target.kind) {
       case "Portal":
         return target.children;
-      case "ProjectHook":
+      case "ProjectHook": {
         this.#functions.addModule(
           target.projectHook.resolver,
           target.projectHook.loadModuleFunction,
           target.projectHook.hirFunction,
         );
-        return this.#inlineFunction(target.projectHook.hirFunction, callSite, walkState);
+        const position = callSite.loc === GeneratedSource ? "generated" : callSite.loc.start.index;
+        return this.withBindingScope(`${this.#resolver.fileName}:${position}`, () =>
+          this.#inlineFunction(target.projectHook.hirFunction, callSite, walkState),
+        );
+      }
       case "Store":
         return this.#readStore(target.storeKey, target.storeActions, callSite, walkState);
       case "Hook":
