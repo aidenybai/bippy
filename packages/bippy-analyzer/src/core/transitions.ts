@@ -47,13 +47,11 @@ interface TransitionContext extends ReachabilityContext {
 const applyUpdates = (
   updates: StateUpdate[],
   constraints: Constraints,
-  reachableConstraints: Constraints,
-  dependentsByBinding: Map<number, number[]>,
+  { reachableConstraints, reachablePlacesByBinding, dependentsByBinding }: ReachabilityContext,
 ): Constraints => {
   const updated = cloneConstraints(constraints);
   for (const update of updates) {
-    for (const [place, reachableValues] of reachableConstraints.possibleValues) {
-      if (place.bindingId !== update.binding.id) continue;
+    for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
       const currentValues = constraints.possibleValues.get(place);
       const fieldCases =
         getFieldCases(update.value, place.path, update.binding, constraints) ??
@@ -71,9 +69,11 @@ const applyUpdates = (
     forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
     addBounds(updated, getLengthBounds(update.value, update.binding));
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
-    for (const [place, reachableValues] of reachableConstraints.possibleValues)
-      if (dependentIds.has(place.bindingId)) updated.possibleValues.set(place, reachableValues);
-    for (const dependentId of dependentIds) forgetBinding(updated, dependentId, false);
+    for (const dependentId of dependentIds) {
+      for (const [place, reachableValues] of reachablePlacesByBinding.get(dependentId) ?? [])
+        updated.possibleValues.set(place, reachableValues);
+      forgetBinding(updated, dependentId, false);
+    }
     forgetUntrackedValues(
       updated,
       new Set([update.binding.id, ...dependentIds]),
@@ -195,9 +195,7 @@ const getConstraintsAfterUpdates = (
   constraints: Constraints,
   context: ReachabilityContext,
 ): Constraints =>
-  updates.length === 0
-    ? constraints
-    : applyUpdates(updates, constraints, context.reachableConstraints, context.dependentsByBinding);
+  updates.length === 0 ? constraints : applyUpdates(updates, constraints, context);
 
 interface ReplayedPath {
   constraints: Constraints;
@@ -352,6 +350,7 @@ export const createTransitionContext = (
 ): TransitionContext => ({
   analysis: context.analysis,
   reachableConstraints: context.reachableConstraints,
+  reachablePlacesByBinding: context.reachablePlacesByBinding,
   dependentsByBinding: context.dependentsByBinding,
   ...getBranchContext(regionBranches, alternatives, context),
   targetIndicesByConstraints: new Map(),
