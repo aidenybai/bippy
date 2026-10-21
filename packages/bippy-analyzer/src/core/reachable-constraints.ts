@@ -2,6 +2,7 @@ import { getBindingUpdates } from "./collect-handlers";
 import { addBounds, dedupeAbstractValues, evaluateCondition, getLengthAtom } from "./constraints";
 import type { Bound, Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
+import { getReachableIntegers, getReachableRange } from "./reachable-ranges";
 import type {
   AbstractValue,
   Binding,
@@ -93,7 +94,7 @@ const getReachableCases = (
         getFieldCases(update.value, path, binding, null) ??
         getToggleCases(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
-      if (!updateCases) return typeCases;
+      if (!updateCases) return getReachableIntegers(binding, updates) ?? typeCases;
       reachable = dedupeAbstractValues([...reachable, ...updateCases]);
     }
     if (reachable.length === previousCount) return reachable;
@@ -127,7 +128,13 @@ const createEmptyConstraints = (analysis: ComponentAnalysis): Constraints => ({
   boundGraph: null,
   invariants: analysis.bindings.flatMap((binding) => [
     ...getLengthLimitBounds(binding),
-    ...getRangeBounds(getBindingPlace(binding), binding.range),
+    ...getRangeBounds(
+      getBindingPlace(binding),
+      binding.range ??
+        (isStateBinding(binding)
+          ? getReachableRange(binding, getBindingUpdates(analysis.handlers, binding))
+          : null),
+    ),
   ]),
   unionMemberValues: analysis.unionMemberValues,
   possibleMembers: new Map(),

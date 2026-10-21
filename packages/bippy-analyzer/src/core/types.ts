@@ -72,6 +72,7 @@ export interface Binding {
 export interface NumberRange {
   min: number | null;
   max: number | null;
+  inner: SymbolicValue | null;
 }
 
 export interface DerivedString {

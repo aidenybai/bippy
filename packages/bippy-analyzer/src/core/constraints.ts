@@ -172,7 +172,7 @@ const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   return null;
 };
 
-const getBounds = (value: SymbolicValue, isTrue: boolean): Bound[] | null => {
+export const getBounds = (value: SymbolicValue, isTrue: boolean): Bound[] | null => {
   if (value.kind !== "BinaryExpression") return null;
   const operator = isTrue ? value.operator : getNegatedOperator(value.operator);
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
