@@ -29,6 +29,7 @@ import { getTruthiness } from "./utils/get-truthiness";
 import { getTypeofNames } from "./utils/get-typeof-names";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { applyStringMethod } from "./utils/string-methods";
+import { memoizeByIdentity } from "./utils/memoize-by-identity";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
@@ -340,7 +341,7 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
-const distributeComparison = (value: SymbolicValue): ConditionalValue | null => {
+const distributeComparison = memoizeByIdentity((value: SymbolicValue): ConditionalValue | null => {
   if (value.kind !== "BinaryExpression" || !COMPARISON_OPERATORS.has(value.operator)) return null;
   const { operator, left, right } = value;
   if (left.kind === "Conditional" && right.kind === "Primitive")
@@ -356,7 +357,7 @@ const distributeComparison = (value: SymbolicValue): ConditionalValue | null => 
       alternate: foldBinary(operator, left, right.alternate),
     };
   return null;
-};
+});
 
 interface TypeofTest {
   operand: SymbolicValue;
