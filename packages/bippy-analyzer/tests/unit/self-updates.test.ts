@@ -14,6 +14,6 @@ describe("self updates", () => {
   });
 
   it("keeps the source state on the arm that passes the state through", () => {
-    expect(getTargets("SelfPhase")).toEqual([[[1]], [[1]], [[2]]]);
+    expect(getTargets("SelfPhase")).toEqual([[[1]], [[1]]]);
   });
 });

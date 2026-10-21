@@ -1,26 +1,49 @@
-import { evaluateCondition, getPossibleValues, type Constraints } from "./constraints";
-import type { AbstractValue, Binding, SymbolicValue } from "./types";
+import { evaluateCondition, type Constraints } from "./constraints";
+import type { AbstractValue, Binding, BindingPlace, SymbolicValue } from "./types";
+import { getBindingPlace } from "./utils/get-binding-place";
 import { getTestExpression } from "./utils/get-test-expression";
-import { isUnchangedField } from "./utils/is-unchanged-field";
-import { isWholeBinding } from "./utils/is-whole-binding";
+import { isSamePlace } from "./utils/is-same-place";
 
 export type FieldCases = AbstractValue[] | "unchanged" | null;
 
-export const getLiteralCases = (
-  value: SymbolicValue,
-  constraints: Constraints | null,
-): AbstractValue[] | null => {
-  if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
-  if (value.kind === "Binding") return constraints && getPossibleValues(value, constraints);
-  if (value.kind !== "Conditional") return null;
-  const decidedOutcome = constraints
-    ? evaluateCondition(getTestExpression(value), constraints)
-    : null;
-  if (decidedOutcome !== null)
-    return getLiteralCases(decidedOutcome ? value.consequent : value.alternate, constraints);
-  const consequentCases = getLiteralCases(value.consequent, constraints);
-  const alternateCases = getLiteralCases(value.alternate, constraints);
-  return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
+interface FieldWalk {
+  target: BindingPlace;
+  constraints: Constraints | null;
+}
+
+const resolveUnchanged = (cases: FieldCases, walk: FieldWalk): AbstractValue[] | null => {
+  if (cases !== "unchanged") return cases;
+  if (!walk.constraints) return [];
+  return walk.constraints.possibleValues.get(walk.target) ?? null;
+};
+
+const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldCases => {
+  if (value.kind === "Binding") {
+    const source = getBindingPlace(value.binding, [...value.path, ...path]);
+    if (isSamePlace(source, walk.target)) return "unchanged";
+    return walk.constraints?.possibleValues.get(source) ?? null;
+  }
+  if (value.kind === "Conditional") {
+    const decidedOutcome = walk.constraints
+      ? evaluateCondition(getTestExpression(value), walk.constraints)
+      : null;
+    if (decidedOutcome !== null)
+      return getCases(decidedOutcome ? value.consequent : value.alternate, path, walk);
+    const consequent = getCases(value.consequent, path, walk);
+    const alternate = getCases(value.alternate, path, walk);
+    if (consequent === "unchanged" && alternate === "unchanged") return "unchanged";
+    const consequentCases = resolveUnchanged(consequent, walk);
+    const alternateCases = resolveUnchanged(alternate, walk);
+    return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
+  }
+  if (path.length === 0)
+    return value.kind === "Primitive" ? [{ kind: "Literal", value: value.value }] : null;
+  if (value.kind !== "ObjectExpression") return null;
+  const [field, ...restPath] = path;
+  const assignedProperty = value.properties.findLast((property) => property.key === field);
+  if (assignedProperty) return getCases(assignedProperty.value, restPath, walk);
+  const spread = value.spreads.at(-1);
+  return spread ? getCases(spread, path, walk) : null;
 };
 
 export const getFieldCases = (
@@ -28,18 +51,5 @@ export const getFieldCases = (
   path: string[],
   binding: Binding,
   constraints: Constraints | null,
-  assignedPath: string[] = [],
-): FieldCases => {
-  if (!value) return null;
-  if (isUnchangedField(value, binding, [...assignedPath, ...path])) return "unchanged";
-  if (path.length === 0) return getLiteralCases(value, constraints);
-  if (value.kind !== "ObjectExpression") return null;
-  const [field, ...restPath] = path;
-  const assignedProperty = value.properties.findLast((property) => property.key === field);
-  if (assignedProperty && field !== undefined)
-    return getFieldCases(assignedProperty.value, restPath, binding, constraints, [
-      ...assignedPath,
-      field,
-    ]);
-  return value.spreads.some((spread) => isWholeBinding(spread, binding)) ? "unchanged" : null;
-};
+): FieldCases =>
+  value ? getCases(value, path, { target: getBindingPlace(binding, path), constraints }) : null;
