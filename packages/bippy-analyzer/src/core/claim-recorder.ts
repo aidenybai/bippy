@@ -82,7 +82,7 @@ export class ClaimRecorder {
   }
 
   record(claim: ClaimSite): void {
-    if (this.#isCheckable(claim.subject))
+    if (claim.kind === "invariant" || this.#isCheckable(claim.subject))
       this.#claims.push({
         ...claim,
         file: this.#interpreter.resolver.fileName,
