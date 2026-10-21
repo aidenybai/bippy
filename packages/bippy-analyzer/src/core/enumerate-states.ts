@@ -105,7 +105,7 @@ const enumerateRegion = (
       .map((handler) => handler.id);
     const renderedHandlerIds = new Set([
       ...runnableEffectIds,
-      ...collectHandlerIds(alternative.render),
+      ...collectHandlerIds(alternative.render, alternative.constraints),
     ]);
     return regionHandlers
       .filter((handler) => renderedHandlerIds.has(handler.id))
