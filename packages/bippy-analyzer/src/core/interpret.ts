@@ -55,6 +55,7 @@ import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
+import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
@@ -1201,6 +1202,21 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const storedValue = this.read(store.value);
+    const [initialRef] = storedValue.kind === "HookResult" ? storedValue.argumentValues : [];
+    const isConstantRef =
+      storedValue.kind === "HookResult" &&
+      storedValue.hookKind === "useRef" &&
+      initialRef?.kind === "Function" &&
+      isRefOnlyRead(this.getCurrentFunction(), store.lvalue.place.identifier.id);
+    if (isConstantRef) {
+      const constantRef: SymbolicValue = {
+        kind: "ObjectExpression",
+        properties: [{ key: "current", value: initialRef }],
+        spreads: [],
+      };
+      this.write(store.lvalue.place, constantRef);
+      return constantRef;
+    }
     const localValue =
       storedValue.kind === "HookResult" && getIdentifierName(store.lvalue.place) !== null
         ? this.destructurer.bindHookResult(store.lvalue.place, storedValue)
