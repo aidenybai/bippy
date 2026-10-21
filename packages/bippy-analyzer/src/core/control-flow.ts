@@ -1,5 +1,8 @@
-import type { BlockId, Terminal } from "../react-compiler/HIR/HIR";
-import type { Branch, ConditionalValue, SymbolicValue, TestKind } from "./types";
+import type { BlockId, SourceLocation, Terminal } from "../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import type { Binding, Branch, ConditionalValue, SymbolicValue, TestKind } from "./types";
+import { createUnknown } from "./symbolic-values";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getTestExpression } from "./utils/get-test-expression";
 import { negate } from "./utils/negate";
 import { getValueKey } from "./utils/get-value-key";
@@ -65,6 +68,56 @@ export const mapFallthroughs = (
     consequent: mapFallthroughs(outcome.consequent, mapFallthrough),
     alternate: mapFallthroughs(outcome.alternate, mapFallthrough),
   };
+};
+
+const isWithin = (loc: SourceLocation, range: SourceLocation): boolean =>
+  loc !== GeneratedSource &&
+  range !== GeneratedSource &&
+  loc.start.index >= range.start.index &&
+  loc.end.index <= range.end.index;
+
+const isIterationTest = (
+  test: SymbolicValue,
+  loopBindings: Binding[],
+  loopLoc: SourceLocation,
+): boolean => {
+  const loopBindingIds = new Set(loopBindings.map((binding) => binding.id));
+  const readsLoopBinding = (binding: Binding): boolean =>
+    loopBindingIds.has(binding.id) ||
+    binding.inputPlaces.some((place) => loopBindingIds.has(place.bindingId));
+  let isIteration = false;
+  forEachSymbolicValue(test, (part) => {
+    if (part.kind === "Binding" && readsLoopBinding(part.binding)) isIteration = true;
+    if (part.kind === "Unknown" && isWithin(part.loc, loopLoc)) isIteration = true;
+  });
+  return isIteration;
+};
+
+const isOpaqueLoopSplit = (outcome: Outcome): outcome is SplitOutcome =>
+  outcome.kind === "Split" && outcome.test.kind === "Unknown" && outcome.test.reason === "loop";
+
+export const collapseLoopSplits = (
+  outcome: Outcome,
+  loopBindings: Binding[],
+  loopLoc: SourceLocation,
+): Outcome => {
+  if (outcome.kind !== "Split") return outcome;
+  const consequent = collapseLoopSplits(outcome.consequent, loopBindings, loopLoc);
+  const alternate = collapseLoopSplits(outcome.alternate, loopBindings, loopLoc);
+  if (!isIterationTest(outcome.test, loopBindings, loopLoc))
+    return { ...outcome, consequent, alternate };
+  const opaque: SplitOutcome = {
+    ...outcome,
+    test: createUnknown("loop", outcome.branch.loc),
+    testKind: "truthy",
+    consequent,
+    alternate,
+  };
+  if (isOpaqueLoopSplit(consequent) && consequent.alternate === alternate)
+    return { ...opaque, consequent: consequent.consequent };
+  if (isOpaqueLoopSplit(alternate) && alternate.consequent === consequent)
+    return { ...opaque, alternate: alternate.alternate };
+  return opaque;
 };
 
 export const createConditional = (

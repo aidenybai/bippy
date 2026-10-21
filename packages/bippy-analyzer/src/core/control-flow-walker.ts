@@ -11,6 +11,7 @@ import {
   getLoopHeaders,
   hasFallthrough,
   isFallthroughOnly,
+  collapseLoopSplits,
   mapFallthroughs,
 } from "./control-flow";
 import type { BranchTerminal, LoopTerminal, Outcome, SwitchTerminal } from "./control-flow";
@@ -340,10 +341,14 @@ export class ControlFlowWalker {
       from: getLoopExit(terminal),
       to: terminal.fallthrough,
     };
-    const exitOutcome = mapFallthroughs(bodyOutcome, (fallthrough) =>
-      fallthrough.to === terminal.fallthrough || loopHeaders.includes(fallthrough.to)
-        ? loopExit
-        : fallthrough,
+    const exitOutcome = collapseLoopSplits(
+      mapFallthroughs(bodyOutcome, (fallthrough) =>
+        fallthrough.to === terminal.fallthrough || loopHeaders.includes(fallthrough.to)
+          ? loopExit
+          : fallthrough,
+      ),
+      loopBindings,
+      terminal.loc,
     );
     const afterWalkState =
       this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
