@@ -5,6 +5,7 @@ import type {
   Instruction,
   InstructionId,
   InstructionValue,
+  ManualMemoDependency,
   ObjectPropertyKey,
   Place,
   SourceLocation,
@@ -65,6 +66,7 @@ import { getValuePlace } from "./utils/get-value-place";
 import { isExternalSource } from "./utils/is-external-source";
 import { isNullish } from "./utils/is-nullish";
 import { isNullishValue } from "./utils/is-nullish-value";
+import { isPlacePrefix } from "./utils/is-place-prefix";
 import { getTestExpression } from "./utils/get-test-expression";
 import { coerceBooleanCall } from "./utils/coerce-boolean-call";
 import { negate } from "./utils/negate";
@@ -287,6 +289,7 @@ export class Interpreter {
   readonly claimRecorder = new ClaimRecorder(this);
   readonly callbacks = new CallbackPasser(this);
   cells = new Cells();
+  readonly #memoDependencies = new Map<number, Array<ManualMemoDependency> | null>();
   readonly iteration = new ArrayIteration(this);
   readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
@@ -1019,6 +1022,64 @@ export class Interpreter {
         );
   }
 
+  #finishMemoize(finish: InstructionValueOfKind<"FinishMemoize">): void {
+    const dependencies = this.#memoDependencies.get(finish.manualMemoId);
+    if (!dependencies) return;
+    const memoized = this.read(finish.decl);
+    const dependencyPlaces = new PlaceMap<true>();
+    for (const dependency of dependencies) {
+      if (dependency.root.kind !== "NamedLocal") continue;
+      const root = this.read(dependency.root.value);
+      if (root.kind !== "Binding") continue;
+      const path = [...root.path, ...dependency.path.map((entry) => String(entry.property))];
+      dependencyPlaces.set(getBindingPlace(root.binding, path), true);
+    }
+    if (memoized.kind === "Function") {
+      this.#captureStaleReads(memoized, dependencyPlaces, finish.loc);
+      return;
+    }
+    if (this.#isStaleMemo(memoized, dependencyPlaces))
+      this.write(finish.decl, createUnknown("memo", finish.loc));
+  }
+
+  #captureStaleReads(
+    callback: FunctionValue,
+    dependencyPlaces: PlaceMap<true>,
+    loc: SourceLocation,
+  ): void {
+    const context = this.#functions.get(callback.functionId)?.context ?? [];
+    let hasStaleRead = false;
+    const capturedValues = context.map((place): CapturedValue => {
+      const value = this.read(place);
+      if (!this.#isStaleMemo(value, dependencyPlaces)) return [place, value];
+      hasStaleRead = true;
+      return [place, createUnknown("memo", loc)];
+    });
+    if (hasStaleRead) this.#functions.setCapturedValues(callback.functionId, capturedValues);
+  }
+
+  #isStaleMemo(memoized: SymbolicValue, dependencyPlaces: PlaceMap<true>): boolean {
+    const readPlaces = new PlaceMap<true>();
+    this.collectInputPlaces(memoized, readPlaces);
+    const bindingsById = new Map(
+      this.bindingTable.bindings.map((binding) => [binding.id, binding]),
+    );
+    const isCovered = (place: BindingPlace, visited = new Set<number>()): boolean => {
+      if (dependencyPlaces.places().some((dependency) => isPlacePrefix(dependency, place)))
+        return true;
+      const binding = bindingsById.get(place.bindingId);
+      if (!binding || binding.kind === "ref" || visited.has(binding.id))
+        return binding?.kind === "ref";
+      visited.add(binding.id);
+      return (
+        (binding.kind === "call" || binding.kind === "loop") &&
+        binding.inputPlaces.length > 0 &&
+        binding.inputPlaces.every((inputPlace) => isCovered(inputPlace, visited))
+      );
+    };
+    return readPlaces.places().some((place) => !isCovered(place));
+  }
+
   collectInputPlaces(
     value: SymbolicValue,
     inputPlaces: PlaceMap<true>,
@@ -1359,11 +1420,14 @@ export class Interpreter {
       case "StoreGlobal":
       case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
+      case "StartMemoize":
+        this.#memoDependencies.set(value.manualMemoId, value.deps);
+        return UNDEFINED_VALUE;
       case "FinishMemoize":
+        this.#finishMemoize(value);
         this.#bindMutatedMemo(value);
         return UNDEFINED_VALUE;
       case "Debugger":
-      case "StartMemoize":
         return UNDEFINED_VALUE;
       default:
         return assertExhaustive(value, "Unhandled instruction value");
