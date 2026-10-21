@@ -17,6 +17,7 @@ import { PlaceMap } from "./utils/place-map";
 import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isSamePlace } from "./utils/is-same-place";
+import { foldBinary } from "./symbolic-values";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { getNegatedOperator } from "./utils/get-negated-operator";
@@ -296,6 +297,24 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
+const distributeComparison = (value: SymbolicValue): ConditionalValue | null => {
+  if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return null;
+  const { operator, left, right } = value;
+  if (left.kind === "Conditional" && right.kind === "Primitive")
+    return {
+      ...left,
+      consequent: foldBinary(operator, left.consequent, right),
+      alternate: foldBinary(operator, left.alternate, right),
+    };
+  if (right.kind === "Conditional" && left.kind === "Primitive")
+    return {
+      ...right,
+      consequent: foldBinary(operator, left, right.consequent),
+      alternate: foldBinary(operator, left, right.alternate),
+    };
+  return null;
+};
+
 const evaluateEquality = (
   value: BinaryExpressionValue,
   constraints: Constraints,
@@ -343,6 +362,8 @@ export const evaluateCondition = (
       return operand === null ? null : !operand;
     }
     case "BinaryExpression": {
+      const distributed = distributeComparison(value);
+      if (distributed) return evaluateCondition(distributed, constraints);
       const bounded = evaluateBounds(value, constraints);
       if (bounded !== null) return bounded;
       return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, constraints) : null;
@@ -521,6 +542,8 @@ const assumeUncached = (
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return assumeMemoized(value.value, !isTrue, constraints, memo);
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
+  const distributed = distributeComparison(value);
+  if (distributed) return assumeConditional(distributed, isTrue, constraints, memo);
   if (value.kind === "Binding" && getPossibleValues(value, constraints))
     return assumeByNarrowing(value, isTrue, value, constraints, (candidate) =>
       narrowTruthiness(candidate, isTrue),
