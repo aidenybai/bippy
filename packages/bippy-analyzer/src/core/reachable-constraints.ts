@@ -94,7 +94,7 @@ const getReachableCases = (
         getFieldCases(update.value, path, binding, null) ??
         getToggleCases(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
-      if (!updateCases) return getReachableIntegers(binding, updates) ?? typeCases;
+      if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
       reachable = dedupeAbstractValues([...reachable, ...updateCases]);
     }
     if (reachable.length === previousCount) return reachable;
@@ -131,9 +131,7 @@ const createEmptyConstraints = (analysis: ComponentAnalysis): Constraints => ({
     ...getRangeBounds(
       getBindingPlace(binding),
       binding.range ??
-        (isStateBinding(binding)
-          ? getReachableRange(binding, getBindingUpdates(analysis.handlers, binding))
-          : null),
+        (isStateBinding(binding) ? getReachableRange(binding, analysis.handlers) : null),
     ),
   ]),
   unionMemberValues: analysis.unionMemberValues,

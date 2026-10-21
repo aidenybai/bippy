@@ -1,6 +1,13 @@
 import { getBounds } from "./constraints";
 import type { Bound } from "./constraints";
-import type { AbstractValue, Binding, NumberRange, StateUpdate, SymbolicValue } from "./types";
+import type {
+  AbstractValue,
+  Binding,
+  Handler,
+  NumberRange,
+  StateUpdate,
+  SymbolicValue,
+} from "./types";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isWholeBinding } from "./utils/is-whole-binding";
@@ -9,6 +16,16 @@ import { negate } from "./utils/negate";
 interface Interval {
   min: number;
   max: number;
+}
+
+interface GuardedUpdate {
+  update: StateUpdate;
+  guards: SymbolicValue[];
+}
+
+interface ReachableInterval {
+  interval: Interval;
+  isInteger: boolean;
 }
 
 const MAX_ROUNDS = 8;
@@ -26,9 +43,16 @@ const isSame = (left: Interval, right: Interval): boolean =>
 const getNumber = (value: SymbolicValue): number | null =>
   value.kind === "Primitive" && typeof value.value === "number" ? value.value : null;
 
-const isIntegerOnly = (binding: Binding, updates: StateUpdate[]): boolean => {
+const getGuardedUpdates = (binding: Binding, handlers: Handler[]): GuardedUpdate[] =>
+  handlers.flatMap((handler) =>
+    handler.updates
+      .filter((update) => update.binding.id === binding.id)
+      .map((update) => ({ update, guards: [...handler.guards, ...update.guards] })),
+  );
+
+const isIntegerOnly = (updates: GuardedUpdate[]): boolean => {
   let isInteger = true;
-  for (const update of updates)
+  for (const { update } of updates)
     forEachSymbolicValue(update.value, (part) => {
       const literal = getNumber(part);
       if (literal !== null && !Number.isInteger(literal)) isInteger = false;
@@ -47,6 +71,20 @@ const getBoundLimit = (bound: Bound, binding: Binding, isInteger: boolean): Part
   return {};
 };
 
+const getExcludedLiteral = (
+  condition: SymbolicValue,
+  binding: Binding,
+  isNegated: boolean,
+): number | null => {
+  if (condition.kind !== "BinaryExpression") return null;
+  const excludes = isNegated
+    ? condition.operator === "===" || condition.operator === "=="
+    : condition.operator === "!==" || condition.operator === "!=";
+  if (!excludes) return null;
+  if (isWholeBinding(condition.left, binding)) return getNumber(condition.right);
+  return isWholeBinding(condition.right, binding) ? getNumber(condition.left) : null;
+};
+
 const tighten = (
   interval: Interval,
   binding: Binding,
@@ -57,6 +95,11 @@ const tighten = (
   for (const guard of guards) {
     const isNegated = guard.kind === "UnaryExpression" && guard.operator === "!";
     const condition = isNegated ? guard.value : guard;
+    const excluded = isInteger ? getExcludedLiteral(condition, binding, isNegated) : null;
+    if (excluded !== null && excluded === tightened.min)
+      tightened = { ...tightened, min: excluded + 1 };
+    if (excluded !== null && excluded === tightened.max)
+      tightened = { ...tightened, max: excluded - 1 };
     for (const bound of getBounds(condition, !isNegated) ?? []) {
       const limit = getBoundLimit(bound, binding, isInteger);
       tightened = {
@@ -122,34 +165,21 @@ const getValueInterval = (
   return null;
 };
 
-interface ReachableInterval {
-  interval: Interval;
-  isInteger: boolean;
-}
-
 const widen = (previous: Interval, next: Interval): Interval => ({
   min: next.min < previous.min ? -Infinity : next.min,
   max: next.max > previous.max ? Infinity : next.max,
 });
 
-const getReachableInterval = (
-  binding: Binding,
-  updates: StateUpdate[],
-): ReachableInterval | null => {
+const getReachableInterval = (binding: Binding, handlers: Handler[]): ReachableInterval | null => {
   const initial = binding.initial ? getNumber(binding.initial) : null;
   if (initial === null) return null;
-  const isInteger = Number.isInteger(initial) && isIntegerOnly(binding, updates);
+  const updates = getGuardedUpdates(binding, handlers);
+  const isInteger = Number.isInteger(initial) && isIntegerOnly(updates);
   let hypothesis: Interval = { min: initial, max: initial };
   for (let round = 0; round <= MAX_ROUNDS + 1; round++) {
     let next = hypothesis;
-    for (const update of updates) {
-      const interval = getValueInterval(
-        update.value,
-        binding,
-        hypothesis,
-        update.guards,
-        isInteger,
-      );
+    for (const { update, guards } of updates) {
+      const interval = getValueInterval(update.value, binding, hypothesis, guards, isInteger);
       if (!interval) return null;
       next = union(next, interval);
     }
@@ -159,8 +189,8 @@ const getReachableInterval = (
   return null;
 };
 
-export const getReachableRange = (binding: Binding, updates: StateUpdate[]): NumberRange | null => {
-  const reachable = getReachableInterval(binding, updates);
+export const getReachableRange = (binding: Binding, handlers: Handler[]): NumberRange | null => {
+  const reachable = getReachableInterval(binding, handlers);
   if (!reachable) return null;
   const { min, max } = reachable.interval;
   if (!Number.isFinite(min) && !Number.isFinite(max)) return null;
@@ -173,9 +203,9 @@ export const getReachableRange = (binding: Binding, updates: StateUpdate[]): Num
 
 export const getReachableIntegers = (
   binding: Binding,
-  updates: StateUpdate[],
+  handlers: Handler[],
 ): AbstractValue[] | null => {
-  const reachable = getReachableInterval(binding, updates);
+  const reachable = getReachableInterval(binding, handlers);
   if (!reachable?.isInteger) return null;
   const { min, max } = reachable.interval;
   if (!Number.isFinite(min) || !Number.isFinite(max) || max - min >= MAX_INTEGER_CASES) return null;
