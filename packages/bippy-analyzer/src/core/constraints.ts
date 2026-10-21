@@ -20,6 +20,7 @@ import { isSamePlace } from "./utils/is-same-place";
 import { foldBinary } from "./symbolic-values";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
+import { isNullish } from "./utils/is-nullish";
 import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
@@ -439,6 +440,19 @@ export const hasUnknownPart = (value: SymbolicValue): boolean => {
   return hasUnknown;
 };
 
+const hasNullishAncestor = (place: BindingPlace, possibleValues: PlaceMap<AbstractValue[]>) =>
+  place.path.some((_segment, length) => {
+    const ancestorValues = possibleValues.get({
+      bindingId: place.bindingId,
+      path: place.path.slice(0, length),
+    });
+    return (
+      ancestorValues !== undefined &&
+      ancestorValues.length > 0 &&
+      ancestorValues.every((value) => value.kind === "Literal" && isNullish(value.value))
+    );
+  });
+
 const joinPlaceValues = (
   left: PlaceMap<AbstractValue[]>,
   right: PlaceMap<AbstractValue[]>,
@@ -447,6 +461,8 @@ const joinPlaceValues = (
     [...left].flatMap(([place, leftValues]): Array<[BindingPlace, AbstractValue[]]> => {
       const rightValues = right.get(place);
       if (!rightValues) return [];
+      if (hasNullishAncestor(place, left)) return [[place, rightValues]];
+      if (hasNullishAncestor(place, right)) return [[place, leftValues]];
       return [
         [
           place,
