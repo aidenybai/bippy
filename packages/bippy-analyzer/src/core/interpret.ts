@@ -53,6 +53,8 @@ import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
+import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
+import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isExternalSource } from "./utils/is-external-source";
@@ -229,6 +231,7 @@ export class Interpreter {
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
+  readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
 
   constructor(
     resolver: SourceFileResolver,
@@ -313,6 +316,29 @@ export class Interpreter {
 
   #registerFunction(hirFunction: HIRFunction, isSnapshot = false): FunctionValue {
     return this.#functions.register(hirFunction, this.#resolver, isSnapshot);
+  }
+
+  #bindMutatedMemo(finish: InstructionValueOfKind<"FinishMemoize">): void {
+    const memoized = this.read(finish.decl);
+    if (memoized.kind !== "ObjectExpression" && memoized.kind !== "ArrayExpression") return;
+    const local = this.#getClosureMutatedLocals().get(finish.decl.identifier.id);
+    if (!local) return;
+    const binding = this.createBinding(
+      getIdentifierName(local) ?? "memo",
+      "memo",
+      getDeclarationLocation(local),
+      { hookKind: "useMemo", initial: memoized },
+    );
+    this.write(finish.decl, createBindingValue(binding));
+  }
+
+  #getClosureMutatedLocals(): Map<IdentifierId, Place> {
+    const hirFunction = this.getCurrentFunction();
+    const cached = this.#closureMutatedLocals.get(hirFunction);
+    if (cached) return cached;
+    const locals = getClosureMutatedLocals(hirFunction);
+    this.#closureMutatedLocals.set(hirFunction, locals);
+    return locals;
   }
 
   #createClosure(hirFunction: HIRFunction): FunctionValue {
@@ -1060,9 +1086,11 @@ export class Interpreter {
       case "StoreGlobal":
       case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
+      case "FinishMemoize":
+        this.#bindMutatedMemo(value);
+        return UNDEFINED_VALUE;
       case "Debugger":
       case "StartMemoize":
-      case "FinishMemoize":
         return UNDEFINED_VALUE;
       default:
         return assertExhaustive(value, "Unhandled instruction value");

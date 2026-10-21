@@ -39,6 +39,7 @@ export type BindingKind =
   | "prop"
   | "state"
   | "reducer"
+  | "memo"
   | "context"
   | "hook"
   | "ref"
