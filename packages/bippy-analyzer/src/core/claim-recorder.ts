@@ -76,7 +76,7 @@ export class ClaimRecorder {
       const domain =
         this.#interpreter.bindingTable.placeDomains.get(getValuePlace(part)) ??
         (part.path.length === 0 ? part.binding.domain : undefined);
-      if (domain?.kind !== "Cases") isCheckable = false;
+      if (domain?.kind !== "Cases" && domain?.kind !== "Opaque") isCheckable = false;
     });
     return isCheckable;
   }
