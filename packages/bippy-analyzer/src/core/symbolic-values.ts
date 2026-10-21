@@ -57,6 +57,25 @@ const getKnownMembership = (key: SymbolicValue, object: SymbolicValue): boolean 
   return object.spreads.length === 0 && !(name in Object.prototype) ? false : null;
 };
 
+const OBJECT_KINDS = new Set<SymbolicValue["kind"]>([
+  "ObjectExpression",
+  "ArrayExpression",
+  "Function",
+  "JsxExpression",
+  "JsxFragment",
+]);
+
+const NULLISH_EQUALITY_FOLDS: Partial<Record<BinaryOperator, boolean>> = {
+  "===": false,
+  "==": false,
+  "!==": true,
+  "!=": true,
+};
+
+const isNullishComparisonOfObject = (left: SymbolicValue, right: SymbolicValue): boolean =>
+  (OBJECT_KINDS.has(left.kind) && right.kind === "Primitive" && isNullish(right.value)) ||
+  (OBJECT_KINDS.has(right.kind) && left.kind === "Primitive" && isNullish(left.value));
+
 export const foldBinary = (
   operator: BinaryOperator,
   left: SymbolicValue,
@@ -64,6 +83,9 @@ export const foldBinary = (
 ): SymbolicValue => {
   const membership = operator === "in" ? getKnownMembership(left, right) : null;
   if (membership !== null) return { kind: "Primitive", value: membership };
+  const nullishFold = NULLISH_EQUALITY_FOLDS[operator];
+  if (nullishFold !== undefined && isNullishComparisonOfObject(left, right))
+    return { kind: "Primitive", value: nullishFold };
   if (left.kind !== "Primitive" || right.kind !== "Primitive")
     return { kind: "BinaryExpression", operator, left, right };
   const leftValue = left.value;
