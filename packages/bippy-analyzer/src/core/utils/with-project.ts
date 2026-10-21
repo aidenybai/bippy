@@ -15,10 +15,8 @@ const isPathMap = (value: unknown): value is Record<string, string[]> =>
 const parseConfigOptions = (api: API, configPath: string): Record<string, unknown> => {
   try {
     return api.parseConfigFile(configPath).options;
-  } catch (error) {
-    throw new ConfigError(
-      `could not read ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
-    );
+  } catch {
+    throw new ConfigError(`could not read ${configPath}`);
   }
 };
 
