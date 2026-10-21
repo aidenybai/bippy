@@ -21,6 +21,7 @@ import type { WalkState } from "./walk-state";
 interface CreationPath {
   guards: SymbolicValue[];
   loopDepth: number;
+  isInHandler: boolean;
 }
 
 const MAX_ALIAS_CHAIN_LENGTH = 32;
@@ -86,6 +87,7 @@ export class MutationTracker {
     this.#creationPaths.set(value, {
       guards: walkState.guards,
       loopDepth: this.#interpreter.walker.loopDepth,
+      isInHandler: this.#interpreter.handlerEffects !== null,
     });
   }
 
@@ -275,7 +277,8 @@ export class MutationTracker {
     const isOnCreationPath =
       creationPath !== undefined &&
       creationPath.guards === walkState.guards &&
-      creationPath.loopDepth === this.#interpreter.walker.loopDepth;
+      creationPath.loopDepth === this.#interpreter.walker.loopDepth &&
+      creationPath.isInHandler === (this.#interpreter.handlerEffects !== null);
     const mutatedLiteral = this.#getMutatedLiteral(
       instruction,
       mutatedPlace,
