@@ -149,6 +149,7 @@ export const foldBinary = (
 
 export const getKnownOutcome = (test: SymbolicValue, testKind: TestKind): boolean | null => {
   if (testKind === "truthy") return getKnownTruthiness(test);
+  if (isObjectValue(test)) return true;
   return test.kind === "Primitive" ? !isNullish(test.value) : null;
 };
 

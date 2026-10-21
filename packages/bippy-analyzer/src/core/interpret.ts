@@ -1088,6 +1088,14 @@ export class Interpreter {
       ITERATION_METHODS.has(methodName) &&
       receiver.kind === "ArrayExpression" &&
       callback?.kind === "Function";
+    const found = this.iteration.evaluateArrayFind(
+      methodName,
+      receiver,
+      callback,
+      methodCall.loc,
+      walkState,
+    );
+    if (found) return found;
     if (isIteratingLiteral) {
       this.iteration.callForEachItem(callback, receiver, methodCall.loc, walkState);
       return createUnknown("call", methodCall.loc);

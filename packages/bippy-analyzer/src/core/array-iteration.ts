@@ -1,6 +1,6 @@
 import type { Place, SourceLocation, SpreadPattern } from "../react-compiler/HIR/HIR";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { createBindingValue, createUnknown } from "./symbolic-values";
+import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "./types";
 import { getIdentifierName } from "./utils/get-identifier-name";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
@@ -61,6 +61,32 @@ export class ArrayIteration {
         walkState,
       ),
     );
+  }
+
+  evaluateArrayFind(
+    methodName: string,
+    array: SymbolicValue,
+    callback: SymbolicValue | undefined,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const isLiteralFind =
+      methodName === "find" &&
+      array.kind === "ArrayExpression" &&
+      array.spreads.length === 0 &&
+      callback?.kind === "Function";
+    if (!isLiteralFind) return null;
+    for (const [index, element] of array.elements.entries()) {
+      const matched = this.#interpreter.callFunction(
+        callback,
+        [element, { kind: "Primitive", value: index }, array],
+        loc,
+        walkState,
+      );
+      if (matched.kind !== "Primitive") return null;
+      if (matched.value) return element;
+    }
+    return UNDEFINED_VALUE;
   }
 
   evaluateArrayFrom(
