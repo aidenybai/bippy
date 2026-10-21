@@ -65,14 +65,20 @@ export class Destructurer {
           loc: value.loc,
           domain: this.#interpreter.resolver.getTupleElementDomain(value.loc, 0),
         };
-    if (STATE_HOOKS.has(value.hookKind) && slot) return this.#destructureState(value, slot);
+    if (STATE_HOOKS.has(value.hookKind) && slot)
+      return this.#destructureState(value, slot, setterPlace ?? null);
     if (REDUCER_HOOKS.has(value.hookKind) && slot)
       return this.#destructureReducer(value, slot, itemPlaces[2] ?? null, loc);
     return itemPlaces.map((place) => (place ? this.bindHookResult(place, value) : null));
   }
 
-  #destructureState(hook: HookResultValue, slot: StateSlot): SymbolicValue[] {
+  #destructureState(
+    hook: HookResultValue,
+    slot: StateSlot,
+    setterPlace: Place | null,
+  ): SymbolicValue[] {
     const [initialArgument] = hook.argumentValues;
+    if (!setterPlace && initialArgument?.kind === "Function") return [initialArgument];
     const initial = initialArgument && initialArgument.kind !== "Function" ? initialArgument : null;
     const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
     const binding = this.#interpreter.createBinding(slot.name, "state", slot.loc, {
