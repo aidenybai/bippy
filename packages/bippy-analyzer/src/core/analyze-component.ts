@@ -141,6 +141,7 @@ export const analyzeComponent = (
   const interpreter = new Interpreter(
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
+    fileContext.compiled.loadModuleConstant,
     fileContext.projectLoaders,
     contextSetterFields,
     fileContext.actionsByStore,

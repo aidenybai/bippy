@@ -79,6 +79,7 @@ import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getStoreFieldValue } from "./external-sources";
 import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
+import type { ModuleConstantLoader } from "./module-constants";
 import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./utils/get-identifier-name";
@@ -204,6 +205,7 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
 export class Interpreter {
   #resolver: SourceFileResolver;
   readonly #projectLoaders: ProjectLoaders;
+  readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -233,11 +235,13 @@ export class Interpreter {
   constructor(
     resolver: SourceFileResolver,
     loadModuleFunction: ModuleFunctionLoader,
+    loadModuleConstant: ModuleConstantLoader,
     projectLoaders: ProjectLoaders,
     contextSetterFields: ContextSetterFields,
     actionsByStore: Map<string, StoreActions>,
   ) {
     this.#resolver = resolver;
+    this.#loadModuleConstant = loadModuleConstant;
     this.#functions.addModule(resolver, loadModuleFunction);
     this.#projectLoaders = projectLoaders;
     this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
@@ -1003,8 +1007,13 @@ export class Interpreter {
       case "Destructure":
         this.destructurer.destructure(value);
         return this.read(value.value);
-      case "LoadGlobal":
-        return this.#foldLiteralType(getGlobalValue(value), value.loc);
+      case "LoadGlobal": {
+        const constant =
+          value.binding.kind === "ModuleLocal"
+            ? this.#loadModuleConstant(value.binding.name)
+            : null;
+        return constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
+      }
       case "PropertyLoad":
         return this.#evaluatePropertyLoad(value, walkState);
       case "ComputedLoad":
