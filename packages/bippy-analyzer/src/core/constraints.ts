@@ -346,6 +346,38 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
     : value;
 };
 
+interface Concatenation {
+  operand: BindingValue;
+  render: (candidate: AbstractValue) => string | null;
+}
+
+const getConcatenationParts = (value: SymbolicValue): SymbolicValue[] | null => {
+  if (value.kind === "Primitive") return [value];
+  if (value.kind === "Binding") return [value];
+  if (value.kind !== "BinaryExpression" || value.operator !== "+") return null;
+  const left = getConcatenationParts(value.left);
+  const right = getConcatenationParts(value.right);
+  return left && right ? [...left, ...right] : null;
+};
+
+const getConcatenation = (value: SymbolicValue): Concatenation | null => {
+  const parts = getConcatenationParts(value);
+  const operands = parts?.filter((part) => part.kind === "Binding") ?? [];
+  const [operand] = operands;
+  if (!parts || !operand || operands.length !== 1) return null;
+  if (!parts.some((part) => part.kind === "Primitive" && typeof part.value === "string"))
+    return null;
+  return {
+    operand,
+    render: (candidate) =>
+      candidate.kind === "Literal"
+        ? parts
+            .map((part) => String(part.kind === "Primitive" ? part.value : candidate.value))
+            .join("")
+        : null,
+  };
+};
+
 const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicValue] =>
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
@@ -400,6 +432,22 @@ const evaluateTypeof = (
   return null;
 };
 
+const evaluateConcatenationEquality = (
+  concatenation: Concatenation,
+  value: BinaryExpressionValue,
+  constraints: Constraints,
+): boolean | null => {
+  const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  const [, literalSide] = splitEquality(value);
+  const placeValues = getPossibleValues(concatenation.operand, constraints);
+  const rendered = placeValues?.map(concatenation.render) ?? [];
+  if (rendered.length === 0 || rendered.some((text) => text === null)) return null;
+  if (literalSide.kind !== "Primitive" || typeof literalSide.value !== "string") return isNegated;
+  const matchCount = rendered.filter((text) => text === literalSide.value).length;
+  if (matchCount === rendered.length) return !isNegated;
+  return matchCount === 0 ? isNegated : null;
+};
+
 const evaluateEquality = (
   value: BinaryExpressionValue,
   constraints: Constraints,
@@ -422,6 +470,8 @@ const evaluateEquality = (
     const arm = test ? placeSide.consequent : placeSide.alternate;
     return evaluateEquality({ ...value, left: arm, right: literalSide }, constraints);
   }
+  const concatenation = getConcatenation(placeSide);
+  if (concatenation) return evaluateConcatenationEquality(concatenation, value, constraints);
   const placeValues = getPossibleValues(placeSide, constraints);
   if (!placeValues) return null;
   const matchCount = placeValues.filter((candidate) =>
@@ -773,9 +823,16 @@ const assumeEquality = (
   const typeofTest = getTypeofTest(value);
   if (typeofTest) return assumeTypeof(value, typeofTest, isTrue, constraints);
   const [placeSide, literalSide] = splitEquality(value);
+  const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  const literal = literalSide.kind === "Primitive" ? literalSide.value : undefined;
+  const concatenation = literalSide.kind === "Primitive" ? getConcatenation(placeSide) : null;
+  if (concatenation && getPossibleValues(concatenation.operand, constraints))
+    return assumeByNarrowing(value, isTrue, concatenation.operand, constraints, (candidate) => {
+      const text = concatenation.render(candidate);
+      return text === null || (text === literal) === wantsMatch ? [candidate] : [];
+    });
   if (literalSide.kind !== "Primitive" || placeSide.kind !== "Binding")
     return assumeOpaqueCondition(value, isTrue, constraints);
-  const wantsMatch = isTrue !== NEGATED_EQUALITY_OPERATORS.has(value.operator);
   if (!getPossibleValues(placeSide, constraints)) {
     const assumed = assumeOpaqueCondition(value, isTrue, constraints);
     return assumed && wantsMatch && STRICT_EQUALITY_OPERATORS.has(value.operator)
