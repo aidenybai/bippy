@@ -1,6 +1,8 @@
 import { SignatureKind, SymbolFlags, TypeFlags } from "typescript/unstable/sync";
 import type { Checker, Symbol, Type } from "typescript/unstable/sync";
 import { isLibraryType, isReactType } from "./utils/typescript";
+import { getTypeArguments } from "./utils/get-type-arguments";
+import { getUnionMembers } from "./utils/get-union-members";
 import type { PrimitiveValue, Sample } from "./types";
 import { SAMPLE_DATE, TEXT_SAMPLE, getStringSamples } from "./string-samples";
 
@@ -79,7 +81,7 @@ const getFirstSample = (
 const getCollectionSamples = (checker: Checker, type: Type, depth: number): Sample[] | null => {
   if (isLibraryType(type, DATE_TYPE_PATTERN)) return [{ kind: "Date", value: SAMPLE_DATE }];
   if (!type.isTypeReference()) return null;
-  const typeArguments = checker.getTypeArguments(type);
+  const typeArguments = getTypeArguments(checker, type);
   if (checker.isArrayType(type)) {
     const itemSample = getFirstSample(checker, typeArguments[0], depth);
     return itemSample
@@ -142,7 +144,7 @@ export const getSamples = (
   if (isReactType(type, NODE_TYPE_PATTERN)) return [{ kind: "Element" }];
   if (type.isUnionType()) {
     const memberSamples = dedupeSamples(
-      type.getTypes().flatMap((member) => getSamples(checker, member, depth, name)),
+      (getUnionMembers(type) ?? []).flatMap((member) => getSamples(checker, member, depth, name)),
     );
     return [
       ...memberSamples.filter((sample) => sample.kind !== "Undefined"),

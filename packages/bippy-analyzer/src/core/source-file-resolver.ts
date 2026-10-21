@@ -29,6 +29,7 @@ import {
   getDomainWithUndefined,
 } from "./domains";
 import { getPropertySamples, getSamples } from "./type-samples";
+import { getTypeAtLocation } from "./utils/get-type-at-location";
 
 const CONTEXT_TYPE_PATTERN = /^Context$/;
 export class SourceFileResolver {
@@ -63,7 +64,7 @@ export class SourceFileResolver {
       const node = this.#findNode(loc);
       this.#typesByLocation.set(
         locationKey,
-        node ? this.#checker.getTypeAtLocation(node) : undefined,
+        node ? getTypeAtLocation(this.#checker, node) : undefined,
       );
     }
     return this.#typesByLocation.get(locationKey);
@@ -101,7 +102,7 @@ export class SourceFileResolver {
       ? node.name
       : (bindingElement?.propertyName ?? bindingElement?.name);
     if (!objectNode || !nameNode || !isIdentifier(nameNode)) return false;
-    const objectType = this.#checker.getTypeAtLocation(objectNode);
+    const objectType = getTypeAtLocation(this.#checker, objectNode);
     const property = objectType && this.#checker.getPropertyOfType(objectType, nameNode.text);
     return property !== undefined && (property.flags & SymbolFlags.Optional) !== 0;
   }
@@ -122,7 +123,7 @@ export class SourceFileResolver {
     const node = this.#findNode(loc);
     if (!node || !(isElementAccessExpression(node) || isPropertyAccessExpression(node)))
       return false;
-    const objectType = this.#checker.getTypeAtLocation(node.expression);
+    const objectType = getTypeAtLocation(this.#checker, node.expression);
     if (!objectType || this.#checker.getIndexInfosOfType(objectType).length === 0) return false;
     const propertyName = isPropertyAccessExpression(node)
       ? node.name.text
@@ -134,9 +135,10 @@ export class SourceFileResolver {
 
   getUnionMemberValues(loc: SourceLocation, field: string): AbstractValue[][] | null {
     const type = this.#getType(loc);
-    if (!type?.isUnionType()) return null;
+    const members = type?.isUnionType() ? getUnionMembers(type) : null;
+    if (!members) return null;
     const unionMemberValues: AbstractValue[][] = [];
-    for (const member of type.getTypes()) {
+    for (const member of members) {
       if (member.flags & (TypeFlags.Null | TypeFlags.Undefined)) {
         unionMemberValues.push([UNDEFINED_CASE]);
         continue;
@@ -149,10 +151,10 @@ export class SourceFileResolver {
       }
       const propertyType = this.#checker.getTypeOfSymbol(property);
       if (!propertyType) return null;
+      const propertyMembers = getUnionMembers(propertyType);
+      if (!propertyMembers) return null;
       unionMemberValues.push(
-        getUnionMembers(propertyType).map((memberType) =>
-          getAbstractValue(this.#checker, memberType),
-        ),
+        propertyMembers.map((memberType) => getAbstractValue(this.#checker, memberType)),
       );
     }
     return unionMemberValues;
@@ -203,9 +205,9 @@ export class SourceFileResolver {
     const node = this.#findNode(calleeLoc);
     if (!node || !isPropertyAccessExpression(node)) return false;
     const methodName = node.name.text;
-    const receiverType = this.#checker.getTypeAtLocation(node.expression);
+    const receiverType = getTypeAtLocation(this.#checker, node.expression);
     if (!receiverType) return false;
-    const definedMembers = getUnionMembers(receiverType).filter(
+    const definedMembers = (getUnionMembers(receiverType) ?? []).filter(
       (member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)),
     );
     return (

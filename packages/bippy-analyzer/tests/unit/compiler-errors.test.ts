@@ -49,6 +49,12 @@ describe("compiler errors", () => {
     },
   );
 
+  it("reads an empty tuple branch TypeScript can't serialize as a value it can't see into", () => {
+    const { analysis, report } = getComponent(project, "DateRange");
+    expect(analysis.bailouts).toEqual([]);
+    expect(report.states).toHaveLength(2);
+  });
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });

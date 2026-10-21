@@ -15,6 +15,9 @@ import type { ShapeRegistry } from "../react-compiler/HIR/ObjectShape";
 import { getCollectionName, getInterfaceMemberNames } from "./utils/lib-collections";
 import { findNodeAtLocation } from "./utils/find-node-at-location";
 import { getReactExportName } from "./utils/typescript";
+import { getTypeAtLocation } from "./utils/get-type-at-location";
+import { getTypeArguments } from "./utils/get-type-arguments";
+import { getUnionMembers } from "./utils/get-union-members";
 
 const MAX_CONVERSION_DEPTH = 3;
 const PRIMITIVE_FLAGS =
@@ -42,7 +45,7 @@ const COLLECTIONS: Record<MutableCollection, Collection> = {
 
 const isPrimitiveType = (type: Type): boolean =>
   Boolean(type.flags & PRIMITIVE_FLAGS) ||
-  (type.isUnionType() && type.getTypes().every(isPrimitiveType));
+  (type.isUnionType() && (getUnionMembers(type)?.every(isPrimitiveType) ?? false));
 
 export class CompilerTypeProvider implements TypeProvider {
   readonly #checker: Checker;
@@ -76,7 +79,7 @@ export class CompilerTypeProvider implements TypeProvider {
 
   getType(loc: SourceLocation, shapes: ShapeRegistry): BuiltInType | null {
     const node = findNodeAtLocation(this.#sourceFile, loc);
-    const type = node ? this.#checker.getTypeAtLocation(node) : undefined;
+    const type = node ? getTypeAtLocation(this.#checker, node) : undefined;
     return type ? this.#convertType(type, shapes, 0) : null;
   }
 
@@ -84,9 +87,9 @@ export class CompilerTypeProvider implements TypeProvider {
     if (type.isErrorType() || type.flags & (TypeFlags.AnyOrUnknown | TypeFlags.Never)) return null;
     if (isPrimitiveType(type)) return { kind: "Primitive" };
     if (type.isUnionType()) {
-      const [onlyMember, ...otherMembers] = type
-        .getTypes()
-        .filter((member) => !(member.flags & NULLISH_FLAGS));
+      const [onlyMember, ...otherMembers] = (getUnionMembers(type) ?? []).filter(
+        (member) => !(member.flags & NULLISH_FLAGS),
+      );
       return onlyMember && otherMembers.length === 0
         ? this.#convertType(onlyMember, shapes, depth)
         : null;
@@ -141,7 +144,7 @@ export class CompilerTypeProvider implements TypeProvider {
 
   #isDeeplyReadonly(type: Type, collection: Collection): boolean {
     if (this.#checker.getPropertyOfType(type, collection.mutatingMethod)) return false;
-    return type.isTypeReference() && this.#checker.getTypeArguments(type).every(isPrimitiveType);
+    return type.isTypeReference() && getTypeArguments(this.#checker, type).every(isPrimitiveType);
   }
 
   #getParameterEffect(type: Type | undefined): Effect {
