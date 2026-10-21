@@ -25,7 +25,7 @@ describe("invariant claims", () => {
 
   it("records an invariant on a ref", () => {
     expect(getOutcomes("InvariantRef")).toEqual([
-      ["invariant(box.current !== null)", "unproven", "can't be decided"],
+      ["invariant(box.current !== null)", "unproven", "box.current = null"],
     ]);
   });
 });
