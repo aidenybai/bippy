@@ -4,6 +4,7 @@ import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, getPassedCallbacks } from "./symbolic-values";
 import type { FunctionValue, SymbolicValue } from "./types";
+import { getTestExpression } from "./utils/get-test-expression";
 import { negate } from "./utils/negate";
 import { getAsyncWalkState } from "./walk-state";
 import type { WalkState } from "./walk-state";
@@ -40,9 +41,22 @@ export class CallbackPasser {
 
   #visitArgument(argument: SymbolicValue, walkState: WalkState): void {
     if (!this.#interpreter.handlerEffects) return;
+    if (argument.kind === "Conditional") {
+      const test = getTestExpression(argument);
+      this.#visitArgument(argument.consequent, {
+        ...walkState,
+        guards: [...walkState.guards, test],
+      });
+      this.#visitArgument(argument.alternate, {
+        ...walkState,
+        guards: [...walkState.guards, negate(test)],
+      });
+      return;
+    }
     if (argument.kind === "ObjectExpression")
-      for (const callback of getPassedCallbacks([argument]))
-        this.#visitArgument(callback, walkState);
+      for (const property of argument.properties) this.#visitArgument(property.value, walkState);
+    if (argument.kind === "ArrayExpression")
+      for (const element of argument.elements) this.#visitArgument(element, walkState);
     const asyncWalkState = getAsyncWalkState(walkState);
     if (argument.kind === "Setter")
       this.#interpreter.handlerEffects.recordSetterCall(
