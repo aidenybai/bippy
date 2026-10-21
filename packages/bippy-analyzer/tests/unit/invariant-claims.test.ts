@@ -8,17 +8,24 @@ describe("invariant claims", () => {
     getComponent(project, name).report.claimOutcomes.map((outcome) => [
       outcome.claim.description,
       outcome.verdict,
+      outcome.reason,
     ]);
 
   it("records an invariant on a number", () => {
-    expect(getOutcomes("InvariantCount")).toEqual([["invariant(count < 3)", "unproven"]]);
+    expect(getOutcomes("InvariantCount")).toEqual([
+      ["invariant(count < 3)", "unproven", "can't be decided"],
+    ]);
   });
 
   it("records an invariant on a string's length", () => {
-    expect(getOutcomes("InvariantLength")).toEqual([["invariant(name.length > 0)", "unproven"]]);
+    expect(getOutcomes("InvariantLength")).toEqual([
+      ["invariant(name.length > 0)", "unproven", "can't be decided"],
+    ]);
   });
 
   it("records an invariant on a ref", () => {
-    expect(getOutcomes("InvariantRef")).toEqual([["invariant(box.current !== null)", "unproven"]]);
+    expect(getOutcomes("InvariantRef")).toEqual([
+      ["invariant(box.current !== null)", "unproven", "can't be decided"],
+    ]);
   });
 });
