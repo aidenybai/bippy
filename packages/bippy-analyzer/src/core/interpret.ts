@@ -99,6 +99,7 @@ interface EffectCall {
   callback: SymbolicValue;
   callbackArguments: SymbolicValue[];
   dependencies: string | null;
+  dependencyPlaces: BindingPlace[] | null;
   loc: SourceLocation;
 }
 

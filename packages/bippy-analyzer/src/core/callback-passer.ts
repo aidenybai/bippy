@@ -3,6 +3,7 @@ import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, getPassedCallbacks } from "./symbolic-values";
+import { PlaceMap } from "./utils/place-map";
 import type { FunctionValue, SymbolicValue } from "./types";
 import { negate } from "./utils/negate";
 import { getAsyncWalkState } from "./walk-state";
@@ -88,6 +89,12 @@ export class CallbackPasser {
     dependenciesPlace: Place | undefined,
     loc: SourceLocation,
   ): void {
+    const dependencyPlaces = new PlaceMap<true>();
+    if (dependenciesPlace)
+      this.#interpreter.collectInputPlaces(
+        this.#interpreter.read(dependenciesPlace),
+        dependencyPlaces,
+      );
     this.#interpreter.effectCalls.push({
       hookKind,
       callback,
@@ -95,6 +102,7 @@ export class CallbackPasser {
       dependencies: dependenciesPlace
         ? this.#interpreter.resolver.getSourceText(dependenciesPlace.loc)
         : null,
+      dependencyPlaces: dependenciesPlace ? dependencyPlaces.places() : null,
       loc,
     });
   }
@@ -108,6 +116,7 @@ export class CallbackPasser {
         callback,
         callbackArguments: parameters.map(() => createUnknown("callback-argument", callback.loc)),
         dependencies: null,
+        dependencyPlaces: null,
         loc,
       });
     }

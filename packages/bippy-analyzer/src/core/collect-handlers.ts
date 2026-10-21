@@ -237,7 +237,12 @@ class HandlerCollector {
     const refCallbackKey = getHandlerKey(prop.value);
     if (refCallbackKey === null) return;
     this.#plan(`ref:${refCallbackKey}`, {
-      trigger: { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+      trigger: {
+        kind: "Effect",
+        hookKind: "useLayoutEffect",
+        dependencies: null,
+        dependencyPlaces: null,
+      },
       callback: prop.value,
       callbackArguments: [EVENT_ARGUMENT],
       loc: getHandlerLocation(prop.value),
@@ -291,13 +296,18 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
   for (const effectCall of interpreter.effectCalls)
     if (!wrappedCallbacks.has(effectCall.callback))
       collector.addHandler(
-        { kind: "Effect", hookKind: effectCall.hookKind, dependencies: effectCall.dependencies },
+        {
+          kind: "Effect",
+          hookKind: effectCall.hookKind,
+          dependencies: effectCall.dependencies,
+          dependencyPlaces: effectCall.dependencyPlaces,
+        },
         effectCall.callback,
         effectCall.callbackArguments,
         effectCall.loc,
       );
   collector.addCollectedHandler(
-    { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+    { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null, dependencyPlaces: null },
     interpreter.finishRenderPhaseEffects(),
     GeneratedSource,
   );
