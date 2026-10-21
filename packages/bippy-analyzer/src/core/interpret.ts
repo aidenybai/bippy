@@ -569,9 +569,25 @@ export class Interpreter {
       callSite.callee.kind === "Global" && getPassedCallbacks(callSite.argumentValues).length > 0
         ? this.#functions.loadModuleFunction(this.#resolver, callSite.callee.name)
         : null;
-    return helperTakingCallbacks
-      ? { kind: "ModuleFunction", hirFunction: helperTakingCallbacks }
-      : { kind: "Value" };
+    if (helperTakingCallbacks)
+      return { kind: "ModuleFunction", hirFunction: helperTakingCallbacks };
+    const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
+    const isPureHandlerCall =
+      this.#handlerEffects !== null &&
+      callSite.callee.kind === "Global" &&
+      this.#inlinedFunctions.size < MAX_INLINE_DEPTH &&
+      declarationKey !== null &&
+      this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
+    const handlerHelper = isPureHandlerCall
+      ? this.#projectLoaders.loadProjectFunction(declarationKey)
+      : null;
+    if (!handlerHelper) return { kind: "Value" };
+    this.#functions.addModule(
+      handlerHelper.resolver,
+      handlerHelper.loadModuleFunction,
+      handlerHelper.hirFunction,
+    );
+    return { kind: "ModuleFunction", hirFunction: handlerHelper.hirFunction };
   }
 
   #readStore(
