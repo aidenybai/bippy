@@ -824,6 +824,36 @@ stateDiagram-v2
   [*] --> S1"
 `;
 
+exports[`fixture analysis > Greeting keeps its render tree and handlers 1`] = `
+"---
+title: Greeting src/option-defaults.tsx:21
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Greeting"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"auth.user"}
+  n2 --> n3
+  n4["#lt;p#gt; {auth.user.name}"]
+  n3 -->|✓| n4
+  n5["#lt;p#gt; #quot;Signed out#quot;"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > Greeting keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Greeting src/option-defaults.tsx:21
+---
+stateDiagram-v2
+  direction LR
+  S1: auth.user · #lt;div#gt; #lt;p#gt; {auth.user.name}
+  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out"
+  state "claims" as claims {
+    claims1: holds invariant(auth.user) L17 · never reached
+  }"
+`;
+
 exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
 "---
 title: GuardedCast src/claims.tsx:26
@@ -1056,6 +1086,27 @@ title: List src/dashboard.tsx:17
 stateDiagram-v2
   direction LR
   S1: always · #lt;ul#gt; ↻ items
+  [*] --> S1"
+`;
+
+exports[`fixture analysis > ListSummary keeps its render tree and handlers 1`] = `
+"---
+title: ListSummary src/option-defaults.tsx:26
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["ListSummary"]
+  n2["#lt;p#gt; {#quot;some#quot;}"]
+  n1 --> n2"
+`;
+
+exports[`fixture analysis > ListSummary keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: ListSummary src/option-defaults.tsx:26
+---
+stateDiagram-v2
+  direction LR
+  S1: always · #lt;p#gt; {"some"}
   [*] --> S1"
 `;
 
