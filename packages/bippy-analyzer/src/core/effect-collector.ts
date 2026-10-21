@@ -48,6 +48,28 @@ export class EffectCollector {
     this.#warn = warn;
   }
 
+  get size(): number {
+    return this.#updates.length + this.#delegates.length;
+  }
+
+  get updateCount(): number {
+    return this.#updates.length;
+  }
+
+  forgetRenderValues(firstUpdate: number): void {
+    const forget = (value: SymbolicValue): SymbolicValue =>
+      mapSymbolicValue(value, (part) =>
+        part.kind === "Binding" ? createUnknown("previous-render", GeneratedSource) : part,
+      );
+    for (const [index, update] of this.#updates.entries())
+      if (index >= firstUpdate)
+        this.#updates[index] = {
+          ...update,
+          value: forget(update.value),
+          guards: update.guards.map(forget),
+        };
+  }
+
   addMutation(binding: Binding, loc: SourceLocation): void {
     if (!this.#mutationsByBinding.has(binding.id))
       this.#mutationsByBinding.set(binding.id, { binding, loc });
