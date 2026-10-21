@@ -32,7 +32,7 @@ export const getRenderGuards = (
         walk(node.item, nodeGuards);
         return;
       case "ArrayExpression":
-        node.elements.forEach((element) => walk(element, nodeGuards));
+        [...node.elements, ...node.spreads].forEach((element) => walk(element, nodeGuards));
         return;
       case "Conditional": {
         const test = getTestExpression(node);

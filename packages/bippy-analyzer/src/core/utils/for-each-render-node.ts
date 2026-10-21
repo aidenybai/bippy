@@ -23,6 +23,7 @@ export const forEachRenderNode = (
         return;
       case "ArrayExpression":
         node.elements.forEach(walk);
+        node.spreads.forEach(walk);
         return;
       default:
         return;
