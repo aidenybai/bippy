@@ -1,6 +1,7 @@
 import {
   assumeCondition,
   evaluateCondition,
+  isComplementNegation,
   getConstraintsKey,
   resolveLiteral,
 } from "./constraints";
@@ -174,7 +175,11 @@ export class StateEnumerator {
   ): string | null {
     if (!this.#shouldDescribeStates || evaluateCondition(test, constraints) !== null) return null;
     const simplifiedTest = simplifyDecidedConditionals(test, constraints);
-    return isTrue ? formatSymbolicValue(simplifiedTest) : formatNegated(simplifiedTest);
+    return isTrue
+      ? formatSymbolicValue(simplifiedTest)
+      : formatNegated(simplifiedTest, (comparison) =>
+          isComplementNegation(comparison, constraints),
+        );
   }
 
   #enumerateChildren(element: JsxContainerValue, constraints: Constraints): Alternative[] {

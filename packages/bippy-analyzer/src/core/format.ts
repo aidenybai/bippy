@@ -3,6 +3,7 @@ import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type {
   AbstractValue,
+  BinaryExpressionValue,
   Binding,
   ConditionalValue,
   PrimitiveValue,
@@ -168,12 +169,16 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
   }
 };
 
-export const formatNegated = (value: SymbolicValue): string => {
+export const formatNegated = (
+  value: SymbolicValue,
+  isComplement: (comparison: BinaryExpressionValue) => boolean = () => true,
+): string => {
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return formatSymbolicValue(value.value);
   if (value.kind === "BinaryExpression") {
     const negatedOperator = getNegatedOperator(value.operator);
-    if (negatedOperator) return formatSymbolicValue({ ...value, operator: negatedOperator });
+    if (negatedOperator && isComplement(value))
+      return formatSymbolicValue({ ...value, operator: negatedOperator });
     return `!(${formatSymbolicValue(value)})`;
   }
   return value.kind === "Conditional"

@@ -177,7 +177,7 @@ title: ClickStats src/mutation.tsx:41
 stateDiagram-v2
   direction LR
   S1: stats.clicks #gt; 0 · #lt;button#gt; {"Clicked"}
-  S2: stats.clicks #lt;= 0 · #lt;button#gt; {"Not clicked"}
+  S2: !(stats.clicks #gt; 0) · #lt;button#gt; {"Not clicked"}
   [*] --> S2
   S1 --> S2: #lt;button#gt; onClick
   S2 --> S1: #lt;button#gt; onClick
@@ -362,8 +362,8 @@ stateDiagram-v2
     --
     %% count
     S3: count #gt; 0 · #lt;b#gt; {count}
-    S4: count #lt;= 0 ∧ !count · #lt;i#gt; "None"
-    S5: count #lt;= 0 ∧ count · ∅
+    S4: !(count #gt; 0) ∧ !count · #lt;i#gt; "None"
+    S5: !(count #gt; 0) ∧ count · ∅
   }"
 `;
 
