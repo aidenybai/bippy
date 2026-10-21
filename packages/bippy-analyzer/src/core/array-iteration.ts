@@ -20,6 +20,7 @@ export const ITERATION_METHODS = new Set([
 
 export class ArrayIteration {
   readonly #interpreter: Interpreter;
+  readonly #callbacksByMap = new WeakMap<SymbolicValue, FunctionValue>();
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -89,12 +90,18 @@ export class ArrayIteration {
       this.#interpreter.functions.get(callback.functionId)?.params ?? [];
     const item = this.#createItemValue(itemParameter, "item", loc);
     const index = this.#createItemValue(indexParameter, "index", loc);
-    return {
+    const mapped: SymbolicValue = {
       kind: "ArrayMap",
       array,
       item: this.#interpreter.callFunction(callback, [item, index, array], loc, walkState),
       loc,
     };
+    this.#callbacksByMap.set(mapped, callback);
+    return mapped;
+  }
+
+  getMapCallback(mapped: SymbolicValue): FunctionValue | null {
+    return this.#callbacksByMap.get(mapped) ?? null;
   }
 
   #createItemValue(

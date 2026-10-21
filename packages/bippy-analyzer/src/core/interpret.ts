@@ -40,6 +40,7 @@ import type {
   JsxSpreadProp,
   LengthLimit,
   ObjectExpressionValue,
+  PrimitiveValue,
   ProvidedContext,
   Sample,
   StoreActions,
@@ -948,11 +949,16 @@ export class Interpreter {
         return this.read(value.value);
       case "LoadGlobal":
         return this.#foldLiteralType(getGlobalValue(value), value.loc);
-      case "PropertyLoad":
-        return this.#foldLiteralType(
-          this.evaluatePropertyLoad(this.read(value.object), String(value.property), value.loc),
-          value.loc,
+      case "PropertyLoad": {
+        const object = this.read(value.object);
+        return (
+          this.#evaluateMappedElement(object, value.property, value.loc, walkState) ??
+          this.#foldLiteralType(
+            this.evaluatePropertyLoad(object, String(value.property), value.loc),
+            value.loc,
+          )
         );
+      }
       case "ComputedLoad":
         return this.#evaluateComputedLoad(value, instruction.id, walkState);
       case "BinaryExpression":
@@ -1051,10 +1057,31 @@ export class Interpreter {
         "computed-member",
         computedLoad.loc,
       );
-    return this.evaluatePropertyLoad(
-      this.read(computedLoad.object),
-      String(propertyKey.value),
-      computedLoad.loc,
+    return (
+      this.#evaluateMappedElement(object, propertyKey.value, computedLoad.loc, walkState) ??
+      this.evaluatePropertyLoad(object, String(propertyKey.value), computedLoad.loc)
+    );
+  }
+
+  #evaluateMappedElement(
+    mapped: SymbolicValue,
+    key: PrimitiveValue,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    if (mapped.kind !== "ArrayMap") return null;
+    const index = Number(key);
+    if (typeof key === "boolean" || key === null || key === undefined || !Number.isInteger(index))
+      return null;
+    const callback = this.iteration.getMapCallback(mapped);
+    const elements = getLiteralEntries(mapped.array);
+    const element = elements?.[index]?.[1];
+    if (!callback || !element) return null;
+    return this.callFunction(
+      callback,
+      [element, { kind: "Primitive", value: index }, mapped.array],
+      loc,
+      walkState,
     );
   }
 
