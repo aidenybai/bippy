@@ -21,6 +21,9 @@ export const forEachRenderNode = (
       case "ArrayMap":
         walk(node.item);
         return;
+      case "ArrayExpression":
+        node.elements.forEach(walk);
+        return;
       default:
         return;
     }
