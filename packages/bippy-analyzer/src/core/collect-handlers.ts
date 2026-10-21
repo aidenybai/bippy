@@ -3,6 +3,7 @@ import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Interpreter } from "./interpret";
 import type { CollectedEffects } from "./effect-collector";
 import type {
+  ObjectExpressionValue,
   Binding,
   Handler,
   HandlerTrigger,
@@ -16,7 +17,7 @@ import type {
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
-import { createUnknown, foldUnary, getPassedCallbacks } from "./symbolic-values";
+import { UNDEFINED_VALUE, createUnknown, foldUnary, getPassedCallbacks } from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -70,9 +71,38 @@ const isCallable = (value: SymbolicValue): boolean =>
 
 const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
-const getSpreadHandlers = (tag: JsxTag, prop: JsxSpreadProp): SymbolicValue | null => {
-  if (prop.value.kind !== "ObjectExpression") return null;
-  const properties = prop.value.properties.filter((property) =>
+const getSpreadProperty = (spread: ObjectExpressionValue | null, key: string): SymbolicValue =>
+  spread?.properties.find((property) => property.key === key)?.value ?? UNDEFINED_VALUE;
+
+const getSpreadHandlers = (
+  tag: JsxTag,
+  prop: JsxSpreadProp,
+  value: SymbolicValue = prop.value,
+): ObjectExpressionValue | null => {
+  if (value.kind === "Conditional") {
+    const consequent = getSpreadHandlers(tag, prop, value.consequent);
+    const alternate = getSpreadHandlers(tag, prop, value.alternate);
+    if (!consequent && !alternate) return null;
+    const keys = new Set(
+      [...(consequent?.properties ?? []), ...(alternate?.properties ?? [])].map(
+        (property) => property.key,
+      ),
+    );
+    return {
+      kind: "ObjectExpression",
+      properties: [...keys].map((key) => ({
+        key,
+        value: {
+          ...value,
+          consequent: getSpreadProperty(consequent, key),
+          alternate: getSpreadProperty(alternate, key),
+        },
+      })),
+      spreads: [],
+    };
+  }
+  if (value.kind !== "ObjectExpression") return null;
+  const properties = value.properties.filter((property) =>
     isHandlerProp(tag, {
       kind: "JsxAttribute",
       name: property.key,
