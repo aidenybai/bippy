@@ -2,10 +2,10 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..d230f3b 100644
+index 959fdf7..6cfbf84 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
-@@ -275,20 +275,27 @@ function lowerStatement(
+@@ -275,20 +275,28 @@ function lowerStatement(
        const value = lowerExpressionToTemporary(builder, stmt.get('argument'));
        const handler = builder.resolveThrowHandler();
        if (handler != null) {
@@ -26,6 +26,7 @@ index 959fdf7..d230f3b 100644
 +        builder.terminateWithContinuation(
 +          {
 +            kind: 'maybe-throw',
++            value,
 +            continuation: continuationBlock.id,
 +            handler,
 +            id: makeInstructionId(0),
@@ -46,7 +47,7 @@ index 959fdf7..d230f3b 100644
        }
        const terminal: ThrowTerminal = {
          kind: 'throw',
-@@ -315,6 +322,9 @@ function lowerStatement(
+@@ -315,6 +323,9 @@ function lowerStatement(
            argument as NodePath<t.Expression>,
          );
        }
@@ -56,7 +57,7 @@ index 959fdf7..d230f3b 100644
        const terminal: ReturnTerminal = {
          kind: 'return',
          returnVariant: 'Explicit',
-@@ -862,7 +872,7 @@ function lowerStatement(
+@@ -862,7 +873,7 @@ function lowerStatement(
          });
          let test: Place | null = null;
          if (hasNode(testExpr)) {
@@ -65,7 +66,7 @@ index 959fdf7..d230f3b 100644
          }
          cases.push({
            test,
-@@ -1348,10 +1358,16 @@ function lowerStatement(
+@@ -1348,10 +1359,16 @@ function lowerStatement(
        const continuationBlock = builder.reserve('block');
  
        const handlerPath = stmt.get('handler');
@@ -84,7 +85,7 @@ index 959fdf7..d230f3b 100644
              category: ErrorCategory.Todo,
              loc: stmt.node.loc ?? null,
              suggestions: null,
-@@ -1359,51 +1375,32 @@ function lowerStatement(
+@@ -1359,51 +1376,32 @@ function lowerStatement(
          );
          return;
        }
@@ -150,7 +151,7 @@ index 959fdf7..d230f3b 100644
            lowerAssignment(
              builder,
              handlerBinding.path.node.loc ?? GeneratedSource,
-@@ -1413,13 +1410,29 @@ function lowerStatement(
+@@ -1413,13 +1411,29 @@ function lowerStatement(
              'Assignment',
            );
          }
@@ -185,7 +186,7 @@ index 959fdf7..d230f3b 100644
          };
        });
  
-@@ -1436,6 +1449,11 @@ function lowerStatement(
+@@ -1436,6 +1450,11 @@ function lowerStatement(
            loc: block.node.loc ?? GeneratedSource,
          };
        });
@@ -197,7 +198,7 @@ index 959fdf7..d230f3b 100644
  
        builder.terminateWithContinuation(
          {
-@@ -1451,6 +1469,9 @@ function lowerStatement(
+@@ -1451,6 +1470,9 @@ function lowerStatement(
          continuationBlock,
        );
  
@@ -207,7 +208,7 @@ index 959fdf7..d230f3b 100644
        return;
      }
      case 'WithStatement': {
-@@ -1818,27 +1839,12 @@ function lowerExpression(
+@@ -1818,27 +1840,12 @@ function lowerExpression(
          );
          return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
        }
@@ -241,7 +242,7 @@ index 959fdf7..d230f3b 100644
      }
      case 'BinaryExpression': {
        const expr = exprPath as NodePath<t.BinaryExpression>;
-@@ -2002,83 +2008,14 @@ function lowerExpression(
+@@ -2002,83 +2009,14 @@ function lowerExpression(
      }
      case 'LogicalExpression': {
        const expr = exprPath as NodePath<t.LogicalExpression>;
@@ -330,7 +331,7 @@ index 959fdf7..d230f3b 100644
      }
      case 'AssignmentExpression': {
        const expr = exprPath as NodePath<t.AssignmentExpression>;
-@@ -2115,6 +2052,11 @@ function lowerExpression(
+@@ -2115,6 +2053,11 @@ function lowerExpression(
          }
        }
  
@@ -342,7 +343,7 @@ index 959fdf7..d230f3b 100644
        const operators: {
          [key: string]: Exclude<t.BinaryExpression['operator'], '|>'>;
        } = {
-@@ -2215,23 +2157,12 @@ function lowerExpression(
+@@ -2215,23 +2158,12 @@ function lowerExpression(
            });
  
            // Save the result back to the property
@@ -372,7 +373,7 @@ index 959fdf7..d230f3b 100644
          }
          default: {
            builder.recordError(
-@@ -2450,43 +2381,29 @@ function lowerExpression(
+@@ -2450,43 +2382,29 @@ function lowerExpression(
      }
      case 'TaggedTemplateExpression': {
        const expr = exprPath as NodePath<t.TaggedTemplateExpression>;
@@ -438,7 +439,7 @@ index 959fdf7..d230f3b 100644
      }
      case 'TemplateLiteral': {
        const expr = exprPath as NodePath<t.TemplateLiteral>;
-@@ -2762,10 +2679,20 @@ function lowerExpression(
+@@ -2762,10 +2680,20 @@ function lowerExpression(
          loc: expr.node.loc ?? GeneratedSource,
        };
      }
@@ -461,7 +462,7 @@ index 959fdf7..d230f3b 100644
      }
      case 'MetaProperty': {
        let expr = exprPath as NodePath<t.MetaProperty>;
-@@ -2791,6 +2718,9 @@ function lowerExpression(
+@@ -2791,6 +2719,9 @@ function lowerExpression(
        );
        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
      }
@@ -471,7 +472,7 @@ index 959fdf7..d230f3b 100644
      default: {
        builder.recordError(
          new CompilerErrorDetail({
-@@ -3084,207 +3014,202 @@ function lowerOptionalCallExpression(
+@@ -3084,207 +3015,202 @@ function lowerOptionalCallExpression(
   *  - primitives
   *  - arrays/objects whose values are also safely reorderable.
   */
@@ -865,7 +866,7 @@ index 959fdf7..d230f3b 100644
  }
  
  function lowerArguments(
-@@ -4314,14 +4239,7 @@ function lowerAssignment(
+@@ -4314,14 +4240,7 @@ function lowerAssignment(
        const continuationBlock = builder.reserve(builder.currentBlockKind());
  
        const consequent = builder.enter('value', () => {
@@ -881,7 +882,7 @@ index 959fdf7..d230f3b 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4515,9 +4433,10 @@ function gatherCapturedContext(
+@@ -4515,9 +4434,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -895,7 +896,7 @@ index 959fdf7..d230f3b 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4450,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4451,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
@@ -1116,10 +1117,18 @@ index 9e908b2..fe500d6 100644
            (isHookName(property) ? this.#getCustomHookType() : null)
          );
 diff --git a/HIR/HIR.ts b/HIR/HIR.ts
-index e7d3b4f..90c352f 100644
+index e7d3b4f..a62927e 100644
 --- a/HIR/HIR.ts
 +++ b/HIR/HIR.ts
-@@ -977,6 +977,10 @@ export type InstructionValue =
+@@ -611,6 +611,7 @@ export type TryTerminal = {
+ 
+ export type MaybeThrowTerminal = {
+   kind: 'maybe-throw';
++  value: Place | null;
+   continuation: BlockId;
+   handler: BlockId | null;
+   id: InstructionId;
+@@ -977,6 +978,10 @@ export type InstructionValue =
            typeAnnotation: t.TSType;
            typeAnnotationKind: 'as' | 'satisfies';
          }
@@ -1131,7 +1140,7 @@ index e7d3b4f..90c352f 100644
    | JsxExpression
    | {
 diff --git a/HIR/HIRBuilder.ts b/HIR/HIRBuilder.ts
-index 71874b0..4e0ab07 100644
+index 71874b0..bd55fb7 100644
 --- a/HIR/HIRBuilder.ts
 +++ b/HIR/HIRBuilder.ts
 @@ -115,6 +115,7 @@ export default class HIRBuilder {
@@ -1142,7 +1151,15 @@ index 71874b0..4e0ab07 100644
    /**
     * Traversal context: counts the number of `fbt` tag parents
     * of the current babel node.
-@@ -191,6 +192,24 @@ export default class HIRBuilder {
+@@ -169,6 +170,7 @@ export default class HIRBuilder {
+       this.terminateWithContinuation(
+         {
+           kind: 'maybe-throw',
++          value: null,
+           continuation: continuationBlock.id,
+           handler: exceptionHandler,
+           id: makeInstructionId(0),
+@@ -191,6 +193,24 @@ export default class HIRBuilder {
      return handler ?? null;
    }
  
@@ -1167,7 +1184,7 @@ index 71874b0..4e0ab07 100644
    makeTemporary(loc: SourceLocation): Identifier {
      const id = this.nextIdentifierId;
      return makeTemporaryIdentifier(id, loc);
-@@ -200,7 +219,12 @@ export default class HIRBuilder {
+@@ -200,7 +220,12 @@ export default class HIRBuilder {
      path: NodePath<t.Identifier | t.JSXIdentifier>,
    ): Binding | null {
      const originalName = path.node.name;
@@ -1181,6 +1198,46 @@ index 71874b0..4e0ab07 100644
      if (binding == null) {
        return null;
      }
+diff --git a/HIR/visitors.ts b/HIR/visitors.ts
+index 6c88847..5abdf47 100644
+--- a/HIR/visitors.ts
++++ b/HIR/visitors.ts
+@@ -920,6 +920,7 @@ export function mapTerminalSuccessors(
+       const handler = terminal.handler !== null ? fn(terminal.handler) : null;
+       return {
+         kind: 'maybe-throw',
++        value: terminal.value,
+         continuation,
+         handler,
+         id: makeInstructionId(0),
+@@ -1153,7 +1154,12 @@ export function mapTerminalOperands(
+       }
+       break;
+     }
+-    case 'maybe-throw':
++    case 'maybe-throw': {
++      if (terminal.value !== null) {
++        terminal.value = fn(terminal.value);
++      }
++      break;
++    }
+     case 'sequence':
+     case 'label':
+     case 'optional':
+@@ -1212,7 +1218,12 @@ export function* eachTerminalOperand(terminal: Terminal): Iterable<Place> {
+       }
+       break;
+     }
+-    case 'maybe-throw':
++    case 'maybe-throw': {
++      if (terminal.value !== null) {
++        yield terminal.value;
++      }
++      break;
++    }
+     case 'sequence':
+     case 'label':
+     case 'optional':
 diff --git a/Optimization/PruneMaybeThrows.ts b/Optimization/PruneMaybeThrows.ts
 index 6d31646..f3a3930 100644
 --- a/Optimization/PruneMaybeThrows.ts

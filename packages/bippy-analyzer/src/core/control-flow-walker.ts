@@ -1,4 +1,11 @@
-import type { BasicBlock, BlockId, Phi, SourceLocation, Terminal } from "../react-compiler/HIR/HIR";
+import type {
+  BasicBlock,
+  BlockId,
+  Phi,
+  Place,
+  SourceLocation,
+  Terminal,
+} from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import { eachTerminalSuccessor } from "../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
@@ -89,11 +96,13 @@ interface ThrowPoint {
 interface FunctionScope {
   walkedCatches: Set<BlockId>;
   throwPointsByTry: ThrowPoint[][];
+  catchBindings: Map<BlockId, Place | null>;
 }
 
 export const createFunctionScope = (): FunctionScope => ({
   walkedCatches: new Set(),
   throwPointsByTry: [],
+  catchBindings: new Map(),
 });
 
 export class ControlFlowWalker {
@@ -494,6 +503,7 @@ export class ControlFlowWalker {
       case "optional":
         return this.#walkValueBranch(terminal, blockId, stops, walkState);
       case "try":
+        this.#functionScope.catchBindings.set(terminal.handler, terminal.handlerBinding);
         return this.#interpreter.handlerEffects
           ? this.#walkTryInHandler(terminal, blockId, stops, walkState)
           : { kind: "Next", block: terminal.block };
@@ -541,6 +551,8 @@ export class ControlFlowWalker {
     walkState: WalkState,
   ): TerminalStep {
     const { handler, continuation } = terminal;
+    if (terminal.value !== null && handler !== null)
+      return this.#walkCaughtThrow(terminal.value, handler, blockId, stops);
     if (this.#interpreter.handlerEffects && handler !== null) this.#throwingCatches.add(handler);
     const { walkedCatches } = this.#functionScope;
     if (this.#interpreter.handlerEffects || handler === null || walkedCatches.has(handler))
@@ -555,6 +567,19 @@ export class ControlFlowWalker {
       consequent: this.#walkArm(handler, blockId, stops, walkState, throwTest),
       alternate: this.#walkArm(continuation, blockId, stops, walkState, negate(throwTest)),
     };
+  }
+
+  #walkCaughtThrow(
+    value: Place,
+    handler: BlockId,
+    blockId: BlockId,
+    stops: ReadonlySet<BlockId>,
+  ): TerminalStep {
+    const handlerBinding = this.#functionScope.catchBindings.get(handler);
+    if (handlerBinding) this.#interpreter.write(handlerBinding, this.#interpreter.read(value));
+    return stops.has(handler)
+      ? { kind: "Fallthrough", from: blockId, to: handler }
+      : { kind: "Next", block: handler };
   }
 
   #passAwait(walkState: WalkState, loc: SourceLocation): WalkState {
