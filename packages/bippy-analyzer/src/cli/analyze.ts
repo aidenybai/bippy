@@ -1,6 +1,7 @@
 import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import { analyzeProject } from "../core/analyze-project";
+import { ConfigError } from "../core/config-error";
 import { serializeProjectAnalysis } from "../core/serialize";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
@@ -87,5 +88,13 @@ new Command()
     DEFAULT_MAX_STATES,
   )
   .option("--json", "print the analyses as JSON instead", false)
-  .action(runAnalyze)
+  .action((tsconfig: string, options: AnalyzeCliOptions) => {
+    try {
+      runAnalyze(tsconfig, options);
+    } catch (error) {
+      if (!(error instanceof ConfigError)) throw error;
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+  })
   .parse();
