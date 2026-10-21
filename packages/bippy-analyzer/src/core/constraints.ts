@@ -346,6 +346,18 @@ const getDerivedValues = (
   return dedupeAbstractValues(results);
 };
 
+const getLengthCases = (value: BindingValue, constraints: Constraints): AbstractValue[] | null => {
+  if (value.path.at(-1) !== LENGTH_FIELD) return null;
+  const ownerValues = getPossibleValues({ ...value, path: value.path.slice(0, -1) }, constraints);
+  if (!ownerValues || ownerValues.length === 0) return null;
+  const lengths: AbstractValue[] = [];
+  for (const ownerValue of ownerValues) {
+    if (ownerValue.kind !== "Literal" || typeof ownerValue.value !== "string") return null;
+    lengths.push({ kind: "Literal", value: ownerValue.value.length });
+  }
+  return dedupeAbstractValues(lengths);
+};
+
 export const getPossibleValues = (
   value: SymbolicValue,
   constraints: Constraints,
@@ -354,7 +366,12 @@ export const getPossibleValues = (
   const { derived } = value.binding;
   const derivedValues =
     derived && value.path.length === 0 ? getDerivedValues(derived, constraints) : null;
-  return derivedValues ?? constraints.possibleValues.get(getValuePlace(value)) ?? null;
+  return (
+    derivedValues ??
+    getLengthCases(value, constraints) ??
+    constraints.possibleValues.get(getValuePlace(value)) ??
+    null
+  );
 };
 
 export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
