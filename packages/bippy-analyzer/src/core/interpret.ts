@@ -201,6 +201,20 @@ const getInvokedArguments = (
     : null;
 };
 
+const BUILTIN_MUTATOR_TARGETS = new Map<string, number>([
+  ["Object.assign", 0],
+  ["Object.defineProperty", 0],
+  ["Object.defineProperties", 0],
+  ["Object.setPrototypeOf", 0],
+  ["Reflect.set", 0],
+  ["Reflect.defineProperty", 0],
+  ["Reflect.deleteProperty", 0],
+  ["Reflect.setPrototypeOf", 0],
+]);
+
+const PROTOTYPE_MUTATOR_CALL =
+  /^Array\.prototype\.(push|pop|shift|unshift|splice|sort|reverse|fill|copyWithin)\.(call|apply)$/;
+
 const getLiteralEntries = (
   value: SymbolicValue,
 ): Array<[string | number, SymbolicValue]> | null => {
@@ -844,6 +858,7 @@ export class Interpreter {
   #callOpaqueValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues, loc } = callSite;
     this.#trackProjectCallMutations(callSite);
+    this.#trackBuiltinMutation(callSite);
     const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
     if (this.#handlerEffects && isMutatingCall && callee.kind === "Binding")
       this.#callBinding(callee, argumentValues, walkState);
@@ -877,6 +892,16 @@ export class Interpreter {
       const argumentPlace = callSite.argumentPlaces[index];
       if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
     }
+  }
+
+  #trackBuiltinMutation(callSite: CallSite): void {
+    const { callee } = callSite;
+    if (callee.kind !== "Global" || callee.module !== null) return;
+    const targetIndex =
+      BUILTIN_MUTATOR_TARGETS.get(callee.name) ??
+      (PROTOTYPE_MUTATOR_CALL.test(callee.name) ? 0 : null);
+    const argumentPlace = targetIndex === null ? undefined : callSite.argumentPlaces[targetIndex];
+    if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
   }
 
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
