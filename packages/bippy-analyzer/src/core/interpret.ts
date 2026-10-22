@@ -267,6 +267,8 @@ const getArrayLiteralMember = (
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
+const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
+
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
   const { binding } = loadGlobal;
   if (binding.kind === "Global" && binding.name === "undefined") return UNDEFINED_VALUE;
@@ -797,6 +799,8 @@ export class Interpreter {
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues } = callSite;
     if (isMemoCacheCall(callee, argumentValues)) return MEMO_CACHE_VALUE;
+    const element = this.#evaluateElementCall(callSite);
+    if (element) return element;
     const modeled =
       this.patterns.start(callee, argumentValues, callSite.loc) ??
       coerceBooleanCall(callee, argumentValues) ??
@@ -1785,6 +1789,67 @@ export class Interpreter {
     return reactExport === "Suspense" && jsxValue.kind === "JsxExpression"
       ? this.#buildSuspense(jsxValue, instructionId)
       : jsxValue;
+  }
+
+  #evaluateElementCall({
+    callee,
+    argumentValues,
+    argumentPlaces,
+    loc,
+  }: CallSite): SymbolicValue | null {
+    if (callee.kind !== "Global" || !callee.module) return null;
+    const isCreateElement = callee.module === "react" && callee.name.endsWith("createElement");
+    if (!isCreateElement && !JSX_RUNTIME_MODULES.has(callee.module)) return null;
+    const [type, props, ...extraArguments] = argumentValues;
+    const [typePlace] = argumentPlaces;
+    if (!type || !typePlace) return null;
+    const isBuiltinTag = type.kind === "Primitive" && typeof type.value === "string";
+    const properties = props?.kind === "ObjectExpression" ? props.properties : [];
+    const childrenProperty = properties.findLast((property) => property.key === "children");
+    const elementProps = [
+      ...properties
+        .filter((property) => isCreateElement || property.key !== "children")
+        .map((property): JsxProp => ({
+          kind: "JsxAttribute",
+          name: property.key,
+          value: property.value,
+          handlerId: null,
+          loc,
+          file: this.#resolver.fileName,
+        })),
+      ...(props?.kind === "ObjectExpression"
+        ? props.spreads
+        : props && !isNullishValue(props)
+          ? [props]
+          : []
+      ).map((spread): JsxSpreadProp => ({
+        kind: "JsxSpreadAttribute",
+        value: spread,
+        handlerId: null,
+        loc,
+        file: this.#resolver.fileName,
+      })),
+    ];
+    const children = isCreateElement
+      ? extraArguments
+      : childrenProperty?.value.kind === "ArrayExpression"
+        ? childrenProperty.value.elements
+        : childrenProperty
+          ? [childrenProperty.value]
+          : [];
+    return buildJsx(
+      type,
+      {
+        declaration: isBuiltinTag ? null : this.#resolver.getDeclarationKey(typePlace.loc),
+        isContext: !isBuiltinTag && this.#resolver.isContext(typePlace.loc),
+        reactExport: isBuiltinTag ? null : this.#resolver.getReactExportName(typePlace.loc),
+        props: elementProps,
+        children: flattenArrayChildren(children),
+        loc,
+        file: this.#resolver.fileName,
+      },
+      this.renderedComponents,
+    );
   }
 
   createBranch(terminalId: InstructionId, loc: SourceLocation, probe: Branch["probe"]): Branch {
