@@ -1,4 +1,3 @@
-import { assumeGuards } from "./claim-guards";
 import {
   addBounds,
   assumeCondition,
@@ -41,7 +40,6 @@ interface TransitionContext extends ReachabilityContext {
   branchTests: Map<string, SymbolicValue | null>;
   stateBranches: StateBranches[];
   targetIndicesByConstraints: Map<string, number[]>;
-  updateSequencesByHandler: Map<string, StateUpdate[][]>;
   firstStateIndex: number;
 }
 
@@ -95,42 +93,86 @@ const forgetUntrackedValues = (
       constraints.possibleValues.delete(place);
 };
 
-const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
-  prefix.every((guardKey, index) => guardKeys[index] === guardKey);
+interface GuardChoice {
+  key: string;
+  test: SymbolicValue;
+  isTrue: boolean;
+}
 
-const getHandlerUpdateSequences = (handler: Handler, budget: TransitionBudget): StateUpdate[][] => {
-  const guardKeysByUpdate = new Map(
-    handler.updates.map((update) => [update, update.guards.map(getValueKey)]),
-  );
-  const indexByUpdate = new Map(handler.updates.map((update, index) => [update, index]));
-  const sequencesByKey = new Map<string, StateUpdate[]>();
-  const isFull = (): boolean => sequencesByKey.size > MAX_UPDATE_SEQUENCES;
-  const addSequence = (sequence: StateUpdate[]): void => {
-    sequencesByKey.set(sequence.map((update) => indexByUpdate.get(update)).join(","), sequence);
-  };
-  const addPaths = (updates: StateUpdate[]): void => {
-    if (updates.length === 0) addSequence([]);
-    const pathKeys = new Set<string>();
-    for (const pathUpdate of updates) {
-      if (isFull()) return;
-      const guardKeys = guardKeysByUpdate.get(pathUpdate) ?? [];
-      const pathKey = guardKeys.join("\0");
-      if (pathKeys.has(pathKey)) continue;
-      pathKeys.add(pathKey);
-      addSequence(
-        updates.filter((update) => isGuardPrefix(guardKeysByUpdate.get(update) ?? [], guardKeys)),
-      );
-    }
-  };
+interface GuardedSequence {
+  updates: StateUpdate[];
+  constraints: Constraints;
+}
+
+const getGuardChoice = (guard: SymbolicValue, isTrue = true): GuardChoice =>
+  guard.kind === "UnaryExpression" && guard.operator === "!"
+    ? getGuardChoice(guard.value, !isTrue)
+    : { key: getValueKey(guard), test: guard, isTrue };
+
+const getCandidateUpdateLists = (handler: Handler): StateUpdate[][] => {
   const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
-  if (handler.updates.some((update) => update.guards.length > 0)) addSequence([]);
-  if (synchronousUpdates.length < handler.updates.length) addPaths(synchronousUpdates);
-  handler.updates.forEach((update, index) => {
-    if (!isFull() && update.isAsync && index < handler.updates.length - 1)
-      addPaths(handler.updates.slice(0, index + 1));
-  });
-  addPaths(handler.updates);
-  const sequences = [...sequencesByKey.values()];
+  return synchronousUpdates.length < handler.updates.length
+    ? [synchronousUpdates, handler.updates]
+    : [handler.updates];
+};
+
+const guardChoicesByUpdate = new WeakMap<StateUpdate, GuardChoice[]>();
+
+const getGuardChoices = (update: StateUpdate): GuardChoice[] => {
+  const cached = guardChoicesByUpdate.get(update);
+  if (cached) return cached;
+  const choices = update.guards.map((guard) => getGuardChoice(guard));
+  guardChoicesByUpdate.set(update, choices);
+  return choices;
+};
+
+const getOpenChoice = (
+  update: StateUpdate,
+  constraints: Constraints,
+  outcomes: Map<string, boolean>,
+): GuardChoice | "applied" | "skipped" => {
+  let openChoice: GuardChoice | null = null;
+  for (const choice of getGuardChoices(update)) {
+    const outcome = outcomes.get(choice.key) ?? evaluateCondition(choice.test, constraints);
+    if (outcome === null) {
+      openChoice ??= choice;
+      continue;
+    }
+    outcomes.set(choice.key, outcome);
+    if (outcome !== choice.isTrue) return "skipped";
+  }
+  return openChoice ?? "applied";
+};
+
+const getGuardedSequences = (
+  updates: StateUpdate[],
+  constraints: Constraints,
+  budget: TransitionBudget,
+): GuardedSequence[] => {
+  const sequences: GuardedSequence[] = [];
+  const included: StateUpdate[] = [];
+  const visit = (start: number, current: Constraints, outcomes: Map<string, boolean>): void => {
+    const includedLength = included.length;
+    for (const [index, update] of updates.entries()) {
+      if (index < start) continue;
+      const openChoice = getOpenChoice(update, current, outcomes);
+      if (typeof openChoice !== "string") {
+        for (const outcome of [true, false]) {
+          const assumed = assumeCondition(openChoice.test, outcome, current);
+          if (assumed && sequences.length <= MAX_UPDATE_SEQUENCES)
+            visit(index, assumed, new Map(outcomes).set(openChoice.key, outcome));
+        }
+        included.length = includedLength;
+        return;
+      }
+      if (openChoice === "applied") included.push(update);
+      if (update.isAsync && index < updates.length - 1)
+        sequences.push({ updates: [...included], constraints: current });
+    }
+    sequences.push({ updates: [...included], constraints: current });
+    included.length = includedLength;
+  };
+  visit(0, constraints, new Map());
   if (sequences.length <= MAX_UPDATE_SEQUENCES) return sequences;
   budget.isExhausted = true;
   return sequences.slice(0, MAX_UPDATE_SEQUENCES);
@@ -204,62 +246,26 @@ const getTargetIndices = (afterHandler: Constraints, context: TransitionContext)
   return targetIndices;
 };
 
-const getCachedUpdateSequences = (
-  handler: Handler,
-  context: TransitionContext,
-): StateUpdate[][] => {
-  const cachedSequences = context.updateSequencesByHandler.get(handler.id);
-  if (cachedSequences) return cachedSequences;
-  const sequences = getHandlerUpdateSequences(handler, context.budget);
-  context.updateSequencesByHandler.set(handler.id, sequences);
-  return sequences;
-};
-
-const getSequenceGuards = (updates: StateUpdate[]): SymbolicValue[] =>
-  updates.reduce<SymbolicValue[]>(
-    (longest, update) => (update.guards.length > longest.length ? update.guards : longest),
-    [],
-  );
-
-const hasSurelyAppliedUpdate = (updates: StateUpdate[], constraints: Constraints): boolean => {
-  const isTrueByKey = new Map<string, boolean>();
-  const isSurelyTrue = (guard: SymbolicValue): boolean => {
-    const key = getValueKey(guard);
-    const cached = isTrueByKey.get(key);
-    if (cached !== undefined) return cached;
-    const isTrue = evaluateCondition(guard, constraints) === true;
-    isTrueByKey.set(key, isTrue);
-    return isTrue;
-  };
-  return updates.some((update) => update.guards.every(isSurelyTrue));
-};
-
-const getConstraintsBeforeUpdates = (
-  handler: Handler,
-  updates: StateUpdate[],
-  constraints: Constraints,
-): Constraints | null => {
-  if (updates.length > 0) return assumeGuards(getSequenceGuards(updates), constraints);
-  return hasSurelyAppliedUpdate(handler.updates, constraints) ? null : constraints;
-};
-
 const getTargetStateIndices = (
   handler: Handler,
   constraints: Constraints,
   context: TransitionContext,
 ): Set<number> => {
   const targetIndices = new Set<number>();
-  for (const updates of getCachedUpdateSequences(handler, context)) {
-    const beforeHandler = getConstraintsBeforeUpdates(handler, updates, constraints);
-    if (!beforeHandler) continue;
-    if (context.budget.remainingTargetEnumerations <= 0) {
-      context.budget.isExhausted = true;
-      break;
+  for (const updates of getCandidateUpdateLists(handler))
+    for (const sequence of getGuardedSequences(updates, constraints, context.budget)) {
+      if (context.budget.remainingTargetEnumerations <= 0) {
+        context.budget.isExhausted = true;
+        return targetIndices;
+      }
+      context.budget.remainingTargetEnumerations--;
+      const afterHandler = getConstraintsAfterUpdates(
+        sequence.updates,
+        sequence.constraints,
+        context,
+      );
+      for (const index of getTargetIndices(afterHandler, context)) targetIndices.add(index);
     }
-    context.budget.remainingTargetEnumerations--;
-    const afterHandler = getConstraintsAfterUpdates(updates, beforeHandler, context);
-    for (const index of getTargetIndices(afterHandler, context)) targetIndices.add(index);
-  }
   return targetIndices;
 };
 
@@ -337,7 +343,6 @@ export const createTransitionContext = (
   dependentsByBinding: context.dependentsByBinding,
   ...getBranchContext(regionBranches, alternatives, context),
   targetIndicesByConstraints: new Map(),
-  updateSequencesByHandler: new Map(),
   firstStateIndex,
   budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
 });
