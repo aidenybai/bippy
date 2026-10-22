@@ -1,6 +1,6 @@
 import { evaluateClaims } from "./claims";
 import { isEffectHandler, isRenderHandler } from "./collect-handlers";
-import { evaluateCondition } from "./constraints";
+import { evaluateCondition, joinConstraints } from "./constraints";
 import type { Constraints } from "./constraints";
 import { findRegions } from "./regions";
 import type { RegionBranches } from "./regions";
@@ -26,7 +26,7 @@ import {
 } from "./reachable-constraints";
 import type { Alternative, FirstRenderOutcomes } from "./state-enumerator";
 import { StateEnumerator } from "./state-enumerator";
-import { createTransitionContext, getTransition } from "./transitions";
+import { createTransitionContext, getTransition, settleRenderUpdates } from "./transitions";
 
 export interface EnumerationContext extends ReachabilityContext {
   branchOutcomes: BranchOutcomes;
@@ -181,16 +181,30 @@ const enumerateRegion = (
 
 export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const reachableConstraints = createInitialConstraints(analysis);
-  const context: EnumerationContext = {
+  const reachability: ReachabilityContext = {
     analysis,
     reachableConstraints,
     reachablePlacesByBinding: getReachablePlacesByBinding(reachableConstraints),
     dependentsByBinding: getDependentsByBinding(analysis.bindings),
+  };
+  const renderUpdates = analysis.handlers
+    .filter(isRenderHandler)
+    .flatMap((handler) => handler.updates);
+  const [firstSettled, ...otherSettled] = settleRenderUpdates(
+    createFirstRenderConstraints(analysis, reachableConstraints),
+    renderUpdates,
+    reachability,
+  );
+  const context: EnumerationContext = {
+    ...reachability,
     branchOutcomes: new Map(),
     effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),
-    renderUpdates: analysis.handlers.filter(isRenderHandler).flatMap((handler) => handler.updates),
+    renderUpdates,
     firstRender: {
-      constraints: createFirstRenderConstraints(analysis, reachableConstraints),
+      constraints: otherSettled.reduce(
+        joinConstraints,
+        firstSettled ?? createFirstRenderConstraints(analysis, reachableConstraints),
+      ),
       outcomesByBranchKey: new Map(),
     },
   };
