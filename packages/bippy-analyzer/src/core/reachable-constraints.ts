@@ -69,6 +69,31 @@ const hasCastPart = (value: SymbolicValue): boolean => {
   return isCast;
 };
 
+const NON_NULLISH_KINDS = new Set<SymbolicValue["kind"]>([
+  "ObjectExpression",
+  "ArrayExpression",
+  "Function",
+  "JsxExpression",
+  "JsxFragment",
+]);
+
+const getNonNullishCases = (typeCases: AbstractValue[] | null): AbstractValue[] | null => {
+  const cases = typeCases?.filter((value) => value.kind !== "Literal" || !isNullish(value.value));
+  return cases && cases.length > 0 ? cases : null;
+};
+
+const getValueCases = (
+  value: SymbolicValue | null,
+  path: string[],
+  binding: Binding,
+  constraints: Constraints | null,
+  typeCases: AbstractValue[] | null,
+): ReturnType<typeof getFieldCases> =>
+  getFieldCases(value, path, binding, constraints) ??
+  (path.length === 0 && value !== null && NON_NULLISH_KINDS.has(value.kind)
+    ? getNonNullishCases(typeCases)
+    : null);
+
 const getReachableCases = (
   analysis: ComponentAnalysis,
   binding: Binding,
@@ -82,7 +107,7 @@ const getReachableCases = (
     typeCases?.every((value) => value.kind === "Literal" && isNullish(value.value)) ?? false;
   if (isUntypedState && updates.length > 0) return null;
   if (updates.some((update) => hasCastPart(update.value))) return null;
-  const initialCases = getFieldCases(binding.initial, path, binding, mount);
+  const initialCases = getValueCases(binding.initial, path, binding, mount, typeCases);
   if (!Array.isArray(initialCases)) return typeCases;
   mount.possibleValues.set(getBindingPlace(binding, path), dedupeAbstractValues(initialCases));
   let reachable = dedupeAbstractValues(initialCases);
@@ -91,7 +116,7 @@ const getReachableCases = (
     const previousCount = reachable.length;
     for (const update of updates) {
       const updateCases =
-        getFieldCases(update.value, path, binding, null) ??
+        getValueCases(update.value, path, binding, null, typeCases) ??
         getToggleCases(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
       if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
@@ -201,14 +226,15 @@ export const createFirstRenderConstraints = (
     bounds: [...reachableConstraints.bounds],
   };
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
-  for (const [place] of analysis.placeDomains) {
+  for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
     if (!binding || !isStateBinding(binding)) continue;
-    const initialCases = getFieldCases(
+    const initialCases = getValueCases(
       getFirstValue(binding, bindingsById),
       place.path,
       binding,
       firstRender,
+      domain.kind === "Cases" ? domain.cases : null,
     );
     if (Array.isArray(initialCases))
       firstRender.possibleValues.set(place, dedupeAbstractValues(initialCases));
