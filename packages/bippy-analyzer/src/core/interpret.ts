@@ -75,6 +75,7 @@ import { negate } from "./utils/negate";
 import {
   EMPTY_STRING_VALUE,
   ONE_VALUE,
+  MEMO_CACHE_VALUE,
   UNDEFINED_VALUE,
   createBindingValue,
   createUnknown,
@@ -83,6 +84,7 @@ import {
   getContainedValues,
   getPassedCallbacks,
   isStartTransition,
+  isMemoCacheCall,
 } from "./symbolic-values";
 import { BindingTable } from "./binding-table";
 import type { BindingOptions } from "./binding-table";
@@ -794,6 +796,7 @@ export class Interpreter {
 
   #evaluateCall(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues } = callSite;
+    if (isMemoCacheCall(callee, argumentValues)) return MEMO_CACHE_VALUE;
     const modeled =
       this.patterns.start(callee, argumentValues, callSite.loc) ??
       coerceBooleanCall(callee, argumentValues) ??

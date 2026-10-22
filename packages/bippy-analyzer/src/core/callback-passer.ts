@@ -2,7 +2,7 @@ import type { Place, SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { createUnknown, getPassedCallbacks } from "./symbolic-values";
+import { createUnknown, getPassedCallbacks, isMemoCache } from "./symbolic-values";
 import { PlaceMap } from "./utils/place-map";
 import type { FunctionValue, SymbolicValue } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
@@ -87,7 +87,9 @@ export class CallbackPasser {
     walkState: WalkState,
   ): void {
     const storedValue = this.#interpreter.read(store.value);
-    if (storedValue.kind === "Function") this.passCallbacks([storedValue], store.loc, walkState);
+    const isCached = isMemoCache(this.#interpreter.read(store.object));
+    if (storedValue.kind === "Function" && !isCached)
+      this.passCallbacks([storedValue], store.loc, walkState);
   }
 
   passCallbacks(argumentValues: SymbolicValue[], loc: SourceLocation, walkState: WalkState): void {
