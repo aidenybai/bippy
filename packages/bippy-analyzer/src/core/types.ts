@@ -65,6 +65,13 @@ export interface Binding {
   initial: SymbolicValue | null;
   inputPlaces: BindingPlace[];
   lengthLimit: LengthLimit | null;
+  derived: DerivedString | null;
+}
+
+export interface DerivedString {
+  method: string;
+  receiver: BindingValue;
+  argumentValues: PrimitiveValue[];
 }
 
 export interface LengthLimit {

@@ -13,8 +13,8 @@ describe("unknown tests", () => {
   it("decides a second test of one unknown by the first", () => {
     const trimmed = getComponent(project, "TrimmedInput");
     expect(trimmed.report.states.map((state) => state.conditions)).toEqual([
-      ["Unknown(member) > 0"],
-      ["Unknown(member) <= 0"],
+      ["(input as string).trim().length > 0"],
+      ["(input as string).trim().length <= 0"],
     ]);
   });
 

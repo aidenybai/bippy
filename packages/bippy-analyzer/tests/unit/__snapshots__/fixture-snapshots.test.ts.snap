@@ -2559,7 +2559,7 @@ flowchart TD
   n3 -.-> n4
   n5["#lt;button#gt; #quot;Add#quot;"]
   n2 --> n5
-  n6(["onClick ⇒ if Unknown(call): todos = [...todos, { id: Unknown(call), text: draft…"]):::event
+  n6(["onClick ⇒ if draft.trim(): todos = [...todos, { id: Unknown(call), text: draft,…"]):::event
   n5 -.-> n6
   n7{"todos.length === 0"}
   n2 --> n7
