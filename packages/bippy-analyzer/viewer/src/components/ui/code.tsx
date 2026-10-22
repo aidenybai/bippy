@@ -8,14 +8,14 @@ interface CodeProps extends Omit<ComponentProps<"code">, "children"> {
 }
 
 interface ThemedStyle extends CSSProperties {
-  "--shiki-light"?: string;
-  "--shiki-dark"?: string;
+  "--hls-light"?: string;
+  "--hls-dark"?: string;
 }
 
 const toStyle = (token: ThemedToken): ThemedStyle | undefined => {
   const { htmlStyle } = token;
   if (typeof htmlStyle !== "object" || htmlStyle === null) return undefined;
-  return { "--shiki-light": htmlStyle["--shiki-light"], "--shiki-dark": htmlStyle["--shiki-dark"] };
+  return { "--hls-light": htmlStyle["--hls-light"], "--hls-dark": htmlStyle["--hls-dark"] };
 };
 
 export const Code = ({ children, className, ...props }: CodeProps) => {
