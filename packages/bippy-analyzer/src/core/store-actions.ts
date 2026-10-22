@@ -7,6 +7,7 @@ import type {
   SourceFile,
 } from "typescript/unstable/ast";
 import {
+  isArrayLiteralExpression,
   isArrowFunction,
   isBlock,
   isCallExpression,
@@ -26,7 +27,15 @@ import {
   isStringLiteral,
   isVariableStatement,
 } from "typescript/unstable/ast/is";
-import type { StoreAssignment, StoreFieldValue, StoreActions } from "./types";
+import type {
+  StoreActions,
+  StoreAssignment,
+  StoreFieldValue,
+  StoreModel,
+  SymbolicValue,
+} from "./types";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import { createUnknown } from "./symbolic-values";
 import { skipParentheses } from "./utils/skip-parentheses";
 import { createDeclarationKey } from "./utils/declaration-key";
 
@@ -90,6 +99,27 @@ const getLiteralValue = (node: Node): StoreFieldValue | null => {
   if (isStringLiteral(node)) return { kind: "Literal", value: node.text };
   if (isNumericLiteral(node)) return { kind: "Literal", value: Number(node.text) };
   return null;
+};
+
+const getInitialValue = (node: Node): SymbolicValue | null => {
+  const expression = skipParentheses(node);
+  const literal = getLiteralValue(expression);
+  if (literal?.kind === "Literal") return { kind: "Primitive", value: literal.value };
+  if (isArrayLiteralExpression(expression)) {
+    const elements = expression.elements.map(getInitialValue);
+    return elements.every((element) => element !== null)
+      ? { kind: "ArrayExpression", elements, spreads: [] }
+      : null;
+  }
+  if (!isObjectLiteralExpression(expression)) return null;
+  const properties = expression.properties.map((property) => {
+    if (!isPropertyAssignment(property) || !isIdentifier(property.name)) return null;
+    const value = getInitialValue(property.initializer);
+    return value ? { key: property.name.text, value } : null;
+  });
+  return properties.every((property) => property !== null)
+    ? { kind: "ObjectExpression", properties, spreads: [] }
+    : null;
 };
 
 const getFieldValue = (
@@ -173,10 +203,10 @@ const getActionAssignments = (action: Node, setName: string): StoreAssignment[] 
     : assignments.map(({ field }) => ({ field, value: { kind: "Unknown" } }));
 };
 
-export const collectStoreActions = (sourceFile: SourceFile): Map<string, StoreActions> => {
-  const actionsByStore = new Map<string, StoreActions>();
+export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreModel> => {
+  const modelsByStore = new Map<string, StoreModel>();
   const creatorNames = getCreatorNames(sourceFile);
-  if (creatorNames.size === 0) return actionsByStore;
+  if (creatorNames.size === 0) return modelsByStore;
   for (const statement of sourceFile.statements) {
     if (!isVariableStatement(statement)) continue;
     for (const declaration of statement.declarationList.declarations) {
@@ -186,13 +216,29 @@ export const collectStoreActions = (sourceFile: SourceFile): Map<string, StoreAc
       const initialState = creator ? getReturnedObject(creator) : null;
       if (!setName || !initialState || !isObjectLiteralExpression(initialState)) continue;
       const actions: StoreActions = new Map();
+      const initialFields: Array<{ key: string; value: SymbolicValue }> = [];
+      let hasOpaqueField = false;
       for (const property of initialState.properties) {
-        if (!isPropertyAssignment(property) || !isIdentifier(property.name)) continue;
+        if (!isPropertyAssignment(property) || !isIdentifier(property.name)) {
+          hasOpaqueField = true;
+          continue;
+        }
         const assignments = getActionAssignments(property.initializer, setName);
         if (assignments) actions.set(property.name.text, assignments);
+        const initialValue = getInitialValue(property.initializer);
+        if (initialValue) initialFields.push({ key: property.name.text, value: initialValue });
+        else hasOpaqueField = true;
       }
-      actionsByStore.set(createDeclarationKey(sourceFile.path, declaration.name.text), actions);
+      const model: StoreModel = {
+        actions,
+        initial: {
+          kind: "ObjectExpression",
+          properties: initialFields,
+          spreads: hasOpaqueField ? [createUnknown("store", GeneratedSource)] : [],
+        },
+      };
+      modelsByStore.set(createDeclarationKey(sourceFile.path, declaration.name.text), model);
     }
   }
-  return actionsByStore;
+  return modelsByStore;
 };

@@ -45,8 +45,10 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
   }
   if (path.length === 0)
     return value.kind === "Primitive" ? [{ kind: "Literal", value: value.value }] : null;
-  if (value.kind !== "ObjectExpression") return null;
   const [field, ...restPath] = path;
+  if (value.kind === "ArrayExpression" && field === "length" && restPath.length === 0)
+    return value.spreads.length === 0 ? [{ kind: "Literal", value: value.elements.length }] : null;
+  if (value.kind !== "ObjectExpression") return null;
   const assignedProperty = value.properties.findLast((property) => property.key === field);
   if (assignedProperty) return getCases(assignedProperty.value, restPath, walk);
   const spread = value.spreads.at(-1);

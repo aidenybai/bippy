@@ -9,6 +9,7 @@ import type {
   Sample,
   StoreAssignment,
   StoreActions,
+  StoreModel,
   SymbolicValue,
 } from "./types";
 import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
@@ -23,6 +24,7 @@ export const getStoreFieldValue = (
   storeBinding: Binding,
   assignment: StoreAssignment,
   actionArguments: SymbolicValue[],
+  readField: (field: string) => SymbolicValue,
 ): SymbolicValue => {
   const { field, value } = assignment;
   switch (value.kind) {
@@ -31,11 +33,7 @@ export const getStoreFieldValue = (
     case "Literal":
       return { kind: "Primitive", value: value.value };
     case "Toggle":
-      return {
-        kind: "UnaryExpression",
-        operator: "!",
-        value: createBindingValue(storeBinding, [field]),
-      };
+      return { kind: "UnaryExpression", operator: "!", value: readField(field) };
     case "Unknown":
       return createUnknown("store", storeBinding.loc);
     default:
@@ -45,7 +43,7 @@ export const getStoreFieldValue = (
 
 export class ExternalSources {
   readonly #contextSetterFields: ContextSetterFields;
-  readonly #actionsByStore: Map<string, StoreActions>;
+  readonly #modelsByStore: Map<string, StoreModel>;
   readonly #contextKeysByHook = new WeakMap<HookResultValue, string>();
   readonly #resolversByHook = new WeakMap<HookResultValue, SourceFileResolver>();
   readonly #setterFieldsByBinding = new Map<number, Map<string, string>>();
@@ -55,9 +53,9 @@ export class ExternalSources {
   readonly contextSamples = new Map<string, Sample>();
   readonly untypedContextBindingIds = new Map<string, number>();
 
-  constructor(contextSetterFields: ContextSetterFields, actionsByStore: Map<string, StoreActions>) {
+  constructor(contextSetterFields: ContextSetterFields, modelsByStore: Map<string, StoreModel>) {
     this.#contextSetterFields = contextSetterFields;
-    this.#actionsByStore = actionsByStore;
+    this.#modelsByStore = modelsByStore;
   }
 
   addHookResult(
@@ -100,15 +98,19 @@ export class ExternalSources {
     return this.#setterFieldsByBinding.get(contextBinding.id)?.get(setterName);
   }
 
-  getStoreActions(storeKey: string): StoreActions | undefined {
-    return this.#actionsByStore.get(storeKey);
+  getStoreModel(storeKey: string): StoreModel | undefined {
+    return this.#modelsByStore.get(storeKey);
   }
 
-  getStoreBinding(storeKey: string, actions: StoreActions, createBinding: () => Binding): Binding {
+  getStoreBinding(storeKey: string, model: StoreModel, createBinding: () => Binding): Binding {
     const storeBinding = this.#bindingsByStore.get(storeKey) ?? createBinding();
     this.#bindingsByStore.set(storeKey, storeBinding);
-    this.#actionsByStoreBinding.set(storeBinding.id, actions);
+    this.#actionsByStoreBinding.set(storeBinding.id, model.actions);
     return storeBinding;
+  }
+
+  isStoreBinding(binding: Binding): boolean {
+    return this.#actionsByStoreBinding.has(binding.id);
   }
 
   getActionAssignments(storeBinding: Binding, actionName: string): StoreAssignment[] | undefined {

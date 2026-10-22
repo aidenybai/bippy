@@ -48,7 +48,7 @@ import type {
   ProvidedContext,
   Sample,
   SetterValue,
-  StoreActions,
+  StoreModel,
   SymbolicValue,
   WarningKind,
 } from "./types";
@@ -147,7 +147,7 @@ interface CompilationTables {
 type CallTarget =
   | { kind: "Portal"; children: SymbolicValue }
   | { kind: "ProjectHook"; projectHook: ProjectHook }
-  | { kind: "Store"; storeKey: string; storeActions: StoreActions }
+  | { kind: "Store"; storeKey: string; storeModel: StoreModel }
   | { kind: "Hook"; hookKind: HookKind }
   | { kind: "ModuleFunction"; hirFunction: HIRFunction }
   | { kind: "Transition" }
@@ -187,13 +187,15 @@ const SUSPENDED_DOMAIN: Domain = {
 };
 
 const createFieldUpdate = (
-  binding: Binding,
+  base: SymbolicValue,
   properties: ObjectExpressionValue["properties"],
 ): ObjectExpressionValue => ({
   kind: "ObjectExpression",
   properties,
-  spreads: [createBindingValue(binding)],
+  spreads: [base],
 });
+
+const STORE_METHODS = new Set(["getState", "setState"]);
 
 const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
   "Function",
@@ -334,7 +336,7 @@ export class Interpreter {
     loadModuleVariable: ModuleVariableLoader,
     projectLoaders: ProjectLoaders,
     contextSetterFields: ContextSetterFields,
-    actionsByStore: Map<string, StoreActions>,
+    modelsByStore: Map<string, StoreModel>,
   ) {
     this.#resolver = resolver;
     this.#loadModuleConstant = loadModuleConstant;
@@ -342,7 +344,7 @@ export class Interpreter {
     this.#componentResolver = resolver;
     this.#functions.addModule(resolver, loadModuleFunction);
     this.#projectLoaders = projectLoaders;
-    this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
+    this.externalSources = new ExternalSources(contextSetterFields, modelsByStore);
   }
 
   get functions(): FunctionRegistry {
@@ -579,7 +581,7 @@ export class Interpreter {
       case "ObjectExpression":
         return (
           object.properties.findLast((candidate) => candidate.key === property)?.value ??
-          (object.spreads.length > 0 ? createUnknown("spread", loc) : UNDEFINED_VALUE)
+          this.#loadSpreadField(object.spreads, property, loc)
         );
       case "ArrayExpression":
         return object.spreads.length === 0
@@ -792,8 +794,8 @@ export class Interpreter {
           ? { kind: "ProjectHook", projectHook }
           : { kind: "Hook", hookKind };
       const storeKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
-      const storeActions = storeKey ? this.externalSources.getStoreActions(storeKey) : undefined;
-      if (storeKey && storeActions) return { kind: "Store", storeKey, storeActions };
+      const storeModel = storeKey ? this.externalSources.getStoreModel(storeKey) : undefined;
+      if (storeKey && storeModel) return { kind: "Store", storeKey, storeModel };
     }
     if (hookKind !== null) return { kind: "Hook", hookKind };
     const helperTakingCallbacks =
@@ -823,21 +825,61 @@ export class Interpreter {
 
   #readStore(
     storeKey: string,
-    storeActions: StoreActions,
+    storeModel: StoreModel,
     callSite: CallSite,
     walkState: WalkState,
   ): SymbolicValue {
     const storeHookName = callSite.callee.kind === "Global" ? callSite.callee.name : "store";
-    const storeBinding = this.externalSources.getStoreBinding(storeKey, storeActions, () =>
-      this.createBinding(`${storeHookName}()`, "hook", callSite.loc, {
-        hookKind: "Custom",
-        domain: { kind: "Opaque", typeText: storeHookName },
-      }),
-    );
+    const storeBinding = this.#getStoreBinding(storeKey, storeModel, storeHookName, callSite.loc);
     const [selector] = callSite.argumentValues;
     return selector?.kind === "Function"
       ? this.callFunction(selector, [createBindingValue(storeBinding)], callSite.loc, walkState)
       : createBindingValue(storeBinding);
+  }
+
+  #getStoreBinding(
+    storeKey: string,
+    storeModel: StoreModel,
+    storeHookName: string,
+    loc: SourceLocation,
+  ): Binding {
+    return this.externalSources.getStoreBinding(storeKey, storeModel, () =>
+      this.createBinding(`${storeHookName}()`, "hook", loc, {
+        hookKind: "Custom",
+        domain: { kind: "Opaque", typeText: storeHookName },
+        initial: storeModel.initial,
+      }),
+    );
+  }
+
+  #evaluateStoreMethod(
+    methodCall: InstructionValueOfKind<"MethodCall">,
+    receiver: SymbolicValue,
+    methodName: string,
+    argumentValues: SymbolicValue[],
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    if (receiver.kind !== "Global" || !STORE_METHODS.has(methodName)) return null;
+    const storeKey = this.#resolver.getDeclarationKey(methodCall.receiver.loc);
+    const storeModel = storeKey ? this.externalSources.getStoreModel(storeKey) : undefined;
+    if (!storeKey || !storeModel) return null;
+    const storeBinding = this.#getStoreBinding(storeKey, storeModel, receiver.name, methodCall.loc);
+    const state = createBindingValue(storeBinding);
+    if (methodName === "getState") return state;
+    const [nextState] = argumentValues;
+    const base = this.#getQueuedState(storeBinding, walkState);
+    const partial =
+      nextState?.kind === "Function"
+        ? this.callFunction(nextState, [base], methodCall.loc, walkState)
+        : nextState;
+    this.#handlerEffects?.recordSetterCall(
+      storeBinding,
+      partial?.kind === "ObjectExpression" && argumentValues.length === 1
+        ? { ...partial, spreads: [base, ...partial.spreads] }
+        : createUnknown("store", methodCall.loc),
+      walkState,
+    );
+    return UNDEFINED_VALUE;
   }
 
   #findProjectFunction(calleePlace: Place): ProjectHook | null {
@@ -883,7 +925,7 @@ export class Interpreter {
         );
       }
       case "Store":
-        return this.#readStore(target.storeKey, target.storeActions, callSite, walkState);
+        return this.#readStore(target.storeKey, target.storeModel, callSite, walkState);
       case "Hook":
         return this.#evaluateHookCall(target.hookKind, callSite, walkState);
       case "ModuleFunction":
@@ -1048,15 +1090,25 @@ export class Interpreter {
     const assignments =
       memberName && this.externalSources.getActionAssignments(binding, memberName);
     if (assignments) {
+      const base = this.#getQueuedState(binding, walkState);
+      const readField = (field: string) => this.evaluatePropertyLoad(base, field, binding.loc);
       this.#handlerEffects?.recordSetterCall(
         binding,
         createFieldUpdate(
-          binding,
+          base,
           assignments.map((assignment) => ({
             key: assignment.field,
-            value: getStoreFieldValue(binding, assignment, argumentValues),
+            value: getStoreFieldValue(binding, assignment, argumentValues, readField),
           })),
         ),
+        walkState,
+      );
+      return;
+    }
+    if (memberName && this.externalSources.isStoreBinding(binding)) {
+      this.#handlerEffects?.recordSetterCall(
+        binding,
+        createUnknown("store", binding.loc),
         walkState,
       );
       return;
@@ -1072,7 +1124,8 @@ export class Interpreter {
     walkState: WalkState,
   ): void {
     if (!this.#handlerEffects) return;
-    const previousValue = createBindingValue(binding, [field]);
+    const base = this.#getQueuedState(binding, walkState);
+    const previousValue = this.evaluatePropertyLoad(base, field, binding.loc);
     const nextValue = this.#getSetterNextValue(
       setterArgument,
       previousValue,
@@ -1081,11 +1134,22 @@ export class Interpreter {
     );
     this.#handlerEffects.addUpdate(
       binding,
-      createFieldUpdate(binding, [
+      createFieldUpdate(base, [
         { key: field, value: this.#handlerEffects.forgetMutatedBindings(nextValue) },
       ]),
       getAsyncWalkState(walkState),
     );
+  }
+
+  #loadSpreadField(spreads: SymbolicValue[], property: string, loc: SourceLocation): SymbolicValue {
+    const [onlySpread] = spreads;
+    if (spreads.length === 1 && onlySpread)
+      return this.evaluatePropertyLoad(onlySpread, property, loc);
+    return spreads.length > 0 ? createUnknown("spread", loc) : UNDEFINED_VALUE;
+  }
+
+  #getQueuedState(binding: Binding, walkState: WalkState): SymbolicValue {
+    return this.#handlerEffects?.getQueuedValue(binding, walkState) ?? createBindingValue(binding);
   }
 
   #recordExternalUpdate(
@@ -1318,6 +1382,14 @@ export class Interpreter {
       walkState,
     });
     if (matched) return matched;
+    const storeResult = this.#evaluateStoreMethod(
+      methodCall,
+      receiver,
+      methodName,
+      argumentValues,
+      walkState,
+    );
+    if (storeResult) return storeResult;
     const invokedArguments = INVOKABLE_KINDS.has(receiver.kind)
       ? getInvokedArguments(methodName, argumentValues)
       : null;
