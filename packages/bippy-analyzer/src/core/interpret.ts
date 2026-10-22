@@ -1124,6 +1124,7 @@ export class Interpreter {
     if (value.kind === "ArrayExpression" || value.kind === "ObjectExpression")
       this.mutations.recordCreation(instructionResult, walkState);
     this.write(instruction.lvalue, instructionResult);
+    this.mutations.trackPossibleMutations(instruction, walkState);
   }
 
   #evaluateInstructionValue(instruction: Instruction, walkState: WalkState): SymbolicValue {
