@@ -1,5 +1,6 @@
 import type { AbstractValue, PrimitiveValue, BinaryOperator } from "../types";
-import { isNullish } from "./is-nullish";
+
+export const LOOSE_EQUALITY_OPERATORS = new Set<BinaryOperator>(["==", "!="]);
 
 export const isEqualToLiteral = (
   value: AbstractValue,
@@ -7,6 +8,7 @@ export const isEqualToLiteral = (
   operator: BinaryOperator,
 ): boolean => {
   if (value.kind !== "Literal") return false;
-  if ((operator === "==" || operator === "!=") && isNullish(literal)) return isNullish(value.value);
-  return value.value === literal;
+  if (!LOOSE_EQUALITY_OPERATORS.has(operator)) return value.value === literal;
+  // oxlint-disable-next-line eqeqeq -- Decides JavaScript loose equality as written.
+  return value.value == literal;
 };
