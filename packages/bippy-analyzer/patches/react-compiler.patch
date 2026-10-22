@@ -1140,7 +1140,7 @@ index e7d3b4f..a62927e 100644
    | JsxExpression
    | {
 diff --git a/HIR/HIRBuilder.ts b/HIR/HIRBuilder.ts
-index 71874b0..bd55fb7 100644
+index 71874b0..8e0c34c 100644
 --- a/HIR/HIRBuilder.ts
 +++ b/HIR/HIRBuilder.ts
 @@ -115,6 +115,7 @@ export default class HIRBuilder {
@@ -1198,6 +1198,15 @@ index 71874b0..bd55fb7 100644
      if (binding == null) {
        return null;
      }
+@@ -242,7 +267,7 @@ export default class HIRBuilder {
+   ): VariableBinding {
+     const originalName = path.node.name;
+     const babelBinding = this.#resolveBabelBinding(path);
+-    if (babelBinding == null) {
++    if (babelBinding == null || babelBinding.path.isFunctionExpression()) {
+       return {kind: 'Global', name: originalName};
+     }
+ 
 diff --git a/HIR/visitors.ts b/HIR/visitors.ts
 index 6c88847..5abdf47 100644
 --- a/HIR/visitors.ts
