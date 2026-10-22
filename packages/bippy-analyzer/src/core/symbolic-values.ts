@@ -30,6 +30,8 @@ export const isStartTransition = (value: SymbolicValue): boolean =>
 
 export const ONE_VALUE: SymbolicValue = { kind: "Primitive", value: 1 };
 
+export const EMPTY_STRING_VALUE: SymbolicValue = { kind: "Primitive", value: "" };
+
 export const getPassedCallbacks = (values: SymbolicValue[], depth = 0): SymbolicValue[] =>
   values.flatMap((value) => {
     if (
@@ -164,6 +166,10 @@ export const foldBinary = (
           right,
         }
       );
+    case "+":
+      return typeof leftValue === "string" || typeof rightValue === "string"
+        ? { kind: "Primitive", value: String(leftValue) + String(rightValue) }
+        : { kind: "BinaryExpression", operator, left, right };
     default:
       return { kind: "BinaryExpression", operator, left, right };
   }

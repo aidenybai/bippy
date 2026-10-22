@@ -68,6 +68,7 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { coerceBooleanCall } from "./utils/coerce-boolean-call";
 import { negate } from "./utils/negate";
 import {
+  EMPTY_STRING_VALUE,
   ONE_VALUE,
   UNDEFINED_VALUE,
   createBindingValue,
@@ -1324,6 +1325,7 @@ export class Interpreter {
       case "PostfixUpdateContext":
         return this.#evaluateUpdateLocal(value, false);
       case "TemplateLiteral":
+        return this.#evaluateTemplateLiteral(value);
       case "TaggedTemplateExpression":
       case "RegExpLiteral":
       case "MetaProperty":
@@ -1393,6 +1395,23 @@ export class Interpreter {
     const next = foldBinary(update.operation === "++" ? "+" : "-", previous, ONE_VALUE);
     this.write(update.lvalue, next);
     return isPrefix ? next : previous;
+  }
+
+  #evaluateTemplateLiteral(template: InstructionValueOfKind<"TemplateLiteral">): SymbolicValue {
+    const parts = template.quasis.flatMap((quasi, index): SymbolicValue[] => {
+      const text = quasi.cooked ?? quasi.raw;
+      const part = template.subexprs[index];
+      return [
+        ...(text === "" ? [] : [{ kind: "Primitive", value: text } as const]),
+        ...(part ? [this.read(part)] : []),
+      ];
+    });
+    const hasText = parts.some(
+      (part) => part.kind === "Primitive" && typeof part.value === "string",
+    );
+    return (hasText ? parts : [EMPTY_STRING_VALUE, ...parts]).reduce((text, part) =>
+      foldBinary("+", text, part),
+    );
   }
 
   #evaluateStoreLocal(
