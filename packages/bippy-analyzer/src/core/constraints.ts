@@ -464,11 +464,28 @@ const evaluateConcatenationEquality = (
   return matchCount === 0 ? isNegated : null;
 };
 
+const mayBeNaN = (candidate: AbstractValue): boolean =>
+  candidate.kind === "Literal"
+    ? typeof candidate.value === "number"
+    : candidate.primitive === "number" || candidate.primitive === null;
+
+const isSameStableValue = (
+  left: SymbolicValue,
+  right: SymbolicValue,
+  constraints: Constraints,
+): boolean => {
+  if (left.kind !== "Binding" || left.binding.kind === "ref") return false;
+  if (getValueKey(left) !== getValueKey(right)) return false;
+  const placeValues = getPossibleValues(left, constraints);
+  return placeValues !== null && !placeValues.some(mayBeNaN);
+};
+
 const evaluateEquality = (
   value: BinaryExpressionValue,
   constraints: Constraints,
 ): boolean | null => {
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
+  if (isSameStableValue(value.left, value.right, constraints)) return !isNegated;
   const typeofTest = getTypeofTest(value);
   if (typeofTest) return evaluateTypeof(typeofTest, isNegated, constraints);
   const [placeSide, literalSide] = splitEquality(value);
