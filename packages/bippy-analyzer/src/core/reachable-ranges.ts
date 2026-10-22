@@ -146,6 +146,20 @@ const getValueInterval = (
     const sign = value.operator === "+" ? 1 : -1;
     return { min: term.min + sign * offset, max: term.max + sign * offset };
   }
+  if (value.kind === "BinaryExpression" && value.operator === "%") {
+    const divisor = getNumber(value.right);
+    const term =
+      divisor === null || divisor === 0
+        ? null
+        : getValueInterval(value.left, binding, hypothesis, guards, isInteger);
+    if (!term || divisor === null) return null;
+    const limit =
+      isInteger && Number.isInteger(divisor) ? Math.abs(divisor) - 1 : Math.abs(divisor);
+    return {
+      min: term.min >= 0 ? 0 : Math.max(term.min, -limit),
+      max: term.max <= 0 ? 0 : Math.min(term.max, limit),
+    };
+  }
   if (value.kind === "Conditional") {
     const test = getTestExpression(value);
     const consequent = getValueInterval(
