@@ -23,7 +23,7 @@ describe("a module-level constant", () => {
   it("folds a field of a literal object", () => {
     expect(
       getComponent(project, "LimitHelper").report.states.map((state) => state.conditions),
-    ).toEqual([["count > 3"], ["count <= 3", "count === 3"], ["count <= 3", "count !== 3"]]);
+    ).toEqual([["count === 3"], ["count !== 3"]]);
   });
 
   it("stays unknown when a handler writes it", () => {
