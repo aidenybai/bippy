@@ -342,6 +342,8 @@ export class ControlFlowWalker {
     }
     for (const phi of this.#getBlock(terminal.fallthrough).phis)
       this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
+    for (const place of this.#getStoredContextPlaces(loopEntry, terminal.fallthrough))
+      this.#interpreter.write(place, createUnknown("loop", place.loc));
     this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
     const loopExit: Outcome = {
       kind: "Fallthrough",
@@ -366,6 +368,24 @@ export class ControlFlowWalker {
       afterWalkState,
       "resolved",
     );
+  }
+
+  #getStoredContextPlaces(entry: BlockId, exit: BlockId): Place[] {
+    const places: Place[] = [];
+    const visited = new Set<BlockId>();
+    const pending = [entry];
+    for (let blockId = pending.pop(); blockId !== undefined; blockId = pending.pop()) {
+      if (blockId === exit || visited.has(blockId)) continue;
+      visited.add(blockId);
+      const block = this.#getBlock(blockId);
+      for (const { value } of block.instructions) {
+        if (value.kind === "StoreContext") places.push(value.lvalue.place);
+        if (value.kind === "PostfixUpdateContext" || value.kind === "PrefixUpdateContext")
+          places.push(value.lvalue);
+      }
+      pending.push(...eachTerminalSuccessor(block.terminal));
+    }
+    return places;
   }
 
   #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
