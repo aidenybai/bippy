@@ -55,7 +55,7 @@ describe("a click that bubbles to an ancestor's handler", () => {
   it("runs an ancestor's capture handler before the target's", () => {
     expect(getUpdateSequences("Captured")).toEqual([
       ['order = "outer"'],
-      ['order = "outer"', 'order = order + "-inner"'],
+      ['order = "outer"', 'order = "outer" + "-inner"'],
     ]);
   });
 });
