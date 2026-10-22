@@ -30,6 +30,7 @@ export interface CompiledFunction {
   loc: SourceLocation;
   hir: HIRFunction | null;
   errors: string[];
+  isClass: boolean;
 }
 
 export interface CompiledFile {
@@ -95,6 +96,46 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
   lowerModuleFunction: () => null,
   loadModuleConstant: () => null,
   loadModuleVariable: () => null,
+};
+
+const COMPONENT_BASE_CLASSES = new Set(["Component", "PureComponent"]);
+
+const isComponentBaseClass = (superClass: types.Expression | null | undefined): boolean => {
+  if (types.isIdentifier(superClass)) return COMPONENT_BASE_CLASSES.has(superClass.name);
+  return (
+    types.isMemberExpression(superClass) &&
+    types.isIdentifier(superClass.property) &&
+    COMPONENT_BASE_CLASSES.has(superClass.property.name)
+  );
+};
+
+const getClassName = (path: NodePath<types.Class>): string | null => {
+  if (path.node.id) return path.node.id.name;
+  const { parent } = path;
+  return types.isVariableDeclarator(parent) && types.isIdentifier(parent.id)
+    ? parent.id.name
+    : null;
+};
+
+const collectClassComponents = (ast: types.File): CompiledFunction[] => {
+  const classComponents: CompiledFunction[] = [];
+  traverse(ast, {
+    Class(path) {
+      const name = getClassName(path);
+      const { loc } = path.node;
+      if (!name || !loc || !isComponentBaseClass(path.node.superClass)) return;
+      classComponents.push({
+        name,
+        bindingName: name,
+        functionType: "Component",
+        loc,
+        hir: null,
+        errors: [],
+        isClass: true,
+      });
+    },
+  });
+  return classComponents;
 };
 
 const isModuleLevel = (path: NodePath | null): boolean =>
@@ -269,6 +310,7 @@ class CompiledFunctionCollector {
       loc,
       hir: null,
       errors: [],
+      isClass: false,
     };
     this.#compiledByLocation.set(locationKey, compiled);
     return compiled;
@@ -321,7 +363,10 @@ export const compileFile = (
   const programFunctions = compileProgramFunctions(ast, fileName, code, pluginOptions);
   const lower = createModuleFunctionLowerer(fileName, code, pluginOptions, programFunctions);
   return {
-    functions: collector.getFunctions(programFunctions.namesByLocation),
+    functions: [
+      ...collector.getFunctions(programFunctions.namesByLocation),
+      ...collectClassComponents(ast),
+    ],
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
     loadModuleConstant: createModuleConstantLoader(ast),

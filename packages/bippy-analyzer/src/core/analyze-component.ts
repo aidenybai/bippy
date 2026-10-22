@@ -110,6 +110,17 @@ const createCompilerErrorAnalysis = (
   };
 };
 
+const createClassAnalysis = (
+  identity: ComponentIdentity,
+  reactFunction: CompiledFunction,
+): ComponentAnalysis => {
+  const { loc } = reactFunction;
+  return {
+    ...createEmptyAnalysis(identity, loc, { kind: "Unknown", reason: "class-component", loc }),
+    bailouts: [{ reason: "class-component", message: reactFunction.name, loc }],
+  };
+};
+
 const getReadBindingIds = (
   render: SymbolicValue,
   handlers: Handler[],
@@ -144,6 +155,7 @@ export const analyzeComponent = (
 ): ComponentAnalysis => {
   const identity = getComponentIdentity(reactFunction, fileContext);
   const { hir } = reactFunction;
+  if (reactFunction.isClass) return createClassAnalysis(identity, reactFunction);
   if (hir === null) return createCompilerErrorAnalysis(identity, reactFunction);
   const interpreter = new Interpreter(
     fileContext.resolver,
