@@ -33,14 +33,12 @@ describe("stale memos", () => {
     expect(getConditions("FreshLoopMemo").map((conditions) => conditions.at(-1))).toEqual([
       "index > 0",
       "index <= 0",
-      "-1 > 0",
-      "-1 <= 0",
+      "!Unknown(loop)",
     ]);
     expect(getConditions("StaleLoopMemo").map((conditions) => conditions.at(-1))).toEqual([
       "Unknown(memo) > 0",
       "Unknown(memo) <= 0",
-      "-1 > 0",
-      "-1 <= 0",
+      "!Unknown(loop)",
     ]);
   });
 
