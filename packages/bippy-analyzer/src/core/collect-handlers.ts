@@ -15,6 +15,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
 import { UNDEFINED_VALUE, createUnknown, foldUnary, getPassedCallbacks } from "./symbolic-values";
@@ -498,6 +499,34 @@ const collectWrappedCallbacks = (
   return wrapped;
 };
 
+const getReadBindingIds = (handler: Handler): Set<number> => {
+  const bindingIds = new Set<number>();
+  for (const update of handler.updates)
+    for (const read of [update.value, ...update.guards])
+      forEachSymbolicValue(read, (part) => {
+        if (part.kind === "Binding") bindingIds.add(part.binding.id);
+      });
+  return bindingIds;
+};
+
+const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
+  const readIds = effects.map(getReadBindingIds);
+  const interacting = effects.filter((effect, index) =>
+    effects.some(
+      (other, otherIndex) =>
+        otherIndex !== index &&
+        (other.updates.some((update) => readIds[index]?.has(update.binding.id)) ||
+          effect.updates.some((update) => readIds[otherIndex]?.has(update.binding.id))),
+    ),
+  );
+  return interacting.flatMap((effect) =>
+    effect.updates.map((update) => ({
+      ...update,
+      guards: [createUnknown(`fires ${effect.id}`, effect.loc), ...update.guards],
+    })),
+  );
+};
+
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const collector = new HandlerCollector(interpreter);
   const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
@@ -523,6 +552,13 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       effectCall.callback,
       effectCall.callbackArguments,
       effectCall.loc,
+    );
+  const commitUpdates = getCommitUpdates(collector.handlers);
+  if (commitUpdates.length > 0)
+    collector.addCollectedHandler(
+      { kind: "Effect", hookKind: "useEffect", dependencies: null, dependencyPlaces: null },
+      { updates: commitUpdates, delegates: [] },
+      GeneratedSource,
     );
   collector.addCollectedHandler(
     { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null, dependencyPlaces: null },
