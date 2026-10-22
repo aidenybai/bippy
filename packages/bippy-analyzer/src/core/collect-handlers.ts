@@ -68,7 +68,10 @@ export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
 const getTriggerEvent = (prop: JsxProp): string => FORM_ACTION_EVENTS.get(prop.name) ?? prop.name;
 
 const isCallable = (value: SymbolicValue): boolean =>
-  value.kind === "Setter" || value.kind === "Function" || value.kind === "Bound";
+  value.kind === "Setter" ||
+  value.kind === "Dispatch" ||
+  value.kind === "Function" ||
+  value.kind === "Bound";
 
 const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
