@@ -17,10 +17,17 @@ describe("a first render that calls Math on known state", () => {
     const { report } = getComponent(project, "ParsedChoice");
     expect(report.states.map((state) => state.conditions)).toEqual([
       ["Number(raw) > 1"],
-      ["!(Number(raw) > 1)"],
+      ["Number(raw) <= 1"],
     ]);
     expect(report.unreachableBranches.map((branch) => branch.description)).toEqual([
       "never Number(raw) > 2",
+    ]);
+  });
+
+  it("carries the cases of a parsed union into the state it sets", () => {
+    const { report } = getComponent(project, "ParsedUnion");
+    expect(report.unreachableBranches.map((branch) => branch.description)).toEqual([
+      "never count === 2",
     ]);
   });
 });

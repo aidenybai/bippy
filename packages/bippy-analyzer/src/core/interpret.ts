@@ -45,6 +45,7 @@ import type {
   LengthLimit,
   NumberRange,
   ObjectExpressionValue,
+  PrimitiveValue,
   ProvidedContext,
   Sample,
   SetterValue,
@@ -60,7 +61,8 @@ import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getClampRange } from "./utils/get-clamp-range";
-import { isPureFunction } from "./utils/pure-functions";
+import { applyPureFunctionToCases, isPureFunction } from "./utils/pure-functions";
+import { dedupeAbstractValues } from "./constraints";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -272,6 +274,29 @@ const getArrayLiteralMember = (
 };
 
 const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+
+const getDomainLiterals = (value: SymbolicValue): PrimitiveValue[] | null => {
+  if (value.kind === "Primitive") return [value.value];
+  if (value.kind !== "Binding" || value.path.length > 0) return null;
+  const { domain } = value.binding;
+  if (domain.kind !== "Cases") return null;
+  return domain.cases.every((candidate) => candidate.kind === "Literal")
+    ? domain.cases.map((candidate) => candidate.value)
+    : null;
+};
+
+const getDerivedDomain = (derived: DerivedCall): Domain | null => {
+  const operandCases = derived.operands.map(getDomainLiterals);
+  if (!operandCases.every((cases): cases is PrimitiveValue[] => cases !== null)) return null;
+  const results = applyPureFunctionToCases(derived.callee, operandCases);
+  return results
+    ? {
+        kind: "Cases",
+        cases: dedupeAbstractValues(results.map((value) => ({ kind: "Literal", value }))),
+        origin: "call-sites",
+      }
+    : null;
+};
 
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
 
@@ -1316,6 +1341,7 @@ export class Interpreter {
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
+    const domain = derived && "operands" in derived ? getDerivedDomain(derived) : null;
     return createBindingValue(
       this.createBinding(`${calleeText}(${argumentText})`, "call", callSite.loc, {
         inputPlaces: inputPlaces.places(),
@@ -1324,6 +1350,7 @@ export class Interpreter {
         derived,
         range,
         initial,
+        ...(domain && { domain }),
       }),
     );
   }
