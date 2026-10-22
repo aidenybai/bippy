@@ -69,6 +69,11 @@ export class Destructurer {
       },
     );
     this.#interpreter.externalSources.bindHookResult(binding, hook, this.#interpreter.resolver);
+    if (hook.hookKind === "useRef")
+      this.#interpreter.addStoredFunctions(
+        { ...createBindingValue(binding), path: ["current"] },
+        initialRef,
+      );
     return createBindingValue(binding);
   }
 
@@ -117,6 +122,8 @@ export class Destructurer {
       ...(slot.domain && { domain: slot.domain }),
       ...(isAsserted && { domain: ASSERTED_DOMAIN }),
     });
+    if (initialArgument)
+      this.#interpreter.addStoredFunctions(createBindingValue(binding), initialArgument);
     return [createBindingValue(binding), { kind: "Setter", binding }];
   }
 
