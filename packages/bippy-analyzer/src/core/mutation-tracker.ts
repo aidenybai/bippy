@@ -28,7 +28,20 @@ const MAX_ALIAS_CHAIN_LENGTH = 32;
 
 const ELEMENT_METHODS = new Set(["find", "findLast", "at"]);
 
-const COPYING_METHODS = new Set(["filter", "slice", "toSorted", "toReversed", "concat"]);
+const COPYING_METHODS = new Set([
+  "filter",
+  "slice",
+  "toSorted",
+  "toReversed",
+  "toSpliced",
+  "concat",
+  "with",
+  "reverse",
+  "sort",
+  "flat",
+]);
+
+const COPYING_STATICS = new Set(["Array.from", "Object.values", "Object.entries"]);
 
 const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
   instruction.value.kind === "StoreContext" &&
@@ -111,7 +124,13 @@ export class MutationTracker {
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
       const storedProperty =
         instruction.value.kind === "PropertyStore" ? String(instruction.value.property) : null;
-      this.#trackOwnedValues(mutatedPlace, mutatedValue, mutatedPlace.loc, storedProperty);
+      this.#trackOwnedValues(
+        mutatedPlace,
+        mutatedValue,
+        mutatedPlace.loc,
+        storedProperty,
+        effect.kind === "MutateFrozen",
+      );
     }
   }
 
@@ -180,9 +199,11 @@ export class MutationTracker {
     value: SymbolicValue,
     loc: SourceLocation,
     storedProperty: string | null,
+    isFrozen = false,
   ): void {
     const ownedValues = getOwnedValues(value);
-    const aliasedValue = ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(place);
+    const aliasedValue =
+      ownedValues.length > 0 ? null : this.#findAliasedOwnedValue(place, isFrozen);
     for (const ownedValue of aliasedValue ? [aliasedValue] : ownedValues)
       this.#trackOwnedMutation(ownedValue, loc, storedProperty);
   }
@@ -219,33 +240,59 @@ export class MutationTracker {
   }
 
   recordAliasSources(instruction: Instruction): void {
-    const { aliasSources, elementSources, propertyNames } =
+    const { aliasSources, elementSources, frozenSources, itemSources, propertyNames } =
       this.#interpreter.getCompilationTables();
     const getElementSource = (place: Place): Place =>
       elementSources.get(place.identifier.id) ?? place;
+    const resultId = instruction.lvalue.identifier.id;
     for (const effect of instruction.effects ?? []) {
-      if (effect.kind === "Assign" || effect.kind === "Alias")
+      if (effect.kind === "Assign" || effect.kind === "Alias") {
         aliasSources.set(effect.into.identifier.id, effect.from);
+        const fromElements = elementSources.get(effect.from.identifier.id);
+        if (fromElements) elementSources.set(effect.into.identifier.id, fromElements);
+      }
       if (effect.kind === "CreateFrom")
         aliasSources.set(effect.into.identifier.id, getElementSource(effect.from));
+      if (effect.kind === "ImmutableCapture")
+        frozenSources.set(effect.into.identifier.id, effect.from);
     }
     const { value } = instruction;
+    if (value.kind === "ArrayExpression") {
+      const [item] = value.elements;
+      if (value.elements.length === 1 && item?.kind === "Spread")
+        elementSources.set(resultId, getElementSource(item.place));
+      if (value.elements.length === 1 && item?.kind === "Identifier")
+        itemSources.set(resultId, item);
+      return;
+    }
     if (value.kind !== "MethodCall") return;
     const methodName = propertyNames.get(value.property.identifier.id) ?? "";
     if (ELEMENT_METHODS.has(methodName))
-      aliasSources.set(instruction.lvalue.identifier.id, getElementSource(value.receiver));
+      aliasSources.set(resultId, getElementSource(value.receiver));
+    const flattenedItem =
+      methodName === "flat" ? itemSources.get(value.receiver.identifier.id) : null;
     if (COPYING_METHODS.has(methodName))
-      elementSources.set(instruction.lvalue.identifier.id, getElementSource(value.receiver));
+      elementSources.set(resultId, getElementSource(flattenedItem ?? value.receiver));
+    const receiver = this.#interpreter.read(value.receiver);
+    const [source] = value.args;
+    const isCopyingStatic =
+      receiver.kind === "Global" && COPYING_STATICS.has(`${receiver.name}.${methodName}`);
+    if (isCopyingStatic && source?.kind === "Identifier")
+      elementSources.set(resultId, getElementSource(source));
   }
 
-  #findAliasedOwnedValue(place: Place): BindingValue | null {
-    const { aliasSources } = this.#interpreter.getCompilationTables();
-    let source = aliasSources.get(place.identifier.id);
+  #findAliasedOwnedValue(place: Place, isFrozen: boolean): BindingValue | null {
+    const { aliasSources, frozenSources } = this.#interpreter.getCompilationTables();
+    const getSource = (from: Place): Place | undefined =>
+      aliasSources.get(from.identifier.id) ??
+      (isFrozen ? frozenSources.get(from.identifier.id) : undefined);
+    let source = getSource(place);
     for (let chainLength = 0; source && chainLength < MAX_ALIAS_CHAIN_LENGTH; chainLength++) {
       const sourceValue = this.#interpreter.read(source);
       if (isOwnedValue(sourceValue)) return sourceValue;
-      if (sourceValue.kind === "ArrayExpression") return getCopiedOwnedValue(sourceValue);
-      source = aliasSources.get(source.identifier.id);
+      if (sourceValue.kind === "ArrayExpression")
+        return getCopiedOwnedValue(sourceValue) ?? sourceValue.elements.find(isOwnedValue) ?? null;
+      source = getSource(source);
     }
     return null;
   }
