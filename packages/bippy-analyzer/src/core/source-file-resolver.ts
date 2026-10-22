@@ -78,6 +78,13 @@ export class SourceFileResolver {
       : getDomainOfType(this.#checker, type);
   }
 
+  getTupleElementDomain(loc: SourceLocation, index: number): Domain | null {
+    const type = this.#getType(loc);
+    if (!type?.isTypeReference() || !this.#checker.isTupleType(type)) return null;
+    const element = this.#checker.getTypeArguments(type)[index];
+    return element ? getDomainOfType(this.#checker, element) : null;
+  }
+
   getTypeDomain(loc: SourceLocation): Domain {
     return getDomainOfType(this.#checker, this.#getType(loc));
   }
