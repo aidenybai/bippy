@@ -107,6 +107,16 @@ const foldOrder = (
   }
 };
 
+const NUMBER_OPERATIONS: Partial<Record<BinaryOperator, (left: number, right: number) => number>> =
+  {
+    "+": (left, right) => left + right,
+    "-": (left, right) => left - right,
+    "*": (left, right) => left * right,
+    "/": (left, right) => left / right,
+    "%": (left, right) => left % right,
+    "**": (left, right) => left ** right,
+  };
+
 export const foldBinary = (
   operator: BinaryOperator,
   left: SymbolicValue,
@@ -124,6 +134,11 @@ export const foldBinary = (
     return { kind: "BinaryExpression", operator, left, right };
   const leftValue = left.value;
   const rightValue = right.value;
+  const operation = NUMBER_OPERATIONS[operator];
+  if (operation && typeof leftValue === "number" && typeof rightValue === "number")
+    return { kind: "Primitive", value: operation(leftValue, rightValue) };
+  if (operator === "+" && typeof leftValue === "string" && typeof rightValue === "string")
+    return { kind: "Primitive", value: leftValue + rightValue };
   switch (operator) {
     case "===":
       return { kind: "Primitive", value: leftValue === rightValue };
