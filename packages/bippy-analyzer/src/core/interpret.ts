@@ -224,6 +224,7 @@ export class Interpreter {
   );
   readonly renderedComponents = new Set<string>();
   readonly #wrappedCallbacks = new WeakMap<SymbolicValue, SymbolicValue[]>();
+  readonly #wrappedCallbacksByBinding = new Map<number, SymbolicValue[]>();
   #wholePropsSample: Sample | null = null;
   readonly providedContexts: ProvidedContext[] = [];
   #handlerEffects: EffectCollector | null = null;
@@ -276,6 +277,7 @@ export class Interpreter {
     callback: SymbolicValue,
     argumentValues: SymbolicValue[],
     renderGuards: SymbolicValue[] = [],
+    guards: SymbolicValue[] = [],
   ): CollectedEffects {
     const previousEffects = this.#handlerEffects;
     const previousBlockVisits = this.walker.blockVisits;
@@ -291,6 +293,7 @@ export class Interpreter {
         this.#runCallback(handlerCallback, argumentValues, new Set(), {
           ...ROOT_WALK_STATE,
           renderGuards,
+          guards,
         });
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
@@ -699,8 +702,10 @@ export class Interpreter {
     const result = this.#createCallResult(callSite);
     const callbacks = getPassedCallbacks(argumentValues);
     const isExternalWrapper = callee.kind === "Binding" && isExternalSource(callee.binding);
-    if (callbacks.length > 0)
-      this.#wrappedCallbacks.set(result, isExternalWrapper ? [callee, ...callbacks] : callbacks);
+    const wrapped = isExternalWrapper ? [callee, ...callbacks] : callbacks;
+    if (callbacks.length > 0) this.#wrappedCallbacks.set(result, wrapped);
+    if (callbacks.length > 0 && result.kind === "Binding")
+      this.#wrappedCallbacksByBinding.set(result.binding.id, wrapped);
     return result;
   }
 
@@ -714,7 +719,9 @@ export class Interpreter {
   }
 
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
-    return this.#wrappedCallbacks.get(value) ?? null;
+    const byBinding =
+      value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
+    return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
   }
 
   #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
