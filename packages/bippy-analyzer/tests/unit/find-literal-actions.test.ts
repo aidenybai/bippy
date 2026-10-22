@@ -26,4 +26,12 @@ describe("find over a literal array", () => {
   it("also resolves a find made during render", () => {
     expect(getTargets("FindInRender")).toEqual([[[0]], [[0]]]);
   });
+
+  it("returns each element under its predicate when the predicate is open", () => {
+    expect(getTargets("FindByState")[0]?.[0]).toContain(2);
+  });
+
+  it.fails("runs the element each open predicate picks", () => {
+    expect(getTargets("FindByState")[0]?.[0]).toEqual(expect.arrayContaining([1, 2]));
+  });
 });

@@ -40,3 +40,19 @@ export const FindInRender = () => {
     </div>
   );
 };
+
+export const FindByState = () => {
+  const [mode, setMode] = useState("b");
+  const [pick, setPick] = useState("a");
+  const actions = [
+    { name: "b", run: () => setPick("b") },
+    { name: "c", run: () => setPick("c") },
+  ];
+  return (
+    <div>
+      <button onClick={() => actions.find((action) => action.name === mode)?.run()}>run</button>
+      <button onClick={() => setMode(mode === "b" ? "c" : "b")}>switch</button>
+      {pick === "a" ? <i>a</i> : pick === "b" ? <i>b</i> : <i>c</i>}
+    </div>
+  );
+};

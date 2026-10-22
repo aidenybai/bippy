@@ -1092,6 +1092,7 @@ export class Interpreter {
       methodName,
       receiver,
       callback,
+      instructionId,
       methodCall.loc,
       walkState,
     );
