@@ -16,6 +16,10 @@ describe("a change on a controlled checkbox or radio", () => {
     expect(getUpdates("FixedCheckbox")).toEqual([{ kind: "Primitive", value: "a" }]);
   });
 
+  it("reads the value attribute of the input", () => {
+    expect(getUpdates("RadioValue")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+
   it("reads checked as true from a radio", () => {
     expect(getUpdates("UncheckedRadio")).toEqual([{ kind: "Primitive", value: "a" }]);
   });

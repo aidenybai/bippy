@@ -205,18 +205,22 @@ interface CheckEvent {
 const getCheckEvent = (element: JsxExpressionValue, prop: JsxProp): CheckEvent | null => {
   if (element.tag.kind !== "BuiltinTag" || element.tag.name !== "input") return null;
   const type = getAttribute(element, "type")?.value;
-  const checked = getAttribute(element, "checked")?.value;
   const isCheckable =
     type?.kind === "Primitive" && typeof type.value === "string" && CHECKABLE_TYPES.has(type.value);
-  if (!isCheckable || !checked || !CHECK_EVENTS.has(prop.name)) return null;
+  if (!isCheckable || !CHECK_EVENTS.has(prop.name)) return null;
   const isRadio = type.value === "radio";
+  const checked = getAttribute(element, "checked")?.value;
+  const value = getAttribute(element, "value")?.value ?? { kind: "Primitive", value: "on" };
+  const nextChecked: SymbolicValue | null = checked
+    ? isRadio
+      ? { kind: "Primitive", value: true }
+      : foldUnary("!", checked)
+    : null;
   const target: SymbolicValue = {
     kind: "ObjectExpression",
     properties: [
-      {
-        key: "checked",
-        value: isRadio ? { kind: "Primitive", value: true } : foldUnary("!", checked),
-      },
+      { key: "value", value },
+      ...(nextChecked ? [{ key: "checked", value: nextChecked }] : []),
     ],
     spreads: [createUnknown("event", GeneratedSource)],
   };
@@ -229,7 +233,7 @@ const getCheckEvent = (element: JsxExpressionValue, prop: JsxProp): CheckEvent |
       ],
       spreads: [EVENT_ARGUMENT],
     },
-    guards: isRadio ? [foldUnary("!", checked)] : [],
+    guards: isRadio && checked ? [foldUnary("!", checked)] : [],
   };
 };
 

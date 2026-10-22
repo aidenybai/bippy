@@ -44,3 +44,18 @@ export const UncheckedRadio = () => {
     </div>
   );
 };
+
+export const RadioValue = () => {
+  const [mode, setMode] = useState<"a" | "b">("a");
+  return (
+    <div>
+      <input
+        type="radio"
+        aria-label="a"
+        value="a"
+        onChange={(event) => setMode(event.target.value === "b" ? "b" : "a")}
+      />
+      {mode === "b" ? <i>b</i> : <i>a</i>}
+    </div>
+  );
+};
