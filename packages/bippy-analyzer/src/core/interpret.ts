@@ -33,6 +33,7 @@ import type {
   Branch,
   Claim,
   ContextSetterFields,
+  DerivedMath,
   DerivedString,
   DispatchValue,
   Domain,
@@ -266,6 +267,8 @@ const getArrayLiteralMember = (
   if (!isArrayIndex) return createUnknown("member", loc);
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
+
+const PURE_MATH_METHODS = new Set(["abs", "ceil", "floor", "max", "min", "round", "sign", "trunc"]);
 
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
 
@@ -1197,7 +1200,7 @@ export class Interpreter {
     {
       derived = null,
       range = null,
-    }: { derived?: DerivedString | null; range?: NumberRange | null } = {},
+    }: { derived?: DerivedString | DerivedMath | null; range?: NumberRange | null } = {},
   ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
@@ -1358,11 +1361,13 @@ export class Interpreter {
       argumentPlaces,
       loc: methodCall.loc,
     };
-    const range =
-      receiver.kind === "Global" && receiver.name === "Math"
-        ? getClampRange(methodName, argumentValues)
+    const isMath = receiver.kind === "Global" && receiver.name === "Math";
+    const range = isMath ? getClampRange(methodName, argumentValues) : null;
+    const derived =
+      isMath && PURE_MATH_METHODS.has(methodName)
+        ? { method: methodName, operands: argumentValues }
         : null;
-    if (range) return this.#createCallResult(callSite, { range });
+    if (range || derived) return this.#createCallResult(callSite, { range, derived });
     return (
       this.#evaluateStringMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)

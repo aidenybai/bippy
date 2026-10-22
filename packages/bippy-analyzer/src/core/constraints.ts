@@ -6,6 +6,7 @@ import type {
   BindingValue,
   BindingPlace,
   ConditionalValue,
+  DerivedMath,
   DerivedString,
   PrimitiveValue,
   SymbolicValue,
@@ -405,10 +406,25 @@ const evaluateNonZero = (value: BindingValue, constraints: Constraints): boolean
   return isPositive === false && isNegative === false ? false : null;
 };
 
+const getMathValues = (derived: DerivedMath, constraints: Constraints): AbstractValue[] | null => {
+  const numbers = derived.operands.flatMap((operand) => {
+    const resolved = resolveLiteral(operand, constraints);
+    return resolved.kind === "Primitive" && typeof resolved.value === "number"
+      ? [resolved.value]
+      : [];
+  });
+  if (numbers.length !== derived.operands.length) return null;
+  const apply = Math[derived.method as keyof Math];
+  return typeof apply === "function"
+    ? [{ kind: "Literal", value: (apply as (...values: number[]) => number)(...numbers) }]
+    : null;
+};
+
 const getDerivedValues = (
-  derived: DerivedString,
+  derived: DerivedString | DerivedMath,
   constraints: Constraints,
 ): AbstractValue[] | null => {
+  if ("operands" in derived) return getMathValues(derived, constraints);
   const receiverValues = getPossibleValues(derived.receiver, constraints);
   if (!receiverValues) return null;
   const results: AbstractValue[] = [];
