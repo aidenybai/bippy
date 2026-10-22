@@ -194,6 +194,7 @@ export interface Warning {
   message: string;
   loc: SourceLocation;
   file: string;
+  prop: string | null;
 }
 
 export interface StateUpdate {

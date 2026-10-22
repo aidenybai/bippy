@@ -13,11 +13,17 @@ export class Diagnostics {
     if (!isDuplicate) this.bailouts.push({ reason, message, loc });
   }
 
-  warn(kind: WarningKind, message: string, loc: SourceLocation, file: string): void {
+  warn(
+    kind: WarningKind,
+    message: string,
+    loc: SourceLocation,
+    file: string,
+    prop: string | null = null,
+  ): void {
     const isDuplicate = this.warnings.some(
       (warning) =>
         warning.kind === kind && warning.message === message && isSameLocation(warning.loc, loc),
     );
-    if (!isDuplicate) this.warnings.push({ kind, message, loc, file });
+    if (!isDuplicate) this.warnings.push({ kind, message, loc, file, prop });
   }
 }
