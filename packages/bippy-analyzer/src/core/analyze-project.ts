@@ -23,6 +23,8 @@ import { collectDisplayNames } from "./utils/collect-display-names";
 import { collectExportNames } from "./utils/collect-export-names";
 import { isProjectSourceFile } from "./utils/is-project-source-file";
 import { withProject } from "./utils/with-project";
+import { NO_TRACER } from "./tracer";
+import type { Tracer } from "./tracer";
 import type { Project } from "typescript/unstable/sync";
 import { createDeclarationKey, parseDeclarationKey } from "./utils/declaration-key";
 
@@ -44,7 +46,11 @@ const withContextFileNames = (
   ),
 });
 
-const compileProjectFiles = (project: Project, fileNames: string[]): FileContext[] => {
+const compileProjectFiles = (
+  project: Project,
+  fileNames: string[],
+  tracer: Tracer,
+): FileContext[] => {
   const { strict, strictNullChecks } = project.compilerOptions;
   const isStrictNullChecks = strictNullChecks ?? strict ?? false;
   const projectHooksByDeclaration = new Map<string, ProjectHook>();
@@ -87,9 +93,11 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
     const sourceFile = project.program.getSourceFile(fileName);
     if (!sourceFile) return [];
     const resolver = new SourceFileResolver(project.checker, sourceFile, isStrictNullChecks);
-    const compiled = compileFile(fileName, sourceFile.text, {
-      typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
-    });
+    const compiled = tracer.span("compile", fileName, () =>
+      compileFile(fileName, sourceFile.text, {
+        typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
+      }),
+    );
     for (const [storeKey, actions] of collectStoreActions(sourceFile))
       actionsByStore.set(storeKey, actions);
     loadersByPath.set(sourceFile.path, {
@@ -121,10 +129,16 @@ const compileProjectFiles = (project: Project, fileNames: string[]): FileContext
 const analyzeCompiledComponent = (
   component: CompiledComponent,
   contextSetterFields: ContextSetterFields,
+  tracer: Tracer,
 ): ComponentAnalysis =>
-  analyzeComponent(component.reactFunction, component.fileContext, contextSetterFields);
+  tracer.span(
+    "interpret",
+    component.reactFunction.name,
+    () => analyzeComponent(component.reactFunction, component.fileContext, contextSetterFields),
+    { file: component.fileContext.sourceFile.fileName },
+  );
 
-const analyzeComponents = (fileContexts: FileContext[]): ComponentAnalysis[] => {
+const analyzeComponents = (fileContexts: FileContext[], tracer: Tracer): ComponentAnalysis[] => {
   const compiledComponents = fileContexts.flatMap((fileContext) =>
     fileContext.compiled.functions.flatMap((reactFunction): CompiledComponent[] =>
       reactFunction.functionType === "Component" ? [{ reactFunction, fileContext }] : [],
@@ -132,27 +146,31 @@ const analyzeComponents = (fileContexts: FileContext[]): ComponentAnalysis[] => 
   );
   const initialAnalyses = compiledComponents.map((component) => ({
     component,
-    analysis: analyzeCompiledComponent(component, new Map()),
+    analysis: analyzeCompiledComponent(component, new Map(), tracer),
   }));
   const contextSetterFields = collectContextSetterFields(
     initialAnalyses.map((initial) => initial.analysis),
   );
   const analyses = initialAnalyses.map((initial) =>
     initial.analysis.bindings.some((binding) => binding.kind === "context")
-      ? analyzeCompiledComponent(initial.component, contextSetterFields)
+      ? analyzeCompiledComponent(initial.component, contextSetterFields, tracer)
       : initial.analysis,
   );
-  for (const analysis of analyses) addSamplesFromReadPaths(analysis);
-  inferPropsFromCallSites(analyses);
+  tracer.span("props", "infer props", () => {
+    for (const analysis of analyses) addSamplesFromReadPaths(analysis);
+    inferPropsFromCallSites(analyses);
+  });
   return analyses;
 };
 
-const createReportLoader = (): ReportLoader => {
+const createReportLoader = (tracer: Tracer): ReportLoader => {
   const reports = new Map<ComponentAnalysis, StateReport>();
   return (analysis) => {
     const cached = reports.get(analysis);
     if (cached) return cached;
-    const report = enumerateStates(analysis);
+    const report = tracer.span("enumerate", analysis.name, () => enumerateStates(analysis), {
+      file: analysis.file,
+    });
     reports.set(analysis, report);
     return report;
   };
@@ -161,27 +179,34 @@ const createReportLoader = (): ReportLoader => {
 export const analyzeProject = (
   configPath: string,
   fileFilter: string | null = null,
+  tracer: Tracer = NO_TRACER,
 ): ProjectAnalysis =>
-  withProject(configPath, (project) => {
-    const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
-    const fileContexts = compileProjectFiles(project, fileNames);
-    const fileNamesByPath = new Map(
-      fileContexts.map((fileContext) => [
-        fileContext.sourceFile.path,
-        fileContext.sourceFile.fileName,
-      ]),
-    );
-    const analyses = analyzeComponents(fileContexts).map((analysis) =>
-      withContextFileNames(analysis, fileNamesByPath),
-    );
-    const loadReport = createReportLoader();
-    const linked = linkComponents(analyses, loadReport);
-    const components = analyses
-      .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
-      .map((analysis) => ({
-        analysis,
-        report: loadReport(analysis),
-        ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
-      }));
-    return { components, fileCount: fileNames.length };
-  });
+  withProject(
+    configPath,
+    (project) => {
+      const fileNames = project.program.getSourceFileNames().filter(isProjectSourceFile);
+      const fileContexts = compileProjectFiles(project, fileNames, tracer);
+      const fileNamesByPath = new Map(
+        fileContexts.map((fileContext) => [
+          fileContext.sourceFile.path,
+          fileContext.sourceFile.fileName,
+        ]),
+      );
+      const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
+        withContextFileNames(analysis, fileNamesByPath),
+      );
+      const loadReport = createReportLoader(tracer);
+      const linked = tracer.span("link", "link components", () =>
+        linkComponents(analyses, loadReport),
+      );
+      const components = analyses
+        .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
+        .map((analysis) => ({
+          analysis,
+          report: loadReport(analysis),
+          ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
+        }));
+      return { components, fileCount: fileNames.length };
+    },
+    tracer,
+  );

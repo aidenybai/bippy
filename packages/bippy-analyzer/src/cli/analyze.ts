@@ -1,8 +1,10 @@
+import { writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { Command, InvalidArgumentError } from "commander";
 import { analyzeProject } from "../core/analyze-project";
 import { ConfigError } from "../core/config-error";
 import { serializeProjectAnalysis } from "../core/serialize";
+import { createTracer, NO_TRACER } from "../core/tracer";
 import { DEFAULT_MAX_STATES, formatMermaid } from "./mermaid";
 import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "./render-tree";
 import type { AnalyzedComponent } from "../core/types";
@@ -13,6 +15,7 @@ interface AnalyzeCliOptions {
   depth: number;
   states: number;
   json: boolean;
+  trace?: string;
 }
 
 const parsePositiveInteger = (value: string): number => {
@@ -48,21 +51,30 @@ const formatTotals = (
 const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
-  const { components: allComponents, fileCount } = analyzeProject(configPath, options.file ?? null);
+  const tracer = options.trace ? createTracer() : NO_TRACER;
+  const { components: allComponents, fileCount } = analyzeProject(
+    configPath,
+    options.file ?? null,
+    tracer,
+  );
   const componentNames = options.component;
   const components = componentNames
     ? allComponents.filter(({ analysis }) => componentNames.includes(analysis.name))
     : allComponents;
-  if (options.json) {
-    console.log(serializeProjectAnalysis({ components, fileCount }));
-    return;
-  }
   const rootDirectory = dirname(configPath);
-  const diagrams = components.flatMap((component) => [
-    formatRenderTree(component, { rootDirectory, maxDepth: options.depth }),
-    formatMermaid(component, { rootDirectory, maxStates: options.states }),
-  ]);
-  console.log(diagrams.join("\n\n"));
+  const output = tracer.span("output", options.json ? "json" : "mermaid", () =>
+    options.json
+      ? serializeProjectAnalysis({ components, fileCount })
+      : components
+          .flatMap((component) => [
+            formatRenderTree(component, { rootDirectory, maxDepth: options.depth }),
+            formatMermaid(component, { rootDirectory, maxStates: options.states }),
+          ])
+          .join("\n\n"),
+  );
+  console.log(output);
+  if (options.trace) writeFileSync(options.trace, JSON.stringify({ traceEvents: tracer.events }));
+  if (options.json) return;
   const elapsedMs = Math.round(performance.now() - startTime);
   for (const line of formatTotals(components, fileCount, elapsedMs)) console.error(line);
 };
@@ -88,6 +100,7 @@ new Command()
     DEFAULT_MAX_STATES,
   )
   .option("--json", "print the analyses as JSON instead", false)
+  .option("--trace <file>", "write the time and memory of each phase as a Chrome trace")
   .action((tsconfig: string, options: AnalyzeCliOptions) => {
     try {
       runAnalyze(tsconfig, options);
