@@ -27,6 +27,8 @@ export const ITERATION_METHODS = new Set([
   "flatMap",
 ]);
 
+const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+
 export class ArrayIteration {
   readonly #interpreter: Interpreter;
 
@@ -70,6 +72,48 @@ export class ArrayIteration {
         walkState,
       ),
     );
+  }
+
+  getFirstValue(
+    methodName: string,
+    receiver: SymbolicValue,
+    callback: SymbolicValue | undefined,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const initial =
+      receiver.kind === "Binding" && receiver.path.length === 0 ? receiver.binding.initial : null;
+    const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
+    if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
+      return null;
+    const outcomes: boolean[] = [];
+    for (const [index, element] of initial.elements.entries()) {
+      const result = this.#interpreter.callFunction(
+        callback,
+        [element, { kind: "Primitive", value: index }],
+        loc,
+        walkState,
+      );
+      if (result.kind !== "Primitive") return null;
+      outcomes.push(Boolean(result.value));
+    }
+    const firstIndex = outcomes.indexOf(true);
+    switch (methodName) {
+      case "every":
+        return { kind: "Primitive", value: outcomes.every(Boolean) };
+      case "some":
+        return { kind: "Primitive", value: firstIndex !== -1 };
+      case "findIndex":
+        return { kind: "Primitive", value: firstIndex };
+      case "find":
+        return initial.elements[firstIndex] ?? UNDEFINED_VALUE;
+      default:
+        return {
+          kind: "ArrayExpression",
+          elements: initial.elements.filter((_element, index) => outcomes[index]),
+          spreads: [],
+        };
+    }
   }
 
   evaluateArrayFind(
