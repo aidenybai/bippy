@@ -15,8 +15,8 @@ import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
 import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { ModuleFunctionLoader } from "./function-registry";
-import { createModuleConstantLoader, createModuleVariableLoader } from "./module-constants";
-import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-constants";
+import { createModuleConstantLoader, createModuleVariableLoader } from "./module-values";
+import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-values";
 import { getLocationKey } from "./utils/get-location-key";
 
 type BabelFunction = NodePath<

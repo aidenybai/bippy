@@ -46,7 +46,6 @@ import type {
   LengthLimit,
   NumberRange,
   ObjectExpressionValue,
-  PrimitiveValue,
   ProvidedContext,
   Sample,
   SetterValue,
@@ -62,8 +61,8 @@ import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getClampRange } from "./utils/get-clamp-range";
-import { applyPureFunctionToCases, isPureFunction } from "./utils/pure-functions";
-import { dedupeAbstractValues } from "./constraints";
+import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
+import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -100,7 +99,7 @@ import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getStoreFieldValue } from "./external-sources";
 import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
-import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-constants";
+import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-values";
 import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./utils/get-identifier-name";
@@ -272,54 +271,6 @@ const getArrayLiteralMember = (
   const isArrayIndex = Number.isInteger(index) && index >= 0 && String(index) === property;
   if (!isArrayIndex) return createUnknown("member", loc);
   return array.elements[index] ?? UNDEFINED_VALUE;
-};
-
-const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
-
-const getMathCall = (methodName: string, argumentValues: SymbolicValue[]): DerivedCall | null =>
-  isPureFunction(`Math.${methodName}`)
-    ? { callee: `Math.${methodName}`, operands: argumentValues }
-    : null;
-
-const getLiteralArrayCall = (
-  receiver: SymbolicValue,
-  methodName: string,
-  argumentValues: SymbolicValue[],
-): DerivedCall | null => {
-  const [searched] = argumentValues;
-  const isLiteralArray =
-    receiver.kind === "ArrayExpression" &&
-    receiver.spreads.length === 0 &&
-    receiver.elements.every((element) => element.kind === "Primitive");
-  return isLiteralArray &&
-    searched &&
-    argumentValues.length === 1 &&
-    isPureFunction(`Array.${methodName}`)
-    ? { callee: `Array.${methodName}`, operands: [searched, ...receiver.elements] }
-    : null;
-};
-
-const getDomainLiterals = (value: SymbolicValue): PrimitiveValue[] | null => {
-  if (value.kind === "Primitive") return [value.value];
-  if (value.kind !== "Binding" || value.path.length > 0) return null;
-  const { domain } = value.binding;
-  if (domain.kind !== "Cases") return null;
-  return domain.cases.every((candidate) => candidate.kind === "Literal")
-    ? domain.cases.map((candidate) => candidate.value)
-    : null;
-};
-
-const getDerivedDomain = (derived: DerivedCall): Domain | null => {
-  const operandCases = derived.operands.map(getDomainLiterals);
-  if (!operandCases.every((cases): cases is PrimitiveValue[] => cases !== null)) return null;
-  const results = applyPureFunctionToCases(derived.callee, operandCases);
-  return results
-    ? {
-        kind: "Cases",
-        cases: dedupeAbstractValues(results.map((value) => ({ kind: "Literal", value }))),
-        origin: "call-sites",
-      }
-    : null;
 };
 
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
@@ -1401,48 +1352,6 @@ export class Interpreter {
     );
   }
 
-  #getFirstIterationValue(
-    methodName: string,
-    receiver: SymbolicValue,
-    callback: SymbolicValue | undefined,
-    loc: SourceLocation,
-    walkState: WalkState,
-  ): SymbolicValue | null {
-    const initial =
-      receiver.kind === "Binding" && receiver.path.length === 0 ? receiver.binding.initial : null;
-    const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
-    if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
-      return null;
-    const outcomes: boolean[] = [];
-    for (const [index, element] of initial.elements.entries()) {
-      const result = this.callFunction(
-        callback,
-        [element, { kind: "Primitive", value: index }],
-        loc,
-        walkState,
-      );
-      if (result.kind !== "Primitive") return null;
-      outcomes.push(Boolean(result.value));
-    }
-    const firstIndex = outcomes.indexOf(true);
-    switch (methodName) {
-      case "every":
-        return { kind: "Primitive", value: outcomes.every(Boolean) };
-      case "some":
-        return { kind: "Primitive", value: firstIndex !== -1 };
-      case "findIndex":
-        return { kind: "Primitive", value: firstIndex };
-      case "find":
-        return initial.elements[firstIndex] ?? UNDEFINED_VALUE;
-      default:
-        return {
-          kind: "ArrayExpression",
-          elements: initial.elements.filter((_element, index) => outcomes[index]),
-          spreads: [],
-        };
-    }
-  }
-
   #evaluateHookCall(hookKind: HookKind, callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues, argumentPlaces, loc } = callSite;
     const [firstArgument, secondArgument] = argumentValues;
@@ -1594,7 +1503,7 @@ export class Interpreter {
       ? getMathCall(methodName, argumentValues)
       : getLiteralArrayCall(receiver, methodName, argumentValues);
     if (range || derived) return this.#createCallResult(callSite, { range, derived });
-    const firstValue = this.#getFirstIterationValue(
+    const firstValue = this.iteration.getFirstValue(
       methodName,
       receiver,
       callback,
