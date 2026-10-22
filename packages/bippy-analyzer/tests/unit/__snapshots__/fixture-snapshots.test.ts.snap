@@ -178,6 +178,7 @@ stateDiagram-v2
   direction LR
   S1: stats.clicks #gt; 0 · #lt;button#gt; {"Clicked"}
   S2: stats.clicks #lt;= 0 · #lt;button#gt; {"Not clicked"}
+  [*] --> S2
   S1 --> S2: #lt;button#gt; onClick
   S2 --> S1: #lt;button#gt; onClick
   state "warnings" as warnings {
@@ -707,6 +708,7 @@ stateDiagram-v2
     %% opened
     S3: opened #gt; 0 · #lt;b#gt; {opened}
     S4: opened #lt;= 0 · ∅
+    [*] --> S4
     S3 --> S4: setOpened(opened + 1)
     S4 --> S3: setOpened(opened + 1)
   }"

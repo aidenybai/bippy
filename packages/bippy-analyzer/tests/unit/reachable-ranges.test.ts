@@ -43,6 +43,11 @@ describe("the render branches that guard a handler", () => {
       { kind: "Literal", value: 1 },
       { kind: "Literal", value: 2 },
     ]);
+    expect(report.states.map((state) => state.conditions)).toEqual([
+      ["page > 0", "page < 2"],
+      ["page > 0", "page >= 2"],
+      ["page <= 0"],
+    ]);
   });
 
   it("bound the wizard whose next button hides on the last step", () => {

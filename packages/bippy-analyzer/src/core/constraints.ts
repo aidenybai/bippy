@@ -38,6 +38,13 @@ const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const STRICT_EQUALITY_OPERATORS = new Set(["===", "!=="]);
 const COMPARISON_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
+const ORDER_OPERATORS = new Set(["<", "<=", ">", ">="]);
+const MIRRORED_OPERATORS = new Map<BinaryOperator, BinaryOperator>([
+  ["<", ">"],
+  ["<=", ">="],
+  [">", "<"],
+  [">=", "<="],
+]);
 
 export interface Bound {
   left: BindingPlace | null;
@@ -531,6 +538,55 @@ const differsInTruthiness = (
   return truthiness !== null && truthiness !== Boolean(literal);
 };
 
+const compareNumbers = (left: number, right: number, operator: BinaryOperator): boolean | null => {
+  switch (operator) {
+    case "<":
+      return left < right;
+    case "<=":
+      return left <= right;
+    case ">":
+      return left > right;
+    case ">=":
+      return left >= right;
+    default:
+      return null;
+  }
+};
+
+const splitComparison = (
+  value: BinaryExpressionValue,
+): [BindingValue, number, BinaryOperator] | null => {
+  const { left, right, operator } = value;
+  const mirrored = MIRRORED_OPERATORS.get(operator) ?? operator;
+  if (left.kind === "Binding" && right.kind === "Primitive" && typeof right.value === "number")
+    return [left, right.value, operator];
+  if (right.kind === "Binding" && left.kind === "Primitive" && typeof left.value === "number")
+    return [right, left.value, mirrored];
+  return null;
+};
+
+const compareCase = (
+  candidate: AbstractValue,
+  literal: number,
+  operator: BinaryOperator,
+): boolean | null =>
+  candidate.kind === "Literal" && typeof candidate.value === "number"
+    ? compareNumbers(candidate.value, literal, operator)
+    : null;
+
+const evaluateComparison = (
+  value: BinaryExpressionValue,
+  constraints: Constraints,
+): boolean | null => {
+  const split = splitComparison(value);
+  const placeValues = split && getPossibleValues(split[0], constraints);
+  if (!split || !placeValues || placeValues.length === 0) return null;
+  const outcomes = placeValues.map((candidate) => compareCase(candidate, split[1], split[2]));
+  if (outcomes.every((outcome) => outcome === true)) return true;
+  if (outcomes.every((outcome) => outcome === false)) return false;
+  return null;
+};
+
 const evaluateTruthiness = (placeValues: AbstractValue[]): boolean | null => {
   if (placeValues.length === 0) return null;
   const truthiness = placeValues.map(getTruthiness);
@@ -572,6 +628,7 @@ export const evaluateCondition = (
       if (distributed) return evaluateCondition(distributed, constraints);
       const bounded = evaluateBounds(value, constraints);
       if (bounded !== null) return bounded;
+      if (ORDER_OPERATORS.has(value.operator)) return evaluateComparison(value, constraints);
       return EQUALITY_OPERATORS.has(value.operator) ? evaluateEquality(value, constraints) : null;
     }
     case "Conditional": {
@@ -788,6 +845,8 @@ const assumeUncached = (
   }
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
     return assumeEquality(value, isTrue, constraints);
+  if (value.kind === "BinaryExpression" && ORDER_OPERATORS.has(value.operator))
+    return assumeComparison(value, isTrue, constraints);
   return assumeOpaqueCondition(value, isTrue, constraints);
 };
 
@@ -841,6 +900,19 @@ const withStringLengthBounds = (
       : { left: length, right: null, maxDifference: 0, isStrict: false },
   ]);
   return isConsistent(getBoundGraph(assumed)) ? assumed : null;
+};
+
+const assumeComparison = (
+  value: BinaryExpressionValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => {
+  const split = splitComparison(value);
+  if (!split || !getPossibleValues(split[0], constraints))
+    return assumeOpaqueCondition(value, isTrue, constraints);
+  return assumeByNarrowing(value, isTrue, split[0], constraints, (candidate) =>
+    compareCase(candidate, split[1], split[2]) === !isTrue ? [] : [candidate],
+  );
 };
 
 export const assumeCondition = (
