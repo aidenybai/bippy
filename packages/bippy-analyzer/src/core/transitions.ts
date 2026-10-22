@@ -49,7 +49,11 @@ const applyUpdates = (
       const fieldCases =
         getFieldCases(update.value, place.path, update.binding, constraints) ??
         getToggleCases(update.value, place, currentValues);
-      if (fieldCases === "unchanged") continue;
+      if (fieldCases === "unchanged") {
+        if (currentValues) updated.possibleValues.set(place, currentValues);
+        if (!currentValues) updated.possibleValues.delete(place);
+        continue;
+      }
       updated.possibleValues.set(
         place,
         fieldCases ? dedupeAbstractValues(fieldCases) : reachableValues,
