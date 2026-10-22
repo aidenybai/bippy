@@ -1034,6 +1034,12 @@ const assumeComparison = (
   );
 };
 
+export const assumeBranchOutcome = (
+  value: SymbolicValue,
+  isTrue: boolean,
+  constraints: Constraints,
+): Constraints | null => assumeMemoized(value, isTrue, constraints, new Map());
+
 export const assumeCondition = (
   value: SymbolicValue,
   isTrue: boolean,
