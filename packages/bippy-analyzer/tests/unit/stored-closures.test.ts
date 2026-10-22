@@ -20,6 +20,24 @@ describe("a function kept in state", () => {
     expect(getEdges("LazyStoredAction")).toContainEqual(["!flag && count !== 1", "flag"]);
   });
 
+  it("runs a closure the render stored in a ref", () => {
+    expect(getEdges("RenderStoredRef")).toContainEqual([
+      "count !== 1 && count === 2",
+      "count === 1",
+    ]);
+  });
+
+  it("keeps running the initial function once a handler can replace it", () => {
+    expect(getEdges("ReplacedInitial")).toContainEqual(["items.length <= 1", "items.length > 1"]);
+  });
+
+  it("runs one stored function, not each in turn", () => {
+    expect(getEdges("RefThenUpdater")).toContainEqual([
+      "count !== 1 && count === 2",
+      "count !== 1 && count !== 2",
+    ]);
+  });
+
   it("runs its updates when it is the handler", () => {
     expect(getEdges("StoredOnClick")).toContainEqual(["count !== 1", "count === 1"]);
   });

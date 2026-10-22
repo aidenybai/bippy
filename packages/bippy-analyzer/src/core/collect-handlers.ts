@@ -5,7 +5,6 @@ import type { CollectedEffects } from "./effect-collector";
 import type {
   ObjectExpressionValue,
   Binding,
-  FunctionValue,
   Handler,
   HandlerTrigger,
   JsxExpressionValue,
@@ -19,7 +18,13 @@ import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
-import { UNDEFINED_VALUE, createUnknown, foldUnary, getPassedCallbacks } from "./symbolic-values";
+import {
+  UNDEFINED_VALUE,
+  createBindingValue,
+  createUnknown,
+  foldUnary,
+  getPassedCallbacks,
+} from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 import { isStateBinding } from "./utils/is-state-binding";
 
@@ -144,7 +149,10 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
         .map((property) => `${property.key}=${getHandlerKey(property.value)}`)
         .join(",")}`;
     case "Binding":
-      return value.binding.kind === "prop" || isExternalSource(value.binding)
+      return value.binding.kind === "prop" ||
+        value.binding.kind === "ref" ||
+        isStateBinding(value.binding) ||
+        isExternalSource(value.binding)
         ? `binding:${value.binding.id}:${value.path.join(".")}`
         : null;
     case "Conditional": {
@@ -566,29 +574,16 @@ const revealPendingMutations = (
   }
 };
 
-const getStoredFunctions = (handlers: Handler[]): Map<number, FunctionValue[]> => {
-  const storedFunctions = new Map<number, FunctionValue[]>();
-  for (const update of handlers.flatMap((handler) => handler.updates)) {
-    if (!isStateBinding(update.binding)) continue;
-    const functions = getPassedCallbacks([update.value]).filter(
-      (value): value is FunctionValue => value.kind === "Function",
-    );
-    if (functions.length > 0)
-      storedFunctions.set(update.binding.id, [
-        ...(storedFunctions.get(update.binding.id) ?? []),
-        ...functions,
-      ]);
-  }
-  return storedFunctions;
-};
-
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const renderPhaseEffects = interpreter.finishRenderPhaseEffects();
+  const storedFunctionCount = interpreter.storedFunctionCount;
   const handlers = collectHandlersOnce(render, interpreter, renderPhaseEffects);
-  const storedFunctions = getStoredFunctions(handlers);
-  if (storedFunctions.size === 0) return handlers;
-  interpreter.setStoredFunctions(storedFunctions);
-  return collectHandlersOnce(render, interpreter, renderPhaseEffects);
+  for (const update of handlers.flatMap((handler) => handler.updates))
+    if (isStateBinding(update.binding))
+      interpreter.addStoredFunctions(createBindingValue(update.binding), update.value);
+  return interpreter.storedFunctionCount === storedFunctionCount
+    ? handlers
+    : collectHandlersOnce(render, interpreter, renderPhaseEffects);
 };
 
 const collectHandlersOnce = (
