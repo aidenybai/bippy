@@ -255,6 +255,7 @@ export type BailoutReason =
   | "unknown-call"
   | "conditional-hook"
   | "too-complex"
+  | "class-component"
   | `untyped-${BindingKind}`;
 
 export interface Bailout {
