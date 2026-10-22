@@ -41,7 +41,9 @@ const isSame = (left: Interval, right: Interval): boolean =>
   left.min === right.min && left.max === right.max;
 
 const getNumber = (value: SymbolicValue): number | null =>
-  value.kind === "Primitive" && typeof value.value === "number" ? value.value : null;
+  value.kind === "Primitive" && typeof value.value === "number" && Number.isFinite(value.value)
+    ? value.value
+    : null;
 
 const getGuardedUpdates = (binding: Binding, handlers: Handler[]): GuardedUpdate[] =>
   handlers.flatMap((handler) =>
@@ -140,7 +142,7 @@ const getValueInterval = (
       offset === null || getNumber(value.left) !== null
         ? null
         : getValueInterval(value.left, binding, hypothesis, guards, isInteger);
-    if (!term || offset === null) return null;
+    if (!term || offset === null || Math.abs(offset) > Number.MAX_SAFE_INTEGER) return null;
     const sign = value.operator === "+" ? 1 : -1;
     return { min: term.min + sign * offset, max: term.max + sign * offset };
   }

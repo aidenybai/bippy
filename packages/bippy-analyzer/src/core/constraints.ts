@@ -81,6 +81,7 @@ export interface Constraints {
   bounds: Bound[];
   boundGraph: BoundGraph | null;
   invariants: Bound[];
+  finitePlaces: PlaceMap<true>;
   unionMemberValues: PlaceMap<AbstractValue[][]>;
   possibleMembers: Map<number, number[]>;
 }
@@ -91,6 +92,7 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   bounds: [...constraints.bounds],
   boundGraph: constraints.boundGraph,
   invariants: constraints.invariants,
+  finitePlaces: constraints.finitePlaces,
   unionMemberValues: constraints.unionMemberValues,
   possibleMembers: new Map(constraints.possibleMembers),
 });
@@ -179,18 +181,43 @@ const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   return null;
 };
 
-const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
-  atom.path.at(-1) === LENGTH_FIELD ||
-  (constraints.possibleValues
-    .get(atom)
-    ?.every(
-      (value) =>
-        value.kind === "Literal" && typeof value.value === "number" && !Number.isNaN(value.value),
-    ) ??
-    false) ||
-  [...constraints.invariants, ...constraints.bounds].some((bound) =>
+const appearsIn = (atom: BindingPlace, bounds: Bound[]): boolean =>
+  bounds.some((bound) =>
     [bound.left, bound.right].some((side) => side !== null && isSamePlace(side, atom)),
   );
+
+const everyCase = (
+  atom: BindingPlace,
+  constraints: Constraints,
+  predicate: (value: AbstractValue) => boolean,
+): boolean => constraints.possibleValues.get(atom)?.every(predicate) ?? false;
+
+const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
+  atom.path.at(-1) === LENGTH_FIELD ||
+  everyCase(
+    atom,
+    constraints,
+    (value) =>
+      value.kind === "Literal" && typeof value.value === "number" && !Number.isNaN(value.value),
+  ) ||
+  appearsIn(atom, [...constraints.invariants, ...constraints.bounds]);
+
+const isNumericAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
+  atom.path.at(-1) === LENGTH_FIELD ||
+  everyCase(atom, constraints, (value) =>
+    value.kind === "Literal" ? typeof value.value === "number" : value.primitive === "number",
+  ) ||
+  appearsIn(atom, constraints.invariants);
+
+const isFiniteAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
+  atom.path.at(-1) === LENGTH_FIELD ||
+  everyCase(
+    atom,
+    constraints,
+    (value) =>
+      value.kind === "Literal" && typeof value.value === "number" && Number.isFinite(value.value),
+  ) ||
+  constraints.finitePlaces.has(atom);
 
 const isNumberValue = (value: SymbolicValue, constraints: Constraints): boolean => {
   if (value.kind === "Conditional")
@@ -221,6 +248,17 @@ export const getBounds = (
   const rightTerm = getLinearTerm(value.right);
   if (!leftTerm || !rightTerm || (leftTerm.atom === null && rightTerm.atom === null)) return null;
   const offsetDifference = rightTerm.offset - leftTerm.offset;
+  const atoms = [leftTerm.atom, rightTerm.atom].filter(
+    (atom): atom is BindingPlace => atom !== null,
+  );
+  const isBetweenAtoms = constraints !== null && atoms.length === 2;
+  if (isBetweenAtoms && !atoms.every((atom) => isNumericAtom(atom, constraints))) return null;
+  if (
+    isBetweenAtoms &&
+    offsetDifference !== 0 &&
+    !atoms.every((atom) => isFiniteAtom(atom, constraints))
+  )
+    return null;
   const lessThan = (isStrict: boolean): Bound => ({
     left: leftTerm.atom,
     right: rightTerm.atom,
@@ -314,9 +352,13 @@ const getBoundGraph = (constraints: Constraints): BoundGraph =>
     EMPTY_GRAPH,
   ));
 
-const isBoundedEquality = (value: BinaryExpressionValue, graph: BoundGraph): boolean => {
-  const below = getBounds({ ...value, operator: "<" }, true);
-  const above = getBounds({ ...value, operator: ">" }, true);
+const isBoundedEquality = (
+  value: BinaryExpressionValue,
+  graph: BoundGraph,
+  constraints: Constraints,
+): boolean => {
+  const below = getBounds({ ...value, operator: "<" }, true, constraints);
+  const above = getBounds({ ...value, operator: ">" }, true, constraints);
   return (
     below !== null &&
     above !== null &&
@@ -328,14 +370,14 @@ const isBoundedEquality = (value: BinaryExpressionValue, graph: BoundGraph): boo
 const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean | null => {
   if (constraints.invariants.length === 0 && constraints.bounds.length === 0) return null;
   const graph = getBoundGraph(constraints);
-  const whenTrue = getBounds(value, true);
-  const whenFalse = getBounds(value, false);
+  const whenTrue = getBounds(value, true, constraints);
+  const whenFalse = getBounds(value, false, constraints);
   if (whenTrue && !isConsistent(whenTrue.reduce(withBound, graph))) return false;
   if (whenFalse && !isConsistent(whenFalse.reduce(withBound, graph))) return true;
   if (
     value.kind === "BinaryExpression" &&
     EQUALITY_OPERATORS.has(value.operator) &&
-    isBoundedEquality(value, graph)
+    isBoundedEquality(value, graph, constraints)
   )
     return !NEGATED_EQUALITY_OPERATORS.has(value.operator);
   return null;
@@ -811,6 +853,7 @@ const joinConstraints = (left: Constraints, right: Constraints): Constraints => 
     bounds: left.bounds.filter((bound) => rightBoundKeys.has(formatBound(bound))),
     boundGraph: null,
     invariants: left.invariants,
+    finitePlaces: left.finitePlaces,
     unionMemberValues: left.unionMemberValues,
     possibleMembers: new Map(
       [...left.possibleMembers].flatMap(([bindingId, members]): Array<[number, number[]]> => {

@@ -121,7 +121,21 @@ const getLengthLimitBounds = (binding: Binding): Bound[] => {
   return isSameLength ? [isNoLonger, isNoShorter] : [isNoLonger];
 };
 
-const createEmptyConstraints = (analysis: ComponentAnalysis): Constraints => ({
+const getReachableRanges = (analysis: ComponentAnalysis): Map<number, NumberRange> =>
+  new Map(
+    analysis.bindings.flatMap((binding): Array<[number, NumberRange]> => {
+      const range =
+        binding.range === null && isStateBinding(binding)
+          ? getReachableRange(binding, analysis.handlers)
+          : null;
+      return range ? [[binding.id, range]] : [];
+    }),
+  );
+
+const createEmptyConstraints = (
+  analysis: ComponentAnalysis,
+  reachableRanges: Map<number, NumberRange>,
+): Constraints => ({
   possibleValues: new PlaceMap<AbstractValue[]>(),
   assumptions: new Map(),
   bounds: [],
@@ -130,17 +144,22 @@ const createEmptyConstraints = (analysis: ComponentAnalysis): Constraints => ({
     ...getLengthLimitBounds(binding),
     ...getRangeBounds(
       getBindingPlace(binding),
-      binding.range ??
-        (isStateBinding(binding) ? getReachableRange(binding, analysis.handlers) : null),
+      binding.range ?? reachableRanges.get(binding.id) ?? null,
     ),
   ]),
+  finitePlaces: new PlaceMap(
+    analysis.bindings
+      .filter((binding) => reachableRanges.has(binding.id))
+      .map((binding): [BindingPlace, true] => [getBindingPlace(binding), true]),
+  ),
   unionMemberValues: analysis.unionMemberValues,
   possibleMembers: new Map(),
 });
 
 export const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
-  const reachable = createEmptyConstraints(analysis);
-  const mount = createEmptyConstraints(analysis);
+  const reachableRanges = getReachableRanges(analysis);
+  const reachable = createEmptyConstraints(analysis, reachableRanges);
+  const mount = createEmptyConstraints(analysis, reachableRanges);
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
