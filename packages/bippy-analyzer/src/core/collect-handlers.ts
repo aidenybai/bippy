@@ -190,6 +190,49 @@ const getEnabledGuards = (element: JsxExpressionValue): SymbolicValue[] => {
   return disabled ? [foldUnary("!", disabled.value)] : [];
 };
 
+const getAttribute = (element: JsxExpressionValue, name: string): JsxProp | undefined =>
+  element.props.find((prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === name);
+
+const CHECKABLE_TYPES = new Set(["checkbox", "radio"]);
+
+const CHECK_EVENTS = new Set(["onChange", "onClick", "onInput"]);
+
+interface CheckEvent {
+  argument: SymbolicValue;
+  guards: SymbolicValue[];
+}
+
+const getCheckEvent = (element: JsxExpressionValue, prop: JsxProp): CheckEvent | null => {
+  if (element.tag.kind !== "BuiltinTag" || element.tag.name !== "input") return null;
+  const type = getAttribute(element, "type")?.value;
+  const checked = getAttribute(element, "checked")?.value;
+  const isCheckable =
+    type?.kind === "Primitive" && typeof type.value === "string" && CHECKABLE_TYPES.has(type.value);
+  if (!isCheckable || !checked || !CHECK_EVENTS.has(prop.name)) return null;
+  const isRadio = type.value === "radio";
+  const target: SymbolicValue = {
+    kind: "ObjectExpression",
+    properties: [
+      {
+        key: "checked",
+        value: isRadio ? { kind: "Primitive", value: true } : foldUnary("!", checked),
+      },
+    ],
+    spreads: [createUnknown("event", GeneratedSource)],
+  };
+  return {
+    argument: {
+      kind: "ObjectExpression",
+      properties: [
+        { key: "target", value: target },
+        { key: "currentTarget", value: target },
+      ],
+      spreads: [EVENT_ARGUMENT],
+    },
+    guards: isRadio ? [foldUnary("!", checked)] : [],
+  };
+};
+
 const SUBMIT_TYPES = new Set(["submit", "image"]);
 
 const isSubmitControl = (element: JsxExpressionValue): boolean => {
@@ -366,12 +409,14 @@ class HandlerCollector {
     const handlerKey = getHandlerKey(handled);
     if (handlerKey === null) return;
     const isWrapped = callback !== prop.value;
-    this.#plan(isWrapped ? `wrapped:${handlerKey}` : handlerKey, {
+    const checkEvent = getCheckEvent(element, prop);
+    const key = isWrapped ? `wrapped:${handlerKey}` : handlerKey;
+    this.#plan(checkEvent ? `${key}:${getValueKey(checkEvent.argument)}` : key, {
       trigger: { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
       callback: handled,
-      callbackArguments: [EVENT_ARGUMENT],
+      callbackArguments: [checkEvent?.argument ?? EVENT_ARGUMENT],
       loc: getHandlerLocation(callback),
-      guards,
+      guards: [...guards, ...(checkEvent?.guards ?? [])],
       callbackGuards: isWrapped ? [createUnknown("wrapped-call", prop.loc)] : [],
       props: [prop],
     });

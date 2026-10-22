@@ -1,0 +1,22 @@
+import { describe, expect, it } from "vite-plus/test";
+import { analyzeFixture, getComponent } from "./helpers";
+
+describe("a change on a controlled checkbox or radio", () => {
+  const project = analyzeFixture("conformance-repros", "checked-events");
+
+  const getUpdates = (name: string) =>
+    getComponent(project, name).analysis.handlers.flatMap((handler) =>
+      handler.updates.map((update) => update.value),
+    );
+
+  it("reads the flipped checked value from a checkbox", () => {
+    expect(getUpdates("ControlledCheckbox")).toMatchObject([
+      { kind: "UnaryExpression", operator: "!" },
+    ]);
+    expect(getUpdates("FixedCheckbox")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+
+  it("reads checked as true from a radio", () => {
+    expect(getUpdates("UncheckedRadio")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+});
