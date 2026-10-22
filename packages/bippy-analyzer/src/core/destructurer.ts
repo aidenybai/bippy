@@ -2,7 +2,12 @@ import type { ArrayPattern, ObjectPattern, Place, SourceLocation } from "../reac
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { getHookBindingKind } from "./external-sources";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
+import {
+  START_TRANSITION_VALUE,
+  UNDEFINED_VALUE,
+  createBindingValue,
+  createUnknown,
+} from "./symbolic-values";
 import type { BindingValue, Domain, HookResultValue, Sample, SymbolicValue } from "./types";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { getIdentifierName } from "./utils/get-identifier-name";
@@ -57,6 +62,10 @@ export class Destructurer {
     if (value.kind === "ArrayExpression" && value.spreads.length === 0)
       return itemPlaces.map((_itemPlace, index) => value.elements[index] ?? UNDEFINED_VALUE);
     if (value.kind !== "HookResult") return itemPlaces.map(() => null);
+    if (value.hookKind === "useTransition")
+      return itemPlaces.map((place, index) =>
+        index === 1 ? START_TRANSITION_VALUE : place ? this.bindHookResult(place, value) : null,
+      );
     const [statePlace, setterPlace] = itemPlaces;
     const slot: StateSlot | null = statePlace
       ? { name: getIdentifierName(statePlace) ?? "state", loc: statePlace.loc, domain: null }
