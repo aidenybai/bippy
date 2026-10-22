@@ -286,6 +286,7 @@ export class Interpreter {
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
+  readonly #frameClosureIds: number[][] = [];
 
   constructor(
     resolver: SourceFileResolver,
@@ -430,16 +431,22 @@ export class Interpreter {
   #createClosure(hirFunction: HIRFunction): FunctionValue {
     const isInlined = this.#inlinedFunctions.size > 0;
     const closure = this.#registerFunction(hirFunction, isInlined);
-    if (isInlined)
-      this.#functions.setCapturedValues(
-        closure.functionId,
-        hirFunction.context.map((place): CapturedValue => [place, this.read(place)]),
-      );
+    if (!isInlined) return closure;
+    this.#functions.setCapturedValues(
+      closure.functionId,
+      hirFunction.context.map((place): CapturedValue => [place, this.read(place)]),
+    );
+    this.#frameClosureIds.at(-1)?.push(closure.functionId);
     return closure;
   }
 
   #applyCapturedValues(functionId: number | null): () => void {
-    const capturedValues = this.#functions.getCapturedValues(functionId);
+    const isCreatingFrameActive =
+      functionId !== null &&
+      this.#frameClosureIds.some((closureIds) => closureIds.includes(functionId));
+    const capturedValues = isCreatingFrameActive
+      ? []
+      : this.#functions.getCapturedValues(functionId);
     const liveValues = capturedValues.map(([place]): CapturedValue => [place, this.read(place)]);
     for (const [place, value] of capturedValues) this.write(place, value);
     return () => {
@@ -1573,6 +1580,8 @@ export class Interpreter {
     this.#currentFunction = hirFunction;
     this.#resolver = this.#functions.getResolver(hirFunction) ?? previousResolver;
     const restoreLiveValues = this.#applyCapturedValues(functionId);
+    const closureIds: number[] = [];
+    this.#frameClosureIds.push(closureIds);
     try {
       hirFunction.params.forEach((parameter, parameterIndex) => {
         const parameterPlace = getPlaceOrSpread(parameter);
@@ -1593,6 +1602,18 @@ export class Interpreter {
         walkState.guards,
       );
     } finally {
+      this.#frameClosureIds.pop();
+      const outerIdentifierIds = new Set(hirFunction.context.map((place) => place.identifier.id));
+      for (const closureId of closureIds)
+        this.#functions.setCapturedValues(
+          closureId,
+          this.#functions
+            .getCapturedValues(closureId)
+            .map(([place, value]): CapturedValue => [
+              place,
+              outerIdentifierIds.has(place.identifier.id) ? value : this.read(place),
+            ]),
+        );
       restoreLiveValues();
       this.#currentFunction = previousFunction;
       this.#resolver = previousResolver;
