@@ -192,15 +192,21 @@ const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
     [bound.left, bound.right].some((side) => side !== null && isSamePlace(side, atom)),
   );
 
+const isNumberValue = (value: SymbolicValue, constraints: Constraints): boolean => {
+  if (value.kind === "Conditional")
+    return (
+      isNumberValue(value.consequent, constraints) && isNumberValue(value.alternate, constraints)
+    );
+  const term = getLinearTerm(value);
+  return term !== null && (term.atom === null || isNumberAtom(term.atom, constraints));
+};
+
 export const isComplementNegation = (
   value: BinaryExpressionValue,
   constraints: Constraints,
 ): boolean =>
   !ORDER_OPERATORS.has(value.operator) ||
-  [value.left, value.right].every((side) => {
-    const term = getLinearTerm(side);
-    return term !== null && (term.atom === null || isNumberAtom(term.atom, constraints));
-  });
+  [value.left, value.right].every((side) => isNumberValue(side, constraints));
 
 export const getBounds = (
   value: SymbolicValue,

@@ -15,7 +15,7 @@ describe("a memoized object a handler mutates", () => {
     });
 
     it(`${name} reaches the mutated field through the click`, () => {
-      const before = findState("box.clicks <= 0");
+      const before = findState("!(box.clicks > 0)");
       const after = findState("box.clicks > 0");
       expect(before).not.toBe(-1);
       expect(after).not.toBe(-1);
