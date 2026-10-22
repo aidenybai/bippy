@@ -373,7 +373,7 @@ export class Interpreter {
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #mountClosureIds = new Set<number>();
-  readonly #storedFunctions = new Map<string, FunctionValue[]>();
+  readonly #storedFunctions = new Map<string, SymbolicValue[]>();
   #storedFunctionCount = 0;
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #frameClosureIds: number[][] = [];
@@ -712,16 +712,14 @@ export class Interpreter {
 
   addStoredFunctions(place: BindingValue, value: SymbolicValue): void {
     const key = getValueKey(place);
-    const known = this.#storedFunctions.get(key) ?? [];
+    const known = new Set((this.#storedFunctions.get(key) ?? []).map(getValueKey));
     const added = getPassedCallbacks([value]).filter(
-      (callback): callback is FunctionValue =>
-        callback.kind === "Function" &&
-        !known.some((stored) => stored.functionId === callback.functionId),
+      (callback) => !known.has(getValueKey(callback)),
     );
     if (added.length === 0) return;
-    this.#storedFunctions.set(key, [...known, ...added]);
+    this.#storedFunctions.set(key, [...(this.#storedFunctions.get(key) ?? []), ...added]);
     this.#storedFunctionCount += added.length;
-    for (const stored of added) this.addMountClosure(stored);
+    for (const stored of added) if (stored.kind === "Function") this.addMountClosure(stored);
   }
 
   #callStoredFunctions(
@@ -734,9 +732,28 @@ export class Interpreter {
     for (const [index, stored] of (this.#storedFunctions.get(key) ?? []).entries()) {
       const isChosen = createUnknown(`stored-call:${key}:${index}`, place.binding.loc);
       const guards = [...walkState.guards, ...skipped, isChosen];
-      this.callFunction(stored, argumentValues, place.binding.loc, { ...walkState, guards });
+      this.#callStoredValue(stored, argumentValues, place.binding.loc, { ...walkState, guards });
       skipped = [...skipped, negate(isChosen)];
     }
+  }
+
+  #callStoredValue(
+    stored: SymbolicValue,
+    argumentValues: SymbolicValue[],
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): void {
+    const [firstArgument] = argumentValues;
+    if (stored.kind === "Function") this.callFunction(stored, argumentValues, loc, walkState);
+    if (stored.kind === "Setter") this.#applySetter(stored, firstArgument, walkState);
+    if (stored.kind === "Dispatch") this.#applyDispatch(stored, firstArgument, loc, walkState);
+    if (stored.kind === "Bound")
+      this.#callStoredValue(
+        stored.callee,
+        [...stored.argumentValues, ...argumentValues],
+        loc,
+        walkState,
+      );
   }
 
   #getModuleBinding(name: string): Binding | null {
@@ -1699,6 +1716,7 @@ export class Interpreter {
         return this.#evaluateTemplateLiteral(value);
       case "StoreGlobal": {
         const variable = this.#getModuleBinding(value.name);
+        if (variable) this.addStoredFunctions(createBindingValue(variable), this.read(value.value));
         if (variable && this.#handlerEffects) this.#handlerEffects.addPossibleMutation(variable);
         if (variable && !this.#handlerEffects) this.bindingTable.forgetInitial(variable);
         return createUnknown(value.kind, value.loc);

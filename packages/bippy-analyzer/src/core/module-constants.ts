@@ -159,8 +159,7 @@ export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoade
         !declaration.isVariableDeclaration() ||
         !isModuleLevel(declaration.parentPath) ||
         !types.isIdentifier(id) ||
-        !id.loc ||
-        types.isFunction(init)
+        !id.loc
       )
         return;
       const binding = path.scope.getBinding(id.name);
