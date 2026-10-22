@@ -50,6 +50,7 @@ import type {
   WarningKind,
 } from "./types";
 import { formatPlace, formatSymbolicValue } from "./format";
+import { flattenArrayChildren } from "./utils/flatten-array-children";
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
@@ -253,7 +254,8 @@ const getArrayLiteralMember = (
 ): SymbolicValue => {
   if (property === "length") return { kind: "Primitive", value: array.elements.length };
   const index = Number(property);
-  if (!Number.isInteger(index) || index < 0) return createUnknown("member", loc);
+  const isArrayIndex = Number.isInteger(index) && index >= 0 && String(index) === property;
+  if (!isArrayIndex) return createUnknown("member", loc);
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
@@ -1205,7 +1207,13 @@ export class Interpreter {
       return createUnknown("call", methodCall.loc);
     }
     if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
-      return this.iteration.evaluateArrayMap(receiver, callback, methodCall.loc, walkState);
+      return this.iteration.evaluateArrayMap(
+        receiver,
+        callback,
+        methodCall.loc,
+        walkState,
+        methodName === "flatMap",
+      );
     if (PROMISE_METHODS.has(methodName)) {
       this.callbacks.visitPromiseCallbacks(methodName, argumentValues, methodCall.loc, walkState);
       return createUnknown("async", methodCall.loc);
@@ -1313,7 +1321,10 @@ export class Interpreter {
       case "JsxExpression":
         return this.#evaluateJsxElement(value, instruction.id);
       case "JsxFragment":
-        return { kind: "JsxFragment", children: value.children.map((child) => this.read(child)) };
+        return {
+          kind: "JsxFragment",
+          children: flattenArrayChildren(value.children.map((child) => this.read(child))),
+        };
       case "Await":
         return createUnknown("async", value.loc);
       case "NewExpression": {
@@ -1653,7 +1664,7 @@ export class Interpreter {
         isContext: !isBuiltinTag && this.#resolver.isContext(element.tag.loc),
         reactExport,
         props,
-        children: (element.children ?? []).map((child) => this.read(child)),
+        children: flattenArrayChildren((element.children ?? []).map((child) => this.read(child))),
         loc: element.loc,
         file: this.#resolver.fileName,
       },

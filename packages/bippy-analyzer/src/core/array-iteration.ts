@@ -4,6 +4,7 @@ import type {
   SourceLocation,
   SpreadPattern,
 } from "../react-compiler/HIR/HIR";
+import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "./types";
@@ -13,6 +14,8 @@ import { getPlaceOrSpread } from "./utils/get-place-or-spread";
 import type { WalkState } from "./walk-state";
 
 export const RENDERED_ITERATION_METHODS = new Set(["map", "flatMap"]);
+
+const MAX_LITERAL_ROWS = 32;
 
 export const ITERATION_METHODS = new Set([
   "forEach",
@@ -131,7 +134,29 @@ export class ArrayIteration {
     callback: FunctionValue,
     loc: SourceLocation,
     walkState: WalkState,
+    isFlat = false,
   ): SymbolicValue {
+    const isLiteralRows =
+      !isFlat &&
+      array.kind === "ArrayExpression" &&
+      array.spreads.length === 0 &&
+      array.elements.length <= MAX_LITERAL_ROWS;
+    const position = loc === GeneratedSource ? "generated" : loc.start.index;
+    if (isLiteralRows)
+      return {
+        kind: "ArrayExpression",
+        elements: array.elements.map((element, index) =>
+          this.#interpreter.withBindingScope(`row:${position}:${index}`, () =>
+            this.#interpreter.callFunction(
+              callback,
+              [element, { kind: "Primitive", value: index }, array],
+              loc,
+              walkState,
+            ),
+          ),
+        ),
+        spreads: [],
+      };
     const [itemParameter, indexParameter] =
       this.#interpreter.functions.get(callback.functionId)?.params ?? [];
     const item = this.#createItemValue(itemParameter, "item", loc);
@@ -176,7 +201,13 @@ export class ArrayIteration {
       receiverPlace !== undefined &&
       callback?.kind === "Function";
     return isRenderedMap
-      ? this.evaluateArrayMap(this.#interpreter.read(receiverPlace), callback, call.loc, walkState)
+      ? this.evaluateArrayMap(
+          this.#interpreter.read(receiverPlace),
+          callback,
+          call.loc,
+          walkState,
+          methodName === "flatMap",
+        )
       : null;
   }
 }

@@ -1171,22 +1171,26 @@ flowchart TD
   n1["LoopList"]
   n2["#lt;div#gt;"]
   n1 --> n2
-  n3["#lt;ul#gt; {[...Unknown(mutation).map(…)]}"]
+  n3["#lt;ul#gt;"]
   n2 --> n3
-  n4{"hasLong"}
-  n2 --> n4
-  n5["#lt;p#gt; #quot;Long#quot;"]
-  n4 -->|✓| n5
-  n6["#lt;button#gt;"]
+  n4[["↻ each of Unknown(mutation)"]]
+  n3 --> n4
+  n5["#lt;li#gt; ⚠ const item"]
+  n4 --> n5
+  n6{"hasLong"}
   n2 --> n6
-  n7(["onClick ⇒ if Unknown(IteratorNext) && Unknown(IteratorNext): isSelected = true"]):::event
-  n6 -.-> n7
-  n8{"isSelected"}
-  n6 --> n8
-  n9["{#quot;Selected#quot;}"]
-  n8 -->|✓| n9
-  n10["{#quot;Select#quot;}"]
-  n8 -->|✗| n10"
+  n7["#lt;p#gt; #quot;Long#quot;"]
+  n6 -->|✓| n7
+  n8["#lt;button#gt;"]
+  n2 --> n8
+  n9(["onClick ⇒ if Unknown(IteratorNext) && Unknown(IteratorNext): isSelected = true"]):::event
+  n8 -.-> n9
+  n10{"isSelected"}
+  n8 --> n10
+  n11["{#quot;Selected#quot;}"]
+  n10 -->|✓| n11
+  n12["{#quot;Select#quot;}"]
+  n10 -->|✗| n12"
 `;
 
 exports[`fixture analysis > LoopList keeps its states, transitions and unreachable branches 1`] = `
@@ -2447,7 +2451,7 @@ flowchart TD
   n1["TagEditor"]
   n2["#lt;div#gt;"]
   n1 --> n2
-  n3["{[#lt;h2 /#gt;]}"]
+  n3["#lt;h2#gt; {title}"]
   n2 --> n3
   n4{"tags.length === 0"}
   n2 --> n4
@@ -2467,8 +2471,8 @@ title: TagEditor src/local-mutations.tsx:3
 ---
 stateDiagram-v2
   direction LR
-  S1: tags.length === 0 · #lt;div#gt; {[#lt;h2 /#gt;]} #lt;p#gt; "No tags" #lt;button#gt; "Add"
-  S2: tags.length !== 0 · #lt;div#gt; {[#lt;h2 /#gt;]} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
+  S1: tags.length === 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "No tags" #lt;button#gt; "Add"
+  S2: tags.length !== 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
   S1 --> S2: "Add""
 `;
 
