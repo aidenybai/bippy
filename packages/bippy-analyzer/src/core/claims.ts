@@ -129,7 +129,7 @@ const toOutcome = (claim: Claim, checks: StateCheck[], context: ClaimContext): C
       found.stateIndex === null
         ? []
         : findClaimPath(context.states, context.regions, found.stateIndex),
-    reason: found.check.witness,
+    reason: found.check.witness ?? (broken ? null : "can't be decided"),
   };
 };
 

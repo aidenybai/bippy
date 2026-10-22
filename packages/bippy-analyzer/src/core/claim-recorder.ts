@@ -76,13 +76,13 @@ export class ClaimRecorder {
       const domain =
         this.#interpreter.bindingTable.placeDomains.get(getValuePlace(part)) ??
         (part.path.length === 0 ? part.binding.domain : undefined);
-      if (domain?.kind !== "Cases") isCheckable = false;
+      if (domain?.kind !== "Cases" && domain?.kind !== "Opaque") isCheckable = false;
     });
     return isCheckable;
   }
 
   record(claim: ClaimSite): void {
-    if (this.#isCheckable(claim.subject))
+    if (claim.kind === "invariant" || this.#isCheckable(claim.subject))
       this.#claims.push({
         ...claim,
         file: this.#interpreter.resolver.fileName,
