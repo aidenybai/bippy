@@ -310,6 +310,7 @@ export class Interpreter {
   #handlerEffects: EffectCollector | null = null;
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
+  readonly #mountClosureIds = new Set<number>();
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #frameClosureIds: number[][] = [];
   readonly #bindingScopes: string[] = [];
@@ -626,10 +627,23 @@ export class Interpreter {
       return createUnknown("call", loc);
     this.#inlinedFunctions.add(hirFunction);
     try {
-      return this.#evaluateFunction(hirFunction, argumentValues, walkState, callee.functionId);
+      return this.#evaluateCallee(hirFunction, argumentValues, walkState, callee.functionId);
     } finally {
       this.#inlinedFunctions.delete(hirFunction);
     }
+  }
+
+  #evaluateCallee(
+    hirFunction: HIRFunction,
+    argumentValues: SymbolicValue[],
+    walkState: WalkState,
+    functionId: number,
+  ): SymbolicValue {
+    const updateCount = this.#handlerEffects?.updateCount ?? 0;
+    const result = this.#evaluateFunction(hirFunction, argumentValues, walkState, functionId);
+    if (this.#mountClosureIds.has(functionId))
+      this.#handlerEffects?.forgetRenderValues(updateCount);
+    return result;
   }
 
   resolveModuleFunction(value: SymbolicValue): SymbolicValue {
@@ -1456,6 +1470,16 @@ export class Interpreter {
   ): SymbolicValue {
     const object = this.read(load.object);
     const property = String(load.property);
+    const [initialRef] = object.kind === "HookResult" ? object.argumentValues : [];
+    const isUnsharedRef =
+      object.kind === "HookResult" &&
+      object.hookKind === "useRef" &&
+      property === "current" &&
+      initialRef !== undefined &&
+      getIdentifierName(load.object) === null;
+    if (isUnsharedRef && initialRef.kind === "Function")
+      this.#mountClosureIds.add(initialRef.functionId);
+    if (isUnsharedRef) return initialRef;
     const loaded = this.#foldLiteralType(
       this.evaluatePropertyLoad(object, property, load.loc),
       load.loc,
@@ -1528,6 +1552,7 @@ export class Interpreter {
       initialRef?.kind === "Function" &&
       isRefOnlyRead(this.getCurrentFunction(), store.lvalue.place.identifier.id);
     if (isConstantRef) {
+      this.#mountClosureIds.add(initialRef.functionId);
       const constantRef: SymbolicValue = {
         kind: "ObjectExpression",
         properties: [{ key: "current", value: initialRef }],
@@ -1864,7 +1889,7 @@ export class Interpreter {
       (_parameter, index) =>
         argumentValues[index] ?? createUnknown("callback-argument", callback.loc),
     );
-    const result = this.#evaluateFunction(
+    const result = this.#evaluateCallee(
       hirFunction,
       externalArguments,
       walkState,
