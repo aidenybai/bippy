@@ -841,7 +841,7 @@ const joinPlaceValues = (
     }),
   );
 
-const joinConstraints = (left: Constraints, right: Constraints): Constraints => {
+export const joinConstraints = (left: Constraints, right: Constraints): Constraints => {
   const rightBoundKeys = new Set(right.bounds.map(formatBound));
   return {
     possibleValues: joinPlaceValues(left.possibleValues, right.possibleValues),

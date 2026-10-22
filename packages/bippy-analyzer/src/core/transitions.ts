@@ -199,7 +199,7 @@ const getConstraintsAfterUpdates = (
 ): Constraints =>
   updates.length === 0 ? constraints : applyUpdates(updates, constraints, context);
 
-const settleRenderUpdates = (
+export const settleRenderUpdates = (
   constraints: Constraints,
   renderUpdates: StateUpdate[],
   context: ReachabilityContext,
