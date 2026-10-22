@@ -75,6 +75,12 @@ describe("compiler errors", () => {
     ]);
   });
 
+  it("lowers a computed key in a destructuring pattern", () => {
+    const { analysis } = getComponent(project, "SelectedTags");
+    expect(analysis.bailouts).toEqual([]);
+    expect(analysis.handlers.map((handler) => handler.updates.length)).toEqual([1]);
+  });
+
   it("lowers a spread child as the array it spreads", () => {
     const { analysis, report } = getComponent(project, "ThemePicker");
     expect(analysis.bailouts).toEqual([]);
