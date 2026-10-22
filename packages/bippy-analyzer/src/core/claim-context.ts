@@ -23,5 +23,7 @@ export const createClaimContext = (
   regions,
   constraintsByState,
   reachable,
-  renderedHandlerIds: states.map((state) => collectHandlerIds(state.render)),
+  renderedHandlerIds: states.map((state, index) =>
+    collectHandlerIds(state.render, constraintsByState[index] ?? reachable),
+  ),
 });
