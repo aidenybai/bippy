@@ -1,5 +1,6 @@
 import type {
   BlockId,
+  DeclarationId,
   HIRFunction,
   IdentifierId,
   Instruction,
@@ -1244,15 +1245,17 @@ export class Interpreter {
     if (!dependencies) return;
     const memoized = this.read(finish.decl);
     const dependencyPlaces = new PlaceMap<true>();
+    const dependencyDeclarations = new Set<DeclarationId>();
     for (const dependency of dependencies) {
       if (dependency.root.kind !== "NamedLocal") continue;
+      dependencyDeclarations.add(dependency.root.value.identifier.declarationId);
       const root = this.read(dependency.root.value);
       if (root.kind !== "Binding") continue;
       const path = [...root.path, ...dependency.path.map((entry) => String(entry.property))];
       dependencyPlaces.set(getBindingPlace(root.binding, path), true);
     }
     if (memoized.kind === "Function") {
-      this.#captureStaleReads(memoized, dependencyPlaces, finish.loc);
+      this.#captureStaleReads(memoized, dependencyPlaces, dependencyDeclarations, finish.loc);
       return;
     }
     if (this.#isStaleMemo(memoized, dependencyPlaces))
@@ -1262,13 +1265,16 @@ export class Interpreter {
   #captureStaleReads(
     callback: FunctionValue,
     dependencyPlaces: PlaceMap<true>,
+    dependencyDeclarations: Set<DeclarationId>,
     loc: SourceLocation,
   ): void {
     const context = this.#functions.get(callback.functionId)?.context ?? [];
     let hasStaleRead = false;
     const capturedValues = context.map((place): CapturedValue => {
       const value = this.read(place);
-      if (!this.#isStaleMemo(value, dependencyPlaces)) return [place, value];
+      const isStaleUnknown =
+        value.kind === "Unknown" && !dependencyDeclarations.has(place.identifier.declarationId);
+      if (!isStaleUnknown && !this.#isStaleMemo(value, dependencyPlaces)) return [place, value];
       hasStaleRead = true;
       return [place, createUnknown("memo", loc)];
     });
