@@ -190,6 +190,74 @@ const getEnabledGuards = (element: JsxExpressionValue): SymbolicValue[] => {
   return disabled ? [foldUnary("!", disabled.value)] : [];
 };
 
+const getAttribute = (element: JsxExpressionValue, name: string): JsxProp | undefined =>
+  element.props.find((prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === name);
+
+const CHECKABLE_TYPES = new Set(["checkbox", "radio"]);
+
+const CHECK_EVENTS = new Set(["onChange", "onClick", "onInput"]);
+
+interface ControlEvent {
+  argument: SymbolicValue;
+  guards: SymbolicValue[];
+}
+
+const getControlEvent = (element: JsxExpressionValue, prop: JsxProp): ControlEvent | null => {
+  if (element.tag.kind !== "BuiltinTag" || element.tag.name !== "input") return null;
+  const type = getAttribute(element, "type")?.value;
+  const isCheckable =
+    type?.kind === "Primitive" && typeof type.value === "string" && CHECKABLE_TYPES.has(type.value);
+  if (!isCheckable || !CHECK_EVENTS.has(prop.name)) return null;
+  const isRadio = type.value === "radio";
+  const checked = getAttribute(element, "checked")?.value;
+  const value = getAttribute(element, "value")?.value ?? { kind: "Primitive", value: "on" };
+  const nextChecked: SymbolicValue | null = checked
+    ? isRadio
+      ? { kind: "Primitive", value: true }
+      : foldUnary("!", checked)
+    : null;
+  const target: SymbolicValue = {
+    kind: "ObjectExpression",
+    properties: [
+      { key: "value", value },
+      ...(nextChecked ? [{ key: "checked", value: nextChecked }] : []),
+    ],
+    spreads: [createUnknown("event", GeneratedSource)],
+  };
+  return {
+    argument: createTargetEvent(target),
+    guards: isRadio && checked ? [foldUnary("!", checked)] : [],
+  };
+};
+
+const isBlankText = (child: SymbolicValue): boolean =>
+  child.kind === "Primitive" && (typeof child.value !== "string" || child.value.trim() === "");
+
+const getOptionValue = (child: SymbolicValue): string | null => {
+  if (child.kind !== "JsxExpression" || child.tag.kind !== "BuiltinTag") return null;
+  if (child.tag.name !== "option") return null;
+  const value = getAttribute(child, "value")?.value;
+  const [text] = child.children;
+  const shown = value ?? (child.children.length === 1 ? text : undefined);
+  return shown?.kind === "Primitive" && shown.value !== null && shown.value !== undefined
+    ? String(shown.value)
+    : null;
+};
+
+const getOptionValues = (select: JsxExpressionValue): string[] | null => {
+  const values = select.children.filter((child) => !isBlankText(child)).map(getOptionValue);
+  return values.length > 0 && values.every((value) => value !== null) ? values : null;
+};
+
+const createTargetEvent = (target: SymbolicValue): SymbolicValue => ({
+  kind: "ObjectExpression",
+  properties: [
+    { key: "target", value: target },
+    { key: "currentTarget", value: target },
+  ],
+  spreads: [EVENT_ARGUMENT],
+});
+
 const SUBMIT_TYPES = new Set(["submit", "image"]);
 
 const isSubmitControl = (element: JsxExpressionValue): boolean => {
@@ -366,13 +434,18 @@ class HandlerCollector {
     const handlerKey = getHandlerKey(handled);
     if (handlerKey === null) return;
     const isWrapped = callback !== prop.value;
-    this.#plan(isWrapped ? `wrapped:${handlerKey}` : handlerKey, {
+    const controlEvent = getControlEvent(element, prop) ?? this.#getSelectEvent(element, prop);
+    const key = isWrapped ? `wrapped:${handlerKey}` : handlerKey;
+    this.#plan(controlEvent ? `${key}:${getValueKey(controlEvent.argument)}` : key, {
       trigger: { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
       callback: handled,
-      callbackArguments: [EVENT_ARGUMENT],
+      callbackArguments: [controlEvent?.argument ?? EVENT_ARGUMENT],
       loc: getHandlerLocation(callback),
       guards,
-      callbackGuards: isWrapped ? [createUnknown("wrapped-call", prop.loc)] : [],
+      callbackGuards: [
+        ...(isWrapped ? [createUnknown("wrapped-call", prop.loc)] : []),
+        ...(controlEvent?.guards ?? []),
+      ],
       props: [prop],
     });
   }
@@ -435,6 +508,27 @@ class HandlerCollector {
     if (callback.kind !== "Function") return false;
     const hirFunction = this.#interpreter.functions.get(callback.functionId);
     return hirFunction !== null && loadsProperty(hirFunction, property);
+  }
+
+  #getSelectEvent(element: JsxExpressionValue, prop: JsxProp): ControlEvent | null {
+    const isSelect = element.tag.kind === "BuiltinTag" && element.tag.name === "select";
+    const values = isSelect && CHECK_EVENTS.has(prop.name) ? getOptionValues(element) : null;
+    if (!values) return null;
+    const selected = this.#interpreter.createBinding("event.target.value", "call", prop.loc, {
+      domain: {
+        kind: "Cases",
+        cases: values.map((value) => ({ kind: "Literal", value })),
+        origin: "call-sites",
+      },
+    });
+    return {
+      argument: createTargetEvent({
+        kind: "ObjectExpression",
+        properties: [{ key: "value", value: createBindingValue(selected) }],
+        spreads: [createUnknown("event", GeneratedSource)],
+      }),
+      guards: [],
+    };
   }
 
   #unwrapCallback(value: SymbolicValue): SymbolicValue {

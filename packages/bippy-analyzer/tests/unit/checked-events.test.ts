@@ -1,0 +1,41 @@
+import { describe, expect, it } from "vite-plus/test";
+import { analyzeFixture, getComponent } from "./helpers";
+
+describe("a change on a controlled checkbox or radio", () => {
+  const project = analyzeFixture("conformance-repros", "checked-events");
+
+  const getUpdates = (name: string) =>
+    getComponent(project, name).analysis.handlers.flatMap((handler) =>
+      handler.updates.map((update) => update.value),
+    );
+
+  it("reads the flipped checked value from a checkbox", () => {
+    expect(getUpdates("ControlledCheckbox")).toMatchObject([
+      { kind: "UnaryExpression", operator: "!" },
+    ]);
+    expect(getUpdates("FixedCheckbox")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+
+  it("reads the value attribute of the input", () => {
+    expect(getUpdates("RadioValue")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+
+  it("reads one of the option values from a select", () => {
+    const { report } = getComponent(project, "SelectValue");
+    expect(report.states.map((state) => state.conditions)).toEqual([[]]);
+  });
+
+  it("never fires a radio that is always checked", () => {
+    const { states } = getComponent(project, "CheckedRadio").report;
+    const changes = states.flatMap((state, index) =>
+      state.transitions.flatMap((transition) =>
+        transition.targets.filter((target) => target !== index),
+      ),
+    );
+    expect(changes).toEqual([]);
+  });
+
+  it("reads checked as true from a radio", () => {
+    expect(getUpdates("UncheckedRadio")).toEqual([{ kind: "Primitive", value: "a" }]);
+  });
+});
