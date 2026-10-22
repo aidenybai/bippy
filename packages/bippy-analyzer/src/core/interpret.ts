@@ -404,6 +404,10 @@ export class Interpreter {
         return property === "length" && object.spreads.length === 0
           ? { kind: "Primitive", value: object.elements.length }
           : createUnknown("member", loc);
+      case "Primitive":
+        return property === "length" && typeof object.value === "string"
+          ? { kind: "Primitive", value: object.value.length }
+          : createUnknown("member", loc);
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
       case "Conditional":
