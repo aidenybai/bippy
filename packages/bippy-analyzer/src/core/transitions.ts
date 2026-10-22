@@ -168,8 +168,18 @@ const getSequenceGuards = (updates: StateUpdate[]): SymbolicValue[] =>
     [],
   );
 
-const isSurelyApplied = (update: StateUpdate, constraints: Constraints): boolean =>
-  update.guards.every((guard) => evaluateCondition(guard, constraints) === true);
+const hasSurelyAppliedUpdate = (updates: StateUpdate[], constraints: Constraints): boolean => {
+  const isTrueByKey = new Map<string, boolean>();
+  const isSurelyTrue = (guard: SymbolicValue): boolean => {
+    const key = getValueKey(guard);
+    const cached = isTrueByKey.get(key);
+    if (cached !== undefined) return cached;
+    const isTrue = evaluateCondition(guard, constraints) === true;
+    isTrueByKey.set(key, isTrue);
+    return isTrue;
+  };
+  return updates.some((update) => update.guards.every(isSurelyTrue));
+};
 
 const getConstraintsBeforeUpdates = (
   handler: Handler,
@@ -177,9 +187,7 @@ const getConstraintsBeforeUpdates = (
   constraints: Constraints,
 ): Constraints | null => {
   if (updates.length > 0) return assumeGuards(getSequenceGuards(updates), constraints);
-  return handler.updates.some((update) => isSurelyApplied(update, constraints))
-    ? null
-    : constraints;
+  return hasSurelyAppliedUpdate(handler.updates, constraints) ? null : constraints;
 };
 
 const getTargetStateIndices = (
