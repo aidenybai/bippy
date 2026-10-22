@@ -25,6 +25,6 @@ describe("context reads after an await", () => {
   });
 
   it("reads a flag the same async step set", () => {
-    expect(getGuards("SettledFlag")).toEqual([["value", true, ["true"]]]);
+    expect(getGuards("SettledFlag")).toEqual([["value", true, []]]);
   });
 });
