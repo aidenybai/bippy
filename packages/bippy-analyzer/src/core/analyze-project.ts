@@ -195,17 +195,17 @@ export const analyzeProject = (
       const analyses = analyzeComponents(fileContexts, tracer).map((analysis) =>
         withContextFileNames(analysis, fileNamesByPath),
       );
+      const isSelected = (analysis: ComponentAnalysis): boolean =>
+        fileFilter === null || analysis.file.includes(fileFilter);
       const loadReport = createReportLoader(tracer);
       const linked = tracer.span("link", "link components", () =>
-        linkComponents(analyses, loadReport),
+        linkComponents(analyses, loadReport, isSelected),
       );
-      const components = analyses
-        .filter((analysis) => fileFilter === null || analysis.file.includes(fileFilter))
-        .map((analysis) => ({
-          analysis,
-          report: loadReport(analysis),
-          ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
-        }));
+      const components = analyses.filter(isSelected).map((analysis) => ({
+        analysis,
+        report: loadReport(analysis),
+        ...(linked.get(analysis.declaration) ?? { links: [], instances: [] }),
+      }));
       return { components, fileCount: fileNames.length };
     },
     tracer,
