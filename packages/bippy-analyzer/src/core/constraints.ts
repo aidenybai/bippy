@@ -658,10 +658,14 @@ const assumeUncached = (
   if (value.kind === "Conditional") return assumeConditional(value, isTrue, constraints, memo);
   const distributed = distributeComparison(value);
   if (distributed) return assumeConditional(distributed, isTrue, constraints, memo);
-  if (value.kind === "Binding" && getPossibleValues(value, constraints))
-    return assumeByNarrowing(value, isTrue, value, constraints, (candidate) =>
-      narrowTruthiness(candidate, isTrue),
-    );
+  if (value.kind === "Binding") {
+    const assumed = getPossibleValues(value, constraints)
+      ? assumeByNarrowing(value, isTrue, value, constraints, (candidate) =>
+          narrowTruthiness(candidate, isTrue),
+        )
+      : assumeOpaqueCondition(value, isTrue, constraints);
+    return assumed && withStringLengthBounds(value, isTrue, assumed);
+  }
   if (value.kind === "BinaryExpression" && EQUALITY_OPERATORS.has(value.operator))
     return assumeEquality(value, isTrue, constraints);
   return assumeOpaqueCondition(value, isTrue, constraints);
@@ -692,6 +696,31 @@ const keepsEarlierAssumptions = (value: SymbolicValue, constraints: Constraints)
     )
       return false;
   return true;
+};
+
+const isStringCase = (value: AbstractValue): boolean =>
+  value.kind === "Literal" ? typeof value.value === "string" : value.primitive === "string";
+
+const isStringValue = (value: BindingValue, constraints: Constraints): boolean => {
+  const placeValues = getPossibleValues(value, constraints);
+  if (placeValues) return placeValues.every(isStringCase);
+  const { domain } = value.binding;
+  return value.path.length === 0 && domain.kind === "Opaque" && domain.typeText === "string";
+};
+
+const withStringLengthBounds = (
+  value: BindingValue,
+  isTrue: boolean,
+  assumed: Constraints,
+): Constraints | null => {
+  if (!isStringValue(value, assumed)) return assumed;
+  const length: BindingPlace = { bindingId: value.binding.id, path: [...value.path, LENGTH_FIELD] };
+  addBounds(assumed, [
+    isTrue
+      ? { left: null, right: length, maxDifference: -1, isStrict: false }
+      : { left: length, right: null, maxDifference: 0, isStrict: false },
+  ]);
+  return isConsistent(getBoundGraph(assumed)) ? assumed : null;
 };
 
 export const assumeCondition = (
