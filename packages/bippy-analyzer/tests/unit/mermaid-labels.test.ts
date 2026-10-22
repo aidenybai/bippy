@@ -18,4 +18,14 @@ describe("Mermaid state labels", () => {
     for (const line of stateLines) expect(line.replace(/^\s+S\d+: /, "")).not.toContain(":");
     expect(diagram).toContain('"save#58; now"');
   });
+
+  it("labels a provided setter by its own value, not a sibling button's text", () => {
+    const diagram = formatMermaid(getComponent(project, "ProviderBesideButton"), {
+      rootDirectory,
+      maxStates: DEFAULT_MAX_STATES,
+    });
+    const transitionLines = diagram.split("\n").filter((line) => /^\s+S\d+ --> S\d+: /.test(line));
+    expect(transitionLines).toHaveLength(2);
+    for (const line of transitionLines) expect(line).toMatch(/: set isOpen$/);
+  });
 });

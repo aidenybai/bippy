@@ -1,6 +1,7 @@
 import type {
   AnalyzedComponent,
   Handler,
+  JsxContainerValue,
   JsxExpressionValue,
   JsxProp,
   JsxSpreadProp,
@@ -18,13 +19,17 @@ const MAX_HANDLER_WIDTH = 40;
 const ARROW_FUNCTION_HEAD = /^(\(\s*\)|\(?\w+\)?)\s*=>\s*/;
 const DECLARED_NAME = /(?:const|let|var|function)\s+(\w+)\s*=?\s*$/;
 
+const getChildrenText = (value: JsxContainerValue): string =>
+  value.children.map(getLiteralText).filter(Boolean).join(" ");
+
 const getLiteralText = (value: SymbolicValue): string => {
   switch (value.kind) {
     case "JSXText":
       return value.value.trim() && JSON.stringify(value.value.trim());
     case "JsxExpression":
+      return value.props.some((prop) => prop.handlerId) ? "" : getChildrenText(value);
     case "JsxFragment":
-      return value.children.map(getLiteralText).filter(Boolean).join(" ");
+      return getChildrenText(value);
     case "Primitive":
       return typeof value.value === "string" ? JSON.stringify(value.value) : "";
     default:
@@ -54,7 +59,7 @@ const getEventTriggerLabel = (
   prop: JsxProp | JsxSpreadProp,
   sourceReader: SourceReader,
 ): string => {
-  const text = getLiteralText(element);
+  const text = getChildrenText(element);
   if (text) return truncate(text, MAX_TEXT_WIDTH);
   const handlerText = prop.kind === "JsxAttribute" ? formatHandlerValue(prop, sourceReader) : null;
   if (handlerText) return truncate(handlerText, MAX_HANDLER_WIDTH);
