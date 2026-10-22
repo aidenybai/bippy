@@ -15,6 +15,7 @@ import { getBranchKey } from "./control-flow";
 import type { Handler, StateUpdate, SymbolicValue, Transition } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { getBindingPlace } from "./utils/get-binding-place";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
@@ -81,6 +82,15 @@ const applyUpdates = (
       new Set([update.binding.id, ...dependentIds]),
       reachableConstraints,
     );
+    const isUntracked = !reachablePlacesByBinding.has(update.binding.id);
+    const literalCases = isUntracked
+      ? getFieldCases(update.value, [], update.binding, constraints)
+      : null;
+    if (Array.isArray(literalCases) && literalCases.every((value) => value.kind === "Literal"))
+      updated.possibleValues.set(
+        getBindingPlace(update.binding),
+        dedupeAbstractValues(literalCases),
+      );
   }
   if (updates.length > 0) forgetUnknownAssumptions(updated);
   return updated;
