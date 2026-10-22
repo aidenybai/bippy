@@ -53,3 +53,25 @@ export const ConditionalStep = () => {
     </div>
   );
 };
+
+export const RenderedPager = () => {
+  const [page, setPage] = useState(0);
+  return (
+    <div>
+      {page > 0 && <button onClick={() => setPage(page - 1)}>prev</button>}
+      {page < 2 && <button onClick={() => setPage(page + 1)}>next</button>}
+      {page === 0 ? <i>L1</i> : page === 1 ? <i>L2</i> : page === 2 ? <i>L3</i> : null}
+    </div>
+  );
+};
+
+export const WizardSteps = () => {
+  const [index, setIndex] = useState(0);
+  const isLast = index === 2;
+  return (
+    <div>
+      {isLast ? <i>finish</i> : <button onClick={() => setIndex(index + 1)}>next</button>}
+      {index === 0 ? <i>L1</i> : index === 1 ? <i>L2</i> : index === 2 ? <i>L3</i> : null}
+    </div>
+  );
+};

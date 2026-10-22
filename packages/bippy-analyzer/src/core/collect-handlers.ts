@@ -232,6 +232,7 @@ class HandlerCollector {
         runsCleanup,
       ),
       loc,
+      guards,
     );
   }
 
@@ -239,10 +240,11 @@ class HandlerCollector {
     trigger: HandlerTrigger,
     { updates, delegates }: CollectedEffects,
     loc: SourceLocation,
+    guards: SymbolicValue[] = [],
   ): string | null {
     if (updates.length === 0 && delegates.length === 0) return null;
     const handlerId = `t${this.handlers.length + 1}`;
-    this.handlers.push({ id: handlerId, trigger, updates, delegates, loc });
+    this.handlers.push({ id: handlerId, trigger, updates, delegates, guards, loc });
     return handlerId;
   }
 

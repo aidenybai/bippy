@@ -240,6 +240,7 @@ export interface Handler {
   trigger: HandlerTrigger;
   updates: StateUpdate[];
   delegates: string[];
+  guards: SymbolicValue[];
   loc: SourceLocation;
 }
 
