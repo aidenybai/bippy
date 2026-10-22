@@ -15,8 +15,8 @@ import type { ReactFunctionType } from "../react-compiler/HIR/Environment";
 import { isHookName } from "../react-compiler/HIR/Environment";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { ModuleFunctionLoader } from "./function-registry";
-import { createModuleConstantLoader } from "./module-constants";
-import type { ModuleConstantLoader } from "./module-constants";
+import { createModuleConstantLoader, createModuleVariableLoader } from "./module-constants";
+import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-constants";
 import { getLocationKey } from "./utils/get-location-key";
 
 type BabelFunction = NodePath<
@@ -37,6 +37,7 @@ export interface CompiledFile {
   loadModuleFunction: ModuleFunctionLoader;
   lowerModuleFunction: ModuleFunctionLoader;
   loadModuleConstant: ModuleConstantLoader;
+  loadModuleVariable: ModuleVariableLoader;
 }
 
 const STOP = Symbol("stop");
@@ -93,6 +94,7 @@ const EMPTY_COMPILED_FILE: CompiledFile = {
   loadModuleFunction: () => null,
   lowerModuleFunction: () => null,
   loadModuleConstant: () => null,
+  loadModuleVariable: () => null,
 };
 
 const isModuleLevel = (path: NodePath | null): boolean =>
@@ -319,5 +321,6 @@ export const compileFile = (
     loadModuleFunction: createModuleFunctionLoader(lower),
     lowerModuleFunction: lower,
     loadModuleConstant: createModuleConstantLoader(ast),
+    loadModuleVariable: createModuleVariableLoader(ast),
   };
 };

@@ -46,7 +46,8 @@ export type BindingKind =
   | "item"
   | "call"
   | "loop"
-  | "suspense";
+  | "suspense"
+  | "module";
 
 export interface BindingPlace {
   bindingId: number;

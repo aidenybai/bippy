@@ -95,7 +95,7 @@ import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getStoreFieldValue } from "./external-sources";
 import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
-import type { ModuleConstantLoader } from "./module-constants";
+import type { ModuleConstantLoader, ModuleVariableLoader } from "./module-constants";
 import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./utils/get-identifier-name";
@@ -289,6 +289,8 @@ export class Interpreter {
   #resolver: SourceFileResolver;
   readonly #projectLoaders: ProjectLoaders;
   readonly #loadModuleConstant: ModuleConstantLoader;
+  readonly #loadModuleVariable: ModuleVariableLoader;
+  readonly #componentResolver: SourceFileResolver;
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -326,12 +328,15 @@ export class Interpreter {
     resolver: SourceFileResolver,
     loadModuleFunction: ModuleFunctionLoader,
     loadModuleConstant: ModuleConstantLoader,
+    loadModuleVariable: ModuleVariableLoader,
     projectLoaders: ProjectLoaders,
     contextSetterFields: ContextSetterFields,
     actionsByStore: Map<string, StoreActions>,
   ) {
     this.#resolver = resolver;
     this.#loadModuleConstant = loadModuleConstant;
+    this.#loadModuleVariable = loadModuleVariable;
+    this.#componentResolver = resolver;
     this.#functions.addModule(resolver, loadModuleFunction);
     this.#projectLoaders = projectLoaders;
     this.externalSources = new ExternalSources(contextSetterFields, actionsByStore);
@@ -650,6 +655,14 @@ export class Interpreter {
     this.#storedFunctions = storedFunctions;
     for (const values of storedFunctions.values())
       for (const value of values) this.addMountClosure(value);
+  }
+
+  #getModuleBinding(name: string): Binding | null {
+    const variable =
+      this.#resolver === this.#componentResolver ? this.#loadModuleVariable(name) : null;
+    return variable
+      ? this.createBinding(name, "module", variable.loc, { initial: variable.initial, scope: "" })
+      : null;
   }
 
   #evaluateCallee(
@@ -1411,10 +1424,10 @@ export class Interpreter {
         this.destructurer.destructure(value);
         return this.read(value.value);
       case "LoadGlobal": {
-        const constant =
-          value.binding.kind === "ModuleLocal"
-            ? this.#loadModuleConstant(value.binding.name)
-            : null;
+        const isModuleLocal = value.binding.kind === "ModuleLocal";
+        const variable = isModuleLocal ? this.#getModuleBinding(value.binding.name) : null;
+        if (variable) return createBindingValue(variable);
+        const constant = isModuleLocal ? this.#loadModuleConstant(value.binding.name) : null;
         return constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
       }
       case "PropertyLoad":
@@ -1468,6 +1481,12 @@ export class Interpreter {
         return this.#evaluateUpdateLocal(value, false);
       case "TemplateLiteral":
         return this.#evaluateTemplateLiteral(value);
+      case "StoreGlobal": {
+        const variable = this.#getModuleBinding(value.name);
+        if (variable && this.#handlerEffects) this.#handlerEffects.addPossibleMutation(variable);
+        if (variable && !this.#handlerEffects) this.bindingTable.forgetInitial(variable);
+        return createUnknown(value.kind, value.loc);
+      }
       case "TaggedTemplateExpression":
       case "RegExpLiteral":
       case "MetaProperty":
@@ -1476,7 +1495,6 @@ export class Interpreter {
       case "NextPropertyOf":
       case "PropertyDelete":
       case "ComputedDelete":
-      case "StoreGlobal":
       case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
       case "StartMemoize":
