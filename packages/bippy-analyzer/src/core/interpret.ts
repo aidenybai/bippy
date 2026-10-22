@@ -271,6 +271,8 @@ const getArrayLiteralMember = (
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
+const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
 
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
@@ -1289,7 +1291,12 @@ export class Interpreter {
     {
       derived = null,
       range = null,
-    }: { derived?: DerivedString | DerivedCall | null; range?: NumberRange | null } = {},
+      initial = null,
+    }: {
+      derived?: DerivedString | DerivedCall | null;
+      range?: NumberRange | null;
+      initial?: SymbolicValue | null;
+    } = {},
   ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
@@ -1298,7 +1305,14 @@ export class Interpreter {
     const receiverPlace = this.#getReceiverPlace(callSite.callee);
     const lengthLimit = this.#getLengthLimit(callSite, receiverPlace);
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
-    if (!lengthLimit && !derived && !range && inputPlaces.size === 0 && !hasFiniteResult)
+    if (
+      !lengthLimit &&
+      !derived &&
+      !range &&
+      !initial &&
+      inputPlaces.size === 0 &&
+      !hasFiniteResult
+    )
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
@@ -1309,8 +1323,51 @@ export class Interpreter {
         identityKey: this.#getRepeatableCallKey(callSite),
         derived,
         range,
+        initial,
       }),
     );
+  }
+
+  #getFirstIterationValue(
+    methodName: string,
+    receiver: SymbolicValue,
+    callback: SymbolicValue | undefined,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const initial =
+      receiver.kind === "Binding" && receiver.path.length === 0 ? receiver.binding.initial : null;
+    const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
+    if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
+      return null;
+    const outcomes: boolean[] = [];
+    for (const [index, element] of initial.elements.entries()) {
+      const result = this.callFunction(
+        callback,
+        [element, { kind: "Primitive", value: index }],
+        loc,
+        walkState,
+      );
+      if (result.kind !== "Primitive") return null;
+      outcomes.push(Boolean(result.value));
+    }
+    const firstIndex = outcomes.indexOf(true);
+    switch (methodName) {
+      case "every":
+        return { kind: "Primitive", value: outcomes.every(Boolean) };
+      case "some":
+        return { kind: "Primitive", value: firstIndex !== -1 };
+      case "findIndex":
+        return { kind: "Primitive", value: firstIndex };
+      case "find":
+        return initial.elements[firstIndex] ?? UNDEFINED_VALUE;
+      default:
+        return {
+          kind: "ArrayExpression",
+          elements: initial.elements.filter((_element, index) => outcomes[index]),
+          spreads: [],
+        };
+    }
   }
 
   #evaluateHookCall(hookKind: HookKind, callSite: CallSite, walkState: WalkState): SymbolicValue {
@@ -1465,6 +1522,14 @@ export class Interpreter {
         ? { callee: `Math.${methodName}`, operands: argumentValues }
         : null;
     if (range || derived) return this.#createCallResult(callSite, { range, derived });
+    const firstValue = this.#getFirstIterationValue(
+      methodName,
+      receiver,
+      callback,
+      methodCall.loc,
+      walkState,
+    );
+    if (firstValue) return this.#createCallResult(callSite, { initial: firstValue });
     return (
       this.#evaluateStringMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)
