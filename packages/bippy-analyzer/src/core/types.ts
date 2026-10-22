@@ -150,6 +150,7 @@ export type SymbolicValue =
   | { kind: "Function"; functionId: number; loc: SourceLocation }
   | { kind: "Setter"; binding: Binding }
   | { kind: "Dispatch"; binding: Binding; reducer: SymbolicValue; pending: Binding | null }
+  | { kind: "Bound"; callee: SymbolicValue; argumentValues: SymbolicValue[]; loc: SourceLocation }
   | { kind: "Props" }
   | {
       kind: "HookResult";

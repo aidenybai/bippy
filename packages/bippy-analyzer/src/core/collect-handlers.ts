@@ -56,7 +56,7 @@ export const isHandlerProp = (tag: JsxTag, prop: JsxProp): boolean =>
 const getTriggerEvent = (prop: JsxProp): string => FORM_ACTION_EVENTS.get(prop.name) ?? prop.name;
 
 const isCallable = (value: SymbolicValue): boolean =>
-  value.kind === "Setter" || value.kind === "Function";
+  value.kind === "Setter" || value.kind === "Function" || value.kind === "Bound";
 
 const isRefCallback = (prop: JsxProp): boolean => prop.name === "ref" && isCallable(prop.value);
 
@@ -83,6 +83,12 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
       return `setter:${value.binding.id}`;
     case "Dispatch":
       return `dispatch:${value.binding.id}`;
+    case "Bound": {
+      const calleeKey = getHandlerKey(value.callee);
+      return calleeKey === null
+        ? null
+        : `bound:${calleeKey}:${value.argumentValues.map(getValueKey).join(",")}`;
+    }
     case "ArrayExpression":
       return `array:${value.elements.map(getHandlerKey).join(",")}`;
     case "ObjectExpression":
@@ -106,7 +112,7 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
 };
 
 const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
-  if (value.kind === "Function") return value.loc;
+  if (value.kind === "Function" || value.kind === "Bound") return value.loc;
   if (value.kind === "Setter" || value.kind === "Dispatch" || value.kind === "Binding")
     return value.binding.loc;
   if (value.kind === "Conditional") {

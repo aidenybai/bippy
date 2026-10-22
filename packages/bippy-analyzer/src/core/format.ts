@@ -153,6 +153,8 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return `set ${value.binding.name}`;
     case "Dispatch":
       return `dispatch ${value.binding.name}`;
+    case "Bound":
+      return `${formatWithPrecedence(value.callee, ATOMIC_PRECEDENCE)}.bind(…)`;
     case "Props":
       return "props";
     case "HookResult":

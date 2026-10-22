@@ -45,6 +45,7 @@ export class CallbackPasser {
       for (const callback of getPassedCallbacks([argument]))
         this.#visitArgument(callback, walkState);
     const asyncWalkState = getAsyncWalkState(walkState);
+    if (argument.kind === "Bound") this.#visitArgument(argument.callee, walkState);
     if (argument.kind === "Setter")
       this.#interpreter.handlerEffects.recordSetterCall(
         argument.binding,
