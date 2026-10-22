@@ -86,7 +86,10 @@ new Command()
   )
   .argument("[tsconfig]", "path to the project's tsconfig.json", "tsconfig.json")
   .option("-c, --component <names...>", "only show these components")
-  .option("-f, --file <filter>", "only analyze files whose path contains this text")
+  .option(
+    "-f, --file <filter>",
+    "only analyze components in files whose path contains this text; their instances come only from parents in those files",
+  )
   .option(
     "-d, --depth <n>",
     "maximum render tree depth",

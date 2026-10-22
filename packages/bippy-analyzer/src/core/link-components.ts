@@ -65,9 +65,13 @@ const collectChildElements = (
   return elements;
 };
 
-const collectLinks = (analyses: ComponentAnalysis[], loadReport: ReportLoader): ComponentLink[] => {
+const collectLinks = (
+  analyses: ComponentAnalysis[],
+  loadReport: ReportLoader,
+  isSelected: (analysis: ComponentAnalysis) => boolean,
+): ComponentLink[] => {
   const declarations = new Set(analyses.map((analysis) => analysis.declaration));
-  return analyses.flatMap((parent) => {
+  return analyses.filter(isSelected).flatMap((parent) => {
     const elements = collectChildElements(parent, declarations);
     if (elements.length === 0) return [];
     const { places } = loadReport(parent);
@@ -165,6 +169,7 @@ const createInstanceLoader = (
 export const linkComponents = (
   analyses: ComponentAnalysis[],
   loadReport: ReportLoader,
+  isSelected: (analysis: ComponentAnalysis) => boolean = () => true,
 ): Map<string, Linked> => {
   const linked = new Map<string, Linked>(
     analyses.map((analysis) => [analysis.declaration, { links: [], instances: [] }]),
@@ -174,12 +179,12 @@ export const linkComponents = (
   );
   const instancesByChild = new Map<string, ComponentInstance[]>();
   const loadInstance = createInstanceLoader(loadReport);
-  const links = collectLinks(analyses, loadReport);
+  const links = collectLinks(analyses, loadReport, isSelected);
   propagatePropMutations(analysesByDeclaration, links);
   for (const link of links) {
     linked.get(link.parent)?.links.push(link);
     const child = analysesByDeclaration.get(link.child);
-    const report = child ? loadInstance(child, link) : null;
+    const report = child && isSelected(child) ? loadInstance(child, link) : null;
     if (report) appendToGroup(instancesByChild, link.child, { link, report });
   }
   for (const [child, instances] of instancesByChild) {
