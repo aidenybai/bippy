@@ -59,11 +59,11 @@ describe("typed call results", () => {
     expect(component.analysis.bailouts).toEqual([]);
   });
 
-  it("doesn't bind calls made in handlers", () => {
+  it("inlines calls made in handlers instead of binding them", () => {
     const handlerCall = getComponent(project, "HandlerCall");
     expect(handlerCall.analysis.bindings.map((binding) => binding.kind)).toEqual(["prop", "state"]);
     expect(handlerCall.analysis.handlers[0]?.updates[0]?.guards.map(formatSymbolicValue)).toEqual([
-      "Unknown(call)",
+      'role === "admin" || false',
     ]);
   });
 
