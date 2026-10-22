@@ -43,3 +43,17 @@ export const HookResultMethod = () => {
     </div>
   );
 };
+
+export const ReflectSetInCallback = () => {
+  const options: { label?: string } = {};
+  [options].forEach((item) => Reflect.set(item, "label", "x"));
+  return <div>{options.label ? <i>labeled</i> : <i>plain</i>}</div>;
+};
+
+export const AssignedInCallback = () => {
+  const options: { label?: string } = {};
+  [options].forEach((item) => {
+    item.label = "x";
+  });
+  return <div>{options.label ? <i>labeled</i> : <i>plain</i>}</div>;
+};

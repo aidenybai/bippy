@@ -15,6 +15,11 @@ describe("a literal passed to a call that may mutate it", () => {
     ]);
   });
 
+  it("is no longer read as the literal after a callback may mutate it inside another literal", () => {
+    for (const name of ["ReflectSetInCallback", "AssignedInCallback"])
+      expect(getConditions(name)).toEqual([["Unknown(member)"], ["!Unknown(member)"]]);
+  });
+
   it("is still a hook result after a method call in a handler", () => {
     const targets = getComponent(project, "HookResultMethod").report.states.map((state) =>
       state.transitions.map((transition) => transition.targets),

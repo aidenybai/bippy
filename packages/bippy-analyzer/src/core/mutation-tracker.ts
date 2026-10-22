@@ -1,5 +1,6 @@
 import { ValueKind } from "../react-compiler/HIR/HIR";
 import type { Instruction, Place, SourceLocation } from "../react-compiler/HIR/HIR";
+import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects";
 import { formatPlace } from "./format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown } from "./symbolic-values";
@@ -57,6 +58,14 @@ const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null =
     : null;
 };
 
+const isTransitiveMutation = (effect: AliasingEffect): boolean =>
+  effect.kind === "MutateTransitive" || effect.kind === "MutateTransitiveConditionally";
+
+const getNestedValues = (literal: ArrayExpressionValue | ObjectExpressionValue): SymbolicValue[] =>
+  literal.kind === "ArrayExpression"
+    ? literal.elements
+    : literal.properties.map((property) => property.value);
+
 export class MutationTracker {
   readonly #interpreter: Interpreter;
   readonly #creationPaths = new WeakMap<SymbolicValue, CreationPath>();
@@ -87,6 +96,7 @@ export class MutationTracker {
         mutatedLiterals.add(
           this.#mutateLiteral(instruction, mutatedPlace, mutatedValue, walkState),
         );
+        if (isTransitiveMutation(effect)) this.#forgetNestedLiterals(mutatedValue, instruction.loc);
         continue;
       }
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
@@ -116,6 +126,8 @@ export class MutationTracker {
         possiblyMutatedValue.kind === "ObjectExpression"
       ) {
         this.#mutateLiteral(instruction, possiblyMutatedPlace, possiblyMutatedValue, walkState);
+        if (isTransitiveMutation(effect))
+          this.#forgetNestedLiterals(possiblyMutatedValue, instruction.loc);
         continue;
       }
       if (possiblyMutatedValue.kind === "Binding" && isStateBinding(possiblyMutatedValue.binding))
@@ -132,11 +144,22 @@ export class MutationTracker {
     if (value.kind !== "ArrayExpression" && value.kind !== "ObjectExpression") return;
     if (this.#frozenValues.has(value)) return;
     this.#frozenValues.add(value);
-    const nestedValues =
-      value.kind === "ArrayExpression"
-        ? value.elements
-        : value.properties.map((property) => property.value);
-    for (const nestedValue of nestedValues) this.#freeze(nestedValue);
+    for (const nestedValue of getNestedValues(value)) this.#freeze(nestedValue);
+  }
+
+  #forgetNestedLiterals(
+    literal: ArrayExpressionValue | ObjectExpressionValue,
+    loc: SourceLocation,
+  ): void {
+    const { values } = this.#interpreter.getCompilationTables();
+    for (const nestedValue of getNestedValues(literal)) {
+      if (nestedValue.kind !== "ArrayExpression" && nestedValue.kind !== "ObjectExpression")
+        continue;
+      if (this.#frozenValues.has(nestedValue)) continue;
+      this.#forgetNestedLiterals(nestedValue, loc);
+      for (const [identifierId, value] of values)
+        if (value === nestedValue) values.set(identifierId, createUnknown("mutation", loc));
+    }
   }
 
   trackArgument(place: Place, loc: SourceLocation): void {
