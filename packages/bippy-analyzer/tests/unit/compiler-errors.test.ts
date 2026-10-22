@@ -70,6 +70,12 @@ describe("compiler errors", () => {
     },
   );
 
+  it("keeps a catch parameter local when a closure inside the catch reads it", () => {
+    const { analysis, report } = getComponent(project, "RetryNotice");
+    expect(analysis.bailouts).toEqual([]);
+    expect(report.states).toHaveLength(2);
+  });
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
