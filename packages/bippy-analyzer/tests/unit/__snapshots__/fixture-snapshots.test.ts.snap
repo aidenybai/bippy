@@ -1518,6 +1518,40 @@ stateDiagram-v2
   S2 --> S1: "Free" "Pro" (async)"
 `;
 
+exports[`fixture analysis > PriceTag keeps its render tree and handlers 1`] = `
+"---
+title: PriceTag src/typeof-checks.tsx:3
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["PriceTag"]
+  n2["#lt;p#gt;"]
+  n1 --> n2
+  n3{"typeof price === #quot;string#quot;"}
+  n2 --> n3
+  n4["#lt;b#gt; {price}"]
+  n3 -->|✓| n4
+  n5{"typeof price === #quot;number#quot;"}
+  n2 --> n5
+  n6["#lt;i#gt; ⚠ price.toFixed(2)"]
+  n5 -->|✓| n6
+  n7{"price === null"}
+  n2 --> n7
+  n8["#lt;s#gt; #quot;Free#quot;"]
+  n7 -->|✓| n8"
+`;
+
+exports[`fixture analysis > PriceTag keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: PriceTag src/typeof-checks.tsx:3
+---
+stateDiagram-v2
+  direction LR
+  S1: typeof price === "string" · #lt;p#gt; #lt;b#gt; {price}
+  S2: typeof price === "number" · #lt;p#gt; #lt;i#gt; ⚠ price.toFixed(2)
+  S3: typeof price ∉ {"string", "number"} · #lt;p#gt; #lt;s#gt; "Free""
+`;
+
 exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
 "---
 title: Profile src/claims.tsx:11
@@ -2081,6 +2115,36 @@ stateDiagram-v2
   direction LR
   S1: size === "sm" · #lt;p#gt; "Small"
   S2: size !== "sm" · #lt;p#gt; "Large""
+`;
+
+exports[`fixture analysis > Slot keeps its render tree and handlers 1`] = `
+"---
+title: Slot src/typeof-checks.tsx:11
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["Slot"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3{"typeof render === #quot;function#quot;"}
+  n2 --> n3
+  n4["⚠ render()"]
+  n3 -->|✓| n4
+  n5["{render}"]
+  n3 -->|✗| n5"
+`;
+
+exports[`fixture analysis > Slot keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: Slot src/typeof-checks.tsx:11
+---
+stateDiagram-v2
+  direction LR
+  S1: typeof render === "function" · #lt;div#gt; ⚠ render()
+  S2: typeof render !== "function" · #lt;div#gt; {render}
+  state "bailouts" as bailouts {
+    bailouts1: unknown-call L12 call returns JSX the analysis can't see into
+  }"
 `;
 
 exports[`fixture analysis > SortedList keeps its render tree and handlers 1`] = `
