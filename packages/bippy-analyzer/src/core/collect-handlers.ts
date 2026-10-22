@@ -207,6 +207,7 @@ interface PlannedHandler {
 
 class HandlerCollector {
   readonly handlers: Handler[] = [];
+  readonly pendingMutations = new Map<number, Binding>();
   readonly #interpreter: Interpreter;
   readonly #plannedByKey = new Map<string | JsxSpreadProp, PlannedHandler>();
 
@@ -240,10 +241,11 @@ class HandlerCollector {
 
   addCollectedHandler(
     trigger: HandlerTrigger,
-    { updates, delegates }: CollectedEffects,
+    { updates, delegates, pendingMutations }: CollectedEffects,
     loc: SourceLocation,
     guards: SymbolicValue[] = [],
   ): string | null {
+    for (const binding of pendingMutations) this.pendingMutations.set(binding.id, binding);
     if (updates.length === 0 && delegates.length === 0) return null;
     const handlerId = `t${this.handlers.length + 1}`;
     this.handlers.push({ id: handlerId, trigger, updates, delegates, guards, loc });
@@ -536,6 +538,20 @@ const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
   );
 };
 
+const revealPendingMutations = (handlers: Handler[], pendingMutations: Binding[]): void => {
+  for (const handler of handlers) {
+    if (handler.trigger.kind === "Render" || handler.updates.length === 0) continue;
+    for (const binding of pendingMutations)
+      if (!handler.updates.some((update) => update.binding.id === binding.id))
+        handler.updates.push({
+          binding,
+          value: createUnknown("mutated", GeneratedSource),
+          guards: [],
+          isAsync: false,
+        });
+  }
+};
+
 const getStoredFunctions = (handlers: Handler[]): Map<number, FunctionValue[]> => {
   const storedFunctions = new Map<number, FunctionValue[]>();
   for (const update of handlers.flatMap((handler) => handler.updates)) {
@@ -595,10 +611,11 @@ const collectHandlersOnce = (
   if (commitUpdates.length > 0)
     collector.addCollectedHandler(
       { kind: "Effect", hookKind: "useEffect", dependencies: null, dependencyPlaces: null },
-      { updates: commitUpdates, delegates: [] },
+      { updates: commitUpdates, delegates: [], pendingMutations: [] },
       GeneratedSource,
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
+  revealPendingMutations(collector.handlers, [...collector.pendingMutations.values()]);
   return collector.handlers;
 };

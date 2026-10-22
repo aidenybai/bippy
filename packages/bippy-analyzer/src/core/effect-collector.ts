@@ -9,6 +9,7 @@ import { createBindingValue, createUnknown } from "./symbolic-values";
 export interface CollectedEffects {
   updates: StateUpdate[];
   delegates: string[];
+  pendingMutations: Binding[];
 }
 
 export interface UpdateCondition {
@@ -43,6 +44,7 @@ export class EffectCollector {
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #warn: WarnCallback;
+  #rendersSurely = false;
 
   constructor(warn: WarnCallback) {
     this.#warn = warn;
@@ -104,9 +106,10 @@ export class EffectCollector {
   }
 
   recordSetterCall(binding: Binding, nextValue: SymbolicValue, condition: UpdateCondition): void {
+    const isSameReference = isWholeBinding(nextValue, binding);
+    if (!isSameReference && condition.guards.length === 0) this.#rendersSurely = true;
     const mutation = this.#mutationsByBinding.get(binding.id);
     if (mutation) {
-      const isSameReference = isWholeBinding(nextValue, binding);
       this.#warn(
         isSameReference ? "lost-update" : "state-mutation",
         isSameReference
@@ -126,6 +129,12 @@ export class EffectCollector {
   }
 
   finish(): CollectedEffects {
+    const pendingMutations = this.#rendersSurely
+      ? []
+      : [
+          ...[...this.#mutationsByBinding.values()].map((mutation) => mutation.binding),
+          ...this.#possiblyMutatedBindings.values(),
+        ];
     for (const { binding, loc } of this.#mutationsByBinding.values()) {
       if (this.hasUpdate(binding)) continue;
       this.#warn(
@@ -138,7 +147,7 @@ export class EffectCollector {
     for (const binding of this.#possiblyMutatedBindings.values())
       if (!this.hasUpdate(binding))
         this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
-    return { updates: this.#updates, delegates: this.#delegates };
+    return { updates: this.#updates, delegates: this.#delegates, pendingMutations };
   }
 
   #isMutated(binding: Binding): boolean {
