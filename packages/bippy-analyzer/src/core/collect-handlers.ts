@@ -144,6 +144,19 @@ const getEnabledGuards = (element: JsxExpressionValue): SymbolicValue[] => {
   return disabled ? [foldUnary("!", disabled.value)] : [];
 };
 
+const SUBMIT_TYPES = new Set(["submit", "image"]);
+
+const isSubmitControl = (element: JsxExpressionValue): boolean => {
+  if (element.tag.kind !== "BuiltinTag") return false;
+  const typeProp = element.props.find(
+    (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "type",
+  );
+  const type = typeProp?.value.kind === "Primitive" ? typeProp.value.value : undefined;
+  if (element.tag.name === "button")
+    return typeProp === undefined || (typeof type === "string" && SUBMIT_TYPES.has(type));
+  return element.tag.name === "input" && typeof type === "string" && SUBMIT_TYPES.has(type);
+};
+
 interface PlannedHandler {
   trigger: HandlerTrigger;
   callback: SymbolicValue;
@@ -323,9 +336,27 @@ class HandlerCollector {
         .reverse()
         .flatMap((ancestor) => this.#getAncestorCallbacks(ancestor, prop.name)),
     ];
-    const stopIndex = chain.findIndex((entry) => this.#stopsPropagation(entry));
-    const propagated = stopIndex === -1 ? chain : chain.slice(0, stopIndex + 1);
+    const stopIndex = chain.findIndex((entry) => this.#loadsProperty(entry, "stopPropagation"));
+    const clicked = stopIndex === -1 ? chain : chain.slice(0, stopIndex + 1);
+    const propagated = [...clicked, ...this.#getSubmitCallbacks(element, prop, ancestors, clicked)];
     return propagated.length === 1 ? [] : propagated;
+  }
+
+  #getSubmitCallbacks(
+    element: JsxExpressionValue,
+    prop: JsxProp,
+    ancestors: JsxExpressionValue[],
+    clicked: SymbolicValue[],
+  ): SymbolicValue[] {
+    const form = ancestors.findLast(
+      (ancestor) => ancestor.tag.kind === "BuiltinTag" && ancestor.tag.name === "form",
+    );
+    const isSubmitted =
+      form !== undefined &&
+      prop.name === "onClick" &&
+      isSubmitControl(element) &&
+      !clicked.some((callback) => this.#loadsProperty(callback, "preventDefault"));
+    return isSubmitted ? this.#getAncestorCallbacks(form, "onSubmit") : [];
   }
 
   #getAncestorCallbacks(ancestor: JsxExpressionValue, name: string): SymbolicValue[] {
@@ -338,10 +369,10 @@ class HandlerCollector {
       .filter((callback) => getHandlerKey(callback) !== null);
   }
 
-  #stopsPropagation(callback: SymbolicValue): boolean {
+  #loadsProperty(callback: SymbolicValue, property: string): boolean {
     if (callback.kind !== "Function") return false;
     const hirFunction = this.#interpreter.functions.get(callback.functionId);
-    return hirFunction !== null && loadsStopPropagation(hirFunction);
+    return hirFunction !== null && loadsProperty(hirFunction, property);
   }
 
   #unwrapCallback(value: SymbolicValue): SymbolicValue {
@@ -354,12 +385,12 @@ class HandlerCollector {
   }
 }
 
-const loadsStopPropagation = (hirFunction: HIRFunction): boolean => {
+const loadsProperty = (hirFunction: HIRFunction, property: string): boolean => {
   for (const block of hirFunction.body.blocks.values())
     for (const { value } of block.instructions) {
-      if (value.kind === "PropertyLoad" && value.property === "stopPropagation") return true;
+      if (value.kind === "PropertyLoad" && value.property === property) return true;
       const isClosure = value.kind === "FunctionExpression" || value.kind === "ObjectMethod";
-      if (isClosure && loadsStopPropagation(value.loweredFunc.func)) return true;
+      if (isClosure && loadsProperty(value.loweredFunc.func, property)) return true;
     }
   return false;
 };

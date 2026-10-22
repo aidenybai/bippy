@@ -79,3 +79,32 @@ export const StoppedByAncestor = () => {
     </section>
   );
 };
+
+export const SubmitButton = () => {
+  const [isClicked, setIsClicked] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        setIsSubmitted(true);
+      }}
+    >
+      <button type="submit" onClick={() => setIsClicked(true)}>
+        send
+      </button>
+      <button type="button" onClick={() => setIsClicked(false)}>
+        reset
+      </button>
+      <button
+        onClick={(event) => {
+          event.preventDefault();
+          setIsClicked(true);
+        }}
+      >
+        hold
+      </button>
+      {isClicked && isSubmitted ? <i>both</i> : isSubmitted ? <i>submitted</i> : <i>none</i>}
+    </form>
+  );
+};

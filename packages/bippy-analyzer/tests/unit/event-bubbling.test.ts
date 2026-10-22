@@ -43,6 +43,15 @@ describe("a click that bubbles to an ancestor's handler", () => {
     ]);
   });
 
+  it("submits the form after a submit button's click unless the click prevents it", () => {
+    expect(getUpdateSequences("SubmitButton")).toEqual([
+      ["isSubmitted = true"],
+      ["isClicked = true", "isSubmitted = true"],
+      ["isClicked = false"],
+      ["isClicked = true"],
+    ]);
+  });
+
   it("runs an ancestor's capture handler before the target's", () => {
     expect(getUpdateSequences("Captured")).toEqual([
       ['order = "outer"'],
