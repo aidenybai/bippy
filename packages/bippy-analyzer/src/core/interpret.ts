@@ -175,6 +175,27 @@ const createFieldUpdate = (
   spreads: [createBindingValue(binding)],
 });
 
+const INVOKABLE_KINDS = new Set<SymbolicValue["kind"]>([
+  "Function",
+  "Setter",
+  "Dispatch",
+  "Conditional",
+]);
+
+const getInvokedArguments = (
+  methodName: string,
+  argumentValues: SymbolicValue[],
+): SymbolicValue[] | null => {
+  const [, ...callArguments] = argumentValues;
+  if (methodName === "call") return callArguments;
+  if (methodName !== "apply") return null;
+  const [applied] = callArguments;
+  if (applied === undefined) return [];
+  return applied.kind === "ArrayExpression" && applied.spreads.length === 0
+    ? applied.elements
+    : null;
+};
+
 const getLiteralEntries = (
   value: SymbolicValue,
 ): Array<[string | number, SymbolicValue]> | null => {
@@ -1039,6 +1060,20 @@ export class Interpreter {
       walkState,
     });
     if (matched) return matched;
+    const invokedArguments = INVOKABLE_KINDS.has(receiver.kind)
+      ? getInvokedArguments(methodName, argumentValues)
+      : null;
+    if (invokedArguments)
+      return this.#evaluateCall(
+        {
+          callee: receiver,
+          calleePlace: methodCall.receiver,
+          argumentValues: invokedArguments,
+          argumentPlaces: methodName === "call" ? argumentPlaces.slice(1) : [],
+          loc: methodCall.loc,
+        },
+        walkState,
+      );
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName))
       this.iteration.visitItemCallback(methodName, callback, methodCall, walkState);
