@@ -60,10 +60,16 @@ interface Assumption {
   hasUnknown: boolean;
 }
 
+export interface BoundGraph {
+  indicesByAtomKey: Map<string, number>;
+  distances: Distance[][];
+}
+
 export interface Constraints {
   possibleValues: PlaceMap<AbstractValue[]>;
   assumptions: Map<string, Assumption>;
   bounds: Bound[];
+  boundGraph: BoundGraph | null;
   invariants: Bound[];
   unionMemberValues: PlaceMap<AbstractValue[][]>;
   possibleMembers: Map<number, number[]>;
@@ -73,6 +79,7 @@ export const cloneConstraints = (constraints: Constraints): Constraints => ({
   possibleValues: constraints.possibleValues.clone(),
   assumptions: new Map(constraints.assumptions),
   bounds: [...constraints.bounds],
+  boundGraph: constraints.boundGraph,
   invariants: constraints.invariants,
   unionMemberValues: constraints.unionMemberValues,
   possibleMembers: new Map(constraints.possibleMembers),
@@ -192,71 +199,77 @@ const isShorter = (candidate: Distance, current: Distance): boolean =>
   candidate.weight < current.weight ||
   (candidate.weight === current.weight && candidate.isStrict && !current.isStrict);
 
-const createDistanceMatrix = (bounds: Bound[]): Distance[][] => {
-  const lengthBounds = bounds
-    .flatMap((bound) => [bound.left, bound.right])
-    .filter((atom) => atom?.path.at(-1) === LENGTH_FIELD)
-    .map((atom): Bound => ({ left: null, right: atom, maxDifference: 0, isStrict: false }));
-  const allBounds = [...bounds, ...lengthBounds];
-  const atomKeys = [
-    ...new Set([
-      CONSTANT_KEY,
-      ...allBounds.flatMap((bound) => [getAtomKey(bound.left), getAtomKey(bound.right)]),
-    ]),
-  ];
-  const indicesByAtomKey = new Map(atomKeys.map((atomKey, index) => [atomKey, index]));
-  const distances = atomKeys.map((_rowKey, rowIndex) =>
-    atomKeys.map((_columnKey, columnIndex): Distance => ({
-      weight: rowIndex === columnIndex ? 0 : Infinity,
-      isStrict: false,
-    })),
-  );
-  const getAtomIndex = (atom: BindingPlace | null): number => {
-    const atomIndex = indicesByAtomKey.get(getAtomKey(atom));
-    if (atomIndex === undefined) throw new Error(`Unindexed bound atom ${getAtomKey(atom)}`);
-    return atomIndex;
+const UNREACHABLE: Distance = { weight: Infinity, isStrict: false };
+
+const SELF: Distance = { weight: 0, isStrict: false };
+
+const EMPTY_GRAPH: BoundGraph = {
+  indicesByAtomKey: new Map([[CONSTANT_KEY, 0]]),
+  distances: [[SELF]],
+};
+
+const getLengthBound = (atom: BindingPlace | null): Bound | null =>
+  atom?.path.at(-1) === LENGTH_FIELD
+    ? { left: null, right: atom, maxDifference: 0, isStrict: false }
+    : null;
+
+const withAtom = (graph: BoundGraph, atom: BindingPlace | null): BoundGraph => {
+  const atomKey = getAtomKey(atom);
+  if (graph.indicesByAtomKey.has(atomKey)) return graph;
+  const size = graph.distances.length;
+  const grown: BoundGraph = {
+    indicesByAtomKey: new Map(graph.indicesByAtomKey).set(atomKey, size),
+    distances: [
+      ...graph.distances.map((row) => [...row, UNREACHABLE]),
+      [...Array.from({ length: size }, () => UNREACHABLE), SELF],
+    ],
   };
-  for (const bound of allBounds) {
-    const row = distances[getAtomIndex(bound.right)];
-    const columnIndex = getAtomIndex(bound.left);
-    const boundDistance = { weight: bound.maxDifference, isStrict: bound.isStrict };
-    if (isShorter(boundDistance, row[columnIndex])) row[columnIndex] = boundDistance;
-  }
-  return distances;
+  const lengthBound = getLengthBound(atom);
+  return lengthBound ? withBound(grown, lengthBound) : grown;
 };
 
-const relaxThroughEveryAtom = (distances: Distance[][]): void => {
-  for (let middle = 0; middle < distances.length; middle++) {
-    for (let from = 0; from < distances.length; from++) {
-      for (let to = 0; to < distances.length; to++) {
-        const toMiddle = distances[from][middle];
-        const fromMiddle = distances[middle][to];
-        const throughMiddle = {
-          weight: toMiddle.weight + fromMiddle.weight,
-          isStrict: toMiddle.isStrict || fromMiddle.isStrict,
+const withBound = (graph: BoundGraph, bound: Bound): BoundGraph => {
+  const { indicesByAtomKey, distances } = withAtom(withAtom(graph, bound.left), bound.right);
+  const from = indicesByAtomKey.get(getAtomKey(bound.right)) ?? 0;
+  const to = indicesByAtomKey.get(getAtomKey(bound.left)) ?? 0;
+  const edge: Distance = { weight: bound.maxDifference, isStrict: bound.isStrict };
+  if (!isShorter(edge, distances[from][to])) return { indicesByAtomKey, distances };
+  return {
+    indicesByAtomKey,
+    distances: distances.map((row, rowIndex) =>
+      row.map((current, columnIndex) => {
+        const toEdge = distances[rowIndex][from];
+        const fromEdge = distances[to][columnIndex];
+        const throughEdge: Distance = {
+          weight: toEdge.weight + edge.weight + fromEdge.weight,
+          isStrict: toEdge.isStrict || edge.isStrict || fromEdge.isStrict,
         };
-        if (isShorter(throughMiddle, distances[from][to])) distances[from][to] = throughMiddle;
-      }
-    }
-  }
+        return isShorter(throughEdge, current) ? throughEdge : current;
+      }),
+    ),
+  };
 };
 
-const areBoundsConsistent = (bounds: Bound[]): boolean => {
-  const distances = createDistanceMatrix(bounds);
-  relaxThroughEveryAtom(distances);
-  return distances.every((row, atomIndex) => {
-    const cycleDistance = row[atomIndex];
-    return !(cycleDistance.weight < 0 || (cycleDistance.weight === 0 && cycleDistance.isStrict));
+const isConsistent = (graph: BoundGraph): boolean =>
+  graph.distances.every((row, atomIndex) => {
+    const cycle = row[atomIndex];
+    return !(cycle.weight < 0 || (cycle.weight === 0 && cycle.isStrict));
   });
-};
+
+const getBoundGraph = (constraints: Constraints): BoundGraph =>
+  (constraints.boundGraph ??= [...constraints.invariants, ...constraints.bounds].reduce(
+    withBound,
+    EMPTY_GRAPH,
+  ));
 
 const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean | null => {
-  const bounds = [...constraints.invariants, ...constraints.bounds];
-  if (bounds.length === 0) return null;
+  if (constraints.invariants.length === 0 && constraints.bounds.length === 0) return null;
   const whenTrue = getBounds(value, true);
   const whenFalse = getBounds(value, false);
-  if (whenTrue && !areBoundsConsistent([...bounds, ...whenTrue])) return false;
-  if (whenFalse && !areBoundsConsistent([...bounds, ...whenFalse])) return true;
+  if (whenTrue && !isConsistent(whenTrue.reduce(withBound, getBoundGraph(constraints))))
+    return false;
+  if (whenFalse && !isConsistent(whenFalse.reduce(withBound, getBoundGraph(constraints))))
+    return true;
   return null;
 };
 
@@ -568,6 +581,7 @@ const joinConstraints = (left: Constraints, right: Constraints): Constraints => 
       ),
     ),
     bounds: left.bounds.filter((bound) => rightBoundKeys.has(formatBound(bound))),
+    boundGraph: null,
     invariants: left.invariants,
     unionMemberValues: left.unionMemberValues,
     possibleMembers: new Map(
@@ -777,10 +791,16 @@ const assumeOpaqueCondition = (
   assumed.assumptions.set(getValueKey(value), createAssumption(value, isTrue));
   const assumedBounds = getBounds(value, isTrue);
   if (assumedBounds) {
-    assumed.bounds.push(...assumedBounds);
-    if (!areBoundsConsistent([...assumed.invariants, ...assumed.bounds])) return null;
+    addBounds(assumed, assumedBounds);
+    if (!isConsistent(getBoundGraph(assumed))) return null;
   }
   return assumed;
+};
+
+export const addBounds = (constraints: Constraints, bounds: Bound[]): void => {
+  if (bounds.length === 0) return;
+  constraints.boundGraph = bounds.reduce(withBound, getBoundGraph(constraints));
+  constraints.bounds.push(...bounds);
 };
 
 export const forgetBinding = (
@@ -804,6 +824,7 @@ export const forgetBinding = (
       !mentionsBinding || (shouldKeepLength && (isLength(bound.left) || isLength(bound.right)))
     );
   });
+  constraints.boundGraph = null;
 };
 
 export const dedupeAbstractValues = (values: AbstractValue[]): AbstractValue[] => [

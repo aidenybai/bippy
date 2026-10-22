@@ -124,6 +124,7 @@ export const createInitialConstraints = (analysis: ComponentAnalysis): Constrain
     possibleValues,
     assumptions: new Map(),
     bounds: [],
+    boundGraph: null,
     invariants: analysis.bindings.flatMap(getLengthLimitBounds),
     unionMemberValues: analysis.unionMemberValues,
     possibleMembers: new Map(),

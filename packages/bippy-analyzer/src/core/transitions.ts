@@ -1,5 +1,6 @@
 import { assumeGuards } from "./claim-guards";
 import {
+  addBounds,
   cloneConstraints,
   dedupeAbstractValues,
   evaluateCondition,
@@ -57,7 +58,7 @@ const applyUpdates = (
       );
     }
     forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
-    updated.bounds.push(...getLengthBounds(update.value, update.binding));
+    addBounds(updated, getLengthBounds(update.value, update.binding));
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const [place, reachableValues] of reachableConstraints.possibleValues)
       if (dependentIds.has(place.bindingId)) updated.possibleValues.set(place, reachableValues);
