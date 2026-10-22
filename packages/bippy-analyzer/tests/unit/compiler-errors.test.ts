@@ -61,6 +61,15 @@ describe("compiler errors", () => {
     expect(report.states).toHaveLength(2);
   });
 
+  it.each(["HueButton", "DigitHint"])(
+    "lowers each tagged template in %s as a call of its tag",
+    (name) => {
+      const { analysis, report } = getComponent(project, name);
+      expect(analysis.bailouts).toEqual([]);
+      expect(report.states).toHaveLength(2);
+    },
+  );
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
