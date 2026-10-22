@@ -297,6 +297,7 @@ export class Interpreter {
   readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #loadModuleVariable: ModuleVariableLoader;
   readonly #componentResolver: SourceFileResolver;
+  #componentCallLoc: SourceLocation | null = null;
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -647,10 +648,13 @@ export class Interpreter {
     )
       return createUnknown("call", loc);
     this.#inlinedFunctions.add(hirFunction);
+    const previousCallLoc = this.#componentCallLoc;
+    if (this.#resolver === this.#componentResolver) this.#componentCallLoc = loc;
     try {
       return this.#evaluateCallee(hirFunction, argumentValues, walkState, callee.functionId);
     } finally {
       this.#inlinedFunctions.delete(hirFunction);
+      this.#componentCallLoc = previousCallLoc;
     }
   }
 
@@ -1038,7 +1042,11 @@ export class Interpreter {
         this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
         return this.#inlineFunction(helper.hirFunction, callSite, walkState);
       }
-      this.diagnostics.bailOut("unknown-call", "call returns JSX the analysis can't see into", loc);
+      this.diagnostics.bailOut(
+        "unknown-call",
+        "call returns JSX the analysis can't see into",
+        this.#resolver === this.#componentResolver ? loc : (this.#componentCallLoc ?? loc),
+      );
       return createUnknown("call", loc);
     }
     const result = this.#createCallResult(callSite);
