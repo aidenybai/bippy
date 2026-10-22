@@ -11,7 +11,7 @@ describe("a literal passed to a call that may mutate it", () => {
     expect(getConditions("ConfiguredLabel")).toEqual([["Unknown(member)"], ["!Unknown(member)"]]);
     expect(getConditions("PropMutation")).toEqual([
       ["Unknown(member) > 0"],
-      ["Unknown(member) <= 0"],
+      ["!(Unknown(member) > 0)"],
     ]);
   });
 

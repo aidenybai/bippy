@@ -179,8 +179,42 @@ const getLinearTerm = (value: SymbolicValue): LinearTerm | null => {
   return null;
 };
 
-export const getBounds = (value: SymbolicValue, isTrue: boolean): Bound[] | null => {
+const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
+  atom.path.at(-1) === LENGTH_FIELD ||
+  (constraints.possibleValues
+    .get(atom)
+    ?.every(
+      (value) =>
+        value.kind === "Literal" && typeof value.value === "number" && !Number.isNaN(value.value),
+    ) ??
+    false) ||
+  [...constraints.invariants, ...constraints.bounds].some((bound) =>
+    [bound.left, bound.right].some((side) => side !== null && isSamePlace(side, atom)),
+  );
+
+const isNumberValue = (value: SymbolicValue, constraints: Constraints): boolean => {
+  if (value.kind === "Conditional")
+    return (
+      isNumberValue(value.consequent, constraints) && isNumberValue(value.alternate, constraints)
+    );
+  const term = getLinearTerm(value);
+  return term !== null && (term.atom === null || isNumberAtom(term.atom, constraints));
+};
+
+export const isComplementNegation = (
+  value: BinaryExpressionValue,
+  constraints: Constraints,
+): boolean =>
+  !ORDER_OPERATORS.has(value.operator) ||
+  [value.left, value.right].every((side) => isNumberValue(side, constraints));
+
+export const getBounds = (
+  value: SymbolicValue,
+  isTrue: boolean,
+  constraints: Constraints | null = null,
+): Bound[] | null => {
   if (value.kind !== "BinaryExpression") return null;
+  if (!isTrue && constraints && !isComplementNegation(value, constraints)) return null;
   const operator = isTrue ? value.operator : getNegatedOperator(value.operator);
   if (!operator || !BOUND_OPERATORS.has(operator)) return null;
   const leftTerm = getLinearTerm(value.left);
@@ -1034,7 +1068,7 @@ const assumeOpaqueCondition = (
 ): Constraints | null => {
   const assumed = cloneConstraints(constraints);
   assumed.assumptions.set(getValueKey(value), createAssumption(value, isTrue));
-  const assumedBounds = getBounds(value, isTrue);
+  const assumedBounds = getBounds(value, isTrue, constraints);
   if (assumedBounds) {
     addBounds(assumed, assumedBounds);
     if (!isConsistent(getBoundGraph(assumed))) return null;

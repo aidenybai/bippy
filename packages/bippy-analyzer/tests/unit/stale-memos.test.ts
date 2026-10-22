@@ -32,12 +32,12 @@ describe("stale memos", () => {
   it("follows a loop variable back to the values its loop reads", () => {
     expect(getConditions("FreshLoopMemo").map((conditions) => conditions.at(-1))).toEqual([
       "index > 0",
-      "index <= 0",
+      "!(index > 0)",
       "!Unknown(loop)",
     ]);
     expect(getConditions("StaleLoopMemo").map((conditions) => conditions.at(-1))).toEqual([
       "Unknown(memo) > 0",
-      "Unknown(memo) <= 0",
+      "!(Unknown(memo) > 0)",
       "!Unknown(loop)",
     ]);
   });

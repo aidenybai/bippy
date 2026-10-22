@@ -11,8 +11,8 @@ describe("a number tested both by comparison and by truthiness", () => {
       ["items.length > 0"],
       ["items.length <= 0"],
       ["count > 0"],
-      ["count <= 0", "!count"],
-      ["count <= 0", "count"],
+      ["!(count > 0)", "!count"],
+      ["!(count > 0)", "count"],
     ]);
   });
 });
