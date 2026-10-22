@@ -21,7 +21,7 @@ index 30c005a..eca1d6c 100644
  }
  
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..6150cb1 100644
+index 959fdf7..9261011 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -103,6 +103,9 @@ export function lower(
@@ -559,7 +559,45 @@ index 959fdf7..6150cb1 100644
      }
      case 'TemplateLiteral': {
        const expr = exprPath as NodePath<t.TemplateLiteral>;
-@@ -2762,10 +2687,23 @@ function lowerExpression(
+@@ -2723,15 +2648,29 @@ function lowerExpression(
+         }
+         return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
+       } else if (lvalue.kind === 'Global') {
+-        builder.recordError(
+-          new CompilerErrorDetail({
+-            reason: `(BuildHIR::lowerExpression) Support UpdateExpression where argument is a global`,
+-            category: ErrorCategory.Todo,
+-            loc: exprLoc,
+-            suggestions: null,
++        const previousValuePlace = lowerExpressionToTemporary(builder, argument);
++        const updatedValue = lowerValueToTemporary(builder, {
++          kind: 'BinaryExpression',
++          operator: expr.node.operator === '++' ? '+' : '-',
++          left: {...previousValuePlace},
++          right: lowerValueToTemporary(builder, {
++            kind: 'Primitive',
++            value: 1,
++            loc: GeneratedSource,
+           }),
+-        );
+-        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
++          loc: exprLoc,
++        });
++        lowerValueToTemporary(builder, {
++          kind: 'StoreGlobal',
++          name: argument.node.name,
++          value: {...updatedValue},
++          loc: exprLoc,
++        });
++        return {
++          kind: 'LoadLocal',
++          place: expr.node.prefix ? {...updatedValue} : {...previousValuePlace},
++          loc: exprLoc,
++        };
+       }
+       const value = lowerIdentifier(builder, argument);
+       const isContext = builder.isContextIdentifier(argument);
+@@ -2762,10 +2701,23 @@ function lowerExpression(
          loc: expr.node.loc ?? GeneratedSource,
        };
      }
@@ -585,7 +623,7 @@ index 959fdf7..6150cb1 100644
      }
      case 'MetaProperty': {
        let expr = exprPath as NodePath<t.MetaProperty>;
-@@ -2791,6 +2729,10 @@ function lowerExpression(
+@@ -2791,6 +2743,10 @@ function lowerExpression(
        );
        return {kind: 'UnsupportedNode', node: exprNode, loc: exprLoc};
      }
@@ -596,7 +634,7 @@ index 959fdf7..6150cb1 100644
      default: {
        builder.recordError(
          new CompilerErrorDetail({
-@@ -3084,207 +3026,202 @@ function lowerOptionalCallExpression(
+@@ -3084,207 +3040,202 @@ function lowerOptionalCallExpression(
   *  - primitives
   *  - arrays/objects whose values are also safely reorderable.
   */
@@ -953,7 +991,7 @@ index 959fdf7..6150cb1 100644
 +        return right;
 +      },
 +    );
-+  }
+   }
 +  builder.recordError(
 +    new CompilerErrorDetail({
 +      reason: `(BuildHIR::lowerExpression) Expected Identifier or MemberExpression, got ${left.type} lval in AssignmentExpression`,
@@ -979,7 +1017,7 @@ index 959fdf7..6150cb1 100644
 +      value: {...value},
 +      loc,
 +    };
-   }
++  }
 +  return {
 +    kind: 'ComputedStore',
 +    object: {...object},
@@ -990,7 +1028,7 @@ index 959fdf7..6150cb1 100644
  }
  
  function lowerArguments(
-@@ -3492,6 +3429,24 @@ function lowerJsxMemberExpression(
+@@ -3492,6 +3443,24 @@ function lowerJsxMemberExpression(
    });
  }
  
@@ -1015,7 +1053,7 @@ index 959fdf7..6150cb1 100644
  function lowerJsxElement(
    builder: HIRBuilder,
    exprPath: NodePath<
-@@ -3517,6 +3472,8 @@ function lowerJsxElement(
+@@ -3517,6 +3486,8 @@ function lowerJsxElement(
        });
        return lowerExpressionToTemporary(builder, expression);
      }
@@ -1024,7 +1062,7 @@ index 959fdf7..6150cb1 100644
    } else if (exprPath.isJSXText()) {
      let text: string | null;
      if (builder.fbtDepth > 0) {
-@@ -4135,6 +4092,10 @@ function lowerAssignment(
+@@ -4135,6 +4106,10 @@ function lowerAssignment(
              property.isRestElement() ||
              (property.isObjectProperty() &&
                (!property.get('value').isIdentifier() ||
@@ -1035,7 +1073,7 @@ index 959fdf7..6150cb1 100644
                  builder.resolveIdentifier(
                    property.get('value') as NodePath<t.Identifier>,
                  ).kind !== 'Identifier')),
-@@ -4206,17 +4167,6 @@ function lowerAssignment(
+@@ -4206,17 +4181,6 @@ function lowerAssignment(
              );
              continue;
            }
@@ -1053,7 +1091,7 @@ index 959fdf7..6150cb1 100644
            const loweredKey = lowerObjectPropertyKey(builder, property);
            if (!loweredKey) {
              continue;
-@@ -4314,14 +4264,7 @@ function lowerAssignment(
+@@ -4314,14 +4278,7 @@ function lowerAssignment(
        const continuationBlock = builder.reserve(builder.currentBlockKind());
  
        const consequent = builder.enter('value', () => {
@@ -1069,7 +1107,7 @@ index 959fdf7..6150cb1 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4398,6 +4341,22 @@ function lowerAssignment(
+@@ -4398,6 +4355,22 @@ function lowerAssignment(
          assignmentKind,
        );
      }
@@ -1092,7 +1130,7 @@ index 959fdf7..6150cb1 100644
      default: {
        builder.recordError(
          new CompilerErrorDetail({
-@@ -4515,9 +4474,10 @@ function gatherCapturedContext(
+@@ -4515,9 +4488,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -1106,7 +1144,7 @@ index 959fdf7..6150cb1 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4491,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4505,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
