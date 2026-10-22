@@ -1,4 +1,4 @@
-import type { Place, HIRFunction } from "../../react-compiler/HIR/HIR";
+import type { HIRFunction, IdentifierId, Place } from "../../react-compiler/HIR/HIR";
 import { isFunctionCreation } from "./is-function-creation";
 import { getMutatedPlace } from "./get-mutated-place";
 
@@ -17,8 +17,16 @@ const collectMutatedPlaces = (hirFunction: HIRFunction): Place[] =>
     return mutatedPlace ? [mutatedPlace] : [];
   });
 
+const getCapturedIds = (hirFunction: HIRFunction): Set<IdentifierId> =>
+  new Set(hirFunction.context.map((place) => place.identifier.id));
+
+export const getStoredContextPlaces = (hirFunction: HIRFunction): Place[] => {
+  const capturedIds = getCapturedIds(hirFunction);
+  return collectStoredPlaces(hirFunction).filter((place) => capturedIds.has(place.identifier.id));
+};
+
 export const getWrittenContextPlaces = (hirFunction: HIRFunction): Place[] => {
-  const capturedIds = new Set(hirFunction.context.map((place) => place.identifier.id));
+  const capturedIds = getCapturedIds(hirFunction);
   return [...collectStoredPlaces(hirFunction), ...collectMutatedPlaces(hirFunction)].filter(
     (place) => capturedIds.has(place.identifier.id),
   );

@@ -89,7 +89,10 @@ import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import { NO_STOPS } from "./control-flow";
 import { getIdentifierName } from "./utils/get-identifier-name";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
-import { getWrittenContextPlaces } from "./utils/get-written-context-places";
+import {
+  getStoredContextPlaces,
+  getWrittenContextPlaces,
+} from "./utils/get-written-context-places";
 
 export type InstructionValueOfKind<Kind extends InstructionValue["kind"]> = Extract<
   InstructionValue,
@@ -363,6 +366,7 @@ export class Interpreter {
         handlerEffects.forgetRenderValues(updateCountBeforeCleanup);
         this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
       }
+      this.forgetHandlerWrites(callback);
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
@@ -467,8 +471,8 @@ export class Interpreter {
     return this.bindingTable.readField(this.#resolver, binding, path, loc);
   }
 
-  getCompilationTables(): CompilationTables {
-    const { env } = this.getCurrentFunction();
+  getCompilationTables(hirFunction: HIRFunction = this.getCurrentFunction()): CompilationTables {
+    const { env } = hirFunction;
     const compilationTables = this.#tablesByEnvironment.get(env) ?? {
       values: new Map(),
       propertyNames: new Map(),
@@ -872,6 +876,17 @@ export class Interpreter {
     const byBinding =
       value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
     return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
+  }
+
+  forgetHandlerWrites(handlerCallback: SymbolicValue): void {
+    for (const callback of getContainedValues(handlerCallback)) {
+      if (callback.kind !== "Function") continue;
+      const hirFunction = this.#functions.get(callback.functionId);
+      if (!hirFunction) continue;
+      const { values } = this.getCompilationTables(hirFunction);
+      for (const place of getStoredContextPlaces(hirFunction))
+        values.set(place.identifier.id, createUnknown("handler-write", callback.loc));
+    }
   }
 
   #forgetCallbackWrites(argumentValues: SymbolicValue[], loc: SourceLocation): void {
