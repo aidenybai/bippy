@@ -24,13 +24,14 @@ import type { BranchOperator } from "./control-flow-walker";
 import { ROOT_WALK_STATE, getAsyncWalkState } from "./walk-state";
 import type { WalkState } from "./walk-state";
 import type {
+  ArrayExpressionValue,
   Binding,
-  Claim,
   BindingKind,
   BindingPlace,
   BindingValue,
-  ContextSetterFields,
   Branch,
+  Claim,
+  ContextSetterFields,
   DispatchValue,
   Domain,
   FunctionValue,
@@ -42,8 +43,8 @@ import type {
   ObjectExpressionValue,
   ProvidedContext,
   Sample,
-  StoreActions,
   SetterValue,
+  StoreActions,
   SymbolicValue,
   WarningKind,
 } from "./types";
@@ -196,6 +197,17 @@ const isRefCell = (object: SymbolicValue, property: string): object is BindingVa
   object.binding.kind === "ref" &&
   object.path.length === 0 &&
   property === "current";
+
+const getArrayLiteralMember = (
+  array: ArrayExpressionValue,
+  property: string,
+  loc: SourceLocation,
+): SymbolicValue => {
+  if (property === "length") return { kind: "Primitive", value: array.elements.length };
+  const index = Number(property);
+  if (!Number.isInteger(index) || index < 0) return createUnknown("member", loc);
+  return array.elements[index] ?? UNDEFINED_VALUE;
+};
 
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
   const { binding } = loadGlobal;
@@ -442,8 +454,8 @@ export class Interpreter {
           (object.spreads.length > 0 ? createUnknown("spread", loc) : UNDEFINED_VALUE)
         );
       case "ArrayExpression":
-        return property === "length" && object.spreads.length === 0
-          ? { kind: "Primitive", value: object.elements.length }
+        return object.spreads.length === 0
+          ? getArrayLiteralMember(object, property, loc)
           : createUnknown("member", loc);
       case "Primitive":
         return property === "length" && typeof object.value === "string"
