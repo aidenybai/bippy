@@ -57,3 +57,21 @@ export const SameHandler = () => {
     </div>
   );
 };
+
+export const ReaderBeforeWriter = () => {
+  const [note, setNote] = useState("");
+  let pending: string | null = null;
+  return (
+    <div>
+      <button onClick={() => setNote(pending === null ? "lost" : "kept")}>read</button>
+      <button
+        onClick={() => {
+          pending = "x";
+        }}
+      >
+        arm
+      </button>
+      {note === "lost" ? <i>lost</i> : note === "kept" ? <i>kept</i> : <i>empty</i>}
+    </div>
+  );
+};

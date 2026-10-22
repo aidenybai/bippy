@@ -224,6 +224,10 @@ class HandlerCollector {
     }
   }
 
+  get plannedCallbacks(): SymbolicValue[] {
+    return [...this.#plannedByKey.values()].map((planned) => planned.callback);
+  }
+
   runPlannedHandlers(): void {
     for (const planned of this.#plannedByKey.values()) {
       const handlerId = this.addHandler(
@@ -467,27 +471,34 @@ const collectWrappedCallbacks = (
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
   const collector = new HandlerCollector(interpreter);
   const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
-  for (const effectCall of interpreter.effectCalls)
-    if (!wrappedCallbacks.has(effectCall.callback))
-      collector.addHandler(
-        {
-          kind: "Effect",
-          hookKind: effectCall.hookKind,
-          dependencies: effectCall.dependencies,
-          dependencyPlaces: effectCall.dependencyPlaces,
-        },
-        effectCall.callback,
-        effectCall.callbackArguments,
-        effectCall.loc,
-      );
+  const effectCalls = interpreter.effectCalls.filter(
+    (effectCall) => !wrappedCallbacks.has(effectCall.callback),
+  );
+  const ancestorsByElement = getElementAncestors(render);
+  for (const [element, renderGuards] of getRenderGuards(render))
+    collector.planElementHandlers(element, renderGuards, ancestorsByElement.get(element) ?? []);
+  for (const callback of [
+    ...effectCalls.map((effectCall) => effectCall.callback),
+    ...collector.plannedCallbacks,
+  ])
+    interpreter.forgetHandlerWrites(callback);
+  for (const effectCall of effectCalls)
+    collector.addHandler(
+      {
+        kind: "Effect",
+        hookKind: effectCall.hookKind,
+        dependencies: effectCall.dependencies,
+        dependencyPlaces: effectCall.dependencyPlaces,
+      },
+      effectCall.callback,
+      effectCall.callbackArguments,
+      effectCall.loc,
+    );
   collector.addCollectedHandler(
     { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null, dependencyPlaces: null },
     interpreter.finishRenderPhaseEffects(),
     GeneratedSource,
   );
-  const ancestorsByElement = getElementAncestors(render);
-  for (const [element, renderGuards] of getRenderGuards(render))
-    collector.planElementHandlers(element, renderGuards, ancestorsByElement.get(element) ?? []);
   collector.runPlannedHandlers();
   return collector.handlers;
 };

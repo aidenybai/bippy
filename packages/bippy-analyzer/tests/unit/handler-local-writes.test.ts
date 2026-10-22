@@ -28,4 +28,10 @@ describe("a handler's write to a render-scoped local", () => {
       analysis.handlers.flatMap((handler) => handler.updates.map((update) => update.value)),
     ).toEqual([{ kind: "Primitive", value: "kept" }]);
   });
+
+  it("is seen by a handler written before the one that writes it", () => {
+    const { report } = getComponent(project, "ReaderBeforeWriter");
+    for (const state of report.states)
+      expect(state.transitions.flatMap((transition) => transition.targets)).toEqual([0, 1]);
+  });
 });
