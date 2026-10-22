@@ -91,6 +91,16 @@ describe("mutation warnings", () => {
     expect(getWarningKinds(getComponent(project, "NestedField"))).toEqual(["state-mutation"]);
   });
 
+  it("reports a context value written in a handler", () => {
+    expect(getWarnings("ContextWrite")).toMatchObject([
+      { kind: "context-mutation", message: "mutates context value counter" },
+    ]);
+  });
+
+  it("reports an item found in state and written in a handler", () => {
+    expect(getWarningKinds(getComponent(project, "FoundItemWrite"))).toEqual(["state-mutation"]);
+  });
+
   it("reports props.items.sort() during render", () => {
     expect(getWarningKinds(getComponent(project, "SortPropsMember"))).toEqual(["prop-mutation"]);
   });

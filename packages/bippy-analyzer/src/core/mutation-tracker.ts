@@ -24,12 +24,17 @@ interface CreationPath {
 
 const MAX_ALIAS_CHAIN_LENGTH = 32;
 
+const ELEMENT_METHODS = new Set(["find", "findLast", "at"]);
+
 const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
   instruction.value.kind === "StoreContext" &&
   instruction.value.lvalue.place.identifier.id === place.identifier.id;
 
 const isOwnedValue = (value: SymbolicValue): value is BindingValue =>
-  value.kind === "Binding" && (value.binding.kind === "prop" || isStateBinding(value.binding));
+  value.kind === "Binding" &&
+  (value.binding.kind === "prop" ||
+    value.binding.kind === "context" ||
+    isStateBinding(value.binding));
 
 const REF_TYPE_PATTERN = /\b(?:Mutable)?RefObject\b|\bForwardedRef\b|\bRef</;
 
@@ -121,6 +126,14 @@ export class MutationTracker {
     storedProperty: string | null,
   ): void {
     const { binding } = ownedValue;
+    if (binding.kind === "context") {
+      this.#interpreter.warn(
+        "context-mutation",
+        `mutates context value ${formatPlace(binding, ownedValue.path)}`,
+        loc,
+      );
+      return;
+    }
     if (binding.kind === "prop") {
       if (isRefWrite(ownedValue, storedProperty)) return;
       this.#interpreter.warn(
@@ -138,10 +151,15 @@ export class MutationTracker {
   }
 
   recordAliasSources(instruction: Instruction): void {
-    const { aliasSources } = this.#interpreter.getCompilationTables();
+    const { aliasSources, propertyNames } = this.#interpreter.getCompilationTables();
     for (const effect of instruction.effects ?? [])
       if (effect.kind === "Assign" || effect.kind === "Alias" || effect.kind === "CreateFrom")
         aliasSources.set(effect.into.identifier.id, effect.from);
+    const { value } = instruction;
+    const isElementLookup =
+      value.kind === "MethodCall" &&
+      ELEMENT_METHODS.has(propertyNames.get(value.property.identifier.id) ?? "");
+    if (isElementLookup) aliasSources.set(instruction.lvalue.identifier.id, value.receiver);
   }
 
   #findAliasedOwnedValue(place: Place): BindingValue | null {

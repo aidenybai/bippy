@@ -187,7 +187,12 @@ export type ArrayExpressionValue = Extract<SymbolicValue, { kind: "ArrayExpressi
 
 export type ObjectExpressionValue = Extract<SymbolicValue, { kind: "ObjectExpression" }>;
 
-export type WarningKind = "lost-update" | "state-mutation" | "render-mutation" | "prop-mutation";
+export type WarningKind =
+  | "lost-update"
+  | "state-mutation"
+  | "render-mutation"
+  | "prop-mutation"
+  | "context-mutation";
 
 export interface Warning {
   kind: WarningKind;
