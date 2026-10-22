@@ -182,6 +182,20 @@ export class SourceFileResolver {
       ]);
   }
 
+  getRequiredPropertyNames(loc: SourceLocation): string[] | null {
+    const type = this.#getType(loc);
+    if (
+      !type ||
+      !(type.flags & TypeFlags.Object) ||
+      this.#checker.getIndexInfosOfType(type).length > 0
+    )
+      return null;
+    const properties = this.#checker.getPropertiesOfType(type);
+    return properties.some((property) => property.flags & SymbolFlags.Optional)
+      ? null
+      : properties.map((property) => property.name);
+  }
+
   getUnionMemberValues(loc: SourceLocation, field: string): AbstractValue[][] | null {
     const type = this.#getType(loc);
     const members = type?.isUnionType() ? getUnionMembers(type) : null;
