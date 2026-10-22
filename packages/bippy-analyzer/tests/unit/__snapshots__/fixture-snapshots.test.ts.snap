@@ -2024,7 +2024,7 @@ flowchart TD
   n2 -->|✓| n3
   n4["#lt;form#gt;"]
   n2 -->|✗| n4
-  n5(["onSubmit ⇒ form = Unknown(external) (async) · if Unknown(member): status = #quot;sen…"]):::event
+  n5(["onSubmit ⇒ if Unknown(wrapped-call): form = Unknown(external) (async) · if Unkn…"]):::event
   n4 -.-> n5
   n6["#lt;input#gt;"]
   n4 --> n6
@@ -2384,7 +2384,7 @@ flowchart TD
   n1["Subscribe"]
   n2["#lt;form#gt;"]
   n1 --> n2
-  n3(["onSubmit ⇒ useForm() = Unknown(external) (async) · isSubscribed = true · calls …"]):::event
+  n3(["onSubmit ⇒ if Unknown(wrapped-call): useForm() = Unknown(external) (async) · if…"]):::event
   n2 -.-> n3
   n4["#lt;input#gt;"]
   n2 --> n4

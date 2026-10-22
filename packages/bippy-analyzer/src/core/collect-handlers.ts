@@ -16,7 +16,7 @@ import type {
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
-import { foldUnary, getPassedCallbacks } from "./symbolic-values";
+import { createUnknown, foldUnary, getPassedCallbacks } from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
@@ -140,6 +140,7 @@ interface PlannedHandler {
   callbackArguments: SymbolicValue[];
   loc: SourceLocation;
   guards: SymbolicValue[];
+  callbackGuards?: SymbolicValue[];
   props: Array<JsxProp | JsxSpreadProp>;
 }
 
@@ -158,10 +159,11 @@ class HandlerCollector {
     callbackArguments: SymbolicValue[],
     loc: SourceLocation,
     guards: SymbolicValue[] = [],
+    callbackGuards: SymbolicValue[] = [],
   ): string | null {
     return this.addCollectedHandler(
       trigger,
-      this.#interpreter.collectEffects(callback, callbackArguments, guards),
+      this.#interpreter.collectEffects(callback, callbackArguments, guards, callbackGuards),
       loc,
     );
   }
@@ -194,6 +196,7 @@ class HandlerCollector {
         planned.callbackArguments,
         planned.loc,
         planned.guards,
+        planned.callbackGuards,
       );
       for (const prop of planned.props) prop.handlerId = handlerId;
     }
@@ -261,12 +264,14 @@ class HandlerCollector {
     const callback = this.#unwrapCallback(prop.value);
     const handlerKey = getHandlerKey(callback);
     if (handlerKey === null) return;
-    this.#plan(handlerKey, {
+    const isWrapped = callback !== prop.value;
+    this.#plan(isWrapped ? `wrapped:${handlerKey}` : handlerKey, {
       trigger: { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
       callback,
       callbackArguments: [EVENT_ARGUMENT],
       loc: getHandlerLocation(callback),
       guards,
+      callbackGuards: isWrapped ? [createUnknown("wrapped-call", prop.loc)] : [],
       props: [prop],
     });
   }
