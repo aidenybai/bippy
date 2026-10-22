@@ -5,7 +5,8 @@ const formatPlaceKey = ({ bindingId, path }: BindingPlace): string =>
   [bindingId, ...path].join(".");
 
 export class PlaceMap<Value> {
-  readonly #entries = new Map<string, [BindingPlace, Value]>();
+  #entries = new Map<string, [BindingPlace, Value]>();
+  #isShared = false;
 
   constructor(entries: Iterable<[BindingPlace, Value]> = []) {
     for (const [place, value] of entries) this.set(place, value);
@@ -24,17 +25,20 @@ export class PlaceMap<Value> {
   }
 
   set(place: BindingPlace, value: Value): this {
-    this.#entries.set(getPlaceKey(place), [place, value]);
+    this.#ownEntries().set(getPlaceKey(place), [place, value]);
     return this;
   }
 
   delete(place: BindingPlace): boolean {
-    return this.#entries.delete(getPlaceKey(place));
+    const key = getPlaceKey(place);
+    return this.#entries.has(key) && this.#ownEntries().delete(key);
   }
 
   clone(): PlaceMap<Value> {
     const copy = new PlaceMap<Value>();
-    for (const [key, entry] of this.#entries) copy.#entries.set(key, entry);
+    copy.#entries = this.#entries;
+    copy.#isShared = true;
+    this.#isShared = true;
     return copy;
   }
 
@@ -52,5 +56,13 @@ export class PlaceMap<Value> {
 
   toJSON(): Record<string, Value> {
     return Object.fromEntries([...this].map(([place, value]) => [formatPlaceKey(place), value]));
+  }
+
+  #ownEntries(): Map<string, [BindingPlace, Value]> {
+    if (this.#isShared) {
+      this.#entries = new Map(this.#entries);
+      this.#isShared = false;
+    }
+    return this.#entries;
   }
 }
