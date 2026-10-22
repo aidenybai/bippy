@@ -35,3 +35,26 @@ export const RestoredFieldAfterUpdate = () => {
     </div>
   );
 };
+
+export const RestoredExplicitField = () => {
+  const [box, setBox] = useState({ count: 3, mode: "a" });
+  return (
+    <div>
+      <button
+        onClick={() => {
+          setBox({ count: 7, mode: "a" });
+          setBox({ count: box.count, mode: "b" });
+        }}
+      >
+        go
+      </button>
+      {box.count === 3 && box.mode === "b" ? (
+        <i>three</i>
+      ) : box.count === 7 && box.mode === "b" ? (
+        <i>seven</i>
+      ) : (
+        <i>start</i>
+      )}
+    </div>
+  );
+};

@@ -22,4 +22,8 @@ describe("a setter given the render's value after an earlier update", () => {
       [[1], [0]],
     ]);
   });
+
+  it("restores a field written out from the render's object", () => {
+    expect(getTargets("RestoredExplicitField")).toEqual([[[0]], [[1]], [[0, 1]]]);
+  });
 });
