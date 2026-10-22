@@ -347,13 +347,13 @@ export class Interpreter {
       const callbacks = getContainedValues(callback);
       const walkState = { ...ROOT_WALK_STATE, renderGuards, guards };
       for (const handlerCallback of callbacks) {
-        const result = this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
-        const cleanups = runsCleanup && result ? getReturnedFunctions(result) : [];
-        if (cleanups.length === 0) continue;
-        const sizeBeforeCleanup = handlerEffects.size;
+        const returned = runsCleanup
+          ? this.#getReturnedValue(handlerCallback, argumentValues, walkState)
+          : null;
+        const cleanups = returned ? getReturnedFunctions(returned) : [];
         const updateCountBeforeCleanup = handlerEffects.updateCount;
         const cleanupWalkState =
-          result?.kind === "Function"
+          returned?.kind === "Function"
             ? walkState
             : {
                 ...walkState,
@@ -361,8 +361,7 @@ export class Interpreter {
               };
         for (const cleanup of cleanups) this.#runCallback(cleanup, [], new Set(), cleanupWalkState);
         handlerEffects.forgetRenderValues(updateCountBeforeCleanup);
-        if (handlerEffects.size > sizeBeforeCleanup)
-          this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
+        this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
       }
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
@@ -376,6 +375,20 @@ export class Interpreter {
     } finally {
       this.#handlerEffects = previousEffects;
       this.walker.blockVisits = previousBlockVisits;
+    }
+  }
+
+  #getReturnedValue(
+    callback: SymbolicValue,
+    argumentValues: SymbolicValue[],
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const handlerEffects = this.#handlerEffects;
+    this.#handlerEffects = new EffectCollector(() => {});
+    try {
+      return this.#runCallback(callback, argumentValues, new Set(), walkState);
+    } finally {
+      this.#handlerEffects = handlerEffects;
     }
   }
 

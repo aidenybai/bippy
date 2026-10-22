@@ -48,10 +48,6 @@ export class EffectCollector {
     this.#warn = warn;
   }
 
-  get size(): number {
-    return this.#updates.length + this.#delegates.length;
-  }
-
   get updateCount(): number {
     return this.#updates.length;
   }

@@ -23,7 +23,7 @@ describe("an effect's cleanup", () => {
   });
 
   it("runs before the body runs again", () => {
-    expect(getEffectUpdates("BodyThenCleanup")).toEqual(['mode = "b"', 'mode = "c"', 'mode = "b"']);
+    expect(getEffectUpdates("BodyThenCleanup")).toEqual(['mode = "c"', 'mode = "b"']);
     const { report } = getComponent(project, "BodyThenCleanup");
     const bodyState = report.states.findIndex((state) => state.conditions[0] === 'mode === "b"');
     expect(report.states.flatMap((state) => state.transitions.map((t) => t.targets))).toEqual([
