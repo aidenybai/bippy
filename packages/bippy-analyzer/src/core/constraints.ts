@@ -273,14 +273,30 @@ const getBoundGraph = (constraints: Constraints): BoundGraph =>
     EMPTY_GRAPH,
   ));
 
+const isBoundedEquality = (value: BinaryExpressionValue, graph: BoundGraph): boolean => {
+  const below = getBounds({ ...value, operator: "<" }, true);
+  const above = getBounds({ ...value, operator: ">" }, true);
+  return (
+    below !== null &&
+    above !== null &&
+    !isConsistent(below.reduce(withBound, graph)) &&
+    !isConsistent(above.reduce(withBound, graph))
+  );
+};
+
 const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean | null => {
   if (constraints.invariants.length === 0 && constraints.bounds.length === 0) return null;
+  const graph = getBoundGraph(constraints);
   const whenTrue = getBounds(value, true);
   const whenFalse = getBounds(value, false);
-  if (whenTrue && !isConsistent(whenTrue.reduce(withBound, getBoundGraph(constraints))))
-    return false;
-  if (whenFalse && !isConsistent(whenFalse.reduce(withBound, getBoundGraph(constraints))))
-    return true;
+  if (whenTrue && !isConsistent(whenTrue.reduce(withBound, graph))) return false;
+  if (whenFalse && !isConsistent(whenFalse.reduce(withBound, graph))) return true;
+  if (
+    value.kind === "BinaryExpression" &&
+    EQUALITY_OPERATORS.has(value.operator) &&
+    isBoundedEquality(value, graph)
+  )
+    return !NEGATED_EQUALITY_OPERATORS.has(value.operator);
   return null;
 };
 

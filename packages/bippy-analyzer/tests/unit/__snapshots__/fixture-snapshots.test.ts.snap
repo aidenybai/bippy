@@ -446,6 +446,7 @@ stateDiagram-v2
   direction LR
   S1: cards.length === 0 · #lt;div#gt; #lt;p#gt; "Empty" #lt;button#gt; "Shuffle " {count}
   S2: cards.length !== 0 · #lt;div#gt; #lt;p#gt; "Cards" #lt;button#gt; "Shuffle " {count}
+  [*] --> S1
   S1 --> S2: "Shuffle"
   S2 --> S1: "Shuffle""
 `;
@@ -2473,6 +2474,7 @@ stateDiagram-v2
   direction LR
   S1: tags.length === 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "No tags" #lt;button#gt; "Add"
   S2: tags.length !== 0 · #lt;div#gt; #lt;h2#gt; {title} #lt;p#gt; "Some tags" #lt;button#gt; "Add"
+  [*] --> S1
   S1 --> S2: "Add""
 `;
 
@@ -2513,6 +2515,7 @@ stateDiagram-v2
   direction LR
   S1: tags.length === 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;p#gt; "No tags"
   S2: tags.length !== 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;ul#gt; ↻ tags
+  [*] --> S1
   S1 --> S2: "Push"
   S2 --> S1: "Push"
   S1 --> S2: "Copy"
@@ -2619,6 +2622,7 @@ stateDiagram-v2
     %% todos.length
     S1: todos.length === 0 · #lt;p#gt; "Nothing to do"
     S2: todos.length !== 0 · ∅
+    [*] --> S1
     S1 --> S2: "Add"
     --
     %% isEditing
