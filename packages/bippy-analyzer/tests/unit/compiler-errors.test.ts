@@ -75,6 +75,16 @@ describe("compiler errors", () => {
     ]);
   });
 
+  it("lowers function declarations after the return they're used in", () => {
+    const { analysis, report } = getComponent(project, "Stepper");
+    expect(analysis.bailouts).toEqual([]);
+    expect(analysis.handlers.map((handler) => handler.updates[0]?.binding.name)).toEqual([
+      "count",
+      "count",
+    ]);
+    expect(report.states).toHaveLength(2);
+  });
+
   it("reassigns a destructured field that a closure captures", () => {
     const { analysis } = getComponent(project, "CaptionLayout");
     expect(analysis.bailouts).toEqual([]);
