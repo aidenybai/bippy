@@ -31,7 +31,7 @@ describe("find over a literal array", () => {
     expect(getTargets("FindByState")[0]?.[0]).toContain(2);
   });
 
-  it.fails("runs the element each open predicate picks", () => {
+  it("runs the element each open predicate picks", () => {
     expect(getTargets("FindByState")[0]?.[0]).toEqual(expect.arrayContaining([1, 2]));
   });
 });
