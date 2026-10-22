@@ -1,0 +1,10 @@
+[
+  {
+    "fixture": "hoisting-within-lambda",
+    "reason": "a closure made inside an inlined call reads its variables as they were when it was made, so `inner()` sees `x` before `const x = 3` runs"
+  },
+  {
+    "fixture": "transitive-freeze-array",
+    "reason": "an object literal passed to an opaque call keeps its literal value, so `y` stays `{}` after `mutate(y)` adds `wat0`"
+  }
+]

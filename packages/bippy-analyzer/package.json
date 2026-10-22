@@ -14,7 +14,8 @@
     "conformance": "tsx tests/conformance/runner/cli.ts",
     "viewer": "pnpm --filter bippy-analyzer-viewer dev",
     "test": "vp test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "compiler-fixtures": "tsx tests/conformance/compiler-fixtures/cli.ts"
   },
   "dependencies": {
     "@babel/code-frame": "^7.26.2",
