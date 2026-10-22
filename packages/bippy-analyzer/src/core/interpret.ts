@@ -814,6 +814,14 @@ export class Interpreter {
     };
   }
 
+  #getRepeatableCallKey(callSite: CallSite): string | undefined {
+    const isRepeatable =
+      this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc) &&
+      this.#resolver.hasPrimitiveType(callSite.loc);
+    if (!isRepeatable) return undefined;
+    return [callSite.callee, ...callSite.argumentValues].map(getValueKey).join(",");
+  }
+
   #createCallResult(callSite: CallSite): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
@@ -830,6 +838,7 @@ export class Interpreter {
       this.createBinding(`${calleeText}(${argumentText})`, "call", callSite.loc, {
         inputPlaces: inputPlaces.places(),
         lengthLimit,
+        identityKey: this.#getRepeatableCallKey(callSite),
       }),
     );
   }

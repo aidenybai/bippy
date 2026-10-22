@@ -2,6 +2,7 @@ import type { Node, SourceFile } from "typescript/unstable/ast";
 import { findNodeAtLocation } from "./utils/find-node-at-location";
 import { getUnionMembers } from "./utils/get-union-members";
 import { getCollectionName, getInterfaceMemberNames } from "./utils/lib-collections";
+import { isPrimitiveType } from "./utils/is-primitive-type";
 import { getContextKey } from "./utils/get-context-key";
 import { getDeclarationKey, getReactExportName, isReactType } from "./utils/typescript";
 import { isReactElementType } from "./utils/is-react-element-type";
@@ -229,6 +230,11 @@ export class SourceFileResolver {
       new Set(getInterfaceMemberNames(this.#checker, this.#sourceFile, `Readonly${collection}`));
     this.#readonlyMethodsByCollection.set(collection, readonlyMethods);
     return readonlyMethods.has(methodName);
+  }
+
+  hasPrimitiveType(loc: SourceLocation): boolean {
+    const type = this.#getType(loc);
+    return type !== undefined && isPrimitiveType(type);
   }
 
   getRequiredSample(loc: SourceLocation): Sample | null {

@@ -16,7 +16,9 @@ import { createBindingValue } from "./symbolic-values";
 
 export interface BindingOptions extends Partial<
   Pick<Binding, "hookKind" | "propName" | "initial" | "inputPlaces" | "lengthLimit" | "domain">
-> {}
+> {
+  identityKey?: string;
+}
 
 export class BindingTable {
   readonly #bindingsByKey = new Map<string, Binding>();
@@ -36,7 +38,8 @@ export class BindingTable {
     loc: SourceLocation,
     options: BindingOptions = {},
   ): Binding {
-    const position = loc === GeneratedSource ? "generated" : loc.start.index;
+    const position =
+      options.identityKey ?? (loc === GeneratedSource ? "generated" : loc.start.index);
     const declarationKey = `${kind}:${name}:${resolver.fileName}:${position}`;
     const existingBinding = this.#bindingsByKey.get(declarationKey);
     if (existingBinding) return existingBinding;
