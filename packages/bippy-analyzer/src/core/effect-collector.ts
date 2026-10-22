@@ -29,6 +29,23 @@ const isLiteral = (value: SymbolicValue): boolean => {
   return isLiteral;
 };
 
+const FRESH_KINDS = new Set(["ObjectExpression", "ArrayExpression", "Function"]);
+
+const isSurelyChanged = (value: SymbolicValue, binding: Binding): boolean => {
+  if (FRESH_KINDS.has(value.kind)) return true;
+  if (value.kind === "UnaryExpression")
+    return value.operator === "!" && isWholeBinding(value.value, binding);
+  if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
+    return false;
+  const { left, right } = value;
+  return (
+    isWholeBinding(left, binding) &&
+    right.kind === "Primitive" &&
+    typeof right.value === "number" &&
+    right.value !== 0
+  );
+};
+
 interface Mutation {
   binding: Binding;
   loc: SourceLocation;
@@ -44,7 +61,6 @@ export class EffectCollector {
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #warn: WarnCallback;
-  #rendersSurely = false;
 
   constructor(warn: WarnCallback) {
     this.#warn = warn;
@@ -107,7 +123,6 @@ export class EffectCollector {
 
   recordSetterCall(binding: Binding, nextValue: SymbolicValue, condition: UpdateCondition): void {
     const isSameReference = isWholeBinding(nextValue, binding);
-    if (!isSameReference && condition.guards.length === 0) this.#rendersSurely = true;
     const mutation = this.#mutationsByBinding.get(binding.id);
     if (mutation) {
       this.#warn(
@@ -129,7 +144,10 @@ export class EffectCollector {
   }
 
   finish(): CollectedEffects {
-    const pendingMutations = this.#rendersSurely
+    const rendersSurely = this.#updates.some(
+      (update) => update.guards.length === 0 && isSurelyChanged(update.value, update.binding),
+    );
+    const pendingMutations = rendersSurely
       ? []
       : [
           ...[...this.#mutationsByBinding.values()].map((mutation) => mutation.binding),
