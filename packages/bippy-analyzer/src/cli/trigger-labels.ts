@@ -69,6 +69,7 @@ const getEventTriggerLabel = (
 export const getEffectTriggerLabel = (handler: Handler): string => {
   const { trigger } = handler;
   if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
+  if (trigger.kind === "Render") return "during render";
   return trigger.dependencies === "[]"
     ? "on mount"
     : `${trigger.hookKind}(${trigger.dependencies ?? "every render"})`;

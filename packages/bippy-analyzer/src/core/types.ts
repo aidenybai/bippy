@@ -225,7 +225,8 @@ export type HandlerTrigger =
       hookKind: HookKind;
       dependencies: string | null;
       dependencyPlaces: BindingPlace[] | null;
-    };
+    }
+  | { kind: "Render" };
 
 export interface Handler {
   id: string;

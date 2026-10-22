@@ -1,3 +1,4 @@
+import { assumeGuards } from "./claim-guards";
 import {
   addBounds,
   assumeCondition,
@@ -40,6 +41,7 @@ interface TransitionContext extends ReachabilityContext {
   regionBranches: RegionBranches;
   branchTests: Map<string, SymbolicValue | null>;
   stateBranches: StateBranches[];
+  renderUpdates: StateUpdate[];
   targetIndicesByConstraints: Map<string, number[]>;
   firstStateIndex: number;
 }
@@ -197,6 +199,25 @@ const getConstraintsAfterUpdates = (
 ): Constraints =>
   updates.length === 0 ? constraints : applyUpdates(updates, constraints, context);
 
+const settleRenderUpdates = (
+  constraints: Constraints,
+  renderUpdates: StateUpdate[],
+  context: ReachabilityContext,
+): Constraints[] =>
+  renderUpdates.reduce<Constraints[]>(
+    (settled, update) =>
+      settled.flatMap((current) => {
+        if (update.guards.length === 0) return [current];
+        const outcomes = update.guards.map((guard) => evaluateCondition(guard, current));
+        if (outcomes.some((outcome) => outcome === false)) return [current];
+        const isCertain = outcomes.every((outcome) => outcome === true);
+        const assumed = isCertain ? current : assumeGuards(update.guards, current);
+        const applied = assumed && getConstraintsAfterUpdates([update], assumed, context);
+        return isCertain ? (applied ? [applied] : []) : [current, ...(applied ? [applied] : [])];
+      }),
+    [constraints],
+  );
+
 interface ReplayedPath {
   constraints: Constraints;
   visited: Set<string>;
@@ -274,7 +295,8 @@ const getTargetStateIndices = (
         sequence.constraints,
         context,
       );
-      for (const index of getTargetIndices(afterHandler, context)) targetIndices.add(index);
+      for (const settled of settleRenderUpdates(afterHandler, context.renderUpdates, context))
+        for (const index of getTargetIndices(settled, context)) targetIndices.add(index);
     }
   return targetIndices;
 };
@@ -353,6 +375,7 @@ export const createTransitionContext = (
   reachablePlacesByBinding: context.reachablePlacesByBinding,
   dependentsByBinding: context.dependentsByBinding,
   ...getBranchContext(regionBranches, alternatives, context),
+  renderUpdates: context.renderUpdates,
   targetIndicesByConstraints: new Map(),
   firstStateIndex,
   budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },

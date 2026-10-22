@@ -1,12 +1,22 @@
 import { evaluateClaims } from "./claims";
-import { isEffectHandler } from "./collect-handlers";
+import { isEffectHandler, isRenderHandler } from "./collect-handlers";
+import { evaluateCondition } from "./constraints";
 import type { Constraints } from "./constraints";
 import { findRegions } from "./regions";
 import type { RegionBranches } from "./regions";
-import type { ComponentAnalysis, Handler, Region, State, StateReport, Transition } from "./types";
+import type {
+  ComponentAnalysis,
+  Handler,
+  Region,
+  State,
+  StateReport,
+  StateUpdate,
+  Transition,
+} from "./types";
 import { collectUnreachableBranches } from "./unreachable-branches";
 import type { BranchOutcomes } from "./unreachable-branches";
 import { collectHandlerIds } from "./utils/collect-handler-ids";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import type { ReachabilityContext } from "./reachable-constraints";
 import {
   createFirstRenderConstraints,
@@ -21,6 +31,7 @@ import { createTransitionContext, getTransition } from "./transitions";
 export interface EnumerationContext extends ReachabilityContext {
   branchOutcomes: BranchOutcomes;
   effectIds: Set<string>;
+  renderUpdates: StateUpdate[];
   firstRender: FirstRenderOutcomes;
 }
 
@@ -30,12 +41,42 @@ interface EnumeratedRegion {
   region: Region;
 }
 
-const getRegionHandlers = (analysis: ComponentAnalysis, region: RegionBranches): Handler[] =>
-  region.hasUnknownTest
-    ? analysis.handlers
-    : analysis.handlers.filter((handler) =>
-        handler.updates.some((update) => region.bindingIds.has(update.binding.id)),
-      );
+const getRenderInputIds = (
+  bindingIds: ReadonlySet<number>,
+  renderUpdates: StateUpdate[],
+): Set<number> => {
+  const inputIds = new Set(bindingIds);
+  for (const bindingId of inputIds)
+    for (const update of renderUpdates)
+      if (update.binding.id === bindingId)
+        for (const read of [update.value, ...update.guards])
+          forEachSymbolicValue(read, (part) => {
+            if (part.kind !== "Binding") return;
+            inputIds.add(part.binding.id);
+            for (const place of part.binding.inputPlaces) inputIds.add(place.bindingId);
+          });
+  return inputIds;
+};
+
+const getRegionHandlers = (
+  analysis: ComponentAnalysis,
+  region: RegionBranches,
+  renderUpdates: StateUpdate[],
+): Handler[] => {
+  const inputIds = getRenderInputIds(region.bindingIds, renderUpdates);
+  return analysis.handlers.filter(
+    (handler) =>
+      !isRenderHandler(handler) &&
+      (region.hasUnknownTest || handler.updates.some((update) => inputIds.has(update.binding.id))),
+  );
+};
+
+const isSettled = (alternative: Alternative, renderUpdates: StateUpdate[]): boolean =>
+  !renderUpdates.some(
+    (update) =>
+      update.guards.length > 0 &&
+      update.guards.every((guard) => evaluateCondition(guard, alternative.constraints) === true),
+  );
 
 const isFirstRender = (alternative: Alternative): boolean =>
   alternative.distanceFromFirstRender === 0 && !alternative.hasUndecidedBranch;
@@ -89,14 +130,16 @@ const enumerateRegion = (
 ): EnumeratedRegion => {
   const { analysis, effectIds } = context;
   const enumerator = createRegionEnumerator(regionBranches, context);
-  const alternatives = enumerator.enumerate(analysis.render, context.reachableConstraints);
+  const alternatives = enumerator
+    .enumerate(analysis.render, context.reachableConstraints)
+    .filter((alternative) => isSettled(alternative, context.renderUpdates));
   const transitionContext = createTransitionContext(
     regionBranches,
     alternatives,
     firstStateIndex,
     context,
   );
-  const regionHandlers = getRegionHandlers(analysis, regionBranches);
+  const regionHandlers = getRegionHandlers(analysis, regionBranches, context.renderUpdates);
   const getTransitions = (alternative: Alternative): Transition[] => {
     const runnableEffectIds = analysis.handlers
       .filter(
@@ -145,6 +188,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
     dependentsByBinding: getDependentsByBinding(analysis.bindings),
     branchOutcomes: new Map(),
     effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),
+    renderUpdates: analysis.handlers.filter(isRenderHandler).flatMap((handler) => handler.updates),
     firstRender: {
       constraints: createFirstRenderConstraints(analysis, reachableConstraints),
       outcomesByBranchKey: new Map(),

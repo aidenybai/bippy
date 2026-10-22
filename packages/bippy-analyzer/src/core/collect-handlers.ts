@@ -52,6 +52,8 @@ export const EVENT_ARGUMENT: SymbolicValue = {
 
 export const isEffectHandler = (handler: Handler): boolean => handler.trigger.kind === "Effect";
 
+export const isRenderHandler = (handler: Handler): boolean => handler.trigger.kind === "Render";
+
 export const getBindingUpdates = (handlers: Handler[], binding: Binding): StateUpdate[] =>
   handlers
     .flatMap((handler) => handler.updates)
@@ -564,7 +566,7 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       GeneratedSource,
     );
   collector.addCollectedHandler(
-    { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null, dependencyPlaces: null },
+    { kind: "Render" },
     interpreter.finishRenderPhaseEffects(),
     GeneratedSource,
   );
