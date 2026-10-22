@@ -1,5 +1,6 @@
 import {
   addBounds,
+  assumeBranchOutcome,
   assumeCondition,
   assumeGuards,
   cloneConstraints,
@@ -253,7 +254,7 @@ const replayBranches = (
     const branch = `${branchKey}:${outcome}`;
     if (!branches.has(branch)) return [];
     const assumed = paths.flatMap(({ constraints, visited }): ReplayedPath[] => {
-      const next = assumeCondition(test, outcome, constraints);
+      const next = assumeBranchOutcome(test, outcome, constraints);
       return next ? [{ constraints: next, visited: new Set([...visited, branch]) }] : [];
     });
     return replayBranches(outcome ? value.consequent : value.alternate, branches, assumed, context);
