@@ -12,6 +12,7 @@ import {
   createFirstRenderConstraints,
   createInitialConstraints,
   getDependentsByBinding,
+  getReachablePlacesByBinding,
 } from "./reachable-constraints";
 import type { Alternative, FirstRenderOutcomes } from "./state-enumerator";
 import { StateEnumerator } from "./state-enumerator";
@@ -140,6 +141,7 @@ export const enumerateStates = (analysis: ComponentAnalysis): StateReport => {
   const context: EnumerationContext = {
     analysis,
     reachableConstraints,
+    reachablePlacesByBinding: getReachablePlacesByBinding(reachableConstraints),
     dependentsByBinding: getDependentsByBinding(analysis.bindings),
     branchOutcomes: new Map(),
     effectIds: new Set(analysis.handlers.filter(isEffectHandler).map((handler) => handler.id)),

@@ -24,11 +24,21 @@ import type { FirstRenderOutcomes } from "./state-enumerator";
 
 const MAX_REACHABILITY_ROUNDS = 8;
 
+export type ReachablePlaces = Map<number, Array<[BindingPlace, AbstractValue[]]>>;
+
 export interface ReachabilityContext {
   analysis: ComponentAnalysis;
   reachableConstraints: Constraints;
+  reachablePlacesByBinding: ReachablePlaces;
   dependentsByBinding: Map<number, number[]>;
 }
+
+export const getReachablePlacesByBinding = (reachableConstraints: Constraints): ReachablePlaces => {
+  const placesByBinding: ReachablePlaces = new Map();
+  for (const entry of reachableConstraints.possibleValues)
+    appendToGroup(placesByBinding, entry[0].bindingId, entry);
+  return placesByBinding;
+};
 
 export const getToggleCases = (
   value: SymbolicValue,
