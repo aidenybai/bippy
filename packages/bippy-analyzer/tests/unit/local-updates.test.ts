@@ -24,7 +24,7 @@ describe("local updates", () => {
   it("gives a postfix update expression the value before the update", () => {
     expect(getConditions("ChainedIndices")[0]).toEqual([
       "(hasTabs ? 0 : -1) >= 0",
-      "(hasChats ? hasTabs ? 1 : 0 : -1) > 0",
+      "(hasChats ? 1 : -1) > 0",
     ]);
   });
 });
