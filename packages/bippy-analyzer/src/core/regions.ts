@@ -10,6 +10,7 @@ import { isSamePlace } from "./utils/is-same-place";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isExternalSource } from "./utils/is-external-source";
 import { getBranchKey } from "./control-flow";
+import { getValueKey } from "./utils/get-value-key";
 
 interface TestedPlace {
   name: string;
@@ -20,6 +21,7 @@ interface BranchTests {
   allBranchKeys: string[];
   branchGroups: DisjointSet<string>;
   branchKeysByPlace: PlaceMap<string[]>;
+  branchKeysByUnknown: Map<string, string[]>;
   testedPlaces: PlaceMap<TestedPlace>;
   unknownTestBranchKeys: Set<string>;
   bindingsById: Map<number, Binding>;
@@ -65,7 +67,14 @@ const recordTestedPlaces = (
   branchKey: string,
 ): void =>
   forEachSymbolicValue(getTestExpression(conditional), (part) => {
-    if (part.kind === "Unknown") branchTests.unknownTestBranchKeys.add(branchKey);
+    if (part.kind === "Unknown") {
+      branchTests.unknownTestBranchKeys.add(branchKey);
+      const unknownKey = getValueKey(part);
+      branchTests.branchKeysByUnknown.set(unknownKey, [
+        ...(branchTests.branchKeysByUnknown.get(unknownKey) ?? []),
+        branchKey,
+      ]);
+    }
     if (part.kind !== "Binding") return;
     for (const place of getDecidingPlaces(part, branchTests.bindingsById))
       branchTests.branchKeysByPlace.set(place, [
@@ -83,6 +92,8 @@ const groupBranchesOnNestedPlaces = (branchTests: BranchTests): void => {
     for (const [otherPlace, otherBranchKeys] of branchTests.branchKeysByPlace)
       if (isPlacePrefix(place, otherPlace))
         branchTests.branchGroups.union([...branchKeys, ...otherBranchKeys]);
+  for (const branchKeys of branchTests.branchKeysByUnknown.values())
+    branchTests.branchGroups.union(branchKeys);
 };
 
 const collectBranchTests = (render: SymbolicValue, bindings: Binding[]): BranchTests => {
@@ -90,6 +101,7 @@ const collectBranchTests = (render: SymbolicValue, bindings: Binding[]): BranchT
     allBranchKeys: [],
     branchGroups: new DisjointSet<string>(),
     branchKeysByPlace: new PlaceMap<string[]>(),
+    branchKeysByUnknown: new Map(),
     testedPlaces: new PlaceMap<TestedPlace>(),
     unknownTestBranchKeys: new Set(),
     bindingsById: new Map(bindings.map((binding) => [binding.id, binding])),

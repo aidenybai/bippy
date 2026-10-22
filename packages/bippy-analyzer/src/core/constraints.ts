@@ -55,6 +55,7 @@ interface Distance {
 interface Assumption {
   isTrue: boolean;
   places: BindingPlace[];
+  hasUnknown: boolean;
 }
 
 export interface Constraints {
@@ -514,6 +515,17 @@ const hasNullishAncestor = (place: BindingPlace, possibleValues: PlaceMap<Abstra
     );
   });
 
+const createAssumption = (value: SymbolicValue, isTrue: boolean): Assumption => ({
+  isTrue,
+  places: collectPlaces(value),
+  hasUnknown: hasUnknownPart(value),
+});
+
+export const forgetUnknownAssumptions = (constraints: Constraints): void => {
+  for (const [assumptionKey, assumption] of constraints.assumptions)
+    if (assumption.hasUnknown) constraints.assumptions.delete(assumptionKey);
+};
+
 const joinPlaceValues = (
   left: PlaceMap<AbstractValue[]>,
   right: PlaceMap<AbstractValue[]>,
@@ -571,9 +583,9 @@ const assumeConditional = (
   const alternate = whenFalse && assumeMemoized(value.alternate, isTrue, whenFalse, memo);
   const joined =
     consequent && alternate ? joinConstraints(consequent, alternate) : (consequent ?? alternate);
-  if (!joined || hasUnknownPart(value)) return joined;
+  if (!joined) return joined;
   const assumed = cloneConstraints(joined);
-  assumed.assumptions.set(getValueKey(value), { isTrue, places: collectPlaces(value) });
+  assumed.assumptions.set(getValueKey(value), createAssumption(value, isTrue));
   return assumed;
 };
 
@@ -720,12 +732,8 @@ const assumeOpaqueCondition = (
   isTrue: boolean,
   constraints: Constraints,
 ): Constraints | null => {
-  if (hasUnknownPart(value)) return constraints;
   const assumed = cloneConstraints(constraints);
-  assumed.assumptions.set(getValueKey(value), {
-    isTrue,
-    places: collectPlaces(value),
-  });
+  assumed.assumptions.set(getValueKey(value), createAssumption(value, isTrue));
   const assumedBounds = getBounds(value, isTrue);
   if (assumedBounds) {
     assumed.bounds.push(...assumedBounds);
