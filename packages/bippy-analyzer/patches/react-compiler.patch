@@ -1,6 +1,25 @@
 Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d387180687b3f510300f42.
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
+diff --git a/Entrypoint/Program.ts b/Entrypoint/Program.ts
+index 30c005a..eca1d6c 100644
+--- a/Entrypoint/Program.ts
++++ b/Entrypoint/Program.ts
+@@ -851,14 +851,6 @@ function shouldSkipCompilation(
+     }
+   }
+ 
+-  if (
+-    hasMemoCacheFunctionImport(
+-      program,
+-      getReactCompilerRuntimeModule(pass.opts.target),
+-    )
+-  ) {
+-    return true;
+-  }
+   return false;
+ }
+ 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
 index 959fdf7..6150cb1 100644
 --- a/HIR/BuildHIR.ts

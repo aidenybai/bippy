@@ -19,6 +19,40 @@ const MAX_OPTIONS_NESTING = 3;
 
 export const UNDEFINED_VALUE: SymbolicValue = { kind: "Primitive", value: undefined };
 
+const COMPILER_RUNTIME_MODULE = "react/compiler-runtime";
+
+const MEMO_CACHE_NAME = "$memoCache";
+
+export const MEMO_CACHE_VALUE: SymbolicValue = {
+  kind: "Global",
+  name: MEMO_CACHE_NAME,
+  module: COMPILER_RUNTIME_MODULE,
+};
+
+export const isMemoCacheCall = (
+  callee: SymbolicValue,
+  argumentValues: SymbolicValue[],
+): boolean => {
+  const [size] = argumentValues;
+  return (
+    callee.kind === "Global" &&
+    callee.module === COMPILER_RUNTIME_MODULE &&
+    argumentValues.length === 1 &&
+    size?.kind === "Primitive" &&
+    typeof size.value === "number"
+  );
+};
+
+export const isMemoCache = (value: SymbolicValue): boolean =>
+  value.kind === "Global" &&
+  value.module === COMPILER_RUNTIME_MODULE &&
+  value.name === MEMO_CACHE_NAME;
+
+const isMemoCacheSlot = (value: SymbolicValue): boolean =>
+  value.kind === "Global" &&
+  value.module === COMPILER_RUNTIME_MODULE &&
+  value.name.startsWith(`${MEMO_CACHE_NAME}.`);
+
 export const START_TRANSITION_VALUE: SymbolicValue = {
   kind: "Global",
   name: "startTransition",
@@ -126,6 +160,9 @@ export const foldBinary = (
   left: SymbolicValue,
   right: SymbolicValue,
 ): SymbolicValue => {
+  const readsMemoCache = isMemoCacheSlot(left) || isMemoCacheSlot(right);
+  if (readsMemoCache && (operator === "!==" || operator === "==="))
+    return { kind: "Primitive", value: true };
   const membership = operator === "in" ? getKnownMembership(left, right) : null;
   if (membership !== null) return { kind: "Primitive", value: membership };
   const comparedPrimitive = isObjectValue(left) ? right : isObjectValue(right) ? left : null;
