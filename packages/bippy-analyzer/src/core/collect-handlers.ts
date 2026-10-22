@@ -184,9 +184,17 @@ class HandlerCollector {
     guards: SymbolicValue[] = [],
     callbackGuards: SymbolicValue[] = [],
   ): string | null {
+    const runsCleanup =
+      trigger.kind === "Effect" && trigger.hookKind !== "Custom" && trigger.dependencies !== "[]";
     return this.addCollectedHandler(
       trigger,
-      this.#interpreter.collectEffects(callback, callbackArguments, guards, callbackGuards),
+      this.#interpreter.collectEffects(
+        callback,
+        callbackArguments,
+        guards,
+        callbackGuards,
+        runsCleanup,
+      ),
       loc,
     );
   }

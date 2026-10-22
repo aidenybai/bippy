@@ -246,6 +246,12 @@ const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): Symbo
   };
 };
 
+const getReturnedFunctions = (value: SymbolicValue): SymbolicValue[] => {
+  if (value.kind === "Conditional")
+    return [...getReturnedFunctions(value.consequent), ...getReturnedFunctions(value.alternate)];
+  return value.kind === "Function" ? [value] : [];
+};
+
 export class Interpreter {
   #resolver: SourceFileResolver;
   readonly #projectLoaders: ProjectLoaders;
@@ -327,6 +333,7 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     renderGuards: SymbolicValue[] = [],
     guards: SymbolicValue[] = [],
+    runsCleanup = false,
   ): CollectedEffects {
     const previousEffects = this.#handlerEffects;
     const previousBlockVisits = this.walker.blockVisits;
@@ -338,12 +345,24 @@ export class Interpreter {
     this.walker.blockVisits = 0;
     try {
       const callbacks = getContainedValues(callback);
-      for (const handlerCallback of callbacks)
-        this.#runCallback(handlerCallback, argumentValues, new Set(), {
-          ...ROOT_WALK_STATE,
-          renderGuards,
-          guards,
-        });
+      const walkState = { ...ROOT_WALK_STATE, renderGuards, guards };
+      for (const handlerCallback of callbacks) {
+        const returned = runsCleanup
+          ? this.#getReturnedValue(handlerCallback, argumentValues, walkState)
+          : null;
+        const cleanups = returned ? getReturnedFunctions(returned) : [];
+        const updateCountBeforeCleanup = handlerEffects.updateCount;
+        const cleanupWalkState =
+          returned?.kind === "Function"
+            ? walkState
+            : {
+                ...walkState,
+                guards: [...walkState.guards, createUnknown("previous-render", GeneratedSource)],
+              };
+        for (const cleanup of cleanups) this.#runCallback(cleanup, [], new Set(), cleanupWalkState);
+        handlerEffects.forgetRenderValues(updateCountBeforeCleanup);
+        this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
+      }
       if (callback.kind === "Unknown")
         for (const binding of this.bindingTable.bindings)
           if (isExternalSource(binding))
@@ -356,6 +375,20 @@ export class Interpreter {
     } finally {
       this.#handlerEffects = previousEffects;
       this.walker.blockVisits = previousBlockVisits;
+    }
+  }
+
+  #getReturnedValue(
+    callback: SymbolicValue,
+    argumentValues: SymbolicValue[],
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const handlerEffects = this.#handlerEffects;
+    this.#handlerEffects = new EffectCollector(() => {});
+    try {
+      return this.#runCallback(callback, argumentValues, new Set(), walkState);
+    } finally {
+      this.#handlerEffects = handlerEffects;
     }
   }
 
@@ -1565,7 +1598,7 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     visitedFunctionIds: Set<number>,
     walkState: WalkState = ROOT_WALK_STATE,
-  ): void {
+  ): SymbolicValue | null {
     if (callback.kind === "Conditional") {
       const test = getTestExpression(callback);
       const consequentWalkState = { ...walkState, guards: [...walkState.guards, test] };
@@ -1577,17 +1610,15 @@ export class Interpreter {
         consequentWalkState,
       );
       this.#runCallback(callback.alternate, argumentValues, visitedFunctionIds, alternateWalkState);
-      return;
+      return null;
     }
-    if (callback.kind === "Bound") {
-      this.#runCallback(
+    if (callback.kind === "Bound")
+      return this.#runCallback(
         callback.callee,
         [...callback.argumentValues, ...argumentValues],
         visitedFunctionIds,
         walkState,
       );
-      return;
-    }
     if (callback.kind === "Setter")
       this.#handlerEffects?.recordSetterCall(
         callback.binding,
@@ -1597,17 +1628,21 @@ export class Interpreter {
     if (callback.kind === "Dispatch")
       this.#applyDispatch(callback, argumentValues[0], callback.binding.loc, walkState);
     if (callback.kind === "Binding") this.#callBinding(callback, argumentValues, walkState);
-    if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return;
+    if (callback.kind !== "Function" || visitedFunctionIds.has(callback.functionId)) return null;
     visitedFunctionIds.add(callback.functionId);
     const hirFunction = this.#functions.get(callback.functionId);
-    if (!hirFunction) return;
+    if (!hirFunction) return null;
     const externalArguments = hirFunction.params.map(
       (_parameter, index) =>
         argumentValues[index] ?? createUnknown("callback-argument", callback.loc),
     );
-    this.#runRenderedHandlers(
-      this.#evaluateFunction(hirFunction, externalArguments, walkState, callback.functionId),
-      visitedFunctionIds,
+    const result = this.#evaluateFunction(
+      hirFunction,
+      externalArguments,
+      walkState,
+      callback.functionId,
     );
+    this.#runRenderedHandlers(result, visitedFunctionIds);
+    return result;
   }
 }

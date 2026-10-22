@@ -531,7 +531,6 @@ describePorts("ReactHooksWithNoopRenderer-test.js > ReactHooksWithNoopRenderer",
   {
     source: "after useEffect > unmounts all previous effects before creating any new ones",
     file: "effect-ordering",
-    gap: "every cleanup runs before any effect body, and the analyzer interleaves them",
     script: {
       component: "UnmountsAllBeforeCreatingAny",
       html: "<div><button>increment</button><p>zero</p><p>AB</p></div>",
