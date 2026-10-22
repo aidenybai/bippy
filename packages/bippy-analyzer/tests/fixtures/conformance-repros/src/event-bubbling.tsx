@@ -60,3 +60,22 @@ export const Captured = () => {
     </div>
   );
 };
+
+export const StoppedByAncestor = () => {
+  const [isOn, setIsOn] = useState(true);
+  const [count, setCount] = useState(0);
+  return (
+    <section onClick={() => setIsOn(true)}>
+      <div
+        onClick={(event) => {
+          setCount(2);
+          event.stopPropagation();
+        }}
+      >
+        <button onClick={() => setIsOn(false)}>go</button>
+      </div>
+      {isOn ? <i>on</i> : <i>off</i>}
+      {count === 2 ? <b>two</b> : <b>zero</b>}
+    </section>
+  );
+};

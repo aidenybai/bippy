@@ -314,15 +314,18 @@ class HandlerCollector {
       !NON_BUBBLING_EVENTS.has(prop.name) &&
       !prop.name.endsWith(CAPTURE_SUFFIX);
     if (!isBubbling) return [];
-    const captures = ancestors.flatMap((ancestor) =>
-      this.#getAncestorCallbacks(ancestor, `${prop.name}${CAPTURE_SUFFIX}`),
-    );
-    const bubbles = this.#stopsPropagation(callback)
-      ? []
-      : [...ancestors]
-          .reverse()
-          .flatMap((ancestor) => this.#getAncestorCallbacks(ancestor, prop.name));
-    return captures.length === 0 && bubbles.length === 0 ? [] : [...captures, callback, ...bubbles];
+    const chain = [
+      ...ancestors.flatMap((ancestor) =>
+        this.#getAncestorCallbacks(ancestor, `${prop.name}${CAPTURE_SUFFIX}`),
+      ),
+      callback,
+      ...[...ancestors]
+        .reverse()
+        .flatMap((ancestor) => this.#getAncestorCallbacks(ancestor, prop.name)),
+    ];
+    const stopIndex = chain.findIndex((entry) => this.#stopsPropagation(entry));
+    const propagated = stopIndex === -1 ? chain : chain.slice(0, stopIndex + 1);
+    return propagated.length === 1 ? [] : propagated;
   }
 
   #getAncestorCallbacks(ancestor: JsxExpressionValue, name: string): SymbolicValue[] {

@@ -35,6 +35,14 @@ describe("a click that bubbles to an ancestor's handler", () => {
     expect(getTargets("Stopped")[3]).toEqual([[2], [1]]);
   });
 
+  it("stops at an ancestor's handler that calls stopPropagation", () => {
+    expect(getUpdateSequences("StoppedByAncestor")).toEqual([
+      ["isOn = true"],
+      ["count = 2"],
+      ["isOn = false", "count = 2"],
+    ]);
+  });
+
   it("runs an ancestor's capture handler before the target's", () => {
     expect(getUpdateSequences("Captured")).toEqual([
       ['order = "outer"'],
