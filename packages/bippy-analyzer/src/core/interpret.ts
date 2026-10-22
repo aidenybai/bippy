@@ -77,6 +77,7 @@ import { Diagnostics } from "./diagnostics";
 import { EffectCollector } from "./effect-collector";
 import type { CollectedEffects } from "./effect-collector";
 import { ExternalSources, getStoreFieldValue } from "./external-sources";
+import { Cells } from "./cells";
 import { FunctionRegistry } from "./function-registry";
 import type { CapturedValue, ModuleFunctionLoader } from "./function-registry";
 import { NO_STOPS } from "./control-flow";
@@ -182,6 +183,14 @@ const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
       ? target.hirFunction.id
       : null;
 
+const getRefCellKey = (binding: Binding): string => `ref:${binding.id}`;
+
+const isRefCell = (object: SymbolicValue, property: string): object is BindingValue =>
+  object.kind === "Binding" &&
+  object.binding.kind === "ref" &&
+  object.path.length === 0 &&
+  property === "current";
+
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
   const { binding } = loadGlobal;
   if (binding.kind === "Global" && binding.name === "undefined") return UNDEFINED_VALUE;
@@ -202,6 +211,7 @@ export class Interpreter {
   readonly destructurer = new Destructurer(this);
   readonly claimRecorder = new ClaimRecorder(this);
   readonly callbacks = new CallbackPasser(this);
+  cells = new Cells();
   readonly iteration = new ArrayIteration(this);
   readonly patterns = new PatternMatcher(this);
   readonly bindingTable = new BindingTable();
@@ -273,6 +283,7 @@ export class Interpreter {
       this.warn(kind, message, loc),
     );
     this.#handlerEffects = handlerEffects;
+    this.cells = new Cells();
     this.walker.blockVisits = 0;
     try {
       const callbacks = getContainedValues(callback);
@@ -969,10 +980,7 @@ export class Interpreter {
       case "LoadGlobal":
         return this.#foldLiteralType(getGlobalValue(value), value.loc);
       case "PropertyLoad":
-        return this.#foldLiteralType(
-          this.evaluatePropertyLoad(this.read(value.object), String(value.property), value.loc),
-          value.loc,
-        );
+        return this.#evaluatePropertyLoad(value, walkState);
       case "ComputedLoad":
         return this.#evaluateComputedLoad(value, instruction.id, walkState);
       case "BinaryExpression":
@@ -1006,9 +1014,10 @@ export class Interpreter {
         );
         return createUnknown(value.kind, value.loc);
       case "PropertyStore":
+        return this.#evaluatePropertyStore(value, walkState);
       case "ComputedStore":
         this.callbacks.passStoredCallback(value, walkState);
-        return createUnknown(value.kind, value.loc);
+        return this.read(value.value);
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
       case "RegExpLiteral":
@@ -1032,6 +1041,33 @@ export class Interpreter {
       default:
         return assertExhaustive(value, "Unhandled instruction value");
     }
+  }
+
+  #evaluatePropertyLoad(
+    load: InstructionValueOfKind<"PropertyLoad">,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const object = this.read(load.object);
+    const property = String(load.property);
+    const loaded = this.#foldLiteralType(
+      this.evaluatePropertyLoad(object, property, load.loc),
+      load.loc,
+    );
+    return this.#handlerEffects && isRefCell(object, property)
+      ? this.cells.read(getRefCellKey(object.binding), loaded, load.loc, walkState)
+      : loaded;
+  }
+
+  #evaluatePropertyStore(
+    store: InstructionValueOfKind<"PropertyStore">,
+    walkState: WalkState,
+  ): SymbolicValue {
+    this.callbacks.passStoredCallback(store, walkState);
+    const object = this.read(store.object);
+    const storedValue = this.read(store.value);
+    if (this.#handlerEffects && isRefCell(object, String(store.property)))
+      this.cells.store(getRefCellKey(object.binding), storedValue, walkState);
+    return storedValue;
   }
 
   #evaluateStoreLocal(store: InstructionValueOfKind<"StoreLocal" | "StoreContext">): SymbolicValue {
