@@ -136,6 +136,8 @@ interface CompilationTables {
   branchOperators: Map<BlockId, BranchOperator>;
   aliasSources: Map<IdentifierId, Place>;
   elementSources: Map<IdentifierId, Place>;
+  frozenSources: Map<IdentifierId, Place>;
+  itemSources: Map<IdentifierId, Place>;
 }
 
 type CallTarget =
@@ -520,6 +522,8 @@ export class Interpreter {
       branchOperators: new Map(),
       aliasSources: new Map(),
       elementSources: new Map(),
+      frozenSources: new Map(),
+      itemSources: new Map(),
     };
     this.#tablesByEnvironment.set(env, compilationTables);
     return compilationTables;
