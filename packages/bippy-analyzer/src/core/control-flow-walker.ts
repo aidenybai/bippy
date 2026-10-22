@@ -7,7 +7,12 @@ import type {
   Terminal,
 } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
-import { eachTerminalSuccessor } from "../react-compiler/HIR/visitors";
+import {
+  eachInstructionLValue,
+  eachInstructionOperand,
+  eachTerminalOperand,
+  eachTerminalSuccessor,
+} from "../react-compiler/HIR/visitors";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type { Binding, Branch, SymbolicValue, TestKind } from "./types";
 import {
@@ -343,6 +348,7 @@ export class ControlFlowWalker {
         this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
     }
     const [loopEntry = terminal.fallthrough] = loopHeaders;
+    this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
     const awaitCountBefore = this.#awaitCount;
     this.#loopDepth++;
     let bodyOutcome: Outcome;
@@ -362,7 +368,6 @@ export class ControlFlowWalker {
       this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
     for (const place of this.#getStoredContextPlaces(loopEntry, terminal.fallthrough))
       this.#interpreter.write(place, createUnknown("loop", place.loc));
-    this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
     const loopExit: Outcome = {
       kind: "Fallthrough",
       from: getLoopExit(terminal),
@@ -424,22 +429,31 @@ export class ControlFlowWalker {
 
   #addLoopInputPlaces(loopBindings: Binding[], loopEntry: BlockId, loopFallthrough: BlockId): void {
     if (loopBindings.length === 0) return;
-    const inputPlaces = new PlaceMap<true>();
     const visitedBlocks = new Set([loopEntry, loopFallthrough]);
-    const pendingBlocks = [loopEntry];
-    for (const blockId of pendingBlocks) {
-      const block = this.#getBlock(blockId);
-      for (const instruction of block.instructions)
-        this.#interpreter.collectInputPlaces(
-          this.#interpreter.read(instruction.lvalue),
-          inputPlaces,
-        );
+    const loopBlocks = [this.#getBlock(loopEntry)];
+    for (const block of loopBlocks)
       for (const successor of eachTerminalSuccessor(block.terminal)) {
         if (visitedBlocks.has(successor)) continue;
         visitedBlocks.add(successor);
-        pendingBlocks.push(successor);
+        loopBlocks.push(this.#getBlock(successor));
       }
-    }
+    const loopDefinedIds = new Set(
+      loopBlocks.flatMap((block) => [
+        ...[...block.phis].map((phi) => phi.place.identifier.id),
+        ...block.instructions.flatMap((instruction) =>
+          [...eachInstructionLValue(instruction)].map((lvalue) => lvalue.identifier.id),
+        ),
+      ]),
+    );
+    const inputPlaces = new PlaceMap<true>();
+    for (const block of loopBlocks)
+      for (const operand of [
+        ...[...block.phis].flatMap((phi) => [...phi.operands.values()]),
+        ...block.instructions.flatMap((instruction) => [...eachInstructionOperand(instruction)]),
+        ...eachTerminalOperand(block.terminal),
+      ])
+        if (!loopDefinedIds.has(operand.identifier.id))
+          this.#interpreter.collectInputPlaces(this.#interpreter.read(operand), inputPlaces);
     const loopBindingIds = new Set(loopBindings.map((binding) => binding.id));
     const outsidePlaces = inputPlaces
       .places()
