@@ -538,6 +538,14 @@ const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
   );
 };
 
+const getRenderedRefIds = (render: SymbolicValue): Set<number> => {
+  const refIds = new Set<number>();
+  forEachSymbolicValue(render, (part) => {
+    if (part.kind === "Binding" && part.binding.kind === "ref") refIds.add(part.binding.id);
+  });
+  return refIds;
+};
+
 const revealPendingMutations = (handlers: Handler[], pendingMutations: Binding[]): void => {
   for (const handler of handlers) {
     if (handler.trigger.kind === "Render" || handler.updates.length === 0) continue;
@@ -616,6 +624,14 @@ const collectHandlersOnce = (
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
-  revealPendingMutations(collector.handlers, [...collector.pendingMutations.values()]);
+  const renderedRefIds = getRenderedRefIds(render);
+  const isRendered = (binding: Binding): boolean =>
+    binding.kind !== "ref" || renderedRefIds.has(binding.id);
+  for (const handler of collector.handlers)
+    handler.updates = handler.updates.filter((update) => isRendered(update.binding));
+  revealPendingMutations(
+    collector.handlers,
+    [...collector.pendingMutations.values()].filter(isRendered),
+  );
   return collector.handlers;
 };
