@@ -87,7 +87,10 @@ export class Destructurer {
     setterPlace: Place | null,
   ): SymbolicValue[] {
     const [initialArgument] = hook.argumentValues;
-    if (!setterPlace && initialArgument?.kind === "Function") return [initialArgument];
+    if (!setterPlace && initialArgument?.kind === "Function") {
+      this.#interpreter.addMountClosure(initialArgument);
+      return [initialArgument];
+    }
     const initial = initialArgument && initialArgument.kind !== "Function" ? initialArgument : null;
     const isAsserted = initial?.kind === "Unknown" && initial.reason === "cast";
     const binding = this.#interpreter.createBinding(slot.name, "state", slot.loc, {

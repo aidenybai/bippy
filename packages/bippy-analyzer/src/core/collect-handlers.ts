@@ -5,6 +5,7 @@ import type { CollectedEffects } from "./effect-collector";
 import type {
   ObjectExpressionValue,
   Binding,
+  FunctionValue,
   Handler,
   HandlerTrigger,
   JsxExpressionValue,
@@ -20,6 +21,7 @@ import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
 import { UNDEFINED_VALUE, createUnknown, foldUnary, getPassedCallbacks } from "./symbolic-values";
 import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
+import { isStateBinding } from "./utils/is-state-binding";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 const CAPTURE_SUFFIX = "Capture";
@@ -534,7 +536,36 @@ const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
   );
 };
 
+const getStoredFunctions = (handlers: Handler[]): Map<number, FunctionValue[]> => {
+  const storedFunctions = new Map<number, FunctionValue[]>();
+  for (const update of handlers.flatMap((handler) => handler.updates)) {
+    if (!isStateBinding(update.binding)) continue;
+    const functions = getPassedCallbacks([update.value]).filter(
+      (value): value is FunctionValue => value.kind === "Function",
+    );
+    if (functions.length > 0)
+      storedFunctions.set(update.binding.id, [
+        ...(storedFunctions.get(update.binding.id) ?? []),
+        ...functions,
+      ]);
+  }
+  return storedFunctions;
+};
+
 export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter): Handler[] => {
+  const renderPhaseEffects = interpreter.finishRenderPhaseEffects();
+  const handlers = collectHandlersOnce(render, interpreter, renderPhaseEffects);
+  const storedFunctions = getStoredFunctions(handlers);
+  if (storedFunctions.size === 0) return handlers;
+  interpreter.setStoredFunctions(storedFunctions);
+  return collectHandlersOnce(render, interpreter, renderPhaseEffects);
+};
+
+const collectHandlersOnce = (
+  render: SymbolicValue,
+  interpreter: Interpreter,
+  renderPhaseEffects: CollectedEffects,
+): Handler[] => {
   const collector = new HandlerCollector(interpreter);
   const wrappedCallbacks = collectWrappedCallbacks(render, interpreter);
   const effectCalls = interpreter.effectCalls.filter(
@@ -567,11 +598,7 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
       { updates: commitUpdates, delegates: [] },
       GeneratedSource,
     );
-  collector.addCollectedHandler(
-    { kind: "Render" },
-    interpreter.finishRenderPhaseEffects(),
-    GeneratedSource,
-  );
+  collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
   return collector.handlers;
 };

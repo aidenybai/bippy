@@ -317,6 +317,7 @@ export class Interpreter {
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #mountClosureIds = new Set<number>();
+  #storedFunctions = new Map<number, FunctionValue[]>();
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #frameClosureIds: number[][] = [];
   readonly #bindingScopes: string[] = [];
@@ -641,6 +642,16 @@ export class Interpreter {
     }
   }
 
+  addMountClosure(closure: FunctionValue): void {
+    this.#mountClosureIds.add(closure.functionId);
+  }
+
+  setStoredFunctions(storedFunctions: Map<number, FunctionValue[]>): void {
+    this.#storedFunctions = storedFunctions;
+    for (const values of storedFunctions.values())
+      for (const value of values) this.addMountClosure(value);
+  }
+
   #evaluateCallee(
     hirFunction: HIRFunction,
     argumentValues: SymbolicValue[],
@@ -954,7 +965,11 @@ export class Interpreter {
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
     const byBinding =
       value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
-    return this.#wrappedCallbacks.get(value) ?? byBinding ?? null;
+    const stored =
+      value.kind === "Binding" && value.path.length === 0
+        ? this.#storedFunctions.get(value.binding.id)
+        : undefined;
+    return this.#wrappedCallbacks.get(value) ?? byBinding ?? stored ?? null;
   }
 
   forgetHandlerWrites(handlerCallback: SymbolicValue): void {
@@ -979,6 +994,9 @@ export class Interpreter {
 
   #callBinding(callee: BindingValue, argumentValues: SymbolicValue[], walkState: WalkState): void {
     const { binding, path } = callee;
+    if (path.length === 0)
+      for (const stored of this.#storedFunctions.get(binding.id) ?? [])
+        this.callFunction(stored, argumentValues, binding.loc, walkState);
     if (binding.kind === "prop") this.#handlerEffects?.addDelegate(formatPlace(binding, path));
     const memberName = path.length === 1 ? path[0] : undefined;
     const setterField = memberName && this.externalSources.getSetterField(binding, memberName);
