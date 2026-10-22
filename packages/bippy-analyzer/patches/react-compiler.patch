@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..6cfbf84 100644
+index 959fdf7..19b4b92 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,28 @@ function lowerStatement(
@@ -866,7 +866,16 @@ index 959fdf7..6cfbf84 100644
  }
  
  function lowerArguments(
-@@ -4314,14 +4240,7 @@ function lowerAssignment(
+@@ -3517,6 +3443,8 @@ function lowerJsxElement(
+       });
+       return lowerExpressionToTemporary(builder, expression);
+     }
++  } else if (exprPath.isJSXSpreadChild()) {
++    return lowerExpressionToTemporary(builder, exprPath.get('expression'));
+   } else if (exprPath.isJSXText()) {
+     let text: string | null;
+     if (builder.fbtDepth > 0) {
+@@ -4314,14 +4242,7 @@ function lowerAssignment(
        const continuationBlock = builder.reserve(builder.currentBlockKind());
  
        const consequent = builder.enter('value', () => {
@@ -882,7 +891,7 @@ index 959fdf7..6cfbf84 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4515,9 +4434,10 @@ function gatherCapturedContext(
+@@ -4515,9 +4436,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -896,7 +905,7 @@ index 959fdf7..6cfbf84 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4451,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4453,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
