@@ -45,6 +45,7 @@ import type {
   LengthLimit,
   NumberRange,
   ObjectExpressionValue,
+  PrimitiveValue,
   ProvidedContext,
   Sample,
   SetterValue,
@@ -60,7 +61,8 @@ import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getClampRange } from "./utils/get-clamp-range";
-import { isPureFunction } from "./utils/pure-functions";
+import { applyPureFunctionToCases, isPureFunction } from "./utils/pure-functions";
+import { dedupeAbstractValues } from "./constraints";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -272,6 +274,52 @@ const getArrayLiteralMember = (
 };
 
 const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+
+const getMathCall = (methodName: string, argumentValues: SymbolicValue[]): DerivedCall | null =>
+  isPureFunction(`Math.${methodName}`)
+    ? { callee: `Math.${methodName}`, operands: argumentValues }
+    : null;
+
+const getLiteralArrayCall = (
+  receiver: SymbolicValue,
+  methodName: string,
+  argumentValues: SymbolicValue[],
+): DerivedCall | null => {
+  const [searched] = argumentValues;
+  const isLiteralArray =
+    receiver.kind === "ArrayExpression" &&
+    receiver.spreads.length === 0 &&
+    receiver.elements.every((element) => element.kind === "Primitive");
+  return isLiteralArray &&
+    searched &&
+    argumentValues.length === 1 &&
+    isPureFunction(`Array.${methodName}`)
+    ? { callee: `Array.${methodName}`, operands: [searched, ...receiver.elements] }
+    : null;
+};
+
+const getDomainLiterals = (value: SymbolicValue): PrimitiveValue[] | null => {
+  if (value.kind === "Primitive") return [value.value];
+  if (value.kind !== "Binding" || value.path.length > 0) return null;
+  const { domain } = value.binding;
+  if (domain.kind !== "Cases") return null;
+  return domain.cases.every((candidate) => candidate.kind === "Literal")
+    ? domain.cases.map((candidate) => candidate.value)
+    : null;
+};
+
+const getDerivedDomain = (derived: DerivedCall): Domain | null => {
+  const operandCases = derived.operands.map(getDomainLiterals);
+  if (!operandCases.every((cases): cases is PrimitiveValue[] => cases !== null)) return null;
+  const results = applyPureFunctionToCases(derived.callee, operandCases);
+  return results
+    ? {
+        kind: "Cases",
+        cases: dedupeAbstractValues(results.map((value) => ({ kind: "Literal", value }))),
+        origin: "call-sites",
+      }
+    : null;
+};
 
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
 
@@ -1316,6 +1364,7 @@ export class Interpreter {
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
+    const domain = derived && "operands" in derived ? getDerivedDomain(derived) : null;
     return createBindingValue(
       this.createBinding(`${calleeText}(${argumentText})`, "call", callSite.loc, {
         inputPlaces: inputPlaces.places(),
@@ -1324,6 +1373,7 @@ export class Interpreter {
         derived,
         range,
         initial,
+        ...(domain && { domain }),
       }),
     );
   }
@@ -1517,10 +1567,9 @@ export class Interpreter {
     };
     const isMath = receiver.kind === "Global" && receiver.name === "Math";
     const range = isMath ? getClampRange(methodName, argumentValues) : null;
-    const derived =
-      isMath && isPureFunction(`Math.${methodName}`)
-        ? { callee: `Math.${methodName}`, operands: argumentValues }
-        : null;
+    const derived = isMath
+      ? getMathCall(methodName, argumentValues)
+      : getLiteralArrayCall(receiver, methodName, argumentValues);
     if (range || derived) return this.#createCallResult(callSite, { range, derived });
     const firstValue = this.#getFirstIterationValue(
       methodName,

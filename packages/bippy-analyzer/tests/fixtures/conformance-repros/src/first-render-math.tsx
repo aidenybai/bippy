@@ -30,3 +30,25 @@ export const ParsedChoice = () => {
     </div>
   );
 };
+
+export const ParsedUnion = () => {
+  const [raw, setRaw] = useState<"0" | "1">("0");
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <button onClick={() => setRaw(raw === "0" ? "1" : "0")}>swap</button>
+      <button onClick={() => setCount(Number(raw))}>apply</button>
+      {count === 2 ? <i>two</i> : count === 1 ? <i>one</i> : <i>none</i>}
+    </div>
+  );
+};
+
+export const ListedStep = () => {
+  const [step, setStep] = useState(1);
+  return (
+    <div>
+      <button onClick={() => setStep(step + 1)}>next</button>
+      {[1, 2].includes(step) ? <i>early</i> : <i>late</i>}
+    </div>
+  );
+};

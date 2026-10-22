@@ -16,9 +16,31 @@ const PURE_FUNCTIONS = new Map<string, PureFunction>([
     (value, radix) => parseInt(String(value), radix === undefined ? undefined : Number(radix)),
   ],
   ["parseFloat", (value) => parseFloat(String(value))],
+  ["Array.includes", (value, ...elements) => elements.includes(value)],
+  ["Array.indexOf", (value, ...elements) => elements.indexOf(value)],
 ]);
 
 export const isPureFunction = (name: string): boolean => PURE_FUNCTIONS.has(name);
 
 export const applyPureFunction = (name: string, values: PrimitiveValue[]): PrimitiveValue | null =>
   PURE_FUNCTIONS.get(name)?.(...values) ?? null;
+
+const MAX_PURE_CALLS = 32;
+
+export const applyPureFunctionToCases = (
+  name: string,
+  operandCases: PrimitiveValue[][],
+): PrimitiveValue[] | null => {
+  let combinations: PrimitiveValue[][] = [[]];
+  for (const cases of operandCases) {
+    if (combinations.length * cases.length > MAX_PURE_CALLS) return null;
+    combinations = combinations.flatMap((values) => cases.map((value) => [...values, value]));
+  }
+  const results: PrimitiveValue[] = [];
+  for (const values of combinations) {
+    const result = applyPureFunction(name, values);
+    if (result === null) return null;
+    results.push(result);
+  }
+  return results;
+};

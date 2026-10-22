@@ -21,7 +21,7 @@ import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isSamePlace } from "./utils/is-same-place";
 import { foldBinary } from "./symbolic-values";
-import { applyPureFunction } from "./utils/pure-functions";
+import { applyPureFunctionToCases } from "./utils/pure-functions";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
@@ -407,8 +407,6 @@ const evaluateNonZero = (value: BindingValue, constraints: Constraints): boolean
   return isPositive === false && isNegative === false ? false : null;
 };
 
-const MAX_DERIVED_CALLS = 32;
-
 const getLiteralCases = (
   value: SymbolicValue,
   constraints: Constraints,
@@ -422,19 +420,12 @@ const getLiteralCases = (
 };
 
 const getCallValues = (derived: DerivedCall, constraints: Constraints): AbstractValue[] | null => {
-  let combinations: PrimitiveValue[][] = [[]];
-  for (const operand of derived.operands) {
-    const cases = getLiteralCases(operand, constraints);
-    if (!cases || combinations.length * cases.length > MAX_DERIVED_CALLS) return null;
-    combinations = combinations.flatMap((values) => cases.map((value) => [...values, value]));
-  }
-  const results: AbstractValue[] = [];
-  for (const values of combinations) {
-    const result = applyPureFunction(derived.callee, values);
-    if (result === null) return null;
-    results.push({ kind: "Literal", value: result });
-  }
-  return dedupeAbstractValues(results);
+  const operandCases = derived.operands.map((operand) => getLiteralCases(operand, constraints));
+  if (!operandCases.every((cases): cases is PrimitiveValue[] => cases !== null)) return null;
+  const results = applyPureFunctionToCases(derived.callee, operandCases);
+  return results
+    ? dedupeAbstractValues(results.map((value) => ({ kind: "Literal", value })))
+    : null;
 };
 
 const getDerivedValues = (
