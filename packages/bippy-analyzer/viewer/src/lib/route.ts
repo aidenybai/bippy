@@ -1,7 +1,7 @@
 import { isViewMode, type ViewMode } from "./view-mode";
 
 interface Route {
-  name: string | null;
+  name: string;
   mode: ViewMode;
 }
 
@@ -10,11 +10,9 @@ interface FileRoute {
   mode: ViewMode;
 }
 
-export const parseRoute = (slug: string[] | undefined, names: Set<string>): Route | null => {
-  const [name, mode, ...rest] = slug ?? [];
-  if (rest.length > 0) return null;
-  if (name === undefined) return { name: null, mode: "code" };
-  if (!names.has(name)) return null;
+export const parseRoute = (slug: string[], names: Set<string>): Route | null => {
+  const [name, mode, ...rest] = slug;
+  if (name === undefined || rest.length > 0 || !names.has(name)) return null;
   if (mode === undefined) return { name, mode: "code" };
   return isViewMode(mode) && mode !== "code" ? { name, mode } : null;
 };

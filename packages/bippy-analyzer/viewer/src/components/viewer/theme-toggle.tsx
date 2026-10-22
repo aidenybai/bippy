@@ -1,3 +1,5 @@
+"use client";
+
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useResolvedTheme } from "@/hooks/use-resolved-theme";
