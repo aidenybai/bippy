@@ -1,8 +1,14 @@
-import type { Place, SourceLocation, SpreadPattern } from "../react-compiler/HIR/HIR";
+import type {
+  InstructionId,
+  Place,
+  SourceLocation,
+  SpreadPattern,
+} from "../react-compiler/HIR/HIR";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
-import { createBindingValue, createUnknown } from "./symbolic-values";
+import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "./types";
 import { getIdentifierName } from "./utils/get-identifier-name";
+import { getValueKey } from "./utils/get-value-key";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
 import type { WalkState } from "./walk-state";
 
@@ -61,6 +67,47 @@ export class ArrayIteration {
         walkState,
       ),
     );
+  }
+
+  evaluateArrayFind(
+    methodName: string,
+    array: SymbolicValue,
+    callback: SymbolicValue | undefined,
+    instructionId: InstructionId,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): SymbolicValue | null {
+    const isLiteralFind =
+      methodName === "find" &&
+      array.kind === "ArrayExpression" &&
+      array.spreads.length === 0 &&
+      callback?.kind === "Function";
+    if (!isLiteralFind) return null;
+    const openMatches: Array<[SymbolicValue, SymbolicValue]> = [];
+    const chooseFirstMatch = (fallback: SymbolicValue): SymbolicValue =>
+      openMatches.reduceRight<SymbolicValue>(
+        (rest, [test, element]) => ({
+          kind: "Conditional",
+          test,
+          testKind: "truthy",
+          consequent: element,
+          alternate: rest,
+          branch: this.#interpreter.createBranch(instructionId, loc, "none"),
+          guardKeys: walkState.guards.map(getValueKey),
+        }),
+        fallback,
+      );
+    for (const [index, element] of array.elements.entries()) {
+      const matched = this.#interpreter.callFunction(
+        callback,
+        [element, { kind: "Primitive", value: index }, array],
+        loc,
+        walkState,
+      );
+      if (matched.kind !== "Primitive") openMatches.push([matched, element]);
+      if (matched.kind === "Primitive" && matched.value) return chooseFirstMatch(element);
+    }
+    return chooseFirstMatch(UNDEFINED_VALUE);
   }
 
   evaluateArrayFrom(

@@ -27,7 +27,7 @@ describe("ref snapshots", () => {
   });
 
   it("reads a ref stored after an await as the stored value", () => {
-    expect(getUpdates("StoreAfterAwait")).toEqual([['"saved"', ["true"]]]);
+    expect(getUpdates("StoreAfterAwait")).toEqual([['"saved"', []]]);
   });
 
   it.fails("compares a ref read after an opaque call with the value read before it", () => {

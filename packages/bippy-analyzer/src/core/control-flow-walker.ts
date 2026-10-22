@@ -221,8 +221,9 @@ export class ControlFlowWalker {
       this.#walkArm(alternate, from, armStops, walkState, negate(consequentGuard));
     if (branchTest.knownOutcome !== null) {
       this.#recordDecidedBranch(branch, branchTest.knownOutcome);
+      const takenArm = branchTest.knownOutcome !== isSwapped ? consequent : alternate;
       return this.#continueAfter(
-        branchTest.knownOutcome !== isSwapped ? walkConsequent() : walkAlternate(),
+        this.#walkArm(takenArm, from, armStops, walkState, null),
         fallthrough,
         stops,
         walkState,
@@ -253,10 +254,10 @@ export class ControlFlowWalker {
     from: BlockId,
     armStops: ReadonlySet<BlockId>,
     walkState: WalkState,
-    guard: SymbolicValue,
+    guard: SymbolicValue | null,
   ): Outcome {
     if (armStops.has(armBlock)) return { kind: "Fallthrough", from, to: armBlock };
-    const guards = [...walkState.guards, guard];
+    const guards = guard ? [...walkState.guards, guard] : walkState.guards;
     return this.walk(armBlock, armStops, from, { ...walkState, guards }, "unresolved");
   }
 
