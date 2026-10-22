@@ -1,9 +1,19 @@
 import { traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
+import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import type { SymbolicValue } from "./types";
 
 export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
+}
+
+export interface ModuleVariable {
+  initial: SymbolicValue | null;
+  loc: SourceLocation;
+}
+
+export interface ModuleVariableLoader {
+  (variableName: string): ModuleVariable | null;
 }
 
 const isModuleLevel = (path: NodePath | null): boolean =>
@@ -124,6 +134,47 @@ const isReadOfPrimitive = (
   if (!values.every(isPrimitive) || isWriteTarget(path)) return false;
   const isCallee = parentPath?.isCallExpression({ callee: path.node }) ?? false;
   return !isCallee || receiverValues.every(isPrimitive);
+};
+
+const isMemberWrite = (path: NodePath): boolean => {
+  const { parentPath } = path;
+  const member = parentPath?.node;
+  const isMemberObject =
+    (types.isMemberExpression(member) || types.isOptionalMemberExpression(member)) &&
+    member.object === path.node;
+  return (
+    parentPath !== null &&
+    isMemberObject &&
+    (isWriteTarget(parentPath) || isMemberWrite(parentPath))
+  );
+};
+
+export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoader => {
+  const variables = new Map<string, ModuleVariable>();
+  traverse(ast, {
+    VariableDeclarator(path) {
+      const declaration = path.parentPath;
+      const { id, init } = path.node;
+      if (
+        !declaration.isVariableDeclaration() ||
+        !isModuleLevel(declaration.parentPath) ||
+        !types.isIdentifier(id) ||
+        !id.loc ||
+        types.isFunction(init)
+      )
+        return;
+      const binding = path.scope.getBinding(id.name);
+      const isWritten =
+        binding !== undefined &&
+        (binding.constantViolations.length > 0 || binding.referencePaths.some(isMemberWrite));
+      if (isWritten)
+        variables.set(id.name, {
+          initial: init ? toSymbolicValue(init) : { kind: "Primitive", value: undefined },
+          loc: id.loc,
+        });
+    },
+  });
+  return (variableName) => variables.get(variableName) ?? null;
 };
 
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {

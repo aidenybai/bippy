@@ -430,8 +430,9 @@ class HandlerCollector {
   }
 
   #unwrapCallback(value: SymbolicValue): SymbolicValue {
-    const wrapped = this.#interpreter.getWrappedCallbacks(value);
-    if (!wrapped) return value;
+    const resolved = this.#interpreter.resolveModuleFunction(value);
+    const wrapped = this.#interpreter.getWrappedCallbacks(resolved);
+    if (!wrapped) return resolved;
     const [single] = wrapped;
     return wrapped.length === 1 && single
       ? single
@@ -538,18 +539,23 @@ const getCommitUpdates = (effects: Handler[]): StateUpdate[] => {
   );
 };
 
-const getRenderedRefIds = (render: SymbolicValue): Set<number> => {
-  const refIds = new Set<number>();
+const getRenderedBindingIds = (render: SymbolicValue): Set<number> => {
+  const bindingIds = new Set<number>();
   forEachSymbolicValue(render, (part) => {
-    if (part.kind === "Binding" && part.binding.kind === "ref") refIds.add(part.binding.id);
+    if (part.kind === "Binding") bindingIds.add(part.binding.id);
   });
-  return refIds;
+  return bindingIds;
 };
 
-const revealPendingMutations = (handlers: Handler[], pendingMutations: Binding[]): void => {
+const revealPendingMutations = (
+  handlers: Handler[],
+  pendingMutations: Binding[],
+  hookBindings: Binding[],
+): void => {
   for (const handler of handlers) {
     if (handler.trigger.kind === "Render" || handler.updates.length === 0) continue;
-    for (const binding of pendingMutations)
+    const writesModule = handler.updates.some((update) => update.binding.kind === "module");
+    for (const binding of writesModule ? [...pendingMutations, ...hookBindings] : pendingMutations)
       if (!handler.updates.some((update) => update.binding.id === binding.id))
         handler.updates.push({
           binding,
@@ -624,14 +630,19 @@ const collectHandlersOnce = (
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);
   collector.runPlannedHandlers();
-  const renderedRefIds = getRenderedRefIds(render);
+  const renderedIds = getRenderedBindingIds(render);
   const isRendered = (binding: Binding): boolean =>
-    binding.kind !== "ref" || renderedRefIds.has(binding.id);
-  for (const handler of collector.handlers)
-    handler.updates = handler.updates.filter((update) => isRendered(update.binding));
+    (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
+  const { bindings } = interpreter.bindingTable;
   revealPendingMutations(
     collector.handlers,
-    [...collector.pendingMutations.values()].filter(isRendered),
+    [
+      ...collector.pendingMutations.values(),
+      ...bindings.filter((binding) => binding.kind === "module"),
+    ].filter(isRendered),
+    bindings.filter((binding) => binding.kind === "hook"),
   );
+  for (const handler of collector.handlers)
+    handler.updates = handler.updates.filter((update) => isRendered(update.binding));
   return collector.handlers;
 };

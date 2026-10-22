@@ -149,6 +149,7 @@ export const analyzeComponent = (
     fileContext.resolver,
     fileContext.compiled.loadModuleFunction,
     fileContext.compiled.loadModuleConstant,
+    fileContext.compiled.loadModuleVariable,
     fileContext.projectLoaders,
     contextSetterFields,
     fileContext.actionsByStore,

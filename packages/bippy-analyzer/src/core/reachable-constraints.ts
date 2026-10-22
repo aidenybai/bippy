@@ -228,7 +228,11 @@ export const createFirstRenderConstraints = (
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
-    if (!binding || !(isStateBinding(binding) || binding.kind === "ref")) continue;
+    if (
+      !binding ||
+      !(isStateBinding(binding) || binding.kind === "ref" || binding.kind === "module")
+    )
+      continue;
     const initialCases = getValueCases(
       getFirstValue(binding, bindingsById),
       place.path,
