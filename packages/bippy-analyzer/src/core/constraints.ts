@@ -488,7 +488,11 @@ const evaluateEquality = (
   if (isSameStableValue(value.left, value.right, constraints)) return !isNegated;
   const typeofTest = getTypeofTest(value);
   if (typeofTest) return evaluateTypeof(typeofTest, isNegated, constraints);
-  const [placeSide, literalSide] = splitEquality(value);
+  const [placeSide, literalSide] = splitEquality({
+    ...value,
+    left: resolveLiteral(value.left, constraints),
+    right: resolveLiteral(value.right, constraints),
+  });
   if (literalSide.kind !== "Primitive") return null;
   if (
     STRICT_EQUALITY_OPERATORS.has(value.operator) &&

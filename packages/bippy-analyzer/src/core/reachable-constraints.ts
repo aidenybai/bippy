@@ -149,6 +149,20 @@ export const createInitialConstraints = (analysis: ComponentAnalysis): Constrain
   return reachable;
 };
 
+const getFirstValue = (
+  binding: Binding,
+  bindingsById: Map<number, Binding>,
+  visited = new Set<number>(),
+): SymbolicValue | null => {
+  const { initial } = binding;
+  if (initial?.kind !== "Binding" || initial.path.length > 0 || visited.has(binding.id))
+    return initial;
+  const source = bindingsById.get(initial.binding.id);
+  return source && isStateBinding(source)
+    ? getFirstValue(source, bindingsById, visited.add(binding.id))
+    : initial;
+};
+
 export const createFirstRenderConstraints = (
   analysis: ComponentAnalysis,
   reachableConstraints: Constraints,
@@ -162,7 +176,12 @@ export const createFirstRenderConstraints = (
   for (const [place] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
     if (!binding || !isStateBinding(binding)) continue;
-    const initialCases = getFieldCases(binding.initial, place.path, binding, firstRender);
+    const initialCases = getFieldCases(
+      getFirstValue(binding, bindingsById),
+      place.path,
+      binding,
+      firstRender,
+    );
     if (Array.isArray(initialCases))
       firstRender.possibleValues.set(place, dedupeAbstractValues(initialCases));
   }

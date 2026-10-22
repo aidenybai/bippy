@@ -37,7 +37,9 @@ const SPONTANEOUS_EVENTS = new Set([
 ]);
 
 export const isSpontaneousHandler = ({ trigger }: Handler): boolean =>
-  trigger.kind === "Event" ? SPONTANEOUS_EVENTS.has(trigger.event) : trigger.hookKind === "Custom";
+  trigger.kind === "Event"
+    ? SPONTANEOUS_EVENTS.has(trigger.event)
+    : trigger.kind === "Effect" && trigger.hookKind === "Custom";
 
 export const getTransitions = (
   context: ScoringContext,
