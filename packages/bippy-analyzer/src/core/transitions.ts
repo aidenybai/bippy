@@ -1,8 +1,14 @@
-import { cloneConstraints, dedupeAbstractValues, forgetBinding } from "./constraints";
+import { assumeGuards } from "./claim-guards";
+import {
+  cloneConstraints,
+  dedupeAbstractValues,
+  evaluateCondition,
+  forgetBinding,
+} from "./constraints";
 import type { Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
 import type { RegionBranches } from "./regions";
-import type { Handler, StateUpdate, Transition } from "./types";
+import type { Handler, StateUpdate, SymbolicValue, Transition } from "./types";
 import { appendToGroup } from "./utils/append-to-group";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
@@ -159,6 +165,26 @@ const getCachedUpdateSequences = (
   return sequences;
 };
 
+const getSequenceGuards = (updates: StateUpdate[]): SymbolicValue[] =>
+  updates.reduce<SymbolicValue[]>(
+    (longest, update) => (update.guards.length > longest.length ? update.guards : longest),
+    [],
+  );
+
+const isSurelyApplied = (update: StateUpdate, constraints: Constraints): boolean =>
+  update.guards.every((guard) => evaluateCondition(guard, constraints) === true);
+
+const getConstraintsBeforeUpdates = (
+  handler: Handler,
+  updates: StateUpdate[],
+  constraints: Constraints,
+): Constraints | null => {
+  if (updates.length > 0) return assumeGuards(getSequenceGuards(updates), constraints);
+  return handler.updates.some((update) => isSurelyApplied(update, constraints))
+    ? null
+    : constraints;
+};
+
 const getTargetStateIndices = (
   handler: Handler,
   constraints: Constraints,
@@ -166,12 +192,14 @@ const getTargetStateIndices = (
 ): Set<number> => {
   const targetIndices = new Set<number>();
   for (const updates of getCachedUpdateSequences(handler, context)) {
+    const beforeHandler = getConstraintsBeforeUpdates(handler, updates, constraints);
+    if (!beforeHandler) continue;
     if (context.budget.remainingTargetEnumerations <= 0) {
       context.budget.isExhausted = true;
       break;
     }
     context.budget.remainingTargetEnumerations--;
-    const afterHandler = getConstraintsAfterUpdates(updates, constraints, context);
+    const afterHandler = getConstraintsAfterUpdates(updates, beforeHandler, context);
     for (const index of getCachedTargetIndices(afterHandler, context)) targetIndices.add(index);
   }
   return targetIndices;
