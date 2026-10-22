@@ -897,7 +897,7 @@ export class Interpreter {
       hookKind,
       name: hookName,
       module: hookModule,
-      argumentValues,
+      argumentValues: this.#evaluateInitializers(hookKind, callSite, walkState),
       loc,
     };
     const [contextPlace] = argumentPlaces;
@@ -907,6 +907,24 @@ export class Interpreter {
         : null;
     this.externalSources.addHookResult(hookResult, this.#resolver, contextKey);
     return hookResult;
+  }
+
+  #evaluateInitializers(
+    hookKind: HookKind,
+    callSite: CallSite,
+    walkState: WalkState,
+  ): SymbolicValue[] {
+    const { argumentValues, loc } = callSite;
+    const [initializer, initialArgument, init] = argumentValues;
+    if (hookKind === "useState" && initializer?.kind === "Function")
+      return [this.callFunction(initializer, [], loc, walkState), ...argumentValues.slice(1)];
+    if (hookKind === "useReducer" && init?.kind === "Function" && initializer && initialArgument)
+      return [
+        initializer,
+        this.callFunction(init, [initialArgument], loc, walkState),
+        ...argumentValues.slice(3),
+      ];
+    return argumentValues;
   }
 
   #evaluateMethodCall(
