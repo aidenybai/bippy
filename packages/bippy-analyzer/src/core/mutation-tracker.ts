@@ -26,6 +26,8 @@ const MAX_ALIAS_CHAIN_LENGTH = 32;
 
 const ELEMENT_METHODS = new Set(["find", "findLast", "at"]);
 
+const COPYING_METHODS = new Set(["filter", "slice", "toSorted", "toReversed", "concat"]);
+
 const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
   instruction.value.kind === "StoreContext" &&
   instruction.value.lvalue.place.identifier.id === place.identifier.id;
@@ -151,15 +153,23 @@ export class MutationTracker {
   }
 
   recordAliasSources(instruction: Instruction): void {
-    const { aliasSources, propertyNames } = this.#interpreter.getCompilationTables();
-    for (const effect of instruction.effects ?? [])
-      if (effect.kind === "Assign" || effect.kind === "Alias" || effect.kind === "CreateFrom")
+    const { aliasSources, elementSources, propertyNames } =
+      this.#interpreter.getCompilationTables();
+    const getElementSource = (place: Place): Place =>
+      elementSources.get(place.identifier.id) ?? place;
+    for (const effect of instruction.effects ?? []) {
+      if (effect.kind === "Assign" || effect.kind === "Alias")
         aliasSources.set(effect.into.identifier.id, effect.from);
+      if (effect.kind === "CreateFrom")
+        aliasSources.set(effect.into.identifier.id, getElementSource(effect.from));
+    }
     const { value } = instruction;
-    const isElementLookup =
-      value.kind === "MethodCall" &&
-      ELEMENT_METHODS.has(propertyNames.get(value.property.identifier.id) ?? "");
-    if (isElementLookup) aliasSources.set(instruction.lvalue.identifier.id, value.receiver);
+    if (value.kind !== "MethodCall") return;
+    const methodName = propertyNames.get(value.property.identifier.id) ?? "";
+    if (ELEMENT_METHODS.has(methodName))
+      aliasSources.set(instruction.lvalue.identifier.id, getElementSource(value.receiver));
+    if (COPYING_METHODS.has(methodName))
+      elementSources.set(instruction.lvalue.identifier.id, getElementSource(value.receiver));
   }
 
   #findAliasedOwnedValue(place: Place): BindingValue | null {

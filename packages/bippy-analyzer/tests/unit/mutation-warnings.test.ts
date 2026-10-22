@@ -71,6 +71,7 @@ describe("mutation warnings", () => {
     "SortedState",
     "CopyInHandler",
     "PassToFunction",
+    "FilteredCopyPush",
   ])("reports nothing for %s", (name) => {
     expect(getWarnings(name)).toEqual([]);
   });
@@ -97,9 +98,12 @@ describe("mutation warnings", () => {
     ]);
   });
 
-  it("reports an item found in state and written in a handler", () => {
-    expect(getWarningKinds(getComponent(project, "FoundItemWrite"))).toEqual(["state-mutation"]);
-  });
+  it.each(["FoundItemWrite", "FilteredItemWrite"])(
+    "reports an item %s takes from state and writes in a handler",
+    (name) => {
+      expect(getWarningKinds(getComponent(project, name))).toEqual(["state-mutation"]);
+    },
+  );
 
   it("reports props.items.sort() during render", () => {
     expect(getWarningKinds(getComponent(project, "SortPropsMember"))).toEqual(["prop-mutation"]);

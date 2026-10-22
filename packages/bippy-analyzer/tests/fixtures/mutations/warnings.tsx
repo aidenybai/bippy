@@ -159,3 +159,18 @@ export const FoundItemWrite = () => {
     </button>
   );
 };
+
+export const FilteredItemWrite = () => {
+  const [items, setItems] = useState([{ id: 1, isDone: false }]);
+  return (
+    <button
+      onClick={() => {
+        const [item] = items.filter((entry) => entry.id === 1);
+        if (item) item.isDone = true;
+        setItems([...items]);
+      }}
+    >
+      {items.length}
+    </button>
+  );
+};
