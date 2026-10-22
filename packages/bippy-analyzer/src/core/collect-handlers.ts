@@ -441,8 +441,11 @@ class HandlerCollector {
       callback: handled,
       callbackArguments: [controlEvent?.argument ?? EVENT_ARGUMENT],
       loc: getHandlerLocation(callback),
-      guards: [...guards, ...(controlEvent?.guards ?? [])],
-      callbackGuards: isWrapped ? [createUnknown("wrapped-call", prop.loc)] : [],
+      guards,
+      callbackGuards: [
+        ...(isWrapped ? [createUnknown("wrapped-call", prop.loc)] : []),
+        ...(controlEvent?.guards ?? []),
+      ],
       props: [prop],
     });
   }

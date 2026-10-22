@@ -25,6 +25,16 @@ describe("a change on a controlled checkbox or radio", () => {
     expect(report.states.map((state) => state.conditions)).toEqual([[]]);
   });
 
+  it("never fires a radio that is always checked", () => {
+    const { states } = getComponent(project, "CheckedRadio").report;
+    const changes = states.flatMap((state, index) =>
+      state.transitions.flatMap((transition) =>
+        transition.targets.filter((target) => target !== index),
+      ),
+    );
+    expect(changes).toEqual([]);
+  });
+
   it("reads checked as true from a radio", () => {
     expect(getUpdates("UncheckedRadio")).toEqual([{ kind: "Primitive", value: "a" }]);
   });

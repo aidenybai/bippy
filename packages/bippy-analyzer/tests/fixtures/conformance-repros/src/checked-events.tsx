@@ -72,3 +72,23 @@ export const SelectValue = () => {
     </div>
   );
 };
+
+export const CheckedRadio = () => {
+  const [mode, setMode] = useState<"a" | "b">("a");
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <input
+        type="radio"
+        aria-label="a"
+        value="a"
+        checked={mode === "a"}
+        onChange={(event) => {
+          if (event.target.checked) setCount(1);
+        }}
+      />
+      <input type="radio" aria-label="b" value="a" onChange={() => setMode("a")} />
+      {count === 1 ? <i>one</i> : <i>zero</i>}
+    </div>
+  );
+};
