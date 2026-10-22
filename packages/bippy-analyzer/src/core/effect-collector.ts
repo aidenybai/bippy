@@ -61,7 +61,6 @@ export class EffectCollector {
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #warn: WarnCallback;
-  #rendersSurely = false;
 
   constructor(warn: WarnCallback) {
     this.#warn = warn;
@@ -124,8 +123,6 @@ export class EffectCollector {
 
   recordSetterCall(binding: Binding, nextValue: SymbolicValue, condition: UpdateCondition): void {
     const isSameReference = isWholeBinding(nextValue, binding);
-    if (condition.guards.length === 0 && isSurelyChanged(nextValue, binding))
-      this.#rendersSurely = true;
     const mutation = this.#mutationsByBinding.get(binding.id);
     if (mutation) {
       this.#warn(
@@ -147,7 +144,10 @@ export class EffectCollector {
   }
 
   finish(): CollectedEffects {
-    const pendingMutations = this.#rendersSurely
+    const rendersSurely = this.#updates.some(
+      (update) => update.guards.length === 0 && isSurelyChanged(update.value, update.binding),
+    );
+    const pendingMutations = rendersSurely
       ? []
       : [
           ...[...this.#mutationsByBinding.values()].map((mutation) => mutation.binding),

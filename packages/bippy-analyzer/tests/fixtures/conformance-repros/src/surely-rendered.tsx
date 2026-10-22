@@ -22,3 +22,25 @@ export const PushSameValue = () => {
     </div>
   );
 };
+
+export const StaleToggle = () => {
+  const [isOn, setIsOn] = useState(true);
+  const [count, setCount] = useState(1);
+  const [items] = useState<number[]>([1]);
+  const [keep] = useState(() => () => setIsOn(!isOn));
+  return (
+    <div>
+      <button
+        onClick={() => {
+          keep();
+          items.push(1);
+        }}
+      >
+        push
+      </button>
+      <button onClick={() => setCount(count + 1)}>tick</button>
+      {items.length > 2 ? <i>many</i> : <i>few</i>}
+      {isOn ? <i>on</i> : null}
+    </div>
+  );
+};

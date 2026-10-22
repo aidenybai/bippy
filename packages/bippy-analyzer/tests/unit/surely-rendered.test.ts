@@ -11,4 +11,12 @@ describe("a mutation next to a set that may keep the same value", () => {
     );
     expect(flip?.updates.map((update) => update.binding.name)).toContain("items");
   });
+
+  it("treats a stale toggle from a stored closure as a set that may keep the value", () => {
+    const component = getComponent(project, "StaleToggle");
+    const tick = component.analysis.handlers.find((handler) =>
+      handler.updates.some((update) => update.binding.name === "count"),
+    );
+    expect(tick?.updates.map((update) => update.binding.name)).toContain("items");
+  });
 });
