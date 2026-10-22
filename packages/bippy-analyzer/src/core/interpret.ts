@@ -68,6 +68,7 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { coerceBooleanCall } from "./utils/coerce-boolean-call";
 import { negate } from "./utils/negate";
 import {
+  ONE_VALUE,
   UNDEFINED_VALUE,
   createBindingValue,
   createUnknown,
@@ -1316,6 +1317,12 @@ export class Interpreter {
       case "ComputedStore":
         this.callbacks.passStoredCallback(value, walkState);
         return this.read(value.value);
+      case "PrefixUpdateLocal":
+      case "PrefixUpdateContext":
+        return this.#evaluateUpdateLocal(value, true);
+      case "PostfixUpdateLocal":
+      case "PostfixUpdateContext":
+        return this.#evaluateUpdateLocal(value, false);
       case "TemplateLiteral":
       case "TaggedTemplateExpression":
       case "RegExpLiteral":
@@ -1325,10 +1332,6 @@ export class Interpreter {
       case "NextPropertyOf":
       case "PropertyDelete":
       case "ComputedDelete":
-      case "PostfixUpdateLocal":
-      case "PrefixUpdateLocal":
-      case "PostfixUpdateContext":
-      case "PrefixUpdateContext":
       case "StoreGlobal":
       case "UnsupportedNode":
         return createUnknown(value.kind, value.loc);
@@ -1378,6 +1381,18 @@ export class Interpreter {
     return this.#handlerEffects
       ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, walkState)
       : loaded;
+  }
+
+  #evaluateUpdateLocal(
+    update: InstructionValueOfKind<
+      "PrefixUpdateLocal" | "PrefixUpdateContext" | "PostfixUpdateLocal" | "PostfixUpdateContext"
+    >,
+    isPrefix: boolean,
+  ): SymbolicValue {
+    const previous = this.read(update.value);
+    const next = foldBinary(update.operation === "++" ? "+" : "-", previous, ONE_VALUE);
+    this.write(update.lvalue, next);
+    return isPrefix ? next : previous;
   }
 
   #evaluateStoreLocal(
