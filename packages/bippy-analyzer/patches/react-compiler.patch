@@ -2,7 +2,7 @@ Patches babel-plugin-react-compiler from facebook/react@b618bbb4422693bbb8d38718
 Edit src/react-compiler, then run `pnpm build --save` to regenerate this file.
 
 diff --git a/HIR/BuildHIR.ts b/HIR/BuildHIR.ts
-index 959fdf7..04d3b12 100644
+index 959fdf7..b0a6fa6 100644
 --- a/HIR/BuildHIR.ts
 +++ b/HIR/BuildHIR.ts
 @@ -275,20 +275,28 @@ function lowerStatement(
@@ -954,7 +954,30 @@ index 959fdf7..04d3b12 100644
          lowerValueToTemporary(builder, {
            kind: 'StoreLocal',
            lvalue: {kind: InstructionKind.Const, place: {...temp}},
-@@ -4515,9 +4447,10 @@ function gatherCapturedContext(
+@@ -4398,6 +4330,22 @@ function lowerAssignment(
+         assignmentKind,
+       );
+     }
++    case 'TSAsExpression':
++    case 'TSSatisfiesExpression':
++    case 'TSNonNullExpression':
++    case 'TSTypeAssertion': {
++      const expression = (lvaluePath as NodePath<t.TSAsExpression>).get(
++        'expression',
++      );
++      return lowerAssignment(
++        builder,
++        loc,
++        kind,
++        expression as NodePath<t.LVal>,
++        value,
++        assignmentKind,
++      );
++    }
+     default: {
+       builder.recordError(
+         new CompilerErrorDetail({
+@@ -4515,9 +4463,10 @@ function gatherCapturedContext(
           * AssignmentExpression if it's an Identifier. Work around it by explicitly
           * visiting it.
           */
@@ -968,7 +991,7 @@ index 959fdf7..04d3b12 100644
          }
          return;
        } else if (path.isJSXElement()) {
-@@ -4531,6 +4464,71 @@ function gatherCapturedContext(
+@@ -4531,6 +4480,71 @@ function gatherCapturedContext(
    return capturedIds;
  }
  
@@ -1188,6 +1211,29 @@ index 9e908b2..fe500d6 100644
            shape.properties.get('*') ??
            (isHookName(property) ? this.#getCustomHookType() : null)
          );
+diff --git a/HIR/FindContextIdentifiers.ts b/HIR/FindContextIdentifiers.ts
+index efb5df2..019018d 100644
+--- a/HIR/FindContextIdentifiers.ts
++++ b/HIR/FindContextIdentifiers.ts
+@@ -211,6 +211,18 @@ function handleAssignment(
+       // Interior mutability (not a reassign)
+       break;
+     }
++    case 'TSAsExpression':
++    case 'TSSatisfiesExpression':
++    case 'TSNonNullExpression':
++    case 'TSTypeAssertion': {
++      const path = lvalPath as NodePath<t.TSAsExpression>;
++      handleAssignment(
++        currentFn,
++        identifiers,
++        path.get('expression') as NodePath<t.LVal>,
++      );
++      break;
++    }
+     default: {
+       CompilerError.throwTodo({
+         reason: `[FindContextIdentifiers] Cannot handle Object destructuring assignment target ${lvalNode.type}`,
 diff --git a/HIR/HIR.ts b/HIR/HIR.ts
 index e7d3b4f..a62927e 100644
 --- a/HIR/HIR.ts
