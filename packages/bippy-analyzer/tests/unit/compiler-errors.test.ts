@@ -76,6 +76,13 @@ describe("compiler errors", () => {
     expect(report.states).toHaveLength(2);
   });
 
+  it.each(["MuteToggle", "ScrollShadow"])(
+    "lowers the this parameter and this in %s's listener",
+    (name) => {
+      expect(getComponent(project, name).analysis.bailouts).toEqual([]);
+    },
+  );
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
