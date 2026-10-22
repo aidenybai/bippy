@@ -6,29 +6,6 @@ export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
 }
 
-const MUTATING_METHODS = new Set([
-  "push",
-  "pop",
-  "shift",
-  "unshift",
-  "splice",
-  "sort",
-  "reverse",
-  "fill",
-  "copyWithin",
-  "set",
-  "delete",
-  "clear",
-  "add",
-]);
-
-const getRootName = (node: types.Node): string | null => {
-  if (types.isIdentifier(node)) return node.name;
-  if (types.isMemberExpression(node) || types.isOptionalMemberExpression(node))
-    return getRootName(node.object);
-  return null;
-};
-
 const isModuleLevel = (path: NodePath | null): boolean =>
   path !== null &&
   (path.isProgram() || (path.isExportNamedDeclaration() && isModuleLevel(path.parentPath)));
@@ -90,60 +67,90 @@ const toSymbolicValue = (node: types.Node): SymbolicValue | null => {
   return null;
 };
 
+const getMemberKey = (
+  member: types.MemberExpression | types.OptionalMemberExpression,
+): string | null => {
+  if (!member.computed && types.isIdentifier(member.property)) return member.property.name;
+  if (types.isStringLiteral(member.property) || types.isNumericLiteral(member.property))
+    return String(member.property.value);
+  return null;
+};
+
+const getMemberValues = (
+  value: SymbolicValue,
+  member: types.MemberExpression | types.OptionalMemberExpression,
+): SymbolicValue[] => {
+  const key = getMemberKey(member);
+  if (value.kind === "ArrayExpression") {
+    if (key === "length") return [{ kind: "Primitive", value: value.elements.length }];
+    return key === null
+      ? value.elements
+      : value.elements.filter((_element, index) => String(index) === key);
+  }
+  if (value.kind !== "ObjectExpression") return [];
+  return value.properties
+    .filter((property) => key === null || property.key === key)
+    .map((property) => property.value);
+};
+
+const isPrimitive = (value: SymbolicValue): boolean => value.kind === "Primitive";
+
+const isWriteTarget = (path: NodePath): boolean => {
+  const { parentPath } = path;
+  if (!parentPath) return false;
+  return (
+    parentPath.isAssignmentExpression({ left: path.node }) ||
+    parentPath.isUpdateExpression() ||
+    parentPath.isUnaryExpression({ operator: "delete" })
+  );
+};
+
+const isReadOfPrimitive = (
+  path: NodePath,
+  values: SymbolicValue[],
+  receiverValues: SymbolicValue[],
+): boolean => {
+  const { parentPath } = path;
+  const member = parentPath?.node;
+  const isMemberObject =
+    (types.isMemberExpression(member) || types.isOptionalMemberExpression(member)) &&
+    member.object === path.node;
+  if (parentPath && isMemberObject)
+    return isReadOfPrimitive(
+      parentPath,
+      values.flatMap((value) => getMemberValues(value, member)),
+      values,
+    );
+  if (!values.every(isPrimitive) || isWriteTarget(path)) return false;
+  const isCallee = parentPath?.isCallExpression({ callee: path.node }) ?? false;
+  return !isCallee || receiverValues.every(isPrimitive);
+};
+
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
-  const initializers = new Map<string, types.Node>();
-  const mutatedNames = new Set<string>();
-  const markMutated = (node: types.Node): void => {
-    const rootName = getRootName(node);
-    if (rootName !== null && !types.isIdentifier(node)) mutatedNames.add(rootName);
-  };
+  const constants = new Map<string, SymbolicValue>();
   traverse(ast, {
     VariableDeclarator(path) {
       const declaration = path.parentPath;
-      const isModuleConstant =
-        declaration.isVariableDeclaration() &&
-        declaration.node.kind === "const" &&
-        isModuleLevel(declaration.parentPath) &&
-        types.isIdentifier(path.node.id) &&
-        path.node.init !== null &&
-        path.node.init !== undefined;
-      if (isModuleConstant && types.isIdentifier(path.node.id) && path.node.init)
-        initializers.set(path.node.id.name, path.node.init);
-    },
-    AssignmentExpression(path) {
-      markMutated(path.node.left);
-    },
-    UpdateExpression(path) {
-      markMutated(path.node.argument);
-    },
-    UnaryExpression(path) {
-      if (path.node.operator === "delete") markMutated(path.node.argument);
-    },
-    CallExpression(path) {
-      const { callee } = path.node;
-      const [receiver] = path.node.arguments;
-      const isMutatingMethod =
-        types.isMemberExpression(callee) &&
-        types.isIdentifier(callee.property) &&
-        MUTATING_METHODS.has(callee.property.name);
-      if (isMutatingMethod) markMutated(callee);
-      const isObjectAssign =
-        types.isMemberExpression(callee) &&
-        types.isIdentifier(callee.object, { name: "Object" }) &&
-        types.isIdentifier(callee.property, { name: "assign" });
-      if (isObjectAssign && receiver && types.isIdentifier(receiver))
-        mutatedNames.add(receiver.name);
+      if (
+        !declaration.isVariableDeclaration() ||
+        declaration.node.kind !== "const" ||
+        !isModuleLevel(declaration.parentPath) ||
+        !types.isIdentifier(path.node.id) ||
+        !path.node.init
+      )
+        return;
+      const value = toSymbolicValue(path.node.init);
+      if (!value) return;
+      const isExported = declaration.parentPath?.isExportNamedDeclaration() ?? false;
+      const binding = path.scope.getBinding(path.node.id.name);
+      const isUnchanged =
+        isPrimitive(value) ||
+        (!isExported &&
+          binding !== undefined &&
+          binding.constantViolations.length === 0 &&
+          binding.referencePaths.every((reference) => isReadOfPrimitive(reference, [value], [])));
+      if (isUnchanged) constants.set(path.node.id.name, value);
     },
   });
-  const constantsByName = new Map<string, SymbolicValue | null>();
-  return (constantName) => {
-    if (!constantsByName.has(constantName)) {
-      const initializer = initializers.get(constantName);
-      constantsByName.set(
-        constantName,
-        initializer && !mutatedNames.has(constantName) ? toSymbolicValue(initializer) : null,
-      );
-    }
-    return constantsByName.get(constantName) ?? null;
-  };
+  return (constantName) => constants.get(constantName) ?? null;
 };

@@ -8,6 +8,12 @@ const LIMITS = { min: 1, max: 3 };
 
 const MUTABLE: Record<string, string> = { a: "b" };
 
+const SETTINGS = { flag: "a" };
+
+const settingsAlias = SETTINGS;
+
+settingsAlias.flag = "b";
+
 export const RecordHelper = () => {
   const [pick, setPick] = useState("a");
   return (
@@ -51,6 +57,16 @@ export const MutatedHelper = () => {
         go
       </button>
       {pick === "a" ? <i>L1</i> : pick === "b" ? <i>L2</i> : <i>L3</i>}
+    </div>
+  );
+};
+
+export const AliasedConstant = () => {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <button onClick={() => setCount(count + 1)}>go</button>
+      {SETTINGS.flag === "b" ? <i>yes</i> : <i>no</i>}
     </div>
   );
 };

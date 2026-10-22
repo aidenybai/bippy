@@ -29,4 +29,10 @@ describe("a module-level constant", () => {
   it("stays unknown when a handler writes it", () => {
     expect(getUpdateTexts("MutatedHelper")[0]).toContain("MUTABLE");
   });
+
+  it("stays unknown when an alias of it is written", () => {
+    expect(
+      getComponent(project, "AliasedConstant").report.states.map((state) => state.conditions),
+    ).toEqual([['SETTINGS.flag === "b"'], ['SETTINGS.flag !== "b"']]);
+  });
 });
