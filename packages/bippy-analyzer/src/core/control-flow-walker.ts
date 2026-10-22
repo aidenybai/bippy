@@ -64,9 +64,7 @@ interface BranchTest {
 interface SwitchWalk {
   terminal: SwitchTerminal;
   from: BlockId;
-  caseStops: ReadonlySet<BlockId>;
   discriminant: SymbolicValue;
-  walkState: WalkState;
 }
 
 const MAX_BLOCK_VISITS = 20_000;
@@ -271,49 +269,68 @@ export class ControlFlowWalker {
     const switchWalk: SwitchWalk = {
       terminal,
       from,
-      caseStops: new Set([...stops, terminal.fallthrough]),
       discriminant: this.#interpreter.read(terminal.test),
-      walkState,
     };
-    return this.#continueAfter(
-      this.#walkSwitchCase(switchWalk, 0, walkState.guards),
-      terminal.fallthrough,
-      stops,
-      walkState,
+    const caseBlocks = [...new Set(terminal.cases.map((switchCase) => switchCase.block))].filter(
+      (block) => block !== terminal.fallthrough,
     );
+    const casesOutcome = caseBlocks.reduce(
+      (outcome, block) =>
+        this.#continueAtCase(
+          outcome,
+          block,
+          new Set([
+            ...stops,
+            terminal.fallthrough,
+            ...caseBlocks.filter((caseBlock) => caseBlock !== block),
+          ]),
+          walkState,
+        ),
+      this.#dispatchSwitchCase(switchWalk, 0),
+    );
+    return this.#continueAfter(casesOutcome, terminal.fallthrough, stops, walkState);
   }
 
-  #walkSwitchCase(switchWalk: SwitchWalk, caseIndex: number, guards: SymbolicValue[]): Outcome {
-    const { terminal, from, caseStops, discriminant, walkState } = switchWalk;
+  #dispatchSwitchCase(switchWalk: SwitchWalk, caseIndex: number): Outcome {
+    const { terminal, from, discriminant } = switchWalk;
     const switchCase = terminal.cases[caseIndex];
-    if (!switchCase) return { kind: "Fallthrough", from, to: terminal.fallthrough };
-    const caseTestNode = switchCase.test;
-    const caseTest =
-      caseTestNode === null
-        ? null
-        : foldBinary("===", discriminant, this.#interpreter.read(caseTestNode));
-    const isSplit = caseTest !== null && caseTest.kind !== "Primitive";
-    const caseOutcome: Outcome =
-      switchCase.block === terminal.fallthrough
-        ? { kind: "Fallthrough", from, to: terminal.fallthrough }
-        : this.walk(
-            switchCase.block,
-            caseStops,
-            from,
-            { ...walkState, guards: isSplit ? [...guards, caseTest] : guards },
-            "unresolved",
-          );
-    if (caseTestNode === null || caseTest === null) return caseOutcome;
+    if (!switchCase) {
+      const defaultCase = terminal.cases.find((candidate) => candidate.test === null);
+      return { kind: "Fallthrough", from, to: defaultCase?.block ?? terminal.fallthrough };
+    }
+    if (switchCase.test === null) return this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
+    const caseTest = foldBinary("===", discriminant, this.#interpreter.read(switchCase.test));
+    const matched: Outcome = { kind: "Fallthrough", from, to: switchCase.block };
     if (caseTest.kind === "Primitive")
-      return caseTest.value ? caseOutcome : this.#walkSwitchCase(switchWalk, caseIndex + 1, guards);
+      return caseTest.value ? matched : this.#dispatchSwitchCase(switchWalk, caseIndex + 1);
     return {
       kind: "Split",
       test: caseTest,
       testKind: "truthy",
-      branch: this.#interpreter.createBranch(terminal.id, caseTestNode.loc, "none"),
-      consequent: caseOutcome,
-      alternate: this.#walkSwitchCase(switchWalk, caseIndex + 1, [...guards, negate(caseTest)]),
+      branch: this.#interpreter.createBranch(terminal.id, switchCase.test.loc, "none"),
+      consequent: matched,
+      alternate: this.#dispatchSwitchCase(switchWalk, caseIndex + 1),
     };
+  }
+
+  #continueAtCase(
+    outcome: Outcome,
+    block: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): Outcome {
+    const predecessors = new Set<BlockId | null>();
+    mapFallthroughs(outcome, (fallthrough) => {
+      if (fallthrough.to === block) predecessors.add(fallthrough.from);
+      return fallthrough;
+    });
+    if (predecessors.size < 2) return this.#continueAfter(outcome, block, stops, walkState);
+    for (const phi of this.#getBlock(block).phis)
+      this.#interpreter.write(phi.place, this.#resolvePhi(phi, outcome, walkState.guards));
+    const blockOutcome = this.walk(block, stops, null, walkState, "resolved");
+    return mapFallthroughs(outcome, (fallthrough) =>
+      fallthrough.to === block ? blockOutcome : fallthrough,
+    );
   }
 
   #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, walkState: WalkState): Outcome {
