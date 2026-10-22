@@ -7,6 +7,7 @@ import type {
   SourceFile,
 } from "typescript/unstable/ast";
 import {
+  isArrayLiteralExpression,
   isArrowFunction,
   isBlock,
   isCallExpression,
@@ -98,6 +99,27 @@ const getLiteralValue = (node: Node): StoreFieldValue | null => {
   if (isStringLiteral(node)) return { kind: "Literal", value: node.text };
   if (isNumericLiteral(node)) return { kind: "Literal", value: Number(node.text) };
   return null;
+};
+
+const getInitialValue = (node: Node): SymbolicValue | null => {
+  const expression = skipParentheses(node);
+  const literal = getLiteralValue(expression);
+  if (literal?.kind === "Literal") return { kind: "Primitive", value: literal.value };
+  if (isArrayLiteralExpression(expression)) {
+    const elements = expression.elements.map(getInitialValue);
+    return elements.every((element) => element !== null)
+      ? { kind: "ArrayExpression", elements, spreads: [] }
+      : null;
+  }
+  if (!isObjectLiteralExpression(expression)) return null;
+  const properties = expression.properties.map((property) => {
+    if (!isPropertyAssignment(property) || !isIdentifier(property.name)) return null;
+    const value = getInitialValue(property.initializer);
+    return value ? { key: property.name.text, value } : null;
+  });
+  return properties.every((property) => property !== null)
+    ? { kind: "ObjectExpression", properties, spreads: [] }
+    : null;
 };
 
 const getFieldValue = (
@@ -203,12 +225,8 @@ export const collectStoreModels = (sourceFile: SourceFile): Map<string, StoreMod
         }
         const assignments = getActionAssignments(property.initializer, setName);
         if (assignments) actions.set(property.name.text, assignments);
-        const literal = getLiteralValue(skipParentheses(property.initializer));
-        if (literal?.kind === "Literal")
-          initialFields.push({
-            key: property.name.text,
-            value: { kind: "Primitive", value: literal.value },
-          });
+        const initialValue = getInitialValue(property.initializer);
+        if (initialValue) initialFields.push({ key: property.name.text, value: initialValue });
         else hasOpaqueField = true;
       }
       const model: StoreModel = {

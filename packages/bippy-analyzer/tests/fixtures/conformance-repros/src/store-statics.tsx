@@ -73,3 +73,43 @@ export const TwoSetStates = () => {
     </div>
   );
 };
+
+interface Counter {
+  on: boolean;
+  count: number;
+  items: number[];
+  reset: () => void;
+  flipIfZero: () => void;
+}
+
+const useCounter = create<Counter>((set) => ({
+  on: true,
+  count: 1,
+  items: [],
+  reset: () => set({ count: 0, on: false }),
+  flipIfZero: () => set((state) => (state.count === 0 ? { on: !state.on } : state)),
+}));
+
+export const ResetThenFlip = () => {
+  const on = useCounter((state) => state.on);
+  const count = useCounter((state) => state.count);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          useCounter.getState().reset();
+          useCounter.getState().flipIfZero();
+        }}
+      >
+        reset
+      </button>
+      {on ? <i>on</i> : <i>off</i>}
+      {count === 1 ? <i>one</i> : <i>other</i>}
+    </div>
+  );
+};
+
+export const EmptyItems = () => {
+  const items = useCounter((state) => state.items);
+  return <div>{items.length > 0 ? <i>some</i> : <i>none</i>}</div>;
+};

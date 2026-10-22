@@ -109,6 +109,10 @@ export class ExternalSources {
     return storeBinding;
   }
 
+  isStoreBinding(binding: Binding): boolean {
+    return this.#actionsByStoreBinding.has(binding.id);
+  }
+
   getActionAssignments(storeBinding: Binding, actionName: string): StoreAssignment[] | undefined {
     return this.#actionsByStoreBinding.get(storeBinding.id)?.get(actionName);
   }

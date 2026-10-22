@@ -33,6 +33,17 @@ describe("a zustand store", () => {
     expect(getFirstConditions("GetStateToggle")).toEqual(["!usePanel().open"]);
   });
 
+  it("keeps an action it cannot summarize from dropping into an earlier update", () => {
+    expect(getEdges("ResetThenFlip")).toContainEqual([
+      "useCounter().on && useCounter().count === 1",
+      "useCounter().on && useCounter().count !== 1",
+    ]);
+  });
+
+  it("starts from array fields of the store", () => {
+    expect(getFirstConditions("EmptyItems")).toEqual(["useCounter().items.length <= 0"]);
+  });
+
   it.each(["TwoActions", "TwoSetStates"])("%s applies both updates from one handler", (name) => {
     expect(getEdges(name)).toContainEqual([
       "!usePanel().open && !usePanel().pinned",

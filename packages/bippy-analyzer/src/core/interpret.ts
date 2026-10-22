@@ -1105,6 +1105,14 @@ export class Interpreter {
       );
       return;
     }
+    if (memberName && this.externalSources.isStoreBinding(binding)) {
+      this.#handlerEffects?.recordSetterCall(
+        binding,
+        createUnknown("store", binding.loc),
+        walkState,
+      );
+      return;
+    }
     if (isExternalSource(binding) && this.#handlerEffects)
       this.#recordExternalUpdate(this.#handlerEffects, callee, walkState);
   }
