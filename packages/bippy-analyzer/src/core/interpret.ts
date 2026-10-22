@@ -1160,6 +1160,13 @@ export class Interpreter {
         },
         walkState,
       );
+    const instance =
+      receiver.kind === "Binding" && receiver.path.length === 0 && receiver.binding.initial
+        ? receiver.binding.initial
+        : receiver;
+    const instanceCallbacks = this.#handlerEffects ? this.getWrappedCallbacks(instance) : null;
+    if (instanceCallbacks)
+      this.callbacks.passCallbacks(instanceCallbacks, methodCall.loc, walkState);
     const [callback] = argumentValues;
     if (ITERATION_METHODS.has(methodName))
       this.iteration.visitItemCallback(methodName, callback, methodCall, walkState);
@@ -1273,13 +1280,14 @@ export class Interpreter {
         return { kind: "JsxFragment", children: value.children.map((child) => this.read(child)) };
       case "Await":
         return createUnknown("async", value.loc);
-      case "NewExpression":
-        this.callbacks.passCallbacks(
-          value.args.map((argument) => this.read(getPlaceOrSpread(argument))),
-          value.loc,
-          walkState,
-        );
-        return createUnknown(value.kind, value.loc);
+      case "NewExpression": {
+        const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
+        this.callbacks.passCallbacks(argumentValues, value.loc, walkState);
+        const instance = createUnknown(value.kind, value.loc);
+        const callbacks = getPassedCallbacks(argumentValues);
+        if (callbacks.length > 0) this.#wrappedCallbacks.set(instance, callbacks);
+        return instance;
+      }
       case "PropertyStore":
         return this.#evaluatePropertyStore(value, walkState);
       case "ComputedStore":
