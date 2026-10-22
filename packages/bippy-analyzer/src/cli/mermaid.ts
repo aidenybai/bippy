@@ -27,7 +27,12 @@ const REGION_SEPARATOR = "--";
 const MIN_FAN_OUT_STATES = 3;
 
 const escapeText = (text: string): string =>
-  text.replaceAll(";", ",").replaceAll("::", "∷").replaceAll("<", "#lt;").replaceAll(">", "#gt;");
+  text
+    .replaceAll(/\s*\n\s*/g, " ")
+    .replaceAll(";", "#59;")
+    .replaceAll(":", "#58;")
+    .replaceAll("<", "#lt;")
+    .replaceAll(">", "#gt;");
 
 const indent = (line: string): string => `${INDENT}${line}`;
 

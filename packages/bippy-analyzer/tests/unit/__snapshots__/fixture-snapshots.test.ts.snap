@@ -659,8 +659,8 @@ title: Feed src/chains.tsx:17
 ---
 stateDiagram-v2
   direction LR
-  S1: !(pages?.map(…) != null ? Unknown(member) : undefined) · #lt;p#gt; "Nothing yet"
-  S2: pages?.map(…) != null ? Unknown(member) : undefined · #lt;p#gt; ⚠ items.length " items""
+  S1: !(pages?.map(…) != null ? Unknown(member) #58; undefined) · #lt;p#gt; "Nothing yet"
+  S2: pages?.map(…) != null ? Unknown(member) #58; undefined · #lt;p#gt; ⚠ items.length " items""
 `;
 
 exports[`fixture analysis > FileRow keeps its render tree and handlers 1`] = `
@@ -795,7 +795,7 @@ title: FromLength src/rows-from-length.tsx:1
 ---
 stateDiagram-v2
   direction LR
-  S1: always · #lt;ul#gt; ↻ { length: count }
+  S1: always · #lt;ul#gt; ↻ { length#58; count }
   [*] --> S1"
 `;
 
@@ -1608,7 +1608,7 @@ title: ProfileCard src/query.tsx:10
 stateDiagram-v2
   direction LR
   S1: query.isPending · #lt;p#gt; "Loading"
-  S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error: " {query.error.message}
+  S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error#58; " {query.error.message}
   S3: !query.isPending ∧ !query.isError ∧ query.data.isAdmin · #lt;div#gt; {query.data.name} #lt;span#gt; "Admin"
   S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}"
 `;
@@ -2704,8 +2704,8 @@ title: ToneLabel src/literal-constants.tsx:21
 ---
 stateDiagram-v2
   direction LR
-  S1: (tone === undefined ? "calm" : tone) === "loud" · #lt;strong#gt; "Loud"
-  S2: (tone === undefined ? "calm" : tone) !== "loud" · #lt;span#gt; "Calm""
+  S1: (tone === undefined ? "calm" #58; tone) === "loud" · #lt;strong#gt; "Loud"
+  S2: (tone === undefined ? "calm" #58; tone) !== "loud" · #lt;span#gt; "Calm""
 `;
 
 exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
