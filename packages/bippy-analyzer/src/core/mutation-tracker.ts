@@ -1,5 +1,5 @@
+import { ValueKind } from "../react-compiler/HIR/HIR";
 import type { Instruction, Place, SourceLocation } from "../react-compiler/HIR/HIR";
-import type { AliasingEffect } from "../react-compiler/Inference/AliasingEffects";
 import { formatPlace } from "./format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown } from "./symbolic-values";
@@ -60,6 +60,7 @@ const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null =
 export class MutationTracker {
   readonly #interpreter: Interpreter;
   readonly #creationPaths = new WeakMap<SymbolicValue, CreationPath>();
+  readonly #frozenValues = new WeakSet<SymbolicValue>();
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -77,11 +78,7 @@ export class MutationTracker {
     const mutatedLiterals = new Set<SymbolicValue>();
     for (const effect of instruction.effects ?? []) {
       const mutatedPlace = getMutatedPlace(effect);
-      if (mutatedPlace && isReassignedPlace(instruction, mutatedPlace)) continue;
-      if (!mutatedPlace) {
-        this.#trackPossibleMutation(effect);
-        continue;
-      }
+      if (!mutatedPlace || isReassignedPlace(instruction, mutatedPlace)) continue;
       const mutatedValue = this.#interpreter.read(mutatedPlace);
       if (
         (mutatedValue.kind === "ArrayExpression" || mutatedValue.kind === "ObjectExpression") &&
@@ -97,6 +94,49 @@ export class MutationTracker {
         instruction.value.kind === "PropertyStore" ? String(instruction.value.property) : null;
       this.#trackOwnedValues(mutatedPlace, mutatedValue, mutatedPlace.loc, storedProperty);
     }
+  }
+
+  trackPossibleMutations(instruction: Instruction, walkState: WalkState): void {
+    if (isFunctionCreation(instruction.value)) return;
+    for (const effect of instruction.effects ?? []) {
+      if (effect.kind === "Freeze") this.#freeze(this.#interpreter.read(effect.value));
+      if (effect.kind === "Create" && effect.value === ValueKind.Frozen)
+        this.#freeze(this.#interpreter.read(effect.into));
+      const possiblyMutatedPlace = getConditionallyMutatedPlace(effect);
+      if (
+        !possiblyMutatedPlace ||
+        possiblyMutatedPlace.identifier.type.kind === "Primitive" ||
+        isReassignedPlace(instruction, possiblyMutatedPlace)
+      )
+        continue;
+      const possiblyMutatedValue = this.#interpreter.read(possiblyMutatedPlace);
+      if (this.#frozenValues.has(possiblyMutatedValue)) continue;
+      if (
+        possiblyMutatedValue.kind === "ArrayExpression" ||
+        possiblyMutatedValue.kind === "ObjectExpression"
+      ) {
+        this.#mutateLiteral(instruction, possiblyMutatedPlace, possiblyMutatedValue, walkState);
+        continue;
+      }
+      if (possiblyMutatedValue.kind === "Binding" && isStateBinding(possiblyMutatedValue.binding))
+        this.#interpreter.handlerEffects?.addPossibleMutation(possiblyMutatedValue.binding);
+    }
+  }
+
+  #freeze(value: SymbolicValue): void {
+    if (value.kind === "Conditional") {
+      this.#freeze(value.consequent);
+      this.#freeze(value.alternate);
+      return;
+    }
+    if (value.kind !== "ArrayExpression" && value.kind !== "ObjectExpression") return;
+    if (this.#frozenValues.has(value)) return;
+    this.#frozenValues.add(value);
+    const nestedValues =
+      value.kind === "ArrayExpression"
+        ? value.elements
+        : value.properties.map((property) => property.value);
+    for (const nestedValue of nestedValues) this.#freeze(nestedValue);
   }
 
   trackArgument(place: Place, loc: SourceLocation): void {
@@ -171,14 +211,6 @@ export class MutationTracker {
       (mutatedGlobal.name === initial.name || mutatedGlobal.name.startsWith(`${initial.name}.`)) &&
       this.#interpreter.bindingTable.isDeclaredIn(binding, this.#interpreter.resolver.fileName)
     );
-  }
-
-  #trackPossibleMutation(effect: AliasingEffect): void {
-    const possiblyMutatedPlace = getConditionallyMutatedPlace(effect);
-    if (!possiblyMutatedPlace || possiblyMutatedPlace.identifier.type.kind === "Primitive") return;
-    const possiblyMutatedValue = this.#interpreter.read(possiblyMutatedPlace);
-    if (possiblyMutatedValue.kind === "Binding" && isStateBinding(possiblyMutatedValue.binding))
-      this.#interpreter.handlerEffects?.addPossibleMutation(possiblyMutatedValue.binding);
   }
 
   #mutateLiteral(
