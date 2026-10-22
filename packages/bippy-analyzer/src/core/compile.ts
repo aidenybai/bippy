@@ -134,7 +134,11 @@ const createPluginOptions = (
     panicThreshold: "none",
     flowSuppressions: false,
     eslintSuppressionRules: [],
-    environment: { ...environment, moduleTypeProvider: getModuleType },
+    environment: {
+      ...environment,
+      moduleTypeProvider: getModuleType,
+      validateRefAccessDuringRender: false,
+    },
     logger,
   });
 
