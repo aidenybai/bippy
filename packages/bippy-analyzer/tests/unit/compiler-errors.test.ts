@@ -87,6 +87,12 @@ describe("compiler errors", () => {
     expect(getComponent(project, "CartTotal").analysis.bailouts).toEqual([]);
   });
 
+  it("lowers an object getter as a value it can't see into and leaves out its setter", () => {
+    const { analysis, report } = getComponent(project, "PointerBadge");
+    expect(analysis.bailouts).toEqual([]);
+    expect(report.states).toHaveLength(2);
+  });
+
   it("lowers a dynamic import as a value it can't see into", () => {
     expect(getComponent(project, "DynamicImport").analysis.bailouts).toEqual([]);
   });
