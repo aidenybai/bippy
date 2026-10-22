@@ -51,7 +51,8 @@ const formatTotals = (
 const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const startTime = performance.now();
   const configPath = resolve(tsconfig);
-  const tracer = options.trace ? createTracer() : NO_TRACER;
+  const rootDirectory = dirname(configPath);
+  const tracer = options.trace ? createTracer(rootDirectory) : NO_TRACER;
   const { components: allComponents, fileCount } = analyzeProject(
     configPath,
     options.file ?? null,
@@ -61,7 +62,6 @@ const runAnalyze = (tsconfig: string, options: AnalyzeCliOptions): void => {
   const components = componentNames
     ? allComponents.filter(({ analysis }) => componentNames.includes(analysis.name))
     : allComponents;
-  const rootDirectory = dirname(configPath);
   const output = tracer.span("output", options.json ? "json" : "mermaid", () =>
     options.json
       ? serializeProjectAnalysis({ components, fileCount })

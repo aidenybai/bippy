@@ -1,3 +1,5 @@
+import { isAbsolute, relative } from "node:path";
+
 export interface TraceEvent {
   name: string;
   cat: string;
@@ -29,8 +31,10 @@ export const NO_TRACER: Tracer = {
   span: (_category, _name, run) => run(),
 };
 
-export const createTracer = (): Tracer => {
+export const createTracer = (rootDirectory: string): Tracer => {
   const events: TraceEvent[] = [];
+  const toTraceText = (text: string): string =>
+    isAbsolute(text) ? relative(rootDirectory, text) : text;
   return {
     events,
     span: (category, name, run, args = {}) => {
@@ -41,7 +45,21 @@ export const createTracer = (): Tracer => {
         const end = getMicroseconds();
         const { heapUsed, rss } = process.memoryUsage();
         events.push(
-          { name, cat: category, ph: "X", ts: start, dur: end - start, pid: 1, tid: 1, args },
+          {
+            name: toTraceText(name),
+            cat: category,
+            ph: "X",
+            ts: start,
+            dur: end - start,
+            pid: 1,
+            tid: 1,
+            args: Object.fromEntries(
+              Object.entries(args).map(([key, value]) => [
+                key,
+                typeof value === "string" ? toTraceText(value) : value,
+              ]),
+            ),
+          },
           {
             name: "memory",
             cat: "memory",
