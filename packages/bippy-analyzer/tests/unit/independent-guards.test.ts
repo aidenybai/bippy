@@ -22,7 +22,7 @@ describe("updates under guards in one handler", () => {
     expect(getTargets("GuardedSetThenRead")[3]?.[0]).toContain(2);
   });
 
-  it.fails("apply together after a guarded updater that reads another state", () => {
+  it("apply together after a guarded updater that reads another state", () => {
     expect(getTargets("GuardedUpdaterThenRead")[3]?.[0]).toContain(0);
   });
 });
