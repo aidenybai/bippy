@@ -2,6 +2,7 @@ import { evaluateCondition, type Constraints } from "./constraints";
 import type { AbstractValue, Binding, BindingPlace, SymbolicValue } from "./types";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTestExpression } from "./utils/get-test-expression";
+import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isSamePlace } from "./utils/is-same-place";
 
 export type FieldCases = AbstractValue[] | "unchanged" | null;
@@ -35,6 +36,10 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
     const consequentCases = resolveUnchanged(consequent, walk);
     const alternateCases = resolveUnchanged(alternate, walk);
     return consequentCases && alternateCases ? [...consequentCases, ...alternateCases] : null;
+  }
+  if (path.length === 0 && walk.constraints && isBooleanExpression(value)) {
+    const outcome = evaluateCondition(value, walk.constraints);
+    return outcome === null ? null : [{ kind: "Literal", value: outcome }];
   }
   if (path.length === 0)
     return value.kind === "Primitive" ? [{ kind: "Literal", value: value.value }] : null;

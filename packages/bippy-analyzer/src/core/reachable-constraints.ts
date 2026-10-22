@@ -72,6 +72,7 @@ const getReachableCases = (
   binding: Binding,
   path: string[],
   domain: Domain,
+  mount: Constraints,
 ): AbstractValue[] | null => {
   const typeCases = domain.kind === "Cases" ? domain.cases : null;
   const updates = getBindingUpdates(analysis.handlers, binding);
@@ -79,8 +80,9 @@ const getReachableCases = (
     typeCases?.every((value) => value.kind === "Literal" && isNullish(value.value)) ?? false;
   if (isUntypedState && updates.length > 0) return null;
   if (updates.some((update) => hasCastPart(update.value))) return null;
-  const initialCases = getFieldCases(binding.initial, path, binding, null);
+  const initialCases = getFieldCases(binding.initial, path, binding, mount);
   if (!Array.isArray(initialCases)) return typeCases;
+  mount.possibleValues.set(getBindingPlace(binding, path), dedupeAbstractValues(initialCases));
   let reachable = dedupeAbstractValues(initialCases);
   const place = getBindingPlace(binding, path);
   for (let round = 0; round < MAX_REACHABILITY_ROUNDS; round++) {
@@ -117,43 +119,53 @@ const getLengthLimitBounds = (binding: Binding): Bound[] => {
   return isSameLength ? [isNoLonger, isNoShorter] : [isNoLonger];
 };
 
+const createEmptyConstraints = (analysis: ComponentAnalysis): Constraints => ({
+  possibleValues: new PlaceMap<AbstractValue[]>(),
+  assumptions: new Map(),
+  bounds: [],
+  boundGraph: null,
+  invariants: analysis.bindings.flatMap(getLengthLimitBounds),
+  unionMemberValues: analysis.unionMemberValues,
+  possibleMembers: new Map(),
+});
+
 export const createInitialConstraints = (analysis: ComponentAnalysis): Constraints => {
-  const possibleValues = new PlaceMap<AbstractValue[]>();
+  const reachable = createEmptyConstraints(analysis);
+  const mount = createEmptyConstraints(analysis);
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place, domain] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
     const cases =
       binding && isStateBinding(binding)
-        ? getReachableCases(analysis, binding, place.path, domain)
+        ? getReachableCases(analysis, binding, place.path, domain, mount)
         : domain.kind === "Cases"
           ? domain.cases
           : null;
-    if (cases) possibleValues.set(place, cases);
+    if (cases) {
+      reachable.possibleValues.set(place, cases);
+      if (!mount.possibleValues.has(place)) mount.possibleValues.set(place, cases);
+    }
   }
-  return {
-    possibleValues,
-    assumptions: new Map(),
-    bounds: [],
-    boundGraph: null,
-    invariants: analysis.bindings.flatMap(getLengthLimitBounds),
-    unionMemberValues: analysis.unionMemberValues,
-    possibleMembers: new Map(),
-  };
+  return reachable;
 };
 
 export const createFirstRenderConstraints = (
   analysis: ComponentAnalysis,
   reachableConstraints: Constraints,
 ): Constraints => {
-  const possibleValues = reachableConstraints.possibleValues.clone();
+  const firstRender = {
+    ...reachableConstraints,
+    possibleValues: reachableConstraints.possibleValues.clone(),
+  };
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place] of analysis.placeDomains) {
     const binding = bindingsById.get(place.bindingId);
     if (!binding || !isStateBinding(binding)) continue;
-    const initialCases = getFieldCases(binding.initial, place.path, binding, null);
-    if (Array.isArray(initialCases)) possibleValues.set(place, dedupeAbstractValues(initialCases));
+    const initialCases = getFieldCases(binding.initial, place.path, binding, firstRender);
+    if (Array.isArray(initialCases))
+      firstRender.possibleValues.set(place, dedupeAbstractValues(initialCases));
   }
-  return { ...reachableConstraints, possibleValues };
+  return firstRender;
 };
 
 export const getFirstRenderOutcome = (
