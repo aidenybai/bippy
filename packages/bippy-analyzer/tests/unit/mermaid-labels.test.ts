@@ -1,6 +1,7 @@
 import { dirname } from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { DEFAULT_MAX_STATES, formatMermaid } from "../../src/cli/mermaid";
+import { DEFAULT_RENDER_DEPTH, formatRenderTree } from "../../src/cli/render-tree";
 import { analyzeFixture, getComponent, getFixtureConfig } from "./helpers";
 
 describe("Mermaid state labels", () => {
@@ -27,5 +28,15 @@ describe("Mermaid state labels", () => {
     const transitionLines = diagram.split("\n").filter((line) => /^\s+S\d+ --> S\d+: /.test(line));
     expect(transitionLines).toHaveLength(2);
     for (const line of transitionLines) expect(line).toMatch(/: set isOpen$/);
+  });
+
+  it("writes quotes and backslashes in text as they are, without JSON escapes", () => {
+    const component = getComponent(project, "QuotedText");
+    const diagram = formatMermaid(component, { rootDirectory, maxStates: DEFAULT_MAX_STATES });
+    expect(diagram).toContain(': "say "hi" \\ now"');
+    expect(diagram).not.toContain('\\"');
+    const tree = formatRenderTree(component, { rootDirectory, maxDepth: DEFAULT_RENDER_DEPTH });
+    expect(tree).toContain("#quot;say #quot;hi#quot; \\ now#quot;");
+    expect(tree).not.toContain("\\\\");
   });
 });

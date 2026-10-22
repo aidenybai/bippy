@@ -5,6 +5,7 @@ import { formatLine, formatStateLabel } from "../core/format";
 import { describeState, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "./source-text";
 import { collectTriggerLabels } from "./trigger-labels";
+import { unescapeQuotedLiterals } from "./text";
 
 export const DEFAULT_MAX_STATES = 32;
 
@@ -27,7 +28,7 @@ const REGION_SEPARATOR = "--";
 const MIN_FAN_OUT_STATES = 3;
 
 const escapeText = (text: string): string =>
-  text
+  unescapeQuotedLiterals(text)
     .replaceAll(/\s*\n\s*/g, " ")
     .replaceAll(";", "#59;")
     .replaceAll(":", "#58;")
