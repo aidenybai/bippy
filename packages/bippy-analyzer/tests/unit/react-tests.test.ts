@@ -701,7 +701,6 @@ describePorts("useRef-test.internal.js > useRef", [
     source:
       "after should not warn about reads or writes outside of render phase (e.g. event handler)",
     file: "refs",
-    gap: "a ref a handler writes is read in render as its initial value",
     script: {
       component: "RefWrittenInHandlerReadAfterUpdate",
       html: "<div><button>click</button><p>zero</p></div>",

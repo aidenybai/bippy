@@ -1525,8 +1525,12 @@ export class Interpreter {
     this.callbacks.passStoredCallback(store, walkState);
     const object = this.read(store.object);
     const storedValue = this.read(store.value);
-    if (this.#handlerEffects && isRefCell(object, String(store.property)))
+    if (this.#handlerEffects && isRefCell(object, String(store.property))) {
       this.cells.store(getRefCellKey(object.binding), storedValue, walkState);
+      this.#handlerEffects.addPossibleMutation(object.binding);
+    }
+    if (!this.#handlerEffects && isRefCell(object, String(store.property)))
+      this.bindingTable.forgetInitial(object.binding);
     return storedValue;
   }
 

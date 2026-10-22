@@ -44,11 +44,22 @@ export class Destructurer {
   }
 
   bindHookResult(place: Place, hook: HookResultValue): BindingValue {
+    const [initialRef = UNDEFINED_VALUE] = hook.argumentValues;
     const binding = this.#interpreter.createBinding(
       getIdentifierName(place) ?? hook.name,
       getHookBindingKind(hook.hookKind),
       getDeclarationLocation(place),
-      { hookKind: hook.hookKind },
+      {
+        hookKind: hook.hookKind,
+        initial:
+          hook.hookKind === "useRef" && initialRef.kind !== "Function"
+            ? {
+                kind: "ObjectExpression",
+                properties: [{ key: "current", value: initialRef }],
+                spreads: [],
+              }
+            : null,
+      },
     );
     this.#interpreter.externalSources.bindHookResult(binding, hook, this.#interpreter.resolver);
     return createBindingValue(binding);
