@@ -22,7 +22,9 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
   if (value.kind === "Binding") {
     const source = getBindingPlace(value.binding, [...value.path, ...path]);
     if (isSamePlace(source, walk.target)) return "unchanged";
-    return walk.constraints?.possibleValues.get(source) ?? null;
+    const { domain } = value.binding;
+    const domainCases = source.path.length === 0 && domain.kind === "Cases" ? domain.cases : null;
+    return walk.constraints?.possibleValues.get(source) ?? domainCases;
   }
   if (value.kind === "Conditional") {
     const decidedOutcome = walk.constraints

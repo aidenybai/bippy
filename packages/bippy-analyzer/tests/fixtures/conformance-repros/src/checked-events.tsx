@@ -59,3 +59,16 @@ export const RadioValue = () => {
     </div>
   );
 };
+
+export const SelectValue = () => {
+  const [size, setSize] = useState("s");
+  return (
+    <div>
+      <select aria-label="size" value={size} onChange={(event) => setSize(event.target.value)}>
+        <option value="s">small</option>
+        <option value="m">medium</option>
+      </select>
+      {size === "l" ? <i>large</i> : <i>other</i>}
+    </div>
+  );
+};

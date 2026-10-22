@@ -20,6 +20,11 @@ describe("a change on a controlled checkbox or radio", () => {
     expect(getUpdates("RadioValue")).toEqual([{ kind: "Primitive", value: "a" }]);
   });
 
+  it("reads one of the option values from a select", () => {
+    const { report } = getComponent(project, "SelectValue");
+    expect(report.states.map((state) => state.conditions)).toEqual([[]]);
+  });
+
   it("reads checked as true from a radio", () => {
     expect(getUpdates("UncheckedRadio")).toEqual([{ kind: "Primitive", value: "a" }]);
   });
