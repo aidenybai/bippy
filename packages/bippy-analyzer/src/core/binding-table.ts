@@ -17,7 +17,14 @@ import { createBindingValue } from "./symbolic-values";
 export interface BindingOptions extends Partial<
   Pick<
     Binding,
-    "hookKind" | "propName" | "initial" | "inputPlaces" | "lengthLimit" | "derived" | "domain"
+    | "hookKind"
+    | "propName"
+    | "initial"
+    | "inputPlaces"
+    | "lengthLimit"
+    | "derived"
+    | "range"
+    | "domain"
   >
 > {
   identityKey?: string;
@@ -65,6 +72,7 @@ export class BindingTable {
       inputPlaces: options.inputPlaces ?? [],
       lengthLimit: options.lengthLimit ?? null,
       derived: options.derived ?? null,
+      range: options.range ?? null,
     };
     this.#bindingsByKey.set(declarationKey, binding);
     this.#resolversByBinding.set(binding.id, resolver);

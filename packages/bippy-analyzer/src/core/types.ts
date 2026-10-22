@@ -66,6 +66,12 @@ export interface Binding {
   inputPlaces: BindingPlace[];
   lengthLimit: LengthLimit | null;
   derived: DerivedString | null;
+  range: NumberRange | null;
+}
+
+export interface NumberRange {
+  min: number | null;
+  max: number | null;
 }
 
 export interface DerivedString {

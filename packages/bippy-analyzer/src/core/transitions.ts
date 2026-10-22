@@ -18,7 +18,7 @@ import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
-import { getLengthBounds, getToggleCases, isLengthPreserving } from "./reachable-constraints";
+import { getToggleCases, getUpdateBounds, isLengthPreserving } from "./reachable-constraints";
 import type { Alternative } from "./state-enumerator";
 import { getCachedConstraintsKey } from "./state-enumerator";
 
@@ -69,7 +69,7 @@ const applyUpdates = (
       );
     }
     forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
-    addBounds(updated, getLengthBounds(update.value, update.binding));
+    addBounds(updated, getUpdateBounds(update.value, update.binding));
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const dependentId of dependentIds) {
       for (const [place, reachableValues] of reachablePlacesByBinding.get(dependentId) ?? [])
