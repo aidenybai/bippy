@@ -8,6 +8,7 @@ import type {
   BindingPlace,
   ComponentAnalysis,
   Domain,
+  NumberRange,
   SymbolicValue,
 } from "./types";
 import { appendToGroup } from "./utils/append-to-group";
@@ -124,7 +125,10 @@ const createEmptyConstraints = (analysis: ComponentAnalysis): Constraints => ({
   assumptions: new Map(),
   bounds: [],
   boundGraph: null,
-  invariants: analysis.bindings.flatMap(getLengthLimitBounds),
+  invariants: analysis.bindings.flatMap((binding) => [
+    ...getLengthLimitBounds(binding),
+    ...getRangeBounds(getBindingPlace(binding), binding.range),
+  ]),
   unionMemberValues: analysis.unionMemberValues,
   possibleMembers: new Map(),
 });
@@ -223,6 +227,21 @@ const getKnownLength = (value: SymbolicValue): { count: number; isExact: boolean
     return { count: value.value.length, isExact: true };
   return null;
 };
+
+export const getRangeBounds = (place: BindingPlace, range: NumberRange | null): Bound[] => {
+  if (!range) return [];
+  const bounds: Bound[] = [];
+  if (range.min !== null)
+    bounds.push({ left: null, right: place, maxDifference: -range.min, isStrict: false });
+  if (range.max !== null)
+    bounds.push({ left: place, right: null, maxDifference: range.max, isStrict: false });
+  return bounds;
+};
+
+export const getUpdateBounds = (value: SymbolicValue, binding: Binding): Bound[] =>
+  value.kind === "Binding" && value.path.length === 0
+    ? getRangeBounds(getBindingPlace(binding), value.binding.range)
+    : getLengthBounds(value, binding);
 
 export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   const known = getKnownLength(value);

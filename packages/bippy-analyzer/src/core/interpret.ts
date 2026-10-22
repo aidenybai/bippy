@@ -42,6 +42,7 @@ import type {
   JsxProp,
   JsxSpreadProp,
   LengthLimit,
+  NumberRange,
   ObjectExpressionValue,
   ProvidedContext,
   Sample,
@@ -57,6 +58,7 @@ import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
+import { getClampRange } from "./utils/get-clamp-range";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -1134,7 +1136,13 @@ export class Interpreter {
     return [callSite.callee, ...callSite.argumentValues].map(getValueKey).join(",");
   }
 
-  #createCallResult(callSite: CallSite, derived: DerivedString | null = null): SymbolicValue {
+  #createCallResult(
+    callSite: CallSite,
+    {
+      derived = null,
+      range = null,
+    }: { derived?: DerivedString | null; range?: NumberRange | null } = {},
+  ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
     const inputPlaces = new PlaceMap<true>();
@@ -1142,7 +1150,7 @@ export class Interpreter {
     const receiverPlace = this.#getReceiverPlace(callSite.callee);
     const lengthLimit = this.#getLengthLimit(callSite, receiverPlace);
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
-    if (!lengthLimit && !derived && inputPlaces.size === 0 && !hasFiniteResult)
+    if (!lengthLimit && !derived && !range && inputPlaces.size === 0 && !hasFiniteResult)
       return createUnknown("call", callSite.loc);
     if (receiverPlace) inputPlaces.set(receiverPlace, true);
     const argumentText = callSite.argumentValues.map(formatSymbolicValue).join(", ");
@@ -1152,6 +1160,7 @@ export class Interpreter {
         lengthLimit,
         identityKey: this.#getRepeatableCallKey(callSite),
         derived,
+        range,
       }),
     );
   }
@@ -1293,6 +1302,11 @@ export class Interpreter {
       argumentPlaces,
       loc: methodCall.loc,
     };
+    const range =
+      receiver.kind === "Global" && receiver.name === "Math"
+        ? getClampRange(methodName, argumentValues)
+        : null;
+    if (range) return this.#createCallResult(callSite, { range });
     return (
       this.#evaluateStringMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)
@@ -1315,7 +1329,9 @@ export class Interpreter {
         value: applyStringMethod(methodName, receiver.value, argumentValues),
       };
     if (receiver.kind !== "Binding") return null;
-    return this.#createCallResult(callSite, { method: methodName, receiver, argumentValues });
+    return this.#createCallResult(callSite, {
+      derived: { method: methodName, receiver, argumentValues },
+    });
   }
 
   evaluateInstruction(instruction: Instruction, walkState: WalkState): void {
