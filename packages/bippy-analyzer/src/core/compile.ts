@@ -25,6 +25,7 @@ type BabelFunction = NodePath<
 
 export interface CompiledFunction {
   name: string;
+  bindingName: string;
   functionType: ReactFunctionType | null;
   loc: SourceLocation;
   hir: HIRFunction | null;
@@ -244,7 +245,8 @@ class CompiledFunctionCollector {
 
   getFunctions(namesByLocation: Map<string, string>): CompiledFunction[] {
     for (const [locationKey, compiled] of this.#compiledByLocation) {
-      compiled.name = compiled.hir?.id ?? namesByLocation.get(locationKey) ?? ANONYMOUS_NAME;
+      compiled.bindingName = namesByLocation.get(locationKey) ?? ANONYMOUS_NAME;
+      compiled.name = compiled.hir?.id ?? compiled.bindingName;
       compiled.functionType ??= guessFunctionTypeFromName(compiled.name);
     }
     return [...this.#compiledByLocation.values()].filter(
@@ -256,6 +258,7 @@ class CompiledFunctionCollector {
     const locationKey = getLocationKey(loc);
     const compiled = this.#compiledByLocation.get(locationKey) ?? {
       name: ANONYMOUS_NAME,
+      bindingName: ANONYMOUS_NAME,
       functionType: null,
       loc,
       hir: null,
