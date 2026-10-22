@@ -8,7 +8,14 @@ import {
   createBindingValue,
   createUnknown,
 } from "./symbolic-values";
-import type { BindingValue, Domain, HookResultValue, Sample, SymbolicValue } from "./types";
+import type {
+  BindingValue,
+  Domain,
+  HookResultValue,
+  ObjectExpressionValue,
+  Sample,
+  SymbolicValue,
+} from "./types";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { getIdentifierName } from "./utils/get-identifier-name";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
@@ -168,6 +175,20 @@ export class Destructurer {
     });
   }
 
+  #getRestValue(value: SymbolicValue, restPlace: Place): ObjectExpressionValue | null {
+    const names = this.#interpreter.resolver.getRequiredPropertyNames(restPlace.loc);
+    return names
+      ? {
+          kind: "ObjectExpression",
+          properties: names.map((key) => ({
+            key,
+            value: this.#interpreter.evaluatePropertyLoad(value, key, restPlace.loc),
+          })),
+          spreads: [],
+        }
+      : null;
+  }
+
   #destructureObject(pattern: ObjectPattern, value: SymbolicValue): void {
     for (const property of pattern.properties) {
       if (property.kind === "Spread") {
@@ -175,7 +196,11 @@ export class Destructurer {
           this.#restPropsSample ??= this.#interpreter.resolver.getRequiredSample(
             property.place.loc,
           );
-        this.#interpreter.write(property.place, createUnknown("rest", property.place.loc));
+        this.#interpreter.write(
+          property.place,
+          (value.kind === "Props" ? null : this.#getRestValue(value, property.place)) ??
+            createUnknown("rest", property.place.loc),
+        );
         continue;
       }
       const key =
