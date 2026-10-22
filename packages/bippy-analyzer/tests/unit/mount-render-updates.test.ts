@@ -21,4 +21,15 @@ describe("a setState during the first render", () => {
     const { report } = getComponent(project, "RenderSetOnMount");
     expect(report.states[0]?.transitions.flatMap((transition) => transition.targets)).toEqual([0]);
   });
+
+  it("keeps the first render of a region the guard doesn't read", () => {
+    const { report } = getComponent(project, "SyncedFromCount");
+    const markRegion = report.regions.find((region) => region.placeNames.includes("mark"));
+    const firstRender = markRegion?.firstRenderState ?? -1;
+    expect(report.states[firstRender]?.conditions).toEqual(["mark < 2"]);
+  });
+
+  it("knows a state copied from another on mount", () => {
+    expect(getFirstRenderConditions("SyncedSeen")).toEqual(["seen === 1"]);
+  });
 });
