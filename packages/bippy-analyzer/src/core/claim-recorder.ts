@@ -15,7 +15,7 @@ import type { Claim, Domain, SymbolicValue } from "./types";
 type ClaimSite = Omit<Claim, "file" | "isInHandler">;
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getValuePlace } from "./utils/get-value-place";
-import type { WalkState } from "./walk-state";
+import { getClaimGuards, type WalkState } from "./walk-state";
 
 const isLiteralDomain = (domain: Domain): boolean =>
   domain.kind === "Cases" && domain.cases.every((value) => value.kind === "Literal");
@@ -42,7 +42,7 @@ export class ClaimRecorder {
     const declaredSourceDomain = resolver.getTypeDomain(typeCast.value.loc);
     if (typeCast.typeAnnotationKind === "non-null") {
       if (hasNullishCase(declaredSourceDomain))
-        this.record(createNonNullClaim(castValue, typeCast.loc, walkState.guards));
+        this.record(createNonNullClaim(castValue, typeCast.loc, getClaimGuards(walkState)));
       return castValue;
     }
     const targetDomain = resolver.getDomain(typeCast.loc);
@@ -51,7 +51,7 @@ export class ClaimRecorder {
       declaredSourceDomain,
       targetDomain,
       typeCast.loc,
-      walkState.guards,
+      getClaimGuards(walkState),
     );
     if (claim) this.record(this.#widenForNonStrictNulls(claim));
     const isUntypedCast = castValue.kind === "Unknown" && sourceDomain.kind === "Unknown";
@@ -103,7 +103,7 @@ export class ClaimRecorder {
       subject: test,
       cases: null,
       test,
-      guards: walkState.guards,
+      guards: getClaimGuards(walkState),
       description: `${name}(${describeCondition(test)})`,
       loc,
     });

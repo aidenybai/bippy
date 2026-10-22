@@ -16,7 +16,8 @@ import type {
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
-import { getPassedCallbacks } from "./symbolic-values";
+import { foldUnary, getPassedCallbacks } from "./symbolic-values";
+import { getRenderGuards, intersectGuards } from "./utils/get-render-guards";
 
 const EVENT_HANDLER_PATTERN = /^on[A-Z]/;
 const FORM_ACTION_PROPS = new Map([
@@ -117,11 +118,29 @@ const getHandlerLocation = (value: SymbolicValue): SourceLocation => {
   return GeneratedSource;
 };
 
+const ENABLEABLE_TAGS = new Set(["button", "input", "select", "textarea"]);
+
+const getEnabledGuards = (element: JsxExpressionValue): SymbolicValue[] => {
+  if (element.tag.kind !== "BuiltinTag" || !ENABLEABLE_TAGS.has(element.tag.name)) return [];
+  const disabled = element.props.find(
+    (prop): prop is JsxProp => prop.kind === "JsxAttribute" && prop.name === "disabled",
+  );
+  return disabled ? [foldUnary("!", disabled.value)] : [];
+};
+
+interface PlannedHandler {
+  trigger: HandlerTrigger;
+  callback: SymbolicValue;
+  callbackArguments: SymbolicValue[];
+  loc: SourceLocation;
+  guards: SymbolicValue[];
+  props: Array<JsxProp | JsxSpreadProp>;
+}
+
 class HandlerCollector {
   readonly handlers: Handler[] = [];
   readonly #interpreter: Interpreter;
-  readonly #handlerIdsByKey = new Map<string, string | null>();
-  readonly #refCallbackKeys = new Set<string>();
+  readonly #plannedByKey = new Map<string | JsxSpreadProp, PlannedHandler>();
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -132,10 +151,11 @@ class HandlerCollector {
     callback: SymbolicValue,
     callbackArguments: SymbolicValue[],
     loc: SourceLocation,
+    guards: SymbolicValue[] = [],
   ): string | null {
     return this.addCollectedHandler(
       trigger,
-      this.#interpreter.collectEffects(callback, callbackArguments),
+      this.#interpreter.collectEffects(callback, callbackArguments, guards),
       loc,
     );
   }
@@ -151,73 +171,93 @@ class HandlerCollector {
     return handlerId;
   }
 
-  collectElementHandlers(element: JsxExpressionValue): void {
+  planElementHandlers(element: JsxExpressionValue, renderGuards: SymbolicValue[]): void {
+    const eventGuards = [...renderGuards, ...getEnabledGuards(element)];
     for (const prop of element.props) {
-      if (prop.kind === "JsxSpreadAttribute") {
-        this.#collectSpreadHandlers(element, prop);
-        continue;
-      }
-      if (isRefCallback(prop)) {
-        this.#collectRefCallback(prop);
-        continue;
-      }
-      if (isHandlerProp(element.tag, prop)) this.#collectEventHandler(element, prop);
+      if (prop.kind === "JsxSpreadAttribute") this.#planSpreadHandlers(element, prop, eventGuards);
+      else if (isRefCallback(prop)) this.#planRefCallback(prop, renderGuards);
+      else if (isHandlerProp(element.tag, prop)) this.#planEventHandler(element, prop, eventGuards);
     }
   }
 
-  #addEventHandler(
-    handlerKey: string,
-    trigger: HandlerTrigger,
-    callback: SymbolicValue,
-    loc: SourceLocation,
-  ): string | null {
-    if (!this.#handlerIdsByKey.has(handlerKey))
-      this.#handlerIdsByKey.set(
-        handlerKey,
-        this.addHandler(trigger, callback, [EVENT_ARGUMENT], loc),
+  runPlannedHandlers(): void {
+    for (const planned of this.#plannedByKey.values()) {
+      const handlerId = this.addHandler(
+        planned.trigger,
+        planned.callback,
+        planned.callbackArguments,
+        planned.loc,
+        planned.guards,
       );
-    return this.#handlerIdsByKey.get(handlerKey) ?? null;
+      for (const prop of planned.props) prop.handlerId = handlerId;
+    }
   }
 
-  #collectSpreadHandlers(element: JsxExpressionValue, prop: JsxSpreadProp): void {
+  #plan(key: string | JsxSpreadProp, handler: PlannedHandler): void {
+    const planned = this.#plannedByKey.get(key);
+    if (!planned) {
+      this.#plannedByKey.set(key, handler);
+      return;
+    }
+    planned.guards = intersectGuards(planned.guards, handler.guards);
+    planned.props.push(...handler.props);
+  }
+
+  #planSpreadHandlers(
+    element: JsxExpressionValue,
+    prop: JsxSpreadProp,
+    guards: SymbolicValue[],
+  ): void {
     const trigger: HandlerTrigger = { kind: "Event", tag: element.tag.name, event: ANY_EVENT };
     if (prop.value.kind === "Unknown") {
-      prop.handlerId = this.addHandler(trigger, prop.value, [], prop.value.loc);
+      this.#plan(prop, {
+        trigger,
+        callback: prop.value,
+        callbackArguments: [],
+        loc: prop.value.loc,
+        guards,
+        props: [prop],
+      });
       return;
     }
     const spreadHandlers = getSpreadHandlers(element.tag, prop);
     const spreadHandlerKey = spreadHandlers && getHandlerKey(spreadHandlers);
     if (spreadHandlers && spreadHandlerKey)
-      prop.handlerId = this.#addEventHandler(
-        spreadHandlerKey,
+      this.#plan(spreadHandlerKey, {
         trigger,
-        spreadHandlers,
-        element.loc,
-      );
+        callback: spreadHandlers,
+        callbackArguments: [EVENT_ARGUMENT],
+        loc: element.loc,
+        guards,
+        props: [prop],
+      });
   }
 
-  #collectRefCallback(prop: JsxProp): void {
+  #planRefCallback(prop: JsxProp, guards: SymbolicValue[]): void {
     const refCallbackKey = getHandlerKey(prop.value);
-    if (refCallbackKey === null || this.#refCallbackKeys.has(refCallbackKey)) return;
-    this.#refCallbackKeys.add(refCallbackKey);
-    this.addHandler(
-      { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
-      prop.value,
-      [EVENT_ARGUMENT],
-      getHandlerLocation(prop.value),
-    );
+    if (refCallbackKey === null) return;
+    this.#plan(`ref:${refCallbackKey}`, {
+      trigger: { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+      callback: prop.value,
+      callbackArguments: [EVENT_ARGUMENT],
+      loc: getHandlerLocation(prop.value),
+      guards,
+      props: [],
+    });
   }
 
-  #collectEventHandler(element: JsxExpressionValue, prop: JsxProp): void {
+  #planEventHandler(element: JsxExpressionValue, prop: JsxProp, guards: SymbolicValue[]): void {
     const callback = this.#unwrapCallback(prop.value);
     const handlerKey = getHandlerKey(callback);
     if (handlerKey === null) return;
-    prop.handlerId = this.#addEventHandler(
-      handlerKey,
-      { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
+    this.#plan(handlerKey, {
+      trigger: { kind: "Event", tag: element.tag.name, event: getTriggerEvent(prop) },
       callback,
-      getHandlerLocation(callback),
-    );
+      callbackArguments: [EVENT_ARGUMENT],
+      loc: getHandlerLocation(callback),
+      guards,
+      props: [prop],
+    });
   }
 
   #unwrapCallback(value: SymbolicValue): SymbolicValue {
@@ -261,6 +301,8 @@ export const collectHandlers = (render: SymbolicValue, interpreter: Interpreter)
     interpreter.finishRenderPhaseEffects(),
     GeneratedSource,
   );
-  forEachJsxElement(render, (element) => collector.collectElementHandlers(element));
+  for (const [element, renderGuards] of getRenderGuards(render))
+    collector.planElementHandlers(element, renderGuards);
+  collector.runPlannedHandlers();
   return collector.handlers;
 };
