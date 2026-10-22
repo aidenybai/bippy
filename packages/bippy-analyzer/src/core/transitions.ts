@@ -13,6 +13,7 @@ import type { RegionBranches } from "./regions";
 import { getBranchKey } from "./control-flow";
 import type { Handler, StateUpdate, SymbolicValue, Transition } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
+import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
@@ -97,6 +98,7 @@ interface GuardChoice {
   key: string;
   test: SymbolicValue;
   isTrue: boolean;
+  readsBinding: boolean;
 }
 
 interface GuardedSequence {
@@ -104,10 +106,18 @@ interface GuardedSequence {
   constraints: Constraints;
 }
 
+const readsBinding = (value: SymbolicValue): boolean => {
+  const bindingIds: number[] = [];
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Binding") bindingIds.push(part.binding.id);
+  });
+  return bindingIds.length > 0;
+};
+
 const getGuardChoice = (guard: SymbolicValue, isTrue = true): GuardChoice =>
   guard.kind === "UnaryExpression" && guard.operator === "!"
     ? getGuardChoice(guard.value, !isTrue)
-    : { key: getValueKey(guard), test: guard, isTrue };
+    : { key: getValueKey(guard), test: guard, isTrue, readsBinding: readsBinding(guard) };
 
 const getCandidateUpdateLists = (handler: Handler): StateUpdate[][] => {
   const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
@@ -158,7 +168,9 @@ const getGuardedSequences = (
       const openChoice = getOpenChoice(update, current, outcomes);
       if (typeof openChoice !== "string") {
         for (const outcome of [true, false]) {
-          const assumed = assumeCondition(openChoice.test, outcome, current);
+          const assumed = openChoice.readsBinding
+            ? assumeCondition(openChoice.test, outcome, current)
+            : current;
           if (assumed && sequences.length <= MAX_UPDATE_SEQUENCES)
             visit(index, assumed, new Map(outcomes).set(openChoice.key, outcome));
         }
