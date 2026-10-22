@@ -11,7 +11,7 @@ const FILE_OPTIONS: Omit<CodeFileOptions, "theme"> = {
     ":host { background-color: transparent; --diffs-bg: transparent; --diffs-font-family: var(--font-mono); } [data-gutter], [data-column-number] { background: transparent; }",
   disableFileHeader: true,
   disableErrorHandling: true,
-  preferredHighlighter: "shiki-js",
+  preferredHighlighter: "highlights",
 };
 
 export const useFileOptions = (onPostRender?: () => void): CodeFileOptions => {

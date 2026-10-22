@@ -96,10 +96,10 @@
     @apply font-mono;
   }
   [data-slot="code"] > span {
-    color: var(--shiki-light);
+    color: var(--hls-light);
   }
   .dark [data-slot="code"] > span {
-    color: var(--shiki-dark);
+    color: var(--hls-dark);
   }
   * {
     scrollbar-width: thin;

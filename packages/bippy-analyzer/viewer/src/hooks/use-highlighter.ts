@@ -12,7 +12,7 @@ const loadHighlighter = (): Promise<DiffsHighlighter> => {
   cache.promise ??= getSharedHighlighter({
     themes: [CODE_THEMES.light, CODE_THEMES.dark],
     langs: ["tsx", "ts", "jsx", "js", "json"],
-    preferredHighlighter: "shiki-js",
+    preferredHighlighter: "highlights",
   });
   return cache.promise;
 };
