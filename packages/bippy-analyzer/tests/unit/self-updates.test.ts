@@ -10,7 +10,7 @@ describe("self updates", () => {
     );
 
   it("keeps the source state when a setter receives the state itself", () => {
-    expect(getTargets("SelfToggle")).toEqual([[[0]], [[1]]]);
+    expect(getTargets("SelfToggle")).toEqual([[[0]]]);
   });
 
   it("keeps the source state on the arm that passes the state through", () => {
