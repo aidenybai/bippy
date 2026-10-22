@@ -37,7 +37,7 @@ describe("callbacks passed to hooks", () => {
     const truncated = getComponent(project, "Truncated");
     expect(truncated.report.unreachableBranches).toEqual([]);
     expect(truncated.analysis.handlers.map((handler) => handler.trigger)).toEqual([
-      { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null },
+      { kind: "Effect", hookKind: "useLayoutEffect", dependencies: null, dependencyPlaces: null },
     ]);
   });
 

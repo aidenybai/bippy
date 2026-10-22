@@ -207,7 +207,12 @@ export interface StateUpdate {
 
 export type HandlerTrigger =
   | { kind: "Event"; tag: string; event: string }
-  | { kind: "Effect"; hookKind: HookKind; dependencies: string | null };
+  | {
+      kind: "Effect";
+      hookKind: HookKind;
+      dependencies: string | null;
+      dependencyPlaces: BindingPlace[] | null;
+    };
 
 export interface Handler {
   id: string;

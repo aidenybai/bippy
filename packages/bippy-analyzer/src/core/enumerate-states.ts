@@ -39,6 +39,12 @@ const getRegionHandlers = (analysis: ComponentAnalysis, region: RegionBranches):
 const isFirstRender = (alternative: Alternative): boolean =>
   alternative.distanceFromFirstRender === 0 && !alternative.hasUndecidedBranch;
 
+const isMountOnlyEffect = (handler: Handler): boolean =>
+  handler.trigger.kind === "Effect" &&
+  handler.trigger.dependencyPlaces !== null &&
+  handler.trigger.dependencyPlaces.length === 0 &&
+  !handler.updates.some((update) => update.isAsync);
+
 const createRegion = (
   regionBranches: RegionBranches,
   firstStateIndex: number,
@@ -91,10 +97,27 @@ const enumerateRegion = (
   );
   const regionHandlers = getRegionHandlers(analysis, regionBranches);
   const getTransitions = (alternative: Alternative): Transition[] => {
-    const renderedHandlerIds = new Set([...effectIds, ...collectHandlerIds(alternative.render)]);
+    const runnableEffectIds = analysis.handlers
+      .filter(
+        (handler) =>
+          effectIds.has(handler.id) && (!isMountOnlyEffect(handler) || isFirstRender(alternative)),
+      )
+      .map((handler) => handler.id);
+    const renderedHandlerIds = new Set([
+      ...runnableEffectIds,
+      ...collectHandlerIds(alternative.render),
+    ]);
     return regionHandlers
       .filter((handler) => renderedHandlerIds.has(handler.id))
-      .map((handler) => getTransition(handler, alternative, transitionContext));
+      .map((handler) =>
+        getTransition(
+          handler,
+          isMountOnlyEffect(handler)
+            ? { ...alternative, constraints: context.firstRender.constraints }
+            : alternative,
+          transitionContext,
+        ),
+      );
   };
   const states = alternatives.map((alternative) => ({
     regionIndex,
