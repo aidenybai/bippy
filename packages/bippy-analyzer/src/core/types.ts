@@ -276,6 +276,11 @@ export interface StoreAssignment {
 
 export interface StoreActions extends Map<string, StoreAssignment[]> {}
 
+export interface StoreModel {
+  actions: StoreActions;
+  initial: SymbolicValue;
+}
+
 export interface ProvidedContext {
   contextKey: string;
   value: SymbolicValue;

@@ -16,7 +16,7 @@ import type {
   ComponentAnalysis,
   Handler,
   ContextSetterFields,
-  StoreActions,
+  StoreModel,
   SymbolicValue,
 } from "./types";
 
@@ -30,7 +30,7 @@ export interface FileContext {
   resolver: SourceFileResolver;
   compiled: CompiledFile;
   projectLoaders: ProjectLoaders;
-  actionsByStore: Map<string, StoreActions>;
+  modelsByStore: Map<string, StoreModel>;
   exportNames: Map<string, string>;
   displayNames: Map<string, string | null>;
 }
@@ -152,7 +152,7 @@ export const analyzeComponent = (
     fileContext.compiled.loadModuleVariable,
     fileContext.projectLoaders,
     contextSetterFields,
-    fileContext.actionsByStore,
+    fileContext.modelsByStore,
   );
   const render = interpreter.evaluateComponent(hir);
   addComparedSamples(render);

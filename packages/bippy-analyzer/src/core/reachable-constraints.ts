@@ -230,7 +230,12 @@ export const createFirstRenderConstraints = (
     const binding = bindingsById.get(place.bindingId);
     if (
       !binding ||
-      !(isStateBinding(binding) || binding.kind === "ref" || binding.kind === "module")
+      !(
+        isStateBinding(binding) ||
+        binding.kind === "ref" ||
+        binding.kind === "module" ||
+        binding.kind === "hook"
+      )
     )
       continue;
     const initialCases = getValueCases(

@@ -5,7 +5,7 @@ import { SourceFileResolver } from "./source-file-resolver";
 import type { ProjectHook, ProjectLoaders } from "./interpret";
 import type { ModuleFunctionLoader } from "./function-registry";
 import { getMutatedParameters } from "./utils/get-mutated-parameters";
-import { collectStoreActions } from "./store-actions";
+import { collectStoreModels } from "./store-actions";
 import { enumerateStates } from "./enumerate-states";
 import { linkComponents, type ReportLoader } from "./link-components";
 import { addSamplesFromReadPaths, inferPropsFromCallSites } from "./infer-props";
@@ -13,7 +13,7 @@ import { collectContextSetterFields } from "./context-setter-fields";
 import type {
   ComponentAnalysis,
   ContextSetterFields,
-  StoreActions,
+  StoreModel,
   ProjectAnalysis,
   StateReport,
 } from "./types";
@@ -58,7 +58,7 @@ const compileProjectFiles = (
   const loadersByPath = new Map<string, Omit<ProjectHook, "hirFunction">>();
   const lowerersByPath = new Map<string, ModuleFunctionLoader>();
   const mutatedParametersByDeclaration = new Map<string, Set<number>>();
-  const actionsByStore = new Map<string, StoreActions>();
+  const modelsByStore = new Map<string, StoreModel>();
   const loadProjectHook = (declarationKey: string): ProjectHook | null =>
     projectHooksByDeclaration.get(declarationKey) ?? null;
   const lowerProjectFunction = (declarationKey: string): ProjectHook | null => {
@@ -98,8 +98,8 @@ const compileProjectFiles = (
         typeProvider: new CompilerTypeProvider(project.checker, sourceFile),
       }),
     );
-    for (const [storeKey, actions] of collectStoreActions(sourceFile))
-      actionsByStore.set(storeKey, actions);
+    for (const [storeKey, model] of collectStoreModels(sourceFile))
+      modelsByStore.set(storeKey, model);
     loadersByPath.set(sourceFile.path, {
       resolver,
       loadModuleFunction: compiled.loadModuleFunction,
@@ -118,7 +118,7 @@ const compileProjectFiles = (
         resolver,
         compiled,
         projectLoaders,
-        actionsByStore,
+        modelsByStore,
         exportNames: collectExportNames(sourceFile),
         displayNames: collectDisplayNames(sourceFile),
       },
