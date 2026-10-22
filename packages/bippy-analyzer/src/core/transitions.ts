@@ -80,52 +80,42 @@ const forgetUntrackedValues = (
       constraints.possibleValues.delete(place);
 };
 
-const getGuardKeys = (update: StateUpdate): string[] => update.guards.map(getValueKey);
-
 const isGuardPrefix = (prefix: string[], guardKeys: string[]): boolean =>
   prefix.every((guardKey, index) => guardKeys[index] === guardKey);
 
-const getUpdatePaths = (updates: StateUpdate[]): StateUpdate[][] => {
-  if (updates.length === 0) return [[]];
-  const guardKeysByPath = new Map(
-    updates.map((update) => {
-      const guardKeys = getGuardKeys(update);
-      return [guardKeys.join("\0"), guardKeys];
-    }),
-  );
-  return [...guardKeysByPath.values()].map((guardKeys) =>
-    updates.filter((update) => isGuardPrefix(getGuardKeys(update), guardKeys)),
-  );
-};
-
-const getUpdatesBeforeLaterAsyncUpdates = (updates: StateUpdate[]): StateUpdate[][] =>
-  updates.flatMap((update, index) =>
-    update.isAsync && index < updates.length - 1 ? [updates.slice(0, index + 1)] : [],
-  );
-
-const dedupeUpdateSequences = (handler: Handler, sequences: StateUpdate[][]): StateUpdate[][] => {
-  const indexByUpdate = new Map(handler.updates.map((update, index) => [update, index]));
-  return [
-    ...new Map(
-      sequences.map((sequence) => [
-        sequence.map((update) => indexByUpdate.get(update)).join(","),
-        sequence,
-      ]),
-    ).values(),
-  ];
-};
-
 const getHandlerUpdateSequences = (handler: Handler, budget: TransitionBudget): StateUpdate[][] => {
+  const guardKeysByUpdate = new Map(
+    handler.updates.map((update) => [update, update.guards.map(getValueKey)]),
+  );
+  const indexByUpdate = new Map(handler.updates.map((update, index) => [update, index]));
+  const sequencesByKey = new Map<string, StateUpdate[]>();
+  const isFull = (): boolean => sequencesByKey.size > MAX_UPDATE_SEQUENCES;
+  const addSequence = (sequence: StateUpdate[]): void => {
+    sequencesByKey.set(sequence.map((update) => indexByUpdate.get(update)).join(","), sequence);
+  };
+  const addPaths = (updates: StateUpdate[]): void => {
+    if (updates.length === 0) addSequence([]);
+    const pathKeys = new Set<string>();
+    for (const pathUpdate of updates) {
+      if (isFull()) return;
+      const guardKeys = guardKeysByUpdate.get(pathUpdate) ?? [];
+      const pathKey = guardKeys.join("\0");
+      if (pathKeys.has(pathKey)) continue;
+      pathKeys.add(pathKey);
+      addSequence(
+        updates.filter((update) => isGuardPrefix(guardKeysByUpdate.get(update) ?? [], guardKeys)),
+      );
+    }
+  };
   const synchronousUpdates = handler.updates.filter((update) => !update.isAsync);
-  const mayChangeNothing = handler.updates.some((update) => update.guards.length > 0);
-  const sequences = dedupeUpdateSequences(handler, [
-    ...(mayChangeNothing ? [[]] : []),
-    ...(synchronousUpdates.length < handler.updates.length
-      ? getUpdatePaths(synchronousUpdates)
-      : []),
-    ...getUpdatesBeforeLaterAsyncUpdates(handler.updates).flatMap(getUpdatePaths),
-    ...getUpdatePaths(handler.updates),
-  ]);
+  if (handler.updates.some((update) => update.guards.length > 0)) addSequence([]);
+  if (synchronousUpdates.length < handler.updates.length) addPaths(synchronousUpdates);
+  handler.updates.forEach((update, index) => {
+    if (!isFull() && update.isAsync && index < handler.updates.length - 1)
+      addPaths(handler.updates.slice(0, index + 1));
+  });
+  addPaths(handler.updates);
+  const sequences = [...sequencesByKey.values()];
   if (sequences.length <= MAX_UPDATE_SEQUENCES) return sequences;
   budget.isExhausted = true;
   return sequences.slice(0, MAX_UPDATE_SEQUENCES);
