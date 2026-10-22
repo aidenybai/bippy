@@ -104,24 +104,32 @@ const formatPlaceEntries = <Value>(
     .sort()
     .join(";");
 
-const formatAbstractValues = (values: AbstractValue[]): string =>
-  values.map((value) => `${value.kind}:${formatAbstractValue(value)}`).join("|");
+const formatAbstractValues = memoizeByIdentity((values: AbstractValue[]): string =>
+  values.map((value) => `${value.kind}:${formatAbstractValue(value)}`).join("|"),
+);
 
 const formatBound = (bound: Bound): string =>
   `${getAtomKey(bound.left)}-${getAtomKey(bound.right)}${bound.isStrict ? "<" : "<="}${bound.maxDifference}`;
 
+const formatBounds = (bounds: Bound[]): string => bounds.map(formatBound).sort().join(";");
+
+const formatInvariants = memoizeByIdentity(formatBounds);
+
 const formatAssumption = ([key, assumption]: [string, Assumption]): string =>
   `${key}=${assumption.isTrue}:${assumption.places.map(getPlaceKey).join(",")}`;
+
+const formatUnionMemberValues = memoizeByIdentity(
+  (unionMemberValues: PlaceMap<AbstractValue[][]>): string =>
+    formatPlaceEntries(unionMemberValues, (members) => members.map(formatAbstractValues).join("/")),
+);
 
 const serializeConstraints = (constraints: Constraints): string =>
   [
     formatPlaceEntries(constraints.possibleValues, formatAbstractValues),
     [...constraints.assumptions].map(formatAssumption).sort().join(";"),
-    constraints.bounds.map(formatBound).sort().join(";"),
-    constraints.invariants.map(formatBound).sort().join(";"),
-    formatPlaceEntries(constraints.unionMemberValues, (members) =>
-      members.map(formatAbstractValues).join("/"),
-    ),
+    formatBounds(constraints.bounds),
+    formatInvariants(constraints.invariants),
+    formatUnionMemberValues(constraints.unionMemberValues),
     [...constraints.possibleMembers]
       .map(([bindingId, members]) => `${bindingId}=${members.join(",")}`)
       .sort()
