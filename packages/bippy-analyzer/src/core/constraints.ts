@@ -323,6 +323,11 @@ const evaluateEquality = (
   const isNegated = NEGATED_EQUALITY_OPERATORS.has(value.operator);
   const [placeSide, literalSide] = splitEquality(value);
   if (literalSide.kind !== "Primitive") return null;
+  if (
+    STRICT_EQUALITY_OPERATORS.has(value.operator) &&
+    differsInTruthiness(placeSide, literalSide.value, constraints)
+  )
+    return isNegated;
   const placeValues = getPossibleValues(placeSide, constraints);
   if (!placeValues) return null;
   const matchCount = placeValues.filter((candidate) =>
@@ -334,6 +339,15 @@ const evaluateEquality = (
   if (matchCount === placeValues.length) return !isNegated;
   if (matchCount === 0 && !canAnyEqual) return isNegated;
   return null;
+};
+
+const differsInTruthiness = (
+  value: SymbolicValue,
+  literal: PrimitiveValue,
+  constraints: Constraints,
+): boolean => {
+  const truthiness = evaluateCondition(value, constraints);
+  return truthiness !== null && truthiness !== Boolean(literal);
 };
 
 const evaluateTruthiness = (placeValues: AbstractValue[]): boolean | null => {
