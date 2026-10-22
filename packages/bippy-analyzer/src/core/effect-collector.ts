@@ -4,7 +4,7 @@ import type { Binding, StateUpdate, SymbolicValue, WarningKind } from "./types";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
-import { createUnknown } from "./symbolic-values";
+import { createBindingValue, createUnknown } from "./symbolic-values";
 
 export interface CollectedEffects {
   updates: StateUpdate[];
@@ -71,6 +71,14 @@ export class EffectCollector {
 
   addUpdate(binding: Binding, value: SymbolicValue, condition: UpdateCondition): void {
     this.#updates.push({ binding, value, guards: condition.guards, isAsync: condition.isAsync });
+  }
+
+  getQueuedValue(binding: Binding, condition: UpdateCondition): SymbolicValue {
+    const queued = this.#updates.findLast((update) => update.binding.id === binding.id);
+    if (!queued || queued.isAsync || condition.isAsync) return createBindingValue(binding);
+    return queued.guards.every((guard) => condition.guards.includes(guard))
+      ? queued.value
+      : createUnknown("queued-update", GeneratedSource);
   }
 
   hasUpdate(binding: Binding): boolean {
