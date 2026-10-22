@@ -189,6 +189,8 @@ const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
 
 const getRefCellKey = (binding: Binding): string => `ref:${binding.id}`;
 
+const getContextCellKey = (place: Place): string => `context:${place.identifier.id}`;
+
 const isRefCell = (object: SymbolicValue, property: string): object is BindingValue =>
   object.kind === "Binding" &&
   object.binding.kind === "ref" &&
@@ -1030,11 +1032,12 @@ export class Interpreter {
       case "JSXText":
         return { kind: "JSXText", value: value.value };
       case "LoadLocal":
-      case "LoadContext":
         return this.read(value.place);
+      case "LoadContext":
+        return this.#evaluateLoadContext(value, walkState);
       case "StoreLocal":
       case "StoreContext":
-        return this.#evaluateStoreLocal(value);
+        return this.#evaluateStoreLocal(value, walkState);
       case "DeclareLocal":
       case "DeclareContext":
         this.write(value.lvalue.place, UNDEFINED_VALUE);
@@ -1137,13 +1140,28 @@ export class Interpreter {
     return storedValue;
   }
 
-  #evaluateStoreLocal(store: InstructionValueOfKind<"StoreLocal" | "StoreContext">): SymbolicValue {
+  #evaluateLoadContext(
+    load: InstructionValueOfKind<"LoadContext">,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const loaded = this.read(load.place);
+    return this.#handlerEffects
+      ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, walkState)
+      : loaded;
+  }
+
+  #evaluateStoreLocal(
+    store: InstructionValueOfKind<"StoreLocal" | "StoreContext">,
+    walkState: WalkState,
+  ): SymbolicValue {
     const storedValue = this.read(store.value);
     const localValue =
       storedValue.kind === "HookResult" && getIdentifierName(store.lvalue.place) !== null
         ? this.destructurer.bindHookResult(store.lvalue.place, storedValue)
         : storedValue;
     this.write(store.lvalue.place, localValue);
+    if (store.kind === "StoreContext" && this.#handlerEffects)
+      this.cells.store(getContextCellKey(store.lvalue.place), localValue, walkState);
     return localValue;
   }
 
