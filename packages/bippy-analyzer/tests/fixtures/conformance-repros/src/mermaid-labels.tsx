@@ -28,3 +28,13 @@ export const ProviderBesideButton = () => {
     </SetOpenContext.Provider>
   );
 };
+
+export const QuotedText = () => {
+  const [isSaid, setIsSaid] = useState(false);
+  return (
+    <div>
+      <button onClick={() => setIsSaid(true)}>say "hi" \ now</button>
+      {isSaid ? <p>said</p> : <p>quiet</p>}
+    </div>
+  );
+};

@@ -17,7 +17,7 @@ import { isEffectHandler } from "../core/collect-handlers";
 import { describeUnknown, type StateDescriber } from "./describe-state";
 import { createSourceReader } from "./source-text";
 import { getEffectTriggerLabel } from "./trigger-labels";
-import { truncate } from "./text";
+import { truncate, unescapeQuotedLiterals } from "./text";
 
 export const DEFAULT_RENDER_DEPTH = 12;
 
@@ -49,7 +49,7 @@ const SHAPES: Record<NodeShape, [string, string]> = {
 };
 
 const escapeLabel = (text: string): string =>
-  text
+  unescapeQuotedLiterals(text)
     .replaceAll(";", ",")
     .replaceAll('"', "#quot;")
     .replaceAll("<", "#lt;")
