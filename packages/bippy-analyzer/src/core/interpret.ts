@@ -506,14 +506,14 @@ export class Interpreter {
     setterArgument: SymbolicValue | undefined,
     walkState: WalkState,
   ): void {
-    const previousValue = createBindingValue(setter.binding);
+    const collector = this.#getUpdateCollector();
     const nextValue = this.#getSetterNextValue(
       setterArgument,
-      previousValue,
+      collector.getQueuedValue(setter.binding, walkState),
       setter.binding.loc,
       walkState,
     );
-    this.#getUpdateCollector().recordSetterCall(setter.binding, nextValue, walkState);
+    collector.recordSetterCall(setter.binding, nextValue, walkState);
   }
 
   #applyDispatch(
@@ -525,16 +525,16 @@ export class Interpreter {
     const { reducer, pending } = dispatch;
     const isAsyncAction =
       reducer.kind === "Function" && (this.#functions.get(reducer.functionId)?.async ?? false);
+    const collector = this.#getUpdateCollector();
     const nextValue =
       reducer.kind === "Function"
         ? this.callFunction(
             reducer,
-            [createBindingValue(dispatch.binding), action ?? UNDEFINED_VALUE],
+            [collector.getQueuedValue(dispatch.binding, walkState), action ?? UNDEFINED_VALUE],
             loc,
             walkState,
           )
         : createUnknown("dispatch", loc);
-    const collector = this.#getUpdateCollector();
     const settledWalkState = isAsyncAction ? getAsyncWalkState(walkState) : walkState;
     if (pending && isAsyncAction)
       collector.recordSetterCall(pending, { kind: "Primitive", value: true }, walkState);
