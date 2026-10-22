@@ -185,7 +185,6 @@ describePorts("ReactDOMEventPropagation-test.js > ReactDOMEventListener", [
   {
     source: "after bubbling events > onClick > testNativeBubblingEventWithTargetListener",
     file: "event-propagation",
-    gap: "a click runs the capture, target and bubble handlers as one transition, and only one is predicted",
     script: {
       component: "CaptureBeforeTargetBeforeBubble",
       html: "<div><button>target</button><p>idle</p></div>",
