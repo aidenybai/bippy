@@ -33,11 +33,33 @@ import { getPropertySamples, getSamples } from "./type-samples";
 import { getTypeAtLocation } from "./utils/get-type-at-location";
 
 const CONTEXT_TYPE_PATTERN = /^Context$/;
+
+interface Cached<Result> {
+  value: Result;
+}
+
+const memoizeByLocation = <Result>(
+  cache: Map<string, Cached<Result>>,
+  loc: SourceLocation,
+  compute: () => Result,
+): Result => {
+  const locationKey = getLocationKey(loc);
+  const cached = cache.get(locationKey);
+  if (cached) return cached.value;
+  const value = compute();
+  cache.set(locationKey, { value });
+  return value;
+};
+
 export class SourceFileResolver {
   readonly #checker: Checker;
   readonly #sourceFile: SourceFile;
   readonly #typesByLocation = new Map<string, Type | undefined>();
   readonly #readonlyMethodsByCollection = new Map<MutableCollection, Set<string>>();
+  readonly #domains = new Map<string, Cached<Domain>>();
+  readonly #reactExportNames = new Map<string, Cached<string | null>>();
+  readonly #declarationKeys = new Map<string, Cached<string | null>>();
+  readonly #nonMutatingMethods = new Map<string, Cached<boolean>>();
   readonly #isStrictNullChecks: boolean;
 
   constructor(checker: Checker, sourceFile: SourceFile, isStrictNullChecks: boolean) {
@@ -72,10 +94,12 @@ export class SourceFileResolver {
   }
 
   getDomain(loc: SourceLocation): Domain {
-    const type = this.#getType(loc);
-    return this.#isIndexedRead(loc) || this.#isOptionalRead(loc) || this.#isDefaultedBinding(loc)
-      ? getDomainWithUndefined(this.#checker, type)
-      : getDomainOfType(this.#checker, type);
+    return memoizeByLocation(this.#domains, loc, () => {
+      const type = this.#getType(loc);
+      return this.#isIndexedRead(loc) || this.#isOptionalRead(loc) || this.#isDefaultedBinding(loc)
+        ? getDomainWithUndefined(this.#checker, type)
+        : getDomainOfType(this.#checker, type);
+    });
   }
 
   getTupleElementDomain(loc: SourceLocation, index: number): Domain | null {
@@ -201,9 +225,11 @@ export class SourceFileResolver {
   }
 
   getReactExportName(loc: SourceLocation): string | null {
-    const node = this.#findNode(loc);
-    if (!node) return null;
-    return getReactExportName(this.#checker, isCallExpression(node) ? node.expression : node);
+    return memoizeByLocation(this.#reactExportNames, loc, () => {
+      const node = this.#findNode(loc);
+      if (!node) return null;
+      return getReactExportName(this.#checker, isCallExpression(node) ? node.expression : node);
+    });
   }
 
   getCalleeText(loc: SourceLocation): string | null {
@@ -217,8 +243,10 @@ export class SourceFileResolver {
   }
 
   getDeclarationKey(loc: SourceLocation): string | null {
-    const node = this.#findNode(loc);
-    return node ? getDeclarationKey(this.#checker, node) : null;
+    return memoizeByLocation(this.#declarationKeys, loc, () => {
+      const node = this.#findNode(loc);
+      return node ? getDeclarationKey(this.#checker, node) : null;
+    });
   }
 
   getContextKey(loc: SourceLocation): string | null {
@@ -227,22 +255,24 @@ export class SourceFileResolver {
   }
 
   isNonMutatingMethod(calleeLoc: SourceLocation): boolean {
-    const node = this.#findNode(calleeLoc);
-    if (!node || !isPropertyAccessExpression(node)) return false;
-    const methodName = node.name.text;
-    const receiverType = getTypeAtLocation(this.#checker, node.expression);
-    if (!receiverType) return false;
-    const definedMembers = (getUnionMembers(receiverType) ?? []).filter(
-      (member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)),
-    );
-    return (
-      definedMembers.length > 0 &&
-      definedMembers.every(
-        (member) =>
-          Boolean(member.flags & TypeFlags.StringLike) ||
-          this.#isReadonlyMethod(member, methodName),
-      )
-    );
+    return memoizeByLocation(this.#nonMutatingMethods, calleeLoc, () => {
+      const node = this.#findNode(calleeLoc);
+      if (!node || !isPropertyAccessExpression(node)) return false;
+      const methodName = node.name.text;
+      const receiverType = getTypeAtLocation(this.#checker, node.expression);
+      if (!receiverType) return false;
+      const definedMembers = (getUnionMembers(receiverType) ?? []).filter(
+        (member) => !(member.flags & (TypeFlags.Null | TypeFlags.Undefined)),
+      );
+      return (
+        definedMembers.length > 0 &&
+        definedMembers.every(
+          (member) =>
+            Boolean(member.flags & TypeFlags.StringLike) ||
+            this.#isReadonlyMethod(member, methodName),
+        )
+      );
+    });
   }
 
   #isReadonlyMethod(type: Type, methodName: string): boolean {
