@@ -20,3 +20,13 @@ export const HalfStep = () => {
     </div>
   );
 };
+
+export const ParsedChoice = () => {
+  const [raw, setRaw] = useState<"1" | "2">("1");
+  return (
+    <div>
+      <button onClick={() => setRaw(raw === "1" ? "2" : "1")}>swap</button>
+      {Number(raw) > 2 ? <i>big</i> : Number(raw) > 1 ? <i>two</i> : <i>one</i>}
+    </div>
+  );
+};

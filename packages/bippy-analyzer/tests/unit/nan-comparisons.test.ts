@@ -14,9 +14,8 @@ describe("the false side of an ordered comparison", () => {
       ["!(Number(text) < 1)", "!(Number(text) >= 1)"],
     ]);
     expect(getConditions("ParsedInput")).toEqual([
-      ["parseInt(text, 10) <= 0"],
-      ["!(parseInt(text, 10) <= 0)", "parseInt(text, 10) > 0"],
-      ["!(parseInt(text, 10) <= 0)", "!(parseInt(text, 10) > 0)"],
+      ["parseInt(text, 10) > 0"],
+      ["!(parseInt(text, 10) > 0)"],
     ]);
   });
 

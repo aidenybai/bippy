@@ -6,7 +6,7 @@ import type {
   BindingValue,
   BindingPlace,
   ConditionalValue,
-  DerivedMath,
+  DerivedCall,
   DerivedString,
   PrimitiveValue,
   SymbolicValue,
@@ -21,6 +21,7 @@ import { getPlaceKey } from "./utils/get-place-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isSamePlace } from "./utils/is-same-place";
 import { foldBinary } from "./symbolic-values";
+import { applyPureFunction } from "./utils/pure-functions";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
@@ -406,25 +407,41 @@ const evaluateNonZero = (value: BindingValue, constraints: Constraints): boolean
   return isPositive === false && isNegative === false ? false : null;
 };
 
-const getMathValues = (derived: DerivedMath, constraints: Constraints): AbstractValue[] | null => {
-  const numbers = derived.operands.flatMap((operand) => {
-    const resolved = resolveLiteral(operand, constraints);
-    return resolved.kind === "Primitive" && typeof resolved.value === "number"
-      ? [resolved.value]
-      : [];
-  });
-  if (numbers.length !== derived.operands.length) return null;
-  const apply = Math[derived.method as keyof Math];
-  return typeof apply === "function"
-    ? [{ kind: "Literal", value: (apply as (...values: number[]) => number)(...numbers) }]
+const MAX_DERIVED_CALLS = 32;
+
+const getLiteralCases = (
+  value: SymbolicValue,
+  constraints: Constraints,
+): PrimitiveValue[] | null => {
+  const resolved = resolveLiteral(value, constraints);
+  if (resolved.kind === "Primitive") return [resolved.value];
+  const cases = getPossibleValues(value, constraints);
+  return cases?.every((candidate) => candidate.kind === "Literal")
+    ? cases.map((candidate) => candidate.value)
     : null;
 };
 
+const getCallValues = (derived: DerivedCall, constraints: Constraints): AbstractValue[] | null => {
+  let combinations: PrimitiveValue[][] = [[]];
+  for (const operand of derived.operands) {
+    const cases = getLiteralCases(operand, constraints);
+    if (!cases || combinations.length * cases.length > MAX_DERIVED_CALLS) return null;
+    combinations = combinations.flatMap((values) => cases.map((value) => [...values, value]));
+  }
+  const results: AbstractValue[] = [];
+  for (const values of combinations) {
+    const result = applyPureFunction(derived.callee, values);
+    if (result === null) return null;
+    results.push({ kind: "Literal", value: result });
+  }
+  return dedupeAbstractValues(results);
+};
+
 const getDerivedValues = (
-  derived: DerivedString | DerivedMath,
+  derived: DerivedString | DerivedCall,
   constraints: Constraints,
 ): AbstractValue[] | null => {
-  if ("operands" in derived) return getMathValues(derived, constraints);
+  if ("operands" in derived) return getCallValues(derived, constraints);
   const receiverValues = getPossibleValues(derived.receiver, constraints);
   if (!receiverValues) return null;
   const results: AbstractValue[] = [];

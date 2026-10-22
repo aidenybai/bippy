@@ -66,7 +66,7 @@ export interface Binding {
   initial: SymbolicValue | null;
   inputPlaces: BindingPlace[];
   lengthLimit: LengthLimit | null;
-  derived: DerivedString | DerivedMath | null;
+  derived: DerivedString | DerivedCall | null;
   range: NumberRange | null;
 }
 
@@ -82,8 +82,8 @@ export interface DerivedString {
   argumentValues: PrimitiveValue[];
 }
 
-export interface DerivedMath {
-  method: string;
+export interface DerivedCall {
+  callee: string;
   operands: SymbolicValue[];
 }
 

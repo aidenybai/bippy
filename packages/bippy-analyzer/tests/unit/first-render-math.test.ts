@@ -12,4 +12,15 @@ describe("a first render that calls Math on known state", () => {
     const firstState = report.regions[0]?.firstRenderState ?? null;
     expect(firstState === null ? null : report.states[firstState]?.conditions).toEqual(conditions);
   });
+
+  it("folds Number over the cases of a union state", () => {
+    const { report } = getComponent(project, "ParsedChoice");
+    expect(report.states.map((state) => state.conditions)).toEqual([
+      ["Number(raw) > 1"],
+      ["!(Number(raw) > 1)"],
+    ]);
+    expect(report.unreachableBranches.map((branch) => branch.description)).toEqual([
+      "never Number(raw) > 2",
+    ]);
+  });
 });
