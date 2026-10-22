@@ -29,6 +29,23 @@ const isLiteral = (value: SymbolicValue): boolean => {
   return isLiteral;
 };
 
+const FRESH_KINDS = new Set(["ObjectExpression", "ArrayExpression", "Function"]);
+
+const isSurelyChanged = (value: SymbolicValue, binding: Binding): boolean => {
+  if (FRESH_KINDS.has(value.kind)) return true;
+  if (value.kind === "UnaryExpression")
+    return value.operator === "!" && isWholeBinding(value.value, binding);
+  if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
+    return false;
+  const { left, right } = value;
+  return (
+    isWholeBinding(left, binding) &&
+    right.kind === "Primitive" &&
+    typeof right.value === "number" &&
+    right.value !== 0
+  );
+};
+
 interface Mutation {
   binding: Binding;
   loc: SourceLocation;
@@ -107,7 +124,8 @@ export class EffectCollector {
 
   recordSetterCall(binding: Binding, nextValue: SymbolicValue, condition: UpdateCondition): void {
     const isSameReference = isWholeBinding(nextValue, binding);
-    if (!isSameReference && condition.guards.length === 0) this.#rendersSurely = true;
+    if (condition.guards.length === 0 && isSurelyChanged(nextValue, binding))
+      this.#rendersSurely = true;
     const mutation = this.#mutationsByBinding.get(binding.id);
     if (mutation) {
       this.#warn(
