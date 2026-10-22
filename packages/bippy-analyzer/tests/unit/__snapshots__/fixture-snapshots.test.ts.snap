@@ -2002,7 +2002,7 @@ title: ShareButton src/share-dialog.tsx:5
 stateDiagram-v2
   direction LR
   S1: !dialog.isOpen · #lt;button#gt; "Share"
-  S2: dialog.isOpen · #lt;p#gt; {dialog.type}
+  S2: dialog.isOpen · #lt;p#gt; {"share"}
   [*] --> S1
   S1 --> S2: "Share""
 `;

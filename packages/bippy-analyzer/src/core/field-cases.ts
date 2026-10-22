@@ -52,7 +52,8 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
   const assignedProperty = value.properties.findLast((property) => property.key === field);
   if (assignedProperty) return getCases(assignedProperty.value, restPath, walk);
   const spread = value.spreads.at(-1);
-  return spread ? getCases(spread, path, walk) : null;
+  if (spread) return getCases(spread, path, walk);
+  return restPath.length === 0 ? [{ kind: "Literal", value: undefined }] : null;
 };
 
 export const getFieldCases = (
