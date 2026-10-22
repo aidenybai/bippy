@@ -455,6 +455,14 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
     const outcome = evaluateCondition(value, constraints);
     return outcome === null ? value : { kind: "Primitive", value: outcome };
   }
+  if (value.kind === "BinaryExpression") {
+    const folded = foldBinary(
+      value.operator,
+      resolveLiteral(value.left, constraints),
+      resolveLiteral(value.right, constraints),
+    );
+    return folded.kind === "Primitive" ? folded : value;
+  }
   const placeValues = getPossibleValues(value, constraints);
   const [onlyValue] = placeValues ?? [];
   return placeValues?.length === 1 && onlyValue?.kind === "Literal"
