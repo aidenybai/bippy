@@ -317,14 +317,14 @@ class HandlerCollector {
 
   addCollectedHandler(
     trigger: HandlerTrigger,
-    { updates, delegates, pendingMutations }: CollectedEffects,
+    { updates, delegates, pendingMutations, claims }: CollectedEffects,
     loc: SourceLocation,
     guards: SymbolicValue[] = [],
   ): string | null {
     for (const binding of pendingMutations) this.pendingMutations.set(binding.id, binding);
-    if (updates.length === 0 && delegates.length === 0) return null;
+    if (updates.length === 0 && delegates.length === 0 && claims.length === 0) return null;
     const handlerId = `t${this.handlers.length + 1}`;
-    this.handlers.push({ id: handlerId, trigger, updates, delegates, guards, loc });
+    this.handlers.push({ id: handlerId, trigger, updates, delegates, claims, guards, loc });
     return handlerId;
   }
 
@@ -714,7 +714,7 @@ const collectHandlersOnce = (
   if (commitUpdates.length > 0)
     collector.addCollectedHandler(
       { kind: "Effect", hookKind: "useEffect", dependencies: null, dependencyPlaces: null },
-      { updates: commitUpdates, delegates: [], pendingMutations: [] },
+      { updates: commitUpdates, delegates: [], pendingMutations: [], claims: [] },
       GeneratedSource,
     );
   collector.addCollectedHandler({ kind: "Render" }, renderPhaseEffects, GeneratedSource);

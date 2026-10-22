@@ -94,6 +94,7 @@ const formatHandlerEffects = (handler: Handler): string =>
     [
       ...handler.updates.map(formatUpdate),
       ...handler.delegates.map((delegate) => `calls ${delegate}`),
+      ...handler.claims.map((claim) => `checks ${claim.description}`),
     ].join(EFFECT_SEPARATOR) || "nothing",
     MAX_EFFECT_WIDTH,
   );

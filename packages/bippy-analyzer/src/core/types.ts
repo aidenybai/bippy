@@ -246,6 +246,7 @@ export interface Handler {
   trigger: HandlerTrigger;
   updates: StateUpdate[];
   delegates: string[];
+  claims: Claim[];
   guards: SymbolicValue[];
   loc: SourceLocation;
 }
@@ -322,10 +323,8 @@ export interface Claim {
   cases: AbstractValue[] | null;
   test: SymbolicValue | null;
   guards: SymbolicValue[];
-  isInHandler: boolean;
   description: string;
   loc: SourceLocation;
-  file: string;
 }
 
 export type ClaimVerdict = "holds" | "broken" | "unproven";

@@ -1,7 +1,7 @@
-import { assumeGuards } from "./claim-guards";
 import {
   addBounds,
   assumeCondition,
+  assumeGuards,
   cloneConstraints,
   dedupeAbstractValues,
   evaluateCondition,

@@ -135,7 +135,8 @@ const getReadBindingIds = (
   visit(render);
   for (const handler of handlers)
     for (const update of handler.updates) [update.value, ...update.guards].forEach(visit);
-  for (const claim of claims) [claim.subject, ...claim.guards].forEach(visit);
+  for (const claim of [...claims, ...handlers.flatMap((handler) => handler.claims)])
+    [claim.subject, ...claim.guards].forEach(visit);
   for (const binding of bindings)
     for (const place of binding.inputPlaces) readIds.add(place.bindingId);
   return readIds;

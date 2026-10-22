@@ -863,7 +863,7 @@ flowchart TD
   n1["GuardedCast"]
   n2["#lt;button#gt; {status}"]
   n1 --> n2
-  n3(["onClick ⇒ if next: status = Unknown(cast)"]):::event
+  n3(["onClick ⇒ if next: status = Unknown(cast) · checks next as #quot;idle#quot; | #quot;saving#quot;"]):::event
   n2 -.-> n3"
 `;
 
@@ -920,7 +920,7 @@ flowchart TD
   n2 -->|✓| n3
   n4["#lt;button#gt; {picked}"]
   n2 -->|✗| n4
-  n5(["onClick ⇒ picked = kind"]):::event
+  n5(["onClick ⇒ picked = kind · checks kind as #quot;a#quot; | #quot;b#quot;"]):::event
   n4 -.-> n5"
 `;
 
@@ -1313,7 +1313,9 @@ flowchart TD
   n4["#lt;i#gt; #quot;named#quot;"]
   n3 -->|✓| n4
   n5["⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…"]
-  n2 --> n5"
+  n2 --> n5
+  n6(["Custom(every render) ⇒ checks user!"]):::event
+  n1 -.-> n6"
 `;
 
 exports[`fixture analysis > OpaqueCallback keeps its states, transitions and unreachable branches 1`] = `
@@ -1577,7 +1579,7 @@ flowchart TD
   n6 --> n7
   n8["#lt;button#gt; #quot;Save#quot;"]
   n6 --> n8
-  n9(["onClick ⇒ status = user.name ? #quot;saving#quot; : #quot;idle#quot;"]):::event
+  n9(["onClick ⇒ status = user.name ? #quot;saving#quot; : #quot;idle#quot; · checks user!"]):::event
   n8 -.-> n9
   n10["#lt;button#gt; #quot;Next#quot;"]
   n6 --> n10
@@ -1585,7 +1587,7 @@ flowchart TD
   n10 -.-> n11
   n12["#lt;button#gt; #quot;Finish#quot;"]
   n6 --> n12
-  n13(["onClick ⇒ status = #quot;done#quot;"]):::event
+  n13(["onClick ⇒ status = #quot;done#quot; · checks #quot;done#quot; as #quot;idle#quot; | #quot;saving#quot;"]):::event
   n12 -.-> n13"
 `;
 

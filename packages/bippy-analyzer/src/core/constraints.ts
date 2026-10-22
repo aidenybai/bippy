@@ -25,6 +25,7 @@ import { applyPureFunctionToCases } from "./utils/pure-functions";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isNullish } from "./utils/is-nullish";
+import { isNullishCase } from "./utils/is-nullish-case";
 import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
@@ -1176,3 +1177,41 @@ export const forgetBinding = (
 export const dedupeAbstractValues = (values: AbstractValue[]): AbstractValue[] => [
   ...new Map(values.map((value) => [formatAbstractValue(value), value])).values(),
 ];
+
+export const assumeGuards = (
+  guards: SymbolicValue[],
+  constraints: Constraints,
+): Constraints | null =>
+  guards.reduce<Constraints | null>(
+    (current, guard) => current && assumeCondition(guard, true, current),
+    constraints,
+  );
+
+const isCoalescing = (value: ConditionalValue): boolean =>
+  value.testKind === "nullish" && getValueKey(value.test) === getValueKey(value.consequent);
+
+const getBranchCases = (
+  value: ConditionalValue,
+  constraints: Constraints,
+): AbstractValue[] | null => {
+  const test = getTestExpression(value);
+  const decided = evaluateCondition(test, constraints);
+  if (decided !== null)
+    return getValueCases(decided ? value.consequent : value.alternate, constraints);
+  const whenTrue = assumeCondition(test, true, constraints);
+  const whenFalse = assumeCondition(test, false, constraints);
+  const consequent = whenTrue ? getValueCases(value.consequent, whenTrue) : [];
+  const alternate = whenFalse ? getValueCases(value.alternate, whenFalse) : [];
+  if (!consequent || !alternate) return null;
+  const kept = isCoalescing(value) ? consequent.filter((item) => !isNullishCase(item)) : consequent;
+  return dedupeAbstractValues([...kept, ...alternate]);
+};
+
+export const getValueCases = (
+  value: SymbolicValue,
+  constraints: Constraints,
+): AbstractValue[] | null => {
+  if (value.kind === "Primitive") return [{ kind: "Literal", value: value.value }];
+  if (value.kind === "Conditional") return getBranchCases(value, constraints);
+  return hasUnknownPart(value) ? null : getPossibleValues(value, constraints);
+};
