@@ -981,25 +981,17 @@ const touchesPlaces = (assumption: Assumption, places: BindingPlace[]): boolean 
     places.some((other) => isPlacePrefix(place, other) || isPlacePrefix(other, place)),
   );
 
-const holdsWithoutItself = (
-  assumptionKey: string,
-  assumption: Assumption,
-  constraints: Constraints,
-): boolean => {
-  const assumptions = new Map(constraints.assumptions);
-  assumptions.delete(assumptionKey);
-  const outcome = evaluateCondition(assumption.value, { ...constraints, assumptions });
-  return outcome === null || outcome === assumption.isTrue;
-};
-
 const keepsEarlierAssumptions = (value: SymbolicValue, constraints: Constraints): boolean => {
   const places = collectPlaces(value);
-  for (const [assumptionKey, assumption] of constraints.assumptions)
-    if (
-      touchesPlaces(assumption, places) &&
-      !holdsWithoutItself(assumptionKey, assumption, constraints)
-    )
-      return false;
+  let others: Constraints | null = null;
+  for (const [assumptionKey, assumption] of constraints.assumptions) {
+    if (!touchesPlaces(assumption, places)) continue;
+    others ??= { ...constraints, assumptions: new Map(constraints.assumptions) };
+    others.assumptions.delete(assumptionKey);
+    const outcome = evaluateCondition(assumption.value, others);
+    others.assumptions.set(assumptionKey, assumption);
+    if (outcome !== null && outcome !== assumption.isTrue) return false;
+  }
   return true;
 };
 
