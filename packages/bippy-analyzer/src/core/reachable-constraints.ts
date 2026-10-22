@@ -1,5 +1,5 @@
 import { getBindingUpdates } from "./collect-handlers";
-import { dedupeAbstractValues, evaluateCondition, getLengthAtom } from "./constraints";
+import { addBounds, dedupeAbstractValues, evaluateCondition, getLengthAtom } from "./constraints";
 import type { Bound, Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
 import type {
@@ -156,6 +156,7 @@ export const createFirstRenderConstraints = (
   const firstRender = {
     ...reachableConstraints,
     possibleValues: reachableConstraints.possibleValues.clone(),
+    bounds: [...reachableConstraints.bounds],
   };
   const bindingsById = new Map(analysis.bindings.map((binding) => [binding.id, binding]));
   for (const [place] of analysis.placeDomains) {
@@ -165,6 +166,12 @@ export const createFirstRenderConstraints = (
     if (Array.isArray(initialCases))
       firstRender.possibleValues.set(place, dedupeAbstractValues(initialCases));
   }
+  addBounds(
+    firstRender,
+    analysis.bindings.flatMap((binding) =>
+      isStateBinding(binding) && binding.initial ? getLengthBounds(binding.initial, binding) : [],
+    ),
+  );
   return firstRender;
 };
 
@@ -190,20 +197,29 @@ export const isLengthPreserving = (value: SymbolicValue, binding: Binding): bool
   );
 };
 
+const getKnownLength = (value: SymbolicValue): { count: number; isExact: boolean } | null => {
+  if (value.kind === "ArrayExpression")
+    return { count: value.elements.length, isExact: value.spreads.length === 0 };
+  if (value.kind === "Primitive" && typeof value.value === "string")
+    return { count: value.value.length, isExact: true };
+  return null;
+};
+
 export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
-  if (value.kind !== "ArrayExpression") return [];
+  const known = getKnownLength(value);
+  if (!known) return [];
   const lengthAtom = getLengthAtom(binding.id);
   const isAtLeastElementCount: Bound = {
     left: null,
     right: lengthAtom,
-    maxDifference: -value.elements.length,
+    maxDifference: -known.count,
     isStrict: false,
   };
-  if (value.spreads.length > 0) return [isAtLeastElementCount];
+  if (!known.isExact) return [isAtLeastElementCount];
   const isAtMostElementCount: Bound = {
     left: lengthAtom,
     right: null,
-    maxDifference: value.elements.length,
+    maxDifference: known.count,
     isStrict: false,
   };
   return [isAtLeastElementCount, isAtMostElementCount];
