@@ -151,4 +151,18 @@ describe("compiler errors", () => {
     expect(report.states).toHaveLength(1);
     expect(analysis.handlers).toHaveLength(1);
   });
+
+  it("lowers a for-await loop as a loop that awaits each value", () => {
+    const { analysis } = getComponent(project, "StreamedReply");
+    expect(analysis.bailouts).toEqual([]);
+    const [stream] = analysis.handlers;
+    expect(
+      stream?.updates.map((update) => [update.binding.name, update.isAsync, update.guards.length]),
+    ).toEqual([
+      ["status", false, 0],
+      ["reply", true, 2],
+      ["status", true, 0],
+      ["status", true, 1],
+    ]);
+  });
 });
