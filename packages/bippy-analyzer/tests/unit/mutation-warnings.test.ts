@@ -71,6 +71,7 @@ describe("mutation warnings", () => {
     "SortedState",
     "CopyInHandler",
     "PassToFunction",
+    "FilteredCopyPush",
   ])("reports nothing for %s", (name) => {
     expect(getWarnings(name)).toEqual([]);
   });
@@ -90,6 +91,19 @@ describe("mutation warnings", () => {
   it("reports nested state mutated before a shallow copy", () => {
     expect(getWarningKinds(getComponent(project, "NestedField"))).toEqual(["state-mutation"]);
   });
+
+  it("reports a context value written in a handler", () => {
+    expect(getWarnings("ContextWrite")).toMatchObject([
+      { kind: "context-mutation", message: "mutates context value counter" },
+    ]);
+  });
+
+  it.each(["FoundItemWrite", "FilteredItemWrite"])(
+    "reports an item %s takes from state and writes in a handler",
+    (name) => {
+      expect(getWarningKinds(getComponent(project, name))).toEqual(["state-mutation"]);
+    },
+  );
 
   it("reports props.items.sort() during render", () => {
     expect(getWarningKinds(getComponent(project, "SortPropsMember"))).toEqual(["prop-mutation"]);

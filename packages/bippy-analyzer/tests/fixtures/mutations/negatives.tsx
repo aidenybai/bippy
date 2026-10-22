@@ -59,3 +59,18 @@ export const PassToFunction = () => {
   const [items] = useState<string[]>([]);
   return <button onClick={() => save(items)}>{items.length}</button>;
 };
+
+export const FilteredCopyPush = () => {
+  const [items, setItems] = useState([{ id: 1, isDone: false }]);
+  return (
+    <button
+      onClick={() => {
+        const copy = items.filter((entry) => entry.isDone);
+        copy.push({ id: 2, isDone: false });
+        setItems(copy);
+      }}
+    >
+      {items.length}
+    </button>
+  );
+};

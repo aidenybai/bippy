@@ -123,6 +123,7 @@ interface CompilationTables {
   propertyObjects: Map<IdentifierId, Place>;
   branchOperators: Map<BlockId, BranchOperator>;
   aliasSources: Map<IdentifierId, Place>;
+  elementSources: Map<IdentifierId, Place>;
 }
 
 type CallTarget =
@@ -441,6 +442,7 @@ export class Interpreter {
       propertyObjects: new Map(),
       branchOperators: new Map(),
       aliasSources: new Map(),
+      elementSources: new Map(),
     };
     this.#tablesByEnvironment.set(env, compilationTables);
     return compilationTables;

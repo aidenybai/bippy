@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 export const LostUpdate = () => {
   const [items, setItems] = useState<string[]>([]);
@@ -125,5 +125,52 @@ export const TwoPushes = () => {
         Second
       </button>
     </div>
+  );
+};
+
+const CounterContext = createContext({ count: 0 });
+
+export const ContextWrite = () => {
+  const counter = useContext(CounterContext);
+  const [isShown, setIsShown] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        counter.count = 1;
+        setIsShown(!isShown);
+      }}
+    >
+      {isShown ? "shown" : "hidden"}
+    </button>
+  );
+};
+
+export const FoundItemWrite = () => {
+  const [items, setItems] = useState([{ id: 1, isDone: false }]);
+  return (
+    <button
+      onClick={() => {
+        const item = items.find((entry) => entry.id === 1);
+        if (item) item.isDone = true;
+        setItems([...items]);
+      }}
+    >
+      {items.length}
+    </button>
+  );
+};
+
+export const FilteredItemWrite = () => {
+  const [items, setItems] = useState([{ id: 1, isDone: false }]);
+  return (
+    <button
+      onClick={() => {
+        const [item] = items.filter((entry) => entry.id === 1);
+        if (item) item.isDone = true;
+        setItems([...items]);
+      }}
+    >
+      {items.length}
+    </button>
   );
 };
