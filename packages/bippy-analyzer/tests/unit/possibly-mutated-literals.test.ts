@@ -31,9 +31,6 @@ describe("a literal passed to a call that may mutate it", () => {
   });
 
   it("is still the literal after a read-only method", () => {
-    expect(getConditions("ReadOnlyMethod")).toEqual([
-      ['items.includes("a")'],
-      ['!items.includes("a")'],
-    ]);
+    expect(getConditions("ReadOnlyMethod")).toEqual([[]]);
   });
 });

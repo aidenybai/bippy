@@ -42,3 +42,13 @@ export const ParsedUnion = () => {
     </div>
   );
 };
+
+export const ListedStep = () => {
+  const [step, setStep] = useState(1);
+  return (
+    <div>
+      <button onClick={() => setStep(step + 1)}>next</button>
+      {[1, 2].includes(step) ? <i>early</i> : <i>late</i>}
+    </div>
+  );
+};

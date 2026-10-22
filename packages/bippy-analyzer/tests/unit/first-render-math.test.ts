@@ -30,4 +30,12 @@ describe("a first render that calls Math on known state", () => {
       "never count === 2",
     ]);
   });
+
+  it("checks a literal list for a known state", () => {
+    const { report } = getComponent(project, "ListedStep");
+    const firstState = report.regions[0]?.firstRenderState ?? null;
+    expect(firstState === null ? null : report.states[firstState]?.conditions).toEqual([
+      "[1, 2].includes(step)",
+    ]);
+  });
 });

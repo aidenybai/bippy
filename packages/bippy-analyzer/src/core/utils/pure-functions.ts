@@ -16,6 +16,8 @@ const PURE_FUNCTIONS = new Map<string, PureFunction>([
     (value, radix) => parseInt(String(value), radix === undefined ? undefined : Number(radix)),
   ],
   ["parseFloat", (value) => parseFloat(String(value))],
+  ["Array.includes", (value, ...elements) => elements.includes(value)],
+  ["Array.indexOf", (value, ...elements) => elements.indexOf(value)],
 ]);
 
 export const isPureFunction = (name: string): boolean => PURE_FUNCTIONS.has(name);
