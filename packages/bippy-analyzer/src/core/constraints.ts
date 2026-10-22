@@ -32,6 +32,7 @@ const LENGTH_FIELD = "length";
 export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const STRICT_EQUALITY_OPERATORS = new Set(["===", "!=="]);
+const COMPARISON_OPERATORS = new Set([...EQUALITY_OPERATORS, "<", "<=", ">", ">="]);
 const BOUND_OPERATORS = new Set(["<", "<=", ">", ">=", "===", "=="]);
 
 export interface Bound {
@@ -300,7 +301,7 @@ const splitEquality = (value: BinaryExpressionValue): [SymbolicValue, SymbolicVa
   value.left.kind === "Primitive" ? [value.right, value.left] : [value.left, value.right];
 
 const distributeComparison = (value: SymbolicValue): ConditionalValue | null => {
-  if (value.kind !== "BinaryExpression" || !EQUALITY_OPERATORS.has(value.operator)) return null;
+  if (value.kind !== "BinaryExpression" || !COMPARISON_OPERATORS.has(value.operator)) return null;
   const { operator, left, right } = value;
   if (left.kind === "Conditional" && right.kind === "Primitive")
     return {
