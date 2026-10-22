@@ -33,6 +33,7 @@ import type {
   Branch,
   Claim,
   ContextSetterFields,
+  DerivedCall,
   DerivedString,
   DispatchValue,
   Domain,
@@ -59,6 +60,7 @@ import { EVENT_ARGUMENT, isHandlerProp } from "./collect-handlers";
 import { PlaceMap } from "./utils/place-map";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getClampRange } from "./utils/get-clamp-range";
+import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -889,6 +891,10 @@ export class Interpreter {
   #callValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee } = callSite;
     const [firstArgument] = callSite.argumentValues;
+    if (callee.kind === "Global" && callee.module === null && isPureFunction(callee.name))
+      return this.#createCallResult(callSite, {
+        derived: { callee: callee.name, operands: callSite.argumentValues },
+      });
     switch (callee.kind) {
       case "Function":
         return this.callFunction(callee, callSite.argumentValues, callSite.loc, walkState);
@@ -1197,7 +1203,7 @@ export class Interpreter {
     {
       derived = null,
       range = null,
-    }: { derived?: DerivedString | null; range?: NumberRange | null } = {},
+    }: { derived?: DerivedString | DerivedCall | null; range?: NumberRange | null } = {},
   ): SymbolicValue {
     const calleeText = this.#resolver.getCalleeText(callSite.loc);
     if (calleeText === null) return createUnknown("call", callSite.loc);
@@ -1358,11 +1364,13 @@ export class Interpreter {
       argumentPlaces,
       loc: methodCall.loc,
     };
-    const range =
-      receiver.kind === "Global" && receiver.name === "Math"
-        ? getClampRange(methodName, argumentValues)
+    const isMath = receiver.kind === "Global" && receiver.name === "Math";
+    const range = isMath ? getClampRange(methodName, argumentValues) : null;
+    const derived =
+      isMath && isPureFunction(`Math.${methodName}`)
+        ? { callee: `Math.${methodName}`, operands: argumentValues }
         : null;
-    if (range) return this.#createCallResult(callSite, { range });
+    if (range || derived) return this.#createCallResult(callSite, { range, derived });
     return (
       this.#evaluateStringMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)
