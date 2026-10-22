@@ -51,19 +51,26 @@ const addComparedSamples = (render: SymbolicValue): void => {
   });
 };
 
+const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
+
 const getComponentIdentity = (
   reactFunction: CompiledFunction,
   fileContext: FileContext,
 ): ComponentIdentity => {
   const { sourceFile, exportNames, displayNames } = fileContext;
+  const { bindingName } = reactFunction;
+  const declarationName =
+    IDENTIFIER_PATTERN.test(bindingName) && bindingName !== "default"
+      ? bindingName
+      : reactFunction.name;
   return {
     name: reactFunction.name,
-    exportName: exportNames.get(reactFunction.name) ?? null,
+    exportName: exportNames.get(declarationName) ?? null,
     runtimeName: displayNames.has(reactFunction.name)
       ? (displayNames.get(reactFunction.name) ?? null)
       : reactFunction.name,
     file: sourceFile.fileName,
-    declaration: createDeclarationKey(sourceFile.path, reactFunction.name),
+    declaration: createDeclarationKey(sourceFile.path, declarationName),
   };
 };
 
