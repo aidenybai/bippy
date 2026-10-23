@@ -9,4 +9,9 @@ describe("a mutation no handler re-renders", () => {
     expect(component.report.states.map((state) => state.conditions)).toEqual([[]]);
     expect(getWarningKinds(component)).toEqual(["lost-update", "state-mutation"]);
   });
+
+  it("still shows when the handler calls imported code that might re-render", () => {
+    const { states } = getComponent(project, "NotifyAfterPush").report;
+    expect(states.flatMap((state) => state.transitions)).not.toEqual([]);
+  });
 });

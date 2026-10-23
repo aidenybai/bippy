@@ -63,6 +63,7 @@ export class EffectCollector {
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
   readonly #sameReferenceSets = new Set<number>();
+  #callsImportedCode = false;
   readonly #warn: WarnCallback;
 
   constructor(warn: WarnCallback) {
@@ -94,6 +95,10 @@ export class EffectCollector {
 
   addPossibleMutation(binding: Binding): void {
     this.#possiblyMutatedBindings.set(binding.id, binding);
+  }
+
+  addImportedCall(): void {
+    this.#callsImportedCode = true;
   }
 
   addDelegate(delegateName: string): void {
@@ -164,7 +169,8 @@ export class EffectCollector {
           ...[...this.#mutationsByBinding.values()].map((mutation) => mutation.binding),
           ...this.#possiblyMutatedBindings.values(),
         ];
-    const mayRender = this.#updates.length > 0 || this.#delegates.length > 0;
+    const mayRender =
+      this.#updates.length > 0 || this.#delegates.length > 0 || this.#callsImportedCode;
     for (const { binding, loc } of this.#mutationsByBinding.values()) {
       if (this.hasUpdate(binding)) continue;
       if (!this.#sameReferenceSets.has(binding.id))
