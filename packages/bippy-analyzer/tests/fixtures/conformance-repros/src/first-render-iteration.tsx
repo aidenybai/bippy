@@ -50,3 +50,23 @@ export const DoneCount = () => {
     </div>
   );
 };
+
+export const PickedId = () => {
+  const [ids, setIds] = useState([2]);
+  return (
+    <div>
+      <button onClick={() => setIds([...ids, 1])}>add</button>
+      {ids.includes(1) ? <i>picked</i> : <i>open</i>}
+    </div>
+  );
+};
+
+export const LastIndex = () => {
+  const [ids, setIds] = useState([2, 3]);
+  return (
+    <div>
+      <button onClick={() => setIds([])}>clear</button>
+      {ids.indexOf(3) === 1 ? <i>second</i> : <i>elsewhere</i>}
+    </div>
+  );
+};
