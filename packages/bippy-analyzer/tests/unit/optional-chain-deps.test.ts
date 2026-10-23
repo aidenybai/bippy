@@ -12,6 +12,11 @@ describe("a memo whose dependency is an optional chain", () => {
     ]);
   });
 
+  it("is not stale for the items of an array it depends on", () => {
+    const { render } = getComponent(project, "MappedChain").analysis;
+    expect(JSON.stringify(render)).not.toContain('"reason":"memo"');
+  });
+
   it("is still stale for a field its dependencies leave out", () => {
     const { render } = getComponent(project, "StaleSibling").analysis;
     expect(render).toMatchObject({ children: [{ kind: "Unknown", reason: "memo" }] });
