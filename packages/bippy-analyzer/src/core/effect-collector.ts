@@ -62,6 +62,7 @@ export class EffectCollector {
   readonly #claims: Claim[] = [];
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
+  readonly #sameReferenceSets = new Set<number>();
   readonly #warn: WarnCallback;
 
   constructor(warn: WarnCallback) {
@@ -139,6 +140,10 @@ export class EffectCollector {
         mutation.loc,
       );
     }
+    if (isSameReference && !this.hasUpdate(binding)) {
+      this.#sameReferenceSets.add(binding.id);
+      return;
+    }
     const knownValue = this.forgetMutatedBindings(nextValue);
     this.addUpdate(
       binding,
@@ -159,17 +164,20 @@ export class EffectCollector {
           ...[...this.#mutationsByBinding.values()].map((mutation) => mutation.binding),
           ...this.#possiblyMutatedBindings.values(),
         ];
+    const mayRender = this.#updates.length > 0 || this.#delegates.length > 0;
     for (const { binding, loc } of this.#mutationsByBinding.values()) {
       if (this.hasUpdate(binding)) continue;
-      this.#warn(
-        "state-mutation",
-        `mutates ${binding.name} without setting it, so the change shows only on the next render`,
-        loc,
-      );
-      this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
+      if (!this.#sameReferenceSets.has(binding.id))
+        this.#warn(
+          "state-mutation",
+          `mutates ${binding.name} without setting it, so the change shows only on the next render`,
+          loc,
+        );
+      if (mayRender)
+        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     }
     for (const binding of this.#possiblyMutatedBindings.values())
-      if (!this.hasUpdate(binding))
+      if (!this.hasUpdate(binding) && (mayRender || binding.kind === "module"))
         this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     return {
       updates: this.#updates,
