@@ -317,6 +317,13 @@ const getReturnedFunctions = (value: SymbolicValue): SymbolicValue[] => {
   return value.kind === "Function" ? [value] : [];
 };
 
+const getConcatenatedParts = (value: SymbolicValue): SymbolicValue[] | null => {
+  if (value.kind === "Primitive") return typeof value.value === "string" ? [value] : null;
+  if (value.kind !== "BinaryExpression" || value.operator !== "+") return null;
+  const leftParts = getConcatenatedParts(value.left);
+  return leftParts && [...leftParts, value.right];
+};
+
 export class Interpreter {
   #resolver: SourceFileResolver;
   readonly #projectLoaders: ProjectLoaders;
@@ -598,6 +605,19 @@ export class Interpreter {
       : value;
   }
 
+  #getConcatenationLength(text: SymbolicValue, loc: SourceLocation): SymbolicValue {
+    const parts = getConcatenatedParts(text);
+    if (!parts) return createUnknown("member", loc);
+    const inputPlaces = new PlaceMap<true>();
+    this.collectInputPlaces(text, inputPlaces);
+    return createBindingValue(
+      this.createBinding(`(${formatSymbolicValue(text)}).length`, "call", loc, {
+        inputPlaces: inputPlaces.places(),
+        derived: { callee: "String.concat.length", operands: parts },
+      }),
+    );
+  }
+
   evaluatePropertyLoad(
     object: SymbolicValue,
     property: string,
@@ -623,6 +643,10 @@ export class Interpreter {
           : createUnknown("member", loc);
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
+      case "BinaryExpression":
+        return property === "length"
+          ? this.#getConcatenationLength(object, loc)
+          : createUnknown("member", loc);
       case "Conditional":
         if (isNullishValue(object.alternate))
           return this.evaluatePropertyLoad(object.consequent, property, loc);

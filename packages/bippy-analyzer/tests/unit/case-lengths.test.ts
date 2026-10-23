@@ -23,4 +23,13 @@ describe("comparisons on the cases of a field and of a string length", () => {
       ["text.length !== 0"],
     ]);
   });
+
+  it("a template string's length follows the cases of what it interpolates", () => {
+    const { states } = getComponent(project, "TemplateLength").report;
+    const shown = states.find((state) => state.conditions.includes("isShown"));
+    const targets = shown?.transitions.flatMap((transition) =>
+      transition.targets.map((target) => states[target]?.conditions),
+    );
+    expect(targets).not.toContainEqual(["!isShown"]);
+  });
 });
