@@ -13,7 +13,7 @@ import type { Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
 import type { RegionBranches } from "./regions";
 import { getBranchKey } from "./control-flow";
-import type { Handler, StateUpdate, SymbolicValue, Transition } from "./types";
+import type { ConditionalValue, Handler, StateUpdate, SymbolicValue, Transition } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
@@ -45,6 +45,7 @@ interface TransitionContext extends ReachabilityContext {
   stateBranches: StateBranches[];
   renderUpdates: StateUpdate[];
   targetIndicesByConstraints: Map<string, number[]>;
+  replayedOutcomes: WeakMap<Constraints, Map<ConditionalValue, Map<boolean, Constraints | null>>>;
   firstStateIndex: number;
 }
 
@@ -234,6 +235,23 @@ interface ReplayedPath {
   visited: Set<string>;
 }
 
+const assumeReplayedOutcome = (
+  conditional: ConditionalValue,
+  outcome: boolean,
+  constraints: Constraints,
+  context: TransitionContext,
+): Constraints | null => {
+  const byConditional = context.replayedOutcomes.get(constraints) ?? new Map();
+  context.replayedOutcomes.set(constraints, byConditional);
+  const outcomes = byConditional.get(conditional) ?? new Map<boolean, Constraints | null>();
+  byConditional.set(conditional, outcomes);
+  const cached = outcomes.get(outcome);
+  if (cached !== undefined) return cached;
+  const assumed = assumeBranchOutcome(getTestExpression(conditional), outcome, constraints);
+  outcomes.set(outcome, assumed);
+  return assumed;
+};
+
 const replayBranches = (
   value: SymbolicValue,
   branches: ReadonlySet<string>,
@@ -249,12 +267,11 @@ const replayBranches = (
   if (value.kind !== "Conditional") return paths;
   const branchKey = getBranchKey(value.branch);
   if (!context.regionBranches.branchKeys.has(branchKey)) return paths;
-  const test = getTestExpression(value);
   return [true, false].flatMap((outcome) => {
     const branch = `${branchKey}:${outcome}`;
     if (!branches.has(branch)) return [];
     const assumed = paths.flatMap(({ constraints, visited }): ReplayedPath[] => {
-      const next = assumeBranchOutcome(test, outcome, constraints);
+      const next = assumeReplayedOutcome(value, outcome, constraints, context);
       return next ? [{ constraints: next, visited: new Set([...visited, branch]) }] : [];
     });
     return replayBranches(outcome ? value.consequent : value.alternate, branches, assumed, context);
@@ -388,6 +405,7 @@ export const createTransitionContext = (
   ...getBranchContext(regionBranches, alternatives, context),
   renderUpdates: context.renderUpdates,
   targetIndicesByConstraints: new Map(),
+  replayedOutcomes: new WeakMap(),
   firstStateIndex,
   budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
 });
