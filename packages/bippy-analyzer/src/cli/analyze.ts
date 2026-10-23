@@ -88,7 +88,7 @@ new Command()
   .option("-c, --component <names...>", "only show these components")
   .option(
     "-f, --file <filter>",
-    "only analyze components in files whose path contains this text; their instances come only from parents in those files",
+    "only list states for components in files whose path contains this text; the whole project is still compiled, and instances come only from parents in those files",
   )
   .option(
     "-d, --depth <n>",
