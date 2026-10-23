@@ -3,8 +3,8 @@ import dagre, { type graphlib } from "@dagrejs/dagre";
 import { Badge } from "@/components/ui/badge";
 import { Code } from "@/components/ui/code";
 import { getSolidColor } from "@/lib/colors";
-import { getStateTransitions, type StateTransition } from "@/lib/diagram";
 import { getConditionNodeId, getHandlerNodeId } from "@/lib/lookup";
+import { getStateTransitions, type StateTransition } from "@/lib/state-chart";
 import {
   buildDecisionTree,
   collectEdges,

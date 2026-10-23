@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Code } from "@/components/ui/code";
-import { getSourceLine } from "@/lib/diagram";
+import { getSourceLine } from "@/lib/state-chart";
 import type { ViewComponent, ViewFile } from "@/model";
 import { useHoverStore } from "@/store/hover";
 import { useViewer } from "./context";
@@ -10,7 +10,7 @@ const CodeLine = ({ text }: { text: string }) => (
   <Code className="wrap-anywhere whitespace-pre-wrap">{text}</Code>
 );
 
-const ComponentDiagram = ({ view, component }: { view: ViewFile; component: ViewComponent }) => {
+const ComponentStateChart = ({ view, component }: { view: ViewFile; component: ViewComponent }) => {
   const activate = useHoverStore((state) => state.activate);
   if (!component.loc) return null;
   const { start, end } = component.loc;
@@ -38,7 +38,7 @@ const ComponentDiagram = ({ view, component }: { view: ViewFile; component: View
   );
 };
 
-export const DiagramPane = () => {
+export const StateChartPane = () => {
   const { view } = useViewer();
   const paneRef = useRef<HTMLDivElement>(null);
   const focusRequest = useHoverStore((state) => state.focusRequest);
@@ -55,7 +55,7 @@ export const DiagramPane = () => {
     >
       <div className="grid gap-6 px-4 py-3 sm:px-5">
         {view.components.map((component) => (
-          <ComponentDiagram key={component.name} view={view} component={component} />
+          <ComponentStateChart key={component.name} view={view} component={component} />
         ))}
       </div>
     </div>

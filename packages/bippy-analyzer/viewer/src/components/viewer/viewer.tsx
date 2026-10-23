@@ -14,10 +14,10 @@ import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { useUiStore } from "@/store/ui";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
-import { DiagramPane } from "./diagram-pane";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
+import { StateChartPane } from "./state-chart-pane";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
@@ -79,7 +79,7 @@ const Panes = ({ source, legend }: PanesProps) => (
 
 const Source = () => {
   const { mode } = useViewer();
-  if (mode === "diagram") return <DiagramPane />;
+  if (mode === "state-chart") return <StateChartPane />;
   if (mode === "json") return <JsonPane />;
   return <SourcePane />;
 };

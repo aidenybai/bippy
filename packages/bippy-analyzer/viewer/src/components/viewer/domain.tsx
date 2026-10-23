@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { getDomainValues, shortenType } from "@/lib/diagram";
+import { getDomainValues, shortenType } from "@/lib/state-chart";
 import type { ViewBinding } from "@/model";
 
 const PREVIEW_COUNT = 6;

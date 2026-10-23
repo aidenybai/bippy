@@ -33,7 +33,7 @@ const ModeTabs = () => {
     <Tabs value={mode} onValueChange={(value) => isViewMode(value) && setMode(value)}>
       <TabsList aria-label="View">
         <TabsTrigger value="code">Code</TabsTrigger>
-        <TabsTrigger value="diagram">Diagram</TabsTrigger>
+        <TabsTrigger value="state-chart">State chart</TabsTrigger>
         <TabsTrigger value="json">JSON</TabsTrigger>
       </TabsList>
     </Tabs>
