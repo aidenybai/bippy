@@ -1,6 +1,7 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { Binding, Claim, StateUpdate, SymbolicValue, WarningKind } from "./types";
+import { isStateBinding } from "./utils/is-state-binding";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
@@ -62,6 +63,8 @@ export class EffectCollector {
   readonly #claims: Claim[] = [];
   readonly #mutationsByBinding = new Map<number, Mutation>();
   readonly #possiblyMutatedBindings = new Map<number, Binding>();
+  readonly #sameReferenceSets = new Set<number>();
+  #callsImportedCode = false;
   readonly #warn: WarnCallback;
 
   constructor(warn: WarnCallback) {
@@ -95,6 +98,10 @@ export class EffectCollector {
     this.#possiblyMutatedBindings.set(binding.id, binding);
   }
 
+  addImportedCall(): void {
+    this.#callsImportedCode = true;
+  }
+
   addDelegate(delegateName: string): void {
     this.#delegates.push(delegateName);
   }
@@ -112,7 +119,18 @@ export class EffectCollector {
   }
 
   addUpdate(binding: Binding, value: SymbolicValue, condition: UpdateCondition): void {
-    this.#updates.push({ binding, value, guards: condition.guards, isAsync: condition.isAsync });
+    const hasMutations =
+      this.#mutationsByBinding.size > 0 || this.#possiblyMutatedBindings.size > 0;
+    const guards = hasMutations
+      ? condition.guards.map((guard) =>
+          mapSymbolicValue(guard, (part) =>
+            part.kind === "Binding" && isStateBinding(part.binding) && this.#isMutated(part.binding)
+              ? createUnknown("mutated", GeneratedSource)
+              : part,
+          ),
+        )
+      : condition.guards;
+    this.#updates.push({ binding, value, guards, isAsync: condition.isAsync });
   }
 
   getQueuedValue(binding: Binding, condition: UpdateCondition): SymbolicValue {
@@ -139,6 +157,10 @@ export class EffectCollector {
         mutation.loc,
       );
     }
+    if (isSameReference && !this.hasUpdate(binding)) {
+      this.#sameReferenceSets.add(binding.id);
+      return;
+    }
     const knownValue = this.forgetMutatedBindings(nextValue);
     this.addUpdate(
       binding,
@@ -159,17 +181,21 @@ export class EffectCollector {
           ...[...this.#mutationsByBinding.values()].map((mutation) => mutation.binding),
           ...this.#possiblyMutatedBindings.values(),
         ];
+    const mayRender =
+      this.#updates.length > 0 || this.#delegates.length > 0 || this.#callsImportedCode;
     for (const { binding, loc } of this.#mutationsByBinding.values()) {
       if (this.hasUpdate(binding)) continue;
-      this.#warn(
-        "state-mutation",
-        `mutates ${binding.name} without setting it, so the change shows only on the next render`,
-        loc,
-      );
-      this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
+      if (!this.#sameReferenceSets.has(binding.id))
+        this.#warn(
+          "state-mutation",
+          `mutates ${binding.name} without setting it, so the change shows only on the next render`,
+          loc,
+        );
+      if (mayRender)
+        this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     }
     for (const binding of this.#possiblyMutatedBindings.values())
-      if (!this.hasUpdate(binding))
+      if (!this.hasUpdate(binding) && (mayRender || binding.kind === "module"))
         this.addUpdate(binding, createUnknown("mutated", GeneratedSource), UNCONDITIONAL_UPDATE);
     return {
       updates: this.#updates,

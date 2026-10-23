@@ -1060,6 +1060,7 @@ export class Interpreter {
 
   #callOpaqueValue(callSite: CallSite, walkState: WalkState): SymbolicValue {
     const { callee, argumentValues, loc } = callSite;
+    if (callee.kind === "Global" && callee.module !== null) this.#handlerEffects?.addImportedCall();
     this.#trackProjectCallMutations(callSite);
     this.#trackBuiltinMutation(callSite);
     const isMutatingCall = !this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);

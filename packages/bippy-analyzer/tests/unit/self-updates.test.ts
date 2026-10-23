@@ -9,8 +9,8 @@ describe("self updates", () => {
       state.transitions.map((transition) => transition.targets),
     );
 
-  it("keeps the source state when a setter receives the state itself", () => {
-    expect(getTargets("SelfToggle")).toEqual([[[0]]]);
+  it("records nothing when a setter receives the state itself", () => {
+    expect(getTargets("SelfToggle")).toEqual([[]]);
   });
 
   it("keeps the source state on the arm that passes the state through", () => {

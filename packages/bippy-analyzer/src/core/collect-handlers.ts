@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { forEachJsxElement } from "./utils/for-each-jsx-element";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
+import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
 import {
@@ -649,6 +650,25 @@ const getRenderedBindingIds = (render: SymbolicValue): Set<number> => {
   return bindingIds;
 };
 
+const forgetPendingReads = (handlers: Handler[], pendingMutations: Binding[]): void => {
+  const pendingIds = new Set(pendingMutations.filter(isStateBinding).map((binding) => binding.id));
+  if (pendingIds.size === 0) return;
+  const forget = (value: SymbolicValue): SymbolicValue =>
+    mapSymbolicValue(value, (part) =>
+      part.kind === "Binding" && pendingIds.has(part.binding.id)
+        ? createUnknown("mutated", GeneratedSource)
+        : part,
+    );
+  for (const handler of handlers) {
+    if (handler.trigger.kind === "Render") continue;
+    handler.updates = handler.updates.map((update) => ({
+      ...update,
+      value: forget(update.value),
+      guards: update.guards.map(forget),
+    }));
+  }
+};
+
 const revealPendingMutations = (
   handlers: Handler[],
   pendingMutations: Binding[],
@@ -723,6 +743,7 @@ const collectHandlersOnce = (
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
   const { bindings } = interpreter.bindingTable;
+  forgetPendingReads(collector.handlers, [...collector.pendingMutations.values()]);
   revealPendingMutations(
     collector.handlers,
     [

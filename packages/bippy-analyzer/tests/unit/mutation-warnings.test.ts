@@ -21,7 +21,7 @@ describe("mutation warnings", () => {
     "reports a lost update when %s mutates state and sets it back",
     (name) => {
       expect(getWarningKinds(getComponent(project, name))).toEqual(["lost-update"]);
-      expect(getUpdateValues(name)).toEqual(["Unknown(mutated)"]);
+      expect(getUpdateValues(name)).toEqual([]);
     },
   );
 
@@ -42,7 +42,7 @@ describe("mutation warnings", () => {
     expect(getWarnings("PushWithoutSet")).toMatchObject([
       { kind: "state-mutation", message: expect.stringContaining("without setting it") },
     ]);
-    expect(getUpdateValues("PushWithoutSet")).toEqual(["Unknown(mutated)"]);
+    expect(getUpdateValues("PushWithoutSet")).toEqual([]);
   });
 
   it("reports a destructured array prop sorted during render", () => {
