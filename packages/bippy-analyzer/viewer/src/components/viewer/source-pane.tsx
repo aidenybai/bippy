@@ -2,6 +2,8 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -18,10 +20,16 @@ import { useTokenBoxes, type PlacedToken, type TokenLayout } from "@/hooks/use-t
 import { isRestingArc, placeArcs } from "@/lib/arcs";
 import { describeNode } from "@/lib/describe";
 import { getComponentAtLine } from "@/lib/graph";
-import { getLineFromEvent, scrollToLine, type Box } from "@/lib/positions";
+import {
+  createLineLookup,
+  getLineFromEvent,
+  getRangeRows,
+  scrollToLine,
+  type Box,
+} from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
-import { useHoverStore, type TokenAnchor } from "@/store/hover";
+import { useHasHover, useHoverStore, type TokenAnchor } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
 import { useHoveredNode, useViewer } from "./context";
 import { TokenMark } from "./token-mark";
@@ -121,6 +129,63 @@ const CausalArcs = ({ layout }: { layout: TokenLayout }) => {
   return arcs.map((arc) => <Arc key={`${arc.edge.from}-${arc.edge.to}`} {...arc} />);
 };
 
+interface OverlayProps {
+  wrapperRef: RefObject<HTMLDivElement | null>;
+  layout: TokenLayout;
+}
+
+const useFocusRows = (wrapperRef: RefObject<HTMLDivElement | null>, layout: TokenLayout): Box[] => {
+  const index = useHoverStore((state) => state.index);
+  const causalNodeIds = useHoverStore((state) => state.causalNodeIds);
+  const [rows, setRows] = useState<Box[]>([]);
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    const host = wrapper?.querySelector<HTMLElement>("diffs-container");
+    if (!wrapper || !host || !index || causalNodeIds === null) return;
+    const lookup = createLineLookup(host, wrapper);
+    const rowByKey = new Map<string, Box>();
+    for (const nodeId of causalNodeIds) {
+      const node = index.nodes.get(nodeId);
+      if (!node || node.kind === "handler") continue;
+      for (const row of getRangeRows(lookup, node.loc))
+        rowByKey.set(`${row.x}-${row.y}-${row.width}`, row);
+    }
+    setRows([...rowByKey.values()]);
+  }, [wrapperRef, index, causalNodeIds, layout]);
+  return rows;
+};
+
+const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
+  const maskId = useId();
+  const hasHover = useHasHover();
+  const rows = useFocusRows(wrapperRef, layout);
+  return (
+    <g className="transition-opacity duration-150" style={{ opacity: hasHover ? 1 : 0 }}>
+      <mask id={maskId}>
+        <rect width={layout.width} height={layout.height} fill="white" />
+        {rows.map((row) => (
+          <rect
+            key={`${row.x}-${row.y}-${row.width}`}
+            x={row.x - 2}
+            y={row.y}
+            width={row.width + 4}
+            height={row.height}
+            rx={2}
+            fill="black"
+          />
+        ))}
+      </mask>
+      <rect
+        width={layout.width}
+        height={layout.height}
+        fill="var(--color-background)"
+        fillOpacity={0.6}
+        mask={`url(#${maskId})`}
+      />
+    </g>
+  );
+};
+
 const TokenTooltip = () => {
   const { view } = useViewer();
   const hoveredNode = useHoveredNode();
@@ -135,7 +200,7 @@ const TokenTooltip = () => {
   );
 };
 
-const Overlay = ({ layout }: { layout: TokenLayout }) => {
+const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
   const { colorByNodeId } = useViewer();
   return (
     <>
@@ -145,6 +210,7 @@ const Overlay = ({ layout }: { layout: TokenLayout }) => {
         height={layout.height}
       >
         <ArcHead />
+        <FocusScrim wrapperRef={wrapperRef} layout={layout} />
         {layout.tokens.map((token) => (
           <TokenMark
             key={token.node.id}
@@ -183,7 +249,7 @@ const CodeView = () => {
       onMouseLeave={leave}
     >
       <File file={file} options={options} disableWorkerPool />
-      <Overlay layout={layout} />
+      <Overlay wrapperRef={wrapperRef} layout={layout} />
     </div>
   );
 };

@@ -134,6 +134,19 @@ export const getLocationRows = (lookup: LineLookup, loc: ViewLocation): Box[] =>
   );
 };
 
+export const getRangeRows = (lookup: LineLookup, loc: ViewLocation): Box[] =>
+  Array.from(
+    { length: loc.end.line - loc.start.line + 1 },
+    (_, offset) => loc.start.line + offset,
+  ).flatMap((line) =>
+    getSpanRows(
+      lookup,
+      line,
+      line === loc.start.line ? loc.start.column : 0,
+      line === loc.end.line ? loc.end.column : Number.MAX_SAFE_INTEGER,
+    ),
+  );
+
 export const getLocationBox = (lookup: LineLookup, loc: ViewLocation): Box | null =>
   getBoundingBox(getLocationRows(lookup, loc));
 
