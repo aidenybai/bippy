@@ -353,10 +353,14 @@ const isConsistent = (graph: BoundGraph): boolean =>
     return !(cycle.weight < 0 || (cycle.weight === 0 && cycle.isStrict));
   });
 
+const getInvariantGraph = memoizeByIdentity((invariants: Bound[]): BoundGraph =>
+  invariants.reduce(withBound, EMPTY_GRAPH),
+);
+
 const getBoundGraph = (constraints: Constraints): BoundGraph =>
-  (constraints.boundGraph ??= [...constraints.invariants, ...constraints.bounds].reduce(
+  (constraints.boundGraph ??= constraints.bounds.reduce(
     withBound,
-    EMPTY_GRAPH,
+    getInvariantGraph(constraints.invariants),
   ));
 
 const isBoundedEquality = (
