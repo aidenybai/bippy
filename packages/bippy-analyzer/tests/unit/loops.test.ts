@@ -32,6 +32,10 @@ describe("loops", () => {
     expect(component.analysis.handlers[0]?.updates).toHaveLength(1);
   });
 
+  it("follows the state a for-of loop reads into the value it leaves through `break`", () => {
+    expect(getTargets("FoundOfState", "found === null")).toContainEqual(["found !== null"]);
+  });
+
   it("keeps what a loop leaves through `break`", () => {
     expect(getConditions("FirstMatch")).toEqual([["found === null"], ["found !== null"]]);
   });

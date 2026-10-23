@@ -105,3 +105,20 @@ export const LongLoop = () => {
     </button>
   );
 };
+
+export const FoundOfState = () => {
+  const [scores, setScores] = useState([0, 0]);
+  let found: number | null = null;
+  for (const score of scores) {
+    if (score > 0) {
+      found = score;
+      break;
+    }
+  }
+  return (
+    <div>
+      <button onClick={() => setScores([0, 3])}>score</button>
+      {found === null ? <i>none</i> : <b>{found}</b>}
+    </div>
+  );
+};

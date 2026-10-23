@@ -384,6 +384,7 @@ export class ControlFlowWalker {
     }
     const [loopEntry = terminal.fallthrough] = loopHeaders;
     this.#addLoopInputPlaces(loopBindings, loopEntry, terminal.fallthrough);
+    const headerBindingCount = loopBindings.length;
     const awaitCountBefore = this.#awaitCount;
     this.#loopDepth++;
     let bodyOutcome: Outcome;
@@ -401,6 +402,11 @@ export class ControlFlowWalker {
     }
     for (const phi of this.#getBlock(terminal.fallthrough).phis)
       this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
+    this.#addLoopInputPlaces(
+      loopBindings.slice(headerBindingCount),
+      loopEntry,
+      terminal.fallthrough,
+    );
     for (const place of this.#getStoredContextPlaces(loopEntry, terminal.fallthrough))
       this.#interpreter.write(place, createUnknown("loop", place.loc));
     const loopExit: Outcome = {
