@@ -19,6 +19,8 @@ describe("a memo whose dependency is an optional chain", () => {
 
   it("is still stale for a field its dependencies leave out", () => {
     const { render } = getComponent(project, "StaleSibling").analysis;
-    expect(render).toMatchObject({ children: [{ kind: "Unknown", reason: "memo" }] });
+    expect(render).toMatchObject({
+      children: [{ kind: "Binding", binding: { kind: "call", hookKind: "useMemo" } }],
+    });
   });
 });
