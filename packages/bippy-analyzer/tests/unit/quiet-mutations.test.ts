@@ -20,4 +20,10 @@ describe("a mutation no handler re-renders", () => {
     const none = states.findIndex((state) => state.conditions.includes("items.length !== 1"));
     expect(states[0]?.transitions.flatMap((transition) => transition.targets)).toContain(none);
   });
+
+  it("lets another handler read the pending mutation", () => {
+    const { states } = getComponent(project, "QuietThenOtherRead").report;
+    const none = states.findIndex((state) => state.conditions.includes("items.length !== 1"));
+    expect(states[0]?.transitions.flatMap((transition) => transition.targets)).toContain(none);
+  });
 });

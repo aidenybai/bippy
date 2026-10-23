@@ -53,3 +53,27 @@ export const PushThenRead = () => {
     </div>
   );
 };
+
+export const QuietThenOtherRead = () => {
+  const [items, setItems] = useState<number[]>([1]);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          items.push(9);
+          setItems(items);
+        }}
+      >
+        push
+      </button>
+      <button
+        onClick={() => {
+          if (items.length > 1) setItems([]);
+        }}
+      >
+        clear
+      </button>
+      {items.length === 1 ? <i>one</i> : items.length > 1 ? <i>many</i> : <i>none</i>}
+    </div>
+  );
+};

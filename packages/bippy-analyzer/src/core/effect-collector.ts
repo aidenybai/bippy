@@ -1,6 +1,7 @@
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { Binding, Claim, StateUpdate, SymbolicValue, WarningKind } from "./types";
+import { isStateBinding } from "./utils/is-state-binding";
 import { isWholeBinding } from "./utils/is-whole-binding";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
@@ -121,7 +122,13 @@ export class EffectCollector {
     const hasMutations =
       this.#mutationsByBinding.size > 0 || this.#possiblyMutatedBindings.size > 0;
     const guards = hasMutations
-      ? condition.guards.map((guard) => this.forgetMutatedBindings(guard))
+      ? condition.guards.map((guard) =>
+          mapSymbolicValue(guard, (part) =>
+            part.kind === "Binding" && isStateBinding(part.binding) && this.#isMutated(part.binding)
+              ? createUnknown("mutated", GeneratedSource)
+              : part,
+          ),
+        )
       : condition.guards;
     this.#updates.push({ binding, value, guards, isAsync: condition.isAsync });
   }
