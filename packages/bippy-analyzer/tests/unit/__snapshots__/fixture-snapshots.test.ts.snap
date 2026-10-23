@@ -160,14 +160,12 @@ flowchart TD
   n1["ClickStats"]
   n2["#lt;button#gt;"]
   n1 --> n2
-  n3(["onClick ⇒ stats = Unknown(mutated)"]):::event
-  n2 -.-> n3
-  n4{"stats.clicks #gt; 0"}
-  n2 --> n4
-  n5["{#quot;Clicked#quot;}"]
-  n4 -->|✓| n5
-  n6["{#quot;Not clicked#quot;}"]
-  n4 -->|✗| n6"
+  n3{"stats.clicks #gt; 0"}
+  n2 --> n3
+  n4["{#quot;Clicked#quot;}"]
+  n3 -->|✓| n4
+  n5["{#quot;Not clicked#quot;}"]
+  n3 -->|✗| n5"
 `;
 
 exports[`fixture analysis > ClickStats keeps its states, transitions and unreachable branches 1`] = `
@@ -176,11 +174,11 @@ title: ClickStats src/mutation.tsx:41
 ---
 stateDiagram-v2
   direction LR
-  S1: stats.clicks #gt; 0 · #lt;button#gt; {"Clicked"}
-  S2: !(stats.clicks #gt; 0) · #lt;button#gt; {"Not clicked"}
-  [*] --> S2
-  S1 --> S2: #lt;button#gt; onClick
-  S2 --> S1: #lt;button#gt; onClick
+  S1: always · #lt;button#gt; {"Not clicked"}
+  [*] --> S1
+  state "unreachable branches" as unreachable {
+    unreachable1: never stats.clicks #gt; 0 L49
+  }
   state "warnings" as warnings {
     warnings1: state-mutation L46 mutates stats without setting it, so the change shows only on the next render
   }"
@@ -2493,22 +2491,20 @@ flowchart TD
   n1 --> n2
   n3["#lt;button#gt; #quot;Push#quot;"]
   n2 --> n3
-  n4(["onClick ⇒ tags = Unknown(mutated)"]):::event
-  n3 -.-> n4
-  n5["#lt;button#gt; #quot;Copy#quot;"]
-  n2 --> n5
-  n6(["onClick ⇒ tags = [...Unknown(mutated)]"]):::event
-  n5 -.-> n6
-  n7{"tags.length === 0"}
-  n2 --> n7
-  n8["#lt;p#gt; #quot;No tags#quot;"]
-  n7 -->|✓| n8
-  n9["#lt;ul#gt;"]
-  n7 -->|✗| n9
-  n10[["↻ each of tags"]]
-  n9 --> n10
-  n11["#lt;li#gt; {tag}"]
-  n10 --> n11"
+  n4["#lt;button#gt; #quot;Copy#quot;"]
+  n2 --> n4
+  n5(["onClick ⇒ tags = [...Unknown(mutated)]"]):::event
+  n4 -.-> n5
+  n6{"tags.length === 0"}
+  n2 --> n6
+  n7["#lt;p#gt; #quot;No tags#quot;"]
+  n6 -->|✓| n7
+  n8["#lt;ul#gt;"]
+  n6 -->|✗| n8
+  n9[["↻ each of tags"]]
+  n8 --> n9
+  n10["#lt;li#gt; {tag}"]
+  n9 --> n10"
 `;
 
 exports[`fixture analysis > TagList keeps its states, transitions and unreachable branches 1`] = `
@@ -2520,8 +2516,6 @@ stateDiagram-v2
   S1: tags.length === 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;p#gt; "No tags"
   S2: tags.length !== 0 · #lt;div#gt; #lt;button#gt; "Push" #lt;button#gt; "Copy" #lt;ul#gt; ↻ tags
   [*] --> S1
-  S1 --> S2: "Push"
-  S2 --> S1: "Push"
   S1 --> S2: "Copy"
   S2 --> S1: "Copy"
   state "warnings" as warnings {
