@@ -35,3 +35,21 @@ export const NotifyAfterPush = () => {
     </div>
   );
 };
+
+export const PushThenRead = () => {
+  const [items, setItems] = useState<number[]>([1]);
+  return (
+    <div>
+      <button
+        onClick={() => {
+          items.push(9);
+          setItems(items);
+          if (items.length > 1) setItems([]);
+        }}
+      >
+        push
+      </button>
+      {items.length === 1 ? <i>one</i> : items.length > 1 ? <i>many</i> : <i>none</i>}
+    </div>
+  );
+};

@@ -14,4 +14,10 @@ describe("a mutation no handler re-renders", () => {
     const { states } = getComponent(project, "NotifyAfterPush").report;
     expect(states.flatMap((state) => state.transitions)).not.toEqual([]);
   });
+
+  it("still lets a later read in the handler see the mutation", () => {
+    const { states } = getComponent(project, "PushThenRead").report;
+    const none = states.findIndex((state) => state.conditions.includes("items.length !== 1"));
+    expect(states[0]?.transitions.flatMap((transition) => transition.targets)).toContain(none);
+  });
 });

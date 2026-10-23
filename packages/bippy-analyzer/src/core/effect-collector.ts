@@ -118,7 +118,12 @@ export class EffectCollector {
   }
 
   addUpdate(binding: Binding, value: SymbolicValue, condition: UpdateCondition): void {
-    this.#updates.push({ binding, value, guards: condition.guards, isAsync: condition.isAsync });
+    const hasMutations =
+      this.#mutationsByBinding.size > 0 || this.#possiblyMutatedBindings.size > 0;
+    const guards = hasMutations
+      ? condition.guards.map((guard) => this.forgetMutatedBindings(guard))
+      : condition.guards;
+    this.#updates.push({ binding, value, guards, isAsync: condition.isAsync });
   }
 
   getQueuedValue(binding: Binding, condition: UpdateCondition): SymbolicValue {
