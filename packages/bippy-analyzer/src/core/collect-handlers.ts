@@ -19,6 +19,7 @@ import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { mapSymbolicValue } from "./utils/map-symbolic-value";
 import { isExternalSource } from "./utils/is-external-source";
 import { getValueKey } from "./utils/get-value-key";
+import { getLocationKey } from "./utils/get-location-key";
 import {
   UNDEFINED_VALUE,
   createBindingValue,
@@ -272,6 +273,31 @@ const isSubmitControl = (element: JsxExpressionValue): boolean => {
   return element.tag.name === "input" && typeof type === "string" && SUBMIT_TYPES.has(type);
 };
 
+const getValueKeys = (values: SymbolicValue[]): string => values.map(getValueKey).join(",");
+
+const getHandlerContentKey = (handler: Handler): string =>
+  JSON.stringify([
+    handler.trigger,
+    getLocationKey(handler.loc),
+    getValueKeys(handler.guards),
+    handler.delegates,
+    handler.updates.map((update) => [
+      update.binding.id,
+      getValueKey(update.value),
+      getValueKeys(update.guards),
+      update.isAsync,
+    ]),
+    handler.claims.map((claim) => [
+      claim.kind,
+      getValueKey(claim.subject),
+      claim.cases,
+      claim.test && getValueKey(claim.test),
+      getValueKeys(claim.guards),
+      claim.description,
+      getLocationKey(claim.loc),
+    ]),
+  ]);
+
 interface PlannedHandler {
   trigger: HandlerTrigger;
   callback: SymbolicValue;
@@ -287,6 +313,7 @@ class HandlerCollector {
   readonly pendingMutations = new Map<number, Binding>();
   readonly #interpreter: Interpreter;
   readonly #plannedByKey = new Map<string | JsxSpreadProp, PlannedHandler>();
+  readonly #idsByContent = new Map<string, string>();
 
   constructor(interpreter: Interpreter) {
     this.#interpreter = interpreter;
@@ -324,9 +351,21 @@ class HandlerCollector {
   ): string | null {
     for (const binding of pendingMutations) this.pendingMutations.set(binding.id, binding);
     if (updates.length === 0 && delegates.length === 0 && claims.length === 0) return null;
-    const handlerId = `t${this.handlers.length + 1}`;
-    this.handlers.push({ id: handlerId, trigger, updates, delegates, claims, guards, loc });
-    return handlerId;
+    const handler: Handler = {
+      id: `t${this.handlers.length + 1}`,
+      trigger,
+      updates,
+      delegates,
+      claims,
+      guards,
+      loc,
+    };
+    const contentKey = getHandlerContentKey(handler);
+    const sameHandlerId = this.#idsByContent.get(contentKey);
+    if (sameHandlerId) return sameHandlerId;
+    this.#idsByContent.set(contentKey, handler.id);
+    this.handlers.push(handler);
+    return handler.id;
   }
 
   planElementHandlers(
