@@ -467,12 +467,16 @@ export const getPossibleValues = (
   const { derived } = value.binding;
   const derivedValues =
     derived && value.path.length === 0 ? getDerivedValues(derived, constraints) : null;
-  return (
-    derivedValues ??
-    getLengthCases(value, constraints) ??
-    constraints.possibleValues.get(getValuePlace(value)) ??
-    null
+  const lengthCases = getLengthCases(value, constraints);
+  const placeValues = constraints.possibleValues.get(getValuePlace(value));
+  if (derivedValues) return derivedValues;
+  if (!lengthCases || !placeValues) return lengthCases ?? placeValues ?? null;
+  const placeLengths = new Set(
+    placeValues.flatMap((placeValue) => (placeValue.kind === "Literal" ? [placeValue.value] : [])),
   );
+  return placeLengths.size === placeValues.length
+    ? lengthCases.filter((length) => length.kind === "Literal" && placeLengths.has(length.value))
+    : lengthCases;
 };
 
 export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): SymbolicValue => {
