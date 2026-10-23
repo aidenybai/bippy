@@ -50,8 +50,19 @@ export const formatPlace = (binding: Binding, path: readonly string[]): string =
 const formatPrimitive = (value: PrimitiveValue): string =>
   typeof value === "string" ? JSON.stringify(value) : String(value);
 
-export const formatAbstractValue = (value: AbstractValue): string =>
-  value.kind === "Literal" ? formatPrimitive(value.value) : value.text;
+const formatEntry = (
+  [key, entryValue]: [PrimitiveValue, PrimitiveValue],
+  isMap: boolean,
+): string =>
+  isMap ? `${formatPrimitive(key)} => ${formatPrimitive(entryValue)}` : formatPrimitive(key);
+
+export const formatAbstractValue = (value: AbstractValue): string => {
+  if (value.kind === "Literal") return formatPrimitive(value.value);
+  if (value.kind === "Type") return value.text;
+  const isMap = value.collection === "Map";
+  const entries = value.entries.map((entry) => formatEntry(entry, isMap));
+  return `${value.collection} {${entries.join(", ")}}`;
+};
 
 const getLogicalOperator = (value: ConditionalValue): "||" | "&&" | "??" | null => {
   const testKey = getValueKey(value.test);
@@ -164,9 +175,11 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return value.name;
     case "Collection": {
       const source = value.source ? formatSymbolicValue(value.source) : "";
-      const writes = value.writes.map(
-        (write) => `.${write.method}(${write.argumentValues.map(formatSymbolicValue).join(", ")})`,
-      );
+      const writes = value.writes.map((write) => {
+        const call = `.${write.method}(${write.argumentValues.map(formatSymbolicValue).join(", ")})`;
+        const guards = write.guards.map(formatSymbolicValue).join(" && ");
+        return write.guards.length > 0 ? ` (${call} if ${guards})` : call;
+      });
       return `new ${value.collection}(${source})${writes.join("")}`;
     }
     case "Unknown":

@@ -1,7 +1,9 @@
-import { evaluateCondition, type Constraints } from "./constraints";
+import { cloneConstraints, evaluateCondition, type Constraints } from "./constraints";
 import type { AbstractValue, Binding, BindingPlace, SymbolicValue } from "./types";
 import { getBindingPlace } from "./utils/get-binding-place";
-import { getCollectionSize } from "./utils/literal-receivers";
+import { getCollectionCases, getContentsField } from "./utils/literal-receivers";
+import type { CollectionOwner } from "./utils/literal-receivers";
+import { getValuePlace } from "./utils/get-value-place";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isSamePlace } from "./utils/is-same-place";
@@ -12,6 +14,18 @@ interface FieldWalk {
   target: BindingPlace;
   constraints: Constraints | null;
 }
+
+export const decideGuards = (
+  guards: SymbolicValue[],
+  constraints: Constraints,
+  owner: CollectionOwner | null,
+): boolean | null => {
+  const narrowed = owner ? cloneConstraints(constraints) : constraints;
+  if (owner) narrowed.possibleValues.set(getValuePlace(owner.source), [owner.value]);
+  const outcomes = guards.map((guard) => evaluateCondition(guard, narrowed));
+  if (outcomes.includes(false)) return false;
+  return outcomes.every((outcome) => outcome === true) ? true : null;
+};
 
 const resolveUnchanged = (cases: FieldCases, walk: FieldWalk): AbstractValue[] | null => {
   if (cases !== "unchanged") return cases;
@@ -44,13 +58,17 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
     const outcome = evaluateCondition(value, walk.constraints);
     return outcome === null ? null : [{ kind: "Literal", value: outcome }];
   }
+  if (value.kind === "Collection") {
+    const { constraints } = walk;
+    const contents = getCollectionCases(value, {
+      read: (source) => constraints?.possibleValues.get(getValuePlace(source)),
+      decide: (guards, owner) => (constraints ? decideGuards(guards, constraints, owner) : null),
+    });
+    return contents && getContentsField(contents, path);
+  }
   if (path.length === 0)
     return value.kind === "Primitive" ? [{ kind: "Literal", value: value.value }] : null;
   const [field, ...restPath] = path;
-  if (value.kind === "Collection" && field === "size" && restPath.length === 0) {
-    const size = getCollectionSize(value);
-    return size === null ? null : [{ kind: "Literal", value: size }];
-  }
   if (value.kind === "ArrayExpression" && field === "length" && restPath.length === 0)
     return value.spreads.length === 0 ? [{ kind: "Literal", value: value.elements.length }] : null;
   if (value.kind !== "ObjectExpression") return null;

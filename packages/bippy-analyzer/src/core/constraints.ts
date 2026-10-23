@@ -7,7 +7,6 @@ import type {
   BindingPlace,
   ConditionalValue,
   DerivedCall,
-  DerivedString,
   PrimitiveValue,
   SymbolicValue,
 } from "./types";
@@ -31,11 +30,14 @@ import { getTestExpression } from "./utils/get-test-expression";
 import { getTruthiness } from "./utils/get-truthiness";
 import { getTypeofNames } from "./utils/get-typeof-names";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
-import { applyStringMethod } from "./utils/string-methods";
+import { applyStringMethod, isStringMethod } from "./utils/string-methods";
+import { readContents } from "./utils/literal-receivers";
 import { memoizeByIdentity } from "./utils/memoize-by-identity";
 
 const CONSTANT_KEY = "#";
 const LENGTH_FIELD = "length";
+
+const SIZE_FIELD = "size";
 export const EQUALITY_OPERATORS = new Set(["===", "!==", "==", "!="]);
 const NEGATED_EQUALITY_OPERATORS = new Set(["!==", "!="]);
 const STRICT_EQUALITY_OPERATORS = new Set(["===", "!=="]);
@@ -208,7 +210,9 @@ const isNumberAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
 const isNumericAtom = (atom: BindingPlace, constraints: Constraints): boolean =>
   atom.path.at(-1) === LENGTH_FIELD ||
   everyCase(atom, constraints, (value) =>
-    value.kind === "Literal" ? typeof value.value === "number" : value.primitive === "number",
+    value.kind === "Literal"
+      ? typeof value.value === "number"
+      : value.kind === "Type" && value.primitive === "number",
   ) ||
   appearsIn(atom, constraints.invariants);
 
@@ -429,34 +433,55 @@ const getCallValues = (derived: DerivedCall, constraints: Constraints): Abstract
     : null;
 };
 
-const getDerivedValues = (
-  derived: DerivedString | DerivedCall,
-  constraints: Constraints,
-): AbstractValue[] | null => {
-  if ("operands" in derived) return getCallValues(derived, constraints);
-  const receiverValues = getPossibleValues(derived.receiver, constraints);
-  if (!receiverValues) return null;
-  const results: AbstractValue[] = [];
-  for (const receiverValue of receiverValues) {
-    if (receiverValue.kind !== "Literal" || typeof receiverValue.value !== "string") return null;
-    results.push({
-      kind: "Literal",
-      value: applyStringMethod(derived.method, receiverValue.value, derived.argumentValues),
-    });
-  }
-  return dedupeAbstractValues(results);
+interface Projection {
+  owner: BindingValue;
+  project: (ownerValue: AbstractValue) => AbstractValue | null;
+}
+
+const projectString = (
+  ownerValue: AbstractValue,
+  read: (text: string) => PrimitiveValue,
+): AbstractValue | null =>
+  ownerValue.kind === "Literal" && typeof ownerValue.value === "string"
+    ? { kind: "Literal", value: read(ownerValue.value) }
+    : null;
+
+const projectSize = (ownerValue: AbstractValue): AbstractValue | null =>
+  ownerValue.kind === "Collection" ? { kind: "Literal", value: ownerValue.entries.length } : null;
+
+const getProjection = (bindingValue: BindingValue): Projection | null => {
+  const field = bindingValue.path.at(-1);
+  const owner = { ...bindingValue, path: bindingValue.path.slice(0, -1) };
+  if (field === LENGTH_FIELD)
+    return { owner, project: (ownerValue) => projectString(ownerValue, (text) => text.length) };
+  if (field === SIZE_FIELD) return { owner, project: projectSize };
+  const { derived } = bindingValue.binding;
+  if (bindingValue.path.length > 0 || !derived || "operands" in derived) return null;
+  const { method, argumentValues } = derived;
+  return {
+    owner: derived.receiver,
+    project: (ownerValue) => {
+      if (isStringMethod(method))
+        return projectString(ownerValue, (text) => applyStringMethod(method, text, argumentValues));
+      const result = readContents(ownerValue, method, argumentValues);
+      return result === null ? null : { kind: "Literal", value: result };
+    },
+  };
 };
 
-const getLengthCases = (value: BindingValue, constraints: Constraints): AbstractValue[] | null => {
-  if (value.path.at(-1) !== LENGTH_FIELD) return null;
-  const ownerValues = getPossibleValues({ ...value, path: value.path.slice(0, -1) }, constraints);
-  if (!ownerValues || ownerValues.length === 0) return null;
-  const lengths: AbstractValue[] = [];
+const getProjectedValues = (
+  projection: Projection,
+  constraints: Constraints,
+): AbstractValue[] | null => {
+  const ownerValues = getPossibleValues(projection.owner, constraints);
+  if (!ownerValues) return null;
+  const results: AbstractValue[] = [];
   for (const ownerValue of ownerValues) {
-    if (ownerValue.kind !== "Literal" || typeof ownerValue.value !== "string") return null;
-    lengths.push({ kind: "Literal", value: ownerValue.value.length });
+    const result = projection.project(ownerValue);
+    if (!result) return null;
+    results.push(result);
   }
-  return dedupeAbstractValues(lengths);
+  return dedupeAbstractValues(results);
 };
 
 export const getPossibleValues = (
@@ -465,11 +490,14 @@ export const getPossibleValues = (
 ): AbstractValue[] | null => {
   if (value.kind !== "Binding") return null;
   const { derived } = value.binding;
+  const isDerived = derived !== null && value.path.length === 0;
+  const projection = getProjection(value);
+  const projectedValues = projection && getProjectedValues(projection, constraints);
   const derivedValues =
-    derived && value.path.length === 0 ? getDerivedValues(derived, constraints) : null;
-  const lengthCases = getLengthCases(value, constraints);
+    isDerived && "operands" in derived ? getCallValues(derived, constraints) : projectedValues;
   const placeValues = constraints.possibleValues.get(getValuePlace(value));
-  if (derivedValues) return derivedValues;
+  if (isDerived && derivedValues) return derivedValues;
+  const lengthCases = projectedValues?.length ? projectedValues : null;
   if (!lengthCases || !placeValues) return lengthCases ?? placeValues ?? null;
   const placeLengths = new Set(
     placeValues.flatMap((placeValue) => (placeValue.kind === "Literal" ? [placeValue.value] : [])),
@@ -601,10 +629,12 @@ const evaluateConcatenationEquality = (
   return matchCount === 0 ? isNegated : null;
 };
 
-const mayBeNaN = (candidate: AbstractValue): boolean =>
-  candidate.kind === "Literal"
-    ? typeof candidate.value === "number"
-    : candidate.primitive === "number" || candidate.primitive === null;
+const mayBeNaN = (candidate: AbstractValue): boolean => {
+  if (candidate.kind === "Literal") return typeof candidate.value === "number";
+  return (
+    candidate.kind === "Type" && (candidate.primitive === "number" || candidate.primitive === null)
+  );
+};
 
 const isSameStableValue = (
   left: SymbolicValue,
@@ -809,47 +839,20 @@ const narrowUnionMembers = (
   return constraints;
 };
 
-interface StringProjection {
-  owner: BindingValue;
-  project: (text: string) => PrimitiveValue;
-}
-
-const getStringProjection = (bindingValue: BindingValue): StringProjection | null => {
-  if (bindingValue.path.at(-1) === LENGTH_FIELD)
-    return {
-      owner: { ...bindingValue, path: bindingValue.path.slice(0, -1) },
-      project: (text) => text.length,
-    };
-  const { derived } = bindingValue.binding;
-  if (bindingValue.path.length > 0 || !derived || "operands" in derived) return null;
-  return {
-    owner: derived.receiver,
-    project: (text) => applyStringMethod(derived.method, text, derived.argumentValues),
-  };
-};
-
-const isStringLiteral = (value: AbstractValue): boolean =>
-  value.kind === "Literal" && typeof value.value === "string";
-
-const narrowOwnerString = (
+const narrowOwner = (
   bindingValue: BindingValue,
   constraints: Constraints,
   narrowedValues: AbstractValue[],
 ): Constraints | null => {
-  const projection = getStringProjection(bindingValue);
+  const projection = getProjection(bindingValue);
   if (!projection || !narrowedValues.every((value) => value.kind === "Literal")) return constraints;
   const ownerValues = getPossibleValues(projection.owner, constraints);
-  if (!ownerValues?.every(isStringLiteral)) return constraints;
+  if (!ownerValues?.every((value) => projection.project(value) !== null)) return constraints;
   const allowedKeys = getAbstractValueKeys(narrowedValues);
-  return narrowPlace(projection.owner, constraints, (candidate) =>
-    candidate.kind === "Literal" &&
-    typeof candidate.value === "string" &&
-    !allowedKeys.has(
-      formatAbstractValue({ kind: "Literal", value: projection.project(candidate.value) }),
-    )
-      ? []
-      : [candidate],
-  );
+  return narrowPlace(projection.owner, constraints, (candidate) => {
+    const projected = projection.project(candidate);
+    return projected && !allowedKeys.has(formatAbstractValue(projected)) ? [] : [candidate];
+  });
 };
 
 const narrowPlace = (
@@ -865,7 +868,7 @@ const narrowPlace = (
   const place = getValuePlace(bindingValue);
   narrowed.possibleValues.set(place, narrowedValues);
   const withMembers = narrowUnionMembers(narrowed, place, narrowedValues);
-  return withMembers && narrowOwnerString(bindingValue, withMembers, narrowedValues);
+  return withMembers && narrowOwner(bindingValue, withMembers, narrowedValues);
 };
 
 export const hasUnknownPart = (value: SymbolicValue): boolean => {
@@ -1045,7 +1048,9 @@ const keepsEarlierAssumptions = (value: SymbolicValue, constraints: Constraints)
 };
 
 const isStringCase = (value: AbstractValue): boolean =>
-  value.kind === "Literal" ? typeof value.value === "string" : value.primitive === "string";
+  value.kind === "Literal"
+    ? typeof value.value === "string"
+    : value.kind === "Type" && value.primitive === "string";
 
 const isStringValue = (value: BindingValue, constraints: Constraints): boolean => {
   const placeValues = getPossibleValues(value, constraints);

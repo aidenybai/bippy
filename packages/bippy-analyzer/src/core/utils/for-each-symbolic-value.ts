@@ -25,7 +25,7 @@ const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
     case "Collection":
       return [
         ...(value.source ? [value.source] : []),
-        ...value.writes.flatMap((write) => write.argumentValues),
+        ...value.writes.flatMap((write) => [...write.argumentValues, ...write.guards]),
       ];
     default:
       return [];

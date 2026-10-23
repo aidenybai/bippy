@@ -74,6 +74,13 @@ const includesLiteral = (cases: AbstractValue[], value: PrimitiveValue): boolean
 
 export const classify = (value: AbstractValue, cases: AbstractValue[]): Membership => {
   if (value.kind === "Literal") return includesLiteral(cases, value.value) ? "in" : "out";
+  if (value.kind === "Collection") {
+    const key = formatAbstractValue(value);
+    if (cases.some((candidate) => formatAbstractValue(candidate) === key)) return "in";
+    return cases.some((candidate) => candidate.kind === "Type" && candidate.primitive === null)
+      ? "maybe"
+      : "out";
+  }
   if (cases.some((candidate) => candidate.kind === "Type" && candidate.text === value.text))
     return "in";
   const mayEqual = cases.some(
@@ -94,7 +101,9 @@ export const withNullishCases = (cases: AbstractValue[]): AbstractValue[] => [
 ];
 
 export const isPrimitiveDomain = (cases: AbstractValue[]): boolean =>
-  cases.every((value) => value.kind === "Literal" || value.primitive !== null);
+  cases.every(
+    (value) => value.kind === "Literal" || (value.kind === "Type" && value.primitive !== null),
+  );
 
 export const isBooleanDomain = (cases: AbstractValue[]): boolean =>
   cases.every((value) => value.kind === "Literal" && typeof value.value === "boolean");

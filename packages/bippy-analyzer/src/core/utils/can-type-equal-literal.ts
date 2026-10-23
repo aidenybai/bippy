@@ -9,6 +9,8 @@ export const canTypeEqualLiteral = (
   operator: BinaryOperator,
 ): boolean => {
   if (value.kind === "Literal") return false;
+  if (value.kind === "Collection")
+    return LOOSE_EQUALITY_OPERATORS.has(operator) && !isNullish(literal);
   if (value.text === "any" || value.text === "unknown" || value.text === "{}") return true;
   if (LOOSE_EQUALITY_OPERATORS.has(operator)) return !isNullish(literal);
   switch (value.primitive) {

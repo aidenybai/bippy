@@ -51,3 +51,21 @@ export const LocalSet = ({ isTagged }: { isTagged: boolean }) => {
     </div>
   );
 };
+
+export const ToggledTag = () => {
+  const [tags, setTags] = useState(new Set<string>());
+  const toggle = (tag: string) =>
+    setTags((previous) => {
+      const next = new Set(previous);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
+      return next;
+    });
+  return (
+    <div>
+      <button onClick={() => toggle("a")}>a</button>
+      {tags.has("a") ? <i>on</i> : <i>off</i>}
+      {tags.size > 0 && <b>{tags.size}</b>}
+    </div>
+  );
+};

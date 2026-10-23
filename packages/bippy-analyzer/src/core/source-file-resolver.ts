@@ -300,6 +300,11 @@ export class SourceFileResolver {
     return readonlyMethods.has(methodName);
   }
 
+  getCollectionName(loc: SourceLocation): MutableCollection | null {
+    const type = this.#getType(loc);
+    return type ? getCollectionName(this.#checker, type) : null;
+  }
+
   hasPrimitiveType(loc: SourceLocation): boolean {
     const type = this.#getType(loc);
     return type !== undefined && isPrimitiveType(type);

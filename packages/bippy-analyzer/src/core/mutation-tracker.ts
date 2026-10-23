@@ -61,10 +61,10 @@ const REF_TYPE_PATTERN = /\b(?:Mutable)?RefObject\b|\bForwardedRef\b|\bRef</;
 
 const REF_CURRENT = "current";
 
-const isRefCase = (value: AbstractValue): boolean =>
-  value.kind === "Literal"
-    ? value.value === null || value.value === undefined
-    : REF_TYPE_PATTERN.test(value.text) || value.text.includes("=>");
+const isRefCase = (value: AbstractValue): boolean => {
+  if (value.kind === "Literal") return value.value === null || value.value === undefined;
+  return value.kind === "Type" && (REF_TYPE_PATTERN.test(value.text) || value.text.includes("=>"));
+};
 
 const isRefDomain = (domain: Domain): boolean => {
   if (domain.kind === "Opaque") return REF_TYPE_PATTERN.test(domain.typeText);
@@ -337,18 +337,23 @@ export class MutationTracker {
     walkState: WalkState,
   ): SymbolicValue {
     const creationPath = this.#creationPaths.get(literal);
-    const isOnCreationPath =
+    const isInCreationScope =
       creationPath !== undefined &&
-      creationPath.guards === walkState.guards &&
       creationPath.loopDepth === this.#interpreter.walker.loopDepth &&
       creationPath.isInHandler === (this.#interpreter.handlerEffects !== null);
-    const mutatedLiteral = this.#getMutatedLiteral(
-      instruction,
-      mutatedPlace,
-      literal,
+    const isOnCreationPath = isInCreationScope && creationPath.guards === walkState.guards;
+    const isUnderCreationPath =
+      isInCreationScope &&
+      creationPath.guards.every((guard, index) => walkState.guards[index] === guard);
+    const writeGuards = isUnderCreationPath
+      ? walkState.guards.slice(creationPath.guards.length)
+      : null;
+    const mutatedLiteral = this.#getMutatedLiteral(instruction, mutatedPlace, literal, {
       isOnCreationPath,
-    );
-    if (isOnCreationPath) this.#creationPaths.set(mutatedLiteral, creationPath);
+      writeGuards,
+    });
+    if (creationPath && (isOnCreationPath || mutatedLiteral.kind === "Collection"))
+      this.#creationPaths.set(mutatedLiteral, creationPath);
     const { values } = this.#interpreter.getCompilationTables();
     for (const [identifierId, value] of values)
       if (value === literal) values.set(identifierId, mutatedLiteral);
@@ -359,7 +364,10 @@ export class MutationTracker {
     instruction: Instruction,
     mutatedPlace: Place,
     literal: MutableLiteral,
-    isOnCreationPath: boolean,
+    {
+      isOnCreationPath,
+      writeGuards,
+    }: { isOnCreationPath: boolean; writeGuards: SymbolicValue[] | null },
   ): SymbolicValue {
     const { value, loc } = instruction;
     const methodName =
@@ -367,11 +375,11 @@ export class MutationTracker {
         ? this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id)
         : undefined;
     if (literal.kind === "Collection")
-      return isOnCreationPath &&
+      return writeGuards &&
         value.kind === "MethodCall" &&
         methodName !== undefined &&
         isCollectionWrite(methodName)
-        ? this.#writeIntoCollection(literal, value, methodName)
+        ? this.#writeIntoCollection(literal, value, methodName, writeGuards)
         : createUnknown("mutation", loc);
     if (literal.kind === "ArrayExpression" && value.kind === "MethodCall" && methodName === "push")
       return this.#pushIntoArray(literal, value, isOnCreationPath, loc);
@@ -414,6 +422,7 @@ export class MutationTracker {
     collection: CollectionValue,
     write: InstructionValueOfKind<"MethodCall">,
     methodName: string,
+    guards: SymbolicValue[],
   ): SymbolicValue {
     if (write.args.some((argument) => argument.kind !== "Identifier"))
       return createUnknown("mutation", write.loc);
@@ -422,7 +431,7 @@ export class MutationTracker {
     );
     return {
       ...collection,
-      writes: [...collection.writes, { method: methodName, argumentValues }],
+      writes: [...collection.writes, { method: methodName, argumentValues, guards }],
     };
   }
 
