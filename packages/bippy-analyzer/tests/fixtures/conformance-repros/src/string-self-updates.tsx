@@ -11,3 +11,14 @@ export const TrimmedText = () => {
     </div>
   );
 };
+
+export const ReplacedText = () => {
+  const [text, setText] = useState("");
+  return (
+    <div>
+      <button onClick={() => setText(text.replace("x", ""))}>strip</button>
+      <button onClick={() => setText(text === "" ? "ab" : "")}>swap</button>
+      {text.length === 0 ? <i>empty</i> : text.length === 2 ? <i>two</i> : <i>other</i>}
+    </div>
+  );
+};

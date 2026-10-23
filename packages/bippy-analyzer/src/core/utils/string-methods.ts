@@ -16,6 +16,10 @@ const STRING_METHODS = new Set([
   "padStart",
   "padEnd",
   "repeat",
+  "replace",
+  "replaceAll",
+  "substring",
+  "lastIndexOf",
 ]);
 
 export const isStringMethod = (methodName: string): boolean => STRING_METHODS.has(methodName);
