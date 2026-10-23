@@ -94,6 +94,39 @@ const getValueCases = (
     ? getNonNullishCases(typeCases)
     : null);
 
+const MAX_SHORTENED_LENGTH = 32;
+
+const getShortenedLengths = (
+  value: SymbolicValue,
+  place: BindingPlace,
+  reachable: AbstractValue[],
+): AbstractValue[] | "unchanged" | null => {
+  const limit = value.kind === "Binding" ? value.binding.lengthLimit : null;
+  if (
+    !limit ||
+    value.kind !== "Binding" ||
+    value.path.length > 0 ||
+    !isSamePlace(limit.arrayLength, place)
+  )
+    return null;
+  if (limit.isSameLength) return "unchanged";
+  const lengths = reachable.flatMap((length) =>
+    length.kind === "Literal" &&
+    typeof length.value === "number" &&
+    Number.isInteger(length.value) &&
+    length.value >= 0
+      ? [length.value]
+      : [],
+  );
+  if (lengths.length === 0 || lengths.length !== reachable.length) return null;
+  const longest = Math.max(...lengths);
+  if (longest > MAX_SHORTENED_LENGTH) return null;
+  return Array.from({ length: longest + 1 }, (_unused, count) => ({
+    kind: "Literal",
+    value: count,
+  }));
+};
+
 const getReachableCases = (
   analysis: ComponentAnalysis,
   binding: Binding,
@@ -117,7 +150,8 @@ const getReachableCases = (
     for (const update of updates) {
       const updateCases =
         getValueCases(update.value, path, binding, null, typeCases) ??
-        getToggleCases(update.value, place, reachable);
+        getToggleCases(update.value, place, reachable) ??
+        getShortenedLengths(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
       if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
       reachable = dedupeAbstractValues([...reachable, ...updateCases]);
