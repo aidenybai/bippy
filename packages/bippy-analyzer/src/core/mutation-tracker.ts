@@ -5,9 +5,11 @@ import { formatPlace } from "./format";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown } from "./symbolic-values";
 import type {
+  AbstractValue,
   ArrayExpressionValue,
   Binding,
   BindingValue,
+  Domain,
   GlobalValue,
   ObjectExpressionValue,
   SymbolicValue,
@@ -57,10 +59,25 @@ const REF_TYPE_PATTERN = /\b(?:Mutable)?RefObject\b|\bForwardedRef\b|\bRef</;
 
 const REF_CURRENT = "current";
 
+const isRefCase = (value: AbstractValue): boolean =>
+  value.kind === "Literal"
+    ? value.value === null || value.value === undefined
+    : REF_TYPE_PATTERN.test(value.text) || value.text.includes("=>");
+
+const isRefDomain = (domain: Domain): boolean => {
+  if (domain.kind === "Opaque") return REF_TYPE_PATTERN.test(domain.typeText);
+  return (
+    domain.kind === "Cases" &&
+    domain.cases.some((value) => value.kind === "Type" && REF_TYPE_PATTERN.test(value.text)) &&
+    domain.cases.every(isRefCase)
+  );
+};
+
 const isRefWrite = (ownedValue: BindingValue, storedProperty: string | null): boolean => {
-  const { domain } = ownedValue.binding;
-  const writesCurrent = ownedValue.path[0] === REF_CURRENT || storedProperty === REF_CURRENT;
-  return writesCurrent && domain.kind === "Opaque" && REF_TYPE_PATTERN.test(domain.typeText);
+  const passesWholeRef = ownedValue.path.length === 0 && storedProperty === null;
+  const writesCurrent =
+    ownedValue.path[0] === REF_CURRENT || storedProperty === REF_CURRENT || passesWholeRef;
+  return writesCurrent && isRefDomain(ownedValue.binding.domain);
 };
 
 const getOwnedValues = (value: SymbolicValue): BindingValue[] => {
