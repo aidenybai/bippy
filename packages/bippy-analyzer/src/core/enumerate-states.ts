@@ -175,7 +175,7 @@ const enumerateRegion = (
     transitions: getTransitions(alternative, index),
   }));
   const constraints = alternatives.map((alternative) => alternative.constraints);
-  const isTruncated = enumerator.isTruncated || transitionContext.budget.isExhausted;
+  const { isTruncated } = enumerator;
   return {
     states,
     constraints,
