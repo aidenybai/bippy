@@ -28,6 +28,7 @@ import type { WalkState } from "./walk-state";
 import type {
   ArrayExpressionValue,
   Binding,
+  PrimitiveValue,
   BindingKind,
   BindingPlace,
   BindingValue,
@@ -65,6 +66,7 @@ import { getClampRange } from "./utils/get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
 import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
+import { isSameValueZero } from "./utils/is-same-value-zero";
 import { getStoredLocals } from "./utils/get-stored-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -1662,9 +1664,40 @@ export class Interpreter {
         ? applyCollectionMethod(receiver, methodName, argumentValues)
         : null;
     if (collectionResult !== null) return { kind: "Primitive", value: collectionResult };
+    if (receiver.kind === "Collection")
+      return this.#readCollection(receiver, methodName, argumentValues, callSite);
     if (receiver.kind !== "Binding") return null;
     return this.#createCallResult(callSite, {
       derived: { method: methodName, receiver, argumentValues },
+    });
+  }
+
+  #readCollection(
+    collection: CollectionValue,
+    methodName: string,
+    argumentValues: PrimitiveValue[],
+    callSite: CallSite,
+  ): SymbolicValue | null {
+    const [key] = argumentValues;
+    const missing: SymbolicValue = {
+      kind: "Primitive",
+      value: methodName === "has" ? false : undefined,
+    };
+    for (const write of collection.writes.toReversed()) {
+      if (write.guards.length > 0) return null;
+      if (write.method === "clear") return missing;
+      const [writtenKey, writtenValue] = write.argumentValues;
+      if (writtenKey?.kind !== "Primitive") return null;
+      if (!isSameValueZero(writtenKey.value, key)) continue;
+      if (write.method === "delete") return missing;
+      if (methodName === "has") return { kind: "Primitive", value: true };
+      return write.method === "set" ? (writtenValue ?? UNDEFINED_VALUE) : null;
+    }
+    const { source } = collection;
+    if (!collection.isCopy || source?.kind !== "Binding") return null;
+    return this.#evaluateDerivedMethod(source, methodName, {
+      ...callSite,
+      callee: { ...source, path: [...source.path, methodName] },
     });
   }
 
@@ -1750,11 +1783,15 @@ export class Interpreter {
           constructor.kind === "Global" && constructor.module === null
             ? COLLECTION_CONSTRUCTORS.get(constructor.name)
             : undefined;
+        const [sourcePlace] = value.args;
         if (collection && value.args.every((argument) => argument.kind === "Identifier"))
           return {
             kind: "Collection",
             collection,
             source: argumentValues[0] ?? null,
+            isCopy:
+              sourcePlace?.kind === "Identifier" &&
+              this.#resolver.getCollectionName(sourcePlace.loc) === collection,
             writes: [],
             loc: value.loc,
           };

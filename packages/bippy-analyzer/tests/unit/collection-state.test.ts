@@ -12,7 +12,7 @@ describe("Set and Map state", () => {
   };
 
   it("reads size and has from a literal Set", () => {
-    expect(getFirstRender("SelectedIds")).toEqual(["ids.size !== 0", "!ids.has(1)"]);
+    expect(getFirstRender("SelectedIds")).toEqual(["!ids.has(1)"]);
   });
 
   it("reads get from a literal Map", () => {
@@ -36,6 +36,37 @@ describe("Set and Map state", () => {
       );
     expect(getUpdateTexts("SelectedIds")).toEqual(["new Set(ids).add(1)"]);
     expect(getUpdateTexts("Scores")).toEqual(['new Map(scores).set("a", 2)']);
+  });
+
+  const getStates = (name: string) =>
+    getComponent(project, name).report.states.map((state) => ({
+      conditions: state.conditions,
+      targets: state.transitions.flatMap((transition) => transition.targets),
+    }));
+
+  it("follows add and set to the contents they reach", () => {
+    expect(getStates("SelectedIds")).toEqual([
+      { conditions: ["ids.has(1)"], targets: [0] },
+      { conditions: ["!ids.has(1)"], targets: [0] },
+    ]);
+    expect(getStates("Scores")).toEqual([
+      { conditions: ['scores.get("a") === 1'], targets: [1] },
+      { conditions: ['scores.get("a") !== 1'], targets: [1] },
+    ]);
+  });
+
+  it("empties a Set replaced with a new one", () => {
+    expect(getStates("FilledSet")).toEqual([
+      { conditions: ['seen.has("x")'], targets: [1] },
+      { conditions: ['!seen.has("x")'], targets: [1] },
+    ]);
+  });
+
+  it("toggles a key with writes under a branch", () => {
+    expect(getStates("ToggledTag")).toEqual([
+      { conditions: ['tags.has("a")'], targets: [1] },
+      { conditions: ['!tags.has("a")'], targets: [0] },
+    ]);
   });
 
   it("leaves get on other classes open", () => {

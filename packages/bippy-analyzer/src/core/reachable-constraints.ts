@@ -1,7 +1,7 @@
 import { getBindingUpdates } from "./collect-handlers";
 import { addBounds, dedupeAbstractValues, evaluateCondition, getLengthAtom } from "./constraints";
 import type { Bound, Constraints } from "./constraints";
-import { getFieldCases } from "./field-cases";
+import { decideGuards, getFieldCases } from "./field-cases";
 import { getReachableIntegers, getReachableRange } from "./reachable-ranges";
 import type {
   AbstractValue,
@@ -16,7 +16,11 @@ import type {
 import { foldBinary, foldUnary } from "./symbolic-values";
 import { appendToGroup } from "./utils/append-to-group";
 import { applyStringMethod } from "./utils/string-methods";
-import { applyArrayMethod, applyCollectionMethod } from "./utils/literal-receivers";
+import {
+  applyArrayMethod,
+  applyCollectionMethod,
+  getCollectionCases,
+} from "./utils/literal-receivers";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTruthiness } from "./utils/get-truthiness";
@@ -117,6 +121,20 @@ export const getSelfCases = (
   return results.length > 0 ? results : null;
 };
 
+const getCollectionUpdateCases = (
+  value: SymbolicValue,
+  place: BindingPlace,
+  currentValues: AbstractValue[],
+  analysis: ComponentAnalysis,
+): AbstractValue[] | null => {
+  if (value.kind !== "Collection" || place.path.length > 0) return null;
+  const guardConstraints = createEmptyConstraints(analysis, new Map());
+  return getCollectionCases(value, {
+    read: (source) => (isSamePlace(getValuePlace(source), place) ? currentValues : null),
+    decide: (guards, owner) => decideGuards(guards, guardConstraints, owner),
+  });
+};
+
 const hasCastPart = (value: SymbolicValue): boolean => {
   let isCast = false;
   forEachSymbolicValue(value, (part) => {
@@ -208,6 +226,7 @@ const getReachableCases = (
         getValueCases(update.value, path, binding, null, typeCases) ??
         getToggleCases(update.value, place, reachable) ??
         getSelfCases(update.value, place, reachable) ??
+        getCollectionUpdateCases(update.value, place, reachable, analysis) ??
         getShortenedLengths(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
       if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;

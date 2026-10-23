@@ -10,7 +10,14 @@ export type PrimitiveTypeName = "string" | "number" | "bigint" | "boolean";
 
 export type AbstractValue =
   | { kind: "Literal"; value: PrimitiveValue }
-  | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null };
+  | { kind: "Type"; text: string; primitive: PrimitiveTypeName | null }
+  | {
+      kind: "Collection";
+      collection: "Set" | "Map";
+      entries: Array<[PrimitiveValue, PrimitiveValue]>;
+    };
+
+export type CollectionContents = Extract<AbstractValue, { kind: "Collection" }>;
 
 export type Truthiness = "truthy" | "falsy" | "either";
 
@@ -185,7 +192,8 @@ export type SymbolicValue =
       kind: "Collection";
       collection: "Set" | "Map";
       source: SymbolicValue | null;
-      writes: Array<{ method: string; argumentValues: SymbolicValue[] }>;
+      isCopy: boolean;
+      writes: Array<{ method: string; argumentValues: SymbolicValue[]; guards: SymbolicValue[] }>;
       loc: SourceLocation;
     }
   | { kind: "Unknown"; reason: string; loc: SourceLocation };

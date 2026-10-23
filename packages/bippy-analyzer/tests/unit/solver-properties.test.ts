@@ -271,6 +271,7 @@ const isSameValueZero = (left: Concrete, right: Concrete): boolean =>
 
 const admits = (abstract: AbstractValue, concrete: Concrete): boolean => {
   if (abstract.kind === "Literal") return isSameValueZero(abstract.value, concrete);
+  if (abstract.kind === "Collection") return false;
   if (abstract.primitive === null) return typeof concrete === "object" && concrete !== null;
   return typeof concrete === abstract.primitive;
 };
