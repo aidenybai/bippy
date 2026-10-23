@@ -5,6 +5,13 @@ describe("loops", () => {
   const project = analyzeFixture("symbolic-tree", "loops");
   const getConditions = (name: string) =>
     getComponent(project, name).report.states.map((state) => state.conditions);
+  const getTargets = (name: string, condition: string) => {
+    const { states } = getComponent(project, name).report;
+    const state = states.find((candidate) => candidate.conditions.includes(condition));
+    return state?.transitions.flatMap((transition) =>
+      transition.targets.map((target) => states[target]?.conditions),
+    );
+  };
 
   it("types a flag a loop sets as declared, so both of its sides render", () => {
     const component = getComponent(project, "LoopList");
@@ -31,5 +38,28 @@ describe("loops", () => {
 
   it("doesn't decide a loop's own test after the loop", () => {
     expect(getConditions("Countdown")).toEqual([["steps === 0"], ["steps !== 0"]]);
+  });
+
+  it("runs a handler's loop with known bounds to its end", () => {
+    expect(getTargets("CountedLoop", "!isDone")).toEqual([["isDone"]]);
+    expect(getTargets("CountedLoop", "isDone")).toEqual([["isDone"]]);
+  });
+
+  it("follows `continue` through a do-while loop", () => {
+    const { report } = getComponent(project, "SkippedSteps");
+    expect(report.unreachableBranches.map((branch) => branch.description)).toEqual([
+      "never steps !== 3",
+    ]);
+  });
+
+  it("leaves a loop through `return`", () => {
+    const { report } = getComponent(project, "EarlyReturn");
+    expect(report.unreachableBranches.map((branch) => branch.description)).toEqual([
+      "never picked !== 3",
+    ]);
+  });
+
+  it("keeps both results of a loop that runs too long to follow", () => {
+    expect(getTargets("LongLoop", "isFull")).toEqual([["isFull"], ["!isFull"]]);
   });
 });
