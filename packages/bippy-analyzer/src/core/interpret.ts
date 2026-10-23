@@ -273,12 +273,13 @@ const getArrayLiteralMember = (
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
-const getNullishTestPlaces = (value: SymbolicValue): PlaceMap<true> => {
+const getNullishTestPlaces = (
+  value: SymbolicValue,
+  capturedPlaces: PlaceMap<true>,
+): PlaceMap<true> => {
   const nullishTests = new PlaceMap<number>();
   const reads = new PlaceMap<number>();
-  let hasFunction = false;
   forEachSymbolicValue(value, (part) => {
-    if (part.kind === "Function") hasFunction = true;
     if (part.kind === "Binding")
       reads.set(getValuePlace(part), (reads.get(getValuePlace(part)) ?? 0) + 1);
     if (
@@ -291,12 +292,10 @@ const getNullishTestPlaces = (value: SymbolicValue): PlaceMap<true> => {
     }
   });
   return new PlaceMap(
-    hasFunction
-      ? []
-      : nullishTests
-          .places()
-          .filter((place) => nullishTests.get(place) === reads.get(place))
-          .map((place): [BindingPlace, true] => [place, true]),
+    nullishTests
+      .places()
+      .filter((place) => nullishTests.get(place) === reads.get(place) && !capturedPlaces.has(place))
+      .map((place): [BindingPlace, true] => [place, true]),
   );
 };
 
@@ -325,6 +324,7 @@ export class Interpreter {
   readonly #loadModuleVariable: ModuleVariableLoader;
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
+  readonly #itemSources = new Map<number, PlaceMap<true>>();
   readonly #tablesByEnvironment = new WeakMap<object, CompilationTables>();
   readonly #functions = new FunctionRegistry();
   readonly walker = new ControlFlowWalker(this);
@@ -683,6 +683,12 @@ export class Interpreter {
       this.#inlinedFunctions.delete(hirFunction);
       this.#componentCallLoc = previousCallLoc;
     }
+  }
+
+  addItemSource(item: Binding, array: SymbolicValue): void {
+    const sources = this.#itemSources.get(item.id) ?? new PlaceMap<true>();
+    this.collectInputPlaces(array, sources);
+    this.#itemSources.set(item.id, sources);
   }
 
   addMountClosure(closure: FunctionValue): void {
@@ -1273,7 +1279,13 @@ export class Interpreter {
     const bindingsById = new Map(
       this.bindingTable.bindings.map((binding) => [binding.id, binding]),
     );
-    const nullishTestPlaces = getNullishTestPlaces(memoized);
+    const capturedPlaces = new PlaceMap<true>();
+    forEachSymbolicValue(memoized, (part) => {
+      if (part.kind !== "Function") return;
+      for (const capturedPlace of this.#functions.get(part.functionId)?.context ?? [])
+        this.collectInputPlaces(this.read(capturedPlace), capturedPlaces);
+    });
+    const nullishTestPlaces = getNullishTestPlaces(memoized, capturedPlaces);
     const isCovered = (place: BindingPlace, visited = new Set<number>()): boolean => {
       if (dependencyPlaces.places().some((dependency) => isPlacePrefix(dependency, place)))
         return true;
@@ -1285,10 +1297,14 @@ export class Interpreter {
       if (!binding || binding.kind === "ref" || visited.has(binding.id))
         return binding?.kind === "ref";
       visited.add(binding.id);
+      const inputPlaces =
+        binding.kind === "item"
+          ? (this.#itemSources.get(binding.id)?.places() ?? [])
+          : binding.kind === "call" || binding.kind === "loop"
+            ? binding.inputPlaces
+            : [];
       return (
-        (binding.kind === "call" || binding.kind === "loop") &&
-        binding.inputPlaces.length > 0 &&
-        binding.inputPlaces.every((inputPlace) => isCovered(inputPlace, visited))
+        inputPlaces.length > 0 && inputPlaces.every((inputPlace) => isCovered(inputPlace, visited))
       );
     };
     return readPlaces.places().some((place) => !isCovered(place));

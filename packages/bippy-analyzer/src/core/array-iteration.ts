@@ -203,8 +203,8 @@ export class ArrayIteration {
       };
     const [itemParameter, indexParameter] =
       this.#interpreter.functions.get(callback.functionId)?.params ?? [];
-    const item = this.#createItemValue(itemParameter, "item", loc);
-    const index = this.#createItemValue(indexParameter, "index", loc);
+    const item = this.#createItemValue(itemParameter, "item", loc, array);
+    const index = this.#createItemValue(indexParameter, "index", loc, array);
     return {
       kind: "ArrayMap",
       array,
@@ -217,17 +217,17 @@ export class ArrayIteration {
     parameter: Place | SpreadPattern | undefined,
     fallbackName: string,
     loc: SourceLocation,
+    array: SymbolicValue,
   ): SymbolicValue {
     const place = parameter ? getPlaceOrSpread(parameter) : null;
-    return place
-      ? createBindingValue(
-          this.#interpreter.createBinding(
-            getIdentifierName(place) ?? fallbackName,
-            "item",
-            place.loc,
-          ),
-        )
-      : createUnknown(fallbackName, loc);
+    if (!place) return createUnknown(fallbackName, loc);
+    const binding = this.#interpreter.createBinding(
+      getIdentifierName(place) ?? fallbackName,
+      "item",
+      place.loc,
+    );
+    this.#interpreter.addItemSource(binding, array);
+    return createBindingValue(binding);
   }
 
   evaluateLoadedArrayMap(

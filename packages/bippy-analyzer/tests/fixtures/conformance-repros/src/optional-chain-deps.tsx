@@ -25,3 +25,11 @@ export const StaleSibling = ({ snapshot }: SlotProps) => {
   );
   return <>{footer}</>;
 };
+
+export const MappedChain = ({ snapshot }: { snapshot?: { items?: string[] } }) => {
+  const rows = useMemo(
+    () => snapshot?.items?.map((item) => <li key={item}>{item}</li>),
+    [snapshot?.items],
+  );
+  return <ul>{rows}</ul>;
+};
