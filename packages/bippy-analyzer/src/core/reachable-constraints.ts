@@ -10,9 +10,12 @@ import type {
   ComponentAnalysis,
   Domain,
   NumberRange,
+  PrimitiveValue,
   SymbolicValue,
 } from "./types";
+import { foldBinary, foldUnary } from "./symbolic-values";
 import { appendToGroup } from "./utils/append-to-group";
+import { applyStringMethod } from "./utils/string-methods";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTruthiness } from "./utils/get-truthiness";
@@ -59,6 +62,58 @@ export const getToggleCases = (
     kind: "Literal",
     value: getTruthiness(currentValue) === "falsy",
   }));
+};
+
+const substitutePlace = (
+  value: SymbolicValue,
+  place: BindingPlace,
+  current: PrimitiveValue,
+): SymbolicValue | null => {
+  switch (value.kind) {
+    case "Primitive":
+      return value;
+    case "Binding": {
+      if (isSamePlace(getValuePlace(value), place)) return { kind: "Primitive", value: current };
+      const { derived } = value.binding;
+      const isDerivedFromPlace =
+        value.path.length === 0 &&
+        derived !== null &&
+        "receiver" in derived &&
+        isSamePlace(getValuePlace(derived.receiver), place);
+      return isDerivedFromPlace && typeof current === "string"
+        ? {
+            kind: "Primitive",
+            value: applyStringMethod(derived.method, current, derived.argumentValues),
+          }
+        : null;
+    }
+    case "UnaryExpression": {
+      const operand = substitutePlace(value.value, place, current);
+      return operand ? foldUnary(value.operator, operand) : null;
+    }
+    case "BinaryExpression": {
+      const left = substitutePlace(value.left, place, current);
+      const right = substitutePlace(value.right, place, current);
+      return left && right ? foldBinary(value.operator, left, right) : null;
+    }
+    default:
+      return null;
+  }
+};
+
+export const getSelfCases = (
+  value: SymbolicValue,
+  place: BindingPlace,
+  currentValues: AbstractValue[] | undefined,
+): AbstractValue[] | null => {
+  const results: AbstractValue[] = [];
+  for (const currentValue of currentValues ?? []) {
+    if (currentValue.kind !== "Literal" || typeof currentValue.value !== "string") return null;
+    const result = substitutePlace(value, place, currentValue.value);
+    if (result?.kind !== "Primitive") return null;
+    results.push({ kind: "Literal", value: result.value });
+  }
+  return results.length > 0 ? results : null;
 };
 
 const hasCastPart = (value: SymbolicValue): boolean => {
@@ -151,6 +206,7 @@ const getReachableCases = (
       const updateCases =
         getValueCases(update.value, path, binding, null, typeCases) ??
         getToggleCases(update.value, place, reachable) ??
+        getSelfCases(update.value, place, reachable) ??
         getShortenedLengths(update.value, place, reachable);
       if (updateCases === "unchanged") continue;
       if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
@@ -232,6 +288,35 @@ export const createInitialConstraints = (analysis: ComponentAnalysis): Constrain
       reachable.possibleValues.set(place, cases);
       if (!mount.possibleValues.has(place)) mount.possibleValues.set(place, cases);
     }
+  }
+  for (const place of analysis.placeDomains.places()) {
+    const binding = bindingsById.get(place.bindingId);
+    const owner = { ...place, path: place.path.slice(0, -1) };
+    const isUnknownLength =
+      place.path.at(-1) === "length" &&
+      owner.path.length === 0 &&
+      binding !== undefined &&
+      isStateBinding(binding) &&
+      !reachable.possibleValues.has(place);
+    if (!isUnknownLength) continue;
+    const ownerCases =
+      reachable.possibleValues.get(owner) ??
+      getReachableCases(
+        analysis,
+        binding,
+        [],
+        analysis.placeDomains.get(owner) ?? binding.domain,
+        mount,
+      );
+    const lengths = ownerCases?.map((value) =>
+      value.kind === "Literal" && typeof value.value === "string" ? value.value.length : null,
+    );
+    if (!lengths || lengths.some((length) => length === null)) continue;
+    const lengthCases = dedupeAbstractValues(
+      lengths.map((length): AbstractValue => ({ kind: "Literal", value: length })),
+    );
+    reachable.possibleValues.set(place, lengthCases);
+    if (!mount.possibleValues.has(place)) mount.possibleValues.set(place, lengthCases);
   }
   return reachable;
 };
