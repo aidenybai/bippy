@@ -847,6 +847,39 @@ stateDiagram-v2
   S2: found !== null · #lt;p#gt; "Found " {found}"
 `;
 
+exports[`fixture analysis > FoundOfState keeps its render tree and handlers 1`] = `
+"---
+title: FoundOfState src/loops.tsx:109
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["FoundOfState"]
+  n2["#lt;div#gt;"]
+  n1 --> n2
+  n3["#lt;button#gt; #quot;score#quot;"]
+  n2 --> n3
+  n4(["onClick ⇒ scores = [0, 3]"]):::event
+  n3 -.-> n4
+  n5{"found === null"}
+  n2 --> n5
+  n6["#lt;i#gt; #quot;none#quot;"]
+  n5 -->|✓| n6
+  n7["#lt;b#gt; {found}"]
+  n5 -->|✗| n7"
+`;
+
+exports[`fixture analysis > FoundOfState keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: FoundOfState src/loops.tsx:109
+---
+stateDiagram-v2
+  direction LR
+  S1: found === null · #lt;div#gt; #lt;button#gt; "score" #lt;i#gt; "none"
+  S2: found !== null · #lt;div#gt; #lt;button#gt; "score" #lt;b#gt; {found}
+  S1 --> S2: "score"
+  S2 --> S1: "score""
+`;
+
 exports[`fixture analysis > FromLength keeps its render tree and handlers 1`] = `
 "---
 title: FromLength src/rows-from-length.tsx:1

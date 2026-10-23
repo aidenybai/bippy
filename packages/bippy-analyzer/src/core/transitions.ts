@@ -223,35 +223,30 @@ const getGuardedSequences = (
   visit(0, constraints, new Map());
   return sequences.length <= MAX_UPDATE_SEQUENCES
     ? sequences
-    : getWidenedSequences(updates, constraints);
+    : [getWidenedSequence(updates, constraints)];
 };
 
-const getWidenedSequences = (
-  updates: StateUpdate[],
-  constraints: Constraints,
-): GuardedSequence[] => {
-  const sequences: GuardedSequence[] = [];
+const getWidenedSequence = (updates: StateUpdate[], constraints: Constraints): GuardedSequence => {
   const included: StateUpdate[] = [];
   const maybeUpdates = new Set<StateUpdate>();
   const maybeValueKeys = new Map<number, Set<string>>();
+  const firstAsyncIndex = updates.findIndex((update) => update.isAsync);
   for (const [index, update] of updates.entries()) {
     const outcomes = getGuardChoices(update).map((choice) => {
       const outcome = evaluateCondition(choice.test, constraints);
       return outcome === null ? null : outcome === choice.isTrue;
     });
     if (outcomes.includes(false)) continue;
-    const isMaybe = outcomes.includes(null);
+    const isAfterAwait = firstAsyncIndex !== -1 && index >= firstAsyncIndex;
+    const isMaybe = isAfterAwait || outcomes.includes(null);
     const valueKeys = maybeValueKeys.get(update.binding.id) ?? new Set();
     const valueKey = getValueKey(update.value);
     if (isMaybe && valueKeys.has(valueKey)) continue;
     if (isMaybe) maybeUpdates.add(update);
     maybeValueKeys.set(update.binding.id, isMaybe ? valueKeys.add(valueKey) : new Set());
     included.push(update);
-    if (update.isAsync && index < updates.length - 1)
-      sequences.push({ updates: [...included], constraints, maybeUpdates });
   }
-  sequences.push({ updates: included, constraints, maybeUpdates });
-  return sequences;
+  return { updates: included, constraints, maybeUpdates };
 };
 
 const getConstraintsAfterUpdates = (
@@ -389,7 +384,7 @@ const getTargetStateIndices = (
     const sequences =
       context.budget.remainingTargetEnumerations > 0
         ? getGuardedSequences(updates, constraints)
-        : getWidenedSequences(updates, constraints);
+        : [getWidenedSequence(updates, constraints)];
     for (const sequence of sequences) {
       const isReplayed = context.budget.remainingTargetEnumerations > 0;
       context.budget.remainingTargetEnumerations--;
