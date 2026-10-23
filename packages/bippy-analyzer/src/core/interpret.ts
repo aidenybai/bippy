@@ -31,6 +31,7 @@ import type {
   BindingKind,
   BindingPlace,
   BindingValue,
+  CollectionValue,
   Branch,
   Claim,
   ContextSetterFields,
@@ -67,6 +68,11 @@ import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { applyStringMethod, isStringMethod } from "./utils/string-methods";
+import {
+  applyCollectionMethod,
+  getCollectionSize,
+  isCollectionRead,
+} from "./utils/literal-receivers";
 import { getValueKey } from "./utils/get-value-key";
 import { getValuePlace } from "./utils/get-value-place";
 import { isExternalSource } from "./utils/is-external-source";
@@ -316,6 +322,11 @@ const getReturnedFunctions = (value: SymbolicValue): SymbolicValue[] => {
     return [...getReturnedFunctions(value.consequent), ...getReturnedFunctions(value.alternate)];
   return value.kind === "Function" ? [value] : [];
 };
+
+const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
+  ["Set", "Set"],
+  ["Map", "Map"],
+]);
 
 const getConcatenatedParts = (value: SymbolicValue): SymbolicValue[] | null => {
   if (value.kind === "Primitive") return typeof value.value === "string" ? [value] : null;
@@ -643,6 +654,10 @@ export class Interpreter {
           : createUnknown("member", loc);
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
+      case "Collection": {
+        const size = property === "size" ? getCollectionSize(object) : null;
+        return size === null ? createUnknown("member", loc) : { kind: "Primitive", value: size };
+      }
       case "BinaryExpression":
         return property === "length"
           ? this.#getConcatenationLength(object, loc)
@@ -1593,17 +1608,19 @@ export class Interpreter {
     );
     if (firstValue) return this.#createCallResult(callSite, { initial: firstValue });
     return (
-      this.#evaluateStringMethod(receiver, methodName, callSite) ??
+      this.#evaluateDerivedMethod(receiver, methodName, callSite) ??
       this.#evaluateCall(callSite, walkState)
     );
   }
 
-  #evaluateStringMethod(
+  #evaluateDerivedMethod(
     receiver: SymbolicValue,
     methodName: string,
     callSite: CallSite,
   ): SymbolicValue | null {
-    if (!isStringMethod(methodName)) return null;
+    const isReadOnlyCollectionCall =
+      isCollectionRead(methodName) && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc);
+    if (!isStringMethod(methodName) && !isReadOnlyCollectionCall) return null;
     const argumentValues = callSite.argumentValues.flatMap((argument) =>
       argument.kind === "Primitive" ? [argument.value] : [],
     );
@@ -1613,6 +1630,11 @@ export class Interpreter {
         kind: "Primitive",
         value: applyStringMethod(methodName, receiver.value, argumentValues),
       };
+    const collectionResult =
+      receiver.kind === "Collection"
+        ? applyCollectionMethod(receiver, methodName, argumentValues)
+        : null;
+    if (collectionResult !== null) return { kind: "Primitive", value: collectionResult };
     if (receiver.kind !== "Binding") return null;
     return this.#createCallResult(callSite, {
       derived: { method: methodName, receiver, argumentValues },
@@ -1692,6 +1714,18 @@ export class Interpreter {
       case "NewExpression": {
         const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
         this.callbacks.passCallbacks(argumentValues, value.loc, walkState);
+        const constructor = this.read(value.callee);
+        const collection =
+          constructor.kind === "Global" && constructor.module === null
+            ? COLLECTION_CONSTRUCTORS.get(constructor.name)
+            : undefined;
+        if (collection && value.args.every((argument) => argument.kind === "Identifier"))
+          return {
+            kind: "Collection",
+            collection,
+            source: argumentValues[0] ?? null,
+            loc: value.loc,
+          };
         const instance = createUnknown(value.kind, value.loc);
         const callbacks = getPassedCallbacks(argumentValues);
         if (callbacks.length > 0) this.#wrappedCallbacks.set(instance, callbacks);

@@ -15,7 +15,8 @@ import type {
 } from "./types";
 import { foldBinary, foldUnary } from "./symbolic-values";
 import { appendToGroup } from "./utils/append-to-group";
-import { applyArrayMethod, applyStringMethod } from "./utils/string-methods";
+import { applyStringMethod } from "./utils/string-methods";
+import { applyArrayMethod, applyCollectionMethod } from "./utils/literal-receivers";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTruthiness } from "./utils/get-truthiness";
@@ -335,7 +336,7 @@ const getFirstValue = (
     : initial;
 };
 
-const getFirstArrayMethodValue = (
+const getFirstMethodValue = (
   binding: Binding,
   bindingsById: Map<number, Binding>,
 ): PrimitiveValue | null => {
@@ -344,6 +345,8 @@ const getFirstArrayMethodValue = (
   const receiver = bindingsById.get(derived.receiver.binding.id);
   const firstValue =
     receiver && isStateBinding(receiver) ? getFirstValue(receiver, bindingsById) : null;
+  if (firstValue?.kind === "Collection")
+    return applyCollectionMethod(firstValue, derived.method, derived.argumentValues);
   if (firstValue?.kind !== "ArrayExpression" || firstValue.spreads.length > 0) return null;
   const elements = firstValue.elements.flatMap((element) =>
     element.kind === "Primitive" ? [element.value] : [],
@@ -377,7 +380,7 @@ export const createFirstRenderConstraints = (
       firstRender.possibleValues.set(place, dedupeAbstractValues(initialCases));
   }
   for (const binding of analysis.bindings) {
-    const value = getFirstArrayMethodValue(binding, bindingsById);
+    const value = getFirstMethodValue(binding, bindingsById);
     if (value !== null)
       firstRender.possibleValues.set(getBindingPlace(binding, []), [{ kind: "Literal", value }]);
   }

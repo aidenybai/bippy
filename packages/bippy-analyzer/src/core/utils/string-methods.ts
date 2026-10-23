@@ -36,20 +36,3 @@ export const applyStringMethod = (
     ? result
     : undefined;
 };
-
-export const applyArrayMethod = (
-  methodName: string,
-  receiver: PrimitiveValue[],
-  argumentValues: PrimitiveValue[],
-): PrimitiveValue | null => {
-  const method: unknown = Reflect.get(Array.prototype, methodName);
-  if (typeof method !== "function") return null;
-  const result: unknown = Reflect.apply(method, receiver, argumentValues);
-  return result === null ||
-    result === undefined ||
-    typeof result === "string" ||
-    typeof result === "number" ||
-    typeof result === "boolean"
-    ? result
-    : null;
-};

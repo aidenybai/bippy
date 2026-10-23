@@ -162,6 +162,8 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return `${value.name}()`;
     case "Global":
       return value.name;
+    case "Collection":
+      return `new ${value.collection}(${value.source ? formatSymbolicValue(value.source) : ""})`;
     case "Unknown":
       return `Unknown(${value.reason})`;
     default:

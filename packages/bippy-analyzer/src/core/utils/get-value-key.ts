@@ -78,6 +78,13 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
       ];
     case "Global":
       return [value.kind, value.name, value.module];
+    case "Collection":
+      return [
+        value.kind,
+        value.collection,
+        value.source ? getValueKey(value.source) : null,
+        getLocationPart(value.loc),
+      ];
     case "Unknown":
       return [value.kind, value.reason, getLocationPart(value.loc)];
     default:
