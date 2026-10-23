@@ -273,6 +273,33 @@ const getArrayLiteralMember = (
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
+const getNullishTestPlaces = (value: SymbolicValue): PlaceMap<true> => {
+  const nullishTests = new PlaceMap<number>();
+  const reads = new PlaceMap<number>();
+  let hasFunction = false;
+  forEachSymbolicValue(value, (part) => {
+    if (part.kind === "Function") hasFunction = true;
+    if (part.kind === "Binding")
+      reads.set(getValuePlace(part), (reads.get(getValuePlace(part)) ?? 0) + 1);
+    if (
+      part.kind === "Conditional" &&
+      part.testKind === "nullish" &&
+      part.test.kind === "Binding"
+    ) {
+      const place = getValuePlace(part.test);
+      nullishTests.set(place, (nullishTests.get(place) ?? 0) + 1);
+    }
+  });
+  return new PlaceMap(
+    hasFunction
+      ? []
+      : nullishTests
+          .places()
+          .filter((place) => nullishTests.get(place) === reads.get(place))
+          .map((place): [BindingPlace, true] => [place, true]),
+  );
+};
+
 const JSX_RUNTIME_MODULES = new Set(["react/jsx-runtime", "react/jsx-dev-runtime"]);
 
 const getGlobalValue = (loadGlobal: InstructionValueOfKind<"LoadGlobal">): SymbolicValue => {
@@ -1246,9 +1273,14 @@ export class Interpreter {
     const bindingsById = new Map(
       this.bindingTable.bindings.map((binding) => [binding.id, binding]),
     );
+    const nullishTestPlaces = getNullishTestPlaces(memoized);
     const isCovered = (place: BindingPlace, visited = new Set<number>()): boolean => {
       if (dependencyPlaces.places().some((dependency) => isPlacePrefix(dependency, place)))
         return true;
+      const isOptionalChainBase =
+        nullishTestPlaces.has(place) &&
+        dependencyPlaces.places().some((dependency) => isPlacePrefix(place, dependency));
+      if (isOptionalChainBase) return true;
       const binding = bindingsById.get(place.bindingId);
       if (!binding || binding.kind === "ref" || visited.has(binding.id))
         return binding?.kind === "ref";
