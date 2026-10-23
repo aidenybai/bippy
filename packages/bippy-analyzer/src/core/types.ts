@@ -185,6 +185,7 @@ export type SymbolicValue =
       kind: "Collection";
       collection: "Set" | "Map";
       source: SymbolicValue | null;
+      writes: Array<{ method: string; argumentValues: SymbolicValue[] }>;
       loc: SourceLocation;
     }
   | { kind: "Unknown"; reason: string; loc: SourceLocation };

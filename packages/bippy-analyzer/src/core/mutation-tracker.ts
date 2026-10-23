@@ -9,6 +9,7 @@ import type {
   ArrayExpressionValue,
   Binding,
   BindingValue,
+  CollectionValue,
   Domain,
   GlobalValue,
   ObjectExpressionValue,
@@ -18,6 +19,7 @@ import { getConditionallyMutatedPlace } from "./utils/get-conditionally-mutated-
 import { getMutatedPlace } from "./utils/get-mutated-place";
 import { isFunctionCreation } from "./utils/is-function-creation";
 import { isStateBinding } from "./utils/is-state-binding";
+import { isCollectionWrite } from "./utils/literal-receivers";
 import type { WalkState } from "./walk-state";
 
 interface CreationPath {
@@ -99,10 +101,19 @@ const getCopiedOwnedValue = (array: ArrayExpressionValue): BindingValue | null =
 const isTransitiveMutation = (effect: AliasingEffect): boolean =>
   effect.kind === "MutateTransitive" || effect.kind === "MutateTransitiveConditionally";
 
-const getNestedValues = (literal: ArrayExpressionValue | ObjectExpressionValue): SymbolicValue[] =>
-  literal.kind === "ArrayExpression"
-    ? literal.elements
-    : literal.properties.map((property) => property.value);
+type MutableLiteral = ArrayExpressionValue | ObjectExpressionValue | CollectionValue;
+
+const isMutableLiteral = (value: SymbolicValue): value is MutableLiteral =>
+  value.kind === "ArrayExpression" ||
+  value.kind === "ObjectExpression" ||
+  value.kind === "Collection";
+
+const getNestedValues = (literal: MutableLiteral): SymbolicValue[] => {
+  if (literal.kind === "ArrayExpression") return literal.elements;
+  return literal.kind === "ObjectExpression"
+    ? literal.properties.map((property) => property.value)
+    : [];
+};
 
 export class MutationTracker {
   readonly #interpreter: Interpreter;
@@ -128,10 +139,7 @@ export class MutationTracker {
       const mutatedPlace = getMutatedPlace(effect);
       if (!mutatedPlace || isReassignedPlace(instruction, mutatedPlace)) continue;
       const mutatedValue = this.#interpreter.read(mutatedPlace);
-      if (
-        (mutatedValue.kind === "ArrayExpression" || mutatedValue.kind === "ObjectExpression") &&
-        !mutatedLiterals.has(mutatedValue)
-      ) {
+      if (isMutableLiteral(mutatedValue) && !mutatedLiterals.has(mutatedValue)) {
         mutatedLiterals.add(
           this.#mutateLiteral(instruction, mutatedPlace, mutatedValue, walkState),
         );
@@ -166,10 +174,7 @@ export class MutationTracker {
         continue;
       const possiblyMutatedValue = this.#interpreter.read(possiblyMutatedPlace);
       if (this.#frozenValues.has(possiblyMutatedValue)) continue;
-      if (
-        possiblyMutatedValue.kind === "ArrayExpression" ||
-        possiblyMutatedValue.kind === "ObjectExpression"
-      ) {
+      if (isMutableLiteral(possiblyMutatedValue)) {
         this.#mutateLiteral(instruction, possiblyMutatedPlace, possiblyMutatedValue, walkState);
         if (isTransitiveMutation(effect))
           this.#forgetNestedLiterals(possiblyMutatedValue, instruction.loc);
@@ -186,21 +191,15 @@ export class MutationTracker {
       this.#freeze(value.alternate);
       return;
     }
-    if (value.kind !== "ArrayExpression" && value.kind !== "ObjectExpression") return;
-    if (this.#frozenValues.has(value)) return;
+    if (!isMutableLiteral(value) || this.#frozenValues.has(value)) return;
     this.#frozenValues.add(value);
     for (const nestedValue of getNestedValues(value)) this.#freeze(nestedValue);
   }
 
-  #forgetNestedLiterals(
-    literal: ArrayExpressionValue | ObjectExpressionValue,
-    loc: SourceLocation,
-  ): void {
+  #forgetNestedLiterals(literal: MutableLiteral, loc: SourceLocation): void {
     const { values } = this.#interpreter.getCompilationTables();
     for (const nestedValue of getNestedValues(literal)) {
-      if (nestedValue.kind !== "ArrayExpression" && nestedValue.kind !== "ObjectExpression")
-        continue;
-      if (this.#frozenValues.has(nestedValue)) continue;
+      if (!isMutableLiteral(nestedValue) || this.#frozenValues.has(nestedValue)) continue;
       this.#forgetNestedLiterals(nestedValue, loc);
       for (const [identifierId, value] of values)
         if (value === nestedValue) values.set(identifierId, createUnknown("mutation", loc));
@@ -334,7 +333,7 @@ export class MutationTracker {
   #mutateLiteral(
     instruction: Instruction,
     mutatedPlace: Place,
-    literal: ArrayExpressionValue | ObjectExpressionValue,
+    literal: MutableLiteral,
     walkState: WalkState,
   ): SymbolicValue {
     const creationPath = this.#creationPaths.get(literal);
@@ -359,17 +358,23 @@ export class MutationTracker {
   #getMutatedLiteral(
     instruction: Instruction,
     mutatedPlace: Place,
-    literal: ArrayExpressionValue | ObjectExpressionValue,
+    literal: MutableLiteral,
     isOnCreationPath: boolean,
   ): SymbolicValue {
     const { value, loc } = instruction;
-    const isPushIntoLiteral =
-      literal.kind === "ArrayExpression" &&
-      value.kind === "MethodCall" &&
-      value.receiver.identifier.id === mutatedPlace.identifier.id &&
-      this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id) ===
-        "push";
-    if (isPushIntoLiteral) return this.#pushIntoArray(literal, value, isOnCreationPath, loc);
+    const methodName =
+      value.kind === "MethodCall" && value.receiver.identifier.id === mutatedPlace.identifier.id
+        ? this.#interpreter.getCompilationTables().propertyNames.get(value.property.identifier.id)
+        : undefined;
+    if (literal.kind === "Collection")
+      return isOnCreationPath &&
+        value.kind === "MethodCall" &&
+        methodName !== undefined &&
+        isCollectionWrite(methodName)
+        ? this.#writeIntoCollection(literal, value, methodName)
+        : createUnknown("mutation", loc);
+    if (literal.kind === "ArrayExpression" && value.kind === "MethodCall" && methodName === "push")
+      return this.#pushIntoArray(literal, value, isOnCreationPath, loc);
     const isStoreIntoLiteral =
       literal.kind === "ObjectExpression" &&
       value.kind === "PropertyStore" &&
@@ -403,6 +408,22 @@ export class MutationTracker {
       loc,
     }));
     return { ...array, spreads: [...array.spreads, ...pushedSpreads, ...maybePushedItems] };
+  }
+
+  #writeIntoCollection(
+    collection: CollectionValue,
+    write: InstructionValueOfKind<"MethodCall">,
+    methodName: string,
+  ): SymbolicValue {
+    if (write.args.some((argument) => argument.kind !== "Identifier"))
+      return createUnknown("mutation", write.loc);
+    const argumentValues = write.args.flatMap((argument) =>
+      argument.kind === "Identifier" ? [this.#interpreter.read(argument)] : [],
+    );
+    return {
+      ...collection,
+      writes: [...collection.writes, { method: methodName, argumentValues }],
+    };
   }
 
   #storeIntoObject(

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
+import { formatSymbolicValue } from "../../src/core/format";
 import { analyzeFixture, getComponent } from "./helpers";
 
 describe("Set and Map state", () => {
@@ -16,6 +17,25 @@ describe("Set and Map state", () => {
 
   it("reads get from a literal Map", () => {
     expect(getFirstRender("Scores")).toEqual(['scores.get("a") === 1']);
+  });
+
+  it("reads a Set filled after it is created", () => {
+    expect(getFirstRender("FilledSet")).toEqual(['seen.has("x")']);
+  });
+
+  it("applies writes made on the path that created the Set", () => {
+    const { report } = getComponent(project, "LocalSet");
+    const conditions = report.states.map((state) => state.conditions.join(" ∧ "));
+    expect(conditions).toEqual(['sometimes.has("y")', '!sometimes.has("y")']);
+  });
+
+  it("keeps the collection that add and set return", () => {
+    const getUpdateTexts = (name: string) =>
+      getComponent(project, name).analysis.handlers.flatMap((handler) =>
+        handler.updates.map((update) => formatSymbolicValue(update.value)),
+      );
+    expect(getUpdateTexts("SelectedIds")).toEqual(["new Set(ids).add(1)"]);
+    expect(getUpdateTexts("Scores")).toEqual(['new Map(scores).set("a", 2)']);
   });
 
   it("leaves get on other classes open", () => {

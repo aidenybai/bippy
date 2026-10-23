@@ -329,6 +329,8 @@ const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
   ["Map", "Map"],
 ]);
 
+const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
+
 const getConcatenatedParts = (value: SymbolicValue): SymbolicValue[] | null => {
   if (value.kind === "Primitive") return typeof value.value === "string" ? [value] : null;
   if (value.kind !== "BinaryExpression" || value.operator !== "+") return null;
@@ -1548,6 +1550,8 @@ export class Interpreter {
       walkState,
     );
     if (storeResult) return storeResult;
+    if (receiver.kind === "Collection" && CHAINED_COLLECTION_WRITES.has(methodName))
+      return receiver;
     const invokedArguments = INVOKABLE_KINDS.has(receiver.kind)
       ? getInvokedArguments(methodName, argumentValues)
       : null;
@@ -1670,7 +1674,11 @@ export class Interpreter {
     this.mutations.recordAliasSources(instruction);
     this.mutations.track(instruction, walkState);
     const instructionResult = this.#evaluateInstructionValue(instruction, walkState);
-    if (value.kind === "ArrayExpression" || value.kind === "ObjectExpression")
+    if (
+      value.kind === "ArrayExpression" ||
+      value.kind === "ObjectExpression" ||
+      value.kind === "NewExpression"
+    )
       this.mutations.recordCreation(instructionResult, walkState);
     this.write(instruction.lvalue, instructionResult);
     this.mutations.trackPossibleMutations(instruction, walkState);
@@ -1747,6 +1755,7 @@ export class Interpreter {
             kind: "Collection",
             collection,
             source: argumentValues[0] ?? null,
+            writes: [],
             loc: value.loc,
           };
         const instance = createUnknown(value.kind, value.loc);

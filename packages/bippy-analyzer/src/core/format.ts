@@ -162,8 +162,13 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       return `${value.name}()`;
     case "Global":
       return value.name;
-    case "Collection":
-      return `new ${value.collection}(${value.source ? formatSymbolicValue(value.source) : ""})`;
+    case "Collection": {
+      const source = value.source ? formatSymbolicValue(value.source) : "";
+      const writes = value.writes.map(
+        (write) => `.${write.method}(${write.argumentValues.map(formatSymbolicValue).join(", ")})`,
+      );
+      return `new ${value.collection}(${source})${writes.join("")}`;
+    }
     case "Unknown":
       return `Unknown(${value.reason})`;
     default:

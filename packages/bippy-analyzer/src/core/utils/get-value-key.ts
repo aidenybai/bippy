@@ -83,6 +83,7 @@ const getKeyPart = (value: SymbolicValue): KeyPart => {
         value.kind,
         value.collection,
         value.source ? getValueKey(value.source) : null,
+        value.writes.map((write) => [write.method, write.argumentValues.map(getValueKey)]),
         getLocationPart(value.loc),
       ];
     case "Unknown":
