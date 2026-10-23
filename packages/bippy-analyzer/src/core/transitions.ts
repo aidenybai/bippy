@@ -30,7 +30,6 @@ const MAX_TARGET_ENUMERATIONS = 262_144;
 
 interface TransitionBudget {
   remainingTargetEnumerations: number;
-  isExhausted: boolean;
 }
 
 interface StateBranches {
@@ -45,22 +44,37 @@ interface TransitionContext extends ReachabilityContext {
   stateBranches: StateBranches[];
   renderUpdates: StateUpdate[];
   targetIndicesByConstraints: Map<string, number[]>;
+  candidateIndicesByConstraints: Map<string, number[]>;
   replayedOutcomes: WeakMap<Constraints, Map<ConditionalValue, Map<boolean, Constraints | null>>>;
   firstStateIndex: number;
 }
+
+const NO_MAYBE_UPDATES: ReadonlySet<StateUpdate> = new Set();
 
 const applyUpdates = (
   updates: StateUpdate[],
   constraints: Constraints,
   { reachableConstraints, reachablePlacesByBinding, dependentsByBinding }: ReachabilityContext,
+  maybeUpdates = NO_MAYBE_UPDATES,
 ): Constraints => {
   const updated = cloneConstraints(constraints);
   for (const update of updates) {
+    const isMaybe = maybeUpdates.has(update);
     for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
       const currentValues = constraints.possibleValues.get(place);
       const fieldCases =
         getFieldCases(update.value, place.path, update.binding, constraints) ??
         getToggleCases(update.value, place, currentValues);
+      if (isMaybe) {
+        const reachedValues = updated.possibleValues.get(place);
+        const candidateValues = fieldCases === "unchanged" ? currentValues : fieldCases;
+        if (reachedValues)
+          updated.possibleValues.set(
+            place,
+            dedupeAbstractValues([...reachedValues, ...(candidateValues ?? reachableValues)]),
+          );
+        continue;
+      }
       if (fieldCases === "unchanged") {
         if (currentValues) updated.possibleValues.set(place, currentValues);
         if (!currentValues) updated.possibleValues.delete(place);
@@ -72,7 +86,7 @@ const applyUpdates = (
       );
     }
     forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
-    addBounds(updated, getUpdateBounds(update.value, update.binding));
+    if (!isMaybe) addBounds(updated, getUpdateBounds(update.value, update.binding));
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const dependentId of dependentIds) {
       for (const [place, reachableValues] of reachablePlacesByBinding.get(dependentId) ?? [])
@@ -84,7 +98,7 @@ const applyUpdates = (
       new Set([update.binding.id, ...dependentIds]),
       reachableConstraints,
     );
-    const isUntracked = !reachablePlacesByBinding.has(update.binding.id);
+    const isUntracked = !isMaybe && !reachablePlacesByBinding.has(update.binding.id);
     const literalCases = isUntracked
       ? getFieldCases(update.value, [], update.binding, constraints)
       : null;
@@ -118,6 +132,7 @@ interface GuardChoice {
 interface GuardedSequence {
   updates: StateUpdate[];
   constraints: Constraints;
+  maybeUpdates: ReadonlySet<StateUpdate>;
 }
 
 const readsBinding = (value: SymbolicValue): boolean => {
@@ -171,7 +186,6 @@ const getOpenChoice = (
 const getGuardedSequences = (
   updates: StateUpdate[],
   constraints: Constraints,
-  budget: TransitionBudget,
 ): GuardedSequence[] => {
   const sequences: GuardedSequence[] = [];
   const included: StateUpdate[] = [];
@@ -193,23 +207,60 @@ const getGuardedSequences = (
       }
       if (openChoice === "applied") included.push(update);
       if (update.isAsync && index < updates.length - 1)
-        sequences.push({ updates: [...included], constraints: current });
+        sequences.push({
+          updates: [...included],
+          constraints: current,
+          maybeUpdates: NO_MAYBE_UPDATES,
+        });
     }
-    sequences.push({ updates: [...included], constraints: current });
+    sequences.push({
+      updates: [...included],
+      constraints: current,
+      maybeUpdates: NO_MAYBE_UPDATES,
+    });
     included.length = includedLength;
   };
   visit(0, constraints, new Map());
-  if (sequences.length <= MAX_UPDATE_SEQUENCES) return sequences;
-  budget.isExhausted = true;
-  return sequences.slice(0, MAX_UPDATE_SEQUENCES);
+  return sequences.length <= MAX_UPDATE_SEQUENCES
+    ? sequences
+    : getWidenedSequences(updates, constraints);
+};
+
+const getWidenedSequences = (
+  updates: StateUpdate[],
+  constraints: Constraints,
+): GuardedSequence[] => {
+  const sequences: GuardedSequence[] = [];
+  const included: StateUpdate[] = [];
+  const maybeUpdates = new Set<StateUpdate>();
+  const maybeValueKeys = new Map<number, Set<string>>();
+  for (const [index, update] of updates.entries()) {
+    const outcomes = getGuardChoices(update).map((choice) => {
+      const outcome = evaluateCondition(choice.test, constraints);
+      return outcome === null ? null : outcome === choice.isTrue;
+    });
+    if (outcomes.includes(false)) continue;
+    const isMaybe = outcomes.includes(null);
+    const valueKeys = maybeValueKeys.get(update.binding.id) ?? new Set();
+    const valueKey = getValueKey(update.value);
+    if (isMaybe && valueKeys.has(valueKey)) continue;
+    if (isMaybe) maybeUpdates.add(update);
+    maybeValueKeys.set(update.binding.id, isMaybe ? valueKeys.add(valueKey) : new Set());
+    included.push(update);
+    if (update.isAsync && index < updates.length - 1)
+      sequences.push({ updates: [...included], constraints, maybeUpdates });
+  }
+  sequences.push({ updates: included, constraints, maybeUpdates });
+  return sequences;
 };
 
 const getConstraintsAfterUpdates = (
   updates: StateUpdate[],
   constraints: Constraints,
   context: ReachabilityContext,
+  maybeUpdates = NO_MAYBE_UPDATES,
 ): Constraints =>
-  updates.length === 0 ? constraints : applyUpdates(updates, constraints, context);
+  updates.length === 0 ? constraints : applyUpdates(updates, constraints, context, maybeUpdates);
 
 export const settleRenderUpdates = (
   constraints: Constraints,
@@ -278,30 +329,53 @@ const replayBranches = (
   });
 };
 
-const getTargetIndices = (afterHandler: Constraints, context: TransitionContext): number[] => {
-  const constraintsKey = getCachedConstraintsKey(afterHandler);
-  const cachedIndices = context.targetIndicesByConstraints.get(constraintsKey);
-  if (cachedIndices) return cachedIndices;
+const getCandidateIndices = (afterHandler: Constraints, context: TransitionContext): number[] => {
   const decidedOutcomes = new Map<string, boolean>();
   for (const [branchKey, test] of context.branchTests) {
     const outcome = test && evaluateCondition(test, afterHandler);
     if (outcome !== null) decidedOutcomes.set(branchKey, outcome);
   }
-  const targetIndices = context.stateBranches.flatMap((target, index) => {
-    const contradictsDecidedOutcome = [...target.outcomes].some(([branchKey, outcome]) => {
+  return context.stateBranches.flatMap((target, index) =>
+    [...target.outcomes].some(([branchKey, outcome]) => {
       const decidedOutcome = decidedOutcomes.get(branchKey);
       return outcome !== null && decidedOutcome !== undefined && decidedOutcome !== outcome;
-    });
-    if (contradictsDecidedOutcome) return [];
-    const paths = replayBranches(
-      context.analysis.render,
-      target.branches,
-      [{ constraints: afterHandler, visited: new Set() }],
-      context,
-    );
-    return paths.some(({ visited }) => visited.size === target.branches.size) ? [index] : [];
-  });
-  context.targetIndicesByConstraints.set(constraintsKey, targetIndices);
+    })
+      ? []
+      : [index],
+  );
+};
+
+const isReplayedTarget = (
+  afterHandler: Constraints,
+  target: StateBranches,
+  context: TransitionContext,
+): boolean =>
+  replayBranches(
+    context.analysis.render,
+    target.branches,
+    [{ constraints: afterHandler, visited: new Set() }],
+    context,
+  ).some(({ visited }) => visited.size === target.branches.size);
+
+const getTargetIndices = (
+  afterHandler: Constraints,
+  isReplayed: boolean,
+  context: TransitionContext,
+): number[] => {
+  const constraintsKey = getCachedConstraintsKey(afterHandler);
+  const cache = isReplayed
+    ? context.targetIndicesByConstraints
+    : context.candidateIndicesByConstraints;
+  const cachedIndices = cache.get(constraintsKey);
+  if (cachedIndices) return cachedIndices;
+  const candidates = getCandidateIndices(afterHandler, context);
+  const targetIndices = isReplayed
+    ? candidates.filter((index) => {
+        const target = context.stateBranches[index];
+        return target !== undefined && isReplayedTarget(afterHandler, target, context);
+      })
+    : candidates;
+  cache.set(constraintsKey, targetIndices);
   return targetIndices;
 };
 
@@ -311,21 +385,25 @@ const getTargetStateIndices = (
   context: TransitionContext,
 ): Set<number> => {
   const targetIndices = new Set<number>();
-  for (const updates of getCandidateUpdateLists(handler))
-    for (const sequence of getGuardedSequences(updates, constraints, context.budget)) {
-      if (context.budget.remainingTargetEnumerations <= 0) {
-        context.budget.isExhausted = true;
-        return targetIndices;
-      }
+  for (const updates of getCandidateUpdateLists(handler)) {
+    const sequences =
+      context.budget.remainingTargetEnumerations > 0
+        ? getGuardedSequences(updates, constraints)
+        : getWidenedSequences(updates, constraints);
+    for (const sequence of sequences) {
+      const isReplayed = context.budget.remainingTargetEnumerations > 0;
       context.budget.remainingTargetEnumerations--;
       const afterHandler = getConstraintsAfterUpdates(
         sequence.updates,
         sequence.constraints,
         context,
+        sequence.maybeUpdates,
       );
       for (const settled of settleRenderUpdates(afterHandler, context.renderUpdates, context))
-        for (const index of getTargetIndices(settled, context)) targetIndices.add(index);
+        for (const index of getTargetIndices(settled, isReplayed, context))
+          targetIndices.add(index);
     }
+  }
   return targetIndices;
 };
 
@@ -405,7 +483,8 @@ export const createTransitionContext = (
   ...getBranchContext(regionBranches, alternatives, context),
   renderUpdates: context.renderUpdates,
   targetIndicesByConstraints: new Map(),
+  candidateIndicesByConstraints: new Map(),
   replayedOutcomes: new WeakMap(),
   firstStateIndex,
-  budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS, isExhausted: false },
+  budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS },
 });
