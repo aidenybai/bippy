@@ -15,4 +15,12 @@ describe("comparisons on the cases of a field and of a string length", () => {
     expect(report.states).toHaveLength(1);
     expect(report.unreachableBranches).toHaveLength(1);
   });
+
+  it("a string's length and a method on it agree on the same value", () => {
+    const { report } = getComponent(project, "LengthAndIncludes");
+    expect(report.states.map((state) => state.conditions)).toEqual([
+      ["text.length === 0"],
+      ["text.length !== 0"],
+    ]);
+  });
 });

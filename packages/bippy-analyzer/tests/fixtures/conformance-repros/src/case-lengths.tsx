@@ -19,3 +19,14 @@ export const StrTwo = () => {
     </div>
   );
 };
+
+export const LengthAndIncludes = () => {
+  const [text, setText] = useState("");
+  return (
+    <div>
+      <button onClick={() => setText(text === "" ? "ab" : "")}>toggle</button>
+      {text.length === 0 ? <i>empty</i> : <i>full</i>}
+      {text.includes("a") ? <b>a</b> : <b>no a</b>}
+    </div>
+  );
+};
