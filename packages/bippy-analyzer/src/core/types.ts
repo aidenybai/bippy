@@ -181,6 +181,12 @@ export type SymbolicValue =
       loc: SourceLocation;
     }
   | { kind: "Global"; name: string; module: string | null }
+  | {
+      kind: "Collection";
+      collection: "Set" | "Map";
+      source: SymbolicValue | null;
+      loc: SourceLocation;
+    }
   | { kind: "Unknown"; reason: string; loc: SourceLocation };
 
 export type ConditionalValue = Extract<SymbolicValue, { kind: "Conditional" }>;
@@ -194,6 +200,8 @@ export type BinaryExpressionValue = Extract<SymbolicValue, { kind: "BinaryExpres
 export type BindingValue = Extract<SymbolicValue, { kind: "Binding" }>;
 
 export type GlobalValue = Extract<SymbolicValue, { kind: "Global" }>;
+
+export type CollectionValue = Extract<SymbolicValue, { kind: "Collection" }>;
 
 export type PrimitiveSymbolicValue = Extract<SymbolicValue, { kind: "Primitive" }>;
 

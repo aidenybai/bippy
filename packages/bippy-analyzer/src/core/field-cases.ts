@@ -1,6 +1,7 @@
 import { evaluateCondition, type Constraints } from "./constraints";
 import type { AbstractValue, Binding, BindingPlace, SymbolicValue } from "./types";
 import { getBindingPlace } from "./utils/get-binding-place";
+import { getCollectionSize } from "./utils/literal-receivers";
 import { getTestExpression } from "./utils/get-test-expression";
 import { isBooleanExpression } from "./utils/is-boolean-expression";
 import { isSamePlace } from "./utils/is-same-place";
@@ -46,6 +47,10 @@ const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldC
   if (path.length === 0)
     return value.kind === "Primitive" ? [{ kind: "Literal", value: value.value }] : null;
   const [field, ...restPath] = path;
+  if (value.kind === "Collection" && field === "size" && restPath.length === 0) {
+    const size = getCollectionSize(value);
+    return size === null ? null : [{ kind: "Literal", value: size }];
+  }
   if (value.kind === "ArrayExpression" && field === "length" && restPath.length === 0)
     return value.spreads.length === 0 ? [{ kind: "Literal", value: value.elements.length }] : null;
   if (value.kind !== "ObjectExpression") return null;
