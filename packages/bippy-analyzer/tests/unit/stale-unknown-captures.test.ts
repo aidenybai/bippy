@@ -16,6 +16,6 @@ describe("a callback that keeps a value its dependencies leave out", () => {
           ]),
       ),
     );
-    expect(edges).toContainEqual(["!isOn && count !== 0 && Unknown(memo)", "!isOn && count === 0"]);
+    expect(edges).toContainEqual(["!isOn && count !== 0 && isFresh", "!isOn && count === 0"]);
   });
 });

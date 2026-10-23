@@ -9,9 +9,14 @@ describe("stale memos", () => {
     getComponent(project, name).report.states.map((state) => state.conditions);
 
   it("keeps a memo open when its deps leave out a value it reads", () => {
-    expect(getConditions("StaleMemo")).toEqual([
-      ["Unknown(memo) !== mode"],
-      ["Unknown(memo) === mode"],
+    expect(getConditions("StaleMemo")).toEqual([["firstMode !== mode"], ["firstMode === mode"]]);
+  });
+
+  it("reads a stale memo's fresh value on the first render", () => {
+    const { report } = getComponent(project, "StaleMemo");
+    const firstState = report.regions[0]?.firstRenderState ?? null;
+    expect(firstState === null ? null : report.states[firstState]?.conditions).toEqual([
+      "firstMode === mode",
     ]);
   });
 
@@ -36,8 +41,8 @@ describe("stale memos", () => {
       "!Unknown(loop)",
     ]);
     expect(getConditions("StaleLoopMemo").map((conditions) => conditions.at(-1))).toEqual([
-      "Unknown(memo) > 0",
-      "!(Unknown(memo) > 0)",
+      "firstOdd > 0",
+      "!(firstOdd > 0)",
       "!Unknown(loop)",
     ]);
   });

@@ -65,6 +65,7 @@ import { getClampRange } from "./utils/get-clamp-range";
 import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/derived-calls";
 import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
+import { getStoredLocals } from "./utils/get-stored-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
 import { applyStringMethod, isStringMethod } from "./utils/string-methods";
@@ -374,6 +375,7 @@ export class Interpreter {
   readonly #storedFunctions = new Map<string, SymbolicValue[]>();
   #storedFunctionCount = 0;
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
+  readonly #storedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #frameClosureIds: number[][] = [];
   readonly #bindingScopes: string[] = [];
 
@@ -1291,7 +1293,28 @@ export class Interpreter {
       return;
     }
     if (this.#isStaleMemo(memoized, dependencyPlaces))
-      this.write(finish.decl, createUnknown("memo", finish.loc));
+      this.write(finish.decl, this.#createStaleMemo(memoized, finish.decl));
+  }
+
+  #createStaleMemo(memoized: SymbolicValue, decl: Place): SymbolicValue {
+    const hirFunction = this.getCurrentFunction();
+    const storedLocals = this.#storedLocals.get(hirFunction) ?? getStoredLocals(hirFunction);
+    this.#storedLocals.set(hirFunction, storedLocals);
+    const local = storedLocals.get(decl.identifier.id) ?? decl;
+    const inputPlaces = new PlaceMap<true>();
+    this.collectInputPlaces(memoized, inputPlaces);
+    return createBindingValue(
+      this.createBinding(
+        getIdentifierName(local) ?? "memo",
+        "call",
+        getDeclarationLocation(local),
+        {
+          hookKind: "useMemo",
+          initial: memoized,
+          inputPlaces: inputPlaces.places(),
+        },
+      ),
+    );
   }
 
   #captureStaleReads(
