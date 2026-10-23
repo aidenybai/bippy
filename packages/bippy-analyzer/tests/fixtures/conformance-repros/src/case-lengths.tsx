@@ -30,3 +30,15 @@ export const LengthAndIncludes = () => {
     </div>
   );
 };
+
+export const TemplateLength = () => {
+  const [count, setCount] = useState(0);
+  const [isShown, setIsShown] = useState(true);
+  return (
+    <div>
+      <button onClick={() => setCount((count + 1) % 3)}>next</button>
+      <button onClick={() => setIsShown(`${count}`.length > 0)}>check</button>
+      {isShown ? <i>shown</i> : <i>hidden</i>}
+    </div>
+  );
+};

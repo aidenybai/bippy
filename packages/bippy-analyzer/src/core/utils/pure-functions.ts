@@ -18,6 +18,7 @@ const PURE_FUNCTIONS = new Map<string, PureFunction>([
   ["parseFloat", (value) => parseFloat(String(value))],
   ["Array.includes", (value, ...elements) => elements.includes(value)],
   ["Array.indexOf", (value, ...elements) => elements.indexOf(value)],
+  ["String.concat.length", (...values) => values.map(String).join("").length],
 ]);
 
 export const isPureFunction = (name: string): boolean => PURE_FUNCTIONS.has(name);
