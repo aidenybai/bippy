@@ -21,7 +21,7 @@ The second is a `stateDiagram-v2`. Each state is labelled with the conditions th
 | Option                       | Effect                                                 |
 | ---------------------------- | ------------------------------------------------------ |
 | `-c, --component <names...>` | Show only these components                             |
-| `-f, --file <filter>`        | Show only files whose path contains this text          |
+| `-f, --file <filter>`        | Analyze only files whose path contains this text       |
 | `-d, --depth <n>`            | Cut the render tree off at this depth (default: 12)    |
 | `-s, --states <n>`           | Draw at most this many states per region (default: 32) |
 | `--json`                     | Print the analyses as JSON instead                     |
@@ -37,60 +37,55 @@ Labels use a few symbols:
 
 The pipeline runs the React Compiler's own front end, then our passes. Read `src/core` in this order:
 
-| File                              | Stage                                                                             |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| `analyze-project.ts`              | Opens the TS project, compiles each file, runs each component, then lists states  |
-| `compile.ts`                      | Runs the React Compiler on a file and keeps each function's HIR                   |
-| `analyze-component.ts`            | Runs our passes on one component's HIR                                            |
-| `type-provider.ts`                | Types the compiler's HIR from the TS checker                                      |
-| `interpret.ts`                    | Runs the HIR symbolically: the render tree, with every branch kept                |
-| `control-flow-walker.ts`          | Walks the HIR blocks: branches, switches, loops, phis and catch handlers          |
-| `destructurer.ts`                 | Binds what a destructuring takes from props, a hook result or a literal           |
-| `mutation-tracker.ts`             | Which mutations in an instruction touch props, state or a literal being built     |
-| `utils/get-mutated-parameters.ts` | Which parameters a function writes into                                           |
-| `callback-passer.ts`              | Callbacks handed to effects, promises and calls the analysis can't see into       |
-| `array-iteration.ts`              | Rows mapped from an array and callbacks run per item                              |
-| `claim-recorder.ts`               | Records a cast, a non-null assertion or an invariant call as a claim              |
-| `pattern-matcher.ts`              | Turns a ts-pattern match chain into branches on its subject                       |
-| `walk-state.ts`                   | The guards and async flag a walk carries                                          |
-| `binding-table.ts`                | The interpreter's bindings, one per declaration, and each place's domain          |
-| `function-registry.ts`            | Functions values refer to, the file each came from, and closure captures          |
-| `external-sources.ts`             | Hooks, contexts and stores: values that change from outside                       |
-| `effect-collector.ts`             | The updates and mutations one handler or effect makes                             |
-| `build-jsx.ts`                    | The element each JSX tag renders                                                  |
-| `diagnostics.ts`                  | Bailouts and warnings, each reported once                                         |
-| `symbolic-values.ts`              | Builds and folds the values the interpreter produces                              |
-| `control-flow.ts`                 | Branch outcomes and the conditionals they merge into                              |
-| `source-file-resolver.ts`         | Reads types, names and source text at a compiler location                         |
-| `domains.ts`                      | Turns a TS type into the values it can take                                       |
-| `type-samples.ts`                 | Turns a TS type into sample values to mount props with                            |
-| `infer-props.ts`                  | Samples untyped props from what they read and what callers pass                   |
-| `link-components.ts`              | Records what each parent passes to each child it renders                          |
-| `value-domains.ts`                | Turns a parent-side value into the finite set of values it can take               |
-| `instance-states.ts`              | Lists a child's states again with its props narrowed to one parent's values       |
-| `claim-sites.ts`                  | Builds a claim from a cast, a non-null assertion or an invariant call             |
-| `claims.ts`                       | Checks each claim in every state where its code runs                              |
-| `claim-states.ts`                 | Which states a claim is checked in: where its handler renders and its values vary |
-| `claim-guards.ts`                 | Narrows a state by the `if` guards that lead to a claim or an update              |
-| `claim-cases.ts`                  | Whether a value is in, out of or maybe in a set of cases                          |
-| `claim-path.ts`                   | The shortest path of actions from the first render to a state                     |
-| `state-claims.ts`                 | Checks that every update keeps a typed state within its type                      |
-| `claim-values.ts`                 | The values a claim's subject or an update can take, split at each condition       |
-| `field-cases.ts`                  | Reads the literal values an update or initial value can take                      |
-| `context-setter-fields.ts`        | Which context fields set which state, across the providers that supply them       |
-| `store-actions.ts`                | What each zustand store action sets                                               |
-| `string-samples.ts`               | Strings a component may parse, picked by name                                     |
-| `collect-handlers.ts`             | What each event handler and effect updates                                        |
-| `regions.ts`                      | Groups branches that test the same data into regions                              |
-| `enumerate-states.ts`             | Lists each region's states and transitions                                        |
-| `reachable-constraints.ts`        | The values every binding can reach, from its initial value and every update       |
-| `state-enumerator.ts`             | Walks the render tree under a region's constraints and lists its alternatives     |
-| `transitions.ts`                  | Which states a handler's updates lead to, with its update sequences cached        |
-| `unreachable-branches.ts`         | Reports branch sides no state reaches                                             |
-| `constraints.ts`                  | What a path assumes: possible values, branch outcomes, numeric bounds             |
-| `format.ts`, `serialize.ts`       | Printing and JSON output                                                          |
-| `types.ts`                        | The data passed between stages                                                    |
-| `utils/`                          | One helper per file: places, keys, HIR, predicates, truthiness, traversal, TS     |
+| File                              | Stage                                                                            |
+| --------------------------------- | -------------------------------------------------------------------------------- |
+| `analyze-project.ts`              | Opens the TS project, compiles each file, runs each component, then lists states |
+| `compile.ts`                      | Runs the React Compiler on a file and keeps each function's HIR                  |
+| `analyze-component.ts`            | Runs our passes on one component's HIR                                           |
+| `type-provider.ts`                | Types the compiler's HIR from the TS checker                                     |
+| `interpret.ts`                    | Runs the HIR symbolically: the render tree, with every branch kept               |
+| `control-flow-walker.ts`          | Walks the HIR blocks: branches, switches, loops, phis and catch handlers         |
+| `destructurer.ts`                 | Binds what a destructuring takes from props, a hook result or a literal          |
+| `mutation-tracker.ts`             | Which mutations in an instruction touch props, state or a literal being built    |
+| `utils/get-mutated-parameters.ts` | Which parameters a function writes into                                          |
+| `callback-passer.ts`              | Callbacks handed to effects, promises and calls the analysis can't see into      |
+| `array-iteration.ts`              | Rows mapped from an array and callbacks run per item                             |
+| `claim-recorder.ts`               | Records a cast, a non-null assertion or an invariant call where it is made       |
+| `pattern-matcher.ts`              | Turns a ts-pattern match chain into branches on its subject                      |
+| `walk-state.ts`                   | The guards and async flag a walk carries                                         |
+| `binding-table.ts`                | The interpreter's bindings, one per declaration, and each place's domain         |
+| `function-registry.ts`            | Functions values refer to, the file each came from, and closure captures         |
+| `external-sources.ts`             | Hooks, contexts and stores: values that change from outside                      |
+| `effect-collector.ts`             | The updates and mutations one handler or effect makes                            |
+| `build-jsx.ts`                    | The element each JSX tag renders                                                 |
+| `diagnostics.ts`                  | Bailouts and warnings, each reported once                                        |
+| `symbolic-values.ts`              | Builds and folds the values the interpreter produces                             |
+| `control-flow.ts`                 | Branch outcomes and the conditionals they merge into                             |
+| `source-file-resolver.ts`         | Reads types, names and source text at a compiler location                        |
+| `domains.ts`                      | Turns a TS type into the values it can take, and tests membership in them        |
+| `type-samples.ts`                 | Turns a TS type into sample values to mount props with                           |
+| `infer-props.ts`                  | Samples untyped props from what they read and what callers pass                  |
+| `link-components.ts`              | Records what each parent passes to each child it renders                         |
+| `value-domains.ts`                | Turns a parent-side value into the finite set of values it can take              |
+| `instance-states.ts`              | Lists a child's states again with its props narrowed to one parent's values      |
+| `claims.ts`                       | Checks render, handler and state-domain claims in every state where they run     |
+| `field-cases.ts`                  | Reads the literal values an update or initial value can take                     |
+| `reachable-ranges.ts`             | The numeric range a state can reach through its updates                          |
+| `module-values.ts`                | Module constants, and the module variables a file writes                         |
+| `context-setter-fields.ts`        | Which context fields set which state, across the providers that supply them      |
+| `store-actions.ts`                | What each zustand store action sets                                              |
+| `string-samples.ts`               | Strings a component may parse, picked by name                                    |
+| `collect-handlers.ts`             | What each event handler and effect updates                                       |
+| `regions.ts`                      | Groups branches that test the same data into regions                             |
+| `enumerate-states.ts`             | Lists each region's states and transitions                                       |
+| `reachable-constraints.ts`        | The values every binding can reach, from its initial value and every update      |
+| `state-enumerator.ts`             | Walks the render tree under a region's constraints and lists its alternatives    |
+| `transitions.ts`                  | Which states a handler's updates lead to, with its update sequences cached       |
+| `unreachable-branches.ts`         | Reports branch sides no state reaches                                            |
+| `constraints.ts`                  | What a path assumes: possible values, branch outcomes, numeric bounds            |
+| `format.ts`, `serialize.ts`       | Printing and JSON output                                                         |
+| `types.ts`                        | The data passed between stages                                                   |
+| `utils/`                          | One helper per file: places, keys, HIR, predicates, truthiness, traversal, TS    |
 
 The browser verifier lives in `tests/conformance/verifier`, next to the repos it runs on.
 
@@ -109,6 +104,9 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - other hooks, typed from their return type
    - `.map` items, including a `.map` reached through an optional chain like `data?.rows.map(…)`, and the rows of `Array.from(arrayLike, callback)`. A binding that stays untyped is an `untyped-item`, `untyped-prop` or similar bailout only when the render, a handler or a claim reads it; the unused `_` of `[...Array(n)].map((_, index) => …)` is not
    - calls it can't see into whose return type has finite values, like `hasPermission()` returning `boolean`
+   - `useRef`: the first render reads the value passed to `useRef`, unless the render itself writes the ref. A handler's write to `ref.current` shows on the next render.
+   - module variables the file writes, like `let clicks = 0` with `clicks++` in a handler: the first render reads the declared literal, and any render after a handler may see a new value, since other code can write them too.
+   - pure calls on values with a few known cases fold over those cases: `Math.max`, `Math.floor` and the other pure `Math` methods, `Number`, `String`, `parseInt`, `parseFloat`, and `includes` or `indexOf` on a literal list. So does arithmetic on known values. `every`, `some`, `find`, `findIndex` and `filter` over state with a literal initial array run the callback over those items for the first render.
    - values a loop carries, like a flag a `for` body sets, typed as declared. The body runs once with them, so the setters and pushes inside it count, and a value a `break` leaves with is kept.
    - a `push` or property store on a local array or object, applied as is when it always runs. One that may not run, or runs in a loop, widens the value to cover both.
 6. Where control flow merges, the value becomes a `Conditional` that records which terminal decided it. Early returns, `?:`, `&&`, `||`, `??`, `?.` and `switch` all produce one. A `?:`, `&&`, `||`, `??` or `?.` merges where it ends, so a `?.` in a `className` doesn't split the rest of the render. Member reads past a `?.`, and reads of a value that may be `undefined`, are assumed not to throw. The compiler lowers every `&&`, `||` and `??` to a branch whose first arm is the left value; for `&&` that arm is taken when the left side is falsy, so the right side of `a && f()` runs under the guard `a`. A test whose outcome is known decides its branch on the spot: comparisons of two literals, and comparisons of an object, array, function or element with a literal, which `===` never equates and `==` never equates with `null` or `undefined`. So a defaulted option like `{ required = true }` called with `{ required: false }` takes only the branch the caller picked.
@@ -134,10 +132,12 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
    - `catch` blocks run too, as what a handler tries may throw. Each `await` in the `try` body may throw, so the catch runs from each one under its own unknown `throws` guard, and the rest of the body runs under its negation. A failed upload sets its error without reaching the `setStep("done")` after the await. Catch updates are async when the body awaited, since a rejected promise lands there later. A body with no `await` runs the catch once, after the whole body. A `finally` the compiler copies into both paths follows the same order
    - code after `await` or inside `.then` makes the new value `Unknown(async)`
    - a setter a context's providers pair with a field, like `setOpen` with `open` in `value={{ open, setOpen }}`, sets that field when a consumer calls it. It may not happen, since a consumer can render without its provider.
-   - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state
+   - a zustand store's action sets the fields its `set` call assigns, from its arguments, literals or the previous state. `useStore.getState().action()` runs the same action, and `useStore.setState(objectOrUpdater)` merges into the state. An action the summary can't model sets the store to unknown. Later updates in the same handler build on earlier ones.
+   - a function or setter kept in state, in `ref.current` or in a module variable runs when a handler calls it or passes it as a handler. When several may be stored, exactly one runs.
+   - a change event on a controlled checkbox reads `target.checked` as the opposite of `checked`. A radio fires only when unchecked and reads `true`. Both read `target.value` from the `value` attribute. A `select` reads one of its option values.
    - calling into any other hook's result or context value, like `query.fetchNextPage()`, may change it, and every hook from the same module, like `useSelector` after a Redux `dispatch`, to anything, later
    - a built-in array or string method that changes nothing, like `items.find()` or `query.trim()`, leaves the value it's called on as it is, as its type shows
-   - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render. State it passes to a function that may mutate it, like a library's `remove(items, item)`, is forgotten too, without a warning.
+   - state the compiler's effects prove a handler mutates is forgotten, since React shows the new contents on the next render. State it passes to a function that may mutate it, like a library's `remove(items, item)`, is forgotten too, without a warning. When the handler may not re-render, like `items.push(x)` alone or `setItems(items)` with the same array, the mutation stays pending and the next render from any other handler reveals it.
 
 9. Lists the states:
    - It splits the render's branches into regions first. Two branches share a region when their tests read overlapping places, like `toast` and `toast.cancel`, or when one sits inside the other's branch. Regions vary independently, so each is listed on its own and the screens are every combination of one state per region.
@@ -151,12 +151,12 @@ The browser verifier lives in `tests/conformance/verifier`, next to the repos it
 12. Checks the claims the code makes. A claim is something the author asserts that TypeScript takes on faith: `x as T` where `T` leaves out values `x` may hold, `x!`, `invariant(cond)` or `assert(cond)`, and the type argument of a `useState` or `useReducer`. Each is checked in every state where its code runs: a claim inside a handler only in the states that render that handler's element, under that state's conditions and with the `if` guards on the way to the claim assumed true, so `if (!next) return; setStatus(next as Status)` is judged with `next` truthy. The same goes for a typed state: each update is checked in the states that render its handler, with its guards assumed, and a conditional value is split by the solver, so `if (next) setStatus(next)` with `next: Status | undefined` holds. A value whose type only may equal a case, like a `string` or `{}` cast to `"idle" | "saving"`, leaves the claim unproven rather than broken. Without `strictNullChecks`, TypeScript leaves `null` and `undefined` out of every type while letting every type hold them, so a cast or a typed state also accepts `null` and `undefined` there. A cast's subject is evaluated like an update, so `(isTall ? orientation : null) as Orientation` is checked on each side of the condition. An update of the form `x ?? fallback` drops the nullish values of `x`. A claim inside a callback handed to a call the analysis can't see into, like a `match(...).with(true, () => user!.name)` branch, has no state of its own, so it is checked against every reachable value and is at most unproven. A cast to literals or a typed state is a membership test against the possible values; a non-null assertion or an invariant is a condition evaluated with the same solver as the branches. The verdict is `holds` when every state proves it, `broken` when some state refutes it, with the state and the shortest path of actions from the first render, and `unproven` when a state leaves it open, with the values that would break it, like `mode = "edit", user = null`. Whether a cast or a `!` makes a claim is judged by the type TypeScript gives the value, not by the `undefined` the analysis adds to an indexed read in case the index is out of range, so `options[index] as Option` claims nothing unless `noUncheckedIndexedAccess` puts `undefined` in the type. A claim whose values are opaque, such as `ref.current!`, is not recorded. The verifier does not check claims yet.
 13. Reports warnings from the compiler's mutation effects:
 
-| Warning           | When                                                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `lost-update`     | A handler mutates state, then sets it to the same array or object. React skips it.                                       |
-| `state-mutation`  | A handler mutates state in place, before copying it or without setting it.                                               |
-| `render-mutation` | State is mutated during render.                                                                                          |
-| `prop-mutation`   | A prop is mutated, like `items.sort()` on an array prop. A write through `.current` of a prop typed as a ref is not one. |
+| Warning           | When                                                                                                                   |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `lost-update`     | A handler mutates state, then sets it to the same array or object. React skips it.                                     |
+| `state-mutation`  | A handler mutates state in place, before copying it or without setting it.                                             |
+| `render-mutation` | State is mutated during render.                                                                                        |
+| `prop-mutation`   | A prop is mutated, like `items.sort()` on an array prop. A ref prop written through `.current` or a helper is not one. |
 
 A call to a function the project declares counts as a mutation of each argument the function writes into, directly or through a local it loads, stores or destructures the parameter into. `setCardData(items, cardOptions)` where `setCardData` sets `options.shape` mutates the `cardOptions` prop. A call the analysis can't see into, like a library's, is not counted, since the compiler only says it might mutate.
 
@@ -197,4 +197,4 @@ The error alert can never show, because nothing dispatches `fail`.
 - **Linking stops at one level and at finite values.** An instance narrows a child's props to what one parent can pass, but the parent's own props are taken as their types allow, so a value handed down two levels is only as precise as the middle component's type. An object or array prop stays opaque, and a prop a spread may set is not narrowed. The verifier still mounts each component on its own with any props its type allows, so instances are not verified yet.
 - **Library calls are opaque.** Their code isn't in the project, so a call's result is known only from its return type and, for array methods, its length.
 - **Loops run once.** A value a loop carries can take any value its type allows after the loop, even when every iteration sets the same one.
-- **Class components are skipped.** The React Compiler finds and lowers only function components and hooks, so a class has no HIR to interpret.
+- **Class components are reported, not analyzed.** The React Compiler finds and lowers only function components and hooks, so a class has no HIR to interpret. Each one gets a `class-component` bailout.
