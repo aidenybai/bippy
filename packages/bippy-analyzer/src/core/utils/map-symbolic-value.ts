@@ -1,38 +1,52 @@
 import type { SymbolicValue } from "../types";
 
-export const mapSymbolicValue = (
+const mapChildren = (
   value: SymbolicValue,
-  replace: (value: SymbolicValue) => SymbolicValue,
+  mapChild: (child: SymbolicValue) => SymbolicValue,
 ): SymbolicValue => {
-  const mapChild = (child: SymbolicValue): SymbolicValue => mapSymbolicValue(child, replace);
   switch (value.kind) {
     case "BinaryExpression":
-      return replace({ ...value, left: mapChild(value.left), right: mapChild(value.right) });
+      return { ...value, left: mapChild(value.left), right: mapChild(value.right) };
     case "UnaryExpression":
-      return replace({ ...value, value: mapChild(value.value) });
+      return { ...value, value: mapChild(value.value) };
     case "Conditional":
-      return replace({
+      return {
         ...value,
         test: mapChild(value.test),
         consequent: mapChild(value.consequent),
         alternate: mapChild(value.alternate),
-      });
+      };
     case "ObjectExpression":
-      return replace({
+      return {
         ...value,
         properties: value.properties.map((property) => ({
           ...property,
           value: mapChild(property.value),
         })),
         spreads: value.spreads.map(mapChild),
-      });
+      };
     case "ArrayExpression":
-      return replace({
+      return {
         ...value,
         elements: value.elements.map(mapChild),
         spreads: value.spreads.map(mapChild),
-      });
+      };
     default:
-      return replace(value);
+      return value;
   }
+};
+
+export const mapSymbolicValue = (
+  root: SymbolicValue,
+  replace: (value: SymbolicValue) => SymbolicValue,
+): SymbolicValue => {
+  const mappedValues = new Map<SymbolicValue, SymbolicValue>();
+  const mapValue = (value: SymbolicValue): SymbolicValue => {
+    const cachedValue = mappedValues.get(value);
+    if (cachedValue) return cachedValue;
+    const mappedValue = replace(mapChildren(value, mapValue));
+    mappedValues.set(value, mappedValue);
+    return mappedValue;
+  };
+  return mapValue(root);
 };
