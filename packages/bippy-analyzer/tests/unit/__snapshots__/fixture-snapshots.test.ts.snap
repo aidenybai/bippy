@@ -365,6 +365,40 @@ stateDiagram-v2
   }"
 `;
 
+exports[`fixture analysis > CountedLoop keeps its render tree and handlers 1`] = `
+"---
+title: CountedLoop src/loops.tsx:49
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["CountedLoop"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ isDone = true"]):::event
+  n2 -.-> n3
+  n4{"isDone"}
+  n2 --> n4
+  n5["{#quot;Done#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;Start#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > CountedLoop keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: CountedLoop src/loops.tsx:49
+---
+stateDiagram-v2
+  direction LR
+  S1: isDone · #lt;button#gt; {"Done"}
+  S2: !isDone · #lt;button#gt; {"Start"}
+  [*] --> S2
+  S2 --> S1: finish
+  state "claims" as claims {
+    claims1: holds isDone stays within false | true L50
+  }"
+`;
+
 exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
 "---
 title: Dashboard src/dashboard.tsx:25
@@ -488,6 +522,44 @@ stateDiagram-v2
   S3 --> S1: setIsOpen(false)
   state "claims" as claims {
     claims1: holds isOpen stays within false | true L18
+  }"
+`;
+
+exports[`fixture analysis > EarlyReturn keeps its render tree and handlers 1`] = `
+"---
+title: EarlyReturn src/loops.tsx:82
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["EarlyReturn"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ picked = 3"]):::event
+  n2 -.-> n3
+  n4{"picked === 0"}
+  n2 --> n4
+  n5["{#quot;Pick#quot;}"]
+  n4 -->|✓| n5
+  n6{"picked === 3"}
+  n4 -->|✗| n6
+  n7["{#quot;Third#quot;}"]
+  n6 -->|✓| n7
+  n8["{#quot;Other#quot;}"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > EarlyReturn keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: EarlyReturn src/loops.tsx:82
+---
+stateDiagram-v2
+  direction LR
+  S1: picked === 0 · #lt;button#gt; {"Pick"}
+  S2: picked !== 0 · #lt;button#gt; {"Third"}
+  [*] --> S1
+  S1 --> S2: setPicked(findFirstSquare())
+  state "unreachable branches" as unreachable {
+    unreachable1: never picked !== 3 L90
   }"
 `;
 
@@ -1161,6 +1233,41 @@ stateDiagram-v2
   direction LR
   S1: always · #lt;p#gt; "Loading…"
   [*] --> S1"
+`;
+
+exports[`fixture analysis > LongLoop keeps its render tree and handlers 1`] = `
+"---
+title: LongLoop src/loops.tsx:95
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["LongLoop"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ isFull = total === 100"]):::event
+  n2 -.-> n3
+  n4{"isFull"}
+  n2 --> n4
+  n5["{#quot;Full#quot;}"]
+  n4 -->|✓| n5
+  n6["{#quot;Fill#quot;}"]
+  n4 -->|✗| n6"
+`;
+
+exports[`fixture analysis > LongLoop keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: LongLoop src/loops.tsx:95
+---
+stateDiagram-v2
+  direction LR
+  S1: isFull · #lt;button#gt; {"Full"}
+  S2: !isFull · #lt;button#gt; {"Fill"}
+  [*] --> S2
+  S1 --> S2: fill
+  S2 --> S1: fill
+  state "claims" as claims {
+    claims1: holds isFull stays within false | true L96
+  }"
 `;
 
 exports[`fixture analysis > LoopList keeps its render tree and handlers 1`] = `
@@ -2119,6 +2226,44 @@ stateDiagram-v2
   direction LR
   S1: size === "sm" · #lt;p#gt; "Small"
   S2: size !== "sm" · #lt;p#gt; "Large""
+`;
+
+exports[`fixture analysis > SkippedSteps keeps its render tree and handlers 1`] = `
+"---
+title: SkippedSteps src/loops.tsx:63
+---
+flowchart TD
+  classDef event stroke-dasharray: 4 2
+  n1["SkippedSteps"]
+  n2["#lt;button#gt;"]
+  n1 --> n2
+  n3(["onClick ⇒ steps = 3"]):::event
+  n2 -.-> n3
+  n4{"steps === 0"}
+  n2 --> n4
+  n5["{#quot;None#quot;}"]
+  n4 -->|✓| n5
+  n6{"steps === 3"}
+  n4 -->|✗| n6
+  n7["{#quot;Three#quot;}"]
+  n6 -->|✓| n7
+  n8["{#quot;Other#quot;}"]
+  n6 -->|✗| n8"
+`;
+
+exports[`fixture analysis > SkippedSteps keeps its states, transitions and unreachable branches 1`] = `
+"---
+title: SkippedSteps src/loops.tsx:63
+---
+stateDiagram-v2
+  direction LR
+  S1: steps === 0 · #lt;button#gt; {"None"}
+  S2: steps !== 0 · #lt;button#gt; {"Three"}
+  [*] --> S1
+  S1 --> S2: advance
+  state "unreachable branches" as unreachable {
+    unreachable1: never steps !== 3 L77
+  }"
 `;
 
 exports[`fixture analysis > Slot keeps its render tree and handlers 1`] = `

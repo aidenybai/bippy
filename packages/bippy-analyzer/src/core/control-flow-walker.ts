@@ -1,6 +1,7 @@
 import type {
   BasicBlock,
   BlockId,
+  InstructionValue,
   Phi,
   Place,
   SourceLocation,
@@ -73,6 +74,32 @@ interface SwitchWalk {
 }
 
 const MAX_BLOCK_VISITS = 20_000;
+const MAX_UNROLLED_ITERATIONS = 32;
+const UNROLLABLE_INSTRUCTIONS = new Set<InstructionValue["kind"]>([
+  "LoadLocal",
+  "StoreLocal",
+  "DeclareLocal",
+  "Primitive",
+  "BinaryExpression",
+  "UnaryExpression",
+  "PrefixUpdateLocal",
+  "PostfixUpdateLocal",
+  "TemplateLiteral",
+  "PropertyLoad",
+  "ComputedLoad",
+]);
+const UNROLLABLE_TERMINALS = new Set<Terminal["kind"]>([
+  "goto",
+  "if",
+  "branch",
+  "ternary",
+  "logical",
+  "optional",
+  "switch",
+  "label",
+  "sequence",
+  "return",
+]);
 const MAX_WALK_DEPTH = 256;
 const NULLISH_BRANCH_OPERATORS = new Set<BranchOperator>(["??", "optional", "optional-chain-tail"]);
 
@@ -115,6 +142,7 @@ export class ControlFlowWalker {
   #walkDepth = 0;
   #loopDepth = 0;
   readonly #enteredLoopHeaders = new Map<BlockId, boolean>();
+  readonly #unrolledLoopHeaders = new Set<BlockId>();
   #functionScope = createFunctionScope();
   readonly #throwingCatches = new Set<BlockId>();
   #awaitCount = 0;
@@ -339,7 +367,14 @@ export class ControlFlowWalker {
     );
   }
 
-  #walkLoop(terminal: LoopTerminal, stops: ReadonlySet<BlockId>, walkState: WalkState): Outcome {
+  #walkLoop(
+    terminal: LoopTerminal,
+    from: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): Outcome {
+    const unrolledOutcome = this.#unrollLoop(terminal, from, stops, walkState);
+    if (unrolledOutcome) return unrolledOutcome;
     const loopHeaders = getLoopHeaders(terminal);
     const loopBindings: Binding[] = [];
     for (const loopHeader of loopHeaders) {
@@ -393,6 +428,60 @@ export class ControlFlowWalker {
     );
   }
 
+  #unrollLoop(
+    terminal: LoopTerminal,
+    from: BlockId,
+    stops: ReadonlySet<BlockId>,
+    walkState: WalkState,
+  ): Outcome | null {
+    const loopHeaders = getLoopHeaders(terminal);
+    const [loopEntry = terminal.fallthrough] = loopHeaders;
+    const isUnrollable = this.#getLoopBlocks(loopEntry, terminal.fallthrough).every(
+      (block) =>
+        UNROLLABLE_TERMINALS.has(block.terminal.kind) &&
+        block.instructions.every((instruction) =>
+          UNROLLABLE_INSTRUCTIONS.has(instruction.value.kind),
+        ),
+    );
+    if (!isUnrollable) return null;
+    const loopStops = new Set([...stops, terminal.fallthrough]);
+    for (const loopHeader of loopHeaders) this.#unrolledLoopHeaders.add(loopHeader);
+    let outcome: Outcome = { kind: "Fallthrough", from, to: loopEntry };
+    try {
+      for (let iteration = 0; outcome.kind === "Fallthrough"; iteration++) {
+        const header = outcome.to;
+        if (!loopHeaders.includes(header)) break;
+        if (iteration > MAX_UNROLLED_ITERATIONS) return null;
+        const headerBlock = this.#getBlock(header);
+        if (outcome.from !== null)
+          this.#resolveBlockPhis(headerBlock, outcome.from, walkState.guards);
+        for (const phi of headerBlock.phis)
+          if (this.#interpreter.read(phi.place).kind !== "Primitive") return null;
+        for (const loopHeader of loopHeaders) this.#enteredLoopHeaders.set(loopHeader, false);
+        outcome = this.walk(header, loopStops, outcome.from, walkState, "resolved");
+      }
+    } finally {
+      for (const loopHeader of loopHeaders) {
+        this.#unrolledLoopHeaders.delete(loopHeader);
+        this.#enteredLoopHeaders.delete(loopHeader);
+      }
+    }
+    if (outcome.kind === "Split") return null;
+    return this.#continueAfter(outcome, terminal.fallthrough, stops, walkState);
+  }
+
+  #getLoopBlocks(loopEntry: BlockId, loopFallthrough: BlockId): BasicBlock[] {
+    const visitedBlocks = new Set([loopEntry, loopFallthrough]);
+    const loopBlocks = [this.#getBlock(loopEntry)];
+    for (const block of loopBlocks)
+      for (const successor of eachTerminalSuccessor(block.terminal)) {
+        if (visitedBlocks.has(successor)) continue;
+        visitedBlocks.add(successor);
+        loopBlocks.push(this.#getBlock(successor));
+      }
+    return loopBlocks;
+  }
+
   #getStoredContextPlaces(entry: BlockId, exit: BlockId): Place[] {
     const places: Place[] = [];
     const visited = new Set<BlockId>();
@@ -429,14 +518,7 @@ export class ControlFlowWalker {
 
   #addLoopInputPlaces(loopBindings: Binding[], loopEntry: BlockId, loopFallthrough: BlockId): void {
     if (loopBindings.length === 0) return;
-    const visitedBlocks = new Set([loopEntry, loopFallthrough]);
-    const loopBlocks = [this.#getBlock(loopEntry)];
-    for (const block of loopBlocks)
-      for (const successor of eachTerminalSuccessor(block.terminal)) {
-        if (visitedBlocks.has(successor)) continue;
-        visitedBlocks.add(successor);
-        loopBlocks.push(this.#getBlock(successor));
-      }
+    const loopBlocks = this.#getLoopBlocks(loopEntry, loopFallthrough);
     const loopDefinedIds = new Set(
       loopBlocks.flatMap((block) => [
         ...[...block.phis].map((phi) => phi.place.identifier.id),
@@ -508,7 +590,7 @@ export class ControlFlowWalker {
         this.#enteredLoopHeaders.set(currentId, true);
       }
       const block = this.#getBlock(currentId);
-      if (!isPhiResolved && !isLoopHeader)
+      if (!isPhiResolved && (!isLoopHeader || this.#unrolledLoopHeaders.has(currentId)))
         this.#resolveBlockPhis(block, previousId, currentWalkState.guards);
       for (const instruction of block.instructions) {
         this.#interpreter.evaluateInstruction(instruction, currentWalkState);
@@ -574,7 +656,7 @@ export class ControlFlowWalker {
       case "for-in":
       case "while":
       case "do-while":
-        return this.#walkLoop(terminal, stops, walkState);
+        return this.#walkLoop(terminal, blockId, stops, walkState);
       default:
         return assertExhaustive(terminal, "Unhandled terminal");
     }
