@@ -22,6 +22,11 @@ const getChildValues = (value: SymbolicValue): SymbolicValue[] => {
       return value.argumentValues;
     case "Bound":
       return [value.callee, ...value.argumentValues];
+    case "Collection":
+      return [
+        ...(value.source ? [value.source] : []),
+        ...value.writes.flatMap((write) => write.argumentValues),
+      ];
     default:
       return [];
   }

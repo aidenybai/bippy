@@ -24,3 +24,30 @@ export const SearchQuery = () => {
   const [params] = useState(() => new URLSearchParams("q=a"));
   return <div>{params.get("q") === "a" ? <i>a</i> : <i>other</i>}</div>;
 };
+
+export const FilledSet = () => {
+  const [seen, setSeen] = useState(() => {
+    const initial = new Set<string>();
+    initial.add("x");
+    return initial;
+  });
+  return (
+    <div>
+      <button onClick={() => setSeen(new Set())}>clear</button>
+      {seen.has("x") ? <i>seen</i> : <i>unseen</i>}
+    </div>
+  );
+};
+
+export const LocalSet = ({ isTagged }: { isTagged: boolean }) => {
+  const always = new Set<string>();
+  always.add("y");
+  const sometimes = new Set<string>();
+  if (isTagged) sometimes.add("y");
+  return (
+    <div>
+      {always.has("y") ? <i>always</i> : <i>never</i>}
+      {sometimes.has("y") ? <b>tagged</b> : <b>untagged</b>}
+    </div>
+  );
+};

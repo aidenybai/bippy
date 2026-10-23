@@ -1670,7 +1670,11 @@ export class Interpreter {
     this.mutations.recordAliasSources(instruction);
     this.mutations.track(instruction, walkState);
     const instructionResult = this.#evaluateInstructionValue(instruction, walkState);
-    if (value.kind === "ArrayExpression" || value.kind === "ObjectExpression")
+    if (
+      value.kind === "ArrayExpression" ||
+      value.kind === "ObjectExpression" ||
+      value.kind === "NewExpression"
+    )
       this.mutations.recordCreation(instructionResult, walkState);
     this.write(instruction.lvalue, instructionResult);
     this.mutations.trackPossibleMutations(instruction, walkState);
@@ -1747,6 +1751,7 @@ export class Interpreter {
             kind: "Collection",
             collection,
             source: argumentValues[0] ?? null,
+            writes: [],
             loc: value.loc,
           };
         const instance = createUnknown(value.kind, value.loc);

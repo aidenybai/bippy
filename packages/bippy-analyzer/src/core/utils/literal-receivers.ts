@@ -4,6 +4,8 @@ type LiteralCollection = Set<PrimitiveValue> | Map<PrimitiveValue, PrimitiveValu
 
 const COLLECTION_READS = new Set(["has", "get"]);
 
+const COLLECTION_WRITES = new Set(["add", "set", "delete", "clear"]);
+
 const toPrimitiveResult = (result: unknown): PrimitiveValue | null =>
   result === undefined ||
   typeof result === "string" ||
@@ -35,10 +37,15 @@ const getLiteralElements = (source: SymbolicValue | null): SymbolicValue[] | nul
 
 export const isCollectionRead = (methodName: string): boolean => COLLECTION_READS.has(methodName);
 
-export const getLiteralCollection = (value: CollectionValue): LiteralCollection | null => {
+const copyCollection = (collection: LiteralCollection): LiteralCollection =>
+  collection instanceof Set ? new Set(collection) : new Map(collection);
+
+const getSourceCollection = (value: CollectionValue): LiteralCollection | null => {
   const { source } = value;
-  if (source?.kind === "Collection")
-    return source.collection === value.collection ? getLiteralCollection(source) : null;
+  if (source?.kind === "Collection") {
+    const copied = source.collection === value.collection ? getLiteralCollection(source) : null;
+    return copied && copyCollection(copied);
+  }
   const elements = getLiteralElements(source);
   if (!elements) return null;
   if (value.collection === "Set") {
@@ -53,6 +60,19 @@ export const getLiteralCollection = (value: CollectionValue): LiteralCollection 
     entries.push([key, entryValue]);
   }
   return new Map(entries);
+};
+
+export const isCollectionWrite = (methodName: string): boolean => COLLECTION_WRITES.has(methodName);
+
+export const getLiteralCollection = (value: CollectionValue): LiteralCollection | null => {
+  const collection = getSourceCollection(value);
+  for (const write of value.writes) {
+    const argumentValues = getPrimitives(write.argumentValues);
+    const method: unknown = collection ? Reflect.get(collection, write.method) : null;
+    if (!collection || !argumentValues || typeof method !== "function") return null;
+    Reflect.apply(method, collection, argumentValues);
+  }
+  return collection;
 };
 
 export const applyArrayMethod = (

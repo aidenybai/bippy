@@ -18,6 +18,16 @@ describe("Set and Map state", () => {
     expect(getFirstRender("Scores")).toEqual(['scores.get("a") === 1']);
   });
 
+  it("reads a Set filled after it is created", () => {
+    expect(getFirstRender("FilledSet")).toEqual(['seen.has("x")']);
+  });
+
+  it("applies writes made on the path that created the Set", () => {
+    const { report } = getComponent(project, "LocalSet");
+    const conditions = report.states.map((state) => state.conditions.join(" ∧ "));
+    expect(conditions).toEqual(['sometimes.has("y")', '!sometimes.has("y")']);
+  });
+
   it("leaves get on other classes open", () => {
     expect(getFirstRender("SearchQuery")).toBeNull();
   });
