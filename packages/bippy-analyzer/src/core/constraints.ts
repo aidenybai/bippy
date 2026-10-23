@@ -809,6 +809,49 @@ const narrowUnionMembers = (
   return constraints;
 };
 
+interface StringProjection {
+  owner: BindingValue;
+  project: (text: string) => PrimitiveValue;
+}
+
+const getStringProjection = (bindingValue: BindingValue): StringProjection | null => {
+  if (bindingValue.path.at(-1) === LENGTH_FIELD)
+    return {
+      owner: { ...bindingValue, path: bindingValue.path.slice(0, -1) },
+      project: (text) => text.length,
+    };
+  const { derived } = bindingValue.binding;
+  if (bindingValue.path.length > 0 || !derived || "operands" in derived) return null;
+  return {
+    owner: derived.receiver,
+    project: (text) => applyStringMethod(derived.method, text, derived.argumentValues),
+  };
+};
+
+const isStringLiteral = (value: AbstractValue): boolean =>
+  value.kind === "Literal" && typeof value.value === "string";
+
+const narrowOwnerString = (
+  bindingValue: BindingValue,
+  constraints: Constraints,
+  narrowedValues: AbstractValue[],
+): Constraints | null => {
+  const projection = getStringProjection(bindingValue);
+  if (!projection || !narrowedValues.every((value) => value.kind === "Literal")) return constraints;
+  const ownerValues = getPossibleValues(projection.owner, constraints);
+  if (!ownerValues?.every(isStringLiteral)) return constraints;
+  const allowedKeys = getAbstractValueKeys(narrowedValues);
+  return narrowPlace(projection.owner, constraints, (candidate) =>
+    candidate.kind === "Literal" &&
+    typeof candidate.value === "string" &&
+    !allowedKeys.has(
+      formatAbstractValue({ kind: "Literal", value: projection.project(candidate.value) }),
+    )
+      ? []
+      : [candidate],
+  );
+};
+
 const narrowPlace = (
   bindingValue: BindingValue,
   constraints: Constraints,
@@ -821,7 +864,8 @@ const narrowPlace = (
   const narrowed = cloneConstraints(constraints);
   const place = getValuePlace(bindingValue);
   narrowed.possibleValues.set(place, narrowedValues);
-  return narrowUnionMembers(narrowed, place, narrowedValues);
+  const withMembers = narrowUnionMembers(narrowed, place, narrowedValues);
+  return withMembers && narrowOwnerString(bindingValue, withMembers, narrowedValues);
 };
 
 export const hasUnknownPart = (value: SymbolicValue): boolean => {
