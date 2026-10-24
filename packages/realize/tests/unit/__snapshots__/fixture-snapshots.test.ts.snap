@@ -2070,8 +2070,8 @@ stateDiagram-v2
   S1: loading · #lt;form#gt; #lt;p#gt; "Saving…"
   S2: !loading · #lt;form#gt; #lt;button#gt; "Save"
   [*] --> S2
-  S1 --> S2: submit (async)
-  S2 --> S1: submit (async)
+  S1 --> S2: submit, "Save" (async)
+  S2 --> S1: submit, "Save" (async)
   state "claims" as claims {
     claims1: holds loading stays within false | true L8
   }"

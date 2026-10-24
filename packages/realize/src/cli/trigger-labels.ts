@@ -103,18 +103,35 @@ export const getEffectTriggerLabel = (handler: Handler): string => {
   return isBeforePaint ? `before paint, after ${changes}` : `after ${changes}`;
 };
 
+const MAX_SHARED_LABELS = 3;
+
+const joinTriggerLabels = (labels: string[]): string =>
+  labels.length <= MAX_SHARED_LABELS
+    ? labels.join(", ")
+    : `${labels.slice(0, MAX_SHARED_LABELS).join(", ")} +${labels.length - MAX_SHARED_LABELS} more`;
+
 export const collectTriggerLabels = (
   component: Pick<AnalyzedComponent, "analysis">,
   sourceReader: SourceReader,
 ): Map<string, string> => {
   const { analysis } = component;
-  const triggerLabelsByHandler = new Map<string, string>();
+  const eventLabelsByHandler = new Map<string, Set<string>>();
   forEachJsxElement(analysis.render, (element) => {
     for (const prop of element.props) {
-      if (!prop.handlerId || triggerLabelsByHandler.has(prop.handlerId)) continue;
-      triggerLabelsByHandler.set(prop.handlerId, getEventTriggerLabel(element, prop, sourceReader));
+      if (!prop.handlerId) continue;
+      const labels = eventLabelsByHandler.get(prop.handlerId) ?? new Set();
+      eventLabelsByHandler.set(
+        prop.handlerId,
+        labels.add(getEventTriggerLabel(element, prop, sourceReader)),
+      );
     }
   });
+  const triggerLabelsByHandler = new Map(
+    [...eventLabelsByHandler].map(([handlerId, labels]) => [
+      handlerId,
+      joinTriggerLabels([...labels]),
+    ]),
+  );
   for (const handler of analysis.handlers.filter(isEffectHandler))
     triggerLabelsByHandler.set(handler.id, getEffectTriggerLabel(handler));
   return triggerLabelsByHandler;
