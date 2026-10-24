@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "strict": false,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2022",
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}

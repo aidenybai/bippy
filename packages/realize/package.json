@@ -1,0 +1,56 @@
+{
+  "name": "realize",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Finds every state a React app can be in from its source, and verifies it against real renders",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsx scripts/build-react-compiler.ts",
+    "prepare": "pnpm build",
+    "analyze": "tsx src/cli/analyze.ts",
+    "conformance": "tsx tests/conformance/runner/cli.ts",
+    "viewer": "pnpm --filter realize-viewer dev",
+    "test": "vp test",
+    "typecheck": "tsc --noEmit",
+    "compiler-fixtures": "tsx tests/conformance/compiler-fixtures/cli.ts"
+  },
+  "dependencies": {
+    "@babel/code-frame": "^7.26.2",
+    "@babel/core": "^7.26.10",
+    "@babel/parser": "7.26.3",
+    "@babel/traverse": "7.26.4",
+    "@babel/types": "7.26.3",
+    "bippy": "workspace:*",
+    "commander": "^15.0.0",
+    "diff": "^8.0.4",
+    "invariant": "^2.2.4",
+    "magic-string": "^0.30.21",
+    "picocolors": "^1.1.1",
+    "playwright": "^1.64.0",
+    "pretty-format": "^24.9.0",
+    "typescript": "7.0.2",
+    "vite": "^7.3.6",
+    "vite-tsconfig-paths": "^6.1.1",
+    "zod": "^4.1.12",
+    "zod-validation-error": "^4.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@tanstack/react-query": "^5.0.0",
+    "@types/babel__code-frame": "^7.27.0",
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__traverse": "^7.18.2",
+    "@types/invariant": "^2.2.37",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "mermaid": "^12.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "ts-pattern": "^5.9.2",
+    "tsx": "^4.21.0"
+  }
+}

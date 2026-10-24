@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Open-Dev-Society/OpenStock",
+  "revision": "d890d910c8746d9794b39520199c6ed6735d2d1e",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

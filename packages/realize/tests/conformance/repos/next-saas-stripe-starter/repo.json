@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/mickasmt/next-saas-stripe-starter",
+  "revision": "c6df229ae73c207e87356d5e592779c511a9b56d",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

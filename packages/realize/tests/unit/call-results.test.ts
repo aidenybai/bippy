@@ -1,0 +1,80 @@
+import { beforeAll, describe, expect, it } from "vite-plus/test";
+import type { ProjectAnalysis } from "../../src/core/types";
+import { formatSymbolicValue } from "../../src/core/format";
+import { analyzeFixture, getComponent } from "./helpers";
+
+describe("typed call results", () => {
+  let project: ProjectAnalysis;
+
+  beforeAll(() => {
+    project = analyzeFixture("calls");
+  });
+
+  it("binds a cross-file boolean call and splits states on it", () => {
+    const gate = getComponent(project, "Gate");
+    expect(gate.analysis.bindings.map((binding) => [binding.name, binding.kind])).toEqual([
+      ["role", "prop"],
+      ['hasPermission(role, "edit")', "call"],
+    ]);
+    expect(gate.analysis.bindings[1]?.domain).toEqual({
+      kind: "Cases",
+      cases: [
+        { kind: "Literal", value: false },
+        { kind: "Literal", value: true },
+      ],
+      origin: "type",
+    });
+    expect(gate.report.states.map((state) => state.conditions)).toEqual([
+      ['!hasPermission(role, "edit")'],
+      ['hasPermission(role, "edit")'],
+    ]);
+    expect(gate.analysis.bailouts).toEqual([]);
+  });
+
+  it("splits on every case of a literal union with undefined", () => {
+    const status = getComponent(project, "Status");
+    expect(status.analysis.bindings.map((binding) => binding.kind)).toEqual(["call"]);
+    expect(status.report.states).toHaveLength(3);
+  });
+
+  it("keeps a call returning string Unknown", () => {
+    const name = getComponent(project, "Name");
+    expect(name.analysis.bindings).toEqual([]);
+    expect(name.analysis.render).toMatchObject({
+      kind: "JsxExpression",
+      children: [{ kind: "Unknown", reason: "call" }],
+    });
+    expect(name.analysis.bailouts).toEqual([]);
+  });
+
+  it.each([
+    ["Badge", "span"],
+    ["Icon", "i"],
+  ])("follows a project helper returning JSX in %s", (componentName, tag) => {
+    const component = getComponent(project, componentName);
+    expect(component.analysis.bindings).toEqual([]);
+    expect(component.analysis.render).toMatchObject({
+      children: [{ kind: "JsxExpression", tag: { kind: "BuiltinTag", name: tag } }],
+    });
+    expect(component.analysis.bailouts).toEqual([]);
+  });
+
+  it("inlines calls made in handlers instead of binding them", () => {
+    const handlerCall = getComponent(project, "HandlerCall");
+    expect(handlerCall.analysis.bindings.map((binding) => binding.kind)).toEqual(["prop", "state"]);
+    expect(handlerCall.analysis.handlers[0]?.updates[0]?.guards.map(formatSymbolicValue)).toEqual([
+      'role === "admin" || false',
+    ]);
+  });
+
+  it("keeps calls with different arguments independent", () => {
+    const twoActions = getComponent(project, "TwoActions");
+    expect(twoActions.report.states).toHaveLength(4);
+  });
+
+  it("doesn't treat a DOM element as JSX", () => {
+    const domLookup = getComponent(project, "DomLookup");
+    expect(domLookup.analysis.bailouts).toEqual([]);
+    expect(domLookup.analysis.bindings.map((binding) => binding.kind)).toEqual(["call"]);
+  });
+});

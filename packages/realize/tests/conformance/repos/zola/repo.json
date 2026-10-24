@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ibelick/zola",
+  "revision": "a1390f0f75481ae94a01d06d197e5e7bd83414f4",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

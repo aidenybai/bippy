@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Saas-Starter-Kit/Saas-Kit-prisma",
+  "revision": "5009c8caefaa492907a6f6cbe01f4ee5b58eca29",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

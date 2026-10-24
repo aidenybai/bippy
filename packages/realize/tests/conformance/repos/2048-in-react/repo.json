@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/mateuszsokola/2048-in-react",
+  "revision": "4c27093929b4293c2c873b3ed75b18671b5be6cb",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

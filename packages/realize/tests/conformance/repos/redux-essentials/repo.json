@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/reduxjs/redux-essentials-example-app",
+  "revision": "2fc16b07daf6d7a3434c4187f599ff7721f0a158",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

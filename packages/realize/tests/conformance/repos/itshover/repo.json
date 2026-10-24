@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/itshover/itshover",
+  "revision": "e5fc90512d9bcd8e6cba407ebf88cb9458989ca3",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

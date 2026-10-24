@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ant-design/ant-design-pro",
+  "revision": "4ee65150b7318af933e56267d257bd9fe644fbd4",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

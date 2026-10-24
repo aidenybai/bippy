@@ -1,0 +1,6 @@
+{
+  "repository": "https://github.com/facebook/react",
+  "revision": "9ffcb463b0ab01a42e781d4dc2e00f3a1b97a188",
+  "fixtures": "compiler/packages/babel-plugin-react-compiler/src/__tests__/fixtures/compiler",
+  "runtime": "compiler/packages/snap/src/sprout/shared-runtime.ts"
+}

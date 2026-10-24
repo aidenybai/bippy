@@ -1,0 +1,9 @@
+diff --git a/tsconfig.conformance.json b/tsconfig.conformance.json
+new file mode 100644
+--- /dev/null
++++ b/tsconfig.conformance.json
+@@ -0,0 +1,4 @@
++{
++  "extends": "./tsconfig.json",
++  "include": ["src/global.d.ts", "src/vite-env.d.ts", "src/ts-tailwind", "src/components"]
++}

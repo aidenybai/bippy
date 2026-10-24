@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ixartz/SaaS-Boilerplate",
+  "revision": "e3952a7ed5b0ef172ac4363c4644b8c334d1094b",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

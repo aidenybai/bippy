@@ -16,7 +16,7 @@ jobs:
   checks:
     name: ${{ matrix.task }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -29,7 +29,18 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
+      - uses: actions/cache@v4
+        with:
+          path: packages/realize/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/realize/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
+      - if: matrix.task == 'test'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
+      - if: matrix.task == 'test'
+        run: pnpm --filter realize exec playwright install --with-deps chromium
       - run: pnpm run ${{ matrix.task }}
       - if: matrix.task == 'build'
         run: |

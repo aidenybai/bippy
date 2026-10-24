@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/excalidraw/excalidraw",
+  "revision": "541653c7c9d587d463a47daacff9fb30e45a52e7",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts"
+}

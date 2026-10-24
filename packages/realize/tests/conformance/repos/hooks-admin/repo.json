@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/HalseySpicy/Hooks-Admin",
+  "revision": "0f0735266b71ca70d619d6ccb47e9a988d992034",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

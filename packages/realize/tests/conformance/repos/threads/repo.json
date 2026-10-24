@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/adrianhajdin/threads",
+  "revision": "72da0d632377518985cb5ae279d84d0733520d37",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

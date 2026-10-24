@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/react-bootstrap/react-bootstrap",
+  "revision": "2f6eef1fbff33c05ea3655fa4e6fa54ef5456aad",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts"
+}

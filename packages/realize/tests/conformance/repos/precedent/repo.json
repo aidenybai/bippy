@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/steven-tey/precedent",
+  "revision": "3be40205d7cdf56082cd284f07f12251b9208f79",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

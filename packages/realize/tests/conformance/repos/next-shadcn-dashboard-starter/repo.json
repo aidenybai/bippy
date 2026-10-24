@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/Kiranism/next-shadcn-dashboard-starter",
+  "revision": "7705dfc0d13889e45c26a55ad5908da6a7a9a605",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "BUN_DIR=$(mktemp -d) && npm install --no-save --no-audit --no-fund --prefix \"$BUN_DIR\" bun@1.3.0 && \"$(ls -d \"$BUN_DIR\"/node_modules/@oven/bun-*/bin/bun | head -1)\" install --frozen-lockfile --ignore-scripts"
+}

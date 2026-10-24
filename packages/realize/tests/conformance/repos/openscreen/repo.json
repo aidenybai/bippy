@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/siddharthvaddem/openscreen",
+  "revision": "f57e36e25448b5af6c7b1b271066fe5beb9b8a49",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

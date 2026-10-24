@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/spree/storefront",
+  "revision": "23b51bad43e65775c5b002b6bf2a8412cf0aa530",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@10.33.4 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

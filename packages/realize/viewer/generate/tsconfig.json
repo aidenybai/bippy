@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["esnext", "dom"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["../src/*"],
+      "@babel/types": ["../../node_modules/@babel/types"],
+      "@babel/traverse": ["../../node_modules/@types/babel__traverse"]
+    }
+  },
+  "include": ["*.ts", "../src/model.ts", "../src/lib/lookup.ts"]
+}

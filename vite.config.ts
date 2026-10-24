@@ -2,6 +2,7 @@ import { defineConfig } from "vite-plus";
 
 const reactDevToolsHookSources =
   "packages/bippy/tests/fixtures/react-devtools-headless/fixtures/hook-sources/**";
+const reactCompilerSource = "packages/realize/src/react-compiler/**";
 
 export default defineConfig({
   staged: {
@@ -12,6 +13,8 @@ export default defineConfig({
       "**/routeTree.gen.ts",
       "packages/bippy/src/react-internals/generated/**",
       reactDevToolsHookSources,
+      reactCompilerSource,
+      "packages/realize/viewer/src/generated/**",
     ],
     semi: true,
     singleQuote: false,
@@ -35,6 +38,7 @@ export default defineConfig({
       "coverage",
       "pnpm-lock.yaml",
       reactDevToolsHookSources,
+      reactCompilerSource,
     ],
   },
 });

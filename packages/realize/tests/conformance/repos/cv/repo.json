@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/BartoszJarocki/cv",
+  "revision": "b9c9c2bacf539d6bbab13714fa1c39a1afd0ad08",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}

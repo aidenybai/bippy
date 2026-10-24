@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/sersavan/shadcn-multi-select-component",
+  "revision": "b286c63c5d61ee065f8dbe2e1dab3a28d2672500",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npm ci --ignore-scripts --no-audit --no-fund"
+}

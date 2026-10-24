@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/codexu/note-gen",
+  "revision": "9859c6eff90514415a1e996cdb74412113afeadd",
+  "workingDirectory": ".",
+  "tsconfig": "tsconfig.json",
+  "install": "npx --yes pnpm@9.15.9 install --frozen-lockfile --ignore-scripts --ignore-workspace"
+}
