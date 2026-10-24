@@ -1498,6 +1498,8 @@ export class Interpreter {
         this.callbacks.addEffectCall(hookKind, firstArgument, argumentPlaces[1], loc);
       return UNDEFINED_VALUE;
     }
+    if (this.#resolver.getReactExportName(loc) === "useDeferredValue")
+      return firstArgument ?? UNDEFINED_VALUE;
     if (hookKind === "Custom") this.callbacks.addDeferredCallbacks(argumentValues, loc);
     if (hookKind === "useImperativeHandle" && secondArgument?.kind === "Function")
       this.callbacks.addDeferredCallbacks(
@@ -1506,7 +1508,8 @@ export class Interpreter {
       );
     if (hookKind === "useMemo" && firstArgument?.kind === "Function")
       return this.callFunction(firstArgument, [], loc, walkState);
-    if (hookKind === "useCallback" && firstArgument) return firstArgument;
+    if ((hookKind === "useCallback" || hookKind === "useEffectEvent") && firstArgument)
+      return firstArgument;
     const hookName = callee.kind === "Global" ? callee.name : hookKind;
     const hookModule = callee.kind === "Global" ? callee.module : null;
     const hookResult: HookResultValue = {

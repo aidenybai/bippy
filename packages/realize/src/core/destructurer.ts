@@ -85,6 +85,12 @@ export class Destructurer {
     if (value.kind === "ArrayExpression" && value.spreads.length === 0)
       return itemPlaces.map((_itemPlace, index) => value.elements[index] ?? UNDEFINED_VALUE);
     if (value.kind !== "HookResult") return itemPlaces.map(() => null);
+    if (value.hookKind === "useOptimistic")
+      return itemPlaces.map((_place, index) =>
+        index === 0
+          ? (value.argumentValues[0] ?? UNDEFINED_VALUE)
+          : createUnknown("optimistic", value.loc),
+      );
     if (value.hookKind === "useTransition")
       return itemPlaces.map((place, index) =>
         index === 1 ? START_TRANSITION_VALUE : place ? this.bindHookResult(place, value) : null,
