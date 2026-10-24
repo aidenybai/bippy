@@ -23,7 +23,7 @@ const ColoredChip = ({ nodeIds, canDim, color, children }: ChipProps & { color: 
       className="inline-block max-w-full rounded-sm px-[5px] py-px font-mono text-foreground wrap-anywhere transition-opacity duration-150"
       style={{
         background: color,
-        boxShadow: isHovered ? `0 0 0 1.5px ${getSolidColor(color)}` : undefined,
+        boxShadow: isHovered ? `inset 0 0 0 1.5px ${getSolidColor(color)}` : undefined,
         opacity: isDimmed ? 0.35 : 1,
       }}
       onMouseEnter={() => first !== undefined && hover(first)}
