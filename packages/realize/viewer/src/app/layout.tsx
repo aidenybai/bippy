@@ -13,7 +13,7 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "realize",
+  title: "Realize",
 };
 
 export const viewport: Viewport = {

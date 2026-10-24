@@ -72,6 +72,10 @@ const Title = () => {
 export const Toolbar = () => (
   <div className="flex h-12 items-center gap-2 border-b px-3 sm:gap-3">
     <div className="flex min-w-0 flex-1 items-center gap-2">
+      <span className="shrink-0 px-1 text-[15px]/[20px] font-semibold tracking-[-0.02em] text-foreground">
+        Realize
+      </span>
+      <span className="h-4 w-px shrink-0 bg-border" />
       <Title />
     </div>
     <ModeTabs />
