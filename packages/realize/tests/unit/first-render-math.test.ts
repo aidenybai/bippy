@@ -35,7 +35,7 @@ describe("a first render that calls Math on known state", () => {
     const { report } = getComponent(project, "ListedStep");
     const firstState = report.regions[0]?.firstRenderState ?? null;
     expect(firstState === null ? null : report.states[firstState]?.conditions).toEqual([
-      "[1, 2].includes(step)",
+      "step === 1 || step === 2",
     ]);
   });
 });
