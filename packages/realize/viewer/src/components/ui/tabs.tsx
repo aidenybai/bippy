@@ -17,7 +17,7 @@ export const TabsTrigger = ({ className, ...props }: TabsPrimitive.Tab.Props) =>
   <TabsPrimitive.Tab
     data-slot="tabs-trigger"
     className={cn(
-      "inline-flex h-7 items-center rounded-md px-3 text-sm text-muted-foreground transition-colors duration-150 outline-none hover:text-foreground focus-visible:shadow-focus data-[active]:bg-background data-[active]:text-foreground data-[active]:shadow-card",
+      "inline-flex h-7 items-center rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 outline-none hover:text-foreground focus-visible:shadow-focus data-[active]:bg-background data-[active]:text-foreground data-[active]:shadow-card",
       className,
     )}
     {...props}
