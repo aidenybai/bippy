@@ -912,22 +912,11 @@ const joinPlaceValues = (
   left: PlaceMap<AbstractValue[]>,
   right: PlaceMap<AbstractValue[]>,
 ): PlaceMap<AbstractValue[]> =>
-  new PlaceMap(
-    [...left].flatMap(([place, leftValues]): Array<[BindingPlace, AbstractValue[]]> => {
-      const rightValues = right.get(place);
-      if (!rightValues) return [];
-      if (hasNullishAncestor(place, left)) return [[place, rightValues]];
-      if (hasNullishAncestor(place, right)) return [[place, leftValues]];
-      return [
-        [
-          place,
-          rightValues === leftValues
-            ? leftValues
-            : dedupeAbstractValues([...leftValues, ...rightValues]),
-        ],
-      ];
-    }),
-  );
+  left.intersect(right, (place, leftValues, rightValues) => {
+    if (hasNullishAncestor(place, left)) return rightValues;
+    if (hasNullishAncestor(place, right)) return leftValues;
+    return dedupeAbstractValues([...leftValues, ...rightValues]);
+  });
 
 export const joinConstraints = (left: Constraints, right: Constraints): Constraints => {
   const rightBoundKeys = new Set(right.bounds.map(formatBound));
