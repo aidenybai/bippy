@@ -689,9 +689,26 @@ const getRenderedBindingIds = (render: SymbolicValue): Set<number> => {
   return bindingIds;
 };
 
-const forgetPendingReads = (handlers: Handler[], pendingMutations: Binding[]): void => {
-  const pendingIds = new Set(pendingMutations.filter(isStateBinding).map((binding) => binding.id));
-  if (pendingIds.size === 0) return;
+const getDependentIds = (bindingIds: Set<number>, bindings: Binding[]): Set<number> => {
+  const dependentIds = new Set(bindingIds);
+  let previousSize = 0;
+  while (previousSize !== dependentIds.size) {
+    previousSize = dependentIds.size;
+    for (const binding of bindings)
+      if (binding.inputPlaces.some((place) => dependentIds.has(place.bindingId)))
+        dependentIds.add(binding.id);
+  }
+  return dependentIds;
+};
+
+const forgetPendingReads = (
+  handlers: Handler[],
+  pendingMutations: Binding[],
+  bindings: Binding[],
+): void => {
+  const mutatedIds = new Set(pendingMutations.filter(isStateBinding).map((binding) => binding.id));
+  if (mutatedIds.size === 0) return;
+  const pendingIds = getDependentIds(mutatedIds, bindings);
   const forget = (value: SymbolicValue): SymbolicValue =>
     mapSymbolicValue(value, (part) =>
       part.kind === "Binding" && pendingIds.has(part.binding.id)
@@ -782,7 +799,7 @@ const collectHandlersOnce = (
   const isRendered = (binding: Binding): boolean =>
     (binding.kind !== "ref" && binding.kind !== "module") || renderedIds.has(binding.id);
   const { bindings } = interpreter.bindingTable;
-  forgetPendingReads(collector.handlers, [...collector.pendingMutations.values()]);
+  forgetPendingReads(collector.handlers, [...collector.pendingMutations.values()], bindings);
   revealPendingMutations(
     collector.handlers,
     [
