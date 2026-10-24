@@ -6,6 +6,7 @@ import {
   SidebarInset,
   SidebarLayout,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { describeNode } from "@/lib/describe";
 import { hasLegendContent } from "@/lib/graph";
@@ -18,6 +19,7 @@ import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
 import { SourcePane } from "./source-pane";
 import { StateChartPane } from "./state-chart-pane";
+import { ThemeToggle } from "./theme-toggle";
 import { Toolbar } from "./toolbar";
 
 const Shell = ({ children }: { children: ReactNode }) => {
@@ -87,25 +89,31 @@ const Source = () => {
 const LegendPane = ({ children }: { children: ReactNode }) => <Legend>{children}</Legend>;
 
 const Status = () => {
-  const { view } = useViewer();
+  const { view, mode } = useViewer();
   const activeComponent = useActiveComponent();
   const hoveredNode = useHoveredNode();
   return (
-    <div className="flex h-8 items-center gap-4 overflow-hidden border-t px-3 whitespace-nowrap text-muted-foreground tabular-nums">
-      {activeComponent && (
-        <span className="shrink-0">
-          {activeComponent.name} · {activeComponent.states.length} states ·{" "}
-          {activeComponent.handlers.length} actions
-        </span>
-      )}
-      {hoveredNode && (
-        <>
-          <span className="hidden shrink-0 sm:inline">
-            Line {hoveredNode.loc.start.line}, Offset {hoveredNode.loc.start.column}
+    <div className="flex h-9 items-center gap-4 border-t pr-1.5 pl-3 whitespace-nowrap text-muted-foreground tabular-nums">
+      <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
+        {activeComponent && (
+          <span className="shrink-0">
+            {activeComponent.name} · {activeComponent.states.length} states ·{" "}
+            {activeComponent.handlers.length} actions
           </span>
-          <span className="truncate">{describeNode(view, hoveredNode)}</span>
-        </>
-      )}
+        )}
+        {hoveredNode && (
+          <>
+            <span className="hidden shrink-0 sm:inline">
+              Line {hoveredNode.loc.start.line}, Offset {hoveredNode.loc.start.column}
+            </span>
+            <span className="truncate">{describeNode(view, hoveredNode)}</span>
+          </>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-0.5">
+        {hasLegendContent(view) && <SidebarTrigger disabled={mode === "json"} />}
+        <ThemeToggle />
+      </div>
     </div>
   );
 };

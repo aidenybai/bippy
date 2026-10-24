@@ -9,15 +9,12 @@ import {
   DropdownMenuLinkItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { hasLegendContent } from "@/lib/graph";
 import { getRouteHref } from "@/lib/route";
 import { getFileTitle } from "@/lib/source";
 import { cn } from "@/lib/utils";
 import { VIEW_MODES, isViewMode } from "@/lib/view-mode";
 import { useViewer } from "./context";
-import { ThemeToggle } from "./theme-toggle";
 
 const usePrefetchModes = (name: string): void => {
   const router = useRouter();
@@ -72,17 +69,11 @@ const Title = () => {
   );
 };
 
-export const Toolbar = () => {
-  const { view, mode } = useViewer();
-  const hasLegend = hasLegendContent(view);
-  return (
-    <div className="flex h-11 items-center gap-2 border-b px-3 sm:gap-3">
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <Title />
-      </div>
-      <ModeTabs />
-      {hasLegend && <SidebarTrigger disabled={mode === "json"} />}
-      <ThemeToggle />
+export const Toolbar = () => (
+  <div className="flex h-12 items-center gap-2 border-b px-3 sm:gap-3">
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <Title />
     </div>
-  );
-};
+    <ModeTabs />
+  </div>
+);
