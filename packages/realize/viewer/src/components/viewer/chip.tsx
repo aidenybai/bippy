@@ -20,7 +20,7 @@ const ColoredChip = ({ nodeIds, canDim, color, children }: ChipProps & { color: 
   return (
     <span
       data-seg={nodeIds.join(" ")}
-      className="rounded-sm px-[5px] py-px font-mono text-foreground wrap-anywhere transition-opacity duration-150"
+      className="inline-block max-w-full rounded-sm px-[5px] py-px font-mono text-foreground wrap-anywhere transition-opacity duration-150"
       style={{
         background: color,
         boxShadow: isHovered ? `0 0 0 1.5px ${getSolidColor(color)}` : undefined,
