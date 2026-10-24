@@ -465,6 +465,7 @@ export class Interpreter {
               };
         for (const cleanup of cleanups) this.#runCallback(cleanup, [], new Set(), cleanupWalkState);
         handlerEffects.forgetRenderValues(updateCountBeforeCleanup);
+        if (cleanups.length > 0) this.cells = new Cells();
         this.#runCallback(handlerCallback, argumentValues, new Set(), walkState);
       }
       this.forgetHandlerWrites(callback);
@@ -489,11 +490,19 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue | null {
     const handlerEffects = this.#handlerEffects;
+    const cells = this.cells;
+    const hirFunction =
+      callback.kind === "Function" ? this.#functions.get(callback.functionId) : undefined;
+    const values = hirFunction ? this.getCompilationTables(hirFunction).values : null;
+    const savedValues = new Map(values);
     this.#handlerEffects = new EffectCollector(() => {});
+    this.cells = new Cells();
     try {
       return this.#runCallback(callback, argumentValues, new Set(), walkState);
     } finally {
       this.#handlerEffects = handlerEffects;
+      this.cells = cells;
+      for (const [id, value] of savedValues) values?.set(id, value);
     }
   }
 
