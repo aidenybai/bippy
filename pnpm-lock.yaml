@@ -238,7 +238,7 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
-  packages/bippy-analyzer:
+  packages/realize:
     dependencies:
       '@babel/code-frame':
         specifier: ^7.26.2
@@ -338,7 +338,7 @@ importers:
         specifier: ^4.21.0
         version: 4.23.12
 
-  packages/bippy-analyzer/viewer:
+  packages/realize/viewer:
     dependencies:
       '@base-ui/react':
         specifier: 1.6.0

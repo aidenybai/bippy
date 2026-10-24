@@ -5,9 +5,9 @@ Runs the analyzer and the verifier against pinned real-world repos and collects 
 ## Run
 
 ```sh
-pnpm --filter bippy-analyzer conformance run                        # every repo
-pnpm --filter bippy-analyzer conformance run invoify                # one repo
-pnpm --filter bippy-analyzer conformance run -n 4                   # four at a time
+pnpm --filter realize conformance run                        # every repo
+pnpm --filter realize conformance run invoify                # one repo
+pnpm --filter realize conformance run -n 4                   # four at a time
 ```
 
 Each repo is set up once under `.conformance/<id>`, or under `BIPPY_CONFORMANCE_CACHE` when that is set: a shallow fetch of the pinned commit, the optional patch, then the install command. Setup runs again only when the commit, install command or patch changes. It runs without the `npm_` and `COREPACK_` variables pnpm sets for scripts, so the app's own package manager sees a clean environment. Set `BIPPY_CONFORMANCE_CACHE` to a folder outside this repository when an app's package manager walks up and finds bippy's root `package.json`, as Yarn 1 does. Each component gets 60 seconds of exploration.
@@ -68,7 +68,7 @@ test("pages through comments", async ({ mountComponent }) => {
 });
 ```
 
-`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter bippy-analyzer conformance specs`, after a `conformance run` has set the repos up.
+`expectState` takes a state's label as `analyze` prints it. When a test ends, everything it saw is scored like an automatic run, so it also fails on any counterexample. Run the specs with `pnpm --filter realize conformance specs`, after a `conformance run` has set the repos up.
 
 ## GitHub Actions
 
@@ -79,7 +79,7 @@ A repo's result depends only on the analyzer, runner and verifier source, bippy'
 Every job uploads its folder as an artifact. The `report` job merges them, prints the table into the job summary, uploads `results.json` and fails if any repo failed or has a counterexample. The same command works on a folder of downloaded artifacts:
 
 ```sh
-pnpm --filter bippy-analyzer conformance report tests/conformance/results/ci
+pnpm --filter realize conformance report tests/conformance/results/ci
 ```
 
 ## Checking a setup

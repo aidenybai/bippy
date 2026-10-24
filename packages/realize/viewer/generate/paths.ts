@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 
-const PACKAGE_NAME = "bippy-analyzer";
+const PACKAGE_NAME = "realize";
 
 const packageSchema = z.object({ name: z.string() });
 

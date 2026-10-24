@@ -10,7 +10,7 @@ pnpm analyze tests/fixtures/symbolic-tree/tsconfig.json -c Wizard    # one compo
 pnpm analyze path/to/app/tsconfig.json -f features/ --json
 ```
 
-Run these from `packages/bippy-analyzer`.
+Run these from `packages/realize`.
 
 The output is two Mermaid diagrams per component, which GitHub and most markdown viewers render when they are pasted into `mermaid` code blocks.
 

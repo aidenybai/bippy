@@ -1256,7 +1256,7 @@ index 9e908b2..fe500d6 100644
    moduleTypeProvider: z.nullable(z.any()).default(null),
  
 +  /**
-+   * bippy-analyzer: a {@link TypeProvider} for the types the TypeScript checker
++   * realize: a {@link TypeProvider} for the types the TypeScript checker
 +   * gives values the compiler can't type itself.
 +   */
 +  typeProvider: z.nullable(z.any()).default(null),
@@ -1269,7 +1269,7 @@ index 9e908b2..fe500d6 100644
  }
  
 +/**
-+ * bippy-analyzer: types the compiler can't infer itself, read from the
++ * realize: types the compiler can't infer itself, read from the
 + * TypeScript checker.
 + */
 +export interface TypeProvider {
@@ -1296,7 +1296,7 @@ index 9e908b2..fe500d6 100644
    }
  
 +  /**
-+   * bippy-analyzer: resolves React's exports through aliases and re-exports
++   * realize: resolves React's exports through aliases and re-exports
 +   * with the TypeScript checker, and falls back to TypeScript's type.
 +   */
    getGlobalDeclaration(
@@ -1318,7 +1318,7 @@ index 9e908b2..fe500d6 100644
 +  }
 +
 +  /**
-+   * bippy-analyzer: the type the TypeScript checker gives the expression at
++   * realize: the type the TypeScript checker gives the expression at
 +   * `loc`, for values the compiler's own inference leaves untyped.
 +   */
 +  getTypeScriptType(loc: SourceLocation): BuiltInType | null {
@@ -1327,7 +1327,7 @@ index 9e908b2..fe500d6 100644
 +  }
 +
 +  /**
-+   * bippy-analyzer: a collection method the compiler's shapes don't list, which
++   * realize: a collection method the compiler's shapes don't list, which
 +   * TypeScript declares on `Array` but not `ReadonlyArray` (likewise `Map`,
 +   * `Set`), mutates its receiver.
 +   */
@@ -1648,7 +1648,7 @@ index 5b6b059..119ec02 100644
  }
  
 +/**
-+ * bippy-analyzer: `StartMemoize`/`FinishMemoize` share the location of the
++ * realize: `StartMemoize`/`FinishMemoize` share the location of the
 + * `useMemo` call they mark, but aren't its value.
 + */
 +function isMemoMarker(instr: Instruction): boolean {
@@ -1667,7 +1667,7 @@ index 5b6b059..119ec02 100644
 +}
 +
 +/**
-+ * bippy-analyzer: the type TypeScript gives a value, as an equation that
++ * realize: the type TypeScript gives a value, as an equation that
 + * follows the compiler's own. Unification keeps the first concrete type, so the
 + * compiler's types win and TypeScript only fills what it leaves open. Emitting
 + * these in program order types receivers like `form.tags` before
@@ -1690,7 +1690,7 @@ index 5b6b059..119ec02 100644
 +}
 +
 +/**
-+ * bippy-analyzer: gives every value still untyped after unification, functions
++ * realize: gives every value still untyped after unification, functions
 + * included, the type TypeScript gives it.
 + */
 +function unifyRemainingTypeScriptTypes(

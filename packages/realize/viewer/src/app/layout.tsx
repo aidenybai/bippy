@@ -13,7 +13,7 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "bippy analyzer",
+  title: "realize",
 };
 
 export const viewport: Viewport = {
@@ -28,7 +28,7 @@ const RootLayout = ({ children }: { children: ReactNode }) => (
     <body>
       <ThemeProvider
         attribute="class"
-        storageKey="bippy-viewer-theme"
+        storageKey="realize-theme"
         enableSystem
         disableTransitionOnChange
       >
