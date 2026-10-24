@@ -373,6 +373,7 @@ export interface Region {
   bindingIds: number[];
   states: number[];
   firstRenderState: number | null;
+  possibleFirstRenderStates: number[];
   isTruncated: boolean;
 }
 

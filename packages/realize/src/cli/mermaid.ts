@@ -123,8 +123,8 @@ const formatRegionLines = (
   }
   const moreLabel = getMoreLabel(region, listed.length);
   if (moreLabel) lines.push(`${getMoreId(regionIndex)}: ${moreLabel}`);
-  if (region.firstRenderState !== null && context.listedStates.has(region.firstRenderState))
-    lines.push(`[*] --> ${formatStateLabel(region.firstRenderState)}`);
+  for (const stateIndex of region.possibleFirstRenderStates)
+    if (context.listedStates.has(stateIndex)) lines.push(`[*] --> ${formatStateLabel(stateIndex)}`);
   const edges = collectRegionEdges(listed, context);
   const fanOutLabels = getFanOutLabels(edges, listed);
   lines.push(...formatFanOutLines(fanOutLabels, listed, regionIndex));

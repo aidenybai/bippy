@@ -24,7 +24,9 @@ title: App src/counter.tsx:9
 stateDiagram-v2
   direction LR
   S1: isLoading · #lt;Loading#gt;
-  S2: !isLoading · #lt;Button#gt; {count}"
+  S2: !isLoading · #lt;Button#gt; {count}
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > Box keeps its render tree and handlers 1`] = `
@@ -98,7 +100,9 @@ title: Card src/chains.tsx:13
 stateDiagram-v2
   direction LR
   S1: note · #lt;div#gt; #lt;p#gt; {note}
-  S2: !note · #lt;div#gt;"
+  S2: !note · #lt;div#gt;
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > CardEditor keeps its render tree and handlers 1`] = `
@@ -211,6 +215,8 @@ stateDiagram-v2
   direction LR
   S1: checked · #lt;p#gt; {"on"}
   S2: !checked · #lt;p#gt; {"off"}
+  [*] --> S1
+  [*] --> S2
   S1 --> S2: useEffect([serverChecked])
   S2 --> S1: useEffect([serverChecked])
   state "claims" as claims {
@@ -245,6 +251,8 @@ stateDiagram-v2
   direction LR
   S1: command === "help" · #lt;div#gt; #lt;input#gt; #lt;p#gt; "Type a command"
   S2: command !== "help" · #lt;div#gt; #lt;input#gt;
+  [*] --> S1
+  [*] --> S2
   S1 --> S2: setCommand(event.target.value)
   S2 --> S1: setCommand(event.target.value)"
 `;
@@ -311,7 +319,9 @@ title: Countdown src/loops.tsx:39
 stateDiagram-v2
   direction LR
   S1: steps === 0 · #lt;p#gt; {"Done"}
-  S2: steps !== 0 · #lt;p#gt; {"Counted"}"
+  S2: steps !== 0 · #lt;p#gt; {"Counted"}
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > CountedList keeps its render tree and handlers 1`] = `
@@ -357,11 +367,16 @@ stateDiagram-v2
     %% items.length
     S1: items.length #gt; 0 · #lt;ul#gt; ↻ items #lt;p#gt; "Has items"
     S2: items.length #lt;= 0 · #lt;p#gt; "Empty"
+    [*] --> S1
+    [*] --> S2
     --
     %% count
     S3: count #gt; 0 · #lt;b#gt; {count}
     S4: !(count #gt; 0) ∧ !count · #lt;i#gt; "None"
     S5: !(count #gt; 0) ∧ count · ∅
+    [*] --> S3
+    [*] --> S4
+    [*] --> S5
   }"
 `;
 
@@ -442,6 +457,9 @@ stateDiagram-v2
   S2: status !== "loading" ∧ !user · #lt;SignIn#gt;
   S3: status !== "loading" ∧ user ∧ items.length #gt; 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;List#gt; #lt;button#gt; {count}
   S4: status !== "loading" ∧ user ∧ items.length #lt;= 0 · #lt;main#gt; #lt;h1#gt; {user.name} #lt;Empty#gt; #lt;button#gt; {count}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S4
   S3 --> S4: on mount (async)
   S4 --> S3: on mount (async)"
 `;
@@ -518,6 +536,8 @@ stateDiagram-v2
   S1: !isOpen · ∅
   S2: isOpen ∧ icon === undefined · #lt;div#gt; #lt;button#gt; #lt;span#gt; "×"
   S3: isOpen ∧ icon !== undefined · #lt;div#gt; #lt;button#gt; {icon}
+  [*] --> S2
+  [*] --> S3
   S2 --> S1: setIsOpen(false)
   S3 --> S1: setIsOpen(false)
   state "claims" as claims {
@@ -595,6 +615,8 @@ stateDiagram-v2
   S1: !hasPermission(role, "edit") · #lt;p#gt; "Read only"
   S2: hasPermission(role, "edit") ∧ isEditing · #lt;button#gt; "Save"
   S3: hasPermission(role, "edit") ∧ !isEditing · #lt;button#gt; "Edit"
+  [*] --> S1
+  [*] --> S3
   S2 --> S3: "Save"
   S3 --> S2: "Edit"
   state "claims" as claims {
@@ -699,10 +721,14 @@ stateDiagram-v2
     %% isEnabled("search"), isEnabled("sync"), isEnabled("share")
     S1: isEnabled("search") || isEnabled("sync") || isEnabled("share") · {"Features on"}
     S2: !(isEnabled("search") || isEnabled("sync") || isEnabled("share")) · {"Features off"}
+    [*] --> S1
+    [*] --> S2
     --
     %% isEnabled("sync"), isEnabled("offline")
     S3: isEnabled("sync") && isEnabled("offline") · {"Full sync"}
     S4: !(isEnabled("sync") && isEnabled("offline")) · ∅
+    [*] --> S3
+    [*] --> S4
   }"
 `;
 
@@ -732,7 +758,9 @@ title: Feed src/chains.tsx:17
 stateDiagram-v2
   direction LR
   S1: !(pages?.map(…) != null ? Unknown(member) #58; undefined) · #lt;p#gt; "Nothing yet"
-  S2: pages?.map(…) != null ? Unknown(member) #58; undefined · #lt;p#gt; ⚠ items.length " items""
+  S2: pages?.map(…) != null ? Unknown(member) #58; undefined · #lt;p#gt; ⚠ items.length " items"
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > FileRow keeps its render tree and handlers 1`] = `
@@ -774,6 +802,8 @@ stateDiagram-v2
     %% path.endsWith(".ts")
     S1: path.endsWith(".ts") · #lt;span#gt; "TS"
     S2: !path.endsWith(".ts") · #lt;span#gt; "File"
+    [*] --> S1
+    [*] --> S2
     --
     %% opened
     S3: opened #gt; 0 · #lt;b#gt; {opened}
@@ -844,7 +874,9 @@ title: FirstMatch src/loops.tsx:27
 stateDiagram-v2
   direction LR
   S1: found === null · #lt;p#gt; "No match"
-  S2: found !== null · #lt;p#gt; "Found " {found}"
+  S2: found !== null · #lt;p#gt; "Found " {found}
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > FoundOfState keeps its render tree and handlers 1`] = `
@@ -876,6 +908,8 @@ stateDiagram-v2
   direction LR
   S1: found === null · #lt;div#gt; #lt;button#gt; "score" #lt;i#gt; "none"
   S2: found !== null · #lt;div#gt; #lt;button#gt; "score" #lt;b#gt; {found}
+  [*] --> S1
+  [*] --> S2
   S1 --> S2: "score"
   S2 --> S1: "score""
 `;
@@ -954,7 +988,9 @@ title: Greeting src/option-defaults.tsx:21
 stateDiagram-v2
   direction LR
   S1: auth.user · #lt;div#gt; #lt;p#gt; {auth.user.name}
-  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out""
+  S2: !auth.user · #lt;div#gt; #lt;p#gt; "Signed out"
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > GuardedCast keeps its render tree and handlers 1`] = `
@@ -1035,6 +1071,8 @@ stateDiagram-v2
   direction LR
   S1: kind === "c" · #lt;p#gt; "c"
   S2: kind !== "c" · #lt;button#gt; {picked}
+  [*] --> S1
+  [*] --> S2
   state "claims" as claims {
     claims1: holds kind as "a" | "b" L38
     claims2: holds picked stays within "a" | "b" L36
@@ -1069,7 +1107,9 @@ title: HintField src/narrowed-strings.tsx:1
 stateDiagram-v2
   direction LR
   S1: !hint · #lt;label#gt; #lt;p#gt; "Add a hint" #lt;small#gt; "No hint yet"
-  S2: hint · #lt;label#gt; #lt;small#gt; {hint}"
+  S2: hint · #lt;label#gt; #lt;small#gt; {hint}
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > Inbox keeps its render tree and handlers 1`] = `
@@ -1344,6 +1384,8 @@ stateDiagram-v2
     %% hasLong
     S1: hasLong · #lt;p#gt; "Long"
     S2: !hasLong · ∅
+    [*] --> S1
+    [*] --> S2
     --
     %% isSelected
     S3: isSelected · {"Selected"}
@@ -1392,6 +1434,8 @@ stateDiagram-v2
   S1: isPending · #lt;form#gt; #lt;p#gt; "Saving…" #lt;button#gt; "Save"
   S2: !isPending ∧ name === "" · #lt;form#gt; #lt;p#gt; {"No name yet"} #lt;button#gt; "Save"
   S3: !isPending ∧ name !== "" · #lt;form#gt; #lt;p#gt; {name} #lt;button#gt; "Save"
+  [*] --> S1
+  [*] --> S2
   S2 --> S3: "Save"
   S3 --> S2: "Save""
 `;
@@ -1434,7 +1478,11 @@ stateDiagram-v2
   S1: pathname === "/" · #lt;nav#gt; #lt;b#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
   S2: pathname === "/blog" · #lt;nav#gt; #lt;a#gt; "Home" #lt;b#gt; "Blog" #lt;a#gt; "About"
   S3: pathname === "/about" · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;b#gt; "About"
-  S4: pathname ∉ {"/", "/blog", "/about"} · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About""
+  S4: pathname ∉ {"/", "/blog", "/about"} · #lt;nav#gt; #lt;a#gt; "Home" #lt;a#gt; "Blog" #lt;a#gt; "About"
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
 `;
 
 exports[`fixture analysis > OpaqueCallback keeps its render tree and handlers 1`] = `
@@ -1465,6 +1513,9 @@ stateDiagram-v2
   S1: user?.name · #lt;div#gt; #lt;i#gt; "named" ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
   S2: !(user?.name) ∧ user != null · #lt;div#gt; {user.name} ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
   S3: !(user?.name) ∧ user == null · #lt;div#gt; ⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
   state "claims" as claims {
     claims1: unproven user! L64 · user = null
   }
@@ -1497,7 +1548,9 @@ title: OptionRow src/claims.tsx:82
 stateDiagram-v2
   direction LR
   S1: options[index].icon · #lt;li#gt; #lt;i#gt; {options[index].icon} {options[index].label}
-  S2: !options[index].icon · #lt;li#gt; {options[index].label}"
+  S2: !options[index].icon · #lt;li#gt; {options[index].label}
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > Page keeps its render tree and handlers 1`] = `
@@ -1612,6 +1665,8 @@ stateDiagram-v2
     %% data
     S1: data != null · ↻ data.rows
     S2: data == null · ∅
+    [*] --> S1
+    [*] --> S2
     --
     %% selected
     S3: selected · #lt;p#gt; {selected}
@@ -1658,6 +1713,8 @@ stateDiagram-v2
   direction LR
   S1: watch("plan") === "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "Billed monthly"
   S2: watch("plan") !== "pro" · #lt;form#gt; #lt;select#gt; #lt;option#gt; "Free" #lt;option#gt; "Pro" #lt;p#gt; "No charge"
+  [*] --> S1
+  [*] --> S2
   S1 --> S2: "Free" "Pro" (async)
   S2 --> S1: "Free" "Pro" (async)"
 `;
@@ -1693,7 +1750,10 @@ stateDiagram-v2
   direction LR
   S1: typeof price === "string" · #lt;p#gt; #lt;b#gt; {price}
   S2: typeof price === "number" · #lt;p#gt; #lt;i#gt; ⚠ price.toFixed(2)
-  S3: typeof price ∉ {"string", "number"} · #lt;p#gt; #lt;s#gt; "Free""
+  S3: typeof price ∉ {"string", "number"} · #lt;p#gt; #lt;s#gt; "Free"
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3"
 `;
 
 exports[`fixture analysis > Profile keeps its render tree and handlers 1`] = `
@@ -1788,7 +1848,11 @@ stateDiagram-v2
   S1: query.isPending · #lt;p#gt; "Loading"
   S2: !query.isPending ∧ query.isError · #lt;p#gt; "Error#58; " {query.error.message}
   S3: !query.isPending ∧ !query.isError ∧ query.data.isAdmin · #lt;div#gt; {query.data.name} #lt;span#gt; "Admin"
-  S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}"
+  S4: !query.isPending ∧ !query.isError ∧ !query.data.isAdmin · #lt;div#gt; {query.data.name}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
 `;
 
 exports[`fixture analysis > ProfileStatus keeps its render tree and handlers 1`] = `
@@ -1823,7 +1887,11 @@ stateDiagram-v2
   S1: useQuery().isPending · #lt;div#gt; #lt;p#gt; "Loading"
   S2: !useQuery().isPending ∧ useQuery().isError ∧ useQuery().data · #lt;div#gt; #lt;p#gt; "Error" #lt;p#gt; {useQuery().data.name}
   S3: !useQuery().isPending ∧ useQuery().isError ∧ !useQuery().data · #lt;div#gt; #lt;p#gt; "Error"
-  S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}"
+  S4: !useQuery().isPending ∧ !useQuery().isError · #lt;div#gt; #lt;p#gt; {useQuery().data.name}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
 `;
 
 exports[`fixture analysis > PublishResult keeps its render tree and handlers 1`] = `
@@ -1901,6 +1969,10 @@ stateDiagram-v2
   S2: user === null ∧ !renderExtra · #lt;p#gt; "Loading "
   S3: user !== null ∧ renderExtra · #lt;p#gt; {renderExtra(user)}
   S4: user !== null ∧ !renderExtra · #lt;p#gt;
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4
   state "claims" as claims {
     claims1: broken user! L73 in S1 · user = null
   }"
@@ -1963,7 +2035,9 @@ title: RoleBadge src/literals.tsx:30
 stateDiagram-v2
   direction LR
   S1: role === "admin" · #lt;strong#gt; "Admin"
-  S2: role !== "admin" · #lt;span#gt; "Member""
+  S2: role !== "admin" · #lt;span#gt; "Member"
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > SaveForm keeps its render tree and handlers 1`] = `
@@ -2039,6 +2113,9 @@ stateDiagram-v2
   S1: items.length === 0 · #lt;div#gt; #lt;input#gt; #lt;p#gt; "No items"
   S2: items.length !== 0 ∧ items.filter(function).length #gt; 0 · #lt;div#gt; #lt;input#gt; #lt;ul#gt; ↻ items.filter(function)
   S3: items.length !== 0 ∧ items.filter(function).length #lt;= 0 · #lt;div#gt; #lt;input#gt;
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
   S2 --> S3: setQuery(event.target.value)
   S3 --> S2: setQuery(event.target.value)"
 `;
@@ -2248,7 +2325,10 @@ stateDiagram-v2
   direction LR
   S1: size === sizes.small · #lt;p#gt; "Small"
   S2: size === sizes.large · #lt;p#gt; "Large"
-  S3: size ∉ {sizes.small, sizes.large} · ∅"
+  S3: size ∉ {sizes.small, sizes.large} · ∅
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3"
 `;
 
 exports[`fixture analysis > SizeLabel keeps its states, transitions and unreachable branches 2`] = `
@@ -2258,7 +2338,9 @@ title: SizeLabel src/literal-constants.tsx:12
 stateDiagram-v2
   direction LR
   S1: size === "sm" · #lt;p#gt; "Small"
-  S2: size !== "sm" · #lt;p#gt; "Large""
+  S2: size !== "sm" · #lt;p#gt; "Large"
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > SkippedSteps keeps its render tree and handlers 1`] = `
@@ -2324,6 +2406,8 @@ stateDiagram-v2
   direction LR
   S1: typeof render === "function" · #lt;div#gt; ⚠ render()
   S2: typeof render !== "function" · #lt;div#gt; {render}
+  [*] --> S1
+  [*] --> S2
   state "bailouts" as bailouts {
     bailouts1: unknown-call L12 call returns JSX the analysis can't see into
   }"
@@ -2441,7 +2525,11 @@ stateDiagram-v2
   S1: status === "error" · #lt;p#gt; "Failed"
   S2: status === "loading" · #lt;p#gt; "Loading…"
   S3: status === "done" · #lt;p#gt; {"Done"} " " {count}
-  S4: status ∉ {"error", "loading", "done"} · #lt;p#gt; {"Idle"} " " {count}"
+  S4: status ∉ {"error", "loading", "done"} · #lt;p#gt; {"Idle"} " " {count}
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3
+  [*] --> S4"
 `;
 
 exports[`fixture analysis > StatusBanner keeps its render tree and handlers 1`] = `
@@ -2550,10 +2638,14 @@ stateDiagram-v2
     %% step
     S1: step === "panel" · #lt;aside#gt; "panel"
     S2: step !== "panel" · #lt;ul#gt;
+    [*] --> S1
+    [*] --> S2
     --
     %% user
     S3: !!user · #lt;b#gt; {user.name}
     S4: !user · #lt;i#gt; "anonymous"
+    [*] --> S3
+    [*] --> S4
   }
   state "claims" as claims {
     claims1: holds user! L31
@@ -2591,6 +2683,8 @@ stateDiagram-v2
   direction LR
   S1: useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;p#gt; {useForm().formState.errors.email.message} #lt;button#gt; "Subscribe"
   S2: !useForm().formState.errors.email · #lt;form#gt; #lt;input#gt; #lt;button#gt; "Subscribe"
+  [*] --> S1
+  [*] --> S2
   S1 --> S2: "Subscribe" (async)
   S2 --> S1: "Subscribe" (async)
   S1 --> S2: #lt;input#gt; {...} (async)
@@ -2724,7 +2818,9 @@ title: TitleCard src/literals.tsx:27
 stateDiagram-v2
   direction LR
   S1: title === "" · #lt;p#gt; "Untitled"
-  S2: title !== "" · #lt;h1#gt; {title}"
+  S2: title !== "" · #lt;h1#gt; {title}
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > TodoApp keeps its render tree and handlers 1`] = `
@@ -2876,7 +2972,10 @@ stateDiagram-v2
   direction LR
   S1: tone === "info" · #lt;span#gt; #lt;b#gt; "Info"
   S2: tone === "warning" · #lt;span#gt; #lt;i#gt; "Warning"
-  S3: tone ∉ {"info", "warning"} · #lt;span#gt;"
+  S3: tone ∉ {"info", "warning"} · #lt;span#gt;
+  [*] --> S1
+  [*] --> S2
+  [*] --> S3"
 `;
 
 exports[`fixture analysis > ToneCounter keeps its render tree and handlers 1`] = `
@@ -2922,6 +3021,8 @@ stateDiagram-v2
   S2: tone === "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;b#gt; {"Info"} #lt;button#gt; {count}
   S3: tone !== "info" ∧ count #gt; 0 · #lt;div#gt; #lt;i#gt; {"Other again"} #lt;button#gt; {count}
   S4: tone !== "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;i#gt; {"Other"} #lt;button#gt; {count}
+  [*] --> S2
+  [*] --> S4
   S1 --> S2: setCount(count + 1)
   S2 --> S1: setCount(count + 1)
   S3 --> S4: setCount(count + 1)
@@ -2950,7 +3051,9 @@ title: ToneLabel src/literal-constants.tsx:21
 stateDiagram-v2
   direction LR
   S1: (tone === undefined ? "calm" #58; tone) === "loud" · #lt;strong#gt; "Loud"
-  S2: (tone === undefined ? "calm" #58; tone) !== "loud" · #lt;span#gt; "Calm""
+  S2: (tone === undefined ? "calm" #58; tone) !== "loud" · #lt;span#gt; "Calm"
+  [*] --> S1
+  [*] --> S2"
 `;
 
 exports[`fixture analysis > Toolbar keeps its render tree and handlers 1`] = `
@@ -3002,12 +3105,20 @@ stateDiagram-v2
     S2: role === "admin" ∧ !hasPermission(role, "edit") · #lt;span#gt; "Admin" #lt;span#gt; "Read only"
     S3: role !== "admin" ∧ hasPermission(role, "edit") · #lt;button#gt; "Edit"
     S4: role !== "admin" ∧ !hasPermission(role, "edit") · #lt;span#gt; "Read only"
+    [*] --> S1
+    [*] --> S2
+    [*] --> S3
+    [*] --> S4
     --
     %% status.isSaving, status.error
     S5: status.isSaving ∧ status.error · #lt;span#gt; "Saving" #lt;p#gt; {status.error}
     S6: status.isSaving ∧ !status.error · #lt;span#gt; "Saving"
     S7: !status.isSaving ∧ status.error · #lt;p#gt; {status.error}
     S8: !status.isSaving ∧ !status.error · ∅
+    [*] --> S5
+    [*] --> S6
+    [*] --> S7
+    [*] --> S8
     --
     %% isHelpOpen
     S9: isHelpOpen · #lt;p#gt; "Press E to edit"

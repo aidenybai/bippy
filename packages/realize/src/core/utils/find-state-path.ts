@@ -2,7 +2,7 @@ import type { Region, State } from "../types";
 
 export const findStatePath = (states: State[], regions: Region[], target: number): string[] => {
   const region = regions.find((candidate) => candidate.states.includes(target));
-  const start = region?.firstRenderState ?? null;
+  const start = region?.firstRenderState ?? region?.possibleFirstRenderStates[0] ?? null;
   if (start === null) return [];
   const previous = new Map<number, [number, string]>();
   const queue = [start];
