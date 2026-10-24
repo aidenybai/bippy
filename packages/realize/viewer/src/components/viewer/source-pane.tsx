@@ -12,13 +12,11 @@ import {
 } from "react";
 import { File } from "@pierre/diffs/react";
 import { Spinner } from "@/components/ui/spinner";
-import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
 import { useFileOptions } from "@/hooks/use-file-options";
 import { useHighlighter } from "@/hooks/use-highlighter";
 import { useIsClient } from "@/hooks/use-is-client";
 import { useTokenBoxes, type PlacedToken, type TokenLayout } from "@/hooks/use-token-boxes";
 import { isRestingArc, placeArcs } from "@/lib/arcs";
-import { describeNode } from "@/lib/describe";
 import { getComponentAtLine } from "@/lib/graph";
 import {
   createLineLookup,
@@ -29,9 +27,9 @@ import {
 } from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
-import { useHasHover, useHoverStore, type TokenAnchor } from "@/store/hover";
+import { useHasHover, useHoverStore } from "@/store/hover";
 import { Arc, ArcHead } from "./arc";
-import { useHoveredNode, useViewer } from "./context";
+import { useViewer } from "./context";
 import { TokenMark } from "./token-mark";
 
 const contains = (box: Box, x: number, y: number): boolean =>
@@ -39,15 +37,6 @@ const contains = (box: Box, x: number, y: number): boolean =>
 
 const findTokenAt = (tokens: PlacedToken[], x: number, y: number): PlacedToken | null =>
   tokens.find((token) => token.rows.some((row) => contains(row, x, y))) ?? null;
-
-const createAnchor = (token: PlacedToken, wrapper: HTMLElement): TokenAnchor => ({
-  nodeId: token.node.id,
-  getBoundingClientRect: () => {
-    const origin = wrapper.getBoundingClientRect();
-    const { box } = token;
-    return new DOMRect(origin.left + box.x, origin.top + box.y, box.width, box.height);
-  },
-});
 
 const usePointerTracking = (
   wrapperRef: RefObject<HTMLDivElement | null>,
@@ -67,7 +56,7 @@ const usePointerTracking = (
         event.clientX - origin.left,
         event.clientY - origin.top,
       );
-      if (token) hover(token.node.id, createAnchor(token, wrapper));
+      if (token) hover(token.node.id);
       else leave();
       const line = getLineFromEvent(event.nativeEvent);
       const component = line === null ? null : getComponentAtLine(view, line);
@@ -186,43 +175,26 @@ const FocusScrim = ({ wrapperRef, layout }: OverlayProps) => {
   );
 };
 
-const TokenTooltip = () => {
-  const { view } = useViewer();
-  const hoveredNode = useHoveredNode();
-  const anchor = useHoverStore((state) => state.anchor);
-  const isOpen = anchor !== null && hoveredNode !== null && hoveredNode.id === anchor.nodeId;
-  return (
-    <Tooltip open={isOpen}>
-      <TooltipContent anchor={anchor} className="font-mono">
-        {hoveredNode && describeNode(view, hoveredNode)}
-      </TooltipContent>
-    </Tooltip>
-  );
-};
-
 const Overlay = ({ wrapperRef, layout }: OverlayProps) => {
   const { colorByNodeId } = useViewer();
   return (
-    <>
-      <svg
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-        width={layout.width}
-        height={layout.height}
-      >
-        <ArcHead />
-        <FocusScrim wrapperRef={wrapperRef} layout={layout} />
-        {layout.tokens.map((token) => (
-          <TokenMark
-            key={token.node.id}
-            {...token}
-            color={colorByNodeId.get(token.node.id) ?? "transparent"}
-          />
-        ))}
-        <RestingArcs layout={layout} />
-        <CausalArcs layout={layout} />
-      </svg>
-      <TokenTooltip />
-    </>
+    <svg
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      width={layout.width}
+      height={layout.height}
+    >
+      <ArcHead />
+      <FocusScrim wrapperRef={wrapperRef} layout={layout} />
+      {layout.tokens.map((token) => (
+        <TokenMark
+          key={token.node.id}
+          {...token}
+          color={colorByNodeId.get(token.node.id) ?? "transparent"}
+        />
+      ))}
+      <RestingArcs layout={layout} />
+      <CausalArcs layout={layout} />
+    </svg>
   );
 };
 
