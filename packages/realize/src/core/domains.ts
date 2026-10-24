@@ -100,6 +100,21 @@ export const withNullishCases = (cases: AbstractValue[]): AbstractValue[] => [
   ...NULLISH_CASES.filter((nullish) => classify(nullish, cases) !== "in"),
 ];
 
+const getCasePrimitive = (value: AbstractValue): PrimitiveTypeName | null => {
+  if (value.kind === "Type") return value.primitive;
+  if (value.kind !== "Literal") return null;
+  if (typeof value.value === "number") return "number";
+  return typeof value.value === "string" ? "string" : null;
+};
+
+export const getDomainPrimitive = (domain: Domain): PrimitiveTypeName | null => {
+  if (domain.kind === "Opaque")
+    return domain.typeText === "number" || domain.typeText === "string" ? domain.typeText : null;
+  if (domain.kind !== "Cases") return null;
+  const [first, ...rest] = domain.cases.map(getCasePrimitive);
+  return first !== undefined && rest.every((primitive) => primitive === first) ? first : null;
+};
+
 export const isPrimitiveDomain = (cases: AbstractValue[]): boolean =>
   cases.every(
     (value) => value.kind === "Literal" || (value.kind === "Type" && value.primitive !== null),

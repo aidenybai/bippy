@@ -67,6 +67,8 @@ import { getDerivedDomain, getLiteralArrayCall, getMathCall } from "./utils/deri
 import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isSameValueZero } from "./utils/is-same-value-zero";
+import { getPropertyKeyForms } from "./utils/get-property-key-forms";
+import { getDomainPrimitive } from "./domains";
 import { getStoredLocals } from "./utils/get-stored-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
 import { getDeclarationLocation } from "./utils/get-declaration-location";
@@ -1965,17 +1967,26 @@ export class Interpreter {
     const propertyKey = this.read(computedLoad.property);
     const object = this.read(computedLoad.object);
     const entries = propertyKey.kind === "Primitive" ? null : getLiteralEntries(object);
+    const keyType = getDomainPrimitive(
+      propertyKey.kind === "Binding" && propertyKey.path.length === 0
+        ? propertyKey.binding.domain
+        : this.#resolver.getDomain(computedLoad.property.loc),
+    );
     if (entries)
       return entries.reduceRight<SymbolicValue>(
-        (rest, [key, entry]) => ({
-          kind: "Conditional",
-          test: foldBinary("===", propertyKey, { kind: "Primitive", value: key }),
-          testKind: "truthy",
-          consequent: entry,
-          alternate: rest,
-          branch: this.createBranch(instructionId, computedLoad.loc, "none"),
-          guardKeys: walkState.guards.map(getValueKey),
-        }),
+        (rest, [key, entry]) =>
+          getPropertyKeyForms(key, keyType).reduceRight<SymbolicValue>(
+            (alternate, keyForm) => ({
+              kind: "Conditional",
+              test: foldBinary("===", propertyKey, { kind: "Primitive", value: keyForm }),
+              testKind: "truthy",
+              consequent: entry,
+              alternate,
+              branch: this.createBranch(instructionId, computedLoad.loc, "none"),
+              guardKeys: walkState.guards.map(getValueKey),
+            }),
+            rest,
+          ),
         UNDEFINED_VALUE,
       );
     if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
