@@ -942,7 +942,11 @@ export class Interpreter {
     const reactExportName = this.#resolver.getReactExportName(callSite.loc);
     if (reactExportName === "createPortal" && firstArgument)
       return { kind: "Portal", children: firstArgument };
-    if (reactExportName === "startTransition" || isStartTransition(callSite.callee))
+    if (
+      reactExportName === "startTransition" ||
+      reactExportName === "flushSync" ||
+      isStartTransition(callSite.callee)
+    )
       return { kind: "Transition" };
     const hookKind = getHookKind(this.getCurrentFunction().env, callSite.calleePlace.identifier);
     if (hookKind === "Custom") {
