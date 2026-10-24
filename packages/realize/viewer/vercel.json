@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "pnpm install --filter realize-viewer"
+  "installCommand": "pnpm install --filter realize-viewer..."
 }
