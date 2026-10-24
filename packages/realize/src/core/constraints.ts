@@ -931,6 +931,10 @@ const joinPlaceValues = (
 
 export const joinConstraints = (left: Constraints, right: Constraints): Constraints => {
   const rightBoundKeys = new Set(right.bounds.map(formatBound));
+  const bounds = left.bounds.filter((bound) => rightBoundKeys.has(formatBound(bound)));
+  const isSameBounds =
+    bounds.length === left.bounds.length &&
+    new Set(left.bounds.map(formatBound)).size === rightBoundKeys.size;
   return {
     possibleValues: joinPlaceValues(left.possibleValues, right.possibleValues),
     assumptions: new Map(
@@ -938,8 +942,8 @@ export const joinConstraints = (left: Constraints, right: Constraints): Constrai
         ([key, assumption]) => right.assumptions.get(key)?.isTrue === assumption.isTrue,
       ),
     ),
-    bounds: left.bounds.filter((bound) => rightBoundKeys.has(formatBound(bound))),
-    boundGraph: null,
+    bounds,
+    boundGraph: isSameBounds ? left.boundGraph : null,
     invariants: left.invariants,
     finitePlaces: left.finitePlaces,
     unionMemberValues: left.unionMemberValues,
@@ -1228,12 +1232,14 @@ export const forgetBinding = (
     if (shouldKeepLength && bindingPlaces.every(isLength)) continue;
     constraints.assumptions.delete(assumptionKey);
   }
-  constraints.bounds = constraints.bounds.filter((bound) => {
+  const bounds = constraints.bounds.filter((bound) => {
     const mentionsBinding = [bound.left, bound.right].some((atom) => atom?.bindingId === bindingId);
     return (
       !mentionsBinding || (shouldKeepLength && (isLength(bound.left) || isLength(bound.right)))
     );
   });
+  if (bounds.length === constraints.bounds.length) return;
+  constraints.bounds = bounds;
   constraints.boundGraph = null;
 };
 
