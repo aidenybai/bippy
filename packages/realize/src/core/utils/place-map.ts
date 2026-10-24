@@ -42,6 +42,20 @@ export class PlaceMap<Value> {
     return copy;
   }
 
+  intersect(
+    other: PlaceMap<Value>,
+    join: (place: BindingPlace, value: Value, otherValue: Value) => Value,
+  ): PlaceMap<Value> {
+    const joined = this.clone();
+    for (const [key, [place, value]] of this.#entries) {
+      const otherEntry = other.#entries.get(key);
+      if (!otherEntry) joined.#ownEntries().delete(key);
+      if (otherEntry && otherEntry[1] !== value)
+        joined.#ownEntries().set(key, [place, join(place, value, otherEntry[1])]);
+    }
+    return joined;
+  }
+
   places(): BindingPlace[] {
     return [...this.#entries.values()].map(([place]) => place);
   }
