@@ -1918,11 +1918,12 @@ export class Interpreter {
         if (variable && !this.#handlerEffects) this.bindingTable.forgetInitial(variable);
         return createUnknown(value.kind, value.loc);
       }
+      case "IteratorNext":
+        return this.iteration.createLoopItem(this.read(value.collection), value.loc);
       case "TaggedTemplateExpression":
       case "RegExpLiteral":
       case "MetaProperty":
       case "GetIterator":
-      case "IteratorNext":
       case "NextPropertyOf":
       case "PropertyDelete":
       case "ComputedDelete":

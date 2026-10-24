@@ -75,6 +75,7 @@ export interface Binding {
   lengthLimit: LengthLimit | null;
   derived: DerivedString | DerivedCall | null;
   range: NumberRange | null;
+  alias: SymbolicValue | null;
 }
 
 export interface NumberRange {

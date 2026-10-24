@@ -409,15 +409,6 @@ export class ControlFlowWalker {
       this.#loopDepth--;
       for (const loopHeader of loopHeaders) this.#enteredLoopHeaders.delete(loopHeader);
     }
-    for (const phi of this.#getBlock(terminal.fallthrough).phis)
-      this.#interpreter.write(phi.place, this.#createLoopValue(phi, loopBindings));
-    this.#addLoopInputPlaces(
-      loopBindings.slice(headerBindingCount),
-      loopEntry,
-      terminal.fallthrough,
-    );
-    for (const place of this.#getStoredContextPlaces(loopEntry, terminal.fallthrough))
-      this.#interpreter.write(place, createUnknown("loop", place.loc));
     const loopExit: Outcome = {
       kind: "Fallthrough",
       from: getLoopExit(terminal),
@@ -432,6 +423,29 @@ export class ControlFlowWalker {
       loopBindings,
       terminal.loc,
     );
+    const exitValueOutcome = collapseLoopSplits(
+      mapFallthroughs(bodyOutcome, (fallthrough) =>
+        loopHeaders.includes(fallthrough.to) ? loopExit : fallthrough,
+      ),
+      loopBindings,
+      terminal.loc,
+    );
+    for (const phi of this.#getBlock(terminal.fallthrough).phis)
+      this.#interpreter.write(
+        phi.place,
+        this.#createLoopValue(
+          phi,
+          loopBindings,
+          this.#resolvePhi(phi, exitValueOutcome, walkState.guards),
+        ),
+      );
+    this.#addLoopInputPlaces(
+      loopBindings.slice(headerBindingCount),
+      loopEntry,
+      terminal.fallthrough,
+    );
+    for (const place of this.#getStoredContextPlaces(loopEntry, terminal.fallthrough))
+      this.#interpreter.write(place, createUnknown("loop", place.loc));
     const afterWalkState =
       this.#awaitCount > awaitCountBefore ? getAsyncWalkState(walkState) : walkState;
     return this.#continueAfter(
@@ -515,7 +529,11 @@ export class ControlFlowWalker {
     return places;
   }
 
-  #createLoopValue(phi: Phi, loopBindings: Binding[]): SymbolicValue {
+  #createLoopValue(
+    phi: Phi,
+    loopBindings: Binding[],
+    alias: SymbolicValue | null = null,
+  ): SymbolicValue {
     const variableName = getIdentifierName(phi.place);
     const declarationLoc = [phi.place, ...phi.operands.values()]
       .map(getDeclarationLocation)
@@ -526,6 +544,7 @@ export class ControlFlowWalker {
       return createUnknown("loop", phi.place.loc);
     const binding = this.#interpreter.createBinding(variableName, "loop", declarationLoc, {
       domain: declaredDomain,
+      alias,
     });
     if (!loopBindings.includes(binding)) loopBindings.push(binding);
     return createBindingValue(binding);

@@ -45,6 +45,7 @@ export const createTestBinding = (overrides: Partial<Binding>): Binding => ({
   lengthLimit: null,
   derived: null,
   range: null,
+  alias: null,
   ...overrides,
 });
 

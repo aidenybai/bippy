@@ -10,6 +10,7 @@ import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-v
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "./types";
 import { getIdentifierName } from "./utils/get-identifier-name";
 import { getKnownTruthiness } from "./utils/get-known-truthiness";
+import { PlaceMap } from "./utils/place-map";
 import { getValueKey } from "./utils/get-value-key";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
 import type { WalkState } from "./walk-state";
@@ -29,6 +30,30 @@ export const ITERATION_METHODS = new Set([
 ]);
 
 const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
+
+const DECLARED_NAME_PATTERN = /^(?:const|let|var)\s+([A-Za-z_$][\w$]*)$/;
+
+const getDeclaredNameLoc = (
+  sourceText: string | null,
+  loc: SourceLocation,
+): { name: string; loc: SourceLocation } | null => {
+  const name = sourceText?.trim().match(DECLARED_NAME_PATTERN)?.[1];
+  if (!name || !sourceText || typeof loc === "symbol" || loc.start.line !== loc.end.line)
+    return null;
+  const offset = sourceText.lastIndexOf(name);
+  return {
+    name,
+    loc: {
+      ...loc,
+      start: { ...loc.start, column: loc.start.column + offset, index: loc.start.index + offset },
+      end: {
+        ...loc.end,
+        column: loc.start.column + offset + name.length,
+        index: loc.start.index + offset + name.length,
+      },
+    },
+  };
+};
 
 export class ArrayIteration {
   readonly #interpreter: Interpreter;
@@ -248,6 +273,18 @@ export class ArrayIteration {
       place.loc,
     );
     this.#interpreter.addItemSource(binding, array);
+    return createBindingValue(binding);
+  }
+
+  createLoopItem(collection: SymbolicValue, loc: SourceLocation): SymbolicValue {
+    const declaredLoc = getDeclaredNameLoc(this.#interpreter.resolver.getSourceText(loc), loc);
+    if (!declaredLoc) return createUnknown("IteratorNext", loc);
+    const inputPlaces = new PlaceMap<true>();
+    this.#interpreter.collectInputPlaces(collection, inputPlaces);
+    const binding = this.#interpreter.createBinding(declaredLoc.name, "item", declaredLoc.loc, {
+      inputPlaces: inputPlaces.places(),
+    });
+    this.#interpreter.addItemSource(binding, collection);
     return createBindingValue(binding);
   }
 
