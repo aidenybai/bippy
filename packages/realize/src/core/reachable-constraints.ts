@@ -33,6 +33,7 @@ import { PlaceMap } from "./utils/place-map";
 import type { FirstRenderOutcomes } from "./state-enumerator";
 
 const MAX_REACHABILITY_ROUNDS = 8;
+const MAX_REACHABLE_CASES = 256;
 
 export type ReachablePlaces = Map<number, Array<[BindingPlace, AbstractValue[]]>>;
 
@@ -231,6 +232,7 @@ const getReachableCases = (
       if (updateCases === "unchanged") continue;
       if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
       reachable = dedupeAbstractValues([...reachable, ...updateCases]);
+      if (reachable.length > MAX_REACHABLE_CASES) return typeCases;
     }
     if (reachable.length === previousCount) return reachable;
   }
