@@ -68,6 +68,7 @@ import { isPureFunction } from "./utils/pure-functions";
 import { getClosureMutatedLocals } from "./utils/get-closure-mutated-locals";
 import { isSameValueZero } from "./utils/is-same-value-zero";
 import { getPropertyKeyForms } from "./utils/get-property-key-forms";
+import { hasUnknownPart } from "./constraints";
 import { getDomainPrimitive } from "./domains";
 import { getStoredLocals } from "./utils/get-stored-locals";
 import { isRefOnlyRead } from "./utils/is-ref-only-read";
@@ -1039,6 +1040,23 @@ export class Interpreter {
     return UNDEFINED_VALUE;
   }
 
+  #getPureHelperResult(callSite: CallSite, walkState: WalkState): SymbolicValue | null {
+    const declarationKey = this.#resolver.getDeclarationKey(callSite.calleePlace.loc);
+    const inputPlaces = new PlaceMap<true>();
+    for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
+    const isPure =
+      declarationKey !== null &&
+      inputPlaces.size > 0 &&
+      this.#inlinedFunctions.size < MAX_INLINE_DEPTH &&
+      !callSite.argumentValues.some((argument) => BOUND_CALLEES.has(argument.kind)) &&
+      this.#projectLoaders.loadMutatedParameters(declarationKey).size === 0;
+    const helper = isPure ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
+    if (!helper) return null;
+    this.#functions.addModule(helper.resolver, helper.loadModuleFunction, helper.hirFunction);
+    const returned = this.#inlineFunction(helper.hirFunction, callSite, walkState);
+    return hasUnknownPart(returned) ? null : returned;
+  }
+
   #findProjectFunction(calleePlace: Place): ProjectHook | null {
     const declarationKey = this.#resolver.getDeclarationKey(calleePlace.loc);
     return declarationKey ? this.#projectLoaders.loadProjectFunction(declarationKey) : null;
@@ -1184,7 +1202,9 @@ export class Interpreter {
       );
       return createUnknown("call", loc);
     }
-    const result = this.#createCallResult(callSite);
+    const result = this.#createCallResult(callSite, {
+      initial: this.#getPureHelperResult(callSite, walkState),
+    });
     const callbacks = getPassedCallbacks(argumentValues);
     const isExternalWrapper = callee.kind === "Binding" && isExternalSource(callee.binding);
     const wrapped = isExternalWrapper ? [callee, ...callbacks] : callbacks;
