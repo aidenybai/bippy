@@ -873,9 +873,16 @@ export class Interpreter {
     walkState: WalkState,
   ): void {
     const collector = this.#getUpdateCollector();
+    const queuedValue = collector.getQueuedValue(setter.binding, walkState);
+    const isPendingValue =
+      queuedValue.kind !== "Binding" || queuedValue.binding.id !== setter.binding.id;
+    const previousValue =
+      isPendingValue && this.walker.loopDepth > 0 && setterArgument?.kind === "Function"
+        ? createUnknown("loop", setter.binding.loc)
+        : queuedValue;
     const nextValue = this.#getSetterNextValue(
       setterArgument,
-      collector.getQueuedValue(setter.binding, walkState),
+      previousValue,
       setter.binding.loc,
       walkState,
     );
