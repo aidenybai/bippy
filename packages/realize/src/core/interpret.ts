@@ -257,6 +257,20 @@ const getLiteralEntries = (
   return null;
 };
 
+const getLiteralEntryValue = (
+  source: SymbolicValue | null,
+  key: PrimitiveValue | undefined,
+): SymbolicValue | null => {
+  if (source?.kind !== "ArrayExpression" || source.spreads.length > 0) return null;
+  for (const entry of source.elements) {
+    if (entry.kind !== "ArrayExpression" || entry.spreads.length > 0) return null;
+    const [entryKey, entryValue] = entry.elements;
+    if (entryKey?.kind !== "Primitive") return null;
+    if (isSameValueZero(entryKey.value, key)) return entryValue ?? UNDEFINED_VALUE;
+  }
+  return UNDEFINED_VALUE;
+};
+
 const getCalleeName = (callSite: CallSite, target: CallTarget): string | null =>
   callSite.callee.kind === "Global"
     ? callSite.callee.name
@@ -1746,6 +1760,11 @@ export class Interpreter {
       return write.method === "set" ? (writtenValue ?? UNDEFINED_VALUE) : null;
     }
     const { source } = collection;
+    const entryValue =
+      collection.collection === "Map" && methodName === "get" && collection.writes.length === 0
+        ? getLiteralEntryValue(source, key)
+        : null;
+    if (entryValue) return entryValue;
     if (!collection.isCopy || source?.kind !== "Binding") return null;
     return this.#evaluateDerivedMethod(source, methodName, {
       ...callSite,
