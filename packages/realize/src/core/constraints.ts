@@ -367,6 +367,20 @@ const isConsistent = (graph: BoundGraph): boolean =>
     return !(cycle.weight < 0 || (cycle.weight === 0 && cycle.isStrict));
   });
 
+const isConsistentWith = (graph: BoundGraph, bounds: Bound[]): boolean => {
+  const [bound] = bounds;
+  const from = bound && graph.indicesByAtomKey.get(getAtomKey(bound.right));
+  const to = bound && graph.indicesByAtomKey.get(getAtomKey(bound.left));
+  if (bounds.length !== 1 || !bound || from === undefined || to === undefined)
+    return isConsistent(bounds.reduce(withBound, graph));
+  const back = graph.distances[to][from];
+  const cycleWeight = back.weight + bound.maxDifference;
+  return (
+    isConsistent(graph) &&
+    !(cycleWeight < 0 || (cycleWeight === 0 && (back.isStrict || bound.isStrict)))
+  );
+};
+
 const getInvariantGraph = memoizeByIdentity((invariants: Bound[]): BoundGraph =>
   invariants.reduce(withBound, EMPTY_GRAPH),
 );
@@ -387,8 +401,8 @@ const isBoundedEquality = (
   return (
     below !== null &&
     above !== null &&
-    !isConsistent(below.reduce(withBound, graph)) &&
-    !isConsistent(above.reduce(withBound, graph))
+    !isConsistentWith(graph, below) &&
+    !isConsistentWith(graph, above)
   );
 };
 
@@ -397,8 +411,8 @@ const evaluateBounds = (value: SymbolicValue, constraints: Constraints): boolean
   const graph = getBoundGraph(constraints);
   const whenTrue = getBounds(value, true, constraints);
   const whenFalse = getBounds(value, false, constraints);
-  if (whenTrue && !isConsistent(whenTrue.reduce(withBound, graph))) return false;
-  if (whenFalse && !isConsistent(whenFalse.reduce(withBound, graph))) return true;
+  if (whenTrue && !isConsistentWith(graph, whenTrue)) return false;
+  if (whenFalse && !isConsistentWith(graph, whenFalse)) return true;
   if (
     value.kind === "BinaryExpression" &&
     EQUALITY_OPERATORS.has(value.operator) &&
