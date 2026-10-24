@@ -521,6 +521,8 @@ export const getPossibleValues = (
   constraints: Constraints,
 ): AbstractValue[] | null => {
   if (value.kind !== "Binding") return null;
+  const alias = getAlias(value);
+  if (alias) return getValueCases(alias, constraints);
   const { derived } = value.binding;
   const isDerived = derived !== null && value.path.length === 0;
   const projection = getProjection(value);
@@ -803,12 +805,44 @@ const getEqualityCounterpart = (value: SymbolicValue): BinaryExpressionValue | n
   return operator ? { ...value, operator } : null;
 };
 
+const getAlias = (value: SymbolicValue): SymbolicValue | null =>
+  value.kind === "Binding" && value.path.length === 0 ? value.binding.alias : null;
+
+const expandAliasOperands = (value: SymbolicValue): SymbolicValue | null => {
+  const alias = getAlias(value);
+  if (alias) return alias;
+  if (value.kind === "UnaryExpression") {
+    const operand = getAlias(value.value);
+    return operand && { ...value, value: operand };
+  }
+  if (value.kind !== "BinaryExpression") return null;
+  const left = getAlias(value.left);
+  const right = getAlias(value.right);
+  return left || right ? { ...value, left: left ?? value.left, right: right ?? value.right } : null;
+};
+
+const evaluateAlias = (value: SymbolicValue, constraints: Constraints): boolean | null => {
+  const distributed = value.kind === "BinaryExpression" ? distributeComparison(value) : null;
+  const condition = distributed ?? value;
+  if (condition.kind !== "Conditional") return evaluateCondition(condition, constraints);
+  const test = getTestExpression(condition);
+  const whenTrue = assumeCondition(test, true, constraints);
+  const whenFalse = assumeCondition(test, false, constraints);
+  const consequent = whenTrue && evaluateAlias(condition.consequent, whenTrue);
+  const alternate = whenFalse && evaluateAlias(condition.alternate, whenFalse);
+  if (!whenTrue) return alternate ?? null;
+  if (!whenFalse) return consequent ?? null;
+  return consequent !== null && consequent === alternate ? consequent : null;
+};
+
 export const evaluateCondition = (
   value: SymbolicValue,
   constraints: Constraints,
 ): boolean | null => {
   const assumption = constraints.assumptions.get(getValueKey(value));
   if (assumption) return assumption.isTrue;
+  const expanded = expandAliasOperands(value);
+  if (expanded) return evaluateAlias(expanded, constraints);
   const counterpart = getEqualityCounterpart(value);
   const counterpartAssumption =
     counterpart && constraints.assumptions.get(getValueKey(counterpart));
@@ -1036,6 +1070,8 @@ const assumeUncached = (
   constraints: Constraints,
   memo: AssumptionMemo,
 ): Constraints | null => {
+  const expanded = expandAliasOperands(value);
+  if (expanded) return assumeMemoized(expanded, isTrue, constraints, memo);
   const evaluated = evaluateCondition(value, constraints);
   if (evaluated !== null) {
     if (evaluated !== isTrue) return null;

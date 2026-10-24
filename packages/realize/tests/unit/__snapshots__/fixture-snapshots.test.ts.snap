@@ -1356,7 +1356,7 @@ flowchart TD
   n2 --> n3
   n4[["↻ each of Unknown(mutation)"]]
   n3 --> n4
-  n5["#lt;li#gt; ⚠ const item"]
+  n5["#lt;li#gt; {item}"]
   n4 --> n5
   n6{"hasLong"}
   n2 --> n6
@@ -1364,7 +1364,7 @@ flowchart TD
   n6 -->|✓| n7
   n8["#lt;button#gt;"]
   n2 --> n8
-  n9(["onClick ⇒ if Unknown(IteratorNext) && Unknown(IteratorNext): isSelected = true"]):::event
+  n9(["onClick ⇒ if item && item: isSelected = true"]):::event
   n8 -.-> n9
   n10{"isSelected"}
   n8 --> n10
