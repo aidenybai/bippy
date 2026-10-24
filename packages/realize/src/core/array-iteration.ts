@@ -9,6 +9,7 @@ import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { UNDEFINED_VALUE, createBindingValue, createUnknown } from "./symbolic-values";
 import type { ArrayExpressionValue, FunctionValue, SymbolicValue } from "./types";
 import { getIdentifierName } from "./utils/get-identifier-name";
+import { getKnownTruthiness } from "./utils/get-known-truthiness";
 import { getValueKey } from "./utils/get-value-key";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
 import type { WalkState } from "./walk-state";
@@ -62,9 +63,9 @@ export class ArrayIteration {
     array: ArrayExpressionValue,
     loc: SourceLocation,
     walkState: WalkState,
-  ): void {
+  ): SymbolicValue[] {
     const items = [...array.elements, ...array.spreads.map(() => createUnknown("item", loc))];
-    items.forEach((item, itemIndex) =>
+    return items.map((item, itemIndex) =>
       this.#interpreter.callFunction(
         callback,
         [item, { kind: "Primitive", value: itemIndex }, array],
@@ -72,6 +73,26 @@ export class ArrayIteration {
         walkState,
       ),
     );
+  }
+
+  getLiteralResult(
+    methodName: string,
+    array: ArrayExpressionValue,
+    results: SymbolicValue[],
+  ): SymbolicValue | null {
+    if (array.spreads.length > 0) return null;
+    if (methodName === "map") return { kind: "ArrayExpression", elements: results, spreads: [] };
+    const outcomes = results.map(getKnownTruthiness);
+    if (outcomes.some((outcome) => outcome === null)) return null;
+    if (methodName === "filter")
+      return {
+        kind: "ArrayExpression",
+        elements: array.elements.filter((_element, index) => outcomes[index]),
+        spreads: [],
+      };
+    if (methodName === "some") return { kind: "Primitive", value: outcomes.includes(true) };
+    if (methodName === "every") return { kind: "Primitive", value: !outcomes.includes(false) };
+    return null;
   }
 
   getFirstValue(
