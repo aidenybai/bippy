@@ -122,6 +122,20 @@ const formatAbstractValues = memoizeByIdentity((values: AbstractValue[]): string
   values.map((value) => `${value.kind}:${formatAbstractValue(value)}`).join("|"),
 );
 
+const possibleValueIds = new Map<string, number>();
+
+const getPossibleValueId = memoizeByIdentity(
+  ([place, values]: [BindingPlace, AbstractValue[]]): number => {
+    const entryKey = `${getPlaceKey(place)}=${formatAbstractValues(values)}`;
+    const entryId = possibleValueIds.get(entryKey) ?? possibleValueIds.size;
+    possibleValueIds.set(entryKey, entryId);
+    return entryId;
+  },
+);
+
+const formatPossibleValues = (possibleValues: PlaceMap<AbstractValue[]>): string =>
+  Int32Array.from(possibleValues, getPossibleValueId).sort().join(",");
+
 const formatBound = (bound: Bound): string =>
   `${getAtomKey(bound.left)}-${getAtomKey(bound.right)}${bound.isStrict ? "<" : "<="}${bound.maxDifference}`;
 
@@ -139,7 +153,7 @@ const formatUnionMemberValues = memoizeByIdentity(
 
 const serializeConstraints = (constraints: Constraints): string =>
   [
-    formatPlaceEntries(constraints.possibleValues, formatAbstractValues),
+    formatPossibleValues(constraints.possibleValues),
     [...constraints.assumptions].map(formatAssumption).sort().join(";"),
     formatBounds(constraints.bounds),
     formatInvariants(constraints.invariants),
