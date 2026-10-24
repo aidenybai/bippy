@@ -51,6 +51,15 @@ const isReassignedPlace = (instruction: Instruction, place: Place): boolean =>
   instruction.value.kind === "StoreContext" &&
   instruction.value.lvalue.place.identifier.id === place.identifier.id;
 
+const isDirectWrite = (instruction: Instruction, place: Place): boolean => {
+  const { value } = instruction;
+  if (value.kind === "MethodCall") return value.receiver.identifier.id === place.identifier.id;
+  return (
+    (value.kind === "PropertyStore" || value.kind === "ComputedStore") &&
+    value.object.identifier.id === place.identifier.id
+  );
+};
+
 const isOwnedValue = (value: SymbolicValue): value is BindingValue =>
   value.kind === "Binding" &&
   (value.binding.kind === "prop" ||
@@ -147,6 +156,15 @@ export class MutationTracker {
         continue;
       }
       if (mutatedValue.kind === "Global") this.#trackGlobalMutation(mutatedValue, mutatedPlace.loc);
+      if (
+        mutatedValue.kind === "Binding" &&
+        mutatedValue.binding.kind === "call" &&
+        isDirectWrite(instruction, mutatedPlace)
+      )
+        this.#replaceMutatedValue(
+          mutatedValue,
+          this.#interpreter.createDerivedValue([mutatedValue], "mutation", mutatedPlace.loc),
+        );
       const storedProperty =
         instruction.value.kind === "PropertyStore" ? String(instruction.value.property) : null;
       this.#trackOwnedValues(
@@ -194,6 +212,12 @@ export class MutationTracker {
     if (!isMutableLiteral(value) || this.#frozenValues.has(value)) return;
     this.#frozenValues.add(value);
     for (const nestedValue of getNestedValues(value)) this.#freeze(nestedValue);
+  }
+
+  #replaceMutatedValue(mutatedValue: SymbolicValue, replacement: SymbolicValue): void {
+    const { values } = this.#interpreter.getCompilationTables();
+    for (const [identifierId, value] of values)
+      if (value === mutatedValue) values.set(identifierId, replacement);
   }
 
   #forgetNestedLiterals(literal: MutableLiteral, loc: SourceLocation): void {
