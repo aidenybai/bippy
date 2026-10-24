@@ -1,4 +1,6 @@
+import { InstructionKind } from "../../react-compiler/HIR/HIR";
 import type { HIRFunction, IdentifierId, Place } from "../../react-compiler/HIR/HIR";
+import { memoizeByIdentity } from "./memoize-by-identity";
 import { isFunctionCreation } from "./is-function-creation";
 import { getMutatedPlace } from "./get-mutated-place";
 
@@ -10,6 +12,21 @@ const collectStoredPlaces = (hirFunction: HIRFunction): Place[] =>
       return isFunctionCreation(value) ? collectStoredPlaces(value.loweredFunc.func) : [];
     }),
   );
+
+const collectReassignedPlaces = (hirFunction: HIRFunction): Place[] =>
+  [...hirFunction.body.blocks.values()].flatMap((block) =>
+    block.instructions.flatMap((instruction) => {
+      const { value } = instruction;
+      if (value.kind === "StoreContext")
+        return value.lvalue.kind === InstructionKind.Reassign ? [value.lvalue.place] : [];
+      return isFunctionCreation(value) ? collectReassignedPlaces(value.loweredFunc.func) : [];
+    }),
+  );
+
+export const getReassignedIds = memoizeByIdentity(
+  (hirFunction: HIRFunction): Set<IdentifierId> =>
+    new Set(collectReassignedPlaces(hirFunction).map((place) => place.identifier.id)),
+);
 
 const collectMutatedPlaces = (hirFunction: HIRFunction): Place[] =>
   (hirFunction.aliasingEffects ?? []).flatMap((effect) => {
