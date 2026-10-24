@@ -67,11 +67,13 @@ export class CallbackPasser {
         asyncWalkState,
       );
     if (argument.kind === "Function")
-      this.#interpreter.callFunction(
-        argument,
-        this.getUnknownArguments(argument),
-        argument.loc,
-        asyncWalkState,
+      this.#interpreter.walker.runRepeated(() =>
+        this.#interpreter.callFunction(
+          argument,
+          this.getUnknownArguments(argument),
+          argument.loc,
+          asyncWalkState,
+        ),
       );
   }
 

@@ -155,6 +155,15 @@ export class ControlFlowWalker {
     return this.#loopDepth;
   }
 
+  runRepeated<Result>(run: () => Result): Result {
+    this.#loopDepth++;
+    try {
+      return run();
+    } finally {
+      this.#loopDepth--;
+    }
+  }
+
   get blockVisits(): number {
     return this.#blockVisits;
   }
