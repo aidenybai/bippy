@@ -552,6 +552,12 @@ export const resolveLiteral = (value: SymbolicValue, constraints: Constraints): 
     );
     return folded.kind === "Primitive" ? folded : value;
   }
+  if (value.kind === "Conditional") {
+    const test = evaluateCondition(getTestExpression(value), constraints);
+    if (test === null) return value;
+    const arm = resolveLiteral(test ? value.consequent : value.alternate, constraints);
+    return arm.kind === "Primitive" ? arm : value;
+  }
   const placeValues = getPossibleValues(value, constraints);
   const [onlyValue] = placeValues ?? [];
   return placeValues?.length === 1 && onlyValue?.kind === "Literal"
@@ -770,6 +776,10 @@ const evaluateComparison = (
   value: BinaryExpressionValue,
   constraints: Constraints,
 ): boolean | null => {
+  const left = resolveLiteral(value.left, constraints);
+  const right = resolveLiteral(value.right, constraints);
+  if (left.kind === "Primitive" && right.kind === "Primitive")
+    return getKnownTruthiness(foldBinary(value.operator, left, right));
   const split = splitComparison(value);
   const placeValues = split && getPossibleValues(split[0], constraints);
   if (!split || !placeValues || placeValues.length === 0) return null;
