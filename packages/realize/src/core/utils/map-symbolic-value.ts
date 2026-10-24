@@ -31,6 +31,16 @@ const mapChildren = (
         elements: value.elements.map(mapChild),
         spreads: value.spreads.map(mapChild),
       };
+    case "Collection":
+      return {
+        ...value,
+        source: value.source && mapChild(value.source),
+        writes: value.writes.map((write) => ({
+          ...write,
+          argumentValues: write.argumentValues.map(mapChild),
+          guards: write.guards.map(mapChild),
+        })),
+      };
     default:
       return value;
   }
