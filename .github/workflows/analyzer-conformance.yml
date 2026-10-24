@@ -8,9 +8,9 @@ on:
         default: ""
   pull_request:
     paths:
-      - packages/bippy-analyzer/src/**
-      - packages/bippy-analyzer/patches/**
-      - packages/bippy-analyzer/tests/conformance/**
+      - packages/realize/src/**
+      - packages/realize/patches/**
+      - packages/realize/tests/conformance/**
       - packages/bippy/src/**
       - pnpm-lock.yaml
       - .github/workflows/analyzer-conformance.yml
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RESULTS: packages/bippy-analyzer/tests/conformance/results/ci
+  RESULTS: packages/realize/tests/conformance/results/ci
 
 jobs:
   repos:
@@ -36,7 +36,7 @@ jobs:
         env:
           REPOS: ${{ inputs.repos }}
         run: |
-          ids=${REPOS:-$(ls packages/bippy-analyzer/tests/conformance/repos)}
+          ids=${REPOS:-$(ls packages/realize/tests/conformance/repos)}
           echo "ids=$(echo $ids | tr ' ' '\n' | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
 
   repo:
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: key
-        run: echo "value=conformance-${{ matrix.id }}-${{ hashFiles('packages/bippy-analyzer/src/**', 'packages/bippy-analyzer/patches/**', 'packages/bippy-analyzer/scripts/build-react-compiler.ts', 'packages/bippy-analyzer/tests/conformance/runner/**', 'packages/bippy-analyzer/tests/conformance/verifier/**', 'packages/bippy/src/**', 'pnpm-lock.yaml', '.github/workflows/analyzer-conformance.yml') }}-${{ hashFiles(format('packages/bippy-analyzer/tests/conformance/repos/{0}/**', matrix.id)) }}" >> "$GITHUB_OUTPUT"
+        run: echo "value=conformance-${{ matrix.id }}-${{ hashFiles('packages/realize/src/**', 'packages/realize/patches/**', 'packages/realize/scripts/build-react-compiler.ts', 'packages/realize/tests/conformance/runner/**', 'packages/realize/tests/conformance/verifier/**', 'packages/bippy/src/**', 'pnpm-lock.yaml', '.github/workflows/analyzer-conformance.yml') }}-${{ hashFiles(format('packages/realize/tests/conformance/repos/{0}/**', matrix.id)) }}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
         id: result
         with:
@@ -67,8 +67,8 @@ jobs:
       - if: steps.result.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
-          path: packages/bippy-analyzer/src/react-compiler
-          key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
+          path: packages/realize/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/realize/patches/react-compiler.patch') }}
       - if: steps.result.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
@@ -77,9 +77,9 @@ jobs:
       - if: steps.result.outputs.cache-hit != 'true'
         run: pnpm install --frozen-lockfile
       - if: steps.result.outputs.cache-hit != 'true'
-        run: pnpm --filter bippy-analyzer exec playwright install --with-deps chromium
+        run: pnpm --filter realize exec playwright install --with-deps chromium
       - if: steps.result.outputs.cache-hit != 'true'
-        run: pnpm -s --filter bippy-analyzer conformance run ${{ matrix.id }} --run-name ci
+        run: pnpm -s --filter realize conformance run ${{ matrix.id }} --run-name ci
         env:
           BIPPY_CONFORMANCE_CACHE: ${{ runner.temp }}/conformance
           NODE_OPTIONS: --max-old-space-size=8192
@@ -107,10 +107,10 @@ jobs:
           cache: "pnpm"
       - uses: actions/cache@v4
         with:
-          path: packages/bippy-analyzer/src/react-compiler
-          key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
+          path: packages/realize/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/realize/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -s --filter bippy-analyzer compiler-fixtures
+      - run: pnpm -s --filter realize compiler-fixtures
         env:
           BIPPY_CONFORMANCE_CACHE: ${{ runner.temp }}/conformance
           NODE_OPTIONS: --max-old-space-size=8192
@@ -129,15 +129,15 @@ jobs:
           cache: "pnpm"
       - uses: actions/cache@v4
         with:
-          path: packages/bippy-analyzer/src/react-compiler
-          key: react-compiler-${{ hashFiles('packages/bippy-analyzer/patches/react-compiler.patch') }}
+          path: packages/realize/src/react-compiler
+          key: react-compiler-${{ hashFiles('packages/realize/patches/react-compiler.patch') }}
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v4
         with:
           pattern: conformance-*
           path: ${{ env.RESULTS }}
           merge-multiple: true
-      - run: pnpm -s --filter bippy-analyzer conformance report tests/conformance/results/ci ${{ inputs.repos }} | tee table.txt
+      - run: pnpm -s --filter realize conformance report tests/conformance/results/ci ${{ inputs.repos }} | tee table.txt
         env:
           NO_COLOR: 1
       - if: ${{ !cancelled() }}
