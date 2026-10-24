@@ -9,26 +9,13 @@ interface Item {
   title: string;
 }
 
-const fetchItems = async (): Promise<Item[]> => [{ id: "1", title: "First" }];
-
-const Spinner = () => <div className="spinner" />;
-const SignIn = () => <a href="/login">Sign in</a>;
-const Empty = () => <p>No items</p>;
-const List = ({ items }: { items: Item[] }) => (
-  <ul>
-    {items.map((item) => (
-      <li key={item.id}>{item.title}</li>
-    ))}
-  </ul>
-);
-
-export const Dashboard = ({
+export function Dashboard({
   status,
   user,
 }: {
   status: "idle" | "loading" | "error";
   user: User | null;
-}) => {
+}) {
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<Item[]>([]);
   useEffect(() => {
@@ -43,4 +30,30 @@ export const Dashboard = ({
       <button onClick={() => setCount(count + 1)}>{count}</button>
     </main>
   );
-};
+}
+
+function Spinner() {
+  return <div className="spinner" />;
+}
+
+function SignIn() {
+  return <a href="/login">Sign in</a>;
+}
+
+function Empty() {
+  return <p>No items</p>;
+}
+
+function List({ items }: { items: Item[] }) {
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>{item.title}</li>
+      ))}
+    </ul>
+  );
+}
+
+async function fetchItems(): Promise<Item[]> {
+  return [{ id: "1", title: "First" }];
+}

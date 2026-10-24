@@ -416,7 +416,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Dashboard keeps its render tree and handlers 1`] = `
 "---
-title: Dashboard src/dashboard.tsx:25
+title: Dashboard src/dashboard.tsx:12
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -449,7 +449,7 @@ flowchart TD
 
 exports[`fixture analysis > Dashboard keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: Dashboard src/dashboard.tsx:25
+title: Dashboard src/dashboard.tsx:12
 ---
 stateDiagram-v2
   direction LR
@@ -626,7 +626,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Empty keeps its render tree and handlers 1`] = `
 "---
-title: Empty src/dashboard.tsx:16
+title: Empty src/dashboard.tsx:43
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -637,7 +637,7 @@ flowchart TD
 
 exports[`fixture analysis > Empty keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: Empty src/dashboard.tsx:16
+title: Empty src/dashboard.tsx:43
 ---
 stateDiagram-v2
   direction LR
@@ -1209,7 +1209,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > List keeps its render tree and handlers 1`] = `
 "---
-title: List src/dashboard.tsx:17
+title: List src/dashboard.tsx:47
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -1224,7 +1224,7 @@ flowchart TD
 
 exports[`fixture analysis > List keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: List src/dashboard.tsx:17
+title: List src/dashboard.tsx:47
 ---
 stateDiagram-v2
   direction LR
@@ -2226,7 +2226,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > SignIn keeps its render tree and handlers 1`] = `
 "---
-title: SignIn src/dashboard.tsx:15
+title: SignIn src/dashboard.tsx:39
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -2260,7 +2260,7 @@ flowchart TD
 
 exports[`fixture analysis > SignIn keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: SignIn src/dashboard.tsx:15
+title: SignIn src/dashboard.tsx:39
 ---
 stateDiagram-v2
   direction LR
@@ -2443,7 +2443,7 @@ stateDiagram-v2
 
 exports[`fixture analysis > Spinner keeps its render tree and handlers 1`] = `
 "---
-title: Spinner src/dashboard.tsx:14
+title: Spinner src/dashboard.tsx:35
 ---
 flowchart TD
   classDef event stroke-dasharray: 4 2
@@ -2454,7 +2454,7 @@ flowchart TD
 
 exports[`fixture analysis > Spinner keeps its states, transitions and unreachable branches 1`] = `
 "---
-title: Spinner src/dashboard.tsx:14
+title: Spinner src/dashboard.tsx:35
 ---
 stateDiagram-v2
   direction LR
