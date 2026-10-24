@@ -142,6 +142,7 @@ interface EffectCall {
 interface CallSite {
   callee: SymbolicValue;
   calleePlace: Place;
+  receiver?: SymbolicValue;
   argumentValues: SymbolicValue[];
   argumentPlaces: Place[];
   loc: SourceLocation;
@@ -1425,7 +1426,7 @@ export class Interpreter {
     });
   }
 
-  #createDerivedValue(
+  createDerivedValue(
     sourceValues: SymbolicValue[],
     reason: string,
     loc: SourceLocation,
@@ -1482,6 +1483,12 @@ export class Interpreter {
     const inputPlaces = new PlaceMap<true>();
     for (const argument of callSite.argumentValues) this.collectInputPlaces(argument, inputPlaces);
     const receiverPlace = this.#getReceiverPlace(callSite.callee);
+    if (receiverPlace && this.#resolver.isNonMutatingMethod(callSite.calleePlace.loc))
+      inputPlaces.set(receiverPlace, true);
+    if (!receiverPlace && callSite.receiver)
+      this.collectInputPlaces(callSite.receiver, inputPlaces);
+    const hasUnknownReceiver = !receiverPlace && callSite.receiver?.kind === "Unknown";
+    if (hasUnknownReceiver && inputPlaces.size === 0) return createUnknown("call", callSite.loc);
     const lengthLimit = this.#getLengthLimit(callSite, receiverPlace);
     const hasFiniteResult = this.#resolver.getDomain(callSite.loc).kind === "Cases";
     if (
@@ -1655,6 +1662,7 @@ export class Interpreter {
     const callSite: CallSite = {
       callee: this.read(methodCall.property),
       calleePlace: methodCall.property,
+      receiver,
       argumentValues,
       argumentPlaces,
       loc: methodCall.loc,
@@ -2025,7 +2033,7 @@ export class Interpreter {
         UNDEFINED_VALUE,
       );
     if (propertyKey.kind !== "Primitive" || isNullish(propertyKey.value))
-      return this.#createDerivedValue(
+      return this.createDerivedValue(
         [this.read(computedLoad.object), propertyKey],
         "computed-member",
         computedLoad.loc,
@@ -2111,10 +2119,12 @@ export class Interpreter {
     const argumentValues = argumentPlaces.map((place) => this.read(place));
     const mapped = this.iteration.evaluateLoadedArrayMap(call, argumentValues, walkState);
     if (mapped) return mapped;
+    const receiverPlace = this.getPropertyObject(call.callee);
     return this.#evaluateCall(
       {
         callee: this.read(call.callee),
         calleePlace: call.callee,
+        receiver: receiverPlace && this.read(receiverPlace),
         argumentValues,
         argumentPlaces,
         loc: call.loc,

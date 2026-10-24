@@ -388,7 +388,9 @@ export class MutationTracker {
       value.kind === "PropertyStore" &&
       value.object.identifier.id === mutatedPlace.identifier.id;
     if (isStoreIntoLiteral) return this.#storeIntoObject(literal, value, isOnCreationPath, loc);
-    return createUnknown("mutation", loc);
+    return value.kind === "MethodCall"
+      ? this.#interpreter.createDerivedValue([literal], "mutation", loc)
+      : createUnknown("mutation", loc);
   }
 
   #pushIntoArray(
