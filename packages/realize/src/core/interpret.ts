@@ -117,6 +117,7 @@ import { getIdentifierName } from "./utils/get-identifier-name";
 import { getPlaceOrSpread } from "./utils/get-place-or-spread";
 import {
   getStoredContextPlaces,
+  getReassignedIds,
   getWrittenContextPlaces,
 } from "./utils/get-written-context-places";
 
@@ -838,9 +839,12 @@ export class Interpreter {
     loc: SourceLocation,
     walkState: WalkState,
   ): SymbolicValue {
-    return setterArgument?.kind === "Function"
-      ? this.callFunction(setterArgument, [previousValue], loc, walkState)
-      : (setterArgument ?? UNDEFINED_VALUE);
+    if (setterArgument?.kind !== "Function") return setterArgument ?? UNDEFINED_VALUE;
+    const reassignedIds = getReassignedIds(this.getCurrentFunction());
+    const updater = this.#functions.get(setterArgument.functionId);
+    return updater?.context.some((place) => reassignedIds.has(place.identifier.id))
+      ? createUnknown("deferred-updater", loc)
+      : this.callFunction(setterArgument, [previousValue], loc, walkState);
   }
 
   #applySetter(
