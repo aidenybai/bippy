@@ -725,12 +725,14 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const hirFunction = this.#functions.get(callee.functionId);
+    if (!hirFunction) return createUnknown("call", loc);
     if (
-      !hirFunction ||
       this.#inlinedFunctions.size >= MAX_INLINE_DEPTH ||
       this.#inlinedFunctions.has(hirFunction)
-    )
+    ) {
+      this.#recordReachableSetters(callee, loc, walkState, new Set());
       return createUnknown("call", loc);
+    }
     this.#inlinedFunctions.add(hirFunction);
     const previousCallLoc = this.#componentCallLoc;
     if (this.#resolver === this.#componentResolver) this.#componentCallLoc = loc;
@@ -739,6 +741,23 @@ export class Interpreter {
     } finally {
       this.#inlinedFunctions.delete(hirFunction);
       this.#componentCallLoc = previousCallLoc;
+    }
+  }
+
+  #recordReachableSetters(
+    callee: FunctionValue,
+    loc: SourceLocation,
+    walkState: WalkState,
+    visited: Set<number>,
+  ): void {
+    const collector = this.#handlerEffects;
+    if (!collector || visited.has(callee.functionId)) return;
+    visited.add(callee.functionId);
+    for (const place of this.#functions.get(callee.functionId)?.context ?? []) {
+      const value = this.read(place);
+      if (value.kind === "Setter" || value.kind === "Dispatch")
+        collector.recordSetterCall(value.binding, createUnknown("call", loc), walkState);
+      if (value.kind === "Function") this.#recordReachableSetters(value, loc, walkState, visited);
     }
   }
 
