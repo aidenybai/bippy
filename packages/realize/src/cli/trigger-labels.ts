@@ -66,13 +66,41 @@ const getEventTriggerLabel = (
   return `<${element.tag.name}> ${prop.kind === "JsxAttribute" ? prop.name : "{...}"}`;
 };
 
+const MAX_NAMED_DEPENDENCIES = 2;
+
+const BEFORE_PAINT_HOOKS = new Set(["useLayoutEffect", "useInsertionEffect"]);
+
+const splitTopLevel = (text: string): string[] => {
+  const parts = [""];
+  let depth = 0;
+  for (const character of text) {
+    if ("([{".includes(character)) depth++;
+    if (")]}".includes(character)) depth--;
+    if (character === "," && depth === 0) parts.push("");
+    else parts[parts.length - 1] += character;
+  }
+  return parts.map((part) => part.trim().replace(/\s+/g, " ")).filter(Boolean);
+};
+
+const describeDependencies = (dependencies: string): string => {
+  const names = splitTopLevel(dependencies.trim().replace(/^\[|\]$/g, ""));
+  if (names.length <= MAX_NAMED_DEPENDENCIES) return `${names.join(" or ")} changes`;
+  const shown = names.slice(0, MAX_NAMED_DEPENDENCIES).join(", ");
+  return `${shown} or ${names.length - MAX_NAMED_DEPENDENCIES} more change`;
+};
+
 export const getEffectTriggerLabel = (handler: Handler): string => {
   const { trigger } = handler;
   if (trigger.kind === "Event") return `<${trigger.tag}> ${trigger.event}`;
   if (trigger.kind === "Render") return "during render";
-  return trigger.dependencies === "[]"
-    ? "on mount"
-    : `${trigger.hookKind}(${trigger.dependencies ?? "every render"})`;
+  if (trigger.hookKind === "Custom") return "hook callback";
+  const isBeforePaint = BEFORE_PAINT_HOOKS.has(trigger.hookKind);
+  if (trigger.dependencies === "[]")
+    return isBeforePaint ? "before first paint" : "after first render";
+  if (trigger.dependencies === null)
+    return isBeforePaint ? "before every paint" : "after every render";
+  const changes = describeDependencies(trigger.dependencies);
+  return isBeforePaint ? `before paint, after ${changes}` : `after ${changes}`;
 };
 
 export const collectTriggerLabels = (

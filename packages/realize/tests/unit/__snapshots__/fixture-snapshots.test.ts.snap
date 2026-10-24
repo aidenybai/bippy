@@ -203,7 +203,7 @@ flowchart TD
   n3 -->|✓| n4
   n5["{#quot;off#quot;}"]
   n3 -->|✗| n5
-  n6(["useEffect([serverChecked]) ⇒ checked = flags?.some(function) ?? false"]):::event
+  n6(["after serverChecked changes ⇒ checked = flags?.some(function) ?? false"]):::event
   n1 -.-> n6"
 `;
 
@@ -217,8 +217,8 @@ stateDiagram-v2
   S2: !checked · #lt;p#gt; {"off"}
   [*] --> S1
   [*] --> S2
-  S1 --> S2: useEffect([serverChecked])
-  S2 --> S1: useEffect([serverChecked])
+  S1 --> S2: after serverChecked changes
+  S2 --> S1: after serverChecked changes
   state "claims" as claims {
     claims1: holds checked stays within false | true L51
   }"
@@ -443,7 +443,7 @@ flowchart TD
   n6 --> n11
   n12(["onClick ⇒ count = count + 1"]):::event
   n11 -.-> n12
-  n13(["on mount ⇒ if !Unknown(rejected): items = Unknown(async) (async)"]):::event
+  n13(["after first render ⇒ if !Unknown(rejected): items = Unknown(async) (async)"]):::event
   n1 -.-> n13"
 `;
 
@@ -460,8 +460,8 @@ stateDiagram-v2
   [*] --> S1
   [*] --> S2
   [*] --> S4
-  S3 --> S4: on mount (async)
-  S4 --> S3: on mount (async)"
+  S3 --> S4: after first render (async)
+  S4 --> S3: after first render (async)"
 `;
 
 exports[`fixture analysis > Deck keeps its render tree and handlers 1`] = `
@@ -1500,7 +1500,7 @@ flowchart TD
   n3 -->|✓| n4
   n5["⚠ whenTrue(Boolean(user?.name), () =#gt; ( #lt;…"]
   n2 --> n5
-  n6(["Custom(every render) ⇒ checks user!"]):::event
+  n6(["hook callback ⇒ checks user!"]):::event
   n1 -.-> n6"
 `;
 
