@@ -15,7 +15,7 @@ describe("guarded transitions", () => {
   });
 
   it("changes nothing when no guard can hold", () => {
-    expect(getTargets("NeverTrueGuard", "t1")).toEqual([[0], [1]]);
+    expect(getTargets("NeverTrueGuard", "t1")).toEqual([[0]]);
   });
 
   it("respects an early return", () => {

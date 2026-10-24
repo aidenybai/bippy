@@ -11,6 +11,7 @@ import type {
   Domain,
   NumberRange,
   PrimitiveValue,
+  StateUpdate,
   SymbolicValue,
 } from "./types";
 import { foldBinary, foldUnary } from "./symbolic-values";
@@ -218,6 +219,32 @@ const getShortenedLengths = (
   }));
 };
 
+const readsOnlyPlace = (guard: SymbolicValue, place: BindingPlace): boolean => {
+  let readsPlace = false;
+  let readsOther = false;
+  forEachSymbolicValue(guard, (part) => {
+    if (part.kind === "Unknown") readsOther = true;
+    if (part.kind !== "Binding") return;
+    if (isSamePlace(getValuePlace(part), place)) readsPlace = true;
+    if (!isSamePlace(getValuePlace(part), place)) readsOther = true;
+  });
+  return readsPlace && !readsOther;
+};
+
+const isGuardedOff = (
+  update: StateUpdate,
+  place: BindingPlace,
+  reachable: AbstractValue[],
+  analysis: ComponentAnalysis,
+): boolean => {
+  if (!update.guards.some((guard) => readsOnlyPlace(guard, place))) return false;
+  const constraints = createEmptyConstraints(analysis, new Map());
+  constraints.possibleValues.set(place, reachable);
+  return update.guards.some(
+    (guard) => readsOnlyPlace(guard, place) && evaluateCondition(guard, constraints) === false,
+  );
+};
+
 const getReachableCases = (
   analysis: ComponentAnalysis,
   binding: Binding,
@@ -239,6 +266,7 @@ const getReachableCases = (
   for (let round = 0; round < MAX_REACHABILITY_ROUNDS; round++) {
     const previousCount = reachable.length;
     for (const update of updates) {
+      if (isGuardedOff(update, place, reachable, analysis)) continue;
       const updateCases =
         getValueCases(update.value, path, binding, null, typeCases) ??
         getToggleCases(update.value, place, reachable) ??
