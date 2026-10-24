@@ -13,7 +13,14 @@ import type { Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
 import type { RegionBranches } from "./regions";
 import { getBranchKey } from "./control-flow";
-import type { ConditionalValue, Handler, StateUpdate, SymbolicValue, Transition } from "./types";
+import type {
+  BindingPlace,
+  ConditionalValue,
+  Handler,
+  StateUpdate,
+  SymbolicValue,
+  Transition,
+} from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
@@ -58,6 +65,7 @@ const applyUpdates = (
   maybeUpdates = NO_MAYBE_UPDATES,
 ): Constraints => {
   const updated = cloneConstraints(constraints);
+  const placesByBinding = groupPlacesByBinding(constraints.possibleValues.places());
   for (const update of updates) {
     const isMaybe = maybeUpdates.has(update);
     for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
@@ -95,31 +103,45 @@ const applyUpdates = (
     }
     forgetUntrackedValues(
       updated,
-      new Set([update.binding.id, ...dependentIds]),
+      [update.binding.id, ...dependentIds],
+      placesByBinding,
       reachableConstraints,
     );
     const isUntracked = !isMaybe && !reachablePlacesByBinding.has(update.binding.id);
     const literalCases = isUntracked
       ? getFieldCases(update.value, [], update.binding, constraints)
       : null;
-    if (Array.isArray(literalCases) && literalCases.every((value) => value.kind === "Literal"))
-      updated.possibleValues.set(
-        getBindingPlace(update.binding),
-        dedupeAbstractValues(literalCases),
-      );
+    if (Array.isArray(literalCases) && literalCases.every((value) => value.kind === "Literal")) {
+      const bindingPlace = getBindingPlace(update.binding);
+      updated.possibleValues.set(bindingPlace, dedupeAbstractValues(literalCases));
+      addPlace(placesByBinding, bindingPlace);
+    }
   }
   if (updates.length > 0) forgetUnknownAssumptions(updated);
   return updated;
 };
 
+const addPlace = (placesByBinding: Map<number, BindingPlace[]>, place: BindingPlace): void => {
+  const places = placesByBinding.get(place.bindingId) ?? [];
+  places.push(place);
+  placesByBinding.set(place.bindingId, places);
+};
+
+const groupPlacesByBinding = (places: BindingPlace[]): Map<number, BindingPlace[]> => {
+  const placesByBinding = new Map<number, BindingPlace[]>();
+  for (const place of places) addPlace(placesByBinding, place);
+  return placesByBinding;
+};
+
 const forgetUntrackedValues = (
   constraints: Constraints,
-  bindingIds: Set<number>,
+  bindingIds: number[],
+  placesByBinding: Map<number, BindingPlace[]>,
   reachableConstraints: Constraints,
 ): void => {
-  for (const place of constraints.possibleValues.places())
-    if (bindingIds.has(place.bindingId) && !reachableConstraints.possibleValues.has(place))
-      constraints.possibleValues.delete(place);
+  for (const bindingId of new Set(bindingIds))
+    for (const place of placesByBinding.get(bindingId) ?? [])
+      if (!reachableConstraints.possibleValues.has(place)) constraints.possibleValues.delete(place);
 };
 
 interface GuardChoice {
