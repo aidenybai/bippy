@@ -66,6 +66,7 @@ const applyUpdates = (
 ): Constraints => {
   const updated = cloneConstraints(constraints);
   const placesByBinding = groupPlacesByBinding(constraints.possibleValues.places());
+  const updatedBindingIds = new Set<number>();
   for (const update of updates) {
     const isMaybe = maybeUpdates.has(update);
     for (const [place, reachableValues] of reachablePlacesByBinding.get(update.binding.id) ?? []) {
@@ -93,7 +94,10 @@ const applyUpdates = (
         fieldCases ? dedupeAbstractValues(fieldCases) : reachableValues,
       );
     }
-    forgetBinding(updated, update.binding.id, isLengthPreserving(update.value, update.binding));
+    const keepsRenderedLength =
+      !updatedBindingIds.has(update.binding.id) && isLengthPreserving(update.value, update.binding);
+    forgetBinding(updated, update.binding.id, keepsRenderedLength);
+    updatedBindingIds.add(update.binding.id);
     if (!isMaybe) addBounds(updated, getUpdateBounds(update.value, update.binding));
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const dependentId of dependentIds) {
