@@ -88,13 +88,32 @@ const isMountOnlyEffect = (handler: Handler): boolean =>
   handler.trigger.dependencyPlaces.length === 0 &&
   !handler.updates.some((update) => update.isAsync);
 
+const isPossibleFirstRender = (
+  alternative: Alternative,
+  firstRender: FirstRenderOutcomes,
+): boolean =>
+  [...alternative.branches].every((branch) => {
+    const separator = branch.lastIndexOf(":");
+    const outcome = firstRender.outcomesByBranchKey.get(branch.slice(0, separator));
+    return (
+      outcome === undefined || outcome === null || String(outcome) === branch.slice(separator + 1)
+    );
+  });
+
 const createRegion = (
   regionBranches: RegionBranches,
   firstStateIndex: number,
   alternatives: Alternative[],
   isTruncated: boolean,
+  firstRender: FirstRenderOutcomes,
 ): Region => {
   const firstRenderIndex = alternatives.findIndex(isFirstRender);
+  const firstRenderIndices =
+    firstRenderIndex === -1
+      ? alternatives.flatMap((alternative, index) =>
+          isPossibleFirstRender(alternative, firstRender) ? [index] : [],
+        )
+      : [firstRenderIndex];
   return {
     placeNames: regionBranches.placeNames,
     bindingIds: [...regionBranches.bindingIds],
@@ -102,6 +121,7 @@ const createRegion = (
       (_alternative, regionStateIndex) => firstStateIndex + regionStateIndex,
     ),
     firstRenderState: firstRenderIndex === -1 ? null : firstStateIndex + firstRenderIndex,
+    possibleFirstRenderStates: firstRenderIndices.map((index) => firstStateIndex + index),
     isTruncated,
   };
 };
@@ -180,7 +200,13 @@ const enumerateRegion = (
     states,
     constraints,
     renderedHandlerIds,
-    region: createRegion(regionBranches, firstStateIndex, alternatives, isTruncated),
+    region: createRegion(
+      regionBranches,
+      firstStateIndex,
+      alternatives,
+      isTruncated,
+      context.firstRender,
+    ),
   };
 };
 
