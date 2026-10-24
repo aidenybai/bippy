@@ -14,6 +14,7 @@ import type {
   SymbolicValue,
 } from "./types";
 import { foldBinary, foldUnary } from "./symbolic-values";
+import { applyPureFunction } from "./utils/pure-functions";
 import { appendToGroup } from "./utils/append-to-group";
 import { applyStringMethod } from "./utils/string-methods";
 import {
@@ -81,6 +82,19 @@ const substitutePlace = (
     case "Binding": {
       if (isSamePlace(getValuePlace(value), place)) return { kind: "Primitive", value: current };
       const { derived } = value.binding;
+      if (value.path.length === 0 && derived !== null && "operands" in derived) {
+        const operands = derived.operands.map((operand) =>
+          substitutePlace(operand, place, current),
+        );
+        const primitives = operands.flatMap((operand) =>
+          operand?.kind === "Primitive" ? [operand.value] : [],
+        );
+        const result =
+          primitives.length === operands.length
+            ? applyPureFunction(derived.callee, primitives)
+            : null;
+        return result === null ? null : { kind: "Primitive", value: result };
+      }
       const isDerivedFromPlace =
         value.path.length === 0 &&
         derived !== null &&
@@ -114,7 +128,9 @@ export const getSelfCases = (
 ): AbstractValue[] | null => {
   const results: AbstractValue[] = [];
   for (const currentValue of currentValues ?? []) {
-    if (currentValue.kind !== "Literal" || typeof currentValue.value !== "string") return null;
+    if (currentValue.kind !== "Literal") return null;
+    if (typeof currentValue.value !== "string" && typeof currentValue.value !== "number")
+      return null;
     const result = substitutePlace(value, place, currentValue.value);
     if (result?.kind !== "Primitive") return null;
     results.push({ kind: "Literal", value: result.value });
@@ -232,11 +248,12 @@ const getReachableCases = (
       if (updateCases === "unchanged") continue;
       if (!updateCases) return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
       reachable = dedupeAbstractValues([...reachable, ...updateCases]);
-      if (reachable.length > MAX_REACHABLE_CASES) return typeCases;
+      if (reachable.length > MAX_REACHABLE_CASES)
+        return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
     }
     if (reachable.length === previousCount) return reachable;
   }
-  return typeCases;
+  return getReachableIntegers(binding, analysis.handlers) ?? typeCases;
 };
 
 const getLengthLimitBounds = (binding: Binding): Bound[] => {
