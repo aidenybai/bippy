@@ -1682,8 +1682,11 @@ export class Interpreter {
     );
     if (found) return found;
     if (isIteratingLiteral) {
-      this.iteration.callForEachItem(callback, receiver, methodCall.loc, walkState);
-      return createUnknown("call", methodCall.loc);
+      const results = this.iteration.callForEachItem(callback, receiver, methodCall.loc, walkState);
+      return (
+        this.iteration.getLiteralResult(methodName, receiver, results) ??
+        createUnknown("call", methodCall.loc)
+      );
     }
     if (RENDERED_ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
       return this.iteration.evaluateArrayMap(
