@@ -11,7 +11,51 @@ const countBy = (arcs: Pick<PlacedArc, "edge">[], side: "from" | "to"): Map<stri
   return counts;
 };
 
-const assignSlots = (arcs: Omit<PlacedArc, "fromSlot" | "toSlot">[]): PlacedArc[] => {
+const LANE_X_REACH = 48;
+
+const getSpan = (arc: Pick<PlacedArc, "from" | "to">): [number, number] => [
+  Math.min(arc.from.y, arc.to.y),
+  Math.max(arc.from.y + arc.from.height, arc.to.y + arc.to.height),
+];
+
+const getMidX = (arc: Pick<PlacedArc, "from" | "to">): number =>
+  (arc.from.x + arc.from.width / 2 + arc.to.x + arc.to.width / 2) / 2;
+
+const isCrowding = (
+  arc: Pick<PlacedArc, "from" | "to">,
+  other: Pick<PlacedArc, "from" | "to">,
+): boolean => {
+  const [top, bottom] = getSpan(arc);
+  const [otherTop, otherBottom] = getSpan(other);
+  return (
+    top < otherBottom && otherTop < bottom && Math.abs(getMidX(arc) - getMidX(other)) < LANE_X_REACH
+  );
+};
+
+const assignLanes = (arcs: Omit<PlacedArc, "lane">[]): PlacedArc[] => {
+  const placed: PlacedArc[] = [];
+  const byLength = [...arcs].sort((left, right) => {
+    const [leftTop, leftBottom] = getSpan(left);
+    const [rightTop, rightBottom] = getSpan(right);
+    return rightBottom - rightTop - (leftBottom - leftTop);
+  });
+  for (const arc of byLength) {
+    const taken = new Set(
+      placed.filter((other) => isCrowding(arc, other)).map((other) => other.lane),
+    );
+    const lane = Array.from({ length: taken.size + 1 }, (_unused, index) => index).find(
+      (candidate) => !taken.has(candidate),
+    );
+    placed.push({ ...arc, lane: lane ?? 0 });
+  }
+  return arcs.map(
+    (arc) => placed.find((candidate) => candidate.edge === arc.edge) ?? { ...arc, lane: 0 },
+  );
+};
+
+const assignSlots = (
+  arcs: Omit<PlacedArc, "fromSlot" | "toSlot" | "lane">[],
+): Omit<PlacedArc, "lane">[] => {
   const fromCounts = countBy(arcs, "from");
   const toCounts = countBy(arcs, "to");
   const fromSeen = new Map<string, number>();
@@ -47,7 +91,7 @@ export const placeArcs = (
       const color = colorByNodeId.get(edge.to) ?? colorByNodeId.get(edge.from);
       return from && to && color && from.y !== to.y ? [{ edge, from, to, color }] : [];
     });
-  return assignSlots(arcs);
+  return assignLanes(assignSlots(arcs));
 };
 
 export const isRestingArc = (edge: GraphEdge): boolean => RESTING_ARC_KINDS.has(edge.kind);

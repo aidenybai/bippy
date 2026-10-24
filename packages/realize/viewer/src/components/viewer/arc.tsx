@@ -4,9 +4,12 @@ import type { GraphEdge } from "@/model";
 import { useHasHover, useIsCausalEdge, useIsInactive } from "@/store/hover";
 
 const SIDE_GAP = 24;
+const SIDE_REACH = 160;
+const MIN_BOW = 10;
 const SIDE_BULGE = 28;
 const STEM = 8;
 const MAX_BOW = 60;
+const LANE_SWING = 14;
 
 export interface PlacedArc {
   edge: GraphEdge;
@@ -14,6 +17,7 @@ export interface PlacedArc {
   to: Box;
   fromSlot: number;
   toSlot: number;
+  lane: number;
   color: string;
 }
 
@@ -24,11 +28,14 @@ interface Point {
 
 const getSlotX = (box: Box, slot: number): number => box.x + box.width * slot;
 
-const getSidePath = (from: Box, to: Box): string => {
+const getLaneSwing = (lane: number): number =>
+  lane === 0 ? 0 : (lane % 2 === 1 ? 1 : -1) * Math.ceil(lane / 2) * LANE_SWING;
+
+const getSidePath = ({ from, to, lane }: PlacedArc): string => {
   const start: Point = { x: from.x + from.width + 2, y: from.y + from.height / 2 };
   const tip: Point = { x: to.x + to.width + 6, y: to.y + to.height / 2 };
   const base: Point = { x: tip.x + STEM, y: tip.y };
-  const bulge = Math.max(start.x, base.x) + SIDE_BULGE;
+  const bulge = Math.max(start.x, base.x) + SIDE_BULGE + lane * LANE_SWING;
   return `M ${start.x} ${start.y} C ${bulge} ${start.y}, ${bulge} ${base.y}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`;
 };
 
@@ -43,8 +50,9 @@ const getVerticalPath = (arc: PlacedArc): string => {
     y: direction === 1 ? arc.to.y : arc.to.y + arc.to.height,
   };
   const base: Point = { x: tip.x, y: tip.y - STEM * direction };
-  const bow = Math.min(MAX_BOW, Math.abs(base.y - start.y) / 2) * direction;
-  return `M ${start.x} ${start.y} C ${start.x} ${start.y + bow}, ${base.x} ${base.y - bow}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`;
+  const bow = Math.max(MIN_BOW, Math.min(MAX_BOW, Math.abs(base.y - start.y) / 2)) * direction;
+  const swing = getLaneSwing(arc.lane);
+  return `M ${start.x} ${start.y} C ${start.x + swing} ${start.y + bow}, ${base.x + swing} ${base.y - bow}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`;
 };
 
 const getArcPath = (arc: PlacedArc): string => {
@@ -52,7 +60,8 @@ const getArcPath = (arc: PlacedArc): string => {
     arc.to.y > arc.from.y
       ? arc.to.y - (arc.from.y + arc.from.height)
       : arc.from.y - (arc.to.y + arc.to.height);
-  return gap < SIDE_GAP ? getSidePath(arc.from, arc.to) : getVerticalPath(arc);
+  const reach = Math.abs(arc.from.x + arc.from.width / 2 - (arc.to.x + arc.to.width / 2));
+  return gap < SIDE_GAP && reach < SIDE_REACH ? getSidePath(arc) : getVerticalPath(arc);
 };
 
 export const Arc = (arc: PlacedArc) => {
