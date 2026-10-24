@@ -151,9 +151,20 @@ const formatUnionMemberValues = memoizeByIdentity(
     formatPlaceEntries(unionMemberValues, (members) => members.map(formatAbstractValues).join("/")),
 );
 
-const serializeConstraints = (constraints: Constraints): string =>
+const formatRelevantValues = (
+  possibleValues: PlaceMap<AbstractValue[]>,
+  bindingIds: ReadonlySet<number>,
+): string =>
+  Int32Array.from(
+    [...possibleValues].filter(([place]) => bindingIds.has(place.bindingId)),
+    getPossibleValueId,
+  )
+    .sort()
+    .join(",");
+
+const serializeConstraints = (constraints: Constraints, possibleValuesText: string): string =>
   [
-    formatPossibleValues(constraints.possibleValues),
+    possibleValuesText,
     [...constraints.assumptions].map(formatAssumption).sort().join(";"),
     formatBounds(constraints.bounds),
     formatInvariants(constraints.invariants),
@@ -165,7 +176,22 @@ const serializeConstraints = (constraints: Constraints): string =>
   ].join("\n");
 
 export const getConstraintsKey = (constraints: Constraints): string =>
-  createHash("sha256").update(serializeConstraints(constraints)).digest("base64");
+  createHash("sha256")
+    .update(serializeConstraints(constraints, formatPossibleValues(constraints.possibleValues)))
+    .digest("base64");
+
+export const getRelevantConstraintsKey = (
+  constraints: Constraints,
+  bindingIds: ReadonlySet<number>,
+): string =>
+  createHash("sha256")
+    .update(
+      serializeConstraints(
+        constraints,
+        formatRelevantValues(constraints.possibleValues, bindingIds),
+      ),
+    )
+    .digest("base64");
 
 const collectPlaces = (value: SymbolicValue): BindingPlace[] => {
   const places: BindingPlace[] = [];
