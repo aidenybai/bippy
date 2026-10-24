@@ -176,6 +176,32 @@ export const createModuleVariableLoader = (ast: types.File): ModuleVariableLoade
   return (variableName) => variables.get(variableName) ?? null;
 };
 
+const HOOK_INITIAL_ARGUMENTS = new Map([
+  ["useState", 0],
+  ["useReducer", 1],
+]);
+
+const isHookInitialArgument = (path: NodePath): boolean => {
+  const call = path.parentPath?.node;
+  if (!types.isCallExpression(call)) return false;
+  const callee = types.isMemberExpression(call.callee) ? call.callee.property : call.callee;
+  return (
+    types.isIdentifier(callee) &&
+    HOOK_INITIAL_ARGUMENTS.get(callee.name) ===
+      call.arguments.indexOf(path.node as types.Expression)
+  );
+};
+
+const isStateValueReference = (path: NodePath): boolean => {
+  const { parentPath } = path;
+  if (!parentPath) return false;
+  if (parentPath.isSpreadElement() || parentPath.isReturnStatement()) return true;
+  if (parentPath.isArrowFunctionExpression()) return parentPath.node.body === path.node;
+  if (parentPath.isConditionalExpression())
+    return parentPath.node.test !== path.node && isStateValueReference(parentPath);
+  return isHookInitialArgument(path);
+};
+
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
   const constants = new Map<string, SymbolicValue>();
   traverse(ast, {
@@ -198,7 +224,10 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
         (!isExported &&
           binding !== undefined &&
           binding.constantViolations.length === 0 &&
-          binding.referencePaths.every((reference) => isReadOfPrimitive(reference, [value], [])));
+          binding.referencePaths.every(
+            (reference) =>
+              isStateValueReference(reference) || isReadOfPrimitive(reference, [value], []),
+          ));
       if (isUnchanged) constants.set(path.node.id.name, value);
     },
   });
