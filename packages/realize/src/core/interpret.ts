@@ -1618,6 +1618,37 @@ export class Interpreter {
     return argumentValues;
   }
 
+  #getMembershipTest(
+    receiver: SymbolicValue,
+    [candidate]: SymbolicValue[],
+    loc: SourceLocation,
+    instructionId: InstructionId,
+  ): SymbolicValue | null {
+    if (!candidate || receiver.kind !== "ArrayExpression" || receiver.spreads.length > 0)
+      return null;
+    const isLiteralList = receiver.elements.every(
+      (element) => element.kind === "Primitive" && !Number.isNaN(element.value),
+    );
+    if (!isLiteralList) return null;
+    return receiver.elements.reduceRight<SymbolicValue>(
+      (rest, element) => {
+        const isElement = foldBinary("===", candidate, element);
+        return rest.kind === "Primitive" && rest.value === false
+          ? isElement
+          : {
+              kind: "Conditional",
+              test: isElement,
+              testKind: "truthy",
+              consequent: isElement,
+              alternate: rest,
+              branch: this.createBranch(instructionId, loc, "none"),
+              guardKeys: [],
+            };
+      },
+      { kind: "Primitive", value: false },
+    );
+  }
+
   #evaluateMethodCall(
     methodCall: InstructionValueOfKind<"MethodCall">,
     instructionId: InstructionId,
@@ -1715,6 +1746,11 @@ export class Interpreter {
       argumentPlaces,
       loc: methodCall.loc,
     };
+    const membership =
+      methodName === "includes" && argumentValues.length === 1
+        ? this.#getMembershipTest(receiver, argumentValues, methodCall.loc, instructionId)
+        : null;
+    if (membership) return membership;
     const isMath = receiver.kind === "Global" && receiver.name === "Math";
     const range = isMath ? getClampRange(methodName, argumentValues) : null;
     const derived = isMath

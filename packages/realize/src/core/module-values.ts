@@ -115,12 +115,32 @@ const isWriteTarget = (path: NodePath): boolean => {
   );
 };
 
+const LIST_READS = new Set(["includes", "indexOf"]);
+
+const isLiteralList = (value: SymbolicValue): boolean =>
+  value.kind === "ArrayExpression" &&
+  value.spreads.length === 0 &&
+  value.elements.every(isPrimitive);
+
+const isListRead = (path: NodePath, values: SymbolicValue[]): boolean => {
+  const member = path.parentPath?.node;
+  const isMethodRead =
+    types.isMemberExpression(member) &&
+    member.object === path.node &&
+    types.isIdentifier(member.property) &&
+    !member.computed &&
+    LIST_READS.has(member.property.name) &&
+    (path.parentPath?.parentPath?.isCallExpression({ callee: member }) ?? false);
+  return isMethodRead && values.every(isLiteralList);
+};
+
 const isReadOfPrimitive = (
   path: NodePath,
   values: SymbolicValue[],
   receiverValues: SymbolicValue[],
 ): boolean => {
   const { parentPath } = path;
+  if (isListRead(path, values)) return true;
   const member = parentPath?.node;
   const isMemberObject =
     (types.isMemberExpression(member) || types.isOptionalMemberExpression(member)) &&
