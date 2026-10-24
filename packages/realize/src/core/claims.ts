@@ -261,14 +261,24 @@ const isLiteralValue = (value: SymbolicValue): boolean =>
 
 const STAYS_WITHIN: Check = { outcome: true, witness: null };
 
+const isWithinCases = (
+  cases: AbstractValue[],
+  value: SymbolicValue,
+  constraints: Constraints,
+): boolean => {
+  if (isBooleanDomain(cases) && isBooleanExpression(value)) return true;
+  const values = getValueCases(value, constraints);
+  return values !== null && values.every((candidate) => classify(candidate, cases) === "in");
+};
+
 const checkUpdate = (
   cases: AbstractValue[],
   update: StateUpdate,
   constraints: Constraints,
 ): Check | null => {
+  if (isWithinCases(cases, update.value, constraints)) return STAYS_WITHIN;
   const narrowed = assumeGuards(update.guards, constraints);
   if (!narrowed) return null;
-  if (isBooleanDomain(cases) && isBooleanExpression(update.value)) return STAYS_WITHIN;
   const values = getValueCases(update.value, narrowed);
   if (!values)
     return hasCastPart(update.value)
