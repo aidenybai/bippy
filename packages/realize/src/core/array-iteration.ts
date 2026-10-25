@@ -31,6 +31,12 @@ export const ITERATION_METHODS = new Set([
 
 const FIRST_VALUE_METHODS = new Set(["every", "some", "find", "findIndex", "filter"]);
 
+const MAX_OPEN_FILTER_OUTCOMES = 4;
+
+const TRUE_VALUE: SymbolicValue = { kind: "Primitive", value: true };
+
+const FALSE_VALUE: SymbolicValue = { kind: "Primitive", value: false };
+
 const DECLARED_NAME_PATTERN = /^(?:const|let|var)\s+([A-Za-z_$][\w$]*)$/;
 
 const getDeclaredNameLoc = (
@@ -125,6 +131,7 @@ export class ArrayIteration {
     receiver: SymbolicValue,
     callback: SymbolicValue | undefined,
     loc: SourceLocation,
+    instructionId: InstructionId,
     walkState: WalkState,
   ): SymbolicValue | null {
     const initial =
@@ -132,33 +139,68 @@ export class ArrayIteration {
     const isLiteralArray = initial?.kind === "ArrayExpression" && initial.spreads.length === 0;
     if (!isLiteralArray || callback?.kind !== "Function" || !FIRST_VALUE_METHODS.has(methodName))
       return null;
-    const outcomes: boolean[] = [];
-    for (const [index, element] of initial.elements.entries()) {
-      const result = this.#interpreter.callFunction(
+    const { elements } = initial;
+    const outcomes = elements.map((element, index) =>
+      this.#interpreter.callFunction(
         callback,
         [element, { kind: "Primitive", value: index }],
         loc,
         walkState,
+      ),
+    );
+    const select = (
+      outcome: SymbolicValue,
+      consequent: SymbolicValue,
+      alternate: SymbolicValue,
+    ): SymbolicValue => {
+      const truthiness = getKnownTruthiness(outcome);
+      if (truthiness !== null) return truthiness ? consequent : alternate;
+      return {
+        kind: "Conditional",
+        test: outcome,
+        testKind: "truthy",
+        consequent,
+        alternate,
+        branch: this.#interpreter.createBranch(instructionId, loc, "none"),
+        guardKeys: [],
+      };
+    };
+    const chain = (
+      consequentAt: (index: number) => SymbolicValue,
+      isFirstMatch: boolean,
+      fallback: SymbolicValue,
+    ): SymbolicValue =>
+      outcomes.reduceRight<SymbolicValue>(
+        (rest, outcome, index) =>
+          isFirstMatch
+            ? select(outcome, consequentAt(index), rest)
+            : select(outcome, rest, consequentAt(index)),
+        fallback,
       );
-      if (result.kind !== "Primitive") return null;
-      outcomes.push(Boolean(result.value));
-    }
-    const firstIndex = outcomes.indexOf(true);
     switch (methodName) {
       case "every":
-        return { kind: "Primitive", value: outcomes.every(Boolean) };
+        return chain(() => FALSE_VALUE, false, TRUE_VALUE);
       case "some":
-        return { kind: "Primitive", value: firstIndex !== -1 };
+        return chain(() => TRUE_VALUE, true, FALSE_VALUE);
       case "findIndex":
-        return { kind: "Primitive", value: firstIndex };
+        return chain((index) => ({ kind: "Primitive", value: index }), true, {
+          kind: "Primitive",
+          value: -1,
+        });
       case "find":
-        return initial.elements[firstIndex] ?? UNDEFINED_VALUE;
-      default:
-        return {
-          kind: "ArrayExpression",
-          elements: initial.elements.filter((_element, index) => outcomes[index]),
-          spreads: [],
+        return chain((index) => elements[index] ?? UNDEFINED_VALUE, true, UNDEFINED_VALUE);
+      default: {
+        const openCount = outcomes.filter((outcome) => getKnownTruthiness(outcome) === null).length;
+        if (openCount > MAX_OPEN_FILTER_OUTCOMES) return null;
+        const keep = (index: number, kept: SymbolicValue[]): SymbolicValue => {
+          const outcome = outcomes[index];
+          const element = elements[index];
+          if (outcome === undefined || element === undefined)
+            return { kind: "ArrayExpression", elements: kept, spreads: [] };
+          return select(outcome, keep(index + 1, [...kept, element]), keep(index + 1, kept));
         };
+        return keep(0, []);
+      }
     }
   }
 

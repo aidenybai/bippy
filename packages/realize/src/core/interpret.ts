@@ -1936,6 +1936,7 @@ export class Interpreter {
       receiver,
       callback,
       methodCall.loc,
+      instructionId,
       walkState,
     );
     if (firstValue) return this.#createCallResult(callSite, { initial: firstValue });
