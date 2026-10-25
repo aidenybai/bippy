@@ -1,4 +1,4 @@
-import { GeneratedSource } from "../react-compiler/HIR/HIR";
+import { GeneratedSource, makeInstructionId } from "../react-compiler/HIR/HIR";
 import type { HIRFunction, SourceLocation } from "../react-compiler/HIR/HIR";
 import type { Interpreter } from "./interpret";
 import type { CollectedEffects } from "./effect-collector";
@@ -128,6 +128,30 @@ const getSpreadHandlers = (
     }),
   );
   return properties.length > 0 ? { kind: "ObjectExpression", properties, spreads: [] } : null;
+};
+
+const chooseSpreadHandler = (
+  handlers: ObjectExpressionValue,
+  loc: SourceLocation,
+  file: string,
+): SymbolicValue => {
+  const [last, ...earlier] = [...handlers.properties].reverse();
+  if (!last) return UNDEFINED_VALUE;
+  return earlier.reduce<SymbolicValue>(
+    (alternate, property, caseIndex) => ({
+      kind: "Conditional",
+      test: createUnknown(`spread-event ${property.key}`, loc, {
+        kind: "Name",
+        name: property.key,
+      }),
+      testKind: "truthy",
+      consequent: property.value,
+      alternate,
+      branch: { terminalId: makeInstructionId(0), probe: "none", loc, file, caseIndex },
+      guardKeys: [],
+    }),
+    last.value,
+  );
 };
 
 const getHandlerKey = (value: SymbolicValue): string | null => {
@@ -435,7 +459,7 @@ class HandlerCollector {
     if (spreadHandlers && spreadHandlerKey)
       this.#plan(spreadHandlerKey, {
         trigger,
-        callback: spreadHandlers,
+        callback: chooseSpreadHandler(spreadHandlers, element.loc, prop.file),
         callbackArguments: [EVENT_ARGUMENT],
         loc: element.loc,
         guards,

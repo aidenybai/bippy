@@ -24,3 +24,15 @@ describe("spreading props chosen by a condition", () => {
     expect(getGuardedUpdates("SpreadOneArm", "isOn")).toEqual([["count", ["isOn"]]]);
   });
 });
+
+describe("spreading props with several event handlers", () => {
+  const project = analyzeFixture("conformance-repros", "spread-handler-events");
+
+  it("runs one handler per event instead of all of them in a row", () => {
+    const { report } = getComponent(project, "ConfirmDelete");
+    expect(report.states.map((state) => state.conditions)).toEqual([["isArmed"], ["!isArmed"]]);
+    expect(
+      report.states.map((state) => state.transitions.map((transition) => transition.targets)),
+    ).toEqual([[[0, 1]], [[0, 1]]]);
+  });
+});
