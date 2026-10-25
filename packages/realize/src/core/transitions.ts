@@ -9,6 +9,7 @@ import {
   forgetBinding,
   forgetUnknownAssumptions,
   getRelevantConstraintsKey,
+  projectRelevantConstraints,
 } from "./constraints";
 import type { Constraints } from "./constraints";
 import { getFieldCases } from "./field-cases";
@@ -396,11 +397,16 @@ const getTargetIndices = (
     : context.candidateIndicesByConstraints;
   const cachedIndices = cache.get(constraintsKey);
   if (cachedIndices) return cachedIndices;
-  const candidates = getCandidateIndices(afterHandler, context);
+  const relevant = projectRelevantConstraints(
+    afterHandler,
+    context.relevantBindingIds,
+    context.addBindingInputs,
+  );
+  const candidates = getCandidateIndices(relevant, context);
   const targetIndices = isReplayed
     ? candidates.filter((index) => {
         const target = context.stateBranches[index];
-        return target !== undefined && isReplayedTarget(afterHandler, target, context);
+        return target !== undefined && isReplayedTarget(relevant, target, context);
       })
     : candidates;
   cache.set(constraintsKey, targetIndices);
