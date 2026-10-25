@@ -352,6 +352,15 @@ const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
 
 const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
+const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
+
+const ARRAY_INDEX_PATTERN = /^\d+$/;
+
+const REF_CONTAINER_WRITES = new Set(["push", "unshift", "add", "set"]);
+
+const isRefContents = (value: BindingValue): boolean =>
+  value.binding.kind === "ref" && value.path[0] === "current";
+
 const getSourceItems = (source: SymbolicValue | null, loc: SourceLocation): SymbolicValue[] => {
   if (source === null) return [];
   if (source.kind !== "ArrayExpression") return [createUnknown("item", loc)];
@@ -409,7 +418,7 @@ export class Interpreter {
   #currentFunction: HIRFunction | null = null;
   readonly #inlinedFunctions = new Set<HIRFunction>();
   readonly #mountClosureIds = new Set<number>();
-  readonly #storedFunctions = new Map<string, SymbolicValue[]>();
+  readonly #storedFunctions = new PlaceMap<SymbolicValue[]>();
   #storedFunctionCount = 0;
   readonly #closureMutatedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
   readonly #storedLocals = new WeakMap<HIRFunction, Map<IdentifierId, Place>>();
@@ -556,6 +565,7 @@ export class Interpreter {
       getDeclarationLocation(local),
       { hookKind: "useMemo", initial: memoized },
     );
+    this.addStoredFunctions(createBindingValue(binding), memoized);
     this.write(finish.decl, createBindingValue(binding));
   }
 
@@ -806,16 +816,52 @@ export class Interpreter {
   }
 
   addStoredFunctions(place: BindingValue, value: SymbolicValue, isMountClosure = true): void {
-    const key = getValueKey(place);
-    const known = new Set((this.#storedFunctions.get(key) ?? []).map(getValueKey));
+    if (value.kind === "Conditional") {
+      this.addStoredFunctions(place, value.consequent, isMountClosure);
+      this.addStoredFunctions(place, value.alternate, isMountClosure);
+      return;
+    }
+    if (value.kind !== "ObjectExpression") {
+      this.#addStoredValues(place, value, isMountClosure);
+      return;
+    }
+    for (const property of value.properties)
+      this.addStoredFunctions(
+        { ...place, path: [...place.path, property.key] },
+        property.value,
+        isMountClosure,
+      );
+    for (const spread of value.spreads) this.#addStoredValues(place, spread, isMountClosure);
+  }
+
+  #addStoredValues(place: BindingValue, value: SymbolicValue, isMountClosure: boolean): void {
+    const storedPlace = getValuePlace(place);
+    const current = this.#storedFunctions.get(storedPlace) ?? [];
+    const known = new Set(current.map(getValueKey));
     const added = getPassedCallbacks([value]).filter(
       (callback) => !known.has(getValueKey(callback)),
     );
     if (added.length === 0) return;
-    this.#storedFunctions.set(key, [...(this.#storedFunctions.get(key) ?? []), ...added]);
+    this.#storedFunctions.set(storedPlace, [...current, ...added]);
     this.#storedFunctionCount += added.length;
     for (const stored of added)
       if (isMountClosure && stored.kind === "Function") this.addMountClosure(stored);
+  }
+
+  getStoredFunctions(place: BindingValue): SymbolicValue[] {
+    const prefix = getValuePlace(place);
+    const stored = [...this.#storedFunctions].flatMap(([storedPlace, values]) =>
+      isPlacePrefix(prefix, storedPlace) ? values : [],
+    );
+    return [...new Map(stored.map((value) => [getValueKey(value), value])).values()];
+  }
+
+  #getCalledFunctions(place: BindingValue): SymbolicValue[] {
+    const called = this.#storedFunctions.get(getValuePlace(place)) ?? [];
+    const lastSegment = place.path.at(-1);
+    if (lastSegment === undefined || !ARRAY_INDEX_PATTERN.test(lastSegment)) return called;
+    const array = getValuePlace({ ...place, path: place.path.slice(0, -1) });
+    return [...called, ...(this.#storedFunctions.get(array) ?? [])];
   }
 
   #callStoredFunctions(
@@ -825,7 +871,7 @@ export class Interpreter {
   ): void {
     const key = getValueKey(place);
     let skipped: SymbolicValue[] = [];
-    for (const [index, stored] of (this.#storedFunctions.get(key) ?? []).entries()) {
+    for (const [index, stored] of this.#getCalledFunctions(place).entries()) {
       const isChosen = createUnknown(`stored-call:${key}:${index}`, place.binding.loc);
       const guards = [...walkState.guards, ...skipped, isChosen];
       this.#callStoredValue(stored, argumentValues, place.binding.loc, { ...walkState, guards });
@@ -1402,7 +1448,7 @@ export class Interpreter {
     const local = storedLocals.get(decl.identifier.id) ?? decl;
     const inputPlaces = new PlaceMap<true>();
     this.collectInputPlaces(memoized, inputPlaces);
-    return createBindingValue(
+    const memo = createBindingValue(
       this.createBinding(
         getIdentifierName(local) ?? "memo",
         "call",
@@ -1414,6 +1460,8 @@ export class Interpreter {
         },
       ),
     );
+    this.addStoredFunctions(memo, memoized);
+    return memo;
   }
 
   #captureStaleReads(
@@ -1665,6 +1713,45 @@ export class Interpreter {
   }
 
   #evaluateMethodCall(
+    methodCall: InstructionValueOfKind<"MethodCall">,
+    instructionId: InstructionId,
+    walkState: WalkState,
+  ): SymbolicValue {
+    const receiver = this.read(methodCall.receiver);
+    if (!this.#handlerEffects || receiver.kind !== "Binding")
+      return this.#evaluateMethodResult(methodCall, instructionId, walkState);
+    const methodName = this.getPropertyName(methodCall.property) ?? "";
+    const argumentValues = methodCall.args.map((argument) => this.read(getPlaceOrSpread(argument)));
+    if (isRefContents(receiver) && REF_CONTAINER_WRITES.has(methodName))
+      for (const argument of argumentValues) this.addStoredFunctions(receiver, argument);
+    const storedFunctions = this.getStoredFunctions(receiver);
+    const [callback] = argumentValues;
+    if (ITERATION_METHODS.has(methodName) && callback?.kind === "Function")
+      this.#callStoredItems(callback, storedFunctions, receiver, methodCall.loc, walkState);
+    const result = this.#evaluateMethodResult(methodCall, instructionId, walkState);
+    if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
+      for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
+    return result;
+  }
+
+  #callStoredItems(
+    callback: FunctionValue,
+    storedFunctions: SymbolicValue[],
+    receiver: BindingValue,
+    loc: SourceLocation,
+    walkState: WalkState,
+  ): void {
+    const key = getValueKey(receiver);
+    for (const [index, stored] of storedFunctions.entries()) {
+      const isHeld = createUnknown(`stored-item:${key}:${index}`, loc);
+      this.callFunction(callback, [stored, createUnknown("item-index", loc), receiver], loc, {
+        ...walkState,
+        guards: [...walkState.guards, isHeld],
+      });
+    }
+  }
+
+  #evaluateMethodResult(
     methodCall: InstructionValueOfKind<"MethodCall">,
     instructionId: InstructionId,
     walkState: WalkState,

@@ -285,8 +285,12 @@ export class ArrayIteration {
       inputPlaces: inputPlaces.places(),
     });
     this.#interpreter.addItemSource(binding, collection);
-    this.#interpreter.addStoredFunctions(createBindingValue(binding), collection, false);
-    return createBindingValue(binding);
+    const item = createBindingValue(binding);
+    this.#interpreter.addStoredFunctions(item, collection, false);
+    if (collection.kind === "Binding")
+      for (const stored of this.#interpreter.getStoredFunctions(collection))
+        this.#interpreter.addStoredFunctions(item, stored, false);
+    return item;
   }
 
   evaluateLoadedArrayMap(
