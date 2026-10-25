@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { create } from "zustand";
 import { getCausalNodeIds, getComponentName, type GraphIndex } from "@/lib/graph";
 
@@ -71,3 +72,13 @@ export const useIsCausalEdge = (from: string, to: string): boolean =>
   );
 
 export const useHasHover = (): boolean => useHoverStore((state) => state.causalNodeIds !== null);
+
+export const useFocusRequest = (onFocus: (name: string) => void): void => {
+  const focusRequest = useHoverStore((state) => state.focusRequest);
+  const handledRequest = useRef(focusRequest);
+  useEffect(() => {
+    if (focusRequest === null || focusRequest === handledRequest.current) return;
+    handledRequest.current = focusRequest;
+    onFocus(focusRequest.name);
+  }, [focusRequest, onFocus]);
+};

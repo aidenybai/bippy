@@ -93,8 +93,11 @@ const useScrollActiveIntoView = (
   activeName: string | null,
 ): { onMouseEnter: () => void; onMouseLeave: () => void } => {
   const isPointerInside = useRef(false);
+  const handledName = useRef(activeName);
   useEffect(() => {
     const list = listRef.current;
+    if (activeName === handledName.current) return;
+    handledName.current = activeName;
     if (activeName === null || isPointerInside.current || !list) return;
     const panel = list.querySelector(`[data-component="${CSS.escape(activeName)}"]`);
     if (panel && !isTopVisible(panel, list))

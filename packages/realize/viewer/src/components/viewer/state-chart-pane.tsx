@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Code } from "@/components/ui/code";
 import { getSourceLine } from "@/lib/state-chart";
 import type { ViewComponent, ViewFile } from "@/model";
-import { useHoverStore } from "@/store/hover";
+import { useFocusRequest, useHoverStore } from "@/store/hover";
 import { useViewer } from "./context";
 import { DecisionTree } from "./decision-tree";
 
@@ -41,13 +41,11 @@ const ComponentStateChart = ({ view, component }: { view: ViewFile; component: V
 export const StateChartPane = () => {
   const { view } = useViewer();
   const paneRef = useRef<HTMLDivElement>(null);
-  const focusRequest = useHoverStore((state) => state.focusRequest);
-  useEffect(() => {
-    if (focusRequest === null) return;
+  useFocusRequest((name) =>
     paneRef.current
-      ?.querySelector(`[data-component="${CSS.escape(focusRequest.name)}"]`)
-      ?.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, [focusRequest]);
+      ?.querySelector(`[data-component="${CSS.escape(name)}"]`)
+      ?.scrollIntoView({ block: "start", behavior: "smooth" }),
+  );
   return (
     <div
       ref={paneRef}

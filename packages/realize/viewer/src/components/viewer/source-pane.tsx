@@ -1,7 +1,6 @@
 import {
   Suspense,
   useCallback,
-  useEffect,
   useId,
   useLayoutEffect,
   useMemo,
@@ -27,7 +26,7 @@ import {
 } from "@/lib/positions";
 import { getFileTitle } from "@/lib/source";
 import type { GraphNode } from "@/model";
-import { useHasHover, useHoverStore } from "@/store/hover";
+import { useFocusRequest, useHasHover, useHoverStore } from "@/store/hover";
 import { Arc } from "./arc";
 import { useViewer } from "./context";
 import { TokenMark } from "./token-mark";
@@ -80,12 +79,11 @@ const useColoredNodes = (): GraphNode[] => {
 
 const useFocusScroll = (wrapperRef: RefObject<HTMLDivElement | null>): void => {
   const { view } = useViewer();
-  const focusRequest = useHoverStore((state) => state.focusRequest);
-  useEffect(() => {
+  useFocusRequest((name) => {
     const host = wrapperRef.current?.querySelector<HTMLElement>("diffs-container");
-    const component = view.components.find((candidate) => candidate.name === focusRequest?.name);
+    const component = view.components.find((candidate) => candidate.name === name);
     if (host && component?.loc) scrollToLine(host, component.loc.start.line);
-  }, [wrapperRef, view, focusRequest]);
+  });
 };
 
 const RestingArcs = ({ layout }: { layout: TokenLayout }) => {
