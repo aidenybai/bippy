@@ -17,6 +17,7 @@ export interface CollectedEffects {
 export interface UpdateCondition {
   guards: SymbolicValue[];
   isAsync: boolean;
+  isRepeated?: boolean;
 }
 
 const UNCONDITIONAL_UPDATE: UpdateCondition = { guards: [], isAsync: false };
@@ -143,7 +144,13 @@ export class EffectCollector {
           ),
         )
       : condition.guards;
-    this.#updates.push({ binding, value, guards, isAsync: condition.isAsync });
+    this.#updates.push({
+      binding,
+      value,
+      guards,
+      isAsync: condition.isAsync,
+      ...(condition.isRepeated && { isRepeated: true }),
+    });
   }
 
   getQueuedValue(binding: Binding, condition: UpdateCondition): SymbolicValue {

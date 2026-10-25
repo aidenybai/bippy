@@ -247,6 +247,7 @@ export interface StateUpdate {
   value: SymbolicValue;
   guards: SymbolicValue[];
   isAsync: boolean;
+  isRepeated?: boolean;
 }
 
 export type HandlerTrigger =
