@@ -164,6 +164,9 @@ const getHandlerKey = (value: SymbolicValue): string | null => {
         ? null
         : `conditional:${getValueKey(value.test)}?${consequentKey}:${alternateKey}`;
     }
+    case "Unknown":
+    case "Global":
+      return `opaque:${getValueKey(value)}`;
     default:
       return null;
   }
