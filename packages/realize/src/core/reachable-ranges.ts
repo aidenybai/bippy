@@ -64,6 +64,7 @@ const isIntegerOnly = (updates: GuardedUpdate[]): boolean => {
     forEachSymbolicValue(update.value, (part) => {
       const literal = getNumber(part);
       if (literal !== null && !Number.isInteger(literal)) isInteger = false;
+      if (part.kind === "BinaryExpression" && part.operator === "/") isInteger = false;
     });
   return isInteger;
 };
@@ -165,6 +166,17 @@ const getValueInterval = (
     if (!term || offset === null || Math.abs(offset) > Number.MAX_SAFE_INTEGER) return null;
     const sign = value.operator === "+" ? 1 : -1;
     return { min: term.min + sign * offset, max: term.max + sign * offset };
+  }
+  if (value.kind === "BinaryExpression" && (value.operator === "*" || value.operator === "/")) {
+    const factor = getNumber(value.right);
+    const term =
+      factor === null || factor === 0 || getNumber(value.left) !== null
+        ? null
+        : getValueInterval(value.left, binding, hypothesis, guards, isInteger);
+    if (!term || factor === null) return null;
+    const scale = value.operator === "*" ? factor : 1 / factor;
+    const ends = [term.min * scale, term.max * scale];
+    return { min: Math.min(...ends), max: Math.max(...ends) };
   }
   if (value.kind === "BinaryExpression" && value.operator === "%") {
     const divisor = getNumber(value.right);
