@@ -42,12 +42,26 @@ const readObject = (methodName: string, target: SymbolicValue): SymbolicValue | 
   );
 };
 
+const getConcatenatedCopy = (
+  receiver: SymbolicValue,
+  argumentValues: SymbolicValue[],
+): SymbolicValue | null => {
+  const isArrayState =
+    receiver.kind === "Binding" &&
+    receiver.path.length === 0 &&
+    receiver.binding.initial?.kind === "ArrayExpression";
+  return isArrayState && argumentValues.every((argument) => argument.kind === "Primitive")
+    ? { kind: "ArrayExpression", elements: argumentValues, spreads: [receiver] }
+    : null;
+};
+
 export const getLiteralRead = (
   receiver: SymbolicValue,
   methodName: string,
   argumentValues: SymbolicValue[],
 ): SymbolicValue | null => {
   const [argument] = argumentValues;
+  if (methodName === "concat") return getConcatenatedCopy(receiver, argumentValues);
   if (receiver.kind === "ArrayExpression" && receiver.spreads.length === 0 && methodName === "at")
     return argument?.kind === "Primitive" && Number.isInteger(argument.value)
       ? (receiver.elements.at(Number(argument.value)) ?? UNDEFINED_VALUE)
