@@ -11,7 +11,12 @@ import type {
   Place,
   SourceLocation,
 } from "../react-compiler/HIR/HIR";
-import { GeneratedSource, SETTER_KEY_PREFIX, getHookKind } from "../react-compiler/HIR/HIR";
+import {
+  GeneratedSource,
+  InstructionKind,
+  SETTER_KEY_PREFIX,
+  getHookKind,
+} from "../react-compiler/HIR/HIR";
 import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import { assertExhaustive } from "../react-compiler/Utils/utils";
 import type { SourceFileResolver } from "./source-file-resolver";
@@ -286,6 +291,13 @@ const getRefCellKey = (binding: Binding): string => `ref:${binding.id}`;
 
 const getContextCellKey = (place: Place): string => `context:${place.identifier.id}`;
 
+const CONSTANT_DECLARATION_KINDS = new Set([
+  InstructionKind.Const,
+  InstructionKind.HoistedConst,
+  InstructionKind.Function,
+  InstructionKind.HoistedFunction,
+]);
+
 const isRefCell = (object: SymbolicValue, property: string): object is BindingValue =>
   object.kind === "Binding" &&
   object.binding.kind === "ref" &&
@@ -430,6 +442,7 @@ export class Interpreter {
   readonly #projectLoaders: ProjectLoaders;
   readonly #loadModuleConstant: ModuleConstantLoader;
   readonly #loadModuleVariable: ModuleVariableLoader;
+  readonly #constantContextIds = new Set<IdentifierId>();
   readonly #componentResolver: SourceFileResolver;
   #componentCallLoc: SourceLocation | null = null;
   readonly #itemSources = new Map<number, PlaceMap<true>>();
@@ -2340,7 +2353,8 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const loaded = this.read(load.place);
-    return this.#handlerEffects
+    const isConstant = this.#constantContextIds.has(load.place.identifier.id);
+    return this.#handlerEffects && !isConstant
       ? this.cells.read(getContextCellKey(load.place), loaded, load.loc, walkState)
       : loaded;
   }
@@ -2388,6 +2402,8 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const storedValue = this.read(store.value);
+    if (store.kind === "StoreContext" && CONSTANT_DECLARATION_KINDS.has(store.lvalue.kind))
+      this.#constantContextIds.add(store.lvalue.place.identifier.id);
     const [initialRef] = storedValue.kind === "HookResult" ? storedValue.argumentValues : [];
     const isConstantRef =
       storedValue.kind === "HookResult" &&
