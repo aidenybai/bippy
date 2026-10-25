@@ -1,20 +1,54 @@
 import { describe, expect, it } from "vite-plus/test";
-import { analyzeFixture } from "./helpers";
+import { analyzeFixture, getComponent } from "./helpers";
 
 describe("a class component", () => {
   const project = analyzeFixture("conformance-repros", "class-components");
 
-  it("is reported with a bailout instead of being skipped", () => {
+  const getConditions = (name: string) =>
+    getComponent(project, name).report.states.map((state) => state.conditions);
+
+  const getTargets = (name: string) =>
+    getComponent(project, name).report.states.map((state) =>
+      state.transitions.map((transition) => transition.targets),
+    );
+
+  it("is analyzed as a function component when it only uses state, props and methods", () => {
     const bailouts = project.components
       .filter((component) => component.analysis.file.endsWith("class-components.tsx"))
-      .map((component) => [
-        component.analysis.name,
-        component.analysis.bailouts.map((bailout) => bailout.reason),
-      ]);
-    expect(bailouts).toEqual([
-      ["ClassCounter", ["class-component"]],
-      ["ClassBadge", ["class-component"]],
-      ["ClassPanel", ["class-component"]],
+      .filter((component) => component.analysis.bailouts.length > 0)
+      .map((component) => component.analysis.name);
+    expect(bailouts).toEqual(["ClassAfterUpdate", "ClassForced", "ClassDelayed"]);
+  });
+
+  it("reads props through this.props", () => {
+    expect(
+      getComponent(project, "ClassBadge").analysis.bindings.map((binding) => binding.kind),
+    ).toEqual(["prop"]);
+  });
+
+  it("toggles state through a class property method", () => {
+    expect(getConditions("ClassSwitch")).toEqual([["state.isOn"], ["!state.isOn"]]);
+    expect(getComponent(project, "ClassSwitch").report.regions[0]?.firstRenderState).toBe(1);
+    expect(getTargets("ClassSwitch")).toEqual([[[1]], [[0]]]);
+  });
+
+  it("applies queued updaters from a bound method like the function form", () => {
+    expect(getConditions("ClassStepper")).toEqual([["state.step === 0"], ["state.step !== 0"]]);
+    expect(getTargets("ClassStepper")).toEqual(getTargets("FunctionStepper"));
+  });
+
+  it("runs componentDidMount after the first render", () => {
+    expect(getConditions("ClassReady")).toEqual([["state.isReady"], ["!state.isReady"]]);
+    const { handlers } = getComponent(project, "ClassReady").analysis;
+    expect(handlers.map((handler) => handler.trigger)).toMatchObject([
+      { kind: "Effect", hookKind: "useEffect", dependencies: "[]" },
     ]);
+  });
+
+  it("keeps the bailout for other lifecycles, instance methods and deferred state reads", () => {
+    for (const name of ["ClassAfterUpdate", "ClassForced", "ClassDelayed"])
+      expect(
+        getComponent(project, name).analysis.bailouts.map((bailout) => bailout.reason),
+      ).toEqual(["class-component"]);
   });
 });
