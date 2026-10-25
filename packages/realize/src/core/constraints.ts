@@ -162,10 +162,17 @@ const formatRelevantValues = (
     .sort()
     .join(",");
 
-const serializeConstraints = (constraints: Constraints, possibleValuesText: string): string =>
+const formatAssumptions = (assumptions: Iterable<[string, Assumption]>): string =>
+  [...assumptions].map(formatAssumption).sort().join(";");
+
+const serializeConstraints = (
+  constraints: Constraints,
+  possibleValuesText: string,
+  assumptionsText: string,
+): string =>
   [
     possibleValuesText,
-    [...constraints.assumptions].map(formatAssumption).sort().join(";"),
+    assumptionsText,
     formatBounds(constraints.bounds),
     formatInvariants(constraints.invariants),
     formatUnionMemberValues(constraints.unionMemberValues),
@@ -177,21 +184,57 @@ const serializeConstraints = (constraints: Constraints, possibleValuesText: stri
 
 export const getConstraintsKey = (constraints: Constraints): string =>
   createHash("sha256")
-    .update(serializeConstraints(constraints, formatPossibleValues(constraints.possibleValues)))
+    .update(
+      serializeConstraints(
+        constraints,
+        formatPossibleValues(constraints.possibleValues),
+        formatAssumptions(constraints.assumptions),
+      ),
+    )
     .digest("base64");
+
+const touchesBindings = (assumption: Assumption, bindingIds: ReadonlySet<number>): boolean =>
+  assumption.places.some((place) => bindingIds.has(place.bindingId));
+
+const getAssumedBindingIds = (
+  constraints: Constraints,
+  bindingIds: ReadonlySet<number>,
+  addInputs: (bindingIds: Set<number>) => void,
+): Set<number> => {
+  const assumedIds = new Set(bindingIds);
+  let isGrowing = true;
+  while (isGrowing) {
+    const size = assumedIds.size;
+    for (const assumption of constraints.assumptions.values())
+      if (touchesBindings(assumption, assumedIds))
+        for (const place of assumption.places) assumedIds.add(place.bindingId);
+    addInputs(assumedIds);
+    isGrowing = assumedIds.size > size;
+  }
+  return assumedIds;
+};
 
 export const getRelevantConstraintsKey = (
   constraints: Constraints,
   bindingIds: ReadonlySet<number>,
-): string =>
-  createHash("sha256")
+  addInputs: (bindingIds: Set<number>) => void,
+): string => {
+  const assumedIds = getAssumedBindingIds(constraints, bindingIds, addInputs);
+  return createHash("sha256")
     .update(
       serializeConstraints(
         constraints,
-        formatRelevantValues(constraints.possibleValues, bindingIds),
+        formatRelevantValues(constraints.possibleValues, assumedIds),
+        formatAssumptions(
+          [...constraints.assumptions].filter(
+            ([, assumption]) =>
+              assumption.places.length === 0 || touchesBindings(assumption, assumedIds),
+          ),
+        ),
       ),
     )
     .digest("base64");
+};
 
 const collectPlaces = (value: SymbolicValue): BindingPlace[] => {
   const places: BindingPlace[] = [];
