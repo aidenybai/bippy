@@ -1298,6 +1298,15 @@ export class Interpreter {
     if (argumentPlace) this.mutations.trackArgument(argumentPlace, callSite.loc);
   }
 
+  carryWrappedCallbacks(binding: Binding, value: SymbolicValue): void {
+    const callbacks = this.#wrappedCallbacks.get(value);
+    if (!callbacks) return;
+    const carried = [...(this.#wrappedCallbacksByBinding.get(binding.id) ?? []), ...callbacks];
+    this.#wrappedCallbacksByBinding.set(binding.id, [
+      ...new Map(carried.map((callback) => [getValueKey(callback), callback])).values(),
+    ]);
+  }
+
   getWrappedCallbacks(value: SymbolicValue): SymbolicValue[] | null {
     const byBinding =
       value.kind === "Binding" ? this.#wrappedCallbacksByBinding.get(value.binding.id) : undefined;
@@ -2122,8 +2131,10 @@ export class Interpreter {
     this.callbacks.passStoredCallback(store, walkState);
     const object = this.read(store.object);
     const storedValue = this.read(store.value);
-    if (isRefCell(object, String(store.property)))
+    if (isRefCell(object, String(store.property))) {
       this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
+      this.carryWrappedCallbacks(object.binding, storedValue);
+    }
     if (this.#handlerEffects && isRefCell(object, String(store.property))) {
       this.cells.store(getRefCellKey(object.binding), storedValue, walkState);
       this.#handlerEffects.addPossibleMutation(object.binding);

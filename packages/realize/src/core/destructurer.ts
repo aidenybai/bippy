@@ -69,11 +69,13 @@ export class Destructurer {
       },
     );
     this.#interpreter.externalSources.bindHookResult(binding, hook, this.#interpreter.resolver);
-    if (hook.hookKind === "useRef")
+    if (hook.hookKind === "useRef") {
       this.#interpreter.addStoredFunctions(
         { ...createBindingValue(binding), path: ["current"] },
         initialRef,
       );
+      this.#interpreter.carryWrappedCallbacks(binding, initialRef);
+    }
     return createBindingValue(binding);
   }
 
