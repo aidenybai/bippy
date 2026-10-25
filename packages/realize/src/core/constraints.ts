@@ -214,6 +214,24 @@ const getAssumedBindingIds = (
   return assumedIds;
 };
 
+export const projectRelevantConstraints = (
+  constraints: Constraints,
+  bindingIds: ReadonlySet<number>,
+  addInputs: (bindingIds: Set<number>) => void,
+): Constraints => {
+  const assumedIds = getAssumedBindingIds(constraints, bindingIds, addInputs);
+  const possibleValues = new PlaceMap<AbstractValue[]>();
+  for (const [place, values] of constraints.possibleValues)
+    if (assumedIds.has(place.bindingId)) possibleValues.set(place, values);
+  return {
+    ...constraints,
+    possibleValues,
+    assumptions: new Map(constraints.assumptions),
+    bounds: [...constraints.bounds],
+    possibleMembers: new Map(constraints.possibleMembers),
+  };
+};
+
 export const getRelevantConstraintsKey = (
   constraints: Constraints,
   bindingIds: ReadonlySet<number>,
