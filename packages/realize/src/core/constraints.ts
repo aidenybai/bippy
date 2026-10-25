@@ -371,19 +371,22 @@ const withBound = (graph: BoundGraph, bound: Bound): BoundGraph => {
   const to = indicesByAtomKey.get(getAtomKey(bound.left)) ?? 0;
   const edge: Distance = { weight: bound.maxDifference, isStrict: bound.isStrict };
   if (!isShorter(edge, distances[from][to])) return { indicesByAtomKey, distances };
+  const fromRow = distances[to];
   return {
     indicesByAtomKey,
-    distances: distances.map((row, rowIndex) =>
-      row.map((current, columnIndex) => {
-        const toEdge = distances[rowIndex][from];
-        const fromEdge = distances[to][columnIndex];
+    distances: distances.map((row) => {
+      const toEdge = row[from];
+      if (toEdge.weight === Infinity) return row;
+      return row.map((current, columnIndex) => {
+        const fromEdge = fromRow[columnIndex];
+        if (fromEdge.weight === Infinity) return current;
         const throughEdge: Distance = {
           weight: toEdge.weight + edge.weight + fromEdge.weight,
           isStrict: toEdge.isStrict || edge.isStrict || fromEdge.isStrict,
         };
         return isShorter(throughEdge, current) ? throughEdge : current;
-      }),
-    ),
+      });
+    }),
   };
 };
 
