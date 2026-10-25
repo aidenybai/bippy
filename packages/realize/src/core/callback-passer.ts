@@ -4,7 +4,7 @@ import type { HookKind } from "../react-compiler/HIR/ObjectShape";
 import type { InstructionValueOfKind, Interpreter } from "./interpret";
 import { createUnknown, getPassedCallbacks, isMemoCache } from "./symbolic-values";
 import { PlaceMap } from "./utils/place-map";
-import type { FunctionValue, SymbolicValue } from "./types";
+import type { FunctionValue, SymbolicValue, UnknownOrigin } from "./types";
 import { getTestExpression } from "./utils/get-test-expression";
 import { negate } from "./utils/negate";
 import { getAsyncWalkState } from "./walk-state";
@@ -19,28 +19,41 @@ export class CallbackPasser {
 
   visitPromiseCallbacks(
     methodName: string,
+    promise: SymbolicValue,
     argumentValues: SymbolicValue[],
     loc: SourceLocation,
     walkState: WalkState,
   ): void {
     const asyncWalkState = getAsyncWalkState(walkState);
-    const isRejected = createUnknown("rejected", loc);
+    const isRejected = createUnknown("rejected", loc, {
+      kind: "Settled",
+      promise,
+      outcome: "rejected",
+    });
     const guardsByArgument =
       methodName === "then"
         ? [negate(isRejected), isRejected]
         : methodName === "catch"
           ? [isRejected]
           : [];
+    const outcomesByArgument: Array<"resolved" | "rejected"> =
+      methodName === "then" ? ["resolved", "rejected"] : methodName === "catch" ? ["rejected"] : [];
     argumentValues.forEach((argument, argumentIndex) => {
       const guard = guardsByArgument[argumentIndex];
+      const outcome = outcomesByArgument[argumentIndex];
       this.#visitArgument(
         argument,
         guard ? { ...asyncWalkState, guards: [...asyncWalkState.guards, guard] } : asyncWalkState,
+        outcome && { kind: "Settled", promise, outcome },
       );
     });
   }
 
-  #visitArgument(argument: SymbolicValue, walkState: WalkState): void {
+  #visitArgument(
+    argument: SymbolicValue,
+    walkState: WalkState,
+    argumentOrigin?: UnknownOrigin,
+  ): void {
     if (!this.#interpreter.handlerEffects) return;
     if (argument.kind === "Conditional") {
       const test = getTestExpression(argument);
@@ -63,24 +76,24 @@ export class CallbackPasser {
     if (argument.kind === "Setter")
       this.#interpreter.handlerEffects.recordSetterCall(
         argument.binding,
-        createUnknown("callback-argument", GeneratedSource),
+        createUnknown("callback-argument", GeneratedSource, argumentOrigin),
         asyncWalkState,
       );
     if (argument.kind === "Function")
       this.#interpreter.walker.runRepeated(() =>
         this.#interpreter.callFunction(
           argument,
-          this.getUnknownArguments(argument),
+          this.getUnknownArguments(argument, argumentOrigin),
           argument.loc,
           asyncWalkState,
         ),
       );
   }
 
-  getUnknownArguments(callback: FunctionValue): SymbolicValue[] {
+  getUnknownArguments(callback: FunctionValue, firstOrigin?: UnknownOrigin): SymbolicValue[] {
     const parameterCount = this.#interpreter.functions.get(callback.functionId)?.params.length ?? 1;
-    return Array.from({ length: Math.max(parameterCount, 1) }, () =>
-      createUnknown("callback-argument", callback.loc),
+    return Array.from({ length: Math.max(parameterCount, 1) }, (_parameter, index) =>
+      createUnknown("callback-argument", callback.loc, index === 0 ? firstOrigin : undefined),
     );
   }
 

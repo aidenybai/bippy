@@ -10,9 +10,7 @@ describe("arguments of a callback another component calls", () => {
 
   it("are unknown rather than missing", () => {
     const updates = analysis.handlers.flatMap((handler) => handler.updates);
-    expect(updates.map((update) => formatSymbolicValue(update.value))).toEqual([
-      "Unknown(callback-argument)",
-    ]);
+    expect(updates.map((update) => formatSymbolicValue(update.value))).toEqual(["checked"]);
   });
 
   it("keep a boolean state within its type and let it reach both values", () => {

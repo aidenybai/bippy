@@ -198,7 +198,14 @@ export type SymbolicValue =
       writes: Array<{ method: string; argumentValues: SymbolicValue[]; guards: SymbolicValue[] }>;
       loc: SourceLocation;
     }
-  | { kind: "Unknown"; reason: string; loc: SourceLocation };
+  | { kind: "Unknown"; reason: string; loc: SourceLocation; origin?: UnknownOrigin };
+
+export type UnknownOrigin =
+  | { kind: "Name"; name: string }
+  | { kind: "Member"; object: SymbolicValue; property: string }
+  | { kind: "Call"; callee: SymbolicValue; argumentValues: SymbolicValue[] }
+  | { kind: "Settled"; promise: SymbolicValue; outcome: "resolved" | "rejected" }
+  | { kind: "Value"; value: SymbolicValue };
 
 export type ConditionalValue = Extract<SymbolicValue, { kind: "Conditional" }>;
 

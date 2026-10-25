@@ -8,6 +8,7 @@ import type {
   ConditionalValue,
   PrimitiveValue,
   SymbolicValue,
+  UnknownOrigin,
 } from "./types";
 import { getNegatedOperator } from "./utils/get-negated-operator";
 import { getValueKey } from "./utils/get-value-key";
@@ -113,6 +114,8 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
     case "Binding":
       return formatPlace(value.binding, value.path);
     case "UnaryExpression": {
+      const resolvedPromise = value.operator === "!" ? getResolvedPromise(value.value) : null;
+      if (resolvedPromise) return `${formatSymbolicValue(resolvedPromise)} resolves`;
       const separator = WORD_OPERATOR_PATTERN.test(value.operator) ? " " : "";
       return `${value.operator}${separator}${formatWithPrecedence(value.value, ATOMIC_PRECEDENCE)}`;
     }
@@ -182,12 +185,51 @@ export const formatSymbolicValue = (value: SymbolicValue): string => {
       });
       return `new ${value.collection}(${source})${writes.join("")}`;
     }
-    case "Unknown":
-      return `Unknown(${value.reason})`;
+    case "Unknown": {
+      const origin = value.origin ? formatOrigin(value.origin) : null;
+      return origin !== null && origin.length <= MAX_ORIGIN_LENGTH
+        ? origin
+        : `Unknown(${value.reason})`;
+    }
     default:
       return assertExhaustive(value, "Unhandled symbolic value");
   }
 };
+
+const MAX_ORIGIN_LENGTH = 80;
+
+const IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
+
+const formatMember = (property: string): string => {
+  if (IDENTIFIER_PATTERN.test(property)) return `.${property}`;
+  return /^\d+$/.test(property) ? `[${property}]` : `[${JSON.stringify(property)}]`;
+};
+
+const formatOrigin = (origin: UnknownOrigin): string => {
+  switch (origin.kind) {
+    case "Name":
+      return origin.name;
+    case "Member":
+      return `${formatWithPrecedence(origin.object, ATOMIC_PRECEDENCE)}${formatMember(origin.property)}`;
+    case "Call":
+      return `${formatWithPrecedence(origin.callee, ATOMIC_PRECEDENCE)}(${origin.argumentValues.map(formatSymbolicValue).join(", ")})`;
+    case "Settled":
+      return origin.outcome === "resolved"
+        ? `await ${formatWithPrecedence(origin.promise, ATOMIC_PRECEDENCE)}`
+        : `${formatSymbolicValue(origin.promise)} rejects`;
+    case "Value":
+      return formatSymbolicValue(origin.value);
+    default:
+      return assertExhaustive(origin, "Unhandled unknown origin");
+  }
+};
+
+const getResolvedPromise = (value: SymbolicValue): SymbolicValue | null =>
+  value.kind === "Unknown" &&
+  value.origin?.kind === "Settled" &&
+  value.origin.outcome === "rejected"
+    ? value.origin.promise
+    : null;
 
 export const formatNegated = (
   value: SymbolicValue,
@@ -195,6 +237,8 @@ export const formatNegated = (
 ): string => {
   if (value.kind === "UnaryExpression" && value.operator === "!")
     return formatSymbolicValue(value.value);
+  const resolvedPromise = getResolvedPromise(value);
+  if (resolvedPromise) return `${formatSymbolicValue(resolvedPromise)} resolves`;
   if (value.kind === "BinaryExpression") {
     const negatedOperator = getNegatedOperator(value.operator);
     if (negatedOperator && isComplement(value))

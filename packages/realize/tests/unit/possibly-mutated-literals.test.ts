@@ -8,16 +8,22 @@ describe("a literal passed to a call that may mutate it", () => {
     getComponent(project, name).report.states.map((state) => state.conditions);
 
   it("is no longer read as the literal after the call", () => {
-    expect(getConditions("ConfiguredLabel")).toEqual([["Unknown(member)"], ["!Unknown(member)"]]);
+    expect(getConditions("ConfiguredLabel")).toEqual([
+      ["Unknown(mutation).label"],
+      ["!Unknown(mutation).label"],
+    ]);
     expect(getConditions("PropMutation")).toEqual([
-      ["Unknown(member) > 0"],
-      ["!(Unknown(member) > 0)"],
+      ["Unknown(mutation).length > 0"],
+      ["!(Unknown(mutation).length > 0)"],
     ]);
   });
 
   it("is no longer read as the literal after a callback may mutate it inside another literal", () => {
     for (const name of ["ReflectSetInCallback", "AssignedInCallback"])
-      expect(getConditions(name)).toEqual([["Unknown(member)"], ["!Unknown(member)"]]);
+      expect(getConditions(name)).toEqual([
+        ["Unknown(mutation).label"],
+        ["!Unknown(mutation).label"],
+      ]);
   });
 
   it("is still a hook result after a method call in a handler", () => {

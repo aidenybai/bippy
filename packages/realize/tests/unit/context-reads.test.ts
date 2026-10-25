@@ -20,7 +20,7 @@ describe("context reads after an await", () => {
 
   it("keeps a flag the cleanup can flip open in a then callback", () => {
     expect(getGuards("IgnoreFlag")).toEqual([
-      ["name", true, ["!Unknown(rejected)", "!Unknown(async)"]],
+      ["name", true, ["load() resolves", "!Unknown(async)"]],
     ]);
   });
 

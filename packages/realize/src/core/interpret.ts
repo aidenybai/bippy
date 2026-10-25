@@ -298,7 +298,8 @@ const getArrayLiteralMember = (
   if (property === "length") return { kind: "Primitive", value: array.elements.length };
   const index = Number(property);
   const isArrayIndex = Number.isInteger(index) && index >= 0 && String(index) === property;
-  if (!isArrayIndex) return createUnknown("member", loc);
+  if (!isArrayIndex)
+    return createUnknown("member", loc, { kind: "Member", object: array, property });
   return array.elements[index] ?? UNDEFINED_VALUE;
 };
 
@@ -354,6 +355,11 @@ const COLLECTION_CONSTRUCTORS = new Map<string, CollectionValue["collection"]>([
 const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
 const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
+
+const nameUnknownArgument = (argument: SymbolicValue, name: string | null): SymbolicValue =>
+  argument.kind === "Unknown" && !argument.origin && name !== null
+    ? { ...argument, origin: { kind: "Name", name } }
+    : argument;
 
 const getSetterAccessor = (object: SymbolicValue, property: string): FunctionValue | null => {
   const literal =
@@ -742,21 +748,23 @@ export class Interpreter {
       case "ArrayExpression":
         return object.spreads.length === 0
           ? getArrayLiteralMember(object, property, loc)
-          : createUnknown("member", loc);
+          : createUnknown("member", loc, { kind: "Member", object, property });
       case "Primitive":
         return property === "length" && typeof object.value === "string"
           ? { kind: "Primitive", value: object.value.length }
-          : createUnknown("member", loc);
+          : createUnknown("member", loc, { kind: "Member", object, property });
       case "Global":
         return { kind: "Global", name: `${object.name}.${property}`, module: object.module };
       case "Collection": {
         const size = property === "size" ? getCollectionSize(object) : null;
-        return size === null ? createUnknown("member", loc) : { kind: "Primitive", value: size };
+        return size === null
+          ? createUnknown("member", loc, { kind: "Member", object, property })
+          : { kind: "Primitive", value: size };
       }
       case "BinaryExpression":
         return property === "length"
           ? this.#getConcatenationLength(object, loc)
-          : createUnknown("member", loc);
+          : createUnknown("member", loc, { kind: "Member", object, property });
       case "Conditional":
         if (isNullishValue(object.alternate))
           return this.evaluatePropertyLoad(object.consequent, property, loc);
@@ -768,7 +776,7 @@ export class Interpreter {
           alternate: this.evaluatePropertyLoad(object.alternate, property, loc),
         };
       default:
-        return createUnknown("member", loc);
+        return createUnknown("member", loc, { kind: "Member", object, property });
     }
   }
 
@@ -1298,7 +1306,8 @@ export class Interpreter {
       this.#callBinding(callee, argumentValues, walkState);
     if (this.#handlerEffects || isMutatingCall)
       this.callbacks.passCallbacks(argumentValues, loc, walkState);
-    if (this.#handlerEffects) return createUnknown("call", loc);
+    if (this.#handlerEffects)
+      return createUnknown("call", loc, { kind: "Call", callee, argumentValues });
     this.#forgetCallbackWrites(argumentValues, loc);
     if (this.#resolver.isReactElement(loc)) {
       const helper = this.#findProjectFunction(callSite.calleePlace);
@@ -1960,8 +1969,22 @@ export class Interpreter {
         methodName === "flatMap",
       );
     if (PROMISE_METHODS.has(methodName)) {
-      this.callbacks.visitPromiseCallbacks(methodName, argumentValues, methodCall.loc, walkState);
-      return createUnknown("async", methodCall.loc);
+      this.callbacks.visitPromiseCallbacks(
+        methodName,
+        receiver,
+        argumentValues,
+        methodCall.loc,
+        walkState,
+      );
+      return createUnknown("async", methodCall.loc, {
+        kind: "Call",
+        callee: createUnknown("member", methodCall.loc, {
+          kind: "Member",
+          object: receiver,
+          property: methodName,
+        }),
+        argumentValues,
+      });
     }
     if (methodName === "bind" && BOUND_CALLEES.has(receiver.kind))
       return {
@@ -2144,7 +2167,11 @@ export class Interpreter {
           children: flattenArrayChildren(value.children.map((child) => this.read(child))),
         };
       case "Await":
-        return createUnknown("async", value.loc);
+        return createUnknown("async", value.loc, {
+          kind: "Settled",
+          promise: this.read(value.value),
+          outcome: "resolved",
+        });
       case "NewExpression": {
         const argumentValues = value.args.map((argument) => this.read(getPlaceOrSpread(argument)));
         this.callbacks.passCallbacks(argumentValues, value.loc, walkState);
@@ -2666,7 +2693,10 @@ export class Interpreter {
                 elements: argumentValues.slice(parameterIndex),
                 spreads: [createUnknown("rest", parameterPlace.loc)],
               }
-            : (argumentValues[parameterIndex] ?? UNDEFINED_VALUE),
+            : nameUnknownArgument(
+                argumentValues[parameterIndex] ?? UNDEFINED_VALUE,
+                getIdentifierName(parameterPlace),
+              ),
         );
       });
       return this.walker.getOutcomeValue(
