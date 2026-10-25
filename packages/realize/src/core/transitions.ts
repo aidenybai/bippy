@@ -54,6 +54,7 @@ interface TransitionContext extends ReachabilityContext {
   targetIndicesByConstraints: Map<string, number[]>;
   candidateIndicesByConstraints: Map<string, number[]>;
   relevantBindingIds: ReadonlySet<number>;
+  addBindingInputs: (bindingIds: Set<number>) => void;
   relevantKeys: WeakMap<Constraints, string>;
   replayedOutcomes: WeakMap<Constraints, Map<ConditionalValue, Map<boolean, Constraints | null>>>;
   firstStateIndex: number;
@@ -388,7 +389,7 @@ const getTargetIndices = (
 ): number[] => {
   const constraintsKey =
     context.relevantKeys.get(afterHandler) ??
-    getRelevantConstraintsKey(afterHandler, context.relevantBindingIds);
+    getRelevantConstraintsKey(afterHandler, context.relevantBindingIds, context.addBindingInputs);
   context.relevantKeys.set(afterHandler, constraintsKey);
   const cache = isReplayed
     ? context.targetIndicesByConstraints
@@ -497,18 +498,37 @@ const getBranchContext = (
   stateBranches: alternatives.map(getStateBranches),
 });
 
+const addReadBindings = (bindingIds: Set<number>, value: SymbolicValue | null): void => {
+  if (value)
+    forEachSymbolicValue(value, (part) => {
+      if (part.kind === "Binding") bindingIds.add(part.binding.id);
+    });
+};
+
+const createBindingInputsAdder = (bindings: Binding[]): ((bindingIds: Set<number>) => void) => {
+  const bindingsById = new Map(bindings.map((binding) => [binding.id, binding]));
+  return (bindingIds) => {
+    for (const bindingId of bindingIds) {
+      const binding = bindingsById.get(bindingId);
+      if (!binding) continue;
+      for (const place of binding.inputPlaces) bindingIds.add(place.bindingId);
+      if (binding.lengthLimit) bindingIds.add(binding.lengthLimit.arrayLength.bindingId);
+      addReadBindings(bindingIds, binding.alias);
+      addReadBindings(bindingIds, binding.range?.inner ?? null);
+      if (binding.derived && "operands" in binding.derived)
+        binding.derived.operands.forEach((operand) => addReadBindings(bindingIds, operand));
+      if (binding.derived && "receiver" in binding.derived)
+        addReadBindings(bindingIds, binding.derived.receiver);
+    }
+  };
+};
+
 const getRelevantBindingIds = (
   render: SymbolicValue,
   regionBranches: RegionBranches,
-  bindings: Binding[],
+  addBindingInputs: (bindingIds: Set<number>) => void,
 ): Set<number> => {
   const bindingIds = new Set(regionBranches.bindingIds);
-  const addReadBindings = (value: SymbolicValue | null): void => {
-    if (value)
-      forEachSymbolicValue(value, (part) => {
-        if (part.kind === "Binding") bindingIds.add(part.binding.id);
-      });
-  };
   const visited = new WeakSet<SymbolicValue>();
   const visit = (value: SymbolicValue): void => {
     if (visited.has(value)) return;
@@ -519,23 +539,12 @@ const getRelevantBindingIds = (
     }
     if (value.kind !== "Conditional") return;
     if (regionBranches.branchKeys.has(getBranchKey(value.branch)))
-      addReadBindings(getTestExpression(value));
+      addReadBindings(bindingIds, getTestExpression(value));
     visit(value.consequent);
     visit(value.alternate);
   };
   visit(render);
-  const bindingsById = new Map(bindings.map((binding) => [binding.id, binding]));
-  for (const bindingId of bindingIds) {
-    const binding = bindingsById.get(bindingId);
-    if (!binding) continue;
-    for (const place of binding.inputPlaces) bindingIds.add(place.bindingId);
-    if (binding.lengthLimit) bindingIds.add(binding.lengthLimit.arrayLength.bindingId);
-    addReadBindings(binding.alias);
-    addReadBindings(binding.range?.inner ?? null);
-    if (binding.derived && "operands" in binding.derived)
-      binding.derived.operands.forEach(addReadBindings);
-    if (binding.derived && "receiver" in binding.derived) addReadBindings(binding.derived.receiver);
-  }
+  addBindingInputs(bindingIds);
   return bindingIds;
 };
 
@@ -544,22 +553,26 @@ export const createTransitionContext = (
   alternatives: Alternative[],
   firstStateIndex: number,
   context: EnumerationContext,
-): TransitionContext => ({
-  analysis: context.analysis,
-  reachableConstraints: context.reachableConstraints,
-  reachablePlacesByBinding: context.reachablePlacesByBinding,
-  dependentsByBinding: context.dependentsByBinding,
-  ...getBranchContext(regionBranches, alternatives, context),
-  renderUpdates: context.renderUpdates,
-  targetIndicesByConstraints: new Map(),
-  candidateIndicesByConstraints: new Map(),
-  relevantBindingIds: getRelevantBindingIds(
-    context.analysis.render,
-    regionBranches,
-    context.analysis.bindings,
-  ),
-  relevantKeys: new WeakMap(),
-  replayedOutcomes: new WeakMap(),
-  firstStateIndex,
-  budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS },
-});
+): TransitionContext => {
+  const addBindingInputs = createBindingInputsAdder(context.analysis.bindings);
+  return {
+    analysis: context.analysis,
+    reachableConstraints: context.reachableConstraints,
+    reachablePlacesByBinding: context.reachablePlacesByBinding,
+    dependentsByBinding: context.dependentsByBinding,
+    ...getBranchContext(regionBranches, alternatives, context),
+    renderUpdates: context.renderUpdates,
+    targetIndicesByConstraints: new Map(),
+    candidateIndicesByConstraints: new Map(),
+    relevantBindingIds: getRelevantBindingIds(
+      context.analysis.render,
+      regionBranches,
+      addBindingInputs,
+    ),
+    addBindingInputs,
+    relevantKeys: new WeakMap(),
+    replayedOutcomes: new WeakMap(),
+    firstStateIndex,
+    budget: { remainingTargetEnumerations: MAX_TARGET_ENUMERATIONS },
+  };
+};
