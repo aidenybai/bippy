@@ -1,4 +1,5 @@
 import type { SymbolicValue } from "../types";
+import { getMemoizedRender } from "./get-memoized-render";
 
 export const forEachRenderNode = (
   value: SymbolicValue,
@@ -25,6 +26,11 @@ export const forEachRenderNode = (
         node.elements.forEach(walk);
         node.spreads.forEach(walk);
         return;
+      case "Binding": {
+        const memoized = getMemoizedRender(node);
+        if (memoized) walk(memoized);
+        return;
+      }
       default:
         return;
     }

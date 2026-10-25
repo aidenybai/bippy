@@ -1,4 +1,5 @@
 import type { JsxExpressionValue, SymbolicValue } from "../types";
+import { getMemoizedRender } from "./get-memoized-render";
 import { getTestExpression } from "./get-test-expression";
 import { getValueKey } from "./get-value-key";
 import { negate } from "./negate";
@@ -38,6 +39,11 @@ export const getRenderGuards = (
         const test = getTestExpression(node);
         walk(node.consequent, [...nodeGuards, test]);
         walk(node.alternate, [...nodeGuards, negate(test)]);
+        return;
+      }
+      case "Binding": {
+        const memoized = getMemoizedRender(node);
+        if (memoized) walk(memoized, nodeGuards);
         return;
       }
       default:

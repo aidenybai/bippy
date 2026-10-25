@@ -1549,8 +1549,12 @@ export class Interpreter {
       this.#captureStaleReads(memoized, dependencyPlaces, dependencyDeclarations, finish.loc);
       return;
     }
-    if (this.#isStaleMemo(memoized, dependencyPlaces))
-      this.write(finish.decl, this.#createStaleMemo(memoized, finish.decl));
+    if (!this.#isStaleMemo(memoized, dependencyPlaces)) return;
+    forEachSymbolicValue(memoized, (part) => {
+      if (part.kind === "Function")
+        this.#captureStaleReads(part, dependencyPlaces, dependencyDeclarations, finish.loc);
+    });
+    this.write(finish.decl, this.#createStaleMemo(memoized, finish.decl));
   }
 
   #createStaleMemo(memoized: SymbolicValue, decl: Place): SymbolicValue {
@@ -1581,18 +1585,33 @@ export class Interpreter {
     dependencyPlaces: PlaceMap<true>,
     dependencyDeclarations: Set<DeclarationId>,
     loc: SourceLocation,
+    visitedFunctionIds = new Set<number>(),
   ): void {
+    if (visitedFunctionIds.has(callback.functionId)) return;
+    visitedFunctionIds.add(callback.functionId);
     const context = this.#functions.get(callback.functionId)?.context ?? [];
-    let hasStaleRead = false;
-    const capturedValues = context.map((place): CapturedValue => {
+    const staleValues = context.flatMap((place): CapturedValue[] => {
       const value = this.read(place);
-      const isStaleUnknown =
-        value.kind === "Unknown" && !dependencyDeclarations.has(place.identifier.declarationId);
-      if (!isStaleUnknown && !this.#isStaleMemo(value, dependencyPlaces)) return [place, value];
-      hasStaleRead = true;
-      return [place, createUnknown("memo", loc)];
+      if (dependencyDeclarations.has(place.identifier.declarationId)) return [];
+      if (value.kind === "Function") {
+        this.#captureStaleReads(
+          value,
+          dependencyPlaces,
+          dependencyDeclarations,
+          loc,
+          visitedFunctionIds,
+        );
+        return [];
+      }
+      if (value.kind !== "Unknown" && !this.#isStaleMemo(value, dependencyPlaces)) return [];
+      return [[place, createUnknown("memo", loc)]];
     });
-    if (hasStaleRead) this.#functions.setCapturedValues(callback.functionId, capturedValues);
+    if (staleValues.length === 0) return;
+    const staleIds = new Set(staleValues.map(([place]) => place.identifier.id));
+    const keptValues = this.#functions
+      .getCapturedValues(callback.functionId)
+      .filter(([place]) => !staleIds.has(place.identifier.id));
+    this.#functions.setCapturedValues(callback.functionId, [...keptValues, ...staleValues]);
   }
 
   #isStaleMemo(memoized: SymbolicValue, dependencyPlaces: PlaceMap<true>): boolean {
