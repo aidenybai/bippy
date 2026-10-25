@@ -1,5 +1,7 @@
 import { cloneConstraints, evaluateCondition, type Constraints } from "./constraints";
-import type { AbstractValue, Binding, BindingPlace, SymbolicValue } from "./types";
+import { foldBinary } from "./symbolic-values";
+import type { AbstractValue, Binding, BindingPlace, PrimitiveValue, SymbolicValue } from "./types";
+import { applyPureFunctionToCases, isPureFunction } from "./utils/pure-functions";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getCollectionCases, getContentsField } from "./utils/literal-receivers";
 import type { CollectionOwner } from "./utils/literal-receivers";
@@ -13,7 +15,21 @@ export type FieldCases = AbstractValue[] | "unchanged" | null;
 interface FieldWalk {
   target: BindingPlace;
   constraints: Constraints | null;
+  isFirstRender: boolean;
 }
+
+const ARITHMETIC_OPERATORS = new Set(["+", "-", "*", "/", "%"]);
+
+const MAX_ARITHMETIC_CASES = 64;
+
+const getLiterals = (cases: FieldCases): PrimitiveValue[] | null => {
+  if (!Array.isArray(cases) || cases.length === 0) return null;
+  const literals = cases.flatMap((value) => (value.kind === "Literal" ? [value.value] : []));
+  return literals.length === cases.length ? literals : null;
+};
+
+const toLiteralCases = (values: PrimitiveValue[] | null): FieldCases =>
+  values && values.map((value) => ({ kind: "Literal", value }));
 
 export const decideGuards = (
   guards: SymbolicValue[],
@@ -33,7 +49,38 @@ const resolveUnchanged = (cases: FieldCases, walk: FieldWalk): AbstractValue[] |
   return walk.constraints.possibleValues.get(walk.target) ?? null;
 };
 
+const getFirstRenderCases = (value: SymbolicValue, walk: FieldWalk): FieldCases => {
+  const derived =
+    value.kind === "Binding" && value.path.length === 0 ? value.binding.derived : null;
+  if (derived && "callee" in derived && isPureFunction(derived.callee)) {
+    const operandCases = derived.operands.map((operand) =>
+      getLiterals(getCases(operand, [], walk)),
+    );
+    if (operandCases.some((cases) => cases === null)) return null;
+    const literals = operandCases.filter((cases): cases is PrimitiveValue[] => cases !== null);
+    return toLiteralCases(applyPureFunctionToCases(derived.callee, literals));
+  }
+  if (value.kind !== "BinaryExpression" || !ARITHMETIC_OPERATORS.has(value.operator)) return null;
+  const left = getLiterals(getCases(value.left, [], walk));
+  const right = getLiterals(getCases(value.right, [], walk));
+  if (!left || !right || left.length * right.length > MAX_ARITHMETIC_CASES) return null;
+  const folded = left.flatMap((leftValue) =>
+    right.map((rightValue) =>
+      foldBinary(
+        value.operator,
+        { kind: "Primitive", value: leftValue },
+        { kind: "Primitive", value: rightValue },
+      ),
+    ),
+  );
+  const literals = folded.flatMap((result) => (result.kind === "Primitive" ? [result.value] : []));
+  return literals.length === folded.length ? toLiteralCases(literals) : null;
+};
+
 const getCases = (value: SymbolicValue, path: string[], walk: FieldWalk): FieldCases => {
+  const firstRenderCases =
+    walk.isFirstRender && path.length === 0 ? getFirstRenderCases(value, walk) : null;
+  if (firstRenderCases) return firstRenderCases;
   if (value.kind === "Binding") {
     const source = getBindingPlace(value.binding, [...value.path, ...path]);
     if (isSamePlace(source, walk.target)) return "unchanged";
@@ -93,5 +140,8 @@ export const getFieldCases = (
   path: string[],
   binding: Binding,
   constraints: Constraints | null,
+  isFirstRender = false,
 ): FieldCases =>
-  value ? getCases(value, path, { target: getBindingPlace(binding, path), constraints }) : null;
+  value
+    ? getCases(value, path, { target: getBindingPlace(binding, path), constraints, isFirstRender })
+    : null;

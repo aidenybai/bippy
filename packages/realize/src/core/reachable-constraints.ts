@@ -180,8 +180,9 @@ const getValueCases = (
   binding: Binding,
   constraints: Constraints | null,
   typeCases: AbstractValue[] | null,
+  isFirstRender = false,
 ): ReturnType<typeof getFieldCases> =>
-  getFieldCases(value, path, binding, constraints) ??
+  getFieldCases(value, path, binding, constraints, isFirstRender) ??
   (path.length === 0 && value !== null && NON_NULLISH_KINDS.has(value.kind)
     ? getNonNullishCases(typeCases)
     : null);
@@ -441,6 +442,7 @@ export const createFirstRenderConstraints = (
       binding,
       firstRender,
       domain.kind === "Cases" ? domain.cases : null,
+      true,
     );
     if (Array.isArray(initialCases))
       firstRender.possibleValues.set(place, dedupeAbstractValues(initialCases));
