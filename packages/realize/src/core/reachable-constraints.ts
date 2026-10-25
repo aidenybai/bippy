@@ -26,6 +26,7 @@ import {
 import { forEachSymbolicValue } from "./utils/for-each-symbolic-value";
 import { getBindingPlace } from "./utils/get-binding-place";
 import { getTruthiness } from "./utils/get-truthiness";
+import { getTestExpression } from "./utils/get-test-expression";
 import { getValuePlace } from "./utils/get-value-place";
 import { isNullish } from "./utils/is-nullish";
 import { isSamePlace } from "./utils/is-same-place";
@@ -174,6 +175,28 @@ const getNonNullishCases = (typeCases: AbstractValue[] | null): AbstractValue[] 
   return cases && cases.length > 0 ? cases : null;
 };
 
+const getFirstRenderTarget = (
+  value: SymbolicValue,
+  path: string[],
+  constraints: Constraints,
+): SymbolicValue | null => {
+  if (value.kind === "Conditional") {
+    const outcome = evaluateCondition(getTestExpression(value), constraints);
+    return outcome === null
+      ? null
+      : getFirstRenderTarget(outcome ? value.consequent : value.alternate, path, constraints);
+  }
+  const [field, ...restPath] = path;
+  if (field === undefined) return value;
+  const fieldValue =
+    value.kind === "ArrayExpression" && value.spreads.length === 0
+      ? value.elements[Number(field)]
+      : value.kind === "ObjectExpression" && value.spreads.length === 0
+        ? value.properties.findLast((property) => property.key === field)?.value
+        : undefined;
+  return fieldValue ? getFirstRenderTarget(fieldValue, restPath, constraints) : null;
+};
+
 const getValueCases = (
   value: SymbolicValue | null,
   path: string[],
@@ -181,11 +204,17 @@ const getValueCases = (
   constraints: Constraints | null,
   typeCases: AbstractValue[] | null,
   isFirstRender = false,
-): ReturnType<typeof getFieldCases> =>
-  getFieldCases(value, path, binding, constraints, isFirstRender) ??
-  (path.length === 0 && value !== null && NON_NULLISH_KINDS.has(value.kind)
-    ? getNonNullishCases(typeCases)
-    : null);
+): ReturnType<typeof getFieldCases> => {
+  const fieldCases = getFieldCases(value, path, binding, constraints, isFirstRender);
+  if (fieldCases !== null || value === null) return fieldCases;
+  const target =
+    isFirstRender && constraints
+      ? getFirstRenderTarget(value, path, constraints)
+      : path.length === 0
+        ? value
+        : null;
+  return target && NON_NULLISH_KINDS.has(target.kind) ? getNonNullishCases(typeCases) : null;
+};
 
 const MAX_SHORTENED_LENGTH = 32;
 
