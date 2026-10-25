@@ -30,7 +30,12 @@ import { getBindingPlace } from "./utils/get-binding-place";
 import { getValueKey } from "./utils/get-value-key";
 import type { EnumerationContext } from "./enumerate-states";
 import type { ReachabilityContext } from "./reachable-constraints";
-import { getToggleCases, getUpdateBounds, isLengthPreserving } from "./reachable-constraints";
+import {
+  getShiftedBounds,
+  getToggleCases,
+  getUpdateBounds,
+  isLengthPreserving,
+} from "./reachable-constraints";
 import type { Alternative } from "./state-enumerator";
 
 const MAX_UPDATE_SEQUENCES = 256;
@@ -101,9 +106,13 @@ const applyUpdates = (
     }
     const keepsRenderedLength =
       !updatedBindingIds.has(update.binding.id) && isLengthPreserving(update.value, update.binding);
+    const shiftedBounds = update.isRepeated
+      ? []
+      : getShiftedBounds(update.value, update.binding, constraints.bounds);
     forgetBinding(updated, update.binding.id, keepsRenderedLength);
     updatedBindingIds.add(update.binding.id);
-    if (!isMaybe) addBounds(updated, getUpdateBounds(update.value, update.binding));
+    if (!isMaybe)
+      addBounds(updated, [...getUpdateBounds(update.value, update.binding), ...shiftedBounds]);
     const dependentIds = new Set(dependentsByBinding.get(update.binding.id));
     for (const dependentId of dependentIds) {
       for (const [place, reachableValues] of reachablePlacesByBinding.get(dependentId) ?? [])

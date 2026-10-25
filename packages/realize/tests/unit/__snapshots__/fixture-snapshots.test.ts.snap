@@ -809,7 +809,6 @@ stateDiagram-v2
     S3: opened #gt; 0 · #lt;b#gt; {opened}
     S4: opened #lt;= 0 · ∅
     [*] --> S4
-    S3 --> S4: setOpened(opened + 1)
     S4 --> S3: setOpened(opened + 1)
   }"
 `;
@@ -3023,9 +3022,7 @@ stateDiagram-v2
   S4: tone !== "info" ∧ count #lt;= 0 · #lt;div#gt; #lt;i#gt; {"Other"} #lt;button#gt; {count}
   [*] --> S2
   [*] --> S4
-  S1 --> S2: setCount(count + 1)
   S2 --> S1: setCount(count + 1)
-  S3 --> S4: setCount(count + 1)
   S4 --> S3: setCount(count + 1)"
 `;
 

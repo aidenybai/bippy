@@ -504,6 +504,37 @@ export const getUpdateBounds = (value: SymbolicValue, binding: Binding): Bound[]
     ? getRangeBounds(getBindingPlace(binding), value.binding.range)
     : getLengthBounds(value, binding);
 
+const isRootAtom = (atom: BindingPlace | null, binding: Binding): boolean =>
+  atom !== null && atom.bindingId === binding.id && atom.path.length === 0;
+
+const getOffset = (value: SymbolicValue, binding: Binding): number | null => {
+  if (value.kind !== "BinaryExpression" || (value.operator !== "+" && value.operator !== "-"))
+    return null;
+  const { left, right } = value;
+  if (!isWholeBinding(left, binding) || right.kind !== "Primitive") return null;
+  if (typeof right.value !== "number") return null;
+  if (!Number.isFinite(right.value)) return null;
+  return value.operator === "+" ? right.value : -right.value;
+};
+
+export const getShiftedBounds = (
+  value: SymbolicValue,
+  binding: Binding,
+  bounds: Bound[],
+): Bound[] => {
+  const isNumber =
+    binding.initial?.kind === "Primitive" && typeof binding.initial.value === "number";
+  const offset = isNumber ? getOffset(value, binding) : null;
+  if (offset === null) return [];
+  return bounds.flatMap((bound): Bound[] => {
+    if (isRootAtom(bound.left, binding) && bound.right === null)
+      return [{ ...bound, maxDifference: bound.maxDifference + offset }];
+    if (bound.left === null && isRootAtom(bound.right, binding))
+      return [{ ...bound, maxDifference: bound.maxDifference - offset }];
+    return [];
+  });
+};
+
 export const getLengthBounds = (value: SymbolicValue, binding: Binding): Bound[] => {
   const known = getKnownLength(value);
   if (!known) return [];
