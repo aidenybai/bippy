@@ -11,11 +11,6 @@ const SIDE_BULGE = 28;
 const STEM = 8;
 const MAX_BOW = 60;
 const LANE_SWING = 22;
-const RAIL_MIN_GAP = 60;
-const RAIL_FEED = 3;
-const HEAD_SIZE = 7;
-const RAIL_HEAD_SIZE = 6;
-export const RAIL_RADIUS = 4;
 
 const EVENT_ARC_KINDS = new Set<GraphEdge["kind"]>(["triggers", "writes"]);
 
@@ -26,7 +21,7 @@ export interface PlacedArc {
   fromSlot: number;
   toSlot: number;
   lane: number;
-  rail: number | null;
+  junction: Point | null;
   color: string;
 }
 
@@ -53,6 +48,9 @@ const getSideShape = ({ from, to, lane }: PlacedArc): ArcShape => {
   };
 };
 
+const getBow = (from: Point, to: Point, direction: number): number =>
+  Math.max(MIN_BOW, Math.min(MAX_BOW, Math.abs(to.y - from.y) / 2)) * direction;
+
 const getVerticalShape = (arc: PlacedArc): ArcShape => {
   const direction = arc.to.y > arc.from.y ? 1 : -1;
   const start: Point = {
@@ -64,10 +62,15 @@ const getVerticalShape = (arc: PlacedArc): ArcShape => {
     y: direction === 1 ? arc.to.y : arc.to.y + arc.to.height,
   };
   const base: Point = { x: tip.x, y: tip.y - STEM * direction };
-  const bow = Math.max(MIN_BOW, Math.min(MAX_BOW, Math.abs(base.y - start.y) / 2)) * direction;
+  const trunk = arc.junction ?? start;
+  const feederBow = getBow(start, trunk, direction);
+  const feeder = arc.junction
+    ? `C ${start.x} ${start.y + feederBow}, ${trunk.x} ${trunk.y - feederBow}, ${trunk.x} ${trunk.y}`
+    : "";
+  const bow = getBow(trunk, base, direction);
   const swing = getLaneSwing(arc.lane);
   return {
-    path: `M ${start.x} ${start.y} C ${start.x + swing} ${start.y + bow}, ${base.x + swing} ${base.y - bow}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`,
+    path: `M ${start.x} ${start.y} ${feeder} C ${trunk.x + swing} ${trunk.y + bow}, ${base.x + swing} ${base.y - bow}, ${base.x} ${base.y} L ${tip.x} ${tip.y}`,
     base,
     tip,
   };
@@ -79,44 +82,8 @@ export const isSideArc = ({ from, to }: Pick<PlacedArc, "from" | "to">): boolean
   return gap < SIDE_GAP && reach < SIDE_REACH;
 };
 
-export const isRailArc = (arc: Pick<PlacedArc, "from" | "to">): boolean => {
-  const gap =
-    arc.to.y > arc.from.y
-      ? arc.to.y - (arc.from.y + arc.from.height)
-      : arc.from.y - (arc.to.y + arc.to.height);
-  return gap > RAIL_MIN_GAP;
-};
-
-const getRailShape = (arc: PlacedArc, railX: number): ArcShape => {
-  const direction = arc.to.y > arc.from.y ? 1 : -1;
-  const startX = getSlotX(arc.from, arc.fromSlot);
-  const startY = direction === 1 ? arc.from.y + arc.from.height : arc.from.y;
-  const tip: Point = {
-    x: getSlotX(arc.to, arc.toSlot),
-    y: direction === 1 ? arc.to.y : arc.to.y + arc.to.height,
-  };
-  const base: Point = { x: tip.x, y: tip.y - RAIL_HEAD_SIZE * direction };
-  const feedY = startY + RAIL_FEED * direction;
-  const turn = RAIL_RADIUS * direction;
-  return {
-    path: [
-      `M ${startX} ${startY}`,
-      `Q ${startX} ${feedY} ${startX - RAIL_RADIUS} ${feedY}`,
-      `L ${railX + RAIL_RADIUS} ${feedY}`,
-      `Q ${railX} ${feedY} ${railX} ${feedY + turn}`,
-      `L ${railX} ${base.y - turn}`,
-      `Q ${railX} ${base.y} ${railX + RAIL_RADIUS} ${base.y}`,
-      `L ${base.x} ${base.y}`,
-    ].join(" "),
-    base,
-    tip,
-  };
-};
-
-const getArcShape = (arc: PlacedArc): ArcShape => {
-  if (arc.rail !== null) return getRailShape(arc, arc.rail);
-  return isSideArc(arc) ? getSideShape(arc) : getVerticalShape(arc);
-};
+const getArcShape = (arc: PlacedArc): ArcShape =>
+  isSideArc(arc) ? getSideShape(arc) : getVerticalShape(arc);
 
 export const Arc = (arc: PlacedArc) => {
   const isActive = useIsCausalEdge(arc.edge.from, arc.edge.to);
@@ -135,13 +102,7 @@ export const Arc = (arc: PlacedArc) => {
         strokeWidth={isActive ? 1.75 : 1}
         strokeDasharray={isEvent ? "4 3" : undefined}
       />
-      <ArrowHead
-        from={shape.base}
-        tip={shape.tip}
-        color={color}
-        size={arc.rail === null ? HEAD_SIZE : RAIL_HEAD_SIZE}
-        isHollow={isEvent}
-      />
+      <ArrowHead from={shape.base} tip={shape.tip} color={color} size={7} isHollow={isEvent} />
     </g>
   );
 };
