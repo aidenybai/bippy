@@ -2033,7 +2033,10 @@ export class Interpreter {
         const isModuleLocal = value.binding.kind === "ModuleLocal";
         const variable = isModuleLocal ? this.#getModuleBinding(value.binding.name) : null;
         if (variable) return createBindingValue(variable);
-        const constant = isModuleLocal ? this.#loadModuleConstant(value.binding.name) : null;
+        const constant =
+          isModuleLocal || value.binding.kind === "Global"
+            ? this.#loadModuleConstant(value.binding.name)
+            : null;
         return constant ?? this.#foldLiteralType(getGlobalValue(value), value.loc);
       }
       case "PropertyLoad":

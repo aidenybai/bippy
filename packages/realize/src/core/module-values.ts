@@ -2,7 +2,7 @@ import { traverse, types } from "@babel/core";
 import type { NodePath } from "@babel/core";
 import { GeneratedSource } from "../react-compiler/HIR/HIR";
 import type { SourceLocation } from "../react-compiler/HIR/HIR";
-import type { SymbolicValue } from "./types";
+import type { PrimitiveValue, SymbolicValue } from "./types";
 
 export interface ModuleConstantLoader {
   (constantName: string): SymbolicValue | null;
@@ -98,6 +98,27 @@ const toSymbolicValue = (node: types.Node): SymbolicValue | null => {
     return properties ? { kind: "ObjectExpression", properties, spreads: [] } : null;
   }
   return null;
+};
+
+const getEnumMemberName = (member: types.TSEnumMember): string | null =>
+  types.isIdentifier(member.id) ? member.id.name : member.id.value;
+
+const getEnumObject = (declaration: types.TSEnumDeclaration): SymbolicValue | null => {
+  const properties: Array<{ key: string; value: SymbolicValue }> = [];
+  let next: number | null = 0;
+  for (const member of declaration.members) {
+    const name = getEnumMemberName(member);
+    const initial = member.initializer ? toSymbolicValue(member.initializer) : null;
+    const memberValue: PrimitiveValue | undefined =
+      initial?.kind === "Primitive" ? initial.value : member.initializer ? undefined : next;
+    if (name === null || (typeof memberValue !== "number" && typeof memberValue !== "string"))
+      return null;
+    properties.push({ key: name, value: { kind: "Primitive", value: memberValue } });
+    if (typeof memberValue === "number")
+      properties.push({ key: String(memberValue), value: { kind: "Primitive", value: name } });
+    next = typeof memberValue === "number" ? memberValue + 1 : null;
+  }
+  return { kind: "ObjectExpression", properties, spreads: [] };
 };
 
 const getMemberKey = (
@@ -290,6 +311,8 @@ const isStateValueReference = (path: NodePath): boolean => {
 
 export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoader => {
   const constants = new Map<string, SymbolicValue>();
+  const enums = new Map<string, SymbolicValue>();
+  const unsafeEnums = new Set<string>();
   traverse(ast, {
     VariableDeclarator(path) {
       const declaration = path.parentPath;
@@ -316,6 +339,26 @@ export const createModuleConstantLoader = (ast: types.File): ModuleConstantLoade
           ));
       if (isUnchanged) constants.set(path.node.id.name, value);
     },
+    TSEnumDeclaration(path) {
+      const { name } = path.node.id;
+      const value = isModuleLevel(path.parentPath) ? getEnumObject(path.node) : null;
+      if (value && !enums.has(name)) enums.set(name, value);
+      if (!value || enums.get(name) !== value) unsafeEnums.add(name);
+    },
   });
+  traverse(ast, {
+    Identifier(path) {
+      const { name } = path.node;
+      const value = enums.get(name);
+      const isTypePosition =
+        path.parentPath.isTSTypeReference() ||
+        path.parentPath.isTSQualifiedName() ||
+        path.parentPath.isTSEnumDeclaration({ id: path.node });
+      if (!value || isTypePosition || !path.isReferencedIdentifier() || path.scope.hasBinding(name))
+        return;
+      if (!isReadOfPrimitive(path, [value], [])) unsafeEnums.add(name);
+    },
+  });
+  for (const [name, value] of enums) if (!unsafeEnums.has(name)) constants.set(name, value);
   return (constantName) => constants.get(constantName) ?? null;
 };
