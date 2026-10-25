@@ -17,6 +17,8 @@ const HEAD_SIZE = 7;
 const RAIL_HEAD_SIZE = 6;
 export const RAIL_RADIUS = 4;
 
+const EVENT_ARC_KINDS = new Set<GraphEdge["kind"]>(["triggers", "writes"]);
+
 export interface PlacedArc {
   edge: GraphEdge;
   from: Box;
@@ -123,6 +125,7 @@ export const Arc = (arc: PlacedArc) => {
   const isMuted = (hasHover && !isActive) || isInactive;
   const shape = getArcShape(arc);
   const color = getSolidColor(arc.color);
+  const isEvent = EVENT_ARC_KINDS.has(arc.edge.kind);
   return (
     <g opacity={isMuted ? 0.1 : isActive ? 1 : 0.55}>
       <path
@@ -130,13 +133,14 @@ export const Arc = (arc: PlacedArc) => {
         fill="none"
         stroke={color}
         strokeWidth={isActive ? 1.75 : 1}
-        strokeDasharray={arc.edge.kind === "writes" ? "4 3" : undefined}
+        strokeDasharray={isEvent ? "4 3" : undefined}
       />
       <ArrowHead
         from={shape.base}
         tip={shape.tip}
         color={color}
         size={arc.rail === null ? HEAD_SIZE : RAIL_HEAD_SIZE}
+        isHollow={isEvent}
       />
     </g>
   );

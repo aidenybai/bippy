@@ -8,9 +8,10 @@ interface ArrowHeadProps {
   tip: Point;
   color: string;
   size: number;
+  isHollow?: boolean;
 }
 
-export const ArrowHead = ({ from, tip, color, size }: ArrowHeadProps) => {
+export const ArrowHead = ({ from, tip, color, size, isHollow }: ArrowHeadProps) => {
   const length = Math.hypot(tip.x - from.x, tip.y - from.y) || 1;
   const unitX = (tip.x - from.x) / length;
   const unitY = (tip.y - from.y) / length;
@@ -21,7 +22,11 @@ export const ArrowHead = ({ from, tip, color, size }: ArrowHeadProps) => {
   return (
     <path
       d={`M ${tip.x} ${tip.y} L ${baseX + spreadX} ${baseY + spreadY} L ${baseX - spreadX} ${baseY - spreadY} Z`}
-      style={{ fill: color }}
+      style={{
+        fill: isHollow ? "var(--color-background)" : color,
+        stroke: isHollow ? color : "none",
+      }}
+      strokeLinejoin="round"
     />
   );
 };

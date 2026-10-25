@@ -14,6 +14,7 @@ import type { ViewMode } from "@/lib/view-mode";
 import type { Example, ViewFile } from "@/model";
 import { useHighlighterWarmup } from "@/hooks/use-highlighter";
 import { useUiStore } from "@/store/ui";
+import { ArcKey } from "./arc-key";
 import { ViewerProvider, useActiveComponent, useHoveredNode, useViewer } from "./context";
 import { JsonPane } from "./json-pane";
 import { Legend } from "./legend";
@@ -110,6 +111,7 @@ const Status = () => {
           </>
         )}
       </div>
+      {mode === "code" && <ArcKey />}
       <div className="flex shrink-0 items-center gap-0.5">
         {hasLegendContent(view) && <SidebarTrigger disabled={mode === "json"} />}
         <ThemeToggle />
