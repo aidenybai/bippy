@@ -76,6 +76,12 @@ export interface Binding {
   derived: DerivedString | DerivedCall | null;
   range: NumberRange | null;
   alias: SymbolicValue | null;
+  firstRender?: FirstRenderValue;
+}
+
+export interface FirstRenderValue {
+  value: SymbolicValue;
+  inputIds: number[];
 }
 
 export interface NumberRange {
