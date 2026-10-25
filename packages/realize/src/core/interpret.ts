@@ -1762,6 +1762,8 @@ export class Interpreter {
     walkState: WalkState,
   ): SymbolicValue {
     const receiver = this.read(methodCall.receiver);
+    const container = this.#getStoredContainer(methodCall, receiver);
+    if (container) return container;
     if (!this.#handlerEffects || receiver.kind !== "Binding")
       return this.#evaluateMethodResult(methodCall, instructionId, walkState);
     const methodName = this.getPropertyName(methodCall.property) ?? "";
@@ -1776,6 +1778,21 @@ export class Interpreter {
     if (STORED_ITEM_READS.has(methodName) && result.kind === "Binding")
       for (const stored of storedFunctions) this.addStoredFunctions(result, stored, false);
     return result;
+  }
+
+  #getStoredContainer(
+    methodCall: InstructionValueOfKind<"MethodCall">,
+    receiver: SymbolicValue,
+  ): BindingValue | null {
+    if (!this.#handlerEffects || this.getPropertyName(methodCall.property) !== "values")
+      return null;
+    const [argument] = methodCall.args;
+    const isObjectValues =
+      receiver.kind === "Global" && receiver.module === null && receiver.name === "Object";
+    const container = isObjectValues && argument ? this.read(getPlaceOrSpread(argument)) : receiver;
+    const hasStoredFunctions =
+      container.kind === "Binding" && this.getStoredFunctions(container).length > 0;
+    return hasStoredFunctions && container.kind === "Binding" ? container : null;
   }
 
   #callStoredItems(
@@ -2177,6 +2194,11 @@ export class Interpreter {
       this.addStoredFunctions({ ...object, path: ["current"] }, storedValue);
       this.carryWrappedCallbacks(object.binding, storedValue);
     }
+    if (object.kind === "Binding" && isRefContents(object))
+      this.addStoredFunctions(
+        { ...object, path: [...object.path, String(store.property)] },
+        storedValue,
+      );
     if (this.#handlerEffects && isRefCell(object, String(store.property))) {
       this.cells.store(getRefCellKey(object.binding), storedValue, walkState);
       this.#handlerEffects.addPossibleMutation(object.binding);
