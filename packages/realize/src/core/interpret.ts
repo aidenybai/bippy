@@ -2101,10 +2101,10 @@ export class Interpreter {
         return this.read(value.value);
       case "PrefixUpdateLocal":
       case "PrefixUpdateContext":
-        return this.#evaluateUpdateLocal(value, true);
+        return this.#evaluateUpdateLocal(value, true, walkState);
       case "PostfixUpdateLocal":
       case "PostfixUpdateContext":
-        return this.#evaluateUpdateLocal(value, false);
+        return this.#evaluateUpdateLocal(value, false, walkState);
       case "TemplateLiteral":
         return this.#evaluateTemplateLiteral(value);
       case "StoreGlobal": {
@@ -2201,10 +2201,19 @@ export class Interpreter {
       "PrefixUpdateLocal" | "PrefixUpdateContext" | "PostfixUpdateLocal" | "PostfixUpdateContext"
     >,
     isPrefix: boolean,
+    walkState: WalkState,
   ): SymbolicValue {
-    const previous = this.read(update.value);
+    const isContextCell =
+      this.#handlerEffects !== null &&
+      (update.kind === "PrefixUpdateContext" || update.kind === "PostfixUpdateContext");
+    const cellKey = getContextCellKey(update.lvalue);
+    const loaded = this.read(update.value);
+    const previous = isContextCell
+      ? this.cells.read(cellKey, loaded, update.loc, walkState)
+      : loaded;
     const next = foldBinary(update.operation === "++" ? "+" : "-", previous, ONE_VALUE);
     this.write(update.lvalue, next);
+    if (isContextCell) this.cells.store(cellKey, next, walkState);
     return isPrefix ? next : previous;
   }
 
