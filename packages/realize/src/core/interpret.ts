@@ -355,6 +355,9 @@ const CHAINED_COLLECTION_WRITES = new Set(["add", "set"]);
 
 const STORED_ITEM_READS = new Set(["get", "at", "find", "findLast"]);
 
+const getStoredLabel = ({ binding, path }: BindingValue): string =>
+  `${formatPlace(binding, path)}@${binding.id}`;
+
 const ARRAY_INDEX_PATTERN = /^\d+$/;
 
 const REF_CONTAINER_WRITES = new Set(["push", "unshift", "add", "set"]);
@@ -872,10 +875,10 @@ export class Interpreter {
     argumentValues: SymbolicValue[],
     walkState: WalkState,
   ): void {
-    const key = getValueKey(place);
+    const label = getStoredLabel(place);
     let skipped: SymbolicValue[] = [];
     for (const [index, stored] of this.#getCalledFunctions(place).entries()) {
-      const isChosen = createUnknown(`stored-call:${key}:${index}`, place.binding.loc);
+      const isChosen = createUnknown(`stored-call:${label}:${index}`, place.binding.loc);
       const guards = [...walkState.guards, ...skipped, isChosen];
       this.#callStoredValue(stored, argumentValues, place.binding.loc, { ...walkState, guards });
       skipped = [...skipped, negate(isChosen)];
@@ -1771,9 +1774,9 @@ export class Interpreter {
     loc: SourceLocation,
     walkState: WalkState,
   ): void {
-    const key = getValueKey(receiver);
+    const label = getStoredLabel(receiver);
     for (const [index, stored] of storedFunctions.entries()) {
-      const isHeld = createUnknown(`stored-item:${key}:${index}`, loc);
+      const isHeld = createUnknown(`stored-item:${label}:${index}`, loc);
       this.callFunction(callback, [stored, createUnknown("item-index", loc), receiver], loc, {
         ...walkState,
         guards: [...walkState.guards, isHeld],
