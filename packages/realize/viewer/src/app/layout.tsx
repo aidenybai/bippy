@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import type { ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import { ThemeFavicon } from "./theme-favicon";
 
 const inter = localFont({
   src: "../../../../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
@@ -14,13 +15,7 @@ const inter = localFont({
 
 export const metadata: Metadata = {
   title: "Realize",
-  icons: {
-    icon: [
-      { url: "/icon-light.png", media: "(prefers-color-scheme: light)" },
-      { url: "/icon-dark.png", media: "(prefers-color-scheme: dark)" },
-    ],
-    apple: "/apple-icon.png",
-  },
+  icons: { apple: "/apple-icon.png" },
 };
 
 export const viewport: Viewport = {
@@ -39,6 +34,7 @@ const RootLayout = ({ children }: { children: ReactNode }) => (
         enableSystem
         disableTransitionOnChange
       >
+        <ThemeFavicon />
         {children}
       </ThemeProvider>
     </body>
